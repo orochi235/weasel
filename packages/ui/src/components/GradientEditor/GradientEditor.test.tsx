@@ -153,7 +153,7 @@ describe('GradientEditor', () => {
         render(<GradientEditor value={LINEAR} onChange={() => {}} />);
         expect(kindNames()).toContain('Diamond');
       } finally {
-        dispose();
+        act(() => { dispose(); });
       }
     });
 

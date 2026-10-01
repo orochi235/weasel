@@ -18,6 +18,8 @@ function Hang({ hang }: { hang: boolean }): null {
  * React holds every later update behind it: a `setState` there never renders.
  * An event that only reads what is committed works anywhere; a test that
  * needs a render after the abandoned one makes it with {@link renderOutsideAct}.
+ * An event fired after it can still commit on a microtask once a sync `act` has
+ * returned, outside act; fire it inside an async `act`.
  */
 export function renderThenAbandon<P>(a: P, b: P, view: (props: P) => ReactNode): void {
   let next!: (p: P) => void;

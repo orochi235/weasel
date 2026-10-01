@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { useState } from 'react';
-import { act, render, screen, fireEvent } from '@testing-library/react';
+import { act, cleanup, render, screen, fireEvent } from '@testing-library/react';
 import {
   asPaint,
   registerPaintKind,
@@ -175,6 +175,8 @@ describe('PaintInput', () => {
 describe('PaintInput — a registered kind', () => {
   const disposers: (() => void)[] = [];
   afterEach(() => {
+    // Unmount before disposing, or the removal re-renders a mounted input outside act.
+    cleanup();
     while (disposers.length) disposers.pop()?.();
   });
 

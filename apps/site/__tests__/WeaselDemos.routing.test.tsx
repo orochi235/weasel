@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEMOS } from '../registry';
 import { WeaselDemos } from '../WeaselDemos';
@@ -79,7 +79,7 @@ describe('the hash router', () => {
     render(<WeaselDemos />);
     await heading(DEMOS[0].title);
     go(`#${target.id}`);
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    act(() => { window.dispatchEvent(new HashChangeEvent('hashchange')); });
     await heading(target.title);
   });
 

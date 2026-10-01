@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import {
   _resetPaintKindsForTests, asPaint, registerPaintKind, registerPaintKindLoader, type PaintKindEntry,
 } from './paintKinds';
@@ -12,7 +12,9 @@ const noise = (): PaintKindEntry => ({
   colorOf: () => undefined,
 });
 
-afterEach(() => { _resetPaintKindsForTests(); });
+// Unmount first: the reset re-seeds every built-in, and each push would
+// re-render a hook that is still mounted, outside act.
+afterEach(() => { cleanup(); _resetPaintKindsForTests(); });
 
 describe('paint-kind hooks', () => {
   it('re-render on a registration and keep their snapshot otherwise', () => {

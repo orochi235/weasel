@@ -78,12 +78,12 @@ describe('PropertyField text drafting', () => {
     const onChange = vi.fn();
     render(<PropertyField kind="string" label="Name" value="a" onInput={() => {}} onChange={onChange} />);
     const field = screen.getByRole('textbox', { name: 'Name' });
-    field.focus();
+    act(() => { field.focus(); });
     fireEvent.change(field, { target: { value: 'a' } });
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(onChange).not.toHaveBeenCalled();
     fireEvent.change(field, { target: { value: 'b' } });
-    field.focus();
+    act(() => { field.focus(); });
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(onChange.mock.calls).toEqual([['b']]);
   });
@@ -191,7 +191,7 @@ describe('PropertyField color alpha', () => {
     expect(onInput).toHaveBeenLastCalledWith('#00ff00');
     expect(onAlphaInput).not.toHaveBeenCalled();
     // The picker closing: a native `change`, before any blur.
-    swatch().dispatchEvent(new Event('change', { bubbles: true }));
+    act(() => { swatch().dispatchEvent(new Event('change', { bubbles: true })); });
     expect(onChange.mock.calls).toEqual([['#00ff00']]);
     const track = screen.getByRole('slider', { name: 'Tint opacity' });
     fireEvent.input(track, { target: { value: '25' } });

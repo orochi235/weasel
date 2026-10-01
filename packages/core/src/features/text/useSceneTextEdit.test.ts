@@ -530,7 +530,7 @@ describe('useSceneTextEdit — abandoned renders', () => {
     document.body.innerHTML = '';
   });
 
-  it('writes through the committed options, not an abandoned render\'s', () => {
+  it('writes through the committed options, not an abandoned render\'s', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const setA = vi.fn((data: TextItem, text: string) => ({ ...data, text }));
@@ -553,7 +553,7 @@ describe('useSceneTextEdit — abandoned renders', () => {
     act(() => api!.startEdit('a'));
     act(() => { startTransition(() => abandon()); });
     const el = container.querySelector('div[contenteditable="true"]')!;
-    act(() => {
+    await act(async () => {
       el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     });
     expect(setB).not.toHaveBeenCalled();

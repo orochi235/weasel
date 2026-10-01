@@ -908,8 +908,6 @@ one dead `const` and four stale disable directives.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op factories, shape kinds and the `features` presets; public exports remain uncovered.
 
-- **(P3) Confirm the `act()` warning sweep in CI.** Run 36271062844 (2026-09-26) printed 650 "not wrapped in act(...)" warnings per Node leg. Every file that produced one now runs at 0 locally, but no CI run has checked it yet: read the next green `ci.yml` log and retire this entry if the count is near zero, or fix whatever is left the same way. The fix touched forge's `labHarness.ts` `flush` (it waited on the port outside `act`), most of labkit's `Lab`/`Trial` tests (now mounted through `renderSettled`, see the CLAUDE.md trap), and a handful of tests in `packages/ui`, `apps/draw` and core's `sceneCanvas.ingestion.test.tsx`. The old `SceneCanvas.tools.test.tsx` residue is no longer there, in that CI run or locally.
-
 - **(P2) Per-command draw cost, for everything that is not batched solid
   geometry.** `tests/perf/draw-loop.spec.ts` sweeps commands per frame under
   real GL (`npm run test:perf`; gates nothing, and its result file records the

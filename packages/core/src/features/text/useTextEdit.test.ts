@@ -1785,7 +1785,7 @@ describe('useTextEdit — abandoned renders', () => {
     document.body.innerHTML = '';
   });
 
-  it('commits through the committed options, not an abandoned render\'s', () => {
+  it('commits through the committed options, not an abandoned render\'s', async () => {
     const h = makeHarness({ a: 'hi' });
     const setB = vi.fn();
     const NEVER = new Promise<never>(() => {});
@@ -1805,7 +1805,7 @@ describe('useTextEdit — abandoned renders', () => {
     act(() => api!.startEdit('a'));
     act(() => { startTransition(() => abandon()); });
     const el = getOverlay(h.container)!;
-    act(() => {
+    await act(async () => {
       el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     });
     expect(setB).not.toHaveBeenCalled();

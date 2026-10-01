@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { Pressable } from 'react-aria-components';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
@@ -199,11 +199,11 @@ describe('Callout', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
-  it('reports Escape to the committed onDismiss, not an abandoned render\'s', () => {
+  it('reports Escape to the committed onDismiss, not an abandoned render\'s', async () => {
     const committed = vi.fn();
     const abandoned = vi.fn();
     renderThenAbandon(committed, abandoned, (onDismiss) => <ProgrammaticSubject onDismiss={onDismiss} />);
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    await act(async () => { fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' }); });
     expect(abandoned).not.toHaveBeenCalled();
     expect(committed).toHaveBeenCalledTimes(1);
   });
