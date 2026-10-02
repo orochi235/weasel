@@ -1,7 +1,8 @@
 # The animator on blits
 
-**Status: steps 1 and 2 are built; steps 3–6 are not.** Pose overrides fold through a blits mix,
-and the paint walk's cost is measured (below). Nothing animates through blits yet. Delete this once
+**Status: steps 1 and 2 are built; steps 3–6 are not, and step 3 is blocked on blits** ("What
+step 3 has to answer first"). Pose overrides fold through a blits mix, and the paint walk's cost is
+measured (below). Nothing animates through blits yet. Delete this once
 it is built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
@@ -134,6 +135,47 @@ Each of these is blits work.
 4. weasel: `cancelKey` interrupts with momentum; global pause through the mix clock.
 5. weasel: color overrides and the camera as mixes.
 6. weasel: event tracks reading mix time.
+
+## What step 3 has to answer first
+
+Step 3 as written, the animator's calls kept and each reimplemented on blits, measures as
+unworkable. `tests/perf/bench/animator-on-blits.bench.ts` animates N nodes' `{ x, y }` three ways:
+today's animator, one tween or spring per node; the literal port, one blits voice per call,
+targeted at its node; and one voice for every node, reading each node's endpoints. Each row checks
+it computes the same values as today's before it is timed. Medians in ms, two runs on an Apple M2
+Max under Node 26, with the machine loaded (load average 13–17):
+
+| One frame            | Nodes  | Today       | Voice per call | One voice   |
+|----------------------|-------:|------------:|---------------:|------------:|
+| tween                |  1,000 | 0.03 / 0.03 |    0.42 / 0.42 | 0.15 / 0.15 |
+| tween                | 10,000 | 0.30 / 0.29 |              — | 2.04 / 1.99 |
+| spring               |  1,000 | 0.04 / 0.04 |    0.50 / 0.54 | 0.30 / 0.30 |
+| spring               | 10,000 | 0.98 / 0.96 |              — | 4.49 / 4.34 |
+
+| Start, and first frame | Nodes | Voice per call   |
+|------------------------|------:|-----------------:|
+| tween                  |   100 |      3.7 / 2.8   |
+| tween                  |   300 |     35.3 / 37.8  |
+| tween                  | 1,000 |  1,116 / 1,074   |
+
+Starting N voices grows with N²: blits asks every voice's `target` about every subject the first
+time it sees that subject. A thousand tweens started at once cost a second, and at 10k the row
+was not run. Today, and one voice, start 1,000 in under a millisecond each.
+
+Even the one-voice shape costs 5–7 times today's frame. That is blits' per-probe cost
+(see "What step 2 built"), paid on top of the arithmetic.
+
+So step 3 needs one of these before it is built:
+
+- **A voice that names its subjects.** A cue carrying the subjects it reaches, so blits indexes
+  subject to voices instead of asking every voice. This is a blits change. With it, a tween per
+  call stays a voice per call.
+- **Batching in the animator.** Calls started in the same frame with the same timing share one
+  voice that reads each node's endpoints. This needs no blits change. How often separate calls
+  share timing is unmeasured; `stagger` offsets them on purpose.
+
+And either way, the per-probe cost has to come down before the animator moves over, or every
+animated frame pays it.
 
 ## What step 2 built
 

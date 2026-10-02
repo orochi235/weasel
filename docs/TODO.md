@@ -489,7 +489,9 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   case is last-writer-wins. Proposal: `docs/proposals/2026-09-30-animator-on-blits.md`, which keeps
   the animator's control surface and moves every value computation onto blits. Steps 1 and 2 are done:
   pose overrides fold through a mix, costing about 2.7 ms a frame at 10k animated nodes. Step 3 —
-  tween, spring and keyframe sampling on blits patches — is next.
+  tween, spring and keyframe sampling on blits patches — is measured and waits on blits: a voice per
+  animation starts in N² time, and one voice for all costs 5–7× today's frame (the proposal's
+  "What step 3 has to answer first").
 
 ### Earlier deferrals
 
