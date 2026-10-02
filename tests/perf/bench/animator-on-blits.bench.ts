@@ -20,6 +20,9 @@
  * The start groups time setup alone: N animations started and their first
  * frame computed, which is when blits first asks each voice which nodes it
  * reaches.
+ *
+ * The `target` rows hold ~800 MB per mix at 1k nodes and outgrow node's 4 GB
+ * default heap: run with `NODE_OPTIONS=--max-old-space-size=12288`.
  */
 import { renderHook } from '@testing-library/react';
 import { easeOut } from '@weasel-js/geom';
