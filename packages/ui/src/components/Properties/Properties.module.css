@@ -1785,13 +1785,10 @@
   opacity: 0.55;
 }
 
-/* Where an inherited value comes from, after the label. Not uppercased: it is a
-   note about the label, not part of it. */
+/* Where an inherited value comes from, after the label. */
 .rowHint {
   font-size: var(--wzl-font-size-2xs);
   color: var(--wzl-fg-subtle);
-  text-transform: none;
-  letter-spacing: normal;
   white-space: nowrap;
 }
 
