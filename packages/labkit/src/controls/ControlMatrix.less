@@ -55,6 +55,8 @@
   border: 0;
   border-radius: var(--wzl-radius-sm);
   background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   color: inherit;
   font: inherit;
   letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wide));
@@ -112,6 +114,9 @@
   border: 1px solid transparent;
   border-radius: var(--wzl-radius-sm);
   background: none;
+  // labkit's default button blurs its backdrop; dozens of blurred cells make Chrome flicker.
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   color: inherit;
   font: inherit;
   cursor: pointer;
