@@ -1,7 +1,7 @@
 // Verify that every publishable workspace's current version is on the registry.
 //
 //   npm run check:published              one pass — "did the last release land?"
-//   npm run check:published -- --wait    poll anything missing for up to 15 minutes
+//   npm run check:published -- --wait    poll anything missing for up to 60 minutes
 //   npm run check:published -- --wait=20 ... or for that many minutes
 //
 // `changeset publish` has twice printed packages under "Successfully published"
@@ -12,8 +12,8 @@
 // the report was wrong. So the release job asks the registry instead.
 //
 // The release job runs this with `--wait`: npm holds a fresh upload as staged,
-// invisible to every read, for up to about fifteen minutes (npm/cli#9889), and
-// 1.6.0 failed this check on four packages that listed minutes later.
+// invisible to every read (npm/cli#9889). 1.6.0 failed this check on four
+// packages that listed minutes later; 1.7.2's `hud` took 55 minutes to list.
 //
 // Not a pre-publish gate and not a CI check: between `chore: version packages`
 // merging and the publish finishing, the manifests legitimately hold versions
@@ -22,7 +22,7 @@ import { publishableWorkspaces } from './lib/workspaces.mjs';
 import { hasVersion, registryBase } from './lib/registry.mjs';
 import { awaitPublished } from './lib/await-published.mjs';
 
-const DEFAULT_WAIT_MINUTES = 15;
+const DEFAULT_WAIT_MINUTES = 60;
 
 function waitMinutes(argv) {
   const flag = argv.find((a) => a === '--wait' || a.startsWith('--wait='));
@@ -49,7 +49,7 @@ const { missing } = await awaitPublished(packages, {
 // A version npm is still holding as staged cannot be republished, so advice to
 // re-dispatch is only right once the staging window has passed.
 const withoutWaiting = [
-  'If the publish finished less than 15 minutes ago, npm may still be holding',
+  'If the publish finished less than an hour ago, npm may still be holding',
   'these as staged. Do not re-dispatch yet; wait them out first:',
   '',
   '  npm run check:published -- --wait',

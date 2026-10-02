@@ -95,10 +95,10 @@ jobs:
       # evidence. This asks npm instead, and fails the job naming what to
       # re-dispatch for.
       #
-      # `--wait` polls anything missing for up to 15 minutes before failing:
-      # npm holds a fresh upload as staged, invisible to every read, for that
-      # long (npm/cli#9889), and 1.6.0 failed here on four packages that listed
-      # minutes later. `npm run release` reports a retry that hits the staged
+      # `--wait` polls anything missing for up to 60 minutes before failing:
+      # npm holds a fresh upload as staged, invisible to every read
+      # (npm/cli#9889). 1.6.0 failed here on four packages that listed minutes
+      # later, and 1.7.2's `hud` took 55 minutes. `npm run release` reports a retry that hits the staged
       # version's E409 as published, so this step is what decides.
       #
       # The `published` guard is load-bearing, not caution. On the other path
@@ -108,7 +108,7 @@ jobs:
       # version PR would fail.
       - name: Verify every version reached the registry
         if: steps.changesets.outputs.published == 'true'
-        timeout-minutes: 20
+        timeout-minutes: 65
         run: npm run check:published -- --wait
       # And the question a consumer actually asks. The group pins its siblings
       # by range, so one missing package fails `npm i @weasel-js/core` while
