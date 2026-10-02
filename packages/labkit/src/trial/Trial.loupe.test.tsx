@@ -1,6 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react';
-import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import userEvent from '@testing-library/user-event';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
@@ -68,7 +68,9 @@ describe('a lens the instrument mounts', () => {
   });
 
   it('drops out of a trial that suppresses it', async () => {
-    await renderSettled(<Lab instruments={[canvasInstrument]} defaultInstrument="Drawn" suppress={['loupe']} />);
+    await renderSettled(
+      <Lab instruments={[canvasInstrument]} defaultInstrument="Drawn" suppress={['loupe']} />,
+    );
     expect(screen.queryByRole('button', { name: 'Loupe' })).toBeNull();
   });
 
@@ -96,7 +98,9 @@ describe('a lens the instrument mounts', () => {
 
   it('asks a DOM instrument to draw itself again at the magnified camera', async () => {
     const user = userEvent.setup();
-    const { container } = await renderSettled(<Lab instruments={[domInstrument]} defaultInstrument="Written" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[domInstrument]} defaultInstrument="Written" />,
+    );
     await user.click(screen.getByRole('button', { name: 'Loupe' }));
 
     const host = container.querySelector('.lk-loupe-host');
@@ -110,7 +114,9 @@ describe('a lens the instrument mounts', () => {
   });
 
   it('wraps nothing for an instrument that mounts no lens', async () => {
-    const { container } = await renderSettled(<Lab instruments={[noLoupe]} defaultInstrument="Plain" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[noLoupe]} defaultInstrument="Plain" />,
+    );
     expect(container.querySelector('.lk-loupe-host')).toBeNull();
   });
 
@@ -122,7 +128,9 @@ describe('a lens the instrument mounts', () => {
       render: () => <TrialLoupe enabled />,
       canvas: { layers: [{ id: 'main', draw: () => undefined }] },
     });
-    const { container } = await renderSettled(<Lab instruments={[always]} defaultInstrument="Always" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[always]} defaultInstrument="Always" />,
+    );
     const stack = container.querySelector('.lk-canvas-stack');
     if (!stack) throw new Error('no canvas stack');
     pointAt(stack, 60, 40);

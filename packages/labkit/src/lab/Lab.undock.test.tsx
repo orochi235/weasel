@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
-import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import userEvent from '@testing-library/user-event';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
@@ -36,7 +36,9 @@ const pinned: TrialContribution = {
 };
 
 async function renderLab() {
-  return renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[notes]} />);
+  return renderSettled(
+    <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[notes]} />,
+  );
 }
 
 describe('undocking a sidebar section', () => {
@@ -80,7 +82,9 @@ describe('undocking a sidebar section', () => {
   });
 
   it('offers no tear-out control on a section that opts out', async () => {
-    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[pinned]} />);
+    await renderSettled(
+      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[pinned]} />,
+    );
     expect(screen.queryByRole('button', { name: 'Undock Pinned' })).toBeNull();
   });
 });

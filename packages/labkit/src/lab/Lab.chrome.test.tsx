@@ -26,12 +26,16 @@ describe('<Lab> chrome', () => {
       region: 'toolbar',
       item: { icon: Glyph, label: 'Export', onActivate: () => {} },
     };
-    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[extra]} />);
+    await renderSettled(
+      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[extra]} />,
+    );
     expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
   });
 
   it('suppresses a built-in by id', async () => {
-    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" suppress={['snapshot']} />);
+    await renderSettled(
+      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" suppress={['snapshot']} />,
+    );
     expect(screen.queryByRole('button', { name: 'Save snapshot' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Clone trial' })).toBeInTheDocument();
   });

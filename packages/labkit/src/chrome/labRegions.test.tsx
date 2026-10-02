@@ -147,13 +147,17 @@ describe('lab sidebar region', () => {
   });
 
   it('folds a section', async () => {
-    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[tree]} />);
+    await renderSettled(
+      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[tree]} />,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Stories' }));
     expect(screen.queryByText('story list')).toBeNull();
   });
 
   it('offers no tear-out at lab level', async () => {
-    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[tree]} />);
+    await renderSettled(
+      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[tree]} />,
+    );
     expect(screen.queryByRole('button', { name: 'Undock Stories' })).toBeNull();
   });
 
@@ -167,13 +171,17 @@ describe('lab sidebar region', () => {
         return <p>probe</p>;
       },
     };
-    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[probe]} />);
+    await renderSettled(
+      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[probe]} />,
+    );
     expect(screen.getByText('probe')).toBeInTheDocument();
     expect(seen[0]?.trials).toHaveLength(1);
   });
 
   it('adds no strip to a lab without sidebar chrome', async () => {
-    const { container } = await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" />);
+    const { container } = await renderSettled(
+      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" />,
+    );
     expect(container.querySelector('.lk-lab__panes')).toBeNull();
   });
 });

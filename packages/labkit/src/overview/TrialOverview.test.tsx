@@ -8,8 +8,8 @@
  */
 
 import { act } from '@testing-library/react';
-import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import type { PointerContextValue } from '@weasel-js/core';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
