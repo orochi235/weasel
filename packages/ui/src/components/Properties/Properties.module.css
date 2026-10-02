@@ -1780,9 +1780,9 @@
 }
 
 /* An auto row that keeps drawing its control: the value is the one it inherits,
-   shown faded so it reads as not chosen here. */
-.rowAutoDimmed > :not(.rowLabel) {
-  opacity: 0.55;
+   drawn in the secondary accent so it reads as not chosen here. */
+.rowAutoInherited {
+  composes: inherited from '@weasel-js/theme/inherited.module.css';
 }
 
 /* Where an inherited value comes from, after the label. */

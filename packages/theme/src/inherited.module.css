@@ -1,0 +1,12 @@
+/* A value in effect but not chosen here, drawn in the secondary accent rather than dimmed, which
+ * reads as disabled. The one definition: compose it, or mix it into Less. Every accent name is
+ * restated because each resolves where it is declared, so remapping the base alone moves none. */
+.inherited {
+  --wzl-accent: var(--wzl-secondary);
+  --wzl-accent-base: var(--wzl-secondary-base);
+  --wzl-accent-strong: var(--wzl-secondary-strong);
+  --wzl-accent-soft: var(--wzl-secondary-soft);
+  --wzl-accent-hover: var(--wzl-secondary-strong);
+  --wzl-accent-fg: var(--wzl-secondary-fg);
+  color: var(--wzl-secondary-fg);
+}

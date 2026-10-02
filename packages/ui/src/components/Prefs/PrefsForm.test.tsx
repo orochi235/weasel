@@ -629,7 +629,7 @@ describe('PrefsForm — inherited leaves', () => {
     const [, windowGlow] = fields();
     expect(windowGlow.value).toBe('4');
     expect(screen.getAllByText('from Defaults')).toHaveLength(1);
-    expect(windowGlow.closest('label')?.className).toMatch(/rowAutoDimmed/);
+    expect(windowGlow.closest('label')?.className).toMatch(/rowAutoInherited/);
   });
 
   it('pins an inherited leaf through onChange when its control is edited', () => {

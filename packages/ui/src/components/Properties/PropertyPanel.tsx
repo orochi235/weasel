@@ -281,7 +281,7 @@ export function PropertyRow({
       variantClass,
       layoutClass,
       span && s.span,
-      auto && (autoControl === 'dimmed' ? s.rowAutoDimmed : s.rowAuto),
+      auto && (autoControl === 'dimmed' ? s.rowAutoInherited : s.rowAuto),
     ]
       .filter(Boolean)
       .join(' '),

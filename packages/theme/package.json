@@ -27,6 +27,7 @@
     "./fonts.css": "./dist/fonts.css",
     "./faces.css": "./dist/faces.css",
     "./numeric.module.css": "./dist/numeric.module.css",
+    "./inherited.module.css": "./dist/inherited.module.css",
     "./package.json": "./package.json"
   },
   "dependencies": {
@@ -62,7 +63,7 @@
   ],
   "scripts": {
     "gen:tokens": "tsx scripts/build-tokens.ts",
-    "build": "npm run gen:tokens && tsup && cp src/generated/tokens.css dist/tokens.css && cp src/fonts.css src/faces.css src/numeric.module.css dist/"
+    "build": "npm run gen:tokens && tsup && cp src/generated/tokens.css dist/tokens.css && cp src/fonts.css src/faces.css src/numeric.module.css src/inherited.module.css dist/"
   },
   "publishConfig": {
     "access": "public",
