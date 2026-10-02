@@ -9,7 +9,8 @@
  * - **today** — one `animator.tween` / `animator.spring` per node, written
  *   the way `tweenPose` / `springPose` write: a fresh pose object per frame.
  * - **blits, voice per animation** — the literal port: each call cues its own
- *   voice, targeted at its one node.
+ *   voice, reaching its one node either by a `target` predicate or by naming
+ *   it in `subjects`.
  * - **blits, one voice** — every node on one voice reading its own endpoints,
  *   the way step 2's override table is one voice.
  *
@@ -121,7 +122,13 @@ function blitsFrame(d: Driven, c: Case, out: Delta): void {
   }
 }
 
-function cueTweenPerVoice(m: Mix<string, Delta>, c: Case): void {
+/** How a voice-per-animation cue says which node it reaches: a predicate
+ *  blits asks of every subject, or the subject named outright. */
+type Reach = 'target' | 'subjects';
+const reach = (how: Reach, id: string) =>
+  how === 'target' ? { target: (s: string) => s === id } : { subjects: [id] };
+
+const cueTweenPerVoice = (how: Reach) => (m: Mix<string, Delta>, c: Case): void => {
   c.ids.forEach((id, i) => {
     const a = c.from[i]!;
     const b = c.to[i]!;
@@ -130,11 +137,11 @@ function cueTweenPerVoice(m: Mix<string, Delta>, c: Case): void {
         { at: 0, delta: { pos: [a.x, a.y] } },
         { at: 1, delta: { pos: [b.x, b.y] } },
       ], { ease: EASE }),
-      target: (s) => s === id,
+      ...reach(how, id),
       loop: false,
     });
   });
-}
+};
 
 function cueTweenOneVoice(m: Mix<string, Delta>, c: Case): void {
   const index = new Map(c.ids.map((id, i) => [id, i]));
@@ -150,16 +157,16 @@ function cueTweenOneVoice(m: Mix<string, Delta>, c: Case): void {
   });
 }
 
-function cueSpringPerVoice(m: Mix<string, Delta>, c: Case): void {
+const cueSpringPerVoice = (how: Reach) => (m: Mix<string, Delta>, c: Case): void => {
   c.ids.forEach((id, i) => {
     const a = c.from[i]!;
     const b = c.to[i]!;
     m.cue({
       patch: spring<string, Delta, number[]>('pos', { from: [a.x, a.y], to: [b.x, b.y], ...SPRING, settle: 0 }),
-      target: (s) => s === id,
+      ...reach(how, id),
     });
   });
-}
+};
 
 function cueSpringOneVoice(m: Mix<string, Delta>, c: Case): void {
   const index = new Map(c.ids.map((id, i) => [id, i]));
@@ -200,8 +207,17 @@ const KINDS = [
   { kind: 'spring', today: startTodaySprings, perVoice: cueSpringPerVoice, oneVoice: cueSpringOneVoice },
 ] as const;
 
-/** The voice-per-animation shape only where its setup finishes in a run. */
-const PER_VOICE_MAX = Number(process.env.PER_VOICE_MAX ?? 1000);
+/** The `target` form only where its setup, which grows with N², finishes in a run. */
+const TARGET_MAX = 1000;
+/** blits before `subjects` (0.2.1) ignores it and reaches every node; skip
+ *  the rows there. */
+const HAS_SUBJECTS = (() => {
+  const m = mix<string, Delta>(KIT);
+  m.sync(0);
+  m.cue({ patch: patch(LONG, () => ({ pos: [1, 1] }), { writes: ['pos'] }), subjects: ['x'] } as never);
+  m.sync(FRAME);
+  return m.probe('y', { pos: [0, 0] }).pos[0] === 0;
+})();
 
 for (const n of [1000, 10000]) {
   for (const k of KINDS) {
@@ -216,12 +232,13 @@ for (const n of [1000, 10000]) {
       for (let f = 0; f < 30; f++) today.frame();
       bench('today', () => today.frame());
 
-      if (n <= PER_VOICE_MAX) {
-        const pv = driven(n, k.perVoice);
+      for (const how of ['target', 'subjects'] as const) {
+        if (how === 'target' ? n > TARGET_MAX : !HAS_SUBJECTS) continue;
+        const pv = driven(n, k.perVoice(how));
         const out = { pos: [0, 0] };
         for (let f = 0; f < 30; f++) blitsFrame(pv.d, pv.c, out);
-        agree(`${k.kind} voice per animation`, tc.sink, pv.c.sink, tol);
-        bench('blits, voice per animation', () => blitsFrame(pv.d, pv.c, out));
+        agree(`${k.kind} voice per animation, ${how}`, tc.sink, pv.c.sink, tol);
+        bench(`blits, voice per animation (${how})`, () => blitsFrame(pv.d, pv.c, out));
       }
 
       const ov = driven(n, k.oneVoice);
@@ -233,7 +250,7 @@ for (const n of [1000, 10000]) {
   }
 }
 
-for (const n of [100, 300, 1000]) {
+for (const n of [100, 300, 1000, 10000]) {
   for (const k of KINDS) {
     group(`${k.kind} start + first frame — ${n} nodes`, (bench) => {
       bench('today', () => {
@@ -242,10 +259,13 @@ for (const n of [100, 300, 1000]) {
         a.frame();
         a.unmount();
       });
-      bench('blits, voice per animation', () => {
-        const { d, c } = driven(n, k.perVoice);
-        blitsFrame(d, c, { pos: [0, 0] });
-      });
+      for (const how of ['target', 'subjects'] as const) {
+        if (how === 'target' ? n > TARGET_MAX : !HAS_SUBJECTS) continue;
+        bench(`blits, voice per animation (${how})`, () => {
+          const { d, c } = driven(n, k.perVoice(how));
+          blitsFrame(d, c, { pos: [0, 0] });
+        });
+      }
       bench('blits, one voice', () => {
         const { d, c } = driven(n, k.oneVoice);
         blitsFrame(d, c, { pos: [0, 0] });

@@ -1,7 +1,7 @@
 # The animator on blits
 
-**Status: steps 1 and 2 are built; steps 3–6 are not, and step 3 is blocked on blits** ("What
-step 3 has to answer first"). Pose overrides fold through a blits mix, and the paint walk's cost is
+**Status: steps 1 and 2 are built; steps 3–6 are not.** Step 3 waits on a decision about its
+per-frame cost ("What step 3 has to answer first"). Pose overrides fold through a blits mix, and the paint walk's cost is
 measured (below). Nothing animates through blits yet. Delete this once
 it is built or turned down.
 
@@ -138,44 +138,41 @@ Each of these is blits work.
 
 ## What step 3 has to answer first
 
-Step 3 as written, the animator's calls kept and each reimplemented on blits, measures as
-unworkable. `tests/perf/bench/animator-on-blits.bench.ts` animates N nodes' `{ x, y }` three ways:
-today's animator, one tween or spring per node; the literal port, one blits voice per call,
-targeted at its node; and one voice for every node, reading each node's endpoints. Each row checks
-it computes the same values as today's before it is timed. Medians in ms, two runs on an Apple M2
-Max under Node 26, with the machine loaded (load average 13–17):
+Whether the animator moves onto blits' `mixer` at its per-frame cost, or waits for a faster engine.
+`tests/perf/bench/animator-on-blits.bench.ts` animates N nodes' `{ x, y }` three ways: today's
+animator, one tween or spring per node; one blits voice per call, naming its node in `subjects`;
+and one voice for every node, reading each node's endpoints. Each row checks it computes today's
+values before it is timed.
 
-| One frame            | Nodes  | Today       | Voice per call | One voice   |
-|----------------------|-------:|------------:|---------------:|------------:|
-| tween                |  1,000 | 0.03 / 0.03 |    0.42 / 0.42 | 0.15 / 0.15 |
-| tween                | 10,000 | 0.30 / 0.29 |              — | 2.04 / 1.99 |
-| spring               |  1,000 | 0.04 / 0.04 |    0.50 / 0.54 | 0.30 / 0.30 |
-| spring               | 10,000 | 0.98 / 0.96 |              — | 4.49 / 4.34 |
+Medians in ms, two runs each, alternated, on an Apple M2 Max under Node 26 with the machine loaded
+(load average 11–23), against blits' unreleased `project` branch as of 2026-10-01:
 
-| Start, and first frame | Nodes | Voice per call   |
-|------------------------|------:|-----------------:|
-| tween                  |   100 |      3.7 / 2.8   |
-| tween                  |   300 |     35.3 / 37.8  |
-| tween                  | 1,000 |  1,116 / 1,074   |
+| One frame | Nodes  | Today       | Voice per call | One voice   |
+|-----------|-------:|------------:|---------------:|------------:|
+| tween     |  1,000 | 0.03 / 0.04 |    0.20 / 0.19 | 0.14 / 0.15 |
+| tween     | 10,000 | 0.31 / 0.28 |    3.92 / 3.57 | 1.79 / 1.84 |
+| spring    |  1,000 | 0.04 / 0.05 |    0.32 / 0.36 | 0.30 / 0.30 |
+| spring    | 10,000 | 0.46 / 0.51 |    6.87 / 6.61 | 4.14 / 4.49 |
 
-Starting N voices grows with N²: blits asks every voice's `target` about every subject the first
-time it sees that subject. A thousand tweens started at once cost a second, and at 10k the row
-was not run. Today, and one voice, start 1,000 in under a millisecond each.
+| Start, and first frame | Nodes  | Today       | Voice per call |
+|------------------------|-------:|------------:|---------------:|
+| tween                  |  1,000 | 0.71 / 0.87 |      3.7 / 2.8 |
+| tween                  | 10,000 |   6.3 / 6.3 |        58 / 42 |
+| spring                 | 10,000 | 10.3 / 10.1 |        96 / 34 |
 
-Even the one-voice shape costs 5–7 times today's frame. That is blits' per-probe cost
-(see "What step 2 built"), paid on top of the arithmetic.
+Today's start rows include mounting the hook, and some of their runs hit 25–100 ms outliers; the
+table quotes the runs without them.
 
-So step 3 needs one of these before it is built:
+A voice per call is the animator's API ported as it stands, so that is the cost step 3 pays as
+written: about 3.5 ms a frame for 10k tweens and 6.5 ms for 10k springs, against 0.3 and 0.5 today.
+Before `subjects`, a voice reached its node through a `target` predicate blits asked of every
+subject, and starting 1,000 took about a second; `subjects` removed that, and the release with it
+is pending.
 
-- **A voice that names its subjects.** A cue carrying the subjects it reaches, so blits indexes
-  subject to voices instead of asking every voice. This is a blits change. With it, a tween per
-  call stays a voice per call.
-- **Batching in the animator.** Calls started in the same frame with the same timing share one
-  voice that reads each node's endpoints. This needs no blits change. How often separate calls
-  share timing is unmeasured; `stagger` offsets them on purpose.
-
-And either way, the per-probe cost has to come down before the animator moves over, or every
-animated frame pays it.
+blits does not expect `mixer` to get much faster for one voice: an exact fast path measured no
+gain. Its `spikes/gpu-engine` measured a dense CPU engine at 0.37 ms for 10k subjects where `mixer`
+took 6.8, but that engine is not built, computes every subject whether or not anything reads it,
+and has not been tried on springs. Whether to build it is open.
 
 ## What step 2 built
 
