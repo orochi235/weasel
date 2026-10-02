@@ -144,23 +144,20 @@ When blits has lanes, rerun `animator-on-blits.bench.ts` and `pose-overrides.ben
 detect `subjects` on their own, and decide from those.
 
 A lane is a channel `mixer` folds over flat arrays when every voice on it qualifies, falling back
-per channel. It is not built, has no date, and still needs design: how subjects are numbered, and
-whether lanes fill eagerly or lazily. The reason to wait is blits' spike measuring this workload in
-a dense loop (`spikes/gpu-engine/README.md` on blits' `project` branch, "weasel's tweens and
-springs"), at 10k nodes, matching `mixer`'s results exactly:
+per channel. The first lanes are on blits' unmerged `lanes` branch (`a7f888b`). On blits' fleet
+benchmark, a keyed patch over 10k subjects × 3 voices runs 2.9× faster than `mixer`; `fn` patches,
+and a voice per subject, run level with it.
 
-| Shape                        | Dense loop  | `mixer`  |
-|------------------------------|------------:|---------:|
-| tween, one voice             | 0.02–0.08   | 1.6      |
-| tween, voice per node        | 0.08–0.11   | 2.7      |
-| spring                       | 0.34        | 3.8–6.2  |
+Lanes alone will not reach today's animator. A `probe` costs 110–140 ns at 10k subjects even when a
+lane has done the arithmetic, so a paint walk probing every node pays 1.1–1.4 ms before any
+interpolation, above today's 0.3 ms tween frame. blits' spike had measured this workload in a dense
+loop at 0.02–0.34 ms for 10k nodes, but those figures fill arrays and never read a pose back
+(`spikes/gpu-engine/README.md` on blits' `lanes` branch says the same).
 
-So the cost is `mixer`'s per-subject bookkeeping, not the patches' arithmetic, and dense would land
-at or under today's animator. That was measured on a different machine from the tables below,
-though `mixer`'s own figure agrees across the two (1.6 there, 1.8 here). Two things are inference,
-not measurement: blits' read is that a lane lands within 2–3× of a pure dense loop at one voice,
-which makes springs the tight case; and step 2's paint-walk cost runs through the same per-subject
-read, so it should shrink with lanes too.
+What blits is weighing to close the rest, none of it decided: a bulk read, where the host reads a
+laned channel's array by subject number instead of probing each node; a tween form carrying
+per-subject endpoints as data instead of a function; and grouping a voice per call into one lane.
+Step 2's paint-walk cost runs through the same per-node probe, so a bulk read would reach it too.
 
 The measurements behind the decision:
 `tests/perf/bench/animator-on-blits.bench.ts` animates N nodes' `{ x, y }` three ways: today's
