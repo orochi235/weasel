@@ -1,7 +1,7 @@
 # The animator on blits
 
-**Status: steps 1 and 2 are built; steps 3–6 are not.** Step 3 waits on a decision about its
-per-frame cost ("What step 3 has to answer first"). Pose overrides fold through a blits mix, and the paint walk's cost is
+**Status: steps 1 and 2 are built, on branch `pose-overrides-mix`, unmerged; steps 3–6 are not.**
+Step 3 waits for dense lanes in blits' `mixer` ("What step 3 has to answer first"). Pose overrides fold through a blits mix, and the paint walk's cost is
 measured (below). Nothing animates through blits yet. Delete this once
 it is built or turned down.
 
@@ -138,7 +138,31 @@ Each of these is blits work.
 
 ## What step 3 has to answer first
 
-Whether the animator moves onto blits' `mixer` at its per-frame cost, or waits for a faster engine.
+**Decided 2026-10-01: step 3 waits for dense lanes in blits' `mixer`.** Mike's call, relayed from
+the blits session. Steps 2 and 3 stay on branch `pose-overrides-mix`, neither merged nor shelved.
+When blits has lanes, rerun `animator-on-blits.bench.ts` and `pose-overrides.bench.ts`, which
+detect `subjects` on their own, and decide from those.
+
+A lane is a channel `mixer` folds over flat arrays when every voice on it qualifies, falling back
+per channel. It is not built, has no date, and still needs design: how subjects are numbered, and
+whether lanes fill eagerly or lazily. The reason to wait is blits' spike measuring this workload in
+a dense loop (`spikes/gpu-engine/README.md` on blits' `project` branch, "weasel's tweens and
+springs"), at 10k nodes, matching `mixer`'s results exactly:
+
+| Shape                        | Dense loop  | `mixer`  |
+|------------------------------|------------:|---------:|
+| tween, one voice             | 0.02–0.08   | 1.6      |
+| tween, voice per node        | 0.08–0.11   | 2.7      |
+| spring                       | 0.34        | 3.8–6.2  |
+
+So the cost is `mixer`'s per-subject bookkeeping, not the patches' arithmetic, and dense would land
+at or under today's animator. That was measured on a different machine from the tables below,
+though `mixer`'s own figure agrees across the two (1.6 there, 1.8 here). Two things are inference,
+not measurement: blits' read is that a lane lands within 2–3× of a pure dense loop at one voice,
+which makes springs the tight case; and step 2's paint-walk cost runs through the same per-subject
+read, so it should shrink with lanes too.
+
+The measurements behind the decision:
 `tests/perf/bench/animator-on-blits.bench.ts` animates N nodes' `{ x, y }` three ways: today's
 animator, one tween or spring per node; one blits voice per call, naming its node in `subjects`;
 and one voice for every node, reading each node's endpoints. Each row checks it computes today's
@@ -172,7 +196,7 @@ is pending.
 blits does not expect `mixer` to get much faster for one voice: an exact fast path measured no
 gain. Its `spikes/gpu-engine` measured a dense CPU engine at 0.37 ms for 10k subjects where `mixer`
 took 6.8, but that engine is not built, computes every subject whether or not anything reads it,
-and has not been tried on springs. Whether to build it is open.
+and has not been tried on springs. Lanes inside `mixer` are the form that work takes.
 
 ## What step 2 built
 

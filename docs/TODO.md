@@ -489,8 +489,10 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   case is last-writer-wins. Proposal: `docs/proposals/2026-09-30-animator-on-blits.md`, which keeps
   the animator's control surface and moves every value computation onto blits. Steps 1 and 2 are done:
   pose overrides fold through a mix, costing about 2.7 ms a frame at 10k animated nodes. Step 3 —
-  tween, spring and keyframe sampling on blits patches — is measured and waits on a decision: on blits'
-  `mixer` it costs about 12× today's frame at 10k animations (the proposal's "What step 3 has to
+  tween, spring and keyframe sampling on blits patches — waits for dense lanes in blits' `mixer`
+  (decided 2026-10-01): on `mixer` as it ships it costs about 12× today's frame at 10k animations,
+  and blits' spike puts a dense fold at or under today's animator. Steps 2 and 3 stay on branch
+  `pose-overrides-mix` until lanes land; then rerun both benches (the proposal's "What step 3 has to
   answer first").
 
 ### Earlier deferrals
