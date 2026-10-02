@@ -1,5 +1,18 @@
 # @weasel-js/ui
 
+## 1.7.3
+
+### Patch Changes
+
+- b258798: An inherited value draws in the secondary accent instead of faded, which read as disabled. `@weasel-js/theme/inherited.module.css` holds the one definition, `.inherited`, which remaps the accent tokens to their secondary twins; the prefs form's inherited rows compose it and `ControlMatrix`'s inherited cells mix it in.
+- Updated dependencies [b258798]
+  - @weasel-js/theme@1.7.3
+  - @weasel-js/core@1.7.3
+  - @weasel-js/font@1.7.3
+  - @weasel-js/modes@1.7.3
+  - @weasel-js/quantity@1.7.3
+  - @weasel-js/svg@1.7.3
+
 ## 1.7.2
 
 ### Patch Changes

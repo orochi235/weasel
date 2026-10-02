@@ -1,5 +1,17 @@
 # @weasel-js/forge
 
+## 1.7.3
+
+### Patch Changes
+
+- 4f7725c: The sidebar's Gallery button is grayed out in a project with no gallery stories, and Components and Tree are grayed out in a project with nothing but galleries. A stored choice of a grayed-out view shows Components (or Gallery) instead, and comes back once the project has something to list there.
+- Updated dependencies [b258798]
+- Updated dependencies [3ce52fe]
+  - @weasel-js/theme@1.7.3
+  - @weasel-js/ui@1.7.3
+  - @weasel-js/labkit@1.7.3
+  - @weasel-js/core@1.7.3
+
 ## 1.7.2
 
 ### Patch Changes
