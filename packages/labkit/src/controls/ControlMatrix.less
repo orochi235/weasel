@@ -86,7 +86,7 @@
 
 .lk-control-matrix__cell {
   padding: 1px;
-  height: var(--wzl-field-h, var(--wzl-control-h-sm));
+  height: var(--wzl-control-h-sm);
   text-align: center;
   vertical-align: middle;
 }
@@ -107,7 +107,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: var(--wzl-field-h, var(--wzl-control-h-sm));
+  height: var(--wzl-control-h-sm);
   padding: 0 var(--wzl-space-1);
   border: 1px solid transparent;
   border-radius: var(--wzl-radius-sm);
@@ -122,11 +122,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  line-height: calc(var(--wzl-field-h, var(--wzl-control-h-sm)) - 2px);
+  line-height: calc(var(--wzl-control-h-sm) - 2px);
 }
 
 .lk-control-matrix__value.is-number {
-  font-variant-numeric: tabular-nums;
+  .numeric();
   text-align: end;
   // A column of numbers is read down, so it keeps every digit: a glow of
   // 0.35 cut to `0…` says nothing.
