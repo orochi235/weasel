@@ -166,7 +166,6 @@ So a select-all drag of 10k nodes spends about 2.7 ms more of a 16.7 ms frame. T
 cost for folding one voice, which the next steps pay as well. Two places it could shrink: a blits
 fast path for a subject only one voice reaches, and fewer per-voice lookups in `Store.get`.
 
-`@msb235/blits` 0.2.1's published manifest still carries `"workspaces": ["site"]`, which is blits'
-own dev setup leaking into the package. It does no harm in weasel's install, but blits should drop
-it from what it publishes.
+Both suggestions, and a stray `workspaces` field in blits' published manifest, are filed in
+`NOTES-FROM-WEASEL.md` in the blits repo.
 
