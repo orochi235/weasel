@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/core",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "Domain-agnostic 2D scene graph primitives for React: viewport math, drag/resize/insert/clone interactions, layered canvas rendering.",
   "license": "MIT",
   "author": "orochi235",
@@ -85,21 +85,21 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
-    "@weasel-js/font": "1.7.1",
+    "@weasel-js/font": "1.7.2",
     "react": ">=18"
   },
   "dependencies": {
-    "@weasel-js/cursor": "1.7.1",
-    "@weasel-js/geom": "1.7.1",
-    "@weasel-js/gestures": "1.7.1",
-    "@weasel-js/history": "1.7.1",
-    "@weasel-js/modes": "1.7.1",
-    "@weasel-js/quantity": "1.7.1",
-    "@weasel-js/paint": "1.7.1",
-    "@weasel-js/react": "1.7.1",
-    "@weasel-js/registry": "1.7.1",
-    "@weasel-js/routing": "1.7.1",
-    "@weasel-js/text": "1.7.1",
+    "@weasel-js/cursor": "1.7.2",
+    "@weasel-js/geom": "1.7.2",
+    "@weasel-js/gestures": "1.7.2",
+    "@weasel-js/history": "1.7.2",
+    "@weasel-js/modes": "1.7.2",
+    "@weasel-js/quantity": "1.7.2",
+    "@weasel-js/paint": "1.7.2",
+    "@weasel-js/react": "1.7.2",
+    "@weasel-js/registry": "1.7.2",
+    "@weasel-js/routing": "1.7.2",
+    "@weasel-js/text": "1.7.2",
     "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7"
   },
@@ -117,7 +117,7 @@
     "2d"
   ],
   "devDependencies": {
-    "@weasel-js/modes": "1.7.1",
-    "@weasel-js/theme": "1.7.1"
+    "@weasel-js/modes": "1.7.2",
+    "@weasel-js/theme": "1.7.2"
   }
 }

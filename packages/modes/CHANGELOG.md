@@ -1,5 +1,11 @@
 # @weasel-js/modes
 
+## 1.7.2
+
+### Patch Changes
+
+- @weasel-js/registry@1.7.2
+
 ## 1.7.1
 
 ### Patch Changes

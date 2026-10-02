@@ -1,5 +1,15 @@
 # @weasel-js/loupe
 
+## 1.7.2
+
+### Patch Changes
+
+- Updated dependencies [06ee1e6]
+- Updated dependencies [88e298e]
+- Updated dependencies [0756a82]
+- Updated dependencies [b18ef4a]
+  - @weasel-js/core@1.7.2
+
 ## 1.7.1
 
 ### Patch Changes

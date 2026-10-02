@@ -1,5 +1,9 @@
 # @weasel-js/gestures
 
+## 1.7.2
+
+No changes in this release.
+
 ## 1.7.1
 
 No changes in this release.
