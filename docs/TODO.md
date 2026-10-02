@@ -488,8 +488,9 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - **(P3) The animator on blits** — weasel has no model for two animations on one property; every
   case is last-writer-wins. Proposal: `docs/proposals/2026-09-30-animator-on-blits.md`, which keeps
   the animator's control surface and moves every value computation onto blits. blits' half is done
-  (published, fixed-interval stepping, springs that keep velocity); step 2 — pose overrides as a mix
-  — is next.
+  (published, fixed-interval stepping, springs that keep velocity). Steps 2 and 3 live on branch
+  `pose-overrides-mix`, unmerged: step 2 is built, and step 3 waits for dense lanes in blits' `mixer`
+  (decided 2026-10-01). Don't rebuild step 2 on `main`; see the proposal on that branch.
 
 ### Earlier deferrals
 
