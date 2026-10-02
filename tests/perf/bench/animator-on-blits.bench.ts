@@ -179,9 +179,17 @@ function cueSpringOneVoice(m: Mix<string, Delta>, c: Case): void {
   });
 }
 
-function driven(n: number, cue: (m: Mix<string, Delta>, c: Case) => void): { d: Driven; c: Case } {
+/** Lanes off, for comparison; blits before lanes ignores it. Cast because
+ *  0.2.1's `MixOptions` has no `lanes`. */
+const NO_LANES = { lanes: false } as never;
+
+function driven(
+  n: number,
+  cue: (m: Mix<string, Delta>, c: Case) => void,
+  opts?: never,
+): { d: Driven; c: Case } {
   const c = nodes(n);
-  const m = mix<string, Delta>(KIT);
+  const m = mix<string, Delta>(KIT, opts);
   const d = { m, t: 0 };
   m.sync(0);
   cue(m, c);
@@ -234,18 +242,23 @@ for (const n of [1000, 10000]) {
 
       for (const how of ['target', 'subjects'] as const) {
         if (how === 'target' ? n > TARGET_MAX : !HAS_SUBJECTS) continue;
-        const pv = driven(n, k.perVoice(how));
-        const out = { pos: [0, 0] };
-        for (let f = 0; f < 30; f++) blitsFrame(pv.d, pv.c, out);
-        agree(`${k.kind} voice per animation, ${how}`, tc.sink, pv.c.sink, tol);
-        bench(`blits, voice per animation (${how})`, () => blitsFrame(pv.d, pv.c, out));
+        // A `target` mix holds ~800 MB at 1k nodes; a second copy runs out of heap.
+        for (const lanes of how === 'target' ? [true] : [true, false]) {
+          const pv = driven(n, k.perVoice(how), lanes ? undefined : NO_LANES);
+          const out = { pos: [0, 0] };
+          for (let f = 0; f < 30; f++) blitsFrame(pv.d, pv.c, out);
+          agree(`${k.kind} voice per animation, ${how}`, tc.sink, pv.c.sink, tol);
+          bench(`blits, voice per animation (${how})${lanes ? '' : ', lanes off'}`, () => blitsFrame(pv.d, pv.c, out));
+        }
       }
 
-      const ov = driven(n, k.oneVoice);
-      const out = { pos: [0, 0] };
-      for (let f = 0; f < 30; f++) blitsFrame(ov.d, ov.c, out);
-      agree(`${k.kind} one voice`, tc.sink, ov.c.sink, tol);
-      bench('blits, one voice', () => blitsFrame(ov.d, ov.c, out));
+      for (const lanes of [true, false]) {
+        const ov = driven(n, k.oneVoice, lanes ? undefined : NO_LANES);
+        const out = { pos: [0, 0] };
+        for (let f = 0; f < 30; f++) blitsFrame(ov.d, ov.c, out);
+        agree(`${k.kind} one voice`, tc.sink, ov.c.sink, tol);
+        bench(`blits, one voice${lanes ? '' : ', lanes off'}`, () => blitsFrame(ov.d, ov.c, out));
+      }
     });
   }
 }

@@ -144,9 +144,17 @@ When blits has lanes, rerun `animator-on-blits.bench.ts` and `pose-overrides.ben
 detect `subjects` on their own, and decide from those.
 
 A lane is a channel `mixer` folds over flat arrays when every voice on it qualifies, falling back
-per channel. The first lanes are on blits' unmerged `lanes` branch (`a7f888b`). On blits' fleet
-benchmark, a keyed patch over 10k subjects × 3 voices runs 2.9× faster than `mixer`; `fn` patches,
-and a voice per subject, run level with it.
+per channel. Lanes are merged on blits' `project` branch (`461efe4`, unreleased) and on by default.
+Rerun there on 2026-10-02 (studio, Node 26, two runs, vitest means in ms per frame), with lanes
+off as the same build's control:
+
+| One frame, 10,000 nodes | Today       | One voice   | lanes off   | Voice per call | lanes off   |
+|-------------------------|------------:|------------:|------------:|---------------:|------------:|
+| tween                   | 0.44 / 0.47 | 2.62 / 2.36 | 2.23 / 2.06 |    3.83 / 4.21 | 3.98 / 3.82 |
+| spring                  | 0.73 / 0.63 | 3.30 / 2.39 | 3.43 / 5.79 |    4.89 / 4.52 | 7.09 / 6.10 |
+
+Only a spring per node gains. A tween is still 8–9× today's frame as a voice per call, and a spring
+is 7×.
 
 Lanes alone will not reach today's animator. A `probe` costs 110–140 ns at 10k subjects even when a
 lane has done the arithmetic, so a paint walk probing every node pays 1.1–1.4 ms before any
