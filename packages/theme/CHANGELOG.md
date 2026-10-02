@@ -1,5 +1,27 @@
 # @weasel-js/theme
 
+## 1.7.2
+
+### Patch Changes
+
+- a6d6ebc: Numeric text now has one definition: `.numeric` in the new `@weasel-js/theme/numeric.module.css` export, which sets `--wzl-font-numeric` and `tabular-nums` together. CSS modules take it with `composes: numeric from '@weasel-js/theme/numeric.module.css'`, Less with `.numeric();`, and markup by putting its class on the element. `npm run check:numeric` fails on `tabular-nums` or a read of `--wzl-font-numeric` anywhere else, and on a `font`, `font-family` or `font-variant-numeric` declaration beside the helper, which would replace it.
+  
+  What that changes on screen:
+  
+  - `NumberField` and `UnitField` set their value in equal-width digits, so every number input does; it was in the UI face with proportional ones.
+  - Property rows' slider readouts and their editable inputs, `OpacityRange`'s percentage, `Timeline` ruler ticks, `BandEditor` tick labels, `Slider` readouts, `FallthroughDiagram`'s number columns, `StatusBar`, and labkit's status bar, scale indicator, FPS meter and specimen pane width move to the numeric face. Several were in the mono face, which had been standing in for tabular figures. Code and hex values stay mono.
+  - `TokenPanel`'s number fields render in the numeric face. They had been forced to mono, which also kept the numeric rules beneath them from ever applying.
+  - `DataGrid` columns take `numeric: true`, which sets the header and cells in the numeric face and ends them.
+  - `DetailRow` reads its list's `values` itself, so a figures row's value gets its class directly rather than through a descendant selector.
+  - forge's font switcher sets `--wzl-font-numeric` to the chosen UI face when that face is not Oswald, instead of leaving Oswald's digits among another face's letters.
+- bbf4d3d: Sliders take a press a few pixels past their track, and `Slider`'s and `RangeSlider`'s thumbs take one a few pixels past their edge, so a thin track or a small thumb no longer has to be hit exactly. Two new tokens set the distances: `--wzl-slider-track-slop` and `--wzl-slider-thumb-slop`, both 6px. Nothing moves or repaints; the extra area is invisible and overlaps whatever sits beside the control.
+  
+  `Slider` (and so `DetentSlider`) and `RangeSlider` draw both. A thumb's slop sits over the track's, so a press near a thumb grabs it instead of jumping the value to the pointer. The native range skin — `InlineRange`, a `PropertyField` slider, a color field's alpha, and labkit's bare ranges — takes the track slop only, because a native thumb re-centers on the pointer wherever a press lands.
+  
+  The skin now sets `box-sizing`, `width`, `height`, `padding` and `margin` on the input to make room for it. A consumer rule that overrides `margin` or `padding` on one of these inputs cancels the slop and makes the box 12px wider and taller.
+- 7671813: `Oswald Tabular` now carries a plus (U+002B) and a minus (U+2212) at a digit's width, so a column of signed figures set in `--wzl-font-numeric` lines up on its digits. The minus is rebuilt from the plus's crossbar: Oswald draws its own minus shorter than that arm, so `+5` over `−5` showed two bar lengths. The hyphen-minus stays out of the face, so a hyphen in a date or an id keeps its own width. Write negatives with U+2212 to get the tabular sign — `@weasel-js/quantity`'s `qty` and `formatNumber` already do.
+- @weasel-js/paint@1.7.2
+
 ## 1.7.1
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @weasel-js/kernel3d
 
+## 1.7.2
+
+### Patch Changes
+
+- 88e298e: Remove `PoseDescriptor.intersectsRect`. Nothing in the kit has read it since marquee and lasso began testing a node's drawn outline, so the built-in descriptors (`RECT_POSE_DESCRIPTOR`, `ROTATED_POSE_DESCRIPTOR`, `pathPoseDescriptor`, the auto descriptor, and kernel3d's) no longer implement it. This is a breaking removal of a public field for anyone implementing a custom `PoseDescriptor`: an object literal typed as `PoseDescriptor` that still declares `intersectsRect` now fails the excess-property check. Delete the method; nothing called it.
+- Updated dependencies [06ee1e6]
+- Updated dependencies [88e298e]
+- Updated dependencies [0756a82]
+- Updated dependencies [b18ef4a]
+  - @weasel-js/core@1.7.2
+  - @weasel-js/geom@1.7.2
+
 ## 1.7.1
 
 ### Patch Changes
