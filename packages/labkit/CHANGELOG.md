@@ -1,5 +1,21 @@
 # @weasel-js/labkit
 
+## 1.7.3
+
+### Patch Changes
+
+- b258798: An inherited value draws in the secondary accent instead of faded, which read as disabled. `@weasel-js/theme/inherited.module.css` holds the one definition, `.inherited`, which remaps the accent tokens to their secondary twins; the prefs form's inherited rows compose it and `ControlMatrix`'s inherited cells mix it in.
+- 3ce52fe: `ControlMatrix` cells no longer blur their backdrop. They inherited labkit's default button blur, and with dozens of them in one panel Chrome flickered the panel and the page header around it.
+- Updated dependencies [b258798]
+  - @weasel-js/theme@1.7.3
+  - @weasel-js/ui@1.7.3
+  - @weasel-js/core@1.7.3
+  - @weasel-js/geom@1.7.3
+  - @weasel-js/kernel3d@1.7.3
+  - @weasel-js/loupe@1.7.3
+  - @weasel-js/quantity@1.7.3
+  - @weasel-js/svg@1.7.3
+
 ## 1.7.2
 
 ### Patch Changes

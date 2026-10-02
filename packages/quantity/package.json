@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/quantity",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "description": "Numbers with units and a display: fractions, ratios, currency, durations and more, as text, spoken text, HTML and MathML. No React, no DOM.",
   "license": "MIT",
   "type": "module",

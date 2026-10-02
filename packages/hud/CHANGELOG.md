@@ -1,5 +1,17 @@
 # @weasel-js/hud
 
+## 1.7.3
+
+### Patch Changes
+
+- Updated dependencies [b258798]
+  - @weasel-js/theme@1.7.3
+  - @weasel-js/core@1.7.3
+  - @weasel-js/font@1.7.3
+  - @weasel-js/geom@1.7.3
+  - @weasel-js/loupe@1.7.3
+  - @weasel-js/paint@1.7.3
+
 ## 1.7.2
 
 ### Patch Changes

@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.7.3
+
+### Patch Changes
+
+- @weasel-js/cursor@1.7.3
+  - @weasel-js/font@1.7.3
+  - @weasel-js/geom@1.7.3
+  - @weasel-js/gestures@1.7.3
+  - @weasel-js/history@1.7.3
+  - @weasel-js/modes@1.7.3
+  - @weasel-js/paint@1.7.3
+  - @weasel-js/quantity@1.7.3
+  - @weasel-js/react@1.7.3
+  - @weasel-js/registry@1.7.3
+  - @weasel-js/routing@1.7.3
+  - @weasel-js/text@1.7.3
+
 ## 1.7.2
 
 ### Patch Changes
