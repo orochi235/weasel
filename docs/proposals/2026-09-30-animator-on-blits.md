@@ -172,9 +172,20 @@ loop at 0.02–0.34 ms for 10k nodes, but those figures fill arrays and never re
 The bulk read exists: `mix.pull(subjects, { pos: Float64Array })` writes every subject's pose into
 arrays in one call. Since blits `93f0317` it skips each subject's lookup when handed the same array
 as last frame, and since `a00754e` it fills a motion lane in one loop and copies it out a column at
-a time. Alternated with `93f0317` over five pairs on studio, the shared `tween` voice read by `pull`
-at 10k went from a median 1.34 ms to 0.94, against today's 0.31–0.40 on the quieter runs: about
-2.5–3× today's frame, or 95 ns a node against 35.
+a time. On teitou (an unloaded M5 Max, Node 26.10, three runs, blits `de5ba57`), at 10k nodes:
+
+| One tween frame, 10,000 nodes            | ms per frame       |
+|------------------------------------------|-------------------:|
+| today                                    | 0.20 / 0.33 / 0.27 |
+| today, no store                          | 0.15 / 0.16 / 0.15 |
+| one `tween` voice, `pull`                | 0.46 / 0.46 / 0.38 |
+| one `tween` voice, `pull`, no store      | 0.40 / 0.39 / 0.33 |
+| one `tween` voice, `probe` per node      | 0.94 / 0.89 / 0.79 |
+| voice per call                           | 1.89 / 1.93 / 1.91 |
+
+"No store" drops writing each node's value where a painter would read it. Today's tween still
+builds a pose object per node in `interpolate`; `pull` builds none. So one shared voice read by
+`pull` is about 1.5× today's frame, and about 2.4× with the stores taken out of both.
 Step 2's paint walk runs through the same per-node probe, so it would gain from `pull` too.
 
 Starting one `tween` voice over 10k nodes and computing its first frame costs about twice an `fn`

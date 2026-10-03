@@ -91,12 +91,12 @@ function mountAnimator(): { animator: Animator; frame: () => void; unmount: () =
   };
 }
 
-function startTodayTweens(animator: Animator, c: Case): void {
+function startTodayTweens(animator: Animator, c: Case, store = true): void {
   c.ids.forEach((_, i) => {
     animator.tween<Pt>({
       from: c.from[i], to: c.to[i], ms: LONG, easing: EASE,
       interpolate: lerpPt,
-      onTick: (v) => { c.sink[i] = v; },
+      onTick: store ? (v) => { c.sink[i] = v; } : () => {},
     });
   });
 }
@@ -290,6 +290,13 @@ for (const n of [1000, 10000]) {
       k.today(today.animator, tc);
       for (let f = 0; f < 30; f++) today.frame();
       bench('today', () => today.frame());
+      if (k.kind === 'tween') {
+        // The animator still builds each pose in `interpolate`; only the store is gone.
+        const bare = mountAnimator();
+        startTodayTweens(bare.animator, nodes(n), false);
+        for (let f = 0; f < 30; f++) bare.frame();
+        bench('today, no sink', () => bare.frame());
+      }
 
       for (const how of ['target', 'subjects'] as const) {
         if (how === 'target' ? n > TARGET_MAX : !HAS_SUBJECTS) continue;
@@ -317,6 +324,12 @@ for (const n of [1000, 10000]) {
           for (let f = 0; f < 30; f++) blitsPullFrame(ov.d, ov.c, cols);
           agree(`${k.kind} ${name}, pull`, tc.sink, ov.c.sink, tol);
           bench(`blits, ${name}, pull`, () => blitsPullFrame(ov.d, ov.c, cols));
+          const pull = (ov.d.m as unknown as { pull: Pull }).pull.bind(ov.d.m);
+          bench(`blits, ${name}, pull, no sink`, () => {
+            ov.d.t += FRAME;
+            ov.d.m.sync(ov.d.t);
+            pull(ov.c.ids, cols);
+          });
         }
       }
     });
