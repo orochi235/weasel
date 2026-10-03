@@ -169,9 +169,13 @@ lane has done the arithmetic, so a paint walk probing every node pays 1.1–1.4 
 interpolation, above today's whole tween frame. blits' spike had measured this workload in a dense
 loop at 0.02–0.34 ms for 10k nodes, but those figures fill arrays and never read a pose back.
 
-What blits is weighing to close the rest: a bulk read, where the host reads a laned channel's array
-by subject number instead of probing each node. Step 2's paint-walk cost runs through the same
-per-node probe, so a bulk read would reach it too.
+The bulk read exists: `mix.pull(subjects, { pos: Float64Array })` writes every subject's pose into
+arrays in one call. It takes the shared `tween` voice to 1.66 / 1.80 ms at 10k, against 2.12 / 2.39
+probing in the same runs and today's 0.34 (in the quieter run): about 170 ns a node against 35–45.
+Starting one `tween` voice over 10k nodes and computing its first frame also costs 85–93 ms,
+against 11–12 for an `fn` voice and for today. blits' next step is keeping subject numbers between
+`pull` calls so the per-node lookup drops out. Step 2's paint walk runs through the same per-node
+probe, so it would gain from `pull` too.
 
 The measurements behind the decision:
 `tests/perf/bench/animator-on-blits.bench.ts` animates N nodes' `{ x, y }` three ways: today's

@@ -14,7 +14,8 @@
  * - **blits, one voice** — every node on one voice reading its own endpoints,
  *   the way step 2's override table is one voice. For tweens that is an `fn`
  *   patch, and, where blits has its `tween` motion form, also **one tween
- *   voice** carrying each node's endpoints as data.
+ *   voice** carrying each node's endpoints as data. Where blits has
+ *   `mix.pull`, each one-voice shape also reads every node in one call.
  *
  * Nothing finishes inside a run: tweens last far longer than any run, and
  * springs are undamped, so they oscillate for good.
@@ -126,6 +127,19 @@ function blitsFrame(d: Driven, c: Case, out: Delta): void {
     const pos = d.m.probe(ids[i]!, out).pos;
     sink[i] = { x: pos[0]!, y: pos[1]! };
   }
+}
+
+/** `blitsFrame` reading every node at once with `mix.pull` (blits 0.3.0)
+ *  instead of a `probe` per node. Typed here because 0.2.1 has no `pull`. */
+type Pull = (subjects: Iterable<string>, into: { pos: Float64Array }) => void;
+
+function blitsPullFrame(d: Driven, c: Case, cols: { pos: Float64Array }): void {
+  d.t += FRAME;
+  d.m.sync(d.t);
+  (d.m as unknown as { pull: Pull }).pull(c.ids, cols);
+  const { sink } = c;
+  const pos = cols.pos;
+  for (let i = 0; i < sink.length; i++) sink[i] = { x: pos[2 * i]!, y: pos[2 * i + 1]! };
 }
 
 /** How a voice-per-animation cue says which node it reaches: a predicate
@@ -255,6 +269,7 @@ const KINDS = [
 const TARGET_MAX = 1000;
 /** blits before `subjects` (0.2.1) ignores it and reaches every node; skip
  *  the rows there. */
+const HAS_PULL = typeof (mix<string, Delta>(KIT) as unknown as { pull?: Pull }).pull === 'function';
 const HAS_SUBJECTS = (() => {
   const m = mix<string, Delta>(KIT);
   m.sync(0);
@@ -295,6 +310,13 @@ for (const n of [1000, 10000]) {
           for (let f = 0; f < 30; f++) blitsFrame(ov.d, ov.c, out);
           agree(`${k.kind} ${name}`, tc.sink, ov.c.sink, tol);
           bench(`blits, ${name}${lanes ? '' : ', lanes off'}`, () => blitsFrame(ov.d, ov.c, out));
+        }
+        if (HAS_PULL) {
+          const ov = driven(n, cue);
+          const cols = { pos: new Float64Array(2 * n) };
+          for (let f = 0; f < 30; f++) blitsPullFrame(ov.d, ov.c, cols);
+          agree(`${k.kind} ${name}, pull`, tc.sink, ov.c.sink, tol);
+          bench(`blits, ${name}, pull`, () => blitsPullFrame(ov.d, ov.c, cols));
         }
       }
     });

@@ -491,9 +491,10 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   pose overrides fold through a mix, costing about 2.7 ms a frame at 10k animated nodes. Step 3 —
   tween, spring and keyframe sampling on blits patches — was held for dense lanes in blits' `mixer`
   (decided 2026-10-01). On blits `main` (26c9764) with lanes and a shared `tween` voice, step 3
-  costs about 5× today's frame at 10k animations; a voice per call costs 9×. The rest is the
-  per-node `probe`, and blits' next item is a bulk read. Steps 2 and 3 stay on branch
-  `pose-overrides-mix` until that lands; then rerun both benches (the proposal's "What step 3 has
+  costs about 5× today's frame at 10k animations, and about 4× read through `mix.pull`; a voice
+  per call costs 9×. What is left is per-node lookup, which blits plans to drop by keeping subject
+  numbers between `pull` calls. Steps 2 and 3 stay on branch `pose-overrides-mix` until that
+  lands; then rerun both benches (the proposal's "What step 3 has
   to answer first").
 
 ### Earlier deferrals
