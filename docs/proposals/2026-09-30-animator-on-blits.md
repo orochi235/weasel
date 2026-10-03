@@ -170,10 +170,11 @@ interpolation, above today's whole tween frame. blits' spike had measured this w
 loop at 0.02–0.34 ms for 10k nodes, but those figures fill arrays and never read a pose back.
 
 The bulk read exists: `mix.pull(subjects, { pos: Float64Array })` writes every subject's pose into
-arrays in one call, and since blits `93f0317` skips each subject's lookup when handed the same array
-as last frame. Alternated with `26c9764` on studio, the shared `tween` voice read by `pull` went from
-2.07 / 1.63 ms at 10k to 1.17 / 1.28, against today's 0.32–0.38: about 3.5× today's frame, or
-120 ns a node against 35. What is left is blits' per-node motion step, which is next on its side.
+arrays in one call. Since blits `93f0317` it skips each subject's lookup when handed the same array
+as last frame, and since `a00754e` it fills a motion lane in one loop and copies it out a column at
+a time. Alternated with `93f0317` over five pairs on studio, the shared `tween` voice read by `pull`
+at 10k went from a median 1.34 ms to 0.94, against today's 0.31–0.40 on the quieter runs: about
+2.5–3× today's frame, or 95 ns a node against 35.
 Step 2's paint walk runs through the same per-node probe, so it would gain from `pull` too.
 
 Starting one `tween` voice over 10k nodes and computing its first frame costs about twice an `fn`
