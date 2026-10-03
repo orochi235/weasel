@@ -1,9 +1,9 @@
 # The animator on blits
 
 **Status: steps 1 and 2 are built, on branch `pose-overrides-mix`, unmerged; steps 3–6 are not.**
-Step 3 waits for dense lanes in blits' `mixer` ("What step 3 has to answer first"). Pose overrides fold through a blits mix, and the paint walk's cost is
-measured (below). Nothing animates through blits yet. Delete this once
-it is built or turned down.
+Step 3 is approved and planned (`docs/superpowers/plans/2026-10-02-animator-on-blits-step3.md`),
+not built. Pose overrides fold through a blits mix, and the paint walk's cost is measured (below).
+Nothing animates through blits yet. Delete this once it is built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
 several animations on one property, without keeping a second copy of the arithmetic that blits
@@ -138,10 +138,9 @@ Each of these is blits work.
 
 ## What step 3 has to answer first
 
-**Decided 2026-10-01: step 3 waits for dense lanes in blits' `mixer`.** Mike's call, relayed from
-the blits session. Steps 2 and 3 stay on branch `pose-overrides-mix`, neither merged nor shelved.
-When blits has lanes, rerun `animator-on-blits.bench.ts` and `pose-overrides.bench.ts`, which
-detect `subjects` on their own, and decide from those.
+**Decided 2026-10-02: step 3 goes ahead**, at about 1.5× today's tween frame for 10k nodes on an
+unloaded machine (the teitou table below). Mike's call. It had waited since 2026-10-01 for dense
+lanes in blits' `mixer`. The plan keeps keyframe sampling for a plan of its own.
 
 A lane is a channel `mixer` folds over flat arrays when every voice on it qualifies, falling back
 per channel. Lanes are on blits' `main` (`26c9764`, unreleased) and on by default, as is a `tween`

@@ -492,8 +492,9 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   tween, spring and keyframe sampling on blits patches — was held for dense lanes in blits' `mixer`
   (decided 2026-10-01). On blits `main` (de5ba57) with lanes, a shared `tween` voice and
   `mix.pull`, step 3 costs about 1.5× today's frame at 10k animations on an unloaded machine; a
-  voice per call costs 7×. Steps 2 and 3 stay on branch `pose-overrides-mix`; whether step 3 goes ahead at that cost
-  is undecided (the proposal's "What step 3 has to answer first").
+  voice per call costs 7×. Mike approved step 3 at that cost on 2026-10-02; it is planned in
+  `docs/superpowers/plans/2026-10-02-animator-on-blits-step3.md` and not built. It needs a blits
+  release carrying `tween`, `pull` and per-subject `fade` before it can merge.
 
 ### Earlier deferrals
 
