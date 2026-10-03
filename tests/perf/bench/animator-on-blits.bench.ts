@@ -12,7 +12,9 @@
  *   voice, reaching its one node either by a `target` predicate or by naming
  *   it in `subjects`.
  * - **blits, one voice** — every node on one voice reading its own endpoints,
- *   the way step 2's override table is one voice.
+ *   the way step 2's override table is one voice. For tweens that is an `fn`
+ *   patch, and, where blits has its `tween` motion form, also **one tween
+ *   voice** carrying each node's endpoints as data.
  *
  * Nothing finishes inside a run: tweens last far longer than any run, and
  * springs are undamped, so they oscillate for good.
@@ -26,6 +28,7 @@
  */
 import { renderHook } from '@testing-library/react';
 import { easeOut } from '@weasel-js/geom';
+import * as blits from '@msb235/blits';
 import { keys, kit, mix, patch, spring, sum, vec, type Mix } from '@msb235/blits';
 import { useAnimator, type Animator } from '@weasel-js/core';
 import { group } from './group';
@@ -160,6 +163,25 @@ function cueTweenOneVoice(m: Mix<string, Delta>, c: Case): void {
   });
 }
 
+/** blits' `tween` motion form, absent before 0.3.0. Typed here because 0.2.1's
+ *  declarations have no `tween`. */
+type TweenMotion = (writes: 'pos', opts: {
+  from: (id: string) => number[];
+  to: (id: string) => number[];
+  ms: number;
+  ease: (u: number) => number;
+}) => ReturnType<typeof patch<string, Delta>>;
+const tweenMotion = (blits as Record<string, unknown>).tween as TweenMotion | undefined;
+
+function cueTweenMotion(m: Mix<string, Delta>, c: Case): void {
+  const index = new Map(c.ids.map((id, i) => [id, i]));
+  const at = (pts: Pt[]) => (id: string) => {
+    const p = pts[index.get(id)!]!;
+    return [p.x, p.y];
+  };
+  m.cue({ patch: tweenMotion!('pos', { from: at(c.from), to: at(c.to), ms: LONG, ease: EASE }), loop: false });
+}
+
 const cueSpringPerVoice = (how: Reach) => (m: Mix<string, Delta>, c: Case): void => {
   c.ids.forEach((id, i) => {
     const a = c.from[i]!;
@@ -213,9 +235,20 @@ function agree(label: string, a: Pt[], b: Pt[], tol: number): void {
 
 // --- groups --------------------------------------------------------------
 
+type Cue = (m: Mix<string, Delta>, c: Case) => void;
+
 const KINDS = [
-  { kind: 'tween', today: startTodayTweens, perVoice: cueTweenPerVoice, oneVoice: cueTweenOneVoice },
-  { kind: 'spring', today: startTodaySprings, perVoice: cueSpringPerVoice, oneVoice: cueSpringOneVoice },
+  {
+    kind: 'tween', today: startTodayTweens, perVoice: cueTweenPerVoice,
+    oneVoice: [
+      ['one voice', cueTweenOneVoice],
+      ...(tweenMotion ? [['one tween voice', cueTweenMotion] as const] : []),
+    ] as [string, Cue][],
+  },
+  {
+    kind: 'spring', today: startTodaySprings, perVoice: cueSpringPerVoice,
+    oneVoice: [['one voice', cueSpringOneVoice]] as [string, Cue][],
+  },
 ] as const;
 
 /** The `target` form only where its setup, which grows with N², finishes in a run. */
@@ -255,12 +288,14 @@ for (const n of [1000, 10000]) {
         }
       }
 
-      for (const lanes of [true, false]) {
-        const ov = driven(n, k.oneVoice, lanes ? undefined : NO_LANES);
-        const out = { pos: [0, 0] };
-        for (let f = 0; f < 30; f++) blitsFrame(ov.d, ov.c, out);
-        agree(`${k.kind} one voice`, tc.sink, ov.c.sink, tol);
-        bench(`blits, one voice${lanes ? '' : ', lanes off'}`, () => blitsFrame(ov.d, ov.c, out));
+      for (const [name, cue] of k.oneVoice) {
+        for (const lanes of [true, false]) {
+          const ov = driven(n, cue, lanes ? undefined : NO_LANES);
+          const out = { pos: [0, 0] };
+          for (let f = 0; f < 30; f++) blitsFrame(ov.d, ov.c, out);
+          agree(`${k.kind} ${name}`, tc.sink, ov.c.sink, tol);
+          bench(`blits, ${name}${lanes ? '' : ', lanes off'}`, () => blitsFrame(ov.d, ov.c, out));
+        }
       }
     });
   }
@@ -282,10 +317,12 @@ for (const n of [100, 300, 1000, 10000]) {
           blitsFrame(d, c, { pos: [0, 0] });
         });
       }
-      bench('blits, one voice', () => {
-        const { d, c } = driven(n, k.oneVoice);
-        blitsFrame(d, c, { pos: [0, 0] });
-      });
+      for (const [name, cue] of k.oneVoice) {
+        bench(`blits, ${name}`, () => {
+          const { d, c } = driven(n, cue);
+          blitsFrame(d, c, { pos: [0, 0] });
+        });
+      }
     }, { time: 0, iterations: 8, warmupIterations: 1 });
   }
 }

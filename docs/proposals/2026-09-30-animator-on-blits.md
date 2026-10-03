@@ -144,28 +144,34 @@ When blits has lanes, rerun `animator-on-blits.bench.ts` and `pose-overrides.ben
 detect `subjects` on their own, and decide from those.
 
 A lane is a channel `mixer` folds over flat arrays when every voice on it qualifies, falling back
-per channel. Lanes are merged on blits' `project` branch (`461efe4`, unreleased) and on by default.
-Rerun there on 2026-10-02 (studio, Node 26, two runs, vitest means in ms per frame), with lanes
+per channel. Lanes are on blits' `main` (`26c9764`, unreleased) and on by default, as is a `tween`
+motion form that carries each subject's endpoints and duration as data, so one voice can move every
+node. A voice also fades or drops one subject (`handle.fade({ subject, over })`), which covers
+weasel handing a node from one animation to another or cancelling it. A call that needs its own
+pause or rate still needs its own voice.
+
+Measured there on 2026-10-02 (studio, Node 26, two runs, vitest means in ms per frame), with lanes
 off as the same build's control:
 
-| One frame, 10,000 nodes | Today       | One voice   | lanes off   | Voice per call | lanes off   |
-|-------------------------|------------:|------------:|------------:|---------------:|------------:|
-| tween                   | 0.44 / 0.47 | 2.62 / 2.36 | 2.23 / 2.06 |    3.83 / 4.21 | 3.98 / 3.82 |
-| spring                  | 0.73 / 0.63 | 3.30 / 2.39 | 3.43 / 5.79 |    4.89 / 4.52 | 7.09 / 6.10 |
+| One frame, 10,000 nodes | Today       | One `tween` voice | lanes off   | Voice per call | lanes off   |
+|-------------------------|------------:|------------------:|------------:|---------------:|------------:|
+| tween                   | 0.42 / 0.44 |       2.11 / 1.99 | 2.64 / 2.68 |    3.76 / 3.92 | 3.80 / 4.19 |
 
-Only a spring per node gains. A tween is still 8–9× today's frame as a voice per call, and a spring
-is 7×.
+| One frame, 10,000 nodes | Today       | One `spring` voice | lanes off   | Voice per call | lanes off   |
+|-------------------------|------------:|-------------------:|------------:|---------------:|------------:|
+| spring                  | 0.67 / 0.94 |        2.45 / 2.48 | 2.68 / 2.77 |    4.64 / 4.70 | 6.07 / 6.03 |
+
+One shared voice halves a voice per call and is still about 5× today's frame. An `fn` patch on one
+voice measures the same as the `tween` form, 2.07 / 2.06.
 
 Lanes alone will not reach today's animator. A `probe` costs 110–140 ns at 10k subjects even when a
 lane has done the arithmetic, so a paint walk probing every node pays 1.1–1.4 ms before any
-interpolation, above today's 0.3 ms tween frame. blits' spike had measured this workload in a dense
-loop at 0.02–0.34 ms for 10k nodes, but those figures fill arrays and never read a pose back
-(`spikes/gpu-engine/README.md` on blits' `lanes` branch says the same).
+interpolation, above today's whole tween frame. blits' spike had measured this workload in a dense
+loop at 0.02–0.34 ms for 10k nodes, but those figures fill arrays and never read a pose back.
 
-What blits is weighing to close the rest, none of it decided: a bulk read, where the host reads a
-laned channel's array by subject number instead of probing each node; a tween form carrying
-per-subject endpoints as data instead of a function; and grouping a voice per call into one lane.
-Step 2's paint-walk cost runs through the same per-node probe, so a bulk read would reach it too.
+What blits is weighing to close the rest: a bulk read, where the host reads a laned channel's array
+by subject number instead of probing each node. Step 2's paint-walk cost runs through the same
+per-node probe, so a bulk read would reach it too.
 
 The measurements behind the decision:
 `tests/perf/bench/animator-on-blits.bench.ts` animates N nodes' `{ x, y }` three ways: today's

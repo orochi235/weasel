@@ -490,12 +490,11 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   the animator's control surface and moves every value computation onto blits. Steps 1 and 2 are done:
   pose overrides fold through a mix, costing about 2.7 ms a frame at 10k animated nodes. Step 3 —
   tween, spring and keyframe sampling on blits patches — was held for dense lanes in blits' `mixer`
-  (decided 2026-10-01). Lanes are merged on blits' `project` branch, and step 3 there still costs
-  7–9× today's frame at 10k animations: only a spring per node gains from them. What blits adds
-  next (a bulk read, a tween form with per-subject endpoints as data, grouping voices that share a
-  patch into one lane) is undecided. Steps 2 and 3 stay on branch `pose-overrides-mix` until the
-  next rerun (the proposal's "What step 3 has to answer first"). `pose-overrides.bench.ts` has not
-  been rerun on lanes.
+  (decided 2026-10-01). On blits `main` (26c9764) with lanes and a shared `tween` voice, step 3
+  costs about 5× today's frame at 10k animations; a voice per call costs 9×. The rest is the
+  per-node `probe`, and blits' next item is a bulk read. Steps 2 and 3 stay on branch
+  `pose-overrides-mix` until that lands; then rerun both benches (the proposal's "What step 3 has
+  to answer first").
 
 ### Earlier deferrals
 
