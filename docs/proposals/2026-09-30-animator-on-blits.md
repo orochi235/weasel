@@ -172,8 +172,10 @@ loop at 0.02–0.34 ms for 10k nodes, but those figures fill arrays and never re
 The bulk read exists: `mix.pull(subjects, { pos: Float64Array })` writes every subject's pose into
 arrays in one call. It takes the shared `tween` voice to 1.66 / 1.80 ms at 10k, against 2.12 / 2.39
 probing in the same runs and today's 0.34 (in the quieter run): about 170 ns a node against 35–45.
-Starting one `tween` voice over 10k nodes and computing its first frame also costs 85–93 ms,
-against 11–12 for an `fn` voice and for today. blits' next step is keeping subject numbers between
+Starting one `tween` voice over 10k nodes and computing its first frame costs about twice an `fn`
+voice in plain node (about 35 ms against 16 warm); the bench's start row reads 85–93 against 11–12,
+which garbage collection inside its eight timed iterations likely inflates. blits' next step is
+keeping subject numbers between
 `pull` calls so the per-node lookup drops out. Step 2's paint walk runs through the same per-node
 probe, so it would gain from `pull` too.
 
