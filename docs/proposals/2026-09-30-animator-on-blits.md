@@ -170,14 +170,15 @@ interpolation, above today's whole tween frame. blits' spike had measured this w
 loop at 0.02–0.34 ms for 10k nodes, but those figures fill arrays and never read a pose back.
 
 The bulk read exists: `mix.pull(subjects, { pos: Float64Array })` writes every subject's pose into
-arrays in one call. It takes the shared `tween` voice to 1.66 / 1.80 ms at 10k, against 2.12 / 2.39
-probing in the same runs and today's 0.34 (in the quieter run): about 170 ns a node against 35–45.
+arrays in one call, and since blits `93f0317` skips each subject's lookup when handed the same array
+as last frame. Alternated with `26c9764` on studio, the shared `tween` voice read by `pull` went from
+2.07 / 1.63 ms at 10k to 1.17 / 1.28, against today's 0.32–0.38: about 3.5× today's frame, or
+120 ns a node against 35. What is left is blits' per-node motion step, which is next on its side.
+Step 2's paint walk runs through the same per-node probe, so it would gain from `pull` too.
+
 Starting one `tween` voice over 10k nodes and computing its first frame costs about twice an `fn`
 voice in plain node (about 35 ms against 16 warm); the bench's start row reads 85–93 against 11–12,
-which garbage collection inside its eight timed iterations likely inflates. blits' next step is
-keeping subject numbers between
-`pull` calls so the per-node lookup drops out. Step 2's paint walk runs through the same per-node
-probe, so it would gain from `pull` too.
+which garbage collection inside its eight timed iterations likely inflates.
 
 The measurements behind the decision:
 `tests/perf/bench/animator-on-blits.bench.ts` animates N nodes' `{ x, y }` three ways: today's
