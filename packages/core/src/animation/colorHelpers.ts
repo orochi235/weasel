@@ -1,4 +1,4 @@
-import { resolveEasing } from '@weasel-js/geom';
+import { linear, resolveEasing } from '@weasel-js/geom';
 import type {
   AnimationHandle,
   Animator,
@@ -294,7 +294,7 @@ export function staggerVertexColors(
     from: 0,
     to: 1,
     ms: totalMs,
-    easing: (t) => t,
+    easing: linear,
     cancelKey: cancelKeyFor(id, channel),
     interpolate: (a, b, t) => a + (b - a) * t,
     onTick: (t) => {

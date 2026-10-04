@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
-import { easeOut, SPRING_PRESETS, resolveEasing } from '@weasel-js/geom';
+import { easeOut, SPRING_PRESETS, resolveEasing, type EasingSpec } from '@weasel-js/geom';
 import { createLoop, createTweenLoop } from './loop';
 import { stepSpring } from './engine/integrator';
 import { createBank } from './engine/bank';
@@ -50,6 +50,14 @@ interface ActiveAnimation {
 }
 
 const numericLerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+
+/** A name for an easing spec that two equal specs share, so their tweens share a bank voice; a
+ *  function spec has none, and the bank names it by identity. */
+function easingKey(spec: EasingSpec): string | undefined {
+  if (typeof spec === 'string') return `name:${spec}`;
+  if (typeof spec === 'object') return `bezier:${spec.bezier.join(',')}`;
+  return undefined;
+}
 
 function resolveSpringConstants(o: { preset?: string; stiffness?: number; damping?: number; mass?: number }) {
   const preset = o.preset ? SPRING_PRESETS[o.preset as keyof typeof SPRING_PRESETS] : null;
@@ -290,9 +298,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       anim.timeScale = 1;
       anim.virtualNow = 0;
       // Seed lastRealNow at registration so the first frame's realDt reflects
-      // the gap between register() and the first RAF callback. Preserves prior
-      // wall-clock-anchored start behavior for tween and gives spring/decay a
-      // non-zero first dt sample matching the pre-virtual-clock code.
+      // the gap between register() and the first RAF callback: it places a
+      // tween's end, and gives spring/decay a non-zero first dt sample.
       anim.lastRealNow = now();
       animations.current.set(anim.id, anim);
       if (hub.watched) hub.emit({ type: 'start', animation: infoOf(anim) });
@@ -347,7 +354,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const tween = <T,>(o: TweenOptions<T>): AnimationHandle => {
       const id = nextId.current++;
-      const easing = resolveEasing(o.easing ?? easeOut);
+      const easingSpec = o.easing ?? easeOut;
+      const easing = resolveEasing(easingSpec);
       // Precedence: factory > per-tick > default numeric lerp. Factory is built
       // once at tween start so expensive setup (color space conversion etc.)
       // doesn't repeat per frame.
@@ -364,12 +372,14 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             });
       let lastValueEmitted = false;
       // blits blends in a straight line, which a caller's own function may not do.
-      const axes = o.interpolate || o.interpolator ? null : axesOf(o.from);
-      // Charges the wait for the first frame to the bank, as `register` does to the call's own clock.
+      const fromAxes = o.interpolate || o.interpolator ? null : axesOf(o.from);
+      const toAxes = fromAxes && axesOf(o.to);
+      const axes = fromAxes && toAxes && toAxes.shape === fromAxes.shape ? fromAxes : null;
+      // Seeds the bank's clock where `register` seeds the call's, so both charge the same wait.
       if (bankFrameT.current == null) bankFrameT.current = now();
       // Started ahead of `register`, whose `start` listeners may already cancel it.
       bank.tween({
-        id, ms: Math.max(o.ms, 1), ease: easing,
+        id, ms: Math.max(o.ms, 1), ease: easing, easeKey: easingKey(easingSpec),
         from: axes ? axes.to(o.from) : [0],
         to: axes ? axes.to(o.to) : [1],
       });
@@ -382,7 +392,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         // `nowMs` is the call's own virtual time, so it still decides when the tween ends; the bank
         // supplies only the value in between.
         tick(nowMs) {
-          if (tripwire()) return true;
+          if (tripwire()) { bank.stop(id); return true; }
           const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
           let value: T;
           if (axes) {

@@ -147,6 +147,22 @@ describe('createBank membership', () => {
     expect(stop10k).toBeLessThan(30 * stop1k);
   });
 
+  it('leaves nothing behind when a tween is refused', () => {
+    const b = createBank();
+    b.tween({ id: 1, ms: 100, ease: linear, from: [0, 0], to: [1, 1] });
+    expect(() => b.tween({ id: 2, ms: 100, ease: linear, from: [0, 0], to: [1] })).toThrow();
+    expect(b.has(2)).toBe(false);
+    b.frame(50);
+    expect(Array.from(b.values(1))).toEqual([0.5, 0.5]);
+  });
+
+  it('shares a voice between tweens whose easings carry the same key', () => {
+    const b = createBank();
+    for (let id = 1; id <= 100; id++) b.tween({ id, ms: 100, ease: (u) => u, easeKey: 'linear', ...U });
+    b.frame(16);
+    expect(b.voiceCount()).toBe(1);
+  });
+
   it('retires a voice once it has been empty at two frames running', () => {
     const b = createBank();
     b.tween({ id: 1, ms: 100, ease: (u) => u, ...U });

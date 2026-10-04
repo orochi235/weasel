@@ -28,4 +28,16 @@ describe('axesOf', () => {
     expect(axesOf('a')).toBeNull();
     expect(axesOf(null)).toBeNull();
   });
+
+  it('returns null for a typed array, which is not a plain array or object', () => {
+    expect(axesOf(new Float32Array([1, 2]))).toBeNull();
+  });
+
+  it('gives two values the same shape only when their axes line up', () => {
+    const shape = (v: unknown) => axesOf(v)!.shape;
+    expect(shape({ y: 2, x: 1 })).toBe(shape({ x: 3, y: 4 }));
+    expect(shape({ x: 1, y: 2 })).not.toBe(shape({ x: 1, z: 2 }));
+    expect(shape([1, 2])).not.toBe(shape([1, 2, 3]));
+    expect(shape(1)).not.toBe(shape([1]));
+  });
 });

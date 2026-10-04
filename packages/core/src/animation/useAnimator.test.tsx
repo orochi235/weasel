@@ -751,6 +751,40 @@ describe('useAnimator on the bank', () => {
     expect(last.y).toBeCloseTo(50, 6);
   });
 
+  it.each([
+    ['a typed array', new Float32Array([0, 0]), new Float32Array([1, 1])],
+    ['objects with different keys', { x: 0, y: 0 }, { x: 1 }],
+    ['arrays of different lengths', [0, 0], [1]],
+  ])('asks for interpolate when from and to are %s', (_name, from, to) => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    expect(() => {
+      act(() => {
+        result.current.tween<unknown>({ from, to, ms: 100, onTick: () => {} });
+      });
+      act(() => clock.advance(0));
+    }).toThrow('tween: interpolate or interpolator is required for non-numeric T');
+    act(() => result.current.cancelAll());
+  });
+
+  it('tweens a typed array through its own interpolate', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let last: Float32Array | null = null;
+    act(() => {
+      result.current.tween<Float32Array>({
+        from: new Float32Array([0, 100]), to: new Float32Array([10, 0]), ms: 1000, easing: linear,
+        interpolate: (a, b, t) => a.map((v, i) => v + (b[i]! - v) * t),
+        onTick: (v) => { last = v; },
+      });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(500));
+    expect(last).toBeInstanceOf(Float32Array);
+    expect(last![0]).toBeCloseTo(5, 5);
+    expect(last![1]).toBeCloseTo(50, 5);
+  });
+
   it('does not charge a tween for the time nothing was running before it', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
