@@ -13,13 +13,13 @@ export interface SpringStart {
   from: number[]; to: number[] | null; velocity: number[];
   stiffness: number; damping: number; mass: number;
 }
-/** One subject's value, read without looking the subject up. Valid until the subject stops. */
+/** One subject's value, kept current in place by the codec. Valid until the subject stops. */
 export interface Reader {
-  /** The array holding the subject's axes as the last `frame` read them, from `offset()` on.
-   *  It is the codec's own, shared with other subjects and valid until the next `frame`. */
-  column(): Float64Array;
-  /** Where the subject's axes start in `column()`. */
-  offset(): number;
+  /** The array holding the subject's axes as the last `frame` read them, from `at` on. It is the
+   *  codec's own, shared with other subjects and valid until the next `frame`. */
+  readonly cols: Float64Array;
+  /** Where the subject's axes start in `cols`. */
+  readonly at: number;
 }
 export interface SpringReader extends Reader {
   /** Position and velocity at the last `frame`. */
@@ -56,6 +56,8 @@ interface Lane {
   mix: Mix<number, Out>;
   /** The subjects `pull` reads, by slot. Joins wait in `pending` until the next `frame`. */
   ids: number[];
+  /** Each slot's subject, beside `ids`. */
+  subs: Subject[];
   pending: Set<number>;
   dirty: boolean;
   /** Frames in a row it has had no subjects at; it retires at the second. */
@@ -63,7 +65,9 @@ interface Lane {
   cols: { v: Float64Array };
 }
 
-interface Subject {
+interface Subject extends Reader {
+  cols: Float64Array;
+  at: number;
   kind: 'tween' | 'spring';
   lane: Lane;
   handle: Handle<number>;
@@ -72,8 +76,9 @@ interface Subject {
   spring?: SpringStart;
   /** Index into the lane's `ids`; -1 while no frame has read it. */
   slot: number;
-  /** What `column` answers while `slot` is -1. */
+  /** What `cols` points at while `slot` is -1. */
   held: Float64Array;
+  motion?(): { value: number[]; velocity: number[] };
 }
 
 export function createCodec(): Codec {
@@ -86,13 +91,15 @@ export function createCodec(): Codec {
     if (!l) {
       const m = mix<number, Out>(kit<Out>({ v: vec(axes, sum()) }));
       m.sync(time);
-      l = { axes, mix: m, ids: [], pending: new Set(), dirty: false, idle: 0, cols: { v: new Float64Array(0) } };
+      l = { axes, mix: m, ids: [], subs: [], pending: new Set(), dirty: false, idle: 0, cols: { v: new Float64Array(0) } };
       lanes.set(axes, l);
     }
     return l;
   };
   const join = (s: Subject, id: number): void => {
     s.slot = -1;
+    s.cols = s.held;
+    s.at = 0;
     s.lane.pending.add(id);
     s.lane.dirty = true;
   };
@@ -101,22 +108,33 @@ export function createCodec(): Codec {
     l.dirty = true;
     if (s.slot < 0) { l.pending.delete(id); return; }
     const last = l.ids.pop()!;
+    const moved = l.subs.pop()!;
     if (last === id) return;
     const n = l.axes;
     const from = l.ids.length * n;
     l.cols.v.copyWithin(s.slot * n, from, from + n);
     l.ids[s.slot] = last;
-    subjects.get(last)!.slot = s.slot;
+    l.subs[s.slot] = moved;
+    moved.slot = s.slot;
+    moved.at = s.slot * n;
   };
   const rebuild = (l: Lane): void => {
     const ids = l.ids.slice();
+    const subs = l.subs;
     for (const id of l.pending) {
-      subjects.get(id)!.slot = ids.length;
+      const s = subjects.get(id)!;
+      s.slot = ids.length;
+      s.at = s.slot * l.axes;
+      s.cols = l.cols.v;
       ids.push(id);
+      subs.push(s);
     }
     l.pending.clear();
     l.ids = ids;
-    if (l.cols.v.length !== ids.length * l.axes) l.cols = { v: new Float64Array(ids.length * l.axes) };
+    if (l.cols.v.length !== ids.length * l.axes) {
+      l.cols = { v: new Float64Array(ids.length * l.axes) };
+      for (const s of subs) s.cols = l.cols.v;
+    }
     l.dirty = false;
   };
 
@@ -153,10 +171,6 @@ export function createCodec(): Codec {
     depart(s, id);
     subjects.delete(id);
   }
-  const readerOf = (s: Subject): Reader => ({
-    column: () => (s.slot < 0 ? s.held : s.lane.cols.v),
-    offset: () => (s.slot < 0 ? 0 : s.slot * s.lane.axes),
-  });
 
   return {
     frame(dtMs) {
@@ -177,7 +191,8 @@ export function createCodec(): Codec {
       const l = laneOf(s.from.length);
       const patch = tweenPatch<number, Out, number[]>('v', { from: s.from.slice(), to: s.from.slice(), ms: s.ms, ease: s.ease });
       const handle = l.mix.cue({ patch, subjects: [s.id] });
-      const sub: Subject = { kind: 'tween', lane: l, handle, patch, slot: -1, held: Float64Array.from(s.from) };
+      const held = Float64Array.from(s.from);
+      const sub: Subject = { kind: 'tween', lane: l, handle, patch, slot: -1, held, cols: held, at: 0 };
       subjects.set(s.id, sub);
       join(sub, s.id);
       try {
@@ -186,17 +201,19 @@ export function createCodec(): Codec {
         stop(s.id);
         throw err;
       }
-      return readerOf(sub);
+      return sub;
     },
     spring(s) {
       const sp = { ...s, from: s.from.slice(), to: s.to && s.to.slice(), velocity: s.velocity.slice() };
       const l = laneOf(sp.axes);
       const { handle, patch } = springVoice(l, s.id, sp);
-      const sub: Subject = { kind: 'spring', lane: l, handle, patch, spring: sp, slot: -1, held: Float64Array.from(sp.from) };
+      const held = Float64Array.from(sp.from);
+      const sub: Subject = { kind: 'spring', lane: l, handle, patch, spring: sp, slot: -1, held, cols: held, at: 0 };
       subjects.set(s.id, sub);
       join(sub, s.id);
       const id = s.id;
-      return { ...readerOf(sub), motion: () => current(sub, id) };
+      sub.motion = () => current(sub, id);
+      return sub as Subject & SpringReader;
     },
     retarget(id, to) {
       const s = get(id);

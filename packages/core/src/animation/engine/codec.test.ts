@@ -26,7 +26,7 @@ const SPRING = { stiffness: 170, damping: 26, mass: 1 };
 const U = { from: [0], to: [1] };
 /** A subject's `n` axes as the last frame read them. */
 const vals = (r: Reader, n: number): number[] =>
-  Array.from({ length: n }, (_, i) => r.column()[r.offset() + i]!);
+  Array.from({ length: n }, (_, i) => r.cols[r.at + i]!);
 
 describe('createCodec', () => {
   it('advances tweens with one easing, each by its own ms', () => {

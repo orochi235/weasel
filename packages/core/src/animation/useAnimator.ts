@@ -378,9 +378,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
           let value: T;
           if (axes) {
-            value = t >= 1 ? o.to : axes.from(reader.column(), reader.offset());
+            value = t >= 1 ? o.to : axes.from(reader.cols, reader.at);
           } else {
-            const eased = t >= 1 ? easing(1) : reader.column()[reader.offset()]!;
+            const eased = t >= 1 ? easing(1) : reader.cols[reader.at]!;
             value = factoryFn ? factoryFn(eased) : o.interpolate!(o.from, o.to, eased);
           }
           o.onTick(value);
