@@ -2,22 +2,24 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Status: unbuilt.** Written 2026-10-02 on branch `pose-overrides-mix`, after Mike approved step 3 at
-about 1.5× today's frame (`docs/proposals/2026-09-30-animator-on-blits.md`, "What step 3 has to
-answer first"). Delete this file when the work merges.
+**Status: Tasks 1–5 built, 6–8 not.** Written 2026-10-02 on branch `pose-overrides-mix`, after Mike
+approved step 3 at about 1.5× today's frame (`docs/proposals/2026-09-30-animator-on-blits.md`,
+"What step 3 has to answer first"). Measured on teitou on 2026-10-03 against blits `2da21c1`, 10k
+tweens cost 2.4–3.5× today's frame (0.77–0.88 ms against 0.22–0.37); the floor is blits' own read,
+0.42 ms. Whether step 3 goes ahead at that cost is open. On 2026-10-03 Mike chose one blits voice
+per animation over grouping, which Tasks 3 and 5 were first built with; the bank is being rewritten
+to it. Delete this file when the work merges.
 
 **Goal:** `animator.tween`, `spring`, `physics` and `decay` compute their values in blits instead
 of in `useAnimator.ts`, with every public signature unchanged.
 
-**Architecture:** Each animator owns a *bank*: a set of blits voices, each on a mix of its own. Every
-animation call is one subject of the bank, named by its animation id. Calls that can share a voice
-do: one voice per distinct `(easing, axis count)` for tweens, and one per distinct
-`(stiffness, damping, mass, axis count)` for physics. Each
-frame the animator syncs the bank once, reads every voice's subjects with `mix.pull`, and hands each
-call its value through `onTick` as today. blits computes the value itself wherever the caller has not
-supplied its own blend; a tween with an `interpolate` or `interpolator` gets eased progress from
-blits and its own function makes the value. A call whose own handle is paused or re-rated moves to a
-voice of its own; cancel and interrupt fade its subject out at once.
+**Architecture:** Each animator owns a *bank*. Every animation call is one subject of the bank, named
+by its animation id, on a blits voice of its own (`subjects: [id]`). Voices share one mix per axis
+count. Each frame the animator syncs the bank once, reads every subject with one `mix.pull` per mix,
+and hands each call its value through `onTick` as today. blits computes the value itself wherever
+the caller has not supplied its own blend; a tween with an `interpolate` or `interpolator` gets
+eased progress from blits and its own function makes the value. Per-call pause and rate set that
+call's voice rate; cancel and interrupt remove its voice.
 
 **Tech Stack:** TypeScript, React hooks, vitest (`--project=core`), `@msb235/blits`.
 
@@ -34,7 +36,7 @@ Each is a call the proposal left open. Mike can overturn any of them before Task
 | What a spring computes in blits | The value itself, as axes, when `T` is a number, a number array or an object of numeric fields | `setTarget` retargets in `T`'s own space, so progress alone cannot carry it |
 | A `T` that is none of those | Stays on today's integrator, in its own file | No caller in the tree does this. `Vec2` (demo) and `RectLike` (momentum) both qualify for axes |
 | Keyframe sampling (`timeline/sampleTrack.ts`) | Not in this plan | Timelines seek, scrub and edit their tracks, a separate subsystem. It gets its own plan |
-| Per-call pause and rate | Moved to a voice of its own, seeked to the call's elapsed time | A blits handle controls a whole voice |
+| Per-call pause and rate | The call's own voice's `rate` | Every call has a voice of its own. Grouping calls onto shared voices was dropped on 2026-10-03: on blits `2da21c1` a voice per call read by `pull` costs what one shared voice does |
 | Global pause and rate | The bank's clock advances at the global rate | blits fades run on the mix clock, so a held clock holds fades too (proposal, "Pausing fades") |
 
 ## Before Task 1
