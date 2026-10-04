@@ -182,6 +182,24 @@ total; neither cache eviction nor any interaction between blits and weasel showe
 built to find one. So 1.5× (about 0.3 ms) is out of reach while every animated node goes through
 blits each frame: blits' part alone is about today's whole frame.
 
+**Replacing animations makes every later frame dearer, until each has been replaced once.** The
+churn row above comes from a short bench run, so it understates what churn costs. Measured on
+teitou against blits `eec0b21`, ms per frame in two consecutive 2.5 s windows each:
+
+| 10k tweens, steady frames                       | Today       | On blits    |
+|-------------------------------------------------|------------:|------------:|
+| as started                                      | 0.19 / 0.19 | 0.53 / 0.54 |
+| after every animation was replaced once         | 0.16 / 0.16 | 0.81 / 0.84 |
+| started with junk allocated between each start  | 0.40 / 0.42 | 1.05 / 1.05 |
+
+Under continuous churn on blits the frame climbs from 0.85 ms and levels off near 1.08 after about
+10k replacements; today's stays near 0.19. What grows in a profile is per-call work: `tick`,
+`tickAll`, the caller's `interpolate` and `onTick` each about double, blits' `writeLater` triples,
+and blits' folding (`runCrowd`, `pullRun`) does not move. The junk row shows that scattering the
+animations' objects through memory doubles both animators' frames. That a replaced animation lands
+scattered on blits and not on today's animator is an inference from the profile, not measured.
+Keeping the codec's slots in join order instead of swap-removing was tried, and was worse.
+
 **Before merge:** blits has to publish `tween`, `pull`, per-subject `fade` and the `5a514a3` fixes,
 and core's exact pin on `@msb235/blits` moves to that release. Until then the branch runs against a
 local build, and the full suite cannot run on the fleet, which installs the pinned 0.2.1.
