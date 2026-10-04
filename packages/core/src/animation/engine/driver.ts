@@ -13,13 +13,13 @@ export interface SpringStart {
   from: number[]; to: number[] | null; velocity: number[];
   stiffness: number; damping: number; mass: number;
 }
-export interface Bank {
-  /** Advances the bank's clock by `dtMs` of animator time, then reads every subject. */
+export interface Driver {
+  /** Advances the driver's clock by `dtMs` of animator time, then reads every subject. */
   frame(dtMs: number): void;
   tween(s: TweenStart): void;
   spring(s: SpringStart): void;
   /** The array holding a tween subject's axes as the last `frame` read them, from `offset(id)` on.
-   *  It is the bank's own, shared with other subjects and valid until the next `frame`. */
+   *  It is the driver's own, shared with other subjects and valid until the next `frame`. */
   column(id: number): Float64Array;
   /** Where subject `id`'s axes start in `column(id)`. */
   offset(id: number): number;
@@ -30,15 +30,15 @@ export interface Bank {
   /** Plays `id` at rate `rate` from where it is, without a jump. */
   rate(id: number, rate: number): void;
   stop(id: number): void;
-  /** Whether `id` is one of the bank's subjects. */
+  /** Whether `id` is one of the driver's subjects. */
   has(id: number): boolean;
-  /** How many voices the bank is running, one per subject; for tests and diagnostics. */
+  /** How many voices the driver is running, one per subject; for tests and diagnostics. */
   voiceCount(): number;
 }
 
 type Out = { v: number[] };
 
-/** What the bank calls on a motion patch: a tween has no `push`, a glide no `to`. */
+/** What the driver calls on a motion patch: a tween has no `push`, a glide no `to`. */
 interface Moves {
   to?(id: number, target: number[], at?: number): void;
   read(id: number, at?: number): Motion<number[]> | undefined;
@@ -66,7 +66,7 @@ interface Subject {
   lane: Lane;
   handle: Handle<number>;
   patch: Moves;
-  /** The bank's own copy, kept at the subject's motion as of its last re-cue. */
+  /** The driver's own copy, kept at the subject's motion as of its last re-cue. */
   spring?: SpringStart;
   /** Index into the lane's `ids`; -1 while no frame has read it. */
   slot: number;
@@ -74,7 +74,7 @@ interface Subject {
   held: Float64Array;
 }
 
-export function createBank(): Bank {
+export function createDriver(): Driver {
   const lanes = new Map<number, Lane>();
   const subjects = new Map<number, Subject>();
   let time = 0;
@@ -124,8 +124,8 @@ export function createBank(): Bank {
     return l;
   };
 
-  // A voice cued now reads voice time 0 at bank time `time`. Each patch holds its subject at rest
-  // at `from`, and the bank releases it with a `to` or `push` timed at 0.
+  // A voice cued now reads voice time 0 at driver time `time`. Each patch holds its subject at rest
+  // at `from`, and the driver releases it with a `to` or `push` timed at 0.
   const springVoice = (l: Lane, id: number, sp: SpringStart): { handle: Handle<number>; patch: Moves } => {
     // With no target the spring force is zero whatever the stiffness, leaving damping alone:
     // velocity falls as exp(-t * damping / mass), a glide whose time constant is mass / damping.
@@ -142,7 +142,7 @@ export function createBank(): Bank {
 
   const get = (id: number): Subject => {
     const s = subjects.get(id);
-    if (!s) throw new Error(`bank: no subject ${id}`);
+    if (!s) throw new Error(`driver: no subject ${id}`);
     return s;
   };
   /** A spring subject's motion now: as its voice last read it, else where it was last placed. */
@@ -209,12 +209,12 @@ export function createBank(): Bank {
     offset,
     motion(id) {
       const s = get(id);
-      if (s.kind !== 'spring') throw new Error(`bank: subject ${id} is a tween and has no motion`);
+      if (s.kind !== 'spring') throw new Error(`driver: subject ${id} is a tween and has no motion`);
       return current(s, id);
     },
     retarget(id, to) {
       const s = get(id);
-      if (s.kind === 'tween') throw new Error(`bank: subject ${id} is a tween; tweens are not retargeted`);
+      if (s.kind === 'tween') throw new Error(`driver: subject ${id} is a tween; tweens are not retargeted`);
       const sp = s.spring!;
       if ((to == null) === (sp.to == null)) {
         if (!to) return;

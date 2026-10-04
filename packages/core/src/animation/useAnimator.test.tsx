@@ -759,7 +759,7 @@ describe('useAnimator — abandoned renders', () => {
   });
 });
 
-describe('useAnimator on the bank', () => {
+describe('useAnimator on the driver', () => {
   it('pausing one tween leaves another with the same easing running', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));

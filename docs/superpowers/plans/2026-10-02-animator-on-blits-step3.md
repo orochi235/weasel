@@ -7,15 +7,15 @@ approved step 3 at about 1.5× today's frame (`docs/proposals/2026-09-30-animato
 "What step 3 has to answer first"). Measured on teitou on 2026-10-03 against blits `2da21c1`, 10k
 tweens cost 2.4–3.5× today's frame (0.77–0.88 ms against 0.22–0.37); the floor is blits' own read,
 0.42 ms. Whether step 3 goes ahead at that cost is open. On 2026-10-03 Mike chose one blits voice
-per animation over grouping, which Tasks 3 and 5 were first built with; the bank is being rewritten
+per animation over grouping, which Tasks 3 and 5 were first built with; the driver is being rewritten
 to it. Delete this file when the work merges.
 
 **Goal:** `animator.tween`, `spring`, `physics` and `decay` compute their values in blits instead
 of in `useAnimator.ts`, with every public signature unchanged.
 
-**Architecture:** Each animator owns a *bank*. Every animation call is one subject of the bank, named
+**Architecture:** Each animator owns a *driver*. Every animation call is one subject of the driver, named
 by its animation id, on a blits voice of its own (`subjects: [id]`). Voices share one mix per axis
-count. Each frame the animator syncs the bank once, reads every subject with one `mix.pull` per mix,
+count. Each frame the animator syncs the driver once, reads every subject with one `mix.pull` per mix,
 and hands each call its value through `onTick` as today. blits computes the value itself wherever
 the caller has not supplied its own blend; a tween with an `interpolate` or `interpolator` gets
 eased progress from blits and its own function makes the value. Per-call pause and rate set that
@@ -37,7 +37,7 @@ Each is a call the proposal left open. Mike can overturn any of them before Task
 | A `T` that is none of those | Stays on today's integrator, in its own file | No caller in the tree does this. `Vec2` (demo) and `RectLike` (momentum) both qualify for axes |
 | Keyframe sampling (`timeline/sampleTrack.ts`) | Not in this plan | Timelines seek, scrub and edit their tracks, a separate subsystem. It gets its own plan |
 | Per-call pause and rate | The call's own voice's `rate` | Every call has a voice of its own. Grouping calls onto shared voices was dropped on 2026-10-03: on blits `2da21c1` a voice per call read by `pull` costs what one shared voice does |
-| Global pause and rate | The bank's clock advances at the global rate | blits fades run on the mix clock, so a held clock holds fades too (proposal, "Pausing fades") |
+| Global pause and rate | The driver's clock advances at the global rate | blits fades run on the mix clock, so a held clock holds fades too (proposal, "Pausing fades") |
 
 ## Before Task 1
 
@@ -56,11 +56,11 @@ Each is a call the proposal left open. Mike can overturn any of them before Task
 |---|---|---|
 | `packages/core/src/animation/engine/axes.ts` | Create | Turn a value into a flat `number[]` and back, or say it cannot |
 | `packages/core/src/animation/engine/axes.test.ts` | Create | |
-| `packages/core/src/animation/engine/bank.ts` | Create | The animator's blits voices, shared and solo, with one `pull` per voice per frame |
-| `packages/core/src/animation/engine/bank.test.ts` | Create | |
-| `packages/core/src/animation/engine/blitsContract.test.ts` | Create | Pins each blits behavior `bank.ts` relies on, so a blits change fails here first |
+| `packages/core/src/animation/engine/driver.ts` | Create | The animator's blits voices, shared and solo, with one `pull` per voice per frame |
+| `packages/core/src/animation/engine/driver.test.ts` | Create | |
+| `packages/core/src/animation/engine/blitsContract.test.ts` | Create | Pins each blits behavior `driver.ts` relies on, so a blits change fails here first |
 | `packages/core/src/animation/engine/integrator.ts` | Create | Today's semi-implicit Euler, moved out of `useAnimator.ts`, for a `T` with no axes |
-| `packages/core/src/animation/useAnimator.ts` | Modify | `tween`, `physics`, `spring`, `decay`, pause and rate route through the bank |
+| `packages/core/src/animation/useAnimator.ts` | Modify | `tween`, `physics`, `spring`, `decay`, pause and rate route through the driver |
 | `packages/core/src/animation/useAnimator.test.tsx` | Modify | Spring parity tests compare against the closed form, not Euler |
 | `tests/perf/bench/animator-on-blits.bench.ts` | Modify | A row for the rebuilt animator itself |
 | `docs/proposals/2026-09-30-animator-on-blits.md` | Modify | Step 3 status |
@@ -69,13 +69,13 @@ Each is a call the proposal left open. Mike can overturn any of them before Task
 
 ---
 
-### Task 1: Pin the blits behaviors the bank relies on
+### Task 1: Pin the blits behaviors the driver relies on
 
-The bank leans on six blits behaviors. Each gets a test against the real package, so a blits
+The driver leans on six blits behaviors. Each gets a test against the real package, so a blits
 release that changes one fails here, by name, instead of somewhere in `useAnimator`. Two were
 corrected against blits 3228fa7 on 2026-10-03: a `sum` channel reads 0 where nothing contributes,
 not NaN, and a motion patch's `read(subject)` is undefined until a frame has pulled that subject.
-The bank pulls every subject it runs each frame before anything reads it.
+The driver pulls every subject it runs each frame before anything reads it.
 
 **Files:**
 - Create: `packages/core/src/animation/engine/blitsContract.test.ts`
@@ -90,7 +90,7 @@ type U = { u: number };
 type P = { p: number[] };
 const linear = (x: number) => x;
 
-describe('blits behaviors the animator bank relies on', () => {
+describe('blits behaviors the animator driver relies on', () => {
   it('a tween subject started with to(id, 1, at) is at ease((t - at) / ms)', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
@@ -182,7 +182,7 @@ describe('blits behaviors the animator bank relies on', () => {
 - [ ] **Step 2: Run them against the local blits build**
 
 Run: `npx vitest run --project=core packages/core/src/animation/engine/blitsContract.test.ts`
-Expected: 6 passed. A failure here means blits does not behave the way the bank below assumes: stop
+Expected: 6 passed. A failure here means blits does not behave the way the driver below assumes: stop
 and settle it with the blits session before writing Task 3. Do not adapt the test to whatever blits
 returns.
 
@@ -190,7 +190,7 @@ returns.
 
 ```bash
 git add packages/core/src/animation/engine/blitsContract.test.ts
-git commit -m "pin the blits behaviors the animator bank will rely on"
+git commit -m "pin the blits behaviors the animator driver will rely on"
 ```
 
 ### Task 2: Axes
@@ -295,16 +295,16 @@ git add packages/core/src/animation/engine/axes.ts packages/core/src/animation/e
 git commit -m "add axes, which map a numeric value onto the flat numbers blits moves"
 ```
 
-### Task 3: The bank
+### Task 3: The driver
 
-The bank is the only file that talks to blits. `useAnimator` asks it to start, move, retarget and
+The driver is the only file that talks to blits. `useAnimator` asks it to start, move, retarget and
 stop subjects, and once a frame to advance and read every subject's values.
 
 **Files:**
-- Create: `packages/core/src/animation/engine/bank.ts`
-- Test: `packages/core/src/animation/engine/bank.test.ts`
+- Create: `packages/core/src/animation/engine/driver.ts`
+- Test: `packages/core/src/animation/engine/driver.test.ts`
 
-The bank's interface, which later tasks use exactly as written:
+The driver's interface, which later tasks use exactly as written:
 
 ```ts
 export interface TweenStart {
@@ -317,12 +317,12 @@ export interface SpringStart {
   from: number[]; to: number[] | null; velocity: number[];
   stiffness: number; damping: number; mass: number;
 }
-export interface Bank {
-  /** Advances the bank's clock by `dtMs` of animator time, then reads every subject. */
+export interface Driver {
+  /** Advances the driver's clock by `dtMs` of animator time, then reads every subject. */
   frame(dtMs: number): void;
   tween(s: TweenStart): void;
   spring(s: SpringStart): void;
-  /** A tween subject's axes as the last `frame` read them: a view into the bank's arrays, valid
+  /** A tween subject's axes as the last `frame` read them: a view into the driver's arrays, valid
    *  until the next `frame`. */
   values(id: number): Float64Array;
   /** Position and velocity of a spring subject at the last `frame`. */
@@ -333,23 +333,23 @@ export interface Bank {
   solo(id: number, rate: number): void;
   stop(id: number): void;
 }
-export function createBank(): Bank;
+export function createDriver(): Driver;
 ```
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
 import { describe, expect, it } from 'vitest';
-import { createBank } from './bank';
+import { createDriver } from './driver';
 
 const linear = (u: number) => u;
 const SPRING = { stiffness: 170, damping: 26, mass: 1 };
 /** A tween of progress alone, as a caller with its own `interpolate` gets. */
 const U = { from: [0], to: [1] };
 
-describe('createBank', () => {
+describe('createDriver', () => {
   it('advances tweens sharing an easing on one voice, each by its own ms', () => {
-    const b = createBank();
+    const b = createDriver();
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.tween({ id: 2, ms: 500, ease: linear, ...U });
     b.frame(250);
@@ -357,8 +357,8 @@ describe('createBank', () => {
     expect(b.values(2)[0]).toBeCloseTo(0.5, 9);
   });
 
-  it('starts a tween at the bank time it was added, not at zero', () => {
-    const b = createBank();
+  it('starts a tween at the driver time it was added, not at zero', () => {
+    const b = createDriver();
     b.frame(400);
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.frame(100);
@@ -366,7 +366,7 @@ describe('createBank', () => {
   });
 
   it('keeps a stopped subject out of the next frame and its neighbors running', () => {
-    const b = createBank();
+    const b = createDriver();
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.tween({ id: 2, ms: 1000, ease: linear, ...U });
     b.frame(100);
@@ -377,7 +377,7 @@ describe('createBank', () => {
   });
 
   it('solo at rate 0 freezes one tween and not its neighbor', () => {
-    const b = createBank();
+    const b = createDriver();
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.tween({ id: 2, ms: 1000, ease: linear, ...U });
     b.frame(300);
@@ -388,7 +388,7 @@ describe('createBank', () => {
   });
 
   it('solo at rate 2 runs one tween at double speed from where it was', () => {
-    const b = createBank();
+    const b = createDriver();
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.frame(200);
     b.solo(1, 2);
@@ -397,7 +397,7 @@ describe('createBank', () => {
   });
 
   it('moves a tween of several axes between its own endpoints', () => {
-    const b = createBank();
+    const b = createDriver();
     b.tween({ id: 1, ms: 1000, ease: linear, from: [0, 100], to: [10, 0] });
     b.tween({ id: 2, ms: 1000, ease: linear, from: [5, 5], to: [5, 15] });
     b.frame(500);
@@ -406,7 +406,7 @@ describe('createBank', () => {
   });
 
   it('moves a spring and keeps its velocity through a retarget', () => {
-    const b = createBank();
+    const b = createDriver();
     b.spring({ id: 1, axes: 1, from: [0], to: [10], velocity: [0], ...SPRING });
     b.frame(100);
     const before = b.motion(1);
@@ -416,7 +416,7 @@ describe('createBank', () => {
   });
 
   it('decays toward rest with no target', () => {
-    const b = createBank();
+    const b = createDriver();
     b.spring({ id: 1, axes: 1, from: [0], to: null, velocity: [100], stiffness: 0, damping: 2, mass: 1 });
     b.frame(1000);
     const m = b.motion(1);
@@ -428,8 +428,8 @@ describe('createBank', () => {
 
 - [ ] **Step 2: Run to see them fail**
 
-Run: `npx vitest run --project=core packages/core/src/animation/engine/bank.test.ts`
-Expected: FAIL, cannot resolve `./bank`.
+Run: `npx vitest run --project=core packages/core/src/animation/engine/driver.test.ts`
+Expected: FAIL, cannot resolve `./driver`.
 
 - [ ] **Step 3: Implement**
 
@@ -452,7 +452,7 @@ export interface SpringStart {
   from: number[]; to: number[] | null; velocity: number[];
   stiffness: number; damping: number; mass: number;
 }
-export interface Bank {
+export interface Driver {
   frame(dtMs: number): void;
   tween(s: TweenStart): void;
   spring(s: SpringStart): void;
@@ -470,7 +470,7 @@ interface Voice {
   key: string;
   axes: number;
   mix: Mix<number, Out>;
-  /** Bank time the voice was cued at. Its own clock reads bank time less this, while at rate 1. */
+  /** Driver time the voice was cued at. Its own clock reads driver time less this, while at rate 1. */
   cuedAt: number;
   handle: Handle<number>;
   patch: {
@@ -487,7 +487,7 @@ interface Voice {
 interface Subject {
   voice: Voice;
   kind: 'tween' | 'spring';
-  /** Bank time it started at; a tween's elapsed time is the bank's time less this. */
+  /** Driver time it started at; a tween's elapsed time is the driver's time less this. */
   start: number;
   ms: number;
   ease: (u: number) => number;
@@ -495,7 +495,7 @@ interface Subject {
   slot: number;
 }
 
-export function createBank(): Bank {
+export function createDriver(): Driver {
   const voices = new Map<string, Voice>();
   const subjects = new Map<number, Subject>();
   let time = 0;
@@ -504,7 +504,7 @@ export function createBank(): Bank {
     m.sync(time);
     return m;
   };
-  /** Bank time as voice `v`'s clock reads it. Shared voices stay at rate 1; a solo voice is
+  /** Driver time as voice `v`'s clock reads it. Shared voices stay at rate 1; a solo voice is
    *  re-rated only after its one subject is placed. */
   const local = (v: Voice): number => time - v.cuedAt;
   const easeIds = new WeakMap<(u: number) => number, number>();
@@ -577,7 +577,7 @@ export function createBank(): Bank {
 
   const get = (id: number): Subject => {
     const s = subjects.get(id);
-    if (!s) throw new Error(`bank: no subject ${id}`);
+    if (!s) throw new Error(`driver: no subject ${id}`);
     return s;
   };
 
@@ -615,7 +615,7 @@ export function createBank(): Bank {
     motion(id) {
       const s = get(id);
       const m = s.voice.patch.read(id);
-      if (!m) throw new Error(`bank: subject ${id} not read yet`);
+      if (!m) throw new Error(`driver: subject ${id} not read yet`);
       return { value: [m.value].flat(), velocity: [m.velocity].flat() };
     },
     retarget(id, to) {
@@ -672,18 +672,18 @@ export function createBank(): Bank {
 Three things in this listing are guesses at blits' API that Task 1 did not pin. Check each against
 `node_modules/@msb235/blits/dist/*.d.ts` before running, and correct the code, not the test:
 `glide`'s options (`from`, `velocity`, `ms`), whether `fade({ over: 0 })` with no subject removes a
-whole voice, and whether a voice cued on a mix synced to bank time `t` reads voice time 0 there.
+whole voice, and whether a voice cued on a mix synced to driver time `t` reads voice time 0 there.
 
 - [ ] **Step 4: Run to see them pass**
 
-Run: `npx vitest run --project=core packages/core/src/animation/engine/bank.test.ts`
+Run: `npx vitest run --project=core packages/core/src/animation/engine/driver.test.ts`
 Expected: 8 passed.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/core/src/animation/engine/bank.ts packages/core/src/animation/engine/bank.test.ts
-git commit -m "add the animator bank, which runs animation calls as subjects of shared blits voices"
+git add packages/core/src/animation/engine/driver.ts packages/core/src/animation/engine/driver.test.ts
+git commit -m "add the animator driver, which runs animation calls as subjects of shared blits voices"
 ```
 
 ### Task 4: Move today's integrator out of `useAnimator.ts`
@@ -743,7 +743,7 @@ git add packages/core/src/animation/engine/integrator.ts packages/core/src/anima
 git commit -m "move the animator's spring step into its own module"
 ```
 
-### Task 5: Tweens through the bank
+### Task 5: Tweens through the driver
 
 **Files:**
 - Modify: `packages/core/src/animation/useAnimator.ts` (`tween`, `tickAll`, `register`'s handle)
@@ -751,13 +751,13 @@ git commit -m "move the animator's spring step into its own module"
 
 For a tween that works today this task changes where its value is computed, not what it is: today's
 tween is already `easing(elapsed / ms)` in closed form. The 36 tests in `useAnimator.test.tsx` guard
-that. Two new tests: one pins the case the bank adds (two tweens on one voice, one paused by its
+that. Two new tests: one pins the case the driver adds (two tweens on one voice, one paused by its
 handle), which passes before and after; the other is a tween that throws today and works after.
 
 - [ ] **Step 1: Add the tests**
 
 ```ts
-describe('useAnimator on the bank', () => {
+describe('useAnimator on the driver', () => {
   it('pausing one tween leaves another with the same easing running', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
@@ -796,38 +796,38 @@ describe('useAnimator on the bank', () => {
 
 - [ ] **Step 2: Run them on today's code**
 
-Run: `npx vitest run --project=core packages/core/src/animation/useAnimator.test.tsx -t "on the bank"`
+Run: `npx vitest run --project=core packages/core/src/animation/useAnimator.test.tsx -t "on the driver"`
 Expected: the pause test passes; the object test fails with "tween: interpolate or interpolator is
 required for non-numeric T".
 
-- [ ] **Step 3: Route tweens through the bank**
+- [ ] **Step 3: Route tweens through the driver**
 
 In `useAnimator`, inside the `useMemo` factory, before `tickAll`:
 
 ```ts
-    const bank = createBank();
+    const driver = createDriver();
 ```
 
 Beside `tickDepth`, outside the memo so `onResume` can reach it:
 
 ```ts
-  /** The frame timestamp the bank last advanced to. Null before the first frame and after the page
-   *  was hidden, so neither gap is charged to the bank. */
-  const bankFrameT = useRef<number | null>(null);
+  /** The frame timestamp the driver last advanced to. Null before the first frame and after the page
+   *  was hidden, so neither gap is charged to the driver. */
+  const driverFrameT = useRef<number | null>(null);
 ```
 
-and in the `onResume` callback at `useAnimator.ts:93`, add `bankFrameT.current = null;`.
+and in the `onResume` callback at `useAnimator.ts:93`, add `driverFrameT.current = null;`.
 
-At the top of `tickAll`, before the per-animation loop, advance the bank by the frame's time at the
+At the top of `tickAll`, before the per-animation loop, advance the driver by the frame's time at the
 global rate:
 
 ```ts
-      const frameDt = bankFrameT.current == null ? 0 : Math.max(0, t - bankFrameT.current);
-      bankFrameT.current = t;
-      bank.frame(frameDt * (globalPaused.current ? 0 : globalTimeScale.current));
+      const frameDt = driverFrameT.current == null ? 0 : Math.max(0, t - driverFrameT.current);
+      driverFrameT.current = t;
+      driver.frame(frameDt * (globalPaused.current ? 0 : globalTimeScale.current));
 ```
 
-A tween registered between frames starts at the bank time of the last frame, where today it starts
+A tween registered between frames starts at the driver time of the last frame, where today it starts
 at `now()` when `tween` is called. The difference is at most one frame.
 
 A tween takes one of two routes, decided once when it starts. With no `interpolate` and no
@@ -843,7 +843,7 @@ in `tween`:
 `perTickInterp`'s fallback throws for a non-numeric `T` with no `interpolate`; with `axes` set it
 is never called, so an array or numeric-field `T` now tweens where it used to throw.
 
-Replace the body of `tween`'s `tick` so it reads from the bank instead of computing:
+Replace the body of `tween`'s `tick` so it reads from the driver instead of computing:
 
 ```ts
         tick(nowMs) {
@@ -851,15 +851,15 @@ Replace the body of `tween`'s `tick` so it reads from the bank instead of comput
           const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
           let value: T;
           if (axes) {
-            value = t >= 1 ? o.to : axes.from(bank.values(id));
+            value = t >= 1 ? o.to : axes.from(driver.values(id));
           } else {
-            const eased = t >= 1 ? easing(1) : bank.values(id)[0]!;
+            const eased = t >= 1 ? easing(1) : driver.values(id)[0]!;
             value = factoryFn ? factoryFn(eased) : perTickInterp!(o.from, o.to, eased);
           }
           o.onTick(value);
           if (t >= 1 && !lastValueEmitted) {
             lastValueEmitted = true;
-            bank.stop(id);
+            driver.stop(id);
             if (animations.current.has(id)) {
               reportEnd(id);
               o.onDone?.();
@@ -874,7 +874,7 @@ and start the subject right after `register` returns, before the `return`:
 
 ```ts
       const handle = register({ /* unchanged seed, with the tick above */ });
-      bank.tween({
+      driver.tween({
         id, ms: Math.max(o.ms, 1), ease: easing,
         from: axes ? axes.to(o.from) : [0],
         to: axes ? axes.to(o.to) : [1],
@@ -885,27 +885,27 @@ and start the subject right after `register` returns, before the `return`:
 and add `import { axesOf } from './engine/axes';` beside the other imports.
 
 `nowMs` stays the call's own virtual time, which already folds in per-call pause and rate, so the
-end of a tween is still decided where it is today. The bank decides only the value in between.
-In `retire`, before `animations.current.delete(id)`, add `bank.stop(id);` so a cancel or interrupt
-takes the subject off its voice. In `cancelAll`, call `bank.stop(a.id)` for each retired animation.
+end of a tween is still decided where it is today. The driver decides only the value in between.
+In `retire`, before `animations.current.delete(id)`, add `driver.stop(id);` so a cancel or interrupt
+takes the subject off its voice. In `cancelAll`, call `driver.stop(a.id)` for each retired animation.
 
 In `register`'s returned handle, a per-call pause or rate moves the call to its own voice:
 
 ```ts
-        pause: () => { const a = animations.current.get(anim.id); if (a) { a.paused = true; bank.solo(anim.id, 0); } },
-        resume: () => { const a = animations.current.get(anim.id); if (a) { a.paused = false; bank.solo(anim.id, a.timeScale); } },
-        setTimeScale: (s) => { const a = animations.current.get(anim.id); if (a) { a.timeScale = s; bank.solo(anim.id, a.paused ? 0 : s); } },
+        pause: () => { const a = animations.current.get(anim.id); if (a) { a.paused = true; driver.solo(anim.id, 0); } },
+        resume: () => { const a = animations.current.get(anim.id); if (a) { a.paused = false; driver.solo(anim.id, a.timeScale); } },
+        setTimeScale: (s) => { const a = animations.current.get(anim.id); if (a) { a.timeScale = s; driver.solo(anim.id, a.paused ? 0 : s); } },
 ```
 
-Do the same in `pauseKey`, `resumeKey` and `setTimeScaleByKey`. `bank.solo` throws for an id with no
-subject (a supervisor, a timeline); guard each call with a `has` check added to `Bank`:
+Do the same in `pauseKey`, `resumeKey` and `setTimeScaleByKey`. `driver.solo` throws for an id with no
+subject (a supervisor, a timeline); guard each call with a `has` check added to `Driver`:
 
 ```ts
-  /** Whether `id` is one of the bank's subjects. */
+  /** Whether `id` is one of the driver's subjects. */
   has(id: number): boolean;
 ```
 
-implemented in `bank.ts` as `has: (id) => subjects.has(id),`.
+implemented in `driver.ts` as `has: (id) => subjects.has(id),`.
 
 - [ ] **Step 4: Run every animator test**
 
@@ -917,11 +917,11 @@ commit message.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/core/src/animation/useAnimator.ts packages/core/src/animation/useAnimator.test.tsx packages/core/src/animation/engine/bank.ts
+git add packages/core/src/animation/useAnimator.ts packages/core/src/animation/useAnimator.test.tsx packages/core/src/animation/engine/driver.ts
 git commit -m "run animator tweens as subjects of shared blits voices"
 ```
 
-### Task 6: Springs, physics and decay through the bank
+### Task 6: Springs, physics and decay through the driver
 
 **Files:**
 - Modify: `packages/core/src/animation/useAnimator.ts` (`physics`)
@@ -931,7 +931,7 @@ git commit -m "run animator tweens as subjects of shared blits voices"
 
 The tests at `useAnimator.test.tsx:541` and `:568` assert that `physics` matches `spring` and an
 exponential decay to 5 places under Euler. Under blits both are closed forms, so the same
-comparison holds and gets tighter; keep them, and add one that fails until physics runs on the bank:
+comparison holds and gets tighter; keep them, and add one that fails until physics runs on the driver:
 
 ```ts
   it('a numeric spring lands where the closed form puts it, at any frame rate', () => {
@@ -953,14 +953,14 @@ comparison holds and gets tighter; keep them, and add one that fails until physi
 Run: `npx vitest run --project=core packages/core/src/animation/useAnimator.test.tsx -t "at any frame rate"`
 Expected: FAIL. Euler at 7 ms and at 33 ms frames lands in different places.
 
-- [ ] **Step 3: Route `physics` through the bank when `T` has axes**
+- [ ] **Step 3: Route `physics` through the driver when `T` has axes**
 
 At the top of `physics`, after the constants are resolved:
 
 ```ts
       const axes = axesOf(o.from);
       if (axes) {
-        bank.spring({
+        driver.spring({
           id, axes: axes.count,
           from: axes.to(o.from),
           to: o.to == null ? null : axes.to(o.to),
@@ -973,26 +973,26 @@ At the top of `physics`, after the constants are resolved:
 In `tick`, when `axes` is set, replace the Euler step with a read:
 
 ```ts
-          const m = bank.motion(id);
+          const m = driver.motion(id);
           value = axes.from(m.value);
           velocity = axes.from(m.velocity);
           o.onTick(value);
 ```
 
-keeping the rest check below it unchanged, with `bank.stop(id)` before `reportEnd(id)` when it
+keeping the rest check below it unchanged, with `driver.stop(id)` before `reportEnd(id)` when it
 settles. When `axes` is null, the tick keeps the `stepSpring` call from Task 4.
 
 `setTarget` and `setVelocity` on the handle become:
 
 ```ts
-        setTarget: (newTo: T | null) => { target = newTo; if (axes) bank.retarget(id, newTo == null ? null : axes.to(newTo)); },
-        setVelocity: (v: T) => { velocity = v; if (axes) bank.push(id, axes.to(v)); },
+        setTarget: (newTo: T | null) => { target = newTo; if (axes) driver.retarget(id, newTo == null ? null : axes.to(newTo)); },
+        setVelocity: (v: T) => { velocity = v; if (axes) driver.push(id, axes.to(v)); },
 ```
 
-`bank.retarget(id, null)` on a held spring (the `setTarget(null)` test at `:622`) has to switch the
+`driver.retarget(id, null)` on a held spring (the `setTarget(null)` test at `:622`) has to switch the
 subject to free motion. If blits' `spring` cannot release a subject to coast, `retarget` moves the
 subject to a `glide` voice from its current motion, the way `solo` moves it; write that branch in
-`bank.ts` with a test in `bank.test.ts` first.
+`driver.ts` with a test in `driver.test.ts` first.
 
 - [ ] **Step 4: Run every animator test**
 
@@ -1002,7 +1002,7 @@ Expected: all pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/core/src/animation/useAnimator.ts packages/core/src/animation/useAnimator.test.tsx packages/core/src/animation/engine/bank.ts packages/core/src/animation/engine/bank.test.ts
+git add packages/core/src/animation/useAnimator.ts packages/core/src/animation/useAnimator.test.tsx packages/core/src/animation/engine/driver.ts packages/core/src/animation/engine/driver.test.ts
 git commit -m "run animator springs, physics and decay on blits closed forms"
 ```
 

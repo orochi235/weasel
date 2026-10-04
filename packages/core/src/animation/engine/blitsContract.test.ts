@@ -5,7 +5,7 @@ type U = { u: number };
 type P = { p: number[] };
 const linear = (x: number) => x;
 
-describe('blits behaviors the animator bank relies on', () => {
+describe('blits behaviors the animator driver relies on', () => {
   it('a tween subject started with to(id, 1, at) is at ease((t - at) / ms)', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
