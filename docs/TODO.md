@@ -483,6 +483,17 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - **(P3) Serializable clips** — follows from tracks being typed callbacks rather
   than data. Revisit with the editor's experience in hand.
 
+### Animator robustness
+
+- **(P2) One throwing tick stops the animator for good** — `tickAll` in
+  `packages/core/src/animation/useAnimator.ts` calls each animation's `tick` with no guard, and
+  nothing in `useVisibleRaf` catches either. A throw from any `onTick`, `onDone` or interpolator
+  skips every later animation that frame, leaves finished ones on the table, skips the tick
+  subscribers, and never requests the next frame; `isActive()` stays true. Measured on
+  2026-10-03 with one throwing tween between two good ones, before and after the blits rebuild
+  alike. Wrap each `tick` the way the subscribers already are (log and retire the thrower), and
+  decide whether the error should also reach the caller.
+
 ### Combining animations
 
 - **(P3) The animator on blits** — weasel has no model for two animations on one property; every
