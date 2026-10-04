@@ -929,206 +929,62 @@ one dead `const` and four stale disable directives.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op factories, shape kinds and the `features` presets; public exports remain uncovered.
 
-- **(P2) Per-command draw cost, for everything that is not batched solid
-  geometry.** `tests/perf/draw-loop.spec.ts` sweeps commands per frame under
-  real GL (`npm run test:perf`; gates nothing, and its result file records the
-  unmasked GL renderer so a software backend is obvious).
+- **(P2) Breaking the batch is what a frame pays for, and a clipped group is
+  the worst case.** Solids, all three gradients, images and text share one
+  batch (`renderer/drawBatch.ts`), and a boundary between any two of them costs
+  nothing measurable. What still costs is closing that batch early. Measured
+  2026-10-03 on teitou (Apple M5 Max, ANGLE Metal, idle); the result files are
+  in `tests/perf/recorded/render-cost-2026-10-03/`.
 
-  The cost turned out not to be the draw call. A warm mesh draw is ~1.8 us;
-  what cost ~66 us was *writing a buffer between draws*, which the driver
-  cannot pipeline over. So batching pays by moving buffer writes to once a
-  frame, and consecutive solid-fill geometry — rects, tessellated fills, stroke
-  ribbons — now shares one `drawElements`. At 3,200 commands on an M2 Max via
-  ANGLE: scene-shaped rects 209 -> 0.39 ms, rotated rects 217 -> 0.70 ms, solid
-  octagons 5.6 -> 0.65 ms, stroked rects 244 -> 9.4 ms.
+  | at 60 Hz, `frame-budget.spec.ts` | elements a frame |
+  |---|---:|
+  | solid rects | 249,856 |
+  | images | 212,992 |
+  | scene tree | 194,560 |
+  | shader panels | 50,176 |
+  | gradient rects | 42,496 |
+  | stroked paths | 34,816 |
+  | text labels | 21,760 |
+  | mixed document | 15,616 |
+  | clipped groups, depth 1 | 1,360 |
+  | clipped groups, depth 4 | 976 |
 
-  Stroked commands then went 9.4 -> 1.7–2.0 ms on 2026-08-15: batching had left
-  them ~85% stroke tessellation, and `cache/strokeMeshCache.ts` now keys that on
-  `Path` identity so a ribbon is built once per stroke configuration rather than
-  once per frame. A ribbon also earns a persistent VAO on its second sight *in a
-  given GL context* — `GLMeshCache.uploadRecurring`, which is where that gate
-  has to live, since one scene can be drawn by several renderers. Design:
-  `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
+  - **A one-rect batch flush costs 7–17 us, and the figure will not hold
+    still.** `clip-cost.spec.ts` prices it at 16.6 us one run and 7.4 the next,
+    and single rows swing 2x between rounds. A pattern rect, which draws alone
+    from a mesh uploaded once, costs ~0.6 us and is steady.
+  - **The stencil is not the clip's cost any more.** Push and pop together are
+    0.83 us; the rest of a ~12 us clip entry is the flush the clip forces. Eight
+    rects under one clip cost ~80 us an entry, more than one rect does, which
+    nothing about the stencil explains.
+  - **Text closes the dearest batch.** In `transition-matrix.spec.ts` a
+    batched kind beside one that breaks the run pays 3–5 us a boundary for
+    solid, gradient or image and 8–18 us for text. The additive per-kind model
+    that fit in August no longer does; residuals reach 8 us.
+  - **The flush's GL calls do not account for it.** `flush-anatomy.spec.ts`
+    drops `flushBatch`'s calls one at a time through the real renderer, and the
+    rows move up and down by more than any one call could cost: bind and draw
+    alone ran 2.4–6.3 us across two runs. A ring of 1,024 slots instead of 64
+    changed nothing outside that noise, so it is not slot reuse either. The
+    instrument resolves nothing below ~5 us until whatever varies is found.
+  - Three uniforms are written on every flush whatever their value —
+    `u_synthBold`, `u_samplers`, `u_fieldScale` — plus a white-texture bind and
+    two `activeTexture` resets. Cheap to cache, but unpriced for the reason
+    above.
 
-  What still pays per command, at 512 a frame on the same machine
-  (`tests/perf/transition-matrix.spec.ts`): solid 0.14 us, shader 1.22,
-  pattern 1.60, gradient 1.78, stencil fill 3.22, per-vertex-color 3.87,
-  image 3.6 (7.0 before the quad ring landed), text 6.7–7.1. None of those is
-  the barrier any more, and neither is a *neighbour of a different kind*: that
-  boundary cost 27 us — all of it the solid batch's stalled flush — until the
-  batch started cycling its buffers, and is now 2.5 us for solid and under one
-  for every other kind. See the boundary entry below.
+  These are not comparable with the August figures this entry replaced, which
+  were measured on an M2 Max.
 
-  Text took the same ring on 2026-08-27 and went 6.65 -> 3.3 us, level with an
-  image draw; a slot's buffer grows to the largest run it has seen, and one
-  shared index buffer serves every slot because the quad pattern for N quads
-  is a prefix of the pattern for any larger N. The remaining per-command costs
-  above are otherwise unchanged.
-
-  Images stopped paying per command on 2026-09-05. Consecutive image quads
-  coalesce into one `drawElements`, and `kind: 'sprites'` hands a run over as a
-  `Float32Array` rather than a command object each. Over one atlas at 20,000
-  quads: 51.3 -> 10.6 ms coalescing, -> 0.79 ms packed. A run breaks on
-  MAG_FILTER, clip depth or color matrix; transform, group alpha and
-  per-command opacity ride the vertices, and as of the slot work below so does
-  the bitmap, up to seven of them.
-
-  Text joined that batch on 2026-09-09. Glyphs, the rules under underlined
-  words and tessellated glyph outlines all stage alongside the geometry around
-  them, so a captioned thumbnail is one draw where the caption used to cost two
-  — and `dispatch` no longer flushes ahead of a text command whether or not it
-  draws anything. The batch shader carries the glyph math behind a paint mode
-  and runs it on *every* fragment, glyph or not: `fwidth` in non-uniform control
-  flow is undefined, so the derivative has to be taken before anything selects
-  on the mode. That roughly doubles a fragment that is not a glyph
-  (`tests/perf/fill-rate.spec.ts`) — recorded here as 1.4% when text landed,
-  which was the instrument and not the shader: the control gated its glyph math
-  on a factor the compiler folds to zero and then deletes the math behind, so it
-  timed `plain` against `plain`. Fill is not what a wall is bound by, so the
-  decision stands; a fill-heavy scene pays more for text than this entry said.
-
-  **The cost of folding text in was the vertex, and packing is what paid it.**
-  The first cut gave the vertex a paint mode and a bold threshold of its own,
-  and that measured 9% slower at the densest wall rung — 1.78 ms against 1.63
-  for 7,500 commands, ABBA in one sitting, with the pure-rect column showing the
-  same shape. The batch exists to make one buffer write a frame cheap, so a
-  float only glyphs read still widens the write for every rect and quad beside
-  them. Slot and mode are both small enumerations, so `slot + 8 * mode` fits in
-  the float `a_texSlot` already was; the threshold went back to a uniform, which
-  breaks a run where a faked bold meets text that is not. Re-measured the same
-  way, the rect column is at parity (0.56 / 0.57 against 0.53 / 0.57) and
-  wall-1x sits a few percent above baseline, inside the spread each variant
-  showed against itself.
-
-  What a run no longer breaks on: a second text color in a paragraph, a
-  decoration whose fill differs from its glyphs, and the difference between a
-  baked MSDF atlas and the runtime canvas bake. A font atlas takes a texture
-  slot in the same list bitmaps take, so seven textures in a run is now seven of
-  either kind.
-
-  **Linear gradients joined the batch on 2026-09-10, on a ramp atlas.** Every
-  baked ramp is a row of one texture (`cache/GradientRampAtlas.ts`) rather than
-  a texture of its own, so every gradient in a frame shares one texture slot
-  instead of taking one each — which is the thing that made a gradient
-  unbatchable at all. The atlas doubles from 16 rows to 1024 and recycles the
-  least recently used row past that, which also bounds an animating gradient:
-  the old cache grew a GL texture per frame for one and freed none.
-
-  A linear gradient's ramp position is affine in position, so a vertex carries
-  it and the rasterizer's interpolation across a triangle is exact. That makes
-  such a fill a textured quad off the atlas — the plain paint mode, `a_uv =
-  (ramp position, row)`, white vertices carrying its opacity — and it cost no
-  paint mode, no vertex float and no line of shader. Fills, stroke ribbons and
-  glyph-outline meshes all take it.
-
-  The trap it carries: a staged vertex names its row by where the row sits, so
-  an atlas that grows or recycles a row repaints geometry already staged.
-  `wouldReshape` is asked before the bake and the run flushed if the answer is
-  yes — asking afterwards is too late.
-
-  **The measurement to quote is the mixing, not the per-command cost.** Three
-  runs of `tests/perf/transition-matrix.spec.ts` in one sitting put 512
-  alternating solids and gradients at 0.35 / 0.40 / 0.50 ms a frame against
-  0.51 / 0.75 / 0.78 for 512 gradients alone — so a solid beside a gradient
-  costs nothing, which is the claim. That spread is ~50% on an unchanged
-  fixture, wide enough that a per-command before-and-after does not resolve
-  against it; the draw counts in `drawBatch.test.ts` are the exact evidence.
-
-  Gradient fills also pick up the group color matrix, which `gradFill` was the
-  only paint program not to apply. The batch program applies it to everything
-  in a run, so without this a linear gradient and a radial one under the same
-  group would have disagreed.
-
-  **Radial and conic followed the same day.** Their ramp position is not affine,
-  but the coordinate they need is, so a vertex carries a gradient-space point in
-  `a_uv` and its atlas row in `a_post`, and the shader takes a `length` or an
-  `atan` of it. Both sit behind a branch on the paint mode, which is legal where
-  it would not be around the glyph math: the mode is a flat varying, so every
-  fragment of a quad takes the same arm, and neither arm holds a derivative.
-
-  **The branch carries the sample, not just the coordinate, and that is worth
-  65% of a fragment.** Selecting a coordinate and then sampling once is a
-  texture read the hardware cannot schedule against a varying; splitting the
-  fetch across the two arms gives every non-gradient fragment its plain read
-  back. Measured against the same shader without the branch at all: +65.1% one
-  way, +4.9% the other (`tests/perf/fill-rate.spec.ts`). Step 4 of
-  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md` is now closed.
-
-  Solid geometry and image quads share that batch as of 2026-09-09
-  (`renderer/drawBatch.ts`). They used to be exclusive — staging a solid
-  drained the image run and staging an image drained the solid one — so a wall
-  of thumbnails, which is a ground rect under an atlas quad per cell, paid a
-  flush per command however well each half batched on its own. Measured over a
-  viewport-filling grid of those cells (`tests/perf/atlas-wall.spec.ts`): 600
-  commands 2.83 -> 0.10 ms, 1,650 11.37 -> 0.20, 5,400 40.50 -> 0.58, 15,000
-  126.15 -> 1.50. Draw calls 15,000 -> 2, the second only because the run
-  crosses the per-flush vertex cap.
-
-  **Every vertex names the texture it samples** (`a_texSlot`, slot 0 the white
-  texel). The first cut had solids carrying the white texel's *UV* while the
-  flush bound the run's bitmap, so every ground rect beside an atlas quad drew
-  multiplied by that atlas's middle texel — white grounds came out olive, and
-  no baseline saw it because in every demo the quad covers its ground.
-  `tests/visual/batch-pixels.spec.ts` reads the framebuffer channel by channel
-  and is the gate for that whole class.
-
-  Slots also let one run hold seven bitmaps rather than one, so a document with
-  a handful of loose images stops breaking its run per bitmap. The run still
-  breaks on an eighth, and on one bitmap wanted at two MAG_FILTERs — texture
-  state, not unit state. The fragment shader unrolls a compare per slot because
-  GLSL ES 3.0 will not index a sampler array with a variable, and the arms cost
-  nothing measurable: at 15,000 commands a two-slot chain and an eight-slot one
-  are the same, and the whole change measures 1.85 -> 1.95 ms against its own
-  parent run back to back.
-
-  Read those two against each other, not against the 1.50 above: the same
-  unchanged tree measured 1.85 on the later day. These absolutes drift by
-  around a quarter between sessions on one machine.
-
-  **There is no step in this at a thousand commands.** A consumer measuring the
-  same wall found per-command cost flat at ~1.3 us up to ~800 and flat at ~7.3
-  past ~1,400, and read the step as a batch or cache limit being crossed. It
-  was the ladder: the rungs below it drew cells the atlas had no tile for,
-  which are solid fills and batched, and the rungs above drew sprites, which
-  interleaved with their grounds and did not. The two regimes weasel had are
-  exactly those two numbers. `atlas-wall.spec.ts` walks the same cell sizes with
-  the sampling held fixed and is flat across the whole ladder.
-
-  **`sampling: 'nearest'` is free on our sheets and is not free on a big one.**
-  `atlas-wall.spec.ts` prices both filters at every rung and finds no
-  difference, which agrees with the reasoning: `GLImageCache` pins MIN_FILTER
-  to LINEAR and generates no mipmaps on the screen path, so `sampling` moves
-  MAG_FILTER alone and a minified draw should never read it. A consumer
-  measuring the same shape on a 12MB sheet gets nearest costing up to 8x
-  linear, and the ratio tracks minification exactly — 8.11 at 2:1, 5.98 at
-  1.33:1, 1.08 at 1:1, 1.14 magnified — vanishing the moment the draw stops
-  minifying, and inverting to the ordinary expectation on their small sheet.
-
-  Our sheets are 16x16 tiles, so the largest is about 3MB. Theirs is 5652px
-  square — **122MB resident**, forty times ours, not four; the 12MB first
-  reported was the compressed webp on the wire. A texture that size against a
-  cache hierarchy is why 3MB may see nothing where 122MB does not fit.
-
-  **One redundant write is already gone.** `flushBatch` re-asserted MAG_FILTER
-  on every flush for every slot, and filtering is state on the texture object,
-  so most of those were writes to a live texture for no reason.
-  `GLImageCache.setMagFilter` now skips a value the texture already carries.
-  That fits the shape of their measurement — their linear pass re-asserted the
-  upload default while their nearest pass changed state on every draw — but it
-  does not explain it: their control is the pre-batch build, which set the
-  filter per *command*, and the ratio they see tracks minification rather than
-  command count. So it is a fix, not the answer.
-
-  What is left of the fork: either MIN_FILTER is not what a draw at 2:1 on a
-  122MB texture actually reads, or something else in the renderer still varies
-  with `sampling`. Widening this spec's sheet toward theirs is the experiment.
-  Their column is single runs per rung on a box that had a fleet job on it all
-  evening — believe the shape, which lands exactly at 1:1 and is not something
-  contention produces, and not the second digit.
-
-  The rest of the plan — one program plus atlases — is in
-  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a
-  two-phase dispatch split that would make it tractable.
+- **(P3) `sampling: 'nearest'` costs up to 8x on a 122MB sheet.** A consumer
+  drawing a 5652px atlas sees nearest cost 8.11x linear at 2:1 minification,
+  5.98x at 1.33:1, 1.08x at 1:1 and 1.14x magnified. `atlas-wall.spec.ts` finds
+  no difference on our sheets, the largest about 3MB, and `GLImageCache` pins
+  MIN_FILTER to LINEAR with no mipmaps, so `sampling` moves MAG_FILTER alone and
+  a minified draw should never read it. Either MIN_FILTER is not what a draw at
+  2:1 on a texture that size reads, or something else still varies with
+  `sampling`. Widening the spec's sheet toward theirs is the experiment. Their
+  column was single runs on a contended box: trust the shape, which tracks
+  minification exactly, not the second digit.
 
 - **(P3) Whether the batched path costs a co-tenant on the same page.**
   Unverified here, and reported rather than measured. A consumer benchmarking
@@ -1177,61 +1033,3 @@ one dead `const` and four stale disable directives.
   regressions. The shape a gate could take instead: a PR job that runs the
   benchmarks on both revisions and posts the `npm run perf:compare` table as a
   comment without failing the build. Mike's call.
-
-- **(P2) A clipped group costs ~10 us to enter, and the stencil is now the
-  larger half.** `tests/perf/clip-cost.spec.ts` separates entry's two costs by
-  clipping contents that would not have batched anyway: a gradient rect never
-  joins the solid batch, so wrapping one in a clip adds the stencil and nothing
-  else. Per clip entry on an M2 Max via ANGLE — stencil push and pop 5.25 us,
-  whole entry around a solid rect 10.16, so the break is 4.90. A second route
-  agrees: a group carrying a color matrix breaks the run through the same test
-  without touching the stencil, and prices one flush at 4.35 us. Nesting is
-  still free, and eight leaves under one clip instead of one takes the per-leaf
-  figure from 10.2 us to 0.65.
-
-  Those were 64.89 and 54.38 before `SolidBatch` stopped rewriting one pair of
-  buffers on every flush. The driver tracks a write hazard per buffer object,
-  so each write waited on the draw still reading what it was about to
-  overwrite. The batch now cycles a ring of 64 slot-sized buffer sets, plus a
-  4-deep ring of growable ones for flushes past a slot, so a write lands that
-  many draws behind the read that hazards it.
-
-  What is left is not the draw. `tests/perf/flush-anatomy.spec.ts` reproduces
-  the flush's call sequence over the same ring and removes one GL call per row,
-  so adjacent rows differ by that call's cost, against a 0.34 us floor for
-  bind-and-draw alone. The index upload and the `u_color` / `u_alpha` writes
-  are now skipped when the GPU already holds those bytes (a ring slot remembers
-  its index pattern; both uniforms go through `UploadedUniforms`), which took a
-  flush from 5.39 to 3.22 us and a clip entry from 12.47 to 9.53 in one A/B.
-  The vertex `bufferSubData`, 1.84 us, is the largest item left — the one thing
-  a flush exists to do — and text is the bigger target now (see the boundary
-  entry below).
-
-- **(P2) A boundary between two command kinds costs 0.3–2.5 us, and solid is
-  the expensive one.** `tests/perf/transition-matrix.spec.ts` prices each
-  ordered pair of command kinds: a frame alternating A and B, minus half of
-  each kind's own frame, over the boundaries between them. Fitting the matrix
-  to `S(A,B) = f(A) + f(B)` leaves residuals inside the noise floor, so a
-  boundary is not a property of the pair — each kind carries its own cost and
-  pays it against any neighbour that is not itself. Those costs, in us per
-  boundary: solid 2.48, clip 0.68, text 0.57, gradient 0.54, stencil 0.54,
-  pattern 0.51, image 0.38, per-vertex-color 0.35, shader 0.28.
-  Repeat-measurement noise on the same cells is 0.02–0.32.
-
-  Solid was 28.37 until the flush stopped stalling (see above), which is what
-  made a mixed document cost several times the sum of its parts. It is still
-  the highest of the nine, and still one flush: 512 rects each broken out of
-  the run are 2.5 ms a frame against 0.06 for 512 unbroken ones, where the same
-  frame was 28.3 ms.
-
-  `frame-budget.spec.ts`'s `mixed-doc` row moved with it, measured by running
-  that spec twice over the same tree with only `solidBatch.ts` swapped: 3,232
-  document elements in a 16.7 ms frame before, 8,320 after. Against the cost
-  its element mix predicts from the single-kind rows, the row was 3.41x and is
-  now 1.37x — so a document interleaving kinds is no longer several times the
-  sum of its parts. Every single-kind row is unchanged within noise; the two
-  that moved besides this one are the clipped groups, 6.4x and 3.5x.
-
-  **Text is what is left.** At 15% of the mix and 6.5 us a label it contributes
-  more of the mixed row than everything else together, which is the same
-  per-draw allocation the transition entry above names.

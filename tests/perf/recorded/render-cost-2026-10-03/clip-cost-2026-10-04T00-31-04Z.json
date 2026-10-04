@@ -1,0 +1,237 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "clip-cost",
+  "git": {
+    "sha": "7b370bb058c7e8449674c270d6d0409936a6878d",
+    "dirty": true
+  },
+  "timestamp": "2026-10-04T00:31:04.351Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.10.0",
+    "loadavg": [
+      1.95,
+      2.43,
+      3.03
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "leaves": 512,
+    "leavesPerClipK8": 8,
+    "runs": 3,
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "rect-plain",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.0388,
+          "unit": "ms",
+          "stat": "median of 3 runs",
+          "samples": [
+            0.0425,
+            0.0375,
+            0.0388
+          ]
+        }
+      }
+    },
+    {
+      "id": "rect-clipped",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 6.252,
+          "unit": "ms",
+          "stat": "median of 3 runs",
+          "samples": [
+            8.46,
+            6.252,
+            5.0586
+          ]
+        }
+      }
+    },
+    {
+      "id": "rect-cmbreak",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 8.7525,
+          "unit": "ms",
+          "stat": "median of 3 runs",
+          "samples": [
+            5.4265,
+            12.8313,
+            8.7525
+          ]
+        }
+      }
+    },
+    {
+      "id": "rect-clipped-k8",
+      "params": {
+        "groups": 64
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 5.1987,
+          "unit": "ms",
+          "stat": "median of 3 runs",
+          "samples": [
+            5.1987,
+            2.1275,
+            5.9938
+          ]
+        }
+      }
+    },
+    {
+      "id": "pat-plain",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.3,
+          "unit": "ms",
+          "stat": "median of 3 runs",
+          "samples": [
+            0.3162,
+            0.2938,
+            0.3
+          ]
+        }
+      }
+    },
+    {
+      "id": "pat-clipped",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.7275,
+          "unit": "ms",
+          "stat": "median of 3 runs",
+          "samples": [
+            0.7525,
+            0.7075,
+            0.7275
+          ]
+        }
+      }
+    },
+    {
+      "id": "pat-cmbreak",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.5462,
+          "unit": "ms",
+          "stat": "median of 3 runs",
+          "samples": [
+            0.5513,
+            0.5287,
+            0.5462
+          ]
+        }
+      }
+    },
+    {
+      "id": "pat-clipped-k8",
+      "params": {
+        "groups": 64
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.3275,
+          "unit": "ms",
+          "stat": "median of 3 runs",
+          "samples": [
+            0.3275,
+            0.3275,
+            0.3225
+          ]
+        }
+      }
+    },
+    {
+      "id": "stencil push+pop",
+      "metrics": {
+        "perClip": {
+          "value": 0.8349609375000001,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, pat-clipped - pat-plain"
+        }
+      }
+    },
+    {
+      "id": "clip entry",
+      "metrics": {
+        "perClip": {
+          "value": 12.1376953125,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-clipped - rect-plain"
+        }
+      }
+    },
+    {
+      "id": "clip entry: batch break",
+      "metrics": {
+        "perClip": {
+          "value": 11.302734375,
+          "unit": "us",
+          "stat": "clip entry - stencil push+pop"
+        }
+      }
+    },
+    {
+      "id": "solid-batch flush",
+      "metrics": {
+        "perFlush": {
+          "value": 16.559765624999997,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-cmbreak - pat-cmbreak, net of plain"
+        }
+      }
+    },
+    {
+      "id": "clip entry at 8 leaves",
+      "metrics": {
+        "perClip": {
+          "value": 80.56562499999998,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-clipped-k8 - rect-plain"
+        }
+      }
+    },
+    {
+      "id": "stencil at 8 leaves",
+      "metrics": {
+        "perClip": {
+          "value": 0.35156250000000033,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, pat-clipped-k8 - pat-plain"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,280 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "flush-anatomy",
+  "git": {
+    "sha": "7b370bb058c7e8449674c270d6d0409936a6878d",
+    "dirty": true
+  },
+  "timestamp": "2026-10-04T00:38:08.221Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.10.0",
+    "loadavg": [
+      3.94,
+      3.25,
+      3.19
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "flushesPerFrame": 512,
+    "runs": 3,
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "flush",
+      "params": {
+        "drops": "— the full flushBatch sequence"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 13.6353515625,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            13.6353515625,
+            10.021875,
+            16.69921875
+          ]
+        }
+      }
+    },
+    {
+      "id": "-unbind",
+      "params": {
+        "drops": "bindVertexArray(null) after the draw"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 6.008203125,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            16.068164062500003,
+            6.008203125,
+            5.517578125
+          ]
+        },
+        "saves": {
+          "value": 7.627148437500001,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-activetex",
+      "params": {
+        "drops": "activeTexture(TEXTURE0), before the binds and after the draw"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 13.06875,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            16.669921875,
+            13.06875,
+            6.965234375
+          ]
+        },
+        "saves": {
+          "value": -7.060546875,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-cliptest",
+      "params": {
+        "drops": "disable(STENCIL_TEST) (applyClipTest at depth 0)"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 8.100390625000001,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            4.99140625,
+            9.365234375,
+            8.100390625000001
+          ]
+        },
+        "saves": {
+          "value": 4.968359374999999,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-samplers",
+      "params": {
+        "drops": "uniform1iv(u_samplers) + uniform2fv(u_fieldScale)"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 8.7474609375,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            8.7474609375,
+            8.8037109375,
+            5.9326171875
+          ]
+        },
+        "saves": {
+          "value": -0.6470703124999986,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-synthbold",
+      "params": {
+        "drops": "uniform1f(u_synthBold)"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 12.2681640625,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            12.2681640625,
+            10.5052734375,
+            15.7787109375
+          ]
+        },
+        "saves": {
+          "value": -3.5207031250000007,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-colormatrix",
+      "params": {
+        "drops": "the color-matrix uniforms, which are this frame's run-breaker"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 9.5423828125,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            9.5423828125,
+            9.00390625,
+            32.855859374999994
+          ]
+        },
+        "saves": {
+          "value": 2.7257812500000007,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-whitetex",
+      "params": {
+        "drops": "bindTexture(white) to unit 0"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 14.895117187499999,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            14.895117187499999,
+            7.1484375,
+            47.6806640625
+          ]
+        },
+        "saves": {
+          "value": -5.352734374999999,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-useprogram",
+      "params": {
+        "drops": "useProgram"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 6.3232421875,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            6.3232421875,
+            4.157421875,
+            60.15625
+          ]
+        },
+        "saves": {
+          "value": 8.571874999999999,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "-idxupload",
+      "params": {
+        "drops": "the index bufferSubData"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 12.4951171875,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            12.4951171875,
+            9.8267578125,
+            59.765625
+          ]
+        },
+        "saves": {
+          "value": -6.171875,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    },
+    {
+      "id": "bind+draw",
+      "params": {
+        "drops": "the vertex bufferSubData — bind and draw only"
+      },
+      "metrics": {
+        "perFlush": {
+          "value": 6.257421875,
+          "unit": "us",
+          "stat": "median of 3 runs",
+          "samples": [
+            6.257421875,
+            2.370703125,
+            32.7392578125
+          ]
+        },
+        "saves": {
+          "value": 6.2376953125,
+          "unit": "us",
+          "stat": "the row above minus this row, medians"
+        }
+      }
+    }
+  ]
+}
