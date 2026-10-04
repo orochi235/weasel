@@ -194,11 +194,19 @@ teitou against blits `eec0b21`, ms per frame in two consecutive 2.5 s windows ea
 
 Under continuous churn on blits the frame climbs from 0.85 ms and levels off near 1.08 after about
 10k replacements; today's stays near 0.19. What grows in a profile is per-call work: `tick`,
-`tickAll`, the caller's `interpolate` and `onTick` each about double, blits' `writeLater` triples,
-and blits' folding (`runCrowd`, `pullRun`) does not move. The junk row shows that scattering the
-animations' objects through memory doubles both animators' frames. That a replaced animation lands
-scattered on blits and not on today's animator is an inference from the profile, not measured.
-Keeping the codec's slots in join order instead of swap-removing was tried, and was worse.
+`tickAll`, the caller's `interpolate` and `onTick` each about double, and blits' `writeLater`
+triples. The junk row shows that scattering the animations' objects through memory doubles both
+animators' frames. Keeping the codec's slots in join order instead of swap-removing was tried, and
+was worse.
+
+Part of it is the JIT's state, which is per process: a fresh animator started after another one
+churned runs 0.64–0.65 ms against 0.50 for one started in a fresh process; today's animator shows
+nothing of the kind (0.17 against 0.19). blits found one cause on its side, voices fading costing
+its row loop the inlining of each row's ease, and fixed it in `2ad0063`; against that build, plain
+frames run 0.48 ms as started and 0.75–0.79 after every animation was replaced once. Weasel's own
+functions inline the same way before and after churn. The one difference
+`--trace-generalization` shows in fields the animator touches is a `from`/`to` field going from one
+known object layout to any value; whose objects those are is not yet established.
 
 **Before merge:** blits has to publish `tween`, `pull`, per-subject `fade` and the `5a514a3` fixes,
 and core's exact pin on `@msb235/blits` moves to that release. Until then the branch runs against a
