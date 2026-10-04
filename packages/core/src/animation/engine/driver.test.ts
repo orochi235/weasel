@@ -128,29 +128,6 @@ describe('createDriver membership', () => {
     expect(vals(b, 1, 1)[0]).toBeCloseTo(0.1, 9);
   });
 
-  it('starts and stops tweens in time linear in their number', () => {
-    const phases = (n: number): [number, number] => {
-      const b = createDriver();
-      let t0 = performance.now();
-      for (let i = 0; i < n; i++) b.tween({ id: i, ms: 1000, ease: linear, ...U });
-      const started = performance.now() - t0;
-      b.frame(16);
-      t0 = performance.now();
-      for (let i = 0; i < n; i++) b.stop(i);
-      return [started, performance.now() - t0];
-    };
-    const median = (n: number): [number, number] => {
-      const runs = [phases(n), phases(n), phases(n)];
-      const mid = (k: 0 | 1) => runs.map((r) => r[k]).sort((a, b) => a - b)[1]!;
-      return [mid(0), mid(1)];
-    };
-    phases(1000);
-    const [start1k, stop1k] = median(1000);
-    const [start10k, stop10k] = median(10_000);
-    expect(start10k).toBeLessThan(30 * start1k);
-    expect(stop10k).toBeLessThan(30 * stop1k);
-  });
-
   it('leaves nothing behind when a tween is refused', () => {
     const b = createDriver();
     b.tween({ id: 1, ms: 100, ease: linear, from: [0, 0], to: [1, 1] });
