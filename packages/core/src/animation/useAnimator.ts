@@ -276,9 +276,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
          *  timeline — which is not a new claim on the key. */
         keepExisting?: boolean;
       };
-    /** Moves a bank subject whose own pause or rate just changed onto a voice of its own. */
-    const soloOf = (a: ActiveAnimation): void => {
-      if (bank.has(a.id)) bank.solo(a.id, a.paused ? 0 : a.timeScale);
+    /** Gives a bank subject the rate its own pause and time scale now ask for. */
+    const rateOf = (a: ActiveAnimation): void => {
+      if (bank.has(a.id)) bank.rate(a.id, a.paused ? 0 : a.timeScale);
     };
 
     const register = (seed: AnimationSeed): AnimationHandle => {
@@ -297,9 +297,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       return {
         id: anim.id,
         cancel: () => retire(anim.id),
-        pause: () => { const a = animations.current.get(anim.id); if (a) { a.paused = true; soloOf(a); } },
-        resume: () => { const a = animations.current.get(anim.id); if (a) { a.paused = false; soloOf(a); } },
-        setTimeScale: (s) => { const a = animations.current.get(anim.id); if (a) { a.timeScale = s; soloOf(a); } },
+        pause: () => { const a = animations.current.get(anim.id); if (a) { a.paused = true; rateOf(a); } },
+        resume: () => { const a = animations.current.get(anim.id); if (a) { a.paused = false; rateOf(a); } },
+        setTimeScale: (s) => { const a = animations.current.get(anim.id); if (a) { a.timeScale = s; rateOf(a); } },
         timeScale: () => animations.current.get(anim.id)?.timeScale ?? 1,
         isPaused: () => animations.current.get(anim.id)?.paused ?? false,
       };
@@ -531,13 +531,13 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       setTimeScale: (s) => { globalTimeScale.current = s; },
       timeScale: () => globalTimeScale.current,
       pauseKey: (key) => {
-        for (const a of animations.current.values()) if (a.cancelKey === key) { a.paused = true; soloOf(a); }
+        for (const a of animations.current.values()) if (a.cancelKey === key) { a.paused = true; rateOf(a); }
       },
       resumeKey: (key) => {
-        for (const a of animations.current.values()) if (a.cancelKey === key) { a.paused = false; soloOf(a); }
+        for (const a of animations.current.values()) if (a.cancelKey === key) { a.paused = false; rateOf(a); }
       },
       setTimeScaleByKey: (key, s) => {
-        for (const a of animations.current.values()) if (a.cancelKey === key) { a.timeScale = s; soloOf(a); }
+        for (const a of animations.current.values()) if (a.cancelKey === key) { a.timeScale = s; rateOf(a); }
       },
       loop: (factory, loopOpts) => createLoop(createSupervisor, factory, loopOpts),
       tweenLoop: (tweenLoopOpts) =>

@@ -28,7 +28,7 @@ export interface Bank {
   retarget(id: number, to: number[] | null): void;
   push(id: number, velocity: number[]): void;
   /** Plays `id` at rate `rate` from where it is, without a jump. */
-  solo(id: number, rate: number): void;
+  rate(id: number, rate: number): void;
   stop(id: number): void;
   /** Whether `id` is one of the bank's subjects. */
   has(id: number): boolean;
@@ -238,7 +238,7 @@ export function createBank(): Bank {
       if (s.spring && !s.patch.read(id)) s.spring.velocity = velocity.slice();
       s.patch.push?.(id, velocity);
     },
-    solo(id, rate) {
+    rate(id, rate) {
       get(id).handle.rate = rate;
     },
     stop,

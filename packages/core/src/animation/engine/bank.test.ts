@@ -58,22 +58,22 @@ describe('createBank', () => {
     expect(() => b.offset(1)).toThrow(/no subject 1/);
   });
 
-  it('solo at rate 0 freezes one tween and not its neighbor', () => {
+  it('rate 0 freezes one tween and not its neighbor', () => {
     const b = createBank();
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.tween({ id: 2, ms: 1000, ease: linear, ...U });
     b.frame(300);
-    b.solo(1, 0);
+    b.rate(1, 0);
     b.frame(300);
     expect(vals(b, 1, 1)[0]).toBeCloseTo(0.3, 9);
     expect(vals(b, 2, 1)[0]).toBeCloseTo(0.6, 9);
   });
 
-  it('solo at rate 2 runs one tween at double speed from where it was', () => {
+  it('rate 2 runs one tween at double speed from where it was', () => {
     const b = createBank();
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.frame(200);
-    b.solo(1, 2);
+    b.rate(1, 2);
     b.frame(100);
     expect(vals(b, 1, 1)[0]).toBeCloseTo(0.4, 9);
   });
@@ -265,21 +265,21 @@ describe('createBank springs', () => {
     expect(b.motion(1)).toEqual({ value: [1, 2], velocity: [3, 4] });
   });
 
-  it('solos a spring no frame has read and holds it at rate 0', () => {
+  it('holds a spring no frame has read at rate 0', () => {
     const b = createBank();
     b.spring({ id: 1, axes: 1, from: [1], to: [10], velocity: [0], ...SPRING });
-    b.solo(1, 0);
+    b.rate(1, 0);
     b.frame(500);
     expect(b.motion(1).value[0]).toBeCloseTo(1, 9);
   });
 
-  it('solos a moving spring without a jump and holds it at rate 0', () => {
+  it('holds a moving spring at rate 0 without a jump', () => {
     const b = createBank();
     b.spring({ id: 1, axes: 1, from: [0], to: [10], velocity: [0], ...SPRING });
     b.spring({ id: 2, axes: 1, from: [0], to: [10], velocity: [0], ...SPRING });
     b.frame(100);
     const before = b.motion(1);
-    b.solo(1, 0);
+    b.rate(1, 0);
     b.frame(300);
     expect(b.motion(1).value[0]).toBeCloseTo(before.value[0]!, 9);
     expect(b.motion(2).value[0]).toBeGreaterThan(before.value[0]!);
@@ -337,11 +337,11 @@ describe('createBank springs', () => {
     expect(b.motion(1).value[0]).toBeCloseTo(50, 3);
   });
 
-  it('keeps a solo spring solo, at its rate, across a retarget', () => {
+  it('keeps a spring at its rate across a retarget', () => {
     const b = createBank();
     b.spring({ id: 1, axes: 1, from: [0], to: [10], velocity: [0], ...SPRING });
     b.frame(50);
-    b.solo(1, 0);
+    b.rate(1, 0);
     const before = b.motion(1);
     b.retarget(1, null);
     b.frame(500);
@@ -380,16 +380,16 @@ describe('createBank reusing ids', () => {
   });
 });
 
-describe('createBank solo', () => {
-  it('changes only the rate on a second solo', () => {
+describe('createBank rate', () => {
+  it('changes the rate again on a second call', () => {
     const b = createBank();
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.frame(200);
-    b.solo(1, 0);
+    b.rate(1, 0);
     b.frame(100);
     expect(vals(b, 1, 1)[0]).toBeCloseTo(0.2, 9);
     expect(b.voiceCount()).toBe(1);
-    b.solo(1, 1);
+    b.rate(1, 1);
     b.frame(100);
     expect(vals(b, 1, 1)[0]).toBeCloseTo(0.3, 9);
     expect(b.voiceCount()).toBe(1);
