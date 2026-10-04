@@ -565,6 +565,20 @@ describe('useAnimator.physics', () => {
     }
   });
 
+  it('a numeric spring lands where the closed form puts it, at any frame rate', () => {
+    const run = (step: number): number => {
+      const clock = makeClock();
+      const { result } = renderHook(() => useAnimator(clock));
+      let last = 0;
+      act(() => { result.current.spring<number>({ from: 0, to: 100, stiffness: 170, damping: 26, mass: 1, onTick: (v) => { last = v; } }); });
+      act(() => clock.advance(0));
+      // 231 ms is a whole number of frames at either rate.
+      for (let t = 0; t < 231; t += step) act(() => clock.advance(step));
+      return last;
+    };
+    expect(run(7)).toBeCloseTo(run(33), 6);
+  });
+
   it('with `to: null` behaves as exponential decay', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));

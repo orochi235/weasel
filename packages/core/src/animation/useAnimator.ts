@@ -419,19 +419,39 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       let velocity: T = o.velocity ?? scale(o.from, 0);
       let lastTime: number | null = null;
 
+      // blits' closed forms need positive damping and mass, and a spring with a target needs
+      // stiffness; decay's handle never takes a target.
+      const solvable = damping > 0 && mass > 0 && (kBase > 0 || kind === 'decay');
+      const fromAxes = solvable ? axesOf(o.from) : null;
+      const sameShape = (v: T | null | undefined): boolean => v == null || axesOf(v)?.shape === fromAxes!.shape;
+      const axes = fromAxes && sameShape(o.to) && sameShape(o.velocity) ? fromAxes : null;
+      if (axes) {
+        // Seeds the bank's clock where `register` seeds the call's, so both charge the same wait.
+        if (bankFrameT.current == null) bankFrameT.current = now();
+        // Started ahead of `register`, whose `start` listeners may already cancel it.
+        bank.spring({
+          id, axes: axes.count,
+          from: axes.to(o.from),
+          to: o.to == null ? null : axes.to(o.to),
+          velocity: o.velocity == null ? new Array<number>(axes.count).fill(0) : axes.to(o.velocity),
+          stiffness: kBase, damping, mass,
+        });
+      }
+
       const baseHandle = register({
         id,
         kind,
         cancelKey: o.cancelKey,
         label: o.label,
         tick(nowMs) {
-          if (tripwire()) return true;
+          if (tripwire()) { bank.stop(id); return true; }
           if (lastTime == null) {
             lastTime = nowMs;
             // Already-at-rest short-circuit: decay-mode (target == null)
             // with starting velocity below threshold should complete
             // immediately rather than emit a tick and wait a frame.
             if (target == null && magnitude(velocity) < restThreshold) {
+              bank.stop(id);
               reportEnd(id);
               o.onDone?.();
               return true;
@@ -439,13 +459,18 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             o.onTick(value);
             return false;
           }
-          const dt = Math.min(0.064, (nowMs - lastTime) / 1000);
+          if (axes) {
+            const m = bank.motion(id);
+            value = axes.from(m.value);
+            velocity = axes.from(m.velocity);
+          } else {
+            // Semi-implicit Euler, for a T blits cannot move as axes.
+            const dt = Math.min(0.064, (nowMs - lastTime) / 1000);
+            const next = stepSpring({ add, subtract, scale }, value, velocity, target, kBase, damping, mass, dt);
+            value = next.value;
+            velocity = next.velocity;
+          }
           lastTime = nowMs;
-          // Semi-implicit Euler. When target == null, stiffness == 0 ⇒
-          // no spring force; only damping acts on velocity (exponential decay).
-          const next = stepSpring({ add, subtract, scale }, value, velocity, target, kBase, damping, mass, dt);
-          value = next.value;
-          velocity = next.velocity;
           o.onTick(value);
           const velRested = magnitude(velocity) < restThreshold;
           const posRested = target == null
@@ -453,6 +478,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             : magnitude(subtract(value, target)) < restThreshold;
           if (velRested && posRested) {
             if (target != null) o.onTick(target);
+            bank.stop(id);
             reportEnd(id);
             o.onDone?.();
             return true;
@@ -463,8 +489,14 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
       const handle: PhysicsHandle<T> = {
         ...baseHandle,
-        setTarget: (newTo: T | null) => { target = newTo; },
-        setVelocity: (v: T) => { velocity = v; },
+        setTarget: (newTo: T | null) => {
+          target = newTo;
+          if (axes && bank.has(id)) bank.retarget(id, newTo == null ? null : axes.to(newTo));
+        },
+        setVelocity: (v: T) => {
+          velocity = v;
+          if (axes && bank.has(id)) bank.push(id, axes.to(v));
+        },
       };
       return handle;
     };
