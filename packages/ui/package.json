@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/ui",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "UI chrome primitives for weasel apps (properties panel, etc.)",
   "license": "MIT",
   "type": "module",
@@ -23,17 +23,17 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/font": "1.7.3",
-    "@weasel-js/modes": "1.7.3",
-    "@weasel-js/quantity": "1.7.3",
-    "@weasel-js/svg": "1.7.3",
-    "@weasel-js/theme": "1.7.3",
+    "@weasel-js/font": "1.7.4",
+    "@weasel-js/modes": "1.7.4",
+    "@weasel-js/quantity": "1.7.4",
+    "@weasel-js/svg": "1.7.4",
+    "@weasel-js/theme": "1.7.4",
     "react-aria-components": "^1.5.0"
   },
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18",
-    "@weasel-js/core": "1.7.3"
+    "@weasel-js/core": "1.7.4"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
@@ -61,7 +61,7 @@
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/cursor": "1.7.3",
-    "@weasel-js/geom": "1.7.3"
+    "@weasel-js/cursor": "1.7.4",
+    "@weasel-js/geom": "1.7.4"
   }
 }

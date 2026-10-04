@@ -1,5 +1,11 @@
 # @weasel-js/theme
 
+## 1.7.4
+
+### Patch Changes
+
+- @weasel-js/paint@1.7.4
+
 ## 1.7.3
 
 ### Patch Changes

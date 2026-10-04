@@ -1,5 +1,12 @@
 # @weasel-js/kernel3d
 
+## 1.7.4
+
+### Patch Changes
+
+- @weasel-js/core@1.7.4
+  - @weasel-js/geom@1.7.4
+
 ## 1.7.3
 
 ### Patch Changes

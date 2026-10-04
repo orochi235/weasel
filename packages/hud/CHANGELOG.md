@@ -1,5 +1,16 @@
 # @weasel-js/hud
 
+## 1.7.4
+
+### Patch Changes
+
+- @weasel-js/core@1.7.4
+  - @weasel-js/font@1.7.4
+  - @weasel-js/geom@1.7.4
+  - @weasel-js/loupe@1.7.4
+  - @weasel-js/paint@1.7.4
+  - @weasel-js/theme@1.7.4
+
 ## 1.7.3
 
 ### Patch Changes
