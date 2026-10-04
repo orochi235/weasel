@@ -196,6 +196,19 @@ function cueTweenMotion(m: Mix<string, Delta>, c: Case): void {
   m.cue({ patch: tweenMotion!('pos', { from: at(c.from), to: at(c.to), ms: LONG, ease: EASE }), loop: false });
 }
 
+/** A `tween` motion voice per animation, each naming its one node. */
+function cueTweenMotionPerCall(m: Mix<string, Delta>, c: Case): void {
+  c.ids.forEach((id, i) => {
+    const a = c.from[i]!;
+    const b = c.to[i]!;
+    m.cue({
+      patch: tweenMotion!('pos', { from: () => [a.x, a.y], to: () => [b.x, b.y], ms: LONG, ease: EASE }),
+      subjects: [id],
+      loop: false,
+    });
+  });
+}
+
 const cueSpringPerVoice = (how: Reach) => (m: Mix<string, Delta>, c: Case): void => {
   c.ids.forEach((id, i) => {
     const a = c.from[i]!;
@@ -249,27 +262,9 @@ function agree(label: string, a: Pt[], b: Pt[], tol: number): void {
 
 // --- groups --------------------------------------------------------------
 
-type Cue = (m: Mix<string, Delta>, c: Case) => void;
-
-const KINDS = [
-  {
-    kind: 'tween', today: startTodayTweens, perVoice: cueTweenPerVoice,
-    oneVoice: [
-      ['one voice', cueTweenOneVoice],
-      ...(tweenMotion ? [['one tween voice', cueTweenMotion] as const] : []),
-    ] as [string, Cue][],
-  },
-  {
-    kind: 'spring', today: startTodaySprings, perVoice: cueSpringPerVoice,
-    oneVoice: [['one voice', cueSpringOneVoice]] as [string, Cue][],
-  },
-] as const;
-
-/** The `target` form only where its setup, which grows with N², finishes in a run. */
-const TARGET_MAX = 1000;
+const HAS_PULL = typeof (mix<string, Delta>(KIT) as unknown as { pull?: Pull }).pull === 'function';
 /** blits before `subjects` (0.2.1) ignores it and reaches every node; skip
  *  the rows there. */
-const HAS_PULL = typeof (mix<string, Delta>(KIT) as unknown as { pull?: Pull }).pull === 'function';
 const HAS_SUBJECTS = (() => {
   const m = mix<string, Delta>(KIT);
   m.sync(0);
@@ -277,6 +272,31 @@ const HAS_SUBJECTS = (() => {
   m.sync(FRAME);
   return m.probe('y', { pos: [0, 0] }).pos[0] === 0;
 })();
+
+type Cue = (m: Mix<string, Delta>, c: Case) => void;
+
+const KINDS = [
+  {
+    kind: 'tween', today: startTodayTweens, perVoice: cueTweenPerVoice,
+    oneVoice: [
+      ['one voice', cueTweenOneVoice],
+      ...(tweenMotion ? [
+        ['one tween voice', cueTweenMotion] as const,
+        ['a tween voice per animation', cueTweenMotionPerCall] as const,
+      ] : []),
+    ] as [string, Cue][],
+  },
+  {
+    kind: 'spring', today: startTodaySprings, perVoice: cueSpringPerVoice,
+    oneVoice: [
+      ['one voice', cueSpringOneVoice],
+      ...(HAS_SUBJECTS ? [['a spring voice per animation', cueSpringPerVoice('subjects')] as const] : []),
+    ] as [string, Cue][],
+  },
+] as const;
+
+/** The `target` form only where its setup, which grows with N², finishes in a run. */
+const TARGET_MAX = 1000;
 
 for (const n of [1000, 10000]) {
   for (const k of KINDS) {
