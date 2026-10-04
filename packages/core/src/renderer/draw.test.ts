@@ -538,29 +538,26 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     // a live texture. A consumer's 122MB sheet is where that stops being free.
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
 
-    // Four flushes at one filter: the gradients break the run each time, so the
-    // count is flushes and not commands.
-    const gradient = {
+    // Four image flushes at one filter: per-vertex colors break the run each
+    // time (a gradient no longer does), so the count is flushes and not commands.
+    const breaker = {
       kind: 'path' as const,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 8, height: 8 },
-      fill: {
-        fill: 'linear-gradient' as const,
-        from: { x: 0, y: 0 }, to: { x: 8, y: 8 },
-        stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
-      },
+      fill: { fill: 'solid' as const, color: '#ffffff' },
+      vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
     } as unknown as DrawCommand;
     const img = {
       kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 64, h: 64,
       sampling: 'nearest' as const,
     };
-    // Warm both caches first. Each upload writes its own MAG_FILTER — the
-    // bitmap's and the gradient ramp's — and this test counts every write, so
-    // an unwarmed ramp shows up as a phantom second filter change.
-    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 }, gradient]);
+    // Warm the bitmap's cache first: its upload writes a MAG_FILTER of its own,
+    // which this test would otherwise count as a filter change.
+    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 }, breaker]);
     recorder.reset();
 
-    r.render([img, gradient, img, gradient, img, gradient, img]);
+    r.render([img, breaker, img, breaker, img, breaker, img]);
 
+    expect(recorder.calls.filter((c) => c.name === 'drawElements')).toHaveLength(7);
     const magFilters = recorder.calls
       .filter((c) => c.name === 'texParameteri' && c.args[1] === recorder.gl.TEXTURE_MAG_FILTER)
       .map((c) => c.args[2]);
