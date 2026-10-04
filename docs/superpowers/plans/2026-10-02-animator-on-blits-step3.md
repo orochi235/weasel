@@ -70,7 +70,10 @@ Each is a call the proposal left open. Mike can overturn any of them before Task
 ### Task 1: Pin the blits behaviors the bank relies on
 
 The bank leans on six blits behaviors. Each gets a test against the real package, so a blits
-release that changes one fails here, by name, instead of somewhere in `useAnimator`.
+release that changes one fails here, by name, instead of somewhere in `useAnimator`. Two were
+corrected against blits 3228fa7 on 2026-10-03: a `sum` channel reads 0 where nothing contributes,
+not NaN, and a motion patch's `read(subject)` is undefined until a frame has pulled that subject.
+The bank pulls every subject it runs each frame before anything reads it.
 
 **Files:**
 - Create: `packages/core/src/animation/engine/blitsContract.test.ts`
@@ -90,7 +93,7 @@ describe('blits behaviors the animator bank relies on', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
     const ms = new Map([[1, 1000], [2, 500]]);
-    const tw = tween<number, U>('u', { from: 0, to: 1, ms: (id) => ms.get(id)!, ease: linear, ...U });
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: (id) => ms.get(id)!, ease: linear });
     m.cue({ patch: tw });
     tw.to(1, 1, 0);
     tw.to(2, 1, 0);
@@ -101,34 +104,35 @@ describe('blits behaviors the animator bank relies on', () => {
     expect(cols.u[1]).toBeCloseTo(0.5, 9);
   });
 
-  it('pull fills a subject no voice reaches with NaN', () => {
+  it('pull reads a sum channel no voice reaches as 0', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
-    const cols = { u: new Float64Array(1) };
+    const cols = { u: new Float64Array([42]) };
     m.pull([7], cols);
-    expect(Number.isNaN(cols.u[0])).toBe(true);
+    expect(cols.u[0]).toBe(0);
   });
 
   it('fade({ subject, over: 0 }) takes one subject off a voice and leaves the rest', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
-    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear, ...U });
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear });
     const h = m.cue({ patch: tw });
     tw.to(1, 1, 0);
     tw.to(2, 1, 0);
     m.sync(100);
     h.fade({ subject: 1, over: 0 });
     m.sync(200);
-    const cols = { u: new Float64Array(2) };
+    const cols = { u: new Float64Array([42, 42]) };
     m.pull([1, 2], cols);
-    expect(Number.isNaN(cols.u[0])).toBe(true);
+    expect(cols.u[0]).toBe(0);
+    expect(h.weightOf(1)).toBe(0);
     expect(cols.u[1]).toBeCloseTo(0.2, 9);
   });
 
   it('a voice seeked to an elapsed time reads where the shared voice would', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
-    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear, ...U });
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear });
     const h = m.cue({ patch: tw, subjects: [3] });
     tw.to(3, 1, 0);
     m.sync(100);
@@ -142,7 +146,7 @@ describe('blits behaviors the animator bank relies on', () => {
   it('rate 0 holds a voice still', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
-    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear, ...U });
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear });
     const h = m.cue({ patch: tw });
     tw.to(1, 1, 0);
     m.sync(300);
@@ -153,13 +157,15 @@ describe('blits behaviors the animator bank relies on', () => {
     expect(cols.u[0]).toBeCloseTo(0.3, 9);
   });
 
-  it('a spring carries position and velocity through to() and push()', () => {
+  it('a spring carries position and velocity through to() and push(), once a frame has met it', () => {
     const m = mix<number, P>(kit<P>({ p: vec(2, sum()) }));
     m.sync(0);
     const sp = spring<number, P, number[]>('p', { from: [0, 0], to: [10, 0], stiffness: 170, damping: 26, mass: 1 });
     m.cue({ patch: sp });
     sp.to(1, [10, 0], 0);
     m.sync(100);
+    expect(sp.read(1)).toBeUndefined();
+    m.pull([1], { p: new Float64Array(2) });
     const before = sp.read(1)!;
     sp.to(1, [0, 10]);
     const after = sp.read(1)!;
