@@ -4,7 +4,7 @@ import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import { easeOut, SPRING_PRESETS, resolveEasing } from '@weasel-js/geom';
 import { createLoop, createTweenLoop } from './loop';
 import { stepSpring } from './engine/integrator';
-import { createDriver } from './engine/driver';
+import { createCodec } from './engine/codec';
 import { axesOf } from './engine/axes';
 import { createStagger, type StaggerTimers } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
@@ -71,9 +71,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
    * write through to the base adapter rather than schedule a new tween.
    */
   const tickDepth = useRef(0);
-  /** The timestamp the driver last advanced to. Null after the page was hidden and while nothing
-   *  runs, so neither gap is charged to the driver; a tween starting then seeds it from `now()`. */
-  const driverFrameT = useRef<number | null>(null);
+  /** The timestamp the codec last advanced to. Null after the page was hidden and while nothing
+   *  runs, so neither gap is charged to the codec; a tween starting then seeds it from `now()`. */
+  const codecFrameT = useRef<number | null>(null);
   const globalTimeScale = useRef(1);
   const globalPaused = useRef(false);
   const colorOverrides = useRef<ColorOverrideRegistry>(new ColorOverrideRegistry());
@@ -96,7 +96,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       // animation's last timestamp makes the resuming frame's `realDt` zero.
       onResume: () => {
         for (const anim of animations.current.values()) anim.lastRealNow = null;
-        driverFrameT.current = null;
+        codecFrameT.current = null;
       },
     },
   );
@@ -171,7 +171,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     };
 
     const hub = new AnimatorEventHub();
-    const driver = createDriver();
+    const codec = createCodec();
     const infoOf = (a: ActiveAnimation): AnimationInfo => {
       if (!a.info) {
         const info: { -readonly [K in keyof AnimationInfo]: AnimationInfo[K] } = { id: a.id, kind: a.kind };
@@ -198,7 +198,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       const a = animations.current.get(id);
       if (!a) return;
       a.onCancel?.();
-      driver.stop(id);
+      codec.stop(id);
       animations.current.delete(id);
       fireCompletion(id);
       if (!hub.watched || a.ended) return;
@@ -209,9 +209,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const tickAll = (t: number): void => {
       const finished: ActiveAnimation[] = [];
-      const frameDt = driverFrameT.current == null ? 0 : Math.max(0, t - driverFrameT.current);
-      driverFrameT.current = t;
-      driver.frame(frameDt * (globalPaused.current ? 0 : globalTimeScale.current));
+      const frameDt = codecFrameT.current == null ? 0 : Math.max(0, t - codecFrameT.current);
+      codecFrameT.current = t;
+      codec.frame(frameDt * (globalPaused.current ? 0 : globalTimeScale.current));
       for (const anim of animations.current.values()) {
         // `t` comes from the frame clock; `lastRealNow` is seeded at register()
         // from `now()`. The two share a time origin in a browser, where the rAF
@@ -252,7 +252,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         try { sub(); } catch (err) { console.error('useAnimator: onTick subscriber threw', err); }
       }
       if (animations.current.size > 0) frameLoopRef.current.request();
-      else driverFrameT.current = null;
+      else codecFrameT.current = null;
     };
 
     const ensureLoop = (): void => {
@@ -276,9 +276,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
          *  timeline — which is not a new claim on the key. */
         keepExisting?: boolean;
       };
-    /** Gives a driver subject the rate its own pause and time scale now ask for. */
+    /** Gives a codec subject the rate its own pause and time scale now ask for. */
     const rateOf = (a: ActiveAnimation): void => {
-      if (driver.has(a.id)) driver.rate(a.id, a.paused ? 0 : a.timeScale);
+      if (codec.has(a.id)) codec.rate(a.id, a.paused ? 0 : a.timeScale);
     };
 
     const register = (seed: AnimationSeed): AnimationHandle => {
@@ -357,10 +357,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       // expensive setup (color space conversion etc.) doesn't repeat per frame.
       const factoryFn = o.interpolator ? o.interpolator(o.from, o.to) : null;
       let lastValueEmitted = false;
-      // Seeds the driver's clock where `register` seeds the call's, so both charge the same wait.
-      if (driverFrameT.current == null) driverFrameT.current = now();
+      // Seeds the codec's clock where `register` seeds the call's, so both charge the same wait.
+      if (codecFrameT.current == null) codecFrameT.current = now();
       // Started ahead of `register`, whose `start` listeners may already cancel it.
-      driver.tween({
+      codec.tween({
         id, ms: Math.max(o.ms, 1), ease: easing,
         from: axes ? axes.to(o.from) : [0],
         to: axes ? axes.to(o.to) : [1],
@@ -371,22 +371,22 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         cancelKey: o.cancelKey,
         label: o.label,
         progress: (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, virtualNow / o.ms)),
-        // `nowMs` is the call's own virtual time, so it still decides when the tween ends; the driver
+        // `nowMs` is the call's own virtual time, so it still decides when the tween ends; the codec
         // supplies only the value in between.
         tick(nowMs) {
-          if (tripwire()) { driver.stop(id); return true; }
+          if (tripwire()) { codec.stop(id); return true; }
           const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
           let value: T;
           if (axes) {
-            value = t >= 1 ? o.to : axes.from(driver.column(id), driver.offset(id));
+            value = t >= 1 ? o.to : axes.from(codec.column(id), codec.offset(id));
           } else {
-            const eased = t >= 1 ? easing(1) : driver.column(id)[driver.offset(id)]!;
+            const eased = t >= 1 ? easing(1) : codec.column(id)[codec.offset(id)]!;
             value = factoryFn ? factoryFn(eased) : o.interpolate!(o.from, o.to, eased);
           }
           o.onTick(value);
           if (t >= 1 && !lastValueEmitted) {
             lastValueEmitted = true;
-            driver.stop(id);
+            codec.stop(id);
             // That last onTick may have cancelled us — deregistering the id.
             // A cancelled tween never completes, whenever the cancel landed.
             if (animations.current.has(id)) {
@@ -426,10 +426,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       const sameShape = (v: T | null | undefined): boolean => v == null || axesOf(v)?.shape === fromAxes!.shape;
       const axes = fromAxes && sameShape(o.to) && sameShape(o.velocity) ? fromAxes : null;
       if (axes) {
-        // Seeds the driver's clock where `register` seeds the call's, so both charge the same wait.
-        if (driverFrameT.current == null) driverFrameT.current = now();
+        // Seeds the codec's clock where `register` seeds the call's, so both charge the same wait.
+        if (codecFrameT.current == null) codecFrameT.current = now();
         // Started ahead of `register`, whose `start` listeners may already cancel it.
-        driver.spring({
+        codec.spring({
           id, axes: axes.count,
           from: axes.to(o.from),
           to: o.to == null ? null : axes.to(o.to),
@@ -444,26 +444,26 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         cancelKey: o.cancelKey,
         label: o.label,
         tick(nowMs) {
-          if (tripwire()) { driver.stop(id); return true; }
+          if (tripwire()) { codec.stop(id); return true; }
           if (lastTime == null) {
             lastTime = nowMs;
             // Already-at-rest short-circuit: decay-mode (target == null)
             // with starting velocity below threshold should complete
             // immediately rather than emit a tick and wait a frame.
             if (target == null && magnitude(velocity) < restThreshold) {
-              driver.stop(id);
+              codec.stop(id);
               reportEnd(id);
               o.onDone?.();
               return true;
             }
-            // The driver's voice has run since registration, so only Euler starts its clock here.
+            // The codec's voice has run since registration, so only Euler starts its clock here.
             if (!axes) {
               o.onTick(value);
               return false;
             }
           }
           if (axes) {
-            const m = driver.motion(id);
+            const m = codec.motion(id);
             value = axes.from(m.value);
             velocity = axes.from(m.velocity);
           } else {
@@ -481,7 +481,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             : magnitude(subtract(value, target)) < restThreshold;
           if (velRested && posRested) {
             if (target != null) o.onTick(target);
-            driver.stop(id);
+            codec.stop(id);
             reportEnd(id);
             o.onDone?.();
             return true;
@@ -498,12 +498,12 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         setTarget: (newTo: T | null) => {
           if (axes && newTo != null) checkShape(newTo, 'setTarget');
           target = newTo;
-          if (axes && driver.has(id)) driver.retarget(id, newTo == null ? null : axes.to(newTo));
+          if (axes && codec.has(id)) codec.retarget(id, newTo == null ? null : axes.to(newTo));
         },
         setVelocity: (v: T) => {
           if (axes) checkShape(v, 'setVelocity');
           velocity = v;
-          if (axes && driver.has(id)) driver.push(id, axes.to(v));
+          if (axes && codec.has(id)) codec.push(id, axes.to(v));
         },
       };
       return handle;
@@ -540,11 +540,11 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       const retired: ActiveAnimation[] = [];
       for (const a of animations.current.values()) {
         a.onCancel?.();
-        driver.stop(a.id);
+        codec.stop(a.id);
         retired.push(a);
       }
       animations.current.clear();
-      driverFrameT.current = null;
+      codecFrameT.current = null;
       for (const a of retired) fireCompletion(a.id);
       if (hub.watched) for (const a of retired) hub.emit({ type: 'cancel', animation: infoOf(a) });
       frameLoopRef.current.cancel();

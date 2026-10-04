@@ -5,7 +5,7 @@ import { linear, SPRING_PRESETS } from '@weasel-js/geom';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { Animator, UseAnimatorOptions } from './types';
 
-/** Minimal manual rAF driver for deterministic tests. */
+/** Minimal manual rAF codec for deterministic tests. */
 function makeClock() {
   let now = 0;
   const callbacks = new Map<number, (t: number) => void>();
@@ -775,7 +775,7 @@ describe('useAnimator — abandoned renders', () => {
   });
 });
 
-describe('useAnimator on the driver', () => {
+describe('useAnimator on the codec', () => {
   it('pausing one tween leaves another with the same easing running', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
