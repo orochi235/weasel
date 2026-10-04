@@ -1,9 +1,9 @@
 # The animator on blits
 
-**Status: steps 1 and 2 are built, on branch `pose-overrides-mix`, unmerged; steps 3–6 are not.**
-Step 3 is approved and planned (`docs/superpowers/plans/2026-10-02-animator-on-blits-step3.md`),
-not built. Pose overrides fold through a blits mix, and the paint walk's cost is measured (below).
-Nothing animates through blits yet. Delete this once it is built or turned down.
+**Status: steps 1, 2 and most of 3 are built, on branch `pose-overrides-mix`, unmerged.** Tweens,
+springs, physics and decay compute their values in blits ("What step 3 built"). Keyframe sampling,
+the rest of step 3, and steps 4–6 are not built. The branch cannot merge until blits publishes
+the features it runs on. Delete this once it is all built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
 several animations on one property, without keeping a second copy of the arithmetic that blits
@@ -76,13 +76,9 @@ Each of these is blits work.
   motion to another patch. Two limits: each keeps one stretch per subject, so a read earlier than
   the latest retarget does not recall history, and a spring's state is its own, so each is cued on
   one voice.
-- **Speed at scene sizes.** One run of blits' `npm run bench` on 2026-09-30 read 27.8 ms per frame
-  for 10k subjects × 3 `fn` voices. The same day, builds from before and after blits' reach change
-  were alternated four times on that row and read 6.0–7.6 ms each, so the 27.8 was a loaded
-  machine. That is still a third to a half of a 60 Hz frame for 10k nodes before painting. The paint walk would probe only the nodes some voice
-  reaches. blits now walks only the voices that reach a subject (`1b1d841`), but nothing yet lists
-  which subjects any voice reaches. weasel supplies that list, as step 2 measured
-  below.
+- **Speed at scene sizes.** Done far enough to build step 3 on: lanes, one-subject voices on flat
+  rows, `pull`, and starts and stops that invalidate only their own subject. What is left of the
+  gap to today's animator is blits' own per-frame work ("What step 3 built").
 
 ## What weasel has to design
 
@@ -131,101 +127,64 @@ Each of these is blits work.
    list supplied by the control layer. Benchmark the paint walk before going further. Done
    2026-10-01; see "What step 2 built".
 3. weasel: tween, spring and keyframe sampling reimplemented on blits patches under the same
-   signatures.
+   signatures. Tweens, springs, physics and decay done 2026-10-04; see "What step 3 built".
+   Keyframe sampling not started.
 4. weasel: `cancelKey` interrupts with momentum; global pause through the mix clock.
 5. weasel: color overrides and the camera as mixes.
 6. weasel: event tracks reading mix time.
 
-## What step 3 has to answer first
+## What step 3 built
 
-**Decided 2026-10-02: step 3 goes ahead**, at about 1.5× today's tween frame for 10k nodes on an
-unloaded machine (the teitou table below). Mike's call. It had waited since 2026-10-01 for dense
-lanes in blits' `mixer`. The plan keeps keyframe sampling for a plan of its own.
+`useAnimator` keeps its signatures and its control layer: the table of running animations, keys,
+pause and rate, `watch`. Values come from `packages/core/src/animation/engine/codec.ts`, which turns
+animator calls into blits voices and blits' columns back into values. Each animation is one blits
+voice naming its one subject (`subjects: [id]`); voices share one mix per axis count, and the codec
+reads every subject with one `mix.pull` per mix a frame.
 
-A lane is a channel `mixer` folds over flat arrays when every voice on it qualifies, falling back
-per channel. Lanes are on blits' `main` (`26c9764`, unreleased) and on by default, as is a `tween`
-motion form that carries each subject's endpoints and duration as data, so one voice can move every
-node. A voice also fades or drops one subject (`handle.fade({ subject, over })`), which covers
-weasel handing a node from one animation to another or cancelling it. A call that needs its own
-pause or rate still needs its own voice.
+- **Tweens.** A value that is a number, a number array or an object of numeric fields, with no
+  `interpolate` or `interpolator`, moves in blits as axes. A tween with either option gets eased
+  progress from blits and its own function makes the value, since a caller's blend need not be a
+  straight line (`interpolateView`, d3's string and color interpolators). A tween of an array or
+  numeric object no longer needs an `interpolate`; a value of no usable shape throws when `tween` is
+  called, not on a frame.
+- **Springs, physics, decay.** Closed forms in blits for the same shapes, so a spring lands in the
+  same place at any frame rate. `setTarget` and `setVelocity` retarget and push the subject, and a
+  shape that differs from `from` throws. A value of another shape, or constants the closed forms
+  cannot solve (damping or mass ≤ 0, stiffness 0 with a target), stays on the old integrator in
+  `engine/integrator.ts`.
+- **Pause and rate** of one call set its voice's rate; cancel and interrupt drop its voice.
+- `engine/blitsContract.test.ts` pins each blits behavior the codec relies on.
 
-Measured there on 2026-10-02 (studio, Node 26, two runs, vitest means in ms per frame), with lanes
-off as the same build's control:
+**One voice per animation, not grouping — decided 2026-10-03, Mike's call.** The first build grouped
+calls onto shared voices by easing or spring constants. Once blits gave one-subject voices shared
+flat rows (`2da21c1`), a voice per call read by `pull` cost what a shared voice did, and grouping
+was dropped. blits `5a514a3` then made a voice starting or retiring invalidate only its own subject,
+where before one start took a 10k frame from about 1 ms to 28–34 ms.
 
-| One frame, 10,000 nodes | Today       | One `tween` voice | lanes off   | Voice per call | lanes off   |
-|-------------------------|------------:|------------------:|------------:|---------------:|------------:|
-| tween                   | 0.42 / 0.44 |       2.11 / 1.99 | 2.64 / 2.68 |    3.76 / 3.92 | 3.80 / 4.19 |
+**The cost — accepted 2026-10-04, Mike's call.** Step 3 was approved at about 1.5× today's tween
+frame; it costs about 3–3.5× at 10k nodes. `tests/perf/bench/animator-on-blits.bench.ts`, on teitou
+(M5 Max, Node 26.10, blits `5a514a3`), today's animator at weasel `014d36366` against this branch,
+alternated, two passes with 13–16 of 18 cores free (a third, run with the machine saturated, is
+dropped):
 
-| One frame, 10,000 nodes | Today       | One `spring` voice | lanes off   | Voice per call | lanes off   |
-|-------------------------|------------:|-------------------:|------------:|---------------:|------------:|
-| spring                  | 0.67 / 0.94 |        2.45 / 2.48 | 2.68 / 2.77 |    4.64 / 4.70 | 6.07 / 6.03 |
+| ms per frame                                  | Today       | On blits    |
+|-----------------------------------------------|------------:|------------:|
+| 10k tweens, steady                            | 0.27 / 0.34 | 1.06 / 0.92 |
+| 10k tweens, one stops and one starts a frame  | 0.17 / 0.18 | 1.21 / 1.10 |
+| 10k springs, steady                           | 0.82 / 0.69 | 0.62 / 0.63 |
+| 1k tweens, steady                             | 0.02 / 0.02 | 0.06 / 0.06 |
 
-One shared voice halves a voice per call and is still about 5× today's frame. An `fn` patch on one
-voice measures the same as the `tween` form, 2.07 / 2.06.
+Where a 10k tween frame goes, timing the pieces apart on the same machine: blits' `sync` and `pull`
+0.27 ms (the same with the codec's shape, any easing, or blits driven raw); reading 10k values back
+0.13 ms before they became two field reads (`2b0cf8088`); weasel's own frame loop, ticks,
+interpolation and `onTick` 0.21–0.24 ms, close to today's whole frame. The pieces add up to the
+total; neither cache eviction nor any interaction between blits and weasel showed in experiments
+built to find one. So 1.5× (about 0.3 ms) is out of reach while every animated node goes through
+blits each frame: blits' part alone is about today's whole frame.
 
-Lanes alone will not reach today's animator. A `probe` costs 110–140 ns at 10k subjects even when a
-lane has done the arithmetic, so a paint walk probing every node pays 1.1–1.4 ms before any
-interpolation, above today's whole tween frame. blits' spike had measured this workload in a dense
-loop at 0.02–0.34 ms for 10k nodes, but those figures fill arrays and never read a pose back.
-
-The bulk read exists: `mix.pull(subjects, { pos: Float64Array })` writes every subject's pose into
-arrays in one call. Since blits `93f0317` it skips each subject's lookup when handed the same array
-as last frame, and since `a00754e` it fills a motion lane in one loop and copies it out a column at
-a time. On teitou (an unloaded M5 Max, Node 26.10, three runs, blits `de5ba57`), at 10k nodes:
-
-| One tween frame, 10,000 nodes            | ms per frame       |
-|------------------------------------------|-------------------:|
-| today                                    | 0.20 / 0.33 / 0.27 |
-| today, no store                          | 0.15 / 0.16 / 0.15 |
-| one `tween` voice, `pull`                | 0.46 / 0.46 / 0.38 |
-| one `tween` voice, `pull`, no store      | 0.40 / 0.39 / 0.33 |
-| one `tween` voice, `probe` per node      | 0.94 / 0.89 / 0.79 |
-| voice per call                           | 1.89 / 1.93 / 1.91 |
-
-"No store" drops writing each node's value where a painter would read it. Today's tween still
-builds a pose object per node in `interpolate`; `pull` builds none. So one shared voice read by
-`pull` is about 1.5× today's frame, and about 2.4× with the stores taken out of both.
-Step 2's paint walk runs through the same per-node probe, so it would gain from `pull` too.
-
-Starting one `tween` voice over 10k nodes and computing its first frame costs about twice an `fn`
-voice in plain node (about 35 ms against 16 warm); the bench's start row reads 85–93 against 11–12,
-which garbage collection inside its eight timed iterations likely inflates.
-
-The measurements behind the decision:
-`tests/perf/bench/animator-on-blits.bench.ts` animates N nodes' `{ x, y }` three ways: today's
-animator, one tween or spring per node; one blits voice per call, naming its node in `subjects`;
-and one voice for every node, reading each node's endpoints. Each row checks it computes today's
-values before it is timed.
-
-Medians in ms, two runs each, alternated, on an Apple M2 Max under Node 26 with the machine loaded
-(load average 11–23), against blits' unreleased `project` branch as of 2026-10-01:
-
-| One frame | Nodes  | Today       | Voice per call | One voice   |
-|-----------|-------:|------------:|---------------:|------------:|
-| tween     |  1,000 | 0.03 / 0.04 |    0.20 / 0.19 | 0.14 / 0.15 |
-| tween     | 10,000 | 0.31 / 0.28 |    3.92 / 3.57 | 1.79 / 1.84 |
-| spring    |  1,000 | 0.04 / 0.05 |    0.32 / 0.36 | 0.30 / 0.30 |
-| spring    | 10,000 | 0.46 / 0.51 |    6.87 / 6.61 | 4.14 / 4.49 |
-
-| Start, and first frame | Nodes  | Today       | Voice per call |
-|------------------------|-------:|------------:|---------------:|
-| tween                  |  1,000 | 0.71 / 0.87 |      3.7 / 2.8 |
-| tween                  | 10,000 |   6.3 / 6.3 |        58 / 42 |
-| spring                 | 10,000 | 10.3 / 10.1 |        96 / 34 |
-
-Today's start rows include mounting the hook, and some of their runs hit 25–100 ms outliers; the
-table quotes the runs without them.
-
-A voice per call is the animator's API ported as it stands, so that is the cost step 3 pays as
-written: about 3.5 ms a frame for 10k tweens and 6.5 ms for 10k springs, against 0.3 and 0.5 today.
-Before `subjects`, a voice reached its node through a `target` predicate blits asked of every
-subject, and starting 1,000 took about a second; `subjects` removed that, and the release with it
-is pending.
-
-blits does not expect `mixer` to get much faster for one voice: an exact fast path measured no
-gain. Its `spikes/gpu-engine` measured a dense CPU engine at 0.37 ms for 10k subjects where `mixer`
-took 6.8, but that engine is not built, computes every subject whether or not anything reads it,
-and has not been tried on springs. Lanes inside `mixer` are the form that work takes.
+**Before merge:** blits has to publish `tween`, `pull`, per-subject `fade` and the `5a514a3` fixes,
+and core's exact pin on `@msb235/blits` moves to that release. Until then the branch runs against a
+local build, and the full suite cannot run on the fleet, which installs the pinned 0.2.1.
 
 ## What step 2 built
 
