@@ -158,6 +158,16 @@ describe('<ControlMatrix>', () => {
     expect(setConfig).toHaveBeenCalledWith('looks.window.glow', 0.75);
   });
 
+  it('lists an enum cell’s options in its popover, with no dropdown inside, and closes on a choice', () => {
+    const { setConfig } = setup();
+    fireEvent.click(cell('Window Shading'));
+    const dialog = screen.getByRole('dialog', { name: 'Window Shading' });
+    expect(within(dialog).queryByRole('button', { name: /Shading/ })).toBeNull();
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Soft' }));
+    expect(setConfig).toHaveBeenCalledWith('looks.window.shading', 'soft');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('unpins from the popover with Inherit, disabled while already inherited', () => {
     const { setConfig, unmount } = setup();
     fireEvent.click(cell('Window Glow'));

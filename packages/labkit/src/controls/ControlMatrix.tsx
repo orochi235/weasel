@@ -5,6 +5,7 @@ import {
   isPrefLeaf,
   type PrefLeaf,
   type PropertyControlProps,
+  PropertyField,
   PropertyHelp,
   PropertyList,
   PropertyPanel,
@@ -211,16 +212,12 @@ export function ControlMatrix({
             aria-label={`${nameOf(open.column)} ${open.label}`}
           >
             <PropertyList pack="one-up">
-              <ControlRow
-                path={open.path}
-                leaf={open.leaf}
-                resolved={schema}
+              <Editor
+                open={open}
+                schema={schema}
                 config={config}
-                shown={config}
                 setConfig={setConfig}
-                pack="one-up"
-                auto={NO_AUTO}
-                setRowAuto={noop}
+                close={() => setOpen(null)}
               />
             </PropertyList>
             {clearable(open.leaf) ? (
@@ -259,6 +256,59 @@ export function ControlMatrix({
     <PropertyPanel title={title} stance={stance} tone={tone}>
       {table}
     </PropertyPanel>
+  );
+}
+
+/**
+ * The control a cell opens. An enum lists its options outright, as radios: the
+ * panel's dropdown would be a second popup opened from inside this one.
+ * Choosing one is the whole edit, so it closes the popover.
+ */
+function Editor({
+  open,
+  schema,
+  config,
+  setConfig,
+  close,
+}: {
+  open: OpenCell;
+  schema: ResolvedConfig;
+  config: Record<string, unknown>;
+  setConfig: (path: string, value: unknown) => void;
+  close: () => void;
+}) {
+  const { path, leaf } = open;
+  const field = isBuiltinToolPref(leaf)
+    ? prefFieldProps(leaf, {
+        value: valueAtPath(config, path) ?? leaf.default,
+        setValue: (next) => setConfig(path, next),
+      })
+    : null;
+  if (field?.kind === 'enum') {
+    return (
+      <PropertyField
+        {...field}
+        label={leaf.name}
+        control="radio"
+        onChange={(next) => {
+          field.onChange(next);
+          close();
+        }}
+      />
+    );
+  }
+  return (
+    <ControlRow
+      path={path}
+      leaf={leaf}
+      resolved={schema}
+      config={config}
+      shown={config}
+      setConfig={setConfig}
+      pack="one-up"
+      auto={NO_AUTO}
+      setRowAuto={noop}
+    />
   );
 }
 
