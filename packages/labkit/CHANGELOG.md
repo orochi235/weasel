@@ -1,5 +1,20 @@
 # @weasel-js/labkit
 
+## 1.7.4
+
+### Patch Changes
+
+- f1aaf3e: A `ControlMatrix` enum cell opens one popup instead of two. Its popover lists the options as radios, where it used to hold a dropdown that opened a second list; choosing one closes the popover.
+- Updated dependencies [8a57e2b]
+  - @weasel-js/ui@1.7.4
+  - @weasel-js/core@1.7.4
+  - @weasel-js/geom@1.7.4
+  - @weasel-js/kernel3d@1.7.4
+  - @weasel-js/loupe@1.7.4
+  - @weasel-js/quantity@1.7.4
+  - @weasel-js/svg@1.7.4
+  - @weasel-js/theme@1.7.4
+
 ## 1.7.3
 
 ### Patch Changes

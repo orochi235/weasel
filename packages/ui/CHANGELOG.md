@@ -1,5 +1,17 @@
 # @weasel-js/ui
 
+## 1.7.4
+
+### Patch Changes
+
+- 8a57e2b: Add a `bookmark` icon: a notched ribbon beside `pin` in the State group. It is fillable, so `<Icon name="bookmark" filled>` draws the solid ribbon for a bookmarked state.
+- @weasel-js/core@1.7.4
+  - @weasel-js/font@1.7.4
+  - @weasel-js/modes@1.7.4
+  - @weasel-js/quantity@1.7.4
+  - @weasel-js/svg@1.7.4
+  - @weasel-js/theme@1.7.4
+
 ## 1.7.3
 
 ### Patch Changes
