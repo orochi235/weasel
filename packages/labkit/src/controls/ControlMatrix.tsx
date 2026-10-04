@@ -290,7 +290,7 @@ function Editor({
         {...field}
         label={leaf.name}
         control="radio"
-        onChange={(next) => {
+        onChange={(next: Parameters<typeof field.onChange>[0]) => {
           field.onChange(next);
           close();
         }}
