@@ -22,6 +22,12 @@ describe('axesOf', () => {
     expect(a.from([5, 6])).toEqual({ x: 5, y: 6 });
   });
 
+  it('reads its axes from a given offset into a longer array', () => {
+    expect(axesOf(0)!.from([9, 4, 9], 1)).toBe(4);
+    expect(axesOf([0, 0])!.from([9, 9, 5, 6, 9], 2)).toEqual([5, 6]);
+    expect(axesOf({ y: 0, x: 0 })!.from([9, 5, 6], 1)).toEqual({ x: 5, y: 6 });
+  });
+
   it('returns null for anything else', () => {
     expect(axesOf({ x: 1, label: 'a' })).toBeNull();
     expect(axesOf({ x: { y: 1 } })).toBeNull();

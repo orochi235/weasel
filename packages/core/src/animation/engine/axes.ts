@@ -6,14 +6,15 @@ export interface Axes<T> {
   /** Equal for two values exactly when their axes line up one for one. */
   shape: string;
   to(v: T): number[];
-  from(a: ArrayLike<number>): T;
+  /** The value whose `count` axes start at `at` in `a`. */
+  from(a: ArrayLike<number>, at?: number): T;
 }
 
 /** The axes of `sample`'s shape: a number, a plain array of numbers, or a plain object whose
  *  fields are all numbers. Null for any other shape, which blits cannot move. */
 export function axesOf<T>(sample: T): Axes<T> | null {
   if (typeof sample === 'number') {
-    return { count: 1, shape: 'number', to: (v) => [v as number], from: (a) => a[0] as T };
+    return { count: 1, shape: 'number', to: (v) => [v as number], from: (a, at = 0) => a[at] as T };
   }
   if (Array.isArray(sample)) {
     if (!sample.every((x) => typeof x === 'number')) return null;
@@ -21,7 +22,11 @@ export function axesOf<T>(sample: T): Axes<T> | null {
       count: sample.length,
       shape: `array:${sample.length}`,
       to: (v) => (v as number[]).slice(),
-      from: (a) => Array.from(a) as T,
+      from: (a, at = 0) => {
+        const out = new Array<number>(sample.length);
+        for (let i = 0; i < out.length; i++) out[i] = a[at + i]!;
+        return out as T;
+      },
     };
   }
   if (!isPlainObject(sample)) return null;
@@ -31,9 +36,9 @@ export function axesOf<T>(sample: T): Axes<T> | null {
     count: keys.length,
     shape: `object:${JSON.stringify(keys)}`,
     to: (v) => keys.map((k) => (v as Record<string, number>)[k]!),
-    from: (a) => {
+    from: (a, at = 0) => {
       const out: Record<string, number> = {};
-      for (let i = 0; i < keys.length; i++) out[keys[i]!] = a[i]!;
+      for (let i = 0; i < keys.length; i++) out[keys[i]!] = a[at + i]!;
       return out as T;
     },
   };

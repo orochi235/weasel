@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createBank } from './bank';
+import { createBank, type Bank } from './bank';
 
 /** Every mix the bank makes, so a test can see what blits keeps per subject. */
 const mixes = vi.hoisted(() => [] as unknown[]);
@@ -24,6 +24,9 @@ const linear = (u: number) => u;
 const SPRING = { stiffness: 170, damping: 26, mass: 1 };
 /** A tween of progress alone, as a caller with its own `interpolate` gets. */
 const U = { from: [0], to: [1] };
+/** Subject `id`'s `n` axes as the last frame read them. */
+const vals = (b: Bank, id: number, n: number): number[] =>
+  Array.from({ length: n }, (_, i) => b.column(id)[b.offset(id) + i]!);
 
 describe('createBank', () => {
   it('advances tweens sharing an easing on one voice, each by its own ms', () => {
@@ -31,8 +34,8 @@ describe('createBank', () => {
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.tween({ id: 2, ms: 500, ease: linear, ...U });
     b.frame(250);
-    expect(b.values(1)[0]).toBeCloseTo(0.25, 9);
-    expect(b.values(2)[0]).toBeCloseTo(0.5, 9);
+    expect(vals(b, 1, 1)[0]).toBeCloseTo(0.25, 9);
+    expect(vals(b, 2, 1)[0]).toBeCloseTo(0.5, 9);
   });
 
   it('starts a tween at the bank time it was added, not at zero', () => {
@@ -40,7 +43,7 @@ describe('createBank', () => {
     b.frame(400);
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.frame(100);
-    expect(b.values(1)[0]).toBeCloseTo(0.1, 9);
+    expect(vals(b, 1, 1)[0]).toBeCloseTo(0.1, 9);
   });
 
   it('keeps a stopped subject out of the next frame and its neighbors running', () => {
@@ -50,8 +53,9 @@ describe('createBank', () => {
     b.frame(100);
     b.stop(1);
     b.frame(100);
-    expect(b.values(2)[0]).toBeCloseTo(0.2, 9);
-    expect(() => b.values(1)).toThrow(/no subject 1/);
+    expect(vals(b, 2, 1)[0]).toBeCloseTo(0.2, 9);
+    expect(() => b.column(1)).toThrow(/no subject 1/);
+    expect(() => b.offset(1)).toThrow(/no subject 1/);
   });
 
   it('solo at rate 0 freezes one tween and not its neighbor', () => {
@@ -61,8 +65,8 @@ describe('createBank', () => {
     b.frame(300);
     b.solo(1, 0);
     b.frame(300);
-    expect(b.values(1)[0]).toBeCloseTo(0.3, 9);
-    expect(b.values(2)[0]).toBeCloseTo(0.6, 9);
+    expect(vals(b, 1, 1)[0]).toBeCloseTo(0.3, 9);
+    expect(vals(b, 2, 1)[0]).toBeCloseTo(0.6, 9);
   });
 
   it('solo at rate 2 runs one tween at double speed from where it was', () => {
@@ -71,7 +75,7 @@ describe('createBank', () => {
     b.frame(200);
     b.solo(1, 2);
     b.frame(100);
-    expect(b.values(1)[0]).toBeCloseTo(0.4, 9);
+    expect(vals(b, 1, 1)[0]).toBeCloseTo(0.4, 9);
   });
 
   it('moves a tween of several axes between its own endpoints', () => {
@@ -79,8 +83,8 @@ describe('createBank', () => {
     b.tween({ id: 1, ms: 1000, ease: linear, from: [0, 100], to: [10, 0] });
     b.tween({ id: 2, ms: 1000, ease: linear, from: [5, 5], to: [5, 15] });
     b.frame(500);
-    expect(Array.from(b.values(1))).toEqual([5, 50]);
-    expect(Array.from(b.values(2))).toEqual([5, 10]);
+    expect(vals(b, 1, 2)).toEqual([5, 50]);
+    expect(vals(b, 2, 2)).toEqual([5, 10]);
   });
 
   it('moves a spring and keeps its velocity through a retarget', () => {
@@ -111,8 +115,8 @@ describe('createBank membership', () => {
     b.tween({ id: 3, ms: 1000, ease: linear, from: [0], to: [2] });
     b.frame(100);
     b.stop(1);
-    expect(b.values(2)[0]).toBeCloseTo(0.1, 9);
-    expect(b.values(3)[0]).toBeCloseTo(0.2, 9);
+    expect(vals(b, 2, 1)[0]).toBeCloseTo(0.1, 9);
+    expect(vals(b, 3, 1)[0]).toBeCloseTo(0.2, 9);
   });
 
   it('answers a tween no frame has read with its own from', () => {
@@ -120,8 +124,8 @@ describe('createBank membership', () => {
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.frame(100);
     b.tween({ id: 2, ms: 1000, ease: linear, from: [7], to: [9] });
-    expect(Array.from(b.values(2))).toEqual([7]);
-    expect(b.values(1)[0]).toBeCloseTo(0.1, 9);
+    expect(vals(b, 2, 1)).toEqual([7]);
+    expect(vals(b, 1, 1)[0]).toBeCloseTo(0.1, 9);
   });
 
   it('starts and stops tweens in time linear in their number', () => {
@@ -153,7 +157,7 @@ describe('createBank membership', () => {
     expect(() => b.tween({ id: 2, ms: 100, ease: linear, from: [0, 0], to: [1] })).toThrow();
     expect(b.has(2)).toBe(false);
     b.frame(50);
-    expect(Array.from(b.values(1))).toEqual([0.5, 0.5]);
+    expect(vals(b, 1, 2)).toEqual([0.5, 0.5]);
   });
 
   it('shares a voice between tweens given the same easing function', () => {
@@ -175,7 +179,7 @@ describe('createBank membership', () => {
     expect(b.voiceCount()).toBe(0);
     b.tween({ id: 2, ms: 100, ease: (u) => u * u, ...U });
     b.frame(50);
-    expect(b.values(2)[0]).toBeCloseTo(0.25, 9);
+    expect(vals(b, 2, 1)[0]).toBeCloseTo(0.25, 9);
   });
 
   it('keeps a voice for a tween that follows one ending on it', () => {
@@ -188,7 +192,7 @@ describe('createBank membership', () => {
     b.tween({ id: 2, ms: 100, ease: linear, ...U });
     b.frame(50);
     expect(mixes).toHaveLength(1);
-    expect(b.values(2)[0]).toBeCloseTo(0.5, 9);
+    expect(vals(b, 2, 1)[0]).toBeCloseTo(0.5, 9);
   });
 
   it('lets its mix forget subjects that have stopped', () => {
@@ -214,7 +218,7 @@ describe('createBank joining a running voice', () => {
     b.frame(400);
     b.tween({ id: 2, ms: 1000, ease: linear, ...U });
     b.frame(100);
-    expect(b.values(2)[0]).toBeCloseTo(0.1, 9);
+    expect(vals(b, 2, 1)[0]).toBeCloseTo(0.1, 9);
   });
 
   it('starts a spring on a shared voice where a fresh bank would', () => {
@@ -347,8 +351,8 @@ describe('createBank reusing ids and voices', () => {
     b.stop(1);
     b.tween({ id: 1, ms: 1000, ease: linear, from: [0], to: [10] });
     b.frame(100);
-    expect(b.values(1)[0]).toBeCloseTo(1, 9);
-    expect(b.values(2)[0]).toBeCloseTo(0.6, 9);
+    expect(vals(b, 1, 1)[0]).toBeCloseTo(1, 9);
+    expect(vals(b, 2, 1)[0]).toBeCloseTo(0.6, 9);
   });
 
   it('returns a spring to a shared voice it left, from where it is', () => {
@@ -375,12 +379,12 @@ describe('createBank solo', () => {
     b.frame(200);
     b.solo(1, 0);
     b.frame(100);
-    expect(b.values(1)[0]).toBeCloseTo(0.2, 9);
+    expect(vals(b, 1, 1)[0]).toBeCloseTo(0.2, 9);
     b.frame(0);
     expect(b.voiceCount()).toBe(1);
     b.solo(1, 1);
     b.frame(100);
-    expect(b.values(1)[0]).toBeCloseTo(0.3, 9);
+    expect(vals(b, 1, 1)[0]).toBeCloseTo(0.3, 9);
     expect(b.voiceCount()).toBe(1);
   });
 });

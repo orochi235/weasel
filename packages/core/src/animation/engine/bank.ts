@@ -18,9 +18,11 @@ export interface Bank {
   frame(dtMs: number): void;
   tween(s: TweenStart): void;
   spring(s: SpringStart): void;
-  /** A tween subject's axes as the last `frame` read them: a view into the bank's arrays, valid
-   *  until the next `frame`. */
-  values(id: number): Float64Array;
+  /** The array holding a tween subject's axes as the last `frame` read them, from `offset(id)` on.
+   *  It is the bank's own, shared with other subjects and valid until the next `frame`. */
+  column(id: number): Float64Array;
+  /** Where subject `id`'s axes start in `column(id)`. */
+  offset(id: number): number;
   /** Position and velocity of a spring subject at the last `frame`. */
   motion(id: number): { value: number[]; velocity: number[] };
   retarget(id: number, to: number[] | null): void;
@@ -210,11 +212,13 @@ export function createBank(): Bank {
     springOf.delete(id);
   }
 
-  function values(id: number): Float64Array {
+  function column(id: number): Float64Array {
     const s = get(id);
-    if (s.slot < 0) return s.held;
-    const n = s.voice.axes;
-    return s.voice.cols.v.subarray(s.slot * n, s.slot * n + n);
+    return s.slot < 0 ? s.held : s.voice.cols.v;
+  }
+  function offset(id: number): number {
+    const s = get(id);
+    return s.slot < 0 ? 0 : s.slot * s.voice.axes;
   }
 
   return {
@@ -257,7 +261,8 @@ export function createBank(): Bank {
       subjects.set(s.id, { voice: v, kind: 'spring', start: time, spring: sp, slot: -1, held: Float64Array.from(sp.from) });
       enterSpring(v, s.id, sp);
     },
-    values,
+    column,
+    offset,
     motion(id) {
       const s = get(id);
       if (s.kind !== 'spring') throw new Error(`bank: subject ${id} is a tween and has no motion`);
@@ -285,7 +290,8 @@ export function createBank(): Bank {
       if (s.voice.solo) { s.voice.handle.rate = rate; return; }
       if (s.kind === 'spring') { moveSpring(s, id, s.spring!, rate); return; }
       const v = tweenVoice(s.ease!, s.voice.axes, `solo:${id}:${soloSerial++}`);
-      s.held = values(id).slice();
+      const at = offset(id);
+      s.held = column(id).slice(at, at + s.voice.axes);
       depart(s, id);
       s.voice = v;
       join(v, id);
