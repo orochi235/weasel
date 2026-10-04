@@ -91,14 +91,16 @@ function mountAnimator(): { animator: Animator; frame: () => void; unmount: () =
   };
 }
 
-function startTodayTweens(animator: Animator, c: Case, store = true): void {
-  c.ids.forEach((_, i) => {
-    animator.tween<Pt>({
-      from: c.from[i], to: c.to[i], ms: LONG, easing: EASE,
-      interpolate: lerpPt,
-      onTick: store ? (v) => { c.sink[i] = v; } : () => {},
-    });
+function startTodayTween(animator: Animator, c: Case, i: number, store = true) {
+  return animator.tween<Pt>({
+    from: c.from[i], to: c.to[i], ms: LONG, easing: EASE,
+    interpolate: lerpPt,
+    onTick: store ? (v) => { c.sink[i] = v; } : () => {},
   });
+}
+
+function startTodayTweens(animator: Animator, c: Case, store = true): void {
+  c.ids.forEach((_, i) => { startTodayTween(animator, c, i, store); });
 }
 
 function startTodaySprings(animator: Animator, c: Case): void {
@@ -297,6 +299,24 @@ const KINDS = [
 
 /** The `target` form only where its setup, which grows with N², finishes in a run. */
 const TARGET_MAX = 1000;
+
+// One frame in which one animation stops and another starts, as when animations begin and end on
+// different frames. All n run throughout; the one replaced moves round the set.
+for (const n of [1000, 10000]) {
+  group(`tween churn — ${n} nodes`, (bench) => {
+    const a = mountAnimator();
+    const c = nodes(n);
+    const handles = c.ids.map((_, i) => startTodayTween(a.animator, c, i));
+    for (let f = 0; f < 30; f++) a.frame();
+    let k = 0;
+    bench('today', () => {
+      handles[k]!.cancel();
+      handles[k] = startTodayTween(a.animator, c, k);
+      k = (k + 1) % n;
+      a.frame();
+    });
+  });
+}
 
 for (const n of [1000, 10000]) {
   for (const k of KINDS) {
