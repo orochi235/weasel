@@ -90,6 +90,11 @@ const checkMid = [
 const checkAt = ([x, y]) => `${round2(x + 10 - checkMid[0])} ${round2(y + 10 - checkMid[1])}`;
 const check = `M${checkAt(CHECK_SHORT)} ${checkAt([0, 0])} ${checkAt(CHECK_LONG)}`;
 
+// ── bookmark ─────────────────────────────────────────────────────────────
+// Ribbon with a V notch; the outline doubles as the fill so `<Icon filled>`
+// reads as "bookmarked". Sides at 5.7/14.3 land mostly in one pixel at 16px 1x.
+const bookmark = `M5.7 16.6V4.8a1.4 1.4 0 0 1 1.4-1.4h5.8a1.4 1.4 0 0 1 1.4 1.4V16.6L10 13.2Z`;
+
 // ── page ─────────────────────────────────────────────────────────────────
 const PAGE_EAR = 11.6;
 
@@ -156,6 +161,7 @@ const STATE = {
   pin: `
     <path d="M8.2 3.4v5.2l-2 2.6h7.6l-2-2.6V3.4z"/><path d="M7 3.4h6"/>
     <path d="M10 11.2v5.4"/>`,
+  bookmark: { d: bookmark, fill: bookmark },
   link: `
     <path d="M8.6 11.4a3.4 3.4 0 0 1 0-4.8l2.2-2.2a3.4 3.4 0 0 1 4.8 4.8l-1.1 1.1"/>
     <path d="M11.4 8.6a3.4 3.4 0 0 1 0 4.8l-2.2 2.2a3.4 3.4 0 0 1-4.8-4.8l1.1-1.1"/>`,
@@ -209,7 +215,7 @@ const STATE = {
 const SPLIT = {
   playback: ['play', 'pause', 'stop', 'stepBack', 'stepForward'],
   status: [
-    'lock', 'unlock', 'visible', 'hidden', 'pin',
+    'lock', 'unlock', 'visible', 'hidden', 'pin', 'bookmark',
     'info', 'warning', 'error', 'busy', 'check',
     'mode-light', 'mode-dark', 'mode-auto',
   ],
