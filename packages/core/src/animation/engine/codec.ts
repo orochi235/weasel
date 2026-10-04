@@ -13,18 +13,23 @@ export interface SpringStart {
   from: number[]; to: number[] | null; velocity: number[];
   stiffness: number; damping: number; mass: number;
 }
+/** One subject's value, read without looking the subject up. Valid until the subject stops. */
+export interface Reader {
+  /** The array holding the subject's axes as the last `frame` read them, from `offset()` on.
+   *  It is the codec's own, shared with other subjects and valid until the next `frame`. */
+  column(): Float64Array;
+  /** Where the subject's axes start in `column()`. */
+  offset(): number;
+}
+export interface SpringReader extends Reader {
+  /** Position and velocity at the last `frame`. */
+  motion(): { value: number[]; velocity: number[] };
+}
 export interface Codec {
   /** Advances the codec's clock by `dtMs` of animator time, then reads every subject. */
   frame(dtMs: number): void;
-  tween(s: TweenStart): void;
-  spring(s: SpringStart): void;
-  /** The array holding a tween subject's axes as the last `frame` read them, from `offset(id)` on.
-   *  It is the codec's own, shared with other subjects and valid until the next `frame`. */
-  column(id: number): Float64Array;
-  /** Where subject `id`'s axes start in `column(id)`. */
-  offset(id: number): number;
-  /** Position and velocity of a spring subject at the last `frame`. */
-  motion(id: number): { value: number[]; velocity: number[] };
+  tween(s: TweenStart): Reader;
+  spring(s: SpringStart): SpringReader;
   retarget(id: number, to: number[] | null): void;
   push(id: number, velocity: number[]): void;
   /** Plays `id` at rate `rate` from where it is, without a jump. */
@@ -55,9 +60,6 @@ interface Lane {
   dirty: boolean;
   /** Frames in a row it has had no subjects at; it retires at the second. */
   idle: number;
-  /** Stopped subjects to `drop` at the next frame, once `sync` has removed their faded voices:
-   *  `drop` walks every voice in the mix, so dropping at `stop` costs the square of the count. */
-  dropped: Set<number>;
   cols: { v: Float64Array };
 }
 
@@ -84,7 +86,7 @@ export function createCodec(): Codec {
     if (!l) {
       const m = mix<number, Out>(kit<Out>({ v: vec(axes, sum()) }));
       m.sync(time);
-      l = { axes, mix: m, ids: [], pending: new Set(), dirty: false, idle: 0, dropped: new Set(), cols: { v: new Float64Array(0) } };
+      l = { axes, mix: m, ids: [], pending: new Set(), dirty: false, idle: 0, cols: { v: new Float64Array(0) } };
       lanes.set(axes, l);
     }
     return l;
@@ -117,12 +119,6 @@ export function createCodec(): Codec {
     if (l.cols.v.length !== ids.length * l.axes) l.cols = { v: new Float64Array(ids.length * l.axes) };
     l.dirty = false;
   };
-  /** A lane for subject `id`, clear of anything a stopped subject of that id left in it. */
-  const laneFor = (axes: number, id: number): Lane => {
-    const l = laneOf(axes);
-    if (l.dropped.delete(id)) l.mix.drop(id);
-    return l;
-  };
 
   // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
   // at `from`, and the codec releases it with a `to` or `push` timed at 0.
@@ -153,18 +149,14 @@ export function createCodec(): Codec {
     const s = subjects.get(id);
     if (!s) return;
     s.handle.fade({ over: 0 });
-    s.lane.dropped.add(id);
+    s.lane.mix.drop(id);
     depart(s, id);
     subjects.delete(id);
   }
-  function column(id: number): Float64Array {
-    const s = get(id);
-    return s.slot < 0 ? s.held : s.lane.cols.v;
-  }
-  function offset(id: number): number {
-    const s = get(id);
-    return s.slot < 0 ? 0 : s.slot * s.lane.axes;
-  }
+  const readerOf = (s: Subject): Reader => ({
+    column: () => (s.slot < 0 ? s.held : s.lane.cols.v),
+    offset: () => (s.slot < 0 ? 0 : s.slot * s.lane.axes),
+  });
 
   return {
     frame(dtMs) {
@@ -176,15 +168,13 @@ export function createCodec(): Codec {
           continue;
         }
         l.mix.sync(time);
-        for (const id of l.dropped) l.mix.drop(id);
-        l.dropped.clear();
         if (l.ids.length === 0) continue;
         l.idle = 0;
         l.mix.pull(l.ids, l.cols);
       }
     },
     tween(s) {
-      const l = laneFor(s.from.length, s.id);
+      const l = laneOf(s.from.length);
       const patch = tweenPatch<number, Out, number[]>('v', { from: s.from.slice(), to: s.from.slice(), ms: s.ms, ease: s.ease });
       const handle = l.mix.cue({ patch, subjects: [s.id] });
       const sub: Subject = { kind: 'tween', lane: l, handle, patch, slot: -1, held: Float64Array.from(s.from) };
@@ -196,21 +186,17 @@ export function createCodec(): Codec {
         stop(s.id);
         throw err;
       }
+      return readerOf(sub);
     },
     spring(s) {
       const sp = { ...s, from: s.from.slice(), to: s.to && s.to.slice(), velocity: s.velocity.slice() };
-      const l = laneFor(sp.axes, s.id);
+      const l = laneOf(sp.axes);
       const { handle, patch } = springVoice(l, s.id, sp);
       const sub: Subject = { kind: 'spring', lane: l, handle, patch, spring: sp, slot: -1, held: Float64Array.from(sp.from) };
       subjects.set(s.id, sub);
       join(sub, s.id);
-    },
-    column,
-    offset,
-    motion(id) {
-      const s = get(id);
-      if (s.kind !== 'spring') throw new Error(`codec: subject ${id} is a tween and has no motion`);
-      return current(s, id);
+      const id = s.id;
+      return { ...readerOf(sub), motion: () => current(sub, id) };
     },
     retarget(id, to) {
       const s = get(id);

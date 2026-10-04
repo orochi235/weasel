@@ -4,7 +4,7 @@ import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import { easeOut, SPRING_PRESETS, resolveEasing } from '@weasel-js/geom';
 import { createLoop, createTweenLoop } from './loop';
 import { stepSpring } from './engine/integrator';
-import { createCodec } from './engine/codec';
+import { createCodec, type SpringReader } from './engine/codec';
 import { axesOf } from './engine/axes';
 import { createStagger, type StaggerTimers } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
@@ -360,7 +360,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       // Seeds the codec's clock where `register` seeds the call's, so both charge the same wait.
       if (codecFrameT.current == null) codecFrameT.current = now();
       // Started ahead of `register`, whose `start` listeners may already cancel it.
-      codec.tween({
+      const reader = codec.tween({
         id, ms: Math.max(o.ms, 1), ease: easing,
         from: axes ? axes.to(o.from) : [0],
         to: axes ? axes.to(o.to) : [1],
@@ -378,9 +378,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
           let value: T;
           if (axes) {
-            value = t >= 1 ? o.to : axes.from(codec.column(id), codec.offset(id));
+            value = t >= 1 ? o.to : axes.from(reader.column(), reader.offset());
           } else {
-            const eased = t >= 1 ? easing(1) : codec.column(id)[codec.offset(id)]!;
+            const eased = t >= 1 ? easing(1) : reader.column()[reader.offset()]!;
             value = factoryFn ? factoryFn(eased) : o.interpolate!(o.from, o.to, eased);
           }
           o.onTick(value);
@@ -425,11 +425,12 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       const fromAxes = solvable ? axesOf(o.from) : null;
       const sameShape = (v: T | null | undefined): boolean => v == null || axesOf(v)?.shape === fromAxes!.shape;
       const axes = fromAxes && sameShape(o.to) && sameShape(o.velocity) ? fromAxes : null;
+      let reader: SpringReader | null = null;
       if (axes) {
         // Seeds the codec's clock where `register` seeds the call's, so both charge the same wait.
         if (codecFrameT.current == null) codecFrameT.current = now();
         // Started ahead of `register`, whose `start` listeners may already cancel it.
-        codec.spring({
+        reader = codec.spring({
           id, axes: axes.count,
           from: axes.to(o.from),
           to: o.to == null ? null : axes.to(o.to),
@@ -463,7 +464,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             }
           }
           if (axes) {
-            const m = codec.motion(id);
+            const m = reader!.motion();
             value = axes.from(m.value);
             velocity = axes.from(m.velocity);
           } else {
