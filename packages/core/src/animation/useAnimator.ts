@@ -456,15 +456,18 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
               o.onDone?.();
               return true;
             }
-            o.onTick(value);
-            return false;
+            // The driver's voice has run since registration, so only Euler starts its clock here.
+            if (!axes) {
+              o.onTick(value);
+              return false;
+            }
           }
           if (axes) {
             const m = driver.motion(id);
             value = axes.from(m.value);
             velocity = axes.from(m.velocity);
           } else {
-            // Semi-implicit Euler, for a T blits cannot move as axes.
+            // Semi-implicit Euler, for a T blits cannot move as axes, or constants its closed forms can't solve.
             const dt = Math.min(0.064, (nowMs - lastTime) / 1000);
             const next = stepSpring({ add, subtract, scale }, value, velocity, target, kBase, damping, mass, dt);
             value = next.value;

@@ -565,18 +565,34 @@ describe('useAnimator.physics', () => {
     }
   });
 
+  /** A default numeric spring from 0 to 100, ticked first after `wait` ms, then every `step` ms
+   *  until `until` ms after registration. Returns the last value it emitted. */
+  const runSpring = (step: number, until: number, wait = 0): number => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let last = NaN;
+    act(() => { result.current.spring<number>({ from: 0, to: 100, stiffness: 170, damping: 26, mass: 1, onTick: (v) => { last = v; } }); });
+    act(() => clock.advance(wait));
+    for (let t = wait; t < until; t += step) act(() => clock.advance(step));
+    return last;
+  };
+
   it('a numeric spring lands where the closed form puts it, at any frame rate', () => {
-    const run = (step: number): number => {
-      const clock = makeClock();
-      const { result } = renderHook(() => useAnimator(clock));
-      let last = 0;
-      act(() => { result.current.spring<number>({ from: 0, to: 100, stiffness: 170, damping: 26, mass: 1, onTick: (v) => { last = v; } }); });
-      act(() => clock.advance(0));
-      // 231 ms is a whole number of frames at either rate.
-      for (let t = 0; t < 231; t += step) act(() => clock.advance(step));
-      return last;
-    };
-    expect(run(7)).toBeCloseTo(run(33), 6);
+    // 231 ms is a whole number of frames at either rate.
+    expect(runSpring(7, 231)).toBeCloseTo(runSpring(33, 231), 6);
+  });
+
+  it('a numeric spring is at the analytic underdamped position', () => {
+    const k = 170, c = 26, m = 1, from = 0, to = 100, t = 0.231;
+    const w = Math.sqrt(k / m);
+    const zeta = c / (2 * Math.sqrt(k * m));
+    const wd = w * Math.sqrt(1 - zeta * zeta);
+    const x = to - (to - from) * Math.exp(-zeta * w * t) * (Math.cos(wd * t) + ((zeta * w) / wd) * Math.sin(wd * t));
+    expect(runSpring(7, 231)).toBeCloseTo(x, 6);
+  });
+
+  it('a spring first ticked after a wait reads the motion it made during the wait', () => {
+    expect(runSpring(100, 100, 100)).toBeCloseTo(runSpring(100, 100, 0), 6);
   });
 
   it('with `to: null` behaves as exponential decay', () => {

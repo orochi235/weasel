@@ -73,7 +73,10 @@ export interface SpringOptions<T> {
   damping?: number;
   mass?: number;
   interpolate?: Interpolate<T>;
-  /** Vector helpers — required for non-numeric T. */
+  /** Vector helpers — required for non-numeric T. When `from`, `to` and `velocity` are numbers, number
+   *  arrays or plain objects of numeric fields of one shape, and stiffness, damping and mass are
+   *  positive, the motion is solved in closed form and these only decide when it has come to rest —
+   *  a `subtract` that wraps an angle won't change the path. */
   add?: (a: T, b: T) => T;
   subtract?: (a: T, b: T) => T;
   scale?: (v: T, k: number) => T;
@@ -101,7 +104,10 @@ export interface PhysicsOptions<T> {
   damping?: number;
   mass?: number;
   restThreshold?: number;
-  /** Vector helpers — required for non-numeric T. */
+  /** Vector helpers — required for non-numeric T. When `from`, `to` and `velocity` are numbers, number
+   *  arrays or plain objects of numeric fields of one shape, and stiffness, damping and mass are
+   *  positive, the motion is solved in closed form and these only decide when it has come to rest —
+   *  a `subtract` that wraps an angle won't change the path. */
   add?: (a: T, b: T) => T;
   subtract?: (a: T, b: T) => T;
   scale?: (v: T, k: number) => T;
@@ -131,6 +137,9 @@ export interface DecayOptions<T> {
   friction?: number;
   /** Velocity magnitude below which decay stops. Default 0.5. */
   threshold?: number;
+  /** When `from` and `velocity` are numbers, number arrays or plain objects of numeric fields of one
+   *  shape and `friction` is below 1, the motion is solved in closed form: `add` and `scale` go
+   *  unused and `magnitude` only decides when it has come to rest. */
   add: (a: T, b: T) => T;
   scale: (v: T, k: number) => T;
   magnitude: (v: T) => number;
