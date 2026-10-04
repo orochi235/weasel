@@ -29,7 +29,7 @@ const vals = (b: Bank, id: number, n: number): number[] =>
   Array.from({ length: n }, (_, i) => b.column(id)[b.offset(id) + i]!);
 
 describe('createBank', () => {
-  it('advances tweens sharing an easing on one voice, each by its own ms', () => {
+  it('advances tweens with one easing, each by its own ms', () => {
     const b = createBank();
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.tween({ id: 2, ms: 500, ease: linear, ...U });
@@ -160,29 +160,20 @@ describe('createBank membership', () => {
     expect(vals(b, 1, 2)).toEqual([0.5, 0.5]);
   });
 
-  it('shares a voice between tweens given the same easing function', () => {
+  it('runs tweens of different easings and axis counts side by side on their own voices', () => {
     const b = createBank();
-    for (let id = 1; id <= 100; id++) b.tween({ id, ms: 100, ease: linear, ...U });
-    b.frame(16);
-    expect(b.voiceCount()).toBe(1);
+    b.tween({ id: 1, ms: 1000, ease: linear, from: [0], to: [1] });
+    b.tween({ id: 2, ms: 1000, ease: (u) => u * u, from: [10], to: [20] });
+    b.tween({ id: 3, ms: 1000, ease: linear, from: [0, 100], to: [10, 0] });
+    b.tween({ id: 4, ms: 1000, ease: (u) => u * u, from: [0, 0], to: [4, 8] });
+    b.frame(500);
+    expect(vals(b, 1, 1)[0]).toBeCloseTo(0.5, 9);
+    expect(vals(b, 2, 1)[0]).toBeCloseTo(12.5, 9);
+    expect(vals(b, 3, 2)).toEqual([5, 50]);
+    expect(vals(b, 4, 2)).toEqual([1, 2]);
   });
 
-  it('retires a voice once it has been empty at two frames running', () => {
-    const b = createBank();
-    b.tween({ id: 1, ms: 100, ease: (u) => u, ...U });
-    b.frame(100);
-    expect(b.voiceCount()).toBe(1);
-    b.stop(1);
-    b.frame(16);
-    expect(b.voiceCount()).toBe(1);
-    b.frame(16);
-    expect(b.voiceCount()).toBe(0);
-    b.tween({ id: 2, ms: 100, ease: (u) => u * u, ...U });
-    b.frame(50);
-    expect(vals(b, 2, 1)[0]).toBeCloseTo(0.25, 9);
-  });
-
-  it('keeps a voice for a tween that follows one ending on it', () => {
+  it('retires a mix once it has been empty at two frames running, and starts a fresh one after', () => {
     mixes.length = 0;
     const b = createBank();
     b.tween({ id: 1, ms: 100, ease: linear, ...U });
@@ -193,6 +184,23 @@ describe('createBank membership', () => {
     b.frame(50);
     expect(mixes).toHaveLength(1);
     expect(vals(b, 2, 1)[0]).toBeCloseTo(0.5, 9);
+    b.stop(2);
+    b.frame(16);
+    b.frame(16);
+    b.tween({ id: 3, ms: 100, ease: linear, ...U });
+    b.frame(25);
+    expect(mixes).toHaveLength(2);
+    expect(vals(b, 3, 1)[0]).toBeCloseTo(0.25, 9);
+  });
+
+  it('runs one voice per subject', () => {
+    const b = createBank();
+    for (let id = 1; id <= 50; id++) b.tween({ id, ms: 100, ease: linear, ...U });
+    for (let id = 51; id <= 60; id++) b.spring({ id, axes: 2, from: [0, 0], to: [1, 1], velocity: [0, 0], ...SPRING });
+    b.frame(16);
+    expect(b.voiceCount()).toBe(60);
+    b.stop(3);
+    expect(b.voiceCount()).toBe(59);
   });
 
   it('lets its mix forget subjects that have stopped', () => {
@@ -208,11 +216,12 @@ describe('createBank membership', () => {
     b.frame(16);
     expect(mixes).toHaveLength(1);
     expect(held(mixes[0])).toBeLessThan(10);
+    expect((mixes[0] as { voices: unknown[] }).voices.length).toBeLessThan(10);
   });
 });
 
-describe('createBank joining a running voice', () => {
-  it('starts a tween on a shared voice at the bank time it was added', () => {
+describe('createBank joining a running mix', () => {
+  it('starts a tween on a running mix at the bank time it was added', () => {
     const b = createBank();
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.frame(400);
@@ -221,7 +230,7 @@ describe('createBank joining a running voice', () => {
     expect(vals(b, 2, 1)[0]).toBeCloseTo(0.1, 9);
   });
 
-  it('starts a spring on a shared voice where a fresh bank would', () => {
+  it('starts a spring on a running mix where a fresh bank would', () => {
     const start = { id: 2, axes: 1, from: [0], to: [10], velocity: [30], ...SPRING };
     const late = createBank();
     late.spring({ ...start, id: 1 });
@@ -235,7 +244,7 @@ describe('createBank joining a running voice', () => {
     expect(late.motion(2).velocity[0]).toBeCloseTo(fresh.motion(2).velocity[0]!, 9);
   });
 
-  it('starts a glide on a shared voice where a fresh bank would', () => {
+  it('starts a glide on a running mix where a fresh bank would', () => {
     const start = { id: 2, axes: 1, from: [0], to: null, velocity: [100], stiffness: 0, damping: 2, mass: 1 };
     const late = createBank();
     late.spring({ ...start, id: 1 });
@@ -337,12 +346,11 @@ describe('createBank springs', () => {
     b.retarget(1, null);
     b.frame(500);
     expect(b.motion(1).value[0]).toBeCloseTo(before.value[0]!, 9);
-    b.frame(0);
     expect(b.voiceCount()).toBe(1);
   });
 });
 
-describe('createBank reusing ids and voices', () => {
+describe('createBank reusing ids', () => {
   it('restarts an id in the frame it was stopped', () => {
     const b = createBank();
     b.tween({ id: 1, ms: 1000, ease: linear, ...U });
@@ -355,7 +363,7 @@ describe('createBank reusing ids and voices', () => {
     expect(vals(b, 2, 1)[0]).toBeCloseTo(0.6, 9);
   });
 
-  it('returns a spring to a shared voice it left, from where it is', () => {
+  it('switches a spring between held and free twice, from where it is', () => {
     const b = createBank();
     b.spring({ id: 1, axes: 1, from: [0], to: [10], velocity: [0], ...SPRING });
     b.spring({ id: 2, axes: 1, from: [0], to: [10], velocity: [0], ...SPRING });
@@ -380,7 +388,6 @@ describe('createBank solo', () => {
     b.solo(1, 0);
     b.frame(100);
     expect(vals(b, 1, 1)[0]).toBeCloseTo(0.2, 9);
-    b.frame(0);
     expect(b.voiceCount()).toBe(1);
     b.solo(1, 1);
     b.frame(100);
