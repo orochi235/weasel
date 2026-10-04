@@ -4,6 +4,8 @@ import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import { easeOut, SPRING_PRESETS, resolveEasing } from '@weasel-js/geom';
 import { createLoop, createTweenLoop } from './loop';
 import { stepSpring } from './engine/integrator';
+import { createBank } from './engine/bank';
+import { axesOf } from './engine/axes';
 import { createStagger, type StaggerTimers } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
 import { ColorOverrideRegistry } from './colorRegistry';
@@ -71,6 +73,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
    * write through to the base adapter rather than schedule a new tween.
    */
   const tickDepth = useRef(0);
+  /** The timestamp the bank last advanced to. Null after the page was hidden and while nothing
+   *  runs, so neither gap is charged to the bank; a tween starting then seeds it from `now()`. */
+  const bankFrameT = useRef<number | null>(null);
   const globalTimeScale = useRef(1);
   const globalPaused = useRef(false);
   const colorOverrides = useRef<ColorOverrideRegistry>(new ColorOverrideRegistry());
@@ -93,6 +98,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       // animation's last timestamp makes the resuming frame's `realDt` zero.
       onResume: () => {
         for (const anim of animations.current.values()) anim.lastRealNow = null;
+        bankFrameT.current = null;
       },
     },
   );
@@ -167,6 +173,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     };
 
     const hub = new AnimatorEventHub();
+    const bank = createBank();
     const infoOf = (a: ActiveAnimation): AnimationInfo => {
       if (!a.info) {
         const info: { -readonly [K in keyof AnimationInfo]: AnimationInfo[K] } = { id: a.id, kind: a.kind };
@@ -193,6 +200,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       const a = animations.current.get(id);
       if (!a) return;
       a.onCancel?.();
+      bank.stop(id);
       animations.current.delete(id);
       fireCompletion(id);
       if (!hub.watched || a.ended) return;
@@ -203,6 +211,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const tickAll = (t: number): void => {
       const finished: ActiveAnimation[] = [];
+      const frameDt = bankFrameT.current == null ? 0 : Math.max(0, t - bankFrameT.current);
+      bankFrameT.current = t;
+      bank.frame(frameDt * (globalPaused.current ? 0 : globalTimeScale.current));
       for (const anim of animations.current.values()) {
         // `t` comes from the frame clock; `lastRealNow` is seeded at register()
         // from `now()`. The two share a time origin in a browser, where the rAF
@@ -243,6 +254,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         try { sub(); } catch (err) { console.error('useAnimator: onTick subscriber threw', err); }
       }
       if (animations.current.size > 0) frameLoopRef.current.request();
+      else bankFrameT.current = null;
     };
 
     const ensureLoop = (): void => {
@@ -266,6 +278,11 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
          *  timeline — which is not a new claim on the key. */
         keepExisting?: boolean;
       };
+    /** Moves a bank subject whose own pause or rate just changed onto a voice of its own. */
+    const soloOf = (a: ActiveAnimation): void => {
+      if (bank.has(a.id)) bank.solo(a.id, a.paused ? 0 : a.timeScale);
+    };
+
     const register = (seed: AnimationSeed): AnimationHandle => {
       const anim = seed as ActiveAnimation;
       if (seed.cancelKey != null && !seed.keepExisting) cancelByKey(seed.cancelKey, anim);
@@ -283,9 +300,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       return {
         id: anim.id,
         cancel: () => retire(anim.id),
-        pause: () => { const a = animations.current.get(anim.id); if (a) a.paused = true; },
-        resume: () => { const a = animations.current.get(anim.id); if (a) a.paused = false; },
-        setTimeScale: (s) => { const a = animations.current.get(anim.id); if (a) a.timeScale = s; },
+        pause: () => { const a = animations.current.get(anim.id); if (a) { a.paused = true; soloOf(a); } },
+        resume: () => { const a = animations.current.get(anim.id); if (a) { a.paused = false; soloOf(a); } },
+        setTimeScale: (s) => { const a = animations.current.get(anim.id); if (a) { a.timeScale = s; soloOf(a); } },
         timeScale: () => animations.current.get(anim.id)?.timeScale ?? 1,
         isPaused: () => animations.current.get(anim.id)?.paused ?? false,
       };
@@ -330,11 +347,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const tween = <T,>(o: TweenOptions<T>): AnimationHandle => {
       const id = nextId.current++;
-      // start is captured in *virtual* time; since virtualNow begins at 0 on
-      // registration, that's our reference. The tween's "elapsed" is just
-      // virtualNow itself — naturally freezing when paused (virtualNow stops
-      // advancing) and decoupled from wall time.
-      const start = 0;
       const easing = resolveEasing(o.easing ?? easeOut);
       // Precedence: factory > per-tick > default numeric lerp. Factory is built
       // once at tween start so expensive setup (color space conversion etc.)
@@ -351,21 +363,38 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
               throw new Error('tween: interpolate or interpolator is required for non-numeric T');
             });
       let lastValueEmitted = false;
+      // blits blends in a straight line, which a caller's own function may not do.
+      const axes = o.interpolate || o.interpolator ? null : axesOf(o.from);
+      // Charges the wait for the first frame to the bank, as `register` does to the call's own clock.
+      if (bankFrameT.current == null) bankFrameT.current = now();
+      // Started ahead of `register`, whose `start` listeners may already cancel it.
+      bank.tween({
+        id, ms: Math.max(o.ms, 1), ease: easing,
+        from: axes ? axes.to(o.from) : [0],
+        to: axes ? axes.to(o.to) : [1],
+      });
       return register({
         id,
         kind: 'tween',
         cancelKey: o.cancelKey,
         label: o.label,
         progress: (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, virtualNow / o.ms)),
+        // `nowMs` is the call's own virtual time, so it still decides when the tween ends; the bank
+        // supplies only the value in between.
         tick(nowMs) {
           if (tripwire()) return true;
-          const elapsed = nowMs - start;
-          const t = o.ms <= 0 ? 1 : Math.min(1, Math.max(0, elapsed / o.ms));
-          const eased = easing(t);
-          const value = factoryFn ? factoryFn(eased) : perTickInterp!(o.from, o.to, eased);
+          const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
+          let value: T;
+          if (axes) {
+            value = t >= 1 ? o.to : axes.from(bank.values(id));
+          } else {
+            const eased = t >= 1 ? easing(1) : bank.values(id)[0]!;
+            value = factoryFn ? factoryFn(eased) : perTickInterp!(o.from, o.to, eased);
+          }
           o.onTick(value);
           if (t >= 1 && !lastValueEmitted) {
             lastValueEmitted = true;
+            bank.stop(id);
             // That last onTick may have cancelled us — deregistering the id.
             // A cancelled tween never completes, whenever the cancel landed.
             if (animations.current.has(id)) {
@@ -479,9 +508,11 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       const retired: ActiveAnimation[] = [];
       for (const a of animations.current.values()) {
         a.onCancel?.();
+        bank.stop(a.id);
         retired.push(a);
       }
       animations.current.clear();
+      bankFrameT.current = null;
       for (const a of retired) fireCompletion(a.id);
       if (hub.watched) for (const a of retired) hub.emit({ type: 'cancel', animation: infoOf(a) });
       frameLoopRef.current.cancel();
@@ -508,13 +539,13 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       setTimeScale: (s) => { globalTimeScale.current = s; },
       timeScale: () => globalTimeScale.current,
       pauseKey: (key) => {
-        for (const a of animations.current.values()) if (a.cancelKey === key) a.paused = true;
+        for (const a of animations.current.values()) if (a.cancelKey === key) { a.paused = true; soloOf(a); }
       },
       resumeKey: (key) => {
-        for (const a of animations.current.values()) if (a.cancelKey === key) a.paused = false;
+        for (const a of animations.current.values()) if (a.cancelKey === key) { a.paused = false; soloOf(a); }
       },
       setTimeScaleByKey: (key, s) => {
-        for (const a of animations.current.values()) if (a.cancelKey === key) a.timeScale = s;
+        for (const a of animations.current.values()) if (a.cancelKey === key) { a.timeScale = s; soloOf(a); }
       },
       loop: (factory, loopOpts) => createLoop(createSupervisor, factory, loopOpts),
       tweenLoop: (tweenLoopOpts) =>

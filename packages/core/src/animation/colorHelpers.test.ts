@@ -234,6 +234,12 @@ function painted(
   return typeof override === 'function' ? override(base, nowMs) : override;
 }
 
+/** Painted values are animated floats, so they are compared to rounding, not exactly. */
+function expectClose(actual: readonly number[], expected: readonly number[]): void {
+  expect(actual).toHaveLength(expected.length);
+  expected.forEach((e, i) => expect(actual[i]).toBeCloseTo(e, 9));
+}
+
 describe('staggerVertexColors', () => {
   it('transitions anchors from origin outward', () => {
     const clock = makeClock(10_000);
@@ -269,15 +275,15 @@ describe('staggerVertexColors', () => {
     act(() => clock.advance(50));
     const at50 = shown()!;
     // Float lerp midpoint between 0 and 255 is 127.5 (no rounding).
-    expect(at50.slice(0, 4)).toEqual([127.5, 127.5, 127.5, 255]);
-    expect(at50.slice(4, 8)).toEqual([0, 0, 0, 255]);
-    expect(at50.slice(8, 12)).toEqual([0, 0, 0, 255]);
+    expectClose(at50.slice(0, 4), [127.5, 127.5, 127.5, 255]);
+    expectClose(at50.slice(4, 8), [0, 0, 0, 255]);
+    expectClose(at50.slice(8, 12), [0, 0, 0, 255]);
 
     act(() => clock.advance(100));
     const at150 = shown()!;
-    expect(at150.slice(0, 4)).toEqual([255, 255, 255, 255]);
-    expect(at150.slice(4, 8)).toEqual([255, 255, 255, 255]);
-    expect(at150.slice(8, 12)).toEqual([127.5, 127.5, 127.5, 255]);
+    expectClose(at150.slice(0, 4), [255, 255, 255, 255]);
+    expectClose(at150.slice(4, 8), [255, 255, 255, 255]);
+    expectClose(at150.slice(8, 12), [127.5, 127.5, 127.5, 255]);
   });
 
   it('fires onDone after the slowest anchor completes and clears the override', () => {

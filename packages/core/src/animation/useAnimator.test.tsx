@@ -715,3 +715,57 @@ describe('useAnimator — abandoned renders', () => {
     act(() => { animator!.cancelAll(); });
   });
 });
+
+describe('useAnimator on the bank', () => {
+  it('pausing one tween leaves another with the same easing running', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let a = 0;
+    let b = 0;
+    let ha: ReturnType<Animator['tween']>;
+    act(() => {
+      ha = result.current.tween<number>({ from: 0, to: 100, ms: 1000, easing: linear, onTick: (v) => { a = v; } });
+      result.current.tween<number>({ from: 0, to: 100, ms: 1000, easing: linear, onTick: (v) => { b = v; } });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(200));
+    act(() => ha.pause());
+    act(() => clock.advance(300));
+    expect(a).toBeCloseTo(20, 6);
+    expect(b).toBeCloseTo(50, 6);
+  });
+
+  it('tweens an object of numbers with no interpolate', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let last = { x: 0, y: 0 };
+    act(() => {
+      result.current.tween<{ x: number; y: number }>({
+        from: { x: 0, y: 100 }, to: { x: 10, y: 0 }, ms: 1000, easing: linear,
+        onTick: (v) => { last = v; },
+      });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(500));
+    expect(last.x).toBeCloseTo(5, 6);
+    expect(last.y).toBeCloseTo(50, 6);
+  });
+
+  it('does not charge a tween for the time nothing was running before it', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    act(() => {
+      result.current.tween<number>({ from: 0, to: 1, ms: 100, easing: linear, onTick: () => {} });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(100));
+    act(() => clock.advance(5000));
+    let v = -1;
+    act(() => {
+      result.current.tween<number>({ from: 0, to: 100, ms: 1000, easing: linear, onTick: (x) => { v = x; } });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(500));
+    expect(v).toBeCloseTo(50, 6);
+  });
+});

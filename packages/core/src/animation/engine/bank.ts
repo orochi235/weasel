@@ -28,6 +28,8 @@ export interface Bank {
   /** Moves `id` onto a voice of its own, at rate `rate`, without a jump. */
   solo(id: number, rate: number): void;
   stop(id: number): void;
+  /** Whether `id` is one of the bank's subjects. */
+  has(id: number): boolean;
   /** How many voices the bank is running; for tests and diagnostics. */
   voiceCount(): number;
 }
@@ -283,6 +285,7 @@ export function createBank(): Bank {
       tweenTo.delete(id);
       springOf.delete(id);
     },
+    has: (id) => subjects.has(id),
     voiceCount() {
       return voices.size;
     },
