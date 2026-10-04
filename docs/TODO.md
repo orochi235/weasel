@@ -902,16 +902,14 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-- **(P2) jsdom is pinned to exactly 29.0.1.** From 29.0.2 through 30.1.1
-  (the latest), reading an inherited property that no ancestor sets — an unset
-  custom property is enough — costs twice as much for every level of DOM depth:
-  about 1.3s at depth 22 on 30.1.1, against about 3ms on 26. `getInheritedPropertyValue` in
-  jsdom's `living/css/helpers/computed-style.js` walks every ancestor, and each
-  ancestor's lookup walks its own ancestors again. `Select`'s
-  `getComputedStyle(trigger).getPropertyValue('--wzl-select-align')` hit it
-  inside forge's workshop, turning one `Workshop.test.tsx` case from ~1s into
-  ~150s. A depth-sweep repro is a dozen lines against `new JSDOM()`; move off the pin once
-  a jsdom release is flat on it.
+- **(P3) jsdom 30.1.1 runs patched.** From 29.0.2 on, reading a custom property no
+  ancestor sets doubles in cost with every level of DOM depth: `_getComputedPropertyValue`
+  caches only properties in `propertyDefinitions`, so `--*` reads go uncached, and
+  `getInheritedPropertyValue` re-walks the chain from each ancestor. `Select`'s
+  `--wzl-select-align` read turned one `Workshop.test.tsx` case from ~1s into ~150s.
+  `patches/jsdom+30.1.1.patch` caches custom properties too, applied by `postinstall`;
+  `Select/jsdomCustomProperty.test.ts` times out if it stops applying. Delete both, and
+  `patch-package`, once a jsdom release carries the fix.
 
 - **(P2) HUD vs DOM text: what the first measurement left open.**
   `tests/perf/hud-vs-dom.spec.ts` answered the main-thread question (findings
