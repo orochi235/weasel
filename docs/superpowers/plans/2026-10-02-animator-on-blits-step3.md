@@ -10,10 +10,13 @@ answer first"). Delete this file when the work merges.
 of in `useAnimator.ts`, with every public signature unchanged.
 
 **Architecture:** Each animator owns a *bank*: a set of blits voices, each on a mix of its own. Every
-animation call is one subject of the bank, named by its animation id. Calls that can share a voice do: one voice per distinct
-easing for tweens, and one per distinct `(stiffness, damping, mass, axis count)` for physics. Each
+animation call is one subject of the bank, named by its animation id. Calls that can share a voice
+do: one voice per distinct `(easing, axis count)` for tweens, and one per distinct
+`(stiffness, damping, mass, axis count)` for physics. Each
 frame the animator syncs the bank once, reads every voice's subjects with `mix.pull`, and hands each
-call its value through `onTick` as today. A call whose own handle is paused or re-rated moves to a
+call its value through `onTick` as today. blits computes the value itself wherever the caller has not
+supplied its own blend; a tween with an `interpolate` or `interpolator` gets eased progress from
+blits and its own function makes the value. A call whose own handle is paused or re-rated moves to a
 voice of its own; cancel and interrupt fade its subject out at once.
 
 **Tech Stack:** TypeScript, React hooks, vitest (`--project=core`), `@msb235/blits`.
@@ -26,7 +29,8 @@ Each is a call the proposal left open. Mike can overturn any of them before Task
 
 | Question | This plan's answer | Why |
 |---|---|---|
-| What a tween computes in blits | Eased progress `u` from 0 to 1; weasel still calls `interpolate(from, to, u)` | `TweenOptions<T>` takes any `T` with a caller's interpolator. blits moves numbers only |
+| What a tween computes in blits | The value itself, as axes, when the caller passes no `interpolate` or `interpolator` and `T` has axes. With either option, eased progress `u` from 0 to 1, and weasel calls the caller's function with it | blits blends in a straight line; a caller's own function may not (`interpolateView`, d3's string and color interpolators). Decided by Mike 2026-10-03 |
+| A tween of a number array or numeric-field object with no `interpolate` | Works, computed by blits | Today it throws "interpolate or interpolator is required". Additive |
 | What a spring computes in blits | The value itself, as axes, when `T` is a number, a number array or an object of numeric fields | `setTarget` retargets in `T`'s own space, so progress alone cannot carry it |
 | A `T` that is none of those | Stays on today's integrator, in its own file | No caller in the tree does this. `Vec2` (demo) and `RectLike` (momentum) both qualify for axes |
 | Keyframe sampling (`timeline/sampleTrack.ts`) | Not in this plan | Timelines seek, scrub and edit their tracks, a separate subsystem. It gets its own plan |
@@ -86,7 +90,7 @@ describe('blits behaviors the animator bank relies on', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
     const ms = new Map([[1, 1000], [2, 500]]);
-    const tw = tween<number, U>('u', { from: 0, to: 1, ms: (id) => ms.get(id)!, ease: linear });
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: (id) => ms.get(id)!, ease: linear, ...U });
     m.cue({ patch: tw });
     tw.to(1, 1, 0);
     tw.to(2, 1, 0);
@@ -108,7 +112,7 @@ describe('blits behaviors the animator bank relies on', () => {
   it('fade({ subject, over: 0 }) takes one subject off a voice and leaves the rest', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
-    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear });
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear, ...U });
     const h = m.cue({ patch: tw });
     tw.to(1, 1, 0);
     tw.to(2, 1, 0);
@@ -124,7 +128,7 @@ describe('blits behaviors the animator bank relies on', () => {
   it('a voice seeked to an elapsed time reads where the shared voice would', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
-    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear });
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear, ...U });
     const h = m.cue({ patch: tw, subjects: [3] });
     tw.to(3, 1, 0);
     m.sync(100);
@@ -138,7 +142,7 @@ describe('blits behaviors the animator bank relies on', () => {
   it('rate 0 holds a voice still', () => {
     const m = mix<number, U>(kit<U>({ u: sum() }));
     m.sync(0);
-    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear });
+    const tw = tween<number, U>('u', { from: 0, to: 1, ms: 1000, ease: linear, ...U });
     const h = m.cue({ patch: tw });
     tw.to(1, 1, 0);
     m.sync(300);
@@ -295,7 +299,11 @@ stop subjects, and once a frame to advance and read every subject's values.
 The bank's interface, which later tasks use exactly as written:
 
 ```ts
-export interface TweenStart { id: number; ms: number; ease: (u: number) => number; }
+export interface TweenStart {
+  id: number; ms: number; ease: (u: number) => number;
+  /** Endpoints as axes. A tween whose caller blends its own values passes [0] and [1]. */
+  from: number[]; to: number[];
+}
 export interface SpringStart {
   id: number; axes: number;
   from: number[]; to: number[] | null; velocity: number[];
@@ -306,8 +314,9 @@ export interface Bank {
   frame(dtMs: number): void;
   tween(s: TweenStart): void;
   spring(s: SpringStart): void;
-  /** Eased progress of a tween subject, as read by the last `frame`. */
-  progress(id: number): number;
+  /** A tween subject's axes as the last `frame` read them: a view into the bank's arrays, valid
+   *  until the next `frame`. */
+  values(id: number): Float64Array;
   /** Position and velocity of a spring subject at the last `frame`. */
   motion(id: number): { value: number[]; velocity: number[] };
   retarget(id: number, to: number[] | null): void;
@@ -327,54 +336,65 @@ import { createBank } from './bank';
 
 const linear = (u: number) => u;
 const SPRING = { stiffness: 170, damping: 26, mass: 1 };
+/** A tween of progress alone, as a caller with its own `interpolate` gets. */
+const U = { from: [0], to: [1] };
 
 describe('createBank', () => {
   it('advances tweens sharing an easing on one voice, each by its own ms', () => {
     const b = createBank();
-    b.tween({ id: 1, ms: 1000, ease: linear });
-    b.tween({ id: 2, ms: 500, ease: linear });
+    b.tween({ id: 1, ms: 1000, ease: linear, ...U });
+    b.tween({ id: 2, ms: 500, ease: linear, ...U });
     b.frame(250);
-    expect(b.progress(1)).toBeCloseTo(0.25, 9);
-    expect(b.progress(2)).toBeCloseTo(0.5, 9);
+    expect(b.values(1)[0]).toBeCloseTo(0.25, 9);
+    expect(b.values(2)[0]).toBeCloseTo(0.5, 9);
   });
 
   it('starts a tween at the bank time it was added, not at zero', () => {
     const b = createBank();
     b.frame(400);
-    b.tween({ id: 1, ms: 1000, ease: linear });
+    b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.frame(100);
-    expect(b.progress(1)).toBeCloseTo(0.1, 9);
+    expect(b.values(1)[0]).toBeCloseTo(0.1, 9);
   });
 
   it('keeps a stopped subject out of the next frame and its neighbors running', () => {
     const b = createBank();
-    b.tween({ id: 1, ms: 1000, ease: linear });
-    b.tween({ id: 2, ms: 1000, ease: linear });
+    b.tween({ id: 1, ms: 1000, ease: linear, ...U });
+    b.tween({ id: 2, ms: 1000, ease: linear, ...U });
     b.frame(100);
     b.stop(1);
     b.frame(100);
-    expect(b.progress(2)).toBeCloseTo(0.2, 9);
-    expect(() => b.progress(1)).toThrow(/no subject 1/);
+    expect(b.values(2)[0]).toBeCloseTo(0.2, 9);
+    expect(() => b.values(1)).toThrow(/no subject 1/);
   });
 
   it('solo at rate 0 freezes one tween and not its neighbor', () => {
     const b = createBank();
-    b.tween({ id: 1, ms: 1000, ease: linear });
-    b.tween({ id: 2, ms: 1000, ease: linear });
+    b.tween({ id: 1, ms: 1000, ease: linear, ...U });
+    b.tween({ id: 2, ms: 1000, ease: linear, ...U });
     b.frame(300);
     b.solo(1, 0);
     b.frame(300);
-    expect(b.progress(1)).toBeCloseTo(0.3, 9);
-    expect(b.progress(2)).toBeCloseTo(0.6, 9);
+    expect(b.values(1)[0]).toBeCloseTo(0.3, 9);
+    expect(b.values(2)[0]).toBeCloseTo(0.6, 9);
   });
 
   it('solo at rate 2 runs one tween at double speed from where it was', () => {
     const b = createBank();
-    b.tween({ id: 1, ms: 1000, ease: linear });
+    b.tween({ id: 1, ms: 1000, ease: linear, ...U });
     b.frame(200);
     b.solo(1, 2);
     b.frame(100);
-    expect(b.progress(1)).toBeCloseTo(0.4, 9);
+    expect(b.values(1)[0]).toBeCloseTo(0.4, 9);
+  });
+
+  it('moves a tween of several axes between its own endpoints', () => {
+    const b = createBank();
+    b.tween({ id: 1, ms: 1000, ease: linear, from: [0, 100], to: [10, 0] });
+    b.tween({ id: 2, ms: 1000, ease: linear, from: [5, 5], to: [5, 15] });
+    b.frame(500);
+    expect(Array.from(b.values(1))).toEqual([5, 50]);
+    expect(Array.from(b.values(2))).toEqual([5, 10]);
   });
 
   it('moves a spring and keeps its velocity through a retarget', () => {
@@ -405,16 +425,20 @@ Expected: FAIL, cannot resolve `./bank`.
 
 - [ ] **Step 3: Implement**
 
-A voice is keyed by what its patch cannot vary per subject: a tween's easing function, or a
-spring's constants and axis count. Each voice gets a mix of its own: a voice cued without
+A voice is keyed by what its patch cannot vary per subject: a tween's easing function and axis
+count, or a spring's constants and axis count. Each voice gets a mix of its own: a voice cued without
 `subjects` reaches every subject a `pull` names, so two voices sharing a `sum` mix would add their
-values into each other's subjects. A decay (`to: null`) is blits' `glide` when `stiffness` is 0;
-everything else with a target is `spring`.
+values into each other's subjects. A spring with no target (`to: null`) is blits' `glide`; one with
+a target is `spring`.
 
 ```ts
 import { glide, kit, mix, spring as springPatch, sum, tween as tweenPatch, vec, type Handle, type Mix } from '@msb235/blits';
 
-export interface TweenStart { id: number; ms: number; ease: (u: number) => number; }
+export interface TweenStart {
+  id: number; ms: number; ease: (u: number) => number;
+  /** Endpoints as axes. A tween whose caller blends its own values passes [0] and [1]. */
+  from: number[]; to: number[];
+}
 export interface SpringStart {
   id: number; axes: number;
   from: number[]; to: number[] | null; velocity: number[];
@@ -424,7 +448,7 @@ export interface Bank {
   frame(dtMs: number): void;
   tween(s: TweenStart): void;
   spring(s: SpringStart): void;
-  progress(id: number): number;
+  values(id: number): Float64Array;
   motion(id: number): { value: number[]; velocity: number[] };
   retarget(id: number, to: number[] | null): void;
   push(id: number, velocity: number[]): void;
@@ -483,6 +507,8 @@ export function createBank(): Bank {
     return k;
   };
   const ms = new Map<number, number>();
+  const tweenFrom = new Map<number, number[]>();
+  const tweenTo = new Map<number, number[]>();
   const springOf = new Map<number, SpringStart>();
 
   const reslot = (v: Voice): void => {
@@ -504,16 +530,16 @@ export function createBank(): Bank {
     }
   };
 
-  const tweenVoice = (ease: (u: number) => number, solo: string | null): Voice => {
-    const key = solo ?? `tween:${easeKey(ease)}`;
+  const tweenVoice = (ease: (u: number) => number, axes: number, solo: string | null): Voice => {
+    const key = solo ?? `tween:${easeKey(ease)}:${axes}`;
     let v = voices.get(key);
     if (!v) {
       const patch = tweenPatch<number, Out, number[]>('v', {
-        from: [0], to: [1], ms: (id) => ms.get(id)!, ease,
+        from: (id) => tweenFrom.get(id)!, to: (id) => tweenTo.get(id)!, ms: (id) => ms.get(id)!, ease,
       });
-      const m = mixOf(1);
+      const m = mixOf(axes);
       const handle = m.cue({ patch });
-      v = { key, axes: 1, mix: m, cuedAt: time, handle, patch: patch as Voice['patch'], ids: [], cols: { v: new Float64Array(0) }, solo: solo != null };
+      v = { key, axes, mix: m, cuedAt: time, handle, patch: patch as Voice['patch'], ids: [], cols: { v: new Float64Array(0) }, solo: solo != null };
       voices.set(key, v);
     }
     return v;
@@ -557,11 +583,13 @@ export function createBank(): Bank {
     },
     tween(s) {
       ms.set(s.id, s.ms);
-      const v = tweenVoice(s.ease, null);
+      tweenFrom.set(s.id, s.from);
+      tweenTo.set(s.id, s.to);
+      const v = tweenVoice(s.ease, s.from.length, null);
       const sub: Subject = { voice: v, kind: 'tween', start: time, ms: s.ms, ease: s.ease, slot: 0 };
       subjects.set(s.id, sub);
       join(v, s.id);
-      v.patch.to(s.id, [1], local(v));
+      v.patch.to(s.id, s.to, local(v));
     },
     spring(s) {
       springOf.set(s.id, s);
@@ -571,9 +599,10 @@ export function createBank(): Bank {
       join(v, s.id);
       if (s.to) v.patch.to(s.id, s.to, local(v));
     },
-    progress(id) {
+    values(id) {
       const s = get(id);
-      return s.voice.cols.v[s.slot]!;
+      const n = s.voice.axes;
+      return s.voice.cols.v.subarray(s.slot * n, s.slot * n + n);
     },
     motion(id) {
       const s = get(id);
@@ -595,12 +624,12 @@ export function createBank(): Bank {
       const from = s.voice;
       const key = `solo:${id}`;
       if (s.kind === 'tween') {
-        const v = tweenVoice(s.ease, key);
+        const v = tweenVoice(s.ease, from.axes, key);
         from.handle.fade({ subject: id, over: 0 });
         leave(from, id);
         s.voice = v;
         join(v, id);
-        v.patch.to(id, [1], 0);
+        v.patch.to(id, tweenTo.get(id)!, 0);
         v.handle.seek(time - s.start);
         v.handle.rate = rate;
       } else {
@@ -624,6 +653,8 @@ export function createBank(): Bank {
       leave(s.voice, id);
       subjects.delete(id);
       ms.delete(id);
+      tweenFrom.delete(id);
+      tweenTo.delete(id);
       springOf.delete(id);
     },
   };
@@ -638,7 +669,7 @@ whole voice, and whether a voice cued on a mix synced to bank time `t` reads voi
 - [ ] **Step 4: Run to see them pass**
 
 Run: `npx vitest run --project=core packages/core/src/animation/engine/bank.test.ts`
-Expected: 7 passed.
+Expected: 8 passed.
 
 - [ ] **Step 5: Commit**
 
@@ -710,13 +741,12 @@ git commit -m "move the animator's spring step into its own module"
 - Modify: `packages/core/src/animation/useAnimator.ts` (`tween`, `tickAll`, `register`'s handle)
 - Test: `packages/core/src/animation/useAnimator.test.tsx`
 
-This task changes where a tween's value is computed, not what it is: today's tween is already
-`easing(elapsed / ms)` in closed form, so no test of behavior can fail before the change and pass
-after it. The bank's own tests (Task 3) are the failing-first half. Here the 36 tests in
-`useAnimator.test.tsx` are the guard, and the one new test pins the case the bank adds: two tweens
-on one voice, one paused by its handle.
+For a tween that works today this task changes where its value is computed, not what it is: today's
+tween is already `easing(elapsed / ms)` in closed form. The 36 tests in `useAnimator.test.tsx` guard
+that. Two new tests: one pins the case the bank adds (two tweens on one voice, one paused by its
+handle), which passes before and after; the other is a tween that throws today and works after.
 
-- [ ] **Step 1: Add the test**
+- [ ] **Step 1: Add the tests**
 
 ```ts
 describe('useAnimator on the bank', () => {
@@ -737,13 +767,30 @@ describe('useAnimator on the bank', () => {
     expect(a).toBeCloseTo(20, 6);
     expect(b).toBeCloseTo(50, 6);
   });
+
+  it('tweens an object of numbers with no interpolate', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let last = { x: 0, y: 0 };
+    act(() => {
+      result.current.tween<{ x: number; y: number }>({
+        from: { x: 0, y: 100 }, to: { x: 10, y: 0 }, ms: 1000, easing: linear,
+        onTick: (v) => { last = v; },
+      });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(500));
+    expect(last.x).toBeCloseTo(5, 6);
+    expect(last.y).toBeCloseTo(50, 6);
+  });
 });
 ```
 
-- [ ] **Step 2: Run it on today's code**
+- [ ] **Step 2: Run them on today's code**
 
 Run: `npx vitest run --project=core packages/core/src/animation/useAnimator.test.tsx -t "on the bank"`
-Expected: PASS. It describes behavior today already has; it stays green through Step 3.
+Expected: the pause test passes; the object test fails with "tween: interpolate or interpolator is
+required for non-numeric T".
 
 - [ ] **Step 3: Route tweens through the bank**
 
@@ -775,14 +822,32 @@ global rate:
 A tween registered between frames starts at the bank time of the last frame, where today it starts
 at `now()` when `tween` is called. The difference is at most one frame.
 
-Replace the body of `tween`'s `tick` so it reads progress from the bank instead of computing it:
+A tween takes one of two routes, decided once when it starts. With no `interpolate` and no
+`interpolator`, and a `T` that has axes, blits computes the value itself. Otherwise blits computes
+eased progress and the caller's function turns it into a value, as today. Above the `register` call
+in `tween`:
+
+```ts
+      // blits blends in a straight line, which a caller's own function may not do.
+      const axes = o.interpolate || o.interpolator ? null : axesOf(o.from);
+```
+
+`perTickInterp`'s fallback throws for a non-numeric `T` with no `interpolate`; with `axes` set it
+is never called, so an array or numeric-field `T` now tweens where it used to throw.
+
+Replace the body of `tween`'s `tick` so it reads from the bank instead of computing:
 
 ```ts
         tick(nowMs) {
           if (tripwire()) return true;
           const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
-          const eased = t >= 1 ? easing(1) : bank.progress(id);
-          const value = factoryFn ? factoryFn(eased) : perTickInterp!(o.from, o.to, eased);
+          let value: T;
+          if (axes) {
+            value = t >= 1 ? o.to : axes.from(bank.values(id));
+          } else {
+            const eased = t >= 1 ? easing(1) : bank.values(id)[0]!;
+            value = factoryFn ? factoryFn(eased) : perTickInterp!(o.from, o.to, eased);
+          }
           o.onTick(value);
           if (t >= 1 && !lastValueEmitted) {
             lastValueEmitted = true;
@@ -801,13 +866,18 @@ and start the subject right after `register` returns, before the `return`:
 
 ```ts
       const handle = register({ /* unchanged seed, with the tick above */ });
-      bank.tween({ id, ms: Math.max(o.ms, 1), ease: easing });
+      bank.tween({
+        id, ms: Math.max(o.ms, 1), ease: easing,
+        from: axes ? axes.to(o.from) : [0],
+        to: axes ? axes.to(o.to) : [1],
+      });
       return handle;
 ```
 
+and add `import { axesOf } from './engine/axes';` beside the other imports.
+
 `nowMs` stays the call's own virtual time, which already folds in per-call pause and rate, so the
 end of a tween is still decided where it is today. The bank decides only the value in between.
-
 In `retire`, before `animations.current.delete(id)`, add `bank.stop(id);` so a cancel or interrupt
 takes the subject off its voice. In `cancelAll`, call `bank.stop(a.id)` for each retired animation.
 
@@ -973,7 +1043,8 @@ is left: keyframe sampling, then steps 4–6.
 
 The animator computes tweens, springs, physics and decay in blits. Signatures are unchanged.
 Springs, physics and decay now follow closed forms, so a spring lands in the same place at any frame
-rate; values differ slightly from the previous integrator's.
+rate; values differ slightly from the previous integrator's. A tween of a number array or an object
+of numbers no longer needs an `interpolate`.
 ```
 
 - [ ] **Step 4: Commit**
