@@ -487,13 +487,18 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         },
       });
 
+      const checkShape = (v: T, what: string): void => {
+        if (!sameShape(v)) throw new Error(`physics: ${what} is not the same shape as \`from\``);
+      };
       const handle: PhysicsHandle<T> = {
         ...baseHandle,
         setTarget: (newTo: T | null) => {
+          if (axes && newTo != null) checkShape(newTo, 'setTarget');
           target = newTo;
           if (axes && bank.has(id)) bank.retarget(id, newTo == null ? null : axes.to(newTo));
         },
         setVelocity: (v: T) => {
+          if (axes) checkShape(v, 'setVelocity');
           velocity = v;
           if (axes && bank.has(id)) bank.push(id, axes.to(v));
         },

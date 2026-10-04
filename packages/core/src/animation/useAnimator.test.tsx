@@ -633,6 +633,35 @@ describe('useAnimator.physics', () => {
     expect(samples[samples.length - 1]).toBeGreaterThan(beforeKick + 10);
   });
 
+  const vecOps = {
+    add: (a: number[], b: number[]) => a.map((x, i) => x + b[i]!),
+    subtract: (a: number[], b: number[]) => a.map((x, i) => x - b[i]!),
+    scale: (v: number[], k: number) => v.map((x) => x * k),
+    magnitude: (v: number[]) => Math.hypot(...v),
+  };
+
+  it('setTarget throws on a target shaped differently from `from`', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let handle!: ReturnType<typeof result.current.physics<number[]>>;
+    act(() => {
+      handle = result.current.physics<number[]>({ from: [0, 0], to: [10, 10], ...vecOps, onTick: () => {} });
+    });
+    act(() => clock.advance(16));
+    expect(() => handle.setTarget([1, 2, 3])).toThrow(/shape/);
+  });
+
+  it('setVelocity throws on a velocity shaped differently from `from`', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let handle!: ReturnType<typeof result.current.physics<number[]>>;
+    act(() => {
+      handle = result.current.physics<number[]>({ from: [0, 0], to: [10, 10], ...vecOps, onTick: () => {} });
+    });
+    act(() => clock.advance(16));
+    expect(() => handle.setVelocity([1, 2, 3])).toThrow(/shape/);
+  });
+
   it('setTarget(null) switches to decay; velocity carries position forward', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
