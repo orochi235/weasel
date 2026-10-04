@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
-import { easeOut, SPRING_PRESETS, resolveEasing, type EasingSpec } from '@weasel-js/geom';
+import { easeOut, SPRING_PRESETS, resolveEasing } from '@weasel-js/geom';
 import { createLoop, createTweenLoop } from './loop';
 import { stepSpring } from './engine/integrator';
 import { createBank } from './engine/bank';
@@ -47,16 +47,6 @@ interface ActiveAnimation {
   tick(virtualNow: number, scale: number): boolean;
   /** Called when the animation is cancelled. Skips onDone. */
   onCancel?(): void;
-}
-
-const numericLerp = (a: number, b: number, t: number): number => a + (b - a) * t;
-
-/** A name for an easing spec that two equal specs share, so their tweens share a bank voice; a
- *  function spec has none, and the bank names it by identity. */
-function easingKey(spec: EasingSpec): string | undefined {
-  if (typeof spec === 'string') return `name:${spec}`;
-  if (typeof spec === 'object') return `bezier:${spec.bezier.join(',')}`;
-  return undefined;
 }
 
 function resolveSpringConstants(o: { preset?: string; stiffness?: number; damping?: number; mass?: number }) {
@@ -353,33 +343,25 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     };
 
     const tween = <T,>(o: TweenOptions<T>): AnimationHandle => {
-      const id = nextId.current++;
-      const easingSpec = o.easing ?? easeOut;
-      const easing = resolveEasing(easingSpec);
-      // Precedence: factory > per-tick > default numeric lerp. Factory is built
-      // once at tween start so expensive setup (color space conversion etc.)
-      // doesn't repeat per frame.
-      const factoryFn = o.interpolator ? o.interpolator(o.from, o.to) : null;
-      const perTickInterp =
-        factoryFn
-          ? null
-          : o.interpolate ??
-            ((a: T, b: T, t: number) => {
-              if (typeof a === 'number' && typeof b === 'number') {
-                return numericLerp(a as number, b as number, t) as unknown as T;
-              }
-              throw new Error('tween: interpolate or interpolator is required for non-numeric T');
-            });
-      let lastValueEmitted = false;
       // blits blends in a straight line, which a caller's own function may not do.
       const fromAxes = o.interpolate || o.interpolator ? null : axesOf(o.from);
       const toAxes = fromAxes && axesOf(o.to);
       const axes = fromAxes && toAxes && toAxes.shape === fromAxes.shape ? fromAxes : null;
+      // Refused here rather than on a tick, where a throw would stop every other animation.
+      if (!axes && !o.interpolate && !o.interpolator) {
+        throw new Error('tween: interpolate or interpolator is required for non-numeric T');
+      }
+      const id = nextId.current++;
+      const easing = resolveEasing(o.easing ?? easeOut);
+      // Precedence: factory > per-tick. Factory is built once at tween start so
+      // expensive setup (color space conversion etc.) doesn't repeat per frame.
+      const factoryFn = o.interpolator ? o.interpolator(o.from, o.to) : null;
+      let lastValueEmitted = false;
       // Seeds the bank's clock where `register` seeds the call's, so both charge the same wait.
       if (bankFrameT.current == null) bankFrameT.current = now();
       // Started ahead of `register`, whose `start` listeners may already cancel it.
       bank.tween({
-        id, ms: Math.max(o.ms, 1), ease: easing, easeKey: easingKey(easingSpec),
+        id, ms: Math.max(o.ms, 1), ease: easing,
         from: axes ? axes.to(o.from) : [0],
         to: axes ? axes.to(o.to) : [1],
       });
@@ -399,7 +381,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             value = t >= 1 ? o.to : axes.from(bank.values(id));
           } else {
             const eased = t >= 1 ? easing(1) : bank.values(id)[0]!;
-            value = factoryFn ? factoryFn(eased) : perTickInterp!(o.from, o.to, eased);
+            value = factoryFn ? factoryFn(eased) : o.interpolate!(o.from, o.to, eased);
           }
           o.onTick(value);
           if (t >= 1 && !lastValueEmitted) {

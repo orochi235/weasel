@@ -758,13 +758,26 @@ describe('useAnimator on the bank', () => {
   ])('asks for interpolate when from and to are %s', (_name, from, to) => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
-    expect(() => {
-      act(() => {
-        result.current.tween<unknown>({ from, to, ms: 100, onTick: () => {} });
-      });
-      act(() => clock.advance(0));
-    }).toThrow('tween: interpolate or interpolator is required for non-numeric T');
-    act(() => result.current.cancelAll());
+    expect(() => result.current.tween<unknown>({ from, to, ms: 100, onTick: () => {} }))
+      .toThrow('tween: interpolate or interpolator is required for non-numeric T');
+    expect(result.current.isActive()).toBe(false);
+  });
+
+  it('keeps every other tween running after refusing one', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    let v = -1;
+    act(() => {
+      result.current.tween<number>({ from: 0, to: 100, ms: 1000, easing: linear, onTick: (x) => { v = x; } });
+    });
+    act(() => clock.advance(0));
+    act(() => {
+      try {
+        result.current.tween<unknown>({ from: [0, 0], to: [1], ms: 100, onTick: () => {} });
+      } catch { /* refused */ }
+    });
+    act(() => clock.advance(500));
+    expect(v).toBeCloseTo(50, 6);
   });
 
   it('tweens a typed array through its own interpolate', () => {

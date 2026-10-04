@@ -156,9 +156,9 @@ describe('createBank membership', () => {
     expect(Array.from(b.values(1))).toEqual([0.5, 0.5]);
   });
 
-  it('shares a voice between tweens whose easings carry the same key', () => {
+  it('shares a voice between tweens given the same easing function', () => {
     const b = createBank();
-    for (let id = 1; id <= 100; id++) b.tween({ id, ms: 100, ease: (u) => u, easeKey: 'linear', ...U });
+    for (let id = 1; id <= 100; id++) b.tween({ id, ms: 100, ease: linear, ...U });
     b.frame(16);
     expect(b.voiceCount()).toBe(1);
   });

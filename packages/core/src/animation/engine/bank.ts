@@ -5,9 +5,6 @@ import {
 
 export interface TweenStart {
   id: number; ms: number; ease: (u: number) => number;
-  /** Names the easing, so tweens whose `ease` is equal but not the same function share a voice.
-   *  Absent, the function's identity names it. */
-  easeKey?: string;
   /** Endpoints as axes. A tween whose caller blends its own values passes [0] and [1]. */
   from: number[]; to: number[];
 }
@@ -70,7 +67,6 @@ interface Subject {
   /** Bank time it started at; a tween's elapsed time is the bank's time less this. */
   start: number;
   ease?: (u: number) => number;
-  easeKey?: string;
   /** The bank's own copy, kept at the subject's motion as of its last move between voices. */
   spring?: SpringStart;
   /** Index into the voice's `ids`; -1 while no frame has read it on this voice. */
@@ -145,8 +141,8 @@ export function createBank(): Bank {
 
   // blits writes a subject's first stretch at voice time 0, so every patch starts a subject at
   // rest at `from`, and the bank releases it with a timed `to` or `push` at the time it joins.
-  const tweenVoice = (ease: (u: number) => number, name: string | undefined, axes: number, solo: string | null): Voice => {
-    const key = solo ?? `tween:${name == null ? `fn:${easeKey(ease)}` : `key:${name}`}:${axes}`;
+  const tweenVoice = (ease: (u: number) => number, axes: number, solo: string | null): Voice => {
+    const key = solo ?? `tween:${easeKey(ease)}:${axes}`;
     const v = voices.get(key);
     if (v) return v;
     const from = (id: number) => tweenFrom.get(id)!;
@@ -242,9 +238,9 @@ export function createBank(): Bank {
       ms.set(s.id, s.ms);
       tweenFrom.set(s.id, s.from.slice());
       tweenTo.set(s.id, s.to.slice());
-      const v = tweenVoice(s.ease, s.easeKey, s.from.length, null);
+      const v = tweenVoice(s.ease, s.from.length, null);
       subjects.set(s.id, {
-        voice: v, kind: 'tween', start: time, ease: s.ease, easeKey: s.easeKey, slot: -1, held: Float64Array.from(s.from),
+        voice: v, kind: 'tween', start: time, ease: s.ease, slot: -1, held: Float64Array.from(s.from),
       });
       join(v, s.id);
       try {
@@ -288,7 +284,7 @@ export function createBank(): Bank {
       const s = get(id);
       if (s.voice.solo) { s.voice.handle.rate = rate; return; }
       if (s.kind === 'spring') { moveSpring(s, id, s.spring!, rate); return; }
-      const v = tweenVoice(s.ease!, s.easeKey, s.voice.axes, `solo:${id}:${soloSerial++}`);
+      const v = tweenVoice(s.ease!, s.voice.axes, `solo:${id}:${soloSerial++}`);
       s.held = values(id).slice();
       depart(s, id);
       s.voice = v;
