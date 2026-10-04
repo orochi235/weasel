@@ -304,8 +304,18 @@ describe('StoryTree', () => {
     await mount();
     openFolder('Kit');
     openFolder('Button');
-    expect(fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { metaKey: true })).toBe(true);
-    expect(fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { ctrlKey: true })).toBe(true);
+    // A browser opens a modified click in a new tab; jsdom navigates this page a task later, past
+    // afterEach's URL reset, and the next test inherits the route. So record what the tree left, then cancel.
+    const left: boolean[] = [];
+    const record = (event: MouseEvent) => {
+      left.push(!event.defaultPrevented);
+      event.preventDefault();
+    };
+    document.addEventListener('click', record);
+    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { metaKey: true });
+    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { ctrlKey: true });
+    document.removeEventListener('click', record);
+    expect(left).toEqual([true, true]);
     expect(trialsOf(ghost)).toHaveLength(0);
   });
 
