@@ -3,6 +3,7 @@ import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import { easeOut, SPRING_PRESETS, resolveEasing } from '@weasel-js/geom';
 import { createLoop, createTweenLoop } from './loop';
+import { stepSpring } from './engine/integrator';
 import { createStagger, type StaggerTimers } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
 import { ColorOverrideRegistry } from './colorRegistry';
@@ -421,13 +422,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           lastTime = nowMs;
           // Semi-implicit Euler. When target == null, stiffness == 0 ⇒
           // no spring force; only damping acts on velocity (exponential decay).
-          const ref = target ?? value;
-          const displacement = subtract(value, ref);
-          const springForce = scale(displacement, target == null ? 0 : -kBase);
-          const dampingForce = scale(velocity, -damping);
-          const accel = scale(add(springForce, dampingForce), 1 / mass);
-          velocity = add(velocity, scale(accel, dt));
-          value = add(value, scale(velocity, dt));
+          const next = stepSpring({ add, subtract, scale }, value, velocity, target, kBase, damping, mass, dt);
+          value = next.value;
+          velocity = next.velocity;
           o.onTick(value);
           const velRested = magnitude(velocity) < restThreshold;
           const posRested = target == null
