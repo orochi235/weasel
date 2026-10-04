@@ -1,5 +1,24 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createBank } from './bank';
+
+/** Every mix the bank makes, so a test can see what blits keeps per subject. */
+const mixes = vi.hoisted(() => [] as unknown[]);
+vi.mock('@msb235/blits', async (importOriginal) => {
+  const blits = await importOriginal<typeof import('@msb235/blits')>();
+  return {
+    ...blits,
+    mix: (...args: Parameters<typeof blits.mix>) => {
+      const m = blits.mix(...args);
+      mixes.push(m);
+      return m;
+    },
+  };
+});
+/** Per-subject records a mix still holds. Reads blits' internals: it has no public count. */
+const held = (m: unknown): number => {
+  const x = m as { chains: { strong: Map<unknown, unknown> }; voices: { parted: Map<unknown, unknown> | null }[] };
+  return x.chains.strong.size + x.voices.reduce((n, v) => n + (v.parted?.size ?? 0), 0);
+};
 
 const linear = (u: number) => u;
 const SPRING = { stiffness: 170, damping: 26, mass: 1 };
@@ -105,31 +124,70 @@ describe('createBank membership', () => {
     expect(b.values(1)[0]).toBeCloseTo(0.1, 9);
   });
 
-  it('starts and stops 10,000 tweens quickly', () => {
-    const b = createBank();
-    const n = 10_000;
-    let t0 = performance.now();
-    for (let i = 0; i < n; i++) b.tween({ id: i, ms: 1000, ease: linear, ...U });
-    const started = performance.now() - t0;
-    b.frame(16);
-    t0 = performance.now();
-    for (let i = 0; i < n; i++) b.stop(i);
-    const stopped = performance.now() - t0;
-    expect(started).toBeLessThan(200);
-    expect(stopped).toBeLessThan(200);
+  it('starts and stops tweens in time linear in their number', () => {
+    const phases = (n: number): [number, number] => {
+      const b = createBank();
+      let t0 = performance.now();
+      for (let i = 0; i < n; i++) b.tween({ id: i, ms: 1000, ease: linear, ...U });
+      const started = performance.now() - t0;
+      b.frame(16);
+      t0 = performance.now();
+      for (let i = 0; i < n; i++) b.stop(i);
+      return [started, performance.now() - t0];
+    };
+    const median = (n: number): [number, number] => {
+      const runs = [phases(n), phases(n), phases(n)];
+      const mid = (k: 0 | 1) => runs.map((r) => r[k]).sort((a, b) => a - b)[1]!;
+      return [mid(0), mid(1)];
+    };
+    phases(1000);
+    const [start1k, stop1k] = median(1000);
+    const [start10k, stop10k] = median(10_000);
+    expect(start10k).toBeLessThan(30 * start1k);
+    expect(stop10k).toBeLessThan(30 * stop1k);
   });
 
-  it('retires a voice once no subject is left on it', () => {
+  it('retires a voice once it has been empty at two frames running', () => {
     const b = createBank();
     b.tween({ id: 1, ms: 100, ease: (u) => u, ...U });
     b.frame(100);
     expect(b.voiceCount()).toBe(1);
     b.stop(1);
     b.frame(16);
+    expect(b.voiceCount()).toBe(1);
+    b.frame(16);
     expect(b.voiceCount()).toBe(0);
     b.tween({ id: 2, ms: 100, ease: (u) => u * u, ...U });
     b.frame(50);
     expect(b.values(2)[0]).toBeCloseTo(0.25, 9);
+  });
+
+  it('keeps a voice for a tween that follows one ending on it', () => {
+    mixes.length = 0;
+    const b = createBank();
+    b.tween({ id: 1, ms: 100, ease: linear, ...U });
+    b.frame(100);
+    b.stop(1);
+    b.frame(16);
+    b.tween({ id: 2, ms: 100, ease: linear, ...U });
+    b.frame(50);
+    expect(mixes).toHaveLength(1);
+    expect(b.values(2)[0]).toBeCloseTo(0.5, 9);
+  });
+
+  it('lets its mix forget subjects that have stopped', () => {
+    mixes.length = 0;
+    const b = createBank();
+    b.tween({ id: 0, ms: 1e9, ease: linear, ...U });
+    b.frame(16);
+    for (let i = 1; i <= 2000; i++) {
+      b.tween({ id: i, ms: 100, ease: linear, ...U });
+      b.frame(16);
+      b.stop(i);
+    }
+    b.frame(16);
+    expect(mixes).toHaveLength(1);
+    expect(held(mixes[0])).toBeLessThan(10);
   });
 });
 
@@ -259,6 +317,7 @@ describe('createBank springs', () => {
     b.retarget(1, null);
     b.frame(500);
     expect(b.motion(1).value[0]).toBeCloseTo(before.value[0]!, 9);
+    b.frame(0);
     expect(b.voiceCount()).toBe(1);
   });
 });
@@ -301,6 +360,7 @@ describe('createBank solo', () => {
     b.solo(1, 0);
     b.frame(100);
     expect(b.values(1)[0]).toBeCloseTo(0.2, 9);
+    b.frame(0);
     expect(b.voiceCount()).toBe(1);
     b.solo(1, 1);
     b.frame(100);

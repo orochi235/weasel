@@ -53,6 +53,8 @@ interface Voice {
   ids: number[];
   pending: Set<number>;
   dirty: boolean;
+  /** Frames in a row it has had no subjects at; it retires at the second. */
+  idle: number;
   cols: { v: Float64Array };
   solo: boolean;
 }
@@ -103,7 +105,7 @@ export function createBank(): Bank {
   };
   const depart = (s: Subject, id: number): void => {
     const v = s.voice;
-    v.handle.fade({ subject: id, over: 0 });
+    v.mix.drop(id);
     v.dirty = true;
     if (s.slot < 0) { v.pending.delete(id); return; }
     const last = v.ids.pop()!;
@@ -129,7 +131,7 @@ export function createBank(): Bank {
     const m = mixOf(axes);
     const v: Voice = {
       key, axes, mix: m, cuedAt: time, handle: m.cue({ patch }), patch: moves,
-      ids: [], pending: new Set(), dirty: false, cols: { v: new Float64Array(0) }, solo,
+      ids: [], pending: new Set(), dirty: false, idle: 0, cols: { v: new Float64Array(0) }, solo,
     };
     voices.set(key, v);
     return v;
@@ -208,10 +210,13 @@ export function createBank(): Bank {
       for (const v of voices.values()) {
         if (v.dirty) rebuild(v);
         if (v.ids.length === 0) {
-          v.handle.fade({ over: 0 });
-          voices.delete(v.key);
+          if (++v.idle >= 2) {
+            v.handle.fade({ over: 0 });
+            voices.delete(v.key);
+          }
           continue;
         }
+        v.idle = 0;
         v.mix.sync(time);
         v.mix.pull(v.ids, v.cols);
       }
