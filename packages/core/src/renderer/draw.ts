@@ -994,7 +994,7 @@ function stagedStateIsLive(
   image?: ImageBitmap, sampling?: 'linear' | 'nearest',
   synthBold = 0,
 ): boolean {
-  if (staged.clipDepth !== runClipDepth(ctx)) return false;
+  if (staged.clipDepth !== (ctx.clipStack.length === 0 ? ctx.clipDepth : runClipDepth(ctx))) return false;
   // Solids and image quads ask with 0, which is what a run of them carries, so
   // this only ever breaks between two kinds of glyph.
   if (staged.synthBold !== synthBold) return false;

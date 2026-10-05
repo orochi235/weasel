@@ -228,8 +228,6 @@ export class DrawBatch {
     r: number, g: number, b: number, a: number,
   ): boolean {
     this.reserve(4, 6);
-    const vStart = this.nVerts;
-    const iStart = this.nIdx;
     let i = this.nVerts * FLOATS_PER_VERTEX;
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
     const x1 = x + w;
@@ -244,7 +242,7 @@ export class DrawBatch {
     i = this.writeVertex(i, cx, cy, r, g, b, a, WHITE_U, WHITE_V, 1, P);
     this.writeVertex(i, dx, dy, r, g, b, a, WHITE_U, WHITE_V, 1, P);
     this.pushQuadIndices();
-    return this.clip === null || this.clipQuad(vStart, iStart, this.clip);
+    return this.clip === null || this.clipQuad(this.nVerts - 4, this.nIdx - 6, this.clip);
   }
 
   /**
@@ -266,8 +264,6 @@ export class DrawBatch {
     post: number, slot: number,
   ): boolean {
     this.reserve(4, 6);
-    const vStart = this.nVerts;
-    const iStart = this.nIdx;
     let i = this.nVerts * FLOATS_PER_VERTEX;
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
     const x1 = x + w;
@@ -282,7 +278,7 @@ export class DrawBatch {
     i = this.writeVertex(i, cx, cy, 1, 1, 1, 1, u1, v1, post, P);
     this.writeVertex(i, dx, dy, 1, 1, 1, 1, u0, v1, post, P);
     this.pushQuadIndices();
-    return this.clip === null || this.clipQuad(vStart, iStart, this.clip);
+    return this.clip === null || this.clipQuad(this.nVerts - 4, this.nIdx - 6, this.clip);
   }
 
   /**
@@ -314,8 +310,6 @@ export class DrawBatch {
     slot: number, mode: number,
   ): boolean {
     this.reserve(4, 6);
-    const vStart = this.nVerts;
-    const iStart = this.nIdx;
     let i = this.nVerts * FLOATS_PER_VERTEX;
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
     // Above-baseline corners (lower y in screen coords) lean further right.
@@ -333,7 +327,7 @@ export class DrawBatch {
     i = this.writeVertex(i, cx, cy, r, g, b, a, u1, v1, 1, P);
     this.writeVertex(i, dx, dy, r, g, b, a, u0, v1, 1, P);
     this.pushQuadIndices();
-    return this.clip === null || this.clipQuad(vStart, iStart, this.clip);
+    return this.clip === null || this.clipQuad(this.nVerts - 4, this.nIdx - 6, this.clip);
   }
 
   /**
@@ -358,8 +352,6 @@ export class DrawBatch {
     r: number, g: number, b: number, a: number,
   ): boolean {
     this.reserve(4, 6);
-    const vStart = this.nVerts;
-    const iStart = this.nIdx;
     let i = this.nVerts * FLOATS_PER_VERTEX;
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
     const x1 = x + w;
@@ -381,7 +373,7 @@ export class DrawBatch {
     corner(x1, y1);
     corner(x, y1);
     this.pushQuadIndices();
-    return this.clip === null || this.clipQuad(vStart, iStart, this.clip);
+    return this.clip === null || this.clipQuad(this.nVerts - 4, this.nIdx - 6, this.clip);
   }
 
   /** `pushMesh` for a mesh filled by a gradient — see `pushGradientRect` for
