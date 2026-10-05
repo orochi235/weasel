@@ -498,12 +498,10 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 
 - **(P3) The animator on blits** — weasel has no model for two animations on one property; every
   case is last-writer-wins. Proposal: `docs/proposals/2026-09-30-animator-on-blits.md`, which keeps
-  the animator's control surface and moves every value computation onto blits. On branch
-  `pose-overrides-mix`: pose overrides fold through a mix (step 2), and tweens, springs, physics and
-  decay compute in blits (most of step 3), at about 3× today's tween frame for 10k nodes, which
-  Mike accepted on 2026-10-04. Left, in order:
-  - Merge: blits publishes `tween`, `pull`, per-subject `fade` and its `5a514a3` fixes; core's pin
-    moves to that release; then the full suite on the fleet.
+  the animator's control surface and moves every value computation onto blits. Built: pose
+  overrides fold through a mix (step 2), and tweens, springs, physics and decay compute in blits
+  (most of step 3), at about 3× today's tween frame for 10k nodes, which Mike accepted on
+  2026-10-04. Left, in order:
   - Keyframe sampling (`timeline/sampleTrack.ts`) on blits, the rest of step 3. Needs a plan.
   - Steps 4–6.
 
