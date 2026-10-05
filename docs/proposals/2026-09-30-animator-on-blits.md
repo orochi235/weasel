@@ -255,8 +255,27 @@ blits' share is 0.22–0.25 in every row of both. The flat tables take most of t
 away (after churn costs what fresh does), but at a higher floor: the loop is 0.07 ms slower as
 started and 0.13 slower fresh, and no row gets near the 0.165 measured with no voices. So the
 per-animation objects weasel allocates are not what keeps the loop at two to three times today's
-cost. Not yet measured, and inferred only from what is left: the caller's own objects, which
-still sit a voice apart, or the tables' many separate arrays read in step.
+cost.
+
+**What churn costs is what each voice keeps alive, and nothing else.** Measured 2026-10-05 on
+teitou against blits 0.4.0, the codec's tween tick computing its own easing so the loop reads no
+codec record, after every animation was replaced once, weasel's loop alone in ms per frame for 10k
+tweens, three alternated rounds:
+
+| after churn                                         | voice per animation | no voice cued     |
+|-----------------------------------------------------|--------------------:|------------------:|
+| caller's objects made at each restart               | 0.75 / 0.66 / 0.69  | 0.22 / 0.21 / 0.21 |
+| caller's objects made in one burst before the churn | 0.41 / 0.40 / 0.65  | 0.21 / 0.21 / 0.21 |
+
+With no voice, churn costs nothing: 0.21 is the loop's steady figure. With voices, about half the
+penalty is the caller's objects landing a voice apart and the rest weasel's own. Reading the
+eased value from the codec record rather than computing it adds at most 0.05 ms in any state.
+A one-subject tween voice keeps about 3.2 KB alive on 0.4.0 (Node, `heapUsed` over 10k): its
+patch 0.8 KB, `cue` 1.6 KB, its first frame 0.75 KB. A tween patch can be shared across voices,
+each tween's `from`, `to` and `ms` read per subject, which drops the patch's share, but shrinking
+a voice by a third (`0c80b6d`) barely moved these rows. What would remove the penalty is blits
+reusing a retired voice's records for the next cue, so a steady churn allocates nothing that
+survives. That is filed with blits.
 
 **Built:** the codec cues tweens together at the start of the next `frame`, not one by one in
 `tween()`, before the clock advances, so a tween starts at the same time either way. Teitou, blits
