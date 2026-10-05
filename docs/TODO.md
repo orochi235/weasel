@@ -890,6 +890,13 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P2) `Toast.browser.test.tsx`'s placement case fails under full-suite load.** "each
+  placement anchors to its corner of the container" failed once in a full run on keiei
+  (2026-10-05, onto job `770eba13`, 2069 ms against ~20 ms for its siblings) and passed 8 of 8
+  alone on the same node. The job's log kept no assertion text, so whether `findByRole` timed
+  out or the offset was wrong is unknown. Nothing touching Toast had changed. A rerun under
+  load that prints the assertion is the next step.
+
 - **(P3) jsdom 30.1.1 runs patched.** From 29.0.2 on, reading a custom property no
   ancestor sets doubles in cost with every level of DOM depth: `_getComputedPropertyValue`
   caches only properties in `propertyDefinitions`, so `--*` reads go uncached, and
