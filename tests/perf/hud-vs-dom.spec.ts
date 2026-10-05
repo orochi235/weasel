@@ -26,16 +26,28 @@
  * covers the canvas's own draws only; the result's `params.gpuTimer` says
  * whether it did.
  *
+ * **Frame rate comes from an untraced window.** Tracing costs the browser
+ * process enough to stretch frames on its own, so each measurement first runs
+ * the same number of frames with tracing off and reads the rAF intervals from
+ * those.
+ *
  * **ABBA order.** Every configuration runs `hud dom dom hud`, then `dom hud hud
  * dom` on the next pass, so a machine drifting across a configuration charges
  * both sides alike, and node noise shows up as spread across samples rather
  * than as a difference between approaches.
  *
  * "Moves with the camera" means per-label repositioning under a pan and a zoom
- * whose glyph size stays fixed — the case for labels pinned to scene nodes. The
- * DOM side moves each label with `transform`, the cheapest per-element update;
- * a pure pan that could translate the whole layer as one element is cheaper
- * still and not measured here.
+ * whose glyph size stays fixed — the case for labels pinned to scene nodes. A
+ * "pan" camera translates without zooming, which lets a DOM overlay move as one
+ * element.
+ *
+ * Approaches: `hud` draws through `attachHud`'s layer; `dom` is plain DOM, each
+ * label moved by its own `transform`; `react` is the same spans rendered by
+ * React (`lib/hudDomReact.tsx`, bundled here with React's production build,
+ * which is what a consumer ships), so it adds reconciliation; `dom-layer`, run
+ * only under a pan, leaves the labels where they are and moves the overlay
+ * with one `transform`. The HUD has no layer-level offset, so under a pan it
+ * still moves each widget.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
@@ -44,8 +56,11 @@ import { metric, rounds, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import os from 'node:os';
+import { build } from 'esbuild';
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const here = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(here, '../..');
+const REACT_URL = '/weasel/__perf/hud-dom-react.js';
 
 const W = 1280;
 const H = 800;
@@ -60,14 +75,23 @@ const ALL_UPDATES = ['static', 'every-frame'] as const;
  *  deadline. */
 const onlyUpdates = process.env.HVD_UPDATES?.split(',').map((x) => x.trim());
 const UPDATES = onlyUpdates?.length ? ALL_UPDATES.filter((u) => onlyUpdates.includes(u)) : ALL_UPDATES;
-const CAMERAS = ['fixed', 'moving'] as const;
-type Approach = 'hud' | 'dom' | 'none';
+const ALL_CAMERAS = ['fixed', 'moving', 'pan'] as const;
+/** `HVD_CAMERAS=pan` narrows the sweep. */
+const onlyCameras = process.env.HVD_CAMERAS?.split(',').map((x) => x.trim());
+const CAMERAS = onlyCameras?.length ? ALL_CAMERAS.filter((c) => onlyCameras.includes(c)) : ALL_CAMERAS;
+type Approach = 'hud' | 'dom' | 'react' | 'dom-layer' | 'none';
+const ALL_APPROACHES = ['hud', 'dom', 'react', 'dom-layer'] as const;
+/** `HVD_APPROACHES=hud,dom` narrows the sweep. */
+const onlyApproaches = process.env.HVD_APPROACHES?.split(',').map((x) => x.trim());
+const APPROACHES = onlyApproaches?.length ? ALL_APPROACHES.filter((a) => onlyApproaches.includes(a)) : ALL_APPROACHES;
+const approachesFor = (camera: string) => APPROACHES.filter((a) => a !== 'dom-layer' || camera === 'pan');
 
 /** Frames traced per measurement, and frames run untraced before it. */
 const FRAMES = Number(process.env.HVD_FRAMES ?? 120);
 const WARMUP = 30;
 
-/** ABBA passes. Each gives every cell two samples. */
+/** Passes. Each runs every configuration's approaches forward then backward
+ *  (ABCCBA), so each gives every cell two samples. */
 const PASSES = rounds(2);
 
 const CATEGORIES = [
@@ -93,6 +117,9 @@ interface Sample extends Cell {
   longFrames: number;
   gpuTimeMs: number | null;
   load1: number;
+  /** From the untraced window. */
+  freeIntervalMs: number;
+  freeMissed: number;
 }
 
 // ─── trace analysis ──────────────────────────────────────────────────────
@@ -209,12 +236,16 @@ function analyze(trace: Buffer, frames: number): Breakdown & { found: string[] }
   };
 }
 
+interface FrameStats { frames: number; intervalMs: number; longFrames: number; missed: number; gpuTimeMs: number | null }
+
+const countFrames = (page: Page, frames: number) => page.evaluate(
+  (n) => (globalThis as unknown as { __hvd: { traceFrames(n: number): Promise<unknown> } }).__hvd.traceFrames(n),
+  frames,
+) as Promise<FrameStats>;
+
 async function traced(page: Page, browser: Browser, frames: number) {
   await browser.startTracing(page, { categories: CATEGORIES.split(',') });
-  const stats = await page.evaluate(
-    (n) => (globalThis as unknown as { __hvd: { traceFrames(n: number): Promise<unknown> } }).__hvd.traceFrames(n),
-    frames,
-  ) as { frames: number; intervalMs: number; longFrames: number; gpuTimeMs: number | null };
+  const stats = await countFrames(page, frames);
   const buf = await browser.stopTracing();
   return { stats, breakdown: analyze(buf, stats.frames) };
 }
@@ -224,13 +255,14 @@ async function traced(page: Page, browser: Browser, frames: number) {
 /** Installed into the page: builds a cell, drives its frame loop, and counts
  *  frames for the traced window. Runs in the browser. */
 async function install(
-  { root, w, h, glyphsPerLabel }: { root: string; w: number; h: number; glyphsPerLabel: number },
+  { root, w, h, glyphsPerLabel, reactUrl }: { root: string; w: number; h: number; glyphsPerLabel: number; reactUrl: string },
 ): Promise<{ glRenderer: string; gpuTimer: boolean }> {
   const base = `/weasel/@fs${root}`;
   // One import of the renderer barrel, so the font registry the renderer reads
   // is the one written here; a second specifier can load a second copy.
   const { WeaselRenderer, registerFont } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
   const { createHud, attachHud } = await import(/* @vite-ignore */ `${base}/packages/hud/src/index.ts`);
+  const { mountReactOverlay } = await import(/* @vite-ignore */ reactUrl);
 
   const canvas = document.getElementById('scene') as HTMLCanvasElement;
   canvas.width = w;
@@ -262,9 +294,9 @@ async function install(
   const home = (i: number) => ({ x: 16 + (i % COLS) * 104, y: 16 + Math.floor(i / COLS) * 18 });
   const pad = (i: number) => String(i).padStart(4, '0');
   const label = (i: number, frame: number) => `L${pad(i)} ${(((frame + i) % 100) / 10).toFixed(2)}`;
-  const camera = (frame: number) => {
+  const camera = (frame: number, zoom: boolean) => {
     const t = frame * 0.05;
-    return { z: 1 + 0.1 * Math.sin(t), px: 20 * Math.sin(t * 0.7), py: 15 * Math.cos(t * 0.9) };
+    return { z: zoom ? 1 + 0.1 * Math.sin(t) : 1, px: 20 * Math.sin(t * 0.7), py: 15 * Math.cos(t * 0.9) };
   };
   const place = (p: { x: number; y: number }, c: { z: number; px: number; py: number }) => ({
     x: w / 2 + (p.x - w / 2) * c.z + c.px,
@@ -321,7 +353,8 @@ async function install(
       teardown();
       const n = Math.max(1, Math.round(cell.glyphs / glyphsPerLabel));
       const every = cell.update === 'every-frame';
-      const moving = cell.camera === 'moving';
+      const moving = cell.camera !== 'fixed';
+      const zoom = cell.camera === 'moving';
       let paints = true;
 
       if (cell.approach === 'none') {
@@ -347,7 +380,7 @@ async function install(
         const dims = { width: w, height: h };
         const frameCommands = () => [...background, ...layer!.draw(null, view, dims)];
         step = (f) => {
-          const c = moving ? camera(f) : null;
+          const c = moving ? camera(f, zoom) : null;
           for (let i = 0; i < n; i++) {
             if (every) widgets[i].setText(label(i, f));
             if (c) {
@@ -365,7 +398,24 @@ async function install(
         paints = false;
         for (let p = 3; p < px.length; p += 4) if (px[p] !== 0) { paints = true; break; }
         teardown = () => { detach(); for (const wd of widgets) wd.dispose(); };
+      } else if (cell.approach === 'react') {
+        const at = (i: number, f: number) => {
+          const c = moving ? camera(f, zoom) : null;
+          const p = c ? place(home(i), c) : home(i);
+          return { text: label(i, every ? f : 0), x: p.x, y: p.y };
+        };
+        const ov = mountReactOverlay(overlay, Array.from({ length: n }, (_, i) => at(i, 0)));
+        step = (f) => {
+          render(background);
+          // A frame with nothing to change sets no state, as a consumer's
+          // would not.
+          if (every || moving) ov.update(Array.from({ length: n }, (_, i) => at(i, f)));
+        };
+        const spans = [...overlay.querySelectorAll('span')];
+        paints = spans.length === n && spans.every((s) => s.getBoundingClientRect().width > 0);
+        teardown = () => { ov.unmount(); overlay.replaceChildren(); };
       } else {
+        const layerMove = cell.approach === 'dom-layer';
         const nodes: Text[] = [];
         const spans: HTMLSpanElement[] = [];
         for (let i = 0; i < n; i++) {
@@ -381,17 +431,18 @@ async function install(
         }
         step = (f) => {
           render(background);
-          const c = moving ? camera(f) : null;
+          const c = moving ? camera(f, zoom) : null;
+          if (c && layerMove) overlay.style.transform = `translate(${c.px}px, ${c.py}px)`;
           for (let i = 0; i < n; i++) {
             if (every) nodes[i].data = label(i, f);
-            if (c) {
+            if (c && !layerMove) {
               const p = place(home(i), c);
               spans[i].style.transform = `translate(${p.x}px, ${p.y}px)`;
             }
           }
         };
         paints = spans.every((s) => s.getBoundingClientRect().width > 0);
-        teardown = () => { overlay.replaceChildren(); };
+        teardown = () => { overlay.replaceChildren(); overlay.style.transform = ''; };
       }
       return { paints };
     },
@@ -416,6 +467,8 @@ async function install(
         frames: stamps.length,
         intervalMs: mean,
         longFrames: iv.filter((x) => x > median * 1.5).length,
+        // Half a 60 Hz frame late: a vsync was skipped.
+        missed: iv.filter((x) => x > 25).length,
         gpuTimeMs,
       };
     },
@@ -466,16 +519,16 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     const none = { approach: 'none' as const, glyphs: 0, update: 'static' as const, camera: 'fixed' as const, pass };
     plan.push(none);
     for (const c of configs) {
-      const order: Approach[] = pass % 2 ? ['hud', 'dom', 'dom', 'hud'] : ['dom', 'hud', 'hud', 'dom'];
-      for (const approach of order) plan.push({ ...c, approach, pass });
+      const fwd = pass % 2 ? approachesFor(c.camera) : [...approachesFor(c.camera)].reverse();
+      for (const approach of [...fwd, ...[...fwd].reverse()]) plan.push({ ...c, approach, pass });
     }
     plan.push({ ...none });
   }
 
   const run = startRun(UPDATES.length === ALL_UPDATES.length ? 'hud-vs-dom' : `hud-vs-dom-${UPDATES.join('-')}`, {
     viewport: `${W}x${H}`, dpr: 1, glyphs: GLYPHS, glyphsPerLabel: GLYPHS_PER_LABEL,
-    updates: [...UPDATES], cameras: [...CAMERAS], frames: FRAMES, warmup: WARMUP, passes: PASSES,
-    order: 'ABBA per configuration, reversed on alternate passes', backgroundRects: 200,
+    updates: [...UPDATES], cameras: [...CAMERAS], approaches: [...APPROACHES], frames: FRAMES, warmup: WARMUP, passes: PASSES,
+    order: 'each configuration\'s approaches forward then backward (ABCCBA), reversed on alternate passes', backgroundRects: 200,
   });
   const errors: string[] = [];
   // The fixture page has no HMR socket to reach; vite's client says so.
@@ -485,14 +538,21 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
   page.on('crash', () => errors.push('page crashed'));
 
   await page.route('**/weasel/__perf/hud-vs-dom', (r) => r.fulfill({ contentType: 'text/html', body: PAGE }));
+  const reactBundle = await build({
+    entryPoints: [resolve(here, 'lib/hudDomReact.tsx')], bundle: true, format: 'esm', write: false,
+    minify: true, jsx: 'automatic', define: { 'process.env.NODE_ENV': '"production"' },
+  });
+  const reactJs = reactBundle.outputFiles[0].text;
+  await page.route(`**${REACT_URL}`, (r) => r.fulfill({ contentType: 'text/javascript', body: reactJs }));
   await page.goto('/weasel/__perf/hud-vs-dom');
-  const { glRenderer, gpuTimer } = await page.evaluate(install, { root: repoRoot, w: W, h: H, glyphsPerLabel: GLYPHS_PER_LABEL });
+  const { glRenderer, gpuTimer } = await page.evaluate(install, { root: repoRoot, w: W, h: H, glyphsPerLabel: GLYPHS_PER_LABEL, reactUrl: REACT_URL });
   run.params({ gpuTimer });
 
   console.log('');
   console.log(`HUD vs DOM overlay — ${W}x${H}, dpr 1, on ${String(glRenderer)}`);
   console.log(`GPU timer query: ${gpuTimer ? 'available' : 'not exposed; GPU column is GPU-process CPU time only'}`);
-  console.log(`${plan.length} measurements (${configs.length} configurations x 4 ABBA + 2 baselines, x ${PASSES} passes), ${FRAMES} frames each`);
+  console.log(`${plan.length} measurements (${configs.length} configurations, each approach twice a pass, + 2 baselines, x ${PASSES} passes), ${FRAMES} frames each`);
+  console.log(`load at start ${os.loadavg().map((x) => x.toFixed(1)).join(' ')} on ${os.cpus().length} cores`);
   console.log(`onto: plan ${plan.length} measurements`);
   console.log('');
 
@@ -506,19 +566,20 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     );
     if (!paints) paintFailures.push(`${cell.approach} ${cell.glyphs}`);
     await page.evaluate((n) => (globalThis as unknown as { __hvd: { warm(n: number): Promise<void> } }).__hvd.warm(n), WARMUP);
+    const free = await countFrames(page, FRAMES);
     const { stats, breakdown } = await traced(page, browser, FRAMES);
     for (const t of ['main', 'gpu']) {
       if (!breakdown.found.includes(t)) throw new Error(`trace has no ${t} thread; found ${breakdown.found.join(', ')}`);
     }
     const { found: _found, ...perFrame } = breakdown;
-    samples.push({ ...cell, perFrame, frames: stats.frames, intervalMs: stats.intervalMs, longFrames: stats.longFrames, gpuTimeMs: stats.gpuTimeMs, load1: os.loadavg()[0] });
+    samples.push({ ...cell, perFrame, frames: stats.frames, intervalMs: stats.intervalMs, longFrames: stats.longFrames, gpuTimeMs: stats.gpuTimeMs, load1: os.loadavg()[0], freeIntervalMs: free.intervalMs, freeMissed: free.missed });
     const b = perFrame;
     console.log(
-      `  ${String(idx + 1).padStart(3)}/${plan.length}  pass ${cell.pass}  ${cell.approach.padEnd(4)}`
+      `  ${String(idx + 1).padStart(3)}/${plan.length}  pass ${cell.pass}  ${cell.approach.padEnd(9)}`
       + `  ${String(cell.glyphs).padStart(4)} glyphs  ${cell.update.padEnd(11)}  ${cell.camera.padEnd(6)}`
       + `  main ${fmt(b.main)}  (js ${fmt(b.script, 5)} style ${fmt(b.style, 5)} layout ${fmt(b.layout, 5)} paint ${fmt(b.paint, 5)})`
       + `  comp ${fmt(b.compositor, 5)}  raster ${fmt(b.raster, 5)}  gpu-proc ${fmt(b.gpuProcess, 5)}`
-      + `  total ${fmt(b.total)} ms/frame  interval ${fmt(stats.intervalMs, 5)}`
+      + `  total ${fmt(b.total)} ms/frame  interval ${fmt(free.intervalMs, 5)} (traced ${fmt(stats.intervalMs, 5)})  missed ${String(free.missed).padStart(3)}`
       + `${stats.gpuTimeMs !== null ? `  gpu ${fmt(stats.gpuTimeMs, 5)}` : ''}`
       + `  load ${fmt(os.loadavg()[0], 6, 1)}  ${((Date.now() - t0) / 1000).toFixed(0).padStart(5)}s`,
     );
@@ -540,18 +601,16 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     `Baseline (background scene alone): main ${baseMain.toFixed(2)}, all threads ${baseTotal.toFixed(2)}.`,
   ];
   for (const update of UPDATES) for (const cam of CAMERAS) {
-    lines.push('', `**${update}, camera ${cam}**`, '',
-      '| glyphs | hud main | dom main | hud all | dom all | hud spread | dom spread | cheaper (all threads) |',
-      '|---:|---:|---:|---:|---:|---:|---:|---|');
+    const as = approachesFor(cam);
+    lines.push('', `**${update}, camera ${cam}**: main thread / all threads / untraced frame interval, median [spread of all threads]`, '',
+      `| glyphs | ${as.join(' | ')} |`, `|---:|${as.map(() => '---:').join('|')}|`);
     for (const glyphs of GLYPHS) {
-      const h = of({ approach: 'hud', glyphs, update, camera: cam });
-      const d = of({ approach: 'dom', glyphs, update, camera: cam });
-      const hm = med(h.map((s) => s.perFrame.main)); const dm = med(d.map((s) => s.perFrame.main));
-      const ht = med(h.map((s) => s.perFrame.total)); const dt = med(d.map((s) => s.perFrame.total));
-      const hs = spread(h.map((s) => s.perFrame.total)); const ds = spread(d.map((s) => s.perFrame.total));
-      const gap = Math.abs(ht - dt);
-      const winner = gap <= Math.max(hs, ds) ? 'within noise' : ht < dt ? 'hud' : 'dom';
-      lines.push(`| ${String(glyphs).padStart(4)} | ${fmt(hm)} | ${fmt(dm)} | ${fmt(ht)} | ${fmt(dt)} | ${fmt(hs)} | ${fmt(ds)} | ${winner} |`);
+      const row = as.map((approach) => {
+        const ss = of({ approach, glyphs, update, camera: cam });
+        const tot = ss.map((s) => s.perFrame.total);
+        return `${fmt(med(ss.map((s) => s.perFrame.main)))} / ${fmt(med(tot))} / ${fmt(med(ss.map((s) => s.freeIntervalMs)), 5)} [${fmt(spread(tot), 4)}]`;
+      });
+      lines.push(`| ${String(glyphs).padStart(4)} | ${row.join(' | ')} |`);
     }
   }
   console.log(lines.join('\n'));
@@ -562,7 +621,7 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
 
   run.machine({ glRenderer: String(glRenderer), browser: `${browserName} ${browser.version()}` });
   const cells: Cell[] = [{ approach: 'none', glyphs: 0, update: 'static', camera: 'fixed' }];
-  for (const c of configs) for (const approach of ['hud', 'dom'] as const) cells.push({ ...c, approach });
+  for (const c of configs) for (const approach of approachesFor(c.camera)) cells.push({ ...c, approach });
   const KEYS = ['main', 'script', 'style', 'layout', 'paint', 'otherMain', 'compositor', 'raster', 'gpuProcess', 'total'] as const;
   for (const c of cells) {
     const ss = of(c);
@@ -574,7 +633,11 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     }
     metrics.totalSpread = metric(spread(ss.map((s) => s.perFrame.total)), 'ms', `max - min of total across ${ss.length} samples`);
     const iv = ss.map((s) => +s.intervalMs.toFixed(3));
-    metrics.frameInterval = metric(med(iv), 'ms', `${stat}, mean rAF interval`, iv);
+    metrics.frameInterval = metric(med(iv), 'ms', `${stat}, mean rAF interval while tracing`, iv);
+    const fiv = ss.map((s) => +s.freeIntervalMs.toFixed(3));
+    metrics.untracedFrameInterval = metric(med(fiv), 'ms', `median of ${ss.length} untraced windows of ${FRAMES} frames, mean rAF interval`, fiv);
+    const fm = ss.map((s) => s.freeMissed);
+    metrics.untracedMissed = metric(med(fm), 'count', `median of ${ss.length} untraced windows of ${FRAMES} frames, intervals over 25 ms`, fm);
     metrics.longFrames = metric(med(ss.map((s) => s.longFrames)), 'count', `${stat}, intervals over 1.5x the median`);
     const gt = ss.map((s) => s.gpuTimeMs).filter((x): x is number => x !== null);
     if (gt.length) metrics.gpuTime = metric(med(gt), 'ms', `${stat}, EXT_disjoint_timer_query of the canvas render`, gt);
