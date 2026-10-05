@@ -239,6 +239,20 @@ test('flush noise: which side of the command buffer the spread lives on', async 
           if (cond === 'ring4096') { batch.rings[0] = ring0; batch.nextInRing[0] = 0; }
         }
       },
+      async warm(gaps: number[], count: number): Promise<number[][]> {
+        const out: number[][] = [];
+        for (const gap of gaps) {
+          if (gap > 0) await new Promise((r) => setTimeout(r, gap));
+          const f: number[] = [];
+          for (let k = 0; k < count; k++) {
+            const t0 = performance.now();
+            render('rect-cmbreak'); gl.finish();
+            f.push(performance.now() - t0);
+          }
+          out.push(f);
+        }
+        return out;
+      },
       stallTrace(id: string, count: number): { frames: number[]; starts: number[] } {
         render(id); gl.finish();
         performance.mark('noise-start');
@@ -373,6 +387,17 @@ test('flush noise: which side of the command buffer the spread lives on', async 
         run.item(`mech ${c} run ${r}`, { frame: metric(med(f), 'ms', 'median of 150 single frames', f) });
       }
     }
+  }
+
+  if (PHASES.includes('warm')) {
+    console.log('\nwarm: segments of 30 single cmbreak frames, after an idle gap; does idling slow the next segment?');
+    const gaps = [0, 0, 0, 0, 0, 0, 500, 0, 0, 50, 0, 0, 2000, 0, 0, 0, 200, 0, 1000, 0, 0];
+    const segs = await ev<number[][]>('warm', gaps, 30);
+    segs.forEach((f, i) => {
+      console.log(`  ${String(i + 1).padStart(2)}/${gaps.length}  after ${String(gaps[i]).padStart(4)} ms idle  `
+        + `first ${f[0].toFixed(1).padStart(5)}  p10 ${pct(f, 0.1).toFixed(2)}  p50 ${pct(f, 0.5).toFixed(2)}  p90 ${pct(f, 0.9).toFixed(2)} ms`);
+      run.item(`warm seg ${i + 1} gap ${gaps[i]}`, { frame: metric(med(f), 'ms', 'median of 30 frames', f) });
+    });
   }
 
   if (PHASES.includes('cpu')) {
