@@ -507,8 +507,6 @@ const med = (xs: number[]) => {
 };
 const spread = (xs: number[]) => Math.max(...xs) - Math.min(...xs);
 
-test.setTimeout(3_600_000);
-
 test('hud vs dom: text over the canvas, per frame', async ({ page, browser, browserName }) => {
   const configs: Config[] = [];
   for (const update of UPDATES) for (const cam of CAMERAS) for (const glyphs of GLYPHS) {
@@ -524,6 +522,9 @@ test('hud vs dom: text over the canvas, per frame', async ({ page, browser, brow
     }
     plan.push({ ...none });
   }
+  // Sized from the plan: a fixed hour cut a three-pass sweep off with nothing
+  // written.
+  test.setTimeout(120_000 + plan.length * 30_000);
 
   const run = startRun(UPDATES.length === ALL_UPDATES.length ? 'hud-vs-dom' : `hud-vs-dom-${UPDATES.join('-')}`, {
     viewport: `${W}x${H}`, dpr: 1, glyphs: GLYPHS, glyphsPerLabel: GLYPHS_PER_LABEL,
