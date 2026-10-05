@@ -218,9 +218,14 @@ own voice. Measured on teitou against blits `2ad0063`, uninstrumented, ms per fr
 Without voices the branch costs what today's animator does (0.17–0.19), and junk standing in for
 them reproduces the slowdown with no blits involved. Cueing at the next frame keeps a burst of
 starts' own objects together and recovers most of it, but not under churn, where one animation
-starts a frame and lands beside its voice either way (0.77–0.81 both ways). The fix that covers
-every case is a smaller live footprint per blits voice. Ruled out on the way: the probe's own
-objects, reading the eased value from the codec's column, inlining, and garbage collection time.
+starts a frame and lands beside its voice either way (0.77–0.81 both ways). Ruled out on the way:
+the probe's own objects, reading the eased value from the codec's column, inlining, and garbage
+collection time.
+
+Shrinking the voice helps less than its bytes suggest. blits `0c80b6d` takes a one-subject tween
+voice from 5.3 KB to 3.7 KB, and the rows move to 0.51 as started, 0.59–0.68 fresh after another
+churned, and 0.73 after churn. At 3.7 KB apart each animation's objects still sit on their own
+cache lines; what would recover the rest is a voice that allocates almost nothing per call.
 
 **Before merge:** blits has to publish `tween`, `pull`, per-subject `fade` and the `5a514a3` fixes,
 and core's exact pin on `@msb235/blits` moves to that release. Until then the branch runs against a
