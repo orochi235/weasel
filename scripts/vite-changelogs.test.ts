@@ -60,6 +60,17 @@ describe('releasesFromChangelogs', () => {
     expect(all.some((e) => /Updated dependencies/.test(e.titleHtml + e.bodyHtml))).toBe(false);
   });
 
+  // Written when a package's only change is the fixed-group bump, so there is no commit to cite.
+  it('drops a bare list of dependency versions', () => {
+    const [release] = releasesFromChangelogs([
+      {
+        pkg: 'core',
+        text: '# @weasel-js/core\n\n## 1.7.3\n\n### Patch Changes\n\n- @weasel-js/cursor@1.7.3\n  - @weasel-js/font@1.7.3\n  - @weasel-js/geom@1.7.3\n- b258798: A real entry.\n',
+      },
+    ]);
+    expect(release.entries.map((e) => e.id)).toEqual(['b258798']);
+  });
+
   it('unwraps the summary and renders the rest as markdown', () => {
     const entry = releases.find((r) => r.version === '1.0.0')!.entries[0];
     expect(entry.titleHtml).toBe(
