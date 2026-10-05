@@ -344,6 +344,9 @@ export interface LiveAnimation extends AnimationInfo {
  * - `cancel` — stopped by its handle, `cancel`, `cancelKey` or `cancelAll`.
  * - `interrupt` — stopped because `by` claimed its `cancelKey`. Delivered
  *   before `by`'s `start`.
+ * - `error` — its tick threw (an `onTick`, `onDone` or interpolator), so it was
+ *   taken off the table, after the frame's other animations ticked. In place of
+ *   `cancel`, or after `end` when `onDone` threw. The error is also logged.
  * - `lap` — a looping timeline wrapped; `lap` counts wraps since it started.
  * - `fire` — an event on a timeline's event track was crossed, at any depth.
  *   `path` indexes from the root timeline's `tracks()` down through each
@@ -352,6 +355,7 @@ export interface LiveAnimation extends AnimationInfo {
 export type AnimatorEvent =
   | { readonly type: 'start' | 'end' | 'cancel'; readonly animation: AnimationInfo }
   | { readonly type: 'interrupt'; readonly animation: AnimationInfo; readonly by: AnimationInfo }
+  | { readonly type: 'error'; readonly animation: AnimationInfo; readonly error: unknown }
   | { readonly type: 'lap'; readonly animation: AnimationInfo; readonly lap: number }
   | {
     readonly type: 'fire';

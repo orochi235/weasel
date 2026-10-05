@@ -483,17 +483,6 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - **(P3) Serializable clips** — follows from tracks being typed callbacks rather
   than data. Revisit with the editor's experience in hand.
 
-### Animator robustness
-
-- **(P2) One throwing tick stops the animator for good** — `tickAll` in
-  `packages/core/src/animation/useAnimator.ts` calls each animation's `tick` with no guard, and
-  nothing in `useVisibleRaf` catches either. A throw from any `onTick`, `onDone` or interpolator
-  skips every later animation that frame, leaves finished ones on the table, skips the tick
-  subscribers, and never requests the next frame; `isActive()` stays true. Measured on
-  2026-10-03 with one throwing tween between two good ones, before and after the blits rebuild
-  alike. Wrap each `tick` the way the subscribers already are (log and retire the thrower), and
-  decide whether the error should also reach the caller.
-
 ### Combining animations
 
 - **(P3) The animator on blits** — weasel has no model for two animations on one property; every
@@ -902,13 +891,6 @@ one dead `const` and four stale disable directives.
 ---
 
 ## Release-gate & build hygiene
-
-- **(P2) `Toast.browser.test.tsx`'s placement case fails under full-suite load.** "each
-  placement anchors to its corner of the container" failed once in a full run on keiei
-  (2026-10-05, onto job `770eba13`, 2069 ms against ~20 ms for its siblings) and passed 8 of 8
-  alone on the same node. The job's log kept no assertion text, so whether `findByRole` timed
-  out or the offset was wrong is unknown. Nothing touching Toast had changed. A rerun under
-  load that prints the assertion is the next step.
 
 - **(P3) jsdom 30.1.1 runs patched.** From 29.0.2 on, reading a custom property no
   ancestor sets doubles in cost with every level of DOM depth: `_getComputedPropertyValue`

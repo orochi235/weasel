@@ -193,15 +193,15 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     };
 
     /** Take `id` off the table as canceled — or, given `by`, as interrupted by
-     *  the animation claiming its key. */
-    const retire = (id: number, by?: ActiveAnimation): void => {
+     *  the animation claiming its key; given `error`, the caller reports it. */
+    const retire = (id: number, by?: ActiveAnimation, error?: true): void => {
       const a = animations.current.get(id);
       if (!a) return;
       a.onCancel?.();
       codec.stop(id);
       animations.current.delete(id);
       fireCompletion(id);
-      if (!hub.watched || a.ended) return;
+      if (!hub.watched || a.ended || error) return;
       hub.emit(by
         ? { type: 'interrupt', animation: infoOf(a), by: infoOf(by) }
         : { type: 'cancel', animation: infoOf(a) });
@@ -209,6 +209,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const tickAll = (t: number): void => {
       const finished: ActiveAnimation[] = [];
+      const threw: [ActiveAnimation, unknown][] = [];
       const frameDt = codecFrameT.current == null ? 0 : Math.max(0, t - codecFrameT.current);
       codecFrameT.current = t;
       codec.frame(frameDt * (globalPaused.current ? 0 : globalTimeScale.current));
@@ -233,9 +234,23 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         tickDepth.current += 1;
         try {
           if (anim.tick(anim.virtualNow, scale)) finished.push(anim);
+        } catch (error) {
+          threw.push([anim, error]);
         } finally {
           tickDepth.current -= 1;
         }
+      }
+      for (const [anim, error] of threw) {
+        console.error('useAnimator: animation tick threw; retiring it', error);
+        if (animations.current.get(anim.id) !== anim) continue;
+        // One that ended before throwing (from `onDone`) is finished, not canceled.
+        if (anim.ended) {
+          animations.current.delete(anim.id);
+          fireCompletion(anim.id);
+        } else {
+          retire(anim.id, undefined, true);
+        }
+        if (hub.watched) hub.emit({ type: 'error', animation: infoOf(anim), error });
       }
       for (const anim of finished) {
         // Gone already if its own tick canceled it; replaced if something
