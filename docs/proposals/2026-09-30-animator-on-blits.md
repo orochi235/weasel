@@ -217,15 +217,24 @@ own voice. Measured on teitou against blits `2ad0063`, uninstrumented, ms per fr
 
 Without voices the branch costs what today's animator does (0.17–0.19), and junk standing in for
 them reproduces the slowdown with no blits involved. Cueing at the next frame keeps a burst of
-starts' own objects together and recovers most of it, but not under churn, where one animation
-starts a frame and lands beside its voice either way (0.77–0.81 both ways). Ruled out on the way:
+starts' own objects together and recovers most of it, but not under churn (0.77–0.81 both ways).
+Ruled out on the way:
 the probe's own objects, reading the eased value from the codec's column, inlining, and garbage
 collection time.
 
 Shrinking the voice helps less than its bytes suggest. blits `0c80b6d` takes a one-subject tween
 voice from 5.3 KB to 3.7 KB, and the rows move to 0.51 as started, 0.59–0.68 fresh after another
-churned, and 0.73 after churn. At 3.7 KB apart each animation's objects still sit on their own
-cache lines; what would recover the rest is a voice that allocates almost nothing per call.
+churned, and 0.73 after churn.
+
+Nor does going back to shared voices close it. A prototype cueing one tween voice per easing,
+with each call a subject on it, allocates almost nothing in blits per animation, and weasel's
+loop still runs 0.23–0.24 ms as started and 0.37–0.49 after churn, against 0.23–0.25 and
+0.47–0.50 with a voice per animation (blits' share 0.23–0.27 throughout, ms per frame for 10k,
+two runs each). So a voice's footprint explains the bulk-start rows but not churn's: after churn,
+weasel's loop is slower whatever blits allocates, and today's animator is not (0.16 after churn
+against 0.19 as started). What churn changes on this branch's side is not yet found. Run-to-run
+spread on teitou is about ±0.08 ms per frame, so a difference smaller than that needs more runs
+than two.
 
 **Before merge:** blits has to publish `tween`, `pull`, per-subject `fade` and the `5a514a3` fixes,
 and core's exact pin on `@msb235/blits` moves to that release. Until then the branch runs against a
