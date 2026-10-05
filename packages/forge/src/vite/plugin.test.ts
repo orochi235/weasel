@@ -230,6 +230,7 @@ describe('forge vite plugin, with a config module per realm', () => {
       plugins: [forge({ stories: ['*.stories.tsx'], frameConfig: 'forge.frame.ts', shellConfig: 'forge.shell.ts' })],
       server: { middlewareMode: true },
       appType: 'custom',
+      optimizeDeps: { noDiscovery: true },
       logLevel: 'silent',
     });
   });
