@@ -57,6 +57,25 @@ describe('createCodec', () => {
     expect(b.has(1)).toBe(false);
   });
 
+  it('drops a tween stopped before any frame, leaving no voice and its neighbor running', () => {
+    const b = createCodec();
+    b.tween({ id: 1, ms: 1000, ease: linear, ...U });
+    const r2 = b.tween({ id: 2, ms: 1000, ease: linear, ...U });
+    b.stop(1);
+    b.frame(100);
+    expect(b.has(1)).toBe(false);
+    expect((mixes.at(-1) as { voices: unknown[] }).voices).toHaveLength(1);
+    expect(vals(r2, 1)[0]).toBeCloseTo(0.1, 9);
+  });
+
+  it('applies a rate asked for before the first frame', () => {
+    const b = createCodec();
+    const r1 = b.tween({ id: 1, ms: 1000, ease: linear, ...U });
+    b.rate(1, 2);
+    b.frame(100);
+    expect(vals(r1, 1)[0]).toBeCloseTo(0.2, 9);
+  });
+
   it('rate 0 freezes one tween and not its neighbor', () => {
     const b = createCodec();
     const r1 = b.tween({ id: 1, ms: 1000, ease: linear, ...U });

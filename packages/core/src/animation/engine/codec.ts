@@ -78,12 +78,19 @@ interface Subject extends Reader {
   slot: number;
   /** What `cols` points at while `slot` is -1. */
   held: Float64Array;
+  /** A tween's start, until the next `frame` cues its voice; `handle` and `patch` exist only after. */
+  queued?: TweenStart;
+  /** A rate asked for while queued. */
+  queuedRate?: number;
   motion?(): { value: number[]; velocity: number[] };
 }
 
 export function createCodec(): Codec {
   const lanes = new Map<number, Lane>();
   const subjects = new Map<number, Subject>();
+  // Tweens are cued together at the next frame, not one by one as they start: a burst of starts then
+  // keeps the caller's objects together rather than each a voice apart, which the frame loop reads.
+  const queue: Subject[] = [];
   let time = 0;
 
   const laneOf = (axes: number): Lane => {
@@ -166,14 +173,28 @@ export function createCodec(): Codec {
   function stop(id: number): void {
     const s = subjects.get(id);
     if (!s) return;
-    s.handle.fade({ over: 0 });
-    s.lane.mix.drop(id);
+    if (s.queued) s.queued = undefined;
+    else {
+      s.handle.fade({ over: 0 });
+      s.lane.mix.drop(id);
+    }
     depart(s, id);
     subjects.delete(id);
   }
 
   return {
     frame(dtMs) {
+      for (const sub of queue) {
+        const q = sub.queued;
+        if (!q) continue;
+        sub.queued = undefined;
+        const patch = tweenPatch<number, Out, number[]>('v', { from: q.from.slice(), to: q.from.slice(), ms: q.ms, ease: q.ease });
+        sub.handle = sub.lane.mix.cue({ patch, subjects: [q.id] });
+        sub.patch = patch;
+        patch.to(q.id, q.to.slice(), 0);
+        if (sub.queuedRate !== undefined) sub.handle.rate = sub.queuedRate;
+      }
+      queue.length = 0;
       time += dtMs;
       for (const l of lanes.values()) {
         if (l.dirty) rebuild(l);
@@ -188,19 +209,15 @@ export function createCodec(): Codec {
       }
     },
     tween(s) {
+      if (s.to.length !== s.from.length) {
+        throw new Error(`codec: tween ${s.id} goes from ${s.from.length} axes to ${s.to.length}`);
+      }
       const l = laneOf(s.from.length);
-      const patch = tweenPatch<number, Out, number[]>('v', { from: s.from.slice(), to: s.from.slice(), ms: s.ms, ease: s.ease });
-      const handle = l.mix.cue({ patch, subjects: [s.id] });
       const held = Float64Array.from(s.from);
-      const sub: Subject = { kind: 'tween', lane: l, handle, patch, slot: -1, held, cols: held, at: 0 };
+      const sub = { kind: 'tween', lane: l, slot: -1, held, cols: held, at: 0, queued: s } as Subject;
       subjects.set(s.id, sub);
       join(sub, s.id);
-      try {
-        patch.to(s.id, s.to.slice(), 0);
-      } catch (err) {
-        stop(s.id);
-        throw err;
-      }
+      queue.push(sub);
       return sub;
     },
     spring(s) {
@@ -242,7 +259,9 @@ export function createCodec(): Codec {
       s.patch.push?.(id, velocity);
     },
     rate(id, rate) {
-      get(id).handle.rate = rate;
+      const s = get(id);
+      if (s.queued) s.queuedRate = rate;
+      else s.handle.rate = rate;
     },
     stop,
     has: (id) => subjects.has(id),

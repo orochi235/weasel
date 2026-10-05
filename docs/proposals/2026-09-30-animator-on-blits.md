@@ -259,6 +259,13 @@ per-animation objects weasel allocates are not what keeps the loop at two to thr
 cost. Not yet measured, and inferred only from what is left: the caller's own objects, which
 still sit a voice apart, or the tables' many separate arrays read in step.
 
+**Built:** the codec cues tweens together at the start of the next `frame`, not one by one in
+`tween()`, before the clock advances, so a tween starts at the same time either way. Teitou, blits
+`0c80b6d`, the two codecs swapped in one tree over six alternating rounds, ms per frame for 10k
+tweens, median (min–max): as started 0.49 (0.47–0.50) before, 0.45 (0.41–0.45) after; fresh after
+another churned 0.55 (0.51–0.65), 0.44 (0.44–0.52); after churn 0.67 (0.63–0.68), 0.69
+(0.66–1.03), no change. Springs still cue in `spring()`.
+
 **Before merge:** blits has to publish `tween`, `pull`, per-subject `fade` and the `5a514a3` fixes,
 and core's exact pin on `@msb235/blits` moves to that release. Until then the branch runs against a
 local build, and the full suite cannot run on the fleet, which installs the pinned 0.2.1.
