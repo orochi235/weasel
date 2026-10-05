@@ -89,7 +89,7 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@msb235/blits": "0.2.1",
+    "@msb235/blits": "0.4.0",
     "@weasel-js/cursor": "1.7.1",
     "@weasel-js/geom": "1.7.1",
     "@weasel-js/gestures": "1.7.1",

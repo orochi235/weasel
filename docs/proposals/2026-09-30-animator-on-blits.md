@@ -1,9 +1,8 @@
 # The animator on blits
 
-**Status: steps 1, 2 and most of 3 are built, on branch `pose-overrides-mix`, unmerged.** Tweens,
-springs, physics and decay compute their values in blits ("What step 3 built"). Keyframe sampling,
-the rest of step 3, and steps 4–6 are not built. The branch cannot merge until blits publishes
-the features it runs on. Delete this once it is all built or turned down.
+**Status: steps 1, 2 and most of 3 are built and merged into `main`.** Tweens, springs, physics
+and decay compute their values in blits ("What step 3 built"), on `@msb235/blits` 0.4.0. Keyframe
+sampling, the rest of step 3, and steps 4–6 are not built. Delete this once it is all built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
 several animations on one property, without keeping a second copy of the arithmetic that blits
@@ -265,10 +264,6 @@ still sit a voice apart, or the tables' many separate arrays read in step.
 tweens, median (min–max): as started 0.49 (0.47–0.50) before, 0.45 (0.41–0.45) after; fresh after
 another churned 0.55 (0.51–0.65), 0.44 (0.44–0.52); after churn 0.67 (0.63–0.68), 0.69
 (0.66–1.03), no change. Springs still cue in `spring()`.
-
-**Before merge:** blits has to publish `tween`, `pull`, per-subject `fade` and the `5a514a3` fixes,
-and core's exact pin on `@msb235/blits` moves to that release. Until then the branch runs against a
-local build, and the full suite cannot run on the fleet, which installs the pinned 0.2.1.
 
 ## What step 2 built
 
