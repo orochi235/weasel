@@ -9,6 +9,8 @@
   padding: 0;
   border: 0.5px solid var(--wzl-border);
   border-radius: 0;
+  /* Not the UA's buttontext: the hover edge is --wzl-fg-muted, a step down from the text beside it. */
+  color: inherit;
   /* The color over the checker, so a translucent swatch reads as one. */
   background:
     linear-gradient(var(--swatch), var(--swatch)),

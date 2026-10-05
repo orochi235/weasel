@@ -13,6 +13,8 @@
   border: 0;
   border-radius: var(--wzl-radius-sm);
   background: none;
+  /* Not the UA's buttontext: the disabled fill is --wzl-fg-subtle, a step down from the text beside it. */
+  color: inherit;
   line-height: 1;
   cursor: pointer;
 }

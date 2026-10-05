@@ -62,6 +62,13 @@ In React, `<ThemeProvider theme={acme} selection={{ mode: 'light' }}>` from
 `useTheme()` — which is how canvas and WebGL surfaces stay in sync without
 reading the DOM.
 
+`--wzl-fg-muted` and `--wzl-fg-subtle` are not fixed colors: each is the text
+color in effect where it is used, at a lower alpha (`rgb(from currentColor r g b
+/ 0.7)`), so muted text on an accent fill steps down from the on-accent text
+beside it. The resolved record carries that CSS as is, because a canvas has no
+`currentColor`; flatten it with `resolveCurrentColor(value, resolved['--wzl-fg'])`,
+passing the color of the text it is drawn beside.
+
 ## The engine
 
 `@weasel-js/theme/engine` is for authoring layered theme definitions: seeds,

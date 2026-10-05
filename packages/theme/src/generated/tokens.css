@@ -56,8 +56,10 @@
   --wzl-surface-raised: var(--wzl-gray-700);
   --wzl-surface-sunken: var(--wzl-gray-900);
   --wzl-fg: var(--wzl-gray-100);
-  --wzl-fg-muted: var(--wzl-gray-300);
-  --wzl-fg-subtle: var(--wzl-gray-400);
+  /* Secondary text: the text color in effect where it is used, at reduced alpha, so it steps down from whatever text it sits beside on any surface. The alpha is absolute, so muted text nested in muted text stays one step down. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes. */
+  --wzl-fg-muted: rgb(from currentColor r g b / 0.7);
+  /* Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes. */
+  --wzl-fg-subtle: rgb(from currentColor r g b / 0.54);
   --wzl-border: var(--wzl-gray-700);
   /* The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against every surface in both modes. */
   --wzl-border-strong: var(--wzl-gray-400);
@@ -250,8 +252,8 @@
   --wzl-surface-raised: var(--wzl-gray-700);
   --wzl-surface-sunken: var(--wzl-gray-900);
   --wzl-fg: var(--wzl-gray-100);
-  --wzl-fg-muted: var(--wzl-gray-300);
-  --wzl-fg-subtle: var(--wzl-gray-400);
+  --wzl-fg-muted: rgb(from currentColor r g b / 0.7);
+  --wzl-fg-subtle: rgb(from currentColor r g b / 0.54);
   --wzl-border: var(--wzl-gray-700);
   --wzl-border-strong: var(--wzl-gray-400);
   --wzl-accent-fg: var(--wzl-accent-strong);
@@ -298,8 +300,8 @@
   --wzl-surface-raised: var(--wzl-gray-100);
   --wzl-surface-sunken: var(--wzl-gray-200);
   --wzl-fg: var(--wzl-gray-900);
-  --wzl-fg-muted: var(--wzl-gray-600);
-  --wzl-fg-subtle: var(--wzl-gray-500);
+  --wzl-fg-muted: rgb(from currentColor r g b / 0.78);
+  --wzl-fg-subtle: rgb(from currentColor r g b / 0.64);
   --wzl-border: var(--wzl-gray-200);
   --wzl-border-strong: var(--wzl-gray-500);
   --wzl-accent-fg: var(--wzl-accent-base);

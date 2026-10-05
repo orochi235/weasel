@@ -77,6 +77,12 @@ describe('window widget', () => {
       rgb(bandColor(cmds)).forEach((v, i) => expect(Math.abs(v - [61, 46, 48][i])).toBeLessThanOrEqual(1));
     });
 
+    it('draws a title that follows the text color as a concrete color, since a canvas has no currentColor', () => {
+      for (const stance of [undefined, 'aside'] as const) {
+        expect(title(createWindow({ ...opts, stance }).draw(ctx))).toMatch(/"color":"rgba\(230, 231, 233, 0\.\d+\)"/);
+      }
+    });
+
     it('drops the ring where a stance sets no border width, and dashes it where it says dashed', () => {
       expect(ring(createWindow({ ...opts, stance: 'scope' }).draw(ctx))).toBeUndefined();
       expect(ring(createWindow({ ...opts, stance: 'debug' }).draw(ctx))?.stroke.dash?.length).toBeGreaterThan(0);

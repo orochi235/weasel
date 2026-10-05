@@ -10,6 +10,8 @@
   width: 14px;
   height: 14px;
   margin: 0;
+  /* Not the UA's fieldtext: the hover edge is --wzl-fg-muted, a step down from the text beside it. */
+  color: inherit;
   background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-sm);
