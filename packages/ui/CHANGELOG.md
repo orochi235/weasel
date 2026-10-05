@@ -1,5 +1,61 @@
 # @weasel-js/ui
 
+## 1.7.3
+
+### Patch Changes
+
+- b258798: An inherited value draws in the secondary accent instead of faded, which read as disabled. `@weasel-js/theme/inherited.module.css` holds the one definition, `.inherited`, which remaps the accent tokens to their secondary twins; the prefs form's inherited rows compose it and `ControlMatrix`'s inherited cells mix it in.
+- Updated dependencies [b258798]
+  - @weasel-js/theme@1.7.3
+  - @weasel-js/core@1.7.3
+  - @weasel-js/font@1.7.3
+  - @weasel-js/modes@1.7.3
+  - @weasel-js/quantity@1.7.3
+  - @weasel-js/svg@1.7.3
+
+## 1.7.2
+
+### Patch Changes
+
+- a6d6ebc: Numeric text now has one definition: `.numeric` in the new `@weasel-js/theme/numeric.module.css` export, which sets `--wzl-font-numeric` and `tabular-nums` together. CSS modules take it with `composes: numeric from '@weasel-js/theme/numeric.module.css'`, Less with `.numeric();`, and markup by putting its class on the element. `npm run check:numeric` fails on `tabular-nums` or a read of `--wzl-font-numeric` anywhere else, and on a `font`, `font-family` or `font-variant-numeric` declaration beside the helper, which would replace it.
+  
+  What that changes on screen:
+  
+  - `NumberField` and `UnitField` set their value in equal-width digits, so every number input does; it was in the UI face with proportional ones.
+  - Property rows' slider readouts and their editable inputs, `OpacityRange`'s percentage, `Timeline` ruler ticks, `BandEditor` tick labels, `Slider` readouts, `FallthroughDiagram`'s number columns, `StatusBar`, and labkit's status bar, scale indicator, FPS meter and specimen pane width move to the numeric face. Several were in the mono face, which had been standing in for tabular figures. Code and hex values stay mono.
+  - `TokenPanel`'s number fields render in the numeric face. They had been forced to mono, which also kept the numeric rules beneath them from ever applying.
+  - `DataGrid` columns take `numeric: true`, which sets the header and cells in the numeric face and ends them.
+  - `DetailRow` reads its list's `values` itself, so a figures row's value gets its class directly rather than through a descendant selector.
+  - forge's font switcher sets `--wzl-font-numeric` to the chosen UI face when that face is not Oswald, instead of leaving Oswald's digits among another face's letters.
+- 9e188af: A nested entry in the `PrefsDialog` rail now reads in the same color as the top-level entries around it. It used `--wzl-fg-subtle`, which reads as disabled; indentation alone marks the nesting.
+- 9362f82: The 2-up property layout (`pack="pairs"`) spaces its columns further apart: 16px at normal density, up from 10px, and 20px at roomy, up from 14px, so roomy stays wider than normal. Tight stays 8px. A list with no density set falls back to 16px, matching normal.
+- 68a373f: A slider whose caller takes settled values only — a no-op `onInput` beside `onChange`, as `PropertyNumberFieldProps` documents — now follows the drag and commits where it stopped. It used to snap back on every move and commit its starting value, because the track stayed controlled by a `value` that the caller never updated mid-drag. `PropertyField` and `PropertyControl` hold the drag locally until the commit. This fixes every bounded number slider in `Prefs`, `PrefsForm` and `PrefsDialog`.
+- bbf4d3d: Sliders take a press a few pixels past their track, and `Slider`'s and `RangeSlider`'s thumbs take one a few pixels past their edge, so a thin track or a small thumb no longer has to be hit exactly. Two new tokens set the distances: `--wzl-slider-track-slop` and `--wzl-slider-thumb-slop`, both 6px. Nothing moves or repaints; the extra area is invisible and overlaps whatever sits beside the control.
+  
+  `Slider` (and so `DetentSlider`) and `RangeSlider` draw both. A thumb's slop sits over the track's, so a press near a thumb grabs it instead of jumping the value to the pointer. The native range skin — `InlineRange`, a `PropertyField` slider, a color field's alpha, and labkit's bare ranges — takes the track slop only, because a native thumb re-centers on the pointer wherever a press lands.
+  
+  The skin now sets `box-sizing`, `width`, `height`, `padding` and `margin` on the input to make room for it. A consumer rule that overrides `margin` or `padding` on one of these inputs cancels the slop and makes the box 12px wider and taller.
+- 2cefe97: `FillStrokeSwatch`'s `onChange` can return the color it actually applied, and the recent colors record that color instead of the picker's. The native picker has no alpha, so an app that keeps a paint's own opacity was recording an opaque swatch for a see-through paint. Returning nothing keeps the old behavior.
+- 3299539: `Transport` no longer moves the controls beside it as its readouts change. The time readout is held at the width of the duration over itself, and the rate readout at the widest rate on offer, so a transport sized to its content (beside a `flex: 1` scrub bar, say) keeps one width as the playhead crosses 10s or the rate goes from `1x` to `0.25x`. The playhead is clamped to the duration for display. `data-testid="timeline-time"` moved to the visible text, so its `textContent` is still just the readout. The hidden sizer behind this is shared with `Select` and `ComboBox`'s `fit` width.
+- 81654ed: `PrefsForm` and `PrefsDialog` can show leaves that inherit a value from elsewhere. Pass `auto` (the paths that inherit) and the form draws those rows with their control dimmed, showing the value you passed; `inheritHint` adds text after the label such as "from Defaults". Editing an inherited control calls `onChange` as usual. With `onAutoChange`, a leaf's label toggles between inheriting and pinned; `canInherit` says which leaves get that toggle. A custom renderer now receives the real `auto` state and a working `setAuto`.
+  
+  `PropertyRow` gains `autoControl="dimmed"` (keep drawing an auto row's control, faded, instead of hiding it) and `hint` (small muted text after the label). The ⓘ help button is exported as `PropertyHelp`.
+  
+  An inline property row that runs past one line — beside a textarea or list editor, or with a label that wraps — now lines the label's first line up with the control's first line instead of centering the label on the whole control, including under `align="center"`. One-line rows are unchanged.
+- Updated dependencies [06ee1e6]
+- Updated dependencies [88e298e]
+- Updated dependencies [0756a82]
+- Updated dependencies [a6d6ebc]
+- Updated dependencies [b18ef4a]
+- Updated dependencies [bbf4d3d]
+- Updated dependencies [7671813]
+  - @weasel-js/core@1.7.2
+  - @weasel-js/theme@1.7.2
+  - @weasel-js/svg@1.7.2
+  - @weasel-js/font@1.7.2
+  - @weasel-js/modes@1.7.2
+  - @weasel-js/quantity@1.7.2
+
 ## 1.7.1
 
 ### Patch Changes

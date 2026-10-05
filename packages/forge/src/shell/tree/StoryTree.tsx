@@ -56,7 +56,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   const [route, setRoute] = useRoute();
   const [query, setQuery] = useState('');
   const [folds, setFolds] = usePersistedState<Record<string, boolean>>('fg-tree-open', {}, { scope: 'lab' });
-  const [view, setView] = usePersistedState<View>('fg-tree-view', 'components', { scope: 'lab' });
+  const [chosen, setView] = usePersistedState<View>('fg-tree-view', 'components', { scope: 'lab' });
   // Stored as what is *off*, so a library added later is on without anyone
   // going back to tick it.
   const [hidden, setHidden] = usePersistedState<Record<string, boolean>>('fg-tree-libraries', {}, { scope: 'lab' });
@@ -64,6 +64,16 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   const items = useRef(new Map<string, HTMLElement>());
 
   const libraries = useMemo(() => librariesIn(index), [index]);
+  // A view is grayed out by what the project has, not by the package filter,
+  // which would otherwise disable a view as a side effect of unticking a box.
+  const views = useMemo(() => {
+    const hasGallery = index.some(isGallery);
+    const hasOther = index.some((entry) => !isGallery(entry));
+    return VIEWS.map((item) => ({ ...item, disabled: item.value === 'gallery' ? !hasGallery : !hasOther }));
+  }, [index]);
+  // The stored choice is kept, so a view comes back once it has something in it.
+  const enabled = (value: View): boolean => views.some((item) => item.value === value && !item.disabled);
+  const view = [chosen, 'components' as const, 'gallery' as const].find(enabled) ?? chosen;
   // The package filter runs on the index, so it means the same thing in both
   // views rather than once per view's own grouping.
   const kept = useMemo(() => index.filter((entry) => !hidden[libraryOf(entry)]), [index, hidden]);
@@ -270,7 +280,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
       <ToggleBar
         ariaLabel="Sidebar view"
         variant="flat"
-        items={VIEWS}
+        items={views}
         value={view}
         onChange={(next) => {
           if (next) setView(next);

@@ -1,0 +1,586 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "draw-loop",
+  "git": {
+    "sha": "8a57e2b20652f8c12a70c7f467f0368e366c3b97",
+    "dirty": true
+  },
+  "timestamp": "2026-10-05T02:59:27.784Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.10.0",
+    "loadavg": [
+      15.31,
+      11.82,
+      7.48
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "sweep": [
+      {
+        "n": 100
+      },
+      {
+        "n": 400
+      },
+      {
+        "n": 1600
+      },
+      {
+        "n": 3200
+      }
+    ],
+    "variants": [
+      "solid",
+      "alternating",
+      "stacked",
+      "scene",
+      "rotated",
+      "meshes",
+      "stroked"
+    ],
+    "gcAvailable": true,
+    "gradientRamps": true
+  },
+  "items": [
+    {
+      "id": "solid n=100",
+      "params": {
+        "variant": "solid",
+        "commands": 100
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.055,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.55,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "solid n=400",
+      "params": {
+        "variant": "solid",
+        "commands": 400
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.075,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.19,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "solid n=1600",
+      "params": {
+        "variant": "solid",
+        "commands": 1600
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.09,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.06,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "solid n=3200",
+      "params": {
+        "variant": "solid",
+        "commands": 3200
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.145,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.05,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "stacked n=100",
+      "params": {
+        "variant": "stacked",
+        "commands": 100
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.3,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "stacked n=400",
+      "params": {
+        "variant": "stacked",
+        "commands": 400
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.035,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.09,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "stacked n=1600",
+      "params": {
+        "variant": "stacked",
+        "commands": 1600
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.09,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.06,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "stacked n=3200",
+      "params": {
+        "variant": "stacked",
+        "commands": 3200
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.14,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.04,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "scene n=100",
+      "params": {
+        "variant": "scene",
+        "commands": 100
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.3,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "scene n=400",
+      "params": {
+        "variant": "scene",
+        "commands": 400
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.05,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.12,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "scene n=1600",
+      "params": {
+        "variant": "scene",
+        "commands": 1600
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.105,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.07,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "scene n=3200",
+      "params": {
+        "variant": "scene",
+        "commands": 3200
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.18,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.06,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "rotated n=100",
+      "params": {
+        "variant": "rotated",
+        "commands": 100
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.045,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.45,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "rotated n=400",
+      "params": {
+        "variant": "rotated",
+        "commands": 400
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.075,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.19,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "rotated n=1600",
+      "params": {
+        "variant": "rotated",
+        "commands": 1600
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.2,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.13,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "rotated n=3200",
+      "params": {
+        "variant": "rotated",
+        "commands": 3200
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.345,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.11,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "meshes n=100",
+      "params": {
+        "variant": "meshes",
+        "commands": 100
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.04,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.4,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "meshes n=400",
+      "params": {
+        "variant": "meshes",
+        "commands": 400
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.1,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.25,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "meshes n=1600",
+      "params": {
+        "variant": "meshes",
+        "commands": 1600
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.23,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.14,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "meshes n=3200",
+      "params": {
+        "variant": "meshes",
+        "commands": 3200
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.505,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.16,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "stroked n=100",
+      "params": {
+        "variant": "stroked",
+        "commands": 100
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.075,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.75,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "stroked n=400",
+      "params": {
+        "variant": "stroked",
+        "commands": 400
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.19,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.47,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "stroked n=1600",
+      "params": {
+        "variant": "stroked",
+        "commands": 1600
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.675,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.42,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "stroked n=3200",
+      "params": {
+        "variant": "stroked",
+        "commands": 3200
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 1.025,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.32,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "alternating n=100",
+      "params": {
+        "variant": "alternating",
+        "commands": 100
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.07,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.7,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "alternating n=400",
+      "params": {
+        "variant": "alternating",
+        "commands": 400
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.13,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.33,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "alternating n=1600",
+      "params": {
+        "variant": "alternating",
+        "commands": 1600
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.37,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.23,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    },
+    {
+      "id": "alternating n=3200",
+      "params": {
+        "variant": "alternating",
+        "commands": 3200
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.7,
+          "unit": "ms",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        },
+        "perCommand": {
+          "value": 0.22,
+          "unit": "us",
+          "stat": "median of 15 single frames, one per task, after 10 untimed"
+        }
+      }
+    }
+  ]
+}

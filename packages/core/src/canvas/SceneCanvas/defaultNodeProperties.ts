@@ -193,14 +193,14 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                         // draws: the slant, the three rules, then the two
                         // scripts. Italic is a flag here although the field
                         // is `fontStyle`, whose only other value is upright.
-                        fontStyle: { kind: 'boolean', name: 'Italic', description: 'Set the text in its italic face.', default: false, control: 'toggle', icon: 'italic', short: 'I', pair: 'Style', encoding: italicEncoding },
-                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false, control: 'toggle', icon: 'underline', short: 'U', pair: 'Style' },
-                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false, control: 'toggle', icon: 'strikethrough', short: 'S', pair: 'Style' },
-                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', default: false, control: 'toggle', icon: 'overline', short: 'O', pair: 'Style' },
+                        fontStyle: { kind: 'boolean', name: 'Italic', description: 'Set the text in its italic face.', default: false, control: 'toggle', icon: 'italic', short: ['I'], pair: 'Style', encoding: italicEncoding },
+                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false, control: 'toggle', icon: 'underline', short: ['U'], pair: 'Style' },
+                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false, control: 'toggle', icon: 'strikethrough', short: ['S'], pair: 'Style' },
+                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', default: false, control: 'toggle', icon: 'overline', short: ['O'], pair: 'Style' },
                         script: { kind: 'enum', name: 'Script', description: 'Set the text smaller and raised or lowered, on the line it would otherwise hold.', default: undefined, control: 'toggle', clearable: true, pair: 'Style', options: [{ value: 'super', label: 'Superscript', icon: 'superscript' }, { value: 'sub', label: 'Subscript', icon: 'subscript' }] },
                         letterSpacing: { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
-                        textTransform: { kind: 'enum', name: 'Case', description: 'Draw the text in capitals, lowercase or title case. The text itself is unchanged.', default: 'none', control: 'toggle', options: [{ value: 'none', label: 'None', short: '–' }, { value: 'uppercase', label: 'Uppercase', short: 'AA' }, { value: 'lowercase', label: 'Lowercase', short: 'aa' }, { value: 'capitalize', label: 'Capitalize', short: 'Aa' }] },
-                        fontVariantCaps: { kind: 'enum', name: 'Small caps', description: 'Draw lowercase letters as smaller capitals. The text itself is unchanged.', default: 'normal', control: 'toggle', options: [{ value: 'normal', label: 'Normal', short: '–' }, { value: 'small-caps', label: 'Small caps', short: 'Sc' }] },
+                        textTransform: { kind: 'enum', name: 'Case', description: 'Draw the text in capitals, lowercase or title case. The text itself is unchanged.', default: 'none', control: 'toggle', options: [{ value: 'none', label: 'None', short: ['–'] }, { value: 'uppercase', label: 'Uppercase', short: ['AA'] }, { value: 'lowercase', label: 'Lowercase', short: ['aa'] }, { value: 'capitalize', label: 'Capitalize', short: ['Aa'] }] },
+                        fontVariantCaps: { kind: 'enum', name: 'Small caps', description: 'Draw lowercase letters as smaller capitals. The text itself is unchanged.', default: 'normal', control: 'toggle', options: [{ value: 'normal', label: 'Normal', short: ['–'] }, { value: 'small-caps', label: 'Small caps', short: ['Sc'] }] },
                       },
                     },
                     paragraph: {
@@ -208,7 +208,7 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                       children: {
                         lineHeight: { kind: 'number', name: 'Leading', description: 'Line height as a multiple of font size.', default: 1.2, min: 0.5, step: 0.1 },
                         wrap: { kind: 'boolean', name: 'Wrap', description: 'Break lines between words at the box width.', default: false, control: 'switch' },
-                        direction: { kind: 'enum', name: 'Direction', description: 'Reading direction.', default: 'ltr', control: 'toggle', options: [{ value: 'ltr', label: 'Left to right', short: 'LTR' }, { value: 'rtl', label: 'Right to left', short: 'RTL' }] },
+                        direction: { kind: 'enum', name: 'Direction', description: 'Reading direction.', default: 'ltr', control: 'toggle', options: [{ value: 'ltr', label: 'Left to right', short: ['LTR'] }, { value: 'rtl', label: 'Right to left', short: ['RTL'] }] },
                         // Last, so the box's vertical alignment — a field of
                         // the node rather than of its style — follows it.
                         align: { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', default: 'left', control: 'toggle', encoding: alignEncoding, options: [{ value: 'left', label: 'Left', icon: 'textAlignLeft' }, { value: 'center', label: 'Center', icon: 'textAlignCenter' }, { value: 'right', label: 'Right', icon: 'textAlignRight' }, { value: 'justify', label: 'Justify', icon: 'textAlignJustify' }] },

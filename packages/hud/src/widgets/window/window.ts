@@ -6,7 +6,7 @@ import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns, pathFromD, parseColor, pastDragThreshold } from '@weasel-js/core';
 import { clampRectWithin } from '@weasel-js/geom';
 import { dashForStrokeStyle, mixOklab } from '@weasel-js/paint';
-import { resolveStanceSlots, type Stance } from '@weasel-js/theme';
+import { resolveCurrentColor, resolveStanceSlots, type Stance } from '@weasel-js/theme';
 import {
   zoneAt, windowContentRect, applyWindowDrag, cursorForZone,
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
@@ -200,6 +200,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         'title-color': ctx.tokens['--wzl-fg-muted'],
         'title-case': 'none',
       }, { stance });
+      look['title-color'] = resolveCurrentColor(look['title-color'], ctx.tokens['--wzl-fg']);
       const named = typeof tone === 'number' ? ctx.toneAt(tone) : tone;
       const band = named === undefined && stance === undefined
         ? look.surface

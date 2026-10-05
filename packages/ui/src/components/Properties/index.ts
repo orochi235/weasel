@@ -22,6 +22,7 @@ export { PropertyControl, PropertyField } from './PropertyField';
 export type {
   PropertyAlign,
   PropertyDensity,
+  PropertyHelpProps,
   PropertyListPack,
   PropertyListProps,
   PropertyMetricProps,
@@ -33,6 +34,7 @@ export type {
   PropertySpanProps,
 } from './PropertyPanel';
 export {
+  PropertyHelp,
   PropertyList,
   PropertyNote,
   PropertyPanel,

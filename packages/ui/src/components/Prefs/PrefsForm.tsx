@@ -62,6 +62,20 @@ export interface PrefsFormProps {
    * them reads as a wall. Default false.
    */
   subPages?: boolean;
+  /** Dotted paths whose leaves currently inherit: each still draws its control,
+   *  dimmed, showing the value in `values` — pass it already resolved. Editing
+   *  it calls `onChange` as usual, which is the owner's cue to pin it. */
+  auto?: ReadonlySet<string>;
+  /** Given, a leaf's label toggles whether it inherits: `next` true unpins it,
+   *  false pins it at the value it shows. Leaves `canInherit` refuses keep a
+   *  plain label. */
+  onAutoChange?: (path: string, next: boolean) => void;
+  /** Which leaves can inherit, and so get a label toggle. Default: every leaf,
+   *  once `onAutoChange` is given. */
+  canInherit?: (path: string) => boolean;
+  /** Small text after an inherited leaf's label, e.g. `() => 'from Defaults'`.
+   *  Default: none. */
+  inheritHint?: (path: string) => string | undefined;
   className?: string;
 }
 
@@ -82,6 +96,10 @@ export function PrefsForm(props: PrefsFormProps) {
     showHidden = false,
     layout = 'columns',
     filterable = false,
+    auto,
+    onAutoChange,
+    canInherit,
+    inheritHint,
     className,
   } = props;
   const [query, setQuery] = useState('');
@@ -90,7 +108,7 @@ export function PrefsForm(props: PrefsFormProps) {
     return visible === null ? null : filterPrefSubtree(visible, query);
   }, [schema, showHidden, query]);
 
-  const ctx: WalkCtx = { values, onChange, renderers };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

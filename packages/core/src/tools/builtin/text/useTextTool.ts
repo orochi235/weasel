@@ -101,7 +101,7 @@ useTextTool.options = {
       description: 'Draw the range in capitals, lowercase or title case. The text itself is unchanged.',
       control: 'toggle',
       default: 'none',
-      options: [{ value: 'none', label: 'None', short: '–' }, { value: 'uppercase', label: 'Uppercase', short: 'AA' }, { value: 'lowercase', label: 'Lowercase', short: 'aa' }, { value: 'capitalize', label: 'Capitalize', short: 'Aa' }],
+      options: [{ value: 'none', label: 'None', short: ['–'] }, { value: 'uppercase', label: 'Uppercase', short: ['AA'] }, { value: 'lowercase', label: 'Lowercase', short: ['aa'] }, { value: 'capitalize', label: 'Capitalize', short: ['Aa'] }],
     },
     fontVariantCaps: {
       kind: 'enum',
@@ -109,7 +109,7 @@ useTextTool.options = {
       description: 'Draw lowercase letters in the range as smaller capitals. The text itself is unchanged.',
       control: 'toggle',
       default: 'normal',
-      options: [{ value: 'normal', label: 'Normal', short: '–' }, { value: 'small-caps', label: 'Small caps', short: 'Sc' }],
+      options: [{ value: 'normal', label: 'Normal', short: ['–'] }, { value: 'small-caps', label: 'Small caps', short: ['Sc'] }],
     },
     fontFamily: {
       kind: 'font-family',
@@ -131,7 +131,7 @@ useTextTool.options = {
       name: 'Tracking',
       // The typographic term, short enough for a strip; `name` stays the
       // accessible one.
-      short: 'VA',
+      short: ['VA'],
       description: 'Space added between characters.',
       step: 0.1,
       default: 0,
@@ -139,7 +139,7 @@ useTextTool.options = {
     baselineShift: {
       kind: 'number',
       name: 'Baseline shift',
-      short: 'Shift',
+      short: ['Shift'],
       description: 'Raise or lower the range, in ems of the inherited size.',
       step: 0.001,
       unit: PERCENT,

@@ -96,8 +96,8 @@ test:smoke:registry` installs the whole set into an empty tree to catch the
 consumer-facing half — one missing sibling breaks `npm i @weasel-js/core` while
 seventeen versions are perfectly present. Both run in the release workflow after
 the publish; run either by hand to answer "did the last release land?".
-Within 15 minutes of a publish a missing version may only be staged — npm hides
-a fresh upload that long, and republishing it fails with E409 — so check with
+Within an hour of a publish a missing version may only be staged — npm has hidden
+a fresh upload for 55 minutes, and republishing it fails with E409 — so check with
 `npm run check:published -- --wait` before re-dispatching anything.
 
 ## Package manager
@@ -304,11 +304,11 @@ runtime zero that is not a compile-time zero (`u_color.a - 0.5` where the
 uniform is 0.5) is what keeps the code alive. The same trap waits for any
 "with and without" shader pair.
 
-**A linear gradient is not a run-breaker any more.** A test reaching for "a
-paint the batch cannot express" wants a radial or conic one; a linear gradient's
-ramp position is affine in position, so it rides the vertices off the ramp atlas
-and joins the run. Four test files were written against the old behavior and
-went on passing for the wrong reason until they were swapped.
+**No gradient is a run-breaker any more.** Linear, radial and conic all ride the
+vertices off the ramp atlas and join the run, and so do images and text. A test
+reaching for "a paint the batch cannot express" wants per-vertex colors or a
+pattern, and should count draws to pin that premise: tests written against the
+old behavior went on passing for the wrong reason, twice.
 
 **A path-fill painter's bind half and draw half must stay split.** `applyClipTest`
 disables the stencil test at clip depth 0 and overwrites `stencilFunc` otherwise, so any

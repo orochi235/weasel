@@ -164,12 +164,16 @@ const plain = defineInstrument<Record<string, never>, Record<string, never>>({
 
 describe('an instrument that declares a stage', () => {
   it('renders its DOM on the stage', async () => {
-    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[staged]} defaultInstrument="Staged" />,
+    );
     expect(content(container)).toContainElement(screen.getByTestId('art'));
   });
 
   it('gets the zoom controls, and they move the stage', async () => {
-    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[staged]} defaultInstrument="Staged" />,
+    );
     const trialView = within(screen.getByRole('toolbar', { name: 'View' }));
     await act(async () => {
       fireEvent.click(trialView.getByRole('button', { name: 'Zoom in' }));
@@ -194,7 +198,9 @@ describe('an instrument that declares a stage', () => {
       toJSON: () => ({}),
     });
     try {
-      const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+      const { container } = await renderSettled(
+        <Lab instruments={[staged]} defaultInstrument="Staged" />,
+      );
       const trialView = within(screen.getByRole('toolbar', { name: 'View' }));
       await act(async () => {
         fireEvent.click(trialView.getByRole('button', { name: 'Zoom in' }));
@@ -225,7 +231,9 @@ describe('an instrument that declares a stage', () => {
         overlay: ({ state }) => <div data-testid="legend">{state.n}</div>,
       },
     });
-    const { container } = await renderSettled(<Lab instruments={[overlaid]} defaultInstrument="Overlaid" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[overlaid]} defaultInstrument="Overlaid" />,
+    );
     const legend = screen.getByTestId('legend');
     expect(legend).toHaveTextContent('7');
     expect(container.querySelector('.lk-stage')).toContainElement(legend);

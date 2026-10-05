@@ -287,14 +287,17 @@ collected by no project.
 Solid geometry, image quads, up to seven distinct textures, text and all three
 gradients share one draw. **Nothing is left of step 4**, and
 `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md` is now a record
-rather than a plan. `docs/TODO.md`'s **"(P2) Per-command draw cost"** entry is
-the live account of the whole arc.
+rather than a plan. `docs/TODO.md`'s **"(P2) Breaking the batch is what a frame
+pays for"** entry holds what it left open, measured 2026-10-03; the arc's history
+is in `git log`.
 
 What still takes its own draw is what no run can express: per-vertex colors,
 even-odd and inner/outer-aligned strokes (their own stencil passes), patterns,
 registered shaders, and meshes past the batch's vertex cap.
 
-**There is no obvious next step here.** The plan's own remaining item is the
+**The next step is the cost of closing a batch early** — a clipped group fits
+~1,360 to a 60 Hz frame against ~250,000 solid rects — and the instrument does
+not yet say where that cost goes (see the TODO entry). The plan's own remaining item is the
 "one thing to fix along the way" — dispatch is half-deferred, walking the tree
 and emitting GL inline except for the batch, so every mutator has to remember to
 flush first. That is a clarity argument, not a pressure one.

@@ -52,4 +52,6 @@ const layers = [
 ];
 
 writeFileSync(join(pkgRoot, 'dist/styles.css'), layers.join('\n'));
-console.log('[css] dist/styles.css — theme faces + theme tokens + core + weasel-ui + windease + labkit');
+console.log(
+  '[css] dist/styles.css — theme faces + theme tokens + core + weasel-ui + windease + labkit',
+);

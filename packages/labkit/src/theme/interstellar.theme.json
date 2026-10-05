@@ -64,20 +64,6 @@
         "type": "color"
       }
     },
-    "fg-muted": {
-      "by": "mode",
-      "dark": {
-        "value": "#a8a8c0",
-        "type": "color"
-      }
-    },
-    "fg-subtle": {
-      "by": "mode",
-      "dark": {
-        "value": "#5a5a78",
-        "type": "color"
-      }
-    },
     "accent": {
       "by": "mode",
       "dark": {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useArgs } from '@weasel-js/forge/preview-api';
+import { endless, unit } from '@weasel-js/quantity';
 import { Slider, type Thumb } from './Slider';
 import { paintGradientTrack } from '../../paintGradientTrack';
 import { oklchToHex } from '../../color/oklch';
@@ -98,6 +99,13 @@ export const SnapsToStops: Story = {
 export const SlimWithReadoutsBelow: Story = {
   args: { density: 'slim', readoutPlacement: 'below-thumb', step: 0.01 },
   render: (args) => <Wrapper {...args} initial={[{ value: 0.32 }, { value: 0.75 }]} />,
+};
+
+/** The top stop stands for infinity: a thumb there reports `Infinity`, and
+ *  the readout shows the display's word for it. */
+export const EndlessEnd: Story = {
+  args: { min: 0, max: 5000, step: 50, endless: 'max', display: endless(unit('ms'), 'never') },
+  render: (args) => <Wrapper {...args} initial={[{ value: Infinity }]} />,
 };
 
 /** The marks are the stops. Turning them off leaves the same snapping with

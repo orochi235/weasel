@@ -80,6 +80,26 @@ describe('StoryTree', () => {
     expect(screen.getByRole('radio', { name: 'Components' })).toHaveAttribute('aria-checked', 'true');
   });
 
+  it('grays out Gallery in a project with no galleries', async () => {
+    render(<Harness storage={createMemoryAdapter()} />);
+    await screen.findByRole('tree', { name: 'Stories' });
+    expect(screen.getByRole('radio', { name: 'Gallery' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Components' })).toBeEnabled();
+  });
+
+  it('shows Components when the stored view is a gallery the project lacks', async () => {
+    const backing = new Map<string, unknown>();
+    const first = render(<Harness storage={createMemoryAdapter(backing)} />);
+    await screen.findByRole('tree', { name: 'Stories' });
+    fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
+    await waitFor(() => expect([...backing.values()]).toContain('tree'));
+    first.unmount();
+    for (const key of backing.keys()) if (key.includes('fg-tree-view')) backing.set(key, 'gallery');
+    render(<Harness storage={createMemoryAdapter(backing)} />);
+    await screen.findByRole('tree', { name: 'Stories' });
+    expect(screen.getByRole('radio', { name: 'Components' })).toHaveAttribute('aria-checked', 'true');
+  });
+
   it('heads itself "Stories" and lists top-level folders', async () => {
     const { treeEl } = await mount();
     expect(screen.getByRole('heading', { name: 'Stories' })).toBeInTheDocument();
@@ -284,8 +304,18 @@ describe('StoryTree', () => {
     await mount();
     openFolder('Kit');
     openFolder('Button');
-    expect(fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { metaKey: true })).toBe(true);
-    expect(fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { ctrlKey: true })).toBe(true);
+    // A browser opens a modified click in a new tab; jsdom navigates this page a task later, past
+    // afterEach's URL reset, and the next test inherits the route. So record what the tree left, then cancel.
+    const left: boolean[] = [];
+    const record = (event: MouseEvent) => {
+      left.push(!event.defaultPrevented);
+      event.preventDefault();
+    };
+    document.addEventListener('click', record);
+    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { metaKey: true });
+    fireEvent.click(screen.getByRole('treeitem', { name: 'Ghost' }), { ctrlKey: true });
+    document.removeEventListener('click', record);
+    expect(left).toEqual([true, true]);
     expect(trialsOf(ghost)).toHaveLength(0);
   });
 
@@ -464,6 +494,32 @@ describe('StoryTree galleries', () => {
     expect(names()).not.toContain('Everything');
     expect(item(button, 'Primary')).toBeTruthy();
     expect(within(button).queryByRole('treeitem', { name: 'Permutations' })).toBeNull();
+  });
+
+  it('grays out Components and Tree in a project of only galleries, and lists the galleries', async () => {
+    const only = [permutations, gallery];
+    const onlyChrome: LabContribution[] = [
+      { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={only} /> },
+    ];
+    function OnlyGalleries() {
+      const { instruments } = useStoryRegistry([...only, ...indexEntries(only)], { frameUrl: '/frame.html' });
+      return (
+        <Lab
+          instruments={instruments}
+          defaultInstrument={gallery.id}
+          labChrome={onlyChrome}
+          addTrial={false}
+          storageKey="tree-only-galleries"
+          storage={createMemoryAdapter()}
+        />
+      );
+    }
+    render(<OnlyGalleries />);
+    await screen.findByRole('tree', { name: 'Stories' });
+    expect(screen.getByRole('radio', { name: 'Components' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Tree' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Gallery' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('treeitem', { name: 'Everything' })).toBeTruthy();
   });
 
   it('lists every gallery, and only galleries, in the Gallery view', async () => {

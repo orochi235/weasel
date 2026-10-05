@@ -568,26 +568,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) A pref's label can't shorten to fit the space it's given.** A leaf (and an enum
-  option) carries `name` and one `short` (`ToolPrefBase` in `core/tools/prefs.ts`), and each
-  surface hard-codes which it reads: `ToolOptionsBar` takes `short ?? name`, SelectionPanel's
-  flag bars take `icon`, then `short`, then `name`'s first letter, and every other surface
-  takes `name`. A label that fits one width and truncates at another has no say. Let a leaf
-  give its shorter forms in order (`name` stays canonical and the accessible name), and have
-  a surface take the longest one that fits the cell it measured, instead of picking a field.
-
-- **(P2) Text emphasis is a fixed gray, not a step down from the text it sits beside.**
-  `--wzl-fg-muted` and `--wzl-fg-subtle` are fixed grays per mode (`gray-300`/`gray-400`
-  dark, `gray-600`/`gray-500` light), used about 700 times. A fixed gray only reads as
-  "less" against the surface it was picked on. On an accent fill, a raised row or a
-  sunken rail it can't follow the text color in effect there, and it lands close enough
-  to a disabled control that the Prefs rail's nested entries read as disabled (fixed
-  there by dropping the color). Look at expressing emphasis as a coefficient on the
-  current text color instead, e.g. `color-mix(in oklab, currentColor <n>%, transparent)` or
-  relative color on `--wzl-fg`, with the steps as theme tokens. Open questions: whether
-  disabled gets its own distinct signal once emphasis is relative; contrast at each step
-  on every surface; and the `var()`-in-a-custom-property trap in CLAUDE.md, which a
-  token built on `currentColor` or `--wzl-fg` must avoid.
+- **(P2) Emphasized text on an accent fill falls below 4.5:1 in dark mode.** `--wzl-fg-muted`
+  and `--wzl-fg-subtle` now step down from the text color in effect (`rgb(from currentColor r g b
+  / a)`, see `docs/conventions.md`, "Design tokens"), so on `--wzl-accent` they follow
+  `--wzl-fg-on-accent`. But that text itself is only 4.73:1 on the dark accent, so muted lands at
+  3.18:1 and subtle at 2.52:1 (light mode: 5.05 and 3.91). Either the dark accent darkens or the
+  steps get an accent-specific alpha. Still open from the same arc: whether disabled gets its own
+  signal now that emphasis is an alpha (disabled is `opacity: 0.4`–`0.5` on the whole control,
+  subtle text is 0.54–0.64 alpha).
 
 - **(P3) apps/site never loads the kit's faces.** It imports no
   `@weasel-js/theme/faces.css` or `fonts.css`, so `--wzl-font-ui`'s Oswald and
@@ -915,235 +903,96 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
-- **(P2) jsdom is pinned to exactly 29.0.1.** From 29.0.2 through 30.1.1
-  (the latest), reading an inherited property that no ancestor sets — an unset
-  custom property is enough — costs twice as much for every level of DOM depth:
-  about 1.3s at depth 22 on 30.1.1, against about 3ms on 26. `getInheritedPropertyValue` in
-  jsdom's `living/css/helpers/computed-style.js` walks every ancestor, and each
-  ancestor's lookup walks its own ancestors again. `Select`'s
-  `getComputedStyle(trigger).getPropertyValue('--wzl-select-align')` hit it
-  inside forge's workshop, turning one `Workshop.test.tsx` case from ~1s into
-  ~150s. A depth-sweep repro is a dozen lines against `new JSDOM()`; move off the pin once
-  a jsdom release is flat on it.
+- **(P2) `Toast.browser.test.tsx`'s placement case fails under full-suite load.** "each
+  placement anchors to its corner of the container" failed once in a full run on keiei
+  (2026-10-05, onto job `770eba13`, 2069 ms against ~20 ms for its siblings) and passed 8 of 8
+  alone on the same node. The job's log kept no assertion text, so whether `findByRole` timed
+  out or the offset was wrong is unknown. Nothing touching Toast had changed. A rerun under
+  load that prints the assertion is the next step.
 
-- **(P2) HUD vs DOM text: what the first measurement left open.**
-  `tests/perf/hud-vs-dom.spec.ts` answered the main-thread question (findings
-  and crossovers in `tests/perf/README.md`, "HUD text against a DOM overlay"),
-  but only on a contended node. Still unanswered: frame rate and the
-  off-main-thread totals, whose spread on studio at load 8–21 swamped a 2–3 ms
-  lean toward the HUD — rerun on an idle node; a React-rendered overlay, which
-  adds reconciliation the plain-DOM side does not pay; and a pure pan that moves
-  the whole DOM layer as one element. Widget command caching cut the HUD's
-  static-label cost from ~1 µs to ~0.2 µs of script per glyph per frame (the
-  README's "After widget command caching"). A static label on a fixed camera
-  still favors the DOM (1.43 ms against 0.35 at 5,000 glyphs), because the
-  renderer re-walks every unchanged text command each frame. A layer-level
-  skip for a HUD whose widgets are all unchanged would need `content` painters
-  kept out of it. The every-frame cells have not been rerun since the cache
-  landed.
+- **(P3) jsdom 30.1.1 runs patched.** From 29.0.2 on, reading a custom property no
+  ancestor sets doubles in cost with every level of DOM depth: `_getComputedPropertyValue`
+  caches only properties in `propertyDefinitions`, so `--*` reads go uncached, and
+  `getInheritedPropertyValue` re-walks the chain from each ancestor. `Select`'s
+  `--wzl-select-align` read turned one `Workshop.test.tsx` case from ~1s into ~150s.
+  `patches/jsdom+30.1.1.patch` caches custom properties too, applied by `postinstall`;
+  `Select/jsdomCustomProperty.test.ts` times out if it stops applying. Delete both, and
+  `patch-package`, once a jsdom release carries the fix.
+
+- **(P2) HUD vs DOM text: what the idle rerun left open.**
+  `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
+  React overlay, and a DOM layer moved as one element, on an idle node
+  (`tests/perf/README.md`, "HUD text against a DOM overlay"). Two things are
+  still open:
+  - **The HUD's 5,000-glyph readout gets the fewest frames** — about 70 ms
+    apart under every camera, against 43–61 for the DOM — while its traced
+    busy time is the lowest, about 9 ms per frame. Either the headless frame
+    scheduler or a thread the trace analysis does not count (renderer worker
+    threads, for one) accounts for the rest; nothing has checked which. Until
+    it is, none of the frame intervals can be read as a display's frame rate.
+  - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main
+    thread against 0.33 at 5,000 glyphs, because the renderer walks every
+    unchanged text command each frame. A layer-level skip for a HUD whose
+    widgets are all unchanged would need `content` painters kept out of it.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op factories, shape kinds and the `features` presets; public exports remain uncovered.
 
-- **(P2) Per-command draw cost, for everything that is not batched solid
-  geometry.** `tests/perf/draw-loop.spec.ts` sweeps commands per frame under
-  real GL (`npm run test:perf`; gates nothing, and its result file records the
-  unmasked GL renderer so a software backend is obvious).
+- **(P2) What still breaks the batch, now that a rect clip does not.** A group
+  clipped by an axis-aligned rect no longer flushes: `batchClip.ts` cuts staged
+  quads to the rect on the CPU. Measured on teitou (Apple M5 Max, ANGLE Metal),
+  2026-10-04, one frame per task; the result files are in
+  `tests/perf/recorded/render-cost-2026-10-04/`, `before/` on main's renderer
+  and `after/` on the `clip-flush` branch at `f674f79c7`.
 
-  The cost turned out not to be the draw call. A warm mesh draw is ~1.8 us;
-  what cost ~66 us was *writing a buffer between draws*, which the driver
-  cannot pipeline over. So batching pays by moving buffer writes to once a
-  frame, and consecutive solid-fill geometry — rects, tessellated fills, stroke
-  ribbons — now shares one `drawElements`. At 3,200 commands on an M2 Max via
-  ANGLE: scene-shaped rects 209 -> 0.39 ms, rotated rects 217 -> 0.70 ms, solid
-  octagons 5.6 -> 0.65 ms, stroked rects 244 -> 9.4 ms.
+  | at 60 Hz, `frame-budget.spec.ts` | before | after |
+  |---|---:|---:|
+  | clipped groups, depth 1 | 3,424 | 194,560 |
+  | clipped groups, depth 4 | 2,080 |  65,536 |
 
-  Stroked commands then went 9.4 -> 1.7–2.0 ms on 2026-08-15: batching had left
-  them ~85% stroke tessellation, and `cache/strokeMeshCache.ts` now keys that on
-  `Path` identity so a ribbon is built once per stroke configuration rather than
-  once per frame. A ribbon also earns a persistent VAO on its second sight *in a
-  given GL context* — `GLMeshCache.uploadRecurring`, which is where that gate
-  has to live, since one scene can be drawn by several renderers. Design:
-  `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
+  No other row moved by more than two runs of the same code differ, which on
+  teitou is up to 30%. What is left:
 
-  What still pays per command, at 512 a frame on the same machine
-  (`tests/perf/transition-matrix.spec.ts`): solid 0.14 us, shader 1.22,
-  pattern 1.60, gradient 1.78, stencil fill 3.22, per-vertex-color 3.87,
-  image 3.6 (7.0 before the quad ring landed), text 6.7–7.1. None of those is
-  the barrier any more, and neither is a *neighbour of a different kind*: that
-  boundary cost 27 us — all of it the solid batch's stalled flush — until the
-  batch started cycling its buffers, and is now 2.5 us for solid and under one
-  for every other kind. See the boundary entry below.
+  - **A run-breaker costs about 1.2–1.7 us a flush**, depending on the run's
+    speed state (`flush-anatomy.spec.ts`). Bind and draw are 0.9–1.1 of it; no
+    other call in `flushBatch` costs more than 0.15. So what remains is the
+    draw count: a color matrix, synthetic bold, and an eighth texture all still
+    break the run.
+  - **A clip only the stencil can express still flushes on entry and exit**:
+    a polygon, a rect turned off the axes, and a rect clip with a slanted item
+    crossing it (`DrawBatch.clipQuad` says why a slanted edge cannot be cut).
+    The stencil itself costs about 0.6–1.3 us a push and pop.
+  - **Caching `u_synthBold`, `u_samplers` and `u_fieldScale` was tried and
+    reverted.** It saved about 0.1 us a flush on color-matrix breaks and made
+    a frame of 20,000 stroked rects 30% slower, measured with both renderers
+    interleaved in one page. The cause was not found.
+  - **Text no longer closes the dearest batch.** `transition-matrix.spec.ts`
+    puts every boundary at 0.7 us or less, text's included; the 8–18 us of
+    the 2026-10-03 run was the timing method, below.
 
-  Text took the same ring on 2026-08-27 and went 6.65 -> 3.3 us, level with an
-  image draw; a slot's buffer grows to the largest run it has seen, and one
-  shared index buffer serves every slot because the quad pattern for N quads
-  is a prefix of the pattern for any larger N. The remaining per-command costs
-  above are otherwise unchanged.
+- **(P2) Perf figures taken many frames to a task are suspect.** Drawn back to
+  back in one task, frames slow down 4–10x after about eight
+  (`tests/perf/README.md`, "Timing a frame"); that is what the old per-flush
+  figures measured. `frame-budget`, `transition-matrix`, `draw-loop`,
+  `clip-cost` and `flush-anatomy` now time one frame per task.
+  `image-quad.spec.ts`, `atlas-wall.spec.ts` and `fill-rate.spec.ts` still
+  time blocks, and decisions rest on their old numbers: `SOLID_RING_SIZE`,
+  `BATCH_TIERS` and the canonical-index note in `drawBatch.ts` cite
+  `image-quad` and `flush-anatomy` block figures, and
+  `MAX_BATCHED_MESH_VERTICES` in `draw.ts` cites `npm run test:perf`. Move the
+  three specs to `lib/frameTiming.ts`, re-measure, and correct or remove the
+  figures in those comments. What inside Chromium or ANGLE resets at a task
+  boundary is also unknown.
 
-  Images stopped paying per command on 2026-09-05. Consecutive image quads
-  coalesce into one `drawElements`, and `kind: 'sprites'` hands a run over as a
-  `Float32Array` rather than a command object each. Over one atlas at 20,000
-  quads: 51.3 -> 10.6 ms coalescing, -> 0.79 ms packed. A run breaks on
-  MAG_FILTER, clip depth or color matrix; transform, group alpha and
-  per-command opacity ride the vertices, and as of the slot work below so does
-  the bitmap, up to seven of them.
-
-  Text joined that batch on 2026-09-09. Glyphs, the rules under underlined
-  words and tessellated glyph outlines all stage alongside the geometry around
-  them, so a captioned thumbnail is one draw where the caption used to cost two
-  — and `dispatch` no longer flushes ahead of a text command whether or not it
-  draws anything. The batch shader carries the glyph math behind a paint mode
-  and runs it on *every* fragment, glyph or not: `fwidth` in non-uniform control
-  flow is undefined, so the derivative has to be taken before anything selects
-  on the mode. That roughly doubles a fragment that is not a glyph
-  (`tests/perf/fill-rate.spec.ts`) — recorded here as 1.4% when text landed,
-  which was the instrument and not the shader: the control gated its glyph math
-  on a factor the compiler folds to zero and then deletes the math behind, so it
-  timed `plain` against `plain`. Fill is not what a wall is bound by, so the
-  decision stands; a fill-heavy scene pays more for text than this entry said.
-
-  **The cost of folding text in was the vertex, and packing is what paid it.**
-  The first cut gave the vertex a paint mode and a bold threshold of its own,
-  and that measured 9% slower at the densest wall rung — 1.78 ms against 1.63
-  for 7,500 commands, ABBA in one sitting, with the pure-rect column showing the
-  same shape. The batch exists to make one buffer write a frame cheap, so a
-  float only glyphs read still widens the write for every rect and quad beside
-  them. Slot and mode are both small enumerations, so `slot + 8 * mode` fits in
-  the float `a_texSlot` already was; the threshold went back to a uniform, which
-  breaks a run where a faked bold meets text that is not. Re-measured the same
-  way, the rect column is at parity (0.56 / 0.57 against 0.53 / 0.57) and
-  wall-1x sits a few percent above baseline, inside the spread each variant
-  showed against itself.
-
-  What a run no longer breaks on: a second text color in a paragraph, a
-  decoration whose fill differs from its glyphs, and the difference between a
-  baked MSDF atlas and the runtime canvas bake. A font atlas takes a texture
-  slot in the same list bitmaps take, so seven textures in a run is now seven of
-  either kind.
-
-  **Linear gradients joined the batch on 2026-09-10, on a ramp atlas.** Every
-  baked ramp is a row of one texture (`cache/GradientRampAtlas.ts`) rather than
-  a texture of its own, so every gradient in a frame shares one texture slot
-  instead of taking one each — which is the thing that made a gradient
-  unbatchable at all. The atlas doubles from 16 rows to 1024 and recycles the
-  least recently used row past that, which also bounds an animating gradient:
-  the old cache grew a GL texture per frame for one and freed none.
-
-  A linear gradient's ramp position is affine in position, so a vertex carries
-  it and the rasterizer's interpolation across a triangle is exact. That makes
-  such a fill a textured quad off the atlas — the plain paint mode, `a_uv =
-  (ramp position, row)`, white vertices carrying its opacity — and it cost no
-  paint mode, no vertex float and no line of shader. Fills, stroke ribbons and
-  glyph-outline meshes all take it.
-
-  The trap it carries: a staged vertex names its row by where the row sits, so
-  an atlas that grows or recycles a row repaints geometry already staged.
-  `wouldReshape` is asked before the bake and the run flushed if the answer is
-  yes — asking afterwards is too late.
-
-  **The measurement to quote is the mixing, not the per-command cost.** Three
-  runs of `tests/perf/transition-matrix.spec.ts` in one sitting put 512
-  alternating solids and gradients at 0.35 / 0.40 / 0.50 ms a frame against
-  0.51 / 0.75 / 0.78 for 512 gradients alone — so a solid beside a gradient
-  costs nothing, which is the claim. That spread is ~50% on an unchanged
-  fixture, wide enough that a per-command before-and-after does not resolve
-  against it; the draw counts in `drawBatch.test.ts` are the exact evidence.
-
-  Gradient fills also pick up the group color matrix, which `gradFill` was the
-  only paint program not to apply. The batch program applies it to everything
-  in a run, so without this a linear gradient and a radial one under the same
-  group would have disagreed.
-
-  **Radial and conic followed the same day.** Their ramp position is not affine,
-  but the coordinate they need is, so a vertex carries a gradient-space point in
-  `a_uv` and its atlas row in `a_post`, and the shader takes a `length` or an
-  `atan` of it. Both sit behind a branch on the paint mode, which is legal where
-  it would not be around the glyph math: the mode is a flat varying, so every
-  fragment of a quad takes the same arm, and neither arm holds a derivative.
-
-  **The branch carries the sample, not just the coordinate, and that is worth
-  65% of a fragment.** Selecting a coordinate and then sampling once is a
-  texture read the hardware cannot schedule against a varying; splitting the
-  fetch across the two arms gives every non-gradient fragment its plain read
-  back. Measured against the same shader without the branch at all: +65.1% one
-  way, +4.9% the other (`tests/perf/fill-rate.spec.ts`). Step 4 of
-  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md` is now closed.
-
-  Solid geometry and image quads share that batch as of 2026-09-09
-  (`renderer/drawBatch.ts`). They used to be exclusive — staging a solid
-  drained the image run and staging an image drained the solid one — so a wall
-  of thumbnails, which is a ground rect under an atlas quad per cell, paid a
-  flush per command however well each half batched on its own. Measured over a
-  viewport-filling grid of those cells (`tests/perf/atlas-wall.spec.ts`): 600
-  commands 2.83 -> 0.10 ms, 1,650 11.37 -> 0.20, 5,400 40.50 -> 0.58, 15,000
-  126.15 -> 1.50. Draw calls 15,000 -> 2, the second only because the run
-  crosses the per-flush vertex cap.
-
-  **Every vertex names the texture it samples** (`a_texSlot`, slot 0 the white
-  texel). The first cut had solids carrying the white texel's *UV* while the
-  flush bound the run's bitmap, so every ground rect beside an atlas quad drew
-  multiplied by that atlas's middle texel — white grounds came out olive, and
-  no baseline saw it because in every demo the quad covers its ground.
-  `tests/visual/batch-pixels.spec.ts` reads the framebuffer channel by channel
-  and is the gate for that whole class.
-
-  Slots also let one run hold seven bitmaps rather than one, so a document with
-  a handful of loose images stops breaking its run per bitmap. The run still
-  breaks on an eighth, and on one bitmap wanted at two MAG_FILTERs — texture
-  state, not unit state. The fragment shader unrolls a compare per slot because
-  GLSL ES 3.0 will not index a sampler array with a variable, and the arms cost
-  nothing measurable: at 15,000 commands a two-slot chain and an eight-slot one
-  are the same, and the whole change measures 1.85 -> 1.95 ms against its own
-  parent run back to back.
-
-  Read those two against each other, not against the 1.50 above: the same
-  unchanged tree measured 1.85 on the later day. These absolutes drift by
-  around a quarter between sessions on one machine.
-
-  **There is no step in this at a thousand commands.** A consumer measuring the
-  same wall found per-command cost flat at ~1.3 us up to ~800 and flat at ~7.3
-  past ~1,400, and read the step as a batch or cache limit being crossed. It
-  was the ladder: the rungs below it drew cells the atlas had no tile for,
-  which are solid fills and batched, and the rungs above drew sprites, which
-  interleaved with their grounds and did not. The two regimes weasel had are
-  exactly those two numbers. `atlas-wall.spec.ts` walks the same cell sizes with
-  the sampling held fixed and is flat across the whole ladder.
-
-  **`sampling: 'nearest'` is free on our sheets and is not free on a big one.**
-  `atlas-wall.spec.ts` prices both filters at every rung and finds no
-  difference, which agrees with the reasoning: `GLImageCache` pins MIN_FILTER
-  to LINEAR and generates no mipmaps on the screen path, so `sampling` moves
-  MAG_FILTER alone and a minified draw should never read it. A consumer
-  measuring the same shape on a 12MB sheet gets nearest costing up to 8x
-  linear, and the ratio tracks minification exactly — 8.11 at 2:1, 5.98 at
-  1.33:1, 1.08 at 1:1, 1.14 magnified — vanishing the moment the draw stops
-  minifying, and inverting to the ordinary expectation on their small sheet.
-
-  Our sheets are 16x16 tiles, so the largest is about 3MB. Theirs is 5652px
-  square — **122MB resident**, forty times ours, not four; the 12MB first
-  reported was the compressed webp on the wire. A texture that size against a
-  cache hierarchy is why 3MB may see nothing where 122MB does not fit.
-
-  **One redundant write is already gone.** `flushBatch` re-asserted MAG_FILTER
-  on every flush for every slot, and filtering is state on the texture object,
-  so most of those were writes to a live texture for no reason.
-  `GLImageCache.setMagFilter` now skips a value the texture already carries.
-  That fits the shape of their measurement — their linear pass re-asserted the
-  upload default while their nearest pass changed state on every draw — but it
-  does not explain it: their control is the pre-batch build, which set the
-  filter per *command*, and the ratio they see tracks minification rather than
-  command count. So it is a fix, not the answer.
-
-  What is left of the fork: either MIN_FILTER is not what a draw at 2:1 on a
-  122MB texture actually reads, or something else in the renderer still varies
-  with `sampling`. Widening this spec's sheet toward theirs is the experiment.
-  Their column is single runs per rung on a box that had a fleet job on it all
-  evening — believe the shape, which lands exactly at 1:1 and is not something
-  contention produces, and not the second digit.
-
-  The rest of the plan — one program plus atlases — is in
-  `docs/superpowers/specs/2026-08-14-batched-dispatch-design.md`, with the traps, and a
-  two-phase dispatch split that would make it tractable.
+- **(P3) `sampling: 'nearest'` costs up to 8x on a 122MB sheet.** A consumer
+  drawing a 5652px atlas sees nearest cost 8.11x linear at 2:1 minification,
+  5.98x at 1.33:1, 1.08x at 1:1 and 1.14x magnified. `atlas-wall.spec.ts` finds
+  no difference on our sheets, the largest about 3MB, and `GLImageCache` pins
+  MIN_FILTER to LINEAR with no mipmaps, so `sampling` moves MAG_FILTER alone and
+  a minified draw should never read it. Either MIN_FILTER is not what a draw at
+  2:1 on a texture that size reads, or something else still varies with
+  `sampling`. Widening the spec's sheet toward theirs is the experiment. Their
+  column was single runs on a contended box: trust the shape, which tracks
+  minification exactly, not the second digit.
 
 - **(P3) Whether the batched path costs a co-tenant on the same page.**
   Unverified here, and reported rather than measured. A consumer benchmarking
@@ -1192,61 +1041,3 @@ one dead `const` and four stale disable directives.
   regressions. The shape a gate could take instead: a PR job that runs the
   benchmarks on both revisions and posts the `npm run perf:compare` table as a
   comment without failing the build. Mike's call.
-
-- **(P2) A clipped group costs ~10 us to enter, and the stencil is now the
-  larger half.** `tests/perf/clip-cost.spec.ts` separates entry's two costs by
-  clipping contents that would not have batched anyway: a gradient rect never
-  joins the solid batch, so wrapping one in a clip adds the stencil and nothing
-  else. Per clip entry on an M2 Max via ANGLE — stencil push and pop 5.25 us,
-  whole entry around a solid rect 10.16, so the break is 4.90. A second route
-  agrees: a group carrying a color matrix breaks the run through the same test
-  without touching the stencil, and prices one flush at 4.35 us. Nesting is
-  still free, and eight leaves under one clip instead of one takes the per-leaf
-  figure from 10.2 us to 0.65.
-
-  Those were 64.89 and 54.38 before `SolidBatch` stopped rewriting one pair of
-  buffers on every flush. The driver tracks a write hazard per buffer object,
-  so each write waited on the draw still reading what it was about to
-  overwrite. The batch now cycles a ring of 64 slot-sized buffer sets, plus a
-  4-deep ring of growable ones for flushes past a slot, so a write lands that
-  many draws behind the read that hazards it.
-
-  What is left is not the draw. `tests/perf/flush-anatomy.spec.ts` reproduces
-  the flush's call sequence over the same ring and removes one GL call per row,
-  so adjacent rows differ by that call's cost, against a 0.34 us floor for
-  bind-and-draw alone. The index upload and the `u_color` / `u_alpha` writes
-  are now skipped when the GPU already holds those bytes (a ring slot remembers
-  its index pattern; both uniforms go through `UploadedUniforms`), which took a
-  flush from 5.39 to 3.22 us and a clip entry from 12.47 to 9.53 in one A/B.
-  The vertex `bufferSubData`, 1.84 us, is the largest item left — the one thing
-  a flush exists to do — and text is the bigger target now (see the boundary
-  entry below).
-
-- **(P2) A boundary between two command kinds costs 0.3–2.5 us, and solid is
-  the expensive one.** `tests/perf/transition-matrix.spec.ts` prices each
-  ordered pair of command kinds: a frame alternating A and B, minus half of
-  each kind's own frame, over the boundaries between them. Fitting the matrix
-  to `S(A,B) = f(A) + f(B)` leaves residuals inside the noise floor, so a
-  boundary is not a property of the pair — each kind carries its own cost and
-  pays it against any neighbour that is not itself. Those costs, in us per
-  boundary: solid 2.48, clip 0.68, text 0.57, gradient 0.54, stencil 0.54,
-  pattern 0.51, image 0.38, per-vertex-color 0.35, shader 0.28.
-  Repeat-measurement noise on the same cells is 0.02–0.32.
-
-  Solid was 28.37 until the flush stopped stalling (see above), which is what
-  made a mixed document cost several times the sum of its parts. It is still
-  the highest of the nine, and still one flush: 512 rects each broken out of
-  the run are 2.5 ms a frame against 0.06 for 512 unbroken ones, where the same
-  frame was 28.3 ms.
-
-  `frame-budget.spec.ts`'s `mixed-doc` row moved with it, measured by running
-  that spec twice over the same tree with only `solidBatch.ts` swapped: 3,232
-  document elements in a 16.7 ms frame before, 8,320 after. Against the cost
-  its element mix predicts from the single-kind rows, the row was 3.41x and is
-  now 1.37x — so a document interleaving kinds is no longer several times the
-  sum of its parts. Every single-kind row is unchanged within noise; the two
-  that moved besides this one are the clipped groups, 6.4x and 3.5x.
-
-  **Text is what is left.** At 15% of the mix and 6.5 us a label it contributes
-  more of the mixed row than everything else together, which is the same
-  per-draw allocation the transition entry above names.

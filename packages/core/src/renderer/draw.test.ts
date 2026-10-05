@@ -41,6 +41,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     widthCss: r._widthCss(),
     heightCss: r._heightCss(),
     clipDepth: 0,
+    clipStack: [],
   };
   return { ctx, calls: recorder.calls, gl: recorder.gl };
 }
@@ -538,29 +539,26 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     // a live texture. A consumer's 122MB sheet is where that stops being free.
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
 
-    // Four flushes at one filter: the gradients break the run each time, so the
-    // count is flushes and not commands.
-    const gradient = {
+    // Four image flushes at one filter: per-vertex colors break the run each
+    // time (a gradient no longer does), so the count is flushes and not commands.
+    const breaker = {
       kind: 'path' as const,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 8, height: 8 },
-      fill: {
-        fill: 'linear-gradient' as const,
-        from: { x: 0, y: 0 }, to: { x: 8, y: 8 },
-        stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
-      },
+      fill: { fill: 'solid' as const, color: '#ffffff' },
+      vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
     } as unknown as DrawCommand;
     const img = {
       kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 64, h: 64,
       sampling: 'nearest' as const,
     };
-    // Warm both caches first. Each upload writes its own MAG_FILTER — the
-    // bitmap's and the gradient ramp's — and this test counts every write, so
-    // an unwarmed ramp shows up as a phantom second filter change.
-    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 }, gradient]);
+    // Warm the bitmap's cache first: its upload writes a MAG_FILTER of its own,
+    // which this test would otherwise count as a filter change.
+    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 }, breaker]);
     recorder.reset();
 
-    r.render([img, gradient, img, gradient, img, gradient, img]);
+    r.render([img, breaker, img, breaker, img, breaker, img]);
 
+    expect(recorder.calls.filter((c) => c.name === 'drawElements')).toHaveLength(7);
     const magFilters = recorder.calls
       .filter((c) => c.name === 'texParameteri' && c.args[1] === recorder.gl.TEXTURE_MAG_FILTER)
       .map((c) => c.args[2]);
@@ -695,9 +693,9 @@ describe('pushClip / popClip', () => {
 
     const drainedBeforeStencil = (calls: ReturnType<typeof createRecorderCtx>['calls']): void => {
       const flushIdx = calls.findIndex((c) => c.name === 'drawElements');
-      const stencilIdx = calls.findIndex(
-        (c) => c.name === 'stencilMask' || c.name === 'stencilFunc' || c.name === 'stencilOp',
-      );
+      // `stencilMask`, not the func or op: a run drawn under a clip sets
+      // those itself on the way to its draw.
+      const stencilIdx = calls.findIndex((c) => c.name === 'stencilMask');
       expect(flushIdx).toBeGreaterThanOrEqual(0);
       expect(stencilIdx).toBeGreaterThan(flushIdx);
     };
@@ -709,11 +707,20 @@ describe('pushClip / popClip', () => {
       drainedBeforeStencil(calls);
     });
 
-    it('popClip', () => {
+    it('popClip, for a run staged under the bit it clears', () => {
       const { ctx, calls } = createRecorderCtx();
+      ctx.clipDepth = 1;
       dispatch(ctx, stagedRect);
       popClip(ctx, path, /* oldDepth */ 0);
       drainedBeforeStencil(calls);
+    });
+
+    it('but not popClip for a run staged below that bit, which never tests it', () => {
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, stagedRect);
+      popClip(ctx, path, /* oldDepth */ 0);
+      expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
+      expect(ctx.drawBatch.length).toBe(6);
     });
   });
 });
@@ -773,12 +780,20 @@ describe('tryStageFill', () => {
 
 import type { GroupDrawCommand } from './DrawCommand';
 
+/** A square no CPU cut can stand in for, so the clip goes through the stencil. */
+const SQUARE_CLIP: PolygonPath = {
+  kind: 'polygon',
+  commands: new Uint8Array([M, L, L, L, Z]),
+  coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+  fillRule: 'nonzero',
+};
+
 describe('drawGroup clip integration', () => {
   it('drawGroup with cmd.clip pushes clip and children draw under the test', () => {
     const { ctx, calls, gl } = createRecorderCtx();
     const cmd: GroupDrawCommand = {
       kind: 'group',
-      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      clip: SQUARE_CLIP,
       children: [{
         kind: 'path' as const,
         path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
@@ -812,7 +827,7 @@ describe('drawGroup clip integration', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     const cmd: GroupDrawCommand = {
       kind: 'group',
-      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      clip: SQUARE_CLIP,
       children: [{ kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 }],
     };
     drawGroup(ctx, cmd);
@@ -1011,7 +1026,7 @@ describe('C1/I4: popClip enables STENCIL_TEST after evenodd child disables it', 
     const { ctx, calls } = createRecorderCtx();
     const cmd: GroupDrawCommand = {
       kind: 'group',
-      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      clip: SQUARE_CLIP,
       children: [],
     };
     drawGroup(ctx, cmd);
@@ -1702,7 +1717,7 @@ describe('drawText — decoration reaches the GPU', () => {
     const { ctx, calls } = createRecorderCtx();
     drawGroup(ctx, {
       kind: 'group',
-      clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      clip: SQUARE_CLIP,
       children: [{
         kind: 'text', x: 0, y: 0,
         runs: [decoratedRun({ underline: true })],

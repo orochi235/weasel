@@ -24,32 +24,25 @@
  *     consumer sends; measuring only that reported a rect-batching win of
  *     ~1,400x that `SceneCanvas` did not get any of.
  *
- * **Timing is the total across many frames, divided — never a single frame.**
- * `performance.now()` is clamped to ~100us without cross-origin isolation, and
- * browser throttling makes per-frame times bimodal. A median lands wherever the
- * throttling did; a min latches onto whichever frame the driver short-circuited
- * — that is what produced an earlier report of a 30x "cliff" between 250 and
- * 500 commands, which does not exist. Timing K frames as one block and dividing
- * is immune to both, and shows a flat per-command cost from 100 to 3200.
+ * **Each cell is the median of single frames, one per task**, the way a frame
+ * loop draws them. This spec used to time a block of frames in one task and
+ * divide, against a 100 us clock and per-frame times it read as bimodal; both
+ * came from drawing many frames in one task, which `lib/frameTiming.ts`
+ * explains, and the page is now cross-origin isolated for a finer clock.
  *
  * This reports; it does not gate. `tests/perf/README.md` explains why this
  * repo does not put timing thresholds on shared runners.
  */
 import { test, expect } from '@playwright/test';
 import { metric, startRun } from './lib/result';
+import { isolate } from './lib/isolate';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-/** Commands per frame, and how many frames to time as one block at each.
- *  Small counts need more frames to clear the clock's granularity. */
-const SWEEP = [
-  { n: 100, frames: 100 },
-  { n: 400, frames: 50 },
-  { n: 1600, frames: 25 },
-  { n: 3200, frames: 25 },
-];
+/** Commands per frame. */
+const SWEEP = [{ n: 100 }, { n: 400 }, { n: 1600 }, { n: 3200 }];
 
 const VARIANTS = ['solid', 'alternating', 'stacked', 'scene', 'rotated', 'meshes', 'stroked'] as const;
 
@@ -68,6 +61,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('crash', () => errors.push('page crashed'));
 
+  await isolate(page);
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
@@ -75,6 +69,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
     async ({ root, sweep, variants }) => {
       const base = `/weasel/@fs${root}/packages/core/src`;
       const { WeaselRenderer } = await import(/* @vite-ignore */ `${base}/renderer/WeaselRenderer.ts`);
+      const { frameMs } = await import(/* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`);
 
       const W = 800;
       const H = 600;
@@ -149,34 +144,21 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
         return out;
       }
 
-      /** Total across `frames`, divided. Never time one frame. */
-      function timeBlock(cmds: unknown[], frames: number): number {
-        // Collect what the previous block left behind, so a major GC of the
-        // whole sweep's garbage does not land inside this one. Needs
-        // --js-flags=--expose-gc, which the perf config passes.
+      /**
+       * Collect what the previous cell left behind first, so a major GC of the
+       * whole sweep's garbage does not land inside this one. Needs
+       * --js-flags=--expose-gc, which the perf config passes. The first frames
+       * at a new count pay one-off costs — collection, re-optimization — so
+       * more of them go untimed than `frameMs` skips by default.
+       */
+      async function measure(n: number, variant: string): Promise<number> {
+        const cmds = build(n, variant);
         const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
         if (collect) {
           collect({ type: 'major', execution: 'sync' });
           collect({ type: 'major', execution: 'sync' });
         }
-        const t0 = performance.now();
-        for (let f = 0; f < frames; f++) renderer.render(cmds, identity);
-        gl.finish();
-        return (performance.now() - t0) / frames;
-      }
-
-      /**
-       * Two blocks, second reported. Three warmup frames are not enough at the
-       * larger counts: the first block at 3200 measured 30x the second one of
-       * identical work, so whatever it pays for — collection, re-optimization
-       * — is one-off and belongs outside the number.
-       */
-      function measure(n: number, frames: number, variant: string): number {
-        const cmds = build(n, variant);
-        for (let i = 0; i < 3; i++) renderer.render(cmds, identity);
-        gl.finish();
-        timeBlock(cmds, frames);
-        return timeBlock(cmds, frames);
+        return frameMs(gl, () => renderer.render(cmds, identity), { warm: 10, samples: 15 });
       }
 
       /** Two points at opposite ends of a gradient rect. Equal values would
@@ -198,8 +180,8 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
       const ramps = checkGradientRamps();
       const rows: Array<{ variant: string; n: number; perFrameMs: number; usPerCmd: number }> = [];
       for (const variant of variants) {
-        for (const { n, frames } of sweep) {
-          const perFrameMs = measure(n, frames, variant);
+        for (const { n } of sweep) {
+          const perFrameMs = await measure(n, variant);
           rows.push({
             variant,
             n,
@@ -247,8 +229,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page, browser, brow
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
   run.params({ gcAvailable, gradientRamps });
   for (const r of rows) {
-    const { frames } = SWEEP.find((s) => s.n === r.n)!;
-    const stat = `mean of ${frames} frames, second of two timed blocks`;
+    const stat = 'median of 15 single frames, one per task, after 10 untimed';
     run.item(`${r.variant} n=${r.n}`, {
       perFrame: metric(r.perFrameMs, 'ms', stat),
       perCommand: metric(r.usPerCmd, 'us', stat),

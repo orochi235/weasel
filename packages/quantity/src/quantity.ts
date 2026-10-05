@@ -8,7 +8,21 @@ import type { Unit } from './units';
  */
 export interface Display {
   readonly kind: string;
+  /** What ±Infinity reads as under this display — `'never'` on a timeout.
+   *  Default `∞`, spoken `infinity`. Honored by every kind. */
+  readonly infinity?: InfinityText;
   readonly [option: string]: unknown;
+}
+
+/** A word for infinity. A string is both shown and spoken. `negative` is the
+ *  word for −Infinity, default `−∞`. */
+export type InfinityText =
+  | string
+  | { readonly text: string; readonly spoken?: string; readonly negative?: string | { readonly text: string; readonly spoken?: string } };
+
+/** `display` with `text` as its word for infinity: `endless(unit('ms'), 'never')`. */
+export function endless<D extends Display>(display: D, text: InfinityText): D {
+  return { ...display, infinity: text };
 }
 
 /** A number that carries its unit, its display, or both. */

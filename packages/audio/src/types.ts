@@ -182,4 +182,6 @@ export interface AudioEngineOptions {
   clearTimer?: (handle: unknown) => void;
   /** Crossfade for every insert-chain edit and bypass, in ms. Default 15. */
   insertFadeMs?: number;
+  /** Uniform in [0, 1), for where in its loop a noise voice starts. Default `Math.random`. */
+  random?: () => number;
 }

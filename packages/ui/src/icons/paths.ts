@@ -58,6 +58,7 @@ export const ICON_PATHS = {
   visible: `<path d="M2.6 10C4.6 6.6 7.1 5 10 5s5.4 1.6 7.4 5c-2 3.4-4.5 5-7.4 5s-5.4-1.6-7.4-5z"/><circle cx="10" cy="10" r="2.2"/>`,
   hidden: `<path d="M2.6 10C4.6 6.6 7.1 5 10 5s5.4 1.6 7.4 5c-2 3.4-4.5 5-7.4 5s-5.4-1.6-7.4-5z"/><circle cx="10" cy="10" r="2.2"/><path d="M4.2 15.8 15.8 4.2"/>`,
   pin: `<path d="M8.2 3.4v5.2l-2 2.6h7.6l-2-2.6V3.4z"/><path d="M7 3.4h6"/><path d="M10 11.2v5.4"/>`,
+  bookmark: `<path d="M5.7 16.6V4.8a1.4 1.4 0 0 1 1.4-1.4h5.8a1.4 1.4 0 0 1 1.4 1.4V16.6L10 13.2Z"/>`,
   info: `<circle cx="10" cy="10" r="7"/><path d="M10 9.4v4.4"/><path d="M10 6.5h0"/>`,
   warning: `<path d="M10 3.4 17.4 16.2H2.6z"/><path d="M10 8.4v3.4"/><path d="M10 14h0"/>`,
   error: `<circle cx="10" cy="10" r="7"/><path d="M7.6 7.6 12.4 12.4M12.4 7.6 7.6 12.4"/>`,
@@ -264,6 +265,7 @@ export type IconName = keyof typeof ICON_PATHS;
  *  edge of the stroke rather than stopping at the path's own endpoint. Only the
  *  glyphs where an enclosed region means something have an entry. */
 export const ICON_FILLS = {
+  bookmark: `<path d="M5.7 16.6V4.8a1.4 1.4 0 0 1 1.4-1.4h5.8a1.4 1.4 0 0 1 1.4 1.4V16.6L10 13.2Z" fill="currentColor" stroke="none"/>`,
   arcStraight: `<path d="M1.85 15L2.6 15H17.4L18.15 15L18.15 15.75L1.85 15.75Z" fill="currentColor" stroke="none"/>`,
   arcParabola: `<path d="M2.31 15.69L2.6 15Q10 -5 17.4 15L17.69 15.69L17.69 15.75L2.31 15.75Z" fill="currentColor" stroke="none"/>`,
   arcCircle: `<path d="M2.52 15.75L2.6 15A7.4 7.4 0 0 1 17.4 15L17.48 15.75L17.48 15.75L2.52 15.75Z" fill="currentColor" stroke="none"/>`,
@@ -455,6 +457,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'visible',
       'hidden',
       'pin',
+      'bookmark',
       'info',
       'warning',
       'error',

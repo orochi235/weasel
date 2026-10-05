@@ -1187,19 +1187,19 @@ describe('SelectionPanel — boolean controls', () => {
               'data.visible': { kind: 'boolean', name: 'Visible', description: 'v', default: false },
               'data.bold': {
                 kind: 'boolean', name: 'Bold', description: 'b', default: false,
-                control: 'toggle', short: 'B',
+                control: 'toggle', short: ['B'],
               },
               'data.underline': {
                 kind: 'boolean', name: 'Underline', description: 'u', default: false,
-                control: 'toggle', short: 'U', pair: 'Decoration',
+                control: 'toggle', short: ['U'], pair: 'Decoration',
               },
               'data.strikethrough': {
                 kind: 'boolean', name: 'Strikethrough', description: 's', default: false,
-                control: 'toggle', short: 'S', pair: 'Decoration',
+                control: 'toggle', short: ['S'], pair: 'Decoration',
               },
               'data.overline': {
                 kind: 'boolean', name: 'Overline', description: 'o', default: false,
-                control: 'toggle', short: 'O', pair: 'Decoration',
+                control: 'toggle', short: ['O'], pair: 'Decoration',
               },
             },
           },
@@ -1234,7 +1234,6 @@ describe('SelectionPanel — boolean controls', () => {
     renderFlags({ underline: false });
     const seg = screen.getByRole('button', { name: 'Decoration Underline' });
     expect(seg).toHaveAttribute('aria-pressed', 'false');
-    expect(seg).toHaveTextContent('U');
     expect(screen.queryByRole('switch', { name: 'Decoration Underline' })).not.toBeInTheDocument();
   });
 
@@ -1295,7 +1294,8 @@ describe('SelectionPanel — boolean controls', () => {
     renderFlags({ bold: true });
     const seg = screen.getByRole('button', { name: 'Bold' });
     expect(seg).toHaveAttribute('aria-pressed', 'true');
-    expect(within(screen.getByText('Bold').parentElement!).getAllByRole('button')).toHaveLength(1);
+    const label = screen.getAllByText('Bold').find((el) => !seg.contains(el))!;
+    expect(within(label.parentElement!).getAllByRole('button')).toHaveLength(1);
   });
 });
 
@@ -1325,15 +1325,15 @@ describe('SelectionPanel — flags inside an object leaf', () => {
                 children: {
                   underline: {
                     kind: 'boolean', name: 'Underline', description: 'u', default: false,
-                    control: 'toggle', short: 'U', pair: 'Decoration',
+                    control: 'toggle', short: ['U'], pair: 'Decoration',
                   },
                   strikethrough: {
                     kind: 'boolean', name: 'Strikethrough', description: 's', default: false,
-                    control: 'toggle', short: 'S', pair: 'Decoration',
+                    control: 'toggle', short: ['S'], pair: 'Decoration',
                   },
                   overline: {
                     kind: 'boolean', name: 'Overline', description: 'o', default: false,
-                    control: 'toggle', short: 'O', pair: 'Decoration',
+                    control: 'toggle', short: ['O'], pair: 'Decoration',
                   },
                 },
               },

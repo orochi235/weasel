@@ -1,5 +1,4 @@
 import { act, fireEvent, screen, within } from '@testing-library/react';
-import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import {
   ActionsProvider,
   type ActionsRegistry,
@@ -9,6 +8,7 @@ import {
   useActionsRegistry,
   useGestureDispatcher,
 } from '@weasel-js/core';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { type ReactNode, useEffect } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { defineInstrument } from '../instrument/defineInstrument';
@@ -113,7 +113,9 @@ function stageZoom(container: HTMLElement, index = 0): number {
 
 describe("the lab header's zoom controls", () => {
   it('step the focused trial through its camera and read its zoom back', async () => {
-    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[staged]} defaultInstrument="Staged" />,
+    );
     expect(readout()).toHaveTextContent('100%');
     await press('Zoom in');
     expect(stageZoom(container)).toBeCloseTo(1.25);
@@ -125,7 +127,9 @@ describe("the lab header's zoom controls", () => {
   });
 
   it('reset to actual size from the readout', async () => {
-    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[staged]} defaultInstrument="Staged" />,
+    );
     await press('Zoom out');
     await press('Zoom out');
     await act(async () => {
@@ -136,7 +140,9 @@ describe("the lab header's zoom controls", () => {
   });
 
   it("stop at the camera's own limit, and say so", async () => {
-    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[staged]} defaultInstrument="Staged" />,
+    );
     await press('Zoom in');
     await press('Zoom in');
     expect(stageZoom(container)).toBe(1.5);
@@ -145,7 +151,9 @@ describe("the lab header's zoom controls", () => {
   });
 
   it('answer Mod+=, Mod+- and Mod+0, claiming the key from the browser', async () => {
-    const { container } = await renderSettled(<Lab instruments={[staged]} defaultInstrument="Staged" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[staged]} defaultInstrument="Staged" />,
+    );
     expect(await key('=')).toBe(true);
     expect(stageZoom(container)).toBeCloseTo(1.25);
     await key('-');
@@ -172,7 +180,9 @@ describe("the lab header's zoom controls", () => {
       name: 'Zooming',
       render: () => <StoryZoomKey run={story} />,
     });
-    const { container } = await renderSettled(<Lab instruments={[zooming]} defaultInstrument="Zooming" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[zooming]} defaultInstrument="Zooming" />,
+    );
     await key('=');
     expect(stageZoom(container)).toBeCloseTo(1.25);
     expect(story).not.toHaveBeenCalled();

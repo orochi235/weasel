@@ -159,7 +159,9 @@ describe('<TrialChrome>', () => {
   });
 
   it('renders a consumer contribution alongside the built-ins', async () => {
-    await renderSettled(<ChromeHarness chrome={[{ id: 'mine', region: 'status', item: { text: 'ready' } }]} />);
+    await renderSettled(
+      <ChromeHarness chrome={[{ id: 'mine', region: 'status', item: { text: 'ready' } }]} />,
+    );
     expect(screen.getByText('ready')).toBeInTheDocument();
   });
 
@@ -244,7 +246,9 @@ describe('<TrialChrome>', () => {
 
 describe('chrome regions in a mounted lab', () => {
   async function renderLabWith(instrument: Instrument) {
-    return renderSettled(<Lab title="T" instruments={[instrument]} defaultInstrument={instrument.name} />);
+    return renderSettled(
+      <Lab title="T" instruments={[instrument]} defaultInstrument={instrument.name} />,
+    );
   }
 
   it('puts zoom in the viewport region and not in the toolbar', async () => {

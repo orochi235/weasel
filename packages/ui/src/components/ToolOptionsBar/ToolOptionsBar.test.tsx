@@ -50,14 +50,14 @@ const optionsSchema: ToolPrefGroup = {
       kind: 'number',
       name: 'Tracking',
       description: 'Letter spacing.',
-      short: 'VA',
+      short: ['VA'],
       default: 0,
     },
     bold: {
       kind: 'boolean',
       name: 'Bold',
       description: 'Heavier weight.',
-      short: 'B',
+      short: ['B'],
       control: 'toggle',
       pair: 'Style',
       default: false,
@@ -66,7 +66,7 @@ const optionsSchema: ToolPrefGroup = {
       kind: 'boolean',
       name: 'Italic',
       description: 'Sloped face.',
-      short: 'I',
+      short: ['I'],
       control: 'toggle',
       pair: 'Style',
       default: false,
@@ -151,14 +151,6 @@ describe('ToolOptionsBar driven by a schema', () => {
 });
 
 describe('ToolOptionsBar labels', () => {
-  it('labels a control with its short name, falling back to its full one', () => {
-    render(<ToolOptionsBar schema={optionsSchema} values={{}} onChange={vi.fn()} />);
-    // `short` wins where a leaf has one, because the strip is one line.
-    expect(screen.getByText('VA')).toBeInTheDocument();
-    expect(screen.queryByText('Tracking')).toBeNull();
-    expect(screen.getByText('Size')).toBeInTheDocument();
-  });
-
   it('leaves a flag run unlabeled — its segments carry their own names', () => {
     render(<ToolOptionsBar schema={optionsSchema} values={{}} onChange={vi.fn()} />);
     expect(screen.queryByText('Style')).toBeNull();

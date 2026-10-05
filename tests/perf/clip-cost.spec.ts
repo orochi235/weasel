@@ -13,13 +13,15 @@
  *     `popClip` flushes a batch holding one rect. Fixable in principle.
  *
  * Separating them needs contents that would not have batched anyway. A
- * gradient rect never joins the solid batch, so wrapping one in a clip adds the
+ * pattern-filled rect never joins the batch, so wrapping one in a clip adds the
  * stencil and nothing else; wrapping a *solid* rect adds the stencil and the
- * break. The difference between those two deltas is the break's share.
+ * break. The difference between those two deltas is the break's share. The
+ * spec checks that premise by counting draws, since gradients once played this
+ * role and stopped breaking the run without anything here noticing.
  *
  * `cmbreak` checks that answer from the other side: a group carrying a color
  * matrix that differs from its neighbour's breaks the run through the same test
- * without touching the stencil. Its gradient twin subtracts the color-matrix
+ * without touching the stencil. Its pattern twin subtracts the color-matrix
  * upload that the trick itself costs, leaving a second, independent estimate of
  * one flush.
  *
@@ -30,6 +32,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { metric, rounds, startRun } from './lib/result';
+import { isolate } from './lib/isolate';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -52,10 +55,10 @@ const VARIANTS = [
   { id: 'rect-clipped',    groups: N,     note: 'each rect in its own clip' },
   { id: 'rect-cmbreak',    groups: N,     note: 'each rect in its own color-matrix break' },
   { id: 'rect-clipped-k8', groups: N / K, note: `${K} rects per clip` },
-  { id: 'grad-plain',      groups: 0,     note: 'N gradient rects, never batched' },
-  { id: 'grad-clipped',    groups: N,     note: 'each gradient in its own clip' },
-  { id: 'grad-cmbreak',    groups: N,     note: 'each gradient in its own color-matrix break' },
-  { id: 'grad-clipped-k8', groups: N / K, note: `${K} gradients per clip` },
+  { id: 'pat-plain',       groups: 0,     note: 'N pattern rects, never batched' },
+  { id: 'pat-clipped',     groups: N,     note: 'each pattern in its own clip' },
+  { id: 'pat-cmbreak',     groups: N,     note: 'each pattern in its own color-matrix break' },
+  { id: 'pat-clipped-k8',  groups: N / K, note: `${K} patterns per clip` },
 ] as const;
 
 type VariantId = (typeof VARIANTS)[number]['id'];
@@ -95,17 +98,24 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
     );
   });
 
+  await isolate(page);
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
-  const { paints, glRenderer } = await page.evaluate(
+  const { paints, glRenderer, patDraws } = await page.evaluate(
     async ({ root, n, k, runs, variants }) => {
       const report = (globalThis as unknown as {
         __clipReport: (m: unknown) => Promise<void>;
       }).__clipReport;
 
-      const { WeaselRenderer } = await import(
+      const { WeaselRenderer, registerTexture } = await import(
         /* @vite-ignore */ `/weasel/@fs${root}/packages/core/src/renderer/index.ts`
+      );
+      const { makeKindBuilders, checkerBitmap } = await import(
+        /* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/kinds.ts`
+      );
+      const { timeInterleaved } = await import(
+        /* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`
       );
 
       const W = 800;
@@ -132,19 +142,9 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
         fill: { fill: 'solid', color: i % 2 ? '#3366cc' : '#cc6633' },
       });
 
-      const gradLeaf = (i: number) => {
-        const x = px(i);
-        const y = py(i);
-        return {
-          kind: 'path',
-          path: { kind: 'rect', x, y, width: 36, height: 36 },
-          fill: {
-            fill: 'linear-gradient',
-            from: { x, y }, to: { x: x + 36, y: y + 36 },
-            stops: [{ offset: 0, color: '#204080' }, { offset: 1, color: '#f0b040' }],
-          },
-        };
-      };
+      const patLeaf = makeKindBuilders({
+        W, H, bitmaps: [], pattern: registerTexture(await checkerBitmap()), shader: null,
+      }).pattern;
 
       const clipPath = (i: number) => ({
         kind: 'rect', x: px(i) - 6, y: py(i) - 6, width: 100, height: 100,
@@ -168,8 +168,8 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
        *  leaves per measurement would price tessellation and uploads instead of
        *  a steady-state frame. */
       const solids: unknown[] = [];
-      const grads: unknown[] = [];
-      for (let i = 0; i < n; i++) { solids.push(solidLeaf(i)); grads.push(gradLeaf(i)); }
+      const pats: unknown[] = [];
+      for (let i = 0; i < n; i++) { solids.push(solidLeaf(i)); pats.push(patLeaf(i)); }
 
       function chunk(leaves: unknown[], size: number, wrap: (i: number, kids: unknown[]) => unknown) {
         const out: unknown[] = [];
@@ -180,7 +180,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       }
 
       function buildVariant(id: string): unknown[] {
-        const leaves = id.startsWith('grad') ? grads : solids;
+        const leaves = id.startsWith('pat') ? pats : solids;
         if (id.endsWith('-plain')) return leaves;
         if (id.endsWith('-k8')) {
           return chunk(leaves, k, (i, kids) => ({ kind: 'group', clip: clipPath(i), children: kids }));
@@ -199,28 +199,6 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
       const gcAvailable = typeof collect === 'function';
 
-      function timeBlock(cmds: unknown[], frames: number): number {
-        if (collect) {
-          collect({ type: 'major', execution: 'sync' });
-          collect({ type: 'major', execution: 'sync' });
-        }
-        renderer.render(cmds, identity);
-        gl.finish();
-        const t0 = performance.now();
-        for (let f = 0; f < frames; f++) renderer.render(cmds, identity);
-        gl.finish();
-        return (performance.now() - t0) / frames;
-      }
-
-      const TARGET_BLOCK_MS = 150;
-      function measure(cmds: unknown[]): number {
-        for (let i = 0; i < 3; i++) renderer.render(cmds, identity);
-        gl.finish();
-        const rough = timeBlock(cmds, 4);
-        const frames = Math.min(80, Math.max(4, Math.round(TARGET_BLOCK_MS / Math.max(rough, 0.05))));
-        return timeBlock(cmds, frames);
-      }
-
       /** A variant that silently draws nothing measures free, which is the one
        *  failure mode that turns a wrong number into a confident one. */
       function paintsAnything(id: string): boolean {
@@ -236,6 +214,10 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       for (const v of variants) paints[v.id] = paintsAnything(v.id);
       const notPainting = variants.filter((v) => !paints[v.id]).map((v) => v.id);
 
+      /** The split rests on a pattern rect drawing alone; one draw per leaf says it still does. */
+      renderer.render(built['pat-plain'], identity);
+      const patDraws = renderer.lastFrameStats().drawCalls;
+
       // Pay this context's one-time costs before the first timed block.
       for (const v of variants) {
         for (let i = 0; i < 3; i++) renderer.render(built[v.id], identity);
@@ -250,15 +232,19 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
 
       let index = 0;
       for (let run = 1; run <= runs; run++) {
+        if (collect) collect({ type: 'major', execution: 'sync' });
+        const timed = await timeInterleaved(gl, variants.map((v) => ({
+          id: v.id, frame: () => renderer.render(built[v.id], identity),
+        })));
         for (const v of variants) {
-          const perFrameMs = +measure(built[v.id]).toFixed(4);
+          const perFrameMs = +timed[v.id].stat.toFixed(4);
           index += 1;
           await report({ type: 'cell', index, run, variant: v.id, perFrameMs });
         }
       }
 
       renderer.dispose();
-      return { paints, glRenderer };
+      return { paints, glRenderer, patDraws };
     },
     { root: repoRoot, n: N, k: K, runs: RUNS, variants: VARIANTS.map((v) => ({ id: v.id })) },
   );
@@ -277,14 +263,14 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   const deltaUs = (a: VariantId, b: VariantId, divisor: number) =>
     med(runs.map((r) => ((at(r, a) - at(r, b)) * 1000) / divisor));
 
-  const stencilOnly = deltaUs('grad-clipped', 'grad-plain', N);
+  const stencilOnly = deltaUs('pat-clipped', 'pat-plain', N);
   const clipTotal = deltaUs('rect-clipped', 'rect-plain', N);
   const breakShare = clipTotal - stencilOnly;
   const cmBreakRaw = deltaUs('rect-cmbreak', 'rect-plain', N);
-  const cmUploadOnly = deltaUs('grad-cmbreak', 'grad-plain', N);
+  const cmUploadOnly = deltaUs('pat-cmbreak', 'pat-plain', N);
   const cmBreak = cmBreakRaw - cmUploadOnly;
   const clipEntryK8 = deltaUs('rect-clipped-k8', 'rect-plain', N / K);
-  const stencilEntryK8 = deltaUs('grad-clipped-k8', 'grad-plain', N / K);
+  const stencilEntryK8 = deltaUs('pat-clipped-k8', 'pat-plain', N / K);
 
   const num = (x: number) => x.toFixed(2);
   const lines = [
@@ -302,12 +288,12 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
     '',
     '| what | us | how |',
     '|---|---:|---|',
-    `| stencil push + pop | ${num(stencilOnly)} | grad-clipped − grad-plain, per clip |`,
+    `| stencil push + pop | ${num(stencilOnly)} | pat-clipped − pat-plain, per clip |`,
     `| clip entry, all in | ${num(clipTotal)} | rect-clipped − rect-plain, per clip |`,
     `| ...of which the batch break | ${num(breakShare)} | the difference between those two |`,
-    `| one solid-batch flush | ${num(cmBreak)} | rect-cmbreak − grad-cmbreak, both net of plain |`,
+    `| one solid-batch flush | ${num(cmBreak)} | rect-cmbreak − pat-cmbreak, both net of plain |`,
     `| clip entry at ${K} leaves | ${num(clipEntryK8)} | rect-clipped-k8 − rect-plain, per clip |`,
-    `| stencil at ${K} leaves | ${num(stencilEntryK8)} | grad-clipped-k8 − grad-plain, per clip |`,
+    `| stencil at ${K} leaves | ${num(stencilEntryK8)} | pat-clipped-k8 − pat-plain, per clip |`,
     '',
     `stencil is ${((stencilOnly / clipTotal) * 100).toFixed(0)}% of clip entry; `
     + `the batch break is ${((breakShare / clipTotal) * 100).toFixed(0)}%.`,
@@ -319,22 +305,23 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
     expect(paints[v.id], `${v.id}: rendered nothing`).toBe(true);
   }
   expect(cells.length).toBe(total);
+  expect(patDraws, 'pattern rects must not batch, or pat-* stops isolating the stencil').toBeGreaterThanOrEqual(N);
   // A clipped frame that did not cost more than its unclipped twin means the
   // variant is not doing what its name says.
   expect(clipTotal, 'clipping a rect should cost more than not clipping it').toBeGreaterThan(0);
-  expect(stencilOnly, 'clipping a gradient should cost more than not clipping it').toBeGreaterThan(0);
+  expect(stencilOnly, 'clipping a pattern should cost more than not clipping it').toBeGreaterThan(0);
 
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
   for (const v of VARIANTS) {
     const samples = runs.map((r) => at(r, v.id));
-    run.item(v.id, { perFrame: metric(ms(v.id), 'ms', `median of ${RUNS} runs`, samples) }, { groups: v.groups });
+    run.item(v.id, { perFrame: metric(ms(v.id), 'ms', `median of ${RUNS} runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)`, samples) }, { groups: v.groups });
   }
   const derived = `median across ${RUNS} runs of the per-run delta`;
-  run.item('stencil push+pop', { perClip: metric(stencilOnly, 'us', `${derived}, grad-clipped - grad-plain`) });
+  run.item('stencil push+pop', { perClip: metric(stencilOnly, 'us', `${derived}, pat-clipped - pat-plain`) });
   run.item('clip entry', { perClip: metric(clipTotal, 'us', `${derived}, rect-clipped - rect-plain`) });
   run.item('clip entry: batch break', { perClip: metric(breakShare, 'us', 'clip entry - stencil push+pop') });
-  run.item('solid-batch flush', { perFlush: metric(cmBreak, 'us', `${derived}, rect-cmbreak - grad-cmbreak, net of plain`) });
+  run.item('solid-batch flush', { perFlush: metric(cmBreak, 'us', `${derived}, rect-cmbreak - pat-cmbreak, net of plain`) });
   run.item(`clip entry at ${K} leaves`, { perClip: metric(clipEntryK8, 'us', `${derived}, rect-clipped-k8 - rect-plain`) });
-  run.item(`stencil at ${K} leaves`, { perClip: metric(stencilEntryK8, 'us', `${derived}, grad-clipped-k8 - grad-plain`) });
+  run.item(`stencil at ${K} leaves`, { perClip: metric(stencilEntryK8, 'us', `${derived}, pat-clipped-k8 - pat-plain`) });
   run.write();
 });

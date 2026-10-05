@@ -7,6 +7,7 @@ import {
   decimal,
   displayKindOf,
   duration,
+  endless,
   fraction,
   fractionKind,
   integer,
@@ -296,5 +297,47 @@ describe('registerDisplayKind', () => {
     unregister = undefined;
     expect(displayKindOf(fraction())).toBe(fractionKind);
     expect(qty(1 / 12, fraction()).spoken).toBe('1 over 12');
+  });
+});
+
+describe('infinity', () => {
+  it('shows ±Infinity as ∞ under any kind, and speaks it', () => {
+    expect(qty(Infinity, unit('ms')).text).toBe('∞');
+    expect(qty(-Infinity, fraction()).text).toBe(`${MINUS}∞`);
+    expect(qty(Infinity, duration()).spoken).toBe('infinity');
+    expect(qty(-Infinity).spoken).toBe('minus infinity');
+  });
+
+  it("uses the display's own word, and drops the unit beside it", () => {
+    const d = endless(unit('ms'), 'never');
+    expect(qty(Infinity, d).text).toBe('never');
+    expect(qty(Infinity, d).spoken).toBe('never');
+    expect(qty(Infinity, d).parts).toEqual([{ type: 'infinity', value: 'never' }]);
+    expect(qty(Infinity, d).html).toBe('<data value="Infinity"><span data-part="infinity">never</span></data>');
+    expect(qty(250, d).text).toBe(qty(250, unit('ms')).text);
+  });
+
+  it('takes separate shown, spoken and negative words', () => {
+    const d = endless(decimal(), { text: 'no cap', spoken: 'uncapped', negative: 'none' });
+    expect(qty(Infinity, d).text).toBe('no cap');
+    expect(qty(Infinity, d).spoken).toBe('uncapped');
+    expect(qty(-Infinity, d).text).toBe('none');
+  });
+
+  it('reads its words and the usual spellings back', () => {
+    const d = endless(unit('ms'), { text: 'Never', negative: 'always' });
+    expect(parseAs('never', d)).toBe(Infinity);
+    expect(parseAs(' NEVER ', d)).toBe(Infinity);
+    expect(parseAs('always', d)).toBe(-Infinity);
+    expect(parseAs('∞', d)).toBe(Infinity);
+    expect(parseAs('-inf', decimal())).toBe(-Infinity);
+    expect(parseAs(`${MINUS}∞`)).toBe(-Infinity);
+    expect(parseAs('Infinity', fraction())).toBe(Infinity);
+    expect(parseAs('12ms', d)).toBe(12);
+  });
+
+  it('keeps the word through a tag', () => {
+    const q = tag(Infinity, endless(integer(), 'unlimited'));
+    expect(qty(retag(q, Infinity)).text).toBe('unlimited');
   });
 });

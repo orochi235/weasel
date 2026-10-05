@@ -229,6 +229,12 @@ export type {
 export { useConfigSchema } from './config/useConfigSchema';
 export { useResolvedConfig } from './config/useResolvedConfig';
 export { isLeafVisible } from './config/visible';
+export {
+  ControlMatrix,
+  type ControlMatrixColumn,
+  type ControlMatrixProps,
+  type ControlMatrixRow,
+} from './controls/ControlMatrix';
 export { ControlPanel } from './controls/ControlPanel';
 export { type InDialogOptions, inDialog, summarizeValue } from './controls/inDialog';
 export type {

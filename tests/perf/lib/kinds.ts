@@ -31,9 +31,9 @@ export interface KindResources {
 export type LeafBuilder = (i: number) => unknown;
 
 /**
- * Every kind the draw loop dispatches differently. `solid` is the only one
- * that batches; the rest each bind their own program, texture or stencil
- * state, which is what makes a boundary between two of them cost anything.
+ * Every kind the draw loop dispatches differently. `solid`, `gradient`, `image`
+ * and `text` stage into one batch; the rest each flush it and bind their own
+ * program, texture or stencil state, which is what makes a boundary cost anything.
  */
 export const KIND_IDS = [
   'solid', 'gradient', 'pattern', 'image', 'text', 'shader', 'vcolor', 'stencil', 'clip',
@@ -153,8 +153,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
     };
   };
 
-  /** One solid rect inside its own clipped group — the unit the frame-budget
-   *  spec prices at ~65 us. */
+  /** One solid rect inside its own clipped group. */
   const clip = (i: number) => ({
     kind: 'group',
     clip: {

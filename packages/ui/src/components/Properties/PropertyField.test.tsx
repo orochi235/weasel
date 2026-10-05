@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { rotationDegreesUnit } from '@weasel-js/core';
+import { endless, unit } from '@weasel-js/quantity';
 import { prefFieldProps } from '../Prefs/prefField';
 import type { PrefLeaf } from '../Prefs/schema';
 import { PropertyControl, PropertyField, type PropertyNumberFieldProps } from './PropertyField';
@@ -135,8 +137,8 @@ describe('PropertyField enum choices', () => {
     expect(alpha.querySelector('[data-testid="alpha-glyph"]')).not.toBeNull();
   });
 
-  it('leaves a letter glyph out of a select, which has room for the label', () => {
-    const lettered = [{ value: 'a', label: 'Alpha', glyph: 'A' }];
+  it('leaves the short forms out of a select, which has room for the label', () => {
+    const lettered = [{ value: 'a', label: 'Alpha', short: ['A'] }];
     render(<PropertyField kind="enum" label="Mode" value="a" options={lettered} onChange={() => {}} />);
     expect(screen.getByRole('button', { name: /Mode/ }).textContent).not.toContain('AAlpha');
   });
@@ -387,5 +389,77 @@ describe('prefFieldProps', () => {
     const custom = { kind: 'registry-enum', name: 'Shape', description: '', default: 'rect' } as PrefLeaf;
     expect(prefFieldProps(object, { value: {}, setValue })).toBeNull();
     expect(prefFieldProps(custom, { value: 'rect', setValue })).toBeNull();
+  });
+});
+
+describe('an endless slider end', () => {
+  const NEVER = endless(unit('ms'), 'never');
+
+  it('reads its word at Infinity, with no unit beside it, and the track at the stop', () => {
+    render(<PropertyControl kind="number" control="slider" name="Cut" value={Infinity} min={0} max={5000} step={50} unit="ms" display={NEVER} endless="max" onChange={() => {}} />);
+    expect(screen.getByRole('spinbutton', { name: 'Cut' })).toHaveValue('never');
+    expect(screen.getByRole('spinbutton', { name: 'Cut' })).toHaveAttribute('aria-valuetext', 'never');
+    expect(screen.queryByText('ms')).toBeNull();
+    expect((screen.getByRole('slider', { name: 'Cut' }) as HTMLInputElement).value).toBe('5000');
+  });
+
+  it('keeps the unit on a finite value', () => {
+    render(<PropertyControl kind="number" control="slider" name="Cut" value={250} min={0} max={5000} step={50} unit="ms" endless="max" onChange={() => {}} />);
+    expect(screen.getByRole('spinbutton', { name: 'Cut' })).toHaveValue('250');
+    expect(screen.getByText('ms')).toBeInTheDocument();
+  });
+
+  it('reports Infinity for the stop, from the track and from the keyboard', () => {
+    const onChange = vi.fn();
+    render(<PropertyControl kind="number" control="slider" name="Cut" value={4950} min={0} max={5000} step={50} endless="max" onChange={onChange} />);
+    fireEvent.input(screen.getByRole('slider', { name: 'Cut' }), { target: { value: '5000' } });
+    expect(onChange).toHaveBeenLastCalledWith(Infinity);
+    fireEvent.keyDown(screen.getByRole('spinbutton', { name: 'Cut' }), { key: 'ArrowUp' });
+    expect(onChange).toHaveBeenLastCalledWith(Infinity);
+  });
+
+  it('steps down off infinity onto the last finite stop', () => {
+    const onChange = vi.fn();
+    render(<PropertyControl kind="number" control="slider" name="Cut" value={Infinity} min={0} max={5000} step={50} endless="max" onChange={onChange} />);
+    fireEvent.keyDown(screen.getByRole('spinbutton', { name: 'Cut' }), { key: 'ArrowDown' });
+    expect(onChange).toHaveBeenLastCalledWith(4950);
+  });
+
+  it('commits Infinity when its word is typed, and clamps it on a bounded end', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(<PropertyControl kind="number" control="slider" name="Cut" value={10} min={0} max={5000} display={NEVER} endless="max" onChange={onChange} />);
+    const readout = screen.getByRole('spinbutton', { name: 'Cut' });
+    fireEvent.focus(readout);
+    fireEvent.change(readout, { target: { value: 'Never' } });
+    fireEvent.blur(readout);
+    expect(onChange).toHaveBeenLastCalledWith(Infinity);
+    rerender(<PropertyControl kind="number" control="slider" name="Cut" value={10} min={0} max={5000} display={NEVER} onChange={onChange} />);
+    fireEvent.focus(readout);
+    fireEvent.change(readout, { target: { value: '∞' } });
+    fireEvent.blur(readout);
+    expect(onChange).toHaveBeenLastCalledWith(5000);
+  });
+
+  it('carries a pref leaf’s word and keeps its Infinity', () => {
+    const write = vi.fn();
+    const leaf: PrefLeaf = { kind: 'number', name: 'Cap', description: 'Cap each step at', default: 64, min: 16, max: 64, step: 8, control: 'slider', endless: 'max', infinity: 'uncapped' };
+    expect((prefFieldProps(leaf, { value: Infinity, setValue: write }) as PropertyNumberFieldProps).value).toBe(Infinity);
+    function Harness() {
+      const [value, setValue] = useState<unknown>(Infinity);
+      const field = prefFieldProps(leaf, {
+        value,
+        setValue: (v: unknown) => {
+          write(v);
+          setValue(v);
+        },
+      }) as PropertyNumberFieldProps;
+      return <PropertyControl {...field} name="Cap" />;
+    }
+    render(<Harness />);
+    expect(screen.getByRole('spinbutton', { name: 'Cap' })).toHaveValue('uncapped');
+    fireEvent.input(screen.getByRole('slider', { name: 'Cap' }), { target: { value: '24' } });
+    expect(write).toHaveBeenLastCalledWith(24);
+    fireEvent.input(screen.getByRole('slider', { name: 'Cap' }), { target: { value: '64' } });
+    expect(write).toHaveBeenLastCalledWith(Infinity);
   });
 });

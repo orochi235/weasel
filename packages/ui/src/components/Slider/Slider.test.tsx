@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { useState } from 'react';
 import { Slider, type TrackCtx } from './Slider';
+import { endless, unit } from '@weasel-js/quantity';
 
 function stubRect(el: Element, rect: Partial<DOMRect> = {}) {
   const full: DOMRect = { x: 0, y: 0, width: 200, height: 24, top: 0, left: 0, right: 200, bottom: 24, toJSON: () => ({}), ...rect };
@@ -1249,5 +1250,35 @@ describe('Slider thumb fit', () => {
     renderFit({ renderTrack: (c) => { ctx = c; return null; } });
     expect(ctx!.fractionToPosition(0)).toBe('calc(var(--rp-thumb-inset) + 0 * (100% - 2 * var(--rp-thumb-inset)))');
     expect(ctx!.fractionToPosition(0.3)).toBe('calc(var(--rp-thumb-inset) + 0.3 * (100% - 2 * var(--rp-thumb-inset)))');
+  });
+});
+
+describe('Slider endless', () => {
+  it('sits a thumb given Infinity at the stop, and reads the display’s word', () => {
+    const { getByRole, container } = render(
+      <Slider min={0} max={5000} endless="max" display={endless(unit('ms'), 'never')} readoutPlacement="inline-after" thumbs={[{ value: Infinity }]} onInput={() => {}} />,
+    );
+    const thumb = getByRole('slider');
+    expect(thumb).toHaveAttribute('aria-valuenow', '5000');
+    expect(thumb).toHaveAttribute('aria-valuetext', 'never');
+    expect(container.querySelector('[data-readout="inline"]')!.textContent).toBe('never');
+  });
+
+  it('reports Infinity at the stop and a number off it', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const { getByRole } = render(<Slider min={0} max={100} step={10} endless="max" thumbs={[{ value: 90 }]} onInput={onInput} onChange={onChange} />);
+    fireEvent.keyDown(getByRole('slider'), { key: 'End' });
+    expect(onChange).toHaveBeenLastCalledWith([{ value: Infinity }]);
+    fireEvent.keyDown(getByRole('slider'), { key: 'Home' });
+    expect(onChange).toHaveBeenLastCalledWith([{ value: 0 }]);
+  });
+
+  it('opens the min end to -Infinity, read as −∞ by default', () => {
+    const onChange = vi.fn();
+    const { getByRole } = render(<Slider min={0} max={100} endless="min" readoutPlacement="inline-after" thumbs={[{ value: -Infinity }]} onInput={() => {}} onChange={onChange} />);
+    expect(getByRole('slider')).toHaveAttribute('aria-valuetext', 'minus infinity');
+    fireEvent.keyDown(getByRole('slider'), { key: 'End' });
+    expect(onChange).toHaveBeenLastCalledWith([{ value: 100 }]);
   });
 });

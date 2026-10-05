@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.7.3
+
+### Patch Changes
+
+- @weasel-js/cursor@1.7.3
+  - @weasel-js/font@1.7.3
+  - @weasel-js/geom@1.7.3
+  - @weasel-js/gestures@1.7.3
+  - @weasel-js/history@1.7.3
+  - @weasel-js/modes@1.7.3
+  - @weasel-js/paint@1.7.3
+  - @weasel-js/quantity@1.7.3
+  - @weasel-js/react@1.7.3
+  - @weasel-js/registry@1.7.3
+  - @weasel-js/routing@1.7.3
+  - @weasel-js/text@1.7.3
+
+## 1.7.2
+
+### Patch Changes
+
+- 06ee1e6: Core's stylesheet is now published as `@weasel-js/core/style.css`. Through 1.7.1 it shipped in the tarball as `dist/index.css` with no export and no import, so an installed core drew its debug HUDs with class names and no rules behind them — unpositioned, unbackgrounded text. Import it once if you turn on `cursorCoordsHud`, `pickHud` or `modalityHud`. labkit's `styles.css` now includes it.
+  
+  `cursorCoordsHud` lays its readings out as a label column and a value column, set in the numeric face, instead of padding a monospace line with spaces. World coordinates write negatives with U+2212. The face is built into core's stylesheet, so installing core still brings no theme dependency. The pick and modality HUDs list ids and stay monospace.
+- 88e298e: Remove `PoseDescriptor.intersectsRect`. Nothing in the kit has read it since marquee and lasso began testing a node's drawn outline, so the built-in descriptors (`RECT_POSE_DESCRIPTOR`, `ROTATED_POSE_DESCRIPTOR`, `pathPoseDescriptor`, the auto descriptor, and kernel3d's) no longer implement it. This is a breaking removal of a public field for anyone implementing a custom `PoseDescriptor`: an object literal typed as `PoseDescriptor` that still declares `intersectsRect` now fails the excess-property check. Delete the method; nothing called it.
+- 0756a82: A child dragged out of its layout container and released where no container
+  takes it now leaves that container, landing under the plain container beneath
+  the drop or at the top level, at the position it was dropped. It used to stay
+  the container's child and draw clipped to it, out of sight. A container whose
+  `releaseDrop` returns ops still decides the release, and a drop back inside the
+  container keeps the child where it is.
+- b18ef4a: Editing a selection that spans parallax planes lands every node where it was drawn. Move, resize, rotate and clone used to measure the whole selection in one plane — the handle's target's, else the first selected node's — so a node on a plane that scales differently drifted off the pointer. Each node is now carried into that plane as the gesture starts and back into its own as it lands. A move that reparents a node onto another plane's layer, or drops it into a layout container there, carries its pose across, so it lands where it was drawn.
+  
+  `ViewApi` gains an optional `planeOf(layer)`, which `inPlane` sets: how the world an invocation edits in maps into the world a layer's nodes are stored in. `inPlane` now wraps an action whenever the scene has any parallax layer, not only when the edited layer has one.
+- @weasel-js/cursor@1.7.2
+  - @weasel-js/font@1.7.2
+  - @weasel-js/geom@1.7.2
+  - @weasel-js/gestures@1.7.2
+  - @weasel-js/history@1.7.2
+  - @weasel-js/modes@1.7.2
+  - @weasel-js/paint@1.7.2
+  - @weasel-js/quantity@1.7.2
+  - @weasel-js/react@1.7.2
+  - @weasel-js/registry@1.7.2
+  - @weasel-js/routing@1.7.2
+  - @weasel-js/text@1.7.2
+
 ## 1.7.1
 
 ### Patch Changes

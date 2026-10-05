@@ -1,5 +1,17 @@
 # @weasel-js/font
 
+## 1.7.3
+
+### Patch Changes
+
+- @weasel-js/registry@1.7.3
+
+## 1.7.2
+
+### Patch Changes
+
+- @weasel-js/registry@1.7.2
+
 ## 1.7.1
 
 ### Patch Changes

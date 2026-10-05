@@ -1,0 +1,474 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "frame-budget",
+  "git": {
+    "sha": "8a57e2b20652f8c12a70c7f467f0368e366c3b97",
+    "dirty": true
+  },
+  "timestamp": "2026-10-05T03:00:18.141Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.10.0",
+    "loadavg": [
+      9.17,
+      10.64,
+      7.29
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "budgets": [
+      {
+        "label": "60 Hz",
+        "ms": 16.7
+      },
+      {
+        "label": "120 Hz",
+        "ms": 8.3
+      }
+    ],
+    "cap": 500000,
+    "kinds": [
+      "solid-rect",
+      "stroked-path",
+      "scene-tree",
+      "text-label",
+      "image",
+      "shader-panel",
+      "clip-depth-1",
+      "clip-depth-4",
+      "gradient-rect",
+      "mixed-doc"
+    ],
+    "runs": 3,
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "solid-rect @ 60 Hz",
+      "params": {
+        "kind": "solid-rect",
+        "unit": "solid rect",
+        "budgetMs": 16.7,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 381072,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            410804,
+            381072,
+            381072
+          ]
+        }
+      }
+    },
+    {
+      "id": "solid-rect @ 120 Hz",
+      "params": {
+        "kind": "solid-rect",
+        "unit": "solid rect",
+        "budgetMs": 8.3,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 188416,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            206848,
+            39424,
+            188416
+          ]
+        }
+      }
+    },
+    {
+      "id": "stroked-path @ 60 Hz",
+      "params": {
+        "kind": "stroked-path",
+        "unit": "stroked rect (2px)",
+        "budgetMs": 16.7,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 27904,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            27904,
+            15616,
+            27904
+          ]
+        }
+      }
+    },
+    {
+      "id": "stroked-path @ 120 Hz",
+      "params": {
+        "kind": "stroked-path",
+        "unit": "stroked rect (2px)",
+        "budgetMs": 8.3,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 16384,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            16384,
+            9088,
+            16384
+          ]
+        }
+      }
+    },
+    {
+      "id": "scene-tree @ 60 Hz",
+      "params": {
+        "kind": "scene-tree",
+        "unit": "leaf in a fanout-4 tree",
+        "budgetMs": 16.7,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 188416,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            194560,
+            188416,
+            188416
+          ]
+        }
+      }
+    },
+    {
+      "id": "scene-tree @ 120 Hz",
+      "params": {
+        "kind": "scene-tree",
+        "unit": "leaf in a fanout-4 tree",
+        "budgetMs": 8.3,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 93184,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            96256,
+            93184,
+            93184
+          ]
+        }
+      }
+    },
+    {
+      "id": "text-label @ 60 Hz",
+      "params": {
+        "kind": "text-label",
+        "unit": "text label (12 glyphs, 16px)",
+        "budgetMs": 16.7,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 18688,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            18688,
+            19456,
+            18688
+          ]
+        }
+      }
+    },
+    {
+      "id": "text-label @ 120 Hz",
+      "params": {
+        "kind": "text-label",
+        "unit": "text label (12 glyphs, 16px)",
+        "budgetMs": 8.3,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 9472,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            9472,
+            9472,
+            9088
+          ]
+        }
+      }
+    },
+    {
+      "id": "image @ 60 Hz",
+      "params": {
+        "kind": "image",
+        "unit": "image quad (48px, 6 bitmaps)",
+        "budgetMs": 16.7,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 410804,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            440536,
+            410804,
+            410804
+          ]
+        }
+      }
+    },
+    {
+      "id": "image @ 120 Hz",
+      "params": {
+        "kind": "image",
+        "unit": "image quad (48px, 6 bitmaps)",
+        "budgetMs": 8.3,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 200704,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            219136,
+            200704,
+            200704
+          ]
+        }
+      }
+    },
+    {
+      "id": "shader-panel @ 60 Hz",
+      "params": {
+        "kind": "shader-panel",
+        "unit": "shader panel (64px)",
+        "budgetMs": 16.7,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 50176,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            50176,
+            50176,
+            50176
+          ]
+        }
+      }
+    },
+    {
+      "id": "shader-panel @ 120 Hz",
+      "params": {
+        "kind": "shader-panel",
+        "unit": "shader panel (64px)",
+        "budgetMs": 8.3,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 24832,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            25600,
+            24832,
+            24832
+          ]
+        }
+      }
+    },
+    {
+      "id": "clip-depth-1 @ 60 Hz",
+      "params": {
+        "kind": "clip-depth-1",
+        "unit": "clipped group (1 rect)",
+        "budgetMs": 16.7,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 194560,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            169984,
+            200704,
+            194560
+          ]
+        }
+      }
+    },
+    {
+      "id": "clip-depth-1 @ 120 Hz",
+      "params": {
+        "kind": "clip-depth-1",
+        "unit": "clipped group (1 rect)",
+        "budgetMs": 8.3,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 96256,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            83968,
+            96256,
+            96256
+          ]
+        }
+      }
+    },
+    {
+      "id": "clip-depth-4 @ 60 Hz",
+      "params": {
+        "kind": "clip-depth-4",
+        "unit": "4-deep clip stack (1 rect)",
+        "budgetMs": 16.7,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 65536,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            71680,
+            65536,
+            65536
+          ]
+        }
+      }
+    },
+    {
+      "id": "clip-depth-4 @ 120 Hz",
+      "params": {
+        "kind": "clip-depth-4",
+        "unit": "4-deep clip stack (1 rect)",
+        "budgetMs": 8.3,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 33280,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            34816,
+            33280,
+            33280
+          ]
+        }
+      }
+    },
+    {
+      "id": "gradient-rect @ 60 Hz",
+      "params": {
+        "kind": "gradient-rect",
+        "unit": "linear-gradient rect",
+        "budgetMs": 16.7,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 42496,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            42496,
+            40960,
+            42496
+          ]
+        }
+      }
+    },
+    {
+      "id": "gradient-rect @ 120 Hz",
+      "params": {
+        "kind": "gradient-rect",
+        "unit": "linear-gradient rect",
+        "budgetMs": 8.3,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 20224,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            20224,
+            20224,
+            20992
+          ]
+        }
+      }
+    },
+    {
+      "id": "mixed-doc @ 60 Hz",
+      "params": {
+        "kind": "mixed-doc",
+        "unit": "document element (weighted mix)",
+        "budgetMs": 16.7,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 34816,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            34816,
+            34816,
+            34816
+          ]
+        }
+      }
+    },
+    {
+      "id": "mixed-doc @ 120 Hz",
+      "params": {
+        "kind": "mixed-doc",
+        "unit": "document element (weighted mix)",
+        "budgetMs": 8.3,
+        "capped": false
+      },
+      "metrics": {
+        "capacity": {
+          "value": 21760,
+          "unit": "count",
+          "stat": "median of 3 independent searches",
+          "samples": [
+            15616,
+            24064,
+            21760
+          ]
+        }
+      }
+    }
+  ]
+}

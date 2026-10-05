@@ -85,7 +85,9 @@ describe('<Lab> surface provider', () => {
   });
 
   it('stacks an under and an over buffer inside the lab body', async () => {
-    const { container } = await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
+    );
     const canvases = container.querySelectorAll('.lk-lab__body > canvas.lk-lab__surface');
     expect(canvases).toHaveLength(2);
     // Source order, because the z-index that separates them is in a stylesheet
@@ -98,7 +100,9 @@ describe('<Lab> surface provider', () => {
   });
 
   it('hands a tenant whichever of the two it asks for', async () => {
-    const { container } = await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
+    );
     const [underEl, overEl] = [...container.querySelectorAll('canvas.lk-lab__surface')];
     expect(seenCanvases.over).toBe(overEl);
     expect(seenCanvases.under).toBe(underEl);
@@ -108,7 +112,9 @@ describe('<Lab> surface provider', () => {
   it('defaults a tenant to the buffer over the trials', async () => {
     // Every tenant predating the split wants the over one: the surface was
     // built for marks that annotate an instrument.
-    const { container } = await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
+    );
     const [underEl, overEl] = [...container.querySelectorAll('canvas.lk-lab__surface')];
     expect(seenCanvases.byDefault).toBe(overEl);
     expect(seenCanvases.byDefault).not.toBe(underEl);
@@ -135,7 +141,9 @@ describe('<Lab> surface provider', () => {
     // The min-width:0 rule that keeps the flex row from overflowing is
     // `.lk-lab__body > .lk-workspace`. An element inserted between them drops
     // it, and jsdom cannot see the overflow that follows.
-    const { container } = await renderSettled(<Lab instruments={[probeInstrument]} defaultInstrument="Probe" />);
+    const { container } = await renderSettled(
+      <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
+    );
     const body = container.querySelector('.lk-lab__body');
     expect(body).not.toBeNull();
     expect(body?.querySelector(':scope > .lk-workspace')).not.toBeNull();

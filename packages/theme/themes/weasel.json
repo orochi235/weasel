@@ -221,23 +221,27 @@
     "fg-muted": {
       "by": "mode",
       "dark": {
-        "ref": "gray-300",
-        "type": "color"
+        "value": "rgb(from currentColor r g b / 0.7)",
+        "type": "color",
+        "description": "Secondary text: the text color in effect where it is used, at reduced alpha, so it steps down from whatever text it sits beside on any surface. The alpha is absolute, so muted text nested in muted text stays one step down. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
       },
       "light": {
-        "ref": "gray-600",
-        "type": "color"
+        "value": "rgb(from currentColor r g b / 0.78)",
+        "type": "color",
+        "description": "Secondary text: the text color in effect where it is used, at reduced alpha, so it steps down from whatever text it sits beside on any surface. The alpha is absolute, so muted text nested in muted text stays one step down. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
       }
     },
     "fg-subtle": {
       "by": "mode",
       "dark": {
-        "ref": "gray-400",
-        "type": "color"
+        "value": "rgb(from currentColor r g b / 0.54)",
+        "type": "color",
+        "description": "Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
       },
       "light": {
-        "ref": "gray-500",
-        "type": "color"
+        "value": "rgb(from currentColor r g b / 0.64)",
+        "type": "color",
+        "description": "Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
       }
     },
     "border": {

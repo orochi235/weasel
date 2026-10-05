@@ -28,8 +28,9 @@
  *
  * The diagonal is the instrument's resolution: `S(A,A)` is two measurements of
  * one frame, so it reports as noise in the same units as every other cell. Read
- * a cell against it. This laptop's floor is wide — see the header of
- * `frame-budget.spec.ts`.
+ * a cell against it. Each cell is the median of single frames drawn one per
+ * task — `lib/frameTiming.ts` says why a block of frames in one task measures
+ * something else.
  *
  * One renderer and one pool of leaves for the whole matrix, deliberately: the
  * caches key on object identity, so reusing the leaves is what makes every cell
@@ -39,6 +40,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { metric, rounds, startRun } from './lib/result';
+import { isolate } from './lib/isolate';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { KIND_IDS, type KindId } from './lib/kinds';
@@ -97,6 +99,7 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
     );
   });
 
+  await isolate(page);
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
@@ -114,6 +117,7 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
       const rendererMod = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
       const { WeaselRenderer, registerFont, registerProgram, registerTexture } = rendererMod;
       const kindsMod = await import(/* @vite-ignore */ `${base}/tests/perf/lib/kinds.ts`);
+      const { frameMs } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);
       const { makeKindBuilders, checkerBitmap, imageBitmaps, PANEL_FRAG } = kindsMod;
 
       const W = 800;
@@ -171,34 +175,15 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
       const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
       const gcAvailable = typeof collect === 'function';
 
-      /** Total across `frames`, divided. Never time one frame. */
-      function timeBlock(cmds: unknown[], frames: number): number {
+      async function measure(cmds: unknown[]): Promise<number> {
         if (collect) {
           collect({ type: 'major', execution: 'sync' });
           collect({ type: 'major', execution: 'sync' });
         }
-        // One untimed frame between the collect and the clock: collecting
-        // finalizes dropped meshes, each of which queues GL deletes that
-        // `render` drains at the top of the next frame. Without this a block is
-        // charged for its predecessor's teardown.
-        renderer.render(cmds, identity);
-        gl.finish();
-        const t0 = performance.now();
-        for (let f = 0; f < frames; f++) renderer.render(cmds, identity);
-        gl.finish();
-        return (performance.now() - t0) / frames;
-      }
-
-      /** The frame count is derived because the cells span two orders of
-       *  magnitude: a fixed count is either below the ~100us clock at the cheap
-       *  end or half a minute at the dear one. */
-      const TARGET_BLOCK_MS = 100;
-      function measure(cmds: unknown[]): number {
-        for (let i = 0; i < 3; i++) renderer.render(cmds, identity);
-        gl.finish();
-        const rough = timeBlock(cmds, 4);
-        const frames = Math.min(60, Math.max(4, Math.round(TARGET_BLOCK_MS / Math.max(rough, 0.05))));
-        return timeBlock(cmds, frames);
+        // `frameMs`'s untimed frames come between the collect and the clock:
+        // collecting finalizes dropped meshes, each of which queues GL deletes
+        // that `render` drains at the top of the next frame.
+        return frameMs(gl, () => renderer.render(cmds, identity));
       }
 
       /** A kind that silently draws nothing measures free, which would make
@@ -232,7 +217,7 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
 
       let index = 0;
       const emit = async (run: number, slot: string, a: string, b: string, cmds: unknown[]) => {
-        const perFrameMs = +measure(cmds).toFixed(4);
+        const perFrameMs = +(await measure(cmds)).toFixed(4);
         index += 1;
         await report({ type: 'cell', index, run, slot, a, b, perFrameMs });
       };

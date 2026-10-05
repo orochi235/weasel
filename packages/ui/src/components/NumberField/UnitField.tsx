@@ -71,9 +71,13 @@ export function UnitField({
   const [draft, setDraft] = useState<string | null>(null);
   const canceled = useRef(false);
   const input = useRef<HTMLInputElement>(null);
-  const known = Number.isFinite(value);
+  const known = !Number.isNaN(value);
   const text = known ? qty(value, display).text : '';
-  const read = (typed: string) => (accepts ? parseNumber(typed, accepts) : parseAs(typed, display));
+  // `accepts` reads units; the display still reads its own words, like infinity's.
+  const read = (typed: string) => {
+    const n = accepts ? parseNumber(typed, accepts) : Number.NaN;
+    return Number.isNaN(n) ? parseAs(typed, display) : n;
+  };
   const bounds = { step, min: minValue, max: maxValue };
 
   // What a step starts from: the text as typed where it reads, else the value.
@@ -169,7 +173,7 @@ export function UnitField({
           inputMode="decimal"
           autoComplete="off"
           aria-label={ariaLabel}
-          aria-valuenow={known ? value : undefined}
+          aria-valuenow={Number.isFinite(value) ? value : undefined}
           aria-valuetext={known ? qty(value, display).spoken : undefined}
           aria-valuemin={minValue}
           aria-valuemax={maxValue}
@@ -179,7 +183,7 @@ export function UnitField({
             const typed = e.target.value;
             setDraft(typed);
             const n = read(typed);
-            if (onInput && typed.trim() !== '' && Number.isFinite(n)) onInput(clampToBounds(n, bounds));
+            if (onInput && typed.trim() !== '' && !Number.isNaN(n)) onInput(clampToBounds(n, bounds));
           }}
           onFocus={() => {
             canceled.current = false;
@@ -187,7 +191,7 @@ export function UnitField({
           onBlur={() => {
             if (draft !== null && !canceled.current) {
               const n = read(draft);
-              if (Number.isFinite(n)) {
+              if (!Number.isNaN(n)) {
                 const next = clampToBounds(n, bounds);
                 if (next !== value) onChange(next);
               }

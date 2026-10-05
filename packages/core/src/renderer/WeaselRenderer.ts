@@ -628,6 +628,7 @@ export class WeaselRenderer {
       widthCss: this.widthCss,
       heightCss: this.heightCss,
       clipDepth: 0,
+      clipStack: [],
       flattenTolerance: this.flattenTolerance,
       textOutlineMinScreenSize: this.textOutlineMinScreenSize,
       viewMatrix,
@@ -640,6 +641,8 @@ export class WeaselRenderer {
       paintResources: this.paintResources,
       stats: counters,
     };
+    // A frame that threw part-way left its clip here.
+    this.drawBatch.clip = null;
     const spans = opts?.spans ?? [];
     let next = 0;
     for (let si = 0; si < spans.length; si++) {

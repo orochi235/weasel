@@ -1,6 +1,6 @@
 import { act, screen } from '@testing-library/react';
-import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import userEvent from '@testing-library/user-event';
+import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { auto } from '../config/auto';
 import { f } from '../config/builder';

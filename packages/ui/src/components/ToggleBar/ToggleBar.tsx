@@ -1,6 +1,7 @@
 import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import s from './ToggleBar.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
+import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
 
 /** One segment of a {@link ToggleBar}, identified by its `value`. */
@@ -128,6 +129,10 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     onActivate: mode === 'multiple' ? (index) => handleClick(index)() : undefined,
   });
 
+  // Segment labels drawn as `FitLabel`s shorten together when the bar is
+  // squeezed or will not fit where it sits.
+  const fit = useFitScope(roving.rootRef);
+
   const style: CSSProperties | undefined = height !== undefined
     ? ({ ['--tb-h' as string]: `${height}px` } as CSSProperties)
     : undefined;
@@ -148,29 +153,31 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
       aria-label={ariaLabel}
       style={style}
     >
-      {items.map((item, i) => {
-        const selected = isSelected(item.value);
-        const mixed = isMixed(item.value);
-        const cls = [s.segment, selected && s.segmentSelected, mixed && s.segmentMixed]
-          .filter(Boolean)
-          .join(' ');
-        return (
-          <SegmentTooltip key={item.value} content={segmentTooltipContent(item)} disabled={item.disabled}>
-            <button
-              type="button"
-              role={mode === 'multiple' ? undefined : 'radio'}
-              aria-checked={mode === 'multiple' ? undefined : selected}
-              aria-pressed={mode === 'multiple' ? (mixed ? 'mixed' : selected) : undefined}
-              aria-label={item.ariaLabel}
-              disabled={item.disabled}
-              className={cls}
-              onClick={handleClick(i)}
-            >
-              {item.label}
-            </button>
-          </SegmentTooltip>
-        );
-      })}
+      <FitScope value={fit}>
+        {items.map((item, i) => {
+          const selected = isSelected(item.value);
+          const mixed = isMixed(item.value);
+          const cls = [s.segment, selected && s.segmentSelected, mixed && s.segmentMixed]
+            .filter(Boolean)
+            .join(' ');
+          return (
+            <SegmentTooltip key={item.value} content={segmentTooltipContent(item)} disabled={item.disabled}>
+              <button
+                type="button"
+                role={mode === 'multiple' ? undefined : 'radio'}
+                aria-checked={mode === 'multiple' ? undefined : selected}
+                aria-pressed={mode === 'multiple' ? (mixed ? 'mixed' : selected) : undefined}
+                aria-label={item.ariaLabel}
+                disabled={item.disabled}
+                className={cls}
+                onClick={handleClick(i)}
+              >
+                {item.label}
+              </button>
+            </SegmentTooltip>
+          );
+        })}
+      </FitScope>
     </div>
   );
 }

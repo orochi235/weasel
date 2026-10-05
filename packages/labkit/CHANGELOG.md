@@ -1,5 +1,62 @@
 # @weasel-js/labkit
 
+## 1.7.3
+
+### Patch Changes
+
+- b258798: An inherited value draws in the secondary accent instead of faded, which read as disabled. `@weasel-js/theme/inherited.module.css` holds the one definition, `.inherited`, which remaps the accent tokens to their secondary twins; the prefs form's inherited rows compose it and `ControlMatrix`'s inherited cells mix it in.
+- 3ce52fe: `ControlMatrix` cells no longer blur their backdrop. They inherited labkit's default button blur, and with dozens of them in one panel Chrome flickered the panel and the page header around it.
+- Updated dependencies [b258798]
+  - @weasel-js/theme@1.7.3
+  - @weasel-js/ui@1.7.3
+  - @weasel-js/core@1.7.3
+  - @weasel-js/geom@1.7.3
+  - @weasel-js/kernel3d@1.7.3
+  - @weasel-js/loupe@1.7.3
+  - @weasel-js/quantity@1.7.3
+  - @weasel-js/svg@1.7.3
+
+## 1.7.2
+
+### Patch Changes
+
+- 06ee1e6: Core's stylesheet is now published as `@weasel-js/core/style.css`. Through 1.7.1 it shipped in the tarball as `dist/index.css` with no export and no import, so an installed core drew its debug HUDs with class names and no rules behind them — unpositioned, unbackgrounded text. Import it once if you turn on `cursorCoordsHud`, `pickHud` or `modalityHud`. labkit's `styles.css` now includes it.
+  
+  `cursorCoordsHud` lays its readings out as a label column and a value column, set in the numeric face, instead of padding a monospace line with spaces. World coordinates write negatives with U+2212. The face is built into core's stylesheet, so installing core still brings no theme dependency. The pick and modality HUDs list ids and stay monospace.
+- c443639: New `ControlMatrix` edits one setting across several config groups of the same shape: settings down the side, scopes across the top (`columns`, each a group's path prefix), a compact cell at each crossing. The first column is the fallback the others inherit from; a path in `auto` draws ghosted with a "from <first column>" tooltip (`inheritHint` changes the text). A boolean cell flips in place and a color cell opens its picker in place; any other cell opens a popover holding the control `ControlPanel` would draw for that leaf. Editing writes through `setConfig`, which pins the cell; the popover's Inherit button, or Option/Alt-click on a pinned cell, writes the `auto` sentinel to unpin it. A column whose group has no such leaf shows a dash. `onColumnClick` makes the headers buttons.
+- a6d6ebc: Numeric text now has one definition: `.numeric` in the new `@weasel-js/theme/numeric.module.css` export, which sets `--wzl-font-numeric` and `tabular-nums` together. CSS modules take it with `composes: numeric from '@weasel-js/theme/numeric.module.css'`, Less with `.numeric();`, and markup by putting its class on the element. `npm run check:numeric` fails on `tabular-nums` or a read of `--wzl-font-numeric` anywhere else, and on a `font`, `font-family` or `font-variant-numeric` declaration beside the helper, which would replace it.
+  
+  What that changes on screen:
+  
+  - `NumberField` and `UnitField` set their value in equal-width digits, so every number input does; it was in the UI face with proportional ones.
+  - Property rows' slider readouts and their editable inputs, `OpacityRange`'s percentage, `Timeline` ruler ticks, `BandEditor` tick labels, `Slider` readouts, `FallthroughDiagram`'s number columns, `StatusBar`, and labkit's status bar, scale indicator, FPS meter and specimen pane width move to the numeric face. Several were in the mono face, which had been standing in for tabular figures. Code and hex values stay mono.
+  - `TokenPanel`'s number fields render in the numeric face. They had been forced to mono, which also kept the numeric rules beneath them from ever applying.
+  - `DataGrid` columns take `numeric: true`, which sets the header and cells in the numeric face and ends them.
+  - `DetailRow` reads its list's `values` itself, so a figures row's value gets its class directly rather than through a descendant selector.
+  - forge's font switcher sets `--wzl-font-numeric` to the chosen UI face when that face is not Oswald, instead of leaving Oswald's digits among another face's letters.
+- 7671813: `Oswald Tabular` now carries a plus (U+002B) and a minus (U+2212) at a digit's width, so a column of signed figures set in `--wzl-font-numeric` lines up on its digits. The minus is rebuilt from the plus's crossbar: Oswald draws its own minus shorter than that arm, so `+5` over `−5` showed two bar lengths. The hyphen-minus stays out of the face, so a hyphen in a date or an id keeps its own width. Write negatives with U+2212 to get the tabular sign — `@weasel-js/quantity`'s `qty` and `formatNumber` already do.
+- Updated dependencies [06ee1e6]
+- Updated dependencies [88e298e]
+- Updated dependencies [0756a82]
+- Updated dependencies [a6d6ebc]
+- Updated dependencies [b18ef4a]
+- Updated dependencies [9e188af]
+- Updated dependencies [9362f82]
+- Updated dependencies [68a373f]
+- Updated dependencies [bbf4d3d]
+- Updated dependencies [2cefe97]
+- Updated dependencies [7671813]
+- Updated dependencies [3299539]
+- Updated dependencies [81654ed]
+  - @weasel-js/core@1.7.2
+  - @weasel-js/kernel3d@1.7.2
+  - @weasel-js/theme@1.7.2
+  - @weasel-js/ui@1.7.2
+  - @weasel-js/loupe@1.7.2
+  - @weasel-js/svg@1.7.2
+  - @weasel-js/geom@1.7.2
+  - @weasel-js/quantity@1.7.2
+
 ## 1.7.1
 
 ### Patch Changes

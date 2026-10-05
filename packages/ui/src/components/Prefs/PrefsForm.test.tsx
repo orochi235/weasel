@@ -1,5 +1,6 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { PrefsDialog } from './PrefsDialog';
 import { PrefsForm, type PrefRenderContext } from './PrefsForm';
 import {
   prefDisplayBounds,
@@ -592,5 +593,108 @@ describe('prefDisplayBounds', () => {
       kind: 'number', name: 'R', description: '', default: 0, unit: rotationDegreesUnit,
     };
     expect(prefDisplayBounds(leaf)).toEqual({ min: undefined, max: undefined, step: 1 });
+  });
+});
+
+describe('PrefsForm — inherited leaves', () => {
+  const LOOKS: PrefGroup = {
+    name: 'Looks',
+    children: {
+      defaults: {
+        name: 'Defaults',
+        children: {
+          glow: { kind: 'number', name: 'Glow', description: 'Halo size.', default: 2, min: 0, max: 10 },
+        },
+      },
+      window: {
+        name: 'Window',
+        children: {
+          glow: { kind: 'number', name: 'Glow', description: 'Halo size.', default: 2, min: 0, max: 10 },
+        },
+      },
+    },
+  };
+  const values = { defaults: { glow: 4 }, window: { glow: 4 } };
+  const props = {
+    schema: LOOKS,
+    values,
+    auto: new Set(['window.glow']),
+    canInherit: (path: string) => !path.startsWith('defaults.'),
+    inheritHint: () => 'from Defaults',
+  };
+  const fields = () => screen.getAllByRole('spinbutton', { name: 'Glow' }) as HTMLInputElement[];
+
+  it('draws an inherited leaf with its control, showing the value it was given, and a hint', () => {
+    render(<PrefsForm {...props} onChange={() => {}} onAutoChange={() => {}} />);
+    const [, windowGlow] = fields();
+    expect(windowGlow.value).toBe('4');
+    expect(screen.getAllByText('from Defaults')).toHaveLength(1);
+    expect(windowGlow.closest('label')?.className).toMatch(/rowAutoInherited/);
+  });
+
+  it('pins an inherited leaf through onChange when its control is edited', () => {
+    const onChange = vi.fn();
+    render(<PrefsForm {...props} onChange={onChange} onAutoChange={() => {}} />);
+    const [, windowGlow] = fields();
+    fireEvent.change(windowGlow, { target: { value: '7' } });
+    fireEvent.blur(windowGlow);
+    expect(onChange).toHaveBeenCalledWith('window.glow', 7);
+  });
+
+  it('toggles inheritance from the label of a leaf that can inherit, and only there', () => {
+    const onAutoChange = vi.fn();
+    render(<PrefsForm {...props} values={{ ...values }} onChange={() => {}} onAutoChange={onAutoChange} />);
+    const toggles = screen.getAllByRole('button', { name: 'Pin Glow' });
+    // Defaults' row refuses inheritance, so only the window's label toggles.
+    expect(toggles).toHaveLength(1);
+    expect(toggles[0].getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(toggles[0]);
+    expect(onAutoChange).toHaveBeenCalledWith('window.glow', false);
+  });
+
+  it('unpins a pinned leaf from its label', () => {
+    const onAutoChange = vi.fn();
+    render(
+      <PrefsForm {...props} auto={new Set()} onChange={() => {}} onAutoChange={onAutoChange} />,
+    );
+    const toggle = screen.getByRole('button', { name: 'Pin Glow' });
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByText('from Defaults')).toBeNull();
+    fireEvent.click(toggle);
+    expect(onAutoChange).toHaveBeenCalledWith('window.glow', true);
+  });
+
+  it('draws plain labels with no onAutoChange, and tells a custom renderer the truth', () => {
+    const seen: PrefRenderContext[] = [];
+    const schema: PrefGroup = {
+      name: 'Looks',
+      children: { tint: { kind: 'swatch', name: 'Tint', description: '', default: 'red' } },
+    };
+    render(
+      <PrefsForm
+        schema={schema}
+        auto={new Set(['tint'])}
+        onChange={() => {}}
+        renderers={{ swatch: (ctx) => (seen.push(ctx), <span>swatch</span>) }}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Pin Tint' })).toBeNull();
+    expect(seen.at(-1)?.auto).toBe(true);
+  });
+
+  it('threads the same props through PrefsDialog', () => {
+    const onAutoChange = vi.fn();
+    render(
+      <PrefsDialog
+        isOpen
+        onOpenChange={() => {}}
+        {...props}
+        onChange={() => {}}
+        onAutoChange={onAutoChange}
+      />,
+    );
+    expect(screen.getByText('from Defaults')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Pin Glow' }));
+    expect(onAutoChange).toHaveBeenCalledWith('window.glow', false);
   });
 });

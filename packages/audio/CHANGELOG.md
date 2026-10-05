@@ -1,5 +1,13 @@
 # @weasel-js/audio
 
+## 1.7.3
+
+No changes in this release.
+
+## 1.7.2
+
+No changes in this release.
+
 ## 1.7.1
 
 ### Patch Changes

@@ -76,7 +76,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--wzl-fg-muted) 70%, transparent);
+  /* Not --wzl-fg-muted: that follows currentColor, which here is the inverse text on the thumb. */
+  background: color-mix(in srgb, var(--wzl-fg) 50%, transparent);
   border: 1px solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-sm);
   cursor: ew-resize;

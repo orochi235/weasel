@@ -115,98 +115,162 @@ strings for a viewer panel.
 
 `hud-vs-dom.spec.ts` asks whether text over the canvas is cheaper drawn by
 `@weasel-js/hud` as canvas commands or laid out by the browser in a transparent
-DOM layer above it. Text comes in 10-glyph labels. The DOM side is plain DOM,
-with each label moved by `transform`; a React-rendered layer would add
-reconciliation on top, and that is not measured.
+DOM layer above it. Text comes in 10-glyph labels, either static or rewritten
+every frame, under three cameras: fixed, a zoom-and-pan that moves every label
+("moving"), and a pan with no zoom. The overlay is priced four ways:
 
-Measured on studio (Apple M1 Max, Metal ANGLE, Chromium headless), 2026-09-29,
-at `759c10f85`. **The node was contended**: other jobs held its 1-minute load
-average between 8 and 21 on 10 cores throughout, and frames arrived every 30–70
-ms instead of every 16.7. The figures below are thread busy time from a
-Chromium trace, which excludes time spent waiting for a core, so they still
-describe the work each approach does; they say nothing about frame rate.
+| Column | What it is |
+|---|---|
+| HUD | `attachHud`'s own layer, drawn after the scene |
+| DOM | plain spans, each moved by its own `transform` |
+| React | the same spans rendered by React's production build, one memoized component per label, committed with `flushSync` inside the frame |
+| DOM layer | pan only: spans left in place, the whole overlay moved by one `transform` |
 
-Renderer main thread, ms per frame, median of 4 samples with [min–max]. The
-background scene alone costs 0.47 (static run) and 0.42 (every-frame run).
+Measured on msb-uai (Apple M3 Max, Metal ANGLE, headless Chromium 153) on
+2026-10-05, at `4e90f4a86`. The node was idle: its 1-minute load average ran
+from 0.9 to 4.8 on 14 cores. Every cell has 6 samples, from three passes that
+run each configuration's approaches forward then backward. Figures are thread
+busy time from a Chromium trace in ms per frame, median [min–max]. The
+background scene alone costs 0.44 on the main thread and 2.65 on all threads.
+The result file is `recorded/hud-vs-dom-2026-10-05T02-23-35Z.json`.
 
-| Glyphs | Static label, fixed: HUD | DOM | Static, camera moves: HUD | DOM |
-|---:|---:|---:|---:|---:|
-| 10 | 0.54 [0.49–0.60] | 0.49 [0.47–0.56] | 0.49 [0.36–0.56] | 0.60 [0.46–0.62] |
-| 100 | 0.53 [0.44–0.91] | 0.42 [0.39–0.52] | 0.50 [0.39–0.62] | 0.56 [0.43–0.77] |
-| 500 | 0.78 [0.50–0.90] | 0.40 [0.33–0.48] | 0.74 [0.52–0.88] | 0.75 [0.60–0.77] |
-| 1,000 | 1.64 [1.21–2.31] | 0.40 [0.31–0.60] | 1.68 [1.25–2.12] | 1.10 [0.70–1.31] |
-| 2,500 | 2.99 [2.58–3.40] | 0.45 [0.33–0.51] | 2.56 [2.36–3.17] | 1.10 [1.03–1.34] |
-| 5,000 | 4.97 [4.56–6.30] | 0.44 [0.33–0.56] | 5.67 [4.75–5.95] | 2.13 [1.68–2.60] |
+Renderer main thread:
 
-| Glyphs | Readout every frame, fixed: HUD | DOM | Every frame, camera moves: HUD | DOM |
-|---:|---:|---:|---:|---:|
-| 10 | 0.39 [0.32–0.64] | 0.57 [0.50–0.74] | 0.52 [0.39–0.68] | 0.75 [0.54–1.04] |
-| 100 | 0.49 [0.46–0.62] | 0.54 [0.53–0.66] | 0.68 [0.50–0.78] | 0.79 [0.72–1.16] |
-| 500 | 0.92 [0.83–1.10] | 1.00 [0.88–1.14] | 1.16 [0.88–1.27] | 1.44 [1.07–1.55] |
-| 1,000 | 1.37 [1.15–1.55] | 1.42 [1.29–1.73] | 1.73 [1.71–1.79] | 2.24 [2.18–2.49] |
-| 2,500 | 2.46 [2.36–2.55] | 2.58 [2.34–3.02] | 3.53 [2.97–3.79] | 3.95 [3.81–4.33] |
-| 5,000 | 4.71 [3.97–7.05] | 4.80 [4.13–6.32] | 5.77 [4.98–6.52] | 6.92 [6.77–6.99] |
+| Text | Camera | Glyphs | HUD | DOM | React | DOM layer |
+|---|---|---:|---:|---:|---:|---:|
+| static | fixed |   100 |  0.57 [ 0.44– 0.75] |  0.42 [ 0.37– 0.47] |  0.42 [ 0.36– 0.57] | — |
+| static | fixed | 1,000 |  0.68 [ 0.60– 0.88] |  0.40 [ 0.20– 0.51] |  0.44 [ 0.33– 0.54] | — |
+| static | fixed | 2,500 |  1.13 [ 0.65– 1.32] |  0.29 [ 0.19– 0.40] |  0.31 [ 0.23– 0.41] | — |
+| static | fixed | 5,000 |  1.38 [ 0.79– 1.53] |  0.33 [ 0.23– 0.44] |  0.34 [ 0.26– 0.37] | — |
+| static | moving |   100 |  0.51 [ 0.39– 0.63] |  0.54 [ 0.45– 0.69] |  0.75 [ 0.57– 0.81] | — |
+| static | moving | 1,000 |  0.72 [ 0.59– 0.96] |  1.00 [ 0.93– 1.14] |  1.28 [ 1.12– 1.33] | — |
+| static | moving | 2,500 |  1.09 [ 0.55– 1.40] |  1.02 [ 0.64– 1.62] |  1.43 [ 1.19– 1.95] | — |
+| static | moving | 5,000 |  1.42 [ 0.88– 1.98] |  1.50 [ 1.05– 1.85] |  2.20 [ 1.75– 2.96] | — |
+| static | pan |   100 |  0.53 [ 0.19– 0.71] |  0.58 [ 0.50– 0.73] |  0.77 [ 0.31– 0.85] |  0.63 [ 0.46– 0.71] |
+| static | pan | 1,000 |  0.84 [ 0.72– 1.04] |  0.94 [ 0.65– 1.07] |  1.08 [ 0.53– 1.30] |  0.73 [ 0.41– 0.77] |
+| static | pan | 2,500 |  1.23 [ 0.94– 1.45] |  1.33 [ 0.69– 1.48] |  1.62 [ 0.99– 2.12] |  0.95 [ 0.62– 1.14] |
+| static | pan | 5,000 |  1.58 [ 1.09– 1.76] |  1.63 [ 1.48– 1.94] |  2.10 [ 1.95– 2.33] |  0.81 [ 0.62– 1.09] |
+| every-frame | fixed |   100 |  0.66 [ 0.54– 0.87] |  0.62 [ 0.34– 0.77] |  0.74 [ 0.39– 1.00] | — |
+| every-frame | fixed | 1,000 |  1.93 [ 1.61– 2.14] |  1.69 [ 1.43– 1.99] |  1.85 [ 1.51– 2.25] | — |
+| every-frame | fixed | 2,500 |  3.04 [ 2.81– 3.36] |  3.01 [ 2.66– 3.61] |  3.21 [ 2.07– 3.95] | — |
+| every-frame | fixed | 5,000 |  6.48 [ 6.27– 7.00] |  5.98 [ 5.35– 6.38] |  6.38 [ 5.99– 7.99] | — |
+| every-frame | moving |   100 |  0.68 [ 0.57– 0.73] |  0.93 [ 0.82– 1.14] |  0.97 [ 0.65– 1.13] | — |
+| every-frame | moving | 1,000 |  1.98 [ 1.60– 2.12] |  2.10 [ 1.89– 2.35] |  2.28 [ 1.50– 2.50] | — |
+| every-frame | moving | 2,500 |  3.10 [ 2.38– 3.66] |  3.42 [ 2.79– 4.05] |  3.79 [ 3.52– 4.38] | — |
+| every-frame | moving | 5,000 |  6.73 [ 6.08– 7.12] |  6.70 [ 5.99– 6.91] |  7.17 [ 6.90– 8.13] | — |
+| every-frame | pan |   100 |  0.71 [ 0.65– 0.80] |  0.85 [ 0.69– 1.03] |  0.88 [ 0.79– 1.13] |  0.81 [ 0.70– 0.97] |
+| every-frame | pan | 1,000 |  2.06 [ 1.40– 2.30] |  1.95 [ 1.34– 2.49] |  2.03 [ 1.86– 2.72] |  2.08 [ 1.36– 2.19] |
+| every-frame | pan | 2,500 |  3.30 [ 3.12– 3.52] |  3.55 [ 3.27– 3.70] |  3.93 [ 3.43– 4.21] |  2.42 [ 1.80– 3.22] |
+| every-frame | pan | 5,000 |  6.78 [ 4.61– 7.19] |  7.11 [ 6.64– 8.16] |  7.57 [ 7.20– 8.71] |  4.92 [ 4.67– 5.63] |
+
+All threads (renderer main, compositor, raster workers, and GPU process),
+readout changing every frame:
+
+| Text | Camera | Glyphs | HUD | DOM | React | DOM layer |
+|---|---|---:|---:|---:|---:|---:|
+| every-frame | fixed |   100 |  2.63 [ 1.96– 3.58] |  2.74 [ 1.53– 3.69] |  3.01 [ 1.55– 3.91] | — |
+| every-frame | fixed | 1,000 |  4.00 [ 3.29– 4.36] |  4.00 [ 3.35– 4.80] |  4.16 [ 3.37– 5.18] | — |
+| every-frame | fixed | 2,500 |  4.57 [ 4.19– 5.03] |  5.47 [ 4.78– 6.53] |  5.55 [ 3.64– 6.92] | — |
+| every-frame | fixed | 5,000 |  8.59 [ 8.26– 9.43] |  9.45 [ 8.56–10.10] |  9.78 [ 9.17–12.23] | — |
+| every-frame | moving |   100 |  2.70 [ 2.32– 3.03] |  3.43 [ 2.92– 4.16] |  3.52 [ 2.37– 3.77] | — |
+| every-frame | moving | 1,000 |  4.06 [ 3.12– 4.30] |  4.52 [ 4.08– 5.30] |  4.76 [ 3.21– 5.27] | — |
+| every-frame | moving | 2,500 |  4.63 [ 3.48– 5.46] |  5.89 [ 4.82– 6.86] |  6.35 [ 5.84– 7.41] | — |
+| every-frame | moving | 5,000 |  9.04 [ 8.16– 9.63] | 10.10 [ 9.13–10.25] | 10.50 [10.16–12.24] | — |
+| every-frame | pan |   100 |  2.94 [ 2.53– 3.12] |  3.36 [ 2.89– 3.93] |  3.23 [ 2.92– 3.90] |  3.44 [ 2.90– 3.87] |
+| every-frame | pan | 1,000 |  4.22 [ 2.80– 4.81] |  4.23 [ 2.82– 5.58] |  4.18 [ 3.81– 5.78] |  5.11 [ 3.29– 5.41] |
+| every-frame | pan | 2,500 |  4.97 [ 4.63– 5.42] |  6.04 [ 5.51– 6.42] |  6.51 [ 5.60– 7.04] |  4.35 [ 3.35– 5.91] |
+| every-frame | pan | 5,000 |  9.08 [ 6.17– 9.58] | 10.39 [ 9.78–12.27] | 10.98 [10.44–13.04] |  8.03 [ 7.77– 8.96] |
 
 What the numbers say:
 
-- **Under about 500 glyphs it does not matter.** Every difference is under
-  0.4 ms per frame and most sit inside the spread.
-- **A static label was cheaper in the DOM from about 1,000 glyphs.** Once laid
-  out, DOM text costs nothing per frame (0.44 ms at 5,000 glyphs, the same as
-  the empty scene). The HUD cost about 1 µs of script per glyph per frame
-  whether the text changed or not. Its layer asked every widget for a fresh
-  command on every repaint, and the fresh runs arrays missed the renderer's
-  text layout cache, so every glyph was laid out again. Widget command caching
-  has since cut this to about 0.2 µs per glyph; see below.
-- **A readout that changes every frame is a tie on the main thread with the
-  camera fixed.** The DOM spends it on layout and paint (1.79 + 1.76 ms at
-  5,000) where the HUD spends it on script (4.43).
-- **A readout that also follows the camera is cheaper on the HUD from about
-  1,000 glyphs** — the one cell where the ranges separate in its favor (1.73
-  [1.71–1.79] against 2.24 [2.18–2.49]).
+- **At 100 glyphs nothing separates.** Every difference is under 0.3 ms and
+  inside the spread.
+- **A static label on a fixed camera is free in the DOM, React included.** At
+  5,000 glyphs the DOM costs 0.33 against the scene's 0.44, because nothing
+  changes and React renders nothing. The HUD costs 1.38, 1.21 of it script:
+  the renderer still walks every unchanged text command each frame, about
+  0.2 µs per glyph since widget command caching (below).
+- **A pure pan wants the DOM layer.** Moving the overlay as one element keeps
+  script near 0.2 ms at every size when the text is static, and at 5,000 glyphs it is the
+  cheapest approach by a wide margin: 0.81 against 1.58 for the HUD and 1.63
+  for per-label DOM with static text, and 4.92 against 6.78 and 7.11 when the
+  text changes too. It saves main-thread work only; its compositor time is the
+  same as per-label DOM.
+- **React costs 0.4–0.7 ms over plain DOM at 5,000 glyphs whenever labels
+  change**, and nothing when they don't. Its script roughly doubles (0.49 to
+  1.11 with static text on a moving camera). That makes React the costliest
+  overlay in every moving cell from 2,500 glyphs up, and puts the HUD ahead of
+  it there: 1.42 against 2.20 with static text on a moving camera.
+- **A readout that changes every frame ties on the main thread**, HUD against
+  plain DOM: from 1,000 glyphs up the ranges overlap under every camera. The
+  HUD spends it on script, the DOM on style, layout, and paint.
+- **Off the main thread the HUD is cheaper, by about 1 ms at 2,500 glyphs and
+  up**, with the readout changing every frame. The compositor is where the
+  ranges separate: from 1,000 glyphs up the HUD's compositor runs 0.20–0.30 ms
+  a frame against the DOM's 0.51–0.76, and at 5,000 glyphs the GPU process
+  runs 1.85–2.03 against 2.61–2.69. The all-thread totals lean the same way,
+  but their ranges overlap except under the pan. The first run, on a contended
+  node, put this lean at 2–3 ms; on an idle one it is about 1 ms. The HUD's
+  text adds little GPU time: `EXT_disjoint_timer_query_webgl2`
+  timed the canvas at 0.35 ms with a 5,000-glyph readout against 0.31 for the
+  scene alone.
 
-Off the main thread the DOM side costs more in every every-frame cell: its
-compositor thread runs 0.5–2.1 ms per frame against the HUD's 0.2–0.8, and the
-GPU process more as well. The all-thread totals put the HUD ahead by 2–3 ms at
-5,000 glyphs in both every-frame cells, but the spread on those totals reaches
-several ms on this node, so read that as a lean, not a result. The HUD's text
-adds almost nothing on the GPU: `EXT_disjoint_timer_query_webgl2` timed the
-canvas at 0.30 ms with 5,000 glyphs against 0.25 without. The raster column
-reads zero throughout because Chromium rasterizes on the GPU here, so that work
-lands in the GPU-process figure.
+### Frame rate
 
-### After widget command caching
+Frame intervals come from a separate untraced window of 120 frames, because
+tracing stretches frames on its own. Headless Chromium paces frames itself:
+the scene alone runs at a median 22 ms, never at 16.7, so read these against
+each other, not as a display's frame rate. Every static cell sits between 19
+and 29 ms. Every-frame cells, mean rAF interval in ms:
 
-`attachHud` now reuses a widget's commands until something it draws from
-changes, and a moved text widget keeps its runs array. The static-label cells
-were rerun on studio on 2026-09-29, in two trees built on `02c5e108d`. Both
-drive `attachHud`'s own layer: the base tree has the old layer and the new tree
-has the cache. The trees ran in ABBA order (base new new base, then new base
-base new), with one hud/dom ABBA pass inside each run, for 8 samples per HUD
-cell and 16 per DOM cell. The 1-minute load average ran from 7 to 17. The
-figures are renderer main thread in ms per frame, median [min–max]. The
-background scene alone costs 0.46.
+| Text | Camera | Glyphs | HUD | DOM | React | DOM layer |
+|---|---|---:|---:|---:|---:|---:|
+| every-frame | fixed | 1,000 | 23.0 [21.0–28.4] | 23.5 [22.0–26.5] | 23.8 [19.9–26.5] | — |
+| every-frame | fixed | 2,500 | 41.1 [31.2–47.2] | 34.5 [24.2–42.6] | 36.7 [22.7–39.5] | — |
+| every-frame | fixed | 5,000 | 71.1 [68.9–71.6] | 43.3 [39.4–49.6] | 58.3 [47.8–62.0] | — |
+| every-frame | moving | 1,000 | 21.9 [21.4–27.2] | 23.2 [20.4–27.0] | 31.8 [22.0–35.2] | — |
+| every-frame | moving | 2,500 | 37.5 [21.6–44.4] | 36.8 [32.2–43.3] | 39.6 [33.1–44.1] | — |
+| every-frame | moving | 5,000 | 71.3 [68.9–76.3] | 61.3 [59.4–70.4] | 65.2 [62.7–69.7] | — |
+| every-frame | pan | 1,000 | 23.2 [18.6–26.2] | 26.6 [21.7–29.7] | 33.9 [30.1–38.7] | 22.4 [18.9–24.2] |
+| every-frame | pan | 2,500 | 42.0 [36.7–44.7] | 35.3 [33.8–39.5] | 39.6 [26.2–49.9] | 33.1 [20.7–34.7] |
+| every-frame | pan | 5,000 | 69.0 [67.9–71.0] | 60.6 [55.9–63.4] | 66.5 [64.0–74.1] | 42.7 [37.7–50.4] |
 
-| Glyphs | Fixed: HUD before | HUD after | DOM | Camera moves: HUD before | HUD after | DOM |
-|---:|---:|---:|---:|---:|---:|---:|
-|   100 | 0.46 [0.33–0.64] | 0.48 [0.43–0.57] | 0.38 [0.31–0.52] | 0.40 [0.35–0.47] | 0.48 [0.35–0.54] | 0.49 [0.42–0.67] |
-| 1,000 | 1.49 [1.39–2.17] | 0.67 [0.57–0.99] | 0.39 [0.33–0.59] | 1.46 [1.33–1.95] | 0.61 [0.58–1.00] | 0.78 [0.66–1.27] |
-| 2,500 | 2.70 [2.58–2.93] | 1.05 [0.78–1.25] | 0.40 [0.33–0.58] | 2.96 [2.62–4.19] | 0.91 [0.85–1.42] | 1.13 [0.93–1.57] |
-| 5,000 | 5.02 [4.80–5.37] | 1.43 [1.18–1.77] | 0.35 [0.30–0.49] | 5.14 [4.95–6.86] | 1.63 [1.22–1.95] | 1.72 [1.49–2.40] |
+**At 5,000 glyphs the HUD's readout gets the fewest frames**, about 70 ms
+apart under every camera with a tight spread, although its traced busy time is
+the lowest of the four. Under the pan, the DOM layer gets the most. Nothing in the trace
+explains the HUD's interval: its four counted thread groups are busy about
+9 ms of each 70 ms frame. Whether this is the headless frame scheduler or work
+on a thread the analysis does not count is not established.
 
-The DOM column pools both trees, because the change does not touch that side.
-From 1,000 glyphs up, the before and after ranges no longer overlap. With the
-camera fixed, a static label still costs the HUD about 0.2 µs of script per
-glyph per frame (1.20 ms at 5,000, against 0.20 for the scene), so the DOM
-still wins that cell. With the camera moving, the HUD and DOM ranges overlap at
-every size. The every-frame cells were not rerun. A readout rebuilds on every
-frame either way, and there the cache adds only a deps comparison per widget:
-an inference from the code, not a measurement. The eight result files are in
-`recorded/hud-command-cache/`.
+### Widget command caching
 
-The two result files from the first run are in `recorded/`. `HVD_UPDATES=static` or
-`every-frame` runs half the sweep, which is how it was run: each half took
-about 13 minutes on studio.
+`attachHud` reuses a widget's commands until something it draws from changes.
+Before that, a static label cost the HUD about 1 µs of script per glyph per
+frame, because every repaint built fresh runs arrays that missed the renderer's
+text layout cache: 5.02 ms against 1.43 after, at 5,000 glyphs on a fixed
+camera (studio, 2026-09-29, ABBA across two trees, 8 samples a cell). Those
+result files are in `recorded/hud-command-cache/`.
+
+The default sweep is 486 measurements and took 78 minutes on msb-uai.
+`HVD_GLYPHS`, `HVD_UPDATES`, `HVD_CAMERAS`, and `HVD_APPROACHES` each narrow it.
+
+## Timing a frame
+
+Specs that time the renderer draw **one frame per task** and take the median,
+through `lib/frameTiming.ts`, on a page `lib/isolate.ts` makes cross-origin
+isolated so `performance.now()` resolves microseconds rather than 100 us. `image-quad`, `atlas-wall`, and `fill-rate` still time blocks; see `docs/TODO.md`.
+
+A block of frames drawn back to back in one task measures something a frame
+loop never sees. Measured on teitou (Apple M5 Max, ANGLE Metal), 2026-10-04,
+with `flush-noise.spec.ts`: a frame of 512 one-rect flushes costs 0.5–0.8 ms
+when the page yields between frames. Inside one task the first eight frames
+still cost that, and every frame after them 3–9 ms, in plateaus that change
+from round to round, with single frames stalling 0.15–3.7 s inside the GPU
+process. The GPU process's own trace showed it busy on the CPU throughout
+(thread time equal to wall time), and the slowdown went away when the draws
+were dropped, not when the uploads were. That regime is what made
+a per-flush figure read 5 us one round and 29 the next. What inside Chromium
+or ANGLE resets at a task boundary was not found.
 
 ## Comparing two runs
 
@@ -228,7 +292,9 @@ import { metric, rounds, startRun } from './lib/result';
 
 const RUNS = rounds(3);
 const run = startRun('my-spec', { runs: RUNS });          // before measuring
-// ... measure, printing one line per cell as it lands: `  7/13  run 2  solid  0.412 ms/frame`
+// ... `await isolate(page)` before navigating, measure with lib/frameTiming.ts
+// in the page, and print one line per cell
+// as it lands: `  7/13  run 2  solid  0.412 ms/frame`
 run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
 run.item('solid n=512', { perFrame: metric(med, 'ms', `median of ${RUNS} runs`, samples) });
 run.write();
