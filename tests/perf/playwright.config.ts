@@ -25,7 +25,11 @@ export default defineConfig({
     // flag `gc` is undefined and specs fall back to timing through it.
     // `--use-angle=metal` because headless otherwise picks ANGLE's OpenGL
     // backend, measuring a path shipping Chrome on macOS does not take.
-    launchOptions: { args: ['--js-flags=--expose-gc', '--use-angle=metal'] },
+    // Local network access checks refuse vite's HMR socket on a page
+    // `lib/isolate.ts` made cross-origin isolated, and log it as an error.
+    launchOptions: {
+      args: ['--js-flags=--expose-gc', '--use-angle=metal', '--disable-features=LocalNetworkAccessChecks'],
+    },
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
     screenshot: 'only-on-failure',
