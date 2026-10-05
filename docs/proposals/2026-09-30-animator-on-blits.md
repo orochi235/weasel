@@ -203,10 +203,24 @@ Part of it is the JIT's state, which is per process: a fresh animator started af
 churned runs 0.64–0.65 ms against 0.50 for one started in a fresh process; today's animator shows
 nothing of the kind (0.17 against 0.19). blits found one cause on its side, voices fading costing
 its row loop the inlining of each row's ease, and fixed it in `2ad0063`; against that build, plain
-frames run 0.48 ms as started and 0.75–0.79 after every animation was replaced once. Weasel's own
-functions inline the same way before and after churn. The one difference
-`--trace-generalization` shows in fields the animator touches is a `from`/`to` field going from one
-known object layout to any value; whose objects those are is not yet established.
+frames run 0.48 ms as started and 0.75–0.79 after every animation was replaced once.
+
+What is left is weasel's. Timing `codec.frame` apart from the loop over animations in `tickAll`,
+in a fresh process each, ms per frame:
+
+| 10k tweens, after another animator in the process… | `codec.frame` | animation loop |
+|-----------------------------------------------------|--------------:|---------------:|
+| nothing (only one animator)                         | 0.22–0.23     | 0.23–0.26      |
+| started 10k, ran frames, canceled them all          | 0.23          | 0.31–0.33      |
+| replaced 2k of its 10k, one a frame                 | 0.23          | 0.36–0.37      |
+
+blits' share does not move; the animator's own loop does, and today's animator shows no such
+penalty. Ruled out, by measurement: the probe's own objects (a `-0` widened its `from`/`to`
+fields, and removing it changed nothing), reading the eased value from the codec's column
+(computing it with `easing(t)` costs the same), inlining (the same before and after), and garbage
+collection (four or five full collections a run). Not yet explained. One side finding: once the
+first animator cancels everything, this branch's heap stays about 68 MB larger, against 12 MB for
+today's.
 
 **Before merge:** blits has to publish `tween`, `pull`, per-subject `fade` and the `5a514a3` fixes,
 and core's exact pin on `@msb235/blits` moves to that release. Until then the branch runs against a
