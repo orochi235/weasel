@@ -190,6 +190,10 @@
 }
 
 .popover[data-tone] {
+  --wzl-surface-sunken: oklch(from var(--_s-fill) calc(l - 0.06) c h);
+}
+
+.popover[data-tone] {
   --wzl-accent: var(--_s-accent);
   --wzl-accent-base: var(--_s-accent);
   --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
