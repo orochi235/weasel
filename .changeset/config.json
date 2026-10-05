@@ -13,6 +13,7 @@
       "@weasel-js/gestures",
       "@weasel-js/history",
       "@weasel-js/quantity",
+      "@weasel-js/select",
       "@weasel-js/registry",
       "@weasel-js/react",
       "@weasel-js/loupe",

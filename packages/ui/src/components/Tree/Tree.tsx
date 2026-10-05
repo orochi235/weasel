@@ -9,7 +9,8 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import type { PressModifiers } from '../../useReorderDragList';
+import { intentOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
+import { selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { DisclosureMark } from '../Disclosure';
 import s from './Tree.module.css';
 
@@ -73,6 +74,8 @@ interface Visible {
 }
 
 const TYPEAHEAD_MS = 500;
+/** A list's convention: Cmd/Ctrl toggles a row, shift ranges from the anchor. */
+const LIST_KEYS = { toggle: ['meta', 'ctrl'], range: 'shift' } as const;
 
 /**
  * A hierarchy of rows that expand and collapse: a file tree, a registry
@@ -152,21 +155,13 @@ export const Tree = forwardRef(function Tree(
   };
 
   const select = (id: string, mods: PressModifiers) => {
-    let next: Set<string>;
-    if (selectionMode === 'multiple' && mods.shiftKey && anchor.current != null && indexOf.has(anchor.current)) {
-      const a = indexOf.get(anchor.current)!;
-      const b = indexOf.get(id)!;
-      next = new Set(visible.slice(Math.min(a, b), Math.max(a, b) + 1)
-        .filter((v) => !v.node.disabled).map((v) => v.node.id));
-    } else if (selectionMode === 'multiple' && (mods.metaKey || mods.ctrlKey)) {
-      next = new Set(selected);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      anchor.current = id;
-    } else {
-      next = new Set([id]);
-      anchor.current = id;
-    }
+    const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multi' : 'single', ...LIST_KEYS };
+    const result = selectFrom({ ids: [...selected], anchor: anchor.current }, id, intentOf(selectModifiers(mods), policy), {
+      order: visible.map((v) => v.node.id),
+      eligible: (x) => !visible[indexOf.get(x) ?? -1]?.node.disabled,
+    });
+    anchor.current = result.anchor;
+    const next = new Set(result.ids);
     if (next.size !== selected.size || [...next].some((x) => !selected.has(x))) setSelected(next);
   };
 

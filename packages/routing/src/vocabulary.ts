@@ -7,7 +7,8 @@
  * interfaces with no dependencies, and `@weasel-js/core` re-exports each from
  * the path its own call sites have always used. Same arrangement as `Op`,
  * which is declared in `@weasel-js/history` and re-exported by
- * `core/ops/types`.
+ * `core/ops/types`. The selection click policy's own vocabulary comes from
+ * `@weasel-js/select`, where the rules that read it live.
  *
  * Authority for the *behavior* behind each of these stays in core: `View` is
  * what `core/viewport` maintains, `SelectionApi` is what `useSelection`
@@ -15,6 +16,9 @@
  * one of these shapes is a change to core's contract that happens to be
  * spelled here.
  */
+
+import type { SelectionExtendKey, SelectionMode } from '@weasel-js/select';
+export type { SelectionExtendKey, SelectionMode };
 
 /** An opaque scene-node identifier. Branded so a bare string cannot stand in. */
 export type NodeId = string & { readonly __brand: 'NodeId' };
@@ -46,12 +50,6 @@ export interface Bounds {
   rotation?: number;
 }
 
-/** Selection click policy. `single` always replaces; `multi` toggles when the
- *  configured extend key is held, otherwise replaces. */
-export type SelectionMode = 'single' | 'multi';
-
-/** Modifier key used to extend the selection in `multi` mode. */
-export type SelectionExtendKey = 'shift' | 'meta' | 'ctrl';
 
 /** The selection as routing reads and writes it. */
 export interface SelectionApi {

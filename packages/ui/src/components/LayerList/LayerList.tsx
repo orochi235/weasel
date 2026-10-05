@@ -10,7 +10,8 @@ import {
 import { useLatest } from '@weasel-js/core';
 import { dlog } from '../../dlog';
 import { LockIcon } from '../../icons';
-import { type PressModifiers, useReorderDragList } from '../../useReorderDragList';
+import { intentOf, select, type SelectPolicy } from '@weasel-js/select';
+import { type PressModifiers, selectModifiers, useReorderDragList } from '../../useReorderDragList';
 import { CloseButton } from '../CloseButton';
 import { Disclosure } from '../Disclosure';
 import { DragGhost } from '../DragGhost';
@@ -182,18 +183,20 @@ export function LayerList(props: LayerListProps) {
   // The press arrives after the drag session ends, which can be after a render
   // the closure did not see, so it reads the selection from here.
   const live = useLatest(props);
+  // Locked rows never join a multi-selection: pressed, one is selected alone, and a range or a
+  // shift-press passes over them.
+  const unlocked = () => {
+    const locked = new Set(lockedIds(live.current.items));
+    return (id: string) => !locked.has(id);
+  };
   const press = (item: LayerListItem, mods: PressModifiers) => {
     const { selectedIds = [], onSelect } = live.current;
     if (!onSelect) return;
-    anchor.current = item.id;
-    if (item.locked || !mods.shiftKey) {
-      onSelect([item.id]);
-      return;
-    }
-    // A leftover locked selection does not carry into a multi-selection.
-    const locked = new Set(lockedIds(live.current.items));
-    const kept = selectedIds.filter((id) => !locked.has(id));
-    onSelect(kept.includes(item.id) ? kept.filter((id) => id !== item.id) : [...kept, item.id]);
+    const next = select({ ids: selectedIds, anchor: anchor.current }, item.id, intentOf(selectModifiers(mods), PRESS_POLICY), {
+      eligible: unlocked(),
+    });
+    anchor.current = next.anchor;
+    onSelect([...next.ids]);
   };
 
   const bodies = new Map<string, ReactNode>();
@@ -238,17 +241,11 @@ export function LayerList(props: LayerListProps) {
     pendingFocus.current = id;
     setFocusId(id);
   };
-  // Locked rows never join a multi-selection, so a range passes over them.
   const selectRange = (to: string) => {
-    const from = anchor.current ?? to;
-    const a = visible.findIndex((v) => v.item.id === from);
-    const b = visible.findIndex((v) => v.item.id === to);
-    if (a < 0 || b < 0) return;
-    const range = visible
-      .slice(Math.min(a, b), Math.max(a, b) + 1)
-      .filter((v) => !v.item.locked)
-      .map((v) => v.item.id);
-    if (range.length > 0) live.current.onSelect?.(range);
+    const before = { ids: live.current.selectedIds ?? [], anchor: anchor.current };
+    const next = select(before, to, 'range', { order: visible.map((v) => v.item.id), eligible: unlocked() });
+    anchor.current = next.anchor;
+    if (next !== before) live.current.onSelect?.([...next.ids]);
   };
 
   const keys: RowKeys = {
@@ -350,6 +347,9 @@ export function LayerList(props: LayerListProps) {
     </div>
   );
 }
+
+/** A layer panel follows the canvas: shift toggles a row in or out. */
+const PRESS_POLICY: SelectPolicy = { mode: 'multi', toggle: 'shift' };
 
 function lockedIds(items: LayerListItem[]): string[] {
   const out: string[] = [];
