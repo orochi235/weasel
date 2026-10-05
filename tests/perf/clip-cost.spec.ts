@@ -32,6 +32,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { metric, rounds, startRun } from './lib/result';
+import { isolate } from './lib/isolate';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -97,6 +98,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
     );
   });
 
+  await isolate(page);
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
@@ -231,7 +233,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       let index = 0;
       for (let run = 1; run <= runs; run++) {
         if (collect) collect({ type: 'major', execution: 'sync' });
-        const timed = timeInterleaved(gl, variants.map((v) => ({
+        const timed = await timeInterleaved(gl, variants.map((v) => ({
           id: v.id, frame: () => renderer.render(built[v.id], identity),
         })));
         for (const v of variants) {
@@ -312,7 +314,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
   for (const v of VARIANTS) {
     const samples = runs.map((r) => at(r, v.id));
-    run.item(v.id, { perFrame: metric(ms(v.id), 'ms', `median of ${RUNS} runs; each the p10 of 40 interleaved samples (lib/frameTiming.ts)`, samples) }, { groups: v.groups });
+    run.item(v.id, { perFrame: metric(ms(v.id), 'ms', `median of ${RUNS} runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)`, samples) }, { groups: v.groups });
   }
   const derived = `median across ${RUNS} runs of the per-run delta`;
   run.item('stencil push+pop', { perClip: metric(stencilOnly, 'us', `${derived}, pat-clipped - pat-plain`) });

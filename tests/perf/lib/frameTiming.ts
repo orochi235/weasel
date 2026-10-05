@@ -1,18 +1,22 @@
 /**
- * Frame timing that holds still on a GPU process whose speed does not.
+ * Frame timing for specs whose frames break the batch, imported into the page
+ * (`/weasel/@fs…/tests/perf/lib/frameTiming.ts`) rather than by the spec.
  *
- * Imported into the page (`/weasel/@fs…/tests/perf/lib/frameTiming.ts`), not
- * by the spec. Measured on teitou, 2026-10-04 (`flush-noise.spec.ts`): the same
- * 512-flush frame ran at 3.4, 5.8, 7.0, 9.2 and 52 ms in plateaus tens of
- * frames long, with single frames stalling 0.15–3.7 s inside the GPU process's
- * command decode. A block mean takes every stall and plateau it overlaps, which
- * is how one per-flush figure read 5 us one round and 29 the next.
+ * **One frame per task.** Measured on teitou, 2026-10-04
+ * (`flush-noise.spec.ts`, `yield` phase): a frame of 512 one-rect flushes costs
+ * 0.5–0.8 ms when the page yields to the event loop between frames, as a real
+ * frame loop does. Run back to back inside one task, the first eight still cost
+ * that and every one after costs 3–9 ms, in plateaus that shift from round to
+ * round, with occasional single frames stalling 0.15–3.7 s inside the GPU
+ * process. A block of 80 frames timed in one task measured that regime, not
+ * the renderer — which is how a per-flush figure read 5 us one round and 29
+ * the next. Each sample here runs a frame in a task of its own and ends in
+ * `finish`.
  *
- * So: variants interleave sample by sample, so a plateau lands on all of them;
- * each sample ends in `finish`, so a stall costs one sample rather than a block;
- * and the statistic is a low quantile, the cost in the fastest state the node
- * reaches. `performance.now()` is coarsened to 100 us here, so a sample runs
- * enough frames to fill `minSampleMs`.
+ * Variants interleave sample by sample so whatever drifts lands on all of them,
+ * and the statistic is the median. It needs `performance.now()` finer than the
+ * 100 us it is coarsened to by default, so the page must be cross-origin
+ * isolated — see `isolate.ts`.
  */
 
 export interface TimedVariant {
@@ -26,8 +30,6 @@ export interface TimedVariant {
 export interface TimingOptions {
   /** Samples per variant. */
   samples?: number;
-  /** Shortest sample, in ms; sets frames per sample from a rough first pass. */
-  minSampleMs?: number;
   /** Quantile `stat` reports. */
   quantile?: number;
 }
@@ -37,36 +39,32 @@ export function quantile(xs: readonly number[], q: number): number {
   return s[Math.min(s.length - 1, Math.floor(s.length * q))];
 }
 
-/** Per-variant ms per frame: every sample, and the low quantile of them. */
-export function timeInterleaved(
+const nextTask = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
+
+/** Per-variant ms per frame: every sample, and the quantile of them. */
+export async function timeInterleaved(
   gl: WebGL2RenderingContext,
   variants: readonly TimedVariant[],
-  { samples = 40, minSampleMs = 2, quantile: q = 0.1 }: TimingOptions = {},
-): Record<string, { stat: number; samples: number[] }> {
-  const framesFor = new Map<string, number>();
-  for (const v of variants) {
-    v.before?.();
-    for (let i = 0; i < 3; i++) v.frame();
-    gl.finish();
-    const t0 = performance.now();
-    for (let i = 0; i < 4; i++) v.frame();
-    gl.finish();
-    const rough = Math.max((performance.now() - t0) / 4, 0.01);
-    v.after?.();
-    framesFor.set(v.id, Math.min(200, Math.max(1, Math.ceil(minSampleMs / rough))));
+  { samples = 40, quantile: q = 0.5 }: TimingOptions = {},
+): Promise<Record<string, { stat: number; samples: number[] }>> {
+  if (!globalThis.crossOriginIsolated) {
+    throw new Error('frameTiming: the page is not cross-origin isolated, so the timer is too coarse; see isolate.ts');
   }
   const out: Record<string, number[]> = {};
-  for (const v of variants) out[v.id] = [];
+  for (const v of variants) {
+    out[v.id] = [];
+    v.before?.();
+    for (let i = 0; i < 3; i++) { await nextTask(); v.frame(); gl.finish(); }
+    v.after?.();
+  }
   for (let s = 0; s < samples; s++) {
     for (const v of variants) {
-      const frames = framesFor.get(v.id)!;
       v.before?.();
+      await nextTask();
+      const t0 = performance.now();
       v.frame();
       gl.finish();
-      const t0 = performance.now();
-      for (let i = 0; i < frames; i++) v.frame();
-      gl.finish();
-      out[v.id].push((performance.now() - t0) / frames);
+      out[v.id].push(performance.now() - t0);
       v.after?.();
     }
   }

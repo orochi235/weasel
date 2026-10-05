@@ -25,6 +25,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { metric, rounds, startRun } from './lib/result';
+import { isolate } from './lib/isolate';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -95,6 +96,7 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page, brows
     );
   });
 
+  await isolate(page);
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
@@ -218,12 +220,10 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page, brows
         notPainting: notPainting.join(', '),
       });
 
-      // Interleaved sample by sample, so the GPU process's speed plateaus land
-      // on every row alike; see lib/frameTiming.ts.
       let index = 0;
       for (let run = 1; run <= runs; run++) {
         if (collect) collect({ type: 'major', execution: 'sync' });
-        const timed = timeInterleaved(gl, variants.map((v) => ({
+        const timed = await timeInterleaved(gl, variants.map((v) => ({
           id: v.id,
           before: () => install(rulesUpTo(v.id)),
           frame: () => renderer.render(cmds, identity),
@@ -280,7 +280,7 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page, brows
     const us = perFlushUs(id);
     const samples = cells.filter((c) => c.variant === id).map((c) => (c.perFrameMs * 1000) / N);
     run.item(id, {
-      perFlush: metric(us, 'us', `median of ${RUNS} runs; each the p10 of 40 interleaved samples (lib/frameTiming.ts)`, samples),
+      perFlush: metric(us, 'us', `median of ${RUNS} runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)`, samples),
       ...(above === undefined ? {} : { saves: metric(above - us, 'us', 'the row above minus this row, medians') }),
     }, { drops });
     above = us;
