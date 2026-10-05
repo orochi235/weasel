@@ -1,8 +1,5 @@
 import {
-  type ComponentProps,
-  type CSSProperties,
   type ReactNode,
-  type RefObject,
   useEffect,
   useId,
   useRef,
@@ -10,21 +7,18 @@ import {
 } from 'react';
 import { getAlpha01, toHex8, withAlpha01, type FillStyle, type PaintKind } from '@weasel-js/core';
 import { dlog } from '../../dlog';
-import { decimal, parseAs, qty, type Display, type UnitTable } from '@weasel-js/quantity';
+import type { Display, UnitTable } from '@weasel-js/quantity';
 import { ColorField } from '../ColorField';
 import { FontFamilySelect } from '../FontFamilySelect';
 import { FontWeightSelect } from '../FontWeightSelect';
 import { Input } from '../Input';
-import { UnitField } from '../NumberField';
 import { PaintField } from '../PaintField';
 import { PaintInput } from '../PaintInput';
 import { Radio, RadioGroup } from '../RadioGroup';
-import { spinKey } from '../spin';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
 import { ToggleBar } from '../ToggleBar';
 import sharedCheckbox from '../checkbox.module.css';
-import shared from '../range.module.css';
 import {
   type PropertyMetricProps,
   PropertyRow,
@@ -32,6 +26,8 @@ import {
   type PropertyRowVariant,
 } from './PropertyPanel';
 import s from './Properties.module.css';
+import type { Endless } from '../../endless';
+import { ignore, NumberInput, SliderCell, SliderRow } from './NumberControls';
 
 /** One choice of an enum field. */
 export interface PropertyOption<T extends string> {
@@ -100,6 +96,11 @@ export interface PropertyNumberFieldProps extends FieldBase {
   min?: number;
   max?: number;
   step?: number;
+  /** Which end stop of a slider stands for infinity: dragged there, it
+   *  reports `Infinity` (`-Infinity` at `min`), and a value of ±Infinity sits
+   *  there. The readout shows `display`'s word for it — `endless(unit('ms'),
+   *  'never')` reads `never` — else `∞`, and drops `unit` beside it. */
+  endless?: Endless;
   /**
    * Suffix after the value. A string becomes a dim word unit (`px`); pass JSX
    * like `<sup>°</sup>` for a symbol. Display only — the value stays a number.
@@ -113,7 +114,7 @@ export interface PropertyNumberFieldProps extends FieldBase {
    *  `step`'s precision. */
   display?: Display;
   /** A slider readout's text, for what no display expresses — a derived
-   *  value, a word at one end. Wins over `display`, and is spoken as shown. */
+   *  value. Wins over `display`, and is spoken as shown. */
   format?: (value: number) => ReactNode;
   placeholder?: string;
   /** A typed field's up and down buttons. Default `false`: a dense panel
@@ -349,54 +350,6 @@ export function PropertyControl<T extends string = string>(typed: PropertyContro
   return <ControlBody {...props} />;
 }
 
-/**
- * A slider's props with its drag held locally. A caller taking settled values
- * only ignores `onInput`, so `value` stands still through the drag; without the
- * draft the controlled track snaps back on every move and commits from there.
- */
-function useSliderDraft(p: PropertyNumberFieldProps): PropertyNumberFieldProps {
-  const [draft, setDraft] = useState<number>();
-  const { onInput, onChange } = p;
-  if (!onInput) return p;
-  return {
-    ...p,
-    value: draft ?? p.value,
-    onInput: (next) => {
-      setDraft(next);
-      onInput(next);
-    },
-    onChange: (next) => {
-      setDraft(undefined);
-      onChange(next);
-    },
-  };
-}
-
-function SliderRow({ row, readout, control }: {
-  row: Omit<ComponentProps<typeof PropertyRow>, 'children'>;
-  readout: ReactNode;
-  control: PropertyNumberFieldProps;
-}) {
-  const p = useSliderDraft(control);
-  return (
-    <PropertyRow {...row} readout={boxedReadout(readout) ?? <SliderReadout {...p} />}>
-      <SliderTrack {...p} />
-    </PropertyRow>
-  );
-}
-
-function SliderCell(props: PropertyNumberFieldProps) {
-  const p = useSliderDraft(props);
-  return (
-    <>
-      <SliderTrack {...p} />
-      <span className={s.cellReadout}>
-        <SliderReadout {...p} />
-      </span>
-    </>
-  );
-}
-
 /** How a row holds a field's control. */
 function rowShape(p: PropertyControlProps<string>): { variant: PropertyRowVariant; group: boolean } {
   switch (p.kind) {
@@ -522,239 +475,6 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
         onChange={(e) => p.onChange(e.target.checked)}
       />
     </Dimmed>
-  );
-}
-
-/**
- * A ref for an input whose commit half has to come off a real listener.
- *
- * A native `range` input fires `input` through a drag and `change` once at
- * the end, but React's synthetic `onChange` sees only the first: its value
- * tracker drops the unchanged second. So a track offering the live/committed
- * split reads the live half from React and the committed half from here.
- * `commit` is `undefined` when the track has one callback, which then fires
- * continuously.
- */
-function useCommitListener(
-  commit: ((raw: string) => void) | undefined,
-): RefObject<HTMLInputElement | null> {
-  const ref = useRef<HTMLInputElement>(null);
-  const latest = useRef(commit);
-  useEffect(() => {
-    latest.current = commit;
-  });
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const onCommit = () => latest.current?.(el.value);
-    el.addEventListener('change', onCommit);
-    return () => el.removeEventListener('change', onCommit);
-  }, []);
-  return ref;
-}
-
-function unitSuffix(unit: ReactNode, className: string): ReactNode {
-  if (unit == null) return null;
-  return typeof unit === 'string' ? <span className={className}>{unit}</span> : unit;
-}
-
-const ignore = (): void => {};
-
-function NumberInput(p: PropertyNumberFieldProps) {
-  const known = !p.mixed && typeof p.value === 'number' && Number.isFinite(p.value);
-  const input = (
-    <UnitField
-      id={p.id}
-      className={p.className ? `${s.numberField} ${p.className}` : s.numberField}
-      value={known ? (p.value as number) : NaN}
-      placeholder={p.mixed ? 'Mixed' : p.placeholder}
-      minValue={p.min}
-      maxValue={p.max}
-      step={p.step}
-      accepts={p.accepts}
-      display={p.display}
-      steppers={p.steppers}
-      aria-label={p.name}
-      // With one callback it is the live one: every keystroke and step reaches
-      // it, and the commit on blur would only repeat the last of them.
-      onInput={p.onInput ?? p.onChange}
-      onChange={p.onInput ? p.onChange : ignore}
-    />
-  );
-  if (p.unit == null) return input;
-  return (
-    <span className={s.fieldUnitGroup}>
-      {input}
-      {unitSuffix(p.unit, s.readoutUnit)}
-    </span>
-  );
-}
-
-/** A slider's bounds, with the 0..100 fallback for an unbounded track. */
-function sliderBounds(p: PropertyNumberFieldProps): { min: number; max: number; step: number } {
-  return { min: p.min ?? 0, max: p.max ?? 100, step: p.step ?? 1 };
-}
-
-function SliderTrack(p: PropertyNumberFieldProps) {
-  const { min, max, step } = sliderBounds(p);
-  const live = p.onInput ?? p.onChange;
-  const commit = p.onInput ? p.onChange : undefined;
-  const range = useCommitListener(commit && ((raw) => commit(Number(raw))));
-  const known = !p.mixed && typeof p.value === 'number' && Number.isFinite(p.value);
-  // The thumb clamps to the track; the readout beside it does not, so a value
-  // past `max` is still reported as what it is.
-  const value = known ? Math.min(Math.max(p.value as number, min), max) : min;
-  return (
-    // The shared skin with no fill: `InlineRange`'s filled-to-value track is its
-    // own, and the property rows' 18% track is the one the kit converges on.
-    <input
-      ref={range}
-      type="range"
-      id={p.id}
-      className={p.className ? `${shared.range} ${p.className}` : shared.range}
-      aria-label={p.name}
-      // The readout is the keyboard's way in, and steps as the track would; a
-      // tab stop here too would be two stops for one value.
-      tabIndex={-1}
-      min={min}
-      max={max}
-      step={step}
-      value={value}
-      disabled={p.mixed}
-      onChange={(e) => {
-        const v = Number(e.target.value);
-        dlog('property-panel', 'slider', { name: p.name, value: v });
-        live(v);
-      }}
-    />
-  );
-}
-
-function SliderReadout(p: PropertyNumberFieldProps) {
-  const { min, max, step } = sliderBounds(p);
-  const known = !p.mixed && typeof p.value === 'number' && Number.isFinite(p.value);
-  if (!known) return <>{boxedReadout('—')}</>;
-  // Precision tracks `step`: integer steps show none, 0.1 one, 0.05 two.
-  const decimals = step >= 1 ? 0 : Math.min(6, Math.max(0, Math.ceil(-Math.log10(step))));
-  const display = p.display ?? decimal({ places: decimals, grouping: false });
-  return (
-    <EditableReadout
-      name={p.name}
-      value={p.value as number}
-      min={min}
-      max={max}
-      step={step}
-      display={display}
-      format={p.format}
-      unit={p.unit}
-      onCommit={(next) => {
-        p.onInput?.(next);
-        p.onChange(next);
-      }}
-    />
-  );
-}
-
-/**
- * A replacement readout in the box `EditableReadout` would have occupied.
- *
- * A row that can go auto swaps its editable readout for a word, and the label
- * is a flex line: an input is taller than bare text — a text input's inner
- * editor will not shrink to a line-height below the font's own content area —
- * so the swap moved the label's baseline, and the whole row with it. Only the
- * slider owns an `EditableReadout`, so only it needs this; giving every text
- * readout the box moves the rows that never had an input.
- */
-function boxedReadout(readout: ReactNode): ReactNode {
-  if (typeof readout !== 'string' && typeof readout !== 'number') return readout;
-  return (
-    <span className={s.readoutGroup}>
-      <span className={s.readoutText}>{readout}</span>
-    </span>
-  );
-}
-
-interface EditableReadoutProps {
-  name: string | undefined;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  display: Display;
-  format?: (value: number) => ReactNode;
-  unit?: ReactNode;
-  onCommit: (next: number) => void;
-}
-
-/**
- * Readout that swaps to a number input on click, commits on Enter/blur,
- * cancels on Escape, and steps like the track beside it. Clicks are stopped so
- * a wrapping <label> doesn't forward focus to the slider thumb.
- */
-function EditableReadout({ name, value, min, max, step, display, format, unit, onCommit }: EditableReadoutProps) {
-  // Draft is non-null only while the input is focused; the live value mirrors
-  // into the input otherwise.
-  const [draft, setDraft] = useState<string | null>(null);
-  const text = (n: number) => (format ? String(format(n)) : qty(n, display).text);
-  const read = (typed: string) => parseAs(typed, display);
-  const displayValue = draft !== null ? draft : text(value);
-  // The widest value the range can show, which the stylesheet widens the box to fit.
-  const fit = { '--wzl-property-readout-fit': `${Math.max(text(min).length, text(max).length)}ch` };
-
-  const commit = () => {
-    if (draft !== null) {
-      const n = read(draft);
-      if (Number.isFinite(n)) onCommit(Math.min(max, Math.max(min, n)));
-    }
-    setDraft(null);
-  };
-
-  return (
-    <span className={s.readoutGroup}>
-      <input
-        type="text"
-        role="spinbutton"
-        aria-label={name}
-        aria-valuenow={value}
-        aria-valuetext={format ? text(value) : qty(value, display).spoken}
-        aria-valuemin={min}
-        aria-valuemax={max}
-        inputMode="decimal"
-        className={s.readoutInput}
-        style={fit as CSSProperties}
-        value={displayValue}
-        onFocus={(e) => {
-          setDraft(text(value));
-          e.currentTarget.select();
-        }}
-        onChange={(e) => setDraft(e.target.value.replace(/-/g, '−'))}
-        onBlur={commit}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          e.currentTarget.focus();
-        }}
-        onMouseDown={(e) => e.stopPropagation()}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            commit();
-            e.currentTarget.blur();
-          } else if (e.key === 'Escape') {
-            setDraft(null);
-            e.currentTarget.blur();
-          } else {
-            const typed = draft === null ? value : read(draft);
-            const next = spinKey(e.key, Number.isFinite(typed) ? typed : value, { step, min, max });
-            if (next === null) return;
-            e.preventDefault();
-            onCommit(next);
-            // A step is committed already; the box shows the value it comes back as.
-            setDraft(null);
-          }
-        }}
-      />
-      {unitSuffix(unit, s.readoutUnit)}
-    </span>
   );
 }
 

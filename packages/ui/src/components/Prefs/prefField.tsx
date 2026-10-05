@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
 import { isBuiltinToolPref, numericWeight, type FillStyle } from '@weasel-js/core';
+import { endless as withInfinity } from '@weasel-js/quantity';
+import { endlessAllows } from '../../endless';
+import { stepDisplay } from '../Properties/NumberControls';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { isPaint } from '../paintValue';
@@ -88,13 +91,18 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
     }
     case 'number': {
       const unit = leaf.unit;
-      const stored = typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+      // ±Infinity is a value only where an end of the leaf stands for it.
+      const endless = leaf.endless;
+      const stored =
+        typeof value === 'number' && (Number.isFinite(value) || endlessAllows(endless, value)) ? value : undefined;
       // `min`/`max`/`step` are declared in the stored unit, like the value, so
       // they convert with it — a leaf storing radians and showing degrees was
       // clamping typed degrees against 0..6.28.
       const bounds = prefDisplayBounds(leaf);
       const clamp = (n: number) =>
-        Math.min(bounds.max ?? Infinity, Math.max(bounds.min ?? -Infinity, n));
+        endlessAllows(endless, n)
+          ? n
+          : Math.min(bounds.max ?? Infinity, Math.max(bounds.min ?? -Infinity, n));
       const store = (shown: number) => setValue(unit ? unit.fromDisplay(clamp(shown)) : clamp(shown));
       return {
         kind: 'number',
@@ -107,7 +115,9 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
         step: bounds.step,
         unit: unit?.suffix,
         accepts: unit ? prefUnitAccepts(unit) : undefined,
-        display: leaf.display,
+        display:
+          leaf.infinity === undefined ? leaf.display : withInfinity(leaf.display ?? stepDisplay(bounds.step), leaf.infinity),
+        endless,
         onChange: store,
       };
     }

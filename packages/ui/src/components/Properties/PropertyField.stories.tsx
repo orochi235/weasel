@@ -4,7 +4,8 @@ import { PropertyField } from './PropertyField';
 import { PropertyList } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 import s from './PropertyField.stories.module.css';
-import { compact, type Display } from '@weasel-js/quantity';
+import { compact, decimal, endless, unit, type Display } from '@weasel-js/quantity';
+import type { Endless } from '../../endless';
 
 const meta: Meta<typeof PropertyField> = {
   title: 'ui/Properties/PropertyField',
@@ -88,6 +89,7 @@ function Slider({ initial, ...rest }: {
   step?: number;
   display?: Display;
   unit?: ReactNode;
+  endless?: Endless;
 }) {
   const [value, setValue] = useState(initial);
   return <PropertyField kind="number" control="slider" value={value} onChange={setValue} {...rest} />;
@@ -102,6 +104,20 @@ export const SliderReadouts: Story = {
       <Slider initial={45} label="Angle" min={-180} max={180} unit={<sup>°</sup>} />
       <Slider initial={200_000} label="Glyphs" min={0} max={200_000} step={1000} />
       <Slider initial={2_000_000} label="Glyphs" min={0} max={2_000_000} step={1000} display={compact()} />
+    </div>
+  ),
+};
+
+/** An end that stands for infinity: drag to the top and the value is
+ *  `Infinity`, read as the display's word with no unit beside it — or `∞`
+ *  when the display names none. Type the word, or `∞`, to set it. */
+export const EndlessEnd: Story = {
+  render: () => (
+    <div className={s.column}>
+      <Slider initial={Infinity} label="Cut at" min={0} max={5000} step={50} unit="ms" endless="max" display={endless(decimal({ grouping: false }), 'never')} />
+      <Slider initial={1200} label="Mute at" min={0} max={8000} step={100} unit="ms" endless="max" display={endless(decimal({ grouping: false }), 'never')} />
+      <Slider initial={Infinity} label="Cap step" min={16} max={64} step={8} endless="max" display={endless(unit('ms'), 'uncapped')} />
+      <Slider initial={-Infinity} label="Floor" min={0} max={100} endless="min" />
     </div>
   ),
 };

@@ -1,4 +1,4 @@
-import type { Display } from '@weasel-js/quantity';
+import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { PrefGroup, PrefLeaf, PrefNumberUnit, PrefRenderer } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 
@@ -36,6 +36,10 @@ export interface Annotations {
   /** Display-unit conversion for a number stored in a canonical unit — the
    *  value, its bounds and its step all convert at the control's edge. */
   unit?: PrefNumberUnit;
+  /** Which end of a number's slider stands for infinity. */
+  endless?: 'min' | 'max' | 'both';
+  /** The word a number's infinity shows as — `'never'`. Default `∞`. */
+  infinity?: InfinityText;
   /** A color leaf's value carries alpha (`#rrggbbaa`) and its row edits it. */
   alpha?: boolean;
   control?: string;

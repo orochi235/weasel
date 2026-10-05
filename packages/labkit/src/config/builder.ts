@@ -1,4 +1,4 @@
-import type { Display } from '@weasel-js/quantity';
+import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { PrefLeaf, PrefNumberUnit } from '@weasel-js/ui';
 import { type Auto, isAuto } from './auto';
 import type {
@@ -157,6 +157,16 @@ export class NumberNode extends BaseNode<number> {
    */
   unit(unit: PrefNumberUnit): this {
     return this.ann({ unit });
+  }
+
+  /**
+   * Make the top of the range mean infinity: the slider's `max` stop stores
+   * `Infinity` and reads `word` — `.range(0, 5000).endless('never')`. A value
+   * of `Infinity` sits at that stop. `at: 'min'` puts it at the bottom
+   * instead, as `-Infinity`; `'both'` does both.
+   */
+  endless(word?: InfinityText, at: 'min' | 'max' | 'both' = 'max'): this {
+    return this.ann(word === undefined ? { endless: at } : { endless: at, infinity: word });
   }
 
   /** Force a slider even without both bounds. */

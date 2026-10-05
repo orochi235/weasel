@@ -8,7 +8,7 @@
 // structural subset of whatever a host app already has.
 
 import { formatUnit, unitScale } from '@weasel-js/quantity';
-import type { Display, Unit, UnitEntry, UnitScale, UnitSystem } from '@weasel-js/quantity';
+import type { Display, InfinityText, Unit, UnitEntry, UnitScale, UnitSystem } from '@weasel-js/quantity';
 
 /** The value types a built-in pref leaf can hold. */
 export type ToolPrefKind =
@@ -128,6 +128,10 @@ export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
    *  reads `2.00M`. Presentation only: the stored value stays a number. */
   display?: Display;
   unit?: ToolPrefNumberUnit;
+  /** Which end of a slider stands for infinity: the value there is ±Infinity. */
+  endless?: 'min' | 'max' | 'both';
+  /** The word infinity shows as — `'never'`, `'uncapped'`. Default `∞`. */
+  infinity?: InfinityText;
 }
 /**
  * Stored-value bridge for a boolean leaf whose field is not a boolean — the

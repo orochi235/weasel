@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import s from './Slider.module.css';
+import { endlessAt, type Endless } from '../../endless';
 import { decimal, qty, type Display } from '@weasel-js/quantity';
 
 /**
@@ -138,6 +139,11 @@ export type SliderProps<T extends Thumb = Thumb> = {
    *  three decimals shown, nothing spoken beyond `aria-valuenow`. */
   display?: Display;
   readoutPlacement?: 'none' | 'inline-after' | 'below-thumb';
+  /** Which end stop stands for infinity: a thumb there reports `Infinity`
+   *  (`-Infinity` at `min`), and a thumb given ±Infinity sits there. Its
+   *  readout and spoken text are `display`'s word for infinity —
+   *  `endless(unit('ms'), 'never')` — else `∞`. */
+  endless?: Endless;
   ariaLabel?: string;
   className?: string;
 };
@@ -241,6 +247,15 @@ function fractionToPosition(f: number): string {
 
 const READOUT = decimal({ places: 3 });
 
+/** The reachable stops and the value span the track runs over: the first stop
+ *  to the last under `spacing: 'even'`, else `min` to `max`. */
+function useSpan(props: Pick<SliderProps, 'stops' | 'min' | 'max' | 'spacing'>) {
+  const stopList = useMemo(() => usableStops(props.stops, props.min, props.max), [props.stops, props.min, props.max]);
+  const stops = useMemo(() => stopList.map(stop => stop.value), [stopList]);
+  const even = props.spacing === 'even' && stops.length >= 2;
+  return { stopList, stops, even, min: even ? stops[0] : props.min, max: even ? stops[stops.length - 1] : props.max };
+}
+
 /**
  * Multi-thumb slider over a shared track. The thumb list is fully controlled:
  * every change, live or committed, arrives as a whole new array.
@@ -250,14 +265,38 @@ const READOUT = decimal({ places: 3 });
  * in-flight state to buffer.
  */
 export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement {
+  const { endless, display, renderReadout, onInput, onChange } = props;
+  const { min, max } = useSpan(props);
+  const thumbs = useMemo(
+    () => props.thumbs.map(t => (t.value === Infinity ? { ...t, value: max } : t.value === -Infinity ? { ...t, value: min } : t)),
+    [props.thumbs, min, max],
+  );
+  if (endless === undefined) return <SliderBody {...props} />;
+  const fromTrack = (v: number) =>
+    endlessAt(endless, 1) && v >= max ? Infinity : endlessAt(endless, -1) && v <= min ? -Infinity : v;
+  const outward = (next: T[]) => next.map(t => ({ ...t, value: fromTrack(t.value) }));
+  return (
+    <SliderBody
+      {...props}
+      thumbs={thumbs}
+      onInput={next => onInput(outward(next))}
+      onChange={onChange && (next => onChange(outward(next)))}
+      renderReadout={(t, i) => {
+        const shown = { ...t, value: fromTrack(t.value) };
+        return renderReadout ? renderReadout(shown, i) : qty(shown.value, display ?? READOUT).text;
+      }}
+      spokenAt={v => (Number.isFinite(fromTrack(v)) ? undefined : qty(fromTrack(v), display ?? READOUT).spoken)}
+    />
+  );
+}
+
+/** The slider proper, in track values: {@link Slider} maps an endless end's
+ *  ±Infinity onto the end stop and back, and speaks it through `spokenAt`. */
+function SliderBody<T extends Thumb = Thumb>(props: SliderProps<T> & { spokenAt?: (v: number) => string | undefined }): ReactElement {
   const { thumbs, onInput, onChange, step, constraint, trackHeight, density, ariaLabel, className } = props;
 
-  const stopList = useMemo(() => usableStops(props.stops, props.min, props.max), [props.stops, props.min, props.max]);
-  const stops = useMemo(() => stopList.map(stop => stop.value), [stopList]);
-  const even = props.spacing === 'even' && stops.length >= 2;
+  const { stopList, stops, even, min, max } = useSpan(props);
   const strict = props.snap === 'strict' && stops.length > 0;
-  const min = even ? stops[0] : props.min;
-  const max = even ? stops[stops.length - 1] : props.max;
 
   const trackRef = useRef<HTMLDivElement | null>(null);
   // The value span. Every pointer is measured against it, and thumbs, ticks
@@ -639,7 +678,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
               aria-valuemin={min}
               aria-valuemax={max}
               aria-valuenow={thumb.value}
-              aria-valuetext={thumb.valueText ?? (display ? qty(thumb.value, display).spoken : undefined)}
+              aria-valuetext={thumb.valueText ?? props.spokenAt?.(thumb.value) ?? (display ? qty(thumb.value, display).spoken : undefined)}
               aria-label={[ariaLabel, thumb.label].filter(Boolean).join(' ') || undefined}
               className={cls}
               style={{ left: `${valueToFraction(thumb.value) * 100}%` }}

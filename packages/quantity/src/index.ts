@@ -1,10 +1,12 @@
 export {
   amount,
   displayOf,
+  endless,
   retag,
   tag,
   unitOf,
   type Display,
+  type InfinityText,
   type Quantity,
   type Tagged,
 } from './quantity';

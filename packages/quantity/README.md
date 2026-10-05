@@ -59,6 +59,25 @@ Every display parses its own text back (`parseAs('1 1/2', fraction())` is
 not registered shows as `decimal` and keeps its tag, so a document saved by an
 app with a custom kind still opens in one without it.
 
+## Infinity
+
+Every display shows ±Infinity, as `∞` (spoken `infinity`) unless it names its
+own word. `endless` gives it one:
+
+```ts
+import { decimal, endless, parseAs, qty, unit } from '@weasel-js/quantity';
+
+const timeout = endless(unit('ms'), 'never');
+qty(Infinity, timeout).text   // 'never'
+qty(250, timeout).text        // '250ms'
+parseAs('never', timeout)     // Infinity
+endless(decimal(), { text: 'no cap', spoken: 'uncapped', negative: 'none' })
+```
+
+The word is one `infinity` part with no unit beside it. `parseAs` reads the
+display's words back, and `∞`, `inf` and `infinity` under any display. JSON
+has no Infinity, so a tagged `Infinity` serializes as `null`.
+
 ## Adding a kind
 
 ```ts

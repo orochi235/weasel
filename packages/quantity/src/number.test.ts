@@ -84,9 +84,9 @@ describe('zoom display', () => {
     expect(formatZoom(99.9)).toBe('99.9x');
   });
 
-  it('passes non-finite zoom through rather than printing NaN%', () => {
+  it('prints NaN and ∞ zoom bare rather than as NaN% or Infinity%', () => {
     expect(formatZoom(Number.NaN)).toBe('NaN');
-    expect(formatZoom(Number.POSITIVE_INFINITY)).toBe('Infinity');
+    expect(formatZoom(Number.POSITIVE_INFINITY)).toBe('∞');
   });
 });
 

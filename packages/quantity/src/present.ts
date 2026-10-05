@@ -3,6 +3,7 @@ import { compactKind, decimalKind, integerKind } from './kinds/plain';
 import { fractionKind, multiplierKind, percentKind, ratioKind, zoomKind } from './kinds/proportion';
 import { bytesKind, currencyKind, durationKind, unitKind } from './kinds/measure';
 import { ordinalKind, romanKind } from './kinds/numeral';
+import { infinityParts, infinityWord, readInfinity } from './infinity';
 import { parseNumber } from './number';
 import { amount, displayOf, retag, tag, unitOf, type Display, type Quantity, type Tagged } from './quantity';
 import { unitScale, type Unit, type UnitSystem } from './units';
@@ -81,7 +82,9 @@ export function partsToHtml(value: number, parts: readonly Part[]): string {
 /** Parts of `q` under its own display, else `fallback`, else `decimal`. */
 export function partsOf(q: Quantity, fallback?: Display, options?: PresentOptions): Part[] {
   const display = displayOf(q, fallback) ?? DEFAULT_DISPLAY;
-  return displayKindOf(display).format(amount(q), display, contextOf(q, options));
+  const value = amount(q);
+  if (isInfinite(value)) return infinityParts(value, display);
+  return displayKindOf(display).format(value, display, contextOf(q, options));
 }
 
 /** `q` as text, spoken text, HTML and MathML. See {@link qty} for one at a time. */
@@ -89,6 +92,10 @@ export function present(q: Quantity, fallback?: Display, options?: PresentOption
   const display = displayOf(q, fallback) ?? DEFAULT_DISPLAY;
   const kind = displayKindOf(display);
   const value = amount(q);
+  if (isInfinite(value)) {
+    const word = infinityWord(display, value > 0 ? 1 : -1);
+    return { text: word.text, spoken: word.spoken, html: partsToHtml(value, infinityParts(value, display)) };
+  }
   const ctx = contextOf(q, options);
   const parts = kind.format(value, display, ctx);
   const text = textOf(parts);
@@ -102,11 +109,18 @@ export function present(q: Quantity, fallback?: Display, options?: PresentOption
   return out;
 }
 
-/** Typed text read through `display`: NaN when it does not read. */
+function isInfinite(value: number): boolean {
+  return value === Infinity || value === -Infinity;
+}
+
+/** Typed text read through `display`: NaN when it does not read. ±Infinity
+ *  reads from the display's own word for it, and from `∞` or `infinity`. */
 export function parseAs(text: string, display?: Display, options?: PresentOptions & { unit?: Unit }): number {
   const d = display ?? DEFAULT_DISPLAY;
   const kind = displayKindOf(d);
   const ctx: FormatContext = { locale: options?.locale ?? 'en-US' };
+  const infinite = readInfinity(text, d, ctx.locale);
+  if (infinite !== undefined) return infinite;
   if (options?.unit !== undefined) ctx.unit = options.unit;
   return kind.parse ? kind.parse(text, d, ctx) : parseNumber(text, undefined, ctx.locale);
 }
