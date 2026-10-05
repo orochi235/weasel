@@ -253,6 +253,22 @@ test('flush noise: which side of the command buffer the spread lives on', async 
         }
         return out;
       },
+      /** `count` frames, `perTask` of them before each yield to the event
+       *  loop — by `setTimeout(0)`, or by `requestAnimationFrame`. */
+      async yielding(id: string, count: number, perTask: number, how: 'timeout' | 'raf'): Promise<number[]> {
+        const out: number[] = [];
+        const yieldNow = () => new Promise<void>((r) => {
+          if (how === 'raf') requestAnimationFrame(() => r()); else setTimeout(r, 0);
+        });
+        await yieldNow();
+        for (let k = 0; k < count; k++) {
+          const t0 = performance.now();
+          render(id); gl.finish();
+          out.push(performance.now() - t0);
+          if ((k + 1) % perTask === 0) await yieldNow();
+        }
+        return out;
+      },
       stallTrace(id: string, count: number): { frames: number[]; starts: number[] } {
         render(id); gl.finish();
         performance.mark('noise-start');
@@ -385,6 +401,21 @@ test('flush noise: which side of the command buffer the spread lives on', async 
         const slow = f.filter((x) => x > 2 * p10).length;
         console.log(`  run ${r}  ${c.padEnd(17)} ${p10.toFixed(2).padStart(6)} ${pct(f, 0.5).toFixed(2).padStart(6)} ${pct(f, 0.9).toFixed(2).padStart(7)}  max ${Math.max(...f).toFixed(1).padStart(7)}  slow ${String(slow).padStart(3)}/150`);
         run.item(`mech ${c} run ${r}`, { frame: metric(med(f), 'ms', 'median of 150 single frames', f) });
+      }
+    }
+  }
+
+  if (PHASES.includes('yield')) {
+    console.log('\nyield: single frames, k per task between yields to the event loop');
+    const conds: [number, 'timeout' | 'raf'][] = [[1, 'raf'], [1, 'timeout'], [4, 'timeout'], [7, 'timeout'], [8, 'timeout'], [9, 'timeout'], [16, 'timeout'], [100000, 'timeout']];
+    for (let r = 1; r <= Math.min(RUNS, 3); r++) {
+      for (const v of VARIANTS) {
+        for (const [k, how] of conds) {
+          const f = await ev<number[]>('yielding', v, 160, k, how);
+          console.log(`  run ${r}  ${v.padEnd(13)} ${String(k === 100000 ? 'all' : k).padStart(3)} per task (${how.padEnd(7)})  `
+            + `p10 ${pct(f, 0.1).toFixed(2).padStart(5)}  p50 ${pct(f, 0.5).toFixed(2).padStart(5)}  p90 ${pct(f, 0.9).toFixed(2).padStart(6)} ms`);
+          run.item(`yield ${v} k${k} ${how} run ${r}`, { frame: metric(med(f), 'ms', 'median of 160 frames', f) });
+        }
       }
     }
   }
