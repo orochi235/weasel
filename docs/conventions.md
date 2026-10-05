@@ -152,6 +152,13 @@ element that never sets one steps down from the UA's `buttontext` or
 an alpha where the base must not follow the element (a slider thumb carrying
 inverse text).
 
+An accent fill is the exception: there the general alphas fall below 4.5:1. A
+rule that sets `color: var(--wzl-fg-on-accent)` also sets `--wzl-fg-muted:
+var(--wzl-fg-muted-on-accent)` and `--wzl-fg-subtle: var(--wzl-fg-subtle-on-accent)`,
+and `npm run check:on-accent` fails on one that doesn't. In dark mode that pair is
+0.98 and 0.96, so on the accent the steps all but disappear: legibility won over
+hierarchy.
+
 ### Sizing
 
 Sizes are baked px, never `calc()` against a root variable. `tokenPx()` is how a

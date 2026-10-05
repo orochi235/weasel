@@ -34,8 +34,10 @@ export type TokenName =
   | '--wzl-fg'
   | '--wzl-fg-inverse'
   | '--wzl-fg-muted'
+  | '--wzl-fg-muted-on-accent'
   | '--wzl-fg-on-accent'
   | '--wzl-fg-subtle'
+  | '--wzl-fg-subtle-on-accent'
   | '--wzl-field-pad-x'
   | '--wzl-focus-ring'
   | '--wzl-font-body'
@@ -238,6 +240,8 @@ export const THEMES = {
         '--wzl-fg': "#e6e7e9",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.7)",
         '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.54)",
+        '--wzl-fg-muted-on-accent': "rgb(from currentColor r g b / 0.98)",
+        '--wzl-fg-subtle-on-accent': "rgb(from currentColor r g b / 0.96)",
         '--wzl-border': "#25272c",
         '--wzl-border-strong': "#6f737b",
         '--wzl-accent-fg': "#8c94ee",
@@ -407,6 +411,8 @@ export const THEMES = {
         '--wzl-fg': "#e6e7e9",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.7)",
         '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.54)",
+        '--wzl-fg-muted-on-accent': "rgb(from currentColor r g b / 0.98)",
+        '--wzl-fg-subtle-on-accent': "rgb(from currentColor r g b / 0.96)",
         '--wzl-border': "#25272c",
         '--wzl-border-strong': "#6f737b",
         '--wzl-accent-fg': "#8c94ee",
@@ -576,6 +582,8 @@ export const THEMES = {
         '--wzl-fg': "#e6e7e9",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.7)",
         '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.54)",
+        '--wzl-fg-muted-on-accent': "rgb(from currentColor r g b / 0.98)",
+        '--wzl-fg-subtle-on-accent': "rgb(from currentColor r g b / 0.96)",
         '--wzl-border': "#25272c",
         '--wzl-border-strong': "#6f737b",
         '--wzl-accent-fg': "#8c94ee",
@@ -745,6 +753,8 @@ export const THEMES = {
         '--wzl-fg': "#0e0f12",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.78)",
         '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.64)",
+        '--wzl-fg-muted-on-accent': "rgb(from currentColor r g b / 0.78)",
+        '--wzl-fg-subtle-on-accent': "rgb(from currentColor r g b / 0.73)",
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#4338ca",
@@ -914,6 +924,8 @@ export const THEMES = {
         '--wzl-fg': "#0e0f12",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.78)",
         '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.64)",
+        '--wzl-fg-muted-on-accent': "rgb(from currentColor r g b / 0.78)",
+        '--wzl-fg-subtle-on-accent': "rgb(from currentColor r g b / 0.73)",
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#4338ca",
@@ -1083,6 +1095,8 @@ export const THEMES = {
         '--wzl-fg': "#0e0f12",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.78)",
         '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.64)",
+        '--wzl-fg-muted-on-accent': "rgb(from currentColor r g b / 0.78)",
+        '--wzl-fg-subtle-on-accent': "rgb(from currentColor r g b / 0.73)",
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#4338ca",
@@ -1455,6 +1469,32 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
           "value": "rgb(from currentColor r g b / 0.64)",
           "type": "color",
           "description": "Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
+        }
+      },
+      "fg-muted-on-accent": {
+        "by": "mode",
+        "dark": {
+          "value": "rgb(from currentColor r g b / 0.98)",
+          "type": "color",
+          "description": "Secondary text on an accent fill. Every rule that sets --wzl-fg-on-accent text redirects --wzl-fg-muted here (npm run check:on-accent), because the general step falls below WCAG 4.5:1 on the accent. In dark mode that leaves almost no step to show."
+        },
+        "light": {
+          "value": "rgb(from currentColor r g b / 0.78)",
+          "type": "color",
+          "description": "Secondary text on an accent fill. Every rule that sets --wzl-fg-on-accent text redirects --wzl-fg-muted here (npm run check:on-accent), because the general step falls below WCAG 4.5:1 on the accent. In dark mode that leaves almost no step to show."
+        }
+      },
+      "fg-subtle-on-accent": {
+        "by": "mode",
+        "dark": {
+          "value": "rgb(from currentColor r g b / 0.96)",
+          "type": "color",
+          "description": "Tertiary text on an accent fill, redirected from --wzl-fg-subtle by the same rule as fg-muted-on-accent. Clears WCAG 4.5:1 on the accent in both modes."
+        },
+        "light": {
+          "value": "rgb(from currentColor r g b / 0.73)",
+          "type": "color",
+          "description": "Tertiary text on an accent fill, redirected from --wzl-fg-subtle by the same rule as fg-muted-on-accent. Clears WCAG 4.5:1 on the accent in both modes."
         }
       },
       "border": {
@@ -2665,6 +2705,32 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
           "type": "color",
           "value": "rgb(from currentColor r g b / 0.64)",
           "description": "Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
+        }
+      },
+      "fg-muted-on-accent": {
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "rgb(from currentColor r g b / 0.98)",
+          "description": "Secondary text on an accent fill. Every rule that sets --wzl-fg-on-accent text redirects --wzl-fg-muted here (npm run check:on-accent), because the general step falls below WCAG 4.5:1 on the accent. In dark mode that leaves almost no step to show."
+        },
+        "light": {
+          "type": "color",
+          "value": "rgb(from currentColor r g b / 0.78)",
+          "description": "Secondary text on an accent fill. Every rule that sets --wzl-fg-on-accent text redirects --wzl-fg-muted here (npm run check:on-accent), because the general step falls below WCAG 4.5:1 on the accent. In dark mode that leaves almost no step to show."
+        }
+      },
+      "fg-subtle-on-accent": {
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "rgb(from currentColor r g b / 0.96)",
+          "description": "Tertiary text on an accent fill, redirected from --wzl-fg-subtle by the same rule as fg-muted-on-accent. Clears WCAG 4.5:1 on the accent in both modes."
+        },
+        "light": {
+          "type": "color",
+          "value": "rgb(from currentColor r g b / 0.73)",
+          "description": "Tertiary text on an accent fill, redirected from --wzl-fg-subtle by the same rule as fg-muted-on-accent. Clears WCAG 4.5:1 on the accent in both modes."
         }
       },
       "border": {
