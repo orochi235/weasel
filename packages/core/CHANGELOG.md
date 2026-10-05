@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.8.0
+
+### Minor Changes
+
+- c1aa1f6: A pref's label shortens to fit the room it is given. **Breaking:** `short` on a pref leaf and on an enum option is now a list of shorter forms, longest first (`short: ['Track', 'VA']`), where it was one string; wrap an existing value in an array. A toggle segment, a flag bar, and a `ToolOptionsBar` label show the longest form that fits, stepping every label in the bar down together, and `name` stays the accessible name. A leaf's `icon` is still drawn in place of any text form where it resolves; a flag with neither no longer falls back to its name's first letter.
+  
+  The mechanism is public: `useFitScope(ref)` measures an element and its parent for overflow, `<FitScope>` hands the step to the `<FitLabel forms>` beneath it, and `ToggleBar` is a scope on its own. `PropertyOption` and `PropertyBooleanFieldProps` take `short` beside `glyph`, which now means only a drawn glyph.
+  
+  <!-- bump-approved: minor: maintainer — minor release requested 2026-10-05 -->
+
+### Patch Changes
+
+- d24f51f: The animator computes tweens, springs, physics and decay in blits. Every signature is unchanged.
+  
+  - Springs, physics and decay follow closed forms, so a spring lands in the same place at any frame rate. Their values differ slightly from the previous integrator's, and they settle on a different frame. A value that isn't a number, a number array or an object of numeric fields, or constants the closed forms can't solve, still uses the previous integrator.
+  - A tween of a number array or an object of numbers no longer needs an `interpolate`.
+  - A tween of anything else with no `interpolate` or `interpolator` now throws when `tween` is called, instead of on its first frame. `setTarget` and `setVelocity` throw when the value's shape differs from `from`'s.
+  
+  At 10,000 tweens a frame costs about 3× what it did; at 1,000, 0.06 ms against 0.02. Springs cost slightly less than before.
+- 4db0f2e: `PoseOverrides` has a new method, `read(id)`. It returns what a node is drawn and picked with: every source of overrides for that node folded into one, as of the last write or `commit()`. `get(id)` still returns the entry a writer stored, by reference. Painting, picking and `effectivePose` now call `read`. Today the only source is the entries table, so `read` and `get` agree. Once animations write overrides too, `read` will fold them in with the table.
+  
+  Anyone who implements `PoseOverrides`, or the `overrides` of a `PoseSource` stand-in or of diagram's `ParticipantScene`, has to add `read`. For a stand-in, `read: (id) => entries.get(id)` reproduces the old behavior.
+  
+  Core now depends on `@msb235/blits`, which does the folding.
+- 2432ce3: Quantities can be infinite. Every display shows ±Infinity as `∞`, spoken "infinity", and reads `∞`, `inf` and `infinity` back; `endless(display, 'never')` gives a display its own word, shown without a unit beside it and read back when typed. A zoom display used to print `Infinity` here.
+  
+  A slider can make an end stand for infinity. `Slider` and `PropertyField` take `endless: 'max' | 'min' | 'both'`: the end stop reports ±Infinity, a value of ±Infinity sits there, and the readout shows the display's word. A number pref leaf takes `endless` and `infinity` (its word), and labkit's number builder takes `.endless('never')`, so `f.number(Infinity).range(0, 5000).suffix('ms').endless('never')` reads "never" at the top of its track instead of "5000 ms".
+- 9b1ff50: A clip that is an axis-aligned rect no longer breaks the batch. The renderer
+  cuts staged geometry to it on the CPU instead of writing it to the stencil, so
+  a clipped group's content shares a draw with what surrounds it. The clip falls
+  back to the stencil only where it must: for content that draws for itself, and
+  for content with a slanted edge across the clip's edge. Rotated or non-rect
+  clips are unchanged.
+- Updated dependencies [2432ce3]
+  - @weasel-js/quantity@1.8.0
+  - @weasel-js/cursor@1.8.0
+  - @weasel-js/font@1.8.0
+  - @weasel-js/geom@1.8.0
+  - @weasel-js/gestures@1.8.0
+  - @weasel-js/history@1.8.0
+  - @weasel-js/modes@1.8.0
+  - @weasel-js/paint@1.8.0
+  - @weasel-js/react@1.8.0
+  - @weasel-js/registry@1.8.0
+  - @weasel-js/routing@1.8.0
+  - @weasel-js/text@1.8.0
+
 ## 1.7.3
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @weasel-js/kernel3d
 
+## 1.8.0
+
+### Patch Changes
+
+- Updated dependencies [d24f51f]
+- Updated dependencies [4db0f2e]
+- Updated dependencies [c1aa1f6]
+- Updated dependencies [2432ce3]
+- Updated dependencies [9b1ff50]
+  - @weasel-js/core@1.8.0
+  - @weasel-js/geom@1.8.0
+
 ## 1.7.3
 
 ### Patch Changes

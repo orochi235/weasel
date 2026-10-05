@@ -1,5 +1,35 @@
 # @weasel-js/labkit
 
+## 1.8.0
+
+### Patch Changes
+
+- f1aaf3e: A `ControlMatrix` enum cell opens one popup instead of two. Its popover lists the options as radios, where it used to hold a dropdown that opened a second list; choosing one closes the popover.
+- 2432ce3: Quantities can be infinite. Every display shows ±Infinity as `∞`, spoken "infinity", and reads `∞`, `inf` and `infinity` back; `endless(display, 'never')` gives a display its own word, shown without a unit beside it and read back when typed. A zoom display used to print `Infinity` here.
+  
+  A slider can make an end stand for infinity. `Slider` and `PropertyField` take `endless: 'max' | 'min' | 'both'`: the end stop reports ±Infinity, a value of ±Infinity sits there, and the readout shows the display's word. A number pref leaf takes `endless` and `infinity` (its word), and labkit's number builder takes `.endless('never')`, so `f.number(Infinity).range(0, 5000).suffix('ms').endless('never')` reads "never" at the top of its track instead of "5000 ms".
+- b68a0e7: `--wzl-fg-muted` and `--wzl-fg-subtle` are now a step down from the text color in effect rather than fixed grays: `rgb(from currentColor r g b / 0.7)` and `/ 0.54` in dark mode, `/ 0.78` and `/ 0.64` in light. Muted text on an accent fill, a raised row, or a sunken rail follows the text beside it instead of landing on a gray picked for the default surface, and muted text nested in muted text no longer compounds. Under `--wzl-fg` both steps clear WCAG 4.5:1 on every neutral surface in both modes; dark-mode subtle text previously did not.
+  
+  In a property other than `color` the step is taken from the element's own `color`. `Checkbox`, `SwatchGrid`, `PatternPicker`, and `Disclosure` now inherit their text color so their hover edges and disabled fill step down from it, and `Slider`'s thumb fills from `--wzl-fg` directly. Nested entries in the `PrefsDialog` rail are drawn a step down from the entry they sit under again. labkit's `interstellar` theme drops its fixed-gray pins for both tokens and takes the same rule.
+  
+  The resolved theme record carries these tokens as CSS, since a canvas has no `currentColor`. New `resolveCurrentColor(value, current)` flattens one to a concrete color; the HUD window's title uses it.
+- Updated dependencies [d24f51f]
+- Updated dependencies [8a57e2b]
+- Updated dependencies [4db0f2e]
+- Updated dependencies [c1aa1f6]
+- Updated dependencies [2432ce3]
+- Updated dependencies [9b1ff50]
+- Updated dependencies [b68a0e7]
+- Updated dependencies [8041802]
+  - @weasel-js/core@1.8.0
+  - @weasel-js/ui@1.8.0
+  - @weasel-js/quantity@1.8.0
+  - @weasel-js/theme@1.8.0
+  - @weasel-js/kernel3d@1.8.0
+  - @weasel-js/loupe@1.8.0
+  - @weasel-js/svg@1.8.0
+  - @weasel-js/geom@1.8.0
+
 ## 1.7.3
 
 ### Patch Changes
