@@ -19,7 +19,8 @@ import type { ChangelogEntry, Release } from '../apps/shared/releases.ts';
  *
  * `Updated dependencies` stanzas are dropped: they are an artifact of the
  * fixed group (every release bumps every package's peers) and carry nothing
- * a reader wants.
+ * a reader wants. So is the same list written as a bare bullet, which is the
+ * shape changesets uses when a package changed only by the bump.
  *
  * Pending `.changeset/*.md` files lead the list as an "Unreleased" entry. The
  * site deploys from `main` on every push but publishes to npm only on a
@@ -160,6 +161,11 @@ export function parseChangeset(
   return { packages, level, body };
 }
 
+/** Every line names a package version (`@weasel-js/geom@1.7.3`) and nothing else. */
+function isVersionList(body: string): boolean {
+  return body.split('\n').every((line) => /^(-\s+)?@[\w-]+\/[\w.-]+@\S+$/.test(line.trim()));
+}
+
 /** `@weasel-js/core` → `core`. */
 function unscope(name: string): string {
   return name.startsWith('@') ? name.slice(name.indexOf('/') + 1) : name;
@@ -211,7 +217,7 @@ function parseChangelog(text: string, pkg: string): RawEntry[] {
     if (!bullet || !version) return (bullet = null), undefined;
     const body = dedent(bullet).join('\n').trim();
     bullet = null;
-    if (!body || /^Updated dependencies\b/.test(body)) return;
+    if (!body || /^Updated dependencies\b/.test(body) || isVersionList(body)) return;
     const hash = /^([0-9a-f]{7,40}):\s*/.exec(body);
     out.push({
       id: hash ? hash[1] : `${pkg}-${version}-${out.length}`,
