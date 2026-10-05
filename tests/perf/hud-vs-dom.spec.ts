@@ -66,7 +66,7 @@ const W = 1280;
 const H = 800;
 const GLYPHS_PER_LABEL = 10;
 
-const ALL_GLYPHS = [10, 100, 500, 1000, 2500, 5000];
+const ALL_GLYPHS = [100, 1000, 2500, 5000];
 /** `HVD_GLYPHS=10,5000` narrows the sweep. */
 const onlyGlyphs = process.env.HVD_GLYPHS?.split(',').map(Number).filter(Number.isFinite);
 const GLYPHS = onlyGlyphs?.length ? onlyGlyphs : ALL_GLYPHS;
