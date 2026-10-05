@@ -101,7 +101,7 @@ export interface DrawContext {
   clipDepth: number;
   /** The clips of the groups drawing now, outermost first. See `enterClip`. */
   clipStack: ClipEntry[];
-  /** Set while `underStencil` stages an item the rect clips could not cut. */
+  /** Set while `enterUncut` stages an item the rect clips could not cut. */
   uncut?: boolean;
   /** Flatness tolerance for curve tessellation, in WORLD units. When set,
    *  fill meshes bypass the Path-identity cache (whose key excludes
@@ -839,22 +839,36 @@ function runClipDepth(ctx: DrawContext): number {
 }
 
 /**
- * Stage again, through the stencil, an item the batch refused to cut — one
- * with a slanted edge across a rect clip (see `DrawBatch.clipQuad`). `push`
- * re-runs the caller's own staging, which now sees the full stencil depth and
- * no CPU cut, so the item lands in a run of its own under every clip.
+ * Put the rect clips on the stencil and stop cutting, for an item the batch
+ * refused to cut — one with a slanted edge across a clip (see
+ * `DrawBatch.clipQuad`). Staged again between this and `leaveUncut`, the item
+ * sees the full stencil depth and lands in a run of its own under every clip.
+ * Returns the cut to hand back.
+ *
+ * A pair rather than a callback: the staging paths are hot, and a closure
+ * over their arguments would cost an allocation on every call, refused or not.
  */
-function underStencil(ctx: DrawContext, push: () => void): void {
+function enterUncut(ctx: DrawContext): ClipRect | null {
   materializeClips(ctx);
   const cut = ctx.drawBatch.clip;
   ctx.drawBatch.clip = null;
   ctx.uncut = true;
-  try {
-    push();
-  } finally {
-    ctx.drawBatch.clip = cut;
-    ctx.uncut = false;
-  }
+  return cut;
+}
+
+function leaveUncut(ctx: DrawContext, cut: ClipRect | null): void {
+  ctx.drawBatch.clip = cut;
+  ctx.uncut = false;
+}
+
+/** `fn(ctx, a, b)` again, uncut — for the stage-and-push helpers, which pass
+ *  themselves. */
+function retryUncut<A, B>(
+  ctx: DrawContext, a: A, b: B, fn: (ctx: DrawContext, a: A, b: B) => void,
+): void {
+  const cut = enterUncut(ctx);
+  fn(ctx, a, b);
+  leaveUncut(ctx, cut);
 }
 
 /**
@@ -1207,7 +1221,7 @@ function pushRect(
   const [r, g, b, a] = stagedColor(ctx, staged, fill);
   if (!ctx.drawBatch.pushRect(
     rect.x, rect.y, rect.width, rect.height, ctx.state.transform, r, g, b, a,
-  )) underStencil(ctx, () => pushRect(ctx, rect, fill));
+  )) retryUncut(ctx, rect, fill, pushRect);
 }
 
 function pushMesh(
@@ -1218,7 +1232,7 @@ function pushMesh(
   const staged = stageSolid(ctx, mesh.vertices.length >> 1);
   const [r, g, b, a] = stagedColor(ctx, staged, paint);
   if (!ctx.drawBatch.pushMesh(mesh, ctx.state.transform, r, g, b, a)) {
-    underStencil(ctx, () => pushMesh(ctx, mesh, paint));
+    retryUncut(ctx, mesh, paint, pushMesh);
   }
 }
 
@@ -1378,7 +1392,7 @@ function pushRampRect(
   if (!ctx.drawBatch.pushGradientRect(
     rect.x, rect.y, rect.width, rect.height, ctx.state.transform,
     uv, post, slot, paint.mode, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
-  )) underStencil(ctx, () => pushRampRect(ctx, rect, paint));
+  )) retryUncut(ctx, rect, paint, pushRampRect);
 }
 
 function pushRampMesh(
@@ -1389,7 +1403,7 @@ function pushRampMesh(
   if (!ctx.drawBatch.pushGradientMesh(
     mesh, ctx.state.transform,
     uv, post, slot, paint.mode, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
-  )) underStencil(ctx, () => pushRampMesh(ctx, mesh, paint));
+  )) retryUncut(ctx, mesh, paint, pushRampMesh);
 }
 
 /**
@@ -2413,14 +2427,16 @@ function drawTextDecorations(
       continue;
     }
     const [r, g, b, a] = 'color' in d.fill ? resolveColor(d.fill.color) : [0, 0, 0, 1];
-    const push = (): boolean => {
+    let cut: ClipRect | null | undefined;
+    for (;;) {
       const staged = stageSolid(ctx, 4);
-      return ctx.drawBatch.pushRect(
+      if (ctx.drawBatch.pushRect(
         d.x0 + dx, d.y0 + dy, d.x1 - d.x0, d.y1 - d.y0, ctx.state.transform,
         r, g, b, a * (staged.foldsAlpha ? ctx.state.alpha : 1),
-      );
-    };
-    if (!push()) underStencil(ctx, push);
+      )) break;
+      cut = enterUncut(ctx);
+    }
+    if (cut !== undefined) leaveUncut(ctx, cut);
   }
 }
 
@@ -2492,18 +2508,19 @@ function drawTextGroup(
       ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
       alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
     }
-    const push = (): boolean => batch.pushGlyph(
+    let cut: ClipRect | null | undefined;
+    while (!batch.pushGlyph(
       q.x0 + dx, q.y0 + dy, q.x1 + dx, q.y1 + dy, q.baselineY + dy, tanItalic, m,
       q.u0, q.v0, q.u1, q.v1,
       color[0], color[1], color[2], alpha,
       slot, mode,
-    );
-    if (!push()) {
-      underStencil(ctx, () => {
-        ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
-        alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
-        push();
-      });
+    )) {
+      cut = enterUncut(ctx);
+      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
+      alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
+    }
+    if (cut !== undefined) {
+      leaveUncut(ctx, cut);
       ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
       alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
     }
@@ -2749,7 +2766,7 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
     // as well would apply it twice.
     (cmd.opacity ?? 1) * (staged.foldsAlpha ? ctx.state.alpha : 1),
     slot,
-  )) underStencil(ctx, () => drawImage(ctx, cmd));
+  )) retryUncut(ctx, cmd, undefined, drawImage);
 }
 
 /**
@@ -2782,17 +2799,18 @@ function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
       groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
     }
     const sx = data[i + 4], sy = data[i + 5], sw = data[i + 6], sh = data[i + 7];
-    const push = (): boolean => batch.pushQuad(
+    let cut: ClipRect | null | undefined;
+    while (!batch.pushQuad(
       data[i], data[i + 1], data[i + 2], data[i + 3], m,
       sx / tw, sy / th, (sx + sw) / tw, (sy + sh) / th,
       data[i + 8] * groupAlpha, slot,
-    );
-    if (!push()) {
-      underStencil(ctx, () => {
-        ({ staged, slot } = stageImage(ctx, cmd.image, sampling));
-        groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
-        push();
-      });
+    )) {
+      cut = enterUncut(ctx);
+      ({ staged, slot } = stageImage(ctx, cmd.image, sampling));
+      groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
+    }
+    if (cut !== undefined) {
+      leaveUncut(ctx, cut);
       ({ staged, slot } = stageImage(ctx, cmd.image, sampling));
       groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
     }
