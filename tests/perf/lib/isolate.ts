@@ -1,7 +1,7 @@
 /**
- * Serve the perf page cross-origin isolated, which is what unlocks a 5 us
- * `performance.now()` in Chromium instead of the 100 us it is otherwise
- * coarsened to. Done per spec by rewriting the document's headers rather than
+ * Serve the perf page cross-origin isolated, which is what unlocks a
+ * microsecond `performance.now()` in Chromium instead of the 100 us it is
+ * otherwise coarsened to. Done per spec by rewriting the document's headers rather than
  * in `vite.config.ts`, so no dev server anyone else runs changes.
  *
  * `credentialless` rather than `require-corp`, so a cross-origin subresource

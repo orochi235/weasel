@@ -1,22 +1,27 @@
 /**
- * Where the run-to-run spread in a per-flush figure comes from.
+ * Where the run-to-run spread in a per-flush figure came from, kept as the
+ * probe that found it. Every phase draws the same frame of 512 one-rect
+ * flushes (`rect-cmbreak`) beside a frame of one batch (`rect-plain`).
  *
- * `clip-cost.spec.ts` and `flush-anatomy.spec.ts` time a block of frames with
- * one `gl.finish()` at the end and divide. That wall time is whichever of
- * three things is slowest: the page's JS issuing the frame, the GPU process
- * decoding the command buffer into Metal, or the GPU itself. This spec times
- * the same 512-flush frame those two do, four ways, so the spread can be
- * pinned to one of them:
+ * The answer, on teitou 2026-10-04: frames drawn back to back in one task slow
+ * down after about eight, by 4–10x, in plateaus that move from round to round
+ * and with occasional stalls of seconds. Frames drawn one per task do not. The
+ * perf specs time one frame per task now — see `lib/frameTiming.ts`.
  *
- *   - `block`: the existing method, repeated, to reproduce the spread.
- *   - `split`: one frame at a time, `render()` and `finish()` timed apart —
- *     the first is the page's share, the second what it waits on.
- *   - `gpu`: `EXT_disjoint_timer_query_webgl2` around single frames.
- *   - `trace`: a Chromium trace of blocks, for the GPU process's own busy
- *     time and where it goes.
+ *   - `block`: the old method, a block of frames in one task, repeated.
+ *   - `yield`: single frames, k per task between yields — the phase that shows
+ *     the eight-frame budget.
+ *   - `warm`: segments of frames after idle gaps of different lengths.
+ *   - `split`: one frame at a time, `render()` and `finish()` timed apart.
+ *   - `short`: median of short blocks, each ending in a finish.
+ *   - `mech`: single frames with uploads, draws, or both dropped, and with a
+ *     ring of 4096 slots.
+ *   - `cpu`: the GPU process's command decode, wall against thread time.
+ *   - `trace`, `stall`: Chromium traces of blocks, and of the slowest frames.
  *
- * `WEASEL_NOISE_PHASES` picks phases (comma-separated); all run by default.
- * This reports; it does not gate. See `tests/perf/README.md`.
+ * `WEASEL_NOISE_PHASES` picks phases (comma-separated). This page is not
+ * cross-origin isolated, so single frames read at 100 us. This reports; it does
+ * not gate. See `tests/perf/README.md`.
  */
 import { test, expect, type Browser, type Page } from '@playwright/test';
 import { metric, rounds, startRun } from './lib/result';
@@ -27,7 +32,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 const N = 512;
 const RUNS = rounds(8);
-const PHASES = (process.env.WEASEL_NOISE_PHASES ?? 'block,split,gpu,trace').split(',');
+const PHASES = (process.env.WEASEL_NOISE_PHASES ?? 'block,yield').split(',');
 const VARIANTS = ['rect-plain', 'rect-cmbreak'] as const;
 
 interface TraceEvent {
@@ -141,11 +146,6 @@ test('flush noise: which side of the command buffer the spread lives on', async 
     const frames: Record<string, unknown[]> = {
       'rect-plain': leaves,
       'rect-cmbreak': leaves.map((l, i) => ({ kind: 'group', colorMatrix: cm(i), children: [l] })),
-      // GPU-bound: one batch of full-screen translucent rects.
-      overdraw: Array.from({ length: 200 }, (_, i) => ({
-        kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: W, height: H },
-        fill: { fill: 'solid', color: i % 2 ? '#3366cc' : '#cc6633', opacity: 0.1 },
-      })),
     };
     const collect = (globalThis as { gc?: (o?: unknown) => void }).gc;
     const gcNow = () => { if (collect) { collect({ type: 'major', execution: 'sync' }); collect({ type: 'major', execution: 'sync' }); } };
@@ -154,9 +154,6 @@ test('flush noise: which side of the command buffer the spread lives on', async 
     gl.finish();
     renderer.render(frames['rect-cmbreak'], identity);
     const draws = renderer.lastFrameStats().drawCalls;
-
-    const timer = gl.getExtension('EXT_disjoint_timer_query_webgl2') as
-      { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null;
 
     const api = {
       /** The existing method: a ~150 ms block, one finish at the end. */
@@ -188,23 +185,6 @@ test('flush noise: which side of the command buffer the spread lives on', async 
           js.push(t1 - t0); wait.push(t2 - t1);
         }
         return { js, wait };
-      },
-      gpu(id: string, count: number): number[] {
-        if (!timer) return [];
-        const out: number[] = [];
-        for (let k = 0; k < count; k++) {
-          const q = gl.createQuery()!;
-          gl.beginQuery(timer.TIME_ELAPSED_EXT, q);
-          render(id);
-          gl.endQuery(timer.TIME_ELAPSED_EXT);
-          gl.finish();
-          let tries = 0;
-          while (!gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE) && tries++ < 1000) gl.finish();
-          const disjoint = gl.getParameter(timer.GPU_DISJOINT_EXT);
-          if (!disjoint && tries < 1000) out.push((gl.getQueryParameter(q, gl.QUERY_RESULT) as number) / 1e6);
-          gl.deleteQuery(q);
-        }
-        return out;
       },
       /** Median of short blocks, each ending in a finish, so one stall
        *  costs one block rather than the mean. */
@@ -274,28 +254,6 @@ test('flush noise: which side of the command buffer the spread lives on', async 
         }
         return out;
       },
-      /** `count` frames, one per task, yielding by `how`; with `finishEach`
-       *  each frame is timed through its own finish, otherwise the whole run
-       *  is timed once, through a single finish at the end, and divided. */
-      async pipe(id: string, count: number, how: 'timeout' | 'message', finishEach: boolean): Promise<number[]> {
-        const ch = new MessageChannel();
-        const yieldNow = () => new Promise<void>((r) => {
-          if (how === 'message') { ch.port1.onmessage = () => r(); ch.port2.postMessage(0); } else setTimeout(r, 0);
-        });
-        await yieldNow(); render(id); gl.finish();
-        if (finishEach) {
-          const out: number[] = [];
-          for (let k = 0; k < count; k++) {
-            await yieldNow();
-            const t0 = performance.now(); render(id); gl.finish(); out.push(performance.now() - t0);
-          }
-          return out;
-        }
-        const t0 = performance.now();
-        for (let k = 0; k < count; k++) { await yieldNow(); render(id); }
-        gl.finish();
-        return [(performance.now() - t0) / count];
-      },
       stallTrace(id: string, count: number): { frames: number[]; starts: number[] } {
         render(id); gl.finish();
         performance.mark('noise-start');
@@ -321,13 +279,13 @@ test('flush noise: which side of the command buffer the spread lives on', async 
       },
     };
     (globalThis as unknown as { __noise: typeof api }).__noise = api;
-    return { glRenderer, draws, gpuTimer: !!timer, gcAvailable: typeof collect === 'function' };
+    return { glRenderer, draws, gcAvailable: typeof collect === 'function' };
   }, { root: repoRoot, n: N });
 
   console.log('');
   console.log(`Flush noise — ${N} one-rect flushes per frame, on ${header.glRenderer}`);
-  console.log(`draws per cmbreak frame: ${header.draws}; GPU timer: ${header.gpuTimer}; gc: ${header.gcAvailable}`);
-  run.params({ gcAvailable: header.gcAvailable, gpuTimer: header.gpuTimer });
+  console.log(`draws per cmbreak frame: ${header.draws}; gc: ${header.gcAvailable}`);
+  run.params({ gcAvailable: header.gcAvailable });
   expect(header.draws).toBe(N);
 
   const ev = <T>(fn: string, ...args: unknown[]) =>
@@ -369,18 +327,6 @@ test('flush noise: which side of the command buffer the spread lives on', async 
           js: metric(med(js), 'ms', 'median of 120 frames', js),
           wait: metric(med(wait), 'ms', 'median of 120 frames', wait),
         });
-      }
-    }
-  }
-
-  if (PHASES.includes('gpu') && header.gpuTimer) {
-    console.log('\ngpu: EXT_disjoint_timer_query, one frame per query');
-    for (let r = 1; r <= Math.min(RUNS, 4); r++) {
-      for (const v of VARIANTS) {
-        const g = await ev<number[]>('gpu', v, 60);
-        if (!g.length) { console.log(`  run ${r}  ${v}: no results`); continue; }
-        console.log(`  run ${r}  ${v.padEnd(13)} p10/p50/p90 ${pct(g, 0.1).toFixed(3)}/${pct(g, 0.5).toFixed(3)}/${pct(g, 0.9).toFixed(3)} ms (${g.length})`);
-        run.item(`gpu ${v} run ${r}`, { gpu: metric(med(g), 'ms', `median of ${g.length} frames`, g) });
       }
     }
   }
@@ -442,23 +388,6 @@ test('flush noise: which side of the command buffer the spread lives on', async 
           console.log(`  run ${r}  ${v.padEnd(13)} ${String(k === 100000 ? 'all' : k).padStart(3)} per task (${how.padEnd(7)})  `
             + `p10 ${pct(f, 0.1).toFixed(2).padStart(5)}  p50 ${pct(f, 0.5).toFixed(2).padStart(5)}  p90 ${pct(f, 0.9).toFixed(2).padStart(6)} ms`);
           run.item(`yield ${v} k${k} ${how} run ${r}`, { frame: metric(med(f), 'ms', 'median of 160 frames', f) });
-        }
-      }
-    }
-  }
-
-  if (PHASES.includes('pipe')) {
-    console.log('\npipe: one frame per task; per-frame median with a finish each, or a mean across 120 frames with one finish');
-    for (let r = 1; r <= Math.min(RUNS, 3); r++) {
-      for (const v of [...VARIANTS, 'overdraw']) {
-        for (const how of ['timeout', 'message'] as const) {
-          const each = await ev<number[]>('pipe', v, 120, how, true);
-          const once = await ev<number[]>('pipe', v, 120, how, false);
-          console.log(`  run ${r}  ${v.padEnd(13)} ${how.padEnd(7)}  finish each: p50 ${pct(each, 0.5).toFixed(3)} ms   one finish: ${once[0].toFixed(3)} ms/frame`);
-          run.item(`pipe ${v} ${how} run ${r}`, {
-            each: metric(med(each), 'ms', 'median of 120 frames, finish each', each),
-            once: metric(once[0], 'ms', 'mean of 120 frames, one finish'),
-          });
         }
       }
     }

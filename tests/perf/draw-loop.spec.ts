@@ -28,7 +28,7 @@
  * loop draws them. This spec used to time a block of frames in one task and
  * divide, against a 100 us clock and per-frame times it read as bimodal; both
  * came from drawing many frames in one task, which `lib/frameTiming.ts`
- * explains, and the page is now cross-origin isolated for a 5 us clock.
+ * explains, and the page is now cross-origin isolated for a finer clock.
  *
  * This reports; it does not gate. `tests/perf/README.md` explains why this
  * repo does not put timing thresholds on shared runners.

@@ -13,6 +13,10 @@
  * the next. Each sample here runs a frame in a task of its own and ends in
  * `finish`.
  *
+ * A sample is the frame's latency through `finish`: the page's JS, the GPU
+ * process and the GPU in series. A frame loop overlaps the GPU with the next
+ * frame's JS, so for a GPU-bound frame this overstates what the loop pays.
+ *
  * Variants interleave sample by sample so whatever drifts lands on all of them,
  * and the statistic is the median. It needs `performance.now()` finer than the
  * 100 us it is coarsened to by default, so the page must be cross-origin
