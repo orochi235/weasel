@@ -1,4 +1,5 @@
 import { createAudioEngine, type AudioEngine } from '../createAudioEngine';
+import type { AudioEngineOptions } from '../types';
 
 /** A centered voice leaves a stereo panner at this gain per channel. */
 export const CENTER_GAIN = Math.SQRT1_2;
@@ -16,10 +17,12 @@ export async function renderEngine(
   seconds: number,
   play: (engine: AudioEngine) => void,
   rate = 48000,
+  opts: Omit<AudioEngineOptions, 'context' | 'setTimer' | 'clearTimer'> = {},
 ): Promise<Float32Array> {
   const ctx = new OfflineAudioContext(2, Math.round(seconds * rate), rate);
   Object.defineProperty(ctx, 'state', { configurable: true, get: () => 'running' });
   const engine = createAudioEngine({
+    ...opts,
     context: ctx as unknown as AudioContext,
     setTimer: (cb, ms) => setTimeout(cb, ms),
     clearTimer: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),

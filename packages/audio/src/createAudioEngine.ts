@@ -151,6 +151,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   // A context the engine made is a context the engine closes; a consumer's is
   // theirs to keep.
   const ownsContext = opts.context === undefined;
+  const random = opts.random ?? Math.random;
   const busNames = opts.buses ?? ['sfx', 'music', 'ui'];
   if (busNames.length === 0) {
     throw new Error('@weasel-js/audio: an engine needs at least one bus');
@@ -662,7 +663,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
           source.loop = true;
           source.connect(into);
           // A random point in the loop, so two hits in a row are not the same hit.
-          source.start(t0, Math.random() * source.buffer.duration);
+          source.start(t0, random() * source.buffer.duration);
           return {
             nodes: [source],
             retune: () => {

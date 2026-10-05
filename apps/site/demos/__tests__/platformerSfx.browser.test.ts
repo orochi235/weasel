@@ -71,11 +71,12 @@ interface Measure { level: number; shape: number[]; envelope: number[] }
 /** Mean RMS, octave densities relative to the 1 kHz octave, and the 10 ms RMS
  *  envelope scaled to sum to 1, over `takes` renders of `play`. */
 async function measure(play: (e: AudioEngine) => void, takes: number): Promise<Measure> {
+  const random = lcg(0x5eed);
   const bands = new Array(OCTAVES.length).fill(0);
   let power = 0;
   let envelope: number[] = [];
   for (let t = 0; t < takes; t++) {
-    const out = await renderEngine(0.2, play, RATE);
+    const out = await renderEngine(0.2, play, RATE, { random: () => (random() + 1) / 2 });
     const s = powerSpectrum(out, RATE, 1024);
     OCTAVES.forEach((hz, i) => { bands[i] += 10 ** (octaveDensityDb(s, hz) / 10); });
     power += rms(out) ** 2;

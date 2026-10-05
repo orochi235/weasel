@@ -7,9 +7,10 @@ import {
   type FakeAudioContext, type FakeBiquad, type FakeGain, type FakeNode, type FakePanner,
 } from './testing/fakeAudioContext';
 
-async function harness(ctx: FakeAudioContext = createFakeAudioContext()) {
+async function harness(ctx: FakeAudioContext = createFakeAudioContext(), random?: () => number) {
   let pass: (() => void) | null = null;
   const engine = createAudioEngine({
+    random,
     context: ctx as never,
     setTimer: (cb) => { pass = cb; return 1; },
     clearTimer: () => { pass = null; },
@@ -28,11 +29,9 @@ function downstream(from: FakeNode, kind: string): FakeNode {
 
 describe('engine.playNoise', () => {
   it('loops a generated noise buffer from a point inside it, through its envelope to the chain', async () => {
-    const { ctx, engine, tick } = await harness();
-    const random = vi.spyOn(Math, 'random').mockReturnValue(0.25);
+    const { ctx, engine, tick } = await harness(createFakeAudioContext(), () => 0.25);
     engine.playNoise({ noise: 'pink', when: 20 });
     tick();
-    random.mockRestore();
     const [source] = ctx._sources;
     expect(source.loop).toBe(true);
     expect(source.started).toEqual([0.02]);
