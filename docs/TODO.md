@@ -899,21 +899,21 @@ one dead `const` and four stale disable directives.
   `Select/jsdomCustomProperty.test.ts` times out if it stops applying. Delete both, and
   `patch-package`, once a jsdom release carries the fix.
 
-- **(P2) HUD vs DOM text: what the first measurement left open.**
-  `tests/perf/hud-vs-dom.spec.ts` answered the main-thread question (findings
-  and crossovers in `tests/perf/README.md`, "HUD text against a DOM overlay"),
-  but only on a contended node. Still unanswered: frame rate and the
-  off-main-thread totals, whose spread on studio at load 8–21 swamped a 2–3 ms
-  lean toward the HUD — rerun on an idle node; a React-rendered overlay, which
-  adds reconciliation the plain-DOM side does not pay; and a pure pan that moves
-  the whole DOM layer as one element. Widget command caching cut the HUD's
-  static-label cost from ~1 µs to ~0.2 µs of script per glyph per frame (the
-  README's "After widget command caching"). A static label on a fixed camera
-  still favors the DOM (1.43 ms against 0.35 at 5,000 glyphs), because the
-  renderer re-walks every unchanged text command each frame. A layer-level
-  skip for a HUD whose widgets are all unchanged would need `content` painters
-  kept out of it. The every-frame cells have not been rerun since the cache
-  landed.
+- **(P2) HUD vs DOM text: what the idle rerun left open.**
+  `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
+  React overlay, and a DOM layer moved as one element, on an idle node
+  (`tests/perf/README.md`, "HUD text against a DOM overlay"). Two things are
+  still open:
+  - **The HUD's 5,000-glyph readout gets the fewest frames** — about 70 ms
+    apart under every camera, against 43–61 for the DOM — while its traced
+    busy time is the lowest, about 9 ms per frame. Either the headless frame
+    scheduler or a thread the trace analysis does not count (renderer worker
+    threads, for one) accounts for the rest; nothing has checked which. Until
+    it is, none of the frame intervals can be read as a display's frame rate.
+  - **A static label on a fixed camera still favors the DOM**, 1.38 ms of main
+    thread against 0.33 at 5,000 glyphs, because the renderer walks every
+    unchanged text command each frame. A layer-level skip for a HUD whose
+    widgets are all unchanged would need `content` painters kept out of it.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op factories, shape kinds and the `features` presets; public exports remain uncovered.
 

@@ -33,11 +33,14 @@ painter is the single, explicit exception.
 
 ## HUD or DOM text?
 
-Measured in `tests/perf/README.md` ("HUD text against a DOM overlay"): below
-about 500 glyphs the choice costs nothing either way. Past that, static labels
-are cheaper in a DOM layer over the canvas, because a HUD re-emits every
-widget's text on each repaint; readouts that change every frame *and* follow the
-camera are cheaper here.
+Measured in `tests/perf/README.md` ("HUD text against a DOM overlay"): at a
+hundred glyphs the choice costs nothing either way. Past that, static labels on
+a fixed camera are cheaper in a DOM layer over the canvas, because the renderer
+walks every HUD text command on each repaint, and text that follows a pure pan
+is cheapest in a DOM layer moved as one element. Readouts that change every
+frame tie on the main thread and, from 2,500 glyphs, cost the HUD about 1 ms
+less a frame across all threads, mostly in the compositor and GPU process; a React-rendered overlay costs more than
+either whenever its labels change.
 
 ## License
 
