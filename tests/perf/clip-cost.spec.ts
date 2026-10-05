@@ -112,6 +112,9 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const { makeKindBuilders, checkerBitmap } = await import(
         /* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/kinds.ts`
       );
+      const { timeInterleaved } = await import(
+        /* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`
+      );
 
       const W = 800;
       const H = 600;
@@ -194,28 +197,6 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
       const gcAvailable = typeof collect === 'function';
 
-      function timeBlock(cmds: unknown[], frames: number): number {
-        if (collect) {
-          collect({ type: 'major', execution: 'sync' });
-          collect({ type: 'major', execution: 'sync' });
-        }
-        renderer.render(cmds, identity);
-        gl.finish();
-        const t0 = performance.now();
-        for (let f = 0; f < frames; f++) renderer.render(cmds, identity);
-        gl.finish();
-        return (performance.now() - t0) / frames;
-      }
-
-      const TARGET_BLOCK_MS = 150;
-      function measure(cmds: unknown[]): number {
-        for (let i = 0; i < 3; i++) renderer.render(cmds, identity);
-        gl.finish();
-        const rough = timeBlock(cmds, 4);
-        const frames = Math.min(80, Math.max(4, Math.round(TARGET_BLOCK_MS / Math.max(rough, 0.05))));
-        return timeBlock(cmds, frames);
-      }
-
       /** A variant that silently draws nothing measures free, which is the one
        *  failure mode that turns a wrong number into a confident one. */
       function paintsAnything(id: string): boolean {
@@ -249,8 +230,12 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
 
       let index = 0;
       for (let run = 1; run <= runs; run++) {
+        if (collect) collect({ type: 'major', execution: 'sync' });
+        const timed = timeInterleaved(gl, variants.map((v) => ({
+          id: v.id, frame: () => renderer.render(built[v.id], identity),
+        })));
         for (const v of variants) {
-          const perFrameMs = +measure(built[v.id]).toFixed(4);
+          const perFrameMs = +timed[v.id].stat.toFixed(4);
           index += 1;
           await report({ type: 'cell', index, run, variant: v.id, perFrameMs });
         }
@@ -327,7 +312,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
   for (const v of VARIANTS) {
     const samples = runs.map((r) => at(r, v.id));
-    run.item(v.id, { perFrame: metric(ms(v.id), 'ms', `median of ${RUNS} runs`, samples) }, { groups: v.groups });
+    run.item(v.id, { perFrame: metric(ms(v.id), 'ms', `median of ${RUNS} runs; each the p10 of 40 interleaved samples (lib/frameTiming.ts)`, samples) }, { groups: v.groups });
   }
   const derived = `median across ${RUNS} runs of the per-run delta`;
   run.item('stencil push+pop', { perClip: metric(stencilOnly, 'us', `${derived}, pat-clipped - pat-plain`) });
