@@ -207,10 +207,6 @@ interface UploadedUniforms {
    *  every time and never skip an upload. */
   color?: [number, number, number, number];
   alpha?: number;
-  /** The batch program's run-level uniforms, which `flushBatch` alone writes. */
-  synthBold?: number;
-  samplers?: boolean;
-  fieldScale?: Float32Array;
 }
 
 const FRAME_UPLOADS = new WeakMap<DrawContext, WeakMap<ShaderProgram, UploadedUniforms>>();
@@ -691,8 +687,6 @@ function drawFullscreenQuad(
   programId?: string,
 ): void {
   const gl = ctx.gl;
-  // It points attributes without a VAO of its own, so none may be bound.
-  gl.bindVertexArray(null);
   gl.useProgram(program.handle);
 
   const aPos = program.attribute('a_position');
@@ -878,9 +872,6 @@ function retryUncut<A, B>(
  */
 function flushForOwnDraw(ctx: DrawContext): void {
   flushBatch(ctx);
-  // A ring slot left bound would take the next draw's element-buffer bind
-  // and attribute pointers as its own, and come back corrupted a ring later.
-  ctx.gl.bindVertexArray(null);
   if (ctx.clipStack.length > 0) materializeClips(ctx);
 }
 
@@ -924,7 +915,7 @@ function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand): void {
   }
 }
 
-/** `u_samplers[i] = i`, uploaded once a frame. Built once: the mapping from
+/** `u_samplers[i] = i`, uploaded whole per flush. Built once: the mapping from
  *  slot to texture unit is the identity and never varies. */
 const SAMPLER_UNITS = new Int32Array(
   Array.from({ length: BATCH_TEXTURE_SLOTS }, (_, i) => i),
@@ -1462,11 +1453,7 @@ export function flushBatch(ctx: DrawContext): void {
   setProjAndModel(ctx, prog, BATCH_MODEL);
   setColorUniform(ctx, prog, 1, 1, 1, 1);
   setAlphaUniform(ctx, prog, staged.alpha);
-  const uploaded = uploadedFor(ctx, prog);
-  if (uploaded.synthBold !== staged.synthBold) {
-    gl.uniform1f(prog.uniform('u_synthBold')!, staged.synthBold);
-    uploaded.synthBold = staged.synthBold;
-  }
+  gl.uniform1f(prog.uniform('u_synthBold')!, staged.synthBold);
   setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, ctx.whiteTexture);
@@ -1491,22 +1478,17 @@ export function flushBatch(ctx: DrawContext): void {
       entry.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
     );
   }
-  if (!uploaded.samplers) {
-    gl.uniform1iv(prog.uniform('u_samplers')!, SAMPLER_UNITS);
-    uploaded.samplers = true;
-  }
-  if (!sameValues(uploaded.fieldScale, FIELD_SCALES)) {
-    gl.uniform2fv(prog.uniform('u_fieldScale')!, FIELD_SCALES);
-    uploaded.fieldScale = Float32Array.from(FIELD_SCALES);
-  }
+  gl.uniform1iv(prog.uniform('u_samplers')!, SAMPLER_UNITS);
+  gl.uniform2fv(prog.uniform('u_fieldScale')!, FIELD_SCALES);
   applyClipTest(ctx, staged.clipDepth);
   drawTriangles(ctx, indexCount, ctx.gl.UNSIGNED_INT);
   // Everything else in the renderer binds its texture to unit 0 and some of it
   // does so without an `activeTexture` of its own, so leaving unit 6 selected
   // sends the next such bind to a unit nothing samples.
   gl.activeTexture(gl.TEXTURE0);
-  // The run's VAO stays bound: the next flush binds its own, and whatever
-  // draws for itself unbinds it first — see `flushForOwnDraw`.
+  // Not redundant: `drawShader` binds no VAO and points attributes at whatever
+  // is current, so a slot left bound here comes back corrupted a ring later.
+  gl.bindVertexArray(null);
   batch.reset();
   ctx.batchState = undefined;
 }

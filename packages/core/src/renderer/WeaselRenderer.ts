@@ -659,9 +659,6 @@ export class WeaselRenderer {
     // The stream ended, so whatever is still staged has nothing left that
     // could merge with it.
     flushBatch(ctx);
-    // A flush leaves its ring slot bound for the next one; nothing outside the
-    // frame should inherit it.
-    gl.bindVertexArray(null);
     // Free transient resources allocated during this frame (e.g. per-frame
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
