@@ -130,6 +130,8 @@
   backdrop-filter: blur(var(--btn-blur)) saturate(var(--btn-saturate));
   -webkit-backdrop-filter: blur(var(--btn-blur)) saturate(var(--btn-saturate));
   color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
   /* Main shadow below for legibility, then a second engraving shadow at a
      configurable angle (defaults below) — a near-black, lower-alpha stamp
      that sits underneath the glyphs and reads as recessed type. */

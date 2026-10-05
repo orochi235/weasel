@@ -60,6 +60,10 @@
   --wzl-fg-muted: rgb(from currentColor r g b / 0.7);
   /* Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes. */
   --wzl-fg-subtle: rgb(from currentColor r g b / 0.54);
+  /* Secondary text on an accent fill. Every rule that sets --wzl-fg-on-accent text redirects --wzl-fg-muted here (npm run check:on-accent), because the general step falls below WCAG 4.5:1 on the accent. In dark mode that leaves almost no step to show. */
+  --wzl-fg-muted-on-accent: rgb(from currentColor r g b / 0.98);
+  /* Tertiary text on an accent fill, redirected from --wzl-fg-subtle by the same rule as fg-muted-on-accent. Clears WCAG 4.5:1 on the accent in both modes. */
+  --wzl-fg-subtle-on-accent: rgb(from currentColor r g b / 0.96);
   --wzl-border: var(--wzl-gray-700);
   /* The line that has to be seen: a control's edge, a raised surface's outline. Clears WCAG 1.4.11's 3:1 against every surface in both modes. */
   --wzl-border-strong: var(--wzl-gray-400);
@@ -254,6 +258,8 @@
   --wzl-fg: var(--wzl-gray-100);
   --wzl-fg-muted: rgb(from currentColor r g b / 0.7);
   --wzl-fg-subtle: rgb(from currentColor r g b / 0.54);
+  --wzl-fg-muted-on-accent: rgb(from currentColor r g b / 0.98);
+  --wzl-fg-subtle-on-accent: rgb(from currentColor r g b / 0.96);
   --wzl-border: var(--wzl-gray-700);
   --wzl-border-strong: var(--wzl-gray-400);
   --wzl-accent-fg: var(--wzl-accent-strong);
@@ -302,6 +308,8 @@
   --wzl-fg: var(--wzl-gray-900);
   --wzl-fg-muted: rgb(from currentColor r g b / 0.78);
   --wzl-fg-subtle: rgb(from currentColor r g b / 0.64);
+  --wzl-fg-muted-on-accent: rgb(from currentColor r g b / 0.78);
+  --wzl-fg-subtle-on-accent: rgb(from currentColor r g b / 0.73);
   --wzl-border: var(--wzl-gray-200);
   --wzl-border-strong: var(--wzl-gray-500);
   --wzl-accent-fg: var(--wzl-accent-base);

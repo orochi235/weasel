@@ -244,6 +244,32 @@
         "description": "Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
       }
     },
+    "fg-muted-on-accent": {
+      "by": "mode",
+      "dark": {
+        "value": "rgb(from currentColor r g b / 0.98)",
+        "type": "color",
+        "description": "Secondary text on an accent fill. Every rule that sets --wzl-fg-on-accent text redirects --wzl-fg-muted here (npm run check:on-accent), because the general step falls below WCAG 4.5:1 on the accent. In dark mode that leaves almost no step to show."
+      },
+      "light": {
+        "value": "rgb(from currentColor r g b / 0.78)",
+        "type": "color",
+        "description": "Secondary text on an accent fill. Every rule that sets --wzl-fg-on-accent text redirects --wzl-fg-muted here (npm run check:on-accent), because the general step falls below WCAG 4.5:1 on the accent. In dark mode that leaves almost no step to show."
+      }
+    },
+    "fg-subtle-on-accent": {
+      "by": "mode",
+      "dark": {
+        "value": "rgb(from currentColor r g b / 0.96)",
+        "type": "color",
+        "description": "Tertiary text on an accent fill, redirected from --wzl-fg-subtle by the same rule as fg-muted-on-accent. Clears WCAG 4.5:1 on the accent in both modes."
+      },
+      "light": {
+        "value": "rgb(from currentColor r g b / 0.73)",
+        "type": "color",
+        "description": "Tertiary text on an accent fill, redirected from --wzl-fg-subtle by the same rule as fg-muted-on-accent. Clears WCAG 4.5:1 on the accent in both modes."
+      }
+    },
     "border": {
       "by": "mode",
       "dark": {

@@ -98,6 +98,8 @@
   backdrop-filter: blur(var(--btn-blur, 6px)) saturate(var(--btn-saturate, 1.3));
   -webkit-backdrop-filter: blur(var(--btn-blur, 6px)) saturate(var(--btn-saturate, 1.3));
   color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
   text-shadow:
     0 1px 0 rgba(0, 0, 0, var(--btn-text-shadow, 0.35)),
     var(--btn-text-inset-x, 0px) var(--btn-text-inset-y, 1px) 0 rgba(0, 0, 0, var(--btn-text-inset, 0.55)),
@@ -276,6 +278,8 @@
   z-index: 1;
   background: var(--wzl-accent);
   color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   text-shadow: none;

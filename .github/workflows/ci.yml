@@ -54,6 +54,9 @@ jobs:
       # Numeric text takes its face from @weasel-js/theme/numeric.module.css;
       # tabular-nums written anywhere else aligns nothing in Oswald.
       - run: npm run check:numeric
+      # Text on an accent fill redirects muted and subtle to their on-accent pair,
+      # or they fall below 4.5:1 there.
+      - run: npm run check:on-accent
       - run: npm run typecheck
       # Two things (eslint.config.js). The scoped no-restricted-imports blocks
       # guard one-way dependency arrows — core/ ← features/, and the leaf purity

@@ -27,12 +27,13 @@ function contrastOver(fg: Rgba, bg: Rgba): number {
 }
 
 /** A surface in `mode` with text in `text`, holding one span per emphasis step and a muted span nested in a muted one. */
-function mount(mode: string, surface: string, text: string) {
+function mount(mode: string, surface: string, text: string, redirect: Record<string, string> = {}) {
   const root = document.createElement('div');
   root.dataset.wzlMode = mode;
   const fill = document.createElement('div');
   fill.style.background = `var(${surface})`;
   fill.style.color = `var(${text})`;
+  for (const [name, value] of Object.entries(redirect)) fill.style.setProperty(name, value);
   fill.innerHTML = '<span data-k="muted">m<span data-k="nested">n</span></span><span data-k="subtle">s</span>';
   root.append(fill);
   document.body.append(root);
@@ -47,6 +48,9 @@ function mount(mode: string, surface: string, text: string) {
     subtle: color('subtle'),
   };
 }
+
+/** What every accent fill declares beside its `--wzl-fg-on-accent` text; `check:on-accent` enforces it. */
+const ON_ACCENT = { '--wzl-fg-muted': 'var(--wzl-fg-muted-on-accent)', '--wzl-fg-subtle': 'var(--wzl-fg-subtle-on-accent)' };
 
 const STEPS = { dark: { muted: 0.7, subtle: 0.54 }, light: { muted: 0.78, subtle: 0.64 } } as const;
 
@@ -75,4 +79,14 @@ describe.each(['dark', 'light'] as const)('text emphasis in %s mode', (mode) => 
     expect(contrastOver(got.subtle, got.background)).toBeGreaterThanOrEqual(4.5);
     expect(contrastOver(got.muted, got.background)).toBeGreaterThan(contrastOver(got.subtle, got.background));
   });
+
+  test('on an accent fill, both steps clear WCAG 4.5:1 once the fill redirects them to the on-accent pair', () => {
+    const got = mount(mode, '--wzl-accent', '--wzl-fg-on-accent', ON_ACCENT);
+    for (const step of ['muted', 'subtle'] as const) {
+      expect(got[step].slice(0, 3)).toEqual(got.text.slice(0, 3).map((c) => expect.closeTo(c, 0)));
+      expect(contrastOver(got[step], got.background)).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(got.muted[3]).toBeGreaterThan(got.subtle[3]);
+  });
 });
+

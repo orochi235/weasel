@@ -52,6 +52,8 @@
 .rowActive {
   background: var(--wzl-accent);
   color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
 }
 .rowDisabled {
   opacity: 0.4;

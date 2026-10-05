@@ -155,6 +155,8 @@
 .card[data-tone] .handle {
   background: var(--wzl-tone);
   color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
 }
 
 .handle:active {
