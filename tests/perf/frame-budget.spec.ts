@@ -8,9 +8,9 @@
  * answer is a capacity in a unit a scene author can act on, so "can this
  * document hit 60?" becomes a lookup.
  *
- * Read `draw-loop.spec.ts`'s header first — the timing method here is the same
- * and the reasoning for it is not repeated. In short: never time one frame, and
- * check the unmasked GL renderer the run printed before believing a number.
+ * Each probe is the median of single frames drawn one per task, the way a
+ * frame loop draws them — `lib/frameTiming.ts` says why. Check the unmasked GL
+ * renderer the run printed before believing a number.
  *
  * **A single digit from this spec is not a result.** The two runs behind the
  * 2026-08-15 stroke figure moved an *untouched* variant from 101 to 152 ms, so
@@ -29,6 +29,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { metric, rounds, startRun } from './lib/result';
+import { isolate } from './lib/isolate';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -138,6 +139,7 @@ test('frame budget: commands per kind that fit one frame', async ({ page, browse
     );
   });
 
+  await isolate(page);
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
@@ -155,6 +157,9 @@ test('frame budget: commands per kind that fit one frame', async ({ page, browse
         /* @vite-ignore */ `/weasel/@fs${root}/packages/core/src/renderer/index.ts`
       );
       const { WeaselRenderer, registerFont, registerProgram } = rendererMod;
+      const { frameMs } = await import(
+        /* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`
+      );
 
       const W = 800;
       const H = 600;
@@ -442,46 +447,24 @@ void main() {
       const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
       const gcAvailable = typeof collect === 'function';
 
-      /** Total across `frames`, divided. Never time one frame. */
-      function timeBlock(cmds: unknown[], frames: number): number {
+      /**
+       * Median of single frames, one per task (`lib/frameTiming.ts`).
+       *
+       * Collected first, and `frameMs`'s untimed frames come between the
+       * collect and the clock: collecting finalizes every Mesh the previous row
+       * dropped, and each one queues a VAO and two buffers into
+       * `GLMeshCache.pendingDeletes`, which `render` drains at the top of the
+       * next frame. Without that the measurement is charged for deleting its
+       * predecessor's GL resources: the mixed profile came back 3x slow, and
+       * because the backlog is a deterministic size it reproduced exactly
+       * across processes and read as a real cliff.
+       */
+      async function measure(cmds: unknown[]): Promise<number> {
         if (collect) {
           collect({ type: 'major', execution: 'sync' });
           collect({ type: 'major', execution: 'sync' });
         }
-        // One untimed frame between the collect and the clock. Collecting
-        // finalizes every Mesh the previous row dropped, and each one queues a
-        // VAO and two buffers into `GLMeshCache.pendingDeletes`, which
-        // `render` drains at the top of the next frame. Without this the block
-        // is charged for deleting its predecessor's GL resources: the mixed
-        // profile came back 3x slow, and because the backlog is a deterministic
-        // size it reproduced exactly across processes and read as a real cliff.
-        renderer.render(cmds, identity);
-        gl.finish();
-        const t0 = performance.now();
-        for (let f = 0; f < frames; f++) renderer.render(cmds, identity);
-        gl.finish();
-        return (performance.now() - t0) / frames;
-      }
-
-      /**
-       * Three blocks: one discarded, one to size the third. The discard is not
-       * optional — the first block at a new count measured 30x the second of
-       * identical work in `draw-loop.spec.ts`, and near a budget boundary that
-       * is the difference between fits and doesn't.
-       *
-       * The frame count is derived rather than fixed because this search spans
-       * three orders of magnitude in per-frame cost: 25 frames is too few to
-       * clear the ~100us clock at the cheap end and half a minute at the dear
-       * one.
-       */
-      const TARGET_BLOCK_MS = 120;
-      function measure(cmds: unknown[]): number {
-        for (let i = 0; i < 3; i++) renderer.render(cmds, identity);
-        gl.finish();
-        timeBlock(cmds, 4);
-        const rough = timeBlock(cmds, 6);
-        const frames = Math.min(80, Math.max(6, Math.round(TARGET_BLOCK_MS / Math.max(rough, 0.05))));
-        return timeBlock(cmds, frames);
+        return frameMs(gl, () => renderer.render(cmds, identity));
       }
 
       /**
@@ -492,11 +475,11 @@ void main() {
        * a noisy row — the mixed profile returned both 2,464 and 1,232 for the
        * same budget before this. Those probes, and only those, go best-of-three.
        */
-      function fits(kind: string, n: number, budgetMs: number): boolean {
+      async function fits(kind: string, n: number, budgetMs: number): Promise<boolean> {
         const cmds = build(kind, n);
-        const first = measure(cmds);
+        const first = await measure(cmds);
         if (Math.abs(first - budgetMs) > budgetMs * 0.1) return first <= budgetMs;
-        const three = [first, measure(cmds), measure(cmds)].sort((a, b) => a - b);
+        const three = [first, await measure(cmds), await measure(cmds)].sort((a, b) => a - b);
         return three[1] <= budgetMs;
       }
 
@@ -512,25 +495,25 @@ void main() {
        * floor. Reporting the spread of *that* as a band states a confidence the
        * numbers do not have.
        */
-      function capacity(kind: string, budgetMs: number):
-      { n: number; capped: boolean } {
+      async function capacity(kind: string, budgetMs: number):
+      Promise<{ n: number; capped: boolean }> {
         let lo = 0;
         let hi = 0;
         const growth = 4;
         let n = 16;
         while (hi === 0) {
           if (n >= cap) {
-            if (fits(kind, cap, budgetMs)) return { n: cap, capped: true };
+            if (await fits(kind, cap, budgetMs)) return { n: cap, capped: true };
             hi = cap;
             break;
           }
-          if (fits(kind, n, budgetMs)) { lo = n; n = Math.round(n * growth); }
+          if (await fits(kind, n, budgetMs)) { lo = n; n = Math.round(n * growth); }
           else hi = n;
         }
         while (hi - lo > Math.max(1, Math.round(lo * 0.05))) {
           const mid = Math.round((lo + hi) / 2);
           if (mid <= lo || mid >= hi) break;
-          if (fits(kind, mid, budgetMs)) lo = mid; else hi = mid;
+          if (await fits(kind, mid, budgetMs)) lo = mid; else hi = mid;
         }
         return { n: lo, capped: false };
       }
@@ -591,7 +574,8 @@ void main() {
           gl.finish();
 
           const t0 = performance.now();
-          const caps = budgets.map(({ label, ms }) => ({ label, ...capacity(id, ms) }));
+          const caps: Array<{ label: string; n: number; capped: boolean }> = [];
+          for (const { label, ms } of budgets) caps.push({ label, ...(await capacity(id, ms)) });
           await report({
             type: 'row', kind: id, run, caps,
             elapsedMs: performance.now() - t0,

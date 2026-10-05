@@ -41,30 +41,52 @@ export function quantile(xs: readonly number[], q: number): number {
 
 const nextTask = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 
+function assertIsolated(): void {
+  if (!globalThis.crossOriginIsolated) {
+    throw new Error('frameTiming: the page is not cross-origin isolated, so the timer is too coarse; see isolate.ts');
+  }
+}
+
+/** One frame in a task of its own, through `finish`, in ms. */
+async function sampleFrame(gl: WebGL2RenderingContext, frame: () => void): Promise<number> {
+  await nextTask();
+  const t0 = performance.now();
+  frame();
+  gl.finish();
+  return performance.now() - t0;
+}
+
+/** Median ms of `samples` frames, after `warm` untimed ones, each in a task of
+ *  its own. */
+export async function frameMs(
+  gl: WebGL2RenderingContext, frame: () => void,
+  { samples = 9, warm = 3 }: { samples?: number; warm?: number } = {},
+): Promise<number> {
+  assertIsolated();
+  for (let i = 0; i < warm; i++) await sampleFrame(gl, frame);
+  const out: number[] = [];
+  for (let i = 0; i < samples; i++) out.push(await sampleFrame(gl, frame));
+  return quantile(out, 0.5);
+}
+
 /** Per-variant ms per frame: every sample, and the quantile of them. */
 export async function timeInterleaved(
   gl: WebGL2RenderingContext,
   variants: readonly TimedVariant[],
   { samples = 40, quantile: q = 0.5 }: TimingOptions = {},
 ): Promise<Record<string, { stat: number; samples: number[] }>> {
-  if (!globalThis.crossOriginIsolated) {
-    throw new Error('frameTiming: the page is not cross-origin isolated, so the timer is too coarse; see isolate.ts');
-  }
+  assertIsolated();
   const out: Record<string, number[]> = {};
   for (const v of variants) {
     out[v.id] = [];
     v.before?.();
-    for (let i = 0; i < 3; i++) { await nextTask(); v.frame(); gl.finish(); }
+    for (let i = 0; i < 3; i++) await sampleFrame(gl, v.frame);
     v.after?.();
   }
   for (let s = 0; s < samples; s++) {
     for (const v of variants) {
       v.before?.();
-      await nextTask();
-      const t0 = performance.now();
-      v.frame();
-      gl.finish();
-      out[v.id].push(performance.now() - t0);
+      out[v.id].push(await sampleFrame(gl, v.frame));
       v.after?.();
     }
   }
