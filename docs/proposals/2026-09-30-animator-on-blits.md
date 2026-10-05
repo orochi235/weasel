@@ -199,28 +199,28 @@ triples. The junk row shows that scattering the animations' objects through memo
 animators' frames. Keeping the codec's slots in join order instead of swap-removing was tried, and
 was worse.
 
-Part of it is the JIT's state, which is per process: a fresh animator started after another one
-churned runs 0.64–0.65 ms against 0.50 for one started in a fresh process; today's animator shows
-nothing of the kind (0.17 against 0.19). blits found one cause on its side, voices fading costing
-its row loop the inlining of each row's ease, and fixed it in `2ad0063`; against that build, plain
-frames run 0.48 ms as started and 0.75–0.79 after every animation was replaced once.
+blits found one cause on its side, voices fading costing its row loop the inlining of each row's
+ease, and fixed it in `2ad0063`. What is left is where each animation's objects sit in memory.
+The animator's loop over animations reads several objects per animation every frame (its entry,
+its `tick` closure and scope, the caller's options and callbacks), and that loop gets slower the
+further apart they sit, whoever's code it is. Each `tween()` also cues a blits voice, about 5 KB
+of live objects (blits' own figure for a one-subject tween voice), and V8 places an animation's
+objects next to whatever else was live when they were promoted out of the young generation: its
+own voice. Measured on teitou against blits `2ad0063`, uninstrumented, ms per frame for 10k:
 
-What is left is weasel's. Timing `codec.frame` apart from the loop over animations in `tickAll`,
-in a fresh process each, ms per frame:
+| variant of this branch                                     | as started | fresh, after another churned |
+|------------------------------------------------------------|-----------:|-----------------------------:|
+| as built                                                   | 0.51–0.59  | 0.82–1.02                    |
+| no blits voice cued at all                                 | 0.165      | 0.21–0.22                    |
+| no voice, but ~7 KB of junk kept alive per `tween()`       | 0.33       | 0.39                         |
+| voices cued together at the next frame, not in `tween()`   | 0.45–0.46  | 0.52–0.53                    |
 
-| 10k tweens, after another animator in the process… | `codec.frame` | animation loop |
-|-----------------------------------------------------|--------------:|---------------:|
-| nothing (only one animator)                         | 0.22–0.23     | 0.23–0.26      |
-| started 10k, ran frames, canceled them all          | 0.23          | 0.31–0.33      |
-| replaced 2k of its 10k, one a frame                 | 0.23          | 0.36–0.37      |
-
-blits' share does not move; the animator's own loop does, and today's animator shows no such
-penalty. Ruled out, by measurement: the probe's own objects (a `-0` widened its `from`/`to`
-fields, and removing it changed nothing), reading the eased value from the codec's column
-(computing it with `easing(t)` costs the same), inlining (the same before and after), and garbage
-collection (four or five full collections a run). Not yet explained. One side finding: once the
-first animator cancels everything, this branch's heap stays about 68 MB larger, against 12 MB for
-today's.
+Without voices the branch costs what today's animator does (0.17–0.19), and junk standing in for
+them reproduces the slowdown with no blits involved. Cueing at the next frame keeps a burst of
+starts' own objects together and recovers most of it, but not under churn, where one animation
+starts a frame and lands beside its voice either way (0.77–0.81 both ways). The fix that covers
+every case is a smaller live footprint per blits voice. Ruled out on the way: the probe's own
+objects, reading the eased value from the codec's column, inlining, and garbage collection time.
 
 **Before merge:** blits has to publish `tween`, `pull`, per-subject `fade` and the `5a514a3` fixes,
 and core's exact pin on `@msb235/blits` moves to that release. Until then the branch runs against a
