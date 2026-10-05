@@ -141,6 +141,11 @@ test('flush noise: which side of the command buffer the spread lives on', async 
     const frames: Record<string, unknown[]> = {
       'rect-plain': leaves,
       'rect-cmbreak': leaves.map((l, i) => ({ kind: 'group', colorMatrix: cm(i), children: [l] })),
+      // GPU-bound: one batch of full-screen translucent rects.
+      overdraw: Array.from({ length: 200 }, (_, i) => ({
+        kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: W, height: H },
+        fill: { fill: 'solid', color: i % 2 ? '#3366cc' : '#cc6633', opacity: 0.1 },
+      })),
     };
     const collect = (globalThis as { gc?: (o?: unknown) => void }).gc;
     const gcNow = () => { if (collect) { collect({ type: 'major', execution: 'sync' }); collect({ type: 'major', execution: 'sync' }); } };
@@ -268,6 +273,28 @@ test('flush noise: which side of the command buffer the spread lives on', async 
           if ((k + 1) % perTask === 0) await yieldNow();
         }
         return out;
+      },
+      /** `count` frames, one per task, yielding by `how`; with `finishEach`
+       *  each frame is timed through its own finish, otherwise the whole run
+       *  is timed once, through a single finish at the end, and divided. */
+      async pipe(id: string, count: number, how: 'timeout' | 'message', finishEach: boolean): Promise<number[]> {
+        const ch = new MessageChannel();
+        const yieldNow = () => new Promise<void>((r) => {
+          if (how === 'message') { ch.port1.onmessage = () => r(); ch.port2.postMessage(0); } else setTimeout(r, 0);
+        });
+        await yieldNow(); render(id); gl.finish();
+        if (finishEach) {
+          const out: number[] = [];
+          for (let k = 0; k < count; k++) {
+            await yieldNow();
+            const t0 = performance.now(); render(id); gl.finish(); out.push(performance.now() - t0);
+          }
+          return out;
+        }
+        const t0 = performance.now();
+        for (let k = 0; k < count; k++) { await yieldNow(); render(id); }
+        gl.finish();
+        return [(performance.now() - t0) / count];
       },
       stallTrace(id: string, count: number): { frames: number[]; starts: number[] } {
         render(id); gl.finish();
@@ -415,6 +442,23 @@ test('flush noise: which side of the command buffer the spread lives on', async 
           console.log(`  run ${r}  ${v.padEnd(13)} ${String(k === 100000 ? 'all' : k).padStart(3)} per task (${how.padEnd(7)})  `
             + `p10 ${pct(f, 0.1).toFixed(2).padStart(5)}  p50 ${pct(f, 0.5).toFixed(2).padStart(5)}  p90 ${pct(f, 0.9).toFixed(2).padStart(6)} ms`);
           run.item(`yield ${v} k${k} ${how} run ${r}`, { frame: metric(med(f), 'ms', 'median of 160 frames', f) });
+        }
+      }
+    }
+  }
+
+  if (PHASES.includes('pipe')) {
+    console.log('\npipe: one frame per task; per-frame median with a finish each, or a mean across 120 frames with one finish');
+    for (let r = 1; r <= Math.min(RUNS, 3); r++) {
+      for (const v of [...VARIANTS, 'overdraw']) {
+        for (const how of ['timeout', 'message'] as const) {
+          const each = await ev<number[]>('pipe', v, 120, how, true);
+          const once = await ev<number[]>('pipe', v, 120, how, false);
+          console.log(`  run ${r}  ${v.padEnd(13)} ${how.padEnd(7)}  finish each: p50 ${pct(each, 0.5).toFixed(3)} ms   one finish: ${once[0].toFixed(3)} ms/frame`);
+          run.item(`pipe ${v} ${how} run ${r}`, {
+            each: metric(med(each), 'ms', 'median of 120 frames, finish each', each),
+            once: metric(once[0], 'ms', 'mean of 120 frames, one finish'),
+          });
         }
       }
     }
