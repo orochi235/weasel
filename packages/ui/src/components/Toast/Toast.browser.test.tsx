@@ -1,12 +1,23 @@
 import '@weasel-js/theme/tokens.css';
 import { act, cleanup, render, screen } from '@testing-library/react';
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { useState } from 'react';
 import { OverlayPortalProvider } from '../../overlays/portalHost';
 import { ToastRegion, type ToastRegionProps } from './Toast';
 import { createToastQueue } from './queue';
 
-afterEach(cleanup);
+// With view transitions on, a toast reaches the DOM only on the next rendered frame, which a
+// loaded runner can withhold past findByRole's timeout. These tests measure layout, not motion.
+beforeEach(() => {
+  const real = window.matchMedia.bind(window);
+  vi.spyOn(window, 'matchMedia').mockImplementation((query) =>
+    query.includes('prefers-reduced-motion') ? ({ ...real(query), matches: true } as MediaQueryList) : real(query),
+  );
+});
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const hostStyle = document.createElement('style');
 hostStyle.textContent =
