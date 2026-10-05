@@ -232,9 +232,32 @@ loop still runs 0.23–0.24 ms as started and 0.37–0.49 after churn, against 0
 0.47–0.50 with a voice per animation (blits' share 0.23–0.27 throughout, ms per frame for 10k,
 two runs each). So a voice's footprint explains the bulk-start rows but not churn's: after churn,
 weasel's loop is slower whatever blits allocates, and today's animator is not (0.16 after churn
-against 0.19 as started). What churn changes on this branch's side is not yet found. Run-to-run
-spread on teitou is about ±0.08 ms per frame, so a difference smaller than that needs more runs
-than two.
+against 0.19 as started). Run-to-run spread on teitou is about ±0.08 ms per frame, so a
+difference smaller than that needs more runs than two.
+
+Nor does keeping weasel's own per-animation objects out of the loop. Branch `animator-pool`
+(`6a3a61246`) ticks tweens from flat tables: clocks, pause, rate and what a tween reads live in
+typed arrays and dense arrays in registration order, the codec mirrors each subject's `cols` and
+`at` by a reused index instead of handing out a per-start reader, and tweens of one shape share
+one `Axes`. The loop then touches no object weasel allocated per animation, only the caller's own
+`onTick`, `from` and `to`. Same harness, same tree on teitou, the two builds alternated over six
+rounds (three for the split), each row redone while other processes used more than half a core;
+ms per frame for 10k tweens, median (min–max):
+
+| 10k tweens, ms per frame      | as built         | flat tables      |
+|-------------------------------|------------------|------------------|
+| as started                    | 0.50 (0.48–0.60) | 0.58 (0.57–0.59) |
+| fresh, after another churned  | 0.53 (0.52–0.58) | 0.63 (0.61–0.68) |
+| after churn                   | 0.67 (0.66–0.83) | 0.63 (0.61–0.73) |
+| weasel's loop, as started     | 0.26 (0.25–0.27) | 0.33 (0.33–0.34) |
+| weasel's loop, after churn    | 0.42 (0.42–0.43) | 0.37 (0.36–0.38) |
+
+blits' share is 0.22–0.25 in every row of both. The flat tables take most of the churn penalty
+away (after churn costs what fresh does), but at a higher floor: the loop is 0.07 ms slower as
+started and 0.13 slower fresh, and no row gets near the 0.165 measured with no voices. So the
+per-animation objects weasel allocates are not what keeps the loop at two to three times today's
+cost. Not yet measured, and inferred only from what is left: the caller's own objects, which
+still sit a voice apart, or the tables' many separate arrays read in step.
 
 **Before merge:** blits has to publish `tween`, `pull`, per-subject `fade` and the `5a514a3` fixes,
 and core's exact pin on `@msb235/blits` moves to that release. Until then the branch runs against a
