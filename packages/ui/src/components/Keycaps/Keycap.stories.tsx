@@ -8,6 +8,7 @@ import {
   type LogicalMod,
   type Platform,
 } from './keySpecsFromMods';
+import { KEYCAP_VARIANT_ICONS } from './variantIcons';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'minimal'];
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
@@ -77,7 +78,7 @@ const meta: Meta<StoryArgs> = {
       description: 'Marks the chip as optional. Default variant flips face + dotted border; minimal uses a dotted border only.',
     },
     variant: {
-      control: 'inline-radio',
+      control: { type: 'inline-radio', icons: KEYCAP_VARIANT_ICONS },
       options: VARIANTS,
       description: '`default` = filled chip. `minimal` = currentColor border + legend, no fill.',
     },

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Powerline } from './Powerline';
 import type { EdgeCap } from '../Badge/bases/edgeProfiles';
 import s from './Powerline.module.css';
+import { BADGE_VARIANT_ICONS } from '../Badge/variantIcons';
 
 const ALL_CAPS: EdgeCap[] = ['flat', 'chevron', 'slant', 'slant-up', 'round', 'scallop', 'puzzle', 'concave-chevron'];
 
@@ -20,7 +21,7 @@ const meta: Meta<typeof Powerline> = {
   },
   argTypes: {
     startCap: { control: 'select', options: ALL_CAPS },
-    variant: { control: 'inline-radio', options: ['outline', 'solid', 'subtle'] },
+    variant: { control: { type: 'inline-radio', icons: BADGE_VARIANT_ICONS }, options: ['outline', 'solid', 'subtle'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     depth: { control: { type: 'range', min: 0, max: 20, step: 0.5 } },
     gap: { control: 'text', description: 'CSS length between segments. Default: 0.2em. Pass 0 for flush.' },

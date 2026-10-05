@@ -10,6 +10,7 @@ import {
   type LogicalMod,
   type Platform,
 } from './index';
+import { KEYCAP_VARIANT_ICONS } from './variantIcons';
 
 const VARIANTS: KeyCapVariant[] = ['default', 'minimal'];
 const PLATFORMS: Platform[] = ['macos', 'windows', 'linux'];
@@ -86,7 +87,7 @@ const meta: Meta<StoryArgs> = {
         '`all`: between every pair of chips. `key` (default): once, between the last modifier and the first non-modifier. `none`: never.',
     },
     variant: {
-      control: 'inline-radio',
+      control: { type: 'inline-radio', icons: KEYCAP_VARIANT_ICONS },
       options: VARIANTS,
       description: 'Forwarded to every contained `KeyCap`.',
     },

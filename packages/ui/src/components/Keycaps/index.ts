@@ -12,3 +12,4 @@ export type {
   LegendStyle,
   KeySpecsFromModsOptions,
 } from './keySpecsFromMods';
+export { KEYCAP_VARIANT_ICONS } from './variantIcons';

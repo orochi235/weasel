@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Code, type CodeStatus } from './Code';
 import { BADGE_STATUS_ICONS } from '../Badge/statusIcons';
+import { CODE_VARIANT_ICONS } from './variantIcons';
 
 const meta: Meta<typeof Code> = {
   title: 'ui/Foundations/Code',
@@ -11,7 +12,7 @@ const meta: Meta<typeof Code> = {
       control: { type: 'inline-radio', icons: BADGE_STATUS_ICONS },
       options: ['neutral', 'muted', 'accent', 'success', 'warn', 'danger'],
     },
-    variant: { control: 'inline-radio', options: ['subtle', 'plain'] },
+    variant: { control: { type: 'inline-radio', icons: CODE_VARIANT_ICONS }, options: ['subtle', 'plain'] },
     size: { control: 'inline-radio', options: [undefined, 'xs', 'sm', 'md'] },
   },
 };

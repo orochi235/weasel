@@ -74,6 +74,17 @@ export const ICON_PATHS = {
   statusNeutral: `<path d="M10 3A7 7 0 0 1 10 17Z" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="7"/>`,
   statusMuted: `<path d="M11.44 3.15A7 7 0 0 0 8.56 3.15M4.79 5.33A7 7 0 0 0 3.35 7.82M3.35 12.18A7 7 0 0 0 4.79 14.67M8.56 16.85A7 7 0 0 0 11.44 16.85M15.21 14.67A7 7 0 0 0 16.65 12.18M16.65 7.82A7 7 0 0 0 15.21 5.33"/>`,
 
+  // Component variants
+  variantSolid: `<path d="M5.25 5H14.75A3.25 3.25 0 0 1 18 8.25V11.75A3.25 3.25 0 0 1 14.75 15H5.25A3.25 3.25 0 0 1 2 11.75V8.25A3.25 3.25 0 0 1 5.25 5ZM6.75 9.25H13.25A0.75 0.75 0 0 1 14 10V10A0.75 0.75 0 0 1 13.25 10.75H6.75A0.75 0.75 0 0 1 6 10V10A0.75 0.75 0 0 1 6.75 9.25Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>`,
+  variantOutline: `<rect x="2.75" y="5.75" width="14.5" height="8.5" rx="2.5"/><path d="M6.75 10h6.5"/>`,
+  variantSubtle: `<path d="M5.25 5H14.75A3.25 3.25 0 0 1 18 8.25V11.75A3.25 3.25 0 0 1 14.75 15H5.25A3.25 3.25 0 0 1 2 11.75V8.25A3.25 3.25 0 0 1 5.25 5Z" fill="currentColor" fill-opacity="0.32" stroke="none"/><path d="M6.75 10h6.5"/>`,
+  variantGhost: `<rect x="2.75" y="5.75" width="14.5" height="8.5" rx="2.5" stroke-dasharray="1.56 1.92"/><path d="M6.75 10h6.5"/>`,
+  variantLink: `<path d="M6.75 8.125h6.5"/><path d="M4.75 11.875h10.5" stroke-width="1.25"/>`,
+  variantPlain: `<path d="M6.75 10h6.5"/>`,
+  variantSegmented: `<rect x="2.75" y="6.75" width="14.5" height="6.5" rx="3.25"/><rect x="7.25" y="8.5" width="5.5" height="3" rx="1.5" fill="currentColor" stroke="none"/>`,
+  variantSegmentedMinimal: `<rect x="7.25" y="8.5" width="5.5" height="3" rx="1.5" fill="currentColor" stroke="none"/><path d="M3.75 10h1.5M14.75 10h1.5"/>`,
+  variantSegmentedFlat: `<rect x="2.75" y="6.75" width="14.5" height="6.5" rx="1"/><path d="M7.58 6.75v6.5M12.42 6.75v6.5"/><rect x="7.58" y="6.75" width="4.84" height="6.5" fill="currentColor" stroke="none"/>`,
+
   // Instrument
   crosshair: `<circle cx="10" cy="10" r="5.6"/><path d="M10 2.8v4.4M10 12.8v4.4M2.8 10h4.4M12.8 10h4.4"/>`,
   fullscreen: `<path d="M11.6 3.6h4.8v4.8M8.4 16.4H3.6v-4.8"/><path d="M16.4 3.6 11.2 8.8M3.6 16.4 8.8 11.2"/>`,
@@ -475,6 +486,20 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'statusAccent',
       'statusNeutral',
       'statusMuted',
+    ],
+  },
+  {
+    label: 'Component variants',
+    names: [
+      'variantSolid',
+      'variantOutline',
+      'variantSubtle',
+      'variantGhost',
+      'variantLink',
+      'variantPlain',
+      'variantSegmented',
+      'variantSegmentedMinimal',
+      'variantSegmentedFlat',
     ],
   },
   {
