@@ -239,6 +239,10 @@
   padding-left: var(--wzl-space-7);
 }
 
+.railSub:not(.railOpen, .railInView) .railName {
+  color: var(--wzl-fg-muted);
+}
+
 .railOpen,
 .railOpen:hover {
   background: var(--wzl-accent);

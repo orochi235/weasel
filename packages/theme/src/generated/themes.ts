@@ -236,8 +236,8 @@ export const THEMES = {
         '--wzl-surface-raised': "#25272c",
         '--wzl-surface-sunken': "#0e0f12",
         '--wzl-fg': "#e6e7e9",
-        '--wzl-fg-muted': "#9ea1a8",
-        '--wzl-fg-subtle': "#6f737b",
+        '--wzl-fg-muted': "rgb(from currentColor r g b / 0.7)",
+        '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.54)",
         '--wzl-border': "#25272c",
         '--wzl-border-strong': "#6f737b",
         '--wzl-accent-fg': "#8c94ee",
@@ -272,8 +272,8 @@ export const THEMES = {
         '--wzl-line-subtle': "rgba(230, 231, 233, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(230, 231, 233, 0.1)",
         '--wzl-stance-aside-blur': "0px",
-        '--wzl-stance-aside-title-color': "#6f737b",
-        '--wzl-stance-advanced-title-color': "#6f737b",
+        '--wzl-stance-aside-title-color': "rgb(from currentColor r g b / 0.54)",
+        '--wzl-stance-advanced-title-color': "rgb(from currentColor r g b / 0.54)",
         '--wzl-stance-debug-border-style': "dashed",
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
@@ -405,8 +405,8 @@ export const THEMES = {
         '--wzl-surface-raised': "#25272c",
         '--wzl-surface-sunken': "#0e0f12",
         '--wzl-fg': "#e6e7e9",
-        '--wzl-fg-muted': "#9ea1a8",
-        '--wzl-fg-subtle': "#6f737b",
+        '--wzl-fg-muted': "rgb(from currentColor r g b / 0.7)",
+        '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.54)",
         '--wzl-border': "#25272c",
         '--wzl-border-strong': "#6f737b",
         '--wzl-accent-fg': "#8c94ee",
@@ -441,8 +441,8 @@ export const THEMES = {
         '--wzl-line-subtle': "rgba(230, 231, 233, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(230, 231, 233, 0.1)",
         '--wzl-stance-aside-blur': "0px",
-        '--wzl-stance-aside-title-color': "#6f737b",
-        '--wzl-stance-advanced-title-color': "#6f737b",
+        '--wzl-stance-aside-title-color': "rgb(from currentColor r g b / 0.54)",
+        '--wzl-stance-advanced-title-color': "rgb(from currentColor r g b / 0.54)",
         '--wzl-stance-debug-border-style': "dashed",
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
@@ -574,8 +574,8 @@ export const THEMES = {
         '--wzl-surface-raised': "#25272c",
         '--wzl-surface-sunken': "#0e0f12",
         '--wzl-fg': "#e6e7e9",
-        '--wzl-fg-muted': "#9ea1a8",
-        '--wzl-fg-subtle': "#6f737b",
+        '--wzl-fg-muted': "rgb(from currentColor r g b / 0.7)",
+        '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.54)",
         '--wzl-border': "#25272c",
         '--wzl-border-strong': "#6f737b",
         '--wzl-accent-fg': "#8c94ee",
@@ -610,8 +610,8 @@ export const THEMES = {
         '--wzl-line-subtle': "rgba(230, 231, 233, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(230, 231, 233, 0.1)",
         '--wzl-stance-aside-blur': "0px",
-        '--wzl-stance-aside-title-color': "#6f737b",
-        '--wzl-stance-advanced-title-color': "#6f737b",
+        '--wzl-stance-aside-title-color': "rgb(from currentColor r g b / 0.54)",
+        '--wzl-stance-advanced-title-color': "rgb(from currentColor r g b / 0.54)",
         '--wzl-stance-debug-border-style': "dashed",
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
@@ -743,8 +743,8 @@ export const THEMES = {
         '--wzl-surface-raised': "#e6e7e9",
         '--wzl-surface-sunken': "#c9cbcf",
         '--wzl-fg': "#0e0f12",
-        '--wzl-fg-muted': "#383b42",
-        '--wzl-fg-subtle': "#4d5058",
+        '--wzl-fg-muted': "rgb(from currentColor r g b / 0.78)",
+        '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.64)",
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#4338ca",
@@ -779,8 +779,8 @@ export const THEMES = {
         '--wzl-line-subtle': "rgba(14, 15, 18, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(14, 15, 18, 0.1)",
         '--wzl-stance-aside-blur': "0px",
-        '--wzl-stance-aside-title-color': "#4d5058",
-        '--wzl-stance-advanced-title-color': "#4d5058",
+        '--wzl-stance-aside-title-color': "rgb(from currentColor r g b / 0.64)",
+        '--wzl-stance-advanced-title-color': "rgb(from currentColor r g b / 0.64)",
         '--wzl-stance-debug-border-style': "dashed",
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
@@ -912,8 +912,8 @@ export const THEMES = {
         '--wzl-surface-raised': "#e6e7e9",
         '--wzl-surface-sunken': "#c9cbcf",
         '--wzl-fg': "#0e0f12",
-        '--wzl-fg-muted': "#383b42",
-        '--wzl-fg-subtle': "#4d5058",
+        '--wzl-fg-muted': "rgb(from currentColor r g b / 0.78)",
+        '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.64)",
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#4338ca",
@@ -948,8 +948,8 @@ export const THEMES = {
         '--wzl-line-subtle': "rgba(14, 15, 18, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(14, 15, 18, 0.1)",
         '--wzl-stance-aside-blur': "0px",
-        '--wzl-stance-aside-title-color': "#4d5058",
-        '--wzl-stance-advanced-title-color': "#4d5058",
+        '--wzl-stance-aside-title-color': "rgb(from currentColor r g b / 0.64)",
+        '--wzl-stance-advanced-title-color': "rgb(from currentColor r g b / 0.64)",
         '--wzl-stance-debug-border-style': "dashed",
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
@@ -1081,8 +1081,8 @@ export const THEMES = {
         '--wzl-surface-raised': "#e6e7e9",
         '--wzl-surface-sunken': "#c9cbcf",
         '--wzl-fg': "#0e0f12",
-        '--wzl-fg-muted': "#383b42",
-        '--wzl-fg-subtle': "#4d5058",
+        '--wzl-fg-muted': "rgb(from currentColor r g b / 0.78)",
+        '--wzl-fg-subtle': "rgb(from currentColor r g b / 0.64)",
         '--wzl-border': "#c9cbcf",
         '--wzl-border-strong': "#4d5058",
         '--wzl-accent-fg': "#4338ca",
@@ -1117,8 +1117,8 @@ export const THEMES = {
         '--wzl-line-subtle': "rgba(14, 15, 18, 0.1)",
         '--wzl-stance-aside-border-color': "rgba(14, 15, 18, 0.1)",
         '--wzl-stance-aside-blur': "0px",
-        '--wzl-stance-aside-title-color': "#4d5058",
-        '--wzl-stance-advanced-title-color': "#4d5058",
+        '--wzl-stance-aside-title-color': "rgb(from currentColor r g b / 0.64)",
+        '--wzl-stance-advanced-title-color': "rgb(from currentColor r g b / 0.64)",
         '--wzl-stance-debug-border-style': "dashed",
         '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         '--wzl-stance-debug-title-font': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
@@ -1434,23 +1434,27 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       "fg-muted": {
         "by": "mode",
         "dark": {
-          "ref": "gray-300",
-          "type": "color"
+          "value": "rgb(from currentColor r g b / 0.7)",
+          "type": "color",
+          "description": "Secondary text: the text color in effect where it is used, at reduced alpha, so it steps down from whatever text it sits beside on any surface. The alpha is absolute, so muted text nested in muted text stays one step down. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
         },
         "light": {
-          "ref": "gray-600",
-          "type": "color"
+          "value": "rgb(from currentColor r g b / 0.78)",
+          "type": "color",
+          "description": "Secondary text: the text color in effect where it is used, at reduced alpha, so it steps down from whatever text it sits beside on any surface. The alpha is absolute, so muted text nested in muted text stays one step down. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
         }
       },
       "fg-subtle": {
         "by": "mode",
         "dark": {
-          "ref": "gray-400",
-          "type": "color"
+          "value": "rgb(from currentColor r g b / 0.54)",
+          "type": "color",
+          "description": "Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
         },
         "light": {
-          "ref": "gray-500",
-          "type": "color"
+          "value": "rgb(from currentColor r g b / 0.64)",
+          "type": "color",
+          "description": "Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
         }
       },
       "border": {
@@ -2641,22 +2645,26 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "by": "mode",
         "dark": {
           "type": "color",
-          "value": "{gray-300}"
+          "value": "rgb(from currentColor r g b / 0.7)",
+          "description": "Secondary text: the text color in effect where it is used, at reduced alpha, so it steps down from whatever text it sits beside on any surface. The alpha is absolute, so muted text nested in muted text stays one step down. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
         },
         "light": {
           "type": "color",
-          "value": "{gray-600}"
+          "value": "rgb(from currentColor r g b / 0.78)",
+          "description": "Secondary text: the text color in effect where it is used, at reduced alpha, so it steps down from whatever text it sits beside on any surface. The alpha is absolute, so muted text nested in muted text stays one step down. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
         }
       },
       "fg-subtle": {
         "by": "mode",
         "dark": {
           "type": "color",
-          "value": "{gray-400}"
+          "value": "rgb(from currentColor r g b / 0.54)",
+          "description": "Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
         },
         "light": {
           "type": "color",
-          "value": "{gray-500}"
+          "value": "rgb(from currentColor r g b / 0.64)",
+          "description": "Tertiary text: a further step down from the text color in effect, by the same rule as fg-muted. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes."
         }
       },
       "border": {

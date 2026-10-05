@@ -141,6 +141,17 @@ names the token bare (`"ref": "gray-800"`). A value that differs per axis is wri
 `{ by: 'mode', dark: …, light: … }`; an `alpha` on a reference emits
 `color-mix()` in CSS and a computed `rgba()` in JS.
 
+Text emphasis is relative. `--wzl-fg-muted` and `--wzl-fg-subtle` are
+`rgb(from currentColor r g b / <alpha>)`, so they step down from whatever text
+color is in effect — on an accent fill, a raised row, or a sunken rail alike —
+and muted text nested in muted text stays one step down rather than compounding.
+In `color` the base is the parent's text color; in any other property
+(`border-color`, `fill`, `background`) it is the element's own `color`, so an
+element that never sets one steps down from the UA's `buttontext` or
+`fieldtext`. Give such an element `color: inherit`, and reach for `--wzl-fg` at
+an alpha where the base must not follow the element (a slider thumb carrying
+inverse text).
+
 ### Sizing
 
 Sizes are baked px, never `calc()` against a root variable. `tokenPx()` is how a

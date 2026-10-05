@@ -14,6 +14,14 @@ export function withAlpha(color: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${round(a * alpha, 3)})`;
 }
 
+/** A resolved color with its alpha replaced by `alpha`, as `rgb(from c r g b / alpha)` computes it. */
+export function atAlpha(color: string, alpha: number): string {
+  const rgba = parseRgba(color.trim());
+  if (!rgba) return `rgb(from ${color.trim()} r g b / ${alpha})`;
+  const [r, g, b] = rgba;
+  return `rgba(${r}, ${g}, ${b}, ${round(alpha, 3)})`;
+}
+
 type Rgba = [number, number, number, number];
 
 function round(n: number, places: number): number {

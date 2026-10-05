@@ -555,18 +555,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Text emphasis is a fixed gray, not a step down from the text it sits beside.**
-  `--wzl-fg-muted` and `--wzl-fg-subtle` are fixed grays per mode (`gray-300`/`gray-400`
-  dark, `gray-600`/`gray-500` light), used about 700 times. A fixed gray only reads as
-  "less" against the surface it was picked on. On an accent fill, a raised row or a
-  sunken rail it can't follow the text color in effect there, and it lands close enough
-  to a disabled control that the Prefs rail's nested entries read as disabled (fixed
-  there by dropping the color). Look at expressing emphasis as a coefficient on the
-  current text color instead, e.g. `color-mix(in oklab, currentColor <n>%, transparent)` or
-  relative color on `--wzl-fg`, with the steps as theme tokens. Open questions: whether
-  disabled gets its own distinct signal once emphasis is relative; contrast at each step
-  on every surface; and the `var()`-in-a-custom-property trap in CLAUDE.md, which a
-  token built on `currentColor` or `--wzl-fg` must avoid.
+- **(P2) Emphasized text on an accent fill falls below 4.5:1 in dark mode.** `--wzl-fg-muted`
+  and `--wzl-fg-subtle` now step down from the text color in effect (`rgb(from currentColor r g b
+  / a)`, see `docs/conventions.md`, "Design tokens"), so on `--wzl-accent` they follow
+  `--wzl-fg-on-accent`. But that text itself is only 4.73:1 on the dark accent, so muted lands at
+  3.18:1 and subtle at 2.52:1 (light mode: 5.05 and 3.91). Either the dark accent darkens or the
+  steps get an accent-specific alpha. Still open from the same arc: whether disabled gets its own
+  signal now that emphasis is an alpha (disabled is `opacity: 0.4`–`0.5` on the whole control,
+  subtle text is 0.54–0.64 alpha).
 
 - **(P3) apps/site never loads the kit's faces.** It imports no
   `@weasel-js/theme/faces.css` or `fonts.css`, so `--wzl-font-ui`'s Oswald and

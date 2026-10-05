@@ -85,7 +85,7 @@ test('a consumer height on the modal still decides the pane', () => {
   }
 });
 
-test('a nested rail entry reads in its parent’s color, not a dimmed one', () => {
+test('a nested rail entry steps down from the color of the entry it sits in', () => {
   const schema: PrefGroup = {
     name: 'Preferences',
     children: { ...SCHEMA.children, text: { name: 'Text', children: rows('text', 2) } },
@@ -93,8 +93,15 @@ test('a nested rail entry reads in its parent’s color, not a dimmed one', () =
   render(
     <PrefsDialog isOpen onOpenChange={() => {}} schema={schema} values={{}} onChange={() => {}} layout="rail" />,
   );
-  const color = (name: string) => getComputedStyle(screen.getByRole('button', { name })).color;
-  expect(screen.getByRole('button', { name: 'Snapping' })).not.toHaveAttribute('aria-current');
-  expect(screen.getByRole('button', { name: 'Text' })).not.toHaveAttribute('aria-current');
-  expect(color('Snapping')).toBe(color('Text'));
+  const entry = (name: string) => screen.getByRole('button', { name });
+  const nameColor = (name: string) => getComputedStyle(entry(name).querySelector('span')!).color;
+  expect(entry('Snapping')).not.toHaveAttribute('aria-current');
+  expect(entry('Text')).not.toHaveAttribute('aria-current');
+  expect(nameColor('Text')).toBe(getComputedStyle(entry('Text')).color);
+  const channels = (css: string) => css.match(/[\d.]+/g)!.map(Number);
+  // The entry's color serializes as rgb(0–255); the stepped-down name as color(srgb 0–1 / alpha).
+  const [r, g, b, alpha] = channels(nameColor('Snapping').replace('srgb', ''));
+  const parent = channels(getComputedStyle(entry('Snapping')).color);
+  [r, g, b].forEach((c, i) => expect(c * 255).toBeCloseTo(parent[i], 0));
+  expect(alpha).toBeLessThan(1);
 });
