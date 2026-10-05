@@ -555,14 +555,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) A pref's label can't shorten to fit the space it's given.** A leaf (and an enum
-  option) carries `name` and one `short` (`ToolPrefBase` in `core/tools/prefs.ts`), and each
-  surface hard-codes which it reads: `ToolOptionsBar` takes `short ?? name`, SelectionPanel's
-  flag bars take `icon`, then `short`, then `name`'s first letter, and every other surface
-  takes `name`. A label that fits one width and truncates at another has no say. Let a leaf
-  give its shorter forms in order (`name` stays canonical and the accessible name), and have
-  a surface take the longest one that fits the cell it measured, instead of picking a field.
-
 - **(P2) Text emphasis is a fixed gray, not a step down from the text it sits beside.**
   `--wzl-fg-muted` and `--wzl-fg-subtle` are fixed grays per mode (`gray-300`/`gray-400`
   dark, `gray-600`/`gray-500` light), used about 700 times. A fixed gray only reads as

@@ -82,7 +82,8 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
         value: coded ? coded.value : typeof value === 'boolean' ? value : undefined,
         mixed: coded ? coded.mixed : mixed,
         unset,
-        glyph: glyphOf(leaf.icon) ?? leaf.short,
+        glyph: glyphOf(leaf.icon),
+        short: leaf.short,
         onChange: coded ? coded.write : setValue,
       };
     }
@@ -142,7 +143,8 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
         options: leaf.options.map((o) => ({
           value: o.value,
           label: o.label,
-          glyph: glyphOf(o.icon) ?? o.short,
+          glyph: glyphOf(o.icon),
+          short: o.short,
           disabled: o.disabled,
         })),
         onChange: coded ? coded.write : setValue,

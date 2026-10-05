@@ -15,7 +15,8 @@ import type {
   ToolPrefObject,
 } from '@weasel-js/core';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
-import { drawnGlyph, PropertyControl, type PropertyBooleanFieldProps } from '../Properties/PropertyField';
+import { FitLabel, labelForms } from '../FitLabel/FitLabel';
+import { PropertyControl, type PropertyBooleanFieldProps } from '../Properties/PropertyField';
 import { ToggleBar } from '../ToggleBar';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
@@ -205,9 +206,9 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
       ariaLabel={ariaLabel}
       items={flags.map(({ cell, field }) => ({
         value: cell.key,
-        label: field.glyph ?? cell.leaf.name.slice(0, 1),
+        label: field.glyph ?? <FitLabel forms={labelForms(cell.leaf.name, field.short)} />,
         ariaLabel: cell.ariaLabel,
-        tooltip: drawnGlyph(field.glyph) === undefined ? undefined : cell.leaf.name,
+        tooltip: field.glyph === undefined ? undefined : cell.leaf.name,
       }))}
       value={on}
       // Each flag owns its own path, so only the segment that moved is
