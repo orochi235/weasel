@@ -13,6 +13,15 @@ import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { makeGLRecorder, type GLCall } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/core';
+
+/** A square no CPU cut can stand in for, so the clip goes through the stencil. */
+const squareClip = (size: number): PolygonPath => ({
+  kind: 'polygon',
+  commands: new Uint8Array([M, L, L, L, Z]),
+  coords: new Float32Array([0, 0, size, 0, size, size, 0, size]),
+  fillRule: 'nonzero',
+});
 import {
   MAX_VERTICES_PER_BATCH, SOLID_LARGE_RING_SIZE, SOLID_RING_SIZE,
   SOLID_RING_SLOT_VERTICES, FLOATS_PER_VERTEX, TEX_SLOT_OFFSET,
@@ -353,6 +362,132 @@ describe('renderer — consecutive solid-fill batching', () => {
     expect(corners).toEqual([0, 0, 0, 10, -10, 10, -10, 0]);
   });
 
+  describe('a rect clip, which cuts staged geometry instead of breaking the run', () => {
+    const clipped = (clip: object, children: DrawCommand[], extra: object = {}): DrawCommand => ({
+      kind: 'group', clip: { kind: 'rect', ...clip }, children, ...extra,
+    } as unknown as DrawCommand);
+    const firstUpload = (): { verts: Float32Array; floats: number } => {
+      const call = recorder.calls.find(
+        (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+      )!;
+      return { verts: call.args[2] as Float32Array, floats: call.args[4] as number };
+    };
+    const positions = (): number[] => {
+      const { verts, floats } = firstUpload();
+      const out: number[] = [];
+      for (let i = 0; i < floats; i += FLOATS_PER_VERTEX) out.push(verts[i], verts[i + 1]);
+      return out;
+    };
+    const clipBitWrites = () =>
+      recorder.calls.filter((c) => c.name === 'stencilMask' && c.args[0] === 0x02);
+
+    it('shares one draw with what surrounds it, and writes no stencil bit', () => {
+      r.render([rect(0), clipped({ x: 20, y: 0, width: 10, height: 10 }, [rect(20)]), rect(40)]);
+      expect(draws()).toEqual([18]);
+      expect(clipBitWrites()).toEqual([]);
+    });
+
+    it('cuts a rect that crosses it to the part inside', () => {
+      r.render([clipped({ x: 0, y: 2, width: 5, height: 20 }, [rect(0)])]);
+      expect(positions()).toEqual([0, 2, 5, 2, 5, 10, 0, 10]);
+      expect(draws()).toEqual([6]);
+    });
+
+    it('drops a rect wholly outside it', () => {
+      r.render([clipped({ x: 100, y: 0, width: 10, height: 10 }, [rect(0)]), rect(40)]);
+      expect(draws()).toEqual([6]);
+      expect(positions()).toEqual([40, 0, 50, 0, 50, 10, 40, 10]);
+    });
+
+    it('applies nested rect clips as their intersection', () => {
+      r.render([clipped({ x: 2, y: 0, width: 100, height: 100 }, [
+        clipped({ x: 0, y: 0, width: 7, height: 100 }, [rect(0)]),
+      ])]);
+      expect(positions()).toEqual([2, 0, 7, 0, 7, 10, 2, 10]);
+    });
+
+    it('carries the color matrix of a cut corner unchanged', () => {
+      r.render([clipped({ x: 0, y: 0, width: 5, height: 10 }, [rect(0, '#0000ff')])]);
+      const { verts, floats } = firstUpload();
+      for (let i = 0; i < floats; i += FLOATS_PER_VERTEX) {
+        expect(Array.from(verts.slice(i + 2, i + 6))).toEqual([0, 0, 1, 1]);
+      }
+    });
+
+    it('refuses to cut a turned rect, and clips it through the stencil instead', () => {
+      // Cutting a slanted edge moves its endpoint off the rasterizer's subpixel
+      // grid, so the shortened edge would cover different samples.
+      const c = Math.SQRT1_2;
+      const eighthTurn = new Float32Array([c, c, 0, -c, c, 0, 0, 0, 1]);
+      r.render([
+        rect(0, '#00ff00'),
+        clipped({ x: 0, y: -100, width: 100, height: 200 }, [
+          { kind: 'group', transform: eighthTurn, children: [rect(0)] } as unknown as DrawCommand,
+        ]),
+        rect(40, '#00ff00'),
+      ]);
+      expect(clipBitWrites().length).toBeGreaterThan(0);
+      // The diamond is staged whole, in a run of its own under the bit.
+      const uploads = recorder.calls.filter((c2) => c2.name === 'bufferSubData' && c2.args[0] === ARRAY_BUFFER);
+      expect(uploads.map((u) => u.args[4])).toEqual([4, 4, 4].map((n) => n * FLOATS_PER_VERTEX));
+      expect(drawPrograms().filter((p2) => p2 === r._batchFill().handle)).toHaveLength(3);
+    });
+
+    it('keeps a turned rect that lies wholly inside, in the run', () => {
+      const c = Math.SQRT1_2;
+      const eighthTurn = new Float32Array([c, c, 0, -c, c, 0, 50, 50, 1]);
+      r.render([
+        rect(0),
+        clipped({ x: 0, y: 0, width: 100, height: 100 }, [
+          { kind: 'group', transform: eighthTurn, children: [rect(0)] } as unknown as DrawCommand,
+        ]),
+      ]);
+      expect(draws()).toEqual([12]);
+      expect(clipBitWrites()).toEqual([]);
+    });
+
+    it('gives itself a stencil bit when a child draws for itself, and still lets the run cross it', () => {
+      r.render([
+        clipped({ x: 0, y: 0, width: 5, height: 10 }, [rect(0), vcolorRect(0), rect(0)]),
+        rect(40),
+      ]);
+      // The run before the per-vertex child, the clip's stencil write, the
+      // child, the stencil clear, then one run holding the third rect and the
+      // one after the group.
+      expect(draws()).toEqual([6, 6, 6, 6, 12]);
+      expect(clipBitWrites().length).toBeGreaterThan(0);
+      expect(drawPrograms()[2]).toBe(r._pathFillVColor().handle);
+      let seen = 0;
+      const vcolorAt = recorder.calls.findIndex((c) => c.name === 'drawElements' && seen++ === 2);
+      let func: unknown[] | null = null;
+      let on = false;
+      for (const c of recorder.calls.slice(0, vcolorAt)) {
+        if (c.name === 'stencilFunc') func = c.args as unknown[];
+        if (c.name === 'enable' && c.args[0] === STENCIL_TEST) on = true;
+        if (c.name === 'disable' && c.args[0] === STENCIL_TEST) on = false;
+      }
+      expect(on).toBe(true);
+      expect(func!.slice(1)).toEqual([0x02, 0x02]);
+    });
+
+    it('goes through the stencil when its transform turns it off the axes', () => {
+      const c = Math.SQRT1_2;
+      r.render([clipped({ x: 0, y: 0, width: 10, height: 10 }, [rect(0)], {
+        transform: new Float32Array([c, c, 0, -c, c, 0, 0, 0, 1]),
+      })]);
+      expect(clipBitWrites().length).toBeGreaterThan(0);
+    });
+
+    it('starts the next frame unclipped after a frame that threw inside it', () => {
+      let deep: DrawCommand = rect(0);
+      for (let i = 0; i < 8; i++) deep = clipped({ x: 0, y: 0, width: 1, height: 1 }, [deep]);
+      expect(() => r.render([deep])).toThrow(/clip nesting depth exceeded/);
+      recorder.reset();
+      r.render([rect(0)]);
+      expect(positions()).toEqual([0, 0, 10, 0, 10, 10, 0, 10]);
+    });
+  });
+
   it('merges across a group alpha, folding it into the vertex alpha', () => {
     r.render([
       rect(0),
@@ -401,11 +536,11 @@ describe('renderer — consecutive solid-fill batching', () => {
     expect(draws()).toEqual([6, 6, 6]);
   });
 
-  it('draws a clipped run under the clip, and the next run without it', () => {
+  it('draws a stencil-clipped run under the clip, and the next run without it', () => {
     r.render([
       {
         kind: 'group',
-        clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+        clip: squareClip(10),
         children: [rect(0), rect(20)],
       } as unknown as DrawCommand,
       rect(40),

@@ -17,6 +17,15 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { SOLID_RING_SIZE, MAX_VERTICES_PER_BATCH, FLOATS_PER_VERTEX } from './drawBatch';
 import { BATCH_TEXTURE_SLOTS } from './shaders/batchFill';
 import type { DrawCommand } from './DrawCommand';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/core';
+
+/** A square no CPU cut can stand in for, so the clip goes through the stencil. */
+const squareClip = (size: number): PolygonPath => ({
+  kind: 'polygon',
+  commands: new Uint8Array([M, L, L, L, Z]),
+  coords: new Float32Array([0, 0, size, 0, size, size, 0, size]),
+  fillRule: 'nonzero',
+});
 import { SPRITE_STRIDE } from './DrawCommand';
 
 /** `drawBatch.ts`'s vertex: vec2 position, vec4 color, vec2 uv, float post,
@@ -211,12 +220,29 @@ describe('renderer — consecutive image batching', () => {
     expect(draws()).toEqual([6, 6, 6]);
   });
 
-  it('flushes the run before a clip is pushed and before it is popped', () => {
+  it('cuts a quad to a rect clip with its UVs, in the same run as what surrounds it', () => {
+    r.render([
+      rect(40),
+      { kind: 'group', clip: { kind: 'rect', x: 0, y: 4, width: 8, height: 100 }, children: [img(0)] },
+    ] as DrawCommand[]);
+    expect(draws()).toEqual([12]);
+    const call = recorder.calls.find((c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER)!;
+    const verts = call.args[2] as Float32Array;
+    const quad: number[][] = [];
+    for (let v = 4; v < 8; v++) {
+      const at = v * FLOATS_PER_VERTEX;
+      quad.push([verts[at], verts[at + 1], verts[at + UV], verts[at + UV + 1]]);
+    }
+    // x 0..8 of a 16-wide quad is u 0..0.5; y 4..16 of 16 is v 0.25..1.
+    expect(quad).toEqual([[0, 4, 0, 0.25], [8, 4, 0.5, 0.25], [8, 16, 0.5, 1], [0, 16, 0, 1]]);
+  });
+
+  it('flushes the run before a stencil clip is pushed and before it is popped', () => {
     r.render([
       img(0),
       {
         kind: 'group',
-        clip: { kind: 'rect', x: 0, y: 0, width: 100, height: 100 },
+        clip: squareClip(100),
         children: [img(20)],
       },
       img(40),

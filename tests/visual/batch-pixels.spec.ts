@@ -387,3 +387,172 @@ test('batched runs paint their own colors', async ({ page }) => {
   expect(errors, errors.join('\n')).toEqual([]);
   expect(failures, failures.join('\n')).toEqual([]);
 });
+
+/**
+ * A rect clip is cut on the CPU rather than written to the stencil, so content
+ * inside it shares a run with content outside. This renders one scene twice —
+ * clipped by rects, and by the same squares as polygons, which only the
+ * stencil can express — and compares the two framebuffers channel by channel.
+ * The clip edges sit on fractional pixels and cross every batched kind, a
+ * nested clip narrows an outer one, a triangle crossing a clip edge is refused
+ * the cut and goes through the stencil, and a per-vertex-color child forces
+ * the rect clip onto the stencil part-way through, which is the mixed state
+ * where a run crosses a clip that holds a bit.
+ *
+ * Within `TOLERANCE`, not exact: a cut corner's UV is interpolated on the CPU,
+ * and a filtered texel near a rounding boundary lands one level apart. A
+ * coverage difference — a lost or gained MSAA sample on an edge — is a quarter
+ * of the color step, far outside it. That is what cutting a slanted edge
+ * produced, and why the batch refuses to.
+ */
+test('a rect clip cut on the CPU paints what the stencil would', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+
+  await page.goto('/weasel/#animation');
+  await page.waitForSelector('canvas');
+
+  const result = await page.evaluate(async ({ root, w, h, tolerance: TOLERANCE_IN_PAGE }) => {
+    const base = `/weasel/@fs${root}`;
+    const { WeaselRenderer, registerFont } = await import(
+      /* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`
+    );
+    const { PATH_M, PATH_L, PATH_Z } = await import(/* @vite-ignore */ `${base}/packages/geom/src/commands.ts`);
+    await registerFont(
+      'probe', { weight: 400, style: 'normal' },
+      '/weasel/inter/inter.json', '/weasel/inter/inter.png',
+    );
+    const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })!;
+    const renderer = new WeaselRenderer({ gl, canvas, width: w, height: h, dpr: 1 });
+
+    const px = new ImageData(16, 16);
+    for (let p = 0; p < px.data.length; p += 4) {
+      px.data[p] = (p >> 2) % 16 < 8 ? 255 : 0; px.data[p + 1] = 64; px.data[p + 2] = 200; px.data[p + 3] = 255;
+    }
+    const bitmap = await createImageBitmap(px);
+
+    const rect = (x: number, y: number, wd: number, ht: number, color: string) => ({
+      kind: 'path', path: { kind: 'rect', x, y, width: wd, height: ht }, fill: { fill: 'solid', color },
+    });
+    const tri = (x: number, y: number, s: number, color: string) => ({
+      kind: 'path',
+      path: {
+        kind: 'polygon', commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z]),
+        coords: new Float32Array([x, y, x + s, y + s * 0.4, x + s * 0.2, y + s]), fillRule: 'nonzero',
+      },
+      fill: { fill: 'solid', color },
+    });
+    const grad = (x: number, y: number, s: number) => ({
+      kind: 'path', path: { kind: 'rect', x, y, width: s, height: s },
+      fill: {
+        fill: 'linear-gradient', from: { x, y: 0 }, to: { x: x + s, y: 0 },
+        stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#00ffff' }],
+      },
+    });
+    const label = (text: string, x: number, y: number) => ({
+      kind: 'text', x, y,
+      runs: [{
+        text, fontFamily: 'probe', fontSize: 28, fontWeight: 400, fontStyle: 'normal',
+        fill: { fill: 'solid', color: '#ffee00' }, letterSpacing: 0,
+        underline: true, strikethrough: false, overline: false, baselineShift: 0,
+      }],
+      maxWidth: Infinity, align: 'left', style: {},
+    });
+    const vcolor = (x: number, y: number) => ({
+      kind: 'path', path: { kind: 'rect', x, y, width: 30, height: 30 },
+      fill: { fill: 'solid', color: '#ffffff' },
+      vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
+    });
+
+    /** The clip, as the CPU path takes it or as only the stencil can. */
+    const clip = (asPolygon: boolean, x: number, y: number, wd: number, ht: number) => (asPolygon
+      ? {
+        kind: 'polygon', commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+        coords: new Float32Array([x, y, x + wd, y, x + wd, y + ht, x, y + ht]), fillRule: 'nonzero',
+      }
+      : { kind: 'rect', x, y, width: wd, height: ht });
+
+    const scene = (asPolygon: boolean) => [
+      rect(0, 0, w, h, '#202020'),
+      {
+        kind: 'group', clip: clip(asPolygon, 10.3, 6.7, 100.6, 60.2),
+        children: [
+          rect(0, 0, 60, 40, '#3366cc'),
+          { kind: 'image', image: bitmap, x: 40, y: 20, w: 90, h: 50 },
+          grad(80, 0, 40),
+          tri(4, 30, 50, '#cc6633'),
+          label('Hg', 70, 30),
+        ],
+      },
+      {
+        kind: 'group', transform: new Float32Array([1.5, 0, 0, 0, 1.25, 0, 120.4, 3.2, 1]),
+        clip: clip(asPolygon, 4.1, 2.9, 60.3, 40.6),
+        children: [
+          {
+            kind: 'group', clip: clip(asPolygon, 20.2, 10.5, 70, 70),
+            children: [rect(0, 0, 80, 80, '#66cc33'), grad(30, 20, 40)],
+          },
+          rect(0, 30, 20, 30, '#cc33aa'),
+        ],
+      },
+      {
+        kind: 'group', clip: clip(asPolygon, 230.5, 10.25, 50.5, 50.5),
+        children: [rect(220, 0, 40, 40, '#3399ff'), vcolor(240, 20), rect(250, 40, 40, 40, '#ff9933')],
+      },
+      rect(300, 20, 20, 20, '#ffffff'),
+    ];
+
+    const W2 = w;
+    function draw(asPolygon: boolean): { pixels: Uint8Array; draws: number } {
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+      renderer.render(scene(asPolygon), identity);
+      const pixels = new Uint8Array(W2 * h * 4);
+      gl.readPixels(0, 0, W2, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      return { pixels, draws: renderer.lastFrameStats().drawCalls };
+    }
+    const cut = draw(false);
+    const stencil = draw(true);
+    let differ = 0;
+    let worst = 0;
+    let firstAt = -1;
+    const samples: string[] = [];
+    for (let i = 0; i < cut.pixels.length; i++) {
+      const d = Math.abs(cut.pixels[i] - stencil.pixels[i]);
+      if (d > 0) {
+        differ++;
+        if (firstAt < 0) firstAt = i;
+        if (d > TOLERANCE_IN_PAGE) {
+          const p = i - (i % 4);
+          if (samples.length < 20) {
+            samples.push(`(${(p >> 2) % W2},${h - 1 - Math.floor((p >> 2) / W2)}) cut ${Array.from(cut.pixels.slice(p, p + 4))} stencil ${Array.from(stencil.pixels.slice(p, p + 4))}`);
+          }
+        }
+      }
+      if (d > worst) worst = d;
+    }
+
+    let painted = 0;
+    for (let i = 3; i < cut.pixels.length; i += 4) if (cut.pixels[i] !== 0) painted++;
+    return {
+      differ, worst, painted, cutDraws: cut.draws, stencilDraws: stencil.draws, samples,
+      firstAt: firstAt < 0 ? null : { x: (firstAt >> 2) % W2, y: h - 1 - Math.floor((firstAt >> 2) / W2) },
+    };
+  }, { root: repoRoot, w: 340, h: 90, tolerance: TOLERANCE });
+
+  console.log(`\nRect clip, cut against stencil: ${result.differ} channels differ (worst ${result.worst}), `
+    + `first at ${JSON.stringify(result.firstAt)}; draws ${result.cutDraws} cut, ${result.stencilDraws} stencil\n`);
+  for (const line of result.samples) console.log(`  ${line}`);
+
+  expect(errors, errors.join('\n')).toEqual([]);
+  // The premise: the rect scene really took the CPU path and the polygon one
+  // did not, or the comparison is a scene against itself.
+  expect(result.cutDraws).toBeLessThan(result.stencilDraws);
+  expect(result.painted).toBeGreaterThan(1000);
+  expect(result.worst, `first difference at ${JSON.stringify(result.firstAt)}`).toBeLessThanOrEqual(TOLERANCE);
+});

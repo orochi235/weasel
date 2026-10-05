@@ -41,6 +41,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     widthCss: r._widthCss(),
     heightCss: r._heightCss(),
     clipDepth: 0,
+    clipStack: [],
   };
   return { ctx, calls: recorder.calls, gl: recorder.gl };
 }
@@ -692,9 +693,9 @@ describe('pushClip / popClip', () => {
 
     const drainedBeforeStencil = (calls: ReturnType<typeof createRecorderCtx>['calls']): void => {
       const flushIdx = calls.findIndex((c) => c.name === 'drawElements');
-      const stencilIdx = calls.findIndex(
-        (c) => c.name === 'stencilMask' || c.name === 'stencilFunc' || c.name === 'stencilOp',
-      );
+      // `stencilMask`, not the func or op: a run drawn under a clip sets
+      // those itself on the way to its draw.
+      const stencilIdx = calls.findIndex((c) => c.name === 'stencilMask');
       expect(flushIdx).toBeGreaterThanOrEqual(0);
       expect(stencilIdx).toBeGreaterThan(flushIdx);
     };
@@ -706,11 +707,20 @@ describe('pushClip / popClip', () => {
       drainedBeforeStencil(calls);
     });
 
-    it('popClip', () => {
+    it('popClip, for a run staged under the bit it clears', () => {
       const { ctx, calls } = createRecorderCtx();
+      ctx.clipDepth = 1;
       dispatch(ctx, stagedRect);
       popClip(ctx, path, /* oldDepth */ 0);
       drainedBeforeStencil(calls);
+    });
+
+    it('but not popClip for a run staged below that bit, which never tests it', () => {
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, stagedRect);
+      popClip(ctx, path, /* oldDepth */ 0);
+      expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
+      expect(ctx.drawBatch.length).toBe(6);
     });
   });
 });
@@ -770,12 +780,20 @@ describe('tryStageFill', () => {
 
 import type { GroupDrawCommand } from './DrawCommand';
 
+/** A square no CPU cut can stand in for, so the clip goes through the stencil. */
+const SQUARE_CLIP: PolygonPath = {
+  kind: 'polygon',
+  commands: new Uint8Array([M, L, L, L, Z]),
+  coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]),
+  fillRule: 'nonzero',
+};
+
 describe('drawGroup clip integration', () => {
   it('drawGroup with cmd.clip pushes clip and children draw under the test', () => {
     const { ctx, calls, gl } = createRecorderCtx();
     const cmd: GroupDrawCommand = {
       kind: 'group',
-      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      clip: SQUARE_CLIP,
       children: [{
         kind: 'path' as const,
         path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
@@ -809,7 +827,7 @@ describe('drawGroup clip integration', () => {
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
     const cmd: GroupDrawCommand = {
       kind: 'group',
-      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      clip: SQUARE_CLIP,
       children: [{ kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 }],
     };
     drawGroup(ctx, cmd);
@@ -1008,7 +1026,7 @@ describe('C1/I4: popClip enables STENCIL_TEST after evenodd child disables it', 
     const { ctx, calls } = createRecorderCtx();
     const cmd: GroupDrawCommand = {
       kind: 'group',
-      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      clip: SQUARE_CLIP,
       children: [],
     };
     drawGroup(ctx, cmd);
@@ -1699,7 +1717,7 @@ describe('drawText — decoration reaches the GPU', () => {
     const { ctx, calls } = createRecorderCtx();
     drawGroup(ctx, {
       kind: 'group',
-      clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      clip: SQUARE_CLIP,
       children: [{
         kind: 'text', x: 0, y: 0,
         runs: [decoratedRun({ underline: true })],
