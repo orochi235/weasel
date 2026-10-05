@@ -27,6 +27,7 @@ import {
   SOLID_RING_SLOT_VERTICES, FLOATS_PER_VERTEX, TEX_SLOT_OFFSET,
 } from './drawBatch';
 import { paintModeOf } from './shaders/batchFill';
+import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
 
 const ARRAY_BUFFER = 0x8892;
 const ELEMENT_ARRAY_BUFFER = 0x8893;
@@ -360,6 +361,65 @@ describe('renderer — consecutive solid-fill batching', () => {
       corners.push(verts[v * FLOATS_PER_VERTEX], verts[v * FLOATS_PER_VERTEX + 1]);
     }
     expect(corners).toEqual([0, 0, 0, 10, -10, 10, -10, 0]);
+  });
+
+  describe('what a flush sends', () => {
+    const cmBreaks = (n: number): DrawCommand[] => Array.from({ length: n }, (_, i) => ({
+      kind: 'group', colorMatrix: i % 2 ? tinted : undefined, children: [rect(i * 12)],
+    } as unknown as DrawCommand));
+    const sent = (name: string, uniform: string) => {
+      const loc = r._batchFill().uniform(uniform);
+      return recorder.calls.filter((c) => c.name === name && c.args[0] === loc);
+    };
+
+    it('sends the run-level uniforms once a frame while they hold still', () => {
+      r.render(cmBreaks(6));
+      expect(draws()).toHaveLength(6);
+      expect(sent('uniform1iv', 'u_samplers')).toHaveLength(1);
+      expect(sent('uniform2fv', 'u_fieldScale')).toHaveLength(1);
+      expect(sent('uniform1f', 'u_synthBold')).toHaveLength(1);
+    });
+
+    it('sends them again the next frame, whose program state it cannot vouch for', () => {
+      r.render(cmBreaks(2));
+      recorder.reset();
+      r.render(cmBreaks(2));
+      expect(sent('uniform1iv', 'u_samplers')).toHaveLength(1);
+    });
+
+    it('leaves no VAO bound for a draw that points its own attributes, or past the frame', () => {
+      _resetProgramRegistryForTests();
+      const prog = registerProgram('vao-hygiene', '', `#version 300 es
+precision highp float;
+out vec4 outColor;
+void main() { outColor = vec4(1.0); }
+`);
+      r.registerProgram(prog);
+      const frame = [
+        ...cmBreaks(2),
+        { kind: 'shader', program: prog, uniforms: {}, bounds: { x: 0, y: 0, w: 10, h: 10 } } as DrawCommand,
+        ...cmBreaks(2),
+      ];
+      r.render(frame);
+      let bound: unknown = null;
+      const atPointer: unknown[] = [];
+      for (const c of recorder.calls) {
+        if (c.name === 'bindVertexArray') bound = c.args[0];
+        // Stride 16 is the shader quad's; the batch's own slots set theirs,
+        // stride 40, inside their own VAO.
+        if (c.name === 'vertexAttribPointer' && c.args[4] === 16) atPointer.push(bound);
+      }
+      expect(atPointer.length).toBeGreaterThan(0);
+      expect(atPointer.every((v) => v === null)).toBe(true);
+      expect(bound).toBeNull();
+      // And not per flush: four flushes, one shader, one frame end. A slot
+      // created this frame unbinds after its own setup, which ends in an
+      // element-buffer `bufferData`; those are not counted.
+      const unbinds = recorder.calls.filter((c, i) =>
+        c.name === 'bindVertexArray' && c.args[0] === null && recorder.calls[i - 1]?.name !== 'bufferData');
+      expect(unbinds.length).toBeLessThan(4);
+      _resetProgramRegistryForTests();
+    });
   });
 
   describe('a rect clip, which cuts staged geometry instead of breaking the run', () => {
