@@ -570,8 +570,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   3.18:1 and subtle at 2.52:1 (light mode: 5.05 and 3.91). Either the dark accent darkens or the
   steps get an accent-specific alpha. Still open from the same arc: whether disabled gets its own
   signal now that emphasis is an alpha (disabled is `opacity: 0.4`–`0.5` on the whole control,
-  subtle text is 0.54–0.64 alpha), and labkit's `interstellar` theme still pins both tokens to
-  fixed grays.
+  subtle text is 0.54–0.64 alpha).
 
 - **(P3) apps/site never loads the kit's faces.** It imports no
   `@weasel-js/theme/faces.css` or `fonts.css`, so `--wzl-font-ui`'s Oswald and
