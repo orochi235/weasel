@@ -137,8 +137,8 @@ describe('PropertyField enum choices', () => {
     expect(alpha.querySelector('[data-testid="alpha-glyph"]')).not.toBeNull();
   });
 
-  it('leaves a letter glyph out of a select, which has room for the label', () => {
-    const lettered = [{ value: 'a', label: 'Alpha', glyph: 'A' }];
+  it('leaves the short forms out of a select, which has room for the label', () => {
+    const lettered = [{ value: 'a', label: 'Alpha', short: ['A'] }];
     render(<PropertyField kind="enum" label="Mode" value="a" options={lettered} onChange={() => {}} />);
     expect(screen.getByRole('button', { name: /Mode/ }).textContent).not.toContain('AAlpha');
   });

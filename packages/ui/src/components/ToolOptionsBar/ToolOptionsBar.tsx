@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import type { ToolPrefGroup, ToolPrefLeaf } from '@weasel-js/core';
 import {
   renderBuiltin,
@@ -8,6 +8,7 @@ import {
   type PropertyRenderer,
 } from '../SelectionPanel/renderLeaf';
 import { isGroup, pairRows, type PanelLeaf, type PanelRow } from '../SelectionPanel/model';
+import { FitLabel, FitScope, labelForms, useFitScope } from '../FitLabel/FitLabel';
 import s from './ToolOptionsBar.module.css';
 
 /** Props for {@link ToolOptionsBar}. */
@@ -65,22 +66,27 @@ export interface ToolOptionsBarProps {
 export function ToolOptionsBar(props: ToolOptionsBarProps) {
   const { label, schema, values, onChange, mixed, renderers, children, className } = props;
   const cls = [s.root, className].filter(Boolean).join(' ');
+  // Every label on the line shortens together before the strip scrolls.
+  const controls = useRef<HTMLDivElement>(null);
+  const fit = useFitScope(controls);
   return (
     <div className={cls} role="toolbar" aria-label={label}>
       {label !== undefined && <span className={s.label}>{label}</span>}
-      <div className={s.controls}>
-        {schema !== undefined &&
-          barRows(schema).map((row) => (
-            <BarRow
-              key={row.leaves[0]!.path}
-              row={row}
-              values={values}
-              mixed={mixed}
-              renderers={renderers}
-              onChange={onChange}
-            />
-          ))}
-        {children}
+      <div className={s.controls} ref={controls}>
+        <FitScope value={fit}>
+          {schema !== undefined &&
+            barRows(schema).map((row) => (
+              <BarRow
+                key={row.leaves[0]!.path}
+                row={row}
+                values={values}
+                mixed={mixed}
+                renderers={renderers}
+                onChange={onChange}
+              />
+            ))}
+          {children}
+        </FitScope>
       </div>
     </div>
   );
@@ -130,7 +136,7 @@ function BarRow({
         <span key={cell.key} className={s.cell}>
           {needsLabel(cell.leaf) && (
             <span className={s.cellLabel} aria-hidden="true">
-              {cell.leaf.short ?? cell.leaf.name}
+              <FitLabel forms={labelForms(cell.leaf.name, cell.leaf.short)} />
             </span>
           )}
           {cell.content}

@@ -40,10 +40,11 @@ export interface ToolPrefBase<K extends string, Value> {
    *  on one row labeled with the `pair` string (e.g. `'Position'` for
    *  `pose.x` / `pose.y`). Purely presentational. */
   pair?: string;
-  /** The label a surface with no room for `name` shows instead — a strip of
-   *  controls on one line, or a segment in a `pair`ed row. `name` stays the
-   *  accessible name, so this abbreviates without costing anything. */
-  short?: string;
+  /** Shorter forms of `name`, longest first. A surface short of room for
+   *  `name` — a strip of controls on one line, a segment in a `pair`ed row —
+   *  shows the longest of them that fits. `name` stays the accessible name, so
+   *  these abbreviate without costing anything. */
+  short?: readonly string[];
 }
 
 /** How a schema-driven UI should present a number pref. */
@@ -188,11 +189,12 @@ export interface ToolPrefEnum<T extends string = string>
    * removes the field.
    */
   clearable?: boolean;
-  /** `short` is the label a segmented control uses when a full one would not
-   *  fit — a capital or two. `icon` names a glyph in the host UI's set
-   *  (weasel-ui resolves it against `ICON_PATHS`) and outranks `short` where
-   *  it resolves. It is a plain string because core ships no icon set and
-   *  cannot depend on one. The full `label` stays the accessible name, so
+  /** `short` holds shorter forms of `label`, longest first, for a segmented
+   *  control too narrow for the full one — down to a capital or two. `icon`
+   *  names a glyph in the host UI's set (weasel-ui resolves it against
+   *  `ICON_PATHS`), drawn in place of any text form where it resolves. It is
+   *  a plain string because core ships no icon set and cannot depend on one.
+   *  The full `label` stays the accessible name, so
    *  neither the abbreviation nor the glyph becomes the only thing naming
    *  the option.
    *
@@ -203,7 +205,7 @@ export interface ToolPrefEnum<T extends string = string>
   options: readonly {
     value: T;
     label: string;
-    short?: string;
+    short?: readonly string[];
     icon?: string;
     disabled?: boolean;
   }[];

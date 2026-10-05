@@ -17,6 +17,7 @@ import { PaintInput } from '../PaintInput';
 import { Radio, RadioGroup } from '../RadioGroup';
 import { Select } from '../Select';
 import { Switch } from '../Switch';
+import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { ToggleBar } from '../ToggleBar';
 import sharedCheckbox from '../checkbox.module.css';
 import {
@@ -34,9 +35,12 @@ export interface PropertyOption<T extends string> {
   value: T;
   /** The option's name. A string also names its segment for a screen reader. */
   label: ReactNode;
-  /** What a segment shows in place of `label` when the full one would not fit
-   *  — a glyph or a letter. `label` stays the accessible name. A select has
-   *  room for the label, so it draws a glyph beside it and leaves a letter out. */
+  /** Shorter forms of `label`, longest first. A segment too narrow for
+   *  `label` shows the longest that fits; `label` stays the accessible name.
+   *  A select has room for the label and leaves these out. */
+  short?: readonly string[];
+  /** A glyph a segment draws in place of any text form, with `label` as its
+   *  tooltip. A select draws it beside the label. */
   glyph?: ReactNode;
   /** Shown but not choosable: a value the control reports and cannot author. */
   disabled?: boolean;
@@ -70,7 +74,10 @@ export interface PropertyBooleanFieldProps extends FieldBase {
   /** Absent reads as off. */
   value: boolean | undefined;
   onChange: (next: boolean) => void;
-  /** A `toggle`'s segment content. Defaults to the first letter of `name`. */
+  /** Shorter forms of `name`, longest first, for a `toggle` segment too
+   *  narrow for the whole name. */
+  short?: readonly string[];
+  /** A glyph a `toggle` segment draws in place of any text form. */
   glyph?: ReactNode;
 }
 
@@ -446,7 +453,7 @@ function BooleanControl(p: PropertyBooleanFieldProps) {
         variant="flat"
         className={p.className}
         ariaLabel={p.name}
-        items={[{ value: key, label: p.glyph ?? p.name?.slice(0, 1), ariaLabel: p.name }]}
+        items={[{ value: key, label: p.glyph ?? <FitLabel forms={labelForms(p.name, p.short)} />, ariaLabel: p.name }]}
         value={on ? [key] : []}
         mixedValues={p.mixed ? [key] : []}
         onChange={(next) => p.onChange(next.includes(key))}
@@ -547,13 +554,6 @@ function nameOf(label: ReactNode): string | undefined {
   return typeof label === 'string' ? label : undefined;
 }
 
-/** `glyph` when it is drawn rather than a letter or two of text. */
-export function drawnGlyph(glyph: ReactNode): ReactNode {
-  return glyph === undefined || glyph === null || typeof glyph === 'string' || typeof glyph === 'number'
-    ? undefined
-    : glyph;
-}
-
 /** A segment drawing a glyph hides its label, so the label comes back as its tooltip. */
 function glyphTip(o: PropertyOption<string>): ReactNode {
   return o.glyph === undefined || o.glyph === null ? undefined : o.label;
@@ -590,7 +590,7 @@ function EnumControl(p: PropertyEnumFieldProps) {
         ariaLabel={p.name}
         items={p.options.map((o) => ({
           value: o.value,
-          label: o.glyph ?? o.label,
+          label: o.glyph ?? <FitLabel forms={labelForms(o.label, o.short)} />,
           ariaLabel: nameOf(o.label),
           tooltip: glyphTip(o),
           disabled: o.disabled,
@@ -614,7 +614,7 @@ function EnumControl(p: PropertyEnumFieldProps) {
         ariaLabel={p.name}
         items={p.options.map((o) => ({
           value: o.value,
-          label: o.glyph ?? o.label,
+          label: o.glyph ?? <FitLabel forms={labelForms(o.label, o.short)} />,
           ariaLabel: nameOf(o.label),
           tooltip: glyphTip(o),
           disabled: o.disabled,
@@ -636,7 +636,7 @@ function EnumControl(p: PropertyEnumFieldProps) {
       options={p.options.map((o) => ({
         value: o.value,
         label: o.label,
-        icon: drawnGlyph(o.glyph),
+        icon: o.glyph,
         isDisabled: o.disabled,
       }))}
       onSelectionChange={(v) => {

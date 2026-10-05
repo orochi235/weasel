@@ -1,0 +1,9 @@
+.room {
+  inline-size: 320px;
+  min-inline-size: 60px;
+  max-inline-size: 100%;
+  padding: var(--wzl-space-2);
+  border: 1px dashed var(--wzl-border);
+  resize: horizontal;
+  overflow: hidden;
+}
