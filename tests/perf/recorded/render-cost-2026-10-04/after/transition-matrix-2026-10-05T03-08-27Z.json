@@ -2,10 +2,10 @@
   "schema": "weasel-perf-result/1",
   "benchmark": "transition-matrix",
   "git": {
-    "sha": "7b370bb058c7e8449674c270d6d0409936a6878d",
+    "sha": "8a57e2b20652f8c12a70c7f467f0368e366c3b97",
     "dirty": true
   },
-  "timestamp": "2026-10-04T00:37:31.977Z",
+  "timestamp": "2026-10-05T03:08:27.334Z",
   "machine": {
     "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
     "softwareGl": false,
@@ -15,9 +15,9 @@
     "os": "Darwin 27.0.0 arm64",
     "node": "v26.10.0",
     "loadavg": [
-      3.18,
-      3.05,
-      3.12
+      3.04,
+      8.44,
+      8.14
     ]
   },
   "params": {
@@ -46,22 +46,22 @@
       },
       "metrics": {
         "perCommand": {
-          "value": 0.0814453125,
+          "value": 0.13671875,
           "unit": "us",
           "stat": "median of 3 runs, each the mean of the two bracketing passes",
           "samples": [
-            0.08466796875,
-            0.0814453125,
-            0.05537109375
+            0.1513671875,
+            0.1220703125,
+            0.13671875
           ]
         },
         "stateCost": {
-          "value": 1.0909377620911382,
+          "value": 0.05049622588761531,
           "unit": "us",
           "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
         },
         "noise": {
-          "value": 0.013111545988258312,
+          "value": 0.00978473581213308,
           "unit": "us",
           "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
         }
@@ -74,22 +74,22 @@
       },
       "metrics": {
         "perCommand": {
-          "value": 0.45576171875,
+          "value": 0.498046875,
           "unit": "us",
           "stat": "median of 3 runs, each the mean of the two bracketing passes",
           "samples": [
-            0.478515625,
-            0.4556640625,
-            0.45576171875
+            0.5419921875,
+            0.498046875,
+            0.478515625
           ]
         },
         "stateCost": {
-          "value": 0.950897225328488,
+          "value": 0.12003774112384676,
           "unit": "us",
           "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
         },
         "noise": {
-          "value": 0.006457925636007823,
+          "value": 0,
           "unit": "us",
           "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
         }
@@ -102,22 +102,22 @@
       },
       "metrics": {
         "perCommand": {
-          "value": 3.2162109375,
+          "value": 0.76171875,
           "unit": "us",
           "stat": "median of 3 runs, each the mean of the two bracketing passes",
           "samples": [
-            4.75908203125,
-            3.2162109375,
-            1.9710937499999996
+            0.791015625,
+            0.751953125,
+            0.76171875
           ]
         },
         "stateCost": {
-          "value": 0.497032254682695,
+          "value": 0.19586944366787812,
           "unit": "us",
           "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
         },
         "noise": {
-          "value": 5.205479452054795,
+          "value": 0,
           "unit": "us",
           "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
         }
@@ -130,22 +130,22 @@
       },
       "metrics": {
         "perCommand": {
-          "value": 0.05537109375,
+          "value": 0.1123046875,
           "unit": "us",
           "stat": "median of 3 runs, each the mean of the two bracketing passes",
           "samples": [
-            0.07646484375000001,
-            0.055273437499999994,
-            0.05537109375
+            0.1123046875,
+            0.09765625,
+            0.1171875
           ]
         },
         "stateCost": {
-          "value": 0.24812954291305594,
+          "value": 0.06866787811014816,
           "unit": "us",
           "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
         },
         "noise": {
-          "value": 0.006457925636007823,
+          "value": 0.019569471624266147,
           "unit": "us",
           "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
         }
@@ -158,22 +158,22 @@
       },
       "metrics": {
         "perCommand": {
-          "value": 0.7486328124999999,
+          "value": 0.8105468750000001,
           "unit": "us",
           "stat": "median of 3 runs, each the mean of the two bracketing passes",
           "samples": [
-            0.7486328124999999,
-            0.70146484375,
-            1.71064453125
+            0.8105468750000001,
+            0.7861328124999999,
+            0.8154296875
           ]
         },
         "stateCost": {
-          "value": 7.020131220296338,
+          "value": 0.17839670114621192,
           "unit": "us",
           "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
         },
         "noise": {
-          "value": 0.03913894324853221,
+          "value": 0.029354207436399132,
           "unit": "us",
           "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
         }
@@ -186,22 +186,22 @@
       },
       "metrics": {
         "perCommand": {
-          "value": 0.34501953125,
+          "value": 0.4248046875,
           "unit": "us",
           "stat": "median of 3 runs, each the mean of the two bracketing passes",
           "samples": [
-            0.35966796874999996,
-            0.341796875,
-            0.34501953125
+            0.4248046875,
+            0.41015625,
+            0.4296875
           ]
         },
         "stateCost": {
-          "value": 2.3260160399776346,
+          "value": 0.10046826949958065,
           "unit": "us",
           "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
         },
         "noise": {
-          "value": 0.026223091976516625,
+          "value": 0.01956947162426616,
           "unit": "us",
           "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
         }
@@ -214,22 +214,22 @@
       },
       "metrics": {
         "perCommand": {
-          "value": 2.7865234375,
+          "value": 1.220703125,
           "unit": "us",
           "stat": "median of 3 runs, each the mean of the two bracketing passes",
           "samples": [
-            2.75546875,
-            2.8548828125,
-            2.7865234375
+            1.1865234374999998,
+            1.2255859375,
+            1.220703125
           ]
         },
         "stateCost": {
-          "value": 1.0530079326251054,
+          "value": 0.24549203242941012,
           "unit": "us",
           "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
         },
         "noise": {
-          "value": 0.08806262230919751,
+          "value": 0.00978473581213308,
           "unit": "us",
           "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
         }
@@ -242,22 +242,22 @@
       },
       "metrics": {
         "perCommand": {
-          "value": 1.0693359375,
+          "value": 0.6689453125,
           "unit": "us",
           "stat": "median of 3 runs, each the mean of the two bracketing passes",
           "samples": [
-            1.1686523437499998,
-            1.0693359375,
-            1.0498046875
+            0.693359375,
+            0.6689453125,
+            0.6640624999999999
           ]
         },
         "stateCost": {
-          "value": 1.3622614970645794,
+          "value": 0.13436538999161313,
           "unit": "us",
           "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
         },
         "noise": {
-          "value": 0.042270058708415,
+          "value": 0.019569471624266054,
           "unit": "us",
           "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
         }
@@ -270,22 +270,22 @@
       },
       "metrics": {
         "perCommand": {
-          "value": 12.953906250000001,
+          "value": 0.2099609375,
           "unit": "us",
           "stat": "median of 3 runs, each the mean of the two bracketing passes",
           "samples": [
-            16.368554687499998,
-            8.10986328125,
-            12.953906250000001
+            0.21972656249999997,
+            0.2099609375,
+            0.20019531250000003
           ]
         },
         "stateCost": {
-          "value": -0.6034220366228682,
+          "value": 0.042458764327648835,
           "unit": "us",
           "stat": "least-squares fit of S(A,B) = f(A) + f(B), per boundary"
         },
         "noise": {
-          "value": 6.494324853228961,
+          "value": 0.029354207436399216,
           "unit": "us",
           "stat": "median of 3 runs of |hom1 - hom2|, per boundary"
         }
@@ -299,22 +299,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 0.017857142857142846,
+          "value": 0.0611545988258317,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            0.017857142857142846,
-            0.00489236790606654,
-            0.021232876712328763
+            -0.004892367906066595,
+            0.0611545988258317,
+            0.06360078277886497
           ]
         },
         "residual": {
-          "value": -2.0239778445624834,
+          "value": -0.10937936818563038,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 0.016340508806262224,
+          "value": 0.06849315068493156,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -328,22 +328,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 3.071477495107632,
+          "value": 0.40851272015655576,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            26.14481409001957,
-            -0.037573385518591206,
-            3.071477495107632
+            0.40851272015655576,
+            0.37426614481409,
+            0.45988258317025443
           ]
         },
         "residual": {
-          "value": 1.4835074783337987,
+          "value": 0.16214705060106233,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 26.18238747553816,
+          "value": 0.08561643835616445,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -357,22 +357,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 0.009784735812133067,
+          "value": 0.014677103718199594,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            0.017123287671232876,
-            0.009784735812133067,
-            -0.00009784735812133353
+            0.014677103718199594,
+            0.03669275929549901,
+            -0.019569471624266147
           ]
         },
         "residual": {
-          "value": -1.3292825691920611,
+          "value": -0.10448700027956387,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 0.01722113502935421,
+          "value": 0.05626223091976516,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -386,22 +386,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 0.022064579256360094,
+          "value": 0.04158512720156559,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            6.02421722113503,
-            0.022064579256360094,
-            -0.46066536203522507
+            0.056262230919765156,
+            0.03424657534246578,
+            0.04158512720156559
           ]
         },
         "residual": {
-          "value": -8.089004403131115,
+          "value": -0.18730779983226165,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 6.484882583170256,
+          "value": 0.022015655577299377,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -415,22 +415,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 4.425146771037182,
+          "value": 0.28375733855185903,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            4.425146771037182,
-            3.8061643835616445,
-            13.798043052837574
+            0.2788649706457926,
+            0.2910958904109589,
+            0.28375733855185903
           ]
         },
         "residual": {
-          "value": 1.0081929689684097,
+          "value": 0.13279284316466305,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 9.99187866927593,
+          "value": 0.012230919765166326,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -444,22 +444,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 4.336154598825831,
+          "value": 0.3864970645792565,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            4.190264187866927,
-            6.823091976516634,
-            4.336154598825831
+            0.3864970645792565,
+            0.2935420743639922,
+            0.41585127201565564
           ]
         },
         "residual": {
-          "value": 2.192208904109588,
+          "value": 0.09050880626223104,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 2.6328277886497062,
+          "value": 0.12230919765166343,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -473,22 +473,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 4.002739726027397,
+          "value": 0.3131115459882583,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            6.925929549902152,
-            4.002739726027397,
-            3.4809686888454014
+            0.3204500978473581,
+            0.2886497064579256,
+            0.3131115459882583
           ]
         },
         "residual": {
-          "value": 1.54954046687168,
+          "value": 0.12824993010902985,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 3.444960861056751,
+          "value": 0.031800391389432525,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -502,22 +502,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 5.6963307240704495,
+          "value": -0.019569471624266133,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            17.43047945205479,
-            1.7182485322896284,
-            5.6963307240704495
+            -0.039138943248532294,
+            -0.019569471624266133,
+            -0.00244618395303327
           ]
         },
         "residual": {
-          "value": 5.20881499860218,
+          "value": -0.11252446183953028,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 15.712230919765162,
+          "value": 0.036692759295499026,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -531,22 +531,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 3.787524461839531,
+          "value": 0.45009784735812136,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            3.7621819960861056,
-            5.420743639921722,
-            3.787524461839531
+            0.44765166340508783,
+            0.45009784735812136,
+            0.49412915851272005
           ]
         },
         "residual": {
-          "value": 2.339594981828348,
+          "value": 0.1341906625663965,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 1.658561643835616,
+          "value": 0.046477495107632216,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -560,22 +560,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": -0.001663405088062602,
+          "value": 0.0244618395303327,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -0.026956947162426633,
-            -0.001565557729941282,
-            -0.001663405088062602
+            0.014677103718199566,
+            0.0244618395303327,
+            0.03424657534246578
           ]
         },
         "residual": {
-          "value": -1.2006901733296065,
+          "value": -0.16424377970366222,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 0.02539138943248535,
+          "value": 0.019569471624266213,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -589,22 +589,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 0.011448140900195738,
+          "value": 0.10029354207436401,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            0.011448140900195738,
-            11.449070450097848,
-            -0.4557729941291585
+            0.07583170254403121,
+            0.10029354207436401,
+            0.12475538160469674
           ]
         },
         "residual": {
-          "value": -7.95958030472463,
+          "value": -0.19814090019569466,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 11.904843444227007,
+          "value": 0.048923679060665526,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -618,22 +618,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 4.027984344422701,
+          "value": 0.39628180039138944,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            6.752299412915852,
-            3.876418786692759,
-            4.027984344422701
+            0.3473581213307241,
+            0.39628180039138944,
+            0.41585127201565564
           ]
         },
         "residual": {
-          "value": 0.7510710791165787,
+          "value": 0.17577578976796204,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 2.8758806262230925,
+          "value": 0.06849315068493156,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -647,22 +647,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 4.40954011741683,
+          "value": 0.5430528375733854,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            8.481017612524463,
-            3.638356164383562,
-            4.40954011741683
+            0.5430528375733854,
+            0.6335616438356165,
+            0.5185909980430528
           ]
         },
         "residual": {
-          "value": 2.405634959463237,
+          "value": 0.17752306402012855,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 4.842661448140901,
+          "value": 0.11497064579256377,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -676,22 +676,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 5.419960861056751,
+          "value": 0.39383561643835613,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            8.65288649706458,
-            5.419960861056751,
-            4.620890410958904
+            0.38894324853228956,
+            0.39383561643835613,
+            0.40606653620352257
           ]
         },
         "residual": {
-          "value": 3.1068021386636837,
+          "value": 0.13943248532289626,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 4.031996086105676,
+          "value": 0.017123287671233,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -705,22 +705,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 2.9286203522504883,
+          "value": 0.007338551859099811,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            36.33688845401174,
-            2.9286203522504883,
-            0.3053326810176127
+            0,
+            0.007338551859099811,
+            0.04158512720156554
           ]
         },
         "residual": {
-          "value": 2.5811451635448686,
+          "value": -0.1551579535923958,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 36.03155577299413,
+          "value": 0.04158512720156554,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -734,22 +734,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 1.8086105675146773,
+          "value": 0.4207436399217221,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            1.7197651663405085,
-            1.8086105675146773,
-            3.3716731898238743
+            0.44765166340508805,
+            0.4158512720156556,
+            0.4207436399217221
           ]
         },
         "residual": {
-          "value": 1.0634487699189263,
+          "value": 0.15620631814369582,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 1.6519080234833659,
+          "value": 0.03180039138943247,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -763,22 +763,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 12.773923679060665,
+          "value": 0.5699608610567516,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            12.123336594911938,
-            14.283317025440313,
-            12.773923679060665
+            0.6360078277886496,
+            0.5699608610567516,
+            0.46232876712328774
           ]
         },
         "residual": {
-          "value": 5.256760204081632,
+          "value": 0.19569471624266155,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 2.1599804305283747,
+          "value": 0.17367906066536187,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -792,22 +792,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 0.901859099804305,
+          "value": 0.06360078277886502,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -1.9772994129158512,
-            0.901859099804305,
-            1.4848825831702543
+            0.10518590998043045,
+            0.06360078277886502,
+            0.0489236790606654
           ]
         },
         "residual": {
-          "value": -1.9211891948560247,
+          "value": -0.23273693038859375,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 3.4621819960861053,
+          "value": 0.05626223091976505,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -821,22 +821,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": -1.3943248532289627,
+          "value": 0.15410958904109587,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -1.9153131115459885,
-            -1.3943248532289627,
-            -0.62866927592955
+            0.20303326810176128,
+            0.15410958904109587,
+            0.10273972602739724
           ]
         },
         "residual": {
-          "value": -2.944365040536763,
+          "value": -0.28725188705619237,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 1.2866438356164385,
+          "value": 0.10029354207436404,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -850,22 +850,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": -1.4228962818003914,
+          "value": 0.0611545988258317,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -2.235812133072407,
-            -1.4228962818003914,
-            -0.7893346379647749
+            0.07827788649706453,
+            0.0611545988258317,
+            0.029354207436399243
           ]
         },
         "residual": {
-          "value": -3.282190033547666,
+          "value": -0.26908023483365956,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 1.446477495107632,
+          "value": 0.04892367906066529,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -879,22 +879,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": -2.101956947162427,
+          "value": 0.37915851272015655,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -4.400538160469667,
-            -1.6406555772994131,
-            -2.101956947162427
+            0.37426614481409,
+            0.37915851272015655,
+            0.38894324853228956
           ]
         },
         "residual": {
-          "value": -1.9955671652222537,
+          "value": 0.1408303047246296,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 2.7598825831702536,
+          "value": 0.01467710371819958,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -908,22 +908,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 0.00738747553816047,
+          "value": 0.051369863013698676,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            0.00738747553816047,
-            0.03517612524461843,
-            -0.47045009784735814
+            0.04647749510763208,
+            0.06604696673189829,
+            0.051369863013698676
           ]
         },
         "residual": {
-          "value": -7.260873287671234,
+          "value": -0.1956947162426614,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 0.5056262230919766,
+          "value": 0.019569471624266213,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -937,22 +937,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 3.5584148727984344,
+          "value": 0.3228962818003913,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            3.4899217221135026,
-            3.5584148727984344,
-            3.602348336594912
+            0.29843444227005866,
+            0.3228962818003913,
+            0.3424657534246575
           ]
         },
         "residual": {
-          "value": 0.9842692899077439,
+          "value": 0.15376013419066248,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 0.11242661448140945,
+          "value": 0.04403131115459885,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -966,22 +966,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 5.246135029354208,
+          "value": 0.4329745596868886,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            7.518052837573386,
-            5.107632093933463,
-            5.246135029354208
+            0.4060665362035227,
+            0.4329745596868886,
+            0.49412915851272005
           ]
         },
         "residual": {
-          "value": 3.944997553816046,
+          "value": 0.11881464914733028,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 2.4104207436399223,
+          "value": 0.08806262230919737,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -995,22 +995,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 4.935567514677104,
+          "value": 0.34980430528375733,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            8.293444227005873,
-            2.6956947162426617,
-            4.935567514677104
+            0.3498043052837574,
+            0.34980430528375733,
+            0.33268101761252444
           ]
         },
         "residual": {
-          "value": 3.3251764746994685,
+          "value": 0.14677103718199608,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 5.597749510763212,
+          "value": 0.017123287671232945,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1024,22 +1024,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 0.11766144814089972,
+          "value": 2.7158097471261166e-17,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -1.8458414872798417,
-            4.4736301369863005,
-            0.11766144814089972
+            2.7158097471261166e-17,
+            -0.007338551859099811,
+            0.017123287671232865
           ]
         },
         "residual": {
-          "value": 0.472953941850712,
+          "value": -0.11112664243779696,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 6.319471624266142,
+          "value": 0.024461839530332676,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1053,22 +1053,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 17.774804305283755,
+          "value": 0.4280821917808219,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            15.393884540117416,
-            17.774804305283755,
-            22.202446183953036
+            0.4280821917808219,
+            0.45743639921722123,
+            0.39383561643835624
           ]
         },
         "residual": {
-          "value": 8.428657045009782,
+          "value": 0.14921722113502933,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 6.8085616438356205,
+          "value": 0.063600782778865,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1082,22 +1082,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 11.731066536203523,
+          "value": 0.6824853228962818,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            19.49187866927593,
-            11.731066536203523,
-            9.234295499021528
+            0.6824853228962818,
+            0.7240704500978475,
+            0.6433463796477495
           ]
         },
         "residual": {
-          "value": 3.65792738328208,
+          "value": 0.2585965893206599,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 10.257583170254403,
+          "value": 0.080724070450098,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1111,22 +1111,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 12.448581213307241,
+          "value": 0.4892367906066536,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            11.309540117416828,
-            15.512084148727986,
-            12.448581213307241
+            0.4892367906066536,
+            0.5332681017612525,
+            0.44275929549902154
           ]
         },
         "residual": {
-          "value": 4.066188495946324,
+          "value": 0.17647469946882854,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 4.202544031311158,
+          "value": 0.09050880626223096,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1140,22 +1140,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 8.316634050880626,
+          "value": 0.022015655577299377,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            8.316634050880626,
-            12.41545988258317,
-            4.943003913894325
+            0.022015655577299377,
+            0.0489236790606654,
+            0.01956947162426616
           ]
         },
         "residual": {
-          "value": 1.899924867207157,
+          "value": -0.1988398098965614,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 7.472455968688845,
+          "value": 0.02935420743639924,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1169,22 +1169,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": 0.4206457925636009,
+          "value": 0.06360078277886502,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            0.2730430528375734,
-            0.4206457925636009,
-            4.2595401174168295
+            0.1223091976516634,
+            0.03180039138943257,
+            0.06360078277886502
           ]
         },
         "residual": {
-          "value": -2.958378180039139,
+          "value": -0.28235951915012575,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 3.986497064579256,
+          "value": 0.09050880626223083,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1198,22 +1198,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": -0.00577299412915842,
+          "value": -0.002446183953033216,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -0.01555772994129161,
-            -0.00577299412915842,
-            0.04818982387475539
+            0.017123287671232838,
+            -0.002446183953033216,
+            -0.009784735812132971
           ]
         },
         "residual": {
-          "value": -3.6940505311713725,
+          "value": -0.23727984344422698,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 0.063747553816047,
+          "value": 0.02690802348336581,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1227,22 +1227,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": -0.8759784735812141,
+          "value": 0.28375733855185914,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -3.269520547945205,
-            1.6367416829745596,
-            -0.8759784735812141
+            0.28375733855185914,
+            0.3155577299412916,
+            0.28131115459882583
           ]
         },
         "residual": {
-          "value": -2.5985724769359804,
+          "value": 0.14083030472462965,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 4.906262230919765,
+          "value": 0.03424657534246578,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1256,22 +1256,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": -0.4851272015655575,
+          "value": 0.15166340508806275,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -0.5308708414872799,
-            -0.4851272015655575,
-            0.7330724070450099
+            0.1541095890410961,
+            0.07827788649706464,
+            0.15166340508806275
           ]
         },
         "residual": {
-          "value": -2.9003966312552425,
+          "value": -0.2281940173329605,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 1.2639432485322897,
+          "value": 0.07583170254403145,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1285,22 +1285,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": -2.9480430528375727,
+          "value": 0.4403131115459882,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -2.9480430528375727,
-            4.450538160469666,
-            -3.790508806262232
+            0.4403131115459882,
+            0.4256360078277886,
+            0.46232876712328763
           ]
         },
         "residual": {
-          "value": -3.3976289488398095,
+          "value": 0.15236231478892923,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 8.241046966731897,
+          "value": 0.03669275929549903,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }
@@ -1314,22 +1314,22 @@
       },
       "metrics": {
         "surcharge": {
-          "value": -1.4122309197651661,
+          "value": 0.3204500978473581,
           "unit": "us",
           "stat": "median of 3 runs, per boundary",
           "samples": [
-            -4.602788649706456,
-            0.6068982387475533,
-            -1.4122309197651661
+            0.36448140900195697,
+            0.2837573385518591,
+            0.3204500978473581
           ]
         },
         "residual": {
-          "value": -2.171070380206877,
+          "value": 0.14362594352809616,
           "unit": "us",
           "stat": "surcharge minus the additive fit"
         },
         "spread": {
-          "value": 5.2096868884540095,
+          "value": 0.08072407045009788,
           "unit": "us",
           "stat": "max - min across 3 runs"
         }

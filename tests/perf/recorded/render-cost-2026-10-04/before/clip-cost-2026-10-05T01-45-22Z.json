@@ -1,0 +1,237 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "clip-cost",
+  "git": {
+    "sha": "8a57e2b20652f8c12a70c7f467f0368e366c3b97",
+    "dirty": true
+  },
+  "timestamp": "2026-10-05T01:45:22.791Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.10.0",
+    "loadavg": [
+      1.82,
+      1.84,
+      3.23
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "leaves": 512,
+    "leavesPerClipK8": 8,
+    "runs": 3,
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "rect-plain",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.14,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.16,
+            0.14,
+            0.11
+          ]
+        }
+      }
+    },
+    {
+      "id": "rect-clipped",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 1.675,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.675,
+            1.845,
+            1.275
+          ]
+        }
+      }
+    },
+    {
+      "id": "rect-cmbreak",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.995,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.905,
+            1.01,
+            0.995
+          ]
+        }
+      }
+    },
+    {
+      "id": "rect-clipped-k8",
+      "params": {
+        "groups": 64
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.195,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.195,
+            0.195,
+            0.19
+          ]
+        }
+      }
+    },
+    {
+      "id": "pat-plain",
+      "params": {
+        "groups": 0
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.55,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.55,
+            0.56,
+            0.49
+          ]
+        }
+      }
+    },
+    {
+      "id": "pat-clipped",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.98,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.98,
+            1.04,
+            0.88
+          ]
+        }
+      }
+    },
+    {
+      "id": "pat-cmbreak",
+      "params": {
+        "groups": 512
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 1.07,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.07,
+            1.145,
+            1.06
+          ]
+        }
+      }
+    },
+    {
+      "id": "pat-clipped-k8",
+      "params": {
+        "groups": 64
+      },
+      "metrics": {
+        "perFrame": {
+          "value": 0.765,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.765,
+            0.85,
+            0.665
+          ]
+        }
+      }
+    },
+    {
+      "id": "stencil push+pop",
+      "metrics": {
+        "perClip": {
+          "value": 0.8398437499999999,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, pat-clipped - pat-plain"
+        }
+      }
+    },
+    {
+      "id": "clip entry",
+      "metrics": {
+        "perClip": {
+          "value": 2.9589843750000004,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-clipped - rect-plain"
+        }
+      }
+    },
+    {
+      "id": "clip entry: batch break",
+      "metrics": {
+        "perClip": {
+          "value": 2.1191406250000004,
+          "unit": "us",
+          "stat": "clip entry - stencil push+pop"
+        }
+      }
+    },
+    {
+      "id": "solid-batch flush",
+      "metrics": {
+        "perFlush": {
+          "value": 0.5859374999999998,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-cmbreak - pat-cmbreak, net of plain"
+        }
+      }
+    },
+    {
+      "id": "clip entry at 8 leaves",
+      "metrics": {
+        "perClip": {
+          "value": 0.8593749999999999,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, rect-clipped-k8 - rect-plain"
+        }
+      }
+    },
+    {
+      "id": "stencil at 8 leaves",
+      "metrics": {
+        "perClip": {
+          "value": 3.3593749999999996,
+          "unit": "us",
+          "stat": "median across 3 runs of the per-run delta, pat-clipped-k8 - pat-plain"
+        }
+      }
+    }
+  ]
+}

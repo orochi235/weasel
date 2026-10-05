@@ -929,51 +929,51 @@ one dead `const` and four stale disable directives.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op factories, shape kinds and the `features` presets; public exports remain uncovered.
 
-- **(P2) Breaking the batch is what a frame pays for, and a clipped group is
-  the worst case.** Solids, all three gradients, images and text share one
-  batch (`renderer/drawBatch.ts`), and a boundary between any two of them costs
-  nothing measurable. What still costs is closing that batch early. Measured
-  2026-10-03 on teitou (Apple M5 Max, ANGLE Metal, idle); the result files are
-  in `tests/perf/recorded/render-cost-2026-10-03/`.
+- **(P2) What still breaks the batch, now that a rect clip does not.** A group
+  clipped by an axis-aligned rect no longer flushes: `batchClip.ts` cuts staged
+  quads to the rect on the CPU. Measured on teitou (Apple M5 Max, ANGLE Metal),
+  2026-10-04, one frame per task; the result files are in
+  `tests/perf/recorded/render-cost-2026-10-04/`, `before/` on main's renderer
+  and `after/` on the `clip-flush` branch at `f674f79c7`.
 
-  | at 60 Hz, `frame-budget.spec.ts` | elements a frame |
-  |---|---:|
-  | solid rects | 249,856 |
-  | images | 212,992 |
-  | scene tree | 194,560 |
-  | shader panels | 50,176 |
-  | gradient rects | 42,496 |
-  | stroked paths | 34,816 |
-  | text labels | 21,760 |
-  | mixed document | 15,616 |
-  | clipped groups, depth 1 | 1,360 |
-  | clipped groups, depth 4 | 976 |
+  | at 60 Hz, `frame-budget.spec.ts` | before | after |
+  |---|---:|---:|
+  | clipped groups, depth 1 | 3,424 | 194,560 |
+  | clipped groups, depth 4 | 2,080 |  65,536 |
 
-  - **A one-rect batch flush costs 7–17 us, and the figure will not hold
-    still.** `clip-cost.spec.ts` prices it at 16.6 us one run and 7.4 the next,
-    and single rows swing 2x between rounds. A pattern rect, which draws alone
-    from a mesh uploaded once, costs ~0.6 us and is steady.
-  - **The stencil is not the clip's cost any more.** Push and pop together are
-    0.83 us; the rest of a ~12 us clip entry is the flush the clip forces. Eight
-    rects under one clip cost ~80 us an entry, more than one rect does, which
-    nothing about the stencil explains.
-  - **Text closes the dearest batch.** In `transition-matrix.spec.ts` a
-    batched kind beside one that breaks the run pays 3–5 us a boundary for
-    solid, gradient or image and 8–18 us for text. The additive per-kind model
-    that fit in August no longer does; residuals reach 8 us.
-  - **The flush's GL calls do not account for it.** `flush-anatomy.spec.ts`
-    drops `flushBatch`'s calls one at a time through the real renderer, and the
-    rows move up and down by more than any one call could cost: bind and draw
-    alone ran 2.4–6.3 us across two runs. A ring of 1,024 slots instead of 64
-    changed nothing outside that noise, so it is not slot reuse either. The
-    instrument resolves nothing below ~5 us until whatever varies is found.
-  - Three uniforms are written on every flush whatever their value —
-    `u_synthBold`, `u_samplers`, `u_fieldScale` — plus a white-texture bind and
-    two `activeTexture` resets. Cheap to cache, but unpriced for the reason
-    above.
+  No other row moved by more than two runs of the same code differ, which on
+  teitou is up to 30%. What is left:
 
-  These are not comparable with the August figures this entry replaced, which
-  were measured on an M2 Max.
+  - **A run-breaker costs about 1.2–1.7 us a flush**, depending on the run's
+    speed state (`flush-anatomy.spec.ts`). Bind and draw are 0.9–1.1 of it; no
+    other call in `flushBatch` costs more than 0.15. So what remains is the
+    draw count: a color matrix, synthetic bold, and an eighth texture all still
+    break the run.
+  - **A clip only the stencil can express still flushes on entry and exit**:
+    a polygon, a rect turned off the axes, and a rect clip with a slanted item
+    crossing it (`DrawBatch.clipQuad` says why a slanted edge cannot be cut).
+    The stencil itself costs about 0.6–1.3 us a push and pop.
+  - **Caching `u_synthBold`, `u_samplers` and `u_fieldScale` was tried and
+    reverted.** It saved about 0.1 us a flush on color-matrix breaks and made
+    a frame of 20,000 stroked rects 30% slower, measured with both renderers
+    interleaved in one page. The cause was not found.
+  - **Text no longer closes the dearest batch.** `transition-matrix.spec.ts`
+    puts every boundary at 0.7 us or less, text's included; the 8–18 us of
+    the 2026-10-03 run was the timing method, below.
+
+- **(P2) Perf figures taken many frames to a task are suspect.** Drawn back to
+  back in one task, frames slow down 4–10x after about eight
+  (`tests/perf/README.md`, "Timing a frame"); that is what the old per-flush
+  figures measured. `frame-budget`, `transition-matrix`, `draw-loop`,
+  `clip-cost` and `flush-anatomy` now time one frame per task.
+  `image-quad.spec.ts`, `atlas-wall.spec.ts` and `fill-rate.spec.ts` still
+  time blocks, and decisions rest on their old numbers: `SOLID_RING_SIZE`,
+  `BATCH_TIERS` and the canonical-index note in `drawBatch.ts` cite
+  `image-quad` and `flush-anatomy` block figures, and
+  `MAX_BATCHED_MESH_VERTICES` in `draw.ts` cites `npm run test:perf`. Move the
+  three specs to `lib/frameTiming.ts`, re-measure, and correct or remove the
+  figures in those comments. What inside Chromium or ANGLE resets at a task
+  boundary is also unknown.
 
 - **(P3) `sampling: 'nearest'` costs up to 8x on a 122MB sheet.** A consumer
   drawing a 5652px atlas sees nearest cost 8.11x linear at 2:1 minification,

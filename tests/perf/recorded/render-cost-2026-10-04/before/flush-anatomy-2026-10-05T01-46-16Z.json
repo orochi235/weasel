@@ -2,10 +2,10 @@
   "schema": "weasel-perf-result/1",
   "benchmark": "flush-anatomy",
   "git": {
-    "sha": "7b370bb058c7e8449674c270d6d0409936a6878d",
+    "sha": "8a57e2b20652f8c12a70c7f467f0368e366c3b97",
     "dirty": true
   },
-  "timestamp": "2026-10-04T00:38:08.221Z",
+  "timestamp": "2026-10-05T01:46:16.558Z",
   "machine": {
     "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
     "softwareGl": false,
@@ -15,9 +15,9 @@
     "os": "Darwin 27.0.0 arm64",
     "node": "v26.10.0",
     "loadavg": [
-      3.94,
-      3.25,
-      3.19
+      1.67,
+      1.81,
+      3.13
     ]
   },
   "params": {
@@ -35,13 +35,13 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 13.6353515625,
+          "value": 1.6796875,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            13.6353515625,
-            10.021875,
-            16.69921875
+            1.73828125,
+            1.6796875,
+            1.66015625
           ]
         }
       }
@@ -53,17 +53,17 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 6.008203125,
+          "value": 1.5625,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            16.068164062500003,
-            6.008203125,
-            5.517578125
+            1.533203125,
+            1.5625,
+            1.5625
           ]
         },
         "saves": {
-          "value": 7.627148437500001,
+          "value": 0.1171875,
           "unit": "us",
           "stat": "the row above minus this row, medians"
         }
@@ -76,17 +76,17 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 13.06875,
+          "value": 1.50390625,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            16.669921875,
-            13.06875,
-            6.965234375
+            1.50390625,
+            1.50390625,
+            1.513671875
           ]
         },
         "saves": {
-          "value": -7.060546875,
+          "value": 0.05859375,
           "unit": "us",
           "stat": "the row above minus this row, medians"
         }
@@ -99,17 +99,17 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 8.100390625000001,
+          "value": 1.4453125,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            4.99140625,
-            9.365234375,
-            8.100390625000001
+            1.474609375,
+            1.4453125,
+            1.4453125
           ]
         },
         "saves": {
-          "value": 4.968359374999999,
+          "value": 0.05859375,
           "unit": "us",
           "stat": "the row above minus this row, medians"
         }
@@ -122,17 +122,17 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 8.7474609375,
+          "value": 1.318359375,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            8.7474609375,
-            8.8037109375,
-            5.9326171875
+            1.318359375,
+            1.396484375,
+            1.279296875
           ]
         },
         "saves": {
-          "value": -0.6470703124999986,
+          "value": 0.126953125,
           "unit": "us",
           "stat": "the row above minus this row, medians"
         }
@@ -145,17 +145,17 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 12.2681640625,
+          "value": 1.298828125,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            12.2681640625,
-            10.5052734375,
-            15.7787109375
+            1.298828125,
+            1.38671875,
+            1.25
           ]
         },
         "saves": {
-          "value": -3.5207031250000007,
+          "value": 0.01953125,
           "unit": "us",
           "stat": "the row above minus this row, medians"
         }
@@ -168,17 +168,17 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 9.5423828125,
+          "value": 1.318359375,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            9.5423828125,
-            9.00390625,
-            32.855859374999994
+            1.23046875,
+            1.376953125,
+            1.318359375
           ]
         },
         "saves": {
-          "value": 2.7257812500000007,
+          "value": -0.01953125,
           "unit": "us",
           "stat": "the row above minus this row, medians"
         }
@@ -191,17 +191,17 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 14.895117187499999,
+          "value": 1.259765625,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            14.895117187499999,
-            7.1484375,
-            47.6806640625
+            1.220703125,
+            1.328125,
+            1.259765625
           ]
         },
         "saves": {
-          "value": -5.352734374999999,
+          "value": 0.05859375,
           "unit": "us",
           "stat": "the row above minus this row, medians"
         }
@@ -214,17 +214,17 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 6.3232421875,
+          "value": 1.298828125,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            6.3232421875,
-            4.157421875,
-            60.15625
+            1.298828125,
+            1.328125,
+            1.259765625
           ]
         },
         "saves": {
-          "value": 8.571874999999999,
+          "value": -0.0390625,
           "unit": "us",
           "stat": "the row above minus this row, medians"
         }
@@ -237,17 +237,17 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 12.4951171875,
+          "value": 1.25,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            12.4951171875,
-            9.8267578125,
-            59.765625
+            1.25,
+            1.34765625,
+            1.23046875
           ]
         },
         "saves": {
-          "value": -6.171875,
+          "value": 0.048828125,
           "unit": "us",
           "stat": "the row above minus this row, medians"
         }
@@ -260,17 +260,17 @@
       },
       "metrics": {
         "perFlush": {
-          "value": 6.257421875,
+          "value": 1.142578125,
           "unit": "us",
-          "stat": "median of 3 runs",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            6.257421875,
-            2.370703125,
-            32.7392578125
+            1.123046875,
+            1.15234375,
+            1.142578125
           ]
         },
         "saves": {
-          "value": 6.2376953125,
+          "value": 0.107421875,
           "unit": "us",
           "stat": "the row above minus this row, medians"
         }
