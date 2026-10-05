@@ -1,5 +1,22 @@
 # @weasel-js/diagram
 
+## 1.8.0
+
+### Patch Changes
+
+- 4db0f2e: `PoseOverrides` has a new method, `read(id)`. It returns what a node is drawn and picked with: every source of overrides for that node folded into one, as of the last write or `commit()`. `get(id)` still returns the entry a writer stored, by reference. Painting, picking and `effectivePose` now call `read`. Today the only source is the entries table, so `read` and `get` agree. Once animations write overrides too, `read` will fold them in with the table.
+  
+  Anyone who implements `PoseOverrides`, or the `overrides` of a `PoseSource` stand-in or of diagram's `ParticipantScene`, has to add `read`. For a stand-in, `read: (id) => entries.get(id)` reproduces the old behavior.
+  
+  Core now depends on `@msb235/blits`, which does the folding.
+- Updated dependencies [d24f51f]
+- Updated dependencies [4db0f2e]
+- Updated dependencies [c1aa1f6]
+- Updated dependencies [2432ce3]
+- Updated dependencies [9b1ff50]
+  - @weasel-js/core@1.8.0
+  - @weasel-js/geom@1.8.0
+
 ## 1.7.3
 
 ### Patch Changes

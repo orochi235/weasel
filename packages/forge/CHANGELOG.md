@@ -1,5 +1,23 @@
 # @weasel-js/forge
 
+## 1.8.0
+
+### Patch Changes
+
+- Updated dependencies [d24f51f]
+- Updated dependencies [8a57e2b]
+- Updated dependencies [f1aaf3e]
+- Updated dependencies [4db0f2e]
+- Updated dependencies [c1aa1f6]
+- Updated dependencies [2432ce3]
+- Updated dependencies [9b1ff50]
+- Updated dependencies [b68a0e7]
+- Updated dependencies [8041802]
+  - @weasel-js/core@1.8.0
+  - @weasel-js/ui@1.8.0
+  - @weasel-js/labkit@1.8.0
+  - @weasel-js/theme@1.8.0
+
 ## 1.7.3
 
 ### Patch Changes

@@ -1,5 +1,9 @@
 # @weasel-js/cursor
 
+## 1.8.0
+
+No changes in this release.
+
 ## 1.7.3
 
 No changes in this release.

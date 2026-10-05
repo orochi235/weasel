@@ -1,5 +1,37 @@
 # @weasel-js/ui
 
+## 1.8.0
+
+### Patch Changes
+
+- 8a57e2b: Add a `bookmark` icon: a notched ribbon beside `pin` in the State group. It is fillable, so `<Icon name="bookmark" filled>` draws the solid ribbon for a bookmarked state.
+- c1aa1f6: A pref's label shortens to fit the room it is given. **Breaking:** `short` on a pref leaf and on an enum option is now a list of shorter forms, longest first (`short: ['Track', 'VA']`), where it was one string; wrap an existing value in an array. A toggle segment, a flag bar, and a `ToolOptionsBar` label show the longest form that fits, stepping every label in the bar down together, and `name` stays the accessible name. A leaf's `icon` is still drawn in place of any text form where it resolves; a flag with neither no longer falls back to its name's first letter.
+  
+  The mechanism is public: `useFitScope(ref)` measures an element and its parent for overflow, `<FitScope>` hands the step to the `<FitLabel forms>` beneath it, and `ToggleBar` is a scope on its own. `PropertyOption` and `PropertyBooleanFieldProps` take `short` beside `glyph`, which now means only a drawn glyph.
+  
+  <!-- bump-approved: minor: maintainer — minor release requested 2026-10-05 -->
+- 2432ce3: Quantities can be infinite. Every display shows ±Infinity as `∞`, spoken "infinity", and reads `∞`, `inf` and `infinity` back; `endless(display, 'never')` gives a display its own word, shown without a unit beside it and read back when typed. A zoom display used to print `Infinity` here.
+  
+  A slider can make an end stand for infinity. `Slider` and `PropertyField` take `endless: 'max' | 'min' | 'both'`: the end stop reports ±Infinity, a value of ±Infinity sits there, and the readout shows the display's word. A number pref leaf takes `endless` and `infinity` (its word), and labkit's number builder takes `.endless('never')`, so `f.number(Infinity).range(0, 5000).suffix('ms').endless('never')` reads "never" at the top of its track instead of "5000 ms".
+- b68a0e7: `--wzl-fg-muted` and `--wzl-fg-subtle` are now a step down from the text color in effect rather than fixed grays: `rgb(from currentColor r g b / 0.7)` and `/ 0.54` in dark mode, `/ 0.78` and `/ 0.64` in light. Muted text on an accent fill, a raised row, or a sunken rail follows the text beside it instead of landing on a gray picked for the default surface, and muted text nested in muted text no longer compounds. Under `--wzl-fg` both steps clear WCAG 4.5:1 on every neutral surface in both modes; dark-mode subtle text previously did not.
+  
+  In a property other than `color` the step is taken from the element's own `color`. `Checkbox`, `SwatchGrid`, `PatternPicker`, and `Disclosure` now inherit their text color so their hover edges and disabled fill step down from it, and `Slider`'s thumb fills from `--wzl-fg` directly. Nested entries in the `PrefsDialog` rail are drawn a step down from the entry they sit under again. labkit's `interstellar` theme drops its fixed-gray pins for both tokens and takes the same rule.
+  
+  The resolved theme record carries these tokens as CSS, since a canvas has no `currentColor`. New `resolveCurrentColor(value, current)` flattens one to a concrete color; the HUD window's title uses it.
+- 8041802: A toned property panel, callout, or dialog now sinks its controls' wells one lightness step below its own fill instead of to the theme's near-black sunken surface. Unselected flat `ToggleBar` cells, off `Switch` tracks, slider rails, checkboxes, and fields in a tinted panel stop being the highest-contrast things on it.
+- Updated dependencies [d24f51f]
+- Updated dependencies [4db0f2e]
+- Updated dependencies [c1aa1f6]
+- Updated dependencies [2432ce3]
+- Updated dependencies [9b1ff50]
+- Updated dependencies [b68a0e7]
+  - @weasel-js/core@1.8.0
+  - @weasel-js/quantity@1.8.0
+  - @weasel-js/theme@1.8.0
+  - @weasel-js/svg@1.8.0
+  - @weasel-js/font@1.8.0
+  - @weasel-js/modes@1.8.0
+
 ## 1.7.3
 
 ### Patch Changes
