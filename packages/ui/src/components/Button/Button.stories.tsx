@@ -3,6 +3,7 @@ import { useEffect, useState, type CSSProperties, type ReactElement } from 'reac
 import { Button, type ButtonVariant, type ButtonSize } from './Button';
 import { ToggleBar as KitToggleBar } from '../ToggleBar/ToggleBar';
 import { BADGE_STATUS_ICONS } from '../Badge/statusIcons';
+import { BUTTON_VARIANT_ICONS } from './variantIcons';
 
 const meta: Meta<typeof Button> = {
   title: 'ui/Foundations/Button',
@@ -17,7 +18,7 @@ const meta: Meta<typeof Button> = {
       control: { type: 'inline-radio', icons: BADGE_STATUS_ICONS },
       options: ['accent', 'neutral', 'muted', 'success', 'warn', 'danger'],
     },
-    variant: { control: 'inline-radio', options: ['primary', 'secondary', 'ghost', 'link'] },
+    variant: { control: { type: 'inline-radio', icons: BUTTON_VARIANT_ICONS }, options: ['primary', 'secondary', 'ghost', 'link'] },
     size: { control: 'inline-radio', options: ['sm', 'md'] },
     disabled: { control: 'boolean' },
     loading: { control: 'boolean' },

@@ -10,6 +10,7 @@ import { BASES, type BadgeBase } from './bases';
 import { EFFECTS, type BadgeEffect, type EffectSpec } from './effects';
 import { SHAPE_CONTROLS, defaultParamsFor } from './shapeControls';
 import { BADGE_STATUS_ICONS } from './statusIcons';
+import { BADGE_VARIANT_ICONS } from './variantIcons';
 
 const STATUSES: BadgeStatus[] = ['accent', 'info', 'success', 'warn', 'danger', 'muted', 'neutral'];
 const VARIANTS: BadgeVariant[] = ['outline', 'solid', 'subtle'];
@@ -28,7 +29,7 @@ const meta: Meta<typeof Badge> = {
     children: { control: 'text', description: 'Badge label content' },
     shape: { control: 'select', options: ALL_SHAPES },
     status: { control: { type: 'inline-radio', icons: BADGE_STATUS_ICONS }, options: STATUSES },
-    variant: { control: 'inline-radio', options: VARIANTS },
+    variant: { control: { type: 'inline-radio', icons: BADGE_VARIANT_ICONS }, options: VARIANTS },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
     bloat: {
       control: { type: 'range', min: -10, max: 20, step: 0.25 },
