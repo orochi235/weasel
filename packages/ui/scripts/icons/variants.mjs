@@ -61,8 +61,8 @@ export const VARIANTS = {
   // The edge is only implied — it appears on hover.
   variantGhost: chipStroke(` stroke-dasharray="${DASH} ${GAP}"`) + label,
 
-  // No chip: label over an underline. Both sit on whole pixel rows at 16px 1x.
-  variantLink: `<path d="M6.75 8.125h6.5"/><path d="M4.75 11.875h10.5" stroke-width="1.25"/>`,
+  // No chip: the series' label, over an underline on a whole pixel row at 16px 1x.
+  variantLink: label + `<path d="M4.75 13.125h10.5" stroke-width="1.25"/>`,
 
   // A label with nothing around it.
   variantPlain: label,

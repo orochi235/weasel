@@ -79,7 +79,7 @@ export const ICON_PATHS = {
   variantOutline: `<rect x="2.75" y="5.75" width="14.5" height="8.5" rx="2.5"/><path d="M6.75 10h6.5"/>`,
   variantSubtle: `<path d="M5.25 5H14.75A3.25 3.25 0 0 1 18 8.25V11.75A3.25 3.25 0 0 1 14.75 15H5.25A3.25 3.25 0 0 1 2 11.75V8.25A3.25 3.25 0 0 1 5.25 5Z" fill="currentColor" fill-opacity="0.32" stroke="none"/><path d="M6.75 10h6.5"/>`,
   variantGhost: `<rect x="2.75" y="5.75" width="14.5" height="8.5" rx="2.5" stroke-dasharray="1.56 1.92"/><path d="M6.75 10h6.5"/>`,
-  variantLink: `<path d="M6.75 8.125h6.5"/><path d="M4.75 11.875h10.5" stroke-width="1.25"/>`,
+  variantLink: `<path d="M6.75 10h6.5"/><path d="M4.75 13.125h10.5" stroke-width="1.25"/>`,
   variantPlain: `<path d="M6.75 10h6.5"/>`,
   variantSegmented: `<rect x="2.75" y="6.75" width="14.5" height="6.5" rx="3.25"/><rect x="7.25" y="8.5" width="5.5" height="3" rx="1.5" fill="currentColor" stroke="none"/>`,
   variantSegmentedMinimal: `<rect x="7.25" y="8.5" width="5.5" height="3" rx="1.5" fill="currentColor" stroke="none"/><path d="M3.75 10h1.5M14.75 10h1.5"/>`,
