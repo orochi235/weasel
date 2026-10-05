@@ -153,8 +153,7 @@ export function makeKindBuilders(res: KindResources): Record<KindId, LeafBuilder
     };
   };
 
-  /** One solid rect inside its own clipped group — the unit the frame-budget
-   *  spec prices at ~65 us. */
+  /** One solid rect inside its own clipped group. */
   const clip = (i: number) => ({
     kind: 'group',
     clip: {

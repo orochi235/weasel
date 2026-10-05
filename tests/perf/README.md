@@ -208,6 +208,24 @@ The two result files from the first run are in `recorded/`. `HVD_UPDATES=static`
 `every-frame` runs half the sweep, which is how it was run: each half took
 about 13 minutes on studio.
 
+## Timing a frame
+
+Specs that time the renderer draw **one frame per task** and take the median,
+through `lib/frameTiming.ts`, on a page `lib/isolate.ts` makes cross-origin
+isolated so `performance.now()` resolves microseconds rather than 100 us. `image-quad`, `atlas-wall`, and `fill-rate` still time blocks; see `docs/TODO.md`.
+
+A block of frames drawn back to back in one task measures something a frame
+loop never sees. Measured on teitou (Apple M5 Max, ANGLE Metal), 2026-10-04,
+with `flush-noise.spec.ts`: a frame of 512 one-rect flushes costs 0.5–0.8 ms
+when the page yields between frames. Inside one task the first eight frames
+still cost that, and every frame after them 3–9 ms, in plateaus that change
+from round to round, with single frames stalling 0.15–3.7 s inside the GPU
+process. The GPU process's own trace showed it busy on the CPU throughout
+(thread time equal to wall time), and the slowdown went away when the draws
+were dropped, not when the uploads were. That regime is what made
+a per-flush figure read 5 us one round and 29 the next. What inside Chromium
+or ANGLE resets at a task boundary was not found.
+
 ## Comparing two runs
 
 ```sh
@@ -228,7 +246,9 @@ import { metric, rounds, startRun } from './lib/result';
 
 const RUNS = rounds(3);
 const run = startRun('my-spec', { runs: RUNS });          // before measuring
-// ... measure, printing one line per cell as it lands: `  7/13  run 2  solid  0.412 ms/frame`
+// ... `await isolate(page)` before navigating, measure with lib/frameTiming.ts
+// in the page, and print one line per cell
+// as it lands: `  7/13  run 2  solid  0.412 ms/frame`
 run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
 run.item('solid n=512', { perFrame: metric(med, 'ms', `median of ${RUNS} runs`, samples) });
 run.write();

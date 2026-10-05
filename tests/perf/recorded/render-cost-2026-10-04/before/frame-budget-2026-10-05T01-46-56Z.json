@@ -2,10 +2,10 @@
   "schema": "weasel-perf-result/1",
   "benchmark": "frame-budget",
   "git": {
-    "sha": "7b370bb058c7e8449674c270d6d0409936a6878d",
+    "sha": "8a57e2b20652f8c12a70c7f467f0368e366c3b97",
     "dirty": true
   },
-  "timestamp": "2026-10-04T00:31:25.931Z",
+  "timestamp": "2026-10-05T01:46:56.280Z",
   "machine": {
     "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
     "softwareGl": false,
@@ -15,9 +15,9 @@
     "os": "Darwin 27.0.0 arm64",
     "node": "v26.10.0",
     "loadavg": [
-      1.96,
-      2.4,
-      3.01
+      1.79,
+      1.81,
+      3.07
     ]
   },
   "params": {
@@ -60,13 +60,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 249856,
+          "value": 321608,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            249856,
-            249856,
-            249856
+            366206,
+            321608,
+            299309
           ]
         }
       }
@@ -81,13 +81,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 120832,
+          "value": 114688,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            126976,
-            120832,
-            120832
+            139264,
+            114688,
+            108544
           ]
         }
       }
@@ -102,13 +102,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 34816,
+          "value": 22528,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            34816,
-            34816,
-            34816
+            26368,
+            22528,
+            21760
           ]
         }
       }
@@ -123,13 +123,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 17152,
+          "value": 14080,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            17920,
-            17152,
-            17152
+            15616,
+            14080,
+            11392
           ]
         }
       }
@@ -144,12 +144,12 @@
       },
       "metrics": {
         "capacity": {
-          "value": 194560,
+          "value": 188416,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            194560,
-            200704,
+            151552,
+            188416,
             188416
           ]
         }
@@ -169,8 +169,8 @@
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
+            50176,
             77824,
-            71680,
             90112
           ]
         }
@@ -186,13 +186,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 21760,
+          "value": 16384,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            21760,
-            21760,
-            21760
+            16384,
+            16384,
+            17920
           ]
         }
       }
@@ -207,13 +207,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 10240,
+          "value": 7552,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            10240,
-            10240,
-            9856
+            5440,
+            8704,
+            7552
           ]
         }
       }
@@ -228,13 +228,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 212992,
+          "value": 440536,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            237568,
-            206848,
-            212992
+            485134,
+            395938,
+            440536
           ]
         }
       }
@@ -249,13 +249,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 108544,
+          "value": 163840,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            108544,
-            114688,
-            102400
+            169984,
+            139264,
+            163840
           ]
         }
       }
@@ -270,13 +270,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 50176,
+          "value": 47104,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            50176,
-            50176,
-            50176
+            47104,
+            47104,
+            37888
           ]
         }
       }
@@ -291,13 +291,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 25600,
+          "value": 19456,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            25600,
-            25600,
-            24832
+            22528,
+            15616,
+            19456
           ]
         }
       }
@@ -312,13 +312,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 1360,
+          "value": 3424,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            1792,
-            1360,
-            1360
+            3232,
+            3424,
+            3712
           ]
         }
       }
@@ -333,13 +333,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 1024,
+          "value": 2560,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            1072,
-            808,
-            1024
+            2560,
+            2560,
+            2464
           ]
         }
       }
@@ -354,13 +354,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 976,
+          "value": 2080,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            1408,
-            976,
-            976
+            2080,
+            1984,
+            2080
           ]
         }
       }
@@ -375,13 +375,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 736,
+          "value": 1408,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            760,
-            568,
-            736
+            1408,
+            1312,
+            1408
           ]
         }
       }
@@ -396,13 +396,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 42496,
+          "value": 33280,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            39424,
-            42496,
-            42496
+            34816,
+            31744,
+            33280
           ]
         }
       }
@@ -417,13 +417,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 20992,
+          "value": 16384,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            19456,
-            20992,
-            20992
+            11392,
+            16384,
+            17152
           ]
         }
       }
@@ -438,13 +438,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 15616,
+          "value": 37888,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            16384,
-            15616,
-            15616
+            37888,
+            37888,
+            37888
           ]
         }
       }
@@ -459,13 +459,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 7936,
+          "value": 20224,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            7936,
-            7936,
-            7936
+            21760,
+            20224,
+            20224
           ]
         }
       }

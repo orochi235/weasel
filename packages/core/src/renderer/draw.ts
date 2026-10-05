@@ -47,6 +47,7 @@ import { strokeMesh, quantizeStrokeScale } from './cache/strokeMeshCache';
 import { cachedMarkerCommands } from './cache/markerCommandCache';
 import { resolveMarkerSize } from '../core/markerInset';
 import { DrawBatch, type GradientUV } from './drawBatch';
+import { axisAlignedClipRect, intersectClipRects, type ClipRect } from './batchClip';
 import {
   BATCH_TEXTURE_SLOTS, PAINT_MODE_PLAIN, PAINT_MODE_RADIAL, PAINT_MODE_CONIC,
 } from './shaders/batchFill';
@@ -98,6 +99,10 @@ export interface DrawContext {
    * incremented/decremented symmetrically by drawGroup around cmd.clip pushes.
    */
   clipDepth: number;
+  /** The clips of the groups drawing now, outermost first. See `enterClip`. */
+  clipStack: ClipEntry[];
+  /** Set while `enterUncut` stages an item the rect clips could not cut. */
+  uncut?: boolean;
   /** Flatness tolerance for curve tessellation, in WORLD units. When set,
    *  fill meshes bypass the Path-identity cache (whose key excludes
    *  tolerance) and are tessellated fresh per frame via the transient pool.
@@ -140,6 +145,18 @@ export interface DrawContext {
   /** Per-frame counters the renderer reads back after the stream ends.
    *  Absent, nothing is counted. */
   stats?: { drawCalls: number };
+}
+
+/** One clipped group's clip, while its children draw. */
+export interface ClipEntry {
+  path: Path;
+  /** The group's transform, which `path` is in. */
+  transform: GlMat3;
+  /** Where staged geometry is cut, for a clip that is an axis-aligned rect;
+   *  `null` for one only the stencil can express. */
+  rect: ClipRect | null;
+  /** The stencil bit this clip holds, or 0 while it holds none. */
+  depth: number;
 }
 
 /** The paints atlas glyphs draw through a program of their own: `texture` is
@@ -327,7 +344,7 @@ export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
     case 'text':   return drawText(ctx, cmd);
     case 'image':  return drawImage(ctx, cmd);
     case 'sprites': return drawSprites(ctx, cmd);
-    case 'shader': flushBatch(ctx); return drawShader(ctx, cmd);
+    case 'shader': flushForOwnDraw(ctx); return drawShader(ctx, cmd);
   }
 }
 
@@ -575,16 +592,21 @@ function drawGroupWithEffects(
   height: number,
 ): void {
   const gl = ctx.gl;
-  // Anything staged belongs to the parent's buffer, not this one.
-  flushBatch(ctx);
+  // Anything staged belongs to the parent's buffer, not this one, and the
+  // composite below draws under the parent's clips.
+  flushForOwnDraw(ctx);
 
   const parentTarget = ctx.renderTarget ?? null;
   const parentClipDepth = ctx.clipDepth;
+  const parentClipStack = ctx.clipStack;
+  const parentBatchClip = ctx.drawBatch.clip;
   const scissorWasOn = gl.isEnabled(gl.SCISSOR_TEST);
 
   let front = targets.acquire(width, height);
   const composited = ctx.state.pushIsolated({ transform: cmd.transform });
   ctx.clipDepth = 0;
+  ctx.clipStack = [];
+  ctx.drawBatch.clip = null;
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, front.fbo);
   ctx.renderTarget = front;
@@ -619,6 +641,8 @@ function drawGroupWithEffects(
   // Back to the parent's buffer, and back under its rules.
   ctx.state.pop();
   ctx.clipDepth = parentClipDepth;
+  ctx.clipStack = parentClipStack;
+  ctx.drawBatch.clip = parentBatchClip;
   ctx.renderTarget = parentTarget;
   returnToRenderTarget(ctx, width, height, scissorWasOn);
 
@@ -720,8 +744,8 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
     colorMatrix: cmd.colorMatrix,
   });
   if (cmd.clip) {
-    const newDepth = ctx.clipDepth + 1;
-    if (newDepth > 7) {
+    const pending = ctx.clipStack.reduce((n, e) => n + (e.depth === 0 ? 1 : 0), 0);
+    if (ctx.clipDepth + pending + 1 > 7) {
       ctx.state.pop();
       throw new Error(
         'weasel: clip nesting depth exceeded (max 7). You can\'t nest more than 7 levels ' +
@@ -729,15 +753,126 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
         'poses outside the scene graph.',
       );
     }
-    pushClip(ctx, cmd.clip, newDepth);
-    ctx.clipDepth = newDepth;
+    enterClip(ctx, cmd.clip);
   }
   for (const child of cmd.children) dispatch(ctx, child);
-  if (cmd.clip) {
-    popClip(ctx, cmd.clip, ctx.clipDepth - 1);
-    ctx.clipDepth -= 1;
-  }
+  if (cmd.clip) leaveClip(ctx);
   ctx.state.pop();
+}
+
+/**
+ * Push a group's clip.
+ *
+ * A clip only the stencil can express takes its bit now. An axis-aligned rect
+ * takes none: staged geometry is cut to it on the CPU (`batchClip.ts`), so
+ * content inside it joins the run outside it instead of costing a flush on
+ * the way in and another on the way out. It takes a bit only if something that
+ * draws for itself turns up inside it — see `flushForOwnDraw`.
+ */
+function enterClip(ctx: DrawContext, path: Path): void {
+  const transform = ctx.state.transform;
+  const rect = axisAlignedClipRect(path, transform);
+  if (rect === null) {
+    // Bits nest in stack order, so any rect clip still without one takes it
+    // first.
+    materializeClips(ctx);
+    const depth = ctx.clipDepth + 1;
+    pushClip(ctx, path, depth);
+    ctx.clipDepth = depth;
+    ctx.clipStack.push({ path, transform, rect: null, depth });
+  } else {
+    ctx.clipStack.push({ path, transform, rect, depth: 0 });
+  }
+  syncBatchClip(ctx);
+}
+
+function leaveClip(ctx: DrawContext): void {
+  const entry = ctx.clipStack.pop()!;
+  if (entry.depth > 0) {
+    popClip(ctx, entry.path, entry.depth - 1, entry.transform);
+    ctx.clipDepth = entry.depth - 1;
+  }
+  syncBatchClip(ctx);
+}
+
+/** Give every rect clip on the stack its stencil bit, for a draw the CPU cut
+ *  cannot reach. */
+function materializeClips(ctx: DrawContext): void {
+  for (const entry of ctx.clipStack) {
+    if (entry.depth !== 0) continue;
+    const depth = ctx.clipDepth + 1;
+    pushClip(ctx, entry.path, depth, entry.transform);
+    entry.depth = depth;
+    ctx.clipDepth = depth;
+  }
+}
+
+function syncBatchClip(ctx: DrawContext): void {
+  let rect: ClipRect | null = null;
+  for (const entry of ctx.clipStack) {
+    if (entry.rect) rect = rect ? intersectClipRects(rect, entry.rect) : entry.rect;
+  }
+  ctx.drawBatch.clip = rect;
+}
+
+/**
+ * The clip depth a run is staged and drawn at: the innermost clip only the
+ * stencil can express. Rect clips are left out whether or not they hold a bit,
+ * because the CPU cut already applies them — which is what lets a run cross
+ * them.
+ */
+function runClipDepth(ctx: DrawContext): number {
+  const stack = ctx.clipStack;
+  if (stack.length === 0 || ctx.uncut) return ctx.clipDepth;
+  for (let i = stack.length - 1; i >= 0; i--) {
+    if (stack[i].rect === null) return stack[i].depth;
+  }
+  // Only rect clips: whatever depth held before the first of them took a bit.
+  for (const entry of stack) if (entry.depth > 0) return entry.depth - 1;
+  return ctx.clipDepth;
+}
+
+/**
+ * Put the rect clips on the stencil and stop cutting, for an item the batch
+ * refused to cut — one with a slanted edge across a clip (see
+ * `DrawBatch.clipQuad`). Staged again between this and `leaveUncut`, the item
+ * sees the full stencil depth and lands in a run of its own under every clip.
+ * Returns the cut to hand back.
+ *
+ * A pair rather than a callback: the staging paths are hot, and a closure
+ * over their arguments would cost an allocation on every call, refused or not.
+ */
+function enterUncut(ctx: DrawContext): ClipRect | null {
+  materializeClips(ctx);
+  const cut = ctx.drawBatch.clip;
+  ctx.drawBatch.clip = null;
+  ctx.uncut = true;
+  return cut;
+}
+
+function leaveUncut(ctx: DrawContext, cut: ClipRect | null): void {
+  ctx.drawBatch.clip = cut;
+  ctx.uncut = false;
+}
+
+/** `fn(ctx, a, b)` again, uncut — for the stage-and-push helpers, which pass
+ *  themselves. */
+function retryUncut<A, B>(
+  ctx: DrawContext, a: A, b: B, fn: (ctx: DrawContext, a: A, b: B) => void,
+): void {
+  const cut = enterUncut(ctx);
+  fn(ctx, a, b);
+  leaveUncut(ctx, cut);
+}
+
+/**
+ * Drain the run before a draw that does not go through it, and give that draw
+ * the stencil it tests against. Every such draw starts here or behind a
+ * `tryStageFill` that returned `false`, which ends the same way.
+ */
+function flushForOwnDraw(ctx: DrawContext): void {
+  flushBatch(ctx);
+  if (ctx.clipStack.length > 0) materializeClips(ctx);
 }
 
 /** A path command whose stroke actually paints something. */
@@ -859,7 +994,7 @@ function stagedStateIsLive(
   image?: ImageBitmap, sampling?: 'linear' | 'nearest',
   synthBold = 0,
 ): boolean {
-  if (staged.clipDepth !== ctx.clipDepth) return false;
+  if (staged.clipDepth !== (ctx.clipStack.length === 0 ? ctx.clipDepth : runClipDepth(ctx))) return false;
   // Solids and image quads ask with 0, which is what a run of them carries, so
   // this only ever breaks between two kinds of glyph.
   if (staged.synthBold !== synthBold) return false;
@@ -957,7 +1092,7 @@ function openRun(ctx: DrawContext): StagedBatchState {
     ctx.batchState = {
       alpha: foldsAlpha ? 1 : ctx.state.alpha,
       colorMatrix,
-      clipDepth: ctx.clipDepth,
+      clipDepth: runClipDepth(ctx),
       synthBold: 0,
       foldsAlpha,
       textures: [],
@@ -1075,9 +1210,9 @@ function pushRect(
 ): void {
   const staged = stageSolid(ctx, 4);
   const [r, g, b, a] = stagedColor(ctx, staged, fill);
-  ctx.drawBatch.pushRect(
+  if (!ctx.drawBatch.pushRect(
     rect.x, rect.y, rect.width, rect.height, ctx.state.transform, r, g, b, a,
-  );
+  )) retryUncut(ctx, rect, fill, pushRect);
 }
 
 function pushMesh(
@@ -1087,7 +1222,9 @@ function pushMesh(
 ): void {
   const staged = stageSolid(ctx, mesh.vertices.length >> 1);
   const [r, g, b, a] = stagedColor(ctx, staged, paint);
-  ctx.drawBatch.pushMesh(mesh, ctx.state.transform, r, g, b, a);
+  if (!ctx.drawBatch.pushMesh(mesh, ctx.state.transform, r, g, b, a)) {
+    retryUncut(ctx, mesh, paint, pushMesh);
+  }
 }
 
 /** A paint a run can express, resolved from a `FillStyle` by `batchPaint`. */
@@ -1243,10 +1380,10 @@ function pushRampRect(
   const { uv, post } = rampVertices(paint, rowV);
   // White vertices, so the ramp texel passes through as its own color and the
   // alpha channel carries what `u_opacity` and `u_alpha` used to.
-  ctx.drawBatch.pushGradientRect(
+  if (!ctx.drawBatch.pushGradientRect(
     rect.x, rect.y, rect.width, rect.height, ctx.state.transform,
     uv, post, slot, paint.mode, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
-  );
+  )) retryUncut(ctx, rect, paint, pushRampRect);
 }
 
 function pushRampMesh(
@@ -1254,10 +1391,10 @@ function pushRampMesh(
 ): void {
   const { staged, slot, rowV } = stageRamps(ctx, paint.stops, paint.space, mesh.vertices.length >> 1);
   const { uv, post } = rampVertices(paint, rowV);
-  ctx.drawBatch.pushGradientMesh(
+  if (!ctx.drawBatch.pushGradientMesh(
     mesh, ctx.state.transform,
     uv, post, slot, paint.mode, 1, 1, 1, stagedAlpha(ctx, staged, paint.opacity),
-  );
+  )) retryUncut(ctx, mesh, paint, pushRampMesh);
 }
 
 /**
@@ -1278,7 +1415,7 @@ export function tryStageFill(
     else pushMesh(ctx, mesh, paint);
     return true;
   }
-  flushBatch(ctx);
+  flushForOwnDraw(ctx);
   return false;
 }
 
@@ -1289,9 +1426,11 @@ export function tryStageFill(
  * the color matrix does not, because `pushRect` notices and flushes then, and
  * one that only changes transform or alpha does not break the run at all.
  *
- * Clips are the exception both ways: the stencil is real GL state that the
- * staged values cannot reconstruct, so `pushClip` and `popClip` flush *before*
- * mutating it rather than leaving it to the next push.
+ * Stencil clips are the exception: the stencil is real GL state that the
+ * staged values cannot reconstruct, so `pushClip` flushes *before* writing a
+ * bit, and `popClip` before clearing one a staged run tests. Rect clips never
+ * reach the stencil while only staged geometry is inside them — see
+ * `enterClip`.
  *
  * `u_color` stays white: the vertex-color program multiplies it by the
  * per-vertex color, so white makes the result bit-identical to the flat
@@ -1301,7 +1440,12 @@ export function tryStageFill(
 export function flushBatch(ctx: DrawContext): void {
   const batch = ctx.drawBatch;
   const staged = ctx.batchState;
-  if (batch.length === 0 || staged === undefined) return;
+  if (batch.length === 0 || staged === undefined) {
+    // An empty run's state still names a clip depth, and an item refused by
+    // the CPU cut is about to be staged again under a different one.
+    ctx.batchState = undefined;
+    return;
+  }
   const gl = ctx.gl;
   const prog = ctx.batchFill;
   gl.useProgram(prog.handle);
@@ -1692,12 +1836,12 @@ function ancestorMask(depth: number): number {
  * The caller is responsible for setting stencilFunc / stencilOp / stencilMask
  * and colorMask before calling.
  */
-function rasterizePathToStencil(ctx: DrawContext, path: Path): void {
+function rasterizePathToStencil(ctx: DrawContext, path: Path, model: GlMat3): void {
   const gl = ctx.gl;
   const handle = fillMeshHandle(ctx, path);
   gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);
-  setProjAndModel(ctx, ctx.pathFill);
+  setProjAndModel(ctx, ctx.pathFill, model);
   drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
   gl.bindVertexArray(null);
 }
@@ -1710,7 +1854,9 @@ function rasterizePathToStencil(ctx: DrawContext, path: Path): void {
  * Invariant: restores stencilMask(0xFF) on exit so callers (draw functions)
  * can rely on an unnarrowed mask after clip ops complete.
  */
-export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
+export function pushClip(
+  ctx: DrawContext, path: Path, newDepth: number, model: GlMat3 = ctx.state.transform,
+): void {
   // First, not last: a run staged outside the clip would otherwise draw under
   // a mask it never had.
   flushBatch(ctx);
@@ -1725,7 +1871,7 @@ export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
   gl.stencilFunc(gl.EQUAL, ref, ancestors);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
 
-  rasterizePathToStencil(ctx, path);
+  rasterizePathToStencil(ctx, path, model);
 
   gl.colorMask(true, true, true, true);
   // Restore full mask so subsequent draw functions don't inherit a narrowed mask.
@@ -1744,10 +1890,12 @@ export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
  * Invariant: restores stencilMask(0xFF) on exit so callers are not left with
  * a narrowed mask.
  */
-export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
+export function popClip(
+  ctx: DrawContext, path: Path, oldDepth: number, model: GlMat3 = ctx.state.transform,
+): void {
   // First, not last: past here the mask is gone, and these pixels belonged
-  // inside it.
-  flushBatch(ctx);
+  // inside it. A run staged below this bit does not test it, so it lives on.
+  if (ctx.batchState !== undefined && ctx.batchState.clipDepth > oldDepth) flushBatch(ctx);
   const gl = ctx.gl;
   // Re-enable stencil: child draw functions (evenodd/stenciled-stroke) disable
   // it at their end; we must set it before writing the clear pass.
@@ -1761,7 +1909,7 @@ export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
   gl.stencilFunc(gl.EQUAL, ref, ref);
   gl.stencilOp(gl.KEEP, gl.KEEP, gl.ZERO);
 
-  rasterizePathToStencil(ctx, path);
+  rasterizePathToStencil(ctx, path, model);
 
   gl.colorMask(true, true, true, true);
   // Restore full mask so subsequent draw functions don't inherit a narrowed mask.
@@ -1838,7 +1986,7 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   const stroke = cmd.stroke;
   const align = stroke.align ?? 'center';
   if (cmd.path.kind === 'polygon' && align !== 'center') {
-    flushBatch(ctx);
+    flushForOwnDraw(ctx);
     drawPathStrokeStenciled(ctx, cmd, align);
   } else {
     drawPathStrokeUnclipped(ctx, cmd);
@@ -2261,11 +2409,16 @@ function drawTextDecorations(
       continue;
     }
     const [r, g, b, a] = 'color' in d.fill ? resolveColor(d.fill.color) : [0, 0, 0, 1];
-    const staged = stageSolid(ctx, 4);
-    ctx.drawBatch.pushRect(
-      d.x0 + dx, d.y0 + dy, d.x1 - d.x0, d.y1 - d.y0, ctx.state.transform,
-      r, g, b, a * (staged.foldsAlpha ? ctx.state.alpha : 1),
-    );
+    let cut: ClipRect | null | undefined;
+    for (;;) {
+      const staged = stageSolid(ctx, 4);
+      if (ctx.drawBatch.pushRect(
+        d.x0 + dx, d.y0 + dy, d.x1 - d.x0, d.y1 - d.y0, ctx.state.transform,
+        r, g, b, a * (staged.foldsAlpha ? ctx.state.alpha : 1),
+      )) break;
+      cut = enterUncut(ctx);
+    }
+    if (cut !== undefined) leaveUncut(ctx, cut);
   }
 }
 
@@ -2337,12 +2490,22 @@ function drawTextGroup(
       ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
       alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
     }
-    batch.pushGlyph(
+    let cut: ClipRect | null | undefined;
+    while (!batch.pushGlyph(
       q.x0 + dx, q.y0 + dy, q.x1 + dx, q.y1 + dy, q.baselineY + dy, tanItalic, m,
       q.u0, q.v0, q.u1, q.v1,
       color[0], color[1], color[2], alpha,
       slot, mode,
-    );
+    )) {
+      cut = enterUncut(ctx);
+      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
+      alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
+    }
+    if (cut !== undefined) {
+      leaveUncut(ctx, cut);
+      ({ staged, slot } = stageGlyphs(ctx, atlasId, fieldScale, bold));
+      alpha = color[3] * (staged.foldsAlpha ? ctx.state.alpha : 1);
+    }
   }
 }
 
@@ -2378,7 +2541,7 @@ function drawPaintedGlyphs(
 ): void {
   const prog = ctx.glyphPaintProgram?.(kind);
   if (!prog) return;
-  flushBatch(ctx);
+  flushForOwnDraw(ctx);
   const fill = group.fill!;
   const m = ctx.state.transform;
   let bound: ShaderProgram | null;
@@ -2399,6 +2562,9 @@ function drawPaintedGlyphs(
   applyClipTest(ctx);
 
   const batch = ctx.drawBatch;
+  // `flushForOwnDraw` put every clip on the stencil, which this draw tests.
+  const cut = batch.clip;
+  batch.clip = null;
   for (const q of group.quads) {
     if (batch.wouldOverflow(4)) drawStagedGlyphs(ctx);
     batch.pushGlyph(
@@ -2409,6 +2575,7 @@ function drawPaintedGlyphs(
     );
   }
   drawStagedGlyphs(ctx);
+  batch.clip = cut;
   gl.activeTexture(gl.TEXTURE0);
   gl.bindVertexArray(null);
 }
@@ -2573,7 +2740,7 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   if (cmd.flipX) { const t = u0; u0 = u1; u1 = t; }
   if (cmd.flipY) { const t = v0; v0 = v1; v1 = t; }
 
-  ctx.drawBatch.pushQuad(
+  if (!ctx.drawBatch.pushQuad(
     cmd.x, cmd.y, cmd.w, cmd.h, ctx.state.transform,
     u0, v0, u1, v1,
     // Group alpha rides the vertices only where it rode the solid colors too:
@@ -2581,7 +2748,7 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
     // as well would apply it twice.
     (cmd.opacity ?? 1) * (staged.foldsAlpha ? ctx.state.alpha : 1),
     slot,
-  );
+  )) retryUncut(ctx, cmd, undefined, drawImage);
 }
 
 /**
@@ -2614,11 +2781,21 @@ function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
       groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
     }
     const sx = data[i + 4], sy = data[i + 5], sw = data[i + 6], sh = data[i + 7];
-    batch.pushQuad(
+    let cut: ClipRect | null | undefined;
+    while (!batch.pushQuad(
       data[i], data[i + 1], data[i + 2], data[i + 3], m,
       sx / tw, sy / th, (sx + sw) / tw, (sy + sh) / th,
       data[i + 8] * groupAlpha, slot,
-    );
+    )) {
+      cut = enterUncut(ctx);
+      ({ staged, slot } = stageImage(ctx, cmd.image, sampling));
+      groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
+    }
+    if (cut !== undefined) {
+      leaveUncut(ctx, cut);
+      ({ staged, slot } = stageImage(ctx, cmd.image, sampling));
+      groupAlpha = staged.foldsAlpha ? ctx.state.alpha : 1;
+    }
   }
 }
 
