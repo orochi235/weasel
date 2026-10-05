@@ -30,6 +30,12 @@ describe('stance rules', () => {
     }
   });
 
+  it.each(STANCE_SURFACES.filter((s) => s.sinks).map((s) => [s.id, s] as const))('%s sinks its wells without reading them as its own surface', (_, surface) => {
+    expect(surface.fills).toBe(true);
+    expect(surface.base.surface).not.toContain('--wzl-surface-sunken');
+    expect(stanceCss(surface)).toContain('--wzl-surface-sunken: oklch(from var(--_s-fill)');
+  });
+
   // check:labels accepts a title reading --_s-title-case, so the recipe has to
   // arrive through the slot: a stanced panel's title, and every group and
   // subpanel title, are labels.

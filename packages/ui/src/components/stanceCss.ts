@@ -22,6 +22,12 @@ export interface StanceSurface {
   readonly nests?: boolean;
   /** The surface paints `--_s-fill` — its surface, with any tone mixed in — as its background. */
   readonly fills?: boolean;
+  /**
+   * A toned surface sinks its controls' wells one step below its fill, not to
+   * the theme's sunken surface. Not for a surface whose own surface is the
+   * sunken one: the two would define each other.
+   */
+  readonly sinks?: boolean;
   /** The surface takes a tone and no stance. */
   readonly stanceless?: boolean;
 }
@@ -65,6 +71,10 @@ export function stanceCss(surface: StanceSurface): string {
       `${sel} {\n  --_s-fill: var(--_s-surface);\n}`,
       `${sel}[data-tone],\n${sel}[data-stance] {\n  --_s-fill: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));\n}`,
     );
+  }
+  if (surface.sinks) {
+    // A fixed lightness step, so a well reads one step down in either mode.
+    rules.push(`${sel}[data-tone] {\n  --wzl-surface-sunken: oklch(from var(--_s-fill) calc(l - 0.06) c h);\n}`);
   }
   if ('accent' in surface.base) {
     // Only a surface that names its tone recolors its controls. Derived against

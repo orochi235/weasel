@@ -8,6 +8,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     selector: '.panel',
     nests: true,
     fills: true,
+    sinks: true,
     base: {
       surface: 'var(--wzl-panel-surface)',
       'border-color': 'var(--wzl-panel-border-color)',
@@ -84,6 +85,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     file: 'packages/ui/src/components/Callout/Callout.module.css',
     selector: '.popover',
     fills: true,
+    sinks: true,
     base: {
       surface: 'var(--wzl-surface)',
       // Also the arrow's stroke.
@@ -107,6 +109,7 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     file: 'packages/ui/src/components/Dialog/Dialog.module.css',
     selector: '.modal',
     fills: true,
+    sinks: true,
     base: {
       surface: 'var(--wzl-surface)',
       'border-color': 'var(--wzl-border)',
