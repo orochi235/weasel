@@ -17,6 +17,9 @@ interface HarnessProps {
   shape?: LoupeShape;
   place?: LoupeOptions['place'];
   seen?: (loupe: LoupeState) => void;
+  /** A wheel listener of the host's own, attached before the loupe's, as a
+   *  camera's controls on the same canvas would be. */
+  hostWheel?: (e: WheelEvent) => void;
 }
 
 /** Reports the loupe's state as text, which is every assertion jsdom can make
@@ -24,7 +27,7 @@ interface HarnessProps {
  *
  *  Mounts `<LoupeGestures>` the way `<TrialLoupe>` does, so the key and wheel
  *  cases below exercise the real dispatcher route rather than a stand-in. */
-function Harness({ enabled = true, seen, sample, ...rest }: HarnessProps) {
+function Harness({ enabled = true, seen, sample, hostWheel, ...rest }: HarnessProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const options = resolveLoupe(rest);
   const loupe = useLoupe({
@@ -35,7 +38,13 @@ function Harness({ enabled = true, seen, sample, ...rest }: HarnessProps) {
   });
   seen?.(loupe);
   return (
-    <div ref={hostRef} data-testid="host">
+    <div
+      ref={(el) => {
+        if (el && hostWheel && hostRef.current !== el) el.addEventListener('wheel', hostWheel);
+        hostRef.current = el;
+      }}
+      data-testid="host"
+    >
       <WeaselProvider isolate>
         <LoupeGestures
           hostRef={hostRef as RefObject<HTMLElement | null>}
@@ -144,6 +153,20 @@ describe('useLoupe', () => {
       fireEvent.wheel(screen.getByTestId('host'), { deltaY: -100 });
     });
     expect(Number(read('factor'))).toBeGreaterThan(6);
+  });
+
+  it('keeps the wheel from the host’s own listeners while the lens is up', () => {
+    const hostWheel = vi.fn();
+    render(<Harness hostWheel={hostWheel} />);
+    move(40, 25);
+    act(() => {
+      fireEvent.wheel(screen.getByTestId('host'), { deltaY: -100 });
+    });
+    expect(Number(read('factor'))).toBeGreaterThan(6);
+    expect(hostWheel).not.toHaveBeenCalled();
+    fireEvent.pointerLeave(screen.getByTestId('host'));
+    fireEvent.wheel(screen.getByTestId('host'), { deltaY: -100 });
+    expect(hostWheel).toHaveBeenCalledTimes(1);
   });
 
   it('clamps the wheel to the declared bounds', () => {

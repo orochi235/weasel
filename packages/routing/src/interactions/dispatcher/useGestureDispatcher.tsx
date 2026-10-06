@@ -862,13 +862,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ...(body?.kind !== undefined ? { bodyKind: body.kind } : {}),
       };
       const result = dispatch(ev);
-      // When a binding claims the wheel (viewport.zoom on Cmd+wheel, viewport.pan
-      // on plain wheel, etc.), the page must not also scroll. Suppress the
-      // default + bubble so a parent scroll container doesn't move while the
-      // canvas is zooming or panning.
+      // A claimed wheel neither scrolls the page nor reaches the canvas's other listeners
+      // (a host's camera would zoom under a loupe); capture phase lets this run first.
       if (result === 'handled') {
         e.preventDefault();
-        e.stopPropagation();
+        e.stopImmediatePropagation();
       }
     };
 
@@ -1645,7 +1643,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.addEventListener('pointerdown', onPointerDown);
       canvas?.addEventListener('pointermove', onHoverMove);
     }
-    if (wheelChannel) canvas?.addEventListener('wheel', onWheel, { passive: false });
+    if (wheelChannel) canvas?.addEventListener('wheel', onWheel, { passive: false, capture: true });
     if (pinchChannel) {
       canvas?.addEventListener('gesturestart', onGestureStart);
       canvas?.addEventListener('gesturechange', onGestureChange);
@@ -1673,7 +1671,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       window.removeEventListener('keydown', scheduleHoverCursorRefresh);
       window.removeEventListener('keyup', scheduleHoverCursorRefresh);
       canvas?.removeEventListener('pointerleave', onHoverPointerLeave);
-      canvas?.removeEventListener('wheel', onWheel);
+      canvas?.removeEventListener('wheel', onWheel, { capture: true });
       canvas?.removeEventListener('gesturestart', onGestureStart);
       canvas?.removeEventListener('gesturechange', onGestureChange);
       canvas?.removeEventListener('gestureend', onGestureEnd);
