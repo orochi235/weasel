@@ -72,7 +72,6 @@ import { JobProgress } from '../primitives/JobProgress';
 import { Legend, type LegendEntry } from '../primitives/Legend';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { Split } from '../primitives/Split';
-import { StatusBar } from '../primitives/StatusBar';
 import { Toolbar } from '../primitives/Toolbar';
 import { ZoomControl } from '../primitives/ZoomControl';
 
@@ -830,12 +829,6 @@ function LabChrome() {
             <Toolbar.Button onClick={() => {}}>Save</Toolbar.Button>
           </Toolbar.Group>
         </Toolbar>
-      </Cell>
-      <Cell label="StatusBar">
-        <StatusBar>
-          <StatusBar.Section>Items: 12</StatusBar.Section>
-          <StatusBar.Section>Zoom: 100%</StatusBar.Section>
-        </StatusBar>
       </Cell>
       <Cell label="Legend, JobProgress">
         <Legend entries={LEGEND} />

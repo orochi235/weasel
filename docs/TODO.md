@@ -557,15 +557,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) Delete labkit's `StatusBar` primitive once levar is off it.** labkit's chrome now
-  draws its status region with `@weasel-js/ui`'s `StatusBar` (`divided`), so
-  `packages/labkit/src/primitives/StatusBar.*` is a second component for the same thing. It
-  stays only because levar's `visor/src/eye/EyeView.tsx` and `visor/src/accuracy/AccuracyMap.tsx`
-  still use `StatusBar.Section`; levar's session asked for the deletion to wait until it has
-  moved them to `StatusBarItem`. Then delete the primitive and its stylesheet import, and have
-  `@weasel-js/labkit/primitives` re-export ui's `StatusBar`, `StatusBarItem` and
-  `StatusBarSpacer`.
-
 - **(P2) `useReorderDragList` drops before any row the pointer is over, however tall.**
   `computeTargetIndex` takes the first row whose bottom is below the pointer, so a pointer on
   the lower half of a row still inserts above it. That is right for one-line rows; for tall

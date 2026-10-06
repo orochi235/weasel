@@ -78,7 +78,7 @@ export interface WheelEvent extends EventModifiers {
 /**
  * One sample of a pinch the platform reports as a scale rather than as
  * pointers — WebKit's `gesturechange`, a macOS trackpad pinch in Safari. A
- * touchscreen pinch arrives as pointers and is {@link MultitouchEvent}.
+ * touchscreen pinch arrives as pointers and is {@link MultiTouchEvent}.
  */
 export interface PinchEvent extends EventModifiers {
   kind: 'pinch';
@@ -284,7 +284,7 @@ export interface LongPressEvent extends EventModifiers {
 }
 
 /** A running multitouch gesture (e.g. pinch/rotate). */
-export interface MultitouchEvent extends EventModifiers {
+export interface MultiTouchEvent extends EventModifiers {
   kind: 'multitouch';
   fingers: number;
   /**
@@ -308,7 +308,7 @@ export interface MultitouchEvent extends EventModifiers {
 }
 
 /** A multi-finger tap (no drag). */
-export interface MultitouchTapEvent extends EventModifiers {
+export interface MultiTouchTapEvent extends EventModifiers {
   kind: 'multitouchtap';
   fingers: number;
 }
@@ -364,7 +364,7 @@ export type InputEvent =
   | DoubleClickEvent
   | ContextMenuEvent
   | LongPressEvent
-  | MultitouchEvent
-  | MultitouchTapEvent
+  | MultiTouchEvent
+  | MultiTouchTapEvent
   | DropEvent
   | PasteEvent;
