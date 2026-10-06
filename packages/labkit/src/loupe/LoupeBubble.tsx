@@ -19,11 +19,10 @@ export interface LoupeBubbleProps {
  * content already on the page rather than adding any.
  */
 export function LoupeBubble({ aim, diameter, hostRef, children }: LoupeBubbleProps) {
-  const style: CSSProperties = {
-    width: `${diameter}px`,
-    height: `${diameter}px`,
+  const style = {
+    '--lk-loupe-diameter': `${diameter}px`,
     transform: `translate(${aim.x - diameter / 2}px, ${aim.y - diameter / 2}px)`,
-  };
+  } as CSSProperties;
   return (
     <div ref={hostRef} className="lk-loupe" style={style} aria-hidden="true">
       {children}

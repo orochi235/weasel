@@ -93,6 +93,25 @@ describe('useLoupe', () => {
     expect(read('visible')).toBe('false');
   });
 
+  it('opens a peek where the pointer already is', () => {
+    // The model ignores aims while the lens is down, so a peek over a pointer
+    // that has not moved since must aim from what the listener saw.
+    render(<Harness enabled={false} />);
+    move(40, 25);
+    act(() => {
+      fireEvent.keyDown(window, { key: 'Alt' });
+    });
+    expect(read('aim')).toBe('40,25');
+  });
+
+  it('opens where the pointer already is when turned on', () => {
+    const { rerender } = render(<Harness enabled={false} />);
+    move(40, 25);
+    rerender(<Harness enabled />);
+    expect(read('visible')).toBe('true');
+    expect(read('aim')).toBe('40,25');
+  });
+
   it('does not peek when its options turned the key off', () => {
     render(<Harness enabled={false} peekKey={null} />);
     move(40, 25);
