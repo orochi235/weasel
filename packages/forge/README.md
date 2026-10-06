@@ -91,6 +91,47 @@ returns `#/ui-button--primary?label=Save&look.px=8`, and `parseRoute`,
 `paramsToKnobs` and `knobsToParams` read and write the same form against a
 story's schema.
 
+## Timelines
+
+A story that declares a timeline gets a playhead, and its trial gets a
+transport in the status bar: a scrub bar, play and pause, loop, and rate. Times
+are in ms, as `@weasel-js/ui`'s timeline components take them.
+
+```tsx
+import { story, usePlayhead } from '@weasel-js/forge';
+
+function Ball() {
+  const t = usePlayhead(); // ms
+  return <circle cx={t / 10} cy={10} r={8} />;
+}
+
+export const Swing = story({
+  timeline: { duration: 4000, start: -500, loop: true, rate: 1 },
+  render: () => <svg><Ball /></svg>,
+});
+// CSF: parameters: { forge: { timeline: { duration: 4000 } } }
+```
+
+The span runs from `start` (default 0; below zero is a lead-in) for `duration`.
+`loop` defaults to true and `rate` to 1. A meta's `timeline` covers every story
+in its file. A function in place of the object is handed the trial's config, or
+a CSF story's args, so the span can follow a control:
+`timeline: (config) => ({ duration: config.seconds * 1000 })`.
+
+`usePlayhead()` returns the time, and re-renders only the component that calls
+it. `useTimeline()` returns the whole clock — `time`, `playing`, `span`, `loop`,
+`rate` — with `play`, `pause`, `seek`, `setLoop`, `setRate`, and `setSpan` for a
+span the story learns only once it runs (null goes back to the declared one).
+Either throws in a story that declares no timeline.
+
+The clock belongs to the trial, so two trials of one story play independently.
+It runs only while the story's box is on screen and the page is visible. While
+the clock is paused, the URL holds the playhead in seconds, so a paused frame
+works as a link: `#/<story>?t=1.5`. Opening that URL starts the story paused at
+1.5s. Playing drops `t` rather than rewriting it every frame. An index page, an
+isolated story's frame and a story test show the story paused at its span's
+start, with no transport.
+
 ## Index pages
 
 Every component — every story title — has an index page, opened by clicking

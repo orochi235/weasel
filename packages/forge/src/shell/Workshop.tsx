@@ -13,6 +13,7 @@ import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
+import { createTrialClocks, TrialClocksContext } from '../timeline/trialClocks';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
 import type { StoryChanges } from './storyChanges';
@@ -106,6 +107,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
     document.title = title;
   }, [title]);
   const [frames] = useState(createTrialFrames);
+  const [clocks] = useState(createTrialClocks);
   const [pool, setPool] = useState<FramePool | null>(null);
   // Warm frames are for the stories that render in one: every story when no importers are given, else the isolated.
   const framed = importers === undefined || index.some((entry) => entry.isolate !== undefined);
@@ -175,30 +177,32 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
       <DependenciesContext.Provider value={dependencies ?? null}>
         <FramePoolContext.Provider value={pool}>
           <TrialFramesContext.Provider value={frames}>
-            <Lab
-              title={title}
-              density="roomy"
-              {...(labTheme ? { theme: labTheme } : {})}
-              instruments={registry.instruments}
-              defaultInstrument={initialStory(entries, first.id)}
-              storageKey={storageKey ?? 'weaselforge'}
-              {...(storage ? { storage } : {})}
-              labChrome={labChrome}
-              addTrial={false}
-              {...(config?.controls ? { controls: config.controls } : {})}
-              {...(config?.pages ? { pages: config.pages } : {})}
-              {...(config?.path !== undefined ? { path: config.path } : {})}
-            >
-              <RouteOpener index={entries} />
-              <RouteKnobs instruments={registry.instruments} isReady={registry.isReady} />
-              <StoryInfoDialog
-                index={index}
-                isReady={registry.isReady}
-                isOpen={infoOpen}
-                onOpenChange={setInfoOpen}
-              />
-              <LabGlobals declarations={declarations} onChange={reportLabValues} />
-            </Lab>
+            <TrialClocksContext.Provider value={clocks}>
+              <Lab
+                title={title}
+                density="roomy"
+                {...(labTheme ? { theme: labTheme } : {})}
+                instruments={registry.instruments}
+                defaultInstrument={initialStory(entries, first.id)}
+                storageKey={storageKey ?? 'weaselforge'}
+                {...(storage ? { storage } : {})}
+                labChrome={labChrome}
+                addTrial={false}
+                {...(config?.controls ? { controls: config.controls } : {})}
+                {...(config?.pages ? { pages: config.pages } : {})}
+                {...(config?.path !== undefined ? { path: config.path } : {})}
+              >
+                <RouteOpener index={entries} />
+                <RouteKnobs instruments={registry.instruments} isReady={registry.isReady} />
+                <StoryInfoDialog
+                  index={index}
+                  isReady={registry.isReady}
+                  isOpen={infoOpen}
+                  onOpenChange={setInfoOpen}
+                />
+                <LabGlobals declarations={declarations} onChange={reportLabValues} />
+              </Lab>
+            </TrialClocksContext.Provider>
           </TrialFramesContext.Provider>
         </FramePoolContext.Provider>
       </DependenciesContext.Provider>

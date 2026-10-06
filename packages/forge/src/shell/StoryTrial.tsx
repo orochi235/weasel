@@ -1,10 +1,16 @@
-import type { RenderContext } from '@weasel-js/labkit';
+import { type RenderContext, TrialIdContext } from '@weasel-js/labkit';
 import { useLatest } from '@weasel-js/core';
-import { memo, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, type RefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
 import { StoryHost } from '../frame/StoryHost';
 import type { Globals } from '../protocol/messages';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
+import { ClockContext } from '../timeline/context';
+import { initialPlayhead } from '../timeline/playheadUrl';
+import { useStoryClock } from '../timeline/StoryClock';
+import { TrialClocksContext } from '../timeline/trialClocks';
+import { useClockLoop } from '../timeline/useClockLoop';
+import { useHeldPlayhead } from '../timeline/useHeldPlayhead';
 import { isGlobalsPath, storyConfig } from './globals';
 import { TrialHost } from './TrialHost';
 
@@ -70,21 +76,33 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   }, [latest]);
   const setState = useCallback((next: unknown) => latest.current.setState(next), [latest]);
 
+  // The story's clock lives with its trial: the trial's transport reads it from the registry, the story from context.
+  const trialId = useContext(TrialIdContext);
+  const clocks = useContext(TrialClocksContext);
+  const ownHost = useRef<HTMLElement | null>(null);
+  const host = hostRef ?? ownHost;
+  const clock = useStoryClock(story.timeline?.(config) ?? null, () => initialPlayhead(story.id));
+  useClockLoop(clock, host);
+  useHeldPlayhead(clock, story.id);
+  useEffect(() => (clock && clocks && trialId ? clocks.publish(trialId, clock) : undefined), [clock, clocks, trialId]);
+
   const decorators = setup.decorators ?? NO_DECORATORS;
   const latestError = useLatest(onError);
   const reportError = useCallback((error: unknown) => latestError.current?.(error), [latestError]);
   const render = (globals: Globals) => (
-    <StoryBody
-      story={story}
-      config={config}
-      setConfig={setConfig}
-      state={ctx.state}
-      setState={setState}
-      globals={globals}
-      decorators={decorators}
-      resetKey={resetKey}
-      onError={reportError}
-    />
+    <ClockContext.Provider value={clock}>
+      <StoryBody
+        story={story}
+        config={config}
+        setConfig={setConfig}
+        state={ctx.state}
+        setState={setState}
+        globals={globals}
+        decorators={decorators}
+        resetKey={resetKey}
+        onError={reportError}
+      />
+    </ClockContext.Provider>
   );
 
   return (
@@ -92,7 +110,7 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
       layout={story.layout}
       setup={setup}
       config={ctx.config}
-      {...(hostRef ? { hostRef } : {})}
+      hostRef={host}
       {...(onRendered ? { onRendered } : {})}
     >
       {render}

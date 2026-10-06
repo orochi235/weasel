@@ -761,6 +761,13 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P3) A forge snapshot does not hold the playhead.** A timeline story's clock
+  lives in the trial's clock registry (`packages/forge/src/timeline/`), outside
+  the trial's config and state, so a labkit snapshot or a reload brings the
+  story back at its span's start. Only the URL's `t` survives. astv's labs kept
+  `t` in trial state, so a snapshot held a frame. Two trials showing the routed
+  story also both write `t`, and the last one to move wins.
+
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
   no Marks section and the tool rail holds only Info. The removed wiring — the

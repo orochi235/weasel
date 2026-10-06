@@ -1,0 +1,12 @@
+.fg-transport {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-6);
+  min-inline-size: 0;
+}
+
+.fg-transport__scrub {
+  inline-size: 16rem;
+  min-inline-size: 6rem;
+  flex: 1 1 16rem;
+}

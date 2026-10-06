@@ -3,6 +3,7 @@ import { type ConfigSchema, f } from '@weasel-js/labkit/config';
 import { useEffect } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
 import type { IndexEntry } from '../story/types';
+import { TrialTransport } from '../timeline/TransportBar';
 import { breadcrumb } from './breadcrumb';
 import { type GlobalDeclarations, withGlobals } from './globals';
 import { type IndexBundle, IndexTrial } from './IndexTrial';
@@ -32,12 +33,15 @@ export function documentInstrument(options: DocumentInstrumentOptions): Instrume
     initialState: (c) => initialState?.(c) ?? null,
     render: (ctx) =>
       loaded.kind === 'story' ? (
-        <StoryTrial story={loaded.story} setup={setup} ctx={ctx} />
+        <StoryTrial key={loaded.story.id} story={loaded.story} setup={setup} ctx={ctx} />
       ) : (
         <IndexTrial bundle={loaded.bundle} setup={setup} config={ctx.config} />
       ),
     ...(loaded.kind === 'story' && loaded.story.viewport
       ? { stage: { size: { width: loaded.story.viewport.width, height: loaded.story.viewport.height } } }
+      : {}),
+    ...(loaded.kind === 'story' && loaded.story.timeline
+      ? { chrome: [{ id: 'fg-transport', region: 'status', render: (c) => <TrialTransport trialId={c.trialId} /> }] }
       : {}),
   };
 }

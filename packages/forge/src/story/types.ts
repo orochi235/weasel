@@ -1,6 +1,7 @@
 import type { ConfigSchema } from '@weasel-js/labkit/config';
 import type { ComponentType, ReactNode } from 'react';
 import type { Globals, Layout, Viewport } from '../protocol/messages.ts';
+import type { TimelineSpec } from '../timeline/clock.ts';
 
 /** What a story's `render` and its decorators receive: the trial's config and state, the globals in force, and the
  *  story's own title and name. */
@@ -36,6 +37,8 @@ export interface MetaSpec {
   /** As CSF's meta `tags`; `'gallery'` marks a catalog or showcase rather than one component. Read from the source,
    *  so each must be a string literal. */
   tags?: readonly string[];
+  /** Gives every story in the file a playhead and a transport, unless the story declares its own. */
+  timeline?: TimelineSpec | ((config: Record<string, unknown>) => TimelineSpec);
 }
 
 /** What an index page is given: its component's stories, and the parts the generated page is built from. */
@@ -86,6 +89,9 @@ export interface StorySpec<C = Record<string, never>, S = undefined> {
   play?: (ctx: PlayContext<C>) => void | Promise<void>;
   /** Added to the meta's `tags`; `'!tag'` drops one. Read from the source, so each must be a string literal. */
   tags?: readonly string[];
+  /** Gives the story a playhead, which it reads with `usePlayhead` or `useTimeline`, and its trial a transport. A
+   *  function is handed the trial's config, for a span that follows a control. */
+  timeline?: TimelineSpec | ((config: C) => TimelineSpec);
 }
 
 /** One story, normalized — what both the native and CSF loaders produce. */
@@ -103,6 +109,8 @@ export interface LoadedStory {
   viewport: Viewport | null;
   isolate: string | null;
   play: ((ctx: PlayContext) => void | Promise<void>) | null;
+  /** The timeline the story declares, for a config; null when it declares none. */
+  timeline: ((config: unknown) => TimelineSpec) | null;
 }
 
 /** One story as the index knows it, before its module is loaded. */

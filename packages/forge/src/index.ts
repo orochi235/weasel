@@ -31,6 +31,8 @@ export type { GlobalsTarget } from './frame/globalsTarget';
 export type { A11yFinding, A11yNode, A11yReport } from './protocol/messages';
 export { FOLLOW_APP, type GlobalDeclaration, type GlobalDeclarations, type LabChrome } from './shell/globals';
 export { meta, story } from './story/define';
+export type { SpanOverride, TimelineSpec } from './timeline/clock';
+export { type StoryTimeline, usePlayhead, useTimeline } from './timeline/context';
 export { GALLERY_TAG } from './story/tags';
 export type {
   ComponentDeps,

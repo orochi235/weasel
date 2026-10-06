@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
+import { WithStoryClock } from '../timeline/StoryClock';
 
 export interface StoryHostProps {
   story: LoadedStory;
@@ -51,6 +52,10 @@ export class StoryHost extends Component<StoryHostProps, BoundaryState> {
       return <pre className="fg-frame__fault">{error instanceof Error ? error.message : String(error)}</pre>;
     }
     const { story, ctx, decorators } = this.props;
-    return <Decorated story={story} ctx={ctx} decorators={decorators} />;
+    return (
+      <WithStoryClock story={story} config={ctx.config}>
+        <Decorated story={story} ctx={ctx} decorators={decorators} />
+      </WithStoryClock>
+    );
   }
 }

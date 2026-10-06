@@ -16,6 +16,7 @@ import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } fr
 import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from './isPlainObject';
 import { withUnsent } from './portSafe';
+import { timelineOf } from '../timeline/declare';
 
 type Args = Record<string, unknown>;
 type CsfContext = {
@@ -210,7 +211,8 @@ export function loadCsfModule(
         );
 
     const layout = parameters.layout as Layout | undefined;
-    const isolate = (parameters.forge as { isolate?: unknown } | undefined)?.isolate;
+    const forgeParams = parameters.forge as { isolate?: unknown; timeline?: unknown } | undefined;
+    const isolate = forgeParams?.isolate;
     const play = spec.play ?? meta.play;
 
     stories.push({
@@ -232,6 +234,7 @@ export function loadCsfModule(
         ? ({ canvasElement, config, globals }: PlayContext) =>
             play({ ...csfContext(config, globals), canvasElement, step: async (_label, fn) => fn() })
         : null,
+      timeline: timelineOf(forgeParams?.timeline, (config) => csfContext(config, {}).args),
     });
   }
   return stories;

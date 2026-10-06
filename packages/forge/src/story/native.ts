@@ -1,6 +1,7 @@
 import { f } from '@weasel-js/labkit/config';
 import { isNative } from './define';
 import { storyId, storyNameFromExport } from './ids';
+import { timelineOf } from '../timeline/declare';
 import type { LoadedStory, MetaSpec, StorySpec } from './types';
 
 /** Normalizes a module written with `meta` and `story`; exports that are not stories are skipped. */
@@ -25,6 +26,7 @@ export function loadNativeModule(mod: Record<string, unknown>, autoTitle: string
       viewport: spec.viewport ?? null,
       isolate: spec.isolate ?? metaSpec.isolate ?? null,
       play: spec.play ?? null,
+      timeline: timelineOf(spec.timeline ?? metaSpec.timeline),
     });
   }
   return stories;

@@ -8,8 +8,11 @@ import { stableStringify } from '../protocol/messages';
  * (`look.px`) — unless its name is reserved for the workshop itself.
  */
 
-/** Param names that are never knobs. `t` is the playhead's. */
-export const RESERVED_PARAMS: ReadonlySet<string> = new Set(['t']);
+/** The param a paused playhead is held in, in seconds. */
+export const PLAYHEAD_PARAM = 't';
+
+/** Param names that are never knobs. */
+export const RESERVED_PARAMS: ReadonlySet<string> = new Set([PLAYHEAD_PARAM]);
 
 /** Config keys forge keeps for itself, such as the `$globals` pins, start with this and never reach the URL. */
 const INTERNAL_PREFIX = '$';
