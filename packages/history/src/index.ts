@@ -9,6 +9,7 @@ export type {
   SerializedHistory,
   HistoryLogger,
   HistorySelection,
+  HistoryBranch,
   RecordEntryOptions,
 } from './history';
 export type { Op } from './op';

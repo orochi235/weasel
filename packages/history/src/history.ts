@@ -64,6 +64,9 @@ export interface SerializedHistory {
    *  history matches the original's `entries().redo` ordering. */
   redoStack: SerializedHistoryEntry[];
   nextEntryId: number;
+  /** Futures kept by a branching history, each under the id of the entry it
+   *  forks from (0 for the start), entries in time order. Absent when none. */
+  branches?: { at: number; entries: SerializedHistoryEntry[] }[];
   /** Entries dropped because at least one of their ops lacked a `name`
    *  and therefore couldn't round-trip through the op-factory registry.
    *  Always present (zero when nothing was dropped) so callers can detect
@@ -104,6 +107,19 @@ export interface HistoryEntry {
   selectionAfter?: readonly string[];
 }
 
+/** One future at the current entry, as `History.branches()` lists it. */
+export interface HistoryBranch {
+  /** The id of the branch's first entry; what `switchBranch` takes. */
+  id: number;
+  /** The first entry's label and timestamp. */
+  label: string;
+  timestamp: number;
+  /** How many entries run along it from here, nested branches not counted. */
+  length: number;
+  /** Whether `redo()` would follow it. */
+  current: boolean;
+}
+
 /** Op-batched undo/redo controller returned by `createHistory`. */
 export interface History {
   apply(op: Op, label?: string): void;
@@ -142,6 +158,14 @@ export interface History {
    *  `onEvict` — retention by age, beside `historyLimit`'s by count. Redo
    *  entries are never pruned: they are a future still reachable. */
   prune(t: number): void;
+  /** The futures that fork from the current entry, oldest first: the redo
+   *  stack, marked `current`, and any a branching history kept. Empty when
+   *  there is nothing to redo and nothing was kept. */
+  branches(): readonly HistoryBranch[];
+  /** Make the branch `id` the redo future, keeping the one it replaces. Applies
+   *  nothing — both start from where the history stands. Throws when no branch
+   *  of that id forks from the current entry. */
+  switchBranch(id: number): void;
   /** Monotonic counter bumped on every push/undo/redo/clear/coalesce.
    *  Cheap to read; callers use it as a React dep to detect changes. */
   getVersion(): number;
@@ -240,6 +264,12 @@ export interface CreateHistoryOptions {
    *  `historyLimit` either: a restored snapshot may exceed the cap, which
    *  re-applies (evicting via `onEvict`) on the next push. */
   onEvict?: (entry: EvictedEntry) => void;
+  /** Keep the redo future when a push is made while there is one, as a branch
+   *  `branches()` lists and `switchBranch` returns to, instead of dropping it.
+   *  Undo and redo still walk one line, the current branch. An entry evicted by
+   *  `historyLimit` or `prune` takes the branches forking from it along.
+   *  Default `false`. */
+  branching?: boolean;
   /** Custom op rebuilder consulted by `restore()` before the global
    *  op-factory registry. Return `null` to fall through (global registry,
    *  then a no-op placeholder). Lets an owner rebuild ops whose handlers
@@ -279,6 +309,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const now = options.now ?? (() => Date.now());
   const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
   const onEvict = options.onEvict;
+  const branching = options.branching ?? false;
+  /** Futures a push set aside, by the id of the entry they fork from (0 for
+   *  the start), each in time order. Only a branching history adds to it. */
+  const forks = new Map<number, Entry[][]>();
   const customRebuild = options.rebuildOp;
   const selection = options.selection;
   const logger = options.debug ?? SILENT;
@@ -311,16 +345,37 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     }
   }
 
-  /** Clear the redo stack (branch-on-edit), reporting dropped entries. */
-  function dropRedo(): void {
+  /** Report `entries` evicted, and evict every branch forking from them. */
+  function evict(entries: Entry[]): void {
+    reportEvicted(entries);
+    for (const e of entries) {
+      const kept = forks.get(e.id);
+      if (!kept) continue;
+      forks.delete(e.id);
+      for (const branch of kept) evict(branch);
+    }
+  }
+
+  /** The id of the entry the history stands on, 0 at the start. */
+  function forkPoint(): number {
+    return undoStack[undoStack.length - 1]?.id ?? 0;
+  }
+
+  /** Clear the redo stack after a push forking from `at`: kept as a branch
+   *  when branching, else dropped and reported. */
+  function retireRedo(at: number): void {
     if (redoStack.length === 0) return;
-    reportEvicted(redoStack.splice(0));
+    const future = redoStack.splice(0);
+    if (!branching) return evict(future);
+    const kept = forks.get(at);
+    if (kept) kept.push(future.reverse());
+    else forks.set(at, [future.reverse()]);
   }
 
   /** Evict the oldest undo entries past `historyLimit`, reporting each. */
   function enforceLimit(): void {
     while (undoStack.length > historyLimit) {
-      reportEvicted([undoStack.shift()!]);
+      evict([undoStack.shift()!]);
     }
   }
 
@@ -435,11 +490,12 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       return;
     }
     logger.log(`push '${label}' (${ops.length} ops)`);
+    const at = forkPoint();
     undoStack.push({
       id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), pushes: 1, touchedIds: incoming,
       ...(selectionBefore ? { selectionBefore } : {}),
     });
-    dropRedo();
+    retireRedo(at);
     enforceLimit();
     bump();
     coalesceAnchorVersion = version;
@@ -474,9 +530,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undoDepth: () => undoStack.length,
     redoDepth: () => redoStack.length,
     clear: () => {
-      const had = undoStack.length > 0 || redoStack.length > 0;
+      const had = undoStack.length > 0 || redoStack.length > 0 || forks.size > 0;
       undoStack.length = 0;
       redoStack.length = 0;
+      forks.clear();
       if (had) bump();
     },
     entries() {
@@ -529,7 +586,29 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       let k = 0;
       while (k < undoStack.length && undoStack[k]!.timestamp < t) k++;
       if (k === 0) return;
-      reportEvicted(undoStack.splice(0, k));
+      evict(undoStack.splice(0, k));
+      bump();
+    },
+    branches() {
+      const view = (entries: readonly Entry[], current: boolean): HistoryBranch => {
+        const first = entries[0]!;
+        return { id: first.id, label: first.label, timestamp: first.timestamp, length: entries.length, current };
+      };
+      const out = (forks.get(forkPoint()) ?? []).map((b) => view(b, false));
+      if (redoStack.length > 0) out.push(view([...redoStack].reverse(), true));
+      return out.sort((a, b) => a.id - b.id);
+    },
+    switchBranch(id) {
+      if (redoStack[redoStack.length - 1]?.id === id) return;
+      const at = forkPoint();
+      const kept = forks.get(at) ?? [];
+      const i = kept.findIndex((b) => b[0]!.id === id);
+      if (i < 0) throw new Error(`No branch ${id} forks from entry ${at}`);
+      const [chosen] = kept.splice(i, 1);
+      if (redoStack.length > 0) kept.push(redoStack.splice(0).reverse());
+      if (kept.length > 0) forks.set(at, kept);
+      else forks.delete(at);
+      redoStack.push(...[...chosen!].reverse());
       bump();
     },
     getVersion: () => version,
@@ -548,18 +627,25 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         version: 1,
         undoStack: undoStack.map(project).filter((e): e is SerializedHistoryEntry => e !== null),
         redoStack: redoStack.map(project).filter((e): e is SerializedHistoryEntry => e !== null),
+        ...(forks.size > 0 ? {
+          branches: [...forks].flatMap(([at, kept]) => kept.map((b) => ({
+            at,
+            entries: b.map(project).filter((e): e is SerializedHistoryEntry => e !== null),
+          }))).filter((b) => b.entries.length > 0),
+        } : {}),
         nextEntryId,
         droppedEntries: dropped,
       };
     },
     recordEntry(ops: Op[], label: string, options: RecordEntryOptions = {}): void {
       if (ops.length === 0) return;
+      const at = forkPoint();
       undoStack.push({
         id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), pushes: 1,
         touchedIds: touchedIdsFromOps(ops),
         ...(options.selectionBefore ? { selectionBefore: [...options.selectionBefore] } : {}),
       });
-      dropRedo();
+      retireRedo(at);
       enforceLimit();
       bump();
     },
@@ -603,12 +689,20 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       for (const se of snapshot.redoStack) {
         redoStack.push(serialToEntry(se, customRebuild, logger));
       }
+      forks.clear();
+      for (const b of snapshot.branches ?? []) {
+        const entries = b.entries.map((se) => serialToEntry(se, customRebuild, logger));
+        const kept = forks.get(b.at);
+        if (kept) kept.push(entries);
+        else forks.set(b.at, [entries]);
+      }
       // Seed nextEntryId from the snapshot, then defensively bump past any
       // restored id — a malformed snapshot with duplicate or out-of-range
       // ids should never produce a collision with future entries.
       nextEntryId = snapshot.nextEntryId;
       for (const e of undoStack) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
       for (const e of redoStack) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
+      for (const kept of forks.values()) for (const b of kept) for (const e of b) if (e.id >= nextEntryId) nextEntryId = e.id + 1;
       bump();
     },
   };
