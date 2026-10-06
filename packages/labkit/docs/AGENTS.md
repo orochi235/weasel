@@ -12,6 +12,7 @@ A map of the library so agents can find what they need quickly.
 | `<Workspace>` | `src/lab/Workspace.tsx` |
 | `<Lightbox>`, `useLightbox`, `useLightboxControl`, `<LightboxLayers>` | `src/lightbox/` |
 | The lab body and its shared surface's layers | `src/lab/LabSurface.tsx` |
+| Presentation mode: `usePresentation`, `?present`, the seed and its store | `src/lab/presentation.tsx`, `src/lab/openLab.ts`, `src/lab/presentation.less` |
 | `<Toolbar>` + subcomponents | `src/primitives/Toolbar.tsx` |
 | `<StatusBar>`, `<StatusBarItem>`, `<StatusBarSpacer>` | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
 | `<FpsMeter>` | `src/primitives/FpsMeter.tsx` |
@@ -153,6 +154,26 @@ once (`loop: false`) unless declared otherwise.
   members in that vocabulary.
 - **Persistence**: `TrialRecord.clock` holds `{ elapsed, rate }`, written on
   rate, seek and loop changes, never per frame.
+
+## Presentation mode
+
+One trial shown without the lab's chrome or its own. The things that are not
+visible from the code:
+
+- **It is CSS over one tree, not a second render path.** `.lk-lab--present`
+  collapses every element between the lab body and the presented trial
+  (`display: contents`) and hides their siblings, so nothing remounts and a
+  round trip leaves every canvas and GL context in place. The presented trial
+  scopes the shared surface to itself, as the lightbox does.
+- **The document root's `color-scheme` is reset while presenting.** An iframe
+  whose root scheme differs from its embedder's is painted opaque, and
+  `tokens.css` sets one on `:root`.
+- **A lab that starts presenting has its own store** (`storageKey:present`):
+  an embed on the lab's origin shares its IndexedDB. The seed's fingerprint
+  (`stableStringify`) is kept beside it; a different seed at mount replaces the
+  stored trial, an unchanged one keeps the visitor's.
+- **Escape only exits a presentation `enter()` started.** A lab mounted
+  presenting is an embed, with no workspace a visitor should land in.
 
 ## When to use what
 
