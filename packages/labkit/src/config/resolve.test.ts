@@ -215,6 +215,18 @@ describe('resolveConfigSchema / nested groups', () => {
     expect(() => resolveConfigSchema(schema, [])).toThrow(/manual/);
   });
 
+  it('rejects a value leaf whose kind nothing can infer, naming it and the fix', () => {
+    const schema = f.schema({ grid: f.group({ when: f.value<number | null>(null) }) });
+    expect(() => resolveConfigSchema(schema, [])).toThrow(/grid\.when/);
+    expect(() => resolveConfigSchema(schema, [])).toThrow(/f\.custom/);
+  });
+
+  it('accepts a kindless value leaf once a lab rule supplies its kind', () => {
+    const rule: ConfigRule = (ctx) => (ctx.default === null ? { kind: 'number' } : null);
+    const schema = f.schema({ when: f.value<number | null>(null) });
+    expect(leafAt(resolveConfigSchema(schema, [rule]), 'when').kind).toBe('number');
+  });
+
   it('carries autoResolve, unpinned and manual onto the resolved leaf', () => {
     const r = resolveConfigSchema(
       f.schema({

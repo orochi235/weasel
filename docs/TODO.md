@@ -761,6 +761,15 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P3) The served page is titled "weaselforge" until the shell config loads.**
+  `ShellConfig.title` sets `document.title` at runtime, but the HTML the plugin
+  serves and builds (`packages/forge/src/vite/html.ts`) hard-codes
+  `<title>weaselforge</title>`, so a tab, a crawler or a link preview reads the
+  old name. The plugin cannot import the shell config module; either it learns
+  to read the title out of it at build time, or the title moves to
+  `ForgeOptions` — and then the shell config's copy should go, not stay as a
+  second source.
+
 - **(P2) A native story whose `meta` is not imported from `@weasel-js/forge`
   gets a different id in the index than at runtime.** The index
   (`packages/forge/src/vite/indexFile.ts`) reads `meta({ title })` only when

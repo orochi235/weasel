@@ -127,6 +127,11 @@ function resolveEntry(
     ...(entry.kind === null ? {} : { kind: entry.kind }),
   });
   const patch = applyRules(seed, { key, path, default: entry.default }, sink.chain);
+  if (patch.kind === undefined) {
+    throw new Error(
+      `[labkit] "${path}" is an f.value whose kind cannot be inferred from its default (${String(entry.default)}) — declare it with a typed builder, or f.custom(kind, default) for a value with no row`,
+    );
+  }
   const { autoResolve, unpinned, manual } = entry.options;
   return {
     ...patch,
