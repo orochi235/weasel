@@ -507,25 +507,17 @@ decomposition meant to absorb the first; it has not landed:
 ### weasel-history as a rewind log
 
 blits (meant to replace weasel's animation engine) will record a mix's host
-calls as `Op`s in a `@weasel-js/history` `History`, timestamped in mix time, so
-a mix can rewind and replay. Mike chose extending weasel-history over a parallel
-log, 2026-10-06. What it lacks, per blits' `NOTES-ON-SCRUBBING.md` (`687fac9`):
+calls as `Op`s in a `@weasel-js/history` `History`, stamped in mix time, and
+rewind by `goto(depthAt(t))`. Scrubbing never discards a recorded future: only
+a push drops redo (Mike, 2026-10-06).
 
-- **(P2) Seek by time.** `goto(n)` takes an entry count, and finding n for a
-  time means scanning `entries()`, which allocates. Add a goto by time, or cheap
-  access to an entry's timestamp.
-- **(P2) Timestamps do not persist.** `SerializedHistoryEntry` has no
-  `timestamp`, and `restore()` sets it to 0. Serialize it.
-- **(P2) Retention by age.** `historyLimit` counts entries; blits' horizon is a
-  span of time. Drop entries older than a time, reported through `onEvict`.
-- **(P2) Pull the next redo entry without applying it.** `redo()` and `goto()`
-  apply at once; a mix applies each op when its time comes, between steps, so it
-  needs to read the next redo entry and its timestamp and apply it itself.
+- **(P2) Branching history, as an option chosen when the history is created.**
+  With it on, a push made while entries sit on the redo stack keeps them as a
+  branch instead of dropping them. Wanted by Mike 2026-10-06; the API for
+  moving between branches is not designed yet.
 
 State checkpoints stay in blits, beside the `History`. Whether a mix keeps its
-own control logs beside the `History` for `project(t)`, and whether scrubbing
-back then forward replays later host calls or cuts them, are open decisions in
-blits.
+own control logs for `project(t)` is open in blits' `NOTES-ON-SCRUBBING.md`.
 
 ## Audio
 
@@ -996,12 +988,16 @@ one dead `const` and four stale disable directives.
     one.
 
 - **(P2) A ring of buffers measures slower than rewriting one.**
-  `SOLID_RING_SIZE` exists so a flush never writes a buffer a draw is still
-  reading, but on teitou (2026-10-05, `image-quad`'s raw rows, one frame a
-  task, two sittings) a quad through a ring of 64 costs 3.3–5.2 us against
-  2.5–3.0 through one buffer rewritten each time. The ring's case was measured on an M2 Max by the retired
-  block method. Try the renderer with a ring of 1 against 64 on the batch-
-  breaking specs before deciding anything.
+  `SOLID_RING_SIZE` (64) exists so a flush never writes a buffer a draw is
+  still reading. On teitou (Apple M5 Max, ANGLE Metal), 2026-10-06, four passes
+  back to back in ABBA order, a quad that ends its run (`image-quad`,
+  `renderer/unmerged`, 20,000 a frame) cost 22.50 and 21.99 us through a ring
+  of 64 against 17.75 and 18.09 through a ring of 1, with no overlap between
+  the sides' samples; `flush-anatomy` did not separate them. Result files:
+  `tests/perf/recorded/ring-size-2026-10-06/`. Only one GPU and backend has
+  been measured, and the ring's own case was made on an M2 Max by the retired
+  block method; D3D and Vulkan backends are where an in-flight buffer write
+  would stall, if anywhere.
 
 - **(P3) No spec measures `MAX_BATCHED_MESH_VERTICES`.** The cap of 256 sits at
   a break-even measured once by hand in 2026-08 with block timing. A spec timing
