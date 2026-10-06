@@ -50,6 +50,8 @@ The vite plugin takes two optional config modules:
   `style(css)` for a rule that should reach that story alone.
 - `shellConfig` default-exports `defineShellConfig({...})`: lab chrome, control
   renderers, and global declarations. Only the workshop page imports it.
+  `title` names the workshop in its header and as the document title
+  (default `weaselforge`), and `cssVars: false` leaves out the CSS Vars panel.
 
 ```ts
 forge({ stories: ['src/**/*.stories.tsx'], frameConfig: 'forge.frame.tsx', shellConfig: 'forge.shell.tsx' });
@@ -60,6 +62,34 @@ trial's config and state kept; the page itself stays.
 
 Clicking a story in the tree, or reaching one by its URL, shows it in the
 focused trial; Shift-click opens another trial beside it.
+
+## Knobs in the URL
+
+A story's URL carries its knobs — its args, the trial's controls — after the
+story id, in the hash:
+
+```
+/#/ui-button--primary?label=Save&look.px=8&disabled=true
+```
+
+Opening that URL shows the story with those values; every knob it leaves out
+is at its default. Changing a control rewrites the URL in place, without a
+history entry, and a value back at its default leaves the URL. Moving to
+another story starts with no knobs. Typing new knobs into the URL of the open
+story applies them.
+
+A knob inside a group is named by its dotted path (`look.px`). Each value is
+read as its control's type, or its default's when the control declares none:
+a number, `true`/`false` (`1`/`0`, or a bare `?disabled`, also work), one of an
+enum's options, a string, or JSON for a list or object. A value that does not
+read as its type, or names no knob, is ignored. `t` is reserved for the
+workshop and is never a knob.
+
+The functions behind this are exported from `@weasel-js/forge`, for a host
+building links: `storyHref('ui-button--primary', { label: 'Save', 'look.px': 8 })`
+returns `#/ui-button--primary?label=Save&look.px=8`, and `parseRoute`,
+`paramsToKnobs` and `knobsToParams` read and write the same form against a
+story's schema.
 
 ## Index pages
 

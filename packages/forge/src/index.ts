@@ -11,6 +11,22 @@ export type {
   StoryObj,
 } from './csf/types';
 export type { FrameSetup } from './frame/FrameController';
+export {
+  decodeKnob,
+  encodeKnob,
+  type ForgeRoute,
+  formatRoute,
+  type KnobLeaf,
+  type KnobPath,
+  knobParams,
+  knobPaths,
+  knobsToParams,
+  paramsToKnobs,
+  parseRoute,
+  RESERVED_PARAMS,
+  reservedParams,
+  storyHref,
+} from './route/url';
 export type { GlobalsTarget } from './frame/globalsTarget';
 export type { A11yFinding, A11yNode, A11yReport } from './protocol/messages';
 export { FOLLOW_APP, type GlobalDeclaration, type GlobalDeclarations, type LabChrome } from './shell/globals';

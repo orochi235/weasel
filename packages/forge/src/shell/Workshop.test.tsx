@@ -225,4 +225,28 @@ describe('Workshop', () => {
     ]);
     expect(items[0]).toHaveAttribute('aria-current', 'page');
   });
+
+  it('is titled weaselforge, on the page and in the document, unless the config names it', async () => {
+    location.hash = '#/x--a';
+    const { unmount } = render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await screen.findByRole('region', { name: /^Trial / });
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('weaselforge');
+    expect(document.title).toBe('weaselforge');
+    unmount();
+    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ title: 'astv parts' }} storage={createMemoryAdapter()} />);
+    await screen.findByRole('region', { name: /^Trial / });
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('astv parts');
+    expect(document.title).toBe('astv parts');
+  });
+
+  it('offers the CSS Vars panel unless the config turns it off', async () => {
+    location.hash = '#/x--a';
+    const { unmount } = render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await screen.findByRole('region', { name: /^Trial / });
+    expect(screen.getByRole('region', { name: 'CSS Vars' })).toBeInTheDocument();
+    unmount();
+    render(<Workshop index={[a]} frameUrl="/frame.html" config={{ cssVars: false }} storage={createMemoryAdapter()} />);
+    await screen.findByRole('region', { name: /^Trial / });
+    expect(screen.queryByRole('region', { name: 'CSS Vars' })).toBeNull();
+  });
 });

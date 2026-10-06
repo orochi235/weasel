@@ -7,6 +7,10 @@ import type { GlobalDeclarations } from './shell/globals';
 
 /** A shell config module: what the workshop adds to the lab. Only the workshop page imports it. */
 export interface ShellConfig {
+  /** The workshop's name, in its header and as the document title. Default `weaselforge`. */
+  title?: string;
+  /** Whether the lab offers the CSS Vars panel. Default true. */
+  cssVars?: boolean;
   labChrome?: readonly LabContribution[];
   controls?: Record<string, ControlRenderer>;
   /** Globals the lab's header sets for every story, each pinnable per trial. Frames apply them with `applyGlobals`. */

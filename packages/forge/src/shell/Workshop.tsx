@@ -17,6 +17,7 @@ import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
 import type { StoryChanges } from './storyChanges';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
+import { RouteKnobs } from './RouteKnobs';
 import { StoryTree } from './tree/StoryTree';
 import { crossesInPlace, readRoute, readRouteEntry, useRoute } from './useRoute';
 import { useStoryRegistry } from './useStoryRegistry';
@@ -42,6 +43,7 @@ export interface WorkshopProps {
 }
 
 const NO_DECLARATIONS: GlobalDeclarations = {};
+const DEFAULT_TITLE = 'weaselforge';
 
 /** The story or index page `#/<id>` names, when there is one; otherwise `fallback`. Read when the lab mounts. */
 function initialStory(entries: readonly IndexEntry[], fallback: string): string {
@@ -99,6 +101,10 @@ function useInfoShortcut(open: (next: boolean) => void): void {
 /** The workshop page: a labkit `Lab` with a story tree, where each story or index page opens as a trial. */
 export function Workshop({ index, frameUrl, importers, setup, changes, config, stories = [], storageKey, storage, dependencies }: WorkshopProps) {
   const declarations = config?.globals ?? NO_DECLARATIONS;
+  const title = config?.title ?? DEFAULT_TITLE;
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
   const [frames] = useState(createTrialFrames);
   const [pool, setPool] = useState<FramePool | null>(null);
   // Warm frames are for the stories that render in one: every story when no importers are given, else the isolated.
@@ -138,14 +144,14 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
         region: 'palette',
         item: { icon: InfoIcon, label: 'Info', shortcut: '⌘I', onActivate: () => setInfoOpen(true) },
       },
-      CSS_VARS_SECTION,
+      ...(config?.cssVars === false ? [] : [CSS_VARS_SECTION]),
       A11Y_SECTION,
       ...(Object.keys(declarations).length > 0
         ? [{ id: 'fg-globals', region: 'header', render: () => <GlobalsToolbar declarations={declarations} /> } as const]
         : []),
       ...(config?.labChrome ?? []),
     ],
-    [index, declarations, config?.labChrome],
+    [index, declarations, config?.cssVars, config?.labChrome],
   );
   const first = index[0];
   if (!first) {
@@ -170,7 +176,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
         <FramePoolContext.Provider value={pool}>
           <TrialFramesContext.Provider value={frames}>
             <Lab
-              title="weaselforge"
+              title={title}
               density="roomy"
               {...(labTheme ? { theme: labTheme } : {})}
               instruments={registry.instruments}
@@ -184,6 +190,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
               {...(config?.path !== undefined ? { path: config.path } : {})}
             >
               <RouteOpener index={entries} />
+              <RouteKnobs instruments={registry.instruments} isReady={registry.isReady} />
               <StoryInfoDialog
                 index={index}
                 isReady={registry.isReady}
