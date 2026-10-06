@@ -230,7 +230,7 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page, brows
           after: uninstall,
         })));
         for (const v of variants) {
-          const perFrameMs = +timed[v.id].stat.toFixed(4);
+          const perFrameMs = +timed[v.id].net.toFixed(4);
           index += 1;
           await report({ type: 'cell', index, run, variant: v.id, perFrameMs });
         }
@@ -280,7 +280,7 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page, brows
     const us = perFlushUs(id);
     const samples = cells.filter((c) => c.variant === id).map((c) => (c.perFrameMs * 1000) / N);
     run.item(id, {
-      perFlush: metric(us, 'us', `median of ${RUNS} runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)`, samples),
+      perFlush: metric(us, 'us', `median of ${RUNS} runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)`, samples),
       ...(above === undefined ? {} : { saves: metric(above - us, 'us', 'the row above minus this row, medians') }),
     }, { drops });
     above = us;

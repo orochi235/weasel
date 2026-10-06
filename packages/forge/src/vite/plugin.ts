@@ -6,9 +6,10 @@ import { hoistPages, writePages } from './build.ts';
 import { autoTitle } from './autoTitle.ts';
 import { createDepGraph, type DepGraphBuilder, type ResolveImport } from './depGraph.ts';
 import { html } from './html.ts';
-import { indexFile } from './indexFile.ts';
+import { foreignCallees, indexFile } from './indexFile.ts';
 import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
+import { createWrapperResolver, type WrapperResolution } from './wrappers.ts';
 
 /** Options for the `forge` vite plugin. */
 export interface ForgeOptions {
@@ -39,6 +40,10 @@ export function forge(options: ForgeOptions): Plugin[] {
   /** The graph last served or pushed; null until a page first asks for it, so no edit rebuilds it before then. */
   let depsSent: string | null = null;
   let depsPending: Promise<void> | null = null;
+  /** Per story file, which of its foreign callees are forge's `meta`/`story`, and what was read to decide it. */
+  const wrappersOf = new Map<string, WrapperResolution>();
+  /** The first pass over every story file, run before the index is first served. */
+  let settledAll: Promise<void> | null = null;
 
   const glob = (): string[] => {
     const files = options.stories.flatMap((pattern) =>
@@ -54,7 +59,8 @@ export function forge(options: ForgeOptions): Plugin[] {
     const path = relative(root, file).split(sep).join('/');
     return !path.split('/').includes('node_modules') && options.stories.some((pattern) => matchesGlob(path, pattern));
   };
-  const read = (file: string) => indexFile(readFileSync(file, 'utf8'), file, autoTitle(file, root, options.stories));
+  const read = (file: string) =>
+    indexFile(readFileSync(file, 'utf8'), file, autoTitle(file, root, options.stories), wrappersOf.get(file)?.wrappers);
   const logError = (err: unknown) => logger?.error(`[forge] ${err instanceof Error ? err.message : String(err)}`);
   /** A file that fails to parse stays in the map with no entries, so an edit that fixes it re-indexes it. */
   const files = (): Map<string, IndexEntry[]> => {
@@ -71,6 +77,33 @@ export function forge(options: ForgeOptions): Plugin[] {
     return byFile;
   };
   const index = () => [...files().values()].flat();
+
+  /**
+   * Decides, for each of `targets`, which imports reached through another module are forge's `meta`/`story`, and
+   * re-reads a file whose answer changed. Without it a meta imported from a project helper reads as no meta at all.
+   */
+  const settle = async (targets: readonly string[], resolveImport: ResolveImport): Promise<void> => {
+    const decide = createWrapperResolver((file) => readFileSync(file, 'utf8'));
+    const current = files();
+    for (const file of targets) {
+      if (!current.has(file)) continue;
+      let next: WrapperResolution;
+      try {
+        next = await decide(file, foreignCallees(readFileSync(file, 'utf8'), file), resolveImport);
+      } catch {
+        // `read` has already logged a file that fails to parse.
+        continue;
+      }
+      const before = wrappersOf.get(file)?.wrappers ?? new Set();
+      wrappersOf.set(file, next);
+      if (before.size === next.wrappers.size && [...before].every((name) => next.wrappers.has(name))) continue;
+      try {
+        current.set(file, read(file));
+      } catch (err) {
+        logError(err);
+      }
+    }
+  };
   const depGraph = (): DepGraphBuilder => (deps ??= createDepGraph({ root, read: (file) => readFileSync(file, 'utf8') }));
 
   const configModule = (path: string | undefined) =>
@@ -159,25 +192,29 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
       });
   }
 
-  /** Re-reads a story file after `event`; true when the index changed. */
-  function reindex(server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink'): boolean {
+  /** Re-reads a story file after `event`, and any story file whose meta or stories were resolved through it; true when the index changed. */
+  async function reindex(server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink'): Promise<boolean> {
     const current = files();
     if (event === 'change' && current.has(file)) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
-    if (event === 'change' && !current.has(file)) return false;
-    if (event === 'add' && !matches(file)) return false;
-    if (event === 'unlink' && !current.has(file)) return false;
+    const own = event === 'add' ? matches(file) : current.has(file);
+    const through = [...wrappersOf].filter(([story, { reads }]) => story !== file && reads.has(file)).map(([story]) => story);
+    if (!own && through.length === 0) return false;
 
     const before = JSON.stringify(index());
-    if (event === 'unlink') {
+    if (own && event === 'unlink') {
       current.delete(file);
-    } else {
+      wrappersOf.delete(file);
+    } else if (own) {
       try {
         current.set(file, read(file));
       } catch (err) {
         logError(err);
-        return false;
+        if (through.length === 0) return false;
       }
     }
+    const resolveImport: ResolveImport = async (spec, importer) =>
+      (await server.environments.client.pluginContainer.resolveId(spec, importer))?.id ?? null;
+    await settle([...(own && event !== 'unlink' ? [file] : []), ...through], resolveImport);
     const next = index();
     if (JSON.stringify(next) === before) return false;
 
@@ -213,6 +250,8 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
         base = config.base;
         logger = config.logger;
         byFile = null;
+        wrappersOf.clear();
+        settledAll = null;
         deps = null;
         depsSent = null;
       },
@@ -222,6 +261,10 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
       async load(id) {
         if (!id.startsWith(`\0${PREFIX}`)) return undefined;
         const name = id.slice(PREFIX.length + 1);
+        if (name === 'index.js') {
+          settledAll ??= settle([...files().keys()], async (spec, importer) => (await this.resolve(spec, importer))?.id ?? null);
+          await settledAll;
+        }
         if (name !== 'deps.js') return modules[name]?.();
         const graph = await depGraph().build(index(), async (spec, importer) => (await this.resolve(spec, importer))?.id ?? null);
         depsSent = JSON.stringify(graph);
@@ -232,12 +275,13 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
         for (const event of ['add', 'change', 'unlink'] as const) {
           server.watcher.on(event, (path) => {
             const file = resolve(path);
-            const indexed = reindex(server, file, event);
             // A new file can answer an import that resolved to nothing before.
             const added = event === 'add' && /\.[cm]?[jt]sx?$/.test(file) && !file.split(sep).includes('node_modules');
             if (added) depGraph().reset();
             const read = added || (event !== 'add' && depGraph().invalidate(file));
-            if (indexed || read) redeps(server);
+            reindex(server, file, event).then((indexed) => {
+              if (indexed || read) redeps(server);
+            }, logError);
           });
         }
         server.middlewares.use((req, res, next) => {

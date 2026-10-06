@@ -80,8 +80,8 @@ override a spec's round count, and `WEASEL_PERF_PORT` for the Playwright dev
 server (default 4722, from `scripts/dev-ports.json`). Use your own port when another checkout might be running
 perf: outside CI the config reuses whatever already listens there, and every
 spec would measure that checkout's code. Some specs take their own —
-`PERF_KINDS` in `frame-budget`, `WEASEL_PERF_N` and `WEASEL_PERF_SIZE` in
-`image-quad` — and record them in `params`.
+`PERF_KINDS` in `frame-budget`, `WEASEL_PERF_N`, `WEASEL_PERF_SIZE` and
+`WEASEL_PERF_VARIANTS` in `image-quad` — and record them in `params`.
 
 ## apps/draw cold start
 
@@ -258,7 +258,10 @@ The default sweep is 486 measurements and took 78 minutes on msb-uai.
 
 Specs that time the renderer draw **one frame per task** and take the median,
 through `lib/frameTiming.ts`, on a page `lib/isolate.ts` makes cross-origin
-isolated so `performance.now()` resolves microseconds rather than 100 us. `image-quad`, `atlas-wall`, and `fill-rate` still time blocks; see `docs/TODO.md`.
+isolated so `performance.now()` resolves microseconds rather than 100 us. A
+sample ends in a one-pixel `readPixels`, not `gl.finish()`, which does not wait
+for the GPU: `fill-rate` times its plain shader both ways and on teitou
+(2026-10-05) read 0.03 ms through `finish` against 3.6 ms through the read.
 
 A block of frames drawn back to back in one task measures something a frame
 loop never sees. Measured on teitou (Apple M5 Max, ANGLE Metal), 2026-10-04,

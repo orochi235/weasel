@@ -183,6 +183,24 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     await expect.poll(async () => indexOf(s), { timeout: 5000, interval: 50 }).toContain('ui-bad--fixed');
   });
 
+  it("titles a native story by its meta when forge's meta reaches it through a helper module, and re-decides when the helper changes", async () => {
+    const forgeEntry = join(import.meta.dirname, '../index.ts');
+    const native = (from: string) =>
+      `import { meta, story } from '${from}';\nexport default meta({ title: 'ui/Thing' });\nexport const Basic = story({ render: () => null });\n`;
+    const { dir, server: s } = await start(
+      {
+        'forge-helpers.ts': `export { meta, story } from '@weasel-js/forge';\n`,
+        'impostor.ts': `export const meta = (spec: object) => spec;\nexport const story = (spec: object) => spec;\n`,
+        'thing.stories.tsx': native('./forge-helpers'),
+        'other.stories.tsx': native('./impostor').replace('ui/Thing', 'ui/Other'),
+      },
+      { resolve: { alias: { '@weasel-js/forge': forgeEntry } } },
+    );
+    expect(await indexOf(s)).toEqual(['other--basic', 'ui-thing--basic']);
+    writeFileSync(join(dir, 'forge-helpers.ts'), `export const meta = (spec: object) => spec;\nexport const story = meta;\n`);
+    await expect.poll(async () => indexOf(s), { timeout: 5000, interval: 50 }).toEqual(['other--basic', 'thing--basic']);
+  });
+
   it('serves the component graph from source, and pushes it again when a component file changes', async () => {
     const { dir, server: s } = await start({
       'A.tsx': `import { B } from './B';\nexport const A = () => <B />;\n`,

@@ -28,7 +28,7 @@ interface Import {
 
 type Export = { kind: 'local'; local: string } | { kind: 'from'; spec: string; imported: string };
 
-interface ModuleInfo {
+export interface ModuleInfo {
   imports: Map<string, Import>;
   exports: Map<string, Export>;
   stars: string[];
@@ -237,7 +237,7 @@ export function createDepGraph({ root, read }: DepGraphOptions): DepGraphBuilder
   };
 }
 
-function moduleInfo(code: string, file: string): ModuleInfo {
+export function moduleInfo(code: string, file: string): ModuleInfo {
   const plugins: ParserPlugin[] = ['typescript', 'decorators-legacy', ...(/\.[cm]?[jt]sx$/.test(file) ? (['jsx'] as const) : [])];
   const program = parse(code, { sourceType: 'module', plugins }).program;
   const imports = new Map<string, Import>();

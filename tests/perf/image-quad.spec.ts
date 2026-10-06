@@ -4,17 +4,18 @@
  * Two halves, and they answer different questions.
  *
  * **`renderer`** is the headline: image commands per frame through the real
- * renderer, next to a pattern-filled rect of the same size. Pattern is the
- * control — same one-draw-per-command shape, same texture bind, but its
- * geometry is a cached mesh with a persistent VAO. Whatever separates them is
- * what the image path pays for its geometry.
+ * renderer. `image`, `atlas` and `sprites` all stage into one batched run;
+ * `unmerged` puts each image in a group whose color matrix alternates, so every
+ * command ends the run before it and draws alone — the case `BATCH_TIERS` in
+ * `drawBatch.ts` is sized for. `pattern` draws a pattern-filled rect per
+ * command off a cached mesh. The header prints each variant's draw count.
  *
  * **`raw`** attributes that gap without the renderer in the way: N small quads
  * per frame through one trivial program, differing only in how the vertices
  * reach the GPU.
  *
  *   - `churn` — a VAO and two buffers created, filled, drawn and deleted per
- *     quad. What `drawImage` does.
+ *     quad. What `drawImage` did before images joined the batch.
  *   - `subdata` — one persistent VAO and buffer, rewritten at offset 0 per
  *     quad. Removes the object lifecycle, keeps the write.
  *   - `arena` — one persistent buffer holding every quad, written at a rising
@@ -32,15 +33,15 @@
  * raises, since that flush rewrites one buffer from offset 0 every time it
  * happens. `ring` and `orphan` are the two escapes from a stalling write.
  *
- * **The stalling rows are bimodal.** `subdata`, `orphan` and `uniform` have each
- * measured 0.05 us in one run and 55 in the next, from identical code: whether a
- * write waits depends on how far ahead of the CPU the GPU happens to be. Read
- * those rows as "sometimes stalls", never as a cost — the range matters more
- * than the median, and a single fast run does not clear one.
+ * Timed in blocks of frames, `subdata`, `orphan` and `uniform` once read 0.05
+ * us in one run and 55 in the next. One frame a task (`lib/frameTiming.ts`),
+ * on teitou in 2026-10, they hold within about 30% across runs, and a ring
+ * costs more than rewriting one buffer — see `docs/TODO.md`.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
+import { isolate } from './lib/isolate';
 import { metric, rounds, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -56,15 +57,20 @@ const SIZE = Number(process.env.WEASEL_PERF_SIZE ?? 48);
 
 const RUNS = rounds(3);
 
-const RAW_VARIANTS = ['churn', 'churn-uniform', 'preloaded', 'arena', 'subdata', 'uniform', 'orphan', 'ring'] as const;
-const RENDERER_VARIANTS = ['image', 'atlas', 'sprites', 'pattern'] as const;
+/** `group/variant` names to run, comma-separated — `WEASEL_PERF_VARIANTS=renderer/image`. All by default. */
+const ONLY = process.env.WEASEL_PERF_VARIANTS?.split(',').map((s) => s.trim());
+const pick = <T extends string>(group: string, variants: readonly T[]): T[] =>
+  variants.filter((v) => !ONLY || ONLY.includes(`${group}/${v}`));
+
+const RAW_VARIANTS = pick('raw', ['churn', 'churn-uniform', 'preloaded', 'arena', 'subdata', 'uniform', 'orphan', 'ring'] as const);
+const RENDERER_VARIANTS = pick('renderer', ['image', 'unmerged', 'atlas', 'sprites', 'pattern'] as const);
 
 interface Cell { run: number; group: 'raw' | 'renderer'; variant: string; perFrameMs: number }
 
 test.setTimeout(1_800_000);
 
 test('image quad: geometry cost per draw', async ({ page, browser, browserName }) => {
-  const run = startRun('image-quad', { viewport: '800x600', dpr: 1, quads: N, sizePx: SIZE, runs: RUNS });
+  const run = startRun('image-quad', { viewport: '800x600', dpr: 1, quads: N, sizePx: SIZE, runs: RUNS, variants: ONLY?.join(',') ?? 'all' });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -82,6 +88,7 @@ test('image quad: geometry cost per draw', async ({ page, browser, browserName }
       console.log(`collected between measurements: ${String(m.gcAvailable)}`);
       console.log(`every variant paints something: ${String(m.allPaint)}`);
       if (m.notPainting) console.log(`  NOT PAINTING: ${String(m.notPainting)}`);
+      console.log(`draw calls in a frame: ${String(m.draws)}`);
       console.log(`${N} quads per frame at ${SIZE}px; ${total} cells`);
       console.log('');
       return;
@@ -96,6 +103,7 @@ test('image quad: geometry cost per draw', async ({ page, browser, browserName }
     );
   });
 
+  await isolate(page);
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
@@ -111,6 +119,9 @@ test('image quad: geometry cost per draw', async ({ page, browser, browserName }
       );
       const { checkerBitmap, imageBitmaps } = await import(
         /* @vite-ignore */ `${base}/tests/perf/lib/kinds.ts`
+      );
+      const { timeInterleaved } = await import(
+        /* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`
       );
 
       const W = 800;
@@ -382,7 +393,10 @@ void main() { outColor = u_color; }`;
       const patternHandle = registerTexture(await checkerBitmap());
 
       const imageCmds: unknown[] = [];
+      const unmergedCmds: unknown[] = [];
       const atlasCmds: unknown[] = [];
+      // Two color matrices, alternated, so every command ends the run before it.
+      const matrices = [0.98, 1].map((k) => [k, 0, 0, 0, 0, 0, k, 0, 0, 0, 0, 0, k, 0, 0, 0, 0, 0, 1, 0]);
       const patternCmds: unknown[] = [];
       // 4x4 cells of the first bitmap, so every quad samples one texture and
       // the run has nothing to break it — the shape the mega view draws.
@@ -391,6 +405,10 @@ void main() { outColor = u_color; }`;
         imageCmds.push({
           kind: 'image', image: bitmaps[i % bitmaps.length],
           x: px(i), y: py(i), w: SIZE, h: SIZE,
+        });
+        unmergedCmds.push({
+          kind: 'group', colorMatrix: matrices[i % 2],
+          children: [{ kind: 'image', image: bitmaps[0], x: px(i), y: py(i), w: SIZE, h: SIZE }],
         });
         atlasCmds.push({
           kind: 'image', image: bitmaps[0],
@@ -418,32 +436,10 @@ void main() { outColor = u_color; }`;
       const spriteCmds = [{ kind: 'sprites', image: bitmaps[0], sprites: packed }];
 
       const rendererCmds: Record<string, unknown[]> = {
-        image: imageCmds, atlas: atlasCmds, sprites: spriteCmds, pattern: patternCmds,
+        image: imageCmds, unmerged: unmergedCmds, atlas: atlasCmds, sprites: spriteCmds, pattern: patternCmds,
       };
 
       // ─── timing ─────────────────────────────────────────────────────────
-
-      function timeBlock(frame: () => void, frames: number): number {
-        if (collect) {
-          collect({ type: 'major', execution: 'sync' });
-          collect({ type: 'major', execution: 'sync' });
-        }
-        frame();
-        gl.finish();
-        const t0 = performance.now();
-        for (let f = 0; f < frames; f++) frame();
-        gl.finish();
-        return (performance.now() - t0) / frames;
-      }
-
-      const TARGET_BLOCK_MS = 150;
-      function measure(frame: () => void): number {
-        for (let i = 0; i < 3; i++) frame();
-        gl.finish();
-        const rough = timeBlock(frame, 4);
-        const frames = Math.min(80, Math.max(4, Math.round(TARGET_BLOCK_MS / Math.max(rough, 0.05))));
-        return timeBlock(frame, frames);
-      }
 
       const frameFor = (group: string, variant: string): (() => void) =>
         group === 'raw'
@@ -475,6 +471,21 @@ void main() { outColor = u_color; }`;
       }
       const notPainting = Object.entries(paints).filter(([, ok]) => !ok).map(([k]) => k);
 
+      /** Draw calls one untimed frame of each renderer variant makes. */
+      const draws: string[] = [];
+      for (const variant of rendererVariants) {
+        let count = 0;
+        const anyGl = gl as unknown as Record<string, unknown>;
+        for (const name of ['drawElements', 'drawArrays']) {
+          const orig = (anyGl[name] as (...a: unknown[]) => unknown).bind(gl);
+          anyGl[name] = (...a: unknown[]) => { count += 1; return orig(...a); };
+        }
+        frameFor('renderer', variant)();
+        delete anyGl.drawElements;
+        delete anyGl.drawArrays;
+        draws.push(`${variant} ${count}`);
+      }
+
       // Pay this context's one-time costs before the first timed block.
       for (const { group, variant } of all) {
         const frame = frameFor(group, variant);
@@ -486,12 +497,17 @@ void main() { outColor = u_color; }`;
         type: 'header', glRenderer, gcAvailable,
         allPaint: notPainting.length === 0,
         notPainting: notPainting.join(', '),
+        draws: draws.join(', '),
       });
 
       let index = 0;
       for (let run = 1; run <= runs; run++) {
+        if (collect) collect({ type: 'major', execution: 'sync' });
+        const timed = await timeInterleaved(gl, all.map(({ group, variant }) => ({
+          id: `${group}/${variant}`, frame: frameFor(group, variant),
+        })));
         for (const { group, variant } of all) {
-          const perFrameMs = +measure(frameFor(group, variant)).toFixed(4);
+          const perFrameMs = +timed[`${group}/${variant}`].net.toFixed(4);
           index += 1;
           await report({ type: 'cell', index, run, group, variant, perFrameMs });
         }
@@ -519,9 +535,15 @@ void main() { outColor = u_color; }`;
   const usHi = (group: string, variant: string) =>
     Math.max(...runs.map((r) => (at(r, group, variant) * 1000) / N));
 
+  const ran = (group: string, variant: string) => cells.some((c) => c.group === group && c.variant === variant);
   const row = (group: string, variant: string, note: string) =>
-    `| ${group}/${variant} | ${us(group, variant).toFixed(2)} `
-    + `(${usLo(group, variant).toFixed(2)}–${usHi(group, variant).toFixed(2)}) | ${note} |`;
+    ran(group, variant)
+      ? `| ${group}/${variant} | ${us(group, variant).toFixed(2)} `
+        + `(${usLo(group, variant).toFixed(2)}–${usHi(group, variant).toFixed(2)}) | ${note} |`
+      : null;
+  /** `a − b` in us/quad, or nothing when either was left out of the run. */
+  const diff = (label: string, [ga, va]: [string, string], [gb, vb]: [string, string]) =>
+    ran(ga, va) && ran(gb, vb) ? `${label}: ${(us(ga, va) - us(gb, vb)).toFixed(2)} us` : null;
 
   const lines = [
     '',
@@ -531,7 +553,8 @@ void main() { outColor = u_color; }`;
     '',
     '| variant | us/quad | what it does |',
     '|---|---:|---|',
-    row('renderer', 'image', 'kind: image, 6 bitmaps — nothing merges'),
+    row('renderer', 'image', 'kind: image, 6 bitmaps — one run, each in a texture slot of its own'),
+    row('renderer', 'unmerged', 'kind: image in a group whose color matrix alternates — a run of one'),
     row('renderer', 'atlas', 'kind: image, one bitmap and source rects — one run'),
     row('renderer', 'sprites', 'kind: sprites — the same run, packed'),
     row('renderer', 'pattern', 'same rect, pattern fill — cached mesh, persistent VAO'),
@@ -544,18 +567,18 @@ void main() { outColor = u_color; }`;
     row('raw', 'orphan', 'one persistent buffer, respecified per quad'),
     row('raw', 'ring', 'a ring of persistent buffers, one written per quad'),
     '',
-    `renderer image − atlas (what coalescing is worth): ${(us('renderer', 'image') - us('renderer', 'atlas')).toFixed(2)} us`,
-    `renderer atlas − sprites (what the command walk costs): ${(us('renderer', 'atlas') - us('renderer', 'sprites')).toFixed(2)} us`,
-    `renderer image − pattern: ${(us('renderer', 'image') - us('renderer', 'pattern')).toFixed(2)} us`,
-    `raw churn − preloaded (the object lifecycle): ${(us('raw', 'churn') - us('raw', 'preloaded')).toFixed(2)} us`,
-    `raw subdata − preloaded (rewriting one buffer): ${(us('raw', 'subdata') - us('raw', 'preloaded')).toFixed(2)} us`,
-    `raw arena − preloaded (writing disjoint ranges): ${(us('raw', 'arena') - us('raw', 'preloaded')).toFixed(2)} us`,
-    `raw uniform − preloaded (a uniform per draw): ${(us('raw', 'uniform') - us('raw', 'preloaded')).toFixed(2)} us`,
-    `raw churn-uniform − churn (a uniform per draw, again): ${(us('raw', 'churn-uniform') - us('raw', 'churn')).toFixed(2)} us`,
-    `raw churn − orphan: ${(us('raw', 'churn') - us('raw', 'orphan')).toFixed(2)} us`,
-    `raw churn − ring: ${(us('raw', 'churn') - us('raw', 'ring')).toFixed(2)} us`,
+    diff('renderer unmerged − atlas (what coalescing is worth)', ['renderer', 'unmerged'], ['renderer', 'atlas']),
+    diff('renderer atlas − sprites (what the command walk costs)', ['renderer', 'atlas'], ['renderer', 'sprites']),
+    diff('renderer image − pattern', ['renderer', 'image'], ['renderer', 'pattern']),
+    diff('raw churn − preloaded (the object lifecycle)', ['raw', 'churn'], ['raw', 'preloaded']),
+    diff('raw subdata − preloaded (rewriting one buffer)', ['raw', 'subdata'], ['raw', 'preloaded']),
+    diff('raw arena − preloaded (writing disjoint ranges)', ['raw', 'arena'], ['raw', 'preloaded']),
+    diff('raw uniform − preloaded (a uniform per draw)', ['raw', 'uniform'], ['raw', 'preloaded']),
+    diff('raw churn-uniform − churn (a uniform per draw, again)', ['raw', 'churn-uniform'], ['raw', 'churn']),
+    diff('raw churn − orphan', ['raw', 'churn'], ['raw', 'orphan']),
+    diff('raw churn − ring', ['raw', 'churn'], ['raw', 'ring']),
   ];
-  console.log(lines.join('\n'));
+  console.log(lines.filter((line) => line !== null).join('\n'));
 
   expect(errors).toEqual([]);
   for (const [k, ok] of Object.entries(paints)) {
@@ -571,7 +594,7 @@ void main() { outColor = u_color; }`;
   for (const [group, variant] of groups) {
     const samples = runs.map((r) => (at(r, group, variant) * 1000) / N);
     run.item(`${group}/${variant}`, {
-      perQuad: metric(us(group, variant), 'us', `median of ${RUNS} runs`, samples),
+      perQuad: metric(us(group, variant), 'us', `median of ${RUNS} runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)`, samples),
     }, { group, variant });
   }
   run.write();

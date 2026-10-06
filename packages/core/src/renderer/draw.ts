@@ -941,9 +941,9 @@ interface StagedBatchState {
    * The SDF threshold shift `u_synthBold` draws this run under.
    *
    * A uniform rather than a vertex attribute, and so a thing that breaks a run.
-   * Carrying it per vertex measured 9% slower at the densest rung of
-   * `tests/perf/atlas-wall.spec.ts` — the batch's whole point is one cheap
-   * buffer write a frame, and a float only glyphs read still widens the write
+   * A per-vertex float costs every rect and quad in the run (see "Mode and slot
+   * share one attribute" in `shaders/batchFill.ts`): the batch's whole point is
+   * one cheap buffer write a frame, and a float only glyphs read still widens the write
    * for every rect and quad beside them. What it costs instead is a break
    * wherever faked-bold text meets text that is not, which is a fallback path:
    * a registered bold face never sets this at all.
@@ -1051,12 +1051,12 @@ function nextFreeSlot(staged: StagedBatchState): number {
  *
  * Batching trades a draw call for copying and re-uploading the mesh every
  * frame, where a mesh already in the persistent cache costs nothing per frame
- * beyond the draw. On an M2 Max via ANGLE (`npm run test:perf`) staged geometry
- * runs ~8.5 ns a vertex and a warm mesh draw ~1.8 us, putting break-even near
- * 200 — and the 1.8 us is an upper bound, measured under heavy overdraw. So
- * this sits about at break-even, where being wrong in either direction is a
- * wash, rather than anywhere a big path pays a per-frame copy for a draw call
- * it barely saves.
+ * beyond the draw. The cap was set near a break-even of about 200 vertices,
+ * measured once in 2026-08 on an M2 Max by timing blocks of frames, a method
+ * since retired (`tests/perf/README.md`, "Timing a frame"); no spec measures it
+ * now. Near break-even, being wrong in either direction is a wash, which is
+ * why it sits there rather than anywhere a big path pays a per-frame copy for a
+ * draw call it barely saves.
  */
 const MAX_BATCHED_MESH_VERTICES = 256;
 

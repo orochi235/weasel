@@ -77,25 +77,27 @@ const PLAIN_WHITE = packSlot(WHITE_SLOT, PAINT_MODE_PLAIN);
 /**
  * Flushes between one ring slot's write and its next.
  *
- * The driver tracks a write hazard per buffer object, so rewriting one buffer
- * before every flush makes each write wait on the draw still reading it — that
- * wait, not the draw, is what a flush costs. Measured per draw on an M2 Max via
- * ANGLE (`tests/perf/image-quad.spec.ts`): 40–80 us rewriting one buffer, 0.34
- * us for a ring of 64, 0.03 us for a buffer nothing writes. Writing disjoint
- * *ranges* of one buffer does not help — the hazard is per object.
+ * Sized for a driver that tracks a write hazard per buffer object, where
+ * rewriting one buffer before every flush makes each write wait on the draw
+ * still reading it. That was measured on an M2 Max by timing blocks of frames,
+ * a method since retired (`tests/perf/README.md`, "Timing a frame"), and on
+ * teitou (M5 Max, ANGLE Metal, 2026-10-05) one frame a task does not show it:
+ * `tests/perf/image-quad.spec.ts` puts a quad through a ring of 64 at 3.3–5.2 us
+ * over two sittings, through one buffer rewritten each time at 2.5–3.0, and
+ * through a buffer nothing writes at 0.16–0.22.
  */
 export const SOLID_RING_SIZE = 64;
 
 /**
  * Slot sizes, smallest first. A flush takes the first it fits in.
  *
- * **Tiered because the hazard costs what the buffer is worth, not what the
- * write is.** A flush writing one quad into a slot the GPU is still reading
- * waits on the whole buffer object, and resolving that on a 36 KB buffer is far
- * dearer than on a 576-byte one. Measured on a frame of 20,000 quads that
- * nothing merged (`tests/perf/image-quad.spec.ts`): 92 ms with a 256-quad
- * smallest slot against 53 ms with a one-quad one, and a merged run unmoved
- * either way. The run that most wants a small buffer — one command, because the
+ * **Tiered because a write into a big slot costs more than the same write into
+ * a small one.** On teitou (M5 Max, ANGLE Metal, 2026-10-05), a frame of 20,000
+ * quads each drawn alone (`tests/perf/image-quad.spec.ts`, `renderer/unmerged`)
+ * costs 19.2–19.9 us a quad with these tiers against 21.0 with 1,024 vertices
+ * as the smallest slot, and a merged run is unmoved either way. The 92 ms
+ * against 53 recorded before came from timing blocks of frames, a method since
+ * retired. The run that most wants a small buffer — one command, because the
  * next broke it — is exactly the run a batch is otherwise pure overhead for.
  */
 export const BATCH_TIERS: readonly { vertices: number; indices: number }[] = [
@@ -126,8 +128,7 @@ interface BufferSet {
    *
    * The pattern for N quads is a prefix of the pattern for any larger N, so a
    * slot written to its capacity serves every quad flush it ever takes and the
-   * upload happens once per slot rather than once per flush — 0.89 us of the
-   * 3.87 a flush costs (`tests/perf/flush-anatomy.spec.ts`). Rects and image
+   * upload happens once per slot rather than once per flush. Rects and image
    * quads share it: both wind 0-1-2 / 0-2-3.
    */
   canonicalQuads: number;

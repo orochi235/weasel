@@ -28,11 +28,12 @@
  * because a derivative in non-uniform control flow is undefined and it
  * has to be taken before anything selects on the mode — see
  * `GLYPH_COVERAGE_GLSL`. Priced head to head at 432M fragments a frame
- * (`tests/perf/fill-rate.spec.ts`), that roughly doubles a fragment that is not
- * a glyph — the figure recorded when text landed was 1.4%, and it was wrong:
- * the control gated its glyph math on a factor the compiler folds to zero, so
- * it timed a shader with that math deleted. Fill is not what a wall is bound
- * by, which is why the conclusion stands even though the number did not.
+ * (`tests/perf/fill-rate.spec.ts`, teitou, 2026-10-05), that adds a quarter to
+ * a half to a fragment that is not a glyph — 27–48% over four sittings. The
+ * figure recorded when text landed was 1.4%, and it was wrong: the control
+ * gated its glyph math on a factor the compiler folds to zero, so it timed a
+ * shader with that math deleted. Fill is not what a wall is bound by, which is
+ * why the conclusion stands even though the number did not.
  *
  * **A gradient is a textured quad off the ramp atlas.** A linear one needs no
  * mode: its ramp position is affine in position, so `a_uv` is (ramp position,
@@ -41,14 +42,17 @@
  * not — with the row in `a_post`, and the fragment takes a `length` or an
  * `atan` of it behind a branch on the flat mode. That branch carries the sample
  * itself, not just the coordinate: a fetch from a varying is one the hardware
- * schedules ahead, and one from a computed coordinate is not, which is 65% of
- * a fragment against 5%.
+ * schedules ahead, and one from a computed coordinate is not: on teitou the
+ * computed-coordinate form costs 29–54% of a fragment, and the split one
+ * −5–11%, which is the spread of the measurement itself
+ * (`tests/perf/fill-rate.spec.ts`, 2026-10-05).
  *
  * **Mode and slot share one attribute because the vertex is the thing that
  * costs.** Both are small enumerations, so `slot + 8 * mode` packs them with
- * room to spare. Carrying the mode as a float of its own instead measures 9%
- * slower at the densest rung of `tests/perf/atlas-wall.spec.ts` — 1.78 ms
- * against 1.63 for 7,500 commands, taken ABBA in one sitting — because the
+ * room to spare. Carrying the mode as a float of its own instead measured
+ * slower at the densest rung of `tests/perf/atlas-wall.spec.ts`, timed then in
+ * blocks of frames, a method since retired (`tests/perf/README.md`, "Timing a
+ * frame"), so the size of it is unknown. The reason holds without the number: the
  * whole batch exists to make one buffer write a frame cheap, and every extra
  * float widens that write for every rect and quad in the run, not just for the
  * glyphs that read it.
@@ -194,8 +198,9 @@ void main() {
   // split across the branch rather than the coordinate selected before it: an
   // arm that reads v_uv straight is a fetch the hardware can schedule against a
   // varying, and one reading a coordinate the shader computed is not. Selecting
-  // the coordinate first and sampling once costs 65% of a fragment that is not
-  // a gradient; splitting it costs 5% (tests/perf/fill-rate.spec.ts).
+  // the coordinate first and sampling once costs 29-54% of a fragment that is
+  // not a gradient; splitting it is within the measurement's own spread of free
+  // (tests/perf/fill-rate.spec.ts, teitou, 2026-10-05).
   //
   // Branching at all is safe here where it would not be around the glyph math:
   // v_paintMode is flat, so every fragment of a quad takes the same arm, and

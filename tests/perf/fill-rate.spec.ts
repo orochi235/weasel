@@ -10,28 +10,35 @@
  * all the time is fragments.
  *
  * It answers "can this shader afford another instruction", which is the
- * question every merge into the batch program raises. Variants are compiled and
- * timed in one page, alternating, so drift moves both.
+ * question every merge into the batch program raises. Variants are compiled in
+ * one page and timed one frame a task, interleaved sample by sample, so drift
+ * moves all of them.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { isolate } from './lib/isolate';
 import { metric, rounds, startRun } from './lib/result';
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 const W = 1200;
 const H = 900;
 
 /**
- * Full-viewport quads per frame, and frames per sample. Sized so one sample is
- * hundreds of milliseconds of GPU work rather than a fraction of one: at 40
- * layers the samples ran ~0.5 ms and scattered +/-30%, which is the clock
- * ramping, and no shader difference survives that.
+ * Full-viewport quads per frame. Sized so one frame is milliseconds of GPU
+ * work rather than a fraction of one: at 40 layers a sample ran ~0.5 ms and
+ * scattered +/-30%, which is the clock ramping, and no shader difference
+ * survives that.
  *
  * The blend is on, so nothing is discarded early and every layer really runs.
  */
 const LAYERS = 400;
-const FRAMES = 20;
-/** Samples dropped from the front — the GPU is still ramping through them. */
+/** Single-frame samples per variant per run, interleaved (`lib/frameTiming.ts`). */
+const SAMPLES = 20;
+/** Runs dropped from the front — the GPU is still ramping through them. */
 const WARMUP_RUNS = 3;
 const RUNS = rounds(8, { min: WARMUP_RUNS + 1 });
 
@@ -40,16 +47,27 @@ interface Row { run: number; variant: string; msPerFrame: number }
 test.setTimeout(600_000);
 
 test('fill rate: what the batch shader costs a fragment it is not for', async ({ page, browser, browserName }) => {
-  const run = startRun('fill-rate', { viewport: `${W}x${H}`, layers: LAYERS, frames: FRAMES, runs: RUNS, warmupRuns: WARMUP_RUNS });
+  const run = startRun('fill-rate', { viewport: `${W}x${H}`, layers: LAYERS, samples: SAMPLES, runs: RUNS, warmupRuns: WARMUP_RUNS });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
 
+  const fragments = (W * H * LAYERS) / 1e6;
+  await page.exposeFunction('__fillReport', (r: Row) => {
+    console.log(
+      `  run ${String(r.run).padStart(2)}/${RUNS}  ${r.variant.padEnd(12)} ${r.msPerFrame.toFixed(3).padStart(7)} ms/frame`
+      + `  ${((r.msPerFrame * 1e6) / (fragments * 1e6)).toFixed(4)} ns/fragment`,
+    );
+  });
+
+  await isolate(page);
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
-  const { rows, glRenderer } = await page.evaluate(
-    async ({ w, h, layers, frames, runs }) => {
+  const { rows, glRenderer, finishMs, drainMs } = await page.evaluate(
+    async ({ root, w, h, layers, samples, runs }) => {
+      const report = (globalThis as unknown as { __fillReport: (r: unknown) => Promise<void> }).__fillReport;
+      const { timeInterleaved } = await import(/* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`);
       const canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
@@ -250,66 +268,40 @@ void main() {
         for (let i = 0; i < layers; i++) gl!.drawArrays(gl!.TRIANGLES, 0, 6);
       }
 
-      /** `gl.finish()` does not block in Chrome — the commands go to the GPU
-       *  process and the call returns, which times 43M fragments at 0.003 ms
-       *  and reads as free. A one-pixel `readPixels` is a real sync point:
-       *  the result cannot exist until the draws behind it have run. */
-      const sync = new Uint8Array(4);
-      function drain(): void {
-        gl!.readPixels(0, 0, 1, 1, gl!.RGBA, gl!.UNSIGNED_BYTE, sync);
-      }
-
-      function timeVariant(prog: WebGLProgram): number {
-        frame(prog);
-        drain();
-        const t0 = performance.now();
-        for (let f = 0; f < frames; f++) frame(prog);
-        drain();
-        return (performance.now() - t0) / frames;
-      }
-
       const rows: { run: number; variant: string; msPerFrame: number }[] = [];
-      // ABBA within each run, not ABAB. The clock ramps for the first second or
-      // so, and under ABAB whichever variant is measured second sits later on
-      // that ramp every single time — which reads as that variant being faster
-      // early and slower late, and is entirely an artifact of the order.
-      // Forward then mirrored — ABBA for two variants, ABCCBA for three. Each
-      // one sits once early and once late within a run, so no variant is the
-      // one always measured last as the clock ramps.
-      const forward = variants.map((_, i) => i);
-      const abba = [...forward, ...[...forward].reverse()];
       for (let run = 1; run <= runs; run++) {
-        const order = run % 2 === 1 ? abba : [...abba].reverse();
-        for (const i of order) {
-          const v = variants[i];
-          rows.push({ run, variant: v.name, msPerFrame: timeVariant(v.prog) });
+        const timed = await timeInterleaved(gl, variants.map((v) => ({ id: v.name, frame: () => frame(v.prog) })), { samples });
+        for (const v of variants) {
+          rows.push({ run, variant: v.name, msPerFrame: timed[v.name].net });
+          await report({ run, variant: v.name, msPerFrame: timed[v.name].net });
         }
       }
-      return { rows, glRenderer };
+
+      // Whether `finish` waits for the GPU, which is why `lib/frameTiming.ts` does not end a sample in it.
+      const plain = [{ id: 'plain', frame: () => frame(variants[0].prog) }];
+      const finishMs = (await timeInterleaved(gl, plain, { samples, sync: () => gl.finish() })).plain.stat;
+      const drainMs = (await timeInterleaved(gl, plain, { samples })).plain.stat;
+      return { rows, glRenderer, finishMs, drainMs };
     },
-    { w: W, h: H, layers: LAYERS, frames: FRAMES, runs: RUNS },
+    { root: repoRoot, w: W, h: H, layers: LAYERS, samples: SAMPLES, runs: RUNS },
   );
 
-  const typed = rows as unknown as Row[];
-  const fragments = (W * H * LAYERS) / 1e6;
   console.log(`\nFill rate — ${W}x${H}, ${LAYERS} full-viewport layers `
     + `(${fragments.toFixed(1)}M fragments/frame) on ${glRenderer}\n`);
 
   const byVariant = new Map<string, number[]>();
-  for (const r of typed) {
-    console.log(
-      `  run ${r.run}  ${r.variant.padEnd(11)} ${r.msPerFrame.toFixed(3).padStart(7)} ms/frame`
-      + `  ${((r.msPerFrame * 1e6) / (fragments * 1e6)).toFixed(4)} ns/fragment`,
-    );
+  for (const r of rows as unknown as Row[]) {
     const list = byVariant.get(r.variant) ?? [];
     list.push(r.msPerFrame);
     byVariant.set(r.variant, list);
   }
 
-  // The minimum, not the median: contention, scheduling and a cool clock can
-  // only make a sample slower, so the fastest run of each variant is the one
+  // The minimum run, not the median: contention, scheduling and a cool clock can
+  // only make a run slower, so the fastest run of each variant is the one
   // least contaminated by everything this spec is not trying to measure.
-  const settled = (name: string) => byVariant.get(name)!.slice(WARMUP_RUNS * 2);
+  const settled = (name: string) => byVariant.get(name)!.slice(WARMUP_RUNS);
+  console.log(`  plain through finish ${finishMs.toFixed(3).padStart(7)} ms/frame, through a readPixels ${drainMs.toFixed(3)}`
+    + '  (far apart means finish does not wait for the GPU)');
   const plain = Math.min(...settled('plain'));
   const glyph = Math.min(...settled('glyph-math'));
   console.log('');
@@ -337,7 +329,7 @@ void main() {
   expect(errors, errors.join('\n')).toEqual([]);
 
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
-  const stat = `min of ${(RUNS - WARMUP_RUNS) * 2} samples after ${WARMUP_RUNS} warmup runs`;
+  const stat = `min of ${RUNS - WARMUP_RUNS} runs after ${WARMUP_RUNS} warmup runs; each the median of ${SAMPLES} single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)`;
   for (const name of byVariant.keys()) {
     const xs = settled(name);
     const fastest = Math.min(...xs);

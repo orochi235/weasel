@@ -237,7 +237,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
           id: v.id, frame: () => renderer.render(built[v.id], identity),
         })));
         for (const v of variants) {
-          const perFrameMs = +timed[v.id].stat.toFixed(4);
+          const perFrameMs = +timed[v.id].net.toFixed(4);
           index += 1;
           await report({ type: 'cell', index, run, variant: v.id, perFrameMs });
         }
@@ -314,7 +314,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
   for (const v of VARIANTS) {
     const samples = runs.map((r) => at(r, v.id));
-    run.item(v.id, { perFrame: metric(ms(v.id), 'ms', `median of ${RUNS} runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)`, samples) }, { groups: v.groups });
+    run.item(v.id, { perFrame: metric(ms(v.id), 'ms', `median of ${RUNS} runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)`, samples) }, { groups: v.groups });
   }
   const derived = `median across ${RUNS} runs of the per-run delta`;
   run.item('stencil push+pop', { perClip: metric(stencilOnly, 'us', `${derived}, pat-clipped - pat-plain`) });
