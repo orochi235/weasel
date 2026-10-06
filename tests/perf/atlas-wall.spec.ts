@@ -30,6 +30,7 @@
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
+import { isolate } from './lib/isolate';
 import { metric, rounds, startRun } from './lib/result';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -108,6 +109,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
     );
   });
 
+  await isolate(page);
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
@@ -120,6 +122,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
       const base = `/weasel/@fs${root}`;
       const rendererMod = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
       const { WeaselRenderer } = rendererMod;
+      const { timeInterleaved } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);
 
       const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
@@ -216,28 +219,6 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
       const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
       const gcAvailable = typeof collect === 'function';
 
-      function timeBlock(cmds: unknown[], frames: number): number {
-        if (collect) {
-          collect({ type: 'major', execution: 'sync' });
-          collect({ type: 'major', execution: 'sync' });
-        }
-        renderer.render(cmds, identity);
-        gl.finish();
-        const t0 = performance.now();
-        for (let f = 0; f < frames; f++) renderer.render(cmds, identity);
-        gl.finish();
-        return (performance.now() - t0) / frames;
-      }
-
-      const TARGET_BLOCK_MS = 100;
-      function measure(cmds: unknown[]): number {
-        for (let i = 0; i < 3; i++) renderer.render(cmds, identity);
-        gl.finish();
-        const rough = timeBlock(cmds, 4);
-        const frames = Math.min(60, Math.max(4, Math.round(TARGET_BLOCK_MS / Math.max(rough, 0.05))));
-        return timeBlock(cmds, frames);
-      }
-
       /** GL calls one frame makes, counted with the clock off. Wrappers are own
        *  properties shadowing the prototype, removed before anything is timed. */
       const COUNTED = [
@@ -298,9 +279,13 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
       let index = 0;
       for (let run = 1; run <= runs; run++) {
         for (const rung of rungs) {
+          if (collect) collect({ type: 'major', execution: 'sync' });
+          const timed = await timeInterleaved(gl, variants.map((v: string) => ({
+            id: v, frame: () => renderer.render(pools.get(`${rung.cellPx}|${v}`)!, identity),
+          })));
           for (const v of variants) {
             const cmds = pools.get(`${rung.cellPx}|${v}`)!;
-            const perFrameMs = +measure(cmds).toFixed(4);
+            const perFrameMs = +timed[v].net.toFixed(4);
             index += 1;
             await report({
               type: 'cell', index, run, cellPx: rung.cellPx, variant: v,
@@ -383,7 +368,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
       const c = counts.find((x) => x.cellPx === cellPx && x.variant === v);
       if (!cs.length || !c) continue;
       const frame = cs.map((x) => x.perFrameMs);
-      const stat = `median of ${RUNS} runs`;
+      const stat = `median of ${RUNS} runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)`;
       run.item(`${v} ${cellPx}px`, {
         perFrame: metric(med(frame), 'ms', stat, frame),
         perCommand: metric((med(frame) * 1000) / cs[0].commands, 'us', stat),

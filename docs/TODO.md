@@ -966,19 +966,36 @@ one dead `const` and four stale disable directives.
     puts every boundary at 0.7 us or less, text's included; the 8–18 us of
     the 2026-10-03 run was the timing method, below.
 
-- **(P2) Perf figures taken many frames to a task are suspect.** Drawn back to
-  back in one task, frames slow down 4–10x after about eight
-  (`tests/perf/README.md`, "Timing a frame"); that is what the old per-flush
-  figures measured. `frame-budget`, `transition-matrix`, `draw-loop`,
-  `clip-cost` and `flush-anatomy` now time one frame per task.
-  `image-quad.spec.ts`, `atlas-wall.spec.ts` and `fill-rate.spec.ts` still
-  time blocks, and decisions rest on their old numbers: `SOLID_RING_SIZE`,
-  `BATCH_TIERS` and the canonical-index note in `drawBatch.ts` cite
-  `image-quad` and `flush-anatomy` block figures, and
-  `MAX_BATCHED_MESH_VERTICES` in `draw.ts` cites `npm run test:perf`. Move the
-  three specs to `lib/frameTiming.ts`, re-measure, and correct or remove the
-  figures in those comments. What inside Chromium or ANGLE resets at a task
-  boundary is also unknown.
+- **(P2) The 2026-10-04 perf figures leave out the GPU's own time.**
+  `lib/frameTiming.ts` ended each sample in `gl.finish()`, which does not wait
+  for the GPU: on teitou, 2026-10-05, `fill-rate`'s 432M fragments timed
+  0.03 ms through it and 3.6–9 ms through a one-pixel `readPixels`. A sample
+  now ends in that read, less `leastFrame` timed beside it (`tests/perf/README.md`,
+  "Timing a frame"). Every figure taken through `finish` is suspect until
+  re-run — the `frame-budget` table and run-breaker costs in the entry above,
+  `transition-matrix`'s boundaries, and what `tests/perf/README.md` quotes from
+  `frame-budget`, `draw-loop`, `clip-cost` and `flush-anatomy`. The one
+  re-measured so far moved a lot: a quad that ends its run costs about 20 us
+  (`image-quad`, `renderer/unmerged`, 20,000 a frame) against the 1.2–1.7 us a
+  flush recorded above. Re-run those five specs on teitou and correct the
+  figures.
+
+- **(P2) A ring of buffers measures slower than rewriting one.**
+  `SOLID_RING_SIZE` exists so a flush never writes a buffer a draw is still
+  reading, but on teitou (2026-10-05, `image-quad`'s raw rows, one frame a
+  task, two sittings) a quad through a ring of 64 costs 3.3–5.2 us against
+  2.5–3.0 through one buffer rewritten each time. The ring's case was measured on an M2 Max by the retired
+  block method. Try the renderer with a ring of 1 against 64 on the batch-
+  breaking specs before deciding anything.
+
+- **(P3) No spec measures `MAX_BATCHED_MESH_VERTICES`.** The cap of 256 sits at
+  a break-even measured once by hand in 2026-08 with block timing. A spec timing
+  frames of meshes of rising vertex count, batched against drawn alone, would
+  re-derive it.
+
+- **(P3) What inside Chromium or ANGLE slows frames drawn back to back in one
+  task** — 4–10x after about eight (`tests/perf/README.md`, "Timing a frame")
+  — is unknown.
 
 - **(P3) `sampling: 'nearest'` costs up to 8x on a 122MB sheet.** A consumer
   drawing a 5652px atlas sees nearest cost 8.11x linear at 2:1 minification,
