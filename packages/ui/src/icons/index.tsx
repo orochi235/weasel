@@ -51,6 +51,12 @@ export const SortIcon = (p: IconProps) => <Icon name="sort" {...p} />;
 export const ZoomOutIcon = (p: IconProps) => <Icon name="zoomOut" {...p} />;
 /** Fit: four corner brackets around a small rect. */
 export const FitIcon = (p: IconProps) => <Icon name="fit" {...p} />;
+/** Fit, contain: a circle in a wide frame, meeting its top and bottom. */
+export const FitContainIcon = (p: IconProps) => <Icon name="fitContain" {...p} />;
+/** Fit, fill: a circle as wide as a frame, running past its top and bottom. */
+export const FitFillIcon = (p: IconProps) => <Icon name="fitFill" {...p} />;
+/** Fit, stretch: an ellipse squashed to a wide frame's proportions. */
+export const FitStretchIcon = (p: IconProps) => <Icon name="fitStretch" {...p} />;
 /** Snapshot: a camera. */
 export const SnapshotIcon = (p: IconProps) => <Icon name="snapshot" {...p} />;
 /** Play: a right-pointing triangle. */

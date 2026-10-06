@@ -14,6 +14,9 @@ export const ICON_PATHS = {
   zoomIn: `<circle cx="9" cy="9" r="5.4"/><path d="M12.82 12.82 16.9 16.9"/><path d="M9 6.7v4.6M6.7 9h4.6"/>`,
   zoomOut: `<circle cx="9" cy="9" r="5.4"/><path d="M12.82 12.82 16.9 16.9"/><path d="M6.7 9h4.6"/>`,
   fit: `<path d="M3.2 7.2V4.4A1.2 1.2 0 0 1 4.4 3.2h2.8M12.8 3.2h2.8A1.2 1.2 0 0 1 16.8 4.4v2.8M16.8 12.8v2.8a1.2 1.2 0 0 1-1.2 1.2h-2.8M7.2 16.8H4.4a1.2 1.2 0 0 1-1.2-1.2v-2.8"/><rect x="7.4" y="8.2" width="5.2" height="3.6" rx="0.8" stroke-width="1"/>`,
+  fitContain: `<rect x="1.875" y="5.625" width="16.25" height="8.75" rx="1" stroke-width="1.25"/><ellipse cx="10" cy="10" rx="3" ry="3"/>`,
+  fitFill: `<rect x="1.875" y="5.625" width="16.25" height="8.75" rx="1" stroke-width="1.25"/><ellipse cx="10" cy="10" rx="6.75" ry="6.75"/>`,
+  fitStretch: `<rect x="1.875" y="5.625" width="16.25" height="8.75" rx="1" stroke-width="1.25"/><ellipse cx="10" cy="10" rx="6.13" ry="2.38"/>`,
   pan: `<path d="M10 8.1V3.2M10 11.9V16.8M8.1 10H3.2M11.9 10H16.8"/><path d="M8.26 5.27 10 3.2 11.74 5.27M11.74 14.73 10 16.8 8.26 14.73M5.27 11.74 3.2 10 5.27 8.26M14.73 8.26 16.8 10 14.73 11.74"/><circle cx="10" cy="10" r="1.9"/>`,
 
   // Actions
@@ -409,6 +412,9 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'zoomIn',
       'zoomOut',
       'fit',
+      'fitContain',
+      'fitFill',
+      'fitStretch',
       'pan',
     ],
   },

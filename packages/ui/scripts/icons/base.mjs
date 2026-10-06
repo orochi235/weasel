@@ -82,6 +82,21 @@ const fitCorners = [
   `M7.2 16.8H4.4a1.2 1.2 0 0 1-1.2-1.2v-2.8`,
 ].join('');
 
+// ── fit modes ────────────────────────────────────────────────────────────
+// `fitViewToBounds`'s contain / fill / stretch: one frame (the viewport) and a
+// circle (content whose aspect is known), placed the way each mode places it.
+// The frame's lines sit on pixel centers at 16px for both 1x and 2x, and it is
+// 1.25 wide — one device pixel at 1x. It runs past the 3..17 margin so `fill`
+// can overflow it by two pixels; any less and the overflow is lost at 1x.
+const FIT_FRAME_W = 1.25;
+const [FX0, FX1, FY0, FY1] = [1.875, 18.125, 5.625, 14.375];
+const fitRoomX = (FX1 - FX0) / 2 - FIT_FRAME_W / 2;
+const fitRoomY = (FY1 - FY0) / 2 - FIT_FRAME_W / 2;
+/** The radius whose 1.5 ink just meets the frame's ink, `room` from center. */
+const meets = (room) => n(room - STROKE / 2);
+const fitFrame = `<rect x="${FX0}" y="${FY0}" width="${n(FX1 - FX0)}" height="${n(FY1 - FY0)}" rx="1" stroke-width="${FIT_FRAME_W}"/>`;
+const fitContent = (rx, ry) => `<ellipse cx="10" cy="10" rx="${rx}" ry="${ry}"/>`;
+
 export const BASE = {
   attrs:
     'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"',
@@ -122,10 +137,22 @@ export const BASE = {
     <path d="${fitCorners}"/>
     <rect x="7.4" y="8.2" width="5.2" height="3.6" rx="0.8" stroke-width="1"/>`,
 
+  // The largest circle the frame holds: it meets top and bottom, and the sides
+  // stay empty.
+  'fit-contain': fitFrame + fitContent(meets(fitRoomY), meets(fitRoomY)),
+
+  // As wide as the frame, so it runs past the top and bottom.
+  'fit-fill': fitFrame + fitContent(meets(fitRoomX), meets(fitRoomX)),
+
+  // Squashed to the frame's proportions. Half a pixel shy of the frame on every
+  // side: touching all four, it fuses into a thick border at 1x, and the shape
+  // is what tells it from `fit-contain`, not where it touches.
+  'fit-stretch': fitFrame + fitContent(n(meets(fitRoomX) - 0.625), n(meets(fitRoomY) - 0.625)),
+
   pan: `
     <path d="${panShafts}"/>
     <path d="${panHeads}"/>
     <circle cx="10" cy="10" r="${HUB}"/>`,
 };
 
-export const BASE_ORDER = ['clone', 'reset', 'close', 'save', 'zoom', 'zoom-out', 'fit', 'pan'];
+export const BASE_ORDER = ['clone', 'reset', 'close', 'save', 'zoom', 'zoom-out', 'fit', 'fit-contain', 'fit-fill', 'fit-stretch', 'pan'];
