@@ -97,10 +97,22 @@ describe('useReorderDragList', () => {
   it('drag past threshold + drop fires onReorder with [draggedId] when row is unselected', () => {
     const { onReorder, row } = setup(ITEMS, ['a']);
     press(row('c'), 80);
-    move(20);
-    release(20);
+    move(10);
+    release(10);
     expect(onReorder).toHaveBeenCalledTimes(1);
     expect(onReorder).toHaveBeenCalledWith(['c'], 0);
+  });
+
+  it('drops above a row from its upper half and below it from its lower half', () => {
+    const { onReorder, row } = setup();
+    // Row c spans y 64–96.
+    press(row('a'), 16);
+    move(70);
+    expect(latest.targetIndex).toBe(2);
+    move(90);
+    expect(latest.targetIndex).toBe(3);
+    release(90);
+    expect(onReorder).toHaveBeenCalledWith(['a'], 3);
   });
 
   it('dragging a selected row moves entire selection as one block', () => {
@@ -250,9 +262,9 @@ describe('useReorderDragList', () => {
   it('commits even though the dragged row unmounted mid-gesture', () => {
     const { onReorder, row, rerender } = setup();
     press(row('d'), 112);
-    move(20);
+    move(10);
     rerender(ITEMS.filter((it) => it.id !== 'd'));
-    release(20);
+    release(10);
     expect(onReorder).toHaveBeenCalledWith(['d'], 0);
   });
 
@@ -406,8 +418,8 @@ describe('useReorderDragList nudge', () => {
     stubGeometry(list);
     const row = (id: string) => document.querySelector<HTMLElement>(`[data-testid="row-${id}"]`)!;
     press(row('c'), 80);
-    move(20);
-    release(20);
+    move(10);
+    release(10);
     press(row('b'), 48);
     release(48);
     expect(abandoned.onReorder).not.toHaveBeenCalled();

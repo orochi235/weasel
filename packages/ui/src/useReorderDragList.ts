@@ -178,7 +178,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       const row = rows[i];
       if (!row) continue;
       const r = row.getBoundingClientRect();
-      if (clientY < r.bottom) { raw = i; break; }
+      if (clientY < r.top + r.height / 2) { raw = i; break; }
     }
     return Math.max(lo, Math.min(raw, hi));
   }, [optsRef]);

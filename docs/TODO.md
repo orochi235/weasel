@@ -557,12 +557,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) `useReorderDragList` drops before any row the pointer is over, however tall.**
-  `computeTargetIndex` takes the first row whose bottom is below the pointer, so a pointer on
-  the lower half of a row still inserts above it. That is right for one-line rows; for tall
-  rows (agnew's block cards, each holding a control panel) dropping after a card means
-  dragging past its bottom edge. Splitting each row at its midpoint would fix both.
-
 - **(P3) Does disabled get its own signal, now that emphasis is an alpha?** Disabled is
   `opacity: 0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled
   control and a subtle label can read alike.

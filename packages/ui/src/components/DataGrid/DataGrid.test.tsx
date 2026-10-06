@@ -75,10 +75,10 @@ describe('DataGrid reorder', () => {
     const { container } = render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} onReorder={onReorder} />);
     stubGeometry(container);
     const handles = container.querySelectorAll('tbody tr td:first-child');
-    // Grab row 2 ('c', y 90..120) and drop it onto row 0 ('a', y 30..60).
+    // Grab row 2 ('c', y 90..120) and drop it on the upper half of row 0 ('a', y 30..60).
     fireEvent(handles[2], pointer('pointerdown', 105));
-    fireEvent(handles[2], pointer('pointermove', 45));
-    fireEvent(handles[2], pointer('pointerup', 45));
+    fireEvent(handles[2], pointer('pointermove', 35));
+    fireEvent(handles[2], pointer('pointerup', 35));
     expect(onReorder).toHaveBeenCalledWith(['c'], 0);
   });
 
@@ -211,8 +211,8 @@ describe('DataGrid detail rows', () => {
     });
     const handle = dataRows[2]!.querySelector('td')!;
     fireEvent(handle, pointer('pointerdown', 105));
-    fireEvent(handle, pointer('pointermove', 75));
-    fireEvent(handle, pointer('pointerup', 75));
+    fireEvent(handle, pointer('pointermove', 65));
+    fireEvent(handle, pointer('pointerup', 65));
     expect(onReorder).toHaveBeenCalledWith(['c'], 1);
   });
 });
