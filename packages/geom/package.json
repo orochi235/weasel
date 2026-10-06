@@ -21,6 +21,10 @@
       "import": "./dist/3d/index.js",
       "types": "./dist/3d/index.d.ts"
     },
+    "./nd": {
+      "import": "./dist/nd/index.js",
+      "types": "./dist/nd/index.d.ts"
+    },
     "./curves": {
       "import": "./dist/curves/index.js",
       "types": "./dist/curves/index.d.ts"

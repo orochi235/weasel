@@ -73,3 +73,49 @@ describe('2D and 3D agree on a plane', () => {
     expect(c1).toEqual({ x: 0, y: 0, z: 4 });
   });
 });
+
+// `./nd` is the core itself, published. A consumer with tuple vectors calls it
+// directly, so it has to answer exactly what the typed entries answer.
+describe('the n-dimensional entry', () => {
+  it('matches the 2D entry on 2-tuples', async () => {
+    const nd = await import('@weasel-js/geom/nd');
+    expect(nd.portCurvePoints([-3, 7], [11, -2], [1, 0], [0, 1], 8)).toEqual(
+      points2(-3, 7, 11, -2, [1, 0], [0, 1], 8),
+    );
+    expect(nd.portControls([0, 0], [6, 8], [0.6, 0.8], null)).toEqual(
+      portControls2(0, 0, 6, 8, [0.6, 0.8], null),
+    );
+  });
+
+  it('matches the 3D entry on 3-tuples', async () => {
+    const nd = await import('@weasel-js/geom/nd');
+    const a: [number, number, number] = [1, 2, 3];
+    const b: [number, number, number] = [7, -4, 9];
+    const outN: [number, number, number] = [0, 0, 1];
+    const inN: [number, number, number] = [0, 1, 0];
+    const v = ([x, y, z]: [number, number, number]) => ({ x, y, z });
+    expect(nd.portCurvePoints(a, b, outN, inN, 8)).toEqual(
+      points3(v(a), v(b), v(outN), v(inN), 8).map((p) => [p.x, p.y, p.z]),
+    );
+    expect(nd.portControls(a, b, outN, inN)).toEqual(
+      portControls3(v(a), v(b), v(outN), v(inN)).map((p) => [p.x, p.y, p.z]),
+    );
+  });
+
+  it('samples without repeating the start point', async () => {
+    const nd = await import('@weasel-js/geom/nd');
+    const pts = nd.portCurvePoints([0, 0, 0], [10, 0, 0], null, null, 4);
+    expect(pts).toHaveLength(4);
+    expect(pts[0]).not.toEqual([0, 0, 0]);
+    expect(pts[3]).toEqual([10, 0, 0]);
+  });
+
+  it('reaches 0.4 of the span by default', async () => {
+    const nd = await import('@weasel-js/geom/nd');
+    expect(nd.PORT_REACH).toBe(0.4);
+    // 10 apart along x, normals along z: each control sits 4 off the chord.
+    const [c1, c2] = nd.portControls([0, 0, 0], [10, 0, 0], [0, 0, 1], [0, 0, 1]);
+    expect(c1).toEqual([0, 0, 4]);
+    expect(c2).toEqual([10, 0, 4]);
+  });
+});

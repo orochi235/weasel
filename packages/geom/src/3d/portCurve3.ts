@@ -4,7 +4,12 @@
  * nothing else, so 2D and 3D cannot disagree about what the curve is.
  */
 
-import { PORT_REACH, cubicAt as cubicAtN, portControls as portControlsN } from '../portCurve';
+import {
+  PORT_REACH,
+  cubicAt as cubicAtN,
+  portControls as portControlsN,
+  portCurvePoints as portCurvePointsN,
+} from '../portCurve';
 import type { Vec3 } from './vec3';
 
 export { PORT_REACH };
@@ -41,19 +46,14 @@ export function portCurvePoints(
   samples: number,
   reach: number = PORT_REACH,
 ): Vec3[] {
-  const [c1, c2] = portControlsN(
+  return portCurvePointsN(
     comps(a),
     comps(b),
     compsOrNull(outNormal),
     compsOrNull(inNormal),
+    samples,
     reach,
-  );
-  const out: Vec3[] = [];
-  for (let s = 1; s <= samples; s++) {
-    const p = cubicAtN(comps(a), c1, c2, comps(b), s / samples);
-    out.push(fromComps(p));
-  }
-  return out;
+  ).map(fromComps);
 }
 
 /** A cubic evaluated at `t`. The 2D barrel's `cubicEvalAt`, one dimension up. */

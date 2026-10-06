@@ -119,8 +119,6 @@ function isHorizontal(normal: Vec2 | null | undefined): boolean {
   return Math.abs(normal?.x ?? 1) >= Math.abs(normal?.y ?? 0);
 }
 
-/** How far a bezier reaches along each end's normal, as a fraction of the
- *  straight-line distance between the two points it joins. */
 /**
  * A smooth route, sampled into points.
  *

@@ -4,7 +4,11 @@
  * `./portCurve`, stated once over components, so this and `./3d` cannot drift.
  */
 
-import { PORT_REACH, cubicAt as cubicAtN, portControls as portControlsN } from './portCurve';
+import {
+  PORT_REACH,
+  portControls as portControlsN,
+  portCurvePoints as portCurvePointsN,
+} from './portCurve';
 
 export { PORT_REACH };
 
@@ -41,13 +45,7 @@ export function portCurvePoints(
   samples: number,
   reach: number = PORT_REACH,
 ): [number, number][] {
-  const a = [ax, ay];
-  const b = [bx, by];
-  const [c1, c2] = portControlsN(a, b, outNormal, inNormal, reach);
-  const out: [number, number][] = [];
-  for (let s = 1; s <= samples; s++) {
-    const p = cubicAtN(a, c1, c2, b, s / samples);
-    out.push([p[0]!, p[1]!]);
-  }
-  return out;
+  return portCurvePointsN([ax, ay], [bx, by], outNormal, inNormal, samples, reach).map(
+    (p) => [p[0]!, p[1]!],
+  );
 }

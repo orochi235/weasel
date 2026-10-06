@@ -9,6 +9,7 @@ Dependency-free core. Subpaths:
 - `./tessellate` — fill tessellation, polylines and trimming; needs the optional peer `earcut`
 - `./booleans` — polygon booleans and path splitting; needs the optional peer `polygon-clipping`
 - `./3d` — vectors, quaternions, 4x4 matrices and ray intersection
+- `./nd` — the port-curve rule (`portControls`, `portCurvePoints`, `PORT_REACH`) over plain number arrays, for any dimension
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the

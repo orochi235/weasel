@@ -3,10 +3,11 @@
  * arrive at the next against that port's normal — what makes a routed edge read
  * as plugged into a box rather than aimed at it.
  *
- * The rule is stated once, over loose components, and the 2D barrel and `./3d`
- * each wrap it in their own currency. Every operation here is closed on the
- * plane z = 0, so a planar problem answered through the 3D wrapper returns the
- * same numbers as through the 2D one, not an approximation of them.
+ * The rule is stated once, over loose components, and published as is from
+ * `./nd`; the 2D barrel and `./3d` each wrap it in their own currency. Every
+ * operation here is closed on the plane z = 0, so a planar problem answered
+ * through the 3D wrapper returns the same numbers as through the 2D one, not an
+ * approximation of them.
  */
 
 /** How far a control point reaches toward the other end, as a fraction of the
@@ -45,6 +46,21 @@ export function portControls(
     c2.push(inNormal == null ? bi - (bi - ai) * reach : bi + inNormal[i]! * span);
   }
   return [c1, c2];
+}
+
+/** A port curve sampled into `samples` points, excluding its start. */
+export function portCurvePoints(
+  a: readonly number[],
+  b: readonly number[],
+  outNormal: readonly number[] | null | undefined,
+  inNormal: readonly number[] | null | undefined,
+  samples: number,
+  reach: number = PORT_REACH,
+): number[][] {
+  const [c1, c2] = portControls(a, b, outNormal, inNormal, reach);
+  const out: number[][] = [];
+  for (let s = 1; s <= samples; s++) out.push(cubicAt(a, c1, c2, b, s / samples));
+  return out;
 }
 
 /** A cubic evaluated at `t`, component-wise, in whatever dimension it was given. */
