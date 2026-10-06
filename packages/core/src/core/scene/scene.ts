@@ -1334,6 +1334,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       history.recordEntry(ops, label, opts);
       notify();
     },
+    prune(t) {
+      history.prune(t);
+      notify();
+    },
     restore: (snapshot) => { scene.restoreHistory(snapshot); },
     // Reads forward to the engine, `version` included: it counts history
     // operations, where the scene's counts every mutation.
@@ -1342,6 +1346,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     undoDepth: () => history.undoDepth(),
     redoDepth: () => history.redoDepth(),
     entries: () => history.entries(),
+    timestampAt: (i) => history.timestampAt(i),
+    depthAt: (t) => history.depthAt(t),
     getVersion: () => history.getVersion(),
     subscribe: (listener) => history.subscribe(listener),
     serialize: () => history.serialize(),
