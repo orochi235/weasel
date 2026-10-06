@@ -504,6 +504,29 @@ decomposition meant to absorb the first; it has not landed:
 
 ---
 
+### weasel-history as a rewind log
+
+blits (meant to replace weasel's animation engine) will record a mix's host
+calls as `Op`s in a `@weasel-js/history` `History`, timestamped in mix time, so
+a mix can rewind and replay. Mike chose extending weasel-history over a parallel
+log, 2026-10-06. What it lacks, per blits' `NOTES-ON-SCRUBBING.md` (`687fac9`):
+
+- **(P2) Seek by time.** `goto(n)` takes an entry count, and finding n for a
+  time means scanning `entries()`, which allocates. Add a goto by time, or cheap
+  access to an entry's timestamp.
+- **(P2) Timestamps do not persist.** `SerializedHistoryEntry` has no
+  `timestamp`, and `restore()` sets it to 0. Serialize it.
+- **(P2) Retention by age.** `historyLimit` counts entries; blits' horizon is a
+  span of time. Drop entries older than a time, reported through `onEvict`.
+- **(P2) Pull the next redo entry without applying it.** `redo()` and `goto()`
+  apply at once; a mix applies each op when its time comes, between steps, so it
+  needs to read the next redo entry and its timestamp and apply it itself.
+
+State checkpoints stay in blits, beside the `History`. Whether a mix keeps its
+own control logs beside the `History` for `project(t)`, and whether scrubbing
+back then forward replays later host calls or cuts them, are open decisions in
+blits.
+
 ## Audio
 
 Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
