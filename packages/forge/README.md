@@ -50,6 +50,8 @@ The vite plugin takes two optional config modules:
   `style(css)` for a rule that should reach that story alone.
 - `shellConfig` default-exports `defineShellConfig({...})`: lab chrome, control
   renderers, and global declarations. Only the workshop page imports it.
+  `title` names the workshop in its header and as the document title
+  (default `weaselforge`), and `cssVars: false` leaves out the CSS Vars panel.
 
 ```ts
 forge({ stories: ['src/**/*.stories.tsx'], frameConfig: 'forge.frame.tsx', shellConfig: 'forge.shell.tsx' });
