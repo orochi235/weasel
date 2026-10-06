@@ -770,21 +770,16 @@ only story runner in the repo.
   `ForgeOptions` — and then the shell config's copy should go, not stay as a
   second source.
 
-- **(P2) A native story whose `meta` is not imported from `@weasel-js/forge`
-  gets a different id in the index than at runtime.** The index
-  (`packages/forge/src/vite/indexFile.ts`) reads `meta({ title })` only when
-  `meta` is imported from `'@weasel-js/forge'`; imported from anywhere else — a
-  project module re-exporting it, or forge's own `../story/define` — it falls
-  back to the path-derived title, while the runtime loader (`story/native.ts`)
-  uses the meta's title. The tree and the route use the index's id, so a link
-  written from the meta's title (`#/ui-thing--basic`) names no story. Repro:
-  `indexFile("import { meta, story } from './forge-helpers';\nexport default
-  meta({ title: 'ui/Thing' });\nexport const Basic = story({ render: () => null
-  });", '/r/x.stories.tsx', 'auto/Title')` gives `auto-title--basic`; from
-  `'@weasel-js/forge'` it gives `ui-thing--basic`. Not a one-line fix: the index
-  cannot follow an arbitrary import, and treating any import named `meta` as
-  forge's is a guess. Either the index resolves the import, or the registry
-  re-ids a loaded story from its entry and the two titles are reconciled.
+- **(P3) A native meta whose import resolves to nothing still gets two titles.**
+  The plugin follows a `meta`/`story` imported from somewhere other than
+  `@weasel-js/forge` to its declaration (`vite/wrappers.ts`), so a helper that
+  re-exports forge's is indexed under the meta's title. When the import does not
+  resolve — or `@weasel-js/forge` itself does not, from that file — the index
+  falls back to the path-derived title while `story/native.ts` still runs the
+  story under the meta's, and a link written from the title names no story. A
+  helper file created after the story file was indexed is also not watched for
+  until that story file changes. Having the loader take the index entry's title
+  would make the two agree in every case.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show

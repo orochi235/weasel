@@ -5,19 +5,84 @@ import type { IndexEntry } from '../story/types.ts';
 
 type Bindings = Map<string, t.Node>;
 
-/** The stories `code` declares, in source order, without running it. `file` is absolute; `autoTitle` titles a meta that names none. */
-export function indexFile(code: string, file: string, autoTitle: string): IndexEntry[] {
+/**
+ * The stories `code` declares, in source order, without running it. `file` is absolute; `autoTitle` titles a meta
+ * that names none. `wrappers` adds locals known to be forge's `meta` or `story` though imported from elsewhere.
+ */
+export function indexFile(code: string, file: string, autoTitle: string, wrappers: ReadonlySet<string> = new Set()): IndexEntry[] {
   try {
-    const plugins: ParserPlugin[] = ['typescript', 'decorators-legacy', ...(/\.[jt]sx$/.test(file) ? (['jsx'] as const) : [])];
-    return indexProgram(parse(code, { sourceType: 'module', plugins }).program, file, autoTitle);
+    return indexProgram(parseFile(code, file), file, autoTitle, wrappers);
   } catch (err) {
     throw new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
   }
 }
 
-function indexProgram(program: t.Program, file: string, autoTitle: string): IndexEntry[] {
+/** An import that a story file's default export or a named export is a call to. */
+export interface ForeignCallee {
+  local: string;
+  spec: string;
+  imported: string;
+}
+
+/**
+ * The imports, from anywhere but `@weasel-js/forge`, that the default export or a named export is a call to. Any of
+ * them may be forge's `meta` or `story` re-exported through another module, which only resolving it can tell.
+ */
+export function foreignCallees(code: string, file: string): ForeignCallee[] {
+  const program = parseFile(code, file);
+  const { bindings } = scan(program, new Set());
+  const imported = new Map<string, ForeignCallee>();
+  const exported: (t.Node | null | undefined)[] = [];
+  for (const stmt of program.body) {
+    if (stmt.type === 'ImportDeclaration' && stmt.importKind !== 'type' && stmt.source.value !== '@weasel-js/forge') {
+      for (const spec of stmt.specifiers) {
+        if (spec.type === 'ImportNamespaceSpecifier' || (spec.type === 'ImportSpecifier' && spec.importKind === 'type')) continue;
+        const name = spec.type === 'ImportDefaultSpecifier' ? 'default' : exportedName(spec.imported);
+        imported.set(spec.local.name, { local: spec.local.name, spec: stmt.source.value, imported: name });
+      }
+    }
+    if (stmt.type === 'ExportDefaultDeclaration') exported.push(stmt.declaration);
+    if (stmt.type !== 'ExportNamedDeclaration' || stmt.exportKind === 'type') continue;
+    if (stmt.declaration?.type === 'VariableDeclaration') exported.push(...stmt.declaration.declarations.map((d) => d.init));
+    if (stmt.source) continue;
+    for (const spec of stmt.specifiers) if (spec.type === 'ExportSpecifier') exported.push(bindings.get(exportedName(spec.local)));
+  }
+  const found = new Map<string, ForeignCallee>();
+  for (const node of exported) {
+    const hit = imported.get(calleeOf(node ?? undefined, bindings) ?? '');
+    if (hit) found.set(hit.local, hit);
+  }
+  return [...found.values()];
+}
+
+function parseFile(code: string, file: string): t.Program {
+  const plugins: ParserPlugin[] = ['typescript', 'decorators-legacy', ...(/\.[jt]sx$/.test(file) ? (['jsx'] as const) : [])];
+  return parse(code, { sourceType: 'module', plugins }).program;
+}
+
+/** The identifier `node` calls, through casts and top-level `const`s. */
+function calleeOf(node: t.Node | undefined, bindings: Bindings, depth = 0): string | undefined {
+  if (!node || depth > 16) return undefined;
+  switch (node.type) {
+    case 'TSSatisfiesExpression':
+    case 'TSAsExpression':
+    case 'TSTypeAssertion':
+    case 'TSNonNullExpression':
+    case 'ParenthesizedExpression':
+      return calleeOf(node.expression, bindings, depth + 1);
+    case 'CallExpression':
+      return node.callee.type === 'Identifier' ? node.callee.name : undefined;
+    case 'Identifier':
+      return calleeOf(bindings.get(node.name), bindings, depth + 1);
+    default:
+      return undefined;
+  }
+}
+
+/** The program's top-level `const` initializers, and its locals that are forge's `meta` or `story`. */
+function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindings; wrappers: Set<string> } {
   const bindings: Bindings = new Map();
-  const wrappers = new Set<string>();
+  const wrappers = new Set(extra);
   for (const stmt of program.body) {
     if (stmt.type === 'ImportDeclaration' && stmt.source.value === '@weasel-js/forge') {
       for (const spec of stmt.specifiers) {
@@ -31,6 +96,11 @@ function indexProgram(program: t.Program, file: string, autoTitle: string): Inde
       for (const d of decl.declarations) if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);
     }
   }
+  return { bindings, wrappers };
+}
+
+function indexProgram(program: t.Program, file: string, autoTitle: string, extra: ReadonlySet<string>): IndexEntry[] {
+  const { bindings, wrappers } = scan(program, extra);
 
   let metaNode: t.Node | undefined;
   let metaDoc: string | undefined;

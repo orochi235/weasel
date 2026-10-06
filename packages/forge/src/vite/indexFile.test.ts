@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { indexFile } from './indexFile';
+import { foreignCallees, indexFile } from './indexFile';
 
 const FILE = '/repo/packages/ui/src/Slider.stories.tsx';
 
@@ -269,5 +269,39 @@ export default { title: '!!!' };
 export const Basic = {};
 `;
     expect(() => indexFile(code, FILE, 'ui/Auto')).toThrow(FILE);
+  });
+});
+
+describe('a meta and stories built by a helper module', () => {
+  const code = `
+import { meta as defineMeta, story } from './forge-helpers';
+import { Thing } from './Thing';
+import type { Spec } from './types';
+export default defineMeta({ title: 'ui/Thing', component: Thing });
+const basic = story({ name: 'The basic one', render: () => null });
+export { basic as Basic };
+export const Plain = {};
+`;
+
+  it('reads the meta only once told the helper is forge', () => {
+    expect(ids(code)).toEqual([
+      ['ui-auto--basic', 'Basic'],
+      ['ui-auto--plain', 'Plain'],
+    ]);
+    expect(indexFile(code, FILE, 'ui/Auto', new Set(['defineMeta', 'story'])).map((e) => [e.id, e.name, e.componentName])).toEqual([
+      ['ui-thing--basic', 'The basic one', 'Thing'],
+      ['ui-thing--plain', 'Plain', 'Thing'],
+    ]);
+  });
+
+  it('names the imports the exports are calls to, and nothing else', () => {
+    expect(foreignCallees(code, FILE)).toEqual([
+      { local: 'defineMeta', spec: './forge-helpers', imported: 'meta' },
+      { local: 'story', spec: './forge-helpers', imported: 'story' },
+    ]);
+  });
+
+  it('leaves out calls to forge itself', () => {
+    expect(foreignCallees(`import { meta } from '@weasel-js/forge';\nexport default meta({ title: 'ui/X' });\n`, FILE)).toEqual([]);
   });
 });
