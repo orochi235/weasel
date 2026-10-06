@@ -514,7 +514,9 @@ a push drops redo (Mike, 2026-10-06).
 - **(P2) Branching history, as an option chosen when the history is created.**
   With it on, a push made while entries sit on the redo stack keeps them as a
   branch instead of dropping them. Wanted by Mike 2026-10-06; the API for
-  moving between branches is not designed yet.
+  moving between branches is not designed yet. Whatever it is, the current
+  branch must read in time order, since `depthAt` and `timestampAt` assume
+  stamps never decrease along it (blits' request).
 
 State checkpoints stay in blits, beside the `History`. Whether a mix keeps its
 own control logs for `project(t)` is open in blits' `NOTES-ON-SCRUBBING.md`.
