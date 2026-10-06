@@ -1105,7 +1105,7 @@ export type {
   UseDragRadialOptions,
   DragRadialController,
 } from './interactions/gestures/dragRadial';
-export { openPointerSession, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/routing';
+export { openPointerSession, DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/routing';
 export type { PointerSession, PointerSessionCallbacks, PointerSessionCancelReason, PointerSessionOptions } from '@weasel-js/routing';
 export { useHandleDrag } from './interactions/gestures/handleDrag';
 export type {

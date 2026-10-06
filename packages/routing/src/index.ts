@@ -118,7 +118,7 @@ export { createLongPressStore, LONG_PRESS_MS } from './interactions/dispatcher/l
 export type {
   PendingLongPress, LongPressState, LongPressStore, LongPressOptions,
 } from './interactions/dispatcher/longPressState';
-export { DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/gestures';
+export { DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/gestures';
 export { openPointerSession } from './interactions/pointerSession';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason,

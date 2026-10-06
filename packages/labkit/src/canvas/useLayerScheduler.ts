@@ -8,6 +8,8 @@ import { DEFAULT_FRAME, type WorldFrame } from './worldSpec';
 export interface CanvasLayerDescriptor {
   id: string;
   visible: boolean;
+  /** Repaint on every `ticks` frame, not only when `render` or the view change. */
+  timed?: boolean;
   render: (ctx: CanvasRenderingContext2D, view: ViewTransform, frame: WorldFrame) => void;
 }
 
@@ -21,6 +23,9 @@ interface SchedulerOptions {
   /** The element the stack occupies. Given one, the scheduler also stops while
    *  the stack sits outside the viewport. */
   host?: RefObject<Element | null>;
+  /** Subscribes to frames — a trial clock's — after each of which every timed
+   *  layer repaints. Returns the unsubscribe. */
+  ticks?: (fn: () => void) => () => void;
 }
 
 export function useLayerScheduler({
@@ -30,6 +35,7 @@ export function useLayerScheduler({
   canvasRefs,
   size,
   host,
+  ticks,
 }: SchedulerOptions): void {
   const dirty = useRef<Set<string>>(new Set());
   const lastRenderRef = useRef<Map<string, CanvasLayerDescriptor['render']>>(new Map());
@@ -82,4 +88,12 @@ export function useLayerScheduler({
   useEffect(() => {
     if (dirty.current.size > 0) frameLoop.request();
   });
+
+  useEffect(() => {
+    if (!ticks || !layers.some((l) => l.timed)) return;
+    return ticks(() => {
+      for (const layer of layers) if (layer.timed) dirty.current.add(layer.id);
+      frameLoop.request();
+    });
+  }, [ticks, layers, frameLoop]);
 }

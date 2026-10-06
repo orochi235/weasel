@@ -624,6 +624,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/LabLoupeDemo.tsx',
   },
   {
+    id: 'trial-clock',
+    title: 'Trial clock',
+    package: 'labkit',
+    description:
+      'An instrument that declares `clock` gets playback time labkit owns: a position, `elapsed`, moved by a signed `rate`, where 0 pauses and a negative rate plays backward. The track is an ordinary layer, drawn once; the planet is a `timed` layer, repainted every frame the clock moves, reading `phase` — how far through its 4-second pass. The buttons drive the clock through `useTrialClock`, which re-renders only when the rate changes, and the readout is written per frame by `useClockFrame` without re-rendering anything.',
+    hint: 'Press Play, then Reverse: the planet runs back the way it came. Pause holds it where it is.',
+    load: () => import('./demos/TrialClockDemo').then((m) => m.TrialClockDemo),
+    path: 'apps/site/demos/TrialClockDemo.tsx',
+  },
+  {
     id: 'auto-controls',
     title: 'Auto controls',
     package: 'labkit',

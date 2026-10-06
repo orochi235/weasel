@@ -11,7 +11,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import { CONTROL_SELECTOR, isInControlWithin } from '../../interactiveTarget';
+import { CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/core';
 import type { PressModifiers, ReorderGhost } from '../../useReorderDragList';
 import { DragGhost } from '../DragGhost';
 import s from './ItemList.module.css';

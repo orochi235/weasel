@@ -26,7 +26,7 @@ import type { Contribution } from '../../contributions/types';
 import {
   createDispatcher, pointerGestureId, publishLiveDispatch, type Dispatcher, type DispatcherContext,
 } from './dispatcher';
-import { pastDragThreshold } from '@weasel-js/gestures';
+import { isInControlWithin, pastDragThreshold } from '@weasel-js/gestures';
 import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from '../../ingestion/ingestItems';
@@ -957,6 +957,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // (synthetic / programmatic events) counts as primary.
       if ((e.button ?? 0) !== 0) return;
       if (!canvas) return;
+      // A button or field laid over the canvas handles its own press: opening a
+      // session here would capture the pointer and retarget its click.
+      if (isInControlWithin(e.target, canvas)) return;
       routeDown(e.pointerId, e.clientX, e.clientY);
 
       const w = toWorld(e.clientX, e.clientY);
