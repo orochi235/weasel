@@ -12,5 +12,7 @@ export { LabShell } from './LabShell';
 export type { LabPage, LabSwitcherProps } from './LabSwitcher';
 export { currentPage, LabSwitcher } from './LabSwitcher';
 export { LabZoom } from './LabZoom';
+export type { PresentationSeed } from './openLab';
+export { type Presentation, usePresentation } from './presentation';
 export type { PanelDescriptor, TrialLayout, WorkspaceProps } from './Workspace';
 export { Workspace } from './Workspace';

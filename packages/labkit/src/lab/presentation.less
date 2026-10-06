@@ -1,0 +1,53 @@
+// An iframe whose root color-scheme differs from its embedder's is painted
+// opaque, so a presenting lab hands the page back its own.
+:root:has(.lk-lab--present) {
+  color-scheme: normal;
+  background: transparent;
+
+  body {
+    background: transparent;
+  }
+}
+
+.lk-lab--present {
+  --wzl-backdrop: none;
+  background: transparent;
+
+  .lk-shell-header,
+  .lk-shell-footer,
+  .lk-lab__body > .lk-palette-region {
+    display: none;
+  }
+
+  // From the lab body down to the presented trial, and from that trial down to
+  // its stage, an element holding the next one lends it its box and whatever
+  // sits beside them has none. Hidden rather than unmounted, so every canvas
+  // keeps its context through a round trip.
+  .lk-lab__body *:has([data-lk-presented]),
+  [data-lk-presented] *:has(.lk-trial__stage) {
+    display: contents;
+  }
+
+  .lk-lab__body *:has([data-lk-presented]) > :not(:has([data-lk-presented]), [data-lk-presented]),
+  [data-lk-presented] > :not(:has(.lk-trial__stage)),
+  [data-lk-presented] *:has(.lk-trial__stage) > :not(:has(.lk-trial__stage), .lk-trial__stage) {
+    display: none;
+  }
+
+  [data-lk-presented] {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .lk-trial__stage {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    background: transparent;
+  }
+}

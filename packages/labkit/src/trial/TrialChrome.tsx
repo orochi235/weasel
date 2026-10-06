@@ -24,6 +24,7 @@ import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
 import { useLabContext } from '../lab/LabContext';
+import { usePresentedTrial } from '../lab/presentation';
 import { useLightboxControl } from '../lightbox/LightboxContext';
 import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
@@ -99,6 +100,7 @@ export function TrialChrome({
   children,
 }: TrialChromeProps) {
   const lab = useLabContext();
+  const { presented, ref: presentedRef } = usePresentedTrial(trialId);
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] TrialChrome requires <LabStoreProvider>');
   const updateTrialView = useStore(storeCtx.store, (s) => s.updateTrialView);
@@ -253,7 +255,8 @@ export function TrialChrome({
 
   const handleKeyDown = (e: KeyboardEvent<HTMLElement>): void => {
     const mod = e.metaKey || e.ctrlKey;
-    if (!mod) return;
+    // A presented trial has no chrome, so nothing the chrome's keys act on.
+    if (!mod || presented) return;
     if (e.key === 'z' || e.key === 'Z') {
       e.preventDefault();
       if (e.shiftKey) ctx.redo();
@@ -266,9 +269,11 @@ export function TrialChrome({
 
   return (
     <section
+      ref={presentedRef}
       className="lk-trial"
       data-trial-id={trialId}
       data-focused={lab.trials.length > 1 && lab.focusedTrialId === trialId ? 'true' : undefined}
+      data-lk-presented={presented ? '' : undefined}
       aria-label={`Trial ${title}`}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
@@ -288,7 +293,12 @@ export function TrialChrome({
           width={record.sidebarWidth}
           onWidthChange={(w) => updateTrialSidebarWidth(trialId, w)}
           contentClassName={
-            instrument.canvas || instrument.stage ? 'lk-trial__content--flush' : undefined
+            [
+              instrument.canvas || instrument.stage ? 'lk-trial__content--flush' : '',
+              presented ? 'lk-trial__stage' : '',
+            ]
+              .filter(Boolean)
+              .join(' ') || undefined
           }
           sidebar={
             <>
