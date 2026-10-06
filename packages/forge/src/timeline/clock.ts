@@ -61,6 +61,14 @@ export interface Clock {
   play(): void;
   pause(): void;
   seek(time: number): void;
+  /**
+   * Pauses at `time`, asked for from outside the story — a URL, a persisted value — and keeps asking: every span
+   * change clamps it afresh, so a span that only arrives later can still hold it, until play, a seek or another
+   * request moves the playhead. Null asks for the span's start, wherever it ends up.
+   */
+  request(time: number | null): void;
+  /** The requested time while the span cannot hold it yet, or null. Whatever echoes the playhead outward waits on it. */
+  pending(): number | null;
   setLoop(loop: boolean): void;
   setRate(rate: number): void;
   /** Replaces the declared span until called with null. */
@@ -71,23 +79,34 @@ export interface Clock {
   tick(elapsed: number): void;
 }
 
-/** A clock for `spec`, paused at `initial` when one is given and at the span start otherwise. */
+/** Where a request puts the playhead in `span`; null asks for its start. */
+const placed = (span: Span, requested: number | null): number =>
+  requested === null ? span.start : clampTime(span, requested);
+
+/** A clock for `spec`, paused at a request for `initial`, which is the span start when none is given. */
 export function createClock(spec: TimelineSpec, initial?: number | null): Clock {
   let declared = spanOf(spec);
   let override: Span | null = null;
-  // Until something moves the playhead it follows the span's start, so a span set after mount still opens there.
-  let homed = initial === undefined || initial === null;
+  // Until something moves the playhead it stands where it was asked to, re-placed in every new span, so a span set
+  // after mount still opens at the start — or at a URL's time beyond the span declared before it.
+  let requested: { time: number | null } | null = { time: initial ?? null };
   let state: ClockState = {
-    time: homed ? declared.start : clampTime(declared, initial as number),
+    time: placed(declared, requested.time),
     playing: false,
     loop: spec.loop ?? true,
     rate: validRate(spec.rate) ? spec.rate : 1,
     span: declared,
   };
   const listeners = new Set<() => void>();
+  const pendingIn = (at: ClockState): number | null =>
+    requested && requested.time !== null && requested.time !== at.time ? requested.time : null;
+  // What echoes the playhead outward waits on a pending request, so its coming and going notifies as a move does.
+  let pending = pendingIn(state);
 
   const set = (next: ClockState): void => {
+    const nextPending = pendingIn(next);
     if (
+      nextPending === pending &&
       next.time === state.time &&
       next.playing === state.playing &&
       next.loop === state.loop &&
@@ -97,15 +116,16 @@ export function createClock(spec: TimelineSpec, initial?: number | null): Clock 
     )
       return;
     state = next;
+    pending = nextPending;
     for (const listener of [...listeners]) listener();
   };
   const moved = (next: ClockState): void => {
-    homed = false;
+    requested = null;
     set(next);
   };
   const respan = (): void => {
     const span = override ?? declared;
-    set({ ...state, span, time: homed ? span.start : clampTime(span, state.time) });
+    set({ ...state, span, time: requested ? placed(span, requested.time) : clampTime(span, state.time) });
   };
 
   return {
@@ -121,6 +141,11 @@ export function createClock(spec: TimelineSpec, initial?: number | null): Clock 
     },
     pause: () => set({ ...state, playing: false }),
     seek: (time) => moved({ ...state, time: clampTime(state.span, time) }),
+    request(time) {
+      requested = { time: Number.isNaN(time) ? null : time };
+      set({ ...state, playing: false, time: placed(state.span, requested.time) });
+    },
+    pending: () => pending,
     setLoop: (loop) => set({ ...state, loop }),
     setRate(rate) {
       if (validRate(rate)) set({ ...state, rate });

@@ -1,7 +1,8 @@
 import { createMemoryAdapter, type StorageAdapter, useLabContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { useEffect } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadCsfModule } from '../csf/loadCsfModule';
 import { StoryHost } from '../frame/StoryHost';
 import { installResizeObserver } from '../shell/labHarness';
@@ -23,10 +24,27 @@ function SpanReadout() {
   return <output aria-label="span">{`${span.start}..${span.end}`}</output>;
 }
 
+/** How long the late story takes to learn its span, standing in for a fixture load; null never learns it. */
+let lateDelay: number | null = 20;
+
+/** A story declaring a placeholder span and setting its real one from an effect, once its "fixture" arrives. */
+function LateSpan() {
+  const { setSpan } = useTimeline();
+  useEffect(() => {
+    if (lateDelay === null) return;
+    const id = setTimeout(() => setSpan({ start: -300, duration: 4000 }), lateDelay);
+    return () => clearTimeout(id);
+  }, [setSpan]);
+  return <Readout />;
+}
+
 const timed: IndexEntry = { id: 't--timed', title: 'T', name: 'Timed', exportName: 'Timed', file: '/t.stories.tsx' };
 const still: IndexEntry = { id: 't--still', title: 'T', name: 'Still', exportName: 'Still', file: '/t.stories.tsx' };
 
+const late: IndexEntry = { id: 't--late', title: 'T', name: 'Late', exportName: 'Late', file: '/t.stories.tsx' };
+
 const tModule = {
+  Late: story({ timeline: { duration: 1000 }, render: () => <LateSpan /> }),
   default: meta({ title: 'T' }),
   Timed: story({ timeline: { duration: 4000 }, render: () => <Readout /> }),
   Still: story({ render: () => <p>still</p> }),
@@ -58,7 +76,7 @@ function mount(url: string, storage: StorageAdapter = createMemoryAdapter()) {
   history.replaceState(null, '', url);
   return render(
     <Workshop
-      index={[timed, still]}
+      index={[timed, still, late]}
       frameUrl="/frame.html"
       importers={importers()}
       setup={{}}
@@ -78,6 +96,8 @@ const persisted = () => act(() => new Promise((r) => setTimeout(r, 400)));
 const tParam = () => readRouteParams().t ?? null;
 
 afterEach(() => {
+  lateDelay = 20;
+  vi.restoreAllMocks();
   history.replaceState(null, '', '/');
 });
 
@@ -181,6 +201,42 @@ describe('the playhead kept with the trial', () => {
     expect(playhead()).toBe(0);
     fireEvent.click(screen.getByRole('button', { name: 'probe: load' }));
     await waitFor(() => expect(playhead()).toBe(4000));
+  });
+});
+
+describe('a story that learns its span only once it runs', () => {
+  it('lands a URL t beyond the placeholder span once the real one arrives, never rewriting t', async () => {
+    const replace = vi.spyOn(history, 'replaceState');
+    mount('/#/t--late?t=2.5');
+    await loaded();
+    await waitFor(() => expect(playhead()).toBe(2500));
+    expect(tParam()).toBe('2.5');
+    const written = replace.mock.calls.map((call) => String(call[2]));
+    expect(written.filter((url) => /[?&]t=(?!2\.5\b)/.test(url))).toEqual([]);
+  });
+
+  it('comes back at a persisted time beyond the placeholder span after a reload', async () => {
+    const storage = createMemoryAdapter();
+    const first = mount('/#/t--late', storage);
+    await loaded();
+    await waitFor(() => expect(playhead()).toBe(-300));
+    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
+    expect(playhead()).toBe(3700);
+    await persisted();
+    first.unmount();
+
+    lateDelay = null;
+    const second = mount('/#/t--late', storage);
+    await loaded();
+    expect(playhead()).toBe(1000);
+    expect(tParam()).toBeNull();
+    await persisted();
+    second.unmount();
+
+    lateDelay = 20;
+    mount('/#/t--late', storage);
+    await loaded();
+    await waitFor(() => expect(playhead()).toBe(3700));
   });
 });
 
