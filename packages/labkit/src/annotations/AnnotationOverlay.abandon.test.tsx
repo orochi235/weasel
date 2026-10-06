@@ -65,6 +65,7 @@ function surfaceFor(clears: SurfaceClear[]): SurfaceHandle {
     invalidate: () => {},
     invalidateAll: () => {},
     invalidateRects: () => {},
+    invalidateBox: () => {},
     registerTile: () => {},
     registerClear: (_id, clear) => {
       clears.push(clear);
