@@ -68,40 +68,42 @@ export function Dialog(props: DialogProps) {
   const stanced = useStance({ stance, tone });
 
   const showClose = showCloseButton ?? Boolean(onOpenChange);
-  const { anchor, portalProps } = useOverlayPortal(portalContainer);
+  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
 
   return (
     <>
       {anchor}
-      <ModalOverlay
-        {...rest}
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        className={s.overlay}
-        data-weasel-overlay=""
-        {...portalProps}
-      >
-        <RACModal className={[s.modal, className].filter(Boolean).join(' ')} {...stanced}>
-          <RACDialog role={role} className={s.dialog}>
-            {({ close }) => (
-              <>
-                {(title !== undefined || showClose) && (
-                  <header className={s.header}>
-                    {title !== undefined && (
-                      <Heading slot="title" className={s.title}>{title}</Heading>
-                    )}
-                    {showClose && (
-                      <CloseButton ariaLabel="Close dialog" onClick={close} />
-                    )}
-                  </header>
-                )}
-                <div className={[s.body, bodyClassName].filter(Boolean).join(' ')}>{children}</div>
-                {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
-              </>
-            )}
-          </RACDialog>
-        </RACModal>
-      </ModalOverlay>
+      {ready && (
+        <ModalOverlay
+          {...rest}
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
+          className={s.overlay}
+          data-weasel-overlay=""
+          {...portalProps}
+        >
+          <RACModal className={[s.modal, className].filter(Boolean).join(' ')} {...stanced}>
+            <RACDialog role={role} className={s.dialog}>
+              {({ close }) => (
+                <>
+                  {(title !== undefined || showClose) && (
+                    <header className={s.header}>
+                      {title !== undefined && (
+                        <Heading slot="title" className={s.title}>{title}</Heading>
+                      )}
+                      {showClose && (
+                        <CloseButton ariaLabel="Close dialog" onClick={close} />
+                      )}
+                    </header>
+                  )}
+                  <div className={[s.body, bodyClassName].filter(Boolean).join(' ')}>{children}</div>
+                  {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
+                </>
+              )}
+            </RACDialog>
+          </RACModal>
+        </ModalOverlay>
+      )}
     </>
   );
 }

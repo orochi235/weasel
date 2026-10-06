@@ -129,7 +129,7 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
     ...rest
   } = props;
 
-  const { anchor, portalProps } = useOverlayPortal(portalContainer);
+  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
 
   return (
     <RACComboBox
@@ -176,26 +176,28 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
         </Text>
       )}
       <FieldError className={`${f.error} ${f.below}`}>{errorMessage}</FieldError>
-      <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
-        <RACListBox
-          className={`${listbox.surface} ${listbox.list}`}
-          renderEmptyState={() =>
-            loadError !== null ? (
-              <div className={s.error} role="alert">{errorLabel}</div>
-            ) : (
-              <div className={s.empty}>{emptyLabel}</div>
-            )
-          }
-        >
-          {options !== undefined
-            ? options.map((o) => (
-                <ComboBoxItem key={String(o.value)} id={o.value} textValue={o.textValue} isDisabled={o.isDisabled}>
-                  {o.label}
-                </ComboBoxItem>
-              ))
-            : children}
-        </RACListBox>
-      </RACPopover>
+      {ready && (
+        <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
+          <RACListBox
+            className={`${listbox.surface} ${listbox.list}`}
+            renderEmptyState={() =>
+              loadError !== null ? (
+                <div className={s.error} role="alert">{errorLabel}</div>
+              ) : (
+                <div className={s.empty}>{emptyLabel}</div>
+              )
+            }
+          >
+            {options !== undefined
+              ? options.map((o) => (
+                  <ComboBoxItem key={String(o.value)} id={o.value} textValue={o.textValue} isDisabled={o.isDisabled}>
+                    {o.label}
+                  </ComboBoxItem>
+                ))
+              : children}
+          </RACListBox>
+        </RACPopover>
+      )}
     </RACComboBox>
   );
 }

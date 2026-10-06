@@ -102,7 +102,7 @@ export function Callout(props: CalloutProps) {
   } = props;
   const anchorRef = useRef<HTMLSpanElement>(null);
   const stanced = useStance({ stance, tone });
-  const { anchor: portalAnchor, portalProps } = useOverlayPortal(portalContainer);
+  const { anchor: portalAnchor, portalProps, ready } = useOverlayPortal(portalContainer);
   const showClose = showCloseButton ?? !modal;
   // Escape is a dismissal like the close button is. It can't ride on a React `onKeyDown`:
   // RAC's Dialog runs its props through filterDOMProps, which drops handlers
@@ -156,68 +156,70 @@ export function Callout(props: CalloutProps) {
           />,
           document.body,
         )}
-      <RACPopover
-        {...rest}
-        triggerRef={anchorRect !== undefined ? anchorRef : triggerRef}
-        isNonModal={!modal}
-        placement={placement}
-        offset={offset}
-        maxHeight={maxHeight}
-        onOpenChange={onOpenChange}
-        shouldCloseOnInteractOutside={
-          shouldCloseOnInteractOutside ?? (modal ? () => false : undefined)
-        }
-        aria-label={popoverAriaLabel}
-        aria-labelledby={popoverAriaLabelledby}
-        className={[s.popover, className].filter(Boolean).join(' ')}
-        {...stanced}
-        data-weasel-overlay=""
-        {...portalProps}
-      >
-        <OverlayArrow className={s.arrow}>
-          <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">
-            <path d="M0 0 L6 6 L12 0" />
-          </svg>
-        </OverlayArrow>
-        <RACDialog
-          role={modal ? 'alertdialog' : 'dialog'}
-          className={s.dialog}
-          aria-label={ariaLabel}
-          aria-labelledby={ariaLabelledby}
-          ref={dialogRef}
+      {ready && (
+        <RACPopover
+          {...rest}
+          triggerRef={anchorRect !== undefined ? anchorRef : triggerRef}
+          isNonModal={!modal}
+          placement={placement}
+          offset={offset}
+          maxHeight={maxHeight}
+          onOpenChange={onOpenChange}
+          shouldCloseOnInteractOutside={
+            shouldCloseOnInteractOutside ?? (modal ? () => false : undefined)
+          }
+          aria-label={popoverAriaLabel}
+          aria-labelledby={popoverAriaLabelledby}
+          className={[s.popover, className].filter(Boolean).join(' ')}
+          {...stanced}
+          data-weasel-overlay=""
+          {...portalProps}
         >
-          {({ close }) => (
-            <>
-              {(title !== undefined || showClose) && (
-                <header className={s.header}>
-                  {title !== undefined && (
-                    <Heading id={titleId} slot="title" className={s.title}>
-                      {title}
-                    </Heading>
-                  )}
-                  {showClose && (
-                    <CloseButton
-                      ariaLabel="Close callout"
-                      onClick={() => {
-                        // `close()` resolves OverlayTriggerStateContext, only
-                        // provided by DialogTrigger (composed mode). In
-                        // triggerRef/anchorRect modes there is no such
-                        // context, so `close()` is a no-op there — the
-                        // controlled-open fallback below does the work.
-                        close();
-                        onOpenChange?.(false);
-                        onDismiss?.();
-                      }}
-                    />
-                  )}
-                </header>
-              )}
-              <div className={s.body}>{children}</div>
-              {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
-            </>
-          )}
-        </RACDialog>
-      </RACPopover>
+          <OverlayArrow className={s.arrow}>
+            <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M0 0 L6 6 L12 0" />
+            </svg>
+          </OverlayArrow>
+          <RACDialog
+            role={modal ? 'alertdialog' : 'dialog'}
+            className={s.dialog}
+            aria-label={ariaLabel}
+            aria-labelledby={ariaLabelledby}
+            ref={dialogRef}
+          >
+            {({ close }) => (
+              <>
+                {(title !== undefined || showClose) && (
+                  <header className={s.header}>
+                    {title !== undefined && (
+                      <Heading id={titleId} slot="title" className={s.title}>
+                        {title}
+                      </Heading>
+                    )}
+                    {showClose && (
+                      <CloseButton
+                        ariaLabel="Close callout"
+                        onClick={() => {
+                          // `close()` resolves OverlayTriggerStateContext, only
+                          // provided by DialogTrigger (composed mode). In
+                          // triggerRef/anchorRect modes there is no such
+                          // context, so `close()` is a no-op there — the
+                          // controlled-open fallback below does the work.
+                          close();
+                          onOpenChange?.(false);
+                          onDismiss?.();
+                        }}
+                      />
+                    )}
+                  </header>
+                )}
+                <div className={s.body}>{children}</div>
+                {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
+              </>
+            )}
+          </RACDialog>
+        </RACPopover>
+      )}
     </>
   );
 }
