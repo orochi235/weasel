@@ -1,0 +1,4 @@
+/* The host page's own ground, which a presented lab lets show through. */
+.prd-host {
+  background: repeating-linear-gradient(45deg, #e8e2d0 0 12px, #d8d0b8 12px 24px);
+}

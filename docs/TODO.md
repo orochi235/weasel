@@ -506,19 +506,19 @@ decomposition meant to absorb the first; it has not landed:
 
 ### labkit presentation mode
 
-An existing lab shown without its chrome — one trial, given params, a few
-gestures, play controls — for portfolio embeds, the way print preview shows a
-document. A mode of a lab, not a second way of writing one: agnew (`?bare`),
-rosee (`?bare`, its own `Bare.tsx` and transport) and transom (`?embed`) each
-hand-roll it today. Mostly mounted directly (a prop, `?present` in the URL),
-switchable on in a running lab for debugging, and public API. The trial clock
-it rests on landed 2026-10-06.
+`<Lab present>`, `?present` and `usePresentation()` show one trial without any
+chrome, for portfolio embeds; README "Presenting a lab" and
+`packages/labkit/docs/AGENTS.md` cover it. What is left:
 
-- **(P2) The mode itself.** `usePresentation()` (enter, exit, active), a
-  `<Lab present>` prop and `?present`; one trial rendered without `LabShell` or
-  `Workspace`, seeded with given config and state (a seed prop beside
-  `seedDefaultTrial`); no persistence while presenting; a transparent
-  background without labkit's `color-scheme` leaking into the host page.
+- **(P2) Move agnew and rosee onto `<Lab>`.** Both hand-roll a bare mode
+  (agnew's `?bare` in `apps/lab/src/App.tsx`, rosee's `Bare.tsx` with its own
+  playhead and transport) because neither mounts `<Lab>`: agnew calls
+  `LabShell` directly and rosee has a `Lab` of its own. Presentation mode
+  reaches them only once each runs as instruments and trials, rosee's playhead
+  as a trial clock.
+- **(P2) Refit the view on entering.** A presented trial keeps the camera its
+  workspace tile had, so content placed by `initialView` for the tile's size
+  sits off-center in the larger box.
 - **(P2) Play controls.** weasel-ui's `<Transport>` bound to a trial clock
   through `useTrialClock`: play/pause, scrub and reverse where the clock is
   seekable, speed; Space and friends. rosee's `Transport.tsx` is the reference —

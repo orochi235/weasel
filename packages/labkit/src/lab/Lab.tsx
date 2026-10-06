@@ -1,4 +1,4 @@
-import { type ColorList, colorAt, colorCount, resolveTheme, type Theme } from '@weasel-js/theme';
+import { type ColorList, colorCount, type Theme } from '@weasel-js/theme';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import {
   type CSSProperties,
@@ -27,12 +27,8 @@ import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import { Split } from '../primitives/Split';
-import { defaultStorage, noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
-import { type OpenedLabStore, openLabStore } from '../state/openLabStore';
 import { PersistenceContext } from '../state/Persistence';
-import { createRecordCache } from '../state/records';
-import { createLabStore, type LabStore } from '../state/store';
 import type { LabDensity, LabMode, StorageAdapter, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { usePersistedState } from '../state/usePersistedState';
@@ -56,7 +52,17 @@ import { LabShell } from './LabShell';
 import { LabSurface } from './LabSurface';
 import type { LabPage } from './LabSwitcher';
 import { LabZoom } from './LabZoom';
+import { buildNebula } from './nebula';
+import {
+  type OpenedLab,
+  openStoredLab,
+  openUnstoredLab,
+  type PresentationSeed,
+  presentStorageKey,
+} from './openLab';
+import { hasPresentParam, PresentationContext } from './presentation';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
+import { useFocusPick } from './useFocusPick';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
 interface LabBaseProps {
@@ -124,6 +130,15 @@ interface LabBaseProps {
    *  Keys are config paths (checked first) or leaf kinds. Memoize or hoist. */
   controls?: Record<string, ControlRenderer>;
   children?: ReactNode;
+  /** Start presenting: one trial, opened on `seed`, without the lab's chrome or
+   *  its own. `?present` in the page's URL does the same. Read once, at mount.
+   *  A stored lab presents from its own records, under `storageKey` +
+   *  `':present'`, so an embed never shows or changes the full lab's trials. */
+  present?: boolean;
+  /** The trial a lab that starts presenting opens on. A store that already
+   *  holds a trial opened on this same seed keeps it; a changed seed replaces
+   *  it. Ignored unless the lab starts presenting. */
+  seed?: PresentationSeed;
 }
 
 /** Props for `<Lab>`. With a `storageKey` the lab persists — to IndexedDB
@@ -134,60 +149,6 @@ export type LabProps = LabBaseProps &
     | { storageKey?: undefined; storage?: undefined }
     | { storageKey: string; storage?: StorageAdapter }
   );
-
-interface OpenedLab extends OpenedLabStore {
-  marks: ReadonlyMap<string, unknown>;
-}
-
-function seedDefaultTrial(
-  store: LabStore,
-  instruments: InstrumentList,
-  defaultInstrument: string,
-): void {
-  if (store.getState().trials.length > 0) return;
-  const record = addTrialOp([], instruments, defaultInstrument)[0];
-  if (!record) return;
-  store.getState().addTrial(record);
-}
-
-/** A lab with nothing to load renders at once. Its records hold
- *  `usePersistedState` values for the session and write nothing. */
-function openUnstoredLab({ instruments, defaultInstrument, mode }: LabProps): OpenedLab {
-  const store = createLabStore({ initialMode: mode ?? 'auto', instruments });
-  seedDefaultTrial(store, instruments, defaultInstrument);
-  const records = createRecordCache({ storage: noneAdapter, prefix: '', writable: false });
-  return { store, records, close: () => records.close(), marks: new Map() };
-}
-
-async function openStoredLab(
-  { instruments, defaultInstrument, mode }: LabProps,
-  storageKey: string,
-  storage: StorageAdapter | undefined,
-): Promise<OpenedLab> {
-  // The store reads the instruments' serializers and defaults while it is being
-  // built, so they go in with it rather than being pushed onto it afterwards.
-  const opened = await openLabStore({
-    storageKey,
-    storage: storage ?? (await defaultStorage()),
-    initialMode: mode ?? 'auto',
-    instruments,
-  });
-  seedDefaultTrial(opened.store, instruments, defaultInstrument);
-  const marks = new Map<string, unknown>();
-  await Promise.all(
-    opened.store.getState().trials.map(async (trial) => {
-      const kept = instruments.find((i) => i.name === trial.instrumentName)?.annotations?.storage;
-      if (!kept) return;
-      try {
-        marks.set(trial.id, await kept.load());
-      } catch (error) {
-        console.warn(`[labkit] could not load the marks of trial "${trial.id}"`, error);
-        marks.set(trial.id, null);
-      }
-    }),
-  );
-  return { ...opened, marks };
-}
 
 function LabFallback({
   title,
@@ -214,35 +175,6 @@ function LabFallback({
       </LabShell>
     </ThemeProvider>
   );
-}
-
-// Fixed spread of nebula blob positions / sizes / fall-off stops. Colors
-// supplied via the `nebula` prop are slotted into these slots in order;
-// callers passing more than 5 wrap around (intentional — keeps the look
-// readable and bounded).
-const NEBULA_SLOTS = [
-  { cx: '18%', cy: '30%', sx: '60%', sy: '80%', stop: '70%' },
-  { cx: '78%', cy: '70%', sx: '55%', sy: '90%', stop: '65%' },
-  { cx: '50%', cy: '50%', sx: '50%', sy: '70%', stop: '75%' },
-  { cx: '12%', cy: '82%', sx: '50%', sy: '70%', stop: '70%' },
-  { cx: '85%', cy: '18%', sx: '55%', sy: '80%', stop: '70%' },
-] as const;
-
-function buildNebula(
-  list: ColorList,
-  theme: Theme,
-  mode: 'light' | 'dark',
-  density: string,
-): string {
-  const ctx = { theme, resolved: resolveTheme(theme, { mode, density }) };
-  const n = colorCount(list, ctx) ?? NEBULA_SLOTS.length;
-  const colors = Array.from({ length: n }, (_, i) => colorAt(list, i, ctx));
-  const blobs = colors.map((c, i) => {
-    const p = NEBULA_SLOTS[i % NEBULA_SLOTS.length];
-    return `radial-gradient(ellipse ${p.sx} ${p.sy} at ${p.cx} ${p.cy}, color-mix(in srgb, ${c} 22%, transparent), transparent ${p.stop})`;
-  });
-  blobs.push('radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%)');
-  return blobs.join(', ');
 }
 
 /** The strip holding the sidebar beside the tool rail and workspace. Its own component
@@ -312,13 +244,22 @@ export function Lab(props: LabProps) {
   if (process.env.NODE_ENV !== 'production' && props.instruments.length === 0) {
     throw new Error('[labkit] <Lab> requires a non-empty `instruments` array');
   }
-  const { storageKey, storage } = props;
-  useWarnIgnoredChange('<Lab>', { storageKey, storage });
-  const opened = useOpenOnce<OpenedLab>(() =>
-    storageKey === undefined ? openUnstoredLab(props) : openStoredLab(props, storageKey, storage),
-  );
+  const { storageKey, storage, present } = props;
+  useWarnIgnoredChange('<Lab>', { storageKey, storage, present });
+  const [startsPresenting] = useState(() => present === true || hasPresentParam());
+  if (process.env.NODE_ENV !== 'production' && props.seed && !startsPresenting) {
+    warnSeedIgnored();
+  }
+  const opened = useOpenOnce<OpenedLab>(() => {
+    const seed = startsPresenting ? (props.seed ?? {}) : undefined;
+    if (storageKey === undefined) return openUnstoredLab(props, seed);
+    const key = startsPresenting ? presentStorageKey(storageKey) : storageKey;
+    return openStoredLab(props, key, storage, seed);
+  });
   if (!opened) {
     if (props.fallback !== undefined) return props.fallback;
+    // An embed shows nothing until its trial is ready, never the lab's shell.
+    if (startsPresenting) return null;
     return (
       <LabFallback
         title={props.title}
@@ -330,7 +271,14 @@ export function Lab(props: LabProps) {
       />
     );
   }
-  return <LabRuntime {...props} opened={opened} />;
+  return <LabRuntime {...props} opened={opened} startsPresenting={startsPresenting} />;
+}
+
+let seedWarned = false;
+function warnSeedIgnored(): void {
+  if (seedWarned) return;
+  seedWarned = true;
+  console.warn('[labkit] <Lab> reads `seed` only when it starts presenting; it is ignored here');
 }
 
 function LabRuntime({
@@ -354,7 +302,8 @@ function LabRuntime({
   controls,
   children,
   opened,
-}: LabProps & { opened: OpenedLab }) {
+  startsPresenting,
+}: LabProps & { opened: OpenedLab; startsPresenting: boolean }) {
   const { store } = opened;
 
   // The store opened against the list <Lab> mounted with; a later list reaches
@@ -371,6 +320,20 @@ function LabRuntime({
   const focusedTrialId = trials.some((t) => t.id === focusPick)
     ? focusPick
     : (trials[0]?.id ?? null);
+  // `mount` when the lab started presenting, `enter` when asked to since.
+  const [presentedBy, setPresentedBy] = useState<'mount' | 'enter' | null>(
+    startsPresenting ? 'mount' : null,
+  );
+  const presenting = presentedBy !== null;
+  const presentation = useMemo(
+    () => ({
+      active: presenting,
+      enter: () => setPresentedBy((by) => by ?? 'enter'),
+      exit: () => setPresentedBy(null),
+      trialId: presenting ? focusedTrialId : null,
+    }),
+    [presenting, focusedTrialId],
+  );
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const modeValue = useStore(store, (s) => s.mode);
   const layout = useStore(store, (s) => s.layout);
@@ -385,38 +348,19 @@ function LabRuntime({
   const [labBody, setLabBody] = useState<HTMLDivElement | null>(null);
   useLabFitWarning(labBody);
 
+  useFocusPick(labBody, store, setFocusPick);
+
+  // Only a lab asked to present has a workspace to go back to.
   useEffect(() => {
-    if (!labBody) return;
-    const pick = (node: unknown): void => {
-      const owned = new Set(store.getState().trials.map((t) => t.id));
-      const nearest = (from: Element | null | undefined) =>
-        from?.closest<HTMLElement>('.lk-trial[data-trial-id]') ?? null;
-      let trial =
-        typeof (node as Element | null)?.closest === 'function' ? nearest(node as Element) : null;
-      // A trial can hold a lab of its own, whose trials this lab does not own.
-      while (trial && !owned.has(trial.dataset.trialId ?? '')) trial = nearest(trial.parentElement);
-      if (trial?.dataset.trialId) setFocusPick(trial.dataset.trialId);
-    };
-    const onInput = (event: Event): void => pick(event.target);
-    // Focus moving into a frame fires nothing in this document: the window
-    // blurs, and the frame is the active element once it has.
-    let pending: ReturnType<typeof setTimeout> | undefined;
+    if (presentedBy !== 'enter' || !labBody) return;
     const doc = labBody.ownerDocument;
-    const win = doc.defaultView;
-    const onBlur = (): void => {
-      clearTimeout(pending);
-      pending = setTimeout(() => pick(doc.activeElement), 0);
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      setPresentedBy(null);
     };
-    labBody.addEventListener('pointerdown', onInput, true);
-    labBody.addEventListener('focusin', onInput, true);
-    win?.addEventListener('blur', onBlur);
-    return () => {
-      clearTimeout(pending);
-      labBody.removeEventListener('pointerdown', onInput, true);
-      labBody.removeEventListener('focusin', onInput, true);
-      win?.removeEventListener('blur', onBlur);
-    };
-  }, [labBody, store]);
+    doc.addEventListener('keydown', onKeyDown);
+    return () => doc.removeEventListener('keydown', onKeyDown);
+  }, [presentedBy, labBody]);
   const workspacePanels = useMemo<PanelDescriptor[]>(
     () =>
       Object.entries(undockedPanels).map(([key, panel]) => ({
@@ -577,12 +521,13 @@ function LabRuntime({
       <PersistenceContext.Provider value={opened.records}>
         <AnnotationPreloadContext.Provider value={opened.marks}>
           <LabContext.Provider value={contextValue}>
+            <PresentationContext.Provider value={presentation}>
             <CameraRegistryContext.Provider value={cameras}>
               <ClockRegistryContext.Provider value={clocks}>
                 <ThemeProvider
                   theme={theme}
                   selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
-                  className="lk-lab"
+                  className={presenting ? 'lk-lab lk-lab--present' : 'lk-lab'}
                   style={backdropStyle}
                 >
                   <LabShell
@@ -603,7 +548,7 @@ function LabRuntime({
                     header={
                       <>
                         <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
-                        {zoom ? <LabZoom /> : null}
+                        {zoom && !presenting ? <LabZoom /> : null}
                         {children}
                         <LabHeaderRegion contributions={labChromeAll} />
                         <LabThemeSwitcher />
@@ -629,6 +574,7 @@ function LabRuntime({
                 </ThemeProvider>
               </ClockRegistryContext.Provider>
             </CameraRegistryContext.Provider>
+            </PresentationContext.Provider>
           </LabContext.Provider>
         </AnnotationPreloadContext.Provider>
       </PersistenceContext.Provider>

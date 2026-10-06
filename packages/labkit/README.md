@@ -74,6 +74,20 @@ names another substrate: `localStorageAdapter`, `sessionStorageAdapter`,
 `urlHashAdapter`, or your own `StorageAdapter` over a server. The lab renders
 `fallback` while it loads. Leave `storageKey` off and nothing persists.
 
+### Presenting a lab
+
+`<Lab present>` shows one trial and nothing else — no lab chrome, no trial
+chrome, a transparent ground — for embedding a lab as a figure. `?present` in
+the page's URL does the same, so one build serves both the lab and its embed.
+`seed={{ instrument, config, state, view }}` says what that trial opens on. A
+stored lab presents from records of its own (`storageKey` + `':present'`), so
+an embed never shows a visitor their last session in the full lab or writes
+into it; changing the seed reopens the trial on it for returning visitors.
+
+Inside any lab, `usePresentation()` gives `{ active, enter, exit }`: `enter`
+presents the focused trial and Escape returns. Nothing unmounts either way, so
+a canvas keeps its context and a clock its place.
+
 A widget's own state persists the same way through `usePersistedState(name,
 initial)`, which is `useState` whose value survives a reload — kept per trial
 inside one, and plain `useState` wherever no `<Lab>` or `<Persistence>` is
