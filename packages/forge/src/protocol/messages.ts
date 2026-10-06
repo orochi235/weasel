@@ -105,11 +105,4 @@ export interface PortHandoff {
 /** Posted by a frame document to its parent as soon as its entry runs, asking for a port. */
 export const FRAME_HELLO = 'weaselforge:hello';
 
-/** JSON with object keys sorted, so two equal configs produce one key. */
-export function stableStringify(value: unknown): string {
-  return JSON.stringify(value, (_key, v) =>
-    v && typeof v === 'object' && !Array.isArray(v)
-      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1)))
-      : v,
-  );
-}
+export { stableStringify } from '@weasel-js/core';

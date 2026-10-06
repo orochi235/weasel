@@ -82,6 +82,7 @@ export type { View, ZoomFactor, ZoomBound } from './core/viewport/view';
 export { viewToTransform, normalizeView, viewZoom } from './core/viewport/view';
 export { meanScale } from './core/viewport/meanScale';
 export { isPlainObject } from './core/isPlainObject';
+export { stableStringify } from './core/stableStringify';
 export { pxExtent, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius } from './core/viewport/pxExtent';
 export type { Scale2 } from './core/viewport/pxExtent';
 export type { ScreenSlop, PickSlop } from './core/viewport/screenSlop';
