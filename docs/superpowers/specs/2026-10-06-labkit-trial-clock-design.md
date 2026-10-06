@@ -93,6 +93,11 @@ clock?: {
 - **Ends.** Not looping, playing forward past `duration` or backward past 0
   holds at that end and sets `rate` to 0. Looping, the position wraps, in either
   direction, and `pass` counts.
+- **`seek` is absolute**: ms from the trial's start, counted across passes, as
+  blits' `Handle.seek(elapsed)` is — `seek(2.5 * duration)` on a looping clock
+  lands halfway through the third pass. A relative jump is
+  `seek(clock.elapsed + delta)`. A target below 0 clamps to 0; one past the end
+  of a finite run (`duration × passes`) clamps to that end.
 - **`seekable: false`** is for an instrument whose state is built up by running,
   so time can only move by running. `seek` throws for any target and a negative
   `rate` throws, as a blits mix rejects one today. Reverse play of a seekable
