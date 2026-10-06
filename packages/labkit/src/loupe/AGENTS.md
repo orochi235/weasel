@@ -83,6 +83,11 @@ reason and the dispatcher falls through to the zoom. Outside a camera — the DO
 `GESTURE_DESCRIPTORS` names no continuous-motion gesture, so `pointermove` /
 `pointerleave` stay hand-attached in `useLoupe`. Everything else routes.
 
+**The model ignores aims while the lens is down.** So a lens that comes up
+under a still pointer — the peek key, or the lens turned on — has had no aim
+since the last time it was up. `useLoupe` keeps the pointer's last spot over the
+host and aims there as the lens rises; without it the lens opens at 0,0.
+
 **`<LoupeGestures>` mounts outside the visibility gate.** Hold-to-peek is what
 raises a lens that is down; gate its registration on `loupe.visible` and the
 peek key stops working entirely.

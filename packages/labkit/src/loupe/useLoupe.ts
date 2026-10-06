@@ -74,6 +74,9 @@ export function useLoupe({
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
   const overRef = useRef(false);
+  // Where the pointer last was over the host, in client px. The model ignores
+  // aims while the lens is down, so this is what the lens opens at.
+  const pointerRef = useRef<{ clientX: number; clientY: number } | null>(null);
   const peekingRef = useRef(false);
   const enabledRef = useLatest(enabled);
   const sampleRef = useLatest(sample);
@@ -125,11 +128,25 @@ export function useLoupe({
     };
   }, []);
 
+  // Aim at the pointer's last spot over the host, for a lens that has just
+  // come up under a pointer that has not moved since. Stable, because `input`
+  // captures it once.
+  const hostRefRef = useLatest(hostRef);
+  const aimAtPointer = useCallback((): void => {
+    const host = hostRefRef.current.current;
+    const p = pointerRef.current;
+    if (!host || !p) return;
+    const rect = host.getBoundingClientRect();
+    modelRef.current?.aimAt({ x: p.clientX - rect.left, y: p.clientY - rect.top });
+  }, [hostRefRef]);
+
   // Turning the loupe off with the pointer still inside must put the lens away,
-  // and the model only reconsiders on an aim.
+  // and the model only reconsiders on an aim; turning it on must open the lens
+  // where the pointer already is.
   useEffect(() => {
-    if (!enabled && !peekingRef.current) bump();
-  }, [enabled]);
+    if (enabled) aimAtPointer();
+    else if (!peekingRef.current) bump();
+  }, [enabled, aimAtPointer]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -137,6 +154,7 @@ export function useLoupe({
 
     const onPointerMove = (e: PointerEvent): void => {
       overRef.current = true;
+      pointerRef.current = { clientX: e.clientX, clientY: e.clientY };
       const rect = host.getBoundingClientRect();
       model.aimAt({ x: e.clientX - rect.left, y: e.clientY - rect.top });
       if (!shown()) return;
@@ -144,6 +162,7 @@ export function useLoupe({
     };
     const onPointerLeave = (): void => {
       overRef.current = false;
+      pointerRef.current = null;
       bump();
     };
 
@@ -171,6 +190,7 @@ export function useLoupe({
       setPeeking: (on) => {
         if (peekingRef.current === on) return;
         peekingRef.current = on;
+        if (on) aimAtPointer();
         bump();
       },
       magnifyBy: (deltaY) => {

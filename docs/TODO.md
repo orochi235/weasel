@@ -634,6 +634,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
   action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
+- **(P3) The loupe's magnified point sits a border-width off the pointer.**
+  `LoupeBubble` translates the lens's border box by `aim - diameter / 2`, and
+  the painters put the aim at the middle of the content box, which starts one
+  `--wzl-border-w` further in. Measured 1 CSS px right and down outside
+  `.lk-root` (content-box); inside it `base.less` makes the box `border-box`, so
+  the content box is also `2 × border` narrower than the `diameter` the painters
+  size for (inferred, not measured). Offset the translate by the border, or draw
+  the ring as an outline or inset shadow.
+
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
   but dragging a palette item onto a canvas is `useDragDrop`
