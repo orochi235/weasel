@@ -135,9 +135,72 @@ describe('createClock', () => {
     expect(clock.get().span).toEqual({ start: 0, end: 50 });
   });
 
-  it('treats a time it was opened at as a moved playhead', () => {
-    const clock = createClock({ duration: 1000 }, 400);
-    clock.setSpan({ start: -300, duration: 2000 });
+  it('holds a time it was opened at as a request, kept across respans until something moves the playhead', () => {
+    const clock = createClock({ duration: 1000 }, 2500);
+    expect(clock.get().time).toBe(1000);
+    expect(clock.pending()).toBe(2500);
+    clock.setSpan({ start: -300, duration: 4000 });
+    expect(clock.get().time).toBe(2500);
+    expect(clock.pending()).toBeNull();
+    clock.setSpan({ duration: 1000 });
+    expect(clock.get().time).toBe(1000);
+    clock.setSpan({ duration: 3000 });
+    expect(clock.get().time).toBe(2500);
+  });
+});
+
+describe('a requested time', () => {
+  it('pauses the clock there, clamped, and survives a respan that contains it', () => {
+    const clock = createClock({ duration: 1000 });
+    clock.play();
+    clock.request(2500);
+    expect(clock.get()).toMatchObject({ time: 1000, playing: false });
+    expect(clock.pending()).toBe(2500);
+    clock.setSpan({ start: -300, duration: 1000 });
+    expect(clock.get().time).toBe(700);
+    clock.setSpan({ start: -300, duration: 4000 });
+    expect(clock.get().time).toBe(2500);
+    expect(clock.pending()).toBeNull();
+  });
+
+  it('is dropped by a seek', () => {
+    const clock = createClock({ duration: 1000 });
+    clock.request(2500);
+    clock.seek(400);
+    expect(clock.pending()).toBeNull();
+    clock.setSpan({ duration: 4000 });
     expect(clock.get().time).toBe(400);
+  });
+
+  it('is dropped by play', () => {
+    const clock = createClock({ duration: 1000 });
+    clock.request(2500);
+    clock.play();
+    clock.pause();
+    expect(clock.pending()).toBeNull();
+    clock.setSpan({ duration: 4000 });
+    expect(clock.get().time).toBe(0);
+  });
+
+  it('notifies when a seek drops it without moving the playhead', () => {
+    const clock = createClock({ duration: 1000 });
+    clock.request(2500);
+    const listener = vi.fn();
+    clock.subscribe(listener);
+    clock.seek(1000);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(clock.pending()).toBeNull();
+  });
+
+  it('is replaced by a newer one, and a request for null follows the span start', () => {
+    const clock = createClock({ duration: 1000 });
+    clock.request(2500);
+    clock.request(1800);
+    clock.setSpan({ duration: 4000 });
+    expect(clock.get().time).toBe(1800);
+    clock.request(null);
+    expect(clock.get().time).toBe(0);
+    clock.setSpan({ start: -300, duration: 4000 });
+    expect(clock.get().time).toBe(-300);
   });
 });

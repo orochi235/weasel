@@ -20,12 +20,13 @@ function PlayheadSync({ trialId, route, applied }: PlayheadSyncProps) {
     const fromUrl = (): void => {
       const t = readPlayheadParam();
       if (t === null || t === clock.get().time) return;
-      clock.pause();
-      clock.seek(t);
+      clock.request(t);
     };
-    // Paused off the span's start, the URL holds the time; playing or at the start, it holds none.
+    // Paused off the span's start, the URL holds the time; playing or at the start, it holds none. While the span
+    // cannot hold a requested time yet, the URL keeps the request rather than the clamped stand-in.
     let held: number | null | undefined;
     const toUrl = (): void => {
+      if (clock.pending() !== null) return;
       const { playing, time, span } = clock.get();
       const next = playing || time === span.start ? null : time;
       if (next === held) return;
