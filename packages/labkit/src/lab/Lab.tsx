@@ -1,4 +1,4 @@
-import { type ColorList, colorAt, colorCount, resolveTheme, type Theme } from '@weasel-js/theme';
+import { type ColorList, colorCount, type Theme } from '@weasel-js/theme';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import {
   type CSSProperties,
@@ -27,12 +27,8 @@ import type { TrialContribution } from '../chrome/types';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import { Split } from '../primitives/Split';
-import { defaultStorage, noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
-import { type OpenedLabStore, openLabStore } from '../state/openLabStore';
 import { PersistenceContext } from '../state/Persistence';
-import { createRecordCache } from '../state/records';
-import { createLabStore, type LabStore } from '../state/store';
 import type { LabDensity, LabMode, StorageAdapter, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { usePersistedState } from '../state/usePersistedState';
@@ -56,7 +52,10 @@ import { LabShell } from './LabShell';
 import { LabSurface } from './LabSurface';
 import type { LabPage } from './LabSwitcher';
 import { LabZoom } from './LabZoom';
+import { buildNebula } from './nebula';
+import { type OpenedLab, openStoredLab, openUnstoredLab } from './openLab';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
+import { useFocusPick } from './useFocusPick';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
 interface LabBaseProps {
@@ -135,60 +134,6 @@ export type LabProps = LabBaseProps &
     | { storageKey: string; storage?: StorageAdapter }
   );
 
-interface OpenedLab extends OpenedLabStore {
-  marks: ReadonlyMap<string, unknown>;
-}
-
-function seedDefaultTrial(
-  store: LabStore,
-  instruments: InstrumentList,
-  defaultInstrument: string,
-): void {
-  if (store.getState().trials.length > 0) return;
-  const record = addTrialOp([], instruments, defaultInstrument)[0];
-  if (!record) return;
-  store.getState().addTrial(record);
-}
-
-/** A lab with nothing to load renders at once. Its records hold
- *  `usePersistedState` values for the session and write nothing. */
-function openUnstoredLab({ instruments, defaultInstrument, mode }: LabProps): OpenedLab {
-  const store = createLabStore({ initialMode: mode ?? 'auto', instruments });
-  seedDefaultTrial(store, instruments, defaultInstrument);
-  const records = createRecordCache({ storage: noneAdapter, prefix: '', writable: false });
-  return { store, records, close: () => records.close(), marks: new Map() };
-}
-
-async function openStoredLab(
-  { instruments, defaultInstrument, mode }: LabProps,
-  storageKey: string,
-  storage: StorageAdapter | undefined,
-): Promise<OpenedLab> {
-  // The store reads the instruments' serializers and defaults while it is being
-  // built, so they go in with it rather than being pushed onto it afterwards.
-  const opened = await openLabStore({
-    storageKey,
-    storage: storage ?? (await defaultStorage()),
-    initialMode: mode ?? 'auto',
-    instruments,
-  });
-  seedDefaultTrial(opened.store, instruments, defaultInstrument);
-  const marks = new Map<string, unknown>();
-  await Promise.all(
-    opened.store.getState().trials.map(async (trial) => {
-      const kept = instruments.find((i) => i.name === trial.instrumentName)?.annotations?.storage;
-      if (!kept) return;
-      try {
-        marks.set(trial.id, await kept.load());
-      } catch (error) {
-        console.warn(`[labkit] could not load the marks of trial "${trial.id}"`, error);
-        marks.set(trial.id, null);
-      }
-    }),
-  );
-  return { ...opened, marks };
-}
-
 function LabFallback({
   title,
   mode,
@@ -214,35 +159,6 @@ function LabFallback({
       </LabShell>
     </ThemeProvider>
   );
-}
-
-// Fixed spread of nebula blob positions / sizes / fall-off stops. Colors
-// supplied via the `nebula` prop are slotted into these slots in order;
-// callers passing more than 5 wrap around (intentional — keeps the look
-// readable and bounded).
-const NEBULA_SLOTS = [
-  { cx: '18%', cy: '30%', sx: '60%', sy: '80%', stop: '70%' },
-  { cx: '78%', cy: '70%', sx: '55%', sy: '90%', stop: '65%' },
-  { cx: '50%', cy: '50%', sx: '50%', sy: '70%', stop: '75%' },
-  { cx: '12%', cy: '82%', sx: '50%', sy: '70%', stop: '70%' },
-  { cx: '85%', cy: '18%', sx: '55%', sy: '80%', stop: '70%' },
-] as const;
-
-function buildNebula(
-  list: ColorList,
-  theme: Theme,
-  mode: 'light' | 'dark',
-  density: string,
-): string {
-  const ctx = { theme, resolved: resolveTheme(theme, { mode, density }) };
-  const n = colorCount(list, ctx) ?? NEBULA_SLOTS.length;
-  const colors = Array.from({ length: n }, (_, i) => colorAt(list, i, ctx));
-  const blobs = colors.map((c, i) => {
-    const p = NEBULA_SLOTS[i % NEBULA_SLOTS.length];
-    return `radial-gradient(ellipse ${p.sx} ${p.sy} at ${p.cx} ${p.cy}, color-mix(in srgb, ${c} 22%, transparent), transparent ${p.stop})`;
-  });
-  blobs.push('radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%)');
-  return blobs.join(', ');
 }
 
 /** The strip holding the sidebar beside the tool rail and workspace. Its own component
@@ -385,38 +301,7 @@ function LabRuntime({
   const [labBody, setLabBody] = useState<HTMLDivElement | null>(null);
   useLabFitWarning(labBody);
 
-  useEffect(() => {
-    if (!labBody) return;
-    const pick = (node: unknown): void => {
-      const owned = new Set(store.getState().trials.map((t) => t.id));
-      const nearest = (from: Element | null | undefined) =>
-        from?.closest<HTMLElement>('.lk-trial[data-trial-id]') ?? null;
-      let trial =
-        typeof (node as Element | null)?.closest === 'function' ? nearest(node as Element) : null;
-      // A trial can hold a lab of its own, whose trials this lab does not own.
-      while (trial && !owned.has(trial.dataset.trialId ?? '')) trial = nearest(trial.parentElement);
-      if (trial?.dataset.trialId) setFocusPick(trial.dataset.trialId);
-    };
-    const onInput = (event: Event): void => pick(event.target);
-    // Focus moving into a frame fires nothing in this document: the window
-    // blurs, and the frame is the active element once it has.
-    let pending: ReturnType<typeof setTimeout> | undefined;
-    const doc = labBody.ownerDocument;
-    const win = doc.defaultView;
-    const onBlur = (): void => {
-      clearTimeout(pending);
-      pending = setTimeout(() => pick(doc.activeElement), 0);
-    };
-    labBody.addEventListener('pointerdown', onInput, true);
-    labBody.addEventListener('focusin', onInput, true);
-    win?.addEventListener('blur', onBlur);
-    return () => {
-      clearTimeout(pending);
-      labBody.removeEventListener('pointerdown', onInput, true);
-      labBody.removeEventListener('focusin', onInput, true);
-      win?.removeEventListener('blur', onBlur);
-    };
-  }, [labBody, store]);
+  useFocusPick(labBody, store, setFocusPick);
   const workspacePanels = useMemo<PanelDescriptor[]>(
     () =>
       Object.entries(undockedPanels).map(([key, panel]) => ({
