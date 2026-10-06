@@ -160,7 +160,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
     ...rest
   } = props;
 
-  const { anchor, portalProps } = useOverlayPortal(portalContainer);
+  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const pressRef = useRef<Press | null>(null);
   const [nudge, setNudge] = useState(NO_NUDGE);
@@ -231,37 +231,39 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
           `closest()` gets the wrong answer without it — a text editor whose
           font menu lives here would end its session the moment the menu is
           clicked. */}
-      <RACPopover
-        className={s.popover}
-        data-weasel-overlay=""
-        placement="bottom start"
-        offset={popup === 'over' ? nudge.offset : undefined}
-        crossOffset={popup === 'over' ? nudge.crossOffset : undefined}
-        shouldFlip={popup !== 'over'}
-        {...portalProps}
-      >
-        {popup === 'over' && (
-          <AlignOverTrigger
-            triggerRef={triggerRef}
-            pressRef={pressRef}
-            applied={nudge}
-            onMeasure={setNudge}
-          />
-        )}
-        <RACListBox className={`${listbox.surface} ${listbox.list}`}>
-          {options !== undefined
-            ? options.map((entry, i) =>
-                isGroup(entry) ? (
-                  <SelectSection key={`section-${i}`} title={entry.title}>
-                    {entry.options.map(renderOption)}
-                  </SelectSection>
-                ) : (
-                  renderOption(entry)
-                ),
-              )
-            : children}
-        </RACListBox>
-      </RACPopover>
+      {ready && (
+        <RACPopover
+          className={s.popover}
+          data-weasel-overlay=""
+          placement="bottom start"
+          offset={popup === 'over' ? nudge.offset : undefined}
+          crossOffset={popup === 'over' ? nudge.crossOffset : undefined}
+          shouldFlip={popup !== 'over'}
+          {...portalProps}
+        >
+          {popup === 'over' && (
+            <AlignOverTrigger
+              triggerRef={triggerRef}
+              pressRef={pressRef}
+              applied={nudge}
+              onMeasure={setNudge}
+            />
+          )}
+          <RACListBox className={`${listbox.surface} ${listbox.list}`}>
+            {options !== undefined
+              ? options.map((entry, i) =>
+                  isGroup(entry) ? (
+                    <SelectSection key={`section-${i}`} title={entry.title}>
+                      {entry.options.map(renderOption)}
+                    </SelectSection>
+                  ) : (
+                    renderOption(entry)
+                  ),
+                )
+              : children}
+          </RACListBox>
+        </RACPopover>
+      )}
     </RACSelect>
   );
 }

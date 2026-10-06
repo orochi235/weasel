@@ -48,25 +48,27 @@ export type TooltipProps = Omit<WithoutPortalTarget<RACTooltipProps>, 'children'
  */
 export function Tooltip(props: TooltipProps) {
   const { children, className, placement = 'top', offset = 8, portalContainer, ...rest } = props;
-  const { anchor, portalProps } = useOverlayPortal(portalContainer);
+  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
   return (
     <>
       {anchor}
-      <RACTooltip
-        {...rest}
-        placement={placement}
-        offset={offset}
-        className={[s.tooltip, className].filter(Boolean).join(' ')}
-        data-weasel-overlay=""
-        {...portalProps}
-      >
-        <OverlayArrow className={s.arrow}>
-          <svg width={8} height={8} viewBox="0 0 8 8" aria-hidden="true">
-            <path d="M0 0 L4 4 L8 0" />
-          </svg>
-        </OverlayArrow>
-        {children}
-      </RACTooltip>
+      {ready && (
+        <RACTooltip
+          {...rest}
+          placement={placement}
+          offset={offset}
+          className={[s.tooltip, className].filter(Boolean).join(' ')}
+          data-weasel-overlay=""
+          {...portalProps}
+        >
+          <OverlayArrow className={s.arrow}>
+            <svg width={8} height={8} viewBox="0 0 8 8" aria-hidden="true">
+              <path d="M0 0 L4 4 L8 0" />
+            </svg>
+          </OverlayArrow>
+          {children}
+        </RACTooltip>
+      )}
     </>
   );
 }

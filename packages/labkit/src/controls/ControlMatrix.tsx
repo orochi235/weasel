@@ -116,7 +116,7 @@ export function ControlMatrix({
     inheritHint ?? ((_: ControlMatrixColumn) => (fallback ? `from ${nameOf(fallback)}` : ''));
   const [open, setOpen] = useState<OpenCell | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
-  const { anchor, portalProps } = useOverlayPortal();
+  const { anchor, portalProps, ready } = useOverlayPortal();
 
   const leafAt = (path: string): PrefLeaf | undefined => {
     const node = schemaNodeAtPath(schema.group, path);
@@ -195,59 +195,61 @@ export function ControlMatrix({
           ))}
         </tbody>
       </table>
-      <RACPopover
-        triggerRef={triggerRef}
-        isOpen={open !== null}
-        onOpenChange={(next) => {
-          if (!next) setOpen(null);
-        }}
-        placement="bottom"
-        className="lk-control-matrix__popover"
-        data-weasel-overlay=""
-        {...portalProps}
-      >
-        {open ? (
-          <RACDialog
-            className="lk-control-matrix__editor"
-            aria-label={`${nameOf(open.column)} ${open.label}`}
-          >
-            <PropertyList pack="one-up">
-              <Editor
-                open={open}
-                schema={schema}
-                config={config}
-                setConfig={setConfig}
-                close={() => setOpen(null)}
-              />
-            </PropertyList>
-            {clearable(open.leaf) ? (
-              <div className="lk-control-matrix__editor-actions">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={!valueAtPath(config, open.path) || auto.has(open.path)}
-                  onClick={() => setConfig(open.path, null)}
-                >
-                  Clear
-                </Button>
-              </div>
-            ) : null}
-            {open.first ? null : (
-              <div className="lk-control-matrix__editor-actions">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={auto.has(open.path)}
-                  tooltip={`Inherit ${hintFor(open.column)}`}
-                  onClick={() => setConfig(open.path, autoValue)}
-                >
-                  Inherit
-                </Button>
-              </div>
-            )}
-          </RACDialog>
-        ) : null}
-      </RACPopover>
+      {ready && (
+        <RACPopover
+          triggerRef={triggerRef}
+          isOpen={open !== null}
+          onOpenChange={(next) => {
+            if (!next) setOpen(null);
+          }}
+          placement="bottom"
+          className="lk-control-matrix__popover"
+          data-weasel-overlay=""
+          {...portalProps}
+        >
+          {open ? (
+            <RACDialog
+              className="lk-control-matrix__editor"
+              aria-label={`${nameOf(open.column)} ${open.label}`}
+            >
+              <PropertyList pack="one-up">
+                <Editor
+                  open={open}
+                  schema={schema}
+                  config={config}
+                  setConfig={setConfig}
+                  close={() => setOpen(null)}
+                />
+              </PropertyList>
+              {clearable(open.leaf) ? (
+                <div className="lk-control-matrix__editor-actions">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={!valueAtPath(config, open.path) || auto.has(open.path)}
+                    onClick={() => setConfig(open.path, null)}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              ) : null}
+              {open.first ? null : (
+                <div className="lk-control-matrix__editor-actions">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={auto.has(open.path)}
+                    tooltip={`Inherit ${hintFor(open.column)}`}
+                    onClick={() => setConfig(open.path, autoValue)}
+                  >
+                    Inherit
+                  </Button>
+                </div>
+              )}
+            </RACDialog>
+          ) : null}
+        </RACPopover>
+      )}
     </div>
   );
 

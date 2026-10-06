@@ -78,14 +78,20 @@ export interface OverlayPortalTarget {
  * never read — a failure that shows up as an unthemed overlay, not an error.
  *
  * Render `anchor` at the component's own position in the tree — outside the
- * portal — and spread `portalProps` onto the React Aria overlay. The anchor
- * is what "nearest themed ancestor" is measured from; the first render has
- * none yet, so an overlay that mounts already open lands in its host on the
- * following render, before paint.
+ * portal — and spread `portalProps` onto the React Aria overlay. Render the
+ * overlay only once `ready` is true.
+ *
+ * The anchor is what "nearest themed ancestor" is measured from, and the
+ * first render has none yet. An overlay rendered then would portal into the
+ * body and move on the next render, but React Aria hides everything outside
+ * it on the first mount — so a modal that mounted open left the app root
+ * `inert` with itself now inside it. `ready` turns true on that next render,
+ * still before paint.
  */
 export function useOverlayPortal(explicit?: Element | null): {
   anchor: ReactElement;
   portalProps: OverlayPortalTarget;
+  ready: boolean;
 } {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const assigned = useAssignedPortalContainer(explicit);
@@ -94,5 +100,6 @@ export function useOverlayPortal(explicit?: Element | null): {
   return {
     anchor: <span hidden ref={setAnchorEl} />,
     portalProps: { UNSTABLE_portalContainer: resolved ?? undefined },
+    ready: assigned !== undefined || anchorEl !== null,
   };
 }

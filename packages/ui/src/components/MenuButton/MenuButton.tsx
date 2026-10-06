@@ -53,7 +53,7 @@ export function MenuButton<T extends string = string>({
   shortcut,
   tooltip,
 }: MenuButtonProps<T>) {
-  const { anchor, portalProps } = useOverlayPortal(portalContainer);
+  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
   return (
     <MenuTrigger>
       {anchor}
@@ -74,21 +74,23 @@ export function MenuButton<T extends string = string>({
       </TriggerTooltip>
       {/* `data-weasel-overlay`: see Select — the list renders in a portal,
           outside the subtree the trigger sits in. */}
-      <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
-        <RACMenu className={`${listbox.surface} ${listbox.list}`} onAction={(key) => onAction(key as T)}>
-          {items.map((item) => (
-            <RACMenuItem
-              key={item.value}
-              id={item.value}
-              className={s.item}
-              isDisabled={item.isDisabled}
-              textValue={item.textValue ?? (typeof item.label === 'string' ? item.label : undefined)}
-            >
-              {item.label}
-            </RACMenuItem>
-          ))}
-        </RACMenu>
-      </RACPopover>
+      {ready && (
+        <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
+          <RACMenu className={`${listbox.surface} ${listbox.list}`} onAction={(key) => onAction(key as T)}>
+            {items.map((item) => (
+              <RACMenuItem
+                key={item.value}
+                id={item.value}
+                className={s.item}
+                isDisabled={item.isDisabled}
+                textValue={item.textValue ?? (typeof item.label === 'string' ? item.label : undefined)}
+              >
+                {item.label}
+              </RACMenuItem>
+            ))}
+          </RACMenu>
+        </RACPopover>
+      )}
     </MenuTrigger>
   );
 }

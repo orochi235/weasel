@@ -58,7 +58,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
     onInput, onChange, className, portalContainer,
   } = props;
   const ariaLabel = props['aria-label'];
-  const { anchor, portalProps } = useOverlayPortal(portalContainer);
+  const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
   const preview = mixed ? undefined : paintPreviewCss(value);
   const label = usePaintKind(value?.fill)?.label;
 
@@ -80,20 +80,22 @@ export function PaintField(props: PaintFieldProps): ReactElement {
       </RACButton>
       {/* `data-weasel-overlay`: see Select — the popover renders in a portal,
           outside the subtree the trigger sits in. */}
-      <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
-        <RACDialog className={`${listbox.surface} ${s.body}`} aria-label={ariaLabel ? `${ariaLabel} editor` : 'Paint editor'}>
-          <PaintInput
-            value={value}
-            mixed={mixed}
-            unset={unset}
-            kinds={kinds}
-            allowNone={allowNone}
-            onInput={onInput}
-            onChange={onChange}
-            aria-label={ariaLabel}
-          />
-        </RACDialog>
-      </RACPopover>
+      {ready && (
+        <RACPopover className={s.popover} data-weasel-overlay="" {...portalProps}>
+          <RACDialog className={`${listbox.surface} ${s.body}`} aria-label={ariaLabel ? `${ariaLabel} editor` : 'Paint editor'}>
+            <PaintInput
+              value={value}
+              mixed={mixed}
+              unset={unset}
+              kinds={kinds}
+              allowNone={allowNone}
+              onInput={onInput}
+              onChange={onChange}
+              aria-label={ariaLabel}
+            />
+          </RACDialog>
+        </RACPopover>
+      )}
     </DialogTrigger>
   );
 }
