@@ -4,6 +4,10 @@
   align-items: center;
   gap: var(--wzl-space-8);
   flex-shrink: 0;
+  /* One line, always. A bar that grows a second line takes it from the canvas
+     above it, and a readout that changes width would do that on and off as it
+     ticks. Too narrow for its contents clips them instead. */
+  overflow: hidden;
   padding: var(--wzl-space-2) var(--wzl-space-6);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
@@ -25,4 +29,16 @@
 
 .spacer {
   margin-left: auto;
+}
+
+/* The gap moves into each item's padding so a hairline sits halfway between
+   two of them. */
+.divided {
+  gap: 0;
+}
+.divided > .item {
+  padding: 0 calc(var(--wzl-space-8) / 2);
+}
+.divided > .item + .item {
+  border-left: 1px solid var(--wzl-line-subtle);
 }
