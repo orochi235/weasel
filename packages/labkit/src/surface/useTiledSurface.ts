@@ -27,6 +27,9 @@ export interface SurfaceHandle {
   invalidate: (id: string) => void;
   /** Mark every tile — what a resize or a tile-set change means. */
   invalidateAll: () => void;
+  /** Mark every tile overlapping `box`, in viewport px as `getBoundingClientRect`
+   *  gives them: what something drawn over the tiles leaves behind when it moves. */
+  invalidateBox: (box: Box) => void;
   /** Re-measure before the next frame. The escape hatch for a host that knows it
    *  moved something a ResizeObserver cannot see. */
   invalidateRects: () => void;
@@ -176,6 +179,25 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     schedule();
   }, [schedule]);
 
+  const invalidateBox = useCallback(
+    (box: Box) => {
+      const el = container.current;
+      if (!el) return;
+      const at = el.getBoundingClientRect();
+      const x = box.left - at.left;
+      const y = box.top - at.top;
+      let hit = false;
+      for (const [id, r] of rects.current) {
+        if (x < r.x + r.w && r.x < x + box.width && y < r.y + r.h && r.y < y + box.height) {
+          dirty.current.add(id);
+          hit = true;
+        }
+      }
+      if (hit) schedule();
+    },
+    [schedule],
+  );
+
   const invalidateRects = useCallback(() => {
     needsMeasure.current = true;
     schedule();
@@ -247,6 +269,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     () => ({
       invalidate,
       invalidateAll,
+      invalidateBox,
       invalidateRects,
       registerTile,
       registerClear,
@@ -257,6 +280,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     [
       invalidate,
       invalidateAll,
+      invalidateBox,
       invalidateRects,
       registerTile,
       registerClear,

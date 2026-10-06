@@ -108,7 +108,9 @@ export interface LoupeOptions {
    * Draw only the lens's outline — ring, shadow, shape — and leave its inside
    * empty, so whatever is under it shows through: for a host that draws the
    * magnified view itself, into the box `onLens` reports. No painter runs; a
-   * `source`, if given, still answers `onColorChange`.
+   * `source`, if given, still answers `onColorChange`. Under a tiled surface,
+   * each move invalidates the tiles under the box it left and the box it now
+   * covers, so the host redraws those and no others.
    */
   hollow?: boolean;
   /**

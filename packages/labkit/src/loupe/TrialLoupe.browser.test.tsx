@@ -3,6 +3,8 @@ import '../styles.less';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { useEffect, useRef, useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
+import { SurfaceContext } from '../surface/SurfaceContext';
+import { useTiledSurface } from '../surface/useTiledSurface';
 import { TrialLoupe } from './TrialLoupe';
 import type { LoupeOptions } from './types';
 
@@ -289,4 +291,42 @@ test('a hollow lens draws only its outline, and tells the host where it is', asy
     factor: 4,
     shape: 'square',
   });
+});
+
+/** Four tiles side by side, each a quarter of the host wide, under a hollow lens. */
+function TiledHollow({ dirtied }: { dirtied: string[][] }) {
+  const surface = useTiledSurface({ onFrame: (f) => dirtied.push([...f.dirty].sort()) });
+  return (
+    <SurfaceContext.Provider value={surface}>
+      <TrialLoupe enabled hollow diameter={20}>
+        <div ref={surface.containerRef} style={{ display: 'flex', width: CSS_W, height: CSS_H }}>
+          {['t0', 't1', 't2', 't3'].map((id) => (
+            <div key={id} ref={(el) => surface.registerTile(id, el)} style={{ width: CSS_W / 4 }} />
+          ))}
+        </div>
+      </TrialLoupe>
+    </SurfaceContext.Provider>
+  );
+}
+
+test('a hollow lens on a surface dirties the tiles it leaves and lands on, and no others', async () => {
+  const dirtied: string[][] = [];
+  const { container } = render(<TiledHollow dirtied={dirtied} />);
+  await frames(3);
+  dirtied.length = 0;
+
+  // A 20px lens at x 15 spans 5..25: inside t0 alone.
+  move(container, 15, 25);
+  await waitFor(() => expect(dirtied).toEqual([['t0']]));
+  dirtied.length = 0;
+
+  // At x 40 it spans 30..50: t1, and t0 for the box it left.
+  move(container, 40, 25);
+  await waitFor(() => expect(dirtied).toEqual([['t0', 't1']]));
+  dirtied.length = 0;
+
+  act(() => {
+    fireEvent.pointerLeave(host(container));
+  });
+  await waitFor(() => expect(dirtied).toEqual([['t1']]));
 });
