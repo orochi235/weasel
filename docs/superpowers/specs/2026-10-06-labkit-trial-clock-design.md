@@ -105,7 +105,9 @@ clock?: {
   instrument seekable is blits' job, not labkit's: blits restores and steps its
   state, from a history store the client supplies (requested of blits
   2026-10-06; labkit would back it with the trial record). labkit grows no
-  checkpoint-and-replay of its own.
+  checkpoint-and-replay of its own. **Scrubbing never discards a recorded
+  future** (Mike, 2026-10-06): moving back and forward replays later host
+  calls like a tape, so no seek is ever recorded as an edit.
 - **Reset** (the existing trial built-in) restores the instrument's initial
   state and returns the clock to 0 at its declared `rate`, through labkit's own
   path, not the public `seek`, so it works on a clock that is not seekable.
