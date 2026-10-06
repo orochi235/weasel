@@ -101,7 +101,11 @@ clock?: {
 - **`seekable: false`** is for an instrument whose state is built up by running,
   so time can only move by running. `seek` throws for any target and a negative
   `rate` throws, as a blits mix rejects one today. Reverse play of a seekable
-  instrument is continuous seeking, so one flag covers both.
+  instrument is continuous seeking, so one flag covers both. Making such an
+  instrument seekable is blits' job, not labkit's: blits restores and steps its
+  state, from a history store the client supplies (requested of blits
+  2026-10-06; labkit would back it with the trial record). labkit grows no
+  checkpoint-and-replay of its own.
 - **Reset** (the existing trial built-in) restores the instrument's initial
   state and returns the clock to 0 at its declared `rate`, through labkit's own
   path, not the public `seek`, so it works on a clock that is not seekable.
