@@ -634,6 +634,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/TrialClockDemo.tsx',
   },
   {
+    id: 'presentation',
+    title: 'Presentation mode',
+    package: 'labkit',
+    description:
+      'A lab shown as one trial and nothing else, for embedding. `usePresentation()` gives anything inside `<Lab>` an `enter` and an `exit`; the Present button calls `enter`, which presents the focused trial. Nothing unmounts — the chrome and every other trial are hidden, not removed — so the pendulum keeps its canvas and its place in the swing on the way in and out. The lab drops its backdrop while presenting, so the striped host page shows through. An embed starts this way instead, with `<Lab present seed={…}>` or `?present` in its URL.',
+    hint: 'Press Present, then Escape to come back.',
+    load: () => import('./demos/PresentationDemo').then((m) => m.PresentationDemo),
+    path: 'apps/site/demos/PresentationDemo.tsx',
+  },
+  {
     id: 'auto-controls',
     title: 'Auto controls',
     package: 'labkit',

@@ -70,7 +70,13 @@ test('a presented trial fills the lab and nothing else has a box', async () => {
   expect(box(stage)).toEqual(box(trial));
   expect(box(labEl)?.height).toBe(480);
   expect(box(stage)?.height).toBe(480);
-  for (const hidden of ['.lk-shell-header', '.lk-trial__titlebar', '.lk-trial__toolbar', '.lk-trial__status', '.lk-trial__sidebar']) {
+  expect(getComputedStyle(container.querySelector('.lk-canvas-stack') as Element).backgroundColor).toBe(
+    'rgba(0, 0, 0, 0)',
+  );
+  for (const hidden of ['.lk-viewport-controls', '.lk-shell-header', '.lk-trial__titlebar']) {
+    expect(container.querySelector(hidden), hidden).not.toBeNull();
+  }
+  for (const hidden of ['.lk-viewport-controls', '.lk-shell-header', '.lk-trial__titlebar', '.lk-trial__toolbar', '.lk-trial__status', '.lk-trial__sidebar']) {
     expect(hasBox(container.querySelector(hidden)), hidden).toBe(false);
   }
 });

@@ -49,5 +49,16 @@
     min-width: 0;
     min-height: 0;
     background: transparent;
+
+    // The well a canvas sits in is the lab's ground, not the figure's.
+    .lk-canvas-stack,
+    .lk-stage {
+      background: transparent;
+    }
+
+    // Trial chrome drawn over the content, like the rest of it.
+    .lk-viewport-controls {
+      display: none;
+    }
   }
 }
