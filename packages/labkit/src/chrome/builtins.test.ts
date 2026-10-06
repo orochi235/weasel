@@ -26,6 +26,9 @@ const ctx: TrialChromeContext = {
   hasLoupe: false,
   loupeOn: false,
   toggleLoupe: () => {},
+  canExpand: false,
+  expanded: false,
+  toggleExpanded: () => {},
   configFields: [],
   configSchema: fromConfigFields([]),
   config: {},
@@ -71,6 +74,17 @@ describe('builtinContributions', () => {
     expect(ids(bare)).not.toContain('undo');
     expect(ids({ ...bare, undo: {} })).toContain('undo');
     expect(ids({ ...bare, undo: {} })).toContain('redo');
+  });
+
+  it('contributes the expand toggle only inside a lightbox, ahead of the trial actions', () => {
+    expect(ids(bare)).not.toContain('expand');
+    expect(ids(bare, { ...ctx, canExpand: true })).toEqual([
+      'expand',
+      'clone',
+      'reset',
+      'snapshot',
+      'close',
+    ]);
   });
 
   it('contributes the loupe toggle only while a lens is mounted', () => {

@@ -44,12 +44,15 @@ function Harness({
   toolId = 'rect',
   onRegisterClear,
   canvas = null,
+  onSurface,
 }: {
   toolId?: string;
   /** Told each tile a clear is registered for, and handed the clear. */
   onRegisterClear?: (id: string, clear: SurfaceClear) => void;
   /** The shared buffer the overlays paint into. */
   canvas?: HTMLCanvasElement | null;
+  /** Handed the surface, for a test that drives it. */
+  onSurface?: (surface: SurfaceHandle) => void;
 }) {
   const a = useRef<HTMLDivElement | null>(null);
   const b = useRef<HTMLDivElement | null>(null);
@@ -68,6 +71,7 @@ function Harness({
     [tiled, onRegisterClear],
   );
   const annotations = useRef(createAnnotationStore({ targets: () => [] })).current;
+  onSurface?.(surface);
 
   const capability: AnnotationsCapability = {
     targets: (): AnnotationTarget[] => [
@@ -176,6 +180,31 @@ describe('<AnnotationTargets>', () => {
     for (const el of container.querySelectorAll('.lk-annotate__input')) {
       expect(el.parentElement).toBe(stage);
     }
+  });
+
+  it('hides the box of a target the surface is scoped away from', () => {
+    let surface: SurfaceHandle | null = null;
+    const { container, getByTestId } = render(
+      <Harness
+        onSurface={(s) => {
+          surface = s;
+        }}
+      />,
+      { wrapper: StrictMode },
+    );
+    act(() => {
+      vi.advanceTimersByTime(64);
+    });
+    const box = (id: string) =>
+      container.querySelector<HTMLElement>(`.lk-annotate__input[data-annotation-target="${id}"]`);
+    act(() => surface?.scope(getByTestId('a')));
+    expect(box('pane:a')?.hidden).toBe(false);
+    expect(box('pane:b')?.hidden).toBe(true);
+    act(() => surface?.scope(null));
+    expect(box('pane:b')?.hidden).toBe(false);
+    act(() => {
+      vi.advanceTimersByTime(64);
+    });
   });
 
   it('hands a wheel over a target to the trial camera', () => {

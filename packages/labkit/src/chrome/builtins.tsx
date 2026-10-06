@@ -1,7 +1,9 @@
 import {
   CloneIcon,
   CloseIcon,
+  CollapseIcon,
   FitIcon,
+  FullscreenIcon,
   LoupeIcon,
   RedoIcon,
   ResetIcon,
@@ -40,8 +42,9 @@ function groupFolds(
 }
 
 /** Built-in ids contributed only while runtime state says so — the loupe
- *  toggle appears once a lens mounts, after the trial's first render. */
-export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set(['loupe']);
+ *  toggle appears once a lens mounts, after the trial's first render, and the
+ *  expand toggle only inside a lightbox. */
+export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set(['loupe', 'expand']);
 
 /**
  * The contributions a trial gets from what its instrument declared. This is
@@ -219,6 +222,18 @@ export function builtinContributions(
           onAction={(id) => c.loadSnapshot(id)}
         />
       ),
+    });
+  }
+  if (ctx.canExpand) {
+    out.push({
+      id: 'expand',
+      region: 'titlebar',
+      end: true,
+      item: {
+        icon: ctx.expanded ? CollapseIcon : FullscreenIcon,
+        label: ctx.expanded ? 'Close expanded view' : 'Expand trial',
+        onActivate: ctx.toggleExpanded,
+      },
     });
   }
   out.push({

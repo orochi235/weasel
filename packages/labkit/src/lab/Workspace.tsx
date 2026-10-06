@@ -17,6 +17,7 @@ import {
   StrategyRegistryProvider,
 } from 'windease/react';
 
+import { Lightbox } from '../lightbox/Lightbox';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { TrialDragContext } from '../trial/TrialDragContext';
 import { usePanelHosts } from './panelHost';
@@ -66,6 +67,19 @@ export interface WorkspaceProps {
    *  floating zone above it. The body is portaled in by the trial that owns
    *  it, so all this renders is the frame and the host. */
   panels?: readonly PanelDescriptor[];
+  /**
+   * Whether a tile can open in a `<Lightbox>` — shown large over the page from
+   * the expand button in its corner — without being remounted. On by default;
+   * `false` turns it off for every tile, and a function decides per tile id.
+   */
+  lightbox?: boolean | ((id: string) => boolean);
+  /**
+   * Whether a double-click on a tile's content also opens its lightbox. Off by
+   * default, since most content has its own use for a double-click; give it
+   * to a tile whose content has none, such as an image, with a function of
+   * the tile id.
+   */
+  expandOnDoubleClick?: boolean | ((id: string) => boolean);
   /**
    * Fixed tiling extent. Omit in an app — the grid measures its own box. Supply
    * it where nothing measures, notably jsdom: at a zero measurement the grid
@@ -149,6 +163,8 @@ export function Workspace({
   gap = 12,
   padding = 0,
   viewport,
+  lightbox = true,
+  expandOnDoubleClick = false,
 }: WorkspaceProps) {
   const items = Children.toArray(children);
   const tilePanels = useMemo(() => (panels ?? []).filter((p) => p.as === 'tile'), [panels]);
@@ -226,6 +242,9 @@ export function Workspace({
   );
 
   const chrome = useMemo<ChromeMap>(() => {
+    const lightboxFor = typeof lightbox === 'function' ? lightbox : () => lightbox;
+    const doubleClickFor =
+      typeof expandOnDoubleClick === 'function' ? expandOnDoubleClick : () => expandOnDoubleClick;
     const byId = new Map<string, ReactNode>(nodeIds.map((id, i) => [id, items[i]]));
     const panelByNode = new Map<string, PanelDescriptor>(
       tilePanels.map((p) => [`lk-panel-${p.key}`, p]),
@@ -237,17 +256,26 @@ export function Workspace({
         return <PanelFrame panel={panel} />;
       },
       [KIND]: ({ node }) => {
-        const content = byId.get(node.id) ?? null;
-        if (!reorderable) return content;
+        const id = String(node.id);
+        const tile = (
+          // `disabled` rather than leaving the wrapper out, so turning the
+          // lightbox off cannot remount the tile.
+          <Lightbox
+            className="lk-trial-tile"
+            disabled={!lightboxFor(id)}
+            expandOnDoubleClick={doubleClickFor(id)}
+          >
+            {byId.get(node.id) ?? null}
+          </Lightbox>
+        );
+        if (!reorderable) return tile;
         return (
           // No grip strip: the trial's own title bar is the drag surface.
-          <TrialDragContext.Provider value={{ nodeId: node.id }}>
-            <div className="lk-trial-tile">{content}</div>
-          </TrialDragContext.Provider>
+          <TrialDragContext.Provider value={{ nodeId: node.id }}>{tile}</TrialDragContext.Provider>
         );
       },
     };
-  }, [nodeIds, items, reorderable, tilePanels]);
+  }, [nodeIds, items, reorderable, tilePanels, lightbox, expandOnDoubleClick]);
 
   const floatingLayer =
     floatPanels.length === 0 ? null : (

@@ -1,4 +1,4 @@
-import { useCallback, useContext } from 'react';
+import { useCallback, useContext, useSyncExternalStore } from 'react';
 import { TrialIdContext } from '../state/context';
 import { SurfaceCanvasContext, SurfaceContext, type SurfaceLayer } from './SurfaceContext';
 import type { SurfaceHandle } from './useTiledSurface';
@@ -53,5 +53,21 @@ export function useSurfaceTile(id: string): (el: HTMLElement | null) => void {
       surface?.registerTile(tileId, el);
     },
     [surface, tileId],
+  );
+}
+
+const noSubscribe = (): (() => void) => () => {};
+
+/**
+ * Whether the tile registered under `tileId` — the key `useTileId` returns —
+ * is inside the surface's scope. A tenant with chrome of its own on the
+ * surface hides it while this is false, since nothing paints that tile then.
+ * True with no surface above.
+ */
+export function useTileInScope(tileId: string): boolean {
+  const surface = useSurfaceOptional();
+  return useSyncExternalStore(
+    surface?.subscribeScope ?? noSubscribe,
+    () => surface?.inScope(tileId) ?? true,
   );
 }

@@ -109,6 +109,40 @@ describe('useTiledSurface', () => {
     expect([...(frames[0]?.dirty ?? [])].sort()).toEqual(['a', 'b']);
   });
 
+  it('narrows to the tiles inside a scope, retiling, and widens back', () => {
+    const frames: SurfaceFrame[] = [];
+    let handle: SurfaceHandle | null = null;
+    const h = (): SurfaceHandle | null => handle;
+    const { getByTestId } = render(
+      <Harness
+        frames={frames}
+        onHandle={(h) => {
+          handle = h;
+        }}
+      />,
+    );
+    flushFrames();
+    const heard = vi.fn();
+    act(() => {
+      h()?.subscribeScope(heard);
+    });
+    frames.length = 0;
+
+    act(() => h()?.scope(getByTestId('a')));
+    flushFrames();
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(h()?.inScope('a')).toBe(true);
+    expect(h()?.inScope('b')).toBe(false);
+    expect([...(frames[0]?.rects.keys() ?? [])]).toEqual(['a']);
+    expect(frames[0]?.retiled).toBe(true);
+
+    frames.length = 0;
+    act(() => h()?.scope(null));
+    flushFrames();
+    expect(h()?.inScope('b')).toBe(true);
+    expect([...(frames[0]?.rects.keys() ?? [])].sort()).toEqual(['a', 'b']);
+  });
+
   it('fires nothing on a clean tick', () => {
     const frames: SurfaceFrame[] = [];
     render(<Harness frames={frames} onHandle={() => {}} />);

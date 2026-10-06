@@ -8,6 +8,8 @@
   width: var(--lk-anno-w);
   height: var(--lk-anno-h);
   z-index: 2;
+  // The container is a layer over the whole lab that takes no input itself.
+  pointer-events: auto;
 
   &[data-idle] {
     pointer-events: none;

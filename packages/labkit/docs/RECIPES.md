@@ -28,6 +28,53 @@ off; without them a tile is identified by its position, so closing one from the
 middle shifts every id after it. `<Trial>` is not usable here — it reads the lab
 store and only mounts inside a `<Lab>`.
 
+### Expanding a tile to fill the window
+
+Every `<Workspace>` tile is already wrapped in a `<Lightbox>`, with a small
+expand button in its top-right corner. The tile's element is lifted into the
+browser's top layer, not remounted, so size the content from a
+`ResizeObserver` and it follows.
+
+A double-click opens it only where you ask, since most content has its own use
+for one. For an image tile:
+
+```tsx
+<Workspace ids={["output", "mechanism"]} expandOnDoubleClick={(id) => id === "output"}>
+  <OutputTile />
+  <MechanismTile />
+</Workspace>
+```
+
+Even there, a double-click on a control, inside `[data-lk-lightbox-ignore]`, or
+one your own handler calls `preventDefault()` on does not open it.
+
+A tile with a title bar of its own can carry the control there instead; the
+corner button steps aside while `useLightboxControl` is mounted:
+
+```tsx
+import { useLightboxControl } from "@weasel-js/labkit";
+
+function TileHeader({ title }: { title: string }) {
+  const lightbox = useLightboxControl();
+  return (
+    <header>
+      {title}
+      {lightbox ? (
+        <button type="button" onClick={lightbox.toggle}>
+          {lightbox.expanded ? "Close" : "Expand"}
+        </button>
+      ) : null}
+    </header>
+  );
+}
+```
+
+Anything drawn for a tile from outside it — a shared buffer it paints into —
+has to come along when it expands. Wrap the tiles in `<LightboxLayers below={…}
+above={…}>` naming those elements: an open lightbox lifts them around itself,
+covering the window. `<Lab>` does this for its own surface, and scopes the
+surface to the expanded trial so no other tile paints over it.
+
 ### A toolbar with undo/redo and a save button
 
 ```tsx

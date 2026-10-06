@@ -169,6 +169,14 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
   loupeOn: boolean;
   toggleLoupe: () => void;
 
+  /** Whether the trial sits in a `<Lightbox>` — every `<Workspace>` tile does
+   *  unless the workspace turned it off. The expand toggle is offered only
+   *  while it does. */
+  canExpand: boolean;
+  /** Whether the trial is showing in its lightbox. */
+  expanded: boolean;
+  toggleExpanded: () => void;
+
   /** The instrument's controls, resolved against the lab's rules. Always
    *  populated: a legacy `configSchema()` is adapted into the same shape. */
   configSchema: ResolvedConfig;
