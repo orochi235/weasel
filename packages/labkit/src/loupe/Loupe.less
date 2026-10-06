@@ -2,11 +2,11 @@
   position: absolute;
   top: 0;
   left: 0;
-  // The ring sits outside the diameter the painters fill, centered on the aim;
+  // The ring sits outside the box the painters fill, centered on the aim;
   // border-box here too, so `.lk-root`'s resets cannot squeeze that box.
   box-sizing: border-box;
-  width: calc(var(--lk-loupe-diameter) + 2 * var(--wzl-border-w, 0px));
-  height: calc(var(--lk-loupe-diameter) + 2 * var(--wzl-border-w, 0px));
+  width: calc(var(--lk-loupe-width) + 2 * var(--wzl-border-w, 0px));
+  height: calc(var(--lk-loupe-height) + 2 * var(--wzl-border-w, 0px));
   margin: calc(-1 * var(--wzl-border-w, 0px));
   border-radius: 50%;
   overflow: hidden;
@@ -19,6 +19,10 @@
   // lens leaves the gaps between marks transparent. This is the trial's own
   // ground, for the part of a DOM lens its stage does not reach.
   background: var(--wzl-surface-raised);
+}
+
+.lk-loupe--square {
+  border-radius: var(--wzl-radius-sm, 0px);
 }
 
 // `.lk-canvas-stack__overlay > *` turns pointer events back on for an

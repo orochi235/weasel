@@ -12,8 +12,13 @@ export type LoupeMode = 'vector' | 'pixel';
  * what colour is under a point, and whether anyone can still see it.
  */
 export interface LoupeSurface {
-  /** The lens' rectangle, or `null` while it has none. */
-  lens(): LoupeRect | null;
+  /**
+   * The lens' rectangle, or `null` while it has none. A lens placed somewhere
+   * other than centered on the aim also says what it shows: `shows` is the
+   * surface point at its middle, and `factor` the magnification it shows it at.
+   * Either one omitted is the aim, or the model's own factor.
+   */
+  lens(): (LoupeRect & { shows?: LoupePoint; factor?: number }) | null;
   /**
    * Does the lens itself cover this point? A stationary lens does over its own
    * frame, which is what the freeze rule below is for; a lens that follows the
@@ -156,7 +161,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
       if (p) {
         const rect = surface.lens();
         if (!rect) return null;
-        at = loupeSourcePoint(p, rect, aim, factor);
+        at = loupeSourcePoint(p, rect, rect.shows ?? aim, rect.factor ?? factor);
         // The lens is part of the picture the surface presents. A point near
         // its frame maps back underneath it, and sampling there reports the
         // lens' own chrome as artwork.

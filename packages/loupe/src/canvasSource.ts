@@ -1,4 +1,4 @@
-import type { LoupePoint } from './geometry';
+import { type LoupePoint, type LoupeSize, loupeExtent } from './geometry';
 
 /** A canvas whose pixels a loupe can read. */
 export type SourceCanvas = HTMLCanvasElement | OffscreenCanvas;
@@ -213,7 +213,7 @@ export function createCanvasSource(
 }
 
 /**
- * The rectangle of `source`'s backing store a lens of `diameter` CSS px
+ * The rectangle of `source`'s backing store a lens of `size` CSS px
  * magnifying `factor` times about `aim` shows, in device px. `box` is where
  * the canvas sits in the same CSS px as `aim`; the scale between the two is
  * measured per axis, so a canvas stretched unevenly is read correctly too.
@@ -221,18 +221,20 @@ export function createCanvasSource(
 export function sourceRegion(
   aim: LoupePoint,
   factor: number,
-  diameter: number,
+  size: LoupeSize,
   box: SourceBox,
   backing: { width: number; height: number },
 ): { sx: number; sy: number; sw: number; sh: number } {
-  const span = diameter / factor;
+  const { width, height } = loupeExtent(size);
+  const spanX = width / factor;
+  const spanY = height / factor;
   const kx = box.width > 0 ? backing.width / box.width : 1;
   const ky = box.height > 0 ? backing.height / box.height : 1;
   return {
-    sx: (aim.x - span / 2 - box.x) * kx,
-    sy: (aim.y - span / 2 - box.y) * ky,
-    sw: span * kx,
-    sh: span * ky,
+    sx: (aim.x - spanX / 2 - box.x) * kx,
+    sy: (aim.y - spanY / 2 - box.y) * ky,
+    sw: spanX * kx,
+    sh: spanY * ky,
   };
 }
 

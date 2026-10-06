@@ -8,7 +8,7 @@ import {
 import { type RefObject, useCallback, useEffect, useReducer, useRef } from 'react';
 import type { LoupeInputApi } from './loupeActions';
 import { WHEEL_RATE } from './loupeActions';
-import type { ResolvedLoupe } from './types';
+import type { LoupeShape, ResolvedLoupe } from './types';
 
 /** Options for {@link useLoupe}. */
 export interface UseLoupeOptions {
@@ -28,13 +28,29 @@ export interface UseLoupeOptions {
   subscribeResample?: (fn: () => void) => () => void;
 }
 
+/** Where a lens is drawn and what it shows, once `place` has had its say. */
+export interface LoupeLens {
+  /** Where the lens is drawn: the middle of its box. */
+  center: LoupePoint;
+  /** The host point the lens shows at its middle. */
+  shows: LoupePoint;
+  width: number;
+  height: number;
+  /** What it magnifies by: the wheel's, unless `place` chose another. */
+  factor: number;
+  shape: LoupeShape;
+}
+
 /** A loupe as a React view reads it. */
 export interface LoupeState {
   /** Whether the lens should be drawn. */
   visible: boolean;
   /** Where it is aimed, in the host's own pixels. */
   aim: LoupePoint;
+  /** The wheel's magnification. What the lens shows at is `lens.factor`. */
   factor: number;
+  /** The box the lens is drawn in, and what it shows. */
+  lens: LoupeLens;
   mode: LoupeMode;
   color: string | null;
   setMode: (mode: LoupeMode) => void;
@@ -98,9 +114,15 @@ export function useLoupe({
       onColorChange: (hex) => onColorChangeRef.current?.(hex),
       surface: {
         lens: () => {
-          const d = diameterRef.current;
-          const { x, y } = modelRef.current?.aim ?? { x: 0, y: 0 };
-          return { x: x - d / 2, y: y - d / 2, w: d, h: d };
+          const { center, shows, width, height, factor } = lensRef.current;
+          return {
+            x: center.x - width / 2,
+            y: center.y - height / 2,
+            w: width,
+            h: height,
+            shows,
+            factor,
+          };
         },
         // The lens follows the pointer and is painted over the host rather than
         // into it, so it is never part of the picture being magnified.
@@ -114,7 +136,6 @@ export function useLoupe({
   }
   const model = modelRef.current;
 
-  const diameterRef = useLatest(options.diameter);
   const goneRef = useRef(false);
 
   // The model holds no resources, and `dispose` is one-way — so unmounting only
@@ -178,6 +199,27 @@ export function useLoupe({
   // after this hook runs — so a frame its own effect provokes is not missed.
   // This render's `enabled`: `enabledRef` holds the last committed one.
   const visible = lensShown(overRef.current, enabled, peekingRef.current);
+
+  // Asked only while the lens is up: a host's `place` may measure its layout.
+  const placed = visible ? (options.place?.({ aim: model.aim, factor: model.factor }) ?? null) : null;
+  const lens: LoupeLens = placed
+    ? {
+        center: placed.center,
+        shows: placed.shows ?? placed.center,
+        width: placed.width,
+        height: placed.height,
+        factor: placed.factor ?? model.factor,
+        shape: options.shape,
+      }
+    : {
+        center: model.aim,
+        shows: model.aim,
+        width: options.diameter,
+        height: options.diameter,
+        factor: model.factor,
+        shape: options.shape,
+      };
+  const lensRef = useLatest(lens);
   useEffect(() => {
     if (!visible || !subscribeResample) return;
     return subscribeResample(() => model.resample());
@@ -204,6 +246,7 @@ export function useLoupe({
     visible,
     aim: model.aim,
     factor: model.factor,
+    lens,
     mode: model.mode,
     color: model.color,
     setMode: model.setMode,

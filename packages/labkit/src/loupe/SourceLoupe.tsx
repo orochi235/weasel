@@ -1,5 +1,5 @@
 import { useLatest, useVisibleRaf } from '@weasel-js/core';
-import type { LoupePoint } from '@weasel-js/loupe';
+import { type LoupePoint, type LoupeSize, loupeExtent } from '@weasel-js/loupe';
 import { type RefObject, useEffect, useRef } from 'react';
 import { drawSourceLens, type LoupeSource, resolveLoupeSource, sourceBoxIn } from './sourceLens';
 
@@ -7,7 +7,8 @@ import { drawSourceLens, type LoupeSource, resolveLoupeSource, sourceBoxIn } fro
 export interface SourceLoupeProps {
   aim: LoupePoint;
   factor: number;
-  diameter: number;
+  /** One number for a round or square lens, or a width and a height. */
+  diameter: LoupeSize;
   /** The canvas whose pixels the lens enlarges. */
   source: LoupeSource;
   /** The element `aim` is measured in, which the source's box is found against. */
@@ -52,8 +53,8 @@ export function SourceLoupe({ aim, factor, diameter, source, hostRef }: SourceLo
     <canvas
       ref={canvasRef}
       className="lk-loupe__canvas"
-      width={Math.max(1, Math.round(diameter * dpr))}
-      height={Math.max(1, Math.round(diameter * dpr))}
+      width={Math.max(1, Math.round(loupeExtent(diameter).width * dpr))}
+      height={Math.max(1, Math.round(loupeExtent(diameter).height * dpr))}
     />
   );
 }

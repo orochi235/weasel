@@ -1,13 +1,16 @@
 export type {
+  BandPlacement,
   CanvasSource,
   CanvasSourceOptions,
   LoupeMode,
   LoupePoint,
+  LoupeSize,
+  PlaceBandArgs,
   SourceBox,
   SourceCanvas,
   SourceContext,
 } from '@weasel-js/loupe';
-export { createCanvasSource } from '@weasel-js/loupe';
+export { createCanvasSource, loupeExtent, placeBand } from '@weasel-js/loupe';
 export type { CanvasLoupeProps } from './CanvasLoupe';
 export { CanvasLoupe } from './CanvasLoupe';
 export type { LensCamera, SourceRect } from './canvasLens';
@@ -26,7 +29,14 @@ export type { LoupeSource, LoupeSourceTarget } from './sourceLens';
 export { drawSourceLens, resolveLoupeSource, sampleSource, sourceBoxIn } from './sourceLens';
 export type { TrialLoupeProps } from './TrialLoupe';
 export { TrialLoupe } from './TrialLoupe';
-export type { LoupeOptions, LoupeRenderArgs, ResolvedLoupe } from './types';
+export type {
+  LoupeOptions,
+  LoupePlaceArgs,
+  LoupePlacement,
+  LoupeRenderArgs,
+  LoupeShape,
+  ResolvedLoupe,
+} from './types';
 export { LOUPE_DEFAULTS, resolveLoupe } from './types';
-export type { LoupeState, UseLoupeOptions } from './useLoupe';
+export type { LoupeLens, LoupeState, UseLoupeOptions } from './useLoupe';
 export { useLoupe } from './useLoupe';

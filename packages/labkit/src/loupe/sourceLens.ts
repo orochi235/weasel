@@ -2,6 +2,8 @@ import {
   type CanvasSource,
   createCanvasSource,
   type LoupePoint,
+  type LoupeSize,
+  loupeExtent,
   type SourceBox,
   type SourceCanvas,
   type SourceContext,
@@ -78,21 +80,22 @@ export function drawSourceLens(
   opts: {
     aim: LoupePoint;
     factor: number;
-    diameter: number;
+    diameter: LoupeSize;
     dpr: number;
     source: CanvasSource;
     box: SourceBox;
   },
 ): void {
   const { aim, factor, diameter, dpr, source, box } = opts;
+  const { width, height } = loupeExtent(diameter);
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, diameter, diameter);
+  ctx.clearRect(0, 0, width, height);
   const frame = source.frame();
   if (frame) {
     const { sx, sy, sw, sh } = sourceRegion(aim, factor, diameter, box, source.canvas);
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(frame, sx, sy, sw, sh, 0, 0, diameter, diameter);
+    ctx.drawImage(frame, sx, sy, sw, sh, 0, 0, width, height);
   }
   ctx.restore();
 }

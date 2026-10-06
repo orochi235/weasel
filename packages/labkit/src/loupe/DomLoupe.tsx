@@ -1,4 +1,4 @@
-import type { LoupeMode, LoupePoint } from '@weasel-js/loupe';
+import { type LoupeMode, type LoupePoint, type LoupeSize, loupeExtent } from '@weasel-js/loupe';
 import type { CSSProperties } from 'react';
 import { zoomAt } from '../canvas/camera';
 import type { ViewportSize, WorldFrame } from '../canvas/worldSpec';
@@ -10,7 +10,8 @@ export interface DomLoupeProps {
   aim: LoupePoint;
   factor: number;
   mode: LoupeMode;
-  diameter: number;
+  /** One number for a round or square lens, or a width and a height. */
+  diameter: LoupeSize;
   /** The host the instrument draws into, which the stage reproduces. */
   size: ViewportSize;
   /** The trial's own camera. */
@@ -25,8 +26,8 @@ export interface DomLoupeProps {
  *
  * The stage is a full copy of the host, so the instrument's own layout still
  * holds; the camera is composed about the aimed point, which keeps that point
- * where it already was, and the stage is then slid by `diameter / 2 - aim` to
- * bring it to the middle of the lens.
+ * where it already was, and the stage is then slid by half the lens less `aim`
+ * to bring it to the middle of the lens.
  */
 export function DomLoupe({
   aim,
@@ -38,10 +39,11 @@ export function DomLoupe({
   frame,
   render,
 }: DomLoupeProps) {
+  const { width, height } = loupeExtent(diameter);
   const style: CSSProperties = {
     width: `${size.width}px`,
     height: `${size.height}px`,
-    transform: `translate(${diameter / 2 - aim.x}px, ${diameter / 2 - aim.y}px)`,
+    transform: `translate(${width / 2 - aim.x}px, ${height / 2 - aim.y}px)`,
   };
   return (
     <div className="lk-loupe__stage" style={style}>

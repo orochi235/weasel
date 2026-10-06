@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react
 import { useEffect, useRef, useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { TrialLoupe } from './TrialLoupe';
+import type { LoupeOptions } from './types';
 
 // The lens has to open where the pointer already is, however it comes up:
 // the peek key held over a still pointer, or the lens turned on under one.
@@ -29,11 +30,15 @@ function SourceScene({
   enabled,
   lab,
   onColorChange,
+  shape,
+  place,
 }: {
   enabled?: boolean;
   /** Mount inside `.lk-root`, under the lab's own resets. */
   lab?: boolean;
   onColorChange?: (hex: string) => void;
+  shape?: LoupeOptions['shape'];
+  place?: LoupeOptions['place'];
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const [gl, setGl] = useState<WebGL2RenderingContext | null>(null);
@@ -59,6 +64,8 @@ function SourceScene({
         source={gl ?? undefined}
         factor={4}
         diameter={DIAMETER}
+        shape={shape}
+        place={place}
         onColorChange={onColorChange}
       >
         <canvas
@@ -226,3 +233,34 @@ for (const lab of [false, true]) {
     expect(Math.abs(s.top - h.top)).toBeLessThanOrEqual(0.5);
   });
 }
+
+test('a placed square lens is drawn at its center, shows the point it names, and reports the aim', async () => {
+  const colors: string[] = [];
+  // Drawn in the host's middle, showing the middle of the blue band (50–75)
+  // at 2x: 30 page px across, so its edges reach the green and white bands.
+  const place = () => ({ center: { x: 50, y: 25 }, shows: { x: 62, y: 25 }, width: 60, height: 20, factor: 2 });
+  const { container } = render(
+    <SourceScene enabled shape="square" place={place} onColorChange={(c) => colors.push(c)} />,
+  );
+  await frames(2);
+  move(container, 30, 25);
+  await waitFor(() => expect(container.querySelector('.lk-loupe__canvas')).not.toBeNull());
+  const canvas = container.querySelector<HTMLCanvasElement>('.lk-loupe__canvas') as HTMLCanvasElement;
+  const c = canvas.getBoundingClientRect();
+  const h = host(container).getBoundingClientRect();
+  expect(c.width).toBeCloseTo(60, 1);
+  expect(c.height).toBeCloseTo(20, 1);
+  expect(Math.abs(c.left + c.width / 2 - (h.left + 50))).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(c.top + c.height / 2 - (h.top + 25))).toBeLessThanOrEqual(0.5);
+
+  const lens = container.querySelector<HTMLElement>('.lk-loupe') as HTMLElement;
+  expect(getComputedStyle(lens).borderTopLeftRadius).not.toBe('50%');
+
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+  const at = (x: number): number[] => [...ctx.getImageData(x, canvas.height / 2, 1, 1).data];
+  await waitFor(() => expect(lensMiddle(container)).toEqual([0, 0, 255, 255]));
+  expect(at(2)).toEqual([0, 255, 0, 255]);
+  expect(at(canvas.width - 3)).toEqual([255, 255, 255, 255]);
+  // The pointer is over the green band, and that is the color reported.
+  await waitFor(() => expect(colors.at(-1)).toBe('#00ff00'));
+});

@@ -1,11 +1,11 @@
-import type { LoupePoint } from '@weasel-js/loupe';
+import { type LoupePoint, type LoupeSize, loupeExtent } from '@weasel-js/loupe';
 import { centerOn } from '../canvas/camera';
 import { screenToWorld } from '../canvas/canvasCoords';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { DEFAULT_FRAME, resolveFrame, type WorldFrame, type WorldSpec } from '../canvas/worldSpec';
 import type { ViewTransform } from '../instrument/types';
 
-/** The camera a round lens of `diameter` shows a magnified region through, and
+/** The camera a lens of `size` shows a magnified region through, and
  *  the coordinate system it is read in — the instrument's own `WorldSpec`,
  *  resolved against the lens rather than the stack. */
 export interface LensCamera {
@@ -24,13 +24,13 @@ export function lensCamera(
   outer: ViewTransform,
   outerFrame: WorldFrame,
   factor: number,
-  diameter: number,
+  size: LoupeSize,
   worldSpec?: WorldSpec,
 ): LensCamera {
-  const size = { width: diameter, height: diameter };
-  const frame = resolveFrame(worldSpec, size);
+  const extent = loupeExtent(size);
+  const frame = resolveFrame(worldSpec, extent);
   const world = screenToWorld(aim, outer, outerFrame);
-  return { view: centerOn(world, outer.zoom * factor, size, frame), frame };
+  return { view: centerOn(world, outer.zoom * factor, extent, frame), frame };
 }
 
 /** A rectangle in a backing store's own device pixels. */
@@ -42,21 +42,23 @@ export interface SourceRect {
 }
 
 /**
- * The region a pixel-mode lens copies out of a presented canvas: the `diameter
- * / factor` CSS px around `aim`, in that canvas' backing-store pixels.
+ * The region a pixel-mode lens copies out of a presented canvas: `size /
+ * factor` CSS px around `aim`, in that canvas' backing-store pixels.
  */
 export function lensSourceRect(
   aim: LoupePoint,
   factor: number,
-  diameter: number,
+  size: LoupeSize,
   dpr: number,
 ): SourceRect {
-  const span = diameter / factor;
+  const { width, height } = loupeExtent(size);
+  const spanX = width / factor;
+  const spanY = height / factor;
   return {
-    sx: (aim.x - span / 2) * dpr,
-    sy: (aim.y - span / 2) * dpr,
-    sw: span * dpr,
-    sh: span * dpr,
+    sx: (aim.x - spanX / 2) * dpr,
+    sy: (aim.y - spanY / 2) * dpr,
+    sw: spanX * dpr,
+    sh: spanY * dpr,
   };
 }
 
@@ -95,7 +97,7 @@ export function drawCanvasLens(
   opts: {
     aim: LoupePoint;
     factor: number;
-    diameter: number;
+    diameter: LoupeSize;
     dpr: number;
     mode: 'vector' | 'pixel';
     outer: ViewTransform;
@@ -106,9 +108,10 @@ export function drawCanvasLens(
   },
 ): void {
   const { aim, factor, diameter, dpr, mode, outer, layers, canvases } = opts;
+  const { width, height } = loupeExtent(diameter);
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, diameter, diameter);
+  ctx.clearRect(0, 0, width, height);
 
   if (mode === 'pixel') {
     const { sx, sy, sw, sh } = lensSourceRect(aim, factor, diameter, dpr);
@@ -117,7 +120,7 @@ export function drawCanvasLens(
       if (!layer.visible) continue;
       const canvas = canvases.get(layer.id);
       if (!canvas || canvas.width === 0 || canvas.height === 0) continue;
-      ctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, diameter, diameter);
+      ctx.drawImage(canvas, sx, sy, sw, sh, 0, 0, width, height);
     }
     ctx.restore();
     return;
