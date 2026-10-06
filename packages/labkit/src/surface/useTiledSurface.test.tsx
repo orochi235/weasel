@@ -207,6 +207,37 @@ describe('useTiledSurface', () => {
     expect(frames[0]?.rects.get('b')).toEqual({ x: 320, y: 0, w: 400, h: 600 });
   });
 
+  it('marks only the tiles a viewport box overlaps, measured from the container', () => {
+    const frames: SurfaceFrame[] = [];
+    let handle: SurfaceHandle | null = null;
+    const { getByTestId } = render(
+      <Harness
+        frames={frames}
+        onHandle={(h) => {
+          handle = h;
+        }}
+      />,
+    );
+    flushFrames();
+    frames.length = 0;
+
+    // The page scrolled: the container now sits at (100, 50). x 450 is 350 into it, inside a.
+    stubBox(getByTestId('stage'), 100, 50, 800, 600);
+    act(() => handle?.invalidateBox({ left: 450, top: 100, width: 40, height: 40 }));
+    flushFrames();
+    expect([...(frames[0]?.dirty ?? [])]).toEqual(['a']);
+
+    frames.length = 0;
+    act(() => handle?.invalidateBox({ left: 480, top: 100, width: 40, height: 40 }));
+    flushFrames();
+    expect([...(frames[0]?.dirty ?? [])].sort()).toEqual(['a', 'b']);
+
+    frames.length = 0;
+    act(() => handle?.invalidateBox({ left: 0, top: 0, width: 40, height: 40 }));
+    flushFrames();
+    expect(frames).toHaveLength(0);
+  });
+
   it('drops a tile that unregisters', () => {
     const frames: SurfaceFrame[] = [];
     let handle: SurfaceHandle | null = null;

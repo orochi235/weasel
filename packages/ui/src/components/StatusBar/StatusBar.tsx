@@ -11,6 +11,8 @@ export interface StatusBarProps {
    * that own them.
    */
   ariaLabel?: string;
+  /** Draw a hairline between neighboring items. A spacer stands in for one. */
+  divided?: boolean;
   children?: ReactNode;
   className?: string;
 }
@@ -24,9 +26,9 @@ export interface StatusBarProps {
  * `<StatusBarItem>` and `<StatusBarSpacer>`.
  */
 export function StatusBar(props: StatusBarProps) {
-  const { ariaLabel, children, className } = props;
+  const { ariaLabel, divided, children, className } = props;
   return (
-    <footer className={[s.bar, className].filter(Boolean).join(' ')} aria-label={ariaLabel}>
+    <footer className={[s.bar, divided && s.divided, className].filter(Boolean).join(' ')} aria-label={ariaLabel}>
       {children}
     </footer>
   );

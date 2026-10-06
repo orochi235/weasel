@@ -1,8 +1,11 @@
-import { type ReactNode, type RefObject, useContext, useEffect, useMemo, useRef } from 'react';
+import { useLatest } from '@weasel-js/core';
+import { type ReactNode, type RefObject, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { CameraContext, CameraScope } from '../canvas/CameraInput';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
 import { fromCameraView } from '../canvas/cameraView';
 import type { ViewTransform } from '../instrument/types';
+import type { Box } from '../surface/rect';
+import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { LoupeSwitchContext } from '../trial/loupeSwitch';
 import { CanvasLoupe } from './CanvasLoupe';
 import { sampleStack } from './canvasLens';
@@ -11,7 +14,7 @@ import { LoupeBubble } from './LoupeBubble';
 import { LoupeGestures } from './LoupeGestures';
 import { SourceLoupe } from './SourceLoupe';
 import { resolveLoupeSource, sampleSource, sourceBoxIn } from './sourceLens';
-import { type LoupeOptions, resolveLoupe } from './types';
+import { type LoupeLens, type LoupeOptions, resolveLoupe } from './types';
 import { useHostSize } from './useHostSize';
 import { useLoupe } from './useLoupe';
 
@@ -61,30 +64,10 @@ export function TrialLoupe({
   peekKey,
   onColorChange,
 }: TrialLoupeProps) {
-  const options = useMemo(
-    () =>
-      resolveLoupe({
-        render,
-        source,
-        factor,
-        minFactor,
-        maxFactor,
-        mode,
-        diameter,
-        shape,
-        place,
-        hollow,
-        onLens,
-        peekKey,
-        onColorChange,
-      }),
-    [render, source, factor, minFactor, maxFactor, mode, diameter, shape, place, hollow, onLens, peekKey, onColorChange],
-  );
-
   const stack = useContext(CanvasStackContext);
   const camera = useContext(CameraContext);
   const loupeSwitch = useContext(LoupeSwitchContext);
-  const surface = options.render || options.source || options.hollow ? undefined : stack?.surface;
+  const surface = render || source || hollow ? undefined : stack?.surface;
 
   const ownHost = useRef<HTMLDivElement | null>(null);
   const cameraHost = useMemo<RefObject<HTMLElement | null> | null>(
@@ -100,6 +83,53 @@ export function TrialLoupe({
   );
   const host = surface?.element ?? hostRef ?? cameraHost ?? ownHost;
   const wraps = host === ownHost;
+  const hostLatest = useLatest(host);
+
+  // A hollow lens is drawn by the host into the tiles under it, so on a shared surface each
+  // move dirties the tiles it left and the ones it landed on.
+  const tiles = useSurfaceOptional();
+  const onLensLatest = useLatest(onLens);
+  const was = useRef<Box | null>(null);
+  const damage = hollow ? tiles : null;
+  const reportLens = useCallback(
+    (lens: LoupeLens | null) => {
+      onLensLatest.current?.(lens);
+      if (!damage) return;
+      const at = hostLatest.current.current?.getBoundingClientRect();
+      const now =
+        lens && at
+          ? {
+              left: at.left + lens.center.x - lens.width / 2,
+              top: at.top + lens.center.y - lens.height / 2,
+              width: lens.width,
+              height: lens.height,
+            }
+          : null;
+      if (was.current) damage.invalidateBox(was.current);
+      if (now) damage.invalidateBox(now);
+      was.current = now;
+    },
+    [damage, onLensLatest, hostLatest],
+  );
+  const options = useMemo(
+    () =>
+      resolveLoupe({
+        render,
+        source,
+        factor,
+        minFactor,
+        maxFactor,
+        mode,
+        diameter,
+        shape,
+        place,
+        hollow,
+        onLens: onLens || damage ? reportLens : undefined,
+        peekKey,
+        onColorChange,
+      }),
+    [render, source, factor, minFactor, maxFactor, mode, diameter, shape, place, hollow, onLens, damage, reportLens, peekKey, onColorChange],
+  );
 
   // A lens told whether it is on has no use for the trial's toggle.
   const mount = enabled === undefined ? loupeSwitch?.mount : undefined;
