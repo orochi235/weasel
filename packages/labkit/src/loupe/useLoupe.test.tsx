@@ -4,7 +4,7 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { type RefObject, StrictMode, useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { LoupeGestures } from './LoupeGestures';
-import { resolveLoupe } from './types';
+import { type LoupeOptions, type LoupeShape, resolveLoupe } from './types';
 import { type LoupeState, useLoupe } from './useLoupe';
 
 interface HarnessProps {
@@ -14,6 +14,8 @@ interface HarnessProps {
   minFactor?: number;
   maxFactor?: number;
   onColorChange?: (hex: string) => void;
+  shape?: LoupeShape;
+  place?: LoupeOptions['place'];
   seen?: (loupe: LoupeState) => void;
 }
 
@@ -294,5 +296,87 @@ describe('useLoupe', () => {
     ));
     expect(seen[0]?.pick()).toBe('#111111');
     expect(abandoned).not.toHaveBeenCalled();
+  });
+
+  describe('placed by the host', () => {
+    const last = (seen: LoupeState[]): LoupeState => seen[seen.length - 1] as LoupeState;
+
+    it('is a diameter box on the aim, at the wheel factor, when nothing places it', () => {
+      const seen: LoupeState[] = [];
+      render(<Harness seen={(l) => seen.push(l)} />);
+      move(40, 30);
+      expect(last(seen).lens).toEqual({
+        center: { x: 40, y: 30 }, shows: { x: 40, y: 30 }, width: 200, height: 200, factor: 6, shape: 'circle',
+      });
+    });
+
+    it('asks place with the aim and the wheel factor, and draws the box it returns', () => {
+      const seen: LoupeState[] = [];
+      const place = vi.fn(({ aim }: { aim: { x: number; y: number } }) => ({
+        center: { x: 150, y: Math.floor(aim.y / 20) * 20 + 10 },
+        width: 300,
+        height: 60,
+      }));
+      render(<Harness shape="square" place={place} seen={(l) => seen.push(l)} />);
+      move(40, 33);
+      expect(place).toHaveBeenLastCalledWith({ aim: { x: 40, y: 33 }, factor: 6 });
+      expect(last(seen).lens).toEqual({
+        center: { x: 150, y: 30 }, shows: { x: 150, y: 30 }, width: 300, height: 60, factor: 6, shape: 'square',
+      });
+    });
+
+    it('draws a placement at its center while showing the point it names', () => {
+      const seen: LoupeState[] = [];
+      render(
+        <Harness
+          place={() => ({ center: { x: 50, y: 20 }, shows: { x: 10, y: 20 }, width: 100, height: 40 })}
+          seen={(l) => seen.push(l)}
+        />,
+      );
+      move(10, 20);
+      expect(last(seen).lens).toMatchObject({ center: { x: 50, y: 20 }, shows: { x: 10, y: 20 } });
+    });
+
+    it('shows at the factor place returns, leaving the wheel factor as what place is asked with', () => {
+      const seen: LoupeState[] = [];
+      const place = vi.fn(({ factor }: { factor: number }) => ({
+        center: { x: 0, y: 0 }, width: 100, height: 20, factor: Math.min(factor, 2.5),
+      }));
+      render(<Harness place={place} seen={(l) => seen.push(l)} />);
+      move(10, 10);
+      expect(last(seen).lens.factor).toBe(2.5);
+      expect(last(seen).factor).toBe(6);
+    });
+
+    it('falls back to the diameter box when place returns null', () => {
+      const seen: LoupeState[] = [];
+      render(<Harness place={() => null} seen={(l) => seen.push(l)} />);
+      move(40, 30);
+      expect(last(seen).lens).toMatchObject({ center: { x: 40, y: 30 }, width: 200, height: 200 });
+    });
+
+    it('does not ask place while the lens is down', () => {
+      const place = vi.fn(() => null);
+      render(<Harness enabled={false} place={place} />);
+      move(40, 30);
+      expect(place).not.toHaveBeenCalled();
+    });
+
+    it('picks what a placed lens shows, about its own center and factor', () => {
+      const seen: LoupeState[] = [];
+      render(
+        <Harness
+          sample={(p) => `#${Math.round(p.x)}`}
+          place={() => ({ center: { x: 300, y: 50 }, width: 400, height: 40, factor: 2 })}
+          seen={(l) => seen.push(l)}
+        />,
+      );
+      move(100, 50);
+      // 100px right of the lens's middle, at 2x, is 50 page px right of the
+      // center it shows — not of the aim.
+      expect(last(seen).pick({ x: 300 + 100, y: 50 })).toBe('#350');
+      // The color under the aim is still the aim's.
+      expect(read('color')).toBe('#100');
+    });
   });
 });

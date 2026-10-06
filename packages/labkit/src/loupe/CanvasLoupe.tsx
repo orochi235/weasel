@@ -1,5 +1,5 @@
 import { useLatest, useVisibleRaf } from '@weasel-js/core';
-import type { LoupeMode, LoupePoint } from '@weasel-js/loupe';
+import { type LoupeMode, type LoupePoint, type LoupeSize, loupeExtent } from '@weasel-js/loupe';
 import { useEffect, useRef } from 'react';
 import type { CanvasStackSurface } from '../canvas/CanvasStackContext';
 import type { WorldFrame, WorldSpec } from '../canvas/worldSpec';
@@ -11,7 +11,8 @@ export interface CanvasLoupeProps {
   aim: LoupePoint;
   factor: number;
   mode: LoupeMode;
-  diameter: number;
+  /** One number for a round or square lens, or a width and a height. */
+  diameter: LoupeSize;
   /** The stack being magnified: its layers, its pixels, and its measured box. */
   surface: CanvasStackSurface;
   view: ViewTransform;
@@ -75,8 +76,8 @@ export function CanvasLoupe({
     <canvas
       ref={canvasRef}
       className="lk-loupe__canvas"
-      width={Math.max(1, Math.round(diameter * dpr))}
-      height={Math.max(1, Math.round(diameter * dpr))}
+      width={Math.max(1, Math.round(loupeExtent(diameter).width * dpr))}
+      height={Math.max(1, Math.round(loupeExtent(diameter).height * dpr))}
     />
   );
 }

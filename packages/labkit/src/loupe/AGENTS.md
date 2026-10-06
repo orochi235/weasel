@@ -18,7 +18,7 @@ This directory binds that model to a labkit trial and draws it.
 | `loupeActions.ts` | `loupe.peek` and `loupe.magnify`, as `Action` descriptors |
 | `LoupeGestures.tsx` | Registers those, and mounts a dispatcher on the host when no camera has one there |
 | `TrialLoupe.tsx` | Finds its host and the trial's switch, picks the painter, mounts the lens |
-| `LoupeBubble.tsx` | The circular clip, positioned on the aim |
+| `LoupeBubble.tsx` | The circle or square clip, positioned on the lens's center |
 | `CanvasLoupe.tsx` | Painter for a `<CanvasStack>` |
 | `canvasLens.ts` | That painter's geometry and drawing, with no React in it |
 | `DomLoupe.tsx` | Painter for DOM content |
@@ -55,7 +55,23 @@ enlarges that canvas's pixels (`SourceLoupe`), or, beside `render`, only
 samples its color. The capture rule for WebGL lives with `createCanvasSource`
 in `@weasel-js/loupe`.
 
+## Where the lens goes
+
+By default a lens is a `diameter` box centered on the aim. `place` lets the
+host put it elsewhere per aim — a box of any size at `center`, showing what is
+around `shows` at its own `factor` — and `placeBand` (from `@weasel-js/loupe`)
+is the stock fit of a region shown whole. `useLoupe` resolves the result into
+`loupe.lens`; the bubble is drawn at `lens.center` and the painters are aimed at
+`lens.shows`, which are different points once a lens is moved to stay on the
+host. `onColorChange` still reports the aim.
+
 ## Traps
+
+**A placed lens must reach the model, not only the painters.** `pick` maps a
+point inside the lens back to the page through `LoupeSurface.lens()`; the rect
+it returns carries `shows` and `factor`, and a lens drawn somewhere the model
+does not know about picks colors from the wrong place with every test of the
+drawing still green.
 
 **jsdom cannot see magnification.** Everything assertable there is state — aim
 moved, factor clamped, mode switched, the lens raised and put away. That the

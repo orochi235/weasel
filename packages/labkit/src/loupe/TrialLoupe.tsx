@@ -54,6 +54,8 @@ export function TrialLoupe({
   maxFactor,
   mode,
   diameter,
+  shape,
+  place,
   peekKey,
   onColorChange,
 }: TrialLoupeProps) {
@@ -67,10 +69,12 @@ export function TrialLoupe({
         maxFactor,
         mode,
         diameter,
+        shape,
+        place,
         peekKey,
         onColorChange,
       }),
-    [render, source, factor, minFactor, maxFactor, mode, diameter, peekKey, onColorChange],
+    [render, source, factor, minFactor, maxFactor, mode, diameter, shape, place, peekKey, onColorChange],
   );
 
   const stack = useContext(CanvasStackContext);
@@ -146,14 +150,16 @@ export function TrialLoupe({
     </CameraScope>
   );
 
+  const { center, shows, width, height, factor: shownFactor, shape: lensShape } = loupe.lens;
+  const box = { width, height };
   const lens = loupe.visible ? (
-    <LoupeBubble aim={loupe.aim} diameter={options.diameter}>
+    <LoupeBubble aim={center} diameter={box} shape={lensShape}>
       {options.render ? (
         <DomLoupe
-          aim={loupe.aim}
-          factor={loupe.factor}
+          aim={shows}
+          factor={shownFactor}
           mode={loupe.mode}
-          diameter={options.diameter}
+          diameter={box}
           size={size}
           view={
             view ??
@@ -165,18 +171,18 @@ export function TrialLoupe({
         />
       ) : options.source ? (
         <SourceLoupe
-          aim={loupe.aim}
-          factor={loupe.factor}
-          diameter={options.diameter}
+          aim={shows}
+          factor={shownFactor}
+          diameter={box}
           source={options.source}
           hostRef={host}
         />
       ) : surface && stack ? (
         <CanvasLoupe
-          aim={loupe.aim}
-          factor={loupe.factor}
+          aim={shows}
+          factor={shownFactor}
           mode={loupe.mode}
-          diameter={options.diameter}
+          diameter={box}
           surface={surface}
           view={stack.view}
           frame={stack.frame}
