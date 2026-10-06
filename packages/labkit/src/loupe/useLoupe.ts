@@ -8,7 +8,7 @@ import {
 import { type RefObject, useCallback, useEffect, useReducer, useRef } from 'react';
 import type { LoupeInputApi } from './loupeActions';
 import { WHEEL_RATE } from './loupeActions';
-import type { LoupeShape, ResolvedLoupe } from './types';
+import type { LoupeLens, ResolvedLoupe } from './types';
 
 /** Options for {@link useLoupe}. */
 export interface UseLoupeOptions {
@@ -26,19 +26,6 @@ export interface UseLoupeOptions {
    *  top of the sample every aim takes at once. Omitted, color changes only on
    *  an aim. */
   subscribeResample?: (fn: () => void) => () => void;
-}
-
-/** Where a lens is drawn and what it shows, once `place` has had its say. */
-export interface LoupeLens {
-  /** Where the lens is drawn: the middle of its box. */
-  center: LoupePoint;
-  /** The host point the lens shows at its middle. */
-  shows: LoupePoint;
-  width: number;
-  height: number;
-  /** What it magnifies by: the wheel's, unless `place` chose another. */
-  factor: number;
-  shape: LoupeShape;
 }
 
 /** A loupe as a React view reads it. */
@@ -220,6 +207,23 @@ export function useLoupe({
         shape: options.shape,
       };
   const lensRef = useLatest(lens);
+
+  // Told on a change in value, not on every render: a host drawing into this
+  // box would otherwise redraw for each one.
+  const onLensRef = useLatest(options.onLens);
+  const reportedRef = useRef<string>(JSON.stringify(null));
+  const report = useCallback((next: LoupeLens | null): void => {
+    const key = JSON.stringify(next);
+    if (key === reportedRef.current) return;
+    reportedRef.current = key;
+    onLensRef.current?.(next);
+  }, [onLensRef]);
+  const shownLens = visible ? lens : null;
+  const shownKey = JSON.stringify(shownLens);
+  useEffect(() => {
+    report(JSON.parse(shownKey) as LoupeLens | null);
+  }, [shownKey, report]);
+  useEffect(() => () => report(null), [report]);
   useEffect(() => {
     if (!visible || !subscribeResample) return;
     return subscribeResample(() => model.resample());
