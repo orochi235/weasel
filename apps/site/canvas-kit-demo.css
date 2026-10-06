@@ -1060,6 +1060,13 @@ a:hover { text-decoration: underline; }
   opacity: 0.55;
 }
 
+/* The foreign WebGL view, sized by layout; it sizes its own backing store. */
+.lab-loupe-gl {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 /* Tiled surface demo: N panes painting into one canvas, each taking input
    from its own transparent box over its rect. */
 .ckd-tile-surface { position: relative; }

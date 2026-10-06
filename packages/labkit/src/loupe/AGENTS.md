@@ -22,6 +22,8 @@ This directory binds that model to a labkit trial and draws it.
 | `CanvasLoupe.tsx` | Painter for a `<CanvasStack>` |
 | `canvasLens.ts` | That painter's geometry and drawing, with no React in it |
 | `DomLoupe.tsx` | Painter for DOM content |
+| `SourceLoupe.tsx` | Painter for any canvas named by `source` |
+| `sourceLens.ts` | That painter's source resolution, box measurement and drawing |
 | `useHostSize.ts` | The host's measured box, for the DOM stage |
 
 ## How it reads the trial
@@ -48,11 +50,22 @@ content again; a DOM loupe is always `vector`, since DOM has no framebuffer to
 enlarge. The canvas painter needs the stack's own pixels, which is why a
 drawing instrument mounts the lens in its `render`, inside `<CanvasStack>`.
 
+`source` names a canvas labkit need not own, and wins over the stack: the lens
+enlarges that canvas's pixels (`SourceLoupe`), or, beside `render`, only
+samples its color. The capture rule for WebGL lives with `createCanvasSource`
+in `@weasel-js/loupe`.
+
 ## Traps
 
 **jsdom cannot see magnification.** Everything assertable there is state — aim
 moved, factor clamped, mode switched, the lens raised and put away. That the
-lens shows the right region is a screenshot.
+lens shows the right region is a screenshot, or a pixel read in a browser test
+(`SourceLoupe.browser.test.tsx`).
+
+**Retain a source by its resolved identity, not the prop.** An inline
+`source={() => ref.current}` is a new function every render, and every aim
+re-renders. Keyed on the prop, the lens released and re-took the source on each
+aim, and each first reader marks a captured frame stale.
 
 **Do not dispose the model when React unmounts.** `dispose` is one-way, and
 StrictMode mounts / unmounts / mounts every effect — so disposing in the

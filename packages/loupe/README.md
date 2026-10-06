@@ -15,3 +15,16 @@ import { createLoupeModel } from '@weasel-js/loupe';
 const loupe = createLoupeModel({ surface, factor: 8 });
 loupe.aimAt({ x, y });
 ```
+
+`createCanvasSource` makes any canvas — 2D or WebGL, yours or someone else's —
+something a pixel lens can read. A WebGL canvas without `preserveDrawingBuffer`
+is blank once composited, so its drawing code calls `capture()` in the same task
+as the draw:
+
+```ts
+const source = createCanvasSource(gl, { requestRedraw: draw });
+function draw() {
+  renderer.render(scene, camera);
+  source.capture(); // copies only while a lens is reading
+}
+```

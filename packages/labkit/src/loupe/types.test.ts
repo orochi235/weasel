@@ -21,6 +21,12 @@ describe('resolveLoupe', () => {
     expect(resolveLoupe({ mode: 'pixel' }).mode).toBe('pixel');
   });
 
+  it('forces pixel on a source loupe, unless render draws it', () => {
+    const source = () => null;
+    expect(resolveLoupe({ source, mode: 'vector' }).mode).toBe('pixel');
+    expect(resolveLoupe({ source, render: () => null }).mode).toBe('vector');
+  });
+
   it('distinguishes an unset peek key from one turned off', () => {
     expect(resolveLoupe({}).peekKey).toBe('Alt');
     expect(resolveLoupe({ peekKey: null }).peekKey).toBeNull();

@@ -20,6 +20,12 @@ export interface UseLoupeOptions {
   /** Hex color at a host point. Omitted, the loupe reports no color — which
    *  is the honest answer for a surface with no pixels to read. */
   sample?: (p: LoupePoint) => string | null;
+  /** Run `fn` whenever what `sample` reads changes without the aim moving — a
+   *  canvas that animates, or a frame that arrives after the aim did; returns
+   *  an unsubscribe. While the lens is up, each call samples the aim again, on
+   *  top of the sample every aim takes at once. Omitted, color changes only on
+   *  an aim. */
+  subscribeResample?: (fn: () => void) => () => void;
 }
 
 /** A loupe as a React view reads it. */
@@ -33,6 +39,8 @@ export interface LoupeState {
   color: string | null;
   setMode: (mode: LoupeMode) => void;
   setFactor: (factor: number) => void;
+  /** Sample the aim again, for pixels that changed under a still aim. */
+  resample: () => void;
   /** Sample what the lens shows at a point inside it. */
   pick: (p?: LoupePoint) => string | null;
   /** What `<LoupeGestures>` drives the lens through. Stable for the life of
@@ -56,7 +64,13 @@ function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
  * has no continuous-motion entry, and inventing one to carry the lens' aim
  * would be an input taxonomy change, not a loupe change.
  */
-export function useLoupe({ options, hostRef, enabled, sample }: UseLoupeOptions): LoupeState {
+export function useLoupe({
+  options,
+  hostRef,
+  enabled,
+  sample,
+  subscribeResample,
+}: UseLoupeOptions): LoupeState {
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
   const overRef = useRef(false);
@@ -141,6 +155,15 @@ export function useLoupe({ options, hostRef, enabled, sample }: UseLoupeOptions)
     };
   }, [hostRef, model, shown]);
 
+  // Subscribed while the lens is up, and before any effect the caller declares
+  // after this hook runs — so a frame its own effect provokes is not missed.
+  // This render's `enabled`: `enabledRef` holds the last committed one.
+  const visible = lensShown(overRef.current, enabled, peekingRef.current);
+  useEffect(() => {
+    if (!visible || !subscribeResample) return;
+    return subscribeResample(() => model.resample());
+  }, [visible, subscribeResample, model]);
+
   const inputRef = useRef<LoupeInputApi | null>(null);
   if (inputRef.current === null) {
     inputRef.current = {
@@ -158,14 +181,14 @@ export function useLoupe({ options, hostRef, enabled, sample }: UseLoupeOptions)
   }
 
   return {
-    // This render's `enabled`: `enabledRef` holds the last committed one.
-    visible: lensShown(overRef.current, enabled, peekingRef.current),
+    visible,
     aim: model.aim,
     factor: model.factor,
     mode: model.mode,
     color: model.color,
     setMode: model.setMode,
     setFactor: model.setFactor,
+    resample: model.resample,
     pick: model.pick,
     input: inputRef.current,
   };

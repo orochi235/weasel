@@ -75,6 +75,9 @@ export interface LoupeModel {
    *  `onPick`. Omit `p` to pick at the aim point. Leaves the aim, and `color`,
    *  alone. */
   pick(p?: LoupePoint): string | null;
+  /** Sample the aim again, now: the pixels under it changed without it moving.
+   *  Reports through `onColorChange` like an aim does. Ignored while hidden. */
+  resample(): void;
   dispose(): void;
 }
 
@@ -162,6 +165,12 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
       const hex = surface.sample(at);
       if (hex !== null) opts.onPick?.(hex);
       return hex;
+    },
+
+    resample() {
+      if (disposed || surface.hidden()) return;
+      aimUnsampled = false;
+      sampleColor();
     },
 
     dispose: teardown,
