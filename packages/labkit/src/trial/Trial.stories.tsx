@@ -23,7 +23,6 @@ const record: TrialRecord = {
   config: {},
   state: {},
   view: { zoom: 1, pan: { x: 0, y: 0 } },
-  undoStack: { past: [], future: [] },
 };
 
 function Harness() {

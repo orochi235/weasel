@@ -144,8 +144,7 @@ function seedDefaultTrial(
   if (store.getState().trials.length > 0) return;
   const record = addTrialOp([], instruments, defaultInstrument)[0];
   if (!record) return;
-  const { undoStack: _undoStack, ...rest } = record;
-  store.getState().addTrial(rest);
+  store.getState().addTrial(record);
 }
 
 /** A lab with nothing to load renders at once. Its records hold

@@ -504,6 +504,13 @@ decomposition meant to absorb the first; it has not landed:
 
 ---
 
+### labkit's deprecated snapshot undo
+
+- **(P3) Delete `packages/labkit/src/undo/undoStack.ts` and its exports**
+  (`emptyStack`, `pushSnapshot`, `undo`, `redo`, `clearUndo`, `UndoStack`) once
+  sherpa's studio (`apps/studio/src/Studio.tsx`), the last user, moves its
+  document undo onto `createHistory`. labkit's own trials left it 2026-10-06.
+
 ## Audio
 
 Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.

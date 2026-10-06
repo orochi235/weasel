@@ -29,7 +29,7 @@ describe('createLabStore — initial state', () => {
 });
 
 describe('addTrial', () => {
-  it('adds a trial with an empty undoStack', () => {
+  it('adds a trial with no undo history', () => {
     const s = makeStore();
     s.getState().addTrial({
       id: 'w1',
@@ -39,7 +39,7 @@ describe('addTrial', () => {
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
     expect(s.getState().trials).toHaveLength(1);
-    expect(s.getState().trials[0]?.undoStack).toEqual({ past: [], future: [] });
+    expect(s.getState().trials[0]?.history).toBeUndefined();
   });
 });
 

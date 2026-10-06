@@ -1,8 +1,8 @@
+import { createHistory } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
 import {
   decodeUrlHash,
   deserializeTrials,
-  emptyUndoStack,
   encodeUrlHash,
   labStorageKey,
   newId,
@@ -29,12 +29,6 @@ describe('encodeUrlHash / decodeUrlHash', () => {
   });
 });
 
-describe('emptyUndoStack', () => {
-  it('returns an empty stack', () => {
-    expect(emptyUndoStack()).toEqual({ past: [], future: [] });
-  });
-});
-
 describe('serializeTrials', () => {
   it('returns records with the undo stack dropped', () => {
     const records = serializeTrials(
@@ -45,7 +39,7 @@ describe('serializeTrials', () => {
           config: { a: 1 },
           state: { b: 2 },
           view: { zoom: 1, pan: { x: 0, y: 0 } },
-          undoStack: { past: [{ b: 1 }], future: [] },
+          history: createHistory(null),
         },
       ],
       {},
@@ -70,7 +64,6 @@ describe('serializeTrials', () => {
           config: {},
           state: { n: 2 },
           view: { zoom: 1, pan: { x: 0, y: 0 } },
-          undoStack: { past: [], future: [] },
         },
       ],
       { Test: { serialize: (s) => ({ doubled: (s as { n: number }).n * 2 }) } },
@@ -80,7 +73,7 @@ describe('serializeTrials', () => {
 });
 
 describe('deserializeTrials', () => {
-  it('rebuilds records with an empty undo stack', () => {
+  it('rebuilds records with no undo history', () => {
     const out = deserializeTrials(
       [
         {
@@ -93,7 +86,7 @@ describe('deserializeTrials', () => {
       ],
       {},
     );
-    expect(out[0].undoStack).toEqual({ past: [], future: [] });
+    expect(out[0].history).toBeUndefined();
   });
 
   it('runs the instrument deserializer over the state', () => {
