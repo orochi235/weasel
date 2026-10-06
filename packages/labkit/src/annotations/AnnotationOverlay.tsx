@@ -20,7 +20,12 @@ import {
 import { createPortal, flushSync } from 'react-dom';
 import { CameraWheelContext } from '../canvas/CameraWheelContext';
 import type { Rect } from '../surface/rect';
-import { useSurfaceCanvas, useSurfaceOptional, useTileId } from '../surface/useSurfaceTile';
+import {
+  useSurfaceCanvas,
+  useSurfaceOptional,
+  useTileId,
+  useTileInScope,
+} from '../surface/useSurfaceTile';
 import { createMarkDrawOne } from './drawOne';
 import { boundsOf, roundPoints, toShape, type WorldRect } from './frac';
 import { POINT_MARK_SHAPE } from './paint';
@@ -124,6 +129,9 @@ export function AnnotationOverlay({
   // instrument declares the same target ids — so the tile is registered under
   // the trial-scoped key, not under `id`.
   const tileId = useTileId(id);
+  // Out of scope while another trial is expanded: nothing paints this tile
+  // then, and its box would sit over the expanded one.
+  const inScope = useTileInScope(tileId);
   const lastTile = useRef<HTMLElement | null>(null);
   useEffect(() => {
     const el = target.ref.current ?? null;
@@ -248,6 +256,7 @@ export function AnnotationOverlay({
         // Pass-through while the rail holds a tool that makes no marks, so the
         // instrument under the overlay stays clickable.
         data-idle={annotationToolInfo(activeToolId) ? undefined : ''}
+        hidden={!inScope}
         role="application"
         aria-label={`Annotations on ${id}`}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: role="application" IS the interactive case — a region with its own keymap. The rule's allowed-role list stops at the native widget roles and does not include it, and the gesture dispatcher listens on this element, so without focus no tool's keyboard binding ever fires.

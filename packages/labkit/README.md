@@ -279,6 +279,16 @@ import { LabShell, Workspace } from '@weasel-js/labkit';
 </LabShell>;
 ```
 
+Every tile has an expand button in its corner that shows it large over the
+page; Escape, a click in the margin, or the close button puts it back. The tile
+is lifted into the browser's top layer rather than remounted, so a WebGL
+context inside it keeps running and only sees its box grow. A double-click
+opens it too where you ask for that — `expandOnDoubleClick={(id) => id ===
+'output'}` for an image tile. Turn the lightbox off with `lightbox={false}`, or
+per tile with `lightbox={(id) => …}`; the same behavior is available outside a
+workspace as `<Lightbox>`. In a `<Lab>` every trial has the toggle in its title
+bar, and its shared-surface pixels — annotation marks, a 3D view — come along.
+
 `<Toolbar>`, `<Sidebar>`, `<StatusBar>`, `<FpsMeter>`, `<ScaleIndicator>`,
 `<Legend>`, `<FloatingPanel>`, `<ZoomControl>` and the `@weasel-js/ui` property
 rows re-exported from the root are all usable this way. `<Trial>` is not: it

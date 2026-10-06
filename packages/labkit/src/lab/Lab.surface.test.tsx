@@ -3,9 +3,10 @@
  * `SurfaceContext` in production — so `useSurfaceOptional()` always answered
  * null and a tile registered from inside a trial reached nothing.
  *
- * The surface is anchored to `.lk-lab__body` rather than wrapped around the
- * workspace: `.lk-lab__body > .lk-workspace { min-width: 0 }` is a direct-child
- * selector, so an extra element between them silently drops that rule.
+ * The surface's layers sit in `.lk-lab__body` beside the workspace rather than
+ * wrapped around it: `.lk-lab__body > .lk-workspace { min-width: 0 }` is a
+ * direct-child selector, so an extra element between them silently drops that
+ * rule.
  */
 import { act } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
@@ -84,19 +85,29 @@ describe('<Lab> surface provider', () => {
     expect(typeof (seen as unknown as SurfaceHandle).registerTile).toBe('function');
   });
 
-  it('stacks an under and an over buffer inside the lab body', async () => {
+  it('stacks an under and an over buffer, each in its own layer of the lab body', async () => {
     const { container } = await renderSettled(
       <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
     );
-    const canvases = container.querySelectorAll('.lk-lab__body > canvas.lk-lab__surface');
-    expect(canvases).toHaveLength(2);
+    const layers = container.querySelectorAll('.lk-lab__body > .lk-lab__layer');
     // Source order, because the z-index that separates them is in a stylesheet
     // jsdom does not resolve — this is a proxy for the stacking, not proof of
     // it. The real check is a browser.
-    expect([...canvases].map((c) => c.className)).toEqual([
-      'lk-lab__surface lk-lab__surface--under',
-      'lk-lab__surface lk-lab__surface--over',
+    expect([...layers].map((l) => l.className)).toEqual([
+      'lk-lab__layer lk-lab__layer--under',
+      'lk-lab__layer lk-lab__layer--over',
     ]);
+    for (const layer of layers)
+      expect(layer.querySelector('canvas.lk-lab__surface')).not.toBeNull();
+  });
+
+  it('measures tile rects against the over layer', async () => {
+    const { container } = await renderSettled(
+      <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
+    );
+    expect((seen as SurfaceHandle).getContainer()).toBe(
+      container.querySelector('.lk-lab__layer--over'),
+    );
   });
 
   it('hands a tenant whichever of the two it asks for', async () => {

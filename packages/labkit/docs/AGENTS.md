@@ -10,6 +10,8 @@ A map of the library so agents can find what they need quickly.
 |---|---|
 | `<LabShell>` | `src/lab/LabShell.tsx` |
 | `<Workspace>` | `src/lab/Workspace.tsx` |
+| `<Lightbox>`, `useLightbox`, `useLightboxControl`, `<LightboxLayers>` | `src/lightbox/` |
+| The lab body and its shared surface's layers | `src/lab/LabSurface.tsx` |
 | `<Toolbar>` + subcomponents | `src/primitives/Toolbar.tsx` |
 | `<StatusBar>`, `<StatusBarItem>`, `<StatusBarSpacer>` | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
 | `<FpsMeter>` | `src/primitives/FpsMeter.tsx` |

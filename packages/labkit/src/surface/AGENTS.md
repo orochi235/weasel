@@ -58,6 +58,19 @@ was the only trial open.
 trial may register one, or none: a trial holding a drawn pane beside an undrawn
 one contributes a single rect, and a trial with nothing to draw contributes none.
 
+## An expanded tile
+
+A `<Lightbox>` lifts its tile into the browser's top layer, which takes it out
+from under the buffers. So the lab declares its two buffer layers with
+`<LightboxLayers>` (`src/lab/LabSurface.tsx`), and an open lightbox lifts the
+under layer, then itself, then the over layer — the same stacking as before,
+each covering the window. The over layer is the surface container, so the
+surface re-measures against the window and the buffers resize. The lightbox
+also calls `scope(el)`: tiles outside it leave `rects`, are not painted, and
+the retile clears them; `useTileInScope` tells a tenant's own chrome on the
+surface (the annotation input box) to hide. A host owning its own surface does
+the same for its buffers, or an expanded tile shows without them.
+
 ## Traps
 
 - **`preserveDrawingBuffer` is the consumer's job and is usually required.** A

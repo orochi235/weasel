@@ -9,6 +9,7 @@ export {
   useSurfaceOptional,
   useSurfaceTile,
   useTileId,
+  useTileInScope,
 } from './useSurfaceTile';
 export type {
   SurfaceClear,

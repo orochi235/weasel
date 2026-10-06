@@ -1,0 +1,128 @@
+// Closed, the lightbox is a plain box filling whatever holds it, so the
+// content's own `height: 100%` chain keeps working.
+.lk-lightbox {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+
+.lk-lightbox__frame {
+  height: 100%;
+  min-height: 0;
+}
+
+.lk-lightbox__button {
+  position: absolute;
+  top: var(--wzl-space-xs);
+  right: var(--wzl-space-xs);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: var(--wzl-border-w) solid var(--wzl-line-subtle);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-surface);
+  color: var(--wzl-fg-muted);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--wzl-fg);
+  }
+}
+
+// Out of the way until the tile is hovered or the button has focus. A touch
+// screen has no hover, so there it always shows.
+.lk-lightbox__open {
+  opacity: 0;
+  transition: opacity var(--wzl-motion-fast);
+}
+
+.lk-lightbox:hover > .lk-lightbox__open,
+.lk-lightbox__open:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .lk-lightbox__open {
+    opacity: 1;
+  }
+}
+
+// The margin around an open lightbox's frame. The frame backing, drawn by
+// whichever element was lifted first, sits at the same inset.
+@lk-lightbox-margin: 44px 3vw 3vh;
+
+// Open, the same element covers the window, with its padding as the margin
+// and the frame inside holding the content. The declarations past `inset`
+// undo the user-agent popover rules, which are written for a small box.
+.lk-lightbox.lk-lightbox--expanded {
+  position: fixed;
+  inset: 0;
+  z-index: var(--wzl-z-modal);
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  padding: @lk-lightbox-margin;
+  overflow: hidden;
+  color: inherit;
+  background: transparent;
+
+  // Positioned, so it paints over the backing the scrim draws.
+  > .lk-lightbox__frame {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--wzl-radius-md);
+  }
+}
+
+// A layer lifted with a lightbox — a shared buffer drawn for the content —
+// covers the window like it, and takes no input of its own.
+[data-lk-lightbox-layer]:popover-open {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  overflow: visible;
+  color: inherit;
+  background: transparent;
+  pointer-events: none;
+}
+
+.lk-lightbox--expanded::backdrop,
+[data-lk-lightbox-layer]::backdrop {
+  background: transparent;
+}
+
+// The lowest lifted element dims the page and backs the frame, so a layer
+// lifted below the content still has something under it.
+[data-lk-lightbox-scrim]::backdrop {
+  background: rgb(0 0 0 / 55%);
+}
+
+[data-lk-lightbox-scrim]::before {
+  content: '';
+  position: fixed;
+  inset: @lk-lightbox-margin;
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 45%);
+  pointer-events: none;
+}
+
+.lk-lightbox--expanded > .lk-lightbox__close {
+  top: 10px;
+  right: 3vw;
+}

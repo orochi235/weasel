@@ -118,18 +118,25 @@
 // the pane can still hold a label or a control. Both sit under the viewport
 // chrome, whose z-overlay outranks them, and both are inert — every tile takes
 // input from its own box.
-.lk-lab__surface {
+// The shared surface's two layers, over the whole body and taking no input.
+// The over layer is also the box tile rects are measured against.
+.lk-lab__layer {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.lk-lab__surface--under {
+.lk-lab__layer--under {
   z-index: 0;
 }
 
-.lk-lab__surface--over {
+.lk-lab__layer--over {
   z-index: 1;
+}
+
+.lk-lab__surface {
+  position: absolute;
+  inset: 0;
 }
 
 .lk-shell-footer {

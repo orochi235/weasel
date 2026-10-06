@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, test, vi } from 'vitest';
 import { useTrialDrag } from '../trial/TrialDragContext';
@@ -48,6 +48,42 @@ describe('Workspace', () => {
     });
     expect(container.querySelector('[data-node="c"]')).toHaveTextContent('c');
     expect(container.querySelector('[data-node="a"]')).toBeNull();
+  });
+
+  test('opens a tile on double-click only where expandOnDoubleClick says so', async () => {
+    const { container } = await renderSettled(
+      <Workspace ids={['a', 'b']} viewport={VIEWPORT} expandOnDoubleClick={(id) => id === 'a'}>
+        <div>a</div>
+        <div>b</div>
+      </Workspace>,
+    );
+    const box = (id: string) => container.querySelector(`[data-node="${id}"] .lk-lightbox`);
+    expect(screen.getAllByRole('button', { name: 'Expand' })).toHaveLength(2);
+    fireEvent.doubleClick(screen.getByText('b'));
+    expect(box('b')).not.toHaveClass('lk-lightbox--expanded');
+    fireEvent.doubleClick(screen.getByText('a'));
+    expect(box('a')).toHaveClass('lk-lightbox--expanded');
+  });
+
+  test('lets a predicate take the lightbox off one tile', async () => {
+    await renderSettled(
+      <Workspace ids={['a', 'b']} viewport={VIEWPORT} lightbox={(id) => id !== 'b'}>
+        <div>a</div>
+        <div>b</div>
+      </Workspace>,
+    );
+    expect(screen.getAllByRole('button', { name: 'Expand' })).toHaveLength(1);
+  });
+
+  test('lightbox={false} leaves no tile expandable', async () => {
+    await renderSettled(
+      <Workspace viewport={VIEWPORT} lightbox={false} expandOnDoubleClick>
+        <div>a</div>
+      </Workspace>,
+    );
+    fireEvent.doubleClick(screen.getByText('a'));
+    expect(document.querySelector('.lk-lightbox--expanded')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Expand' })).toBeNull();
   });
 
   test('uses lk-workspace class', async () => {

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it, vi } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
@@ -30,6 +30,13 @@ describe('<Lab> chrome', () => {
       <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[extra]} />,
     );
     expect(screen.getByRole('button', { name: 'Export' })).toBeInTheDocument();
+  });
+
+  it('puts the expand toggle in the trial title bar instead of the tile corner', async () => {
+    await renderSettled(<Lab title="T" instruments={[bare]} defaultInstrument="Bare" />);
+    expect(screen.queryByRole('button', { name: 'Expand' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand trial' }));
+    expect(document.querySelector('.lk-lightbox--expanded .lk-trial')).not.toBeNull();
   });
 
   it('suppresses a built-in by id', async () => {

@@ -16,6 +16,9 @@ function fakeHandle(): SurfaceHandle {
     registerPainter: vi.fn(() => () => {}),
     containerRef: vi.fn(),
     getContainer: vi.fn(() => null),
+    scope: vi.fn(),
+    inScope: vi.fn(() => true),
+    subscribeScope: vi.fn(() => () => {}),
   };
 }
 

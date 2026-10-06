@@ -24,6 +24,7 @@ import { useResolvedConfig } from '../config/useResolvedConfig';
 import type { Instrument } from '../instrument/types';
 import type { JobHandle } from '../job/types';
 import { useLabContext } from '../lab/LabContext';
+import { useLightboxControl } from '../lightbox/LightboxContext';
 import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
@@ -141,6 +142,9 @@ export function TrialChrome({
     () => cameras?.get(trialId) ?? null,
   );
 
+  // The title bar carries the expand toggle, so the lightbox drops its own.
+  const lightbox = useLightboxControl();
+
   const ctx = useMemo<TrialChromeContext>(() => {
     const setZoom = (z: number): void => {
       if (camera) zoomCameraTo(camera, z);
@@ -161,6 +165,9 @@ export function TrialChrome({
       hasLoupe: loupe != null,
       loupeOn: loupe?.on ?? false,
       toggleLoupe: loupe?.toggle ?? NO_OP,
+      canExpand: lightbox != null,
+      expanded: lightbox?.expanded ?? false,
+      toggleExpanded: lightbox?.toggle ?? NO_OP,
       configSchema,
       configFields: instrument.config ? [] : (instrument.configSchema?.() ?? []),
       config: record.config,
@@ -210,6 +217,7 @@ export function TrialChrome({
     updateTrialState,
     undoBindings,
     loupe,
+    lightbox,
     view2d,
     activeToolId,
     setActiveTool,

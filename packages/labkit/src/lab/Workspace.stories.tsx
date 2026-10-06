@@ -17,6 +17,8 @@ const Tile = ({ children }: { children: React.ReactNode }) => (
       borderRadius: 'var(--wzl-radius-md)',
       padding: 'var(--wzl-space-md)',
       minHeight: 120,
+      height: '100%',
+      boxSizing: 'border-box',
       display: 'grid',
       placeItems: 'center',
     }}
@@ -71,6 +73,22 @@ export const Resizable: Story = {
         <Tile>3</Tile>
         <Tile>4</Tile>
         <Tile>5</Tile>
+      </Workspace>
+    </div>
+  ),
+};
+
+/** Every tile has an expand button in its corner that shows it large over the
+ *  page. The tile is lifted into the browser's top layer rather than
+ *  remounted; Escape, the close button, or a click in the margin puts it back.
+ *  Tile 1 also opens on a double-click, through `expandOnDoubleClick`. */
+export const Lightbox: Story = {
+  render: () => (
+    <div style={{ height: 500 }}>
+      <Workspace ids={['a', 'b', 'c']} resizable expandOnDoubleClick={(id) => id === 'a'}>
+        <Tile>1</Tile>
+        <Tile>2</Tile>
+        <Tile>3</Tile>
       </Workspace>
     </div>
   ),

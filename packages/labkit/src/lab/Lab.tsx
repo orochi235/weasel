@@ -3,9 +3,7 @@ import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import {
   type CSSProperties,
   type ReactNode,
-  useCallback,
   useEffect,
-  useInsertionEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -36,9 +34,7 @@ import { createLabStore, type LabStore } from '../state/store';
 import type { LabDensity, LabMode, StorageAdapter, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { usePersistedState } from '../state/usePersistedState';
-import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
-import { useSurfaceCanvas, useSurfaceOptional } from '../surface/useSurfaceTile';
-import { type SurfaceFrame, useTiledSurface } from '../surface/useTiledSurface';
+import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { interstellarTheme } from '../theme/interstellar';
 import type { TrialTool } from '../tools/types';
 import { Trial } from '../trial/Trial';
@@ -55,6 +51,7 @@ import { LabContext, type LabContextValue } from './LabContext';
 import { LabHeader, LabThemeSwitcher } from './LabHeader';
 import { LabPalette } from './LabPalette';
 import { LabShell } from './LabShell';
+import { LabSurface } from './LabSurface';
 import type { LabPage } from './LabSwitcher';
 import { LabZoom } from './LabZoom';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
@@ -104,6 +101,10 @@ interface LabBaseProps {
   labChrome?: readonly LabContribution[];
   /** Built-in contribution ids to drop. Throws on an id that is not there. */
   suppress?: readonly string[];
+  /** Whether a double-click on a trial also opens it in its lightbox, beside
+   *  the title bar's expand toggle every trial has. Off by default; a
+   *  function decides per trial, by its record. */
+  expandOnDoubleClick?: boolean | ((trial: TrialRecord) => boolean);
   /** Offer the header's add-trial control. Default `true`; a lab that opens
    *  trials some other way passes `false`. */
   addTrial?: boolean;
@@ -344,6 +345,7 @@ function LabRuntime({
   chrome,
   labChrome,
   suppress,
+  expandOnDoubleClick = false,
   addTrial,
   zoom = true,
   tools,
@@ -377,61 +379,7 @@ function LabRuntime({
   const panelHostsRef = useRef<ReturnType<typeof createPanelHostRegistry> | null>(null);
   if (panelHostsRef.current === null) panelHostsRef.current = createPanelHostRegistry();
 
-  // One shared drawing surface for the whole lab, anchored to the body — tile
-  // rects compose against it, and both buffers compose against the same rects.
-  // `Workspace` invalidates rects when the grid moves something a
-  // ResizeObserver cannot see. A host that already owns a surface keeps it: a
-  // lab embedded in a larger shared-surface app must not open a second GL
-  // tenancy, and mounts no buffer of its own.
-  const outerSurface = useSurfaceOptional();
-  const outerOver = useSurfaceCanvas('over');
-  const outerUnder = useSurfaceCanvas('under');
-  const [ownOver, setOwnOver] = useState<HTMLCanvasElement | null>(null);
-  const [ownUnder, setOwnUnder] = useState<HTMLCanvasElement | null>(null);
-  const ownOverRef = useRef<HTMLCanvasElement | null>(null);
-  const ownUnderRef = useRef<HTMLCanvasElement | null>(null);
-  const bufferRef = useRef({ w: 0, h: 0 });
-  const surfaceRef = useRef<ReturnType<typeof useTiledSurface> | null>(null);
-
-  // Sizing the buffer clears all of it, so every tile has to repaint — not
-  // only the one whose move triggered the measurement. Both buffers are sized
-  // together off one comparison: they are the same box, so a tenant of either
-  // is looking at the same rects, and one invalidateAll covers both.
-  const onFrame = useCallback((frame: SurfaceFrame) => {
-    const canvases = [ownUnderRef.current, ownOverRef.current].filter((c) => c !== null);
-    if (canvases.length === 0) return;
-    const w = Math.round(frame.size.width * frame.dpr);
-    const h = Math.round(frame.size.height * frame.dpr);
-    if (bufferRef.current.w !== w || bufferRef.current.h !== h) {
-      bufferRef.current = { w, h };
-      for (const c of canvases) {
-        c.width = w;
-        c.height = h;
-        c.style.width = `${frame.size.width}px`;
-        c.style.height = `${frame.size.height}px`;
-      }
-      surfaceRef.current?.invalidateAll();
-      return;
-    }
-    // A same-size re-tile does not go through here: assigning `width` its own
-    // value resizes nothing, so it clears nothing. The tenants clear, through
-    // `registerClear`.
-  }, []);
-
-  const ownSurface = useTiledSurface({ onFrame });
-  // Not `useLatest`: `onFrame` reads it, and is needed before the surface exists.
-  useInsertionEffect(() => {
-    surfaceRef.current = ownSurface;
-  }, [ownSurface]);
   const [labBody, setLabBody] = useState<HTMLDivElement | null>(null);
-  const attachOwnSurface = ownSurface.containerRef;
-  const labBodyRef = useCallback(
-    (el: HTMLDivElement | null) => {
-      setLabBody(el);
-      if (!outerSurface) attachOwnSurface(el);
-    },
-    [outerSurface, attachOwnSurface],
-  );
   useLabFitWarning(labBody);
 
   useEffect(() => {
@@ -466,13 +414,6 @@ function LabRuntime({
       win?.removeEventListener('blur', onBlur);
     };
   }, [labBody, store]);
-  const surface = outerSurface ?? ownSurface;
-  const surfaceCanvases = useMemo(
-    () =>
-      outerSurface ? { over: outerOver, under: outerUnder } : { over: ownOver, under: ownUnder },
-    [outerSurface, outerOver, outerUnder, ownOver, ownUnder],
-  );
-
   const workspacePanels = useMemo<PanelDescriptor[]>(
     () =>
       Object.entries(undockedPanels).map(([key, panel]) => ({
@@ -611,6 +552,14 @@ function LabRuntime({
       onReorder={(ids) => contextValue.reorderTrials(ids)}
       layout={layout as TrialLayout}
       onLayoutChange={(next) => store.getState().setLayout(next)}
+      expandOnDoubleClick={
+        typeof expandOnDoubleClick === 'function'
+          ? (id) => {
+              const trial = trials.find((t) => t.id === id);
+              return trial ? expandOnDoubleClick(trial) : false;
+            }
+          : expandOnDoubleClick
+      }
     >
       {trials.map((w) => (
         <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
@@ -656,46 +605,19 @@ function LabRuntime({
                   }
                 >
                   <PanelHostContext.Provider value={panelHostsRef.current}>
-                    <SurfaceContext.Provider value={surface}>
-                      <SurfaceCanvasContext.Provider value={surfaceCanvases}>
-                        <div className="lk-lab__body" ref={labBodyRef}>
-                          {outerSurface ? null : (
-                            // Two buffers stacked around the trials, both inert —
-                            // each tile takes input from its own box. A tile's marks
-                            // annotate the instrument's DOM from over it; an opaque
-                            // renderer sits under it, so the pane can still hold a
-                            // label. The under one is first so it paints first.
-                            <>
-                              <canvas
-                                className="lk-lab__surface lk-lab__surface--under"
-                                ref={(el) => {
-                                  ownUnderRef.current = el;
-                                  setOwnUnder(el);
-                                }}
-                              />
-                              <canvas
-                                className="lk-lab__surface lk-lab__surface--over"
-                                ref={(el) => {
-                                  ownOverRef.current = el;
-                                  setOwnOver(el);
-                                }}
-                              />
-                            </>
-                          )}
-                          {hasPaneChrome ? (
-                            <LabPanes contributions={labChromeAll}>
-                              <LabPalette contributions={labChromeAll} />
-                              {workspace}
-                            </LabPanes>
-                          ) : (
-                            <>
-                              <LabPalette contributions={labChromeAll} />
-                              {workspace}
-                            </>
-                          )}
-                        </div>
-                      </SurfaceCanvasContext.Provider>
-                    </SurfaceContext.Provider>
+                    <LabSurface bodyRef={setLabBody}>
+                      {hasPaneChrome ? (
+                        <LabPanes contributions={labChromeAll}>
+                          <LabPalette contributions={labChromeAll} />
+                          {workspace}
+                        </LabPanes>
+                      ) : (
+                        <>
+                          <LabPalette contributions={labChromeAll} />
+                          {workspace}
+                        </>
+                      )}
+                    </LabSurface>
                   </PanelHostContext.Provider>
                 </LabShell>
               </ThemeProvider>

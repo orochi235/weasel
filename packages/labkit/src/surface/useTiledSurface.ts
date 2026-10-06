@@ -48,6 +48,15 @@ export interface SurfaceHandle {
   /** The element tile rects are measured against, and so the one a tile's own
    *  chrome positions itself inside. Null before the owner attaches it. */
   getContainer: () => HTMLElement | null;
+  /** Narrow the surface to the tiles inside `el`, or widen it back with
+   *  `null`. A tile outside drops out of the frame's `rects` and is not
+   *  painted, and the frame is retiled so the buffer is cleared of it — what
+   *  an expanded tile needs, with the buffers lifted over the rest. */
+  scope: (el: HTMLElement | null) => void;
+  /** Whether the tile is inside the current scope. Everything is, unscoped. */
+  inScope: (id: string) => boolean;
+  /** Called whenever the scope changes. Returns the unsubscribe. */
+  subscribeScope: (listener: () => void) => () => void;
 }
 
 /** What a tile's painter is handed: where it sits on the surface now, and the
@@ -81,6 +90,8 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const needsMeasure = useRef(true);
   const observer = useRef<ResizeObserver | null>(null);
   const lastDpr = useRef(0);
+  const scopeEl = useRef<HTMLElement | null>(null);
+  const scopeListeners = useRef(new Set<() => void>());
 
   // Held in a ref so a caller passing an inline closure does not re-create every
   // callback below on each render.
@@ -90,7 +101,10 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     const el = container.current;
     if (!el) return false;
     const boxes = new Map<string, Box>();
-    for (const [id, tile] of tiles.current) boxes.set(id, tile.getBoundingClientRect());
+    for (const [id, tile] of tiles.current) {
+      if (scopeEl.current && !scopeEl.current.contains(tile)) continue;
+      boxes.set(id, tile.getBoundingClientRect());
+    }
     const next = composeRects(el.getBoundingClientRect(), boxes);
     let changed = next.size !== rects.current.size;
     for (const [id, rect] of next) {
@@ -238,6 +252,29 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
 
   const getContainer = useCallback(() => container.current, []);
 
+  const scope = useCallback(
+    (el: HTMLElement | null) => {
+      if (scopeEl.current === el) return;
+      scopeEl.current = el;
+      needsMeasure.current = true;
+      schedule();
+      for (const listener of scopeListeners.current) listener();
+    },
+    [schedule],
+  );
+
+  const inScope = useCallback((id: string) => {
+    const tile = tiles.current.get(id);
+    return !scopeEl.current || (tile !== undefined && scopeEl.current.contains(tile));
+  }, []);
+
+  const subscribeScope = useCallback((listener: () => void) => {
+    scopeListeners.current.add(listener);
+    return () => {
+      scopeListeners.current.delete(listener);
+    };
+  }, []);
+
   const containerRef = useCallback(
     (el: HTMLElement | null) => {
       if (container.current === el) return;
@@ -276,6 +313,9 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
       registerPainter,
       containerRef,
       getContainer,
+      scope,
+      inScope,
+      subscribeScope,
     }),
     [
       invalidate,
@@ -287,6 +327,9 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
       registerPainter,
       containerRef,
       getContainer,
+      scope,
+      inScope,
+      subscribeScope,
     ],
   );
 }

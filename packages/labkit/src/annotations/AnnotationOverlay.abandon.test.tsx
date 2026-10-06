@@ -77,6 +77,9 @@ function surfaceFor(clears: SurfaceClear[]): SurfaceHandle {
     },
     containerRef: () => {},
     getContainer: () => container,
+    scope: () => {},
+    inScope: () => true,
+    subscribeScope: () => () => {},
   } as SurfaceHandle;
 }
 

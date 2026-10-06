@@ -944,7 +944,18 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Canvas pointer listeners + multi-touch synthesis
     // -----------------------------------------------------------------------
 
+    // A double click this dispatcher acted on is spent: the browser's own
+    // `dblclick` that follows is marked handled, so a container that opens or
+    // toggles on double-click (labkit's lightbox) leaves it alone.
+    let claimedDoubleClick = false;
+    const onNativeDoubleClick = (e: MouseEvent) => {
+      if (!claimedDoubleClick) return;
+      claimedDoubleClick = false;
+      e.preventDefault();
+    };
+
     const onPointerDown = (e: PointerEvent) => {
+      claimedDoubleClick = false;
       // Any button makes this the scope chrome and keys reach.
       registryRef.current.activate();
       // Only the primary button drives gesture dispatch. `pointerdown` reports
@@ -1470,7 +1481,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           // Notify observers first — see `onDoubleClick`'s doc for why this
           // is not modeled as a binding.
           onDoubleClickRef.current?.({ x: wClick.x, y: wClick.y });
-          dispatch(dblEv);
+          const handled = dispatch(dblEv) === 'handled';
+          claimedDoubleClick = handled || onDoubleClickRef.current !== undefined;
           lastClickRef.current = null;
         } else {
           lastClickRef.current = { t: now, clientX: e.clientX, clientY: e.clientY };
@@ -1642,6 +1654,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.addEventListener('pointerleave', onHoverPointerLeave);
       canvas?.addEventListener('pointerdown', onPointerDown);
       canvas?.addEventListener('pointermove', onHoverMove);
+      canvas?.addEventListener('dblclick', onNativeDoubleClick);
     }
     if (wheelChannel) canvas?.addEventListener('wheel', onWheel, { passive: false, capture: true });
     if (pinchChannel) {
@@ -1677,6 +1690,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.removeEventListener('gestureend', onGestureEnd);
       canvas?.removeEventListener('pointerdown', onPointerDown);
       canvas?.removeEventListener('pointermove', onHoverMove);
+      canvas?.removeEventListener('dblclick', onNativeDoubleClick);
       canvas?.removeEventListener('contextmenu', onContextMenu);
       canvas?.removeEventListener('dragenter', onDragOver);
       canvas?.removeEventListener('dragover', onDragOver);

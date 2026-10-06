@@ -1,0 +1,14 @@
+// A host that would trap a fixed-position child: a transform makes it the
+// containing block, and the clipping cuts off anything past its edge.
+.lk-lightbox-test-host {
+  width: 480px;
+  height: 320px;
+  overflow: hidden;
+  transform: translate(7px, 5px);
+}
+
+.lk-lightbox-test-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
