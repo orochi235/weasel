@@ -151,6 +151,27 @@ describe('loupe model: colour', () => {
   });
 });
 
+describe('loupe model: resampling', () => {
+  it('reads the aim again when the pixels under it change', () => {
+    let hex = '#111111';
+    const onColorChange = vi.fn();
+    const { surface } = stubSurface({ sample: () => hex });
+    const loupe = createLoupeModel({ surface, onColorChange });
+    loupe.aimAt({ x: 5, y: 5 });
+    hex = '#222222';
+    loupe.resample();
+    expect(loupe.color).toBe('#222222');
+    expect(onColorChange.mock.calls).toEqual([['#111111'], ['#222222']]);
+  });
+
+  it('does nothing while the lens is hidden', () => {
+    const sample = vi.fn(() => '#111111');
+    const { surface } = stubSurface({ sample, hidden: () => true });
+    createLoupeModel({ surface }).resample();
+    expect(sample).not.toHaveBeenCalled();
+  });
+});
+
 describe('loupe model: picking', () => {
   it('maps a lens point back through the magnification before sampling', () => {
     const seen: { x: number; y: number }[] = [];

@@ -39,7 +39,9 @@ interface SceneProps {
   /** Whether the drawing code calls `capture()` after it draws. */
   captures: boolean;
   onColorChange?: (hex: string) => void;
-  onReady?: (gl: WebGLRenderingContext) => void;
+  /** Handed the context, and a way to redraw the whole canvas one color — a
+   *  frame that changes what is under a lens that has not moved. */
+  onReady?: (gl: WebGLRenderingContext, fill: (rgb: [number, number, number]) => void) => void;
 }
 
 /** Stands in for an app's own WebGL view: it owns the context, draws on
@@ -47,20 +49,28 @@ interface SceneProps {
 function Scene({ captures, onColorChange, onReady }: SceneProps) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const [source, setSource] = useState<CanvasSource | null>(null);
+  const onReadyRef = useRef(onReady);
 
   useEffect(() => {
     const canvas = ref.current;
     const gl = canvas?.getContext('webgl', { preserveDrawingBuffer: false, antialias: false });
     if (!gl) throw new Error('no WebGL');
+    let solid: [number, number, number] | null = null;
     const draw = (): void => {
-      drawBands(gl);
+      if (solid) {
+        gl.clearColor(solid[0] / 255, solid[1] / 255, solid[2] / 255, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+      } else drawBands(gl);
       if (captures) s.capture();
     };
     const s = createCanvasSource(gl, { requestRedraw: draw });
     draw();
     setSource(s);
-    onReady?.(gl);
-  }, [captures, onReady]);
+    onReadyRef.current?.(gl, (rgb) => {
+      solid = rgb;
+      draw();
+    });
+  }, [captures]);
 
   return (
     <div className="scene-box" style={{ width: CSS_W, height: CSS_H }}>
@@ -142,16 +152,27 @@ test('without capture the lens has nothing to show', async () => {
   expect(lensPixel(container, 10, 20)).toEqual([0, 0, 0, 0]);
 });
 
-test('reports the captured color under the aim', async () => {
+test('reports the captured color on the first aim', async () => {
   const colors: string[] = [];
   const { container } = render(<Scene captures onColorChange={(c) => colors.push(c)} />);
   await frames(3);
   aim(container, 80, 25);
-  await frames(2);
-  aim(container, 81, 25);
   await waitFor(() => expect(colors.at(-1)).toBe('#ffffff'));
   aim(container, 30, 25);
   await waitFor(() => expect(colors.at(-1)).toBe('#00ff00'));
+});
+
+test('a still aim follows the canvas as it redraws', async () => {
+  const colors: string[] = [];
+  let fill: ((rgb: [number, number, number]) => void) | undefined;
+  const { container } = render(
+    <Scene captures onColorChange={(c) => colors.push(c)} onReady={(_, f) => (fill = f)} />,
+  );
+  await frames(3);
+  aim(container, 80, 25);
+  await waitFor(() => expect(colors.at(-1)).toBe('#ffffff'));
+  fill?.([255, 0, 255]);
+  await waitFor(() => expect(colors.at(-1)).toBe('#ff00ff'));
 });
 
 test('reads a plain 2D canvas directly, with no capture', async () => {

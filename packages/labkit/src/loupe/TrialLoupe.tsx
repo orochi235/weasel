@@ -112,16 +112,25 @@ export function TrialLoupe({
     };
   }, [surface, options.source, host]);
 
+  // Keyed on the resolved source, not the prop: an inline getter is re-made
+  // every render, and every aim renders.
+  const resolved = resolveLoupeSource(options.source);
+  const subscribeResample = useMemo(
+    () => (resolved ? (fn: () => void) => resolved.subscribeFrame(fn) : undefined),
+    [resolved],
+  );
+
   const loupe = useLoupe({
     options,
     hostRef: host,
     enabled: enabled ?? loupeSwitch?.on ?? false,
     sample,
+    subscribeResample,
   });
-  // A captured source copies frames only while someone is reading them.
-  // Keyed on the resolved source, so an inline getter re-made every render
-  // does not release and re-take it — each re-take marks the frame stale.
-  const reading = loupe.visible ? resolveLoupeSource(options.source) : null;
+  // A captured source copies frames only while someone is reading them. Taken
+  // after `useLoupe` has subscribed, so the frame a first reader's redraw
+  // captures reaches the color too.
+  const reading = loupe.visible ? resolved : null;
   useEffect(() => reading?.retain(), [reading]);
 
   const measured = useHostSize(host);
