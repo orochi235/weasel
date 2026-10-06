@@ -46,17 +46,18 @@ import { Toolbar } from "@weasel-js/labkit";
 </Toolbar>;
 ```
 
-### A status bar with multiple sections
+### A status bar with several readouts
 
 ```tsx
-import { StatusBar, FpsMeter } from "@weasel-js/labkit";
+import { StatusBar, StatusBarItem, StatusBarSpacer, FpsMeter } from "@weasel-js/labkit";
 
-<StatusBar>
-  <StatusBar.Section>Items: {items.length}</StatusBar.Section>
-  <StatusBar.Section>Zoom: {Math.round(zoom * 100)}%</StatusBar.Section>
-  <StatusBar.Section>
+<StatusBar divided>
+  <StatusBarItem>Items: {items.length}</StatusBarItem>
+  <StatusBarItem>Zoom: {Math.round(zoom * 100)}%</StatusBarItem>
+  <StatusBarSpacer />
+  <StatusBarItem>
     <FpsMeter />
-  </StatusBar.Section>
+  </StatusBarItem>
 </StatusBar>;
 ```
 
