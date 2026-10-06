@@ -92,6 +92,32 @@ describe('StatusRegion', () => {
     );
     expect(screen.getByText('150%')).toBeInTheDocument();
   });
+
+  it('pushes the first readout marked end, and the ones after it, past one spacer', () => {
+    const { container } = render(
+      <StatusRegion
+        contributions={[
+          { id: 'a', region: 'status', item: { text: 'A' } },
+          { id: 'b', region: 'status', end: true, item: { text: 'B' } },
+          { id: 'c', region: 'status', end: true, item: { text: 'C' } },
+        ]}
+        ctx={ctx}
+      />,
+    );
+    const bar = container.querySelector('footer') as HTMLElement;
+    const kids = [...bar.children].map((el) => el.getAttribute('aria-hidden') === 'true' ? '|' : el.textContent);
+    expect(kids).toEqual(['A', '|', 'B', 'C']);
+  });
+
+  it('keeps a readout title as its hover text', () => {
+    render(
+      <StatusRegion
+        contributions={[{ id: 'z', region: 'status', item: { text: '150%', title: 'zoom' } }]}
+        ctx={ctx}
+      />,
+    );
+    expect(screen.getByText('150%').closest('[title]')?.getAttribute('title')).toBe('zoom');
+  });
 });
 
 describe('ViewportRegion', () => {

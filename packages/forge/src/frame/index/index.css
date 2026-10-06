@@ -76,8 +76,11 @@
   overflow: auto;
 }
 
+/* A padded story sits top-left as it would on a page, so the minimum height
+   that gives a centered one presence would only leave room under it. */
 .fg-index-cell--padded > .fg-index-cell__stage {
   display: block;
+  min-height: 0;
 }
 
 .fg-index-cell--fullscreen {
