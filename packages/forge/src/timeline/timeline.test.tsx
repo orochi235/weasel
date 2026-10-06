@@ -1,4 +1,4 @@
-import { createMemoryAdapter } from '@weasel-js/labkit';
+import { createMemoryAdapter, type StorageAdapter, useLabContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -34,15 +34,47 @@ const tModule = {
 
 const importers = () => ({ '/t.stories.tsx': () => Promise.resolve(tModule as unknown as Record<string, unknown>) });
 
-function mount(url: string) {
-  history.replaceState(null, '', url);
-  return render(
-    <Workshop index={[timed, still]} frameUrl="/frame.html" importers={importers()} setup={{}} storage={createMemoryAdapter()} />,
+/** Lab commands the workshop has no button for, as buttons. */
+function LabProbe() {
+  const lab = useLabContext();
+  const first = lab.trials[0]?.id;
+  return (
+    <>
+      <button type="button" onClick={() => lab.addTrial('t--timed')}>probe: add</button>
+      <button type="button" onClick={() => first && lab.saveSnapshot(first, 'held')}>probe: save</button>
+      <button
+        type="button"
+        onClick={() => first && lab.savedSnapshots[0] && lab.loadSnapshot(first, lab.savedSnapshots[0].id)}
+      >
+        probe: load
+      </button>
+    </>
   );
 }
 
-const trial = () => screen.getByRole('region', { name: /^Trial / });
-const playhead = () => Number(screen.getByRole('status', { name: 'playhead' }).textContent);
+const probeConfig = { labChrome: [{ id: 'probe', region: 'header', render: () => <LabProbe /> }] } as const;
+
+function mount(url: string, storage: StorageAdapter = createMemoryAdapter()) {
+  history.replaceState(null, '', url);
+  return render(
+    <Workshop
+      index={[timed, still]}
+      frameUrl="/frame.html"
+      importers={importers()}
+      setup={{}}
+      storage={storage}
+      config={probeConfig}
+    />,
+  );
+}
+
+const trial = () => screen.getAllByRole('region', { name: /^Trial / })[0]!;
+const playhead = () => Number(screen.getAllByRole('status', { name: 'playhead' })[0]!.textContent);
+const playheads = () => screen.getAllByRole('status', { name: 'playhead' }).map((el) => Number(el.textContent));
+const loaded = () =>
+  waitFor(() => expect(screen.getAllByRole('status', { name: 'playhead' }).length).toBeGreaterThan(0), { timeout: 15_000 });
+/** Past labkit's write-behind, so what the lab holds has reached storage. */
+const persisted = () => act(() => new Promise((r) => setTimeout(r, 400)));
 const tParam = () => readRouteParams().t ?? null;
 
 afterEach(() => {
@@ -96,6 +128,91 @@ describe('a story with a timeline, in the workshop', () => {
       location.hash = '#/t--still';
     });
     await waitFor(() => expect(tParam()).toBeNull());
+  });
+});
+
+describe('a hash change under the open story', () => {
+  it('seeks to a t that differs and pauses there, and leaves the clock alone when the hash holds none', async () => {
+    mount('/#/t--timed');
+    await loaded();
+    fireEvent.click(within(trial()).getByRole('button', { name: 'Play' }));
+    act(() => {
+      location.hash = '#/t--timed?t=2';
+    });
+    await waitFor(() => expect(playhead()).toBe(2000));
+    expect(within(trial()).getByRole('button', { name: 'Play' })).toBeInTheDocument();
+
+    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
+    act(() => {
+      location.hash = '#/t--timed?other=1';
+    });
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+    expect(playhead()).toBe(4000);
+  });
+});
+
+describe('the playhead kept with the trial', () => {
+  it('comes back at its paused time after a reload, and a URL holding t wins over it', async () => {
+    const storage = createMemoryAdapter();
+    const first = mount('/#/t--timed', storage);
+    await loaded();
+    fireEvent.keyDown(within(trial()).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
+    expect(playhead()).toBe(4000);
+    await persisted();
+    first.unmount();
+
+    const second = mount('/#/t--timed', storage);
+    await loaded();
+    expect(playhead()).toBe(4000);
+    second.unmount();
+
+    mount('/#/t--timed?t=1', storage);
+    await loaded();
+    expect(playhead()).toBe(1000);
+  });
+
+  it('comes back at its paused time when a snapshot is loaded', async () => {
+    mount('/#/t--timed');
+    await loaded();
+    const scrub = within(trial()).getByRole('slider', { name: 'Scrub' });
+    fireEvent.keyDown(scrub, { key: 'End' });
+    fireEvent.click(screen.getByRole('button', { name: 'probe: save' }));
+    fireEvent.keyDown(scrub, { key: 'Home' });
+    expect(playhead()).toBe(0);
+    fireEvent.click(screen.getByRole('button', { name: 'probe: load' }));
+    await waitFor(() => expect(playhead()).toBe(4000));
+  });
+});
+
+describe('two trials of the routed story', () => {
+  it('lets only the focused one write t', async () => {
+    mount('/#/t--timed');
+    await loaded();
+    fireEvent.click(screen.getByRole('button', { name: 'probe: add' }));
+    await waitFor(() => expect(playheads()).toHaveLength(2));
+    const [older, newer] = screen.getAllByRole('region', { name: /^Trial / });
+    fireEvent.keyDown(within(newer!).getByRole('slider', { name: 'Scrub' }), { key: 'End' });
+    expect(tParam()).toBe('4');
+    const olderScrub = within(older!).getByRole('slider', { name: 'Scrub' });
+    fireEvent.keyDown(olderScrub, { key: 'End' });
+    fireEvent.keyDown(olderScrub, { key: 'Home' });
+    expect(playheads()).toEqual([0, 4000]);
+    expect(tParam()).toBe('4');
+  });
+
+  it('applies a t the URL opens with to that trial alone', async () => {
+    const storage = createMemoryAdapter();
+    const first = mount('/#/t--timed', storage);
+    await loaded();
+    fireEvent.click(screen.getByRole('button', { name: 'probe: add' }));
+    await waitFor(() => expect(playheads()).toHaveLength(2));
+    await persisted();
+    first.unmount();
+
+    mount('/#/t--timed?t=1.5', storage);
+    await waitFor(() => expect(playheads()).toHaveLength(2), { timeout: 15_000 });
+    await waitFor(() => expect(playheads().filter((t) => t === 1500)).toHaveLength(1));
+    expect(playheads().filter((t) => t === 0)).toHaveLength(1);
   });
 });
 

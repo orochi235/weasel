@@ -125,10 +125,17 @@ span the story learns only once it runs (null goes back to the declared one).
 Either throws in a story that declares no timeline.
 
 The clock belongs to the trial, so two trials of one story play independently.
-It runs only while the story's box is on screen and the page is visible. While
-the clock is paused, the URL holds the playhead in seconds, so a paused frame
-works as a link: `#/<story>?t=1.5`. Opening that URL starts the story paused at
-1.5s. Playing drops `t` rather than rewriting it every frame. An index page, an
+It runs only while the story's box is on screen and the page is visible. Its
+paused time is kept with the trial, so a reload or a loaded snapshot brings the
+story back there; it is written when the clock stops or moves while stopped,
+never on a playing frame.
+
+While the clock is paused off its span's start, the URL holds the playhead in
+seconds, so a paused frame works as a link: `#/<story>?t=1.5`. Opening that URL
+starts the story paused at 1.5s, over any kept time, and a hash change that
+brings a different `t` seeks there and pauses. Playing drops `t` rather than
+rewriting it every frame. Only one trial holds the URL, as for knobs: the
+focused trial when it shows the routed story, else the first that does. An index page, an
 isolated story's frame and a story test show the story paused at its span's
 start, with no transport.
 

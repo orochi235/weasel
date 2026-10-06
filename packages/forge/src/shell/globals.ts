@@ -44,6 +44,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 export const isGlobalsPath = (path: string): boolean => path === GLOBALS_KEY || path.startsWith(`${GLOBALS_KEY}.`);
 
+/** The config key a timeline story's paused playhead is kept under, so labkit persists and snapshots it. */
+export const PLAYHEAD_KEY = '$playhead';
+
+/** Config keys forge owns: a story neither sees nor writes them. */
+const FORGE_KEYS: ReadonlySet<string> = new Set([GLOBALS_KEY, PLAYHEAD_KEY]);
+
+/** Whether a config path lies under a key forge owns. */
+export const isForgePath = (path: string): boolean => FORGE_KEYS.has(path.split('.')[0]!);
+
 /** The options the toolbar offers for `declaration` at `globals`. */
 export function shownOptions(declaration: GlobalDeclaration, globals: Globals): GlobalDeclaration['options'] {
   const { shows } = declaration;
@@ -102,12 +111,12 @@ export function effectiveGlobals(lab: Globals, pins: unknown): Globals {
 }
 
 /**
- * The config a story receives: the trial's, without its pins. Returns `previous` when every other entry is the same,
- * so a change to a pin alone is not a change to the story's config.
+ * The config a story receives: the trial's, without the keys forge owns. Returns `previous` when every other entry is
+ * the same, so a change to a pin or the playhead alone is not a change to the story's config.
  */
 export function storyConfig(config: unknown, previous?: unknown): unknown {
-  if (!isRecord(config) || !(GLOBALS_KEY in config)) return config;
-  const rest = Object.fromEntries(Object.entries(config).filter(([key]) => key !== GLOBALS_KEY));
+  if (!isRecord(config) || !Object.keys(config).some((key) => FORGE_KEYS.has(key))) return config;
+  const rest = Object.fromEntries(Object.entries(config).filter(([key]) => !FORGE_KEYS.has(key)));
   if (isRecord(previous)) {
     const keys = Object.keys(rest);
     if (keys.length === Object.keys(previous).length && keys.every((key) => rest[key] === previous[key])) return previous;

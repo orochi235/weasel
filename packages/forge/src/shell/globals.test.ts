@@ -5,6 +5,7 @@ import {
   FOLLOW_APP,
   followApp,
   type GlobalDeclarations,
+  isForgePath,
   isGlobalsPath,
   labGlobals,
   labOptions,
@@ -76,6 +77,20 @@ describe('storyConfig', () => {
     const previous = storyConfig({ label: 'hi', grid: inner, $globals: { mode: 'lab' } });
     expect(storyConfig({ label: 'hi', grid: inner, $globals: { mode: 'dark' } }, previous)).toBe(previous);
     expect(storyConfig({ label: 'bye', grid: inner, $globals: { mode: 'dark' } }, previous)).toEqual({ label: 'bye', grid: inner });
+  });
+
+  it('strips the kept playhead too, and a change to it alone is no change', () => {
+    const previous = storyConfig({ label: 'hi', $playhead: 1000 });
+    expect(previous).toEqual({ label: 'hi' });
+    expect(storyConfig({ label: 'hi', $playhead: 2000 }, previous)).toBe(previous);
+  });
+});
+
+describe('isForgePath', () => {
+  it('names the keys a story may not write', () => {
+    expect(isForgePath('$playhead')).toBe(true);
+    expect(isForgePath('$globals.mode')).toBe(true);
+    expect(isForgePath('label')).toBe(false);
   });
 });
 

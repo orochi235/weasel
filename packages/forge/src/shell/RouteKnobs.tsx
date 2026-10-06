@@ -2,6 +2,7 @@ import { type InstrumentList, TrialIdContext, useLabContext, useTrialState } fro
 import { type ConfigSchema, valueAtPath } from '@weasel-js/labkit/config';
 import { useEffect, useRef, useState } from 'react';
 import { knobPaths, knobsToParams, paramsToKnobs, reservedParams, sameKnob } from '../route/url';
+import { routedTrial } from './routedTrial';
 import { readRouteParams, replaceRouteParams, useRoute } from './useRoute';
 
 interface KnobSyncProps {
@@ -59,9 +60,7 @@ export function RouteKnobs({ instruments, isReady }: { instruments: InstrumentLi
   const lab = useLabContext();
   const [route] = useRoute();
   if (route === null || !isReady(route)) return null;
-  const trial =
-    lab.trials.find((t) => t.id === lab.focusedTrialId && t.instrumentName === route) ??
-    lab.trials.find((t) => t.instrumentName === route);
+  const trial = routedTrial(lab.trials, lab.focusedTrialId, route);
   const schema = instruments.find((instrument) => instrument.name === route)?.config;
   if (!trial || !schema) return null;
   return (

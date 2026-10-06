@@ -1,5 +1,5 @@
 import { PLAYHEAD_PARAM } from '../route/url';
-import { readRoute, readRouteParams, replaceRouteParams } from '../shell/useRoute';
+import { readRouteParams, replaceRouteParams } from '../shell/useRoute';
 
 export function formatSeconds(ms: number): string {
   const rounded = Math.round(ms) / 1000;
@@ -22,9 +22,4 @@ export function writePlayheadParam(ms: number | null): void {
   replaceRouteParams(({ [PLAYHEAD_PARAM]: _held, ...rest }) =>
     ms === null ? rest : { ...rest, [PLAYHEAD_PARAM]: formatSeconds(ms) },
   );
-}
-
-/** The playhead a URL opened on `storyId` holds: `t`, when the route names that story; otherwise null. */
-export function initialPlayhead(storyId: string): number | null {
-  return readRoute() === storyId ? readPlayheadParam() : null;
 }

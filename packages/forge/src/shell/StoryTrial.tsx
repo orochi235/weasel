@@ -1,17 +1,16 @@
 import { type RenderContext, TrialIdContext } from '@weasel-js/labkit';
 import { useLatest } from '@weasel-js/core';
-import { memo, type RefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, type RefObject, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
 import { StoryHost } from '../frame/StoryHost';
 import type { Globals } from '../protocol/messages';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 import { ClockContext } from '../timeline/context';
-import { initialPlayhead } from '../timeline/playheadUrl';
 import { useStoryClock } from '../timeline/StoryClock';
 import { TrialClocksContext } from '../timeline/trialClocks';
 import { useClockLoop } from '../timeline/useClockLoop';
-import { useHeldPlayhead } from '../timeline/useHeldPlayhead';
-import { isGlobalsPath, storyConfig } from './globals';
+import { usePersistedPlayhead } from '../timeline/usePersistedPlayhead';
+import { isForgePath, PLAYHEAD_KEY, storyConfig } from './globals';
 import { TrialHost } from './TrialHost';
 
 /** Props for `StoryTrial`. */
@@ -50,7 +49,10 @@ const StoryBody = memo(function StoryBody({ story, config, setConfig, state, set
 /** A story rendered in the workshop document, inside a `TrialHost`, from the trial's own config and state. */
 export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: StoryTrialProps) {
   const latest = useLatest(ctx);
-  const config = useMemo(() => storyConfig(ctx.config), [ctx.config]);
+  // Kept across a write to a key forge owns, so moving the playhead or a pin does not re-render the story.
+  const [heldConfig, setHeldConfig] = useState(() => storyConfig(ctx.config));
+  const config = storyConfig(ctx.config, heldConfig);
+  if (config !== heldConfig) setHeldConfig(config);
 
   // A trial opened on the provisional instrument starts at `null`; the story's own initial state fills it once.
   const seeded = useRef(false);
@@ -72,7 +74,7 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   // Stable, as the frame's were: a story may list them as effect dependencies.
   // The pins belong to the trial; a story cannot see them, so it cannot set them either.
   const setConfig = useCallback((path: string, value: unknown) => {
-    if (!isGlobalsPath(path)) latest.current.setConfig(path, value);
+    if (!isForgePath(path)) latest.current.setConfig(path, value);
   }, [latest]);
   const setState = useCallback((next: unknown) => latest.current.setState(next), [latest]);
 
@@ -81,9 +83,11 @@ export function StoryTrial({ story, setup, ctx, hostRef, onRendered, onError }: 
   const clocks = useContext(TrialClocksContext);
   const ownHost = useRef<HTMLElement | null>(null);
   const host = hostRef ?? ownHost;
-  const clock = useStoryClock(story.timeline?.(config) ?? null, () => initialPlayhead(story.id));
+  const kept = (ctx.config as Record<string, unknown> | null)?.[PLAYHEAD_KEY];
+  const persisted = typeof kept === 'number' && Number.isFinite(kept) ? kept : null;
+  const clock = useStoryClock(story.timeline?.(config) ?? null, () => persisted);
   useClockLoop(clock, host);
-  useHeldPlayhead(clock, story.id);
+  usePersistedPlayhead(clock, persisted, (time) => latest.current.setConfig(PLAYHEAD_KEY, time));
   useEffect(() => (clock && clocks && trialId ? clocks.publish(trialId, clock) : undefined), [clock, clocks, trialId]);
 
   const decorators = setup.decorators ?? NO_DECORATORS;

@@ -13,6 +13,7 @@ import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
 import { StoryInfoDialog } from './info/StoryInfoDialog';
 import { createFramePool, type FramePool, FramePoolContext } from './framePool';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
+import { RoutePlayhead } from '../timeline/RoutePlayhead';
 import { createTrialClocks, TrialClocksContext } from '../timeline/trialClocks';
 import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
@@ -194,6 +195,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
               >
                 <RouteOpener index={entries} />
                 <RouteKnobs instruments={registry.instruments} isReady={registry.isReady} />
+                <RoutePlayhead />
                 <StoryInfoDialog
                   index={index}
                   isReady={registry.isReady}

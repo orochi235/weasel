@@ -5,7 +5,7 @@ import type { FrameSetup } from '../frame/FrameController';
 import type { IndexEntry } from '../story/types';
 import { TrialTransport } from '../timeline/TransportBar';
 import { breadcrumb } from './breadcrumb';
-import { type GlobalDeclarations, withGlobals } from './globals';
+import { type GlobalDeclarations, PLAYHEAD_KEY, withGlobals } from './globals';
 import { type IndexBundle, IndexTrial } from './IndexTrial';
 import { StoryTrial } from './StoryTrial';
 
@@ -19,11 +19,17 @@ export interface DocumentInstrumentOptions {
   globals?: GlobalDeclarations;
 }
 
+/** `schema` with a hidden leaf for the paused playhead, which labkit then persists and snapshots with the trial. */
+function withPlayhead(schema: ConfigSchema<unknown>): ConfigSchema<unknown> {
+  return f.schema({ ...schema.nodes, [PLAYHEAD_KEY]: f.custom<number | null>('forge-playhead', null).hidden() }) as ConfigSchema<unknown>;
+}
+
 /** A loaded story, or index page, as a lab instrument rendering in the workshop document. */
 export function documentInstrument(options: DocumentInstrumentOptions): Instrument<unknown, unknown> {
   const { entry, loaded, setup, globals = {} } = options;
   const schema = loaded.kind === 'story' ? loaded.story.config : (f.schema({}) as ConfigSchema<unknown>);
-  const config = withGlobals(schema, globals);
+  const timed = loaded.kind === 'story' && loaded.story.timeline !== null;
+  const config = withGlobals(timed ? withPlayhead(schema) : schema, globals);
   const initialState = loaded.kind === 'story' ? loaded.story.initialState : null;
   return {
     name: entry.id,
@@ -40,7 +46,7 @@ export function documentInstrument(options: DocumentInstrumentOptions): Instrume
     ...(loaded.kind === 'story' && loaded.story.viewport
       ? { stage: { size: { width: loaded.story.viewport.width, height: loaded.story.viewport.height } } }
       : {}),
-    ...(loaded.kind === 'story' && loaded.story.timeline
+    ...(timed
       ? { chrome: [{ id: 'fg-transport', region: 'status', render: (c) => <TrialTransport trialId={c.trialId} /> }] }
       : {}),
   };

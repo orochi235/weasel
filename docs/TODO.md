@@ -761,12 +761,21 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) A forge snapshot does not hold the playhead.** A timeline story's clock
-  lives in the trial's clock registry (`packages/forge/src/timeline/`), outside
-  the trial's config and state, so a labkit snapshot or a reload brings the
-  story back at its span's start. Only the URL's `t` survives. astv's labs kept
-  `t` in trial state, so a snapshot held a frame. Two trials showing the routed
-  story also both write `t`, and the last one to move wins.
+- **(P2) A native story whose `meta` is not imported from `@weasel-js/forge`
+  gets a different id in the index than at runtime.** The index
+  (`packages/forge/src/vite/indexFile.ts`) reads `meta({ title })` only when
+  `meta` is imported from `'@weasel-js/forge'`; imported from anywhere else — a
+  project module re-exporting it, or forge's own `../story/define` — it falls
+  back to the path-derived title, while the runtime loader (`story/native.ts`)
+  uses the meta's title. The tree and the route use the index's id, so a link
+  written from the meta's title (`#/ui-thing--basic`) names no story. Repro:
+  `indexFile("import { meta, story } from './forge-helpers';\nexport default
+  meta({ title: 'ui/Thing' });\nexport const Basic = story({ render: () => null
+  });", '/r/x.stories.tsx', 'auto/Title')` gives `auto-title--basic`; from
+  `'@weasel-js/forge'` it gives `ui-thing--basic`. Not a one-line fix: the index
+  cannot follow an arbitrary import, and treating any import named `meta` as
+  forge's is a guess. Either the index resolves the import, or the registry
+  re-ids a loaded story from its entry and the two titles are reconciled.
 
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
