@@ -264,3 +264,29 @@ test('a placed square lens is drawn at its center, shows the point it names, and
   // The pointer is over the green band, and that is the color reported.
   await waitFor(() => expect(colors.at(-1)).toBe('#00ff00'));
 });
+
+test('a hollow lens draws only its outline, and tells the host where it is', async () => {
+  const lenses: unknown[] = [];
+  const { container } = render(
+    <div style={{ width: CSS_W, height: CSS_H }}>
+      <TrialLoupe enabled hollow shape="square" factor={4} diameter={DIAMETER} onLens={(l) => lenses.push(l)}>
+        <div style={{ width: CSS_W, height: CSS_H }} />
+      </TrialLoupe>
+    </div>,
+  );
+  await frames(2);
+  move(container, 30, 25);
+  await waitFor(() => expect(lensCenter(container)).toEqual({ x: 30, y: 25 }));
+  const lens = container.querySelector<HTMLElement>('.lk-loupe') as HTMLElement;
+  expect(lens.children).toHaveLength(0);
+  expect(getComputedStyle(lens).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+  expect(getComputedStyle(lens).borderTopStyle).not.toBe('none');
+  expect(lenses.at(-1)).toEqual({
+    center: { x: 30, y: 25 },
+    shows: { x: 30, y: 25 },
+    width: DIAMETER,
+    height: DIAMETER,
+    factor: 4,
+    shape: 'square',
+  });
+});

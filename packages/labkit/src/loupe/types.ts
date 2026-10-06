@@ -36,6 +36,19 @@ export interface LoupePlacement {
   factor?: number;
 }
 
+/** Where a lens is drawn and what it shows, once `place` has had its say. */
+export interface LoupeLens {
+  /** Where the lens is drawn: the middle of its box. */
+  center: LoupePoint;
+  /** The host point the lens shows at its middle. */
+  shows: LoupePoint;
+  width: number;
+  height: number;
+  /** What it magnifies by: the wheel's, unless `place` chose another. */
+  factor: number;
+  shape: LoupeShape;
+}
+
 /** What `place` is asked with. */
 export interface LoupePlaceArgs {
   aim: LoupePoint;
@@ -91,6 +104,19 @@ export interface LoupeOptions {
    * still the one `onColorChange` reports.
    */
   place?: (at: LoupePlaceArgs) => LoupePlacement | null;
+  /**
+   * Draw only the lens's outline — ring, shadow, shape — and leave its inside
+   * empty, so whatever is under it shows through: for a host that draws the
+   * magnified view itself, into the box `onLens` reports. No painter runs; a
+   * `source`, if given, still answers `onColorChange`.
+   */
+  hollow?: boolean;
+  /**
+   * Called with where the lens is drawn and what it shows, in host CSS px,
+   * whenever that changes — an aim, the wheel, `place`, `shape` — and with
+   * `null` when a lens that was up goes away.
+   */
+  onLens?: (lens: LoupeLens | null) => void;
   /** Held for a momentary peek while the loupe is off. Default `'Alt'`; `null`
    *  turns hold-to-peek off. Matched against `KeyboardEvent.key`. */
   peekKey?: string | null;
@@ -112,6 +138,8 @@ export interface ResolvedLoupe {
   diameter: number;
   shape: LoupeShape;
   place?: (at: LoupePlaceArgs) => LoupePlacement | null;
+  hollow: boolean;
+  onLens?: (lens: LoupeLens | null) => void;
   peekKey: string | null;
 }
 
@@ -123,8 +151,9 @@ export const LOUPE_DEFAULTS = {
   mode: 'vector',
   diameter: 200,
   shape: 'circle',
+  hollow: false,
   peekKey: 'Alt',
-} as const satisfies Omit<ResolvedLoupe, 'render' | 'source' | 'onColorChange' | 'place'>;
+} as const satisfies Omit<ResolvedLoupe, 'render' | 'source' | 'onColorChange' | 'place' | 'onLens'>;
 
 /** `options` with every default filled in and `factor` clamped to
  *  `[minFactor, maxFactor]`. A loupe with its own `render` is always `'vector'`,
@@ -142,6 +171,8 @@ export function resolveLoupe(options: LoupeOptions = {}): ResolvedLoupe {
     diameter: options.diameter ?? LOUPE_DEFAULTS.diameter,
     shape: options.shape ?? LOUPE_DEFAULTS.shape,
     place: options.place,
+    hollow: options.hollow ?? LOUPE_DEFAULTS.hollow,
+    onLens: options.onLens,
     peekKey: options.peekKey === undefined ? LOUPE_DEFAULTS.peekKey : options.peekKey,
     // A DOM loupe has no framebuffer, so `pixel` would have nothing to enlarge.
     mode: options.render

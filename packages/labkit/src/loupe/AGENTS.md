@@ -65,6 +65,10 @@ is the stock fit of a region shown whole. `useLoupe` resolves the result into
 `lens.shows`, which are different points once a lens is moved to stay on the
 host. `onColorChange` still reports the aim.
 
+`hollow` runs no painter and leaves the bubble's inside clear, for a host that
+draws the magnified view itself; `onLens` tells it the box, on each change in
+value and with `null` once a lens that was up goes away.
+
 ## Traps
 
 **A placed lens must reach the model, not only the painters.** `pick` maps a

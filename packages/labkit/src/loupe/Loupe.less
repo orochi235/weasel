@@ -25,6 +25,11 @@
   border-radius: var(--wzl-radius-sm, 0px);
 }
 
+// The host draws the magnified view into this box itself.
+.lk-loupe--hollow {
+  background: transparent;
+}
+
 // `.lk-canvas-stack__overlay > *` turns pointer events back on for an
 // instrument's own overlay; the lens is the one child that must stay inert.
 .lk-canvas-stack__overlay > .lk-loupe {

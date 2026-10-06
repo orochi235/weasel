@@ -30,6 +30,7 @@ export { drawSourceLens, resolveLoupeSource, sampleSource, sourceBoxIn } from '.
 export type { TrialLoupeProps } from './TrialLoupe';
 export { TrialLoupe } from './TrialLoupe';
 export type {
+  LoupeLens,
   LoupeOptions,
   LoupePlaceArgs,
   LoupePlacement,
@@ -38,5 +39,5 @@ export type {
   ResolvedLoupe,
 } from './types';
 export { LOUPE_DEFAULTS, resolveLoupe } from './types';
-export type { LoupeLens, LoupeState, UseLoupeOptions } from './useLoupe';
+export type { LoupeState, UseLoupeOptions } from './useLoupe';
 export { useLoupe } from './useLoupe';

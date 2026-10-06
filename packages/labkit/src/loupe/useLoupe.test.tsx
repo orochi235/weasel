@@ -16,6 +16,7 @@ interface HarnessProps {
   onColorChange?: (hex: string) => void;
   shape?: LoupeShape;
   place?: LoupeOptions['place'];
+  onLens?: LoupeOptions['onLens'];
   seen?: (loupe: LoupeState) => void;
   /** A wheel listener of the host's own, attached before the loupe's, as a
    *  camera's controls on the same canvas would be. */
@@ -383,6 +384,39 @@ describe('useLoupe', () => {
       render(<Harness enabled={false} place={place} />);
       move(40, 30);
       expect(place).not.toHaveBeenCalled();
+    });
+
+    it('tells onLens where the lens is drawn as it moves, and null once it is put away', () => {
+      const onLens = vi.fn();
+      render(<Harness shape="square" onLens={onLens} />);
+      expect(onLens).not.toHaveBeenCalled();
+      move(40, 30);
+      expect(onLens).toHaveBeenLastCalledWith({
+        center: { x: 40, y: 30 }, shows: { x: 40, y: 30 }, width: 200, height: 200, factor: 6, shape: 'square',
+      });
+      move(50, 30);
+      expect(onLens).toHaveBeenLastCalledWith(expect.objectContaining({ center: { x: 50, y: 30 } }));
+      const calls = onLens.mock.calls.length;
+      fireEvent.pointerLeave(screen.getByTestId('host'));
+      expect(onLens).toHaveBeenLastCalledWith(null);
+      expect(onLens).toHaveBeenCalledTimes(calls + 1);
+    });
+
+    it('does not tell onLens again when a render changes nothing about the lens', () => {
+      const onLens = vi.fn();
+      const { rerender } = render(<Harness onLens={onLens} />);
+      move(40, 30);
+      const calls = onLens.mock.calls.length;
+      rerender(<Harness onLens={onLens} />);
+      expect(onLens).toHaveBeenCalledTimes(calls);
+    });
+
+    it('tells onLens null when a lens that is up unmounts', () => {
+      const onLens = vi.fn();
+      const { unmount } = render(<Harness onLens={onLens} />);
+      move(40, 30);
+      unmount();
+      expect(onLens).toHaveBeenLastCalledWith(null);
     });
 
     it('picks what a placed lens shows, about its own center and factor', () => {

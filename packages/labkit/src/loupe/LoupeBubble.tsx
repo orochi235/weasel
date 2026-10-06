@@ -10,8 +10,10 @@ export interface LoupeBubbleProps {
   diameter: LoupeSize;
   /** Default `'circle'`; on a box that is not square, `'circle'` is an ellipse. */
   shape?: LoupeShape;
+  /** Only the ring and shadow: the inside is left clear for what is under it. */
+  hollow?: boolean;
   hostRef?: RefObject<HTMLDivElement | null>;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 /**
@@ -22,7 +24,7 @@ export interface LoupeBubbleProps {
  * keep working while it is up — and it is `aria-hidden`, since it magnifies
  * content already on the page rather than adding any.
  */
-export function LoupeBubble({ aim, diameter, shape = 'circle', hostRef, children }: LoupeBubbleProps) {
+export function LoupeBubble({ aim, diameter, shape = 'circle', hollow, hostRef, children }: LoupeBubbleProps) {
   const { width, height } = loupeExtent(diameter);
   const style = {
     '--lk-loupe-width': `${width}px`,
@@ -32,7 +34,9 @@ export function LoupeBubble({ aim, diameter, shape = 'circle', hostRef, children
   return (
     <div
       ref={hostRef}
-      className={shape === 'square' ? 'lk-loupe lk-loupe--square' : 'lk-loupe'}
+      className={['lk-loupe', shape === 'square' && 'lk-loupe--square', hollow && 'lk-loupe--hollow']
+        .filter(Boolean)
+        .join(' ')}
       style={style}
       aria-hidden="true"
     >

@@ -56,6 +56,8 @@ export function TrialLoupe({
   diameter,
   shape,
   place,
+  hollow,
+  onLens,
   peekKey,
   onColorChange,
 }: TrialLoupeProps) {
@@ -71,16 +73,18 @@ export function TrialLoupe({
         diameter,
         shape,
         place,
+        hollow,
+        onLens,
         peekKey,
         onColorChange,
       }),
-    [render, source, factor, minFactor, maxFactor, mode, diameter, shape, place, peekKey, onColorChange],
+    [render, source, factor, minFactor, maxFactor, mode, diameter, shape, place, hollow, onLens, peekKey, onColorChange],
   );
 
   const stack = useContext(CanvasStackContext);
   const camera = useContext(CameraContext);
   const loupeSwitch = useContext(LoupeSwitchContext);
-  const surface = options.render || options.source ? undefined : stack?.surface;
+  const surface = options.render || options.source || options.hollow ? undefined : stack?.surface;
 
   const ownHost = useRef<HTMLDivElement | null>(null);
   const cameraHost = useMemo<RefObject<HTMLElement | null> | null>(
@@ -153,8 +157,8 @@ export function TrialLoupe({
   const { center, shows, width, height, factor: shownFactor, shape: lensShape } = loupe.lens;
   const box = { width, height };
   const lens = loupe.visible ? (
-    <LoupeBubble aim={center} diameter={box} shape={lensShape}>
-      {options.render ? (
+    <LoupeBubble aim={center} diameter={box} shape={lensShape} hollow={options.hollow}>
+      {options.hollow ? null : options.render ? (
         <DomLoupe
           aim={shows}
           factor={shownFactor}
