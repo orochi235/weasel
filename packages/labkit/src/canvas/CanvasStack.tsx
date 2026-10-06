@@ -30,6 +30,8 @@ export interface CanvasStackProps {
   /** A yoke to join, from `useYoke()`: cameras on one yoke share their tool
    *  and gesture in flight. Omitted, this one keeps its own. */
   yoke?: Yoke;
+  /** Frames after each of which every `timed` layer repaints — a trial clock's. */
+  ticks?: (fn: () => void) => () => void;
 }
 
 /** Stacks one `<canvas>` per layer and drives them from a shared view, so a
@@ -50,6 +52,7 @@ export function CanvasStack({
   onHitTest,
   children,
   yoke,
+  ticks,
 }: CanvasStackProps) {
   const view = normalize2DView(viewProp);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -101,7 +104,7 @@ export function CanvasStack({
     () => ({ view: camera, frame, element: () => containerRef.current }),
     [camera, frame],
   );
-  useLayerScheduler({ layers, view, frame, canvasRefs: canvasMap, size, host: containerRef });
+  useLayerScheduler({ layers, view, frame, canvasRefs: canvasMap, size, host: containerRef, ticks });
 
   const ctxValue = useMemo(
     () => ({

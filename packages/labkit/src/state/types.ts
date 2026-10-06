@@ -57,6 +57,9 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
    *  snapshot. Session-only: absent on a new, cloned, swapped or reloaded
    *  trial, which is how each starts with an empty history. */
   history?: History;
+  /** Where the trial's clock stood at its last rate or seek change, for a
+   *  trial whose instrument declares `clock`. */
+  clock?: { elapsed: number; rate: number };
 }
 
 /** A named, saved copy of a trial's config and state, restorable into any

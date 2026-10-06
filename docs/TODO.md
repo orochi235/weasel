@@ -504,6 +504,32 @@ decomposition meant to absorb the first; it has not landed:
 
 ---
 
+### labkit presentation mode
+
+An existing lab shown without its chrome — one trial, given params, a few
+gestures, play controls — for portfolio embeds, the way print preview shows a
+document. A mode of a lab, not a second way of writing one: agnew (`?bare`),
+rosee (`?bare`, its own `Bare.tsx` and transport) and transom (`?embed`) each
+hand-roll it today. Mostly mounted directly (a prop, `?present` in the URL),
+switchable on in a running lab for debugging, and public API. The trial clock
+it rests on landed 2026-10-06.
+
+- **(P2) The mode itself.** `usePresentation()` (enter, exit, active), a
+  `<Lab present>` prop and `?present`; one trial rendered without `LabShell` or
+  `Workspace`, seeded with given config and state (a seed prop beside
+  `seedDefaultTrial`); no persistence while presenting; a transparent
+  background without labkit's `color-scheme` leaking into the host page.
+- **(P2) Play controls.** weasel-ui's `<Transport>` bound to a trial clock
+  through `useTrialClock`: play/pause, scrub and reverse where the clock is
+  seekable, speed; Space and friends. rosee's `Transport.tsx` is the reference —
+  auto-loop with a hold, stop looping once touched, hidden below a size.
+  `<Transport>` has no scrub or reverse yet.
+- **(P2) Gestures.** A `gestures` option on the trial canvas — pan, wheel
+  `plain` / `mod` / off, pinch, tap — threaded into `CameraInput`, and a
+  relaxed `touch-action`, so an embed can let the page scroll.
+- **(P3) A still for poster capture, and `postMessage` play/pause** so a host
+  page's play control can reach a live lab.
+
 ### labkit's deprecated snapshot undo
 
 - **(P3) Delete `packages/labkit/src/undo/undoStack.ts` and its exports**

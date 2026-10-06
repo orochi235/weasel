@@ -45,6 +45,8 @@ export interface LabStoreActions {
   updateTrialAnnotations: (id: string, doc: unknown) => void;
   /** Give a trial the undo history it made on its first snapshot. */
   setTrialHistory: (id: string, history: History) => void;
+  /** Record where a trial's clock stands. */
+  updateTrialClock: (id: string, clock: { elapsed: number; rate: number }) => void;
   setTrialInstrument: (id: string, instrumentName: string) => void;
   saveSnapshot: (trialId: string, name: string) => void;
   loadSnapshot: (snapshotId: string, trialId: string) => void;
@@ -181,6 +183,11 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
       }));
     },
 
+    updateTrialClock: (id, clock) => {
+      set((s) => ({
+        trials: s.trials.map((w) => (w.id === id ? { ...w, clock } : w)),
+      }));
+    },
     setTrialHistory: (id, history) => {
       set((s) => ({
         trials: s.trials.map((w) => (w.id === id ? { ...w, history } : w)),

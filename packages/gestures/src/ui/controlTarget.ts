@@ -6,8 +6,9 @@ export const CONTROL_SELECTOR = [
 
 /**
  * Whether `target` sits in a control of its own somewhere inside `host` — a
- * toggle in a list row. The host's handlers leave such an event to the
- * control, so a row's press, click and keys never swallow its controls'.
+ * toggle in a list row, a button over a canvas. The host's handlers leave such
+ * an event to the control, so a host's press, click and keys never swallow its
+ * controls'.
  */
 export function isInControlWithin(target: EventTarget | null, host: Element): boolean {
   if (!(target instanceof Element)) return false;

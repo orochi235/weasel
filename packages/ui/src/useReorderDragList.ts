@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
-import { startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
-import { isInControlWithin } from './interactiveTarget';
+import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
 
 /** One row in a reorderable list. */
 export interface ReorderItem {

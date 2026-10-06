@@ -112,3 +112,4 @@ export { specificity } from './ui/specificity';
 
 // Click-vs-drag travel
 export { DRAG_THRESHOLD_PX, pastDragThreshold } from './ui/dragThreshold';
+export { CONTROL_SELECTOR, isInControlWithin } from './ui/controlTarget';

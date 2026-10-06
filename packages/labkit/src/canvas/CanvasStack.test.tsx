@@ -131,3 +131,31 @@ describe('<CanvasStack> zoom invariant', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('<CanvasStack ticks>', () => {
+  it('repaints only the timed layers on a tick', async () => {
+    const still: CanvasLayerDescriptor = { id: 'still', visible: true, render: vi.fn() };
+    const moving: CanvasLayerDescriptor = { id: 'moving', visible: true, timed: true, render: vi.fn() };
+    const listeners = new Set<() => void>();
+    const ticks = (fn: () => void) => {
+      listeners.add(fn);
+      return () => { listeners.delete(fn); };
+    };
+    const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
+    render(
+      <CanvasStack
+        layers={[still, moving]}
+        view={{ zoom: 1, pan: { x: 0, y: 0 } }}
+        onViewChange={vi.fn()}
+        ticks={ticks}
+      />,
+    );
+    await nextFrame();
+    vi.mocked(still.render).mockClear();
+    vi.mocked(moving.render).mockClear();
+    for (const fn of listeners) fn();
+    await nextFrame();
+    expect(moving.render).toHaveBeenCalledTimes(1);
+    expect(still.render).not.toHaveBeenCalled();
+  });
+});

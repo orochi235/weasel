@@ -15,6 +15,8 @@ import { useStore } from 'zustand/react';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { labAnnotationTools } from '../annotations/toolMap';
 import { CameraRegistryContext, createCameraRegistry } from '../canvas/cameraRegistry';
+import { ClockRegistryContext, createClockRegistry } from '../clock/clockRegistry';
+import { useClockLoop } from '../clock/useClockLoop';
 import {
   LabAsideRegion,
   LabFooterRegion,
@@ -361,6 +363,8 @@ function LabRuntime({
 
   const trials = useStore(store, (s) => s.trials);
   const [cameras] = useState(createCameraRegistry);
+  const [clocks] = useState(createClockRegistry);
+  useClockLoop(clocks);
   const [focusPick, setFocusPick] = useState<string | null>(null);
   const focusedTrialId = trials.some((t) => t.id === focusPick)
     ? focusPick
@@ -557,6 +561,7 @@ function LabRuntime({
               : w,
           ),
         }));
+        clocks.get(id)?.reset();
       },
       savedSnapshots,
       saveSnapshot: (trialId, name) => {
@@ -577,6 +582,7 @@ function LabRuntime({
       controls,
     };
   }, [
+    clocks,
     instruments,
     trials,
     focusedTrialId,
@@ -623,81 +629,83 @@ function LabRuntime({
         <AnnotationPreloadContext.Provider value={opened.marks}>
           <LabContext.Provider value={contextValue}>
             <CameraRegistryContext.Provider value={cameras}>
-              <ThemeProvider
-                theme={theme}
-                selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
-                className="lk-lab"
-                style={backdropStyle}
-              >
-                <LabShell
-                  title={title ?? 'Labkit'}
-                  mode={modeValue}
-                  {...(pages ? { pages } : {})}
-                  {...(path !== undefined ? { path } : {})}
-                  footer={
-                    hasFooterChrome ? (
-                      <>
-                        {footer}
-                        <LabFooterRegion contributions={labChromeAll} />
-                      </>
-                    ) : (
-                      footer
-                    )
-                  }
-                  header={
-                    <>
-                      <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
-                      {zoom ? <LabZoom /> : null}
-                      {children}
-                      <LabHeaderRegion contributions={labChromeAll} />
-                      <LabThemeSwitcher />
-                    </>
-                  }
+              <ClockRegistryContext.Provider value={clocks}>
+                <ThemeProvider
+                  theme={theme}
+                  selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
+                  className="lk-lab"
+                  style={backdropStyle}
                 >
-                  <PanelHostContext.Provider value={panelHostsRef.current}>
-                    <SurfaceContext.Provider value={surface}>
-                      <SurfaceCanvasContext.Provider value={surfaceCanvases}>
-                        <div className="lk-lab__body" ref={labBodyRef}>
-                          {outerSurface ? null : (
-                            // Two buffers stacked around the trials, both inert —
-                            // each tile takes input from its own box. A tile's marks
-                            // annotate the instrument's DOM from over it; an opaque
-                            // renderer sits under it, so the pane can still hold a
-                            // label. The under one is first so it paints first.
-                            <>
-                              <canvas
-                                className="lk-lab__surface lk-lab__surface--under"
-                                ref={(el) => {
-                                  ownUnderRef.current = el;
-                                  setOwnUnder(el);
-                                }}
-                              />
-                              <canvas
-                                className="lk-lab__surface lk-lab__surface--over"
-                                ref={(el) => {
-                                  ownOverRef.current = el;
-                                  setOwnOver(el);
-                                }}
-                              />
-                            </>
-                          )}
-                          {hasPaneChrome ? (
-                            <LabPanes contributions={labChromeAll}>
-                              <LabPalette contributions={labChromeAll} />
-                              {workspace}
-                            </LabPanes>
-                          ) : (
-                            <>
-                              <LabPalette contributions={labChromeAll} />
-                              {workspace}
-                            </>
-                          )}
-                        </div>
-                      </SurfaceCanvasContext.Provider>
-                    </SurfaceContext.Provider>
-                  </PanelHostContext.Provider>
-                </LabShell>
-              </ThemeProvider>
+                  <LabShell
+                    title={title ?? 'Labkit'}
+                    mode={modeValue}
+                    {...(pages ? { pages } : {})}
+                    {...(path !== undefined ? { path } : {})}
+                    footer={
+                      hasFooterChrome ? (
+                        <>
+                          {footer}
+                          <LabFooterRegion contributions={labChromeAll} />
+                        </>
+                      ) : (
+                        footer
+                      )
+                    }
+                    header={
+                      <>
+                        <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
+                        {zoom ? <LabZoom /> : null}
+                        {children}
+                        <LabHeaderRegion contributions={labChromeAll} />
+                        <LabThemeSwitcher />
+                      </>
+                    }
+                  >
+                    <PanelHostContext.Provider value={panelHostsRef.current}>
+                      <SurfaceContext.Provider value={surface}>
+                        <SurfaceCanvasContext.Provider value={surfaceCanvases}>
+                          <div className="lk-lab__body" ref={labBodyRef}>
+                            {outerSurface ? null : (
+                              // Two buffers stacked around the trials, both inert —
+                              // each tile takes input from its own box. A tile's marks
+                              // annotate the instrument's DOM from over it; an opaque
+                              // renderer sits under it, so the pane can still hold a
+                              // label. The under one is first so it paints first.
+                              <>
+                                <canvas
+                                  className="lk-lab__surface lk-lab__surface--under"
+                                  ref={(el) => {
+                                    ownUnderRef.current = el;
+                                    setOwnUnder(el);
+                                  }}
+                                />
+                                <canvas
+                                  className="lk-lab__surface lk-lab__surface--over"
+                                  ref={(el) => {
+                                    ownOverRef.current = el;
+                                    setOwnOver(el);
+                                  }}
+                                />
+                              </>
+                            )}
+                            {hasPaneChrome ? (
+                              <LabPanes contributions={labChromeAll}>
+                                <LabPalette contributions={labChromeAll} />
+                                {workspace}
+                              </LabPanes>
+                            ) : (
+                              <>
+                                <LabPalette contributions={labChromeAll} />
+                                {workspace}
+                              </>
+                            )}
+                          </div>
+                        </SurfaceCanvasContext.Provider>
+                      </SurfaceContext.Provider>
+                    </PanelHostContext.Provider>
+                  </LabShell>
+                </ThemeProvider>
+              </ClockRegistryContext.Provider>
             </CameraRegistryContext.Provider>
           </LabContext.Provider>
         </AnnotationPreloadContext.Provider>

@@ -1,0 +1,14 @@
+.ckd-clock-controls {
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-start: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.ckd-clock-readout {
+  min-width: 7ch;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

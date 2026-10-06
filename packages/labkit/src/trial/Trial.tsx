@@ -27,6 +27,8 @@ import type { CameraView } from '../canvas/CameraInput';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
 import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
+import { ClockRegistryContext, TrialClockContext } from '../clock/clockRegistry';
+import { createTrialClock } from '../clock/trialClock';
 import { fitStage, Stage } from '../canvas/Stage';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera, type ViewportSize } from '../canvas/worldSpec';
@@ -165,6 +167,7 @@ function TrialRuntime({
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
   const setTrialHistory = useStore(store, (s) => s.setTrialHistory);
+  const updateTrialClock = useStore(store, (s) => s.updateTrialClock);
   const updateTrialAnnotations = useStore(store, (s) => s.updateTrialAnnotations);
   const labToolId = useStore(store, (s) => s.activeToolId);
   const setLabTool = useStore(store, (s) => s.setLabTool);
@@ -195,6 +198,28 @@ function TrialRuntime({
         .filter((l) => layerVisibility[l.id] !== false)
         .map((l) => l.id),
     [instrument.canvas, layerVisibility],
+  );
+
+  // Read once: `record.clock` is where a reopened trial's clock stood, and the
+  // clock is the truth from then on. A swap mounts a new trial under a new id.
+  const [clockHandle] = useState(() =>
+    instrument.clock ? createTrialClock(instrument.clock, record.clock) : null,
+  );
+  const clocks = useContext(ClockRegistryContext);
+  useEffect(() => {
+    if (!clockHandle || !clocks) return;
+    return clocks.register(record.id, clockHandle);
+  }, [clocks, clockHandle, record.id]);
+  useEffect(() => {
+    if (!clockHandle) return;
+    const { clock } = clockHandle;
+    return clock.subscribe(() =>
+      updateTrialClock(record.id, { elapsed: clock.elapsed, rate: clock.rate }),
+    );
+  }, [clockHandle, record.id, updateTrialClock]);
+  const ticks = useMemo(
+    () => (clockHandle ? (fn: () => void) => clockHandle.onFrame(() => fn()) : undefined),
+    [clockHandle],
   );
 
   const undoCap = instrument.undo;
@@ -392,6 +417,7 @@ function TrialRuntime({
       activeToolId: resolvedToolId,
       visibleLayers,
       pointer,
+      ...(clockHandle ? { clock: clockHandle.clock } : {}),
     },
     emit: (event) => {
       snapshotIfNeeded(event);
@@ -431,17 +457,26 @@ function TrialRuntime({
     const ordered = layerOrder
       ? [...baseLayers].sort((a, b) => layerOrder.indexOf(a.id) - layerOrder.indexOf(b.id))
       : baseLayers;
+    const clock = clockHandle?.clock;
     return ordered.map((layer) => ({
       id: layer.id,
       visible: layerVisibility[layer.id] !== false,
+      timed: layer.timed === true,
       render: (ctx, view, frame) => {
         // Camera applied here, so a layer draws in world coordinates. `zoom`
         // stays in the args for line widths, which must not scale with it.
         applyCamera(ctx, view, frame);
-        layer.draw(ctx, { state: record.state, config, zoom: view.zoom });
+        layer.draw(ctx, {
+          state: record.state,
+          config,
+          zoom: view.zoom,
+          elapsed: clock?.elapsed ?? 0,
+          pass: clock?.pass ?? 0,
+          phase: clock?.phase ?? 0,
+        });
       },
     }));
-  }, [instrument.canvas, record.state, config, layerVisibility, layerOrder]);
+  }, [instrument.canvas, record.state, config, layerVisibility, layerOrder, clockHandle]);
 
   const layerDescriptors: LayerDescriptor[] = useMemo(() => {
     if (!instrument.layers) return [];
@@ -526,6 +561,7 @@ function TrialRuntime({
           onResize={placeView}
           minZoom={instrument.canvas.minZoom}
           maxZoom={instrument.canvas.maxZoom}
+          ticks={ticks}
         >
           {instrument.render(renderCtx)}
         </CanvasStack>
@@ -623,27 +659,29 @@ function TrialRuntime({
 
   return (
     <TrialIdProvider trialId={record.id}>
-      <AnnotationsContext.Provider value={annotationsCap ? provided : null}>
-        <CameraWheelContext.Provider value={wheelSlot}>
-          <TrialChrome
-            job={jobCap ? job : undefined}
-            loupe={loupeBindings}
-            trialId={record.id}
-            record={record}
-            instrument={instrument}
-            isLastTrial={isLast}
-            undoBindings={undoBindings}
-            trialChrome={extraChrome}
-            chrome={chrome}
-            suppress={suppress}
-            activeToolId={resolvedToolId}
-            setActiveTool={setActiveTool}
-          >
-            {scopedBody}
-            {annotationOverlays}
-          </TrialChrome>
-        </CameraWheelContext.Provider>
-      </AnnotationsContext.Provider>
+      <TrialClockContext.Provider value={clockHandle}>
+        <AnnotationsContext.Provider value={annotationsCap ? provided : null}>
+          <CameraWheelContext.Provider value={wheelSlot}>
+            <TrialChrome
+              job={jobCap ? job : undefined}
+              loupe={loupeBindings}
+              trialId={record.id}
+              record={record}
+              instrument={instrument}
+              isLastTrial={isLast}
+              undoBindings={undoBindings}
+              trialChrome={extraChrome}
+              chrome={chrome}
+              suppress={suppress}
+              activeToolId={resolvedToolId}
+              setActiveTool={setActiveTool}
+            >
+              {scopedBody}
+              {annotationOverlays}
+            </TrialChrome>
+          </CameraWheelContext.Provider>
+        </AnnotationsContext.Provider>
+      </TrialClockContext.Provider>
     </TrialIdProvider>
   );
 }

@@ -71,6 +71,7 @@ A map of the library so agents can find what they need quickly.
 | `<LayerList>` (reorder, visibility, nesting, cards) | `@weasel-js/ui` (re-exported by labkit) |
 | Trial state undo (a weasel-history `History` on `TrialRecord.history`, entries from `stateOp`) | `src/trial/Trial.tsx`, `src/undo/stateOp.ts` |
 | Synchronous event bus | `src/undo/eventBus.ts` |
+| Trial clock, its registry, the lab's frame loop, `useTrialClock` / `useClockFrame` | `src/clock/` |
 | `<Palette>` (drag source) | `src/dragdrop/Palette.tsx` |
 | `<DragGhost>` (portal-rendered floater) | `src/dragdrop/DragGhost.tsx` |
 | `useDragDrop` + `<DragOverlay>` (drop pipeline) | `src/dragdrop/DragDropRuntime.tsx` |
@@ -116,8 +117,40 @@ An instrument may declare any of these on its `defineInstrument({...})` spec:
 | `tools` | Instrument-owned tools | Adds a palette region and a trial tool slot |
 | `job` | Async work with progress | Starts on mount, aborts on unmount and key change; renders progress and cancel into the chrome |
 | `undo` | Undo/redo bindings | Wires toolbar buttons; snapshots `state` on `snapshotOn` events |
+| `clock` | Playback time | Gives the trial a `TrialClock` on `ctx.trial.clock`; `timed` layers repaint as it moves |
 
 Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all three behaviors automatically. See `src/trial/Trial.tsx` for the wiring.
+
+## The trial clock
+
+A trial whose instrument declares `clock` owns its playback time: a position,
+`elapsed` (ms, counted across passes), moved by a signed `rate` — 0 pauses, a
+negative rate plays backward. `pass` and `phase` (0–1 through the pass) derive
+from it; `elapsed` itself never wraps. It opens paused (`rate: 0`) and plays
+once (`loop: false`) unless declared otherwise.
+
+- **Read it** three ways: a canvas layer marked `timed` gets `elapsed`, `pass`
+  and `phase` in its draw args and repaints every frame the clock moves; an
+  imperative renderer, or text that changes per frame, uses `useClockFrame`;
+  anything that controls time uses `useTrialClock()`, which re-renders on rate,
+  seek and loop changes only.
+- **Reach it from chrome** with `useTrialClock(trialId?)`: that trial's, else
+  the one rendered inside, else the lab's focused trial's.
+- **One frame loop per lab** (`useClockLoop`, behind `useVisibleRaf`) syncs
+  every clock that is not inert and sleeps when all are. A clock woken from
+  inert only records the time on its first sync, so a pause never arrives as
+  one long step.
+- **`seekable: false`** is for an instrument whose state is built up by
+  running: `seek` throws, and so does a negative rate. Reset still returns it
+  to 0. Making such an instrument seekable is blits' job, from a history the
+  client supplies — not a labkit checkpoint-and-replay. Scrubbing never
+  discards a recorded future.
+- **Named after blits** (`elapsed`, `rate`, `ramp`, `seek`, `sync`, `rebase`,
+  `inert`, `onWake`), which is meant to replace weasel's animation engine: in
+  its terms a trial clock is an owner whose voices play under it. Keep new
+  members in that vocabulary.
+- **Persistence**: `TrialRecord.clock` holds `{ elapsed, rate }`, written on
+  rate, seek and loop changes, never per frame.
 
 ## When to use what
 

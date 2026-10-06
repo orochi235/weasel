@@ -1,4 +1,5 @@
 import type { PointerContextValue } from '@weasel-js/core';
+import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { ReactNode } from 'react';
 import type { AnnotationsCapability } from '../annotations/types';
 import type { ViewportSize, WorldSpec } from '../canvas/worldSpec';
@@ -41,6 +42,8 @@ export interface RenderContext<TS = unknown, TC = unknown> {
      * reading it works over either view.
      */
     pointer: PointerContextValue;
+    /** The trial's clock, present when the instrument declares `clock`. */
+    clock?: TrialClock;
   };
   emit: (event: string) => void;
   /** Present only when the instrument declares a `job`. */
@@ -54,7 +57,21 @@ export interface RenderContext<TS = unknown, TC = unknown> {
  *  set `ctx.lineWidth = 1 / zoom` to keep a hairline hairline. */
 export interface CanvasLayer<TS = unknown, TC = unknown> {
   id: string;
-  draw: (ctx: CanvasRenderingContext2D, args: { state: TS; config: TC; zoom: number }) => void;
+  /** Redraw every frame the trial's clock moves, not only when state, config
+   *  or the view change. For a layer that reads `elapsed`, `pass` or `phase`. */
+  timed?: boolean;
+  draw: (
+    ctx: CanvasRenderingContext2D,
+    args: {
+      state: TS;
+      config: TC;
+      zoom: number;
+      /** The trial clock's, as `TrialClock` has them; 0 with no clock. */
+      elapsed: number;
+      pass: number;
+      phase: number;
+    },
+  ) => void;
 }
 
 /** Declares that an instrument draws to a canvas: its layers, and where the
@@ -183,6 +200,9 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   annotations?: AnnotationsCapability<TS, TC>;
   /** Chrome this instrument contributes beyond what its capabilities imply. */
   chrome?: TrialContribution[];
+  /** Gives the trial a clock: playback time that layers, renderers and chrome
+   *  read and drive. */
+  clock?: ClockCapability;
   /** Work too slow to do during a render. The runtime starts it, aborts it on
    *  unmount and on a `key` change, and renders progress into the trial. */
   job?: JobCapability<TS, TC, TItem>;
