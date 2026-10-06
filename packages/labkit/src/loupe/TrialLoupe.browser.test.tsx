@@ -27,9 +27,12 @@ const BANDS: Array<[number, number, number]> = [
  *  capture — the shape of astv's 3D stage. */
 function SourceScene({
   enabled,
+  lab,
   onColorChange,
 }: {
   enabled?: boolean;
+  /** Mount inside `.lk-root`, under the lab's own resets. */
+  lab?: boolean;
   onColorChange?: (hex: string) => void;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
@@ -50,7 +53,7 @@ function SourceScene({
     setGl(ctx);
   }, []);
   return (
-    <div style={{ width: CSS_W, height: CSS_H }}>
+    <div className={lab ? 'lk-root' : undefined} style={{ width: CSS_W, height: CSS_H }}>
       <TrialLoupe
         enabled={enabled}
         source={gl ?? undefined}
@@ -70,9 +73,9 @@ function SourceScene({
 }
 
 /** DOM content with a `render` lens, which draws it again magnified. */
-function RenderScene({ enabled }: { enabled?: boolean }) {
+function RenderScene({ enabled, lab }: { enabled?: boolean; lab?: boolean }) {
   return (
-    <div style={{ width: CSS_W, height: CSS_H }}>
+    <div className={lab ? 'lk-root' : undefined} style={{ width: CSS_W, height: CSS_H }}>
       <TrialLoupe
         enabled={enabled}
         factor={4}
@@ -113,14 +116,19 @@ function peek(down: boolean): void {
   });
 }
 
-/** Where the lens is centered, in the host's CSS px, read from layout: its
- *  box's corner plus half the diameter, since the border sits outside it. */
+/** The middle of the lens's inner box — inside its ring, where the painters
+ *  put the aimed point — in the host's CSS px, read from layout and rounded to
+ *  the nearest half pixel. */
 function lensCenter(container: HTMLElement): { x: number; y: number } | null {
   const lens = container.querySelector<HTMLElement>('.lk-loupe');
   if (!lens) return null;
   const l = lens.getBoundingClientRect();
   const h = host(container).getBoundingClientRect();
-  return { x: l.left + DIAMETER / 2 - h.left, y: l.top + DIAMETER / 2 - h.top };
+  const half = (n: number): number => Math.round(n * 2) / 2;
+  return {
+    x: half(l.left + lens.clientLeft + lens.clientWidth / 2 - h.left),
+    y: half(l.top + lens.clientTop + lens.clientHeight / 2 - h.top),
+  };
 }
 
 /** The pixel at the lens's own center. */
@@ -175,7 +183,46 @@ test('a render lens peeked over a still pointer opens under it', async () => {
   move(container, 70, 20);
   peek(true);
   await waitFor(() => expect(lensCenter(container)).toEqual({ x: 70, y: 20 }));
-  // The stage is slid so the aimed point lands mid-lens.
-  const stage = container.querySelector<HTMLElement>('.lk-loupe__stage');
-  expect(stage?.style.transform).toBe(`translate(${DIAMETER / 2 - 70}px, ${DIAMETER / 2 - 20}px)`);
 });
+
+// Where the magnified point lands on the page, against the pointer. The ring
+// is drawn outside the box the painters fill, so a lens positioned by its
+// outer edge puts the aim a border-width off; and under `.lk-root`, whose
+// resets make every box `border-box`, the ring also eats into the painters'
+// box. Both contexts, since they fail differently.
+for (const lab of [false, true]) {
+  const where = lab ? 'inside a lab' : 'outside a lab';
+
+  test(`a source lens's magnified point sits under the pointer, ${where}`, async () => {
+    const { container } = render(<SourceScene enabled lab={lab} />);
+    await frames(2);
+    move(container, 62, 25);
+    await waitFor(() => expect(container.querySelector('.lk-loupe__canvas')).not.toBeNull());
+    const canvas = container.querySelector<HTMLElement>('.lk-loupe__canvas');
+    const c = canvas?.getBoundingClientRect() as DOMRect;
+    const h = host(container).getBoundingClientRect();
+    // The canvas is drawn for exactly the diameter, aim in its middle.
+    expect(c.width).toBeCloseTo(DIAMETER, 1);
+    expect(c.height).toBeCloseTo(DIAMETER, 1);
+    expect(Math.abs(c.left + c.width / 2 - (h.left + 62))).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(c.top + c.height / 2 - (h.top + 25))).toBeLessThanOrEqual(0.5);
+  });
+
+  test(`a render lens's magnified point sits under the pointer, ${where}`, async () => {
+    const { container } = render(<RenderScene enabled lab={lab} />);
+    await frames(2);
+    move(container, 70, 20);
+    await waitFor(() => expect(container.querySelector('.lk-loupe__stage')).not.toBeNull());
+    const lens = container.querySelector<HTMLElement>('.lk-loupe') as HTMLElement;
+    const stage = container.querySelector<HTMLElement>('.lk-loupe__stage') as HTMLElement;
+    const s = stage.getBoundingClientRect();
+    const h = host(container).getBoundingClientRect();
+    // The stage reproduces the host and zooms about the aim, so the aim sits
+    // at its own offset into the stage: under the pointer when the stage
+    // lines up with the host.
+    expect(lens.clientWidth).toBe(DIAMETER);
+    expect(lens.clientHeight).toBe(DIAMETER);
+    expect(Math.abs(s.left - h.left)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(s.top - h.top)).toBeLessThanOrEqual(0.5);
+  });
+}
