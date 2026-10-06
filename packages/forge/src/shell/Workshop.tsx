@@ -17,6 +17,7 @@ import { type GlobalDeclarations, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
 import type { StoryChanges } from './storyChanges';
 import { StoryGlobalsContext } from './StoryGlobalsContext';
+import { RouteKnobs } from './RouteKnobs';
 import { StoryTree } from './tree/StoryTree';
 import { crossesInPlace, readRoute, readRouteEntry, useRoute } from './useRoute';
 import { useStoryRegistry } from './useStoryRegistry';
@@ -184,6 +185,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
               {...(config?.path !== undefined ? { path: config.path } : {})}
             >
               <RouteOpener index={entries} />
+              <RouteKnobs instruments={registry.instruments} isReady={registry.isReady} />
               <StoryInfoDialog
                 index={index}
                 isReady={registry.isReady}
