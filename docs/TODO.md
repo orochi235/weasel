@@ -937,48 +937,40 @@ one dead `const` and four stale disable directives.
 - **(P2) What still breaks the batch, now that a rect clip does not.** A group
   clipped by an axis-aligned rect no longer flushes: `batchClip.ts` cuts staged
   quads to the rect on the CPU. Measured on teitou (Apple M5 Max, ANGLE Metal),
-  2026-10-04, one frame per task; the result files are in
-  `tests/perf/recorded/render-cost-2026-10-04/`, `before/` on main's renderer
-  and `after/` on the `clip-flush` branch at `f674f79c7`.
+  2026-10-06, one frame a task, each sample ending in a one-pixel `readPixels`
+  so the GPU's own time counts; the result files are in
+  `tests/perf/recorded/render-cost-2026-10-06/`.
 
-  | at 60 Hz, `frame-budget.spec.ts` | before | after |
+  | at 60 Hz, `frame-budget.spec.ts` | before | now |
   |---|---:|---:|
-  | clipped groups, depth 1 | 3,424 | 194,560 |
-  | clipped groups, depth 4 | 2,080 |  65,536 |
+  | clipped groups, depth 1 | 3,424 | 83,968 |
+  | clipped groups, depth 4 | 2,080 | 42,496 |
 
-  No other row moved by more than two runs of the same code differ, which on
-  teitou is up to 30%. What is left:
+  The before column is the renderer ahead of the rect-clip change, measured
+  2026-10-04 through `gl.finish()`, which does not wait for the GPU
+  (`tests/perf/README.md`, "Timing a frame"); its files are in
+  `tests/perf/recorded/render-cost-2026-10-04/before/`. Re-measuring it means
+  that renderer under today's timing, so the size of the gain is not settled.
+  What is left:
 
-  - **A run-breaker costs about 1.2–1.7 us a flush**, depending on the run's
-    speed state (`flush-anatomy.spec.ts`). Bind and draw are 0.9–1.1 of it; no
-    other call in `flushBatch` costs more than 0.15. So what remains is the
-    draw count: a color matrix, synthetic bold, and an eighth texture all still
-    break the run.
+  - **A run-breaker costs about 21 us a flush** (`flush-anatomy.spec.ts`),
+    16 of it bind and draw; no other call in `flushBatch` moves it by more than
+    its noise, about 1.2 us. So what remains is the draw count: a color matrix,
+    synthetic bold, and an eighth texture all still break the run.
   - **A clip only the stencil can express still flushes on entry and exit**:
     a polygon, a rect turned off the axes, and a rect clip with a slanted item
     crossing it (`DrawBatch.clipQuad` says why a slanted edge cannot be cut).
-    The stencil itself costs about 0.6–1.3 us a push and pop.
+    The stencil itself costs about 4.9 us a push and pop, 7.9 at 8 leaves
+    (`clip-cost.spec.ts`).
   - **Caching `u_synthBold`, `u_samplers` and `u_fieldScale` was tried and
-    reverted.** It saved about 0.1 us a flush on color-matrix breaks and made
-    a frame of 20,000 stroked rects 30% slower, measured with both renderers
-    interleaved in one page. The cause was not found.
-  - **Text no longer closes the dearest batch.** `transition-matrix.spec.ts`
-    puts every boundary at 0.7 us or less, text's included; the 8–18 us of
-    the 2026-10-03 run was the timing method, below.
-
-- **(P2) The 2026-10-04 perf figures leave out the GPU's own time.**
-  `lib/frameTiming.ts` ended each sample in `gl.finish()`, which does not wait
-  for the GPU: on teitou, 2026-10-05, `fill-rate`'s 432M fragments timed
-  0.03 ms through it and 3.6–9 ms through a one-pixel `readPixels`. A sample
-  now ends in that read, less `leastFrame` timed beside it (`tests/perf/README.md`,
-  "Timing a frame"). Every figure taken through `finish` is suspect until
-  re-run — the `frame-budget` table and run-breaker costs in the entry above,
-  `transition-matrix`'s boundaries, and what `tests/perf/README.md` quotes from
-  `frame-budget`, `draw-loop`, `clip-cost` and `flush-anatomy`. The one
-  re-measured so far moved a lot: a quad that ends its run costs about 20 us
-  (`image-quad`, `renderer/unmerged`, 20,000 a frame) against the 1.2–1.7 us a
-  flush recorded above. Re-run those five specs on teitou and correct the
-  figures.
+    reverted**, measured through `finish`: it saved about 0.1 us a flush on
+    color-matrix breaks and made a frame of 20,000 stroked rects 30% slower,
+    with both renderers interleaved in one page. The cause was not found.
+  - **Changing kind costs 1.35–4.9 us a boundary** (`transition-matrix.spec.ts`):
+    text and gradient the least, shader (4.9) and vcolor (4.4) the most. Pairs
+    whose kinds share a batch cost nothing extra; the rest add 8–16 us, with a
+    run-to-run spread up to 9.7 us, so the spec ranks pairs but does not price
+    one.
 
 - **(P2) A ring of buffers measures slower than rewriting one.**
   `SOLID_RING_SIZE` exists so a flush never writes a buffer a draw is still

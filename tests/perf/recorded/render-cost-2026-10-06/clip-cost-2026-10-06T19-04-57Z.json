@@ -2,10 +2,10 @@
   "schema": "weasel-perf-result/1",
   "benchmark": "clip-cost",
   "git": {
-    "sha": "8a57e2b20652f8c12a70c7f467f0368e366c3b97",
+    "sha": "2adb12cc13b8a5c2f7451b082ba22bdac0183a34",
     "dirty": true
   },
-  "timestamp": "2026-10-05T02:58:52.609Z",
+  "timestamp": "2026-10-06T19:04:57.271Z",
   "machine": {
     "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
     "softwareGl": false,
@@ -15,9 +15,9 @@
     "os": "Darwin 27.0.0 arm64",
     "node": "v26.10.0",
     "loadavg": [
-      26.07,
-      13.06,
-      7.72
+      7.05,
+      3.19,
+      2.11
     ]
   },
   "params": {
@@ -36,13 +36,13 @@
       },
       "metrics": {
         "perFrame": {
-          "value": 0.055,
+          "value": 0.095,
           "unit": "ms",
-          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            0.05,
-            0.055,
-            0.055
+            0.095,
+            0.08,
+            0.11
           ]
         }
       }
@@ -54,13 +54,13 @@
       },
       "metrics": {
         "perFrame": {
-          "value": 0.075,
+          "value": 0.13,
           "unit": "ms",
-          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            0.07,
-            0.075,
-            0.075
+            0.16,
+            0.13,
+            0.115
           ]
         }
       }
@@ -72,13 +72,13 @@
       },
       "metrics": {
         "perFrame": {
-          "value": 0.6,
+          "value": 13.99,
           "unit": "ms",
-          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            0.585,
-            0.6,
-            0.605
+            12.825,
+            13.99,
+            16.625
           ]
         }
       }
@@ -90,13 +90,13 @@
       },
       "metrics": {
         "perFrame": {
-          "value": 0.065,
+          "value": 0.035,
           "unit": "ms",
-          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            0.075,
-            0.065,
-            0.06
+            0.25,
+            0.035,
+            -0.035
           ]
         }
       }
@@ -108,13 +108,13 @@
       },
       "metrics": {
         "perFrame": {
-          "value": 0.355,
+          "value": 1.4,
           "unit": "ms",
-          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            0.355,
-            0.35,
-            0.36
+            1.305,
+            1.4,
+            1.53
           ]
         }
       }
@@ -126,13 +126,13 @@
       },
       "metrics": {
         "perFrame": {
-          "value": 0.655,
+          "value": 3.89,
           "unit": "ms",
-          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            0.65,
-            0.655,
-            0.67
+            4.06,
+            3.89,
+            3.68
           ]
         }
       }
@@ -144,13 +144,13 @@
       },
       "metrics": {
         "perFrame": {
-          "value": 0.67,
+          "value": 1.67,
           "unit": "ms",
-          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            0.67,
-            0.66,
-            0.68
+            1.46,
+            1.67,
+            1.77
           ]
         }
       }
@@ -162,13 +162,13 @@
       },
       "metrics": {
         "perFrame": {
-          "value": 0.395,
+          "value": 2.035,
           "unit": "ms",
-          "stat": "median of 3 runs; each the median of 40 single-frame samples, one frame a task (lib/frameTiming.ts)",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
           "samples": [
-            0.395,
-            0.395,
-            0.4
+            2.16,
+            1.765,
+            2.035
           ]
         }
       }
@@ -177,7 +177,7 @@
       "id": "stencil push+pop",
       "metrics": {
         "perClip": {
-          "value": 0.5957031250000001,
+          "value": 4.86328125,
           "unit": "us",
           "stat": "median across 3 runs of the per-run delta, pat-clipped - pat-plain"
         }
@@ -187,7 +187,7 @@
       "id": "clip entry",
       "metrics": {
         "perClip": {
-          "value": 0.03906249999999999,
+          "value": 0.09765625,
           "unit": "us",
           "stat": "median across 3 runs of the per-run delta, rect-clipped - rect-plain"
         }
@@ -197,7 +197,7 @@
       "id": "clip entry: batch break",
       "metrics": {
         "perClip": {
-          "value": -0.5566406250000001,
+          "value": -4.765625,
           "unit": "us",
           "stat": "clip entry - stencil push+pop"
         }
@@ -207,7 +207,7 @@
       "id": "solid-batch flush",
       "metrics": {
         "perFlush": {
-          "value": 0.44921874999999967,
+          "value": 26.69921875,
           "unit": "us",
           "stat": "median across 3 runs of the per-run delta, rect-cmbreak - pat-cmbreak, net of plain"
         }
@@ -217,7 +217,7 @@
       "id": "clip entry at 8 leaves",
       "metrics": {
         "perClip": {
-          "value": 0.15625000000000003,
+          "value": -0.703125,
           "unit": "us",
           "stat": "median across 3 runs of the per-run delta, rect-clipped-k8 - rect-plain"
         }
@@ -227,7 +227,7 @@
       "id": "stencil at 8 leaves",
       "metrics": {
         "perClip": {
-          "value": 0.6250000000000006,
+          "value": 7.890625000000002,
           "unit": "us",
           "stat": "median across 3 runs of the per-run delta, pat-clipped-k8 - pat-plain"
         }

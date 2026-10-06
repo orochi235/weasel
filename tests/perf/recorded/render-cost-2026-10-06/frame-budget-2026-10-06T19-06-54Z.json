@@ -2,10 +2,10 @@
   "schema": "weasel-perf-result/1",
   "benchmark": "frame-budget",
   "git": {
-    "sha": "8a57e2b20652f8c12a70c7f467f0368e366c3b97",
+    "sha": "2adb12cc13b8a5c2f7451b082ba22bdac0183a34",
     "dirty": true
   },
-  "timestamp": "2026-10-05T03:00:18.141Z",
+  "timestamp": "2026-10-06T19:06:54.613Z",
   "machine": {
     "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
     "softwareGl": false,
@@ -15,9 +15,9 @@
     "os": "Darwin 27.0.0 arm64",
     "node": "v26.10.0",
     "loadavg": [
-      9.17,
-      10.64,
-      7.29
+      3.88,
+      3.26,
+      2.27
     ]
   },
   "params": {
@@ -60,13 +60,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 381072,
+          "value": 126976,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            410804,
-            381072,
-            381072
+            126976,
+            163840,
+            93184
           ]
         }
       }
@@ -81,13 +81,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 188416,
+          "value": 29440,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            206848,
-            39424,
-            188416
+            24832,
+            44032,
+            29440
           ]
         }
       }
@@ -102,13 +102,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 27904,
+          "value": 13696,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            27904,
-            15616,
-            27904
+            13696,
+            16384,
+            12544
           ]
         }
       }
@@ -123,13 +123,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 16384,
+          "value": 5824,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            16384,
-            9088,
-            16384
+            5824,
+            5248,
+            6016
           ]
         }
       }
@@ -144,13 +144,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 188416,
+          "value": 54784,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            194560,
-            188416,
-            188416
+            51712,
+            90112,
+            54784
           ]
         }
       }
@@ -165,13 +165,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 93184,
+          "value": 14848,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            96256,
-            93184,
-            93184
+            14848,
+            14464,
+            15616
           ]
         }
       }
@@ -186,13 +186,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 18688,
+          "value": 9472,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            18688,
-            19456,
-            18688
+            9088,
+            9472,
+            11008
           ]
         }
       }
@@ -207,13 +207,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 9472,
+          "value": 3904,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            9472,
-            9472,
-            9088
+            4480,
+            3904,
+            3520
           ]
         }
       }
@@ -228,13 +228,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 410804,
+          "value": 87040,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            440536,
-            410804,
-            410804
+            87040,
+            145408,
+            80896
           ]
         }
       }
@@ -249,13 +249,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 200704,
+          "value": 26368,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            219136,
-            200704,
-            200704
+            26368,
+            25600,
+            29440
           ]
         }
       }
@@ -270,13 +270,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 50176,
+          "value": 13696,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            50176,
-            50176,
-            50176
+            22528,
+            12928,
+            13696
           ]
         }
       }
@@ -291,13 +291,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 24832,
+          "value": 6784,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            25600,
-            24832,
-            24832
+            7360,
+            6784,
+            6784
           ]
         }
       }
@@ -312,13 +312,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 194560,
+          "value": 83968,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            169984,
-            200704,
-            194560
+            83968,
+            77824,
+            114688
           ]
         }
       }
@@ -333,13 +333,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 96256,
+          "value": 30976,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            83968,
-            96256,
-            96256
+            30976,
+            30976,
+            29440
           ]
         }
       }
@@ -354,13 +354,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 65536,
+          "value": 42496,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            71680,
-            65536,
-            65536
+            44032,
+            42496,
+            30208
           ]
         }
       }
@@ -375,13 +375,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 33280,
+          "value": 18688,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            34816,
-            33280,
-            33280
+            20992,
+            14848,
+            18688
           ]
         }
       }
@@ -396,13 +396,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 42496,
+          "value": 20224,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            42496,
-            40960,
-            42496
+            15616,
+            20224,
+            20224
           ]
         }
       }
@@ -417,13 +417,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 20224,
+          "value": 11008,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            20224,
-            20224,
-            20992
+            11008,
+            9088,
+            11008
           ]
         }
       }
@@ -438,13 +438,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 34816,
+          "value": 11392,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            34816,
-            34816,
-            34816
+            12160,
+            11392,
+            10624
           ]
         }
       }
@@ -459,13 +459,13 @@
       },
       "metrics": {
         "capacity": {
-          "value": 21760,
+          "value": 5632,
           "unit": "count",
           "stat": "median of 3 independent searches",
           "samples": [
-            15616,
-            24064,
-            21760
+            3904,
+            5632,
+            5824
           ]
         }
       }
