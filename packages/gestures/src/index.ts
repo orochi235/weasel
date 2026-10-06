@@ -87,8 +87,8 @@ export type {
   DoubleClickEvent,
   ContextMenuEvent,
   LongPressEvent,
-  MultitouchEvent,
-  MultitouchTapEvent,
+  MultiTouchEvent,
+  MultiTouchTapEvent,
   DropEvent,
   PasteEvent,
 } from './ui/inputEvent';
