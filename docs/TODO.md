@@ -634,6 +634,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
   action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
+- **(P3) A captured loupe source reports color one aim late.** With a WebGL
+  `source` that needs `capture()`, the lens takes the source only once it is up,
+  and the source has no current frame until the drawing code's next capture — so
+  the first aim's `onColorChange` reads nothing, and a color under a still aim
+  never updates as the canvas animates. The pixels in the lens are right; only
+  the reported color lags. The model's `LoupeSurface.subscribeFrame` is the
+  existing hook for "sample on the next landed frame", but `useLoupe` builds its
+  surface once and `subscribeFrame` there makes every aim wait for a frame, which
+  a canvas that draws on demand may never deliver. Wants a resample-on-frame
+  that does not also defer the immediate sample
+  (`packages/labkit/src/loupe/TrialLoupe.tsx`, `packages/loupe/src/model.ts`).
+
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
   but dragging a palette item onto a canvas is `useDragDrop`

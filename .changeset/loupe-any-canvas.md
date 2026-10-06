@@ -1,0 +1,8 @@
+---
+'@weasel-js/loupe': patch
+'@weasel-js/labkit': patch
+---
+
+A labkit loupe can now enlarge the pixels of any canvas, not only labkit's own 2D layers. `<TrialLoupe source={…}>` takes a canvas, a context on one (2D, WebGL or WebGL2), a function returning one once it exists, or a `CanvasSource`. With a `source` and no `render`, the lens is a pixel lens over that canvas, and `onColorChange` reads its color. With `render` as well, `render` draws the lens and the source answers `onColorChange`. The canvas's backing store is mapped to the lens through its laid-out box, so a canvas drawn at any device-pixel ratio, or stretched, lines up.
+
+A WebGL canvas made without `preserveDrawingBuffer` is cleared once the browser composites it, so a lens reading it on its own frame sees nothing. `createCanvasSource(gl)`, new in `@weasel-js/loupe` and re-exported from `@weasel-js/labkit/loupe`, handles this: the drawing code calls `source.capture()` right after each draw, and the source copies the frame while it still exists — only while a lens is up, so it costs nothing otherwise. A canvas that draws on demand passes `requestRedraw`, which the source calls when a lens comes up with no current frame. A source made from a WebGL context knows it needs capturing; if it is read for about two seconds with no capture, it logs one warning naming the fix. `SourceLoupe`, `drawSourceLens`, `sampleSource`, `sourceBoxIn` and `resolveLoupeSource` are the pieces `<TrialLoupe>` builds this from.

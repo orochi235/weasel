@@ -2,6 +2,7 @@ import type { LoupeMode } from '@weasel-js/loupe';
 import type { ReactNode } from 'react';
 import type { ViewportSize } from '../canvas/worldSpec';
 import type { ViewTransform } from '../instrument/types';
+import type { LoupeSource } from './sourceLens';
 
 /** What a DOM loupe's `render` is handed: the camera to draw the content
  *  through again. */
@@ -23,10 +24,25 @@ export interface LoupeRenderArgs {
  *
  * With no `render`, the lens re-draws the canvas stack's layers through a
  * zoomed camera, so it stays sharp at any factor. Over DOM content, `render`
- * draws it instead: given a camera, draw me again.
+ * draws it instead: given a camera, draw me again. With a `source`, it
+ * enlarges the pixels of that canvas — any canvas, labkit's or not.
  */
 export interface LoupeOptions {
   render?: (args: LoupeRenderArgs) => ReactNode;
+  /**
+   * A canvas to read pixels from instead of the canvas stack: a
+   * `CanvasSource` from `createCanvasSource`, a canvas, a context on one, or
+   * a function returning one once it exists. 2D, WebGL and WebGL2 all work.
+   * Without `render` the lens enlarges its pixels, so the mode is `'pixel'`;
+   * with `render`, `render` draws the lens and the source answers
+   * `onColorChange`.
+   *
+   * A WebGL canvas made without `preserveDrawingBuffer` is blank to anyone
+   * reading it after the frame that drew it. Make its source with
+   * `createCanvasSource(gl)` and call `source.capture()` right after each
+   * draw; a canvas that draws on demand also passes `requestRedraw`.
+   */
+  source?: LoupeSource;
   /** Opening magnification, clamped to the bounds below. Default 6. */
   factor?: number;
   /** What the wheel clamps to. Defaults 2 and 32. */
@@ -34,7 +50,7 @@ export interface LoupeOptions {
   maxFactor?: number;
   /** `'vector'` (default) re-renders the content magnified; `'pixel'` blows up
    *  the pixels the instrument presented. A `render` loupe is always vector —
-   *  DOM has no framebuffer to enlarge. */
+   *  DOM has no framebuffer to enlarge — and a `source` loupe always pixel. */
   mode?: LoupeMode;
   /** Lens diameter in CSS px. Default 200. */
   diameter?: number;
@@ -42,13 +58,15 @@ export interface LoupeOptions {
    *  turns hold-to-peek off. Matched against `KeyboardEvent.key`. */
   peekKey?: string | null;
   /** Called with the color under the aim, wherever the surface can say. The
-   *  canvas painter reads it back; a DOM loupe has no pixels to sample. */
+   *  canvas painter and a `source` read it back; a DOM loupe with no `source`
+   *  has no pixels to sample. */
   onColorChange?: (hex: string) => void;
 }
 
 /** {@link LoupeOptions} with every default filled in. */
 export interface ResolvedLoupe {
   render?: (args: LoupeRenderArgs) => ReactNode;
+  source?: LoupeSource;
   onColorChange?: (hex: string) => void;
   factor: number;
   minFactor: number;
@@ -66,15 +84,17 @@ export const LOUPE_DEFAULTS = {
   mode: 'vector',
   diameter: 200,
   peekKey: 'Alt',
-} as const satisfies Omit<ResolvedLoupe, 'render' | 'onColorChange'>;
+} as const satisfies Omit<ResolvedLoupe, 'render' | 'source' | 'onColorChange'>;
 
 /** `options` with every default filled in and `factor` clamped to
- *  `[minFactor, maxFactor]`. A loupe with its own `render` is always `'vector'`. */
+ *  `[minFactor, maxFactor]`. A loupe with its own `render` is always `'vector'`,
+ *  and one with only a `source` always `'pixel'`. */
 export function resolveLoupe(options: LoupeOptions = {}): ResolvedLoupe {
   const minFactor = options.minFactor ?? LOUPE_DEFAULTS.minFactor;
   const maxFactor = options.maxFactor ?? LOUPE_DEFAULTS.maxFactor;
   return {
     render: options.render,
+    source: options.source,
     onColorChange: options.onColorChange,
     minFactor,
     maxFactor,
@@ -82,6 +102,10 @@ export function resolveLoupe(options: LoupeOptions = {}): ResolvedLoupe {
     diameter: options.diameter ?? LOUPE_DEFAULTS.diameter,
     peekKey: options.peekKey === undefined ? LOUPE_DEFAULTS.peekKey : options.peekKey,
     // A DOM loupe has no framebuffer, so `pixel` would have nothing to enlarge.
-    mode: options.render ? 'vector' : (options.mode ?? LOUPE_DEFAULTS.mode),
+    mode: options.render
+      ? 'vector'
+      : options.source
+        ? 'pixel'
+        : (options.mode ?? LOUPE_DEFAULTS.mode),
   };
 }

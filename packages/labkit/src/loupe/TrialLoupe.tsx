@@ -9,6 +9,8 @@ import { sampleStack } from './canvasLens';
 import { DomLoupe } from './DomLoupe';
 import { LoupeBubble } from './LoupeBubble';
 import { LoupeGestures } from './LoupeGestures';
+import { SourceLoupe } from './SourceLoupe';
+import { resolveLoupeSource, sampleSource, sourceBoxIn } from './sourceLens';
 import { type LoupeOptions, resolveLoupe } from './types';
 import { useHostSize } from './useHostSize';
 import { useLoupe } from './useLoupe';
@@ -38,7 +40,7 @@ const IDENTITY: ViewTransform = { zoom: 1, pan: { x: 0, y: 0 } };
  *
  * With no `render` inside a `<CanvasStack>`, it re-draws the stack's own
  * layers through a zoomed camera. With `render`, it asks for the content again
- * at a magnified camera.
+ * at a magnified camera. With `source`, it enlarges the pixels of any canvas.
  */
 export function TrialLoupe({
   enabled,
@@ -46,6 +48,7 @@ export function TrialLoupe({
   hostRef,
   children,
   render,
+  source,
   factor,
   minFactor,
   maxFactor,
@@ -58,6 +61,7 @@ export function TrialLoupe({
     () =>
       resolveLoupe({
         render,
+        source,
         factor,
         minFactor,
         maxFactor,
@@ -66,13 +70,13 @@ export function TrialLoupe({
         peekKey,
         onColorChange,
       }),
-    [render, factor, minFactor, maxFactor, mode, diameter, peekKey, onColorChange],
+    [render, source, factor, minFactor, maxFactor, mode, diameter, peekKey, onColorChange],
   );
 
   const stack = useContext(CanvasStackContext);
   const camera = useContext(CameraContext);
   const loupeSwitch = useContext(LoupeSwitchContext);
-  const surface = options.render ? undefined : stack?.surface;
+  const surface = options.render || options.source ? undefined : stack?.surface;
 
   const ownHost = useRef<HTMLDivElement | null>(null);
   const cameraHost = useMemo<RefObject<HTMLElement | null> | null>(
@@ -94,12 +98,19 @@ export function TrialLoupe({
   useEffect(() => mount?.(), [mount]);
 
   const sample = useMemo(() => {
+    if (options.source) {
+      const input = options.source;
+      return (p: { x: number; y: number }): string | null => {
+        const src = resolveLoupeSource(input);
+        return src ? sampleSource(src, p, sourceBoxIn(src, host.current)) : null;
+      };
+    }
     if (!surface) return undefined;
     return (p: { x: number; y: number }): string | null => {
       const canvases = surface.canvases.current;
       return canvases ? sampleStack(surface.layers, canvases, p, surface.size.dpr) : null;
     };
-  }, [surface]);
+  }, [surface, options.source, host]);
 
   const loupe = useLoupe({
     options,
@@ -107,6 +118,12 @@ export function TrialLoupe({
     enabled: enabled ?? loupeSwitch?.on ?? false,
     sample,
   });
+  // A captured source copies frames only while someone is reading them.
+  // Keyed on the resolved source, so an inline getter re-made every render
+  // does not release and re-take it — each re-take marks the frame stale.
+  const reading = loupe.visible ? resolveLoupeSource(options.source) : null;
+  useEffect(() => reading?.retain(), [reading]);
+
   const measured = useHostSize(host);
   const size = surface?.size ?? measured;
 
@@ -136,6 +153,14 @@ export function TrialLoupe({
           }
           frame={stack?.frame ?? camera?.frame}
           render={options.render}
+        />
+      ) : options.source ? (
+        <SourceLoupe
+          aim={loupe.aim}
+          factor={loupe.factor}
+          diameter={options.diameter}
+          source={options.source}
+          hostRef={host}
         />
       ) : surface && stack ? (
         <CanvasLoupe
