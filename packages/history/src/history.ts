@@ -14,7 +14,8 @@ interface Entry {
    *  pre-edit state, no matter how many coalesces happened. */
   baseOps: Op[];
   label: string;
-  /** ms timestamp at last push or coalesce; used to gate the coalesce window. */
+  /** `now()` at last push or coalesce: gates the coalesce window, and is the
+   *  entry's place in time for `depthAt` and `prune`. */
   timestamp: number;
   /** See `HistoryEntry.pushes`. */
   pushes: number;
@@ -47,6 +48,8 @@ export interface SerializedHistoryEntry {
   baseOps: SerializedOp[];
   /** See `HistoryEntry.pushes`. Absent in snapshots that predate it; read as 1. */
   pushes?: number;
+  /** See `HistoryEntry.timestamp`. Absent in snapshots that predate it; read as 0. */
+  timestamp?: number;
   selectionBefore?: readonly string[];
   selectionAfter?: readonly string[];
 }
@@ -126,6 +129,19 @@ export interface History {
    *  Equivalent to repeated `undo()`/`redo()` calls but doesn't bother
    *  rebuilding entry snapshots between steps. No-op if already at `n`. */
   goto(n: number): void;
+  /** The `timestamp` of entry `i`, counting in time order through the undo
+   *  stack and on into the redo stack, so `timestampAt(undoDepth())` is the
+   *  next redo's. `undefined` outside the entries. Allocates nothing. */
+  timestampAt(i: number): number | undefined;
+  /** The undo depth at which every entry stamped at or before `t` is applied
+   *  and none after it: `goto(depthAt(t))` seeks the history to `t`, either
+   *  way. Assumes stamps never decrease in time order, which holds while
+   *  `now()` does not run backward between pushes. */
+  depthAt(t: number): number;
+  /** Evict the oldest undo entries stamped before `t`, reporting each through
+   *  `onEvict` — retention by age, beside `historyLimit`'s by count. Redo
+   *  entries are never pruned: they are a future still reachable. */
+  prune(t: number): void;
   /** Monotonic counter bumped on every push/undo/redo/clear/coalesce.
    *  Cheap to read; callers use it as a React dep to detect changes. */
   getVersion(): number;
@@ -482,7 +498,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // Total length stays constant during this walk (we only shuffle
       // entries between undo and redo stacks).
       const total = undoStack.length + redoStack.length;
-      if (n < 0 || n > total) return;
+      if (n < 0 || n > total || n === undoStack.length) return;
       while (undoStack.length > n) {
         const entry = undoStack.pop()!;
         stepBack(entry);
@@ -494,6 +510,26 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         stepForward(entry);
         undoStack.push(entry);
       }
+      bump();
+    },
+    timestampAt(i) {
+      if (i < 0) return undefined;
+      if (i < undoStack.length) return undoStack[i]!.timestamp;
+      // redoStack is newest-on-top, so time order runs from its end.
+      return redoStack[redoStack.length - 1 - (i - undoStack.length)]?.timestamp;
+    },
+    depthAt(t) {
+      let n = undoStack.length;
+      while (n > 0 && undoStack[n - 1]!.timestamp > t) n--;
+      if (n < undoStack.length) return n;
+      for (let r = redoStack.length - 1; r >= 0 && redoStack[r]!.timestamp <= t; r--) n++;
+      return n;
+    },
+    prune(t) {
+      let k = 0;
+      while (k < undoStack.length && undoStack[k]!.timestamp < t) k++;
+      if (k === 0) return;
+      reportEvicted(undoStack.splice(0, k));
       bump();
     },
     getVersion: () => version,
@@ -628,7 +664,7 @@ function entryToSerial(e: Entry, logger: HistoryLogger): SerializedHistoryEntry 
     baseOps.push(s);
   }
   return {
-    id: e.id, label: e.label, forwardOps, baseOps, pushes: e.pushes,
+    id: e.id, label: e.label, forwardOps, baseOps, pushes: e.pushes, timestamp: e.timestamp,
     ...(e.selectionBefore ? { selectionBefore: e.selectionBefore } : {}),
     ...(e.selectionAfter ? { selectionAfter: e.selectionAfter } : {}),
   };
@@ -676,9 +712,7 @@ function serialToEntry(se: SerializedHistoryEntry, custom: CustomRebuild | undef
     label: se.label,
     forwardOps,
     baseOps,
-    // Coalescing is a within-session concept; a restored entry is never a
-    // coalesce anchor, so its timestamp only has to be non-null.
-    timestamp: 0,
+    timestamp: se.timestamp ?? 0,
     pushes: se.pushes ?? 1,
     // Re-derive touchedIds from the rebuilt ops rather than trying to
     // round-trip the Set through the serialized form (Sets aren't JSON-safe).
