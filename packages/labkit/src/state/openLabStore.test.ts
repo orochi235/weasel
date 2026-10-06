@@ -1,3 +1,4 @@
+import { createHistory } from '@weasel-js/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import { createMemoryAdapter } from './adapters';
@@ -61,13 +62,13 @@ describe('openLabStore — round trips', () => {
     const backing = new Map<string, unknown>();
     const first = await open(backing);
     first.store.getState().addTrial(trial('w1', { state: { n: 7 } }));
-    first.store.getState().updateTrialUndoStack('w1', { past: [{ n: 6 }], future: [] });
+    first.store.getState().setTrialHistory('w1', createHistory(null));
     await first.close();
 
     const again = await open(backing);
     expect(again.store.getState().trials).toHaveLength(1);
     expect(again.store.getState().trials[0]).toMatchObject({ id: 'w1', state: { n: 7 } });
-    expect(again.store.getState().trials[0]?.undoStack).toEqual({ past: [], future: [] });
+    expect(again.store.getState().trials[0]?.history).toBeUndefined();
   });
 
   // An instrument holding a Map, a Set or anything else storage cannot keep
@@ -321,7 +322,7 @@ describe('openLabStore — what a change writes', () => {
     storeLab(backing, { trials: [trial('a')] });
     const { storage, set } = counting(backing);
     const opened = await openLabStore({ storageKey: 'test', storage });
-    opened.store.getState().updateTrialUndoStack('a', { past: [{}], future: [] });
+    opened.store.getState().setTrialHistory('a', createHistory(null));
     await opened.close();
     expect(set).not.toHaveBeenCalled();
   });
@@ -380,7 +381,7 @@ describe('openLabStore — trial order', () => {
     storeLab(backing, { trials: [trial('a'), trial('c')] });
     const opened = await open(backing);
     const [a, c] = opened.store.getState().trials as [TrialRecord, TrialRecord];
-    const b: TrialRecord = { ...trial('b'), undoStack: { past: [], future: [] } };
+    const b: TrialRecord = trial('b');
     opened.store.setState({ trials: [a, b, c] });
     await opened.close();
     const ids = (await open(backing)).store.getState().trials.map((t) => t.id);
@@ -409,8 +410,9 @@ describe('openLabStore — two tabs', () => {
     storeLab(backing, { trials: [trial('t1', { state: { n: 0 } }), trial('t2')] });
     const tabA = await open(backing);
     const tabB = await open(backing);
-    tabA.store.getState().updateTrialUndoStack('t1', { past: [{ n: -1 }], future: [] });
-    tabA.store.getState().updateTrialUndoStack('t2', { past: [{ n: -2 }], future: [] });
+    const kept = createHistory(null);
+    tabA.store.getState().setTrialHistory('t1', createHistory(null));
+    tabA.store.getState().setTrialHistory('t2', kept);
 
     tabB.store.getState().updateTrialState('t1', { n: 5 });
     await tabB.records.flush();
@@ -418,8 +420,8 @@ describe('openLabStore — two tabs', () => {
 
     const [t1, t2] = tabA.store.getState().trials;
     expect(t1?.state).toEqual({ n: 5 });
-    expect(t1?.undoStack).toEqual({ past: [], future: [] });
-    expect(t2?.undoStack).toEqual({ past: [{ n: -2 }], future: [] });
+    expect(t1?.history).toBeUndefined();
+    expect(t2?.history).toBe(kept);
   });
 
   it("applies another tab's delete, snapshot, layout and mode without writing them back", async () => {

@@ -89,7 +89,6 @@ export function addTrial(
     config,
     state,
     view: initialView(instrument),
-    undoStack: { past: [], future: [] },
   };
   if (options.config) record.configSeed = seeded.config;
   if (seeded.autoPaths.length > 0) record.autoSeed = seeded.autoPaths;
@@ -103,13 +102,13 @@ export function cloneTrial(trials: TrialRecord[], id: string): TrialRecord[] {
   const sourceIdx = trials.findIndex((w) => w.id === id);
   const source = trials[sourceIdx];
   if (!source) return trials;
+  const { history: _history, ...rest } = source;
   const clone: TrialRecord = {
-    ...source,
+    ...rest,
     id: newId(),
     config: structuredClone(source.config),
     state: structuredClone(source.state),
     view: structuredClone(source.view),
-    undoStack: { past: [], future: [] },
   };
   return [...trials.slice(0, sourceIdx + 1), clone, ...trials.slice(sourceIdx + 1)];
 }

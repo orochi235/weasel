@@ -27,7 +27,6 @@ const stubRecord: TrialRecord = {
   config: {},
   state: {},
   view: { zoom: 1, pan: { x: 0, y: 0 } },
-  undoStack: { past: [], future: [] },
 };
 
 type ChromeProps = Parameters<typeof TrialChrome>[0];
@@ -37,8 +36,7 @@ type ChromeProps = Parameters<typeof TrialChrome>[0];
  *  keeps its own store and hands it to both. */
 function makeChromeStore() {
   const store = createLabStore();
-  const { undoStack: _undo, ...seed } = stubRecord;
-  store.getState().addTrial(seed);
+  store.getState().addTrial(stubRecord);
   return store;
 }
 
@@ -355,5 +353,44 @@ describe('<TrialChrome> — state that outlives a mount', () => {
 
     await renderSettled(<ChromeHarness store={store} chrome={collapsedChrome} />);
     expect(screen.getByTestId('notes-body')).toBeInTheDocument();
+  });
+});
+
+describe('state undo in a mounted lab', () => {
+  const counter: Instrument<{ n: number }> = {
+    name: 'Counter',
+    defaultConfig: () => ({}),
+    initialState: () => ({ n: 0 }),
+    undo: { snapshotOn: ['bump'] },
+    render: (ctx) => (
+      <button
+        type="button"
+        onClick={() => {
+          ctx.emit('bump');
+          ctx.setState((s) => ({ n: s.n + 1 }));
+        }}
+      >
+        {`n=${ctx.state.n}`}
+      </button>
+    ),
+  };
+
+  it('undoes and redoes a change through the trial history', async () => {
+    await renderSettled(<Lab title="T" instruments={[counter]} defaultInstrument="Counter" />);
+    const undo = screen.getByRole('button', { name: 'Undo' });
+    const redo = screen.getByRole('button', { name: 'Redo' });
+    expect(undo).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'n=0' }));
+    fireEvent.click(screen.getByRole('button', { name: 'n=1' }));
+    expect(undo).not.toBeDisabled();
+    fireEvent.click(undo);
+    expect(screen.getByRole('button', { name: 'n=1' })).toBeInTheDocument();
+    fireEvent.click(undo);
+    expect(screen.getByRole('button', { name: 'n=0' })).toBeInTheDocument();
+    expect(undo).toBeDisabled();
+    fireEvent.click(redo);
+    fireEvent.click(redo);
+    expect(screen.getByRole('button', { name: 'n=2' })).toBeInTheDocument();
+    expect(redo).toBeDisabled();
   });
 });

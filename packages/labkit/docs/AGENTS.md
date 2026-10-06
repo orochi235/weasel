@@ -66,10 +66,10 @@ A map of the library so agents can find what they need quickly.
 |---|---|
 | `<CanvasStack>` (layered canvases + pan/zoom) | `src/canvas/CanvasStack.tsx` |
 | `useLayerScheduler` (DPR-aware rAF dirty-flag scheduler) | `src/canvas/useLayerScheduler.ts` |
-| `usePanZoom` | `src/canvas/usePanZoom.ts` |
+| Pan, zoom and tap on a trial canvas (weasel's dispatcher) | `src/canvas/CameraInput.tsx` |
 | `screenToWorld` / `worldToScreen` | `src/canvas/canvasCoords.ts` |
 | `<LayerList>` (reorder, visibility, nesting, cards) | `@weasel-js/ui` (re-exported by labkit) |
-| Undo stack (pure FIFO with `past`/`future`) | `src/undo/undoStack.ts` |
+| Trial state undo (a weasel-history `History` on `TrialRecord.history`, entries from `stateOp`) | `src/trial/Trial.tsx`, `src/undo/stateOp.ts` |
 | Synchronous event bus | `src/undo/eventBus.ts` |
 | `<Palette>` (drag source) | `src/dragdrop/Palette.tsx` |
 | `<DragGhost>` (portal-rendered floater) | `src/dragdrop/DragGhost.tsx` |

@@ -258,7 +258,6 @@ describe('reorderTrials', () => {
       config: {},
       state: {},
       view: { zoom: 1, pan: { x: 0, y: 0 } },
-      undoStack: { past: [], future: [] },
     }) as never;
 
   it('reorders to match the given ids', () => {
@@ -322,7 +321,7 @@ describe('swapTrial', () => {
     expect(swapped.config).toEqual({ subject: 'moon', zoom: 1 });
     expect(swapped.state).toEqual({ label: 'MOON' });
     expect(swapped.configSeed).toEqual({ subject: 'moon' });
-    expect(swapped.undoStack).toEqual({ past: [], future: [] });
+    expect(swapped.history).toBeUndefined();
   });
 
   it('keeps the width the trial’s sidebar was dragged to', () => {

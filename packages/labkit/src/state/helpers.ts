@@ -1,4 +1,4 @@
-import type { InstrumentSerializers, SerializedTrial, TrialRecord, UndoStack } from './types';
+import type { InstrumentSerializers, SerializedTrial, TrialRecord } from './types';
 
 /** The storage key a lab writes one of its buckets under. Namespaced by
  *  `storageKey` so two labs sharing an origin do not collide. */
@@ -41,10 +41,6 @@ export function newId(): string {
   return `lk-${Date.now().toString(36)}-${idCounter++}`;
 }
 
-/** A fresh, empty undo history. */
-export function emptyUndoStack(): UndoStack {
-  return { past: [], future: [] };
-}
 
 /** Serialize trials for storage, running each instrument's own serializer
  *  over its state. Undo history is deliberately dropped — it does not survive
@@ -53,7 +49,7 @@ export function serializeTrials(
   trials: TrialRecord[],
   serializers: InstrumentSerializers,
 ): SerializedTrial[] {
-  return trials.map(({ undoStack: _undo, ...w }) => {
+  return trials.map(({ history: _history, ...w }) => {
     const s = serializers[w.instrumentName];
     return { ...w, state: s?.serialize ? s.serialize(w.state) : w.state };
   });
@@ -75,7 +71,6 @@ export function deserializeTrials(
     return {
       ...r,
       state: d?.deserialize ? d.deserialize(r.state, r.config) : r.state,
-      undoStack: emptyUndoStack(),
     };
   });
 }

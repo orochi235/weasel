@@ -1,3 +1,4 @@
+import type { History } from '@weasel-js/core';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { applyConfigWrite } from '../config/autoConfig';
 import { fillConfigDefaults } from '../config/path';
@@ -9,7 +10,7 @@ import {
 } from '../instrument/serializers';
 import type { InstrumentList } from '../instrument/types';
 import { emptyDocument } from './document';
-import { deserializeTrials, emptyUndoStack, newId } from './helpers';
+import { deserializeTrials, newId } from './helpers';
 import type {
   CreateLabStoreOptions,
   InstrumentHooks,
@@ -29,7 +30,7 @@ import {
 /** Every mutation a lab store supports: managing trials, saving and
  *  restoring snapshots, and setting the color mode. */
 export interface LabStoreActions {
-  addTrial: (record: Omit<TrialRecord, 'undoStack'>) => void;
+  addTrial: (record: Omit<TrialRecord, 'history'>) => void;
   removeTrial: (id: string) => void;
   updateTrialState: <TS>(id: string, next: TS | ((prev: TS) => TS)) => void;
   /** Write one config value. `path` is dotted for a value nested under an
@@ -42,10 +43,8 @@ export interface LabStoreActions {
   /** Fold or unfold one of a trial's sections. */
   setTrialSectionCollapsed: (id: string, key: string, collapsed: boolean) => void;
   updateTrialAnnotations: (id: string, doc: unknown) => void;
-  updateTrialUndoStack: (
-    id: string,
-    next: TrialRecord['undoStack'] | ((prev: TrialRecord['undoStack']) => TrialRecord['undoStack']),
-  ) => void;
+  /** Give a trial the undo history it made on its first snapshot. */
+  setTrialHistory: (id: string, history: History) => void;
   setTrialInstrument: (id: string, instrumentName: string) => void;
   saveSnapshot: (trialId: string, name: string) => void;
   loadSnapshot: (snapshotId: string, trialId: string) => void;
@@ -96,7 +95,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
 
     addTrial: (record) => {
       set((s) => ({
-        trials: [...s.trials, { ...record, undoStack: emptyUndoStack() }],
+        trials: [...s.trials, record],
       }));
     },
 
@@ -182,16 +181,9 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
       }));
     },
 
-    updateTrialUndoStack: (id, next) => {
+    setTrialHistory: (id, history) => {
       set((s) => ({
-        trials: s.trials.map((w) => {
-          if (w.id !== id) return w;
-          const undoStack =
-            typeof next === 'function'
-              ? (next as (prev: TrialRecord['undoStack']) => TrialRecord['undoStack'])(w.undoStack)
-              : next;
-          return { ...w, undoStack };
-        }),
+        trials: s.trials.map((w) => (w.id === id ? { ...w, history } : w)),
       }));
     },
 

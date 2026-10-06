@@ -212,7 +212,7 @@ function persistedFieldsDiffer(a: TrialRecord, b: TrialRecord): boolean {
   const left = a as unknown as Record<string, unknown>;
   const right = b as unknown as Record<string, unknown>;
   for (const key of new Set([...Object.keys(left), ...Object.keys(right)])) {
-    if (key !== 'undoStack' && !Object.is(left[key], right[key])) return true;
+    if (key !== 'history' && !Object.is(left[key], right[key])) return true;
   }
   return false;
 }

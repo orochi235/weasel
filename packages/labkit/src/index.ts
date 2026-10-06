@@ -311,7 +311,6 @@ export type {
   TrialInfo,
   TrialRecord,
   TrialStateHandle,
-  UndoStack,
 } from './state/types';
 export type { UndockedPanel, UndockedPanels } from './state/undock';
 export { dockPanel, panelKey, undockPanel } from './state/undock';
@@ -323,5 +322,5 @@ export * from './surface';
 export { interstellarTheme } from './theme/interstellar';
 export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';
-export type { EventBus, EventListener } from './undo';
+export type { EventBus, EventListener, UndoStack } from './undo';
 export { clearUndo, createEventBus, emptyStack, pushSnapshot, redo, undo } from './undo';

@@ -1,5 +1,7 @@
 import {
+  createHistory,
   createPointerStore,
+  type History,
   PointerContextProvider,
   useLatest,
   WeaselProvider,
@@ -13,6 +15,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
@@ -48,7 +51,7 @@ import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
 import { createEventBus, type EventBus } from '../undo/eventBus';
-import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
+import { stateOp } from '../undo/stateOp';
 import { LoupeSwitchContext } from './loupeSwitch';
 import type { LoupeBindings, UndoBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
@@ -161,7 +164,7 @@ function TrialRuntime({
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
-  const updateTrialUndoStack = useStore(store, (s) => s.updateTrialUndoStack);
+  const setTrialHistory = useStore(store, (s) => s.setTrialHistory);
   const updateTrialAnnotations = useStore(store, (s) => s.updateTrialAnnotations);
   const labToolId = useStore(store, (s) => s.activeToolId);
   const setLabTool = useStore(store, (s) => s.setLabTool);
@@ -202,8 +205,14 @@ function TrialRuntime({
     if (!undoCap || !undoEvents.has(event)) return;
     const current = store.getState().trials.find((w) => w.id === record.id);
     if (!current) return;
-    const snap = structuredClone(current.state);
-    updateTrialUndoStack(record.id, (prev) => pushSnapshot(prev, snap, maxDepth));
+    let history = current.history;
+    if (!history) {
+      history = createHistory(null, { historyLimit: maxDepth });
+      setTrialHistory(record.id, history);
+    }
+    const read = () => store.getState().trials.find((w) => w.id === record.id)?.state;
+    const write = (state: unknown) => updateTrialState(record.id, state as never);
+    history.recordEntry([stateOp(structuredClone(current.state), read, write)], event);
   };
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
@@ -395,31 +404,20 @@ function TrialRuntime({
   // stack — the spec's rule, and the reason a mark scene is the truth. A trial
   // declaring both takes the marks first: the most recent thing the user did
   // is what undo is for, and only a mark change moves the mark history.
-  const undoState = () => {
-    const result = undoUndo(record.undoStack, structuredClone(record.state));
-    if (!result) return;
-    updateTrialState(record.id, result.snapshot as never);
-    updateTrialUndoStack(record.id, result.stack);
-  };
-  const redoState = () => {
-    const result = undoRedo(record.undoStack, structuredClone(record.state));
-    if (!result) return;
-    updateTrialState(record.id, result.snapshot as never);
-    updateTrialUndoStack(record.id, result.stack);
-  };
+  const stateHistory = useHistoryVersion(record.history);
 
   const undoBindings: UndoBindings | undefined =
     undoCap || annotationsCap
       ? {
-          canUndo: markMoves.undo || (undoCap ? record.undoStack.past.length > 0 : false),
-          canRedo: markMoves.redo || (undoCap ? record.undoStack.future.length > 0 : false),
+          canUndo: markMoves.undo || (undoCap ? (stateHistory?.canUndo() ?? false) : false),
+          canRedo: markMoves.redo || (undoCap ? (stateHistory?.canRedo() ?? false) : false),
           undo: () => {
             if (annotationsCap && annotations.undo()) return;
-            if (undoCap) undoState();
+            if (undoCap) stateHistory?.undo();
           },
           redo: () => {
             if (annotationsCap && annotations.redo()) return;
-            if (undoCap) redoState();
+            if (undoCap) stateHistory?.redo();
           },
         }
       : undefined;
@@ -648,4 +646,12 @@ function TrialRuntime({
       </AnnotationsContext.Provider>
     </TrialIdProvider>
   );
+}
+
+const NO_SUBSCRIBE = () => () => {};
+
+/** `history`, re-rendering the caller whenever it changes. */
+function useHistoryVersion(history: History | undefined): History | undefined {
+  useSyncExternalStore(history?.subscribe ?? NO_SUBSCRIBE, () => history?.getVersion() ?? 0);
+  return history;
 }

@@ -24,7 +24,6 @@ export {
 export {
   decodeUrlHash,
   deserializeTrials,
-  emptyUndoStack,
   encodeUrlHash,
   labStorageKey,
   serializeTrials,
@@ -50,7 +49,6 @@ export type {
   StorageChange,
   TrialRecord,
   TrialStateHandle,
-  UndoStack,
 } from './types';
 export type { UndockedPanel, UndockedPanels } from './undock';
 export { dockPanel, panelKey, undockPanel } from './undock';

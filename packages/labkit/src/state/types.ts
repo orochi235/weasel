@@ -2,14 +2,8 @@ import type { ColorModePreference } from '@weasel-js/theme';
 import type { Auto } from '../config/auto';
 import type { ConfigPath, ResolvedConfig, ValueAtPath } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
+import type { History } from '@weasel-js/core';
 import type { UndockedPanels } from './undock';
-/** A trial's undo history, as snapshots of its state either side of the
- *  present. */
-export interface UndoStack {
-  past: unknown[];
-  future: unknown[];
-}
-
 /** The trial a per-trial call is coming from. `id` is the id `useTileId`
  *  scopes a surface tile under, so a consumer keying its own per-trial
  *  registry and labkit's tiles agree on the key. */
@@ -59,7 +53,10 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
    *  no `annotations` — or declares its own `storage`. Not in `state`, which
    *  belongs to the instrument and is typed as such. */
   annotations?: unknown;
-  undoStack: UndoStack;
+  /** This trial's undo history over `state`, made by the trial on its first
+   *  snapshot. Session-only: absent on a new, cloned, swapped or reloaded
+   *  trial, which is how each starts with an empty history. */
+  history?: History;
 }
 
 /** A named, saved copy of a trial's config and state, restorable into any
@@ -190,7 +187,7 @@ export type InstrumentSerializers = Record<
 
 /** A trial as it is persisted: everything but the undo history, which is
  *  session-only. */
-export type SerializedTrial = Omit<TrialRecord, 'undoStack'>;
+export type SerializedTrial = Omit<TrialRecord, 'history'>;
 
 /** Everything a lab persists, under one key, at a known version. */
 export interface LabDocument {
