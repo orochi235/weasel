@@ -260,17 +260,17 @@ export const EDGE_DERIVE_PATH = edgeDerivePath<unknown>();
 
 /** Merge this package's registry entries under a consumer's, so an edge
  *  round-trips through `toJSON` without the consumer wiring the key. */
-export function withDiagramRegistry<TPose>(
-  registry: SceneRegistry<TPose> = {},
-): SceneRegistry<TPose> {
+export function withDiagramRegistry<TPose, TData = unknown, TLayer extends string = string>(
+  registry: SceneRegistry<TPose, TData, TLayer> = {},
+): SceneRegistry<TPose, TData, TLayer> {
   return {
     ...registry,
     derivePath: {
-      [DIAGRAM_EDGE]: EDGE_DERIVE_PATH as NonNullable<SceneRegistry<TPose>['derivePath']>[string],
+      [DIAGRAM_EDGE]: EDGE_DERIVE_PATH,
       ...registry.derivePath,
     },
     derivePose: {
-      [DIAGRAM_LABEL]: LABEL_DERIVE_POSE as NonNullable<SceneRegistry<TPose>['derivePose']>[string],
+      [DIAGRAM_LABEL]: LABEL_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       ...registry.derivePose,
     },
   };

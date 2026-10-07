@@ -39,7 +39,7 @@ function DiagramLiveInner() {
         pose: { x: 0, y: 0, width: 0, height: 0 },
         data: { diagram: { from: {}, to: {} }, stroke: { paint: { color: INK }, width: 2 } },
         dependsOn: [from as never, to as never],
-        derivePath: EDGE_DERIVE_PATH as never,
+        derivePath: EDGE_DERIVE_PATH,
       });
     }
     return specs;

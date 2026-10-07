@@ -63,7 +63,7 @@ function DiagramLayoutInner() {
           stroke: { paint: { color: INK }, width: 2, markerEnd: 'arrow' },
         },
         dependsOn: [from as never, to as never],
-        derivePath: EDGE_DERIVE_PATH as never,
+        derivePath: EDGE_DERIVE_PATH,
       });
     }
     return specs;

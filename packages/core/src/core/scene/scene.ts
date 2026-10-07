@@ -2112,7 +2112,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
  *  throws on an unsupported version or an unknown registry key. */
 function specsFromSerialized<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose>,
-  registry: SceneRegistry<TPose>,
+  registry: SceneRegistry<TPose, TData, TLayer>,
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   if (json.version !== 1) {
     throw new Error(`Scene: unsupported version ${json.version}; only v1 supported`);
@@ -2171,7 +2171,7 @@ export function sceneSelectionStore(scene: {
 export function sceneFromJSON<TData, TLayer extends string, TPose>(
   json: SerializedScene<TData, TLayer, TPose>,
   options: {
-    registry?: SceneRegistry<TPose>;
+    registry?: SceneRegistry<TPose, TData, TLayer>;
     historyLimit?: number;
     coalesceWindowMs?: number;
     generateId?: () => NodeId;

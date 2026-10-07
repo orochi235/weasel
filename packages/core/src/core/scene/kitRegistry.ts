@@ -62,12 +62,14 @@ export function asRectPose(pose: unknown): RectPose | null {
 }
 
 /** Merge the kit's own entries under a consumer registry. */
-export function withKitRegistry<TPose>(registry: SceneRegistry<TPose>): SceneRegistry<TPose> {
+export function withKitRegistry<TPose, TData = unknown, TLayer extends string = string>(
+  registry: SceneRegistry<TPose, TData, TLayer>,
+): SceneRegistry<TPose, TData, TLayer> {
   return {
     ...registry,
     derivePose: {
       [UNION_OF_CHILDREN]: unionOfChildren as NonNullable<
-        SceneRegistry<TPose>['derivePose']
+        SceneRegistry<TPose, TData, TLayer>['derivePose']
       >[string],
       ...registry.derivePose,
     },

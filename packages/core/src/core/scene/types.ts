@@ -89,8 +89,8 @@ export const asNodeId = (s: string): NodeId => s as NodeId;
  * so handing over only the pose made the invalidation pay for a read nothing
  * could perform.
  */
-export interface DerivedDep<TPose> {
-  node: Node<unknown, string, TPose>;
+export interface DerivedDep<TPose, TData = unknown, TLayer extends string = string> {
+  node: Node<TData, TLayer, TPose>;
   /** Its override when it has one, else its own derived pose, else the pose
    *  the document stores — `effectivePose`, the same answer the renderer uses. */
   pose: TPose;
@@ -113,16 +113,16 @@ type Bivariant<F extends (...args: never[]) => unknown> = {
 
 /** Computes a node's path from its dependencies: the type of a node's
  *  `derivePath` and of each entry in `SceneRegistry.derivePath`. */
-export type DerivePathFn<TPose> = Bivariant<(
-  node: Node<unknown, string, TPose>,
-  deps: readonly (DerivedDep<TPose> | undefined)[],
+export type DerivePathFn<TPose, TData = unknown, TLayer extends string = string> = Bivariant<(
+  node: Node<TData, TLayer, TPose>,
+  deps: readonly (DerivedDep<TPose, TData, TLayer> | undefined)[],
 ) => Path | null>;
 
 /** Computes a node's pose from its dependencies: the type of a node's
  *  `derivePose` and of each entry in `SceneRegistry.derivePose`. */
-export type DerivePoseFn<TPose> = Bivariant<(
-  node: Node<unknown, string, TPose>,
-  deps: readonly (DerivedDep<TPose> | undefined)[],
+export type DerivePoseFn<TPose, TData = unknown, TLayer extends string = string> = Bivariant<(
+  node: Node<TData, TLayer, TPose>,
+  deps: readonly (DerivedDep<TPose, TData, TLayer> | undefined)[],
 ) => TPose | null>;
 
 /** A container's clip, from its pose: the type of `ContainerNode.clipFromPose`
@@ -162,14 +162,11 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  Returning `null` means "nothing to draw right now". Re-evaluated when a
    *  dependency's world pose changes, never authored. Absolute-pose `Scene`
    *  makes that the dependency's own pose, and an ancestor's move reaches it as
-   *  a `setPose` of its own from the container cascade.
-   *  `node` is widened to `unknown` data and `string` layer because
-   *  `SceneRegistry`, which holds these functions too, is generic in the pose
-   *  alone. The cost is that a `derivePath` casts to read `node.data`. */
-  derivePath?: DerivePathFn<TPose>;
+   *  a `setPose` of its own from the container cascade. */
+  derivePath?: DerivePathFn<TPose, TData, TLayer>;
   /** Computes this node's pose from its dependencies' poses, the same way
-   *  `derivePath` computes its path — same `dependsOn` list, same widened
-   *  `node`, same registry-keyed serialization.
+   *  `derivePath` computes its path — same `dependsOn` list, same
+   *  registry-keyed serialization.
    *
    *  Where a derived path is resolved at paint time and reaches only the
    *  painter, a derived pose is what the node *is* at: it feeds bounds,
@@ -180,7 +177,7 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  Returning `null` means "I have nothing to derive from right now", and
    *  the node falls back to its authored `pose`. `setPose` on a derived node
    *  still writes that authored pose; it is simply not what anything reads. */
-  derivePose?: DerivePoseFn<TPose>;
+  derivePose?: DerivePoseFn<TPose, TData, TLayer>;
 }
 
 /** A node with no children — a shape, a label, an image. */
@@ -290,9 +287,9 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   dependsOn?: readonly NodeId[] | 'children';
   /** Mirrors `SceneNode.derivePath`. Taken as a live function; its registry key is
    *  looked up from it, never passed in. */
-  derivePath?: DerivePathFn<TPose>;
+  derivePath?: DerivePathFn<TPose, TData, TLayer>;
   /** Mirrors `SceneNode.derivePose`, on the same terms as `derivePath`. */
-  derivePose?: DerivePoseFn<TPose>;
+  derivePose?: DerivePoseFn<TPose, TData, TLayer>;
   /** Mirrors `ContainerNode.layout`; ignored for leaves. */
   layout?: LayoutStrategy<TPose>;
 }
@@ -379,13 +376,13 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
 /** Per-scene registry mapping string keys to live function references.
  *  Passed to `createScene({ ..., registry })` and `sceneFromJSON(json, { registry })`.
  *  Each function-field type has its own keyed map. */
-export interface SceneRegistry<TPose> {
+export interface SceneRegistry<TPose, TData = unknown, TLayer extends string = string> {
   /** Maps registry keys to `clipFromPose` factory functions for container nodes. */
   clipFromPose?: Readonly<Record<string, ClipFromPoseFn<TPose>>>;
   /** Maps registry keys to `derivePath` functions for nodes with `dependsOn`. */
-  derivePath?: Readonly<Record<string, DerivePathFn<TPose>>>;
+  derivePath?: Readonly<Record<string, DerivePathFn<TPose, TData, TLayer>>>;
   /** Maps registry keys to `derivePose` functions for nodes with `dependsOn`. */
-  derivePose?: Readonly<Record<string, DerivePoseFn<TPose>>>;
+  derivePose?: Readonly<Record<string, DerivePoseFn<TPose, TData, TLayer>>>;
   /** Maps registry keys to container layout strategies. */
   layout?: Readonly<Record<string, LayoutStrategy<TPose>>>;
   // A new function field is a row in `NODE_FN_FIELDS` (core/scene/nodeFnFields.ts)
@@ -435,7 +432,7 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
   generateId?: () => NodeId;
   /** Per-scene registry for non-serializable function fields (clipFromPose, etc.).
    *  Required only when serializing/deserializing scenes that use function fields. */
-  registry?: SceneRegistry<TPose>;
+  registry?: SceneRegistry<TPose, TData, TLayer>;
   /** How laid-out containers are measured. See {@link LayoutFrame}. */
   layoutFrame?: LayoutFrame<TPose>;
   /** When supplied, `scene.applyOps(ops, label)` consults this on every call.
@@ -535,7 +532,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   readonly layers: readonly LayerRecord<TLayer>[];
   /** The registry this scene resolves node functions against — the consumer's
    *  entries over the kit's. */
-  readonly registry: SceneRegistry<TPose>;
+  readonly registry: SceneRegistry<TPose, TData, TLayer>;
   get(id: NodeId): Node<TData, TLayer, TPose> | undefined;
   /** A token for the node `id` names right now, for telling one node from a
    *  later one that reuses its id. It holds for as long as the node stays in

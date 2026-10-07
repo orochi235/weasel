@@ -60,4 +60,28 @@ describe('Scene variance', () => {
     });
     expect(scene.nodes.size).toBe(1);
   });
+
+  it('a registered derivation reads its node\'s and dependencies\' data typed', () => {
+    const registry: SceneRegistry<MyPose, MyData, MyLayer> = {
+      derivePath: {
+        labeled: (node, deps) => {
+          expectTypeOf(node.data.label).toEqualTypeOf<string>();
+          expectTypeOf(node.layer).toEqualTypeOf<MyLayer>();
+          // @ts-expect-error MyData has no `weight`
+          void node.data.weight;
+          const first = deps[0];
+          expectTypeOf(first?.node.data.label).toEqualTypeOf<string | undefined>();
+          // @ts-expect-error same, on a dependency
+          void first?.node.data.weight;
+          return null;
+        },
+      },
+      derivePose: {
+        tilted: (node) => (node.data.label ? node.pose : null),
+      },
+    };
+    const scene = createScene<MyData, MyLayer, MyPose>({ systemLayers: [{ id: 'front' }], registry });
+    expectTypeOf(scene).toMatchTypeOf<Scene<unknown, string, unknown>>();
+    expect(scene.nodes.size).toBe(0);
+  });
 });

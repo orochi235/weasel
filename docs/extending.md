@@ -378,19 +378,13 @@ Declare the dependencies and the function that reads them:
 ```ts
 import {
   createScene, linePath, strokeOf,
-  type SceneNode, type Path, type RectPose,
+  type DerivePathFn, type RectPose,
 } from '@weasel-js/core';
 
-const connectCenters = (
-  _node: SceneNode<unknown, string, RectPose>,
-  [from, to]: readonly (RectPose | undefined)[],
-): Path | null =>
-  from && to
-    ? linePath(
-        { x: from.x + from.width / 2, y: from.y + from.height / 2 },
-        { x: to.x + to.width / 2, y: to.y + to.height / 2 },
-      )
-    : null;
+const center = (p: RectPose) => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 });
+
+const connectCenters: DerivePathFn<RectPose> = (_node, [from, to]) =>
+  from && to ? linePath(center(from.pose), center(to.pose)) : null;
 
 const scene = createScene<object, 'main', RectPose>({
   systemLayers: [{ id: 'main' }],
@@ -428,9 +422,12 @@ off `data` and `layer`, and the scene already invalidates on both. A dependency
 the scene cannot resolve arrives as `undefined`; returning `null` means
 "nothing to draw right now".
 
-`node` arrives typed `SceneNode<unknown, string, TPose>`, so a `derivePath` that
-reads `node.data` casts. `SceneRegistry` holds derivations too, and it is
-generic in the pose alone.
+`node` and each dependency's `node` carry the scene's own data and layer types:
+a `derivePath` on a `Scene<MyData, MyLayer, MyPose>` — or registered in a
+`SceneRegistry<MyPose, MyData, MyLayer>` — reads `node.data` typed, without a
+cast. `DerivePathFn` and `DerivePoseFn` take the pose, data and layer types in
+that order; data and layer default to `unknown` and `string`, for a derivation
+that reads neither.
 
 **Serialization carries a registry key, never the function.** `SceneRegistry`
 does for `derivePath` what it already does for `clipFromPose`: `toJSON` looks

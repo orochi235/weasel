@@ -12,7 +12,7 @@ import { dependencyIdsOf } from './dependents';
 import { resolveDerivedPath } from './derivedPath';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
 import type { Path } from '@weasel-js/geom';
-import type { DerivedDep, Node, NodeId, PoseOverrides } from './types';
+import type { DerivedDep, DerivePathFn, DerivePoseFn, Node, NodeId, PoseOverrides } from './types';
 
 /**
  * Which pose a resolution answers: `effective` honors overrides all the way
@@ -40,15 +40,9 @@ export interface PosedNode<TPose> {
   /** Read only by the memo, which keys on its reference alongside the pose. */
   data?: unknown;
   dependsOn?: readonly NodeId[] | 'children';
-  derivePose?: (
-    node: never,
-    deps: readonly (DerivedDep<TPose> | undefined)[],
-  ) => TPose | null;
+  derivePose?: DerivePoseFn<TPose>;
   /** Read only when something asks a dependency for its `path`. */
-  derivePath?: (
-    node: never,
-    deps: readonly (DerivedDep<TPose> | undefined)[],
-  ) => Path | null;
+  derivePath?: DerivePathFn<TPose>;
 }
 
 /** What resolving a pose needs: the overrides, and enough of the scene to

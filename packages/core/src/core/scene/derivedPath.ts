@@ -22,7 +22,7 @@ import type { Path } from '@weasel-js/geom';
 import { dependencyIdsOf } from './dependents';
 import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
 import { recordDeps, sameDeps, type DepRecord } from './depMemo';
-import type { DerivedDep, NodeId } from './types';
+import type { DerivedDep, DerivePathFn, NodeId } from './types';
 
 const SLOT = 'kit:derivedPath';
 
@@ -34,10 +34,7 @@ export interface PathDerivingNode<TPose> {
   /** Read only by the memo, which keys on its reference alongside the pose. */
   data?: unknown;
   dependsOn?: readonly NodeId[] | 'children';
-  derivePath?: (
-    node: never,
-    deps: readonly (DerivedDep<TPose> | undefined)[],
-  ) => Path | null;
+  derivePath?: DerivePathFn<TPose>;
 }
 
 /** A cached path, with what it was drawn from. */

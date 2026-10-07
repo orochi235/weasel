@@ -41,7 +41,7 @@ function DiagramEdgesInner() {
           stroke: { paint: { color: INK }, width: 2, markerEnd: 'arrow' },
         },
         dependsOn: [`${router}-from` as never, `${router}-to` as never],
-        derivePath: EDGE_DERIVE_PATH as never,
+        derivePath: EDGE_DERIVE_PATH,
       });
       // A label is a node too: it depends on the edge and derives its *pose*
       // from the route the edge derived, so it rides along without routing
