@@ -9,7 +9,7 @@ describe('registerDefaultFont', () => {
   it('registers a font under DEFAULT_FONT_FAMILY', async () => {
     // Mock fetch since jsdom doesn't load assets
     const interJson = await import('./inter.json');
-    const fakePng = new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], { type: 'image/png' });
+    const fakePng = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
     global.fetch = vi.fn(async (url: string) => {
       if (url.endsWith('.json')) return new Response(JSON.stringify(interJson.default ?? interJson));
       if (url.endsWith('.png')) return new Response(fakePng);
@@ -28,7 +28,7 @@ describe('registerDefaultFont', () => {
 
   it('is idempotent', async () => {
     const interJson = await import('./inter.json');
-    const fakePng = new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], { type: 'image/png' });
+    const fakePng = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
     global.fetch = vi.fn(async (url: string) => {
       if (url.endsWith('.json')) return new Response(JSON.stringify(interJson.default ?? interJson));
       if (url.endsWith('.png')) return new Response(fakePng);
