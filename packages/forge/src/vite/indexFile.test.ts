@@ -176,6 +176,31 @@ export const Basic = {};
     ]);
   });
 
+  describe('viewport', () => {
+    const viewports = (code: string) => indexFile(code, FILE, 'ui/Auto').map((e) => e.viewport);
+
+    it("reads a native story's viewport written as number literals, and nothing else", () => {
+      const code = `
+import { meta, story } from '@weasel-js/forge';
+const size = { width: 1, height: 2 };
+export default meta({ title: 'ui/Slider' });
+export const Literal = story({ viewport: { width: 320, height: 200 }, render: () => null });
+export const Bound = story({ viewport: size, render: () => null });
+export const Computed = story({ viewport: { width: 2 * 160, height: 200 }, render: () => null });
+export const None = story({ render: () => null });
+`;
+      expect(viewports(code)).toEqual([{ width: 320, height: 200 }, { width: 1, height: 2 }, undefined, undefined]);
+    });
+
+    it('reads no viewport off a CSF story, whose viewport comes from its parameters and globals', () => {
+      const code = `
+export default { title: 'ui/Button' };
+export const A = { viewport: { width: 320, height: 200 } };
+`;
+      expect(viewports(code)).toEqual([undefined]);
+    });
+  });
+
   describe('isolate', () => {
     const isolates = (code: string) => indexFile(code, FILE, 'ui/Auto').map((e) => e.isolate);
 

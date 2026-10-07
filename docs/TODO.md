@@ -829,13 +829,17 @@ only story runner in the repo.
   font is still lost, and so is any font or image the document did not inline.
 
 
-- **(P3, isolated stories only) A forge story with a `viewport` reloads its
-  frame once when first opened.** The instrument built before the frame's `ready` message has no
-  `stage`, and the one built after it does. labkit's `Trial`
+- **(P3, isolated stories only) A forge story whose `viewport` the index cannot
+  read reloads its frame once when first opened.** The index reads a native
+  story's `viewport` when both sides are number literals, and the first
+  instrument takes its stage from that. Otherwise — a computed size, or a CSF
+  story, whose viewport comes from `parameters.viewport` and `globals.viewport` —
+  the stage arrives with the frame's `ready`, and labkit's `Trial`
   (`packages/labkit/src/trial/Trial.tsx`) renders stage content inside `<Stage>`
-  and other content bare, so the switch remounts `FrameView` and reloads the
-  iframe. Mount the provisional instrument under the same tree position, or learn
-  the viewport before the first instrument is built.
+  and other content bare, so `FrameView` remounts and the iframe reloads. A
+  general fix keeps the frame through that remount (it is already placed by hand,
+  and `moveBefore` moves an iframe without reloading it), or has `Trial` keep
+  the body at one tree position whether or not there is a stage.
 
 - **(P3) A trial tile narrower than 300px cuts off its content pane.** A trial's
   `Split` (`packages/labkit/src/primitives/Split.tsx`) holds the sidebar at its

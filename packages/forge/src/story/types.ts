@@ -129,6 +129,8 @@ export interface IndexEntry {
   componentName?: string;
   /** Read statically from the source; a story with it renders in its own frame. */
   isolate?: string;
+  /** A native story's `viewport`, when the source writes both sides as number literals. */
+  viewport?: Viewport;
   /** The story's tags, read statically from the source: its meta's and its own. An index page's are those every
    *  story of its component carries. */
   tags?: string[];

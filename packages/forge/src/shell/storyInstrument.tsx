@@ -27,6 +27,7 @@ export function storyInstrument(options: StoryInstrumentOptions): Instrument<unk
     globals,
   );
   const descriptionKey = ready ? readyKey(ready) : null;
+  const viewport = ready ? ready.viewport : entry.viewport;
   return {
     name: entry.id,
     title: breadcrumb(entry.title, entry.name),
@@ -43,6 +44,7 @@ export function storyInstrument(options: StoryInstrumentOptions): Instrument<unk
         ctx={ctx}
       />
     ),
-    ...(ready?.viewport ? { stage: { size: { width: ready.viewport.width, height: ready.viewport.height } } } : {}),
+    // Taken from the index until the frame reports, so the trial does not move the frame into a stage and reload it.
+    ...(viewport ? { stage: { size: { width: viewport.width, height: viewport.height } } } : {}),
   };
 }

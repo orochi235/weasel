@@ -566,12 +566,12 @@ describe('FrameView with declared globals', () => {
 });
 
 describe('FrameView under a story registry', () => {
-  function RegistryLab({ labGlobals, lists }: { labGlobals: Globals; lists: InstrumentList[] }) {
-    const registry = useStoryRegistry([entry], { frameUrl: '/frame.html' });
+  function RegistryLab({ labGlobals, lists, story = entry }: { labGlobals: Globals; lists: InstrumentList[]; story?: IndexEntry }) {
+    const registry = useStoryRegistry([story], { frameUrl: '/frame.html' });
     lists.push(registry.instruments);
     return (
       <StoryGlobalsContext.Provider value={labGlobals}>
-        <Lab instruments={registry.instruments} defaultInstrument={entry.id}>
+        <Lab instruments={registry.instruments} defaultInstrument={story.id}>
           {captureLab()}
         </Lab>
       </StoryGlobalsContext.Provider>
@@ -590,6 +590,16 @@ describe('FrameView under a story registry', () => {
     await flush();
     expect(received.at(-1)).toEqual({ type: 'globals', globals: { theme: 'light' } });
     expect(lists.at(-1)).toBe(settled);
+  });
+  it('keeps its iframe when the ready brings the viewport the index already read', async () => {
+    const viewport = { width: 320, height: 200 };
+    const view = await renderSettled(<RegistryLab labGlobals={globals} lists={[]} story={{ ...entry, viewport }} />);
+    const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
+    const { frame, received } = connect(iframe);
+    frame.send({ ...ready, viewport });
+    await flush();
+    expect(view.container.querySelector('iframe.fg-frame-view')).toBe(iframe);
+    expect(received.map((m) => m.type)).toEqual(['init']);
   });
 });
 
