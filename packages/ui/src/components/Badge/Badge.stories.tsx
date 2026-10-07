@@ -949,6 +949,14 @@ function loadLabSnapshot(): Partial<LabSnapshot> {
   }
 }
 
+function LinkIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true" focusable="false" style={{ verticalAlign: 'middle', opacity: 0.85 }}>
+      <path d="M6.5 4h-1.5a3 3 0 1 0 0 6h1.5M9.5 4h1.5a3 3 0 0 1 0 6h-1.5M5.5 7h5" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function ComposeLabView({ status: statusArg, variant: variantArg, label: labelArg }: {
   status: BadgeStatus; variant: BadgeVariant; label: string;
 }) {
@@ -1205,11 +1213,6 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
   };
 
   const ctrlLabel: CSSProperties = { fontSize: 10, opacity: 0.7 };
-  const LinkIcon = () => (
-    <svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true" focusable="false" style={{ verticalAlign: 'middle', opacity: 0.85 }}>
-      <path d="M6.5 4h-1.5a3 3 0 1 0 0 6h1.5M9.5 4h1.5a3 3 0 0 1 0 6h-1.5M5.5 7h5" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
 
   const toggleBar = <T extends string>(
     value: T,

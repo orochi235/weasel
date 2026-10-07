@@ -213,6 +213,7 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
       'weasel/no-render-ref-write': 'error',
+      'react-hooks/static-components': 'error',
 
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',

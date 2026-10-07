@@ -72,33 +72,34 @@ async function key(k: string): Promise<boolean> {
 
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 
+function Bound({ run }: { run: () => void }) {
+  const registry = useActionsRegistry() as ActionsRegistry;
+  useEffect(
+    () =>
+      registry.register({
+        id: 'story.zoom',
+        label: 'Story zoom',
+        defaultBinding: { kind: 'key', key: '=', mods: { mod: true } },
+        invoker: { timing: 'immediate', run: () => run() },
+      }),
+    [registry, run],
+  );
+  useGestureDispatcher({
+    canvasRef: { current: null },
+    actions: registry,
+    entriesById: NO_TOOLS,
+    channels: { contextMenu: false, ingest: false },
+  });
+  return null;
+}
+
 /** A story's own dispatcher, binding Mod+= the way a `<SceneCanvas>` with keyboard zoom does. */
 function StoryZoomKey({ run }: { run: () => void }) {
-  function Bound() {
-    const registry = useActionsRegistry() as ActionsRegistry;
-    useEffect(
-      () =>
-        registry.register({
-          id: 'story.zoom',
-          label: 'Story zoom',
-          defaultBinding: { kind: 'key', key: '=', mods: { mod: true } },
-          invoker: { timing: 'immediate', run: () => run() },
-        }),
-      [registry],
-    );
-    useGestureDispatcher({
-      canvasRef: { current: null },
-      actions: registry,
-      entriesById: NO_TOOLS,
-      channels: { contextMenu: false, ingest: false },
-    });
-    return null;
-  }
   return (
     <DepRegistryProvider>
       <ActionsProvider>
         <ActiveToolContextProvider>
-          <Bound />
+          <Bound run={run} />
         </ActiveToolContextProvider>
       </ActionsProvider>
     </DepRegistryProvider>

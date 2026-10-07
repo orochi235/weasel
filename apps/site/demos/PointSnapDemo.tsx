@@ -32,6 +32,16 @@ const INITIAL: Rect[] = [
   { id: 'a', x: 160, y: 100, width: 100, height: 60, rotation: Math.PI / 6, color: '#7fb069' },
 ];
 
+// Point snapping is dispatcher-driven via the `resizePolicy` dep, so this is
+// mounted as a child of `<SceneCanvas>`, where `<DepRegistryProvider>` is in
+// scope. The pose shape itself comes from `<SceneCanvas poseDescriptor>`.
+function ResizePolicyBridge() {
+  useResizePolicy<Rect>({
+    pointSnap: [pointSnapToGrid({ spacing: SNAP_GRID })],
+  });
+  return null;
+}
+
 function PointSnapDemoInner() {
   const scene = useScene({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
@@ -39,16 +49,6 @@ function PointSnapDemoInner() {
   const adapter = useSceneAdapter(scene, { selection });
 
   const select = useSelectTool(adapter, { leafPicking: 'silhouette' });
-  // Point snapping is dispatcher-driven via the `resizePolicy` dep — see
-  // `ResizePolicyBridge` below, mounted as a child of `<SceneCanvas>` so
-  // `<DepRegistryProvider>` is in scope. The pose shape itself comes from
-  // `<SceneCanvas poseDescriptor>`.
-  function ResizePolicyBridge() {
-    useResizePolicy<Rect>({
-      pointSnap: [pointSnapToGrid({ spacing: SNAP_GRID })],
-    });
-    return null;
-  }
   const tools = useTools({
     active: 'select',
     registry: { select },
