@@ -852,18 +852,6 @@ only story runner in the repo.
   At the same 140px the forge Globals group's label/value columns overlap
   ("MODE" over "Lab").
 
-- **(P3, isolated stories only) Check forge's out-of-view frame unmounting in
-  a browser.** `FrameView`
-  (`packages/forge/src/shell/FrameView.tsx`) drops a trial's iframe once its host
-  is more than half a viewport outside the viewport and reloads it on return.
-  `useNearViewport` (`packages/forge/src/frame/useNearViewport.ts`) has a browser
-  test for the margin; the reload itself is tested only against a stubbed
-  observer. Confirm in the dev app that scrolling a trial away and back reloads
-  its story with the trial's config and state. While an `overflow` ancestor clips
-  the host to nothing its intersection ratio stays 0, so the observer reports no
-  move and `useNearViewport` keeps its last answer: a clipped trial scrolled far
-  away stays mounted until something unclips it.
-
 ---
 
 ## Demos & visual regression
