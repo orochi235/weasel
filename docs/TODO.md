@@ -220,19 +220,15 @@ have shipped. What remains:
   Composing would mean a view's camera derived from the view under its aim, and
   a resolver that descends rather than picking one rect.
 
-- **(P3) A `{ px }` stroke on a line that is not axis-aligned has no exact
-  width under non-uniform zoom.** A ribbon is tessellated in world with one
-  width, and `withResolvedStrokeLengths` (`renderer/draw.ts`) resolves `{ px }`
-  through `meanScaleOf`, so at 4:1 a 1px hairline paints 2px wide vertically
-  and 0.5px horizontally. Axis-aligned lines have an exact answer — the grid
-  layer takes `pxExtent` on each line's cross axis — but a rect outline, an
-  ellipse or a diagonal does not: `PanZoomDemo`, `ForceGraphDemo`,
-  `ViewportDemo` and labkit's annotation point ring all divide by `meanScale`.
-  The fix is the ribbon built after the view's linear part (path coords carried
-  through it, stroked at `px`, drawn under the transform with that part
-  removed), which touches the ribbon cache key, dashes, markers and the
-  stencil-aligned polygon path. Picking reads ink widths through the same mean
-  (`useSceneSelectTool`) and has to move with it.
+- **(P3) A few `{ px }` lengths still resolve through the mean scale.** Path
+  ribbons, their dashes and their heads are exact under non-uniform zoom: the
+  ribbon is built in the transform's stretch (`features/paths/tessellate/metric.ts`)
+  and mapped back. Still averaged: a glyph outline's `{ px }` stroke
+  (`outlineGroupStrokeMesh` in `renderer/draw.ts`, which tessellates in em
+  space); a `{ px }`-sized head on a world-width stroke, built in world; a
+  world-sized head or a `vertexWidths` entry on a `{ px }` stroke, read as a
+  length in the stretched space. The glyph case wants the em-space ribbon cache
+  keyed on the metric too.
 
 ---
 
