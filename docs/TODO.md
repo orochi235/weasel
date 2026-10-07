@@ -309,11 +309,27 @@ Core five + Crop shipped. Remaining:
   the canvas's text baseline to device pixels as browsers do, or find the
   bias first. Recorded 2026-09-29.
 
-- **(P3) WebKit at DPR 1 fails one overlay-alignment case.** `"Hgd" Inter 72px
-  small caps` reports `dRight -0.79` against the 0.75 bound in `npx vitest run -c
-  scripts/measure-overlay-alignment.config.ts`; Chromium and Firefox pass it at both
-  DPRs, and so does WebKit at DPR 2. CI runs Chromium only, so nothing gates on it.
-  Seen 2026-10-07 on macOS, with and without the overlay's `geometricPrecision`.
+- **(P3) WebKit at DPR 1 fails one overlay-alignment case, because it paints
+  text on whole pixels.** `"Hgd" Inter 72px small caps` reports `dRight -0.79`
+  against the 0.75 bound in `npx vitest run -c
+  scripts/measure-overlay-alignment.config.ts`; Chromium and Firefox pass it at
+  both DPRs, and so does WebKit at DPR 2. CI runs Chromium only, so nothing gates
+  on it. It is not advances, small-caps synthesis or `text-rendering`: WebKit's
+  DOM width of `GDGDGDGDGD` matches the atlas to 0.001px at 54.024px (the
+  small-caps size) under both `geometricPrecision` and `auto`, and turning off
+  `font-variant`, kerning or `geometricPrecision` on the overlay moves no pixel.
+  What differs is where a text box starts painting. The small capitals sit in
+  their own span, which starts at x 73.5; WebKit paints it from 73, so `G` and
+  `D` land 0.44 and 0.69px left of the canvas's. Moving the overlay right by
+  `f` (0 to 0.875 in eighths) moves WebKit's `H` ink by `-f` at DPR 1 and by
+  `-(f mod 0.5)` at DPR 2, so a box's paint origin is floored to the
+  device-pixel grid; Chromium's `H` stays within 0.08px throughout. Not
+  compensable from the overlay as far as measured: a WebKit-only half-device-
+  pixel `translate` (floor into round) fixes this case but moves WebKit DPR 1's
+  matrix mean `dx` from -0.14 to +0.36 and fails three other cases, and a
+  0.492px nudge on the small-caps span alone moved `D` a whole pixel and `G`
+  not at all — WebKit picks a pixel either way. Measured 2026-10-07 on macOS
+  (Playwright WebKit).
 
 - **(P3) The character strip has no "no fill" chip.** WeaselDraw's text
   objects carry `fill: null` through its SVG export and import, and the
