@@ -1,5 +1,12 @@
 # @weasel-js/gestures
 
+## 1.8.1
+
+### Patch Changes
+
+- 934f195: The gesture dispatcher no longer takes a press that lands on a control inside its host — a button, field, link or anything with a control role. It used to open a pointer session that captured the pointer, so the browser delivered the click to the host instead, and a button laid over a canvas (labkit's instrument overlay, for one) could not be clicked with a real pointer. `isInControlWithin` and `CONTROL_SELECTOR`, which answer that question, move from weasel-ui's internals to `@weasel-js/gestures`, re-exported by routing and core.
+- f9c137b: `MultitouchEvent` and `MultitouchTapEvent` are renamed `MultiTouchEvent` and `MultiTouchTapEvent`, matching `MultiTouchSpec` and every other event and spec type. The old names are gone; an import of either needs the new spelling. The event kinds stay `'multitouch'` and `'multitouchtap'`, lowercase like `'doubleclick'` and `'longpress'`.
+
 ## 1.8.0
 
 No changes in this release.

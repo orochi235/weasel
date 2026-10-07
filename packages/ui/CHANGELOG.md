@@ -1,5 +1,36 @@
 # @weasel-js/ui
 
+## 1.8.1
+
+### Patch Changes
+
+- 75dd38d: Muted and subtle text on an accent fill now clears WCAG 4.5:1 in both modes. New tokens `--wzl-fg-muted-on-accent` and `--wzl-fg-subtle-on-accent` carry the higher alphas, and every weasel-ui accent fill (a primary `Button`, a selected segment or `ToggleBar` cell, an open `Prefs` rail entry, a toned `LayerList` handle) redirects `--wzl-fg-muted` and `--wzl-fg-subtle` to them. In dark mode the steps are 0.98 and 0.96, so secondary text on the accent reads nearly at full strength. A consumer drawing its own accent fill with `--wzl-fg-on-accent` text should set the same two properties on that rule.
+- 934f195: The gesture dispatcher no longer takes a press that lands on a control inside its host — a button, field, link or anything with a control role. It used to open a pointer session that captured the pointer, so the browser delivered the click to the host instead, and a button laid over a canvas (labkit's instrument overlay, for one) could not be clicked with a real pointer. `isInControlWithin` and `CONTROL_SELECTOR`, which answer that question, move from weasel-ui's internals to `@weasel-js/gestures`, re-exported by routing and core.
+- b459d73: Three icons for `fitViewToBounds`'s modes: `fitContain`, `fitFill` and `fitStretch`, with `FitContainIcon`, `FitFillIcon` and `FitStretchIcon`. Each shows a circle in a wide frame placed the way that mode places content: the largest that fits, as wide as the frame and running past it, or squashed to the frame's proportions.
+- 9003c69: A `Dialog` that mounts with `isOpen` already true no longer leaves the page inert. Its first render portalled into the body before the overlay found its themed host, and React Aria marked everything outside it `inert` — including the app root the dialog then moved into, so nothing in it took a click or a key. Every weasel overlay (`Dialog`, `Callout`, `Tooltip`, the `Select`, `ComboBox`, `MenuButton` and `PaintField` popovers, labkit's `ControlMatrix`) now renders only once its portal host is known, still before paint.
+- bbf8715: A slider row in a property panel now sits at the top of its grid cell like every other row. It was bottom-aligned, so beside a taller row (a select, a color) its label hung lower than its neighbor's.
+- 4cb1e04: A reorder drag (`useReorderDragList`, and so `ItemList`, `DataGrid`, `Tree`, `LayerList` and `PropertyList`) now drops below a row when the pointer is on its lower half. Before, any point on a row inserted above it, so dropping after a tall row meant dragging past its bottom edge.
+- c49c9e0: New package `@weasel-js/select`: selection as a value. `intentOf(modifiers, policy)` reads a press as `'replace'`, `'toggle'` or `'range'` under a policy naming which keys toggle and which range, and `select(state, id, intent, { order, eligible })` applies it to `{ ids, anchor }`. Ineligible ids — locked or disabled rows — are skipped by a range, dropped when a selection grows, and selected alone when pressed. `createSelectionStore` keeps ids outside a component, behind the `SelectionStore` contract, which core still exports under the same name.
+  
+  core's `useSelection`, and `Tree` and `LayerList` in `@weasel-js/ui`, now select through it rather than each keeping its own rules. `SelectionMode` and `SelectionExtendKey` are declared in `@weasel-js/select` and still exported from `@weasel-js/routing` and `@weasel-js/core`. Two edges change: `LayerList`'s Shift+arrow with its anchor hidden in a collapsed branch now selects the row it reaches instead of doing nothing, and a Cmd/Ctrl-press in a multi-select `Tree` drops any disabled row from the selection it builds on.
+- f78b82d: `StatusBar` takes `divided`, which draws a hairline between neighboring items, and now keeps to one line, clipping readouts it has no room for instead of letting them spill past its edge. labkit's chrome lays out its status region with it, putting the first readout marked `end` and those after it past a `StatusBarSpacer`. labkit's own `StatusBar` primitive is unchanged for now and will be retired.
+- 6e60eb1: Add glyphs for component variants, in a new Component variants group. `variantSolid`, `variantOutline`, `variantSubtle`, `variantGhost`, `variantLink`, and `variantPlain` draw one chip with less chrome at each step. `variantSegmented`, `variantSegmentedMinimal`, and `variantSegmentedFlat` draw the three styles of segmented bar.
+  
+  Each component with a `variant` prop exports a map from its variants to these glyphs, for a picker that shows them: `BUTTON_VARIANT_ICONS`, `BADGE_VARIANT_ICONS`, `CODE_VARIANT_ICONS`, `KEYCAP_VARIANT_ICONS`, `TOGGLE_BAR_VARIANT_ICONS`, `BUTTON_BAR_VARIANT_ICONS`, and `OPTIONS_BAR_VARIANT_ICONS`. The variant controls in the Button, Badge, Code, Powerline, KeyCap, and KeySequence stories now show them.
+- Updated dependencies [75dd38d]
+- Updated dependencies [e07c4ca]
+- Updated dependencies [934f195]
+- Updated dependencies [bf522cf]
+- Updated dependencies [c49c9e0]
+- Updated dependencies [2123049]
+  - @weasel-js/theme@1.8.1
+  - @weasel-js/core@1.8.1
+  - @weasel-js/select@1.8.1
+  - @weasel-js/svg@1.8.1
+  - @weasel-js/font@1.8.1
+  - @weasel-js/modes@1.8.1
+  - @weasel-js/quantity@1.8.1
+
 ## 1.8.0
 
 ### Patch Changes
