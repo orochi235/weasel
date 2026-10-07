@@ -3,7 +3,6 @@ import {
   SceneCanvas,
   useScene,
   useSelection,
-  meanScale,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View } from '@weasel-js/core';
@@ -20,10 +19,9 @@ const W = 400, H = 300;
  * space = momentary) and the wheel-pan tool, zoom via ctrl/⌘+wheel and the
  * keyboard (⌘+= / ⌘+- / ⌘+0). The rects spread across a coordinate range far
  * larger than the 400×300 viewport so panning has somewhere to go. The two
- * center rects show the stroke trade-off under zoom: the green one divides its
- * line width by `meanScale(view.scale)` (screen-pinned — constant pixel width
- * at every zoom), the purple one uses a plain world-px stroke (grows and
- * shrinks with the zoom).
+ * center rects show the stroke trade-off under zoom: the green one strokes a
+ * `{ px }` width (screen-pinned — constant pixel width at every zoom), the
+ * purple one a plain world-unit width (grows and shrinks with the zoom).
  */
 export function PanZoomDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
@@ -65,8 +63,8 @@ export function PanZoomDemo() {
         onViewChange={setView}
         layers={{
           scene: {
-            drawOne: (n, p, v): DrawCommand[] => {
-              const lineWidth = n.data.pin === 'screen' ? 2 / meanScale(v.scale) : 2;
+            drawOne: (n, p): DrawCommand[] => {
+              const lineWidth = n.data.pin === 'screen' ? { px: 2 } : 2;
               return [{
                 kind: 'path',
                 path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },

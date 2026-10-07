@@ -121,6 +121,15 @@ describe('a point mark at different zooms', () => {
       4,
     );
   });
+
+  // The renderer holds a { px } width and its dashes on screen in every
+  // direction; dividing by the mean scale was 1px across and 4px down at 4:1.
+  it('strokes the ring in screen pixels, dashes included', () => {
+    const [ring] = markCommands(POINT, { stale: true }, { x: 4, y: 1 });
+    const stroke = (ring as { stroke?: { width?: unknown; dash?: number[] } }).stroke;
+    expect(stroke?.width).toEqual({ px: 2 });
+    expect(stroke?.dash).toEqual([6, 4]);
+  });
 });
 
 describe('picking a point mark', () => {
@@ -140,6 +149,18 @@ describe('picking a point mark', () => {
   } as unknown as SceneNode<AnnotationData, 'marks', WorldRect>;
 
   // Ring radius 4px plus half the 2px outline: the ring's outer edge is 5px out.
+  // 5px on screen across and down alike; through the mean of 2 it was 2.5
+  // world units, 10px across and 2.5px down.
+  it('reaches the ring it draws and no further under a 4:1 zoom', () => {
+    const tolerance = { px: 0, scale: { x: 4, y: 1 } };
+    const at = (dx: number, dy: number) =>
+      shapeCoversPoint(node, pose, 50 + dx / 4, 50 + dy, { tolerance, scale: 2 });
+    expect(at(4.9, 0)).toBe(true);
+    expect(at(5.5, 0)).toBe(false);
+    expect(at(0, 4.9)).toBe(true);
+    expect(at(0, 5.5)).toBe(false);
+  });
+
   it.each([1, 4])('reaches the ring it draws and no further, at zoom %i', (zoom) => {
     const at = (px: number) => shapeCoversPoint(node, pose, 50 + px / zoom, 50, { scale: zoom });
     expect(at(4.9)).toBe(true);

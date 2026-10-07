@@ -281,7 +281,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'pan-zoom',
     title: 'Pan & Zoom',
     category: 'Viewport',
-    description: 'Viewport navigation in one place. Pan via the hand tool (H = sticky, hold space = momentary) and the wheel-pan tool; zoom via ctrl/⌘+wheel (about the cursor) and the keyboard (⌘+= / ⌘+- / ⌘+0). The two center rects show the scene-stroke trade-off: the green rect divides its line width by meanScale(view.scale) (screen-pinned — constant at every zoom); the purple rect uses a plain world-px stroke (grows and shrinks with zoom). Two further rects sit well outside the viewport so panning has somewhere to go.',
+    description: 'Viewport navigation in one place. Pan via the hand tool (H = sticky, hold space = momentary) and the wheel-pan tool; zoom via ctrl/⌘+wheel (about the cursor) and the keyboard (⌘+= / ⌘+- / ⌘+0). The two center rects show the scene-stroke trade-off: the green rect strokes a { px } width (screen-pinned — constant at every zoom); the purple rect a plain world-unit width (grows and shrinks with zoom). Two further rects sit well outside the viewport so panning has somewhere to go.',
     hint: 'H = hand · hold space = momentary · drag to pan · ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0 · Reset view to return home.',
     load: () => import('./demos/PanZoomDemo').then((m) => m.PanZoomDemo),
     path: 'apps/site/demos/PanZoomDemo.tsx',

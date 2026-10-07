@@ -81,7 +81,7 @@ export function ViewportDemo() {
                 {
                   kind: 'path',
                   path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  stroke: { paint: { color: 'rgba(255,255,255,0.25)' }, width: 1.5 / meanScale(view.scale) },
+                  stroke: { paint: { color: 'rgba(255,255,255,0.25)' }, width: { px: 1.5 } },
                 },
                 // Center-aligned: x = center - (text_width / 2). Approximates
                 // ctx.textAlign='center' since TextDrawCommand uses left baseline.

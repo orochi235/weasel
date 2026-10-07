@@ -9,7 +9,6 @@ import {
   useSimulation,
   ellipsePath,
   linePath,
-  meanScale,
 } from '@weasel-js/core';
 import type {
   Action,
@@ -85,8 +84,7 @@ function paintEdges(
     id: 'force-graph-edges',
     label: 'Edges',
     space: 'world',
-    draw: (_data, v): DrawCommand[] => {
-      const edgeW = 1 / meanScale(v.scale);
+    draw: (): DrawCommand[] => {
       const cmds: DrawCommand[] = [];
       for (const l of linksRef.current) {
         const src = typeof l.source === 'object' ? (l.source as GraphNode) : null;
@@ -95,7 +93,7 @@ function paintEdges(
         cmds.push({
           kind: 'path',
           path: linePath({ x: src.x, y: src.y }, { x: tgt.x, y: tgt.y }),
-          stroke: { paint: { color: '#aab' }, width: edgeW },
+          stroke: { paint: { color: '#aab' }, width: { px: 1 } },
         });
       }
       return cmds;
@@ -294,11 +292,11 @@ export function ForceGraphDemo() {
           onViewChange={setView}
           layers={{
             scene: {
-              drawOne: (n, p, v): DrawCommand[] => [{
+              drawOne: (n, p): DrawCommand[] => [{
                 kind: 'path',
                 path: ellipsePath(p),
                 fill: { fill: 'solid', color: GROUP_COLORS[n.data.group] },
-                stroke: { paint: { color: '#fff' }, width: 1.5 / meanScale(v.scale) },
+                stroke: { paint: { color: '#fff' }, width: { px: 1.5 } },
               }],
             },
             edges: { layer: edgesLayer, before: 'scene' },

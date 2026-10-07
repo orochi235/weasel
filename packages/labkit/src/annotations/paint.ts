@@ -3,7 +3,6 @@ import {
   ellipsePath,
   HANDLE_BASE_PX,
   linePath,
-  meanScale,
   PathBuilder,
   pxExtent,
   rectPath,
@@ -109,18 +108,8 @@ export function markCommands(
       const c = { x: m.pose.x, y: m.pose.y };
       const r = pxExtent(POINT_RADIUS_PX, scale);
       const ring = { x: c.x - r.x, y: c.y - r.y, width: 2 * r.x, height: 2 * r.y };
-      const px = 1 / meanScale(scale);
-      return [
-        {
-          kind: 'path',
-          path: ellipsePath(ring),
-          stroke: {
-            ...stroke,
-            width: MARK_WIDTH * px,
-            ...(stroke.dash ? { dash: stroke.dash.map((d) => d * px) } : {}),
-          },
-        },
-      ];
+      // On a `{ px }` stroke the dashes are screen pixels too.
+      return [{ kind: 'path', path: ellipsePath(ring), stroke: { ...stroke, width: { px: MARK_WIDTH } } }];
     }
     case 'text': {
       const text = m.data.title;
@@ -157,8 +146,5 @@ export const POINT_MARK_SHAPE: NodeShapeEntry<AnnotationData, WorldRect> = {
   paint: (node, pose) => markCommands({ pose, data: node.data }),
   silhouette: (_node, pose) => rectPath(pose.x, pose.y, 0, 0),
   // Filled, so a click inside the ring lands on it as it would on a handle.
-  ink: (_node, _pose, ctx) => {
-    const s = ctx?.scale ?? 1;
-    return { filled: true, outset: (POINT_RADIUS_PX + MARK_WIDTH / 2) / s, inset: 0 };
-  },
+  ink: () => ({ filled: true, outset: 0, inset: 0, outsetPx: POINT_RADIUS_PX + MARK_WIDTH / 2 }),
 };
