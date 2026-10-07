@@ -109,7 +109,9 @@ export function markCommands(
       const r = pxExtent(POINT_RADIUS_PX, scale);
       const ring = { x: c.x - r.x, y: c.y - r.y, width: 2 * r.x, height: 2 * r.y };
       // On a `{ px }` stroke the dashes are screen pixels too.
-      return [{ kind: 'path', path: ellipsePath(ring), stroke: { ...stroke, width: { px: MARK_WIDTH } } }];
+      return [
+        { kind: 'path', path: ellipsePath(ring), stroke: { ...stroke, width: { px: MARK_WIDTH } } },
+      ];
     }
     case 'text': {
       const text = m.data.title;
