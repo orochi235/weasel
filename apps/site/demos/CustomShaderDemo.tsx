@@ -31,6 +31,7 @@ void main() {
   outColor = vec4(col, 1.0);
 }`;
 
+const RIPPLE_SECONDS = 1.5;
 const RIPPLE_FRAG = `#version 300 es
 precision highp float;
 in vec2 v_uv;
@@ -45,11 +46,11 @@ void main() {
     if (float(i) >= u_rippleCount) break;
     vec3 r = u_ripples[i];
     float age = u_time - r.z;
-    if (age < 0.0 || age > 1.5) continue;
+    if (age < 0.0 || age > ${RIPPLE_SECONDS.toFixed(1)}) continue;
     float radius = age * 0.7;
     float ring = exp(-30.0 * pow(distance(v_uv, r.xy) - radius, 2.0));
     vec2 dir = normalize(v_uv - r.xy + 1e-6);
-    uv -= dir * ring * 0.04 * (1.0 - age / 1.5);
+    uv -= dir * ring * 0.04 * (1.0 - age / ${RIPPLE_SECONDS.toFixed(1)});
   }
   vec4 c = texture(u_image, uv);
   outColor = vec4(c.rgb * c.a, c.a);
@@ -302,10 +303,10 @@ export function CustomShaderDemo() {
     return () => loop.cancel();
   }, [frozen, loop]);
 
-  // Drop expired ripples
-  useEffect(() => {
-    setRipples((r) => r.filter((x) => time - x.t < 1.5).slice(-8));
-  }, [time]);
+  const liveRipples = useMemo(
+    () => ripples.filter((x) => time - x.t < RIPPLE_SECONDS).slice(-8),
+    [ripples, time],
+  );
 
   const plasmaUniforms: ShaderUniforms = useMemo(() => ({
     u_time: time,
@@ -315,11 +316,9 @@ export function CustomShaderDemo() {
   const rippleUniforms_ = useMemo((): ShaderUniforms => ({
     u_time: time,
     ...(tex ? { u_image: tex } : {}),
-    // A press can land a ninth ripple before the trim below runs, and a value
-    // longer than the declared `u_ripples[8]` is rejected.
-    u_ripples: ripples.slice(-8).flatMap((r) => [r.x, r.y, r.t]),
-    u_rippleCount: Math.min(ripples.length, 8),
-  }), [time, tex, ripples]);
+    u_ripples: liveRipples.flatMap((r) => [r.x, r.y, r.t]),
+    u_rippleCount: liveRipples.length,
+  }), [time, tex, liveRipples]);
 
   const voronoiUniforms = useMemo((): ShaderUniforms => ({
     u_time: time,
@@ -340,7 +339,7 @@ export function CustomShaderDemo() {
           title="Ripple"
           program={RIPPLE_PROGRAM}
           uniforms={rippleUniforms_}
-          onPress={(x, y) => setRipples((r) => [...r, { x, y, t: time }])}
+          onPress={(x, y) => setRipples((r) => [...r.filter((p) => time - p.t < RIPPLE_SECONDS), { x, y, t: time }].slice(-8))}
           disabled={!tex}
         />
         <Panel
