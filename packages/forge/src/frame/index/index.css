@@ -61,6 +61,9 @@
 .fg-index-cell {
   margin: var(--wzl-space-8) 0 0;
   width: fit-content;
+  /* A fluid specimen (a slider, a tiled workspace) has no width of its own,
+     so hugging it alone collapses the cell to its padding. */
+  min-width: min(100%, 20rem);
   max-width: 100%;
 }
 
@@ -76,8 +79,12 @@
   overflow: auto;
 }
 
-/* A padded story sits top-left as it would on a page, so the minimum height
-   that gives a centered one presence would only leave room under it. */
+/* A padded story sits top-left as it would on a page: the column's width, and
+   none of the minimum height that gives a centered one presence. */
+.fg-index-cell--padded {
+  width: auto;
+}
+
 .fg-index-cell--padded > .fg-index-cell__stage {
   display: block;
   min-height: 0;

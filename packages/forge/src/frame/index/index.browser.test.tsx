@@ -31,3 +31,25 @@ test('a centered cell keeps its minimum and centers a short specimen in it', () 
   expect(stage.height).toBeGreaterThanOrEqual(96);
   expect(Math.abs(specimen.top - stage.top - (stage.bottom - specimen.bottom))).toBeLessThanOrEqual(1);
 });
+
+function fluidCell(layout: 'padded' | 'centered') {
+  const { container } = render(
+    <div style={{ width: 600 }}>
+      <figure className={`fg-index-cell fg-index-cell--${layout}`}>
+        <div className="fg-index-cell__stage">
+          <div className="specimen" style={{ width: '100%', height: 20 }} />
+        </div>
+      </figure>
+    </div>,
+  );
+  return (container.querySelector('.specimen') as HTMLElement).getBoundingClientRect();
+}
+
+// A slider, a tiled workspace: anything sized by its container has no width of its own to hug.
+test('a padded cell gives a fluid specimen the column, as a page would', () => {
+  expect(fluidCell('padded').width).toBeGreaterThan(500);
+});
+
+test('a centered cell gives a fluid specimen room instead of collapsing it', () => {
+  expect(fluidCell('centered').width).toBeGreaterThan(200);
+});
