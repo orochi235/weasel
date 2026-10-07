@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { act, render, renderHook } from '@testing-library/react';
-import { Suspense, createElement, startTransition, use, useState } from 'react';
+import { Suspense, createElement, startTransition, useState } from 'react';
+import { Hang } from '@weasel-js/react/testing/abandonRender';
 import { overlayTop, useTextEdit } from './useTextEdit';
 import type { UseTextEditOptions } from './useTextEdit';
 import { SMALL_CAPS_SCALE, type StyledRun } from '@weasel-js/text';
@@ -1788,18 +1789,13 @@ describe('useTextEdit — abandoned renders', () => {
   it('commits through the committed options, not an abandoned render\'s', async () => {
     const h = makeHarness({ a: 'hi' });
     const setB = vi.fn();
-    const NEVER = new Promise<never>(() => {});
-    function Hang({ on }: { on: boolean }): null {
-      if (on) use(NEVER);
-      return null;
-    }
     let api: ReturnType<typeof useTextEdit> | null = null;
     let abandon: () => void = () => {};
     function Host(): ReturnType<typeof createElement> {
       const [b, setB2] = useState(false);
       abandon = () => setB2(true);
       api = useTextEdit(b ? { ...h.opts, setText: setB } : h.opts);
-      return createElement(Suspense, { fallback: null }, createElement(Hang, { on: b }));
+      return createElement(Suspense, { fallback: null }, createElement(Hang, { hang: b }));
     }
     render(createElement(Host));
     act(() => api!.startEdit('a'));

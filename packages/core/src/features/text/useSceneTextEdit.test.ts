@@ -9,7 +9,8 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { act, render, renderHook } from '@testing-library/react';
-import { Suspense, createElement, startTransition, use, useState } from 'react';
+import { Suspense, createElement, startTransition, useState } from 'react';
+import { Hang } from '@weasel-js/react/testing/abandonRender';
 import type { MouseEvent } from 'react';
 import { useScene } from '../../core/scene/useScene';
 import { asNodeId } from '../../core/scene/types';
@@ -535,11 +536,6 @@ describe('useSceneTextEdit — abandoned renders', () => {
     document.body.appendChild(container);
     const setA = vi.fn((data: TextItem, text: string) => ({ ...data, text }));
     const setB = vi.fn((data: TextItem, text: string) => ({ ...data, text }));
-    const NEVER = new Promise<never>(() => {});
-    function Hang({ on }: { on: boolean }): null {
-      if (on) use(NEVER);
-      return null;
-    }
     let api: ReturnType<typeof useSceneTextEdit> | null = null;
     let abandon: () => void = () => {};
     function Host(): ReturnType<typeof createElement> {
@@ -547,7 +543,7 @@ describe('useSceneTextEdit — abandoned renders', () => {
       abandon = () => setWhich(true);
       const scene = useScene({ items: [NODE] });
       api = useSceneTextEdit(scene, container, { setText: b ? setB : setA });
-      return createElement(Suspense, { fallback: null }, createElement(Hang, { on: b }));
+      return createElement(Suspense, { fallback: null }, createElement(Hang, { hang: b }));
     }
     render(createElement(Host));
     act(() => api!.startEdit('a'));

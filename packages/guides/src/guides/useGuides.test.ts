@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { act, render, renderHook } from '@testing-library/react';
-import { Suspense, createElement, startTransition, use, useState } from 'react';
+import { Suspense, createElement, startTransition, useState } from 'react';
+import { Hang } from '@weasel-js/react/testing/abandonRender';
 import { useGuides } from './useGuides';
 
 describe('useGuides', () => {
@@ -84,18 +85,13 @@ describe('useGuides', () => {
 
 describe('useGuides — abandoned renders', () => {
   it('getGuides answers with the committed list, not one a suspended transition rendered', () => {
-    const NEVER = new Promise<never>(() => {});
     let api: ReturnType<typeof useGuides> | null = null;
     let hang: (h: boolean) => void = () => {};
-    function Hang({ on }: { on: boolean }): null {
-      if (on) use(NEVER);
-      return null;
-    }
     function Host(): ReturnType<typeof createElement> {
       const [on, setOn] = useState(false);
       hang = setOn;
       api = useGuides();
-      return createElement(Suspense, { fallback: null }, createElement(Hang, { on }));
+      return createElement(Suspense, { fallback: null }, createElement(Hang, { hang: on }));
     }
     render(createElement(Host));
     const committed = api!;

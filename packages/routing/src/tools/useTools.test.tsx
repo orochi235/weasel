@@ -4,8 +4,9 @@
  * tools nor its comparison behind.
  */
 import { describe, expect, it } from 'vitest';
+import { act } from '@testing-library/react';
 import { useLayoutEffect, useState } from 'react';
-import { renderOutsideAct, renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
 import { useTools, type ToolsApi } from './useTools';
 import type { AnyTool } from './types';
@@ -39,7 +40,7 @@ describe('useTools after an abandoned render', () => {
   it('keeps its identity on the next render of the same tools', () => {
     const { committed, bump } = setup();
     const before = committed();
-    renderOutsideAct(bump);
+    act(() => { bump(); });
     expect(committed()).toBe(before);
   });
 });

@@ -10,7 +10,7 @@
 
 import { describe, it, expect, beforeAll, afterEach, onTestFinished, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
-import { Profiler, StrictMode, Suspense, startTransition, use, useLayoutEffect, useMemo, useState } from 'react';
+import { Profiler, StrictMode, Suspense, startTransition, useLayoutEffect, useMemo, useState } from 'react';
 import type React from 'react';
 import { Canvas } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
@@ -18,7 +18,7 @@ import type { RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
 import type { CanvasHelpers } from './useViewHelpers';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
-import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
+import { Hang, renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();
@@ -604,13 +604,8 @@ describe('Canvas state a render abandons', () => {
       },
     };
     const layers = { probe: { layer } };
-    const never = new Promise<never>(() => {});
     let setProps!: (p: Props) => void;
 
-    function Hang({ hang }: { hang: boolean }) {
-      if (hang) use(never);
-      return null;
-    }
     function Parent() {
       const [props, set] = useState(A);
       setProps = set;

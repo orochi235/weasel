@@ -2,7 +2,7 @@ import { Lab } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { renderOutsideAct, renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
+import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { describe, expect, it, vi } from 'vitest';
 import { meta, story } from '../story/define';
 import { loadNativeModule } from '../story/native';
@@ -204,7 +204,7 @@ describe('StoryTrial', () => {
       renderThenAbandon({ ok: false }, { ok: true }, (config) => <Trial config={config} />);
       const before = failures.mock.calls.length;
       // A re-render with the committed config, which has not changed.
-      renderOutsideAct(bump);
+      act(() => { bump(); });
       expect(failures.mock.calls.length).toBe(before);
     } finally {
       spy.mockRestore();
