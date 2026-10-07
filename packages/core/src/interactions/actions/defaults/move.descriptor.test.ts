@@ -27,7 +27,7 @@ function drag(
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
       selection: { get: () => ids as NodeId[] },
-      scene: scene as Scene<unknown, string, unknown>,
+      scene: scene,
       poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
       ...deps,
     },
@@ -76,7 +76,7 @@ describe('moveAction — non-rect poses through the descriptor', () => {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
         selection: { get: () => [id] as NodeId[] },
-        scene: scene as Scene<unknown, string, unknown>,
+        scene: scene,
         poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
         layout: { getLayout: (cid: string) => (cid === box ? layout : null) },
       },

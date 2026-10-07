@@ -379,7 +379,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // this adapter's consumer has nothing to fold children into them.
     hitTestArea(rect: Bounds, view?: RegionPickView) {
       return hitTestArea(
-        scene as unknown as Scene<unknown, string, unknown>,
+        scene,
         rect,
         pickOptsFor(view),
         d as PoseDescriptor<unknown>,
@@ -388,7 +388,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     },
     hitTestLasso(polygon, mode: LassoHitMode, view?: RegionPickView) {
       return hitTestLassoPolygon(
-        scene as unknown as Scene<unknown, string, unknown>,
+        scene,
         polygon,
         mode,
         pickOptsFor(view),

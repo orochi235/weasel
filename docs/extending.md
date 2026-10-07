@@ -429,8 +429,8 @@ the scene cannot resolve arrives as `undefined`; returning `null` means
 "nothing to draw right now".
 
 `node` arrives typed `SceneNode<unknown, string, TPose>`, so a `derivePath` that
-reads `node.data` casts. Naming `TData` and `TLayer` there would put them in a
-contravariant position and make `Scene` invariant in both.
+reads `node.data` casts. `SceneRegistry` holds derivations too, and it is
+generic in the pose alone.
 
 **Serialization carries a registry key, never the function.** `SceneRegistry`
 does for `derivePath` what it already does for `clipFromPose`: `toJSON` looks

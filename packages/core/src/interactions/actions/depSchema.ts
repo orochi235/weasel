@@ -492,7 +492,8 @@ declare module '@weasel-js/routing' {
      * Scene tree — structural reads + undoable mutations.
      *
      * The entry uses the fully-erased form `Scene<unknown, string, unknown>`
-     * because `DepSchema` must be concrete. Actions that need a typed scene
+     * because `DepSchema` must be concrete; any `Scene<MyData, MyLayer,
+     * MyPose>` is assignable to it. Actions that need a typed scene back
      * should cast: `deps.scene as Scene<MyData, MyLayer, MyPose>`.
      */
     scene: Scene<unknown, string, unknown>;

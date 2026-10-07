@@ -487,7 +487,7 @@ describe('moveAction — reparentOnDrop', () => {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {
         selection,
-        scene: scene as Scene<unknown, string, unknown>,
+        scene: scene,
         poseComposition: LOCAL_PC,
         ...(nodeAtPoint ? { nodeAtPoint } : {}),
       },
@@ -644,7 +644,7 @@ describe('moveAction — reparentOnDrop', () => {
     // Stub registry mirroring the dispatcher's DepRegistry.get contract.
     const sources: Record<string, () => unknown> = {
       selection: () => selection,
-      scene: () => scene as unknown as Scene<unknown, string, unknown>,
+      scene: () => scene,
       poseComposition: () => LOCAL_PC,
       nodeAtPoint: () => nodeAtPoint,
     };

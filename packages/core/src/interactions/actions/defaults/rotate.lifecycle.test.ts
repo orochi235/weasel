@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import { rotateAction } from './rotate';
 import { createScene } from 'core/scene/scene';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import type { RotateBehavior } from '../../gestures/types';
 
 type Pose = { x: number; y: number; width: number; height: number; rotation?: number };
@@ -23,7 +23,7 @@ function setup(selected: 'a' | 'ab' = 'a') {
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
       selection: { get: () => ids as NodeId[] },
-      scene: scene as unknown as Scene<unknown, string, unknown>,
+      scene: scene,
     } as Record<string, unknown>,
   };
   /** A frame with the pointer a quarter turn round from where it started. */

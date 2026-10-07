@@ -38,7 +38,7 @@ function makeScene(withThird: boolean) {
       pose: { x: 0, y: 0, width: 20, height: 20 },
     });
   }
-  return scene as unknown as Scene<unknown, string, unknown>;
+  return scene;
 }
 
 function selectionOf(ids: NodeId[]) {

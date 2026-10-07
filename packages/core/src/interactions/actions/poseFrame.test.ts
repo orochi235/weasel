@@ -8,14 +8,14 @@ import {
   FRAME_FIXTURE_WORLD,
   FRAME_FIXTURE_LOCAL,
 } from 'features/groups/frameFixture';
-import type { RectPose, Scene } from 'core/scene/types';
+import type { RectPose } from 'core/scene/types';
 
 function fixtureFrame() {
   const scene = makeFrameFixture();
   return {
     scene,
     frame: scenePoseFrame(
-      scene as unknown as Scene<unknown, string, unknown>,
+      scene,
       RIGID_POSE_COMPOSITION,
     ),
   };
@@ -48,7 +48,7 @@ describe('scenePoseFrame', () => {
 
   it('is the identity in both directions with no composition dep', () => {
     const scene = makeFrameFixture();
-    const frame = scenePoseFrame(scene as unknown as Scene<unknown, string, unknown>, undefined);
+    const frame = scenePoseFrame(scene, undefined);
     for (const id of [FRAME_FIXTURE_IDS.upright, FRAME_FIXTURE_IDS.turned] as const) {
       expect(frame.world(id)).toEqual(FRAME_FIXTURE_LOCAL[id]);
       expect(frame.local(id, FRAME_FIXTURE_LOCAL[id])).toEqual(FRAME_FIXTURE_LOCAL[id]);

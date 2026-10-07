@@ -4,7 +4,6 @@ import {
   resizeAction,
   createScene,
   type NodeId,
-  type Scene,
   type ResizeAnchor,
   rotatePoint,
 } from '@weasel-js/core';
@@ -42,7 +41,7 @@ function run(
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
       selection: { get: () => [a] as NodeId[] },
-      scene: scene as unknown as Scene<unknown, string, unknown>,
+      scene: scene,
       resizePolicy: { constraints: [align], pointSnap: [], expandIds: (ids: string[]) => ids },
     },
     drag: { start, current: start, delta: { x: 0, y: 0 }, affordance: { kind, anchor } },

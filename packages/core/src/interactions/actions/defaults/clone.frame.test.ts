@@ -16,7 +16,7 @@ import type { InvocationCtx } from '@weasel-js/routing';
 const { group, upright, turned } = FRAME_FIXTURE_IDS;
 
 function makeScene() {
-  return makeFrameFixture() as unknown as Scene<unknown, string, unknown>;
+  return makeFrameFixture();
 }
 
 function ctxAt(scene: Scene<unknown, string, unknown>, dx: number, dy: number): InvocationCtx {

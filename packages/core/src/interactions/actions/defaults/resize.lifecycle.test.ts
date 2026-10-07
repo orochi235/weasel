@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { resizeAction } from './resize';
 import { createScene } from 'core/scene/scene';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import type { ResizePolicy } from '../depSchema';
 
 type Pose = { x: number; y: number; width: number; height: number };
@@ -19,7 +19,7 @@ function setup(policy: Partial<ResizePolicy<unknown>>) {
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
       selection: { get: () => [a] as NodeId[] },
-      scene: scene as unknown as Scene<unknown, string, unknown>,
+      scene: scene,
       resizePolicy: { constraints: [], pointSnap: [], expandIds: (ids: string[]) => ids, ...policy },
     },
     drag: {

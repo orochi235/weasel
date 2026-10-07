@@ -952,6 +952,7 @@ export type { PoseSource, PosedNode } from './core/scene';
 export type {
   AddLayerSpec,
   AddNodeSpec,
+  ClipFromPoseFn,
   DerivedDep,
   DerivePathFn,
   DerivePoseFn,

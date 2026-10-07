@@ -151,7 +151,7 @@ describe('hitTestArea — the memoized AABB tracks the scene', () => {
       systemLayers: [{ id: 'main' }],
     });
     const id = scene.add({ kind: 'leaf', layer: 'main', pose: square(0, 0), data: { label: 'a' } });
-    return { scene: scene as unknown as Scene<unknown, string, unknown>, api: scene, id };
+    return { scene, api: scene, id };
   }
 
   const NEAR = { x: 0, y: 0, width: 10, height: 10 };
@@ -250,7 +250,7 @@ describe('hitTestArea — non-rect poses', () => {
   it('fast-rejects and admits circles through a descriptor', () => {
     const scene = createScene<object, 'main', CirclePose>({ systemLayers: [{ id: 'main' }] });
     const id = scene.add({ kind: 'leaf', layer: 'main', pose: circle(10, 10, 5), data: {} });
-    const s = scene as unknown as Scene<unknown, string, unknown>;
+    const s = scene;
     expect(hitTestArea(s, { x: 0, y: 0, width: 20, height: 20 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([id]);
     expect(hitTestArea(s, { x: 30, y: 30, width: 5, height: 5 }, undefined, CIRCLE_POSE_DESCRIPTOR as never)).toEqual([]);
   });

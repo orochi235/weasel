@@ -104,19 +104,30 @@ export interface DerivedDep<TPose> {
   readonly path: Path | null;
 }
 
+/** `F` with its parameters checked bivariantly, as a method's are, so that a
+ *  `Scene<D, L, MyPose>` is a `Scene<unknown, string, unknown>`. A callback for
+ *  an unrelated pose is still rejected; one for a narrower pose is not. */
+type Bivariant<F extends (...args: never[]) => unknown> = {
+  method(...args: Parameters<F>): ReturnType<F>;
+}['method'];
+
 /** Computes a node's path from its dependencies: the type of a node's
  *  `derivePath` and of each entry in `SceneRegistry.derivePath`. */
-export type DerivePathFn<TPose> = (
+export type DerivePathFn<TPose> = Bivariant<(
   node: Node<unknown, string, TPose>,
   deps: readonly (DerivedDep<TPose> | undefined)[],
-) => Path | null;
+) => Path | null>;
 
 /** Computes a node's pose from its dependencies: the type of a node's
  *  `derivePose` and of each entry in `SceneRegistry.derivePose`. */
-export type DerivePoseFn<TPose> = (
+export type DerivePoseFn<TPose> = Bivariant<(
   node: Node<unknown, string, TPose>,
   deps: readonly (DerivedDep<TPose> | undefined)[],
-) => TPose | null;
+) => TPose | null>;
+
+/** A container's clip, from its pose: the type of `ContainerNode.clipFromPose`
+ *  and of each entry in `SceneRegistry.clipFromPose`. */
+export type ClipFromPoseFn<TPose> = Bivariant<(pose: TPose) => Path | null>;
 
 interface NodeBase<TData, TLayer extends string, TPose> {
   id: NodeId;
@@ -152,9 +163,9 @@ interface NodeBase<TData, TLayer extends string, TPose> {
    *  dependency's world pose changes, never authored. Absolute-pose `Scene`
    *  makes that the dependency's own pose, and an ancestor's move reaches it as
    *  a `setPose` of its own from the container cascade.
-   *  `node` is deliberately widened: naming `TData`/`TLayer` here puts them in
-   *  a contravariant position, making `Scene` invariant in both and breaking
-   *  assignment kit-wide. The cost is that a `derivePath` casts to read `node.data`. */
+   *  `node` is widened to `unknown` data and `string` layer because
+   *  `SceneRegistry`, which holds these functions too, is generic in the pose
+   *  alone. The cost is that a `derivePath` casts to read `node.data`. */
   derivePath?: DerivePathFn<TPose>;
   /** Computes this node's pose from its dependencies' poses, the same way
    *  `derivePath` computes its path — same `dependsOn` list, same widened
@@ -190,7 +201,7 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  means "clip everything out" (children render nowhere). When set, the
    *  renderer rasterizes the returned path into the stencil buffer and
    *  paints descendants only where it covers. */
-  clipFromPose?: (pose: TPose) => Path | null;
+  clipFromPose?: ClipFromPoseFn<TPose>;
   /** How this container arranges its children. Whenever the container's
    *  child set or order changes, or its bounds change size, the scene hands
    *  the change to the strategy — `depart` for children that left it,
@@ -274,7 +285,7 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   pickable?: boolean;
   /** Only meaningful when `kind === 'container'`. Attach a clip-path function
    *  to the node; ignored for leaves. Mirrors `ContainerNode.clipFromPose`. */
-  clipFromPose?: (pose: TPose) => Path | null;
+  clipFromPose?: ClipFromPoseFn<TPose>;
   /** Mirrors `SceneNode.dependsOn`. */
   dependsOn?: readonly NodeId[] | 'children';
   /** Mirrors `SceneNode.derivePath`. Taken as a live function; its registry key is
@@ -370,7 +381,7 @@ export interface SerializedNode<TData, TLayer extends string, TPose> {
  *  Each function-field type has its own keyed map. */
 export interface SceneRegistry<TPose> {
   /** Maps registry keys to `clipFromPose` factory functions for container nodes. */
-  clipFromPose?: Readonly<Record<string, (pose: TPose) => Path | null>>;
+  clipFromPose?: Readonly<Record<string, ClipFromPoseFn<TPose>>>;
   /** Maps registry keys to `derivePath` functions for nodes with `dependsOn`. */
   derivePath?: Readonly<Record<string, DerivePathFn<TPose>>>;
   /** Maps registry keys to `derivePose` functions for nodes with `dependsOn`. */

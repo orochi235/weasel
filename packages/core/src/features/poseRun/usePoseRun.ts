@@ -104,7 +104,7 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     previews: Map<NodeId, unknown>;
     overrideEntries: Map<NodeId, { pose: unknown }>;
   } => ({
-    scene: optsRef.current.scene as Scene<unknown, string, unknown>,
+    scene: optsRef.current.scene,
     previews: state.current.previews,
     overrideEntries: state.current.overrideEntries,
   }), [optsRef]);

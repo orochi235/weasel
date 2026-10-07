@@ -4,7 +4,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { buildDeleteOps, deleteAction } from './delete';
 import { createScene } from 'core/scene/scene';
-import type { ContainerNode, RectPose, Scene } from 'core/scene/types';
+import type { ContainerNode, RectPose } from 'core/scene/types';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -341,13 +341,6 @@ describe('deleteAction.run — undo restores document order for a multi-node bat
 const LAYERS = [{ id: 'main' as const }];
 const leaf = { kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} } as const;
 
-/** `Scene` is contravariant in `TPose` through `clipFromPose` / `derivePath`, so a
- *  concretely-typed scene never satisfies the action-facing `Scene<unknown,
- *  string, unknown>`. Same cast every other real-scene action test uses. */
-function asActionScene(scene: unknown): Scene<unknown, string, unknown> {
-  return scene as Scene<unknown, string, unknown>;
-}
-
 function makeCycleScene() {
   const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
   const edge = asNodeId('edge');
@@ -367,7 +360,7 @@ function makeEdgeScene() {
 describe('buildDeleteOps over a real scene', () => {
   it('emits one op for a node and an edge that derives from it', () => {
     const { scene, a, edge } = makeEdgeScene();
-    const ops = buildDeleteOps(asActionScene(scene), [a, edge], 'Delete');
+    const ops = buildDeleteOps(scene, [a, edge], 'Delete');
     expect(ops).toHaveLength(1);
     expect((ops[0].args as { node: { id: string } }).node.id).toBe(a);
   });
@@ -376,7 +369,7 @@ describe('buildDeleteOps over a real scene', () => {
     const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
     const box = scene.add({ ...leaf, kind: 'container' });
     const child = scene.add({ ...leaf, parent: box });
-    expect(buildDeleteOps(asActionScene(scene), [box, child], 'Delete')).toHaveLength(1);
+    expect(buildDeleteOps(scene, [box, child], 'Delete')).toHaveLength(1);
   });
 
   it('emits one op for a node and a child of an edge that derives from it', () => {
@@ -385,19 +378,19 @@ describe('buildDeleteOps over a real scene', () => {
     const child = scene.add({ ...leaf, parent: group });
     // `child` is neither a descendant of `a` nor derived from it; it goes only
     // because `group` does. Walking one relation at a time never reaches `a`.
-    expect(buildDeleteOps(asActionScene(scene), [a, child], 'Delete')).toHaveLength(1);
+    expect(buildDeleteOps(scene, [a, child], 'Delete')).toHaveLength(1);
   });
 
   it('terminates, and still emits an op, on a dependency cycle', () => {
     const { scene, a } = makeCycleScene();
-    expect(buildDeleteOps(asActionScene(scene), [a], 'Delete')).toHaveLength(1);
+    expect(buildDeleteOps(scene, [a], 'Delete')).toHaveLength(1);
   });
 
   it('emits one op when both members of a cycle are selected', () => {
     const { scene, a, edge } = makeCycleScene();
     // Each reaches the other, so a rule that asks "does anything in the
     // selection cover me" filters both and the delete silently does nothing.
-    expect(buildDeleteOps(asActionScene(scene), [a, edge], 'Delete')).toHaveLength(1);
+    expect(buildDeleteOps(scene, [a, edge], 'Delete')).toHaveLength(1);
   });
 
   it('emits one op for a three-member cycle', () => {
@@ -406,7 +399,7 @@ describe('buildDeleteOps over a real scene', () => {
     scene.add({ ...leaf, id: x, dependsOn: [z] });
     scene.add({ ...leaf, id: y, dependsOn: [x] });
     scene.add({ ...leaf, id: z, dependsOn: [y] });
-    expect(buildDeleteOps(asActionScene(scene), [x, y, z], 'Delete')).toHaveLength(1);
+    expect(buildDeleteOps(scene, [x, y, z], 'Delete')).toHaveLength(1);
   });
 
   it('emits one op for a container and the child it derives from', () => {
@@ -416,12 +409,12 @@ describe('buildDeleteOps over a real scene', () => {
     scene.add({ ...leaf, id: child, parent: box });
     // No `dependsOn` cycle at all — the loop closes through parent ∪ dependsOn,
     // which is the graph a cascade actually follows.
-    expect(buildDeleteOps(asActionScene(scene), [box, child], 'Delete')).toHaveLength(1);
+    expect(buildDeleteOps(scene, [box, child], 'Delete')).toHaveLength(1);
   });
 
   it('emits one op for a repeated id', () => {
     const { scene, a } = makeEdgeScene();
-    expect(buildDeleteOps(asActionScene(scene), [a, a], 'Delete')).toHaveLength(1);
+    expect(buildDeleteOps(scene, [a, a], 'Delete')).toHaveLength(1);
   });
 
   it('still deletes a node whose dependsOn names an id that is not in the scene', () => {
@@ -430,13 +423,13 @@ describe('buildDeleteOps over a real scene', () => {
     // `ghost` rides along in the selection but can never produce an op, so it
     // must not stand in for one and filter the node that names it. Both orders:
     // with the stale id first, treating it as spoken-for swallows the edge.
-    expect(buildDeleteOps(asActionScene(scene), ['ghost', edge], 'Delete')).toHaveLength(1);
-    expect(buildDeleteOps(asActionScene(scene), [edge, 'ghost'], 'Delete')).toHaveLength(1);
+    expect(buildDeleteOps(scene, ['ghost', edge], 'Delete')).toHaveLength(1);
+    expect(buildDeleteOps(scene, [edge, 'ghost'], 'Delete')).toHaveLength(1);
   });
 
   it('emits one op per independent root', () => {
     const { scene, a, b } = makeEdgeScene();
-    expect(buildDeleteOps(asActionScene(scene), [a, b], 'Delete')).toHaveLength(2);
+    expect(buildDeleteOps(scene, [a, b], 'Delete')).toHaveLength(2);
   });
 });
 

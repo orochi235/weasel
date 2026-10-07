@@ -23,7 +23,7 @@
 
 import type { Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
-import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
+import type { ClipFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { resolveDerivedPath } from './derivedPath';
@@ -44,7 +44,7 @@ export interface PickCandidate<TPose> {
   pose: TPose;
   /** `false` makes the node transparent to the walk — see `SceneNode.pickable`. */
   pickable?: boolean;
-  clipFromPose?: (pose: TPose) => Path | null;
+  clipFromPose?: ClipFromPoseFn<TPose>;
 }
 
 /**

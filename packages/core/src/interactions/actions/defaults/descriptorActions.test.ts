@@ -16,7 +16,7 @@ const scene = (): S => createScene<object, 'main', CirclePose>({ systemLayers: [
 const leaf = (s: S, p: CirclePose) => s.add({ kind: 'leaf', layer: 'main', pose: p, data: {} });
 const deps = (s: S, ids: NodeId[]) => ({
   selection: { get: () => ids, set: () => {} },
-  scene: s as unknown as Scene<unknown, string, unknown>,
+  scene: s,
   poseDescriptor: CIRCLE_POSE_DESCRIPTOR,
 });
 const run = (action: { invoker?: unknown }, d: object, params?: object) =>

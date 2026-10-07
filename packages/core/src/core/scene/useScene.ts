@@ -39,7 +39,7 @@ function isTrivialOptions<TItem extends { id: string }>(
 
 function buildScene(options: unknown): Scene<unknown, string, unknown> {
   if (!isTrivialOptions(options)) {
-    return createScene(options as UseSceneOptions<unknown, string, unknown>) as Scene<unknown, string, unknown>;
+    return createScene(options as UseSceneOptions<unknown, string, unknown>);
   }
   return createScene<unknown, DefaultLayer, unknown>({
     systemLayers: [{ id: DEFAULT_LAYER }],
@@ -52,7 +52,7 @@ function buildScene(options: unknown): Scene<unknown, string, unknown> {
       data: item,
       id: asNodeId(item.id),
     })),
-  }) as Scene<unknown, string, unknown>;
+  });
 }
 
 /** React hook returning a kit-owned `Scene`. The Scene is constructed once

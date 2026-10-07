@@ -61,7 +61,6 @@ import {
   type RenderLayer,
   resolveTextStyle,
   sampleGradientStops,
-  type Scene,
   SceneCanvas,
   type SceneCanvasApi,
   type SerializedScene,
@@ -973,9 +972,7 @@ export function App(): ReactElement {
   // wires the journal accessor on the scene via
   // `scene.setActiveJournalAccessor` once the machine is constructed —
   // no ref dance needed at this layer.
-  const modality = useModality(
-    scene as unknown as import('@weasel-js/core').Scene<unknown, string, unknown>,
-  );
+  const modality = useModality(scene);
 
   // Restored external-op history entries (nudges, drags, action commits)
   // replay against this adapter after a reload. `defaultCommitAdapter` is the
@@ -1490,7 +1487,7 @@ function EditorWithSharedScene({
             <CreateOutlinesAdapterPublisher scene={scene} selection={selection} />
             <TextEditDepPublisher
               edit={textEdit}
-              scene={scene as unknown as Scene<unknown, string, unknown>}
+              scene={scene}
             />
           </SceneCanvas>
           )}

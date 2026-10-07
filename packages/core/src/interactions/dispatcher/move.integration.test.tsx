@@ -82,10 +82,7 @@ function MountDispatcher({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasE
 /** Registers live dep sources for 'scene' and 'selection'. */
 function RegisterDeps({ scene, selection }: { scene: Scene<D, L, P>; selection: SelectionApi }) {
   const registry = useDepRegistry();
-  // Cast through the DepRegistry's typed contract. The test imports depSchema so
-  // 'scene' and 'selection' are valid DepName entries; the scene generic is erased
-  // to the depSchema form (Scene<unknown, string, unknown>) at this boundary.
-  registry.register('scene', () => scene as unknown as Scene<unknown, string, unknown>);
+  registry.register('scene', () => scene);
   registry.register('selection', () => selection);
   return null;
 }

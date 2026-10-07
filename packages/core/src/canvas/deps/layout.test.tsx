@@ -4,13 +4,13 @@ import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-j
 import { useLayoutDepSource } from './layout';
 import type { LayoutStrategy, ReflowTransition } from '../../layout/types';
 import { createScene } from 'core/scene/scene';
-import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
+import { asNodeId, type RectPose } from 'core/scene/types';
 
 /** Only identity is under test, so any object stands in for a strategy. */
 const strategy = () => ({}) as unknown as LayoutStrategy<unknown>;
 
 const emptyScene = () =>
-  createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] }) as unknown as Scene<unknown, string, unknown>;
+  createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
 
 function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
   const r = useDepRegistry();
@@ -100,7 +100,7 @@ describe('useLayoutDepSource', () => {
     const scene = createScene<null, 'l', RectPose>({
       systemLayers: [{ id: 'l' }],
       initial: [{ id: asNodeId('C'), kind: 'container', layer: 'l', pose: { x: 0, y: 0, width: 9, height: 9 }, data: null, layout: declared }],
-    }) as unknown as Scene<unknown, string, unknown>;
+    });
     let reg!: DepRegistry;
     function Wire() {
       useLayoutDepSource(scene, { C: strategy(), D: strategy() });
@@ -133,7 +133,7 @@ describe('useLayoutDepSource', () => {
       glide: vi.fn(), settle: vi.fn(), stop: vi.fn(), poseOf: () => undefined,
     };
     function Wire() {
-      useLayoutDepSource(scene as unknown as Scene<unknown, string, unknown>, undefined, undefined, reflow);
+      useLayoutDepSource(scene, undefined, undefined, reflow);
       return null;
     }
     render(<DepRegistryProvider><Wire /></DepRegistryProvider>);

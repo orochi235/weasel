@@ -2267,7 +2267,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
               <PointerPublisher canvasRef={internalCanvasRef} />
               <StandardActionsRegistrar
                 selection={selection}
-                scene={scene as Scene<unknown, string, unknown>}
+                scene={scene}
                 adapter={adapter as unknown as BridgeAdapter}
                 actionDefaults={actionDefaults}
                 actions={resolvedActions}

@@ -18,7 +18,7 @@ const { upright, turned } = FRAME_FIXTURE_IDS;
 const IDS: NodeId[] = [upright, turned];
 
 function makeScene() {
-  return makeFrameFixture() as unknown as Scene<unknown, string, unknown>;
+  return makeFrameFixture();
 }
 
 function ctxAt(scene: Scene<unknown, string, unknown>, x: number, y: number): InvocationCtx {

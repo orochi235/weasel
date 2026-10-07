@@ -408,11 +408,11 @@ intercepting the press that drags the body.
   `kit:setLayer`. Widening the pull to those means deciding what a derivation
   is allowed to read, not just how a pose is compared.
 
-- **(P3) `Scene<TData, TLayer, TPose>` is contravariant in `TPose`** via
-  `clipFromPose` and `derivePath`, so no concretely-typed scene satisfies the
-  action-facing `Scene<unknown, string, unknown>`. Pre-dates `derivePath` —
-  `clipFromPose` has the same shape — and the action layer already reaches its
-  scene through a cast everywhere, so nothing is blocked today.
+- **(P3) A `derivePath` / `derivePose` casts to read `node.data`.** Its `node`
+  is typed `SceneNode<unknown, string, TPose>`. Variance no longer forces that —
+  the scene's callbacks are checked bivariantly — but `SceneRegistry`, which
+  holds the same functions, is generic in the pose alone, so typing `node`
+  means threading `TData`/`TLayer` through the registry first.
 
 ### `useScene` follow-ups
 

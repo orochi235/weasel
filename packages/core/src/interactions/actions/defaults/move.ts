@@ -952,7 +952,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         ?? DRAG_THRESHOLD_PX;
       const lifecycle = readGestureLifecycle(params, 'Move', behaviors);
       let engaged = false;
-      const adapter = moveGestureAdapter<unknown>(scene as Scene<unknown, string, unknown>);
+      const adapter = moveGestureAdapter<unknown>(scene);
       const origin = new Map<string, unknown>();
       for (const [id, pose] of startPoses) origin.set(id as string, pose);
       const readView = gestureViewReader(ctx.deps);

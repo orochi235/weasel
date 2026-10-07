@@ -17,7 +17,7 @@ import type { InvocationCtx } from '@weasel-js/routing';
 const { upright } = FRAME_FIXTURE_IDS;
 
 function makeScene() {
-  return makeFrameFixture() as unknown as Scene<unknown, string, unknown>;
+  return makeFrameFixture();
 }
 
 /** Drag the bottom-right handle — the corner opposite a fixed min/min anchor. */

@@ -18,7 +18,7 @@ import type { Mat3 } from '@weasel-js/geom';
 const { upright, turned } = FRAME_FIXTURE_IDS;
 
 function makeScene() {
-  return makeFrameFixture() as unknown as Scene<unknown, string, unknown>;
+  return makeFrameFixture();
 }
 
 function run(
