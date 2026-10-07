@@ -23,9 +23,10 @@
  *                   layer into its texture when it changes, nor the texture
  *                   memory (a 2560x1600 RGBA layer is 16 MB).
  *
- * The composite quads cycle through 8 distinct bitmaps, so neighbors always
- * rebind, without holding 64 canvas-sized textures. Each quad reads every texel
- * of a 16 MB texture once, so which of the 8 it reads does not change the cost.
+ * The composite quads cycle through 8 distinct bitmaps rather than holding 64
+ * canvas-sized textures. A run of image quads shares one draw until it runs out of
+ * texture slots (7 images a draw), so 8 cycling bitmaps break it exactly where 64 distinct ones
+ * would, and each quad reads every texel of a 16 MB texture once either way.
  *
  * A layer's `M` commands are a mix: half solid rects, a quarter text labels,
  * 15% images from six 64px bitmaps, and 10% linear gradients (`lib/kinds.ts`).
@@ -49,7 +50,7 @@ const DPR = 2;
 const ladder = (env: string | undefined, fallback: number[]) =>
   env?.split(',').map(Number).filter((n) => n >= 1) ?? fallback;
 const LAYERS = ladder(process.env.WEASEL_PERF_LAYERS, [1, 4, 16, 64]);
-const CMDS = ladder(process.env.WEASEL_PERF_CMDS, [10, 100, 1000]);
+const CMDS = ladder(process.env.WEASEL_PERF_CMDS, [10, 30, 100, 300, 1000]);
 
 const RUNS = rounds(3);
 
@@ -323,10 +324,11 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
   console.log(lines.join('\n'));
 
   expect(errors, `page errors:\n${errors.join('\n')}`).toEqual([]);
-  // A composite frame draws one quad per layer; fewer means the layers were
-  // not all drawn, and the comparison is against less work than it claims.
+  // The batch binds up to 8 textures a draw (`BATCH_TEXTURE_SLOTS`), so a
+  // composite of n layers is at least n / 8 draws; fewer means layers went
+  // missing and the comparison is against less work than it claims.
   for (const n of LAYERS) {
-    for (const m of CMDS) expect(draws(n, m, 'composite'), `${n}x${m} composite`).toBeGreaterThanOrEqual(n);
+    for (const m of CMDS) expect(draws(n, m, 'composite'), `${n}x${m} composite`).toBeGreaterThanOrEqual(Math.ceil(n / 8));
   }
 
   run.machine({ glRenderer, browser: `${browserName} ${browser.version()}` });
