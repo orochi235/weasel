@@ -30,11 +30,6 @@ Priority tags:
 
   A bare `<SceneCanvas>` now only renders, and `features` presets turn behavior on
   (`canvas/SceneCanvas/features.ts`). Still waiting on the answer:
-  - **Presets are coarser than two demos want.** `pick` is the only way to get the selection
-    outline, so a demo supplying its own select tool (LayerList, MultiSelect) still mounts
-    `pick`'s built-in one unused. `transform` brings rotation with resize, so a resize-only
-    demo (PointSnap hides the rotation handle in its layer config; Text doesn't) can't ask
-    for half.
   - **`features` now names two things.** The `<SceneCanvas features>` prop is unrelated to the
     `features/` source directories `docs/taxonomy.md` describes, and the two will be confused.
   - **`edit` cannot paste from the keyboard alone.** Cmd/Ctrl+V arrives as a DOM `paste`,
