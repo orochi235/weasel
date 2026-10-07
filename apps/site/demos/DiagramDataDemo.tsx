@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { DiagramView, diagramScene, type DiagramData } from '@weasel-js/diagram';
 
 /** Sinks listed out of order on purpose: the barycenter pass is what keeps
- *  these edges from crossing. */
+ *  these edges down to the one crossing K2,2 cannot avoid. */
 const DATA: DiagramData = {
   nodes: [
     { id: 'mix', lines: ['level mix', '0–1'] },

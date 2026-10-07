@@ -103,7 +103,11 @@ return <DiagramView specs={specs} width={360} height={600} selected={id} onSelec
 ```
 
 Node sizes are estimated from line lengths, so layout runs without a canvas.
-It defaults to `layered` with `order: 'barycenter'`.
+It defaults to `layered` with `order: 'barycenter'`. Labels paint only in a
+registered font family, and the default is sans-serif, so call
+`registerCanvasFont('sans-serif')` once or they render blank. `minScale` stops
+the initial fit from shrinking a wide diagram past readable; the rest is a pan
+away.
 
 ## Design notes
 
