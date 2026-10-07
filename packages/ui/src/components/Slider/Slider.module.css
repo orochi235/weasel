@@ -218,14 +218,15 @@
   color: var(--wzl-fg-subtle);
 }
 
-/* The end labels are pinned inside the track rather than centered on it, so a
- * wide one can't spill past the control and misalign whatever sits beside it. */
+/* An end label centers on its stop like the rest, but stops at the track's edge,
+ * so a wide one can't spill past the control and misalign whatever sits beside it.
+ * The rail is inset from that edge by `--rp-thumb-inset`. */
 .stopLabel[data-edge="start"] {
-  transform: none;
+  transform: translateX(max(-50%, -1 * var(--rp-thumb-inset)));
 }
 
 .stopLabel[data-edge="end"] {
-  transform: translateX(-100%);
+  transform: translateX(min(-50%, var(--rp-thumb-inset) - 100%));
 }
 
 .stopLabel[data-selected] {
