@@ -4,7 +4,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
 import {
-  pushClip, popClip, drawGroup, dispatch, tryStageFill, flushBatch, type DrawContext,
+  pushClip, popClip, drawGroup, dispatch, tryStageFill, flushBatch, meshBatching, type DrawContext,
 } from './draw';
 import {
   SOLID_RING_SIZE as IMAGE_RING_SIZE, FLOATS_PER_VERTEX, TEX_SLOT_OFFSET,
@@ -767,7 +767,7 @@ describe('tryStageFill', () => {
 
   it('flushes before answering false for a mesh past the vertex cap', () => {
     const { ctx, drawCount } = withStagedRun();
-    expect(tryStageFill(ctx, triangle(1024), { kind: 'solid', color: '#0000ff' })).toBe(false);
+    expect(tryStageFill(ctx, triangle(meshBatching.maxVerticesInRun + 1), { kind: 'solid', color: '#0000ff' })).toBe(false);
     expect(drawCount()).toBe(1);
   });
 
@@ -1156,7 +1156,14 @@ describe('flattenTolerance option', () => {
     const render = (flattenTolerance?: number): ReturnType<typeof makeGLRecorder> => {
       const rec = makeGLRecorder();
       const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1, flattenTolerance });
-      r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { fill: 'solid', color: '#000' } }]);
+      // Counted off the staged run, so the finer mesh has to join one.
+      const caps = { ...meshBatching };
+      meshBatching.maxVertices = Infinity;
+      try {
+        r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { fill: 'solid', color: '#000' } }]);
+      } finally {
+        Object.assign(meshBatching, caps);
+      }
       return rec;
     };
     // A finer tolerance means more segments, so the staged run is longer. The

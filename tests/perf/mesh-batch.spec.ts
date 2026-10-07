@@ -1,13 +1,14 @@
 /**
  * Where a mesh stops being cheaper to batch than to draw on its own.
  *
- * `MAX_BATCHED_MESH_VERTICES` in `packages/core/src/renderer/draw.ts` decides
- * it. A batched mesh is copied into the run and uploaded again every frame; one
- * drawn alone sits in the persistent mesh cache and costs a draw call, plus the
- * flush of whatever run was open before it. This times both at each rung of a
- * vertex-count ladder by moving the cap itself (`meshBatching.maxVertices`)
- * around each frame, so the two sides run the same commands through the same
- * renderer, interleaved sample by sample.
+ * `MAX_BATCHED_MESH_VERTICES` and `MAX_BATCHED_MESH_VERTICES_IN_RUN` in
+ * `packages/core/src/renderer/draw.ts` decide it, for a mesh arriving with no
+ * run open and with one. A batched mesh is copied into the run and uploaded
+ * again every frame; one drawn alone sits in the persistent mesh cache and
+ * costs a draw call, plus the flush of whatever run was open before it. This
+ * times both at each rung of a vertex-count ladder by moving both caps
+ * (`meshBatching`) around each frame, so the two sides run the same commands
+ * through the same renderer, interleaved sample by sample.
  *
  * Two shapes of frame, each `K` meshes:
  *
@@ -105,7 +106,7 @@ test('mesh batch: where batching a mesh stops paying', async ({ page, browser, b
       const { WeaselRenderer, tessellate } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
       const { meshBatching } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/draw.ts`);
       const { timeInterleaved } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);
-      const defaultCap: number = meshBatching.maxVertices;
+      const defaults = { ...meshBatching };
 
       const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
       const canvas = document.createElement('canvas');
@@ -163,8 +164,8 @@ test('mesh batch: where batching a mesh stops paying', async ({ page, browser, b
 
       const capFor = (mode: string): number => (mode === 'batched' ? Infinity : -1);
       function frameUnder(cmds: unknown[], mode: string): void {
-        meshBatching.maxVertices = capFor(mode);
-        try { renderer.render(cmds, identity); } finally { meshBatching.maxVertices = defaultCap; }
+        meshBatching.maxVertices = meshBatching.maxVerticesInRun = capFor(mode);
+        try { renderer.render(cmds, identity); } finally { Object.assign(meshBatching, defaults); }
       }
 
       // Uploads, program links and batch growth for both sides, before anything is timed.

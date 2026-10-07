@@ -3,7 +3,7 @@
  * every direction under a non-uniform transform, as a path's is — and a
  * stroke's dashes are in its width's units, not the glyph's em.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Stroke } from '@weasel-js/core';
 import { registerFont, FIXTURE_FONT, registerFontOutlines, glyphOutline } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
@@ -12,6 +12,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { mat3, type GlMat3 } from './math/mat3';
 import { FLOATS_PER_VERTEX } from './drawBatch';
+import { meshBatching } from './draw';
 import { _resetOutlineMeshCacheForTests } from './cache/outlineMeshCache';
 import { _resetOutlineStrokeMeshCacheForTests } from './cache/outlineStrokeMeshCache';
 
@@ -42,6 +43,10 @@ const span = (pts: Point[], axis: 0 | 1) =>
   Math.max(...pts.map((p) => p[axis])) - Math.min(...pts.map((p) => p[axis]));
 
 describe('outlined text — stroke lengths', () => {
+  // Every assertion here reads the batch, so every ribbon has to join it.
+  const caps = { ...meshBatching };
+  beforeEach(() => { meshBatching.maxVertices = meshBatching.maxVerticesInRun = Infinity; });
+  afterEach(() => { Object.assign(meshBatching, caps); });
   let recorder: ReturnType<typeof makeGLRecorder>;
   let r: WeaselRenderer;
 

@@ -1010,10 +1010,11 @@ one dead `const` and four stale disable directives.
   block method; D3D and Vulkan backends are where an in-flight buffer write
   would stall, if anywhere.
 
-- **(P3) `MAX_BATCHED_MESH_VERTICES` (256) is not a break-even; there are
-  two.** `tests/perf/mesh-batch.spec.ts` times 256 convex meshes a frame,
-  batched against drawn alone, by moving the cap itself each frame. Whether
-  batching pays depends on whether the mesh's own draw also breaks a run:
+- **(P3) The mesh batching caps are measured on one GPU.** A mesh joins a run
+  up to `MAX_BATCHED_MESH_VERTICES_IN_RUN` (1,024) vertices when one is open,
+  and up to `MAX_BATCHED_MESH_VERTICES` (96) when none is
+  (`packages/core/src/renderer/draw.ts`). `tests/perf/mesh-batch.spec.ts` times
+  256 convex meshes a frame, batched against drawn alone:
 
   | Frame | Break-even, two passes (vertices) | At 256: alone less batched (us/mesh) |
   |---|---:|---:|
@@ -1022,15 +1023,14 @@ one dead `const` and four stale disable directives.
 
   Drawn alone among rects, a mesh costs 26–37 us whatever its size, because it
   closes the rect's run and switches program twice; back to back it costs
-  1.4–6.7 us. So 256 is too high for consecutive meshes and far too low for
-  mixed ones, and being wrong on the mixed side costs about ten times more a
-  mesh. One reading: the cap should depend on whether a run is open when the
-  mesh arrives, not on vertex count alone. Not changed.
+  1.4–6.7 us. Both caps sit below their break-even because being wrong on the
+  open-run side costs about ten times more a mesh. A chain of mid-sized meshes
+  that a small one opened stays batched, which is the cheap side of being wrong.
   Measured on teitou (Apple M5 Max, ANGLE Metal), 2026-10-07, at the spec in
-  `2108ceb69`, two passes 20 minutes apart with atlas-wall runs between; load
-  average 2–5 on 18 cores, with small fleet jobs (1–3 core-minutes each)
-  overlapping. Result files: `tests/perf/recorded/mesh-batch-2026-10-07/`.
-  Only one GPU and backend.
+  `2108ceb69`, two passes 20 minutes apart; load average 2–5 on 18 cores, with
+  small fleet jobs overlapping. Result files:
+  `tests/perf/recorded/mesh-batch-2026-10-07/`. Left: the same run on a D3D or
+  Vulkan backend, where the break-evens may sit elsewhere.
 
 - **(P3) What inside Chromium or ANGLE slows frames drawn back to back in one
   task** — 4–10x after about eight (`tests/perf/README.md`, "Timing a frame")

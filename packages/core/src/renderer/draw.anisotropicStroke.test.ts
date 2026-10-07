@@ -15,6 +15,7 @@ import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
 import { mat3, type GlMat3 } from './math/mat3';
 import { FLOATS_PER_VERTEX } from './drawBatch';
+import { meshBatching } from './draw';
 import { _resetStrokeMeshCacheForTests } from './cache/strokeMeshCache';
 import { _resetMarkerCommandCacheForTests } from './cache/markerCommandCache';
 import { registerMarker } from '../core/strokeMarkers';
@@ -53,6 +54,10 @@ function distanceToSegment([x, y]: Point, [ax, ay]: Point, [bx, by]: Point): num
 const drawCalls = (rec: Recorder) => rec.calls.filter((c) => c.name === 'drawElements').length;
 
 describe('renderer — { px } strokes under a non-uniform transform', () => {
+  // Every assertion here reads the batch, so every ribbon has to join it.
+  const caps = { ...meshBatching };
+  beforeEach(() => { meshBatching.maxVertices = meshBatching.maxVerticesInRun = Infinity; });
+  afterEach(() => { Object.assign(meshBatching, caps); });
   let recorder: Recorder;
   let r: WeaselRenderer;
   let dispose: () => void;

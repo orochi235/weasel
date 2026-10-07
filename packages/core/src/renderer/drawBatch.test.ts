@@ -187,6 +187,50 @@ describe('renderer — consecutive solid-fill batching', () => {
     expect(draws()).toEqual([6, 6, 6]);
   });
 
+  /**
+   * Drawing a mesh alone closes whatever run is open and switches program
+   * twice, so it pays to batch a far bigger mesh into an open run than to
+   * start one with it (`tests/perf/mesh-batch.spec.ts`).
+   */
+  describe('how big a mesh may be and still join a run', () => {
+    /** A convex `n`-gon: earcut keeps its points as the mesh's vertices. */
+    const ngon = (x: number, n: number): DrawCommand => {
+      const coords = new Float32Array(n * 2);
+      for (let j = 0; j < n; j++) {
+        coords[j * 2] = x + 10 * Math.cos((j * 2 * Math.PI) / n);
+        coords[j * 2 + 1] = 10 + 10 * Math.sin((j * 2 * Math.PI) / n);
+      }
+      const commands = new Uint8Array(n + 1).fill(L);
+      commands[0] = M;
+      commands[n] = Z;
+      return {
+        kind: 'path',
+        path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' },
+        fill: { color: '#00ff00' },
+      } as DrawCommand;
+    };
+
+    it('batches a small mesh with no run open', () => {
+      r.render([ngon(0, 64), ngon(40, 64)]);
+      expect(draws()).toHaveLength(1);
+    });
+
+    it('draws a mid-sized mesh alone when no run is open', () => {
+      r.render([ngon(0, 200), ngon(40, 200)]);
+      expect(draws()).toHaveLength(2);
+    });
+
+    it('lets a mid-sized mesh join a run a rect opened', () => {
+      r.render([rect(0), ngon(40, 500), rect(80)]);
+      expect(draws()).toHaveLength(1);
+    });
+
+    it('draws a large mesh alone even into an open run', () => {
+      r.render([rect(0), ngon(40, 2000), rect(80)]);
+      expect(draws()).toHaveLength(3);
+    });
+  });
+
   describe('a linear gradient, which the ramp atlas lets join a run', () => {
     /** Every vertex the first flush wrote, as [ramp position, atlas row v,
      *  packed slot]. Bounded by the call's own length: `bufferSubData` records

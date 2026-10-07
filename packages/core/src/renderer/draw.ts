@@ -1046,24 +1046,31 @@ function nextFreeSlot(staged: StagedBatchState): number {
 }
 
 /**
- * Vertices above which a mesh keeps its own draw.
+ * Vertices above which a mesh keeps its own draw, by whether a run is open.
  *
  * Batching trades a draw call for copying and re-uploading the mesh every
  * frame, where a mesh already in the persistent cache costs nothing per frame
- * beyond the draw. Where those cross depends on whether the mesh's own draw
- * also breaks a run around it; `tests/perf/mesh-batch.spec.ts` measures both,
- * and `docs/TODO.md` holds what it found against this value.
+ * beyond the draw. Drawn alone with a run open, a mesh also closes that run and
+ * switches program twice, so it breaks even far later there. Both values sit
+ * below what `tests/perf/mesh-batch.spec.ts` measured, recorded in
+ * `docs/TODO.md`: being wrong on the open-run side costs ten times more.
  */
-const MAX_BATCHED_MESH_VERTICES = 256;
+const MAX_BATCHED_MESH_VERTICES = 96;
+const MAX_BATCHED_MESH_VERTICES_IN_RUN = 1024;
 
-/** The cap {@link canBatchMesh} reads. Mutable only so `mesh-batch.spec.ts`
- *  can time both sides of it in one page; the barrel does not export it. */
-export const meshBatching = { maxVertices: MAX_BATCHED_MESH_VERTICES };
+/** The caps {@link canBatchMesh} reads. Mutable only so `mesh-batch.spec.ts`
+ *  can time both sides of them in one page; the barrel does not export it. */
+export const meshBatching = {
+  maxVertices: MAX_BATCHED_MESH_VERTICES,
+  maxVerticesInRun: MAX_BATCHED_MESH_VERTICES_IN_RUN,
+};
 
 /** Whether a mesh can join a run. Stencil fills need their own two-pass dance,
  *  and a mesh past the cap is cheaper as its own draw. */
-function canBatchMesh(mesh: Mesh): boolean {
-  return !mesh.requiresStencil && (mesh.vertices.length >> 1) <= meshBatching.maxVertices;
+function canBatchMesh(ctx: DrawContext, mesh: Mesh): boolean {
+  if (mesh.requiresStencil) return false;
+  const cap = ctx.drawBatch.length > 0 ? meshBatching.maxVerticesInRun : meshBatching.maxVertices;
+  return (mesh.vertices.length >> 1) <= cap;
 }
 
 /**
@@ -1410,7 +1417,7 @@ export function tryStageFill(
   mesh: Mesh,
   paint: BatchPaint | undefined,
 ): boolean {
-  if (paint !== undefined && canBatchMesh(mesh)) {
+  if (paint !== undefined && canBatchMesh(ctx, mesh)) {
     if (paint.kind === 'ramp') pushRampMesh(ctx, mesh, paint);
     else pushMesh(ctx, mesh, paint);
     return true;
