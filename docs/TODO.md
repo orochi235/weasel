@@ -255,6 +255,11 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
+- **(P3) Three canvas components merge a forwarded `canvasRef` by hand.**
+  `DrawCanvas`, `MinimapCanvas` and `SceneViewCanvas` each write the element to
+  a function-or-object ref with the same branch and cast. One shared ref-merge
+  helper would serve all three.
+
 - **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
   `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
   still derives framing from document poses, so a node overridden outside the
@@ -916,14 +921,23 @@ was hiding an assertion that read `.space` without narrowing.
 
 Deferred, with the rationale in `eslint.config.js` next to each:
 
-- **(P3) eslint-plugin-react-hooks v7 compiler rules** — `refs` (387 findings
-  across 103 files; it has no writes-only mode, so render-time *writes* are
-  enforced by the local `weasel/no-render-ref-write` instead), `immutability` (18), `set-state-in-effect` (21),
-  `use-memo` (7), `globals` (6), `static-components` (3),
-  `preserve-manual-memoization` (2). `refs` dominates because reading a ref
-  during render is how a canvas library reaches mutable frame state, so a large
-  share are expected false positives. Worth evaluating rule by rule; not worth
-  adopting as a block.
+- **(P3) eslint-plugin-react-hooks v7 compiler rules still off.**
+  `static-components`, `use-memo` and `globals` (outside tests) are on. The rest:
+  - `refs` — 387 reports; reading a ref during render is how a canvas library
+    reaches frame state, and there is no writes-only mode
+    (`weasel/no-render-ref-write` covers writes).
+  - `immutability` — 52 reports, none a defect: `useVisibleRaf` loops
+    re-requesting themselves, and writes to forwarded refs, DOM nodes and
+    mutable engine objects.
+  - `set-state-in-effect` — 27 reports, one a defect (fixed). 12 are layout
+    measurement, subscription sync or resource creation, which the rule cannot
+    tell from derived state. The 14 that are derived state could be computed
+    in render instead: `ListEditor`, `useStoryRegistry`, `CommandPalette` (2),
+    `WeaselDemos`' tab reset, `LayeredCurveDemo`, `PerceptualColorSlidersDemo`,
+    draw's `App` (`docSelected`), `RegistryInspector` (2), `RegistryTree`, and
+    the `LayeredCurveEditor` (2) and `Slider` stories.
+  - `preserve-manual-memoization` — reports where React Compiler would bail,
+    and nothing here is compiled.
 
 `eqeqeq`, `@typescript-eslint/no-unused-vars` and
 `reportUnusedDisableDirectives` are all on as of 2026-09-05. The counts that

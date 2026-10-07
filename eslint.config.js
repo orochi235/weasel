@@ -25,14 +25,22 @@ const CORE_ALIASES = (() => {
  * below carry the dependency arrows the type system can't express; the
  * baseline block near the bottom carries rules that catch bugs.
  *
- * Deliberately off, and why:
- *   - eslint-plugin-react-hooks v7's compiler rules (`refs`, `immutability`,
- *     `set-state-in-effect`, `use-memo`, `globals`, `static-components`).
- *     `refs` alone reports 387 times across 103 files, because reading a ref
- *     during render is how a canvas library gets at mutable frame state. Worth
- *     revisiting per rule; not worth adopting as a block. `refs` cannot be
- *     narrowed to writes, so render-time ref writes are the local
+ * Deliberately off, and why — eslint-plugin-react-hooks v7's compiler rules,
+ * evaluated one at a time on 2026-10-07:
+ *   - `refs`: 387 reports across 103 files, because reading a ref during
+ *     render is how a canvas library gets at mutable frame state. It cannot
+ *     be narrowed to writes, so render-time ref writes are the local
  *     `weasel/no-render-ref-write` instead.
+ *   - `immutability`: 52 reports, none a defect. A `useVisibleRaf` callback
+ *     re-requesting its own loop reads as use-before-declare, and assigning to
+ *     a forwarded ref, a mutable engine object or a DOM node reads as
+ *     mutating a hook's value.
+ *   - `set-state-in-effect`: 27 reports, one a defect. Measuring layout,
+ *     syncing to a subscription and creating a disposable resource all set
+ *     state in an effect legitimately, and the rule cannot tell them apart
+ *     from derived state.
+ *   - `preserve-manual-memoization`: reports where React Compiler would skip
+ *     a component, and nothing here is compiled.
  */
 
 const languageOptions = {
