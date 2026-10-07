@@ -142,7 +142,7 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
   afterEach(async () => {
     if (http) await new Promise((done) => http?.close(done));
     await server?.close();
-    if (root) rmSync(root, { recursive: true, force: true });
+    if (root) rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
     http = undefined;
     server = undefined;
     root = undefined;
@@ -268,7 +268,7 @@ describe('forge vite plugin, with a config module per realm', () => {
 
   afterAll(async () => {
     await server?.close();
-    rmSync(root, { recursive: true, force: true });
+    rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   });
 
   const entry = async (name: string) => (await server.pluginContainer.load(`\0virtual:forge/${name}`)) as string;
@@ -329,7 +329,7 @@ describe('forge vite plugin, with a config module per realm', () => {
 describe('forge vite plugin, built', () => {
   let root: string | undefined;
   afterEach(() => {
-    if (root) rmSync(root, { recursive: true, force: true });
+    if (root) rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
     root = undefined;
   });
 

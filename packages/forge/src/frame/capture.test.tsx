@@ -1,6 +1,6 @@
 import { f } from '@weasel-js/labkit/config';
 import { act } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { openChannel } from '../protocol/channel';
 import type { FromFrame, ToFrame } from '../protocol/messages';
 import { meta, story } from '../story/define';
@@ -89,9 +89,11 @@ describe('startFrame capture.run', () => {
     shell.send({ type: 'init', config: { label: 'hello' }, state: null, globals: {} });
     await flush();
     shell.send({ type: 'capture.run', id: 'cap-1' });
-    await flush();
-
-    const answer = received.find((m) => m.type === 'capture');
+    const answer = await vi.waitFor(() => {
+      const found = received.find((m) => m.type === 'capture');
+      if (!found) throw new Error('no capture answer yet');
+      return found;
+    });
     expect(answer).toMatchObject({ type: 'capture', id: 'cap-1', ok: true });
     if (answer?.type !== 'capture' || !answer.ok) throw new Error('no picture');
     expect(answer.picture.kind).toBe('svg');
