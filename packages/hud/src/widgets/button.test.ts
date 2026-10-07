@@ -183,7 +183,7 @@ describe('button widget', () => {
 describe('button label placement', () => {
   beforeAll(async () => {
     const interJson = await import('../fonts/inter.json');
-    const fakePng = new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], { type: 'image/png' });
+    const fakePng = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
     global.fetch = vi.fn(async (url: string) => {
       if (url.endsWith('.json')) return new Response(JSON.stringify(interJson.default ?? interJson));
       if (url.endsWith('.png')) return new Response(fakePng);
