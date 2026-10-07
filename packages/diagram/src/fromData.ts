@@ -72,10 +72,23 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[]): Graph {
   };
 }
 
+/** Throws on a repeated node id, which names two nodes as one. An edge whose
+ *  end is not a node is dropped, and so is a repeat of an earlier edge with
+ *  the same ends and label: it would draw exactly on top of the first. */
 export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
   const font = opts.font ?? FONT;
-  const ids = new Set(data.nodes.map((n) => n.id));
-  const edges = data.edges.filter((e) => ids.has(e.from) && ids.has(e.to));
+  const ids = new Set<string>();
+  for (const n of data.nodes) {
+    if (ids.has(n.id)) throw new Error(`diagramScene: node id "${n.id}" appears more than once`);
+    ids.add(n.id);
+  }
+  const seen = new Set<string>();
+  const edges = data.edges.filter((e) => {
+    const id = edgeIdOf(e);
+    if (seen.has(id) || !ids.has(e.from) || !ids.has(e.to)) return false;
+    seen.add(id);
+    return true;
+  });
   // Seeded on the diagonal in source order, so whichever axis a layout reads
   // for in-rank order, it starts from the data's own order.
   const seeds: GraphNode[] = data.nodes.map((n, i) => ({

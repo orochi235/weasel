@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { Graph, GraphEdge, GraphNode } from './graph';
 import { layered } from './layered';
 
-function graph(ids: string[], pairs: [string, string][]): Graph {
+function graph(
+  ids: string[],
+  pairs: [string, string][],
+  at?: ReadonlyMap<string, { x: number; y: number }>,
+): Graph {
   const nodes: GraphNode[] = ids.map((id, i) => ({
-    id, bounds: { x: i, y: 0, width: 40, height: 20 }, pinned: false,
+    id, bounds: { ...(at?.get(id) ?? { x: i, y: 0 }), width: 40, height: 20 }, pinned: false,
   }));
   const edges: GraphEdge[] = pairs.map(([from, to], i) => ({ id: `e${i}`, from, to }));
   const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -53,5 +57,25 @@ describe('layered order', () => {
   it('lays out a graph with no edges without throwing', () => {
     const g = graph(['only'], []);
     expect(() => layered(g, { order: 'barycenter' })).not.toThrow();
+  });
+
+  it('untangles every rank of a deeper graph', () => {
+    // Ranks [a b] [q p] [x y], seeded so both gaps cross.
+    const g = graph(['a', 'b', 'q', 'p', 'x', 'y'], [['a', 'p'], ['b', 'q'], ['p', 'x'], ['q', 'y']]);
+    expect(crossings(g, layered(g))).toBe(2);
+    expect(crossings(g, layered(g, { order: 'barycenter' }))).toBe(0);
+  });
+
+  it('ignores a back edge when ordering, and still untangles', () => {
+    const g = graph(IDS, [...PAIRS, ['x', 'a']]);
+    expect(crossings(g, layered(g, { order: 'barycenter' }))).toBe(0);
+  });
+
+  it('moves nothing when re-run on its own output', () => {
+    const ids = ['a', 'b', 'q', 'p', 'x', 'y'];
+    const pairs: [string, string][] = [['a', 'p'], ['b', 'q'], ['p', 'x'], ['q', 'y'], ['x', 'a']];
+    const once = layered(graph(ids, pairs), { order: 'barycenter' });
+    const twice = layered(graph(ids, pairs, once), { order: 'barycenter' });
+    expect(twice.size).toBe(0);
   });
 });

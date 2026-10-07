@@ -200,6 +200,13 @@ export interface UseGestureDispatcherOptions {
    */
   onDoubleClick?: (world: { x: number; y: number }) => void;
   /**
+   * Observer fired on every synthesized click, in world coordinates — an
+   * observer for the same reason as `onDoubleClick`. Unlike it, this runs
+   * AFTER the click is dispatched, so whatever the click's binding changed
+   * (a pick, say) is already readable.
+   */
+  onClick?: (world: { x: number; y: number }) => void;
+  /**
    * Default true. Set false to leave the window `keydown`/`keyup` listeners
    * unattached so keyboard-bound actions never dispatch — pointer, wheel, and
    * contextmenu channels stay live. `<SceneCanvas>` wires this to
@@ -428,7 +435,7 @@ function computeMultiTouchGeometry(
  * providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onDoubleClick, views, channels, longPress } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onClick, onDoubleClick, views, channels, longPress } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
@@ -437,6 +444,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const pinchChannel = channels?.pinch !== false;
   const contextMenuChannel = channels?.contextMenu !== false;
   const ingestChannel = channels?.ingest !== false;
+  const onClickRef = useLatest(onClick);
   const onDoubleClickRef = useLatest(onDoubleClick);
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
@@ -1455,6 +1463,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
         };
         dispatch(clickEv);
+        onClickRef.current?.({ x: wClick.x, y: wClick.y });
 
         // Double-click synthesis: emit a `doubleclick` event AFTER the
         // second click when two clicks land within DOUBLE_CLICK_MAX_MS and
@@ -1713,5 +1722,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       for (const d of allDispatchers()) d.cancelAll('cancel');
     };
   }, [enabled, keyboard, canvasRef, pointerChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel,
-    allDispatchers, ctxRef, longPressRef, onDoubleClickRef, paintedCursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, ctxRef, longPressRef, onClickRef, onDoubleClickRef, paintedCursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

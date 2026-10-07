@@ -66,4 +66,18 @@ describe('diagramScene', () => {
     });
     expect(scene.get('b' as never)).toBeDefined();
   });
+
+  it('throws on a repeated node id', () => {
+    const data = { nodes: [{ id: 'a', lines: ['a'] }, { id: 'a', lines: ['again'] }], edges: [] };
+    expect(() => diagramScene(data)).toThrow(/"a" appears more than once/);
+  });
+
+  it('drops a repeat of an edge with the same ends and label', () => {
+    const data = {
+      nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }],
+      edges: [{ from: 'a', to: 'b' }, { from: 'a', to: 'b' }, { from: 'a', to: 'b', label: 'x' }],
+    };
+    const ids = diagramScene(data).map((s) => s.id).filter((id) => String(id).startsWith('edge:'));
+    expect(ids).toEqual(['edge:a->b', 'edge:a->b:x']);
+  });
 });

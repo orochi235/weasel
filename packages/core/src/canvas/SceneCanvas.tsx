@@ -160,6 +160,7 @@ import {
 } from 'features/selection/overlay';
 import { getActiveModeFor, type ModeRegistry } from '@weasel-js/modes';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
+import { useHitObserver } from './useHitObserver';
 import {
   buildChromeCtx,
   never,
@@ -977,6 +978,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * isolation on a group, text-edit on a text node.
      */
     onDoubleClick?: (hit: SceneCanvasHit | null) => void;
+    /** Called on every click — a press and release without a drag — with the
+     *  node under it, or `null` on empty canvas. Fires after the click's own
+     *  behavior, so a pick it made is already in the selection, and fires
+     *  again on a node that was already picked. */
+    onClick?: (hit: SceneCanvasHit | null) => void;
   };
 
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
@@ -1045,6 +1051,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     layerOrder,
     isPointerInteractive,
     onDoubleClick,
+    onClick,
     chromeVisibility,
     modes,
     getFocused: getFocusedProp,
@@ -1673,20 +1680,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // because the prop is a notification, not a behavior: as a binding it would
   // lose first-match-wins to `enterPathEdit` on every body hit and silently
   // stop firing.
-  const onDoubleClickRef = useLatest(onDoubleClick);
   const getNodeAtPointRef = useLatest(getNodeAtPoint);
-  // Identity only needs to change between "wired" and "not wired" — the
-  // callback and picker are both read through refs.
-  const wiresDoubleClick = Boolean(onDoubleClick);
-  const onDoubleClickObserver = useMemo(() => {
-    if (!wiresDoubleClick) return undefined;
-    return (world: { x: number; y: number }): void => {
-      const cb = onDoubleClickRef.current;
-      if (!cb) return;
-      const result = getNodeAtPointRef.current?.(world.x, world.y);
-      cb(result ? { id: result.id, kind: result.kind } : null);
-    };
-  }, [wiresDoubleClick, onDoubleClickRef, getNodeAtPointRef]);
+  const onDoubleClickObserver = useHitObserver(onDoubleClick, getNodeAtPointRef);
+  const onClickObserver = useHitObserver(onClick, getNodeAtPointRef);
 
   // (Legacy `gestures` prop removed alongside the consumer-facing action
   // hooks; undo/redo and friends now register via the Actions Registry.)
@@ -2323,6 +2319,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 rotationBadge={rotationBadge}
                 chromeAffordancesRef={chromeAffordancesRef}
                 onDoubleClick={onDoubleClickObserver}
+                onClick={onClickObserver}
                 longPress={longPress}
               />
               <ToolKeybindingsMounter
@@ -2419,6 +2416,7 @@ function GestureDispatcherMounter({
   rotationBadge,
   chromeAffordancesRef,
   onDoubleClick,
+  onClick,
   longPress: longPressOpts,
 }: {
   canvasRef: React.RefObject<HTMLElement | null>;
@@ -2476,6 +2474,8 @@ function GestureDispatcherMounter({
    *  `onDoubleClick` prop — see the option's doc on
    *  `UseGestureDispatcherOptions` for why it's an observer, not a binding. */
   onDoubleClick?: (world: { x: number; y: number }) => void;
+  /** Fires after every synthesized click. Backs the `onClick` prop. */
+  onClick?: (world: { x: number; y: number }) => void;
   /** Backs `<SceneCanvas longPress>`. */
   longPress?: SceneCanvasLongPress;
 }) {
@@ -2660,6 +2660,7 @@ function GestureDispatcherMounter({
     requestRedraw,
     paintedCursor,
     getRuleCtx,
+    onClick,
     onDoubleClick,
     longPress,
     ...(views ? { views } : {}),

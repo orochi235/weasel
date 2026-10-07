@@ -1,4 +1,5 @@
 import {
+  dragPanContribution,
   fitViewToBounds,
   SceneCanvas,
   useScene,
@@ -19,8 +20,9 @@ export interface DiagramViewProps {
   height: number;
   /** A participant id, or null for none. */
   selected?: string | null;
-  /** Reports a pick. The canvas keeps the pick even if `selected` does not
-   *  follow it; only a change to `selected` is pushed back in. */
+  /** Reports what each click leaves picked, `null` for none — a re-click on the
+   *  picked node reports it again. The canvas keeps the pick even if
+   *  `selected` does not follow it; only a change to `selected` is pushed in. */
   onSelect?: (id: string | null) => void;
   /** The smallest scale the initial fit may use. Unset, the whole diagram fits
    *  however small that makes it; set, it stops here and the rest is a pan away. */
@@ -39,7 +41,9 @@ const keyOf = (specs: readonly DiagramSpec[]) => {
   return k;
 };
 
-/** A read-only diagram: pan, zoom and pick a node, nothing else. A new `specs`
+const AMBIENT = [dragPanContribution()];
+
+/** A read-only diagram: drag or wheel to pan, zoom, and pick a node, nothing else. A new `specs`
  *  array is a new scene, fitted to the box, so memoize it: one built inline
  *  remounts the scene on every render. Labels paint only in a registered font
  *  family; `diagramScene` defaults to sans-serif, so call
@@ -61,7 +65,7 @@ function Inner({ specs, width, height, selected, onSelect, minScale, anchor, cla
     registry,
   });
   const selection = useSelection({ scene, mode: 'single' });
-  useMirroredSelection(selection, selected, onSelect);
+  const onClick = useMirroredSelection(selection, selected, onSelect);
   const defaultView = useMemo(
     () => fitDiagram(specs, { width, height }, minScale, anchor),
     [specs, width, height, minScale, anchor],
@@ -71,6 +75,8 @@ function Inner({ specs, width, height, selected, onSelect, minScale, anchor, cla
       scene={scene}
       selection={selection}
       features={['view', 'pick']}
+      ambient={AMBIENT}
+      onClick={onClick}
       width={width}
       height={height}
       className={className}
