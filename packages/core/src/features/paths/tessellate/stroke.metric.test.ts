@@ -112,3 +112,55 @@ describe('tessellateStroke under a stroke metric', () => {
     expect(Math.max(...along) - Math.min(...along)).toBeCloseTo(6, 6);
   });
 });
+
+/** The ribbon's extent on screen along `axis`. */
+function screenSpan(path: Path, stroke: Stroke, axis: 0 | 1, opts: Parameters<typeof tessellateStroke>[2] = {}) {
+  const mesh = tessellateStroke(path, stroke, opts);
+  const along: number[] = [];
+  for (let i = 0; i < mesh.vertices.length; i += 2) along.push(toScreen(mesh.vertices[i], mesh.vertices[i + 1])[axis]);
+  return { min: Math.min(...along), max: Math.max(...along) };
+}
+
+const across = linePath({ x: 0, y: 10 }, { x: 100, y: 10 });
+const down = linePath({ x: 10, y: 0 }, { x: 10, y: 100 });
+
+describe('world lengths on a ribbon built under a stroke metric', () => {
+  // `vertexWidths` are world widths whatever the stroke's own width is in, so
+  // the 4:1 view stretches them like any world geometry: 2 world units are
+  // 2px running across and 8px running down.
+  it.each([['across', across, 1, 2], ['down', down, 0, 8]] as const)(
+    'keeps a vertexWidths entry a world width on a line running %s',
+    (_label, path, axis, px) => {
+      const { min, max } = screenSpan(path, onePx({ vertexWidths: [2, 2] }), axis, { metric: metric! });
+      expect(max - min).toBeCloseTo(px, 4);
+    },
+  );
+
+  it('falls back to the stroke width, still in screen pixels, for a missing entry', () => {
+    const stroke = onePx({ vertexWidths: [Number.NaN, Number.NaN] });
+    const { min, max } = screenSpan(down, stroke, 0, { metric: metric! });
+    expect(max - min).toBeCloseTo(1, 4);
+  });
+
+  // A world-sized head stops the line a world distance short of the tip.
+  it.each([['across', across, 0, 360], ['down', down, 1, 90]] as const)(
+    'trims a world-measured inset in world on a line running %s',
+    (_label, path, axis, end) => {
+      const { max } = screenSpan(path, onePx(), axis, { metric: metric!, endInset: { length: 10, metric: null } });
+      expect(max).toBeCloseTo(end, 4);
+    },
+  );
+});
+
+describe('screen lengths on a world-width ribbon', () => {
+  // A head sized in screen pixels stops a world-width line that many pixels
+  // short on screen: 3 units of the metric's space are 6px at this scale.
+  it.each([['across', across, 0, 394], ['down', down, 1, 94]] as const)(
+    'trims a metric-measured inset in the metric on a line running %s',
+    (_label, path, axis, end) => {
+      const stroke: Stroke = { paint: { color: '#000' }, width: 2, cap: 'butt' };
+      const { max } = screenSpan(path, stroke, axis, { endInset: { length: 3, metric: metric! } });
+      expect(max).toBeCloseTo(end, 4);
+    },
+  );
+});

@@ -12,7 +12,8 @@ import type { Path } from '@weasel-js/core';
 import type { Stroke } from '@weasel-js/paint';
 import { tessellateStroke, resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { strokeInsets } from '../../core/markerInset';
-import { metricKey, type StrokeMetric } from 'features/paths/tessellate/metric';
+import { metricKey, type ScreenSpace, type StrokeSpaces } from 'features/paths/tessellate/metric';
+import type { InsetLength } from 'features/paths/tessellate/insets';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 
 /**
@@ -54,9 +55,10 @@ let cache = new WeakMap<Path, Map<string, StrokeEntry>>();
  *  triangles at draw time. Marker *identity* is absent too — only the
  *  resolved trim distance affects these triangles, so two heads with the
  *  same inset share one entry. */
-function configKey(stroke: Stroke, flattenTolerance: number | undefined, metric: StrokeMetric | undefined): string {
+function configKey(stroke: Stroke, flattenTolerance: number | undefined, spaces: StrokeSpaces): string {
   const width = resolveStrokeWidth(stroke.width ?? 1, 1);
   const insets = strokeInsets(stroke, width);
+  const ribbon = spaces.ribbon?.metric;
   return [
     width,
     stroke.cap ?? 'butt',
@@ -68,18 +70,20 @@ function configKey(stroke: Stroke, flattenTolerance: number | undefined, metric:
     flattenTolerance ?? '',
     insets.start,
     insets.end,
-    metricKey(metric),
+    metricKey(ribbon),
+    metricKey(spaces.start?.metric),
+    metricKey(spaces.end?.metric),
   ].join('|');
 }
 
-/** The tessellated ribbon for `path` under `stroke`, built in `metric`'s
- *  space when one is given. The same `Mesh` object comes back for as long as
- *  the entry lives. */
+/** The tessellated ribbon for `path` under `stroke`, built in the space
+ *  `spaces` names for it, and stopped short of each head in that head's own.
+ *  The same `Mesh` object comes back for as long as the entry lives. */
 export function strokeMesh(
   path: Path,
   stroke: Stroke,
   flattenTolerance: number | undefined,
-  metric?: StrokeMetric,
+  spaces: StrokeSpaces = {},
 ): Mesh {
   let byConfig = cache.get(path);
   if (byConfig === undefined) {
@@ -87,7 +91,7 @@ export function strokeMesh(
     cache.set(path, byConfig);
   }
 
-  const key = configKey(stroke, flattenTolerance, metric);
+  const key = configKey(stroke, flattenTolerance, spaces);
   const entry = byConfig.get(key);
   if (entry !== undefined && entry.vertexWidths === stroke.vertexWidths) {
     return entry.mesh;
@@ -97,15 +101,20 @@ export function strokeMesh(
   const insets = strokeInsets(stroke, width);
   const mesh = tessellateStroke(path, stroke, {
     flattenTolerance,
-    startInset: insets.start,
-    endInset: insets.end,
-    metric,
+    startInset: insetIn(insets.start, spaces.start, spaces.ribbon),
+    endInset: insetIn(insets.end, spaces.end, spaces.ribbon),
+    metric: spaces.ribbon?.metric,
   });
   // Only a new key grows the map; replacing one under a churning
   // `vertexWidths` must not evict the other configurations alongside it.
   if (entry === undefined && byConfig.size >= STROKE_CONFIGS_PER_PATH) byConfig.clear();
   byConfig.set(key, { mesh, vertexWidths: stroke.vertexWidths });
   return mesh;
+}
+
+/** `length`, measured in `head`'s space, as the tessellator reads it. */
+function insetIn(length: number, head: ScreenSpace | undefined, ribbon: ScreenSpace | undefined): InsetLength {
+  return head?.metric === ribbon?.metric ? length : { length, metric: head?.metric ?? null };
 }
 
 /** Test helper. Do not call from product code. */

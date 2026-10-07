@@ -163,11 +163,82 @@ describe('renderer — { px } strokes under a non-uniform transform', () => {
     expect(span(head, 1)).toBeCloseTo(7, 1);
   });
 
+  // A `{ px }` head is screen-sized whatever the line's width is in, so on a
+  // world-width line it is built in the stretch too.
+  it.each([
+    ['across', linePath({ x: 0, y: 50 }, { x: 100, y: 50 }), 0, 400],
+    ['down', linePath({ x: 50, y: 0 }, { x: 50, y: 100 }), 1, 100],
+  ] as const)('sizes a { px } head in screen pixels on a world-width line running %s', (_label, path, axis, tip) => {
+    const { ribbon, head } = frame([{
+      path,
+      stroke: { width: 0.5, paint: LINE, markerEnd: { key: 'test-green-arrow', size: { px: 2 } } },
+    }]);
+    expect(span(head, 0)).toBeCloseTo(6, 4);
+    expect(span(head, 1)).toBeCloseTo(6, 4);
+    expect(Math.max(...head.map((p) => p[axis]))).toBeCloseTo(tip, 4);
+    expect(Math.max(...ribbon.map((p) => p[axis]))).toBeCloseTo(tip - 6, 4);
+  });
+
+  // A world-sized head is world geometry whatever the line's width is in: the
+  // 4:1 view stretches it like any other.
+  it('builds a world-sized head in world on a { px } line', () => {
+    const { ribbon, head } = frame([{
+      path: linePath({ x: 0, y: 50 }, { x: 100, y: 50 }),
+      stroke: { width: { px: 2 }, paint: LINE, markerEnd: { key: 'test-green-arrow', size: 2 } },
+    }]);
+    // 6 world units long, 6 tall: 24px across, 6px down.
+    expect(span(head, 0)).toBeCloseTo(24, 4);
+    expect(span(head, 1)).toBeCloseTo(6, 4);
+    expect(Math.max(...head.map((p) => p[0]))).toBeCloseTo(400, 4);
+    // The inset is 3 units of 2 world: the ribbon stops 6 world, 24px, short.
+    expect(Math.max(...ribbon.map((p) => p[0]))).toBeCloseTo(376, 4);
+    expect(span(ribbon, 1)).toBeCloseTo(2, 4);
+  });
+
+  it.each([
+    ['across', linePath({ x: 0, y: 50 }, { x: 100, y: 50 }), 1, 2],
+    ['down', linePath({ x: 50, y: 0 }, { x: 50, y: 100 }), 0, 8],
+  ] as const)('keeps vertexWidths world widths on a { px } line running %s', (_label, path, axis, px) => {
+    const { ribbon } = frame([{ path, stroke: { ...onePx, vertexWidths: [2, 2] } }]);
+    expect(span(ribbon, axis)).toBeCloseTo(px, 4);
+  });
+
+  it('gives a { px } head\'s outline the same screen width on both axes of a world-width line', () => {
+    const off = registerMarker({
+      id: 'test-green-outline-px',
+      inset: 0,
+      fill: 'none',
+      outline: { width: 0.5, paint: { color: HEAD_FILL } },
+      path: ({ size }) => ({
+        kind: 'polygon',
+        commands: new Uint8Array([0, 1, 1, 4]),
+        coords: new Float32Array([0, 0, -3 * size, -1.5 * size, -3 * size, 1.5 * size]),
+        fillRule: 'nonzero',
+      }),
+    });
+    const { head } = frame([{
+      path: linePath({ x: 0, y: 50 }, { x: 100, y: 50 }),
+      stroke: { width: 0.5, paint: LINE, markerEnd: { key: 'test-green-outline-px', size: { px: 2 } } },
+    }]);
+    off();
+    expect(span(head, 0)).toBeCloseTo(7, 1);
+    expect(span(head, 1)).toBeCloseTo(7, 1);
+  });
+
   it('stays in one batched draw', () => {
     frame([
       { path: linePath({ x: 0, y: 50 }, { x: 100, y: 50 }), stroke: onePx },
       { path: linePath({ x: 50, y: 0 }, { x: 50, y: 100 }), stroke: { ...onePx, dash: [6, 4] } },
       { path: { kind: 'rect', x: 10, y: 10, width: 20, height: 40 }, stroke: onePx },
+      { path: linePath({ x: 0, y: 60 }, { x: 100, y: 60 }), stroke: { ...onePx, vertexWidths: [1, 3] } },
+      {
+        path: linePath({ x: 0, y: 70 }, { x: 100, y: 70 }),
+        stroke: { width: 0.5, paint: LINE, markerEnd: { key: 'test-green-arrow', size: { px: 2 } } },
+      },
+      {
+        path: linePath({ x: 0, y: 80 }, { x: 100, y: 80 }),
+        stroke: { ...onePx, markerStart: { key: 'test-green-arrow', size: 2 }, markerEnd: 'test-green-arrow' },
+      },
     ]);
     expect(drawCalls(recorder)).toBe(1);
   });

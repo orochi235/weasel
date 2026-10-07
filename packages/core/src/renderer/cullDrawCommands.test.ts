@@ -95,6 +95,36 @@ describe('cullDrawCommands', () => {
     });
   });
 
+  // At 1:16 a screen pixel across x is a whole world unit, where the mean
+  // scale of 4 makes it a quarter. A line 40px left of the screen, running
+  // down; an arrow reaches 3 size units from its tip.
+  describe('a head sized in other units than its line, at 1:16', () => {
+    const tall = mat3.scaled(mat3.identity(), 1, 16);
+    const down = (stroke: PathDrawCommand['stroke']): PathDrawCommand => ({
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([PATH_M, PATH_L]),
+        coords: new Float32Array([-40, 0, -40, 10]),
+        fillRule: 'nonzero',
+      },
+      stroke,
+    });
+
+    it('measures a { px } head on a world-width line on screen', () => {
+      // A 30px head reaches 90px across, where the mean scale made it 22.5.
+      const marked = down({ width: 0.1, paint, markerEnd: { key: 'arrow', size: { px: 30 } } });
+      expect(cullDrawCommands([marked], tall, SCREEN)).toEqual([marked]);
+    });
+
+    it('measures a world-sized head on a { px } line in world', () => {
+      // A 10-unit head reaches 30 world units, 30px across: 10 short of the
+      // screen. Taken as screen-sized, it reached 120.
+      const marked = down({ width: { px: 1 }, paint, markerEnd: { key: 'arrow', size: 10 } });
+      expect(cullDrawCommands([marked], tall, SCREEN)).toEqual([]);
+    });
+  });
+
   it('bounds a polygon by its control points', () => {
     const curve: PathDrawCommand = {
       kind: 'path',

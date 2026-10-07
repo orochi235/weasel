@@ -23,6 +23,32 @@ export interface StrokeMetric {
   readonly r: number;
 }
 
+/** A space a screen-sized part of a stroke is built in: the metric, and how
+ *  many screen pixels one of its units is. */
+export interface ScreenSpace {
+  readonly metric: StrokeMetric;
+  readonly pxPerUnit: number;
+}
+
+/**
+ * Where each part of a stroke is built. An absent part is built in world:
+ * everything is under a similarity, and otherwise a part whose size is a world
+ * length. The ribbon is screen-sized for a `{ px }` width; a head for a
+ * `{ px }` size, or for no size on a screen-sized ribbon, since it then takes
+ * the stroke width.
+ */
+export interface StrokeSpaces {
+  readonly ribbon?: ScreenSpace;
+  readonly start?: ScreenSpace;
+  readonly mid?: ScreenSpace;
+  readonly end?: ScreenSpace;
+}
+
+/** A cache-key fragment naming `space`; empty for world. */
+export function screenSpaceKey(space: ScreenSpace | undefined): string {
+  return space === undefined ? '' : `${metricKey(space.metric)}@${space.pxPerUnit}`;
+}
+
 /** Below this, a stretch is a rounding error and the transform a similarity. */
 const CONFORMAL_EPSILON = 1e-9;
 
@@ -65,6 +91,38 @@ export function polylineIntoMetric(pl: Polyline, m: StrokeMetric): void {
     pts[i] = m.p * x + m.q * y;
     pts[i + 1] = m.q * x + m.r * y;
   }
+}
+
+/** Map `pl`'s points back out through `P⁻¹`, in place. */
+export function polylineOutOfMetric(pl: Polyline, m: StrokeMetric): void {
+  const pts = pl.points;
+  for (let i = 0; i < pts.length; i += 2) {
+    const x = pts[i], y = pts[i + 1];
+    pts[i] = m.r * x - m.q * y;
+    pts[i + 1] = m.p * y - m.q * x;
+  }
+}
+
+/** Whether two spaces are the same — world being `null`. */
+export function sameMetric(a: StrokeMetric | null, b: StrokeMetric | null): boolean {
+  if (a === b) return true;
+  return a !== null && b !== null && a.p === b.p && a.q === b.q && a.r === b.r;
+}
+
+/**
+ * What one world unit of width, across a line running along the unit
+ * direction `(tx, ty)` of the metric's own space, measures in that space.
+ * `P` keeps areas, so a strip keeps its area while its length stretches by
+ * `|P u|` (`u` the line's world direction): its width shrinks by the same,
+ * and `1 / |P u|` is `|P⁻¹ t|`.
+ */
+export function worldWidthInMetric(m: StrokeMetric, tx: number, ty: number): number {
+  return Math.hypot(m.r * tx - m.q * ty, m.p * ty - m.q * tx);
+}
+
+/** The same, for a line running along the unit world direction `(ux, uy)`. */
+export function worldWidthInMetricAlongWorld(m: StrokeMetric, ux: number, uy: number): number {
+  return 1 / Math.hypot(m.p * ux + m.q * uy, m.q * ux + m.r * uy);
 }
 
 /** Map interleaved x,y pairs back out through `P⁻¹` = [[r, −q], [−q, p]], in

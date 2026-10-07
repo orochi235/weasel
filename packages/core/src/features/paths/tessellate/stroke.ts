@@ -1,30 +1,32 @@
 import type { Path } from '@weasel-js/core';
 import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
-import { type Mesh, extractPolylines, type Polyline, trimPolyline } from '@weasel-js/geom/tessellate';
+import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { splitForDash } from './dash';
-import { populatePolylineWidths } from './vertexWidths';
+import { populatePolylineWidths, type WidthScale } from './vertexWidths';
+import { type InsetLength, trimInSpace } from './insets';
 import {
-  type StrokeMetric, coordsOutOfMetric, polylineIntoMetric, rectIntoMetric,
+  type StrokeMetric, coordsOutOfMetric, rectIntoMetric, worldWidthInMetric, worldWidthInMetricAlongWorld,
 } from './metric';
 
 /** Options for stroke tessellation. */
 export interface StrokeOptions {
   flattenTolerance?: number;
   /**
-   * Shorten each open subpath by this much at its start / end, in the same
-   * world units as the path. Stroke markers use this so a filled head is not
-   * speared by its own line; the caller resolves the distance, because this
-   * layer knows nothing about the marker registry.
+   * Shorten each open subpath by this much at its start / end: a length in
+   * the ribbon's space, or one measured in a space of its own. Stroke markers
+   * use this so a filled head is not speared by its own line; the caller
+   * resolves the distance, because this layer knows nothing about the marker
+   * registry.
    */
-  startInset?: number;
-  endInset?: number;
+  startInset?: InsetLength;
+  endInset?: InsetLength;
   /**
    * Build the ribbon in this metric's space and map it back out, so the
    * transform it was derived from draws it at an exact screen width — see
-   * `./metric`. Width, dash and insets are then lengths in that space. The
-   * path is flattened in world first, so the ribbon follows the same
-   * vertices its fill does.
+   * `./metric`. Width and dash are then lengths in that space; `vertexWidths`
+   * stay world widths. The path is flattened in world first, so the ribbon
+   * follows the same vertices its fill does.
    */
   metric?: StrokeMetric;
 }
@@ -105,14 +107,12 @@ export function tessellateStroke(
   }
 
   const polylines = extractPolylines(workingPath, opts);
-  if (metric && !rectInMetric) for (const pl of polylines) polylineIntoMetric(pl, metric);
-  // Derive per-polyline-point widths by lerping vertexWidths across
-  // anchor pairs using each point's anchorT. When vertexWidths is absent
-  // or invalid (length mismatch / non-finite values), polyline.widths is
-  // left undefined and the uniform-width fast path runs.
-  if (stroke.vertexWidths && stroke.vertexWidths.length > 0) {
-    for (const pl of polylines) populatePolylineWidths(pl, stroke.vertexWidths, width);
-  }
+  // Per-point widths come first, in the space the points are in, so a trim
+  // interpolates them rather than re-reading an anchor's.
+  const vertexWidths = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
+  const scale: WidthScale | undefined = !metric ? undefined
+    : rectInMetric ? (tx, ty) => worldWidthInMetric(metric, tx, ty)
+      : (ux, uy) => worldWidthInMetricAlongWorld(metric, ux, uy);
   const dash = stroke.dash ?? [];
   const verts: number[] = [];
   const idx: number[] = [];
@@ -122,10 +122,10 @@ export function tessellateStroke(
 
   // Trim before dashing, so the dash pattern fits the visible line rather than
   // running off under a marker head.
-  const startInset = opts.startInset ?? 0;
-  const endInset = opts.endInset ?? 0;
+  const ribbonSpace = metric ?? null;
   for (const pl of polylines) {
-    const trimmed = startInset > 0 || endInset > 0 ? trimPolyline(pl, startInset, endInset) : pl;
+    if (vertexWidths) populatePolylineWidths(pl, vertexWidths, width, scale);
+    const trimmed = trimInSpace(pl, rectInMetric ? ribbonSpace : null, ribbonSpace, opts.startInset, opts.endInset);
     if (trimmed === null) continue;
     const subs = dash.length > 0 ? splitForDash(trimmed, dash) : [trimmed];
     for (const sub of subs) {

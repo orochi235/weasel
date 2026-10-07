@@ -48,11 +48,11 @@ describe('stroke ribbon cache', () => {
   // out, so a pan, a uniform zoom or a turned view keeps hitting.
   it('keys on the metric, which a uniform zoom does not change', () => {
     const path = rect();
-    const fourToOne = strokeSpaceOf(4, 0, 0, 1).metric!;
+    const fourToOne = { ribbon: { metric: strokeSpaceOf(4, 0, 0, 1).metric!, pxPerUnit: 2 } };
     const first = strokeMesh(path, base, undefined, fourToOne);
     expect(first).not.toBe(strokeMesh(path, base, undefined));
-    expect(strokeMesh(path, base, undefined, strokeSpaceOf(8, 0, 0, 2).metric!)).toBe(first);
-    expect(strokeMesh(path, base, undefined, strokeSpaceOf(1, 0, 0, 4).metric!)).not.toBe(first);
+    expect(strokeMesh(path, base, undefined, { ribbon: { metric: strokeSpaceOf(8, 0, 0, 2).metric!, pxPerUnit: 4 } })).toBe(first);
+    expect(strokeMesh(path, base, undefined, { ribbon: { metric: strokeSpaceOf(1, 0, 0, 4).metric!, pxPerUnit: 2 } })).not.toBe(first);
   });
 
   it('hits when only paint changes — colors are not geometry', () => {

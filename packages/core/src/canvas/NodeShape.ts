@@ -628,29 +628,29 @@ function strokeInPoseFrame(stroke: PaintedStroke, box: FillPoseBox): Stroke | nu
   return paint === stroke.paint ? stroke : { ...stroke, paint };
 }
 
-/** Per-side grab reach for a resolved stroke: world units, or screen pixels
- *  for a `{ px }` stroke, whose ribbon and heads the renderer builds on
- *  screen — a head with a world size included, at that size times `scale`. */
+/** Per-side grab reach for a resolved stroke: world units for what the
+ *  renderer builds in world, screen pixels for what it builds on screen — a
+ *  `{ px }` width, and each head by its own size's units. */
 function inkReach(
   stroke: Stroke | null,
   scale: number | undefined,
 ): Pick<NodeInk, 'outset' | 'inset' | 'outsetPx' | 'insetPx'> {
   if (stroke === null) return { outset: 0, inset: 0 };
-  const s = scale ?? 1;
-  const w = resolveStrokeWidth(stroke.width ?? 1, s);
   // A marker paints past the path's own end, and the kit's rule is that
   // visible chrome is hittable — so the reach has to cover it.
-  const marker = markerReach(stroke, w, scale);
-  const sides = (width: number, heads: number) => {
+  const heads = markerReach(stroke);
+  const sides = (width: number, headReach: number) => {
     switch (stroke.align ?? 'center') {
-      case 'inner': return { outset: heads, inset: width };
-      case 'outer': return { outset: width + heads, inset: 0 };
-      default: return { outset: width / 2 + heads, inset: width / 2 };
+      case 'inner': return { outset: headReach, inset: width };
+      case 'outer': return { outset: width + headReach, inset: 0 };
+      default: return { outset: width / 2 + headReach, inset: width / 2 };
     }
   };
-  if (typeof stroke.width !== 'object') return sides(w, marker);
-  const px = sides(stroke.width.px, marker * s);
-  return { outset: 0, inset: 0, outsetPx: px.outset, insetPx: px.inset };
+  const width = stroke.width ?? 1;
+  const world = sides(typeof width === 'object' ? 0 : resolveStrokeWidth(width, scale ?? 1), heads.world);
+  if (typeof width !== 'object' && !(heads.px > 0)) return world;
+  const px = sides(typeof width === 'object' ? width.px : 0, heads.px);
+  return { outset: world.outset, inset: world.inset, outsetPx: px.outset, insetPx: px.inset };
 }
 
 /** Apply {@link NodePaintCtx.vertexColors} to a path painter's body — its first

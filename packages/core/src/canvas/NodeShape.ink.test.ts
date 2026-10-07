@@ -12,6 +12,7 @@ import { solid, strokeOf } from '../util/paint';
 import { linePath } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
+import { registerMarker } from '../core/strokeMarkers';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 
@@ -197,6 +198,36 @@ describe('findShapeInk — a Stroke object on the node', () => {
     const screen = { filled: false, outset: 0, inset: 0, outsetPx: 4, insetPx: 4 };
     expect(findShapeInk(n, POSE, { scale: 2 })).toEqual(screen);
     expect(findShapeInk(n, POSE)).toEqual(screen);
+  });
+
+  // Each head's reach is measured where it is built: on screen for a { px }
+  // size, in world for a world size, whatever the line's own width is in.
+  describe('a head sized in other units than its line', () => {
+    const bar = () => registerMarker({
+      id: 'test-ink-bar',
+      inset: 0,
+      fill: { color: '#000' },
+      path: ({ size }) => ({
+        kind: 'polygon',
+        commands: new Uint8Array([0, 1, 1, 1, 4]),
+        coords: new Float32Array([-2 * size, -2 * size, 2 * size, -2 * size, 2 * size, 2 * size, -2 * size, 2 * size]),
+        fillRule: 'nonzero',
+      }),
+    });
+
+    it('reaches a { px } head on a world-width line in screen pixels', () => {
+      const off = bar();
+      const n = strokeNode({ paint: { color: '#000' }, width: 2, markerEnd: { key: 'test-ink-bar', size: { px: 5 } } });
+      expect(findShapeInk(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 1, inset: 1, outsetPx: 10, insetPx: 0 });
+      off();
+    });
+
+    it('reaches a world-sized head on a { px } line in world units', () => {
+      const off = bar();
+      const n = strokeNode({ paint: { color: '#000' }, width: { px: 8 }, markerEnd: { key: 'test-ink-bar', size: 3 } });
+      expect(findShapeInk(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 6, inset: 0, outsetPx: 4, insetPx: 4 });
+      off();
+    });
   });
 
   it("passes a consumer painter's per-side ink straight through", () => {

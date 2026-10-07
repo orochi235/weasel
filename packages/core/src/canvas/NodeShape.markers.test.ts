@@ -53,16 +53,16 @@ describe('markers on a path node', () => {
     expect(inkOf(marked)).toBeCloseTo(inkOf(plain) + reach * 2, 3);
   });
 
-  it('resolves a { px } marker size against the view scale for its reach', () => {
+  // A { px } head is built on screen, so its reach is screen pixels at any
+  // scale, beside the world reach of the world-width line it caps.
+  it('reaches a { px } marker size in screen pixels', () => {
     const node = nodeWith({
       paint: { fill: 'solid', color: '#000' }, width: 2,
       markerEnd: { key: 'arrow', size: { px: 8 } },
     });
-    const outset = (scale: number) =>
-      findNodeShape(node)!.ink!(node, POSE as never, { scale } as never)!.outset;
-    // A centered 2-wide stroke reaches 1; the arrow insets 3 size units.
-    expect(outset(1)).toBeCloseTo(1 + 24, 6);
-    expect(outset(4)).toBeCloseTo(1 + 6, 6);
+    const ink = (scale: number) => findNodeShape(node)!.ink!(node, POSE as never, { scale } as never)!;
+    // A centered 2-wide stroke reaches 1; the arrow reaches 3 size units.
+    for (const scale of [1, 4]) expect(ink(scale)).toMatchObject({ outset: 1, outsetPx: 24 });
   });
 });
 

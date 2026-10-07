@@ -144,7 +144,7 @@ function growingHead(reads?: MarkerEntry['reads']): MarkerEntry {
 }
 
 describe('markerReach', () => {
-  const at = (miterLimit: number): Stroke => ({ ...BASE, miterLimit, markerEnd: 'app-grow' });
+  const at = (miterLimit: number, width = 2): Stroke => ({ ...BASE, width, miterLimit, markerEnd: 'app-grow' });
 
   it.each([
     ['a head that does not say what it reads', undefined],
@@ -152,8 +152,8 @@ describe('markerReach', () => {
   ])('follows the stroke field that shapes %s', (_, reads) => {
     const dispose = registerMarker(growingHead(reads as MarkerEntry['reads']));
     try {
-      expect(markerReach(at(1), 2)).toBeCloseTo(2, 6);
-      expect(markerReach(at(10), 2)).toBeCloseTo(20, 6);
+      expect(markerReach(at(1)).world).toBeCloseTo(2, 6);
+      expect(markerReach(at(10)).world).toBeCloseTo(20, 6);
     } finally {
       dispose();
     }
@@ -165,9 +165,9 @@ describe('markerReach', () => {
     const counted: MarkerEntry = { ...head, path: (ctx) => { built++; return head.path(ctx); } };
     const dispose = registerMarker(counted);
     try {
-      markerReach(at(3), 2);
-      markerReach(at(3), 2);
-      markerReach(at(3), 5);
+      markerReach(at(3));
+      markerReach(at(3));
+      markerReach(at(3, 5));
       expect(built).toBe(1);
     } finally {
       dispose();

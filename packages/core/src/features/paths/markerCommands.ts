@@ -14,7 +14,9 @@ import { getMarker, type MarkerEntry, type MarkerPaint } from '../../core/stroke
 import { markerKeyOf, resolveMarkerSize } from '../../core/markerInset';
 import { extractPolylines } from '@weasel-js/geom/tessellate';
 import { markerSites, type MarkerSite } from './markerSites';
-import { coordsOutOfMetric, polylineIntoMetric, type StrokeMetric } from './tessellate/metric';
+import {
+  coordsOutOfMetric, polylineIntoMetric, type ScreenSpace, type StrokeSpaces,
+} from './tessellate/metric';
 
 /** Rotate + translate a marker's geometry onto its site. */
 function placed(path: Path, site: MarkerSite): PolygonPath {
@@ -41,45 +43,53 @@ export interface MarkerHead {
   readonly entry: MarkerEntry;
   readonly path: PolygonPath;
   readonly size: number;
+  /** Where it was built, when not in world — `size` is in this space's units. */
+  readonly space?: ScreenSpace;
 }
 
 /**
  * Every marker head for `path` under `stroke`, placed but unpainted.
  * `strokeWidth` is the already width-resolved stroke width; `flattenTolerance`
  * matches what the ribbon used, so heads land on the same flattened vertices
- * the stroke did. Given the ribbon's `metric`, heads are placed and sized in
- * its space too and come back in world units, so they meet the line they cap.
+ * the stroke did. A head `spaces` puts in a screen space is placed and sized
+ * there and comes back in world units, so it meets the line it caps.
  */
 export function markerHeads(
   path: Path,
   stroke: Stroke,
   strokeWidth: number,
   flattenTolerance: number | undefined,
-  metric?: StrokeMetric,
+  spaces: StrokeSpaces = {},
 ): MarkerHead[] {
-  const want = {
-    start: stroke.markerStart !== undefined,
-    mid: stroke.markerMid !== undefined,
-    end: stroke.markerEnd !== undefined,
-  };
-  if (!want.start && !want.mid && !want.end) return [];
+  const refs = { start: stroke.markerStart, mid: stroke.markerMid, end: stroke.markerEnd };
+  if (refs.start === undefined && refs.mid === undefined && refs.end === undefined) return [];
 
-  const refFor = (role: MarkerSite['role']): MarkerRef | undefined =>
-    role === 'start' ? stroke.markerStart : role === 'mid' ? stroke.markerMid : stroke.markerEnd;
+  // Heads sharing a space share one pass over the polyline mapped into it.
+  const groups = new Map<ScreenSpace | undefined, { start: boolean; mid: boolean; end: boolean }>();
+  for (const role of ['start', 'mid', 'end'] as const) {
+    if (refs[role] === undefined) continue;
+    const space = spaces[role];
+    let want = groups.get(space);
+    if (want === undefined) groups.set(space, (want = { start: false, mid: false, end: false }));
+    want[role] = true;
+  }
 
   const out: MarkerHead[] = [];
   for (const pl of extractPolylines(path, { flattenTolerance })) {
-    if (metric) polylineIntoMetric(pl, metric);
-    for (const site of markerSites(pl, want)) {
-      const ref = refFor(site.role);
-      if (ref === undefined) continue;
-      const entry = getMarker(markerKeyOf(ref));
-      if (entry === undefined) continue;
-      const size = resolveMarkerSize(ref, strokeWidth);
-      const angle = entry.orient === undefined || entry.orient === 'auto' ? site.angle : entry.orient;
-      const head = placed(entry.path({ size, stroke }), { ...site, angle });
-      if (metric) coordsOutOfMetric(head.coords, metric);
-      out.push({ entry, size, path: head });
+    for (const [space, want] of groups) {
+      const inSpace = space ? { ...pl, points: pl.points.slice() } : pl;
+      if (space) polylineIntoMetric(inSpace, space.metric);
+      for (const site of markerSites(inSpace, want)) {
+        const ref: MarkerRef | undefined = refs[site.role];
+        if (ref === undefined) continue;
+        const entry = getMarker(markerKeyOf(ref));
+        if (entry === undefined) continue;
+        const size = resolveMarkerSize(ref, strokeWidth);
+        const angle = entry.orient === undefined || entry.orient === 'auto' ? site.angle : entry.orient;
+        const head = placed(entry.path({ size, stroke }), { ...site, angle });
+        if (space) coordsOutOfMetric(head.coords, space.metric);
+        out.push(space ? { entry, size, path: head, space } : { entry, size, path: head });
+      }
     }
   }
   return out;
@@ -89,10 +99,14 @@ export function markerHeads(
  *  both resolve to no paint is dropped. */
 export function headCommands(heads: readonly MarkerHead[], stroke: Stroke): PathDrawCommand[] {
   const out: PathDrawCommand[] = [];
-  for (const { entry, path, size } of heads) {
+  for (const { entry, path, size, space } of heads) {
     const fill = resolvePaint(entry.fill, stroke, 'line');
+    // A head built in a screen space is in world once placed, but its outline
+    // width is still in that space's units — so it goes out as the screen
+    // width it stands for, and is stroked as exactly as the line.
+    const width = entry.outline ? entry.outline.width * size : 0;
     const outline = entry.outline
-      ? { paint: resolvePaint(entry.outline.paint, stroke, 'line'), width: entry.outline.width * size }
+      ? { paint: resolvePaint(entry.outline.paint, stroke, 'line'), width: space ? { px: width * space.pxPerUnit } : width }
       : null;
     if (fill === undefined && (outline === null || outline.paint === undefined)) continue;
     out.push({
@@ -164,18 +178,23 @@ function unitReach(entry: MarkerEntry, stroke: Stroke): number {
 }
 
 /**
- * How far any of `stroke`'s markers can paint from the vertex it sits on, in
- * world units. `strokeWidth` is the resolved width and `scale` the view scale
- * a `{ px }` size resolves against. Culling and a path node's grab reach both
- * measure through here.
+ * How far `stroke`'s markers can paint from the vertex each sits on, split by
+ * where each is built: `world` in world units for a head with a world size,
+ * `px` in screen pixels for one with a `{ px }` size. A head with no size
+ * takes the stroke width, and with it the width's units. Culling and a path
+ * node's grab reach both measure through here.
  */
-export function markerReach(stroke: Stroke, strokeWidth: number, scale = 1): number {
-  let reach = 0;
+export function markerReach(stroke: Stroke): { world: number; px: number } {
+  const reach = { world: 0, px: 0 };
+  const width = stroke.width ?? 1;
   for (const ref of [stroke.markerStart, stroke.markerMid, stroke.markerEnd]) {
     if (ref === undefined) continue;
     const entry = getMarker(markerKeyOf(ref));
     if (entry === undefined) continue;
-    reach = Math.max(reach, unitReach(entry, stroke) * resolveMarkerSize(ref, strokeWidth, scale));
+    const size = typeof ref === 'string' || ref.size === undefined ? width : ref.size;
+    const unit = unitReach(entry, stroke);
+    if (typeof size === 'number') reach.world = Math.max(reach.world, unit * size);
+    else reach.px = Math.max(reach.px, unit * size.px);
   }
   return reach;
 }

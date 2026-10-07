@@ -1,5 +1,5 @@
 import type { Path } from '@weasel-js/geom';
-import type { Stroke } from '@weasel-js/paint';
+import { resolveScreenLength, type Stroke } from '@weasel-js/paint';
 import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
 import { mat3, type GlMat3 } from './math/mat3';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
@@ -118,23 +118,20 @@ function strokeReach(stroke: Stroke, m: GlMat3): number {
  * bounding its own output before it paints can know. `least` is the scale
  * along the axis the transform shrinks most, where it differs from `scale`.
  *
- * A `{ px }` ribbon and its heads are built to their screen size in every
- * direction, so in world they reach farthest along that axis. A head with a
- * world size is built at that size in the ribbon's space, which the mean
- * scale takes to the screen.
+ * A `{ px }` ribbon or head is built to its screen size in every direction,
+ * so in world it reaches farthest along that axis. A head with a world size is
+ * built in world, whatever the line's width is in.
  */
 export function strokeReachAt(stroke: Stroke, scale: number, least = scale): number {
-  if (typeof stroke.width === 'object' && least > 0 && least < scale) {
-    const unitWidth = resolveStrokeWidth(stroke.width, scale);
-    return Math.max(strokeReachAt(stroke, least), markerReach(stroke, unitWidth, scale) * scale / least);
-  }
-  const base = resolveStrokeWidth(stroke.width ?? 1, scale);
+  const at = least > 0 ? least : scale;
+  const base = resolveStrokeWidth(stroke.width ?? 1, typeof stroke.width === 'object' ? at : scale);
   let width = base;
   if (stroke.vertexWidths) {
     for (const v of stroke.vertexWidths) if (v > width) width = v;
   }
   const spike = Math.max(stroke.miterLimit ?? DEFAULT_MITER_LIMIT, Math.SQRT2);
-  return Math.max(Math.abs(width) * spike, markerReach(stroke, base, scale));
+  const heads = markerReach(stroke);
+  return Math.max(Math.abs(width) * spike, heads.world, resolveScreenLength({ px: heads.px }, at));
 }
 
 function spritesMiss(sprites: Float32Array, m: GlMat3, box: Box): boolean {

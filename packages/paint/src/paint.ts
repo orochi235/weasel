@@ -226,8 +226,9 @@ export interface Stroke {
   /**
    * Per-anchor stroke width (length = `countPathAnchors(path)`). When set,
    * the tessellator interpolates half-widths along each segment to produce
-   * a tapered ribbon. `width` is used as the fallback for any anchor whose
-   * entry is missing or non-finite. Pressure-driven pencil strokes use
+   * a tapered ribbon. Entries are world units, even on a `{ px }` stroke.
+   * `width` is used as the fallback for any anchor whose entry is missing or
+   * non-finite. Pressure-driven pencil strokes use
    * this; pair with `pressureToWidth` to derive widths from stylus input.
    *
    * Joins between adjacent segments whose widths differ by more than
