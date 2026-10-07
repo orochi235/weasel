@@ -1,5 +1,19 @@
 # @weasel-js/routing
 
+## 1.9.0
+
+### Patch Changes
+
+- c06cc26: `ActionDeps` — the `deps` an action's invoker and `enabled` receive — now types each name through `DepSchema`, so once `@weasel-js/core` is in scope `ctx.deps.scene` is a `Scene | undefined`, `ctx.deps.selection` a `SelectionApi | undefined`, and a dep a consumer merges into `DepSchema` reads back as its declared type, all without a cast. A name nothing declares still reads as `unknown`. This is breaking for code that put a value in `deps` that does not match its `DepSchema` entry, such as a partial stub in a test: that is now a type error where the object is built.
+- 63d0bf8: `<SceneCanvas onClick>` reports every click with the node under it, after the click's own behavior has run, including a click on a node that is already picked. `DiagramView` uses it, so `onSelect` fires on a re-click, and it now pans on a plain drag as well as the wheel. `diagramScene` throws on a repeated node id and drops a repeated edge with the same ends and label.
+- Updated dependencies [dc5bcfc]
+  - @weasel-js/react@1.9.0
+  - @weasel-js/cursor@1.9.0
+  - @weasel-js/gestures@1.9.0
+  - @weasel-js/history@1.9.0
+  - @weasel-js/modes@1.9.0
+  - @weasel-js/select@1.9.0
+
 ## 1.8.1
 
 ### Patch Changes

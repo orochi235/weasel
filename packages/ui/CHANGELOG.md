@@ -1,5 +1,36 @@
 # @weasel-js/ui
 
+## 1.9.0
+
+### Patch Changes
+
+- ee165ac: A solid `muted` `Badge` is visible again. Its fill follows `--wzl-fg-muted`, which steps down from the current text color, and the badge used to set its own text color to white — so in light mode the fill came out white on a white surface, which blanked the modifier chord in every `GestureRoute` and `FallthroughDiagram`. The label color now sits on the badge's content, so the fill and stroke resolve against the surrounding text, and a solid muted label uses `--wzl-fg-inverse`, which reads in both modes. Pill badges get the same fix.
+- b83b452: labkit: a presented trial whose instrument declares a `clock` gets play controls along its bottom — play and pause, speed and loop, and for a seekable clock with a duration a scrub bar over the current pass and a reverse switch. Space plays and pauses, the arrows step, Home and End jump, R reverses and `<` / `>` change speed. A run that ends plays again after three seconds until a visitor touches the controls, and they hide in a presented box narrower than 480px. `<Lab transport={false}>` leaves them off. The same controls are `<TrialTransport trialId? keys? replay? />` for any lab chrome. A `TrialClock` now says its `duration`, whether it is `seekable`, and whether its run has `ended`.
+  
+  ui: `TRANSPORT_RATES`, the rates `<Transport>` offers, is exported.
+- 7b24dba: `Slider`'s first and last stop labels (and so `DetentSlider`'s) now center on their stops like the others, and move inward only as far as needed to stay inside the track. They used to be pinned flush to their stop, so a short end label sat visibly off its tick.
+- 5df9a88: `<Transport>` can scrub and reverse. Given `onSeek(playhead)`, it shows a scrub bar over the duration — a slider named "Position" that speaks the playhead in seconds, steps from the keyboard and takes the bar's slack. Given `onReverseChange(reverse)`, it shows a "Reverse" switch reflecting `reverse`. Without either handler it renders as before.
+- Updated dependencies [c06cc26]
+- Updated dependencies [dc5bcfc]
+- Updated dependencies [0b8d6f8]
+- Updated dependencies [0004749]
+- Updated dependencies [1b22863]
+- Updated dependencies [ad0da6c]
+- Updated dependencies [2b03077]
+- Updated dependencies [718769e]
+- Updated dependencies [3088756]
+- Updated dependencies [63d0bf8]
+- Updated dependencies [4146713]
+- Updated dependencies [24b2eaf]
+  - @weasel-js/core@1.9.0
+  - @weasel-js/react@1.9.0
+  - @weasel-js/svg@1.9.0
+  - @weasel-js/theme@1.9.0
+  - @weasel-js/font@1.9.0
+  - @weasel-js/modes@1.9.0
+  - @weasel-js/quantity@1.9.0
+  - @weasel-js/select@1.9.0
+
 ## 1.8.1
 
 ### Patch Changes

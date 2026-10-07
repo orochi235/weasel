@@ -1,5 +1,41 @@
 # @weasel-js/labkit
 
+## 1.9.0
+
+### Patch Changes
+
+- 718769e: A point annotation's ring is stroked with a `{ px }` width, so it keeps an even 2px outline under non-uniform zoom, and its pick reach is measured on screen.
+- a6b21fb: A camera can be told which gestures to take: `gestures: { pan, wheel, pinch, tap }` on `<CanvasStack>`, `<Stage>` and `<CameraInput>`, on an instrument's `canvas` or `stage`, and on `<Lab>`, whose keys win over the instrument's one by one. `wheel` is `'plain'` (the default), `'mod'` for Cmd/Ctrl+wheel only, or `false`; `pinch` covers a trackpad pinch and, new here, a two-finger pinch on a touch screen. A gesture the camera does not take is never claimed, so the page gets it — `<Lab present gestures={{ pan: false, wheel: false }}>` is an embed the page scrolls past — and the camera's `touch-action` follows: `none` while a finger pans it, `pan-x pan-y` once it does not, `auto` when it takes no touch at all.
+- d270868: Entering presentation refits the presented trial's view: an instrument whose `initialView` is a function of the viewport size — and a stage left to `fitStage` — is placed again for the presented box instead of keeping the camera its smaller workspace tile had. Leaving gives the tile back the view it had before.
+- b83b452: labkit: a presented trial whose instrument declares a `clock` gets play controls along its bottom — play and pause, speed and loop, and for a seekable clock with a duration a scrub bar over the current pass and a reverse switch. Space plays and pauses, the arrows step, Home and End jump, R reverses and `<` / `>` change speed. A run that ends plays again after three seconds until a visitor touches the controls, and they hide in a presented box narrower than 480px. `<Lab transport={false}>` leaves them off. The same controls are `<TrialTransport trialId? keys? replay? />` for any lab chrome. A `TrialClock` now says its `duration`, whether it is `seekable`, and whether its run has `ended`.
+  
+  ui: `TRANSPORT_RATES`, the rates `<Transport>` offers, is exported.
+- Updated dependencies [c06cc26]
+- Updated dependencies [c06cc26]
+- Updated dependencies [dc5bcfc]
+- Updated dependencies [ee165ac]
+- Updated dependencies [0b8d6f8]
+- Updated dependencies [0004749]
+- Updated dependencies [1b22863]
+- Updated dependencies [b83b452]
+- Updated dependencies [ad0da6c]
+- Updated dependencies [2b03077]
+- Updated dependencies [718769e]
+- Updated dependencies [3088756]
+- Updated dependencies [63d0bf8]
+- Updated dependencies [4146713]
+- Updated dependencies [24b2eaf]
+- Updated dependencies [7b24dba]
+- Updated dependencies [5df9a88]
+  - @weasel-js/core@1.9.0
+  - @weasel-js/kernel3d@1.9.0
+  - @weasel-js/ui@1.9.0
+  - @weasel-js/loupe@1.9.0
+  - @weasel-js/svg@1.9.0
+  - @weasel-js/theme@1.9.0
+  - @weasel-js/geom@1.9.0
+  - @weasel-js/quantity@1.9.0
+
 ## 1.8.1
 
 ### Patch Changes

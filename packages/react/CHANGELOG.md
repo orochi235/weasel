@@ -1,5 +1,13 @@
 # @weasel-js/react
 
+## 1.9.0
+
+### Patch Changes
+
+- dc5bcfc: `@weasel-js/react` exports `assignRef(ref, value)`, which writes a value into a ref prop whether it is a callback ref or an object ref. `<DrawCanvas>`, `<SceneViewCanvas>`, `<MinimapCanvas>`, `<SceneCanvas>` and `ItemList` forward their refs through it.
+  
+  A callback ref passed as `<SceneViewCanvas canvasRef>` or `<MinimapCanvas canvasRef>` is now called only when the canvas attaches or detaches, or when the ref itself changes. It used to be called with `null` and then the element again on every render.
+
 ## 1.8.1
 
 No changes in this release.

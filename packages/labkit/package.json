@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/labkit",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "description": "React widgets for building self-contained interactive lab pages",
   "license": "MIT",
   "author": "orochi235",
@@ -115,18 +115,18 @@
     "dev:3d": "LABKIT_EXAMPLE=3d-lab vite"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.8.1",
-    "@weasel-js/theme": "1.8.1",
+    "@weasel-js/core": "1.9.0",
+    "@weasel-js/theme": "1.9.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.8.1",
-    "@weasel-js/kernel3d": "1.8.1",
-    "@weasel-js/loupe": "1.8.1",
-    "@weasel-js/quantity": "1.8.1",
-    "@weasel-js/svg": "1.8.1",
-    "@weasel-js/ui": "1.8.1",
+    "@weasel-js/geom": "1.9.0",
+    "@weasel-js/kernel3d": "1.9.0",
+    "@weasel-js/loupe": "1.9.0",
+    "@weasel-js/quantity": "1.9.0",
+    "@weasel-js/svg": "1.9.0",
+    "@weasel-js/ui": "1.9.0",
     "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7",
     "react-aria-components": "^1.5.0",
@@ -136,8 +136,8 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.12",
     "@testing-library/jest-dom": "^7.0.1",
-    "@weasel-js/guides": "1.8.1",
-    "@weasel-js/modes": "1.8.1",
+    "@weasel-js/guides": "1.9.0",
+    "@weasel-js/modes": "1.9.0",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",
     "tsx": "^4.19.0",

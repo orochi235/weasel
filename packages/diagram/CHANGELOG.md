@@ -1,5 +1,34 @@
 # @weasel-js/diagram
 
+## 1.9.0
+
+### Minor Changes
+
+- 2540471: Add `diagramScene` and `DiagramView`, a laid-out read-only diagram from plain nodes and edges, and `order: 'barycenter'` for `layered`, which reorders ranks to reduce crossings.
+  
+  <!-- bump-approved: minor: maintainer — 1.9.0 release requested 2026-10-07 -->
+
+### Patch Changes
+
+- c06cc26: Read action deps at their declared `DepSchema` types instead of casting them.
+- 1b22863: `fitViewToBounds` takes `anchor: 'start'`, which shows the left or top edge of bounds that overflow the viewport instead of their middle. `DiagramView` passes it through, alongside a new `minScale` floor on its initial fit.
+- 63d0bf8: `<SceneCanvas onClick>` reports every click with the node under it, after the click's own behavior has run, including a click on a node that is already picked. `DiagramView` uses it, so `onSelect` fires on a re-click, and it now pans on a plain drag as well as the wheel. `diagramScene` throws on a repeated node id and drops a repeated edge with the same ends and label.
+- 24b2eaf: `SceneRegistry`, `DerivedDep`, `DerivePathFn` and `DerivePoseFn` take the scene's data and layer types after the pose (`SceneRegistry<TPose, TData, TLayer>`), defaulting to `unknown` and `string`. A `derivePath` or `derivePose` on a `Scene<MyData, MyLayer, MyPose>`, or in its registry, now reads its node's and its dependencies' `data` and `layer` typed instead of casting. `withKitRegistry` and `withDiagramRegistry` carry the same parameters through. Existing `SceneRegistry<TPose>` spellings are unchanged.
+- Updated dependencies [c06cc26]
+- Updated dependencies [dc5bcfc]
+- Updated dependencies [0b8d6f8]
+- Updated dependencies [0004749]
+- Updated dependencies [1b22863]
+- Updated dependencies [ad0da6c]
+- Updated dependencies [2b03077]
+- Updated dependencies [718769e]
+- Updated dependencies [3088756]
+- Updated dependencies [63d0bf8]
+- Updated dependencies [4146713]
+- Updated dependencies [24b2eaf]
+  - @weasel-js/core@1.9.0
+  - @weasel-js/geom@1.9.0
+
 ## 1.8.1
 
 ### Patch Changes
