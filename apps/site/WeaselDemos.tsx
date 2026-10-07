@@ -181,10 +181,8 @@ function DemoView({ entry }: { entry: DemoEntry }) {
   // Tabs: the demo's primary TSX is always first; companions follow. Paths and
   // languages are known up front; only the visible tab's text is fetched.
   const tabs = entry.sources;
+  // Starts on the TSX tab for every demo because the caller keys this view by demo id.
   const [activeTab, setActiveTab] = useState(0);
-  // Reset to the TSX tab when switching demos so we don't try to keep an
-  // out-of-range index from the previous entry.
-  useEffect(() => { setActiveTab(0); }, [entry]);
   const current = tabs[activeTab];
   const panelRef = useRef<HTMLDivElement>(null);
   const code = useSourceText(current, useHasBeenNearViewport(panelRef));

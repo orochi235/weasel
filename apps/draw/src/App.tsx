@@ -1115,10 +1115,7 @@ function EditorWithSharedScene({
   // Doc-target selection is mutually exclusive with scene-node selection.
   // Whenever the kit selection becomes non-empty, drop the doc-target flag
   // so the Properties panel reverts to node properties.
-  const selectionCount = selection.current.length;
-  useEffect(() => {
-    if (selectionCount > 0 && docSelected) setDocSelected(false);
-  }, [selectionCount, docSelected]);
+  if (selection.current.length > 0 && docSelected) setDocSelected(false);
 
   // Persist filename + bg color with the same 300ms debounce as the scene.
   useEffect(() => {

@@ -82,6 +82,14 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
   const selectionCtx = useSelectionContext();
   const [query, setQuery] = useState('');
   const [highlight, setHighlight] = useState(0);
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setQuery('');
+      setHighlight(0);
+    }
+  }
   const listRef = useRef<HTMLUListElement>(null);
 
   const labels = reasonLabels ?? DEFAULT_REASON_LABELS;
@@ -107,6 +115,9 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
     return allItems.filter((i) => i.label.toLowerCase().includes(q));
   }, [allItems, query]);
 
+  // Clamped when a registry change shrinks the list under it.
+  if (highlight > 0 && highlight >= filtered.length) setHighlight(Math.max(0, filtered.length - 1));
+
   const isEnabled = (i: ActionItem): boolean => enabledById.get(i.action.id)?.enabled ?? true;
   const reasonFor = (i: ActionItem): string | undefined => {
     const r = enabledById.get(i.action.id)?.reason;
@@ -125,17 +136,6 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
       }
     }
   };
-
-  useEffect(() => {
-    if (!open) return;
-    setQuery('');
-    setHighlight(0);
-  }, [open]);
-
-  // Clamp highlight when filter shrinks the list.
-  useEffect(() => {
-    if (highlight >= filtered.length) setHighlight(Math.max(0, filtered.length - 1));
-  }, [filtered.length, highlight]);
 
   // Scroll highlighted row into view.
   useEffect(() => {

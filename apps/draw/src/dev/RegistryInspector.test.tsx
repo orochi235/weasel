@@ -90,4 +90,13 @@ describe('RegistryInspector', () => {
     // tool only registers when viewport is initialized, which jsdom may skip.
     expect(screen.getAllByText('Select').length).toBeGreaterThan(0);
   });
+
+  it('selects a deep-linked entry once it appears, and drops it when the filter excludes it', async () => {
+    window.history.replaceState(null, '', '/#/dev/registry?kind=tool&id=rect');
+    renderInspector();
+    await waitFor(() => expect(screen.getByRole('treeitem', { name: 'Rectangle' })).toHaveAttribute('aria-selected', 'true'));
+    expect(window.location.hash).toBe('#/dev/registry?kind=tool&id=rect');
+    fireEvent.change(screen.getByLabelText('Filter registry'), { target: { value: 'zzz' } });
+    await waitFor(() => expect(window.location.hash).toBe('#/dev/registry'));
+  });
 });

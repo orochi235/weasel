@@ -90,13 +90,17 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
     });
   }, []);
 
-  useEffect(() => {
+  // Keyed by content: a caller may rebuild an equal index every render, and an identity key would loop.
+  const indexIds = JSON.stringify(index.map((entry) => entry.id));
+  const [prunedFor, setPrunedFor] = useState(indexIds);
+  if (prunedFor !== indexIds) {
+    setPrunedFor(indexIds);
     const ids = new Set(index.map((entry) => entry.id));
     setReadies((prev) => pruned(prev, ids));
     setLoaded((prev) => pruned(prev, ids));
     setFaults((prev) => pruned(prev, ids));
     setRevisions((prev) => pruned(prev, ids));
-  }, [index]);
+  }
 
   // One import per file, shared by every entry it holds; a reload drops the file's promise and asks again.
   const imports = useRef(new Map<string, Promise<Record<string, unknown>>>());

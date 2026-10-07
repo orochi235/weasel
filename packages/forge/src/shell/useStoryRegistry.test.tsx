@@ -1,3 +1,4 @@
+import { Profiler, type ReactNode } from 'react';
 import { Lab } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, render, renderHook, screen } from '@testing-library/react';
@@ -67,6 +68,21 @@ describe('useStoryRegistry', () => {
     expect(result.current.instruments.map((i) => i.name)).toEqual(['x--b']);
     rerender({ entries: index });
     expect(result.current.instruments[0]?.config?.defaults()).toEqual({});
+  });
+
+  it('forgets a departed story in the commit that drops it', () => {
+    let commits = 0;
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Profiler id="registry" onRender={() => { commits++; }}>{children}</Profiler>
+    );
+    const { result, rerender } = renderHook(({ entries }) => useStoryRegistry(entries, options), {
+      initialProps: { entries: index },
+      wrapper,
+    });
+    act(() => result.current.onReady(a, readyWith('hi')));
+    const before = commits;
+    rerender({ entries: [b] });
+    expect(commits - before).toBe(1);
   });
 });
 

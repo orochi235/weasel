@@ -32,17 +32,20 @@ export function RegistryTree({ nodes, selected, onSelect, filter: filterProp, on
     return nodes.find((n) => n.entries.some((e) => sameEntry(e, selected))) ?? null;
   }, [nodes, selected]);
 
-  useEffect(() => {
-    if (!selectedCategory) return;
-    const idsToOpen: string[] = [categoryKey(selectedCategory)];
-    if (selectedCategory.group) idsToOpen.push(groupKey(selectedCategory.group.id));
-    setOpenIds((cur) => {
-      if (idsToOpen.every((id) => cur.has(id))) return cur;
-      const next = new Set(cur);
-      for (const id of idsToOpen) next.add(id);
-      return next;
-    });
-  }, [selectedCategory]);
+  const [openedFor, setOpenedFor] = useState<TreeCategoryNode | null>(null);
+  if (selectedCategory !== openedFor) {
+    setOpenedFor(selectedCategory);
+    if (selectedCategory) {
+      const idsToOpen: string[] = [categoryKey(selectedCategory)];
+      if (selectedCategory.group) idsToOpen.push(groupKey(selectedCategory.group.id));
+      setOpenIds((cur) => {
+        if (idsToOpen.every((id) => cur.has(id))) return cur;
+        const next = new Set(cur);
+        for (const id of idsToOpen) next.add(id);
+        return next;
+      });
+    }
+  }
 
   const { treeNodes, entriesByKey } = useMemo(() => {
     const byKey = new Map<string, TreeEntry>();

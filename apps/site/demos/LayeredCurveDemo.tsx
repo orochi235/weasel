@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   LayeredCurveEditor,
   createFunctionLayer,
@@ -109,13 +109,13 @@ export function LayeredCurveDemo() {
   }));
   const [partitionState, setPartitionState] = useState<PartitionState>(() => ({ x: 0.25 }));
 
-  // Re-anchor each curve's seam to b whenever b changes (toolbar
-  // slider or partition-handle drag).
-  useEffect(() => {
-    setBevelState((prev) => ({ ...prev, points: clampPointsToRange(prev.points, [0, b]) }));
-    setSplineState((prev) => ({ ...prev, points: clampPointsToRange(prev.points, [b, HALF_WIDTH]) }));
-    setPartitionState((prev) => prev.x === b ? prev : { x: b });
-  }, [b]);
+  // Moving the seam re-anchors both curves to it.
+  const moveSeam = (next: number) => {
+    setB(next);
+    setBevelState((prev) => ({ ...prev, points: clampPointsToRange(prev.points, [0, next]) }));
+    setSplineState((prev) => ({ ...prev, points: clampPointsToRange(prev.points, [next, HALF_WIDTH]) }));
+    setPartitionState((prev) => prev.x === next ? prev : { x: next });
+  };
 
   // Layers carry b in their config (via xClamp), so they're rebuilt
   // when b changes. Cheap; only happens on a discrete b update.
@@ -159,7 +159,7 @@ export function LayeredCurveDemo() {
     } else if (id === 'partition') {
       const next = nextUnknown as PartitionState;
       setPartitionState(next);
-      setB(next.x);
+      moveSeam(next.x);
     }
   };
 
@@ -174,7 +174,7 @@ export function LayeredCurveDemo() {
             max={0.95}
             step={0.01}
             value={b}
-            onChange={(e) => setB(Number(e.currentTarget.value))}
+            onChange={(e) => moveSeam(Number(e.currentTarget.value))}
             style={{ width: 240 }}
           />
           <code style={{ minWidth: 48, textAlign: 'right' }}>{b.toFixed(2)}</code>

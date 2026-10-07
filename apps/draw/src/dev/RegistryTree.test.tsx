@@ -1,3 +1,4 @@
+import { Profiler } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import { RegistryTree } from './RegistryTree';
@@ -88,6 +89,31 @@ describe('RegistryTree', () => {
     rerender(<RegistryTree nodes={NODES} selected={onSelect.mock.calls[0][0]} onSelect={onSelect} />);
     expect(item('useRectTool')).toHaveAttribute('aria-selected', 'true');
     expect(item('useEllipseTool')).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('never commits the selected entry’s category closed', () => {
+    const expanded: (string | null)[] = [];
+    render(
+      <Profiler
+        id="tree"
+        onRender={() => { expanded.push(queryItem(/^Actions/)?.getAttribute('aria-expanded') ?? null); }}
+      >
+        <RegistryTree nodes={NODES} selected={NODES[1].entries[0]} onSelect={() => {}} />
+      </Profiler>,
+    );
+    expect(expanded.length).toBeGreaterThan(0);
+    expect(expanded.every((v) => v === 'true')).toBe(true);
+  });
+
+  it('leaves a collapsed category shut until the selection moves into it again', () => {
+    const { rerender } = render(<RegistryTree nodes={NODES} selected={NODES[1].entries[0]} onSelect={() => {}} />);
+    fireEvent.click(screen.getByText('Actions'));
+    expect(item(/^Actions/)).toHaveAttribute('aria-expanded', 'false');
+    rerender(<RegistryTree nodes={NODES} selected={NODES[1].entries[0]} onSelect={() => {}} />);
+    expect(item(/^Actions/)).toHaveAttribute('aria-expanded', 'false');
+    rerender(<RegistryTree nodes={NODES} selected={NODES[0].entries[0]} onSelect={() => {}} />);
+    rerender(<RegistryTree nodes={NODES} selected={NODES[1].entries[0]} onSelect={() => {}} />);
+    expect(item(/^Actions/)).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('shows a per-leaf count from getCount', () => {

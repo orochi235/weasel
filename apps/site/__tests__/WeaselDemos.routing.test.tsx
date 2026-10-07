@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEMOS } from '../registry';
 import { WeaselDemos } from '../WeaselDemos';
@@ -99,5 +99,20 @@ describe('the sidebar', () => {
     const audio = within(packages).getByRole('heading', { level: 3, name: 'audio' }).closest('section')!;
     expect(within(audio).getByRole('link', { name: 'Audio' })).toBeTruthy();
     expect(within(nav).getAllByRole('link', { name: 'Audio' })).toHaveLength(1);
+  });
+});
+
+describe('the source panel', () => {
+  it('opens each demo on its first tab, whichever tab the last one was left on', async () => {
+    const [first, second] = DEMOS.filter((d) => d.sources.length > 1);
+    go(`#${first.id}`);
+    render(<WeaselDemos />);
+    await heading(first.title);
+    fireEvent.click(screen.getAllByRole('tab')[1]);
+    expect(screen.getAllByRole('tab')[1].getAttribute('aria-selected')).toBe('true');
+    go(`#${second.id}`);
+    act(() => { window.dispatchEvent(new HashChangeEvent('hashchange')); });
+    await heading(second.title);
+    expect(screen.getAllByRole('tab')[0].getAttribute('aria-selected')).toBe('true');
   });
 });

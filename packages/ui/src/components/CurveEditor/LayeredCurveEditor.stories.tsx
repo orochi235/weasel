@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   LayeredCurveEditor,
   createKeyframeLayer,
@@ -182,41 +182,46 @@ function clampPointsToRange(
 
 function RimContourDemo(args: RimContourArgs) {
   const [b, setB] = useState(args.initialB);
-  useEffect(() => { setB(args.initialB); }, [args.initialB]);
 
   // Initial anchor sets — interior anchors capture the visual shape;
   // endpoints will be pinned in place by the layers.
   const [bevelState, setBevelState] = useState<FunctionLayerState>(() => ({
-    points: [
+    points: clampPointsToRange([
       { x: 0, y: 0.0 },
       { x: 0.1, y: 0.55 },
       { x: 0.25, y: 0.78 },
-    ],
+    ], [0, args.initialB], true, true),
     activeIndex: null,
   }));
   const [splineState, setSplineState] = useState<FunctionLayerState>(() => ({
-    points: [
+    points: clampPointsToRange([
       { x: 0.25, y: 0.78 },  // seam — y must match bevel's last
       { x: 0.5, y: 0.55 },
       { x: 0.85, y: 0.35 },
       { x: 1.0, y: 0.2 },
-    ],
+    ], [args.initialB, HALF_WIDTH], true, true),
     activeIndex: null,
   }));
-  const [partitionState, setPartitionState] = useState<PartitionState>(() => ({ x: 0.25 }));
+  const [partitionState, setPartitionState] = useState<PartitionState>(() => ({ x: args.initialB }));
 
-  // Re-anchor the seam to b whenever b changes (slider or handle drag).
-  useEffect(() => {
+  // Moving the seam (handle drag or the initialB control) re-anchors both curves to it.
+  const moveSeam = (next: number) => {
+    setB(next);
     setBevelState((prev) => ({
       ...prev,
-      points: clampPointsToRange(prev.points, [0, b], true, true),
+      points: clampPointsToRange(prev.points, [0, next], true, true),
     }));
     setSplineState((prev) => ({
       ...prev,
-      points: clampPointsToRange(prev.points, [b, HALF_WIDTH], true, true),
+      points: clampPointsToRange(prev.points, [next, HALF_WIDTH], true, true),
     }));
-    setPartitionState((prev) => prev.x === b ? prev : { x: b });
-  }, [b]);
+    setPartitionState((prev) => prev.x === next ? prev : { x: next });
+  };
+  const [initialB, setInitialB] = useState(args.initialB);
+  if (args.initialB !== initialB) {
+    setInitialB(args.initialB);
+    moveSeam(args.initialB);
+  }
 
   // Layers are recreated on b changes so xClamp tracks the partition.
   const bevelLayer = useMemo(() => createFunctionLayer({
@@ -269,7 +274,7 @@ function RimContourDemo(args: RimContourArgs) {
     } else if (id === 'partition') {
       const next = nextUnknown as PartitionState;
       setPartitionState(next);
-      setB(next.x);
+      moveSeam(next.x);
     }
   };
 

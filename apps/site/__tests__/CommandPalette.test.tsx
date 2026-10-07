@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { useState } from 'react';
+import { Profiler, useState } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ActionDisabledReason, ActionsProvider, useAction } from '@weasel-js/core';
 import { CommandPalette, useCommandPaletteShortcut } from '../CommandPalette/CommandPalette';
@@ -119,6 +119,37 @@ describe('CommandPalette', () => {
     await flush();
     expect(runs.group).toHaveBeenCalledOnce();
     expect(palette()).toBeNull();
+  });
+
+  it('reopens with an empty search and the first row highlighted', () => {
+    openPalette();
+    fireEvent.change(search(), { target: { value: 'gro' } });
+    fireEvent.keyDown(search(), { key: 'Escape' });
+    fireEvent.keyDown(document.body, { key: '/' });
+    expect((search() as HTMLInputElement).value).toBe('');
+    expect(selected()!.textContent).toBe(options()[0].textContent);
+  });
+
+  it('never commits a reopened palette still holding the last search', () => {
+    const seen: string[] = [];
+    render(
+      <Profiler
+        id="palette"
+        onRender={() => {
+          const input = screen.queryByPlaceholderText<HTMLInputElement>('Search actions…');
+          if (input) seen.push(input.value);
+        }}
+      >
+        <Harness />
+      </Profiler>,
+    );
+    fireEvent.keyDown(document.body, { key: '/' });
+    fireEvent.change(search(), { target: { value: 'gro' } });
+    fireEvent.keyDown(search(), { key: 'Escape' });
+    seen.length = 0;
+    fireEvent.keyDown(document.body, { key: '/' });
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((v) => v === '')).toBe(true);
   });
 
   it('closes on Escape without running anything', () => {

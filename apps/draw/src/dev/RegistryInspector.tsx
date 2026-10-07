@@ -139,31 +139,26 @@ export function RegistryInspector() {
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();
-  useEffect(() => {
-    if (!selected) return;
-    const category = nodes.find((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id));
-    if (!category) { setSelected(null); return; }
-    if (lower) {
-      const matches = selected.id.toLowerCase().includes(lower)
-        || selected.label.toLowerCase().includes(lower);
-      if (!matches) setSelected(null);
-    }
-  }, [nodes, lower, selected]);
+  if (selected) {
+    const inTree = nodes.some((n) => n.entries.some((e) => e.kind === selected.kind && e.id === selected.id));
+    const matches = !lower
+      || selected.id.toLowerCase().includes(lower)
+      || selected.label.toLowerCase().includes(lower);
+    if (!inTree || !matches) setSelected(null);
+  }
 
   // Drain any pending deep-link once the matching entry exists in the tree.
   // The probe pushes its snapshot async on first render, so the URL-decoded
   // selection may name an entry that won't be in `nodes` for a frame or two.
-  useEffect(() => {
-    if (!pendingDeepLink) return;
-    for (const node of nodes) {
-      const hit = node.entries.find((e) => e.kind === pendingDeepLink.kind && e.id === pendingDeepLink.id);
-      if (hit) {
-        setSelected(hit);
-        setPendingDeepLink(null);
-        return;
-      }
+  if (pendingDeepLink) {
+    const hit = nodes
+      .flatMap((node) => node.entries)
+      .find((e) => e.kind === pendingDeepLink.kind && e.id === pendingDeepLink.id);
+    if (hit) {
+      setSelected(hit);
+      setPendingDeepLink(null);
     }
-  }, [pendingDeepLink, nodes]);
+  }
 
   // Mirror the selection into the URL hash so the inspector is deep-linkable.
   useEffect(() => {

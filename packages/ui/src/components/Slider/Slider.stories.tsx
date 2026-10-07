@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useArgs } from '@weasel-js/forge/preview-api';
 import { endless, unit } from '@weasel-js/quantity';
@@ -275,19 +275,15 @@ function PlaygroundView({
   );
   // Sync thumbs to the count arg. Add new thumbs at the high end; remove from
   // the end so dragging during a count change doesn't yank a different thumb.
-  useEffect(() => {
-    setThumbs((prev) => {
-      if (prev.length === thumbCount) return prev;
-      if (prev.length < thumbCount) {
-        const extra = Array.from({ length: thumbCount - prev.length }, (_, i) => {
-          const t = (prev.length + i) / (thumbCount - 1 || 1);
-          return { value: sliderArgs.min + t * (sliderArgs.max - sliderArgs.min) };
-        });
-        return [...prev, ...extra];
-      }
-      return prev.slice(0, thumbCount);
+  if (thumbs.length < thumbCount) {
+    const extra = Array.from({ length: thumbCount - thumbs.length }, (_, i) => {
+      const t = (thumbs.length + i) / (thumbCount - 1 || 1);
+      return { value: sliderArgs.min + t * (sliderArgs.max - sliderArgs.min) };
     });
-  }, [thumbCount, sliderArgs.min, sliderArgs.max]);
+    setThumbs([...thumbs, ...extra]);
+  } else if (thumbs.length > thumbCount) {
+    setThumbs(thumbs.slice(0, thumbCount));
+  }
   const btnStyle: React.CSSProperties = {
     fontSize: 11,
     padding: '3px 10px',

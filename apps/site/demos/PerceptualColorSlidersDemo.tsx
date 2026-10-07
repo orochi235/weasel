@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Slider, chromaAt, oklchToHex, paintGradientTrack, type ChromaCurve, type Thumb } from '@weasel-js/ui';
 import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
@@ -247,20 +247,22 @@ export function PerceptualColorSlidersDemo() {
   const chromaBounds = CHROMA_BOUNDS[boundsMode];
   const lBounds = L_BOUNDS[boundsMode];
 
-  // Clamp existing values when the mode tightens to keep thumbs in-bounds.
-  // (Loosening the mode never invalidates current state, so this is a no-op
-  // when transitioning unconstrained ← anything.)
-  useEffect(() => {
+  // Tightening the mode clamps the current values to keep thumbs in bounds;
+  // loosening it leaves them where they are.
+  const changeBoundsMode = (mode: BoundsMode) => {
+    const l = L_BOUNDS[mode];
+    const c = CHROMA_BOUNDS[mode];
+    setBoundsMode(mode);
     setLRange(prev => [
-      Math.max(prev[0], lBounds.dark[0]),
-      Math.min(prev[1], lBounds.light[1]),
+      Math.max(prev[0], l.dark[0]),
+      Math.min(prev[1], l.light[1]),
     ]);
     setChroma(prev => ({
-      cTop:  Math.min(prev.cTop,  chromaBounds.cTop[1]),
-      cPeak: Math.min(prev.cPeak, chromaBounds.cPeak[1]),
-      cBot:  Math.min(prev.cBot,  chromaBounds.cBot[1]),
+      cTop:  Math.min(prev.cTop,  c.cTop[1]),
+      cPeak: Math.min(prev.cPeak, c.cPeak[1]),
+      cBot:  Math.min(prev.cBot,  c.cBot[1]),
     }));
-  }, [boundsMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  };
 
   const params: RampParams = { hue, midL, lRange, chroma };
 
@@ -348,7 +350,7 @@ export function PerceptualColorSlidersDemo() {
 
       <div style={{ position: 'sticky', top: 16 }}>
         <h3 style={{ margin: '0 0 8px', fontSize: 11, color: 'var(--ckd-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>C as function of L</h3>
-        <BoundsModeToggle mode={boundsMode} onChange={setBoundsMode} />
+        <BoundsModeToggle mode={boundsMode} onChange={changeBoundsMode} />
         <ChromaCurveDiagram params={params} bounds={chromaBounds} />
         <div style={{ fontSize: 10, color: 'var(--ckd-faint)', marginTop: 8, lineHeight: 1.4 }}>
           Triangle interior rendered via <code>PathDrawCommand.vertexColors</code> — each corner carries its OKLCH color, the kit's <code>pathFillVColor</code> shader interpolates across. Dashed range tracks show each thumb's allowed slide range; the toggle above adjusts the L and chroma slider bounds together.
