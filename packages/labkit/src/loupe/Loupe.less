@@ -5,15 +5,15 @@
   // The ring sits outside the box the painters fill, centered on the aim;
   // border-box here too, so `.lk-root`'s resets cannot squeeze that box.
   box-sizing: border-box;
-  width: calc(var(--lk-loupe-width) + 2 * var(--wzl-border-w, 0px));
-  height: calc(var(--lk-loupe-height) + 2 * var(--wzl-border-w, 0px));
-  margin: calc(-1 * var(--wzl-border-w, 0px));
+  width: calc(var(--lk-loupe-width) + 2 * var(--wzl-border-w));
+  height: calc(var(--lk-loupe-height) + 2 * var(--wzl-border-w));
+  margin: calc(-1 * var(--wzl-border-w));
   border-radius: 50%;
   overflow: hidden;
   // Nothing under the lens stops working while it is up: the pan, the wheel and
   // any overlay of the instrument's own keep receiving the pointer.
   pointer-events: none;
-  border: var(--wzl-border-w, 0px) solid var(--wzl-border-strong);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
   box-shadow: 0 2px 8px var(--wzl-shadow);
   // A painter's ground shows through wherever it draws nothing, and a vector
   // lens leaves the gaps between marks transparent. This is the trial's own
@@ -22,7 +22,7 @@
 }
 
 .lk-loupe--square {
-  border-radius: var(--wzl-radius-sm, 0px);
+  border-radius: var(--wzl-radius-sm);
 }
 
 // The host draws the magnified view into this box itself.

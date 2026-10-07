@@ -65,11 +65,7 @@ export function sourceBoxIn(source: CanvasSource, host: HTMLElement | null): Sou
 }
 
 /** The color a source shows at a host point, or `null` where it shows none. */
-export function sampleSource(
-  source: CanvasSource,
-  p: LoupePoint,
-  box: SourceBox,
-): string | null {
+export function sampleSource(source: CanvasSource, p: LoupePoint, box: SourceBox): string | null {
   return source.sample(sourcePixel(p, box, source.canvas));
 }
 

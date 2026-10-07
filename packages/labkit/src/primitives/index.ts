@@ -1,3 +1,5 @@
+export type { StatusBarItemProps, StatusBarProps } from '@weasel-js/ui';
+export { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui';
 export type { FloatingPanelProps } from './FloatingPanel';
 export { FloatingPanel } from './FloatingPanel';
 export { FpsMeter } from './FpsMeter';
@@ -11,8 +13,6 @@ export type { ScaleIndicatorProps } from './ScaleIndicator';
 export { ScaleIndicator } from './ScaleIndicator';
 export type { SplitProps } from './Split';
 export { Split } from './Split';
-export type { StatusBarItemProps, StatusBarProps } from '@weasel-js/ui';
-export { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui';
 export type { ToolbarButtonProps, ToolbarGroupProps, ToolbarProps } from './Toolbar';
 export { Toolbar } from './Toolbar';
 export type { ZoomControlProps } from './ZoomControl';

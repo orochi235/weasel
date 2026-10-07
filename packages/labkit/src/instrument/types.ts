@@ -1,9 +1,9 @@
 import type { PointerContextValue } from '@weasel-js/core';
-import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { ReactNode } from 'react';
 import type { AnnotationsCapability } from '../annotations/types';
 import type { ViewportSize, WorldSpec } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
+import type { ClockCapability, TrialClock } from '../clock/trialClock';
 import type { ConfigPath, ConfigSchema } from '../config/types';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';

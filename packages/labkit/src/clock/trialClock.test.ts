@@ -159,7 +159,9 @@ describe('createTrialClock', () => {
 
     it('throws on a negative rate, set or ramped', () => {
       const { clock } = createTrialClock({ seekable: false });
-      expect(() => { clock.rate = -1; }).toThrow();
+      expect(() => {
+        clock.rate = -1;
+      }).toThrow();
       expect(() => clock.ramp(-1, 100)).toThrow();
     });
 
@@ -253,7 +255,11 @@ describe('createTrialClock', () => {
 
   it('rejects a rate that is not a finite number', () => {
     const { clock } = createTrialClock({});
-    expect(() => { clock.rate = Number.NaN; }).toThrow();
-    expect(() => { clock.rate = Number.POSITIVE_INFINITY; }).toThrow();
+    expect(() => {
+      clock.rate = Number.NaN;
+    }).toThrow();
+    expect(() => {
+      clock.rate = Number.POSITIVE_INFINITY;
+    }).toThrow();
   });
 });

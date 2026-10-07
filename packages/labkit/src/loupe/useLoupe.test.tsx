@@ -330,7 +330,12 @@ describe('useLoupe', () => {
       render(<Harness seen={(l) => seen.push(l)} />);
       move(40, 30);
       expect(last(seen).lens).toEqual({
-        center: { x: 40, y: 30 }, shows: { x: 40, y: 30 }, width: 200, height: 200, factor: 6, shape: 'circle',
+        center: { x: 40, y: 30 },
+        shows: { x: 40, y: 30 },
+        width: 200,
+        height: 200,
+        factor: 6,
+        shape: 'circle',
       });
     });
 
@@ -345,7 +350,12 @@ describe('useLoupe', () => {
       move(40, 33);
       expect(place).toHaveBeenLastCalledWith({ aim: { x: 40, y: 33 }, factor: 6 });
       expect(last(seen).lens).toEqual({
-        center: { x: 150, y: 30 }, shows: { x: 150, y: 30 }, width: 300, height: 60, factor: 6, shape: 'square',
+        center: { x: 150, y: 30 },
+        shows: { x: 150, y: 30 },
+        width: 300,
+        height: 60,
+        factor: 6,
+        shape: 'square',
       });
     });
 
@@ -353,7 +363,12 @@ describe('useLoupe', () => {
       const seen: LoupeState[] = [];
       render(
         <Harness
-          place={() => ({ center: { x: 50, y: 20 }, shows: { x: 10, y: 20 }, width: 100, height: 40 })}
+          place={() => ({
+            center: { x: 50, y: 20 },
+            shows: { x: 10, y: 20 },
+            width: 100,
+            height: 40,
+          })}
           seen={(l) => seen.push(l)}
         />,
       );
@@ -364,7 +379,10 @@ describe('useLoupe', () => {
     it('shows at the factor place returns, leaving the wheel factor as what place is asked with', () => {
       const seen: LoupeState[] = [];
       const place = vi.fn(({ factor }: { factor: number }) => ({
-        center: { x: 0, y: 0 }, width: 100, height: 20, factor: Math.min(factor, 2.5),
+        center: { x: 0, y: 0 },
+        width: 100,
+        height: 20,
+        factor: Math.min(factor, 2.5),
       }));
       render(<Harness place={place} seen={(l) => seen.push(l)} />);
       move(10, 10);
@@ -392,10 +410,17 @@ describe('useLoupe', () => {
       expect(onLens).not.toHaveBeenCalled();
       move(40, 30);
       expect(onLens).toHaveBeenLastCalledWith({
-        center: { x: 40, y: 30 }, shows: { x: 40, y: 30 }, width: 200, height: 200, factor: 6, shape: 'square',
+        center: { x: 40, y: 30 },
+        shows: { x: 40, y: 30 },
+        width: 200,
+        height: 200,
+        factor: 6,
+        shape: 'square',
       });
       move(50, 30);
-      expect(onLens).toHaveBeenLastCalledWith(expect.objectContaining({ center: { x: 50, y: 30 } }));
+      expect(onLens).toHaveBeenLastCalledWith(
+        expect.objectContaining({ center: { x: 50, y: 30 } }),
+      );
       const calls = onLens.mock.calls.length;
       fireEvent.pointerLeave(screen.getByTestId('host'));
       expect(onLens).toHaveBeenLastCalledWith(null);

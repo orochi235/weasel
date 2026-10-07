@@ -104,7 +104,15 @@ export function CanvasStack({
     () => ({ view: camera, frame, element: () => containerRef.current }),
     [camera, frame],
   );
-  useLayerScheduler({ layers, view, frame, canvasRefs: canvasMap, size, host: containerRef, ticks });
+  useLayerScheduler({
+    layers,
+    view,
+    frame,
+    canvasRefs: canvasMap,
+    size,
+    host: containerRef,
+    ticks,
+  });
 
   const ctxValue = useMemo(
     () => ({

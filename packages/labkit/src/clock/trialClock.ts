@@ -64,7 +64,8 @@ const passesOf = (loop: boolean | number): number =>
 
 const checkRate = (rate: number, seekable: boolean): void => {
   if (!Number.isFinite(rate)) throw new RangeError(`labkit: a clock's rate is finite, not ${rate}`);
-  if (rate < 0 && !seekable) throw new RangeError('labkit: a clock that is not seekable cannot run backward');
+  if (rate < 0 && !seekable)
+    throw new RangeError('labkit: a clock that is not seekable cannot run backward');
 };
 
 /** A trial's clock, opened from its declaration and, for a trial reopened,
@@ -105,10 +106,16 @@ export function createTrialClock(
   };
   const passAt = (): number =>
     duration > 0 && Number.isFinite(duration)
-      ? elapsed >= span ? passesOf(loop) - 1 : Math.floor(elapsed / duration)
+      ? elapsed >= span
+        ? passesOf(loop) - 1
+        : Math.floor(elapsed / duration)
       : 0;
   const phaseAt = (): number =>
-    duration > 0 && Number.isFinite(duration) ? (elapsed >= span ? 1 : (elapsed % duration) / duration) : 0;
+    duration > 0 && Number.isFinite(duration)
+      ? elapsed >= span
+        ? 1
+        : (elapsed % duration) / duration
+      : 0;
 
   /** ms of trial time over `dt` real ms, ramp included; settles the ramp. */
   const advance = (dt: number): number => {
@@ -128,10 +135,18 @@ export function createTrialClock(
   };
 
   const clock: TrialClock = {
-    get elapsed() { return elapsed; },
-    get pass() { return passAt(); },
-    get phase() { return phaseAt(); },
-    get rate() { return rate; },
+    get elapsed() {
+      return elapsed;
+    },
+    get pass() {
+      return passAt();
+    },
+    get phase() {
+      return phaseAt();
+    },
+    get rate() {
+      return rate;
+    },
     set rate(next: number) {
       checkRate(next, seekable);
       rate = next;
@@ -139,7 +154,9 @@ export function createTrialClock(
       change();
       notify();
     },
-    get loop() { return loop; },
+    get loop() {
+      return loop;
+    },
     set loop(next: boolean | number) {
       loop = next;
       span = duration * passesOf(loop);
@@ -192,14 +209,20 @@ export function createTrialClock(
     rebase() {
       last = Number.NaN;
     },
-    get inert() { return isInert(); },
+    get inert() {
+      return isInert();
+    },
     onWake(fn) {
       wakes.add(fn);
-      return () => { wakes.delete(fn); };
+      return () => {
+        wakes.delete(fn);
+      };
     },
     subscribe(fn) {
       subs.add(fn);
-      return () => { subs.delete(fn); };
+      return () => {
+        subs.delete(fn);
+      };
     },
   };
 
@@ -214,7 +237,9 @@ export function createTrialClock(
     },
     onFrame(fn) {
       frames.add(fn);
-      return () => { frames.delete(fn); };
+      return () => {
+        frames.delete(fn);
+      };
     },
   };
 }

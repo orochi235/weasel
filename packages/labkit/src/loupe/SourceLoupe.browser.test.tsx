@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
-import { createCanvasSource, type CanvasSource } from '@weasel-js/loupe';
+import { type CanvasSource, createCanvasSource } from '@weasel-js/loupe';
 import { useEffect, useRef, useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { TrialLoupe } from './TrialLoupe';
@@ -73,7 +73,7 @@ function Scene({ captures, onColorChange, onReady }: SceneProps) {
   }, [captures]);
 
   return (
-    <div className="scene-box" style={{ width: CSS_W, height: CSS_H }}>
+    <div style={{ width: CSS_W, height: CSS_H }}>
       <TrialLoupe
         enabled
         source={source ?? undefined}

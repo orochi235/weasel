@@ -173,6 +173,7 @@ export {
   zoomAt,
 } from './canvas';
 export * from './chrome';
+export * from './clock';
 export { type Auto, auto, isAuto } from './config/auto';
 export { autoPathsOf, resolveAutoConfig } from './config/autoConfig';
 export {
@@ -295,7 +296,6 @@ export {
   useLabStore,
   useTrialId,
 } from './state/context';
-export * from './clock';
 export { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './state/document';
 export { type OpenedLabStore, type OpenLabStoreOptions, openLabStore } from './state/openLabStore';
 export { Persistence, type PersistenceProps } from './state/Persistence';

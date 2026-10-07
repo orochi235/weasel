@@ -155,7 +155,10 @@ export const LOUPE_DEFAULTS = {
   shape: 'circle',
   hollow: false,
   peekKey: 'Alt',
-} as const satisfies Omit<ResolvedLoupe, 'render' | 'source' | 'onColorChange' | 'place' | 'onLens'>;
+} as const satisfies Omit<
+  ResolvedLoupe,
+  'render' | 'source' | 'onColorChange' | 'place' | 'onLens'
+>;
 
 /** `options` with every default filled in and `factor` clamped to
  *  `[minFactor, maxFactor]`. A loupe with its own `render` is always `'vector'`,

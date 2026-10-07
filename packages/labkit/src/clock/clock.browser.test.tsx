@@ -44,7 +44,9 @@ const Ticking: Instrument = {
 
 /** The red channel at the middle of the layer's canvas. */
 function red(): number {
-  const canvas = document.querySelector('.lk-clock-frame .lk-canvas-stack__canvas') as HTMLCanvasElement;
+  const canvas = document.querySelector(
+    '.lk-clock-frame .lk-canvas-stack__canvas',
+  ) as HTMLCanvasElement;
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   return ctx.getImageData(canvas.width >> 1, canvas.height >> 1, 1, 1).data[0] ?? -1;
 }

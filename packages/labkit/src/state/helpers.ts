@@ -41,7 +41,6 @@ export function newId(): string {
   return `lk-${Date.now().toString(36)}-${idCounter++}`;
 }
 
-
 /** Serialize trials for storage, running each instrument's own serializer
  *  over its state. Undo history is deliberately dropped — it does not survive
  *  a reload. */

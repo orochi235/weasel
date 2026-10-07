@@ -1,5 +1,5 @@
-import { useContext, useEffect, useReducer, useSyncExternalStore } from 'react';
 import { useLatest } from '@weasel-js/core';
+import { useContext, useEffect, useReducer, useSyncExternalStore } from 'react';
 import { LabContext } from '../lab/LabContext';
 import { ClockRegistryContext, TrialClockContext } from './clockRegistry';
 import type { TrialClock } from './trialClock';
@@ -37,5 +37,8 @@ export function useTrialClock(trialId?: string): TrialClock | null {
 export function useClockFrame(fn: (elapsed: number, pass: number) => void): void {
   const handle = useContext(TrialClockContext);
   const latest = useLatest(fn);
-  useEffect(() => handle?.onFrame((elapsed, pass) => latest.current(elapsed, pass)), [handle, latest]);
+  useEffect(
+    () => handle?.onFrame((elapsed, pass) => latest.current(elapsed, pass)),
+    [handle, latest],
+  );
 }

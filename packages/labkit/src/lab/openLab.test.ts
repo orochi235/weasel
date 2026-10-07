@@ -32,7 +32,11 @@ describe('opening a presented lab', () => {
     });
     const trials = store.getState().trials;
     expect(trials).toHaveLength(1);
-    expect(trials[0]).toMatchObject({ instrumentName: 'Other', config: { k: 'b' }, state: { k: 'b' } });
+    expect(trials[0]).toMatchObject({
+      instrumentName: 'Other',
+      config: { k: 'b' },
+      state: { k: 'b' },
+    });
   });
 
   it('takes a seeded state and view over the ones the config would give', () => {

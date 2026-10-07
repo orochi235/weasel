@@ -13,8 +13,6 @@ import { useStore } from 'zustand/react';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { labAnnotationTools } from '../annotations/toolMap';
 import { CameraRegistryContext, createCameraRegistry } from '../canvas/cameraRegistry';
-import { ClockRegistryContext, createClockRegistry } from '../clock/clockRegistry';
-import { useClockLoop } from '../clock/useClockLoop';
 import {
   LabAsideRegion,
   LabFooterRegion,
@@ -24,6 +22,8 @@ import {
 } from '../chrome/LabChrome';
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
+import { ClockRegistryContext, createClockRegistry } from '../clock/clockRegistry';
+import { useClockLoop } from '../clock/useClockLoop';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import { Split } from '../primitives/Split';
@@ -60,8 +60,8 @@ import {
   type PresentationSeed,
   presentStorageKey,
 } from './openLab';
-import { hasPresentParam, PresentationContext } from './presentation';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
+import { hasPresentParam, PresentationContext } from './presentation';
 import { useFocusPick } from './useFocusPick';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
@@ -522,58 +522,58 @@ function LabRuntime({
         <AnnotationPreloadContext.Provider value={opened.marks}>
           <LabContext.Provider value={contextValue}>
             <PresentationContext.Provider value={presentation}>
-            <CameraRegistryContext.Provider value={cameras}>
-              <ClockRegistryContext.Provider value={clocks}>
-                <ThemeProvider
-                  theme={theme}
-                  selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
-                  className={presenting ? 'lk-lab lk-lab--present' : 'lk-lab'}
-                  style={backdropStyle}
-                >
-                  <LabShell
-                    title={title ?? 'Labkit'}
-                    mode={modeValue}
-                    {...(pages ? { pages } : {})}
-                    {...(path !== undefined ? { path } : {})}
-                    footer={
-                      hasFooterChrome ? (
-                        <>
-                          {footer}
-                          <LabFooterRegion contributions={labChromeAll} />
-                        </>
-                      ) : (
-                        footer
-                      )
-                    }
-                    header={
-                      <>
-                        <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
-                        {zoom && !presenting ? <LabZoom /> : null}
-                        {children}
-                        <LabHeaderRegion contributions={labChromeAll} />
-                        <LabThemeSwitcher />
-                      </>
-                    }
+              <CameraRegistryContext.Provider value={cameras}>
+                <ClockRegistryContext.Provider value={clocks}>
+                  <ThemeProvider
+                    theme={theme}
+                    selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
+                    className={presenting ? 'lk-lab lk-lab--present' : 'lk-lab'}
+                    style={backdropStyle}
                   >
-                    <PanelHostContext.Provider value={panelHostsRef.current}>
-                      <LabSurface bodyRef={setLabBody}>
-                        {hasPaneChrome ? (
-                          <LabPanes contributions={labChromeAll}>
-                            <LabPalette contributions={labChromeAll} />
-                            {workspace}
-                          </LabPanes>
-                        ) : (
+                    <LabShell
+                      title={title ?? 'Labkit'}
+                      mode={modeValue}
+                      {...(pages ? { pages } : {})}
+                      {...(path !== undefined ? { path } : {})}
+                      footer={
+                        hasFooterChrome ? (
                           <>
-                            <LabPalette contributions={labChromeAll} />
-                            {workspace}
+                            {footer}
+                            <LabFooterRegion contributions={labChromeAll} />
                           </>
-                        )}
-                      </LabSurface>
-                    </PanelHostContext.Provider>
-                  </LabShell>
-                </ThemeProvider>
-              </ClockRegistryContext.Provider>
-            </CameraRegistryContext.Provider>
+                        ) : (
+                          footer
+                        )
+                      }
+                      header={
+                        <>
+                          <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
+                          {zoom && !presenting ? <LabZoom /> : null}
+                          {children}
+                          <LabHeaderRegion contributions={labChromeAll} />
+                          <LabThemeSwitcher />
+                        </>
+                      }
+                    >
+                      <PanelHostContext.Provider value={panelHostsRef.current}>
+                        <LabSurface bodyRef={setLabBody}>
+                          {hasPaneChrome ? (
+                            <LabPanes contributions={labChromeAll}>
+                              <LabPalette contributions={labChromeAll} />
+                              {workspace}
+                            </LabPanes>
+                          ) : (
+                            <>
+                              <LabPalette contributions={labChromeAll} />
+                              {workspace}
+                            </>
+                          )}
+                        </LabSurface>
+                      </PanelHostContext.Provider>
+                    </LabShell>
+                  </ThemeProvider>
+                </ClockRegistryContext.Provider>
+              </CameraRegistryContext.Provider>
             </PresentationContext.Provider>
           </LabContext.Provider>
         </AnnotationPreloadContext.Provider>

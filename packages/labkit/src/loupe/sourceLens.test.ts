@@ -54,7 +54,12 @@ describe('sourceBoxIn', () => {
     document.body.append(host);
     host.getBoundingClientRect = () => ({ left: 100, top: 50, width: 300, height: 150 }) as DOMRect;
     c.getBoundingClientRect = () => ({ left: 120, top: 60, width: 100, height: 50 }) as DOMRect;
-    expect(sourceBoxIn(createCanvasSource(c), host)).toEqual({ x: 20, y: 10, width: 100, height: 50 });
+    expect(sourceBoxIn(createCanvasSource(c), host)).toEqual({
+      x: 20,
+      y: 10,
+      width: 100,
+      height: 50,
+    });
     host.remove();
   });
 });

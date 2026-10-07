@@ -135,11 +135,18 @@ describe('<CanvasStack> zoom invariant', () => {
 describe('<CanvasStack ticks>', () => {
   it('repaints only the timed layers on a tick', async () => {
     const still: CanvasLayerDescriptor = { id: 'still', visible: true, render: vi.fn() };
-    const moving: CanvasLayerDescriptor = { id: 'moving', visible: true, timed: true, render: vi.fn() };
+    const moving: CanvasLayerDescriptor = {
+      id: 'moving',
+      visible: true,
+      timed: true,
+      render: vi.fn(),
+    };
     const listeners = new Set<() => void>();
     const ticks = (fn: () => void) => {
       listeners.add(fn);
-      return () => { listeners.delete(fn); };
+      return () => {
+        listeners.delete(fn);
+      };
     };
     const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
     render(

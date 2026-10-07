@@ -1,8 +1,8 @@
+import type { History } from '@weasel-js/core';
 import type { ColorModePreference } from '@weasel-js/theme';
 import type { Auto } from '../config/auto';
 import type { ConfigPath, ResolvedConfig, ValueAtPath } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
-import type { History } from '@weasel-js/core';
 import type { UndockedPanels } from './undock';
 /** The trial a per-trial call is coming from. `id` is the id `useTileId`
  *  scopes a surface tile under, so a consumer keying its own per-trial

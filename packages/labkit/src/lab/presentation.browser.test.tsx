@@ -61,7 +61,9 @@ const hasBox = (el: Element | null) => !!el && el.getClientRects().length > 0;
 
 test('a presented trial fills the lab and nothing else has a box', async () => {
   const { container } = mount(true);
-  await expect.poll(() => box(container.querySelector('.lk-trial__stage'))?.width).toBeGreaterThan(0);
+  await expect
+    .poll(() => box(container.querySelector('.lk-trial__stage'))?.width)
+    .toBeGreaterThan(0);
   const labEl = container.querySelector('.lk-lab');
   const trial = container.querySelector('.lk-trial[data-lk-presented]');
   const stage = container.querySelector('.lk-trial__stage');
@@ -70,13 +72,20 @@ test('a presented trial fills the lab and nothing else has a box', async () => {
   expect(box(stage)).toEqual(box(trial));
   expect(box(labEl)?.height).toBe(480);
   expect(box(stage)?.height).toBe(480);
-  expect(getComputedStyle(container.querySelector('.lk-canvas-stack') as Element).backgroundColor).toBe(
-    'rgba(0, 0, 0, 0)',
-  );
+  expect(
+    getComputedStyle(container.querySelector('.lk-canvas-stack') as Element).backgroundColor,
+  ).toBe('rgba(0, 0, 0, 0)');
   for (const hidden of ['.lk-viewport-controls', '.lk-shell-header', '.lk-trial__titlebar']) {
     expect(container.querySelector(hidden), hidden).not.toBeNull();
   }
-  for (const hidden of ['.lk-viewport-controls', '.lk-shell-header', '.lk-trial__titlebar', '.lk-trial__toolbar', '.lk-trial__status', '.lk-trial__sidebar']) {
+  for (const hidden of [
+    '.lk-viewport-controls',
+    '.lk-shell-header',
+    '.lk-trial__titlebar',
+    '.lk-trial__toolbar',
+    '.lk-trial__status',
+    '.lk-trial__sidebar',
+  ]) {
     expect(hasBox(container.querySelector(hidden)), hidden).toBe(false);
   }
 });

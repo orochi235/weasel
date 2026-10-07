@@ -12,9 +12,7 @@ const stub: Instrument = {
   name: 'Stub',
   defaultConfig: () => ({ count: 0 }),
   initialState: (config) => ({ value: (config as { count: number }).count }),
-  render: ({ state }) => (
-    <div data-testid="stub-content">{(state as { value: number }).value}</div>
-  ),
+  render: ({ state }) => <div data-testid="stub-content">{(state as { value: number }).value}</div>,
 };
 
 let presentation: Presentation | null = null;
@@ -52,7 +50,10 @@ afterEach(() => {
 
 describe('<Lab present>', () => {
   it('presents one trial opened on the seed', async () => {
-    const { container, getByTestId } = await mountLab({ present: true, seed: { config: { count: 4 } } });
+    const { container, getByTestId } = await mountLab({
+      present: true,
+      seed: { config: { count: 4 } },
+    });
     expect(root(container).classList.contains('lk-lab--present')).toBe(true);
     expect(presented(container)).toHaveLength(1);
     expect(presented(container)[0]?.querySelector('.lk-trial__stage')).not.toBeNull();

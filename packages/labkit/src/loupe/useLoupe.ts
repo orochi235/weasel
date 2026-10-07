@@ -188,7 +188,9 @@ export function useLoupe({
   const visible = lensShown(overRef.current, enabled, peekingRef.current);
 
   // Asked only while the lens is up: a host's `place` may measure its layout.
-  const placed = visible ? (options.place?.({ aim: model.aim, factor: model.factor }) ?? null) : null;
+  const placed = visible
+    ? (options.place?.({ aim: model.aim, factor: model.factor }) ?? null)
+    : null;
   const lens: LoupeLens = placed
     ? {
         center: placed.center,
@@ -212,12 +214,15 @@ export function useLoupe({
   // box would otherwise redraw for each one.
   const onLensRef = useLatest(options.onLens);
   const reportedRef = useRef<string>(JSON.stringify(null));
-  const report = useCallback((next: LoupeLens | null): void => {
-    const key = JSON.stringify(next);
-    if (key === reportedRef.current) return;
-    reportedRef.current = key;
-    onLensRef.current?.(next);
-  }, [onLensRef]);
+  const report = useCallback(
+    (next: LoupeLens | null): void => {
+      const key = JSON.stringify(next);
+      if (key === reportedRef.current) return;
+      reportedRef.current = key;
+      onLensRef.current?.(next);
+    },
+    [onLensRef],
+  );
   const shownLens = visible ? lens : null;
   const shownKey = JSON.stringify(shownLens);
   useEffect(() => {

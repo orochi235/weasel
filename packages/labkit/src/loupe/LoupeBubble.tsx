@@ -24,8 +24,16 @@ export interface LoupeBubbleProps {
  * keep working while it is up — and it is `aria-hidden`, since it magnifies
  * content already on the page rather than adding any.
  */
-export function LoupeBubble({ aim, diameter, shape = 'circle', hollow, hostRef, children }: LoupeBubbleProps) {
+export function LoupeBubble({
+  aim,
+  diameter,
+  shape = 'circle',
+  hollow,
+  hostRef,
+  children,
+}: LoupeBubbleProps) {
   const { width, height } = loupeExtent(diameter);
+  const square = shape === 'square';
   const style = {
     '--lk-loupe-width': `${width}px`,
     '--lk-loupe-height': `${height}px`,
@@ -34,7 +42,11 @@ export function LoupeBubble({ aim, diameter, shape = 'circle', hollow, hostRef, 
   return (
     <div
       ref={hostRef}
-      className={['lk-loupe', shape === 'square' && 'lk-loupe--square', hollow && 'lk-loupe--hollow']
+      className={[
+        'lk-loupe',
+        square && 'lk-loupe--square',
+        hollow && 'lk-loupe--hollow',
+      ]
         .filter(Boolean)
         .join(' ')}
       style={style}

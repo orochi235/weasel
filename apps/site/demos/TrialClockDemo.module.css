@@ -1,4 +1,4 @@
-.ckd-clock-controls {
+.controls {
   position: absolute;
   inset-block-start: 12px;
   inset-inline-start: 12px;
@@ -7,8 +7,8 @@
   align-items: center;
 }
 
-.ckd-clock-readout {
+.readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   min-width: 7ch;
   text-align: end;
-  font-variant-numeric: tabular-nums;
 }

@@ -89,7 +89,7 @@ function RenderScene({ enabled, lab }: { enabled?: boolean; lab?: boolean }) {
         enabled={enabled}
         factor={4}
         diameter={DIAMETER}
-        render={() => <div className="lens-content" />}
+        render={() => <div />}
       >
         <div style={{ width: CSS_W, height: CSS_H }} />
       </TrialLoupe>
@@ -240,14 +240,22 @@ test('a placed square lens is drawn at its center, shows the point it names, and
   const colors: string[] = [];
   // Drawn in the host's middle, showing the middle of the blue band (50–75)
   // at 2x: 30 page px across, so its edges reach the green and white bands.
-  const place = () => ({ center: { x: 50, y: 25 }, shows: { x: 62, y: 25 }, width: 60, height: 20, factor: 2 });
+  const place = () => ({
+    center: { x: 50, y: 25 },
+    shows: { x: 62, y: 25 },
+    width: 60,
+    height: 20,
+    factor: 2,
+  });
   const { container } = render(
     <SourceScene enabled shape="square" place={place} onColorChange={(c) => colors.push(c)} />,
   );
   await frames(2);
   move(container, 30, 25);
   await waitFor(() => expect(container.querySelector('.lk-loupe__canvas')).not.toBeNull());
-  const canvas = container.querySelector<HTMLCanvasElement>('.lk-loupe__canvas') as HTMLCanvasElement;
+  const canvas = container.querySelector<HTMLCanvasElement>(
+    '.lk-loupe__canvas',
+  ) as HTMLCanvasElement;
   const c = canvas.getBoundingClientRect();
   const h = host(container).getBoundingClientRect();
   expect(c.width).toBeCloseTo(60, 1);
@@ -271,7 +279,14 @@ test('a hollow lens draws only its outline, and tells the host where it is', asy
   const lenses: unknown[] = [];
   const { container } = render(
     <div style={{ width: CSS_W, height: CSS_H }}>
-      <TrialLoupe enabled hollow shape="square" factor={4} diameter={DIAMETER} onLens={(l) => lenses.push(l)}>
+      <TrialLoupe
+        enabled
+        hollow
+        shape="square"
+        factor={4}
+        diameter={DIAMETER}
+        onLens={(l) => lenses.push(l)}
+      >
         <div style={{ width: CSS_W, height: CSS_H }} />
       </TrialLoupe>
     </div>,

@@ -1,5 +1,13 @@
 import { useLatest } from '@weasel-js/core';
-import { type ReactNode, type RefObject, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import {
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { CameraContext, CameraScope } from '../canvas/CameraInput';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
 import { fromCameraView } from '../canvas/cameraView';
@@ -128,7 +136,23 @@ export function TrialLoupe({
         peekKey,
         onColorChange,
       }),
-    [render, source, factor, minFactor, maxFactor, mode, diameter, shape, place, hollow, onLens, damage, reportLens, peekKey, onColorChange],
+    [
+      render,
+      source,
+      factor,
+      minFactor,
+      maxFactor,
+      mode,
+      diameter,
+      shape,
+      place,
+      hollow,
+      onLens,
+      damage,
+      reportLens,
+      peekKey,
+      onColorChange,
+    ],
   );
 
   // A lens told whether it is on has no use for the trial's toggle.

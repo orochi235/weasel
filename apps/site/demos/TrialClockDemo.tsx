@@ -5,7 +5,7 @@ import { useRef } from 'react';
 // `@weasel-js/labkit/styles.css` instead.
 import '@weasel-js/labkit/styles.less';
 import 'windease/styles.css';
-import './TrialClockDemo.css';
+import s from './TrialClockDemo.module.css';
 
 const RADIUS = 160;
 
@@ -20,14 +20,14 @@ function Controls() {
   if (!clock) return null;
   const forward = clock.rate >= 0;
   return (
-    <div className="ckd-clock-controls">
+    <div className={s.controls}>
       <Button onClick={() => { clock.rate = clock.rate === 0 ? 1 : 0; }}>
         {clock.rate === 0 ? 'Play' : 'Pause'}
       </Button>
       <Button onClick={() => { clock.rate = forward ? -1 : 1; }}>
         {forward ? 'Reverse' : 'Forward'}
       </Button>
-      <span ref={readout} className="ckd-clock-readout">0.00s</span>
+      <span ref={readout} className={s.readout}>0.00s</span>
     </div>
   );
 }
