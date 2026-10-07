@@ -570,6 +570,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P3) Should routing declare the `activeTool` dep itself?** `ActionDeps` types each dep
+  through `DepSchema`, but `activeTool` is merged in by core, so routing's own
+  `makeToolOffhandAction` still reads `ctx.deps.activeTool as ActiveToolContextValue` — routing
+  builds without core's augmentation, and the type it casts to is routing's own. Declaring the
+  entry in routing's `DepSchema` would drop that last cast; the question is whether routing
+  should own a dep entry at all, when it is empty by design today.
+
 - **(P3) Range selection on the canvas.** `@weasel-js/select` ranges over an `order` the caller
   supplies, and a canvas has none of its own, so core's `useSelection` never ranges and keeps no
   anchor. The order could be z-order, tree order, or a layer panel's row order handed across;
