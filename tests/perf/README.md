@@ -81,7 +81,9 @@ server (default 4722, from `scripts/dev-ports.json`). Use your own port when ano
 perf: outside CI the config reuses whatever already listens there, and every
 spec would measure that checkout's code. Some specs take their own —
 `PERF_KINDS` in `frame-budget`, `WEASEL_PERF_N`, `WEASEL_PERF_SIZE` and
-`WEASEL_PERF_VARIANTS` in `image-quad` — and record them in `params`.
+`WEASEL_PERF_VARIANTS` in `image-quad`, `WEASEL_PERF_SHEET`, `WEASEL_PERF_CELLS`
+and `WEASEL_PERF_VARIANTS` in `atlas-wall`, `WEASEL_PERF_VERTS` in `mesh-batch`
+— and record them in `params`.
 
 ## apps/draw cold start
 

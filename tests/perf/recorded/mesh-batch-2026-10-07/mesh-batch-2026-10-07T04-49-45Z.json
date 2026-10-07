@@ -1,0 +1,1644 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "mesh-batch",
+  "git": {
+    "sha": "8a39dce882c95b9ac9c2fc554a618d57dea756c3",
+    "dirty": true
+  },
+  "timestamp": "2026-10-07T04:49:45.997Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.10.0",
+    "loadavg": [
+      5.47,
+      7.93,
+      9
+    ]
+  },
+  "params": {
+    "viewport": "800x600",
+    "dpr": 1,
+    "meshesPerFrame": 256,
+    "verts": [
+      8,
+      16,
+      32,
+      48,
+      64,
+      96,
+      128,
+      192,
+      256,
+      384,
+      512,
+      768,
+      1024,
+      1536,
+      2048,
+      3072
+    ],
+    "runs": 5,
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "interleaved 8v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 8,
+        "meshVerts": 8
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 0.6640625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.46875,
+            0.80078125,
+            0.6640625,
+            0.4296875,
+            0.859375
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 31.875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            26.8359375,
+            32.63671875,
+            33.046875,
+            20.13671875,
+            31.875
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 31.2109375,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 16v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 16,
+        "meshVerts": 16
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 1.7578125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.7578125,
+            0.64453125,
+            1.8359375,
+            1.15234375,
+            1.77734375
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 30.52734375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            35.8203125,
+            30.3515625,
+            30.52734375,
+            21.25,
+            34.3359375
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 28.76953125,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 32v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 32,
+        "meshVerts": 32
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 1.5234375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.25,
+            1.5625,
+            1.81640625,
+            1.5234375,
+            1.25
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 33.28125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            33.28125,
+            38.73046875,
+            33.92578125,
+            27.91015625,
+            30.48828125
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 31.757812499999996,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 48v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 48,
+        "meshVerts": 48
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 2.34375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.2265625,
+            2.34375,
+            0.80078125,
+            2.44140625,
+            2.7734375
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 33.984375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            36.3671875,
+            35.46875,
+            30.41015625,
+            32.96875,
+            33.984375
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 31.640625,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 64v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 64,
+        "meshVerts": 64
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 3.02734375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.02734375,
+            3.3203125,
+            3.57421875,
+            2.9296875,
+            1.54296875
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 32.24609375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            35.4296875,
+            32.24609375,
+            38.33984375,
+            28.0078125,
+            27.3828125
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 29.21875,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 96v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 96,
+        "meshVerts": 96
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 2.87109375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.34375,
+            2.1484375,
+            2.890625,
+            2.87109375,
+            3.28125
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 34.0234375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            36.46484375,
+            32.6171875,
+            36.42578125,
+            34.0234375,
+            27.08984375
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 31.152343750000004,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 128v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 128,
+        "meshVerts": 128
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 4.23828125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            4.140625,
+            4.66796875,
+            4.5703125,
+            4.23828125,
+            2.109375
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 2,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 32.265625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            30.29296875,
+            35.48828125,
+            35.78125,
+            32.265625,
+            24.6875
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 28.02734375,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 192v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 192,
+        "meshVerts": 192
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 5.60546875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            5.72265625,
+            5.60546875,
+            5.234375,
+            6.015625,
+            2.59765625
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 2,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 29.00390625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            28.359375,
+            29.00390625,
+            35.78125,
+            33.65234375,
+            25.46875
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 23.3984375,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 256v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 256,
+        "meshVerts": 256
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 6.640625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            8.3203125,
+            6.640625,
+            6.26953125,
+            7.55859375,
+            4.4921875
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 3,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 32.94921875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            39.609375,
+            38.33984375,
+            32.94921875,
+            30.17578125,
+            25.64453125
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 26.30859375,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 384v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 384,
+        "meshVerts": 384
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 8.2421875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            8.2421875,
+            10.60546875,
+            7.8125,
+            11.015625,
+            6.03515625
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 4,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 31.796875000000004,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            31.796875000000004,
+            36.015625,
+            30.72265625,
+            33.9453125,
+            26.2109375
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 23.554687500000004,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 512v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 512,
+        "meshVerts": 512
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 14.140625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            12.578125,
+            14.58984375,
+            14.140625,
+            14.296875,
+            9.08203125
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 5,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 30.9375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            30.9375,
+            35.13671875,
+            31.269531250000004,
+            28.0078125,
+            25.99609375
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 16.796875,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 768v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 768,
+        "meshVerts": 768
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 17.67578125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            18.92578125,
+            17.67578125,
+            16.07421875,
+            21.09375,
+            13.828125
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 7,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 34.47265625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            35.2734375,
+            34.47265625,
+            30.5859375,
+            34.66796875,
+            26.11328125
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 16.796874999999996,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 1024v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 1024,
+        "meshVerts": 1024
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 21.66015625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            24.74609375,
+            24.86328125,
+            21.66015625,
+            21.03515625,
+            15.48828125
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 9,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 34.9609375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            36.62109375,
+            36.875,
+            31.796875000000004,
+            34.9609375,
+            22.20703125
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 13.300781249999998,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 1536v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 1536,
+        "meshVerts": 1536
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 35.95703125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            26.2890625,
+            39.55078125,
+            38.2421875,
+            35.95703125,
+            21.38671875
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 13,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 34.5703125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            31.933593750000004,
+            34.5703125,
+            35.5078125,
+            37.24609375,
+            24.19921875
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -1.3867187500000018,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 2048v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 2048,
+        "meshVerts": 2048
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 39.43359375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            39.43359375,
+            39.43359375,
+            43.28125,
+            33.6328125,
+            26.6015625
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 18,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 36.6015625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            37.87109375,
+            36.81640625,
+            36.6015625,
+            31.445312500000004,
+            24.296875
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -2.8320312500000053,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved 3072v",
+      "params": {
+        "shape": "interleaved",
+        "verts": 3072,
+        "meshVerts": 3072
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 42.5,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            50.21484375,
+            42.5,
+            38.69140625,
+            51.97265625,
+            36.93359375
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 26,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 33.2421875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            33.2421875,
+            33.88671875,
+            26.42578125,
+            36.7578125,
+            24.86328125
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 512,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -9.257812500000004,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "interleaved break-even",
+      "params": {
+        "shape": "interleaved"
+      },
+      "metrics": {
+        "vertices": {
+          "value": 1487.7,
+          "unit": "count",
+          "stat": "first zero crossing of saves, linear between rungs"
+        }
+      }
+    },
+    {
+      "id": "meshes 8v",
+      "params": {
+        "shape": "meshes",
+        "verts": 8,
+        "meshVerts": 8
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 0.390625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.15625,
+            0.0390625,
+            0.80078125,
+            0.390625,
+            0.4296875
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 1.8359375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.8359375,
+            1.58203125,
+            3.10546875,
+            1.19140625,
+            2.2265625
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 1.4453125,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 16v",
+      "params": {
+        "shape": "meshes",
+        "verts": 16,
+        "meshVerts": 16
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 0.83984375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.87890625,
+            0.72265625,
+            0.83984375,
+            0.44921875,
+            1.0546875
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 3.22265625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            4.1796875,
+            1.38671875,
+            3.22265625,
+            1.171875,
+            3.69140625
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 2.3828125,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 32v",
+      "params": {
+        "shape": "meshes",
+        "verts": 32,
+        "meshVerts": 32
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 0.91796875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.52734375,
+            0.91796875,
+            0.48828125,
+            0.91796875,
+            0.9765625
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 2.28515625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.6328125,
+            3.88671875,
+            2.28515625,
+            1.6015625,
+            2.28515625
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 1.3671875,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 48v",
+      "params": {
+        "shape": "meshes",
+        "verts": 48,
+        "meshVerts": 48
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 1.015625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.015625,
+            0.9765625,
+            0.60546875,
+            2.32421875,
+            1.42578125
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 3.046875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.046875,
+            2.265625,
+            2.94921875,
+            3.4375,
+            3.61328125
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 2.03125,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 64v",
+      "params": {
+        "shape": "meshes",
+        "verts": 64,
+        "meshVerts": 64
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 1.38671875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.71875,
+            1.38671875,
+            1.69921875,
+            1.2109375,
+            0.99609375
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 2.734375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.5,
+            2.734375,
+            3.61328125,
+            2.94921875,
+            2.6953125
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 1.34765625,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 96v",
+      "params": {
+        "shape": "meshes",
+        "verts": 96,
+        "meshVerts": 96
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 1.73828125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.34375,
+            1.484375,
+            1.73828125,
+            2.5,
+            1.58203125
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 2.63671875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.046875,
+            1.62109375,
+            3.41796875,
+            2.63671875,
+            2.0703125
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 0.8984375000000001,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 128v",
+      "params": {
+        "shape": "meshes",
+        "verts": 128,
+        "meshVerts": 128
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 2.3828125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.87109375,
+            2.71484375,
+            1.85546875,
+            2.3828125,
+            1.81640625
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 2.421875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.421875,
+            2.265625,
+            2.48046875,
+            3.984375,
+            1.3671875
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": 0.039062500000000035,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 192v",
+      "params": {
+        "shape": "meshes",
+        "verts": 192,
+        "meshVerts": 192
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 3.7109375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.046875,
+            3.7109375,
+            3.9453125,
+            4.31640625,
+            2.59765625
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 2,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 3.4375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.0859375,
+            3.49609375,
+            3.9648437499999996,
+            3.4375,
+            1.5234375
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -0.27343749999999983,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 256v",
+      "params": {
+        "shape": "meshes",
+        "verts": 256,
+        "meshVerts": 256
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 5.15625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            4.84375,
+            5.15625,
+            5.76171875,
+            5.3125,
+            3.9453125
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 2,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 2.79296875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.3046875,
+            3.8671875,
+            2.65625,
+            3.3203125,
+            2.79296875
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -2.3632812500000004,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 384v",
+      "params": {
+        "shape": "meshes",
+        "verts": 384,
+        "meshVerts": 384
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 7.48046875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            7.2265625,
+            9.2578125,
+            7.48046875,
+            7.48046875,
+            5.76171875
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 4,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 2.44140625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.79296875,
+            2.2265625,
+            2.44140625,
+            2.890625,
+            2.2265625
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -5.0390625,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 512v",
+      "params": {
+        "shape": "meshes",
+        "verts": 512,
+        "meshVerts": 512
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 9.453125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            8.84765625,
+            10.3515625,
+            9.453125,
+            11.26953125,
+            7.1875
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 4,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 3.53515625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.33984375,
+            4.609375,
+            3.69140625,
+            3.53515625,
+            2.16796875
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -5.91796875,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 768v",
+      "params": {
+        "shape": "meshes",
+        "verts": 768,
+        "meshVerts": 768
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 15.01953125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            18.1640625,
+            13.76953125,
+            15.01953125,
+            16.89453125,
+            12.734375
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 7,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 3.828125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            4.1796875,
+            3.828125,
+            3.41796875,
+            4.70703125,
+            2.6171875
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -11.19140625,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 1024v",
+      "params": {
+        "shape": "meshes",
+        "verts": 1024,
+        "meshVerts": 1024
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 19.4140625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            20.625,
+            19.9609375,
+            19.27734375,
+            19.4140625,
+            13.4765625
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 8,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 3.59375,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            4.04296875,
+            5.3515625,
+            3.33984375,
+            3.515625,
+            3.59375
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -15.8203125,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 1536v",
+      "params": {
+        "shape": "meshes",
+        "verts": 1536,
+        "meshVerts": 1536
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 30.76171875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            26.58203125,
+            30.76171875,
+            31.73828125,
+            31.640625,
+            20.41015625
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 13,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 4.08203125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.80859375,
+            5.1953125,
+            4.94140625,
+            4.08203125,
+            3.9648437499999996
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -26.6796875,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 2048v",
+      "params": {
+        "shape": "meshes",
+        "verts": 2048,
+        "meshVerts": 2048
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 32.98828125,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            36.5234375,
+            32.98828125,
+            38.76953125,
+            32.91015625,
+            23.4375
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 16,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 5.44921875,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            5.2734375,
+            6.4453125,
+            6.484375,
+            4.94140625,
+            5.44921875
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -27.539062500000004,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes 3072v",
+      "params": {
+        "shape": "meshes",
+        "verts": 3072,
+        "meshVerts": 3072
+      },
+      "metrics": {
+        "batchedPerMesh": {
+          "value": 42.12890625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            46.3671875,
+            42.12890625,
+            37.109375,
+            47.03125,
+            33.88671875
+          ]
+        },
+        "batchedDrawCalls": {
+          "value": 26,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "alonePerMesh": {
+          "value": 6.66015625,
+          "unit": "us",
+          "stat": "median of 5 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            6.15234375,
+            5.46875,
+            7.3828125,
+            7.5390625,
+            6.66015625
+          ]
+        },
+        "aloneDrawCalls": {
+          "value": 256,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "saves": {
+          "value": -35.46875,
+          "unit": "us",
+          "stat": "alone less batched, per mesh, medians"
+        }
+      }
+    },
+    {
+      "id": "meshes break-even",
+      "params": {
+        "shape": "meshes"
+      },
+      "metrics": {
+        "vertices": {
+          "value": 136,
+          "unit": "count",
+          "stat": "first zero crossing of saves, linear between rungs"
+        }
+      }
+    }
+  ]
+}

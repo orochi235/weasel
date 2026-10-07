@@ -1016,25 +1016,57 @@ one dead `const` and four stale disable directives.
   block method; D3D and Vulkan backends are where an in-flight buffer write
   would stall, if anywhere.
 
-- **(P3) No spec measures `MAX_BATCHED_MESH_VERTICES`.** The cap of 256 sits at
-  a break-even measured once by hand in 2026-08 with block timing. A spec timing
-  frames of meshes of rising vertex count, batched against drawn alone, would
-  re-derive it.
+- **(P3) `MAX_BATCHED_MESH_VERTICES` (256) is not a break-even; there are
+  two.** `tests/perf/mesh-batch.spec.ts` times 256 convex meshes a frame,
+  batched against drawn alone, by moving the cap itself each frame. Whether
+  batching pays depends on whether the mesh's own draw also breaks a run:
+
+  | Frame | Break-even, two passes (vertices) | At 256: alone less batched (us/mesh) |
+  |---|---:|---:|
+  | meshes back to back | 136 and 92 | -2.36 and -1.00 |
+  | a rect before every mesh | 1,488 and 1,724 | 26.31 and 21.02 |
+
+  Drawn alone among rects, a mesh costs 26–37 us whatever its size, because it
+  closes the rect's run and switches program twice; back to back it costs
+  1.4–6.7 us. So 256 is too high for consecutive meshes and far too low for
+  mixed ones, and being wrong on the mixed side costs about ten times more a
+  mesh. One reading: the cap should depend on whether a run is open when the
+  mesh arrives, not on vertex count alone. Not changed.
+  Measured on teitou (Apple M5 Max, ANGLE Metal), 2026-10-07, at the spec in
+  `2108ceb69`, two passes 20 minutes apart with atlas-wall runs between; load
+  average 2–5 on 18 cores, with small fleet jobs (1–3 core-minutes each)
+  overlapping. Result files: `tests/perf/recorded/mesh-batch-2026-10-07/`.
+  Only one GPU and backend.
 
 - **(P3) What inside Chromium or ANGLE slows frames drawn back to back in one
   task** — 4–10x after about eight (`tests/perf/README.md`, "Timing a frame")
   — is unknown.
 
-- **(P3) `sampling: 'nearest'` costs up to 8x on a 122MB sheet.** A consumer
-  drawing a 5652px atlas sees nearest cost 8.11x linear at 2:1 minification,
-  5.98x at 1.33:1, 1.08x at 1:1 and 1.14x magnified. `atlas-wall.spec.ts` finds
-  no difference on our sheets, the largest about 3MB, and `GLImageCache` pins
-  MIN_FILTER to LINEAR with no mipmaps, so `sampling` moves MAG_FILTER alone and
-  a minified draw should never read it. Either MIN_FILTER is not what a draw at
-  2:1 on a texture that size reads, or something else still varies with
-  `sampling`. Widening the spec's sheet toward theirs is the experiment. Their
-  column was single runs on a contended box: trust the shape, which tracks
-  minification exactly, not the second digit.
+- **(P3) A consumer's `sampling: 'nearest'` costing up to 8x does not
+  reproduce here.** They drew a 5652px atlas (~122MB) and saw nearest cost
+  8.11x linear at 2:1 minification, 5.98x at 1.33:1, 1.08x at 1:1 and 1.14x
+  magnified, in single runs on a contended box. `atlas-wall.spec.ts` with
+  `WEASEL_PERF_SHEET=5652` builds sheets that size, cells sampling tiles across
+  all of it. On teitou (Apple M5 Max, ANGLE Metal), 2026-10-07, at
+  `48f473a66`, in ABBA passes against our 0.1–3MB sheets, 5 runs a pass,
+  nearest over linear was:
+
+  | Sheet | Pass | 1:1 (56px) | 1.33:1 (42px) | 2:1 (28px) |
+  |---|---:|---:|---:|---:|
+  | 5652px | 1 | 1.30 | 1.20 | 0.66 |
+  | 3MB    | 2 | 1.11 | 0.97 | 0.77 |
+  | 3MB    | 3 | 1.17 | 1.68 | 1.11 |
+  | 5652px | 4 | 0.63 | 1.08 | 1.25 |
+
+  Every ratio, magnified rungs included, falls between 0.6 and 1.7 either way
+  with no trend in sheet size or minification. The frames are 0.2–0.6 ms,
+  where 0.1 ms is noise; an 8x would be 3 ms and could not hide. That matches
+  the code: `GLImageCache` uploads with MIN_FILTER LINEAR and no mipmaps, and
+  `sampling` reaches GL only as `setMagFilter`, which skips a value the texture
+  already holds. Result files: `tests/perf/recorded/atlas-wall-sheet-2026-10-07/`.
+  What is left is their side: whether their build predates `fee0c98db`
+  (which stopped re-asserting MAG_FILTER per flush), their GPU and backend, and
+  their dpr. Only their harness can answer it.
 
 - **(P3) Whether the batched path costs a co-tenant on the same page.**
   Unverified here, and reported rather than measured. A consumer benchmarking
