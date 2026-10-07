@@ -12,6 +12,7 @@ import {
   type Ref,
 } from 'react';
 import { CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/core';
+import { assignRef } from '@weasel-js/react';
 import type { PressModifiers, ReorderGhost } from '../../useReorderDragList';
 import { DragGhost } from '../DragGhost';
 import s from './ItemList.module.css';
@@ -145,8 +146,7 @@ export const ItemList = forwardRef(function ItemList(
   const setRefs = useCallback(
     (el: HTMLDivElement | null) => {
       setContainer(el);
-      if (typeof ref === 'function') ref(el);
-      else if (ref) ref.current = el;
+      assignRef(ref, el);
     },
     [ref],
   );

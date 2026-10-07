@@ -34,7 +34,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import type { Ref } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { assignRef, useLatest } from '@weasel-js/react';
 import { useFrameLoop } from './useFrameLoop';
 import { useLateContentRedraw } from './useLateContentRedraw';
 import { useCanvasRenderer } from './useCanvasRenderer';
@@ -111,18 +111,10 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
 
   const localRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Forward the canvas element to the caller's ref. `useImperativeHandle`-on-
-  // ref isn't quite right for a plain element; instead, we expose the same
-  // element via a callback ref pattern by writing through to the consumer-
-  // supplied ref each time React attaches the canvas.
-  const setCanvasRef = (el: HTMLCanvasElement | null): void => {
+  const setCanvasRef = useCallback((el: HTMLCanvasElement | null): void => {
     localRef.current = el;
-    if (typeof canvasRef === 'function') {
-      canvasRef(el);
-    } else if (canvasRef && typeof canvasRef === 'object') {
-      (canvasRef as { current: HTMLCanvasElement | null }).current = el;
-    }
-  };
+    assignRef(canvasRef, el);
+  }, [canvasRef]);
 
   // The frame loop paints, not React — so an override commit can repaint
   // without a render. The thunk defers to `paintRef`, which every committed

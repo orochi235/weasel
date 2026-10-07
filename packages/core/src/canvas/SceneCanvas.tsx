@@ -149,7 +149,7 @@ import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import type { Op } from 'core/ops/types';
 import { useDepRegistry } from '@weasel-js/routing/react';
-import { useLatest } from '@weasel-js/react';
+import { assignRef, useLatest } from '@weasel-js/react';
 import { createNodeRouting, type NodeRoutingEntry } from '../core/scene/NodeRouting';
 import { inferredNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import { installTestHookIfRequested } from '../test-hook/install';
@@ -2166,8 +2166,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         : null;
       canvasApiRef.current = extended;
       setCanvasReady(extended !== null);
-      if (typeof ref === 'function') ref(extended);
-      else if (ref) (ref as React.MutableRefObject<SceneCanvasApi | null>).current = extended;
+      assignRef(ref, extended);
     },
     [ref, ingestImpl, viewAnimation, addView],
   );

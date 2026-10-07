@@ -26,6 +26,7 @@
     "@weasel-js/font": "1.8.1",
     "@weasel-js/modes": "1.8.1",
     "@weasel-js/quantity": "1.8.1",
+    "@weasel-js/react": "1.8.1",
     "@weasel-js/select": "1.8.1",
     "@weasel-js/svg": "1.8.1",
     "@weasel-js/theme": "1.8.1",

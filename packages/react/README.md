@@ -2,7 +2,8 @@
 
 Generic React hooks the weasel packages share: `useLatest`, a ref holding the
 value of the last committed render, and `useStableByContent`, which keeps one
-identity for a value rebuilt equal every render. No weasel domain in it.
+identity for a value rebuilt equal every render; and `assignRef`, which writes
+a value into a ref prop of either shape. No weasel domain in it.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the

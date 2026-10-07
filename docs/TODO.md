@@ -251,11 +251,6 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P3) Three canvas components merge a forwarded `canvasRef` by hand.**
-  `DrawCanvas`, `MinimapCanvas` and `SceneViewCanvas` each write the element to
-  a function-or-object ref with the same branch and cast. One shared ref-merge
-  helper would serve all three.
-
 - **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
   `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
   still derives framing from document poses, so a node overridden outside the

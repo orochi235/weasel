@@ -30,7 +30,7 @@ import {
   useDepSource,
   useGestureDispatcher,
 } from '@weasel-js/routing/react';
-import { useLatest } from '@weasel-js/react';
+import { assignRef, useLatest } from '@weasel-js/react';
 import type { Tool } from '@weasel-js/routing';
 import { PointerProviderIfRoot } from './SceneCanvas/PointerProviderIfRoot';
 import { usePointerContext, usePointerPosition } from 'features/pointer/PointerContext';
@@ -257,11 +257,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   // we route both our internal ref and the consumer's ref through one setter.
   const setCanvasRef = useCallback((el: HTMLCanvasElement | null) => {
     localCanvasRef.current = el;
-    if (typeof canvasRef === 'function') {
-      canvasRef(el);
-    } else if (canvasRef && typeof canvasRef === 'object') {
-      (canvasRef as { current: HTMLCanvasElement | null }).current = el;
-    }
+    assignRef(canvasRef, el);
   }, [canvasRef]);
 
   return (

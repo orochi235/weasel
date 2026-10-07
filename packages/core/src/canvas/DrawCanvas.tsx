@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import type { Ref } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { assignRef, useLatest } from '@weasel-js/react';
 import type { FillStyle } from '@weasel-js/paint';
 import { useFrameLoop } from './useFrameLoop';
 import { useLateContentRedraw } from './useLateContentRedraw';
@@ -68,8 +68,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const setRefs = useCallback((el: HTMLCanvasElement | null) => {
     canvasElRef.current = el;
-    if (typeof canvasRef === 'function') canvasRef(el);
-    else if (canvasRef) (canvasRef as { current: HTMLCanvasElement | null }).current = el;
+    assignRef(canvasRef, el);
   }, [canvasRef]);
 
   const { paint: paintCanvas } = useCanvasRenderer();

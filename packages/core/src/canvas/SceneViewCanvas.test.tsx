@@ -275,6 +275,18 @@ describe('<SceneViewCanvas>', () => {
     expect(captured).toBe(canvas);
   });
 
+  it('calls a stable callback canvasRef once, not again on every render', () => {
+    const scene = makeScene();
+    const ref = vi.fn<(el: HTMLCanvasElement | null) => void>();
+    const props = { scene, view: identityView, height: 80, drawOne, canvasRef: ref };
+
+    const { rerender } = render(<SceneViewCanvas {...props} width={100} />);
+    rerender(<SceneViewCanvas {...props} width={101} />);
+    rerender(<SceneViewCanvas {...props} width={102} />);
+
+    expect(ref.mock.calls.map(([el]) => el?.tagName ?? null)).toEqual(['CANVAS']);
+  });
+
   it('applies the consumer className to the canvas (no inline width/height styles)', () => {
     const scene = makeScene();
     const { container } = render(
