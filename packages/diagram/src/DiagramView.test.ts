@@ -22,4 +22,9 @@ describe('fitDiagram', () => {
     ] as unknown as DiagramSpec[];
     expect(fitDiagram(small, size, 0.75)!.scale).toEqual({ x: 1, y: 1 });
   });
+
+  it("opens on the start of a floored diagram with anchor 'start'", () => {
+    const v = fitDiagram(wide, size, 0.75, 'start')!;
+    expect(v.x * v.scale.x).toBeCloseTo(-16); // left edge 16px in from the box
+  });
 });

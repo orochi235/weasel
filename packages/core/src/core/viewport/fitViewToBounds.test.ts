@@ -195,4 +195,25 @@ describe('fitViewToBounds — mode', () => {
     expect(v.scale.x).toBe(0.5);  // sx = 0.1, clamped up
     expect(v.scale.y).toBe(5);    // sy = 10000, clamped down
   });
+
+  describe("anchor: 'start'", () => {
+    // 100 wide x 1000 tall in a 200x200 viewport, floored at 1: overflows y only.
+    const tall = { x: 50, y: 30, width: 100, height: 1000 };
+    const opts = { padding: 10, minScale: 1, maxScale: 1 } as const;
+
+    it('shows the top edge, inset by padding, on the axis that overflows', () => {
+      const v = fitViewToBounds(tall, { width: 200, height: 200 }, CURRENT, { ...opts, anchor: 'start' });
+      expect(v.y).toBe(30 - 10); // world y=30 lands at screen y=10
+    });
+
+    it('still centers the axis that fits', () => {
+      const v = fitViewToBounds(tall, { width: 200, height: 200 }, CURRENT, { ...opts, anchor: 'start' });
+      expect(v.x).toBe(100 - 100); // center 100 at screen 100
+    });
+
+    it("'center' (default) shows the middle of the overflowing axis", () => {
+      const v = fitViewToBounds(tall, { width: 200, height: 200 }, CURRENT, opts);
+      expect(v.y).toBe(530 - 100);
+    });
+  });
 });

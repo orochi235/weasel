@@ -25,6 +25,9 @@ export interface DiagramViewProps {
   /** The smallest scale the initial fit may use. Unset, the whole diagram fits
    *  however small that makes it; set, it stops here and the rest is a pan away. */
   minScale?: number;
+  /** Which part of a diagram too big for the box it opens on: its middle
+   *  (default) or its top-left, where a layered flow begins. */
+  anchor?: 'center' | 'start';
   className?: string;
 }
 
@@ -49,7 +52,7 @@ export function DiagramView(props: DiagramViewProps) {
   );
 }
 
-function Inner({ specs, width, height, selected, onSelect, minScale, className }: DiagramViewProps) {
+function Inner({ specs, width, height, selected, onSelect, minScale, anchor, className }: DiagramViewProps) {
   useEffect(() => registerDiagramShape<RectPose>(), []);
   const registry = useMemo(() => withDiagramRegistry<RectPose>(), []);
   const scene = useScene<DiagramSceneData, 'main', RectPose>({
@@ -59,7 +62,10 @@ function Inner({ specs, width, height, selected, onSelect, minScale, className }
   });
   const selection = useSelection({ scene, mode: 'single' });
   useMirroredSelection(selection, selected, onSelect);
-  const defaultView = useMemo(() => fitDiagram(specs, { width, height }, minScale), [specs, width, height, minScale]);
+  const defaultView = useMemo(
+    () => fitDiagram(specs, { width, height }, minScale, anchor),
+    [specs, width, height, minScale, anchor],
+  );
   return (
     <SceneCanvas
       scene={scene}
@@ -79,6 +85,7 @@ export function fitDiagram(
   specs: readonly DiagramSpec[],
   size: { width: number; height: number },
   minScale?: number,
+  anchor?: 'center' | 'start',
 ): View | undefined {
   const boxes = specs.filter((s) => s.kind === 'container').map((s) => s.pose as RectPose);
   if (boxes.length === 0) return undefined;
@@ -93,5 +100,6 @@ export function fitDiagram(
   return fitViewToBounds(bounds, size, { x: 0, y: 0, scale: { x: 1, y: 1 } }, {
     maxScale: 1,
     ...(minScale !== undefined ? { minScale } : {}),
+    ...(anchor !== undefined ? { anchor } : {}),
   });
 }

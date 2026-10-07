@@ -34,6 +34,13 @@ export interface FitViewToBoundsOptions {
    * - `'stretch'`: per-axis scale. Bounds match viewport exactly; scale is non-uniform.
    */
   mode?: 'contain' | 'fill' | 'stretch';
+  /**
+   * Where bounds that overflow the viewport on an axis sit, which happens when
+   * `minScale` stops the fit or `mode` is `'fill'`. `'center'` (default) shows
+   * their middle; `'start'` shows their left or top edge, inset by `padding`.
+   * An axis that fits is centered either way.
+   */
+  anchor?: 'center' | 'start';
 }
 
 /**
@@ -101,11 +108,13 @@ export function fitViewToBounds(
   // Center bounds in the viewport. With view-as-camera semantics:
   //   screenCenter = (worldCenter - view.x) * scale
   //   view.x = worldCenter - viewportCenter / scale
-  const worldCx = bounds.x + bounds.width / 2;
-  const worldCy = bounds.y + bounds.height / 2;
+  const place = (start: number, size: number, avail: number, viewport: number, scale: number) =>
+    opts.anchor === 'start' && size * scale > avail + 1e-9
+      ? start - padding / scale
+      : start + size / 2 - viewport / (2 * scale);
   return {
-    x: worldCx - viewportDims.width / (2 * scaleX),
-    y: worldCy - viewportDims.height / (2 * scaleY),
+    x: place(bounds.x, bounds.width, availW, viewportDims.width, scaleX),
+    y: place(bounds.y, bounds.height, availH, viewportDims.height, scaleY),
     scale: { x: scaleX, y: scaleY },
   };
 }
