@@ -20,9 +20,8 @@ import {
 import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationTargets } from '../annotations/AnnotationTargets';
-import { AnnotationPreloadContext } from '../annotations/preload';
 import { annotationsFromJSON } from '../annotations/store';
-import type { AnnotationStorage, AnnotationsApi, AnnotationTargetInfo } from '../annotations/types';
+import type { AnnotationsApi, AnnotationTargetInfo } from '../annotations/types';
 import type { CameraView } from '../canvas/CameraInput';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
@@ -47,6 +46,7 @@ import type {
 } from '../instrument/types';
 import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
+import { PresentedTransport } from '../lab/PresentedTransport';
 import { useIsPresented } from '../lab/presentation';
 import { LayerList, type LayerListItem, moveLayers } from '../passthrough/weasel-ui';
 import { LabStoreContext, TrialIdProvider } from '../state/context';
@@ -59,6 +59,7 @@ import { stateOp } from '../undo/stateOp';
 import { LoupeSwitchContext } from './loupeSwitch';
 import type { LoupeBindings, UndoBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
+import { useKeptMarks } from './useKeptMarks';
 import { useViewPlacement } from './useViewPlacement';
 
 /** Props for `<Trial>`. */
@@ -102,36 +103,6 @@ export function Trial({ id, chrome, suppress }: TrialProps) {
       suppress={suppress}
     />
   );
-}
-
-/** The marks an instrument keeps in its own storage: preloaded by the lab for
- *  the trials it opened with, loaded here for any added since. */
-function useKeptMarks(
-  storage: AnnotationStorage | undefined,
-  trialId: string,
-): { ready: boolean; value: unknown } {
-  const preload = useContext(AnnotationPreloadContext);
-  const [loaded, setLoaded] = useState<{ value: unknown } | null>(() =>
-    storage && preload?.has(trialId) ? { value: preload.get(trialId) } : null,
-  );
-  useEffect(() => {
-    if (!storage || loaded) return;
-    let live = true;
-    storage.load().then(
-      (value) => {
-        if (live) setLoaded({ value });
-      },
-      (error) => {
-        console.warn(`[labkit] could not load the marks of trial "${trialId}"`, error);
-        if (live) setLoaded({ value: null });
-      },
-    );
-    return () => {
-      live = false;
-    };
-  }, [storage, loaded, trialId]);
-  if (!storage) return { ready: true, value: undefined };
-  return loaded ? { ready: true, value: loaded.value } : { ready: false, value: undefined };
 }
 
 interface TrialRuntimeProps {
@@ -684,6 +655,7 @@ function TrialRuntime({
             >
               {scopedBody}
               {annotationOverlays}
+              <PresentedTransport trialId={record.id} />
             </TrialChrome>
           </CameraWheelContext.Provider>
         </AnnotationsContext.Provider>

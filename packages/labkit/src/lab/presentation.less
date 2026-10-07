@@ -35,6 +35,8 @@
   }
 
   [data-lk-presented] {
+    // The play controls ask its width, not the page's: an embed is a box.
+    container-type: size;
     position: absolute;
     inset: 0;
     display: flex;
@@ -60,5 +62,21 @@
     .lk-viewport-controls {
       display: none;
     }
+  }
+}
+
+// Laid over the bottom of the content rather than taking room from it, and
+// gone where the bar would not fit.
+.lk-presented-transport {
+  position: absolute;
+  inset-inline: var(--wzl-space-sm);
+  bottom: var(--wzl-space-sm);
+  border-radius: var(--wzl-radius-md);
+  overflow: hidden;
+}
+
+@container (width < 480px) {
+  .lk-presented-transport {
+    display: none;
   }
 }

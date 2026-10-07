@@ -8,8 +8,9 @@ import t from './Transport.module.css';
 
 const RATE = multiplier({ symbol: 'x' });
 
-/** Playback rates the transport offers. */
-const RATES = [0.25, 0.5, 1, 2, 4] as const;
+/** Playback rates the transport offers, slowest first. */
+export const TRANSPORT_RATES = [0.25, 0.5, 1, 2, 4] as const;
+const RATES = TRANSPORT_RATES;
 
 /** Props for {@link Transport}. Times are in ms. */
 export interface TransportProps {

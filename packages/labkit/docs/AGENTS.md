@@ -12,7 +12,7 @@ A map of the library so agents can find what they need quickly.
 | `<Workspace>` | `src/lab/Workspace.tsx` |
 | `<Lightbox>`, `useLightbox`, `useLightboxControl`, `<LightboxLayers>` | `src/lightbox/` |
 | The lab body and its shared surface's layers | `src/lab/LabSurface.tsx` |
-| Presentation mode: `usePresentation`, `?present`, the seed and its store | `src/lab/presentation.tsx`, `src/lab/openLab.ts`, `src/lab/presentation.less` |
+| Presentation mode: `usePresentation`, `?present`, the seed and its store, the refit and the play controls | `src/lab/presentation.tsx`, `src/lab/openLab.ts`, `src/lab/presentation.less`, `src/lab/PresentedTransport.tsx`, `src/trial/useViewPlacement.ts` |
 | `<Toolbar>` + subcomponents | `src/primitives/Toolbar.tsx` |
 | `<StatusBar>`, `<StatusBarItem>`, `<StatusBarSpacer>` | `@weasel-js/ui`, re-exported from `src/primitives/index.ts` |
 | `<FpsMeter>` | `src/primitives/FpsMeter.tsx` |
@@ -139,6 +139,13 @@ once (`loop: false`) unless declared otherwise.
   seek and loop changes only.
 - **Reach it from chrome** with `useTrialClock(trialId?)`: that trial's, else
   the one rendered inside, else the lab's focused trial's.
+- **Play controls** are `<TrialTransport>` (`src/clock/TrialTransport.tsx`):
+  weasel-ui's `<Transport>` over the clock, resolved the same way. The clock
+  holds one signed rate, so the speed and direction a pause returns to live in
+  the component. Scrub and reverse appear only for a seekable clock with a
+  duration, and the scrub bar spans the current pass. `keys` answers Space,
+  the arrows, Home/End, R and `<`/`>` on the document; `replay` restarts an
+  ended run after a hold until the transport is touched.
 - **One frame loop per lab** (`useClockLoop`, behind `useVisibleRaf`) syncs
   every clock that is not inert and sleeps when all are. A clock woken from
   inert only records the time on its first sync, so a pause never arrives as
@@ -174,6 +181,15 @@ visible from the code:
   stored trial, an unchanged one keeps the visitor's.
 - **Escape only exits a presentation `enter()` started.** A lab mounted
   presenting is an embed, with no workspace a visitor should land in.
+- **Entering refits the view** for the presented box when the instrument's
+  `initialView` depends on the size (`trial/useViewPlacement.ts`, the same
+  placement the first measurement uses), and leaving restores the tile's view.
+  The box is measured in a layout effect, not left to the `ResizeObserver`, so
+  a presented box the same size as the tile still refits.
+- **The play controls** (`lab/PresentedTransport.tsx`) are a `<TrialTransport>`
+  with `keys` and a 3 s `replay`, laid over the bottom of the stage. The
+  presented trial is a size container, so `@container (width < 480px)` hides
+  them in a narrow embed. `<Lab transport={false}>` leaves them off.
 
 ## When to use what
 

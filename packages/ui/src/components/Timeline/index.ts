@@ -3,7 +3,7 @@ export type { KeyEditorCtx, KeySelection, TimelineProps, TimeWindow } from './Ti
 export { samePath } from './keys';
 export { AnimatedTimeline } from './AnimatedTimeline';
 export type { AnimatedTimelineProps } from './AnimatedTimeline';
-export { Transport } from './Transport';
+export { Transport, TRANSPORT_RATES } from './Transport';
 export type { TransportProps } from './Transport';
 export { EasingPicker } from './EasingPicker';
 export type { EasingPickerProps } from './EasingPicker';

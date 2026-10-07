@@ -26,6 +26,12 @@ export interface TrialClock {
   readonly pass: number;
   /** How far through its pass, 0 to 1; 1 once the run is over. 0 with no duration. */
   readonly phase: number;
+  /** ms per pass, as declared; `Infinity` for a run that never ends. */
+  readonly duration: number;
+  /** Whether `seek` and a negative `rate` are allowed. */
+  readonly seekable: boolean;
+  /** A finite run has played to its end. */
+  readonly ended: boolean;
   /** Signed: 0 pauses and a negative rate plays backward. A write changes speed
    *  at once and replaces any ramp. */
   rate: number;
@@ -143,6 +149,11 @@ export function createTrialClock(
     },
     get phase() {
       return phaseAt();
+    },
+    duration,
+    seekable,
+    get ended() {
+      return Number.isFinite(span) && elapsed >= span;
     },
     get rate() {
       return rate;

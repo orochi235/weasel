@@ -12,6 +12,8 @@ export interface Presentation {
 interface PresentationContextValue extends Presentation {
   /** The trial being presented, while one is. */
   trialId: string | null;
+  /** Whether a presented trial with a clock shows its play controls. */
+  transport: boolean;
 }
 
 export const PresentationContext = createContext<PresentationContextValue | null>(null);
@@ -22,6 +24,7 @@ export function useLabPresentation(
   startsPresenting: boolean,
   focusedTrialId: string | null,
   labBody: HTMLElement | null,
+  transport: boolean,
 ): PresentationContextValue {
   // `mount` when the lab started presenting, `enter` when asked to since.
   const [presentedBy, setPresentedBy] = useState<'mount' | 'enter' | null>(
@@ -47,8 +50,9 @@ export function useLabPresentation(
       enter: () => setPresentedBy((by) => by ?? 'enter'),
       exit: () => setPresentedBy(null),
       trialId: presenting ? focusedTrialId : null,
+      transport,
     }),
-    [presenting, focusedTrialId],
+    [presenting, focusedTrialId, transport],
   );
 }
 
@@ -62,6 +66,12 @@ export function usePresentation(): Presentation {
 /** Whether the trial `trialId` is the one its lab is presenting. */
 export function useIsPresented(trialId: string): boolean {
   return useContext(PresentationContext)?.trialId === trialId;
+}
+
+/** Whether the trial `trialId` is presented with its play controls. */
+export function usePresentedTransport(trialId: string): boolean {
+  const value = useContext(PresentationContext);
+  return value?.trialId === trialId && value.transport;
 }
 
 /** Whether the trial `trialId` is the one its lab is presenting, and a ref for

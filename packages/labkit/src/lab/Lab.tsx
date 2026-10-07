@@ -143,6 +143,11 @@ interface LabBaseProps {
   /** Gestures every trial's camera takes, over its instrument's own one by
    *  one — `{ wheel: false, pan: false }` lets the page scroll past an embed. */
   gestures?: CameraGestures;
+  /** Play controls over a presented trial whose instrument declares a clock:
+   *  hidden in a box too narrow for them, answering Space and friends, and
+   *  replaying an ended run after a hold until a visitor touches them.
+   *  Default `true`. */
+  transport?: boolean;
 }
 
 /** Props for `<Lab>`. With a `storageKey` the lab persists — to IndexedDB
@@ -305,6 +310,7 @@ function LabRuntime({
   configRules,
   controls,
   gestures,
+  transport = true,
   children,
   opened,
   startsPresenting,
@@ -340,7 +346,7 @@ function LabRuntime({
   useLabFitWarning(labBody);
 
   useFocusPick(labBody, store, setFocusPick);
-  const presentation = useLabPresentation(startsPresenting, focusedTrialId, labBody);
+  const presentation = useLabPresentation(startsPresenting, focusedTrialId, labBody, transport);
   const presenting = presentation.active;
   const workspacePanels = useMemo<PanelDescriptor[]>(
     () =>

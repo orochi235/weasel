@@ -118,6 +118,41 @@ test('entering and leaving keeps every trial’s canvas element', async () => {
   expect(canvases().filter(hasBox)).toHaveLength(2);
 });
 
+const Timed: Instrument = { ...Painted, name: 'Timed', clock: { duration: 1000 } };
+
+function mountTimed(frame: string) {
+  return render(
+    <div className={frame}>
+      <Lab instruments={[Timed]} defaultInstrument="Timed" present>
+        <Capture />
+      </Lab>
+    </div>,
+  );
+}
+
+test('play controls sit along the bottom of a presented trial, inside it', async () => {
+  const { container, findByRole } = mountTimed('lk-present-frame');
+  const play = await findByRole('button', { name: 'Play' });
+  const controls = play.closest('.lk-presented-transport');
+  const trial = container.querySelector('[data-lk-presented]');
+  await expect.poll(() => box(controls)?.width ?? 0).toBeGreaterThan(0);
+  const c = box(controls) as DOMRect;
+  const t = box(trial) as DOMRect;
+  expect(c.bottom).toBeLessThanOrEqual(t.bottom);
+  expect(c.bottom).toBeGreaterThan(t.bottom - 40);
+  expect(c.left).toBeGreaterThanOrEqual(t.left);
+  expect(c.right).toBeLessThanOrEqual(t.right);
+  // Laid over the canvas, not taking room from it.
+  expect(box(container.querySelector('.lk-canvas-stack'))?.height).toBe(t.height);
+});
+
+test('play controls are hidden in a presented box too narrow for them', async () => {
+  const { container, findByRole } = mountTimed('lk-present-frame lk-present-frame--narrow');
+  const play = await findByRole('button', { name: 'Play', hidden: true });
+  await expect.poll(() => box(container.querySelector('[data-lk-presented]'))?.width).toBe(360);
+  expect(hasBox(play)).toBe(false);
+});
+
 const Centered: Instrument = {
   ...Painted,
   name: 'Centered',

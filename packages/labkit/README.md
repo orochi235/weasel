@@ -86,7 +86,23 @@ into it; changing the seed reopens the trial on it for returning visitors.
 
 Inside any lab, `usePresentation()` gives `{ active, enter, exit }`: `enter`
 presents the focused trial and Escape returns. Nothing unmounts either way, so
-a canvas keeps its context and a clock its place.
+a canvas keeps its context and a clock its place. Entering refits a view the
+instrument places by the viewport's size (`initialView` as a function, or a
+fitted stage) to the presented box; leaving gives the tile its view back.
+
+A presented trial whose instrument declares a `clock` gets play controls along
+its bottom: play and pause, speed and loop, and — for a seekable clock with a
+duration — a scrub bar and a reverse switch. Space plays and pauses, the arrows
+step, Home and End jump, R reverses and `<` / `>` change speed. A run that ends
+plays again after three seconds until a visitor touches the controls, and the
+controls hide in a box narrower than 480px. `<Lab transport={false}>` leaves
+them off; `<TrialTransport>` is the same controls for any lab chrome.
+
+`gestures` on `<Lab>` decides what the trials' cameras take — `{ pan, wheel:
+'plain' | 'mod' | false, pinch, tap }`, over each instrument's own
+`canvas.gestures` / `stage.gestures` — and whatever they leave reaches the page:
+`<Lab present gestures={{ pan: false, wheel: false }}>` is an embed the page
+scrolls past, keeping only the pinch.
 
 A widget's own state persists the same way through `usePersistedState(name,
 initial)`, which is `useState` whose value survives a reload — kept per trial

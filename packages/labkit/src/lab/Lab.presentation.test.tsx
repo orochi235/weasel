@@ -90,6 +90,32 @@ describe('<Lab present>', () => {
   });
 });
 
+const timed: Instrument = { ...stub, name: 'Timed', clock: { duration: 1000 } };
+
+describe('a presented trial’s play controls', () => {
+  const mountTimed = (props: Partial<LabProps> = {}) =>
+    mountLab({ instruments: [timed], defaultInstrument: 'Timed', ...props });
+
+  it('show for a trial with a clock, and answer Space', async () => {
+    const { getByRole } = await mountTimed({ present: true });
+    expect(getByRole('button', { name: 'Play' })).not.toBeNull();
+    await act(async () => fireEvent.keyDown(document.body, { key: ' ' }));
+    expect(getByRole('button', { name: 'Pause' })).not.toBeNull();
+  });
+
+  it('show only while the trial is presented', async () => {
+    const { queryByRole } = await mountTimed();
+    expect(queryByRole('button', { name: 'Play' })).toBeNull();
+    await act(async () => presentation?.enter());
+    expect(queryByRole('button', { name: 'Play' })).not.toBeNull();
+  });
+
+  it('are left off with `transport={false}`', async () => {
+    const { queryByRole } = await mountTimed({ present: true, transport: false });
+    expect(queryByRole('button', { name: 'Play' })).toBeNull();
+  });
+});
+
 describe('usePresentation', () => {
   it('presents the focused trial and returns on Escape', async () => {
     const { container } = await mountLab();

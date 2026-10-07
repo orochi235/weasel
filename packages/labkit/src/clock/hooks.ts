@@ -2,7 +2,7 @@ import { useLatest } from '@weasel-js/core';
 import { useContext, useEffect, useReducer, useSyncExternalStore } from 'react';
 import { LabContext } from '../lab/LabContext';
 import { ClockRegistryContext, TrialClockContext } from './clockRegistry';
-import type { TrialClock } from './trialClock';
+import type { TrialClock, TrialClockHandle } from './trialClock';
 
 const NO_SUBSCRIBE = () => () => {};
 
@@ -13,6 +13,15 @@ const NO_SUBSCRIBE = () => () => {};
  * per frame through {@link useClockFrame}.
  */
 export function useTrialClock(trialId?: string): TrialClock | null {
+  const clock = useTrialClockHandle(trialId)?.clock ?? null;
+  const [, bump] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => clock?.subscribe(bump), [clock]);
+  return clock;
+}
+
+/** The handle behind {@link useTrialClock}, resolved the same way; re-renders
+ *  only when which handle that is changes. */
+export function useTrialClockHandle(trialId?: string): TrialClockHandle | null {
   const registry = useContext(ClockRegistryContext);
   const own = useContext(TrialClockContext);
   const lab = useContext(LabContext);
@@ -23,10 +32,7 @@ export function useTrialClock(trialId?: string): TrialClock | null {
     const focused = lab?.focusedTrialId;
     return focused ? (registry?.get(focused) ?? null) : null;
   }
-  const clock = resolve()?.clock ?? null;
-  const [, bump] = useReducer((n: number) => n + 1, 0);
-  useEffect(() => clock?.subscribe(bump), [clock]);
-  return clock;
+  return resolve();
 }
 
 /**

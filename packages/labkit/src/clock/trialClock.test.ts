@@ -22,6 +22,26 @@ describe('createTrialClock', () => {
     expect(clock.inert).toBe(false);
   });
 
+  it('says how long a pass runs and whether it seeks', () => {
+    expect(createTrialClock({ duration: 800 }).clock.duration).toBe(800);
+    expect(createTrialClock({}).clock.duration).toBe(Number.POSITIVE_INFINITY);
+    expect(createTrialClock({}).clock.seekable).toBe(true);
+    expect(createTrialClock({ seekable: false }).clock.seekable).toBe(false);
+  });
+
+  it('has ended once a finite run plays to its end, and not before', () => {
+    const { clock } = started({ duration: 100, loop: 2, rate: 1 });
+    clock.sync(150);
+    expect(clock.ended).toBe(false);
+    clock.sync(250);
+    expect(clock.ended).toBe(true);
+    clock.seek(50);
+    expect(clock.ended).toBe(false);
+    clock.seek(200);
+    clock.loop = true;
+    expect(clock.ended).toBe(false);
+  });
+
   it('advances by rate times real time', () => {
     const { clock } = started({ rate: 2 });
     clock.sync(100);

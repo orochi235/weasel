@@ -502,26 +502,16 @@ decomposition meant to absorb the first; it has not landed:
 ### labkit presentation mode
 
 `<Lab present>`, `?present` and `usePresentation()` show one trial without any
-chrome, for portfolio embeds; README "Presenting a lab" and
-`packages/labkit/docs/AGENTS.md` cover it. What is left:
+chrome, for portfolio embeds, with a refit view, play controls and `gestures`;
+README "Presenting a lab" and `packages/labkit/docs/AGENTS.md` cover it. What
+is left:
 
 - **(P2) Move agnew and rosee onto `<Lab>`.** Both hand-roll a bare mode
   (agnew's `?bare` in `apps/lab/src/App.tsx`, rosee's `Bare.tsx` with its own
   playhead and transport) because neither mounts `<Lab>`: agnew calls
   `LabShell` directly and rosee has a `Lab` of its own. Presentation mode
   reaches them only once each runs as instruments and trials, rosee's playhead
-  as a trial clock.
-- **(P2) Refit the view on entering.** A presented trial keeps the camera its
-  workspace tile had, so content placed by `initialView` for the tile's size
-  sits off-center in the larger box.
-- **(P2) Play controls.** weasel-ui's `<Transport>` bound to a trial clock
-  through `useTrialClock`: play/pause, scrub and reverse where the clock is
-  seekable, speed; Space and friends. rosee's `Transport.tsx` is the reference —
-  auto-loop with a hold, stop looping once touched, hidden below a size.
-  `<Transport>` has no scrub or reverse yet.
-- **(P2) Gestures.** A `gestures` option on the trial canvas — pan, wheel
-  `plain` / `mod` / off, pinch, tap — threaded into `CameraInput`, and a
-  relaxed `touch-action`, so an embed can let the page scroll.
+  as a trial clock; `<TrialTransport>` then replaces its `Transport.tsx`.
 - **(P3) A still for poster capture, and `postMessage` play/pause** so a host
   page's play control can reach a live lab.
 
