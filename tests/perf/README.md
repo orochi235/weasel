@@ -82,8 +82,14 @@ perf: outside CI the config reuses whatever already listens there, and every
 spec would measure that checkout's code. Some specs take their own —
 `PERF_KINDS` in `frame-budget`, `WEASEL_PERF_N`, `WEASEL_PERF_SIZE` and
 `WEASEL_PERF_VARIANTS` in `image-quad`, `WEASEL_PERF_SHEET`, `WEASEL_PERF_CELLS`
-and `WEASEL_PERF_VARIANTS` in `atlas-wall`, `WEASEL_PERF_VERTS` in `mesh-batch`
+and `WEASEL_PERF_VARIANTS` in `atlas-wall`, `WEASEL_PERF_VERTS` in `mesh-batch`,
+`WEASEL_PERF_LAYERS` and `WEASEL_PERF_CMDS` in `layer-dispatch`
 — and record them in `params`.
+
+The name after `npm run test:perf --` is a regular expression over each spec's
+absolute path, not its file name. In a checkout whose directory name contains
+it — an onto tree called `weasel-layer-dispatch` — it selects every spec. Pass
+`perf/<name>.spec.ts` there.
 
 ## apps/draw cold start
 

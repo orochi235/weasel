@@ -1074,14 +1074,74 @@ one dead `const` and four stale disable directives.
   Worth chasing because a real app is a co-tenant too: weasel beside a chart
   library, or two surfaces on one page.
 
-- **(P3) Per-layer GPU dispatch skipping.** `RenderLayer.deps` (shipped
-  2026-08-22, `packages/core/src/core/layers/render.ts`) skips rebuilding a
-  layer's command tree, not submitting it — every layer is still dispatched
-  to the renderer every frame regardless of caching. Skipping submission too
-  would need render-to-texture per layer plus compositing, which the
-  renderer has no concept of today. Nobody has measured whether dispatch
-  alone costs enough to justify that. Measure before building.
+- **(P3) Per-layer GPU dispatch skipping.** `RenderLayer.deps`
+  (`packages/core/src/core/layers/render.ts`) skips rebuilding a layer's
+  command tree, not submitting it: every layer still goes through
+  `WeaselRenderer.render` every frame. Skipping that means drawing each cached
+  layer into its own texture once and compositing one quad per layer, which
+  the renderer has no concept of today.
 
+  Measured: **compositing a cached layer is cheaper than resubmitting it once
+  the layer holds more than about 130–250 commands**, at every layer count
+  from 4 to 64. Below that, resubmitting wins, by up to 7 ms at 64 layers of
+  10 commands. At 64 layers of 1,000 commands, submission costs 58 ms a frame
+  and the composite 5.4. With a single layer the composite costs nothing
+  measurable, so it never loses there.
+
+  `tests/perf/layer-dispatch.spec.ts` times `N` unchanged layers of `M`
+  commands (half solid rects, a quarter text labels, 15% images, 10% linear
+  gradients) through `drawLayers` with a warm command cache, against a frame
+  holding only one live rect. The composite stands in for cached layers with
+  one canvas-sized image per layer, which batches 7 to a draw. Canvas
+  1280x800 at dpr 2. ms a frame over that control, two passes (`pass 1 / pass 2`),
+  each the median of 3 runs:
+
+  | Layers | Cmds a layer | Submit | Composite | Draws, submit / composite |
+  |---:|---:|---:|---:|---:|
+  |  1 |    10 |  0.07 /  0.03 |  0.02 /  0.03 |     1 /  1 |
+  |  1 |    30 |  0.18 /  0.11 |  0.08 /  0.02 |     1 /  1 |
+  |  1 |   100 |  0.28 /  0.23 |  0.12 /  0.10 |     3 /  1 |
+  |  1 |   300 |  0.60 /  0.30 |  0.05 /  0.00 |     7 /  1 |
+  |  1 | 1,000 |  1.19 /  0.85 | -0.02 /  0.04 |    21 /  1 |
+  |  4 |    10 |  0.05 /  0.02 |  0.79 /  0.71 |     1 /  1 |
+  |  4 |    30 |  0.09 /  0.09 |  0.94 /  0.80 |     1 /  1 |
+  |  4 |   100 |  0.39 /  0.25 |  0.53 /  0.70 |     8 /  1 |
+  |  4 |   300 |  1.15 /  0.90 |  0.63 /  0.53 |    24 /  1 |
+  |  4 | 1,000 |  4.17 /  3.96 |  0.57 /  0.77 |    80 /  1 |
+  | 16 |    10 |  0.14 /  0.19 |  3.63 /  3.58 |     1 /  3 |
+  | 16 |    30 |  0.32 /  0.40 |  3.85 /  3.61 |     1 /  3 |
+  | 16 |   100 |  1.48 /  1.51 |  3.66 /  3.71 |    31 /  3 |
+  | 16 |   300 |  4.44 /  4.56 |  3.62 /  3.00 |    96 /  3 |
+  | 16 | 1,000 | 14.42 / 15.00 |  1.74 /  1.69 |   319 /  3 |
+  | 64 |    10 |  0.41 /  0.47 |  7.54 /  6.81 |     2 / 10 |
+  | 64 |    30 |  1.04 /  1.10 |  7.24 /  7.85 |     3 / 10 |
+  | 64 |   100 |  4.70 /  5.69 |  6.77 /  7.63 |   122 / 10 |
+  | 64 |   300 | 17.14 / 17.54 |  5.67 /  5.78 |   383 / 10 |
+  | 64 | 1,000 | 57.57 / 58.67 |  5.35 /  5.39 | 1,274 / 10 |
+
+  Interpolating linearly between the 100 and 300 rungs, the crossing falls
+  at 143 / 210 commands for 4 layers, 245 / 217 for 16, and 131 / 128 for 64.
+  Submission runs about 0.75–1.2 us a command from 300 commands a layer up;
+  the renderer's own `render()` time is about a third of that, and the rest is
+  the GPU process and the GPU. A composited layer costs 0.08–0.25 ms, almost
+  none of it in `render()` (0.04–0.09 ms for the whole composite frame).
+
+  What the composite figures leave out, all of which count against building it:
+  rendering a layer into its texture whenever it changes, on top of that
+  frame's normal cost; the texture memory, 16 MB a layer at this canvas size
+  (1 GB at 64 layers); and quads bounded to a layer's content rather than the
+  whole canvas, which would cost less fill than measured here.
+
+  Unexplained: the composite frame is identical down a layer count, yet it
+  falls from 3.6 to 1.7 ms at 16 layers and 7.5 to 5.4 at 64 as the submit
+  frames interleaved beside it get heavier. One reading, not checked: heavy
+  neighbors hold the GPU at a higher clock. And one composited layer measures
+  near zero while four measure 0.5–0.9 ms.
+
+  Measured on teitou (Apple M5 Max, ANGLE Metal, headless Chromium 153),
+  2026-10-07, at the spec in `7e16a79d7`; load average 2.4–4.3 on 18 cores,
+  no other fleet job running. Result files:
+  `tests/perf/recorded/layer-dispatch-2026-10-07/`. One GPU and backend only.
 - **(P3) Whether the benchmarks gate CI.** Every benchmark lives in
   `tests/perf/` and writes a result file per run; nothing gates anything. The
   vitest microbenchmarks keep a committed baseline in `tests/perf/bench/`. `tests/perf/README.md` argues a hard
