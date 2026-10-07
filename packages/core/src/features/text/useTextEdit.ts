@@ -16,7 +16,7 @@ import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import {
   fontString, numericWeight, resolveAlign, resolveTextStyle, scriptMetricsFor, smallCapsScaleFor,
 } from '@weasel-js/text';
-import { cssFontFamily, cssFontFamilyLoading } from '@weasel-js/font';
+import { cssFontFamily, cssFontFamilyLoading, isCanvasFont } from '@weasel-js/font';
 import type { TextPaint, TextVerticalAlign } from '@weasel-js/text';
 import { layoutTextPose, verticalAlignOffset } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
@@ -1067,6 +1067,10 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
     weight: numericWeight(style.fontWeight), style: style.fontStyle,
   });
   el.style.font = fontString({ ...style, fontFamily });
+  // Linux Chromium otherwise rounds every advance to a whole pixel at DPR 1, while
+  // the canvas lays out a face's own fractional ones: 'Small Caps' at 24px ran 3px
+  // long. A canvas font is measured by the browser's default rendering, so keeps it.
+  el.style.textRendering = isCanvasFont(style.fontFamily) ? '' : 'geometricPrecision';
   el.style.lineHeight = String(style.lineHeight);
   // The overlay sets no `direction`, so a justified paragraph's last line is
   // pinned to the edge the canvas puts it at rather than left to `start`.
@@ -1164,14 +1168,14 @@ const CSS_BASELINES = new Map<string, number>();
 function cssBaseline(el: HTMLElement): number {
   const parent = el.parentElement;
   if (!parent) return 0;
-  const { fontFamily, fontWeight, fontStyle, fontSize, lineHeight } = el.style;
-  const key = [fontFamily, fontWeight, fontStyle, fontSize, lineHeight].join('|');
+  const { fontFamily, fontWeight, fontStyle, fontSize, lineHeight, textRendering } = el.style;
+  const key = [fontFamily, fontWeight, fontStyle, fontSize, lineHeight, textRendering].join('|');
   const cached = CSS_BASELINES.get(key);
   if (cached !== undefined) return cached;
   const line = document.createElement('div');
   Object.assign(line.style, {
     position: 'absolute', left: '0', top: '0', width: '100px', margin: '0', padding: '0', border: '0',
-    visibility: 'hidden', whiteSpace: 'pre', fontFamily, fontWeight, fontStyle, fontSize, lineHeight,
+    visibility: 'hidden', whiteSpace: 'pre', fontFamily, fontWeight, fontStyle, fontSize, lineHeight, textRendering,
   });
   const mark = document.createElement('span');
   Object.assign(mark.style, { display: 'inline-block', width: '0', height: '0', verticalAlign: 'baseline' });

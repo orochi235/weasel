@@ -323,6 +323,12 @@ Core five + Crop shipped. Remaining:
   the canvas's text baseline to device pixels as browsers do, or find the
   bias first. Recorded 2026-09-29.
 
+- **(P3) WebKit at DPR 1 fails one overlay-alignment case.** `"Hgd" Inter 72px
+  small caps` reports `dRight -0.79` against the 0.75 bound in `npx vitest run -c
+  scripts/measure-overlay-alignment.config.ts`; Chromium and Firefox pass it at both
+  DPRs, and so does WebKit at DPR 2. CI runs Chromium only, so nothing gates on it.
+  Seen 2026-10-07 on macOS, with and without the overlay's `geometricPrecision`.
+
 - **(P3) The character strip has no "no fill" chip.** WeaselDraw's text
   objects carry `fill: null` through its SVG export and import, and the
   sidebar's Fill leaf already offers None for a text node. What is missing is
@@ -930,16 +936,6 @@ one dead `const` and four stale disable directives.
 ---
 
 ## Release-gate & build hygiene
-
-- **(P2) Three browser tests fail on CI's Linux Chromium and pass on macOS.**
-  `overlayAlignment.browser.test.tsx` ("Inter 12px super" exceeds the 0.75 `dRight`
-  bound at 0.83; "Small Caps" Inter 24px finds 8 overlay glyph runs against the
-  canvas's 9) and `FitLabel.browser.test.tsx` ("a inline enum toggle row shortens its
-  segments to fit", 93 > 86). They have failed the Node 24 job on every main push
-  since at least 1.8.0, so main's CI has not been green since then, and with fail-fast
-  they cancel the Node 22 job, which hid a separate Node 22 failure that was fixed for
-  1.8.1. Find whether the Linux font rasterization differs or the tolerance is just
-  too tight, and fix whichever one it is.
 
 - **(P3) jsdom 30.1.1 runs patched.** From 29.0.2 on, reading a custom property no
   ancestor sets doubles in cost with every level of DOM depth: `_getComputedPropertyValue`
