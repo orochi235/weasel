@@ -2,8 +2,8 @@
  * The ambient bindings that act on the selection: moving it, cloning it, and
  * resizing or rotating it from its handles. They belong to the selection, not
  * to the select tool, so they run under any tool that does not claim the
- * gesture itself. `<SceneCanvas features>` installs them as the `move` and
- * `transform` presets.
+ * gesture itself. `<SceneCanvas features>` installs them as the `move`,
+ * `resize` and `rotate` presets.
  */
 import type { BindingOpts, GestureBinding } from '@weasel-js/routing';
 import { isResizeHandle, isRotateHandle, isAnchorOrControl } from '@weasel-js/routing';
@@ -28,6 +28,10 @@ export interface SelectionMoveOptions<TPose = unknown> {
 export const SELECTION_MOVE_ID = 'selection.move';
 /** Id of the entry {@link selectionTransformContribution} builds. */
 export const SELECTION_TRANSFORM_ID = 'selection.transform';
+/** Id of the entry {@link selectionResizeContribution} builds. */
+export const SELECTION_RESIZE_ID = 'selection.resize';
+/** Id of the entry {@link selectionRotateContribution} builds. */
+export const SELECTION_ROTATE_ID = 'selection.rotate';
 
 /** Drag a body to move the selection; Alt-drag to clone it. */
 export function selectionMoveBindings<TPose>(
@@ -97,17 +101,26 @@ export function selectionMoveBindings<TPose>(
   ];
 }
 
-/** Options for {@link selectionTransformContribution}. Resize takes its
- *  options through the `resizePolicy` dep (`useResizePolicy`), not here. */
-export interface SelectionTransformOptions<TPose = unknown> {
+/** Options for {@link selectionRotateContribution}. */
+export interface SelectionRotateOptions<TPose = unknown> {
   /** Rotate-action options: `behaviors` become the rotate binding's
    *  `opts.behaviors`, everything else its `opts.params`. */
   rotate?: UseRotateOptions<TPose>;
 }
 
-/** Drag a resize handle to resize the selection, the rotation handle to rotate it. */
-export function selectionTransformBindings<TPose>(
-  options: SelectionTransformOptions<TPose> = {},
+/** Options for {@link selectionTransformContribution}. Resize takes its
+ *  options through the `resizePolicy` dep (`useResizePolicy`), not here. */
+export type SelectionTransformOptions<TPose = unknown> = SelectionRotateOptions<TPose>;
+
+/** Drag a resize handle to resize the selection. Options come through the
+ *  `resizePolicy` dep (`useResizePolicy`). */
+export function selectionResizeBindings(): GestureBinding[] {
+  return [{ spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle } }, actionId: 'resize' }];
+}
+
+/** Drag the rotation handle to rotate the selection. */
+export function selectionRotateBindings<TPose>(
+  options: SelectionRotateOptions<TPose> = {},
 ): GestureBinding[] {
   const rotate = options.rotate ?? {};
   const params: Record<string, unknown> = gestureLifecycleParams({ ...rotate, label: rotate.rotateLabel });
@@ -116,14 +129,18 @@ export function selectionTransformBindings<TPose>(
     ...(Object.keys(params).length > 0 ? { params } : {}),
     ...(rotate.behaviors?.length ? { behaviors: rotate.behaviors as BindingOpts['behaviors'] } : {}),
   };
-  return [
-    { spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle } }, actionId: 'resize' },
-    {
-      spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle } },
-      actionId: 'rotate',
-      ...(Object.keys(opts).length > 0 ? { opts } : {}),
-    },
-  ];
+  return [{
+    spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle } },
+    actionId: 'rotate',
+    ...(Object.keys(opts).length > 0 ? { opts } : {}),
+  }];
+}
+
+/** Drag a resize handle to resize the selection, the rotation handle to rotate it. */
+export function selectionTransformBindings<TPose>(
+  options: SelectionTransformOptions<TPose> = {},
+): GestureBinding[] {
+  return [...selectionResizeBindings(), ...selectionRotateBindings(options)];
 }
 
 /** An always-live entry carrying {@link selectionMoveBindings}. Add it to a
@@ -138,8 +155,9 @@ export function selectionMoveContribution<TPose>(
   };
 }
 
-/** An always-live entry carrying {@link selectionTransformBindings}. Add it
- *  to a canvas's ambient list; `<SceneCanvas features={['transform']}>` does. */
+/** An always-live entry carrying {@link selectionTransformBindings}: resize
+ *  and rotate in one entry, what `<SceneCanvas features={['transform']}>`
+ *  turns on. */
 export function selectionTransformContribution<TPose>(
   options: SelectionTransformOptions<TPose> = {},
 ): Contribution {
@@ -147,6 +165,28 @@ export function selectionTransformContribution<TPose>(
     id: SELECTION_TRANSFORM_ID,
     eligibility: { always: true },
     bindings: selectionTransformBindings(options),
+  };
+}
+
+/** An always-live entry carrying {@link selectionResizeBindings}. Add it to a
+ *  canvas's ambient list; `<SceneCanvas features={['resize']}>` does. */
+export function selectionResizeContribution(): Contribution {
+  return {
+    id: SELECTION_RESIZE_ID,
+    eligibility: { always: true },
+    bindings: selectionResizeBindings(),
+  };
+}
+
+/** An always-live entry carrying {@link selectionRotateBindings}. Add it to a
+ *  canvas's ambient list; `<SceneCanvas features={['rotate']}>` does. */
+export function selectionRotateContribution<TPose>(
+  options: SelectionRotateOptions<TPose> = {},
+): Contribution {
+  return {
+    id: SELECTION_ROTATE_ID,
+    eligibility: { always: true },
+    bindings: selectionRotateBindings(options),
   };
 }
 

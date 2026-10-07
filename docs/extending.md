@@ -618,9 +618,10 @@ so that a tool hook stays callable from anywhere.
 **Add the selection's own bindings.** The select tool only chooses. Dragging
 the selection to move or clone it, and its resize and rotation handles, are the
 `always` entries `selectionMoveContribution()` and
-`selectionTransformContribution()`; put them in the dispatcher's `entriesById`
-beside your tools (transform first, since a handle sits over the body it
-resizes). The 3d lab (`packages/labkit/examples/3d-lab/SolidInstrument.tsx`)
+`selectionTransformContribution()` (or `selectionResizeContribution()` and
+`selectionRotateContribution()` for one handle without the other); put them in
+the dispatcher's `entriesById` beside your tools (handles first, since a handle
+sits over the body it resizes). The 3d lab (`packages/labkit/examples/3d-lab/SolidInstrument.tsx`)
 adds the move one.
 
 **Capability eligibility is off until you ask for it.** `select.pick` declares

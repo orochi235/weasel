@@ -118,7 +118,7 @@ under every tool, `areaSelectContribution()`), `insert` and
 `insert.adjustRotation` from the shape tools, `lassoSelect` from the lasso tool,
 `slice` from the slice tool, `viewport.dragPan` from the hand tool (or, on any
 unclaimed drag, `dragPanContribution()`), and `resize`, `rotate` and `clone`
-from the `transform` and `move` presets' selection contributions.
+from the `resize`, `rotate` and `move` presets' selection contributions.
 
 `clearSelection` (fires from `useSelectTool`'s empty-click binding),
 `enterTextEdit` (from `useTextTool`'s binding), `align.left` / `.right` /

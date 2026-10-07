@@ -70,7 +70,11 @@ import { useDepSource } from '@weasel-js/routing/react';
 import { usePointerContext } from 'features/pointer/PointerContext';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
-import { selectionMoveContribution, selectionTransformContribution } from 'tools/builtin/select';
+import {
+  selectionMoveContribution,
+  selectionResizeContribution,
+  selectionRotateContribution,
+} from 'tools/builtin/select';
 import {
   resolveFeatures,
   featureActionIds,
@@ -496,8 +500,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     // --- Selection options. `pickBest` and `handleHitRadius` configure the
     //     internal select tool, and are ignored under a `tools` takeover;
-    //     `move`, `snap`, `resize` and `rotate` configure the `move` and
-    //     `transform` presets, and apply either way. ---
+    //     `move`, `snap`, `resize` and `rotate` configure the `move`,
+    //     `resize` and `rotate` presets, and apply either way. ---
     selectTool?: {
       move?: UseMoveOptions<TPose>;
       resize?: UseResizeOptions<TPose>;
@@ -591,12 +595,16 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *
      * - `view` — wheel pan and zoom, pinch, the zoom keys, and the hand tool
      *   (H, or hold Space). Passing `viewport` implies it.
-     * - `pick` — the select tool, as the initial active tool and Escape's
+     * - `select` — the select tool, as the initial active tool and Escape's
      *   return target: click to pick, drag on empty to marquee, click on empty
-     *   to clear; and the selection outline.
+     *   to clear.
+     * - `outline` — the selection outline, whichever tool sets the selection.
+     * - `pick` — `select` and `outline`.
      * - `move` — drag a body to move it, Alt-drag to clone it. Ambient, so it
      *   runs under any tool that does not claim the drag.
-     * - `transform` — resize and rotation handles, drawn and bound.
+     * - `resize` — resize handles, drawn and bound.
+     * - `rotate` — the rotation handle, drawn and bound.
+     * - `transform` — `resize` and `rotate`.
      * - `edit` — undo/redo, delete, duplicate, group/ungroup, nudge,
      *   select-all, Escape, cancel-gesture, cut/copy/paste, fill and stroke,
      *   and their keys.
@@ -1485,10 +1493,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
 
   // Built-ins to mount: what `defaultTools` lists, plus the tool each preset
-  // brings — `pick` the select tool, `view` the hand.
+  // brings — `select` the select tool, `view` the hand.
   const baseRequestedTools: readonly BuiltinToolId[] = [
     ...(defaultTools ?? []),
-    ...(enabled.has('pick') ? ['select' as const] : []),
+    ...(enabled.has('select') ? ['select' as const] : []),
     ...(enabled.has('view') ? ['hand' as const] : []),
   ];
 
@@ -1614,17 +1622,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const tools = toolsTakeover ?? internalTools;
 
-  // The selection's own ambient bindings: `move` and `transform`. They are
-  // not tools and sit outside `tools`, so they apply under a takeover too.
+  // The selection's own ambient bindings: `move`, `resize` and `rotate`. They
+  // are not tools and sit outside `tools`, so they apply under a takeover too.
   const selectionMoveOptions = useMemo(
     () => ({ move: internalMoveOptions }),
     [internalMoveOptions],
   );
   const rotateOptions = selectToolOpts?.rotate || undefined;
-  // Transform first: a handle sits over the selected body, so the move
-  // binding matches a handle drag too, and a tie goes to whichever is first.
+  // Handles first: a handle sits over the selected body, so the move binding
+  // matches a handle drag too, and a tie goes to whichever is first.
   const featureContributions = useMemo<Contribution[]>(() => [
-    ...(enabled.has('transform') ? [selectionTransformContribution({ rotate: rotateOptions })] : []),
+    ...(enabled.has('resize') ? [selectionResizeContribution()] : []),
+    ...(enabled.has('rotate') ? [selectionRotateContribution({ rotate: rotateOptions })] : []),
     ...(enabled.has('move') ? [selectionMoveContribution(selectionMoveOptions)] : []),
   ], [enabled, selectionMoveOptions, rotateOptions]);
 
@@ -1793,8 +1802,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // and is called per draw / per hitTest from Canvas.
   const selectionForCapsRef = useLatest(selection.current as readonly NodeId[]);
   const getFocusedPropRef = useLatest(getFocusedProp);
-  // Selection chrome belongs to the presets that act on it: the outline to
-  // `pick`, the handles to `transform`. `never` also takes a handle out of
+  // Selection chrome belongs to the presets that turn it on: the outline to
+  // `outline`, each handle to the preset that binds it. `never` also takes a handle out of
   // hit-testing, so a hidden handle cannot be grabbed.
   //
   // `selectable={false}` suppresses the marquee / lasso chrome by default:
@@ -1805,11 +1814,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const effectiveChromeVisibility = useMemo(() => {
     // Kit defaults first; consumer `chromeVisibility` spread last so it wins.
     const defaults: import('features/chrome-caps').VisibilityRules = {};
-    if (!enabled.has('pick')) defaults['selection.outline'] = never;
-    if (!enabled.has('transform')) {
-      defaults['selection.resize-handles'] = never;
-      defaults['selection.rotation-handle'] = never;
-    }
+    if (!enabled.has('outline')) defaults['selection.outline'] = never;
+    if (!enabled.has('resize')) defaults['selection.resize-handles'] = never;
+    if (!enabled.has('rotate')) defaults['selection.rotation-handle'] = never;
     if (!selectable) {
       defaults['action.marquee'] = never;
       defaults['action.lasso'] = never;

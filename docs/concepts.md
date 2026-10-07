@@ -95,23 +95,30 @@ Behavior is turned on by naming presets in `features`. Each is independent:
 | Preset | Registers |
 |---|---|
 | `view` | wheel pan and zoom, pinch, the zoom keys; the hand tool, held on Space |
-| `pick` | the select tool, as the initial active tool and Escape's return target; the selection outline |
+| `select` | the select tool, as the initial active tool and Escape's return target |
+| `outline` | the selection outline, whichever tool sets the selection |
+| `pick` | `select` and `outline` |
 | `move` | ambient drag-to-move and Alt-drag-to-clone bindings |
-| `transform` | the resize and rotation handles, drawn and bound |
+| `resize` | the resize handles, drawn and bound |
+| `rotate` | the rotation handle, drawn and bound |
+| `transform` | `resize` and `rotate` |
 | `edit` | undo/redo, delete, duplicate, group/ungroup, nudge, select-all, Escape, cancel-gesture, clipboard, fill and stroke, and their keys |
 | `arrange` | align, distribute, reorder, flip |
 | `paths` | pathfinder operations, path-edit entry, anchor editing |
 | `ingest` | dropped and pasted content |
 | `draw` | every preset above |
 
-`FEATURE_ACTION_IDS` is the table of which kit action each preset registers.
+`FEATURE_ACTION_IDS` is the table of which kit action each preset registers,
+and `COMPOSITE_FEATURES` of what `pick`, `transform` and `draw` abbreviate. A
+canvas supplying its own select tool names `outline` rather than `pick`, so the
+built-in one is not mounted beside it.
 Passing `viewport` implies `view`; the prop only configures it. A tool brings
 the kit actions it binds, so `defaultTools={['rect']}` registers `insert`
 under any preset, and `actions` adds, overrides or removes on top of all of it.
 
-`move` and `transform` belong to the selection, not to the select tool: they
-are always-live entries (`selectionMoveContribution`,
-`selectionTransformContribution`), so a drag on the selection moves it under
+`move`, `resize` and `rotate` belong to the selection, not to the select tool:
+they are always-live entries (`selectionMoveContribution`,
+`selectionResizeContribution`, `selectionRotateContribution`), so a drag on the selection moves it under
 any tool that leaves the drag unclaimed. The select tool itself only chooses:
 it picks on press, marquees on an empty drag, and clears on an empty click.
 

@@ -316,7 +316,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
   label: 'Resize',
   // No default binding: a bare `{ kind: 'drag' }` claimed every drag at ambient
   // scope, tying areaSelect's. The resize handles bind it
-  // (`selectionTransformBindings`, the `transform` preset).
+  // (`selectionResizeBindings`, the `resize` preset).
   eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene', 'resizePolicy', 'poseDescriptor', 'applyOps', 'geometryProjection', 'poseComposition', 'view'],
   invoker: {

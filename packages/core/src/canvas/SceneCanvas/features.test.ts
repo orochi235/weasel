@@ -4,6 +4,7 @@ import {
   FEATURE_ACTION_IDS,
   TOOL_DRIVEN_ACTION_IDS,
   SCENE_CANVAS_FEATURES,
+  COMPOSITE_FEATURES,
   resolveFeatures,
   featureActionIds,
 } from './features';
@@ -30,13 +31,24 @@ describe('resolveFeatures', () => {
     expect([...resolveFeatures([])]).toEqual([]);
   });
 
-  it('expands draw to every other preset', () => {
-    const all = SCENE_CANVAS_FEATURES.filter((f) => f !== 'draw');
+  it('expands draw to every preset no other one abbreviates', () => {
+    const all = SCENE_CANVAS_FEATURES.filter((f) => !(f in COMPOSITE_FEATURES));
     expect([...resolveFeatures(['draw'])].sort()).toEqual([...all].sort());
   });
 
   it('adds view when a viewport config is passed', () => {
-    expect([...resolveFeatures(['pick'], { viewport: true })].sort()).toEqual(['pick', 'view']);
+    expect([...resolveFeatures(['outline'], { viewport: true })].sort()).toEqual(['outline', 'view']);
+  });
+
+  it('expands pick to select + outline and transform to resize + rotate', () => {
+    expect([...resolveFeatures(['pick'])].sort()).toEqual(['outline', 'select']);
+    expect([...resolveFeatures(['transform'])].sort()).toEqual(['resize', 'rotate']);
+  });
+
+  it('registers resize without rotate', () => {
+    const ids = featureActionIds(resolveFeatures(['resize']));
+    expect(ids.has('resize')).toBe(true);
+    expect(ids.has('rotate')).toBe(false);
   });
 
   it('composes presets independently', () => {

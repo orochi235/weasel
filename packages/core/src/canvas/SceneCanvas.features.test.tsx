@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
 import { render, act } from '@testing-library/react';
 import { SceneCanvas, type Feature } from './SceneCanvas';
+import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import { useActionsRegistry, useDepRegistry } from '@weasel-js/routing/react';
@@ -178,6 +179,55 @@ describe('<SceneCanvas features>', () => {
     drag(canvas, [50, 50], [70, 70]);
     const pose = scene.get(id)!.pose as P;
     expect(pose.width).toBe(50);
+  });
+
+  it("'resize' takes a handle drag, and the rotation handle is neither drawn nor grabbed", () => {
+    const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
+    const { seen, canvas, id, scene } = mount({ features: ['pick', 'resize'], helpersRef });
+    act(() => seen.selection!.set([id]));
+    const isVisible = helpersRef.current!.getIsVisible();
+    expect(isVisible('selection.resize-handles')).toBe(true);
+    expect(isVisible('selection.rotation-handle')).toBe(false);
+    expect(seen.actionIds).toContain('resize');
+    expect(seen.actionIds).not.toContain('rotate');
+
+    drag(canvas, [25, -24], [60, 10]);
+    expect((scene.get(id)!.pose as P).rotation).toBe(0);
+    drag(canvas, [50, 50], [70, 70]);
+    expect((scene.get(id)!.pose as P).width).toBe(70);
+  });
+
+  it("'rotate' takes the rotation handle, and the resize handles are neither drawn nor grabbed", () => {
+    const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
+    const { seen, canvas, id, scene } = mount({ features: ['pick', 'rotate'], helpersRef });
+    act(() => seen.selection!.set([id]));
+    const isVisible = helpersRef.current!.getIsVisible();
+    expect(isVisible('selection.resize-handles')).toBe(false);
+    expect(isVisible('selection.rotation-handle')).toBe(true);
+    expect(seen.actionIds).not.toContain('resize');
+
+    drag(canvas, [50, 50], [70, 70]);
+    expect((scene.get(id)!.pose as P).width).toBe(50);
+    drag(canvas, [25, -24], [60, 10]);
+    expect((scene.get(id)!.pose as P).rotation).not.toBe(0);
+  });
+
+  it("'outline' draws the selection outline without mounting the select tool", () => {
+    const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
+    const { seen, id, tools } = mount({ features: ['outline'], helpersRef });
+    act(() => seen.selection!.set([id]));
+    expect(helpersRef.current!.getIsVisible()('selection.outline')).toBe(true);
+    expect(Object.keys(tools().registry)).toEqual([]);
+    expect(tools().active).toBe(null);
+  });
+
+  it("'select' mounts the select tool without the selection outline", () => {
+    const helpersRef: { current: CanvasHelpers<P> | null } = { current: null };
+    const { seen, canvas, id, tools } = mount({ features: ['select'], helpersRef });
+    expect(tools().active).toBe('select');
+    click(canvas, [10, 10]);
+    expect(seen.selection!.get()).toEqual([id]);
+    expect(helpersRef.current!.getIsVisible()('selection.outline')).toBe(false);
   });
 
   it("'move' runs under a tool that leaves the drag unclaimed", () => {

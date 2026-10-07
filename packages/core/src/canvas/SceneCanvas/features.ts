@@ -4,43 +4,60 @@
  * turned on by naming a preset here.
  */
 
-/** A behavior preset for `<SceneCanvas features>`. `draw` names every other
- *  one. */
-export type Feature =
+/** A preset that names one behavior and abbreviates nothing. */
+export type BaseFeature =
   | 'view'
-  | 'pick'
+  | 'select'
+  | 'outline'
   | 'move'
-  | 'transform'
+  | 'resize'
+  | 'rotate'
   | 'edit'
   | 'arrange'
   | 'paths'
-  | 'ingest'
-  | 'draw';
+  | 'ingest';
 
-/** Every preset except `draw`, which only abbreviates them. */
-export type BaseFeature = Exclude<Feature, 'draw'>;
+/** A preset that abbreviates others: `pick` is `select` + `outline`,
+ *  `transform` is `resize` + `rotate`, and `draw` is every base preset. */
+export type CompositeFeature = 'pick' | 'transform' | 'draw';
 
-/** Every preset `<SceneCanvas features>` accepts, `draw` last. */
+/** A behavior preset for `<SceneCanvas features>`. */
+export type Feature = BaseFeature | CompositeFeature;
+
+/** Every preset `<SceneCanvas features>` accepts, each composite after the
+ *  presets it names. */
 export const SCENE_CANVAS_FEATURES: readonly Feature[] = [
-  'view', 'pick', 'move', 'transform', 'edit', 'arrange', 'paths', 'ingest', 'draw',
+  'view', 'select', 'outline', 'pick', 'move', 'resize', 'rotate', 'transform',
+  'edit', 'arrange', 'paths', 'ingest', 'draw',
 ];
 
-const BASE_FEATURES: readonly BaseFeature[] =
-  SCENE_CANVAS_FEATURES.filter((f): f is BaseFeature => f !== 'draw');
+const BASE_FEATURES: readonly BaseFeature[] = [
+  'view', 'select', 'outline', 'move', 'resize', 'rotate', 'edit', 'arrange', 'paths', 'ingest',
+];
+
+/** The base presets each composite preset turns on. */
+export const COMPOSITE_FEATURES: Readonly<Record<CompositeFeature, readonly BaseFeature[]>> = {
+  pick: ['select', 'outline'],
+  transform: ['resize', 'rotate'],
+  draw: BASE_FEATURES,
+};
 
 /**
  * The kit-standard actions each preset registers.
  *
  * Every id `useStandardActions` knows appears under exactly one preset, except
- * the ones in {@link TOOL_DRIVEN_ACTION_IDS}. `move` and `transform` also bring
- * the ambient bindings that route drags to their actions, and `pick` brings the
- * select tool; this table is only the registration half.
+ * the ones in {@link TOOL_DRIVEN_ACTION_IDS}. `move`, `resize` and `rotate`
+ * also bring the ambient bindings that route drags to their actions, `select`
+ * brings the select tool, and `outline`, `resize` and `rotate` bring their
+ * selection chrome; this table is only the registration half.
  */
 export const FEATURE_ACTION_IDS: Readonly<Record<BaseFeature, readonly string[]>> = {
   view: ['viewport.dragPan', 'viewport.pinchZoom'],
-  pick: ['areaSelect', 'clearSelection', 'lassoSelect'],
+  select: ['areaSelect', 'clearSelection', 'lassoSelect'],
+  outline: [],
   move: ['move', 'clone'],
-  transform: ['resize', 'rotate'],
+  resize: ['resize'],
+  rotate: ['rotate'],
   edit: [
     'escape', 'cancelGesture', 'selectAll', 'duplicate', 'delete',
     'group', 'ungroup', 'undo', 'redo',
@@ -73,9 +90,9 @@ export const FEATURE_ACTION_IDS: Readonly<Record<BaseFeature, readonly string[]>
 export const TOOL_DRIVEN_ACTION_IDS: readonly string[] = ['insert', 'insert.adjustRotation', 'enterTextEdit'];
 
 /**
- * The presets a canvas runs with: `features` with `draw` expanded, plus `view`
- * whenever the canvas was handed a `viewport` config, since that prop only
- * configures what `view` turns on.
+ * The base presets a canvas runs with: `features` with every composite
+ * expanded, plus `view` whenever the canvas was handed a `viewport` config,
+ * since that prop only configures what `view` turns on.
  */
 export function resolveFeatures(
   features: readonly Feature[] | undefined,
@@ -83,8 +100,11 @@ export function resolveFeatures(
 ): ReadonlySet<BaseFeature> {
   const out = new Set<BaseFeature>();
   for (const f of features ?? []) {
-    if (f === 'draw') for (const b of BASE_FEATURES) out.add(b);
-    else out.add(f);
+    if (f in COMPOSITE_FEATURES) {
+      for (const b of COMPOSITE_FEATURES[f as CompositeFeature]) out.add(b);
+    } else {
+      out.add(f as BaseFeature);
+    }
   }
   if (opts.viewport) out.add('view');
   return out;

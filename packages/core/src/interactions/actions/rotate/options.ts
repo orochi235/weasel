@@ -2,7 +2,7 @@
 
 import type { RotateBehavior, RotatedPose } from '../../gestures/types';
 
-/** Options for the `rotate` action. `selectionTransformBindings` threads
+/** Options for the `rotate` action. `selectionRotateBindings` threads
  *  them into the rotation handle's binding. */
 export interface UseRotateOptions<TPose> {
   /** Behaviors are typed against the pose shape; typed `never` for a pose

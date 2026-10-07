@@ -161,15 +161,15 @@ press, the deferred multi-click collapse on release, `areaSelect` on an empty
 drag, `clearSelection` on an empty click. Acting on the selection is not the
 select tool's. Moving, cloning, resizing and rotating it are `always` entries
 owned by the selection (`selectionMoveContribution`,
-`selectionTransformContribution` in `tools/builtin/select`), so they are live
+`selectionResizeContribution`, `selectionRotateContribution` in
+`tools/builtin/select`), so they are live
 under any tool that leaves the gesture unclaimed.
 
 Nothing is a base tool. A bare `<SceneCanvas>` registers no tool and has none
-active; the `pick` preset registers select and makes it the initial active tool
-and Escape's return target, and without it Escape returns nowhere. The presets
-`<SceneCanvas features>` takes (`view`, `pick`, `move`, `transform`, `edit`,
-`arrange`, `paths`, `ingest`, and `draw` for all of them) are listed in
-`docs/concepts.md`.
+active; the `select` preset (or `pick`, which adds the selection outline)
+registers select and makes it the initial active tool and Escape's return
+target, and without it Escape returns nowhere. The presets `<SceneCanvas
+features>` takes are listed in `docs/concepts.md`.
 
 ### Affordance
 

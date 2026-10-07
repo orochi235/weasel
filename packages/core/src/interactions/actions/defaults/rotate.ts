@@ -138,7 +138,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
   label: 'Rotate',
   // No default binding. It used to be a bare `{ kind: 'drag' }`, which made
   // any drag no active tool claimed rotate a non-empty selection. The rotation
-  // handle binds it (`selectionTransformBindings`, the `transform` preset).
+  // handle binds it (`selectionRotateBindings`, the `rotate` preset).
   eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene', 'applyOps', 'poseDescriptor', 'poseComposition', 'view'],
   invoker: {

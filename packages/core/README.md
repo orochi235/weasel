@@ -40,14 +40,18 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 | Preset | Turns on |
 |---|---|
 | `view` | wheel pan and zoom, pinch, the zoom keys, the hand tool (H, or hold Space). Passing `viewport` implies it. |
-| `pick` | the select tool, active from the start: click to pick, drag on empty to marquee, click on empty to clear; the selection outline |
+| `select` | the select tool, active from the start: click to pick, drag on empty to marquee, click on empty to clear |
+| `outline` | the selection outline, whichever tool sets the selection |
+| `pick` | `select` and `outline` |
 | `move` | drag a body to move it, Alt-drag to clone — under any tool that leaves the drag unclaimed |
-| `transform` | resize and rotation handles |
+| `resize` | resize handles |
+| `rotate` | the rotation handle |
+| `transform` | `resize` and `rotate` |
 | `edit` | undo/redo, delete, duplicate, group/ungroup, nudge, select-all, Escape, cut/copy/paste, fill and stroke, and their keys |
 | `arrange` | align, distribute, reorder, flip |
 | `paths` | pathfinder operations, path editing and anchor editing |
 | `ingest` | dropped and pasted content |
-| `draw` | all of the above |
+| `draw` | every preset above |
 
 `defaultTools` adds built-in tools on top, and each brings the actions it binds: `defaultTools={['rect']}` brings `insert`.
 
@@ -94,7 +98,7 @@ Lower-level surfaces take a narrow **adapter** instead of a scene — a few meth
 
 An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `viewport.dragPan` — paired with the input that triggers it. `<ActionsProvider>` holds the registered descriptors, and the gesture dispatcher matches live input against each one's `defaultBinding` and the active tool's bindings. Keystrokes and pointer gestures take the same path, so a keyboard shortcut and a drag are two bindings on one action rather than two mechanisms.
 
-`<SceneCanvas>` mounts a provider when none is above it and registers the kit-standard actions its `features` presets name — under `draw`, all of them: escape, select-all, delete, duplicate, group and ungroup, undo and redo, flip, nudge, reorder, align, distribute, the pathfinder booleans, path-anchor editing, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `FEATURE_ACTION_IDS` lists which preset registers which. `insert` comes with the shape tools that bind it.
+`<SceneCanvas>` mounts a provider when none is above it and registers the kit-standard actions its `features` presets name — under `draw`, all of them: escape, select-all, delete, duplicate, group and ungroup, undo and redo, flip, nudge, reorder, align, distribute, the pathfinder booleans, path-anchor editing, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `FEATURE_ACTION_IDS` lists which preset registers which, and `COMPOSITE_FEATURES` what `pick`, `transform` and `draw` abbreviate. `insert` comes with the shape tools that bind it.
 
 ```tsx
 <SceneCanvas

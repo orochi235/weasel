@@ -1440,9 +1440,9 @@ export type {
   StandardSlotConfig,
 } from './canvas/Canvas';
 export type { BuiltinToolId, Feature } from './canvas/SceneCanvas';
-export type { BaseFeature } from './canvas/SceneCanvas/features';
+export type { BaseFeature, CompositeFeature } from './canvas/SceneCanvas/features';
 export { BUILTIN_TOOL_IDS, SCENE_CANVAS_FEATURES, rotateAroundAABBCenter } from './canvas/SceneCanvas';
-export { FEATURE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS } from './canvas/SceneCanvas/features';
+export { COMPOSITE_FEATURES, FEATURE_ACTION_IDS, TOOL_DRIVEN_ACTION_IDS } from './canvas/SceneCanvas/features';
 export { KIT_SHAPE_KINDS, SHAPE_KINDS } from './core/shapeKinds';
 export type {
   BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,

@@ -66,19 +66,23 @@ describe('kit barrel parity', () => {
   // same (canvas) layer, so it's in lockstep by construction — no cross-layer
   // parity test needed (the two no longer straddle a boundary).
 
-  // `apps/draw/src/dev/registryData.ts` lists the presets from the kit's own
-  // tables rather than a copy — assert the barrel ships them, one action list
-  // per preset `draw` abbreviates.
-  it('exports SCENE_CANVAS_FEATURES and FEATURE_ACTION_IDS for every preset', () => {
+  // Consumers list the presets from the kit's own tables rather than a copy —
+  // assert the barrel ships them: one action list per base preset, one
+  // expansion per composite.
+  it('exports SCENE_CANVAS_FEATURES, FEATURE_ACTION_IDS and COMPOSITE_FEATURES for every preset', () => {
     const features = (Barrel as Record<string, unknown>).SCENE_CANVAS_FEATURES as
       | readonly string[]
       | undefined;
     const table = (Barrel as Record<string, unknown>).FEATURE_ACTION_IDS as
       | Record<string, readonly string[]>
       | undefined;
+    const composites = (Barrel as Record<string, unknown>).COMPOSITE_FEATURES as
+      | Record<string, readonly string[]>
+      | undefined;
     expect(features, 'SCENE_CANVAS_FEATURES must be exported').toBeDefined();
     expect(table, 'FEATURE_ACTION_IDS must be exported').toBeDefined();
-    expect(features!.filter((f) => f !== 'draw').sort()).toEqual(Object.keys(table!).sort());
+    expect(composites, 'COMPOSITE_FEATURES must be exported').toBeDefined();
+    expect([...Object.keys(table!), ...Object.keys(composites!)].sort()).toEqual([...features!].sort());
   });
 });
 
