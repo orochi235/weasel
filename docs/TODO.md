@@ -807,17 +807,6 @@ only story runner in the repo.
   `ForgeOptions` — and then the shell config's copy should go, not stay as a
   second source.
 
-- **(P3) A native meta whose import resolves to nothing still gets two titles.**
-  The plugin follows a `meta`/`story` imported from somewhere other than
-  `@weasel-js/forge` to its declaration (`vite/wrappers.ts`), so a helper that
-  re-exports forge's is indexed under the meta's title. When the import does not
-  resolve — or `@weasel-js/forge` itself does not, from that file — the index
-  falls back to the path-derived title while `story/native.ts` still runs the
-  story under the meta's, and a link written from the title names no story. A
-  helper file created after the story file was indexed is also not watched for
-  until that story file changes. Having the loader take the index entry's title
-  would make the two agree in every case.
-
 - **(P3) Marks are off in the workshop until annotations are a feature.** forge's
   instruments no longer declare labkit's `annotations` capability, so trials show
   no Marks section and the tool rail holds only Info. The removed wiring — the

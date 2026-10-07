@@ -201,6 +201,19 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     await expect.poll(async () => indexOf(s), { timeout: 5000, interval: 50 }).toEqual(['other--basic', 'thing--basic']);
   });
 
+  it('re-decides a story whose helper module did not exist until after it was indexed', async () => {
+    const forgeEntry = join(import.meta.dirname, '../index.ts');
+    const { dir, server: s } = await start(
+      {
+        'thing.stories.tsx': `import { meta, story } from './forge-helpers';\nexport default meta({ title: 'ui/Thing' });\nexport const Basic = story({ render: () => null });\n`,
+      },
+      { resolve: { alias: { '@weasel-js/forge': forgeEntry } } },
+    );
+    expect(await indexOf(s)).toEqual(['thing--basic']);
+    writeFileSync(join(dir, 'forge-helpers.ts'), `export { meta, story } from '@weasel-js/forge';\n`);
+    await expect.poll(async () => indexOf(s), { timeout: 5000, interval: 50 }).toEqual(['ui-thing--basic']);
+  });
+
   it('serves the component graph from source, and pushes it again when a component file changes', async () => {
     const { dir, server: s } = await start({
       'A.tsx': `import { B } from './B';\nexport const A = () => <B />;\n`,

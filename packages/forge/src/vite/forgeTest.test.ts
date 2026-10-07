@@ -33,7 +33,7 @@ describe('forgeTest', () => {
     expect(code).toContain(`import "@weasel-js/forge/frame.css";`);
     expect(code?.match(/__forge_test\(/g)).toHaveLength(2);
     expect(code).toContain(`const __forge_file = ${JSON.stringify(file)};`);
-    expect(code).toContain('const __forge_title = "x/Counter";');
+    expect(code).toContain('const __forge_title = "forge/Counter";');
     expect(code).toContain(
       'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_title, __forge_options);',
     );

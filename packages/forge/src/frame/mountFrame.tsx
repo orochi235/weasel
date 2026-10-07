@@ -33,7 +33,7 @@ export interface MountFrameOptions {
   index: readonly FrameIndexEntry[];
   importers: FrameImporters;
   setup?: FrameSetup;
-  load?: (mod: Record<string, unknown>, autoTitle: string, parameters?: Record<string, unknown>) => LoadedStory[];
+  load?: (mod: Record<string, unknown>, title: string, parameters?: Record<string, unknown>) => LoadedStory[];
 }
 
 export { indexRenderOf, loadStories } from '../story/load';

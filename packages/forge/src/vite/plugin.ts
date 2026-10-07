@@ -197,7 +197,9 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
     const current = files();
     if (event === 'change' && current.has(file)) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
     const own = event === 'add' ? matches(file) : current.has(file);
-    const through = [...wrappersOf].filter(([story, { reads }]) => story !== file && reads.has(file)).map(([story]) => story);
+    const through = [...wrappersOf]
+      .filter(([story, { reads, unresolved }]) => story !== file && (reads.has(file) || (event === 'add' && unresolved)))
+      .map(([story]) => story);
     if (!own && through.length === 0) return false;
 
     const before = JSON.stringify(index());

@@ -6,6 +6,8 @@ export interface WrapperResolution {
   wrappers: Set<string>;
   /** Every file read to decide it, so an edit to one can re-decide it. */
   reads: Set<string>;
+  /** Whether an import on the way resolved to nothing, so a file added later could change the answer. */
+  unresolved: boolean;
 }
 
 /**
@@ -32,10 +34,12 @@ export function createWrapperResolver(read: (file: string) => string) {
   return async (file: string, callees: readonly ForeignCallee[], resolve: ResolveImport): Promise<WrapperResolution> => {
     const reads = new Set<string>();
     const wrappers = new Set<string>();
-    if (callees.length === 0) return { wrappers, reads };
+    let unresolved = false;
+    if (callees.length === 0) return { wrappers, reads, unresolved };
 
     const target = async (spec: string, importer: string): Promise<string | null> => {
       const id = (await resolve(spec, importer).catch(() => null))?.split('?')[0];
+      if (!id) unresolved = true;
       return id && !id.startsWith('\0') ? id : null;
     };
 
@@ -66,7 +70,7 @@ export function createWrapperResolver(read: (file: string) => string) {
     };
 
     const forge = await target('@weasel-js/forge', file);
-    if (!forge) return { wrappers, reads };
+    if (!forge) return { wrappers, reads, unresolved };
     const own = new Set(
       (await Promise.all(['meta', 'story'].map((name) => declaring(forge, name)))).filter((key) => key !== null),
     );
@@ -75,6 +79,6 @@ export function createWrapperResolver(read: (file: string) => string) {
       const key = from ? await declaring(from, callee.imported) : null;
       if (key && own.has(key)) wrappers.add(callee.local);
     }
-    return { wrappers, reads };
+    return { wrappers, reads, unresolved };
   };
 }

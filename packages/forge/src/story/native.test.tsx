@@ -16,7 +16,7 @@ describe('loadNativeModule', () => {
   };
 
   it('loads each branded story export', () => {
-    const stories = loadNativeModule(mod, 'Slider');
+    const stories = loadNativeModule(mod, 'ui/Slider');
     expect(stories.map((s) => [s.id, s.name, s.layout])).toEqual([
       ['ui-slider--basic', 'Basic', 'padded'],
       ['ui-slider--withname', 'Custom name', 'fullscreen'],
@@ -42,11 +42,12 @@ describe('loadNativeModule', () => {
     expect(loadNativeModule(mod, 'Slider').map((s) => s.isolate)).toEqual([null, null]);
   });
 
-  it('titles its stories with the auto title when the meta names none', () => {
+  it("titles its stories with the index entry's title, even over the meta's own", () => {
+    // The index falls back to a path-derived title when it cannot tell the meta is forge's.
     const [only] = loadNativeModule(
-      { default: meta({}), A: story({ render: () => null }) },
-      'ui/Button',
+      { default: meta({ title: 'ui/Thing' }), A: story({ render: () => null }) },
+      'thing',
     );
-    expect(only?.title).toBe('ui/Button');
+    expect([only?.id, only?.title]).toEqual(['thing--a', 'thing']);
   });
 });

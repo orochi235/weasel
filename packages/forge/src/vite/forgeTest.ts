@@ -50,9 +50,9 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
       },
       transform(code, id) {
         if (!matches(id)) return undefined;
-        const title = autoTitle(id, root, options.stories);
-        const entries = indexFile(code, id, title);
-        if (entries.length === 0) return undefined;
+        const entries = indexFile(code, id, autoTitle(id, root, options.stories));
+        const title = entries[0]?.title;
+        if (title === undefined) return undefined;
         const q = (value: string) => JSON.stringify(value);
         // The module comes from its own URL at test time: vitest imports a test file with a cache-busting query,
         // so a static self-import would evaluate the file a second time and register every test twice.

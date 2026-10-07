@@ -36,7 +36,7 @@ export interface StoryRegistryOptions {
   importers?: FrameImporters;
   /** The frame config, applied to each story host in the document. */
   setup?: FrameSetup;
-  load?: (mod: Record<string, unknown>, autoTitle: string, parameters?: Record<string, unknown>) => LoadedStory[];
+  load?: (mod: Record<string, unknown>, title: string, parameters?: Record<string, unknown>) => LoadedStory[];
 }
 
 interface Built {
