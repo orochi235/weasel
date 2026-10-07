@@ -49,7 +49,7 @@ export interface PreferencesModalProps {
 
 export function PreferencesModal({ open, onClose, registryEnumSources }: PreferencesModalProps) {
   const sources = useMemo(() => registryEnumSources ?? {}, [registryEnumSources]);
-  const dev = useMemo(isDevMode, []);
+  const [dev] = useState(isDevMode);
   const [showHidden, setShowHidden] = useState(false);
   const [values, setAt] = usePrefsValues();
 

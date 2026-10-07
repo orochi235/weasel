@@ -173,7 +173,7 @@ function usePinTool(
 }
 
 export function ForceGraphDemo() {
-  const initial = useMemo(makeInitial, []);
+  const [initial] = useState(makeInitial);
   const nodesRef = useRef<GraphNode[]>(initial.nodes);
   const linksRef = useRef<GraphLink[]>(initial.links);
   const [settled, setSettled] = useState(false);

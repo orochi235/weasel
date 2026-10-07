@@ -962,9 +962,10 @@ function CreateOutlinesAdapterPublisher({
 }
 
 export function App(): ReactElement {
+  const [initialScene] = useState(loadInitial);
   const scene = useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
     systemLayers: [{ id: 'default' }],
-    initial: useMemo(loadInitial, []),
+    initial: initialScene,
   });
   const selection = useSelection({ mode: 'multi', scene });
 
@@ -1109,7 +1110,7 @@ function EditorWithSharedScene({
   // Document-level state (filename + background color) persisted alongside
   // the scene under a separate LS key so a doc-shape migration doesn't
   // have to touch the scene snapshot.
-  const initialDoc = useMemo(loadDoc, []);
+  const [initialDoc] = useState(loadDoc);
   const [filename, setFilename] = useState<string>(initialDoc.filename);
   const [backgroundColor, setBackgroundColor] = useState<string>(initialDoc.backgroundColor);
   const [docSelected, setDocSelected] = useState<boolean>(false);

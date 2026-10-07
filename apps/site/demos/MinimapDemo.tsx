@@ -44,7 +44,7 @@ function makeRandomScene() {
 }
 
 export function MinimapDemo() {
-  const initial = useMemo(makeRandomScene, []);
+  const [initial] = useState(makeRandomScene);
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial,

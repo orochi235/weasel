@@ -214,6 +214,7 @@ export default [
       'react-hooks/exhaustive-deps': 'error',
       'weasel/no-render-ref-write': 'error',
       'react-hooks/static-components': 'error',
+      'react-hooks/use-memo': 'error',
 
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',

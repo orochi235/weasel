@@ -1,6 +1,6 @@
 /** The React seam over the dep registry in `./depNode`: its provider and hooks. */
 import {
-  createContext, useContext, useEffect, useMemo,
+  createContext, useContext, useEffect, useState,
   type ReactNode,
 } from 'react';
 import type { DepSchema, DepName } from '../../index';
@@ -16,7 +16,7 @@ export const DepRegistryContext = createContext<DepRegistry | null>(null);
 /** Provides the dep registry for a canvas. `<SceneCanvas>` mounts one; a
  *  consumer registering its own dep sources must be inside it. */
 export function DepRegistryProvider({ children }: { children: ReactNode }) {
-  const registry = useMemo(createDepRegistry, []);
+  const [registry] = useState(createDepRegistry);
   return <DepRegistryContext.Provider value={registry}>{children}</DepRegistryContext.Provider>;
 }
 

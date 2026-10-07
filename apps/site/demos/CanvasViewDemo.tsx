@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   CanvasView,
   PointerContextProvider,
@@ -64,7 +64,7 @@ function PointerReadout() {
 }
 
 export function CanvasViewDemo() {
-  const initial = useMemo(makeRandomScene, []);
+  const [initial] = useState(makeRandomScene);
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial,

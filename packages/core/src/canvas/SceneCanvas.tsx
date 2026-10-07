@@ -1675,17 +1675,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // stop firing.
   const onDoubleClickRef = useLatest(onDoubleClick);
   const getNodeAtPointRef = useLatest(getNodeAtPoint);
+  // Identity only needs to change between "wired" and "not wired" — the
+  // callback and picker are both read through refs.
+  const wiresDoubleClick = Boolean(onDoubleClick);
   const onDoubleClickObserver = useMemo(() => {
-    if (!onDoubleClick) return undefined;
+    if (!wiresDoubleClick) return undefined;
     return (world: { x: number; y: number }): void => {
       const cb = onDoubleClickRef.current;
       if (!cb) return;
       const result = getNodeAtPointRef.current?.(world.x, world.y);
       cb(result ? { id: result.id, kind: result.kind } : null);
     };
-    // Identity only needs to change between "wired" and "not wired" — the
-    // callback and picker are both read through refs.
-  }, [Boolean(onDoubleClick)]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [wiresDoubleClick, onDoubleClickRef, getNodeAtPointRef]);
 
   // (Legacy `gestures` prop removed alongside the consumer-facing action
   // hooks; undo/redo and friends now register via the Actions Registry.)

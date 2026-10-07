@@ -14,7 +14,7 @@
  * minimap and its main canvas each see where the other's pointer is.
  */
 import {
-  createContext, useContext, useMemo, useSyncExternalStore, type ReactNode,
+  createContext, useContext, useState, useSyncExternalStore, type ReactNode,
 } from 'react';
 
 /** @experimental World-space pointer position and the view it is over — a
@@ -79,7 +79,7 @@ const PointerContext = createContext<PointerContextValue | null>(null);
 export function PointerContextProvider(
   { children, store }: { children: ReactNode; store?: PointerContextValue },
 ): ReactNode {
-  const own = useMemo(createPointerStore, []);
+  const [own] = useState(createPointerStore);
   return <PointerContext.Provider value={store ?? own}>{children}</PointerContext.Provider>;
 }
 
