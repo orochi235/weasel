@@ -1,5 +1,37 @@
 # @weasel-js/routing
 
+## 1.8.1
+
+### Patch Changes
+
+- 934f195: The gesture dispatcher no longer takes a press that lands on a control inside its host — a button, field, link or anything with a control role. It used to open a pointer session that captured the pointer, so the browser delivered the click to the host instead, and a button laid over a canvas (labkit's instrument overlay, for one) could not be clicked with a real pointer. `isInControlWithin` and `CONTROL_SELECTOR`, which answer that question, move from weasel-ui's internals to `@weasel-js/gestures`, re-exported by routing and core.
+- 2d97065: A `<Workspace>` tile can be shown large: the expand button in its top-right corner fills most of the window with it, over a dimmed page. Escape, a click in the dimmed margin, or the close button puts it back, and focus returns to where it was. The tile is not remounted. Its element is lifted into the browser's top layer, so a WebGL context or scene inside it keeps running and only sees its box grow, and anything sizing itself from a `ResizeObserver` follows.
+  
+  The button is on every tile. `lightbox={false}` takes it off a workspace, and `lightbox={(id) => …}` decides per tile. A double-click opens a tile only where you ask, with `expandOnDoubleClick={(id) => id === 'output'}` — off by default, since most content has its own use for a double-click. Even then, a double-click on a control, inside `[data-lk-lightbox-ignore]`, or one a handler further in already called `preventDefault()` on does not open it.
+  
+  The same behavior is available on its own as `<Lightbox>`, with `label`, `disabled`, `expandOnDoubleClick`, and controlled `expanded` / `onExpandedChange`. Content inside reads the state with `useLightbox()`; a component that draws its own expand control calls `useLightboxControl()` instead, and the corner button steps aside while it is mounted.
+  
+  Every trial in a `<Lab>` has the toggle in its title bar — the built-in contribution `expand` — and `<Lab expandOnDoubleClick>` takes the same opt-in, as a boolean or a function of the trial's record. An expanded trial keeps what the lab's shared surface draws for it: annotation marks stay over it and still take new marks, and a `useSurfaceTile` tenant such as a 3D view keeps painting under it. The lab's two buffers now sit in layers of their own (`.lk-lab__layer--under` and `.lk-lab__layer--over`) rather than as bare canvases in the lab body, and tile rects are measured against the over layer. `<LightboxLayers below above>` declares such layers to every lightbox inside it, which lifts them around itself; a host owning its own surface uses it for its own buffers.
+  
+  `SurfaceHandle` gains `scope(el)`, `inScope(id)`, and `subscribeScope(listener)`: a scoped surface paints only the tiles inside `el`, so no other tile draws over an expanded one, and `useTileInScope(tileId)` tells a tenant's own chrome when to hide. Code that builds a `SurfaceHandle` by hand, such as a test fake, needs the three new members.
+  
+  The gesture dispatcher now calls `preventDefault()` on the browser's `dblclick` when it has already acted on that double click — a binding handled its `doubleclick`, or an `onDoubleClick` observer was given — so a double-click that edits a scene does not also open a lightbox around it.
+- c49c9e0: New package `@weasel-js/select`: selection as a value. `intentOf(modifiers, policy)` reads a press as `'replace'`, `'toggle'` or `'range'` under a policy naming which keys toggle and which range, and `select(state, id, intent, { order, eligible })` applies it to `{ ids, anchor }`. Ineligible ids — locked or disabled rows — are skipped by a range, dropped when a selection grows, and selected alone when pressed. `createSelectionStore` keeps ids outside a component, behind the `SelectionStore` contract, which core still exports under the same name.
+  
+  core's `useSelection`, and `Tree` and `LayerList` in `@weasel-js/ui`, now select through it rather than each keeping its own rules. `SelectionMode` and `SelectionExtendKey` are declared in `@weasel-js/select` and still exported from `@weasel-js/routing` and `@weasel-js/core`. Two edges change: `LayerList`'s Shift+arrow with its anchor hidden in a collapsed branch now selects the row it reaches instead of doing nothing, and a Cmd/Ctrl-press in a multi-select `Tree` drops any disabled row from the selection it builds on.
+- 2123049: A wheel the gesture dispatcher claims no longer reaches the element's other wheel listeners. It listens in the capture phase and stops the event there, so a labkit loupe over a canvas with its own camera controls — three.js `OrbitControls`, say — zooms the lens alone instead of the lens and the camera together. A wheel no binding claims still reaches them.
+- Updated dependencies [934f195]
+- Updated dependencies [412e53a]
+- Updated dependencies [6d800fb]
+- Updated dependencies [f9c137b]
+- Updated dependencies [c49c9e0]
+  - @weasel-js/gestures@1.8.1
+  - @weasel-js/history@1.8.1
+  - @weasel-js/select@1.8.1
+  - @weasel-js/cursor@1.8.1
+  - @weasel-js/modes@1.8.1
+  - @weasel-js/react@1.8.1
+
 ## 1.8.0
 
 ### Patch Changes

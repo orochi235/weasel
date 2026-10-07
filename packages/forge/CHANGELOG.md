@@ -1,5 +1,46 @@
 # @weasel-js/forge
 
+## 1.8.1
+
+### Patch Changes
+
+- 7e71950: The workshop keeps a story's knobs in its URL: `#/<story id>?label=Save&look.px=8`. Opening such a URL shows the story at those values, a knob inside a group is named by its dotted path, and each value is read as its control's type, with one that does not parse ignored. Changing a control rewrites the URL in place, values at their default are left out, and moving to another story drops the previous one's knobs. `t` is reserved and never a knob. `parseRoute`, `formatRoute`, `paramsToKnobs`, `knobsToParams` and `storyHref` are exported for a host building links to a story at a given state.
+- 377ad0e: A native story file that imports `meta` and `story` from its own module rather than from `@weasel-js/forge`, such as a project helper that re-exports them, is now indexed under its meta's `title`. Before, the index fell back to the path-derived title while the story ran under the meta's, so a link written from the title named no story. The plugin follows the import to where it is declared and checks that it is forge's own; a same-named function of the project's own is still treated as not forge's.
+- 4adec3c: A padded story's cell on a component's index page now hugs the story instead of holding the 96px minimum meant for centered ones, which left empty room under any padded story shorter than that — ToolGroup's horizontal one, for instance.
+- 6d22b02: A story that sets its timeline span at runtime now opens at the time a URL's `t` or the trial's persisted playhead asks for, even when that time lies past the span declared before `setSpan` ran. The asked-for time is placed afresh in every new span until play, a seek, a scrub or a new `t` moves the playhead, and until a span can hold it, neither `t` nor the persisted playhead is rewritten. Before, the time was clamped to the placeholder span and the clamped value was written back.
+- 90ed7f5: A story can declare a timeline — `timeline: { duration, start?, loop?, rate? }` on a native story or meta, `parameters.forge.timeline` in CSF, or a function of the config or args — and forge then owns its clock. The trial gets a scrub bar and `@weasel-js/ui`'s `Transport` in its status bar, and the story reads the playhead with `usePlayhead()`, or the whole clock with `useTimeline()`, which can also play, pause, seek and replace the span at runtime. Times are in ms. The paused time is kept with the trial, so a reload or a labkit snapshot restores it. While paused, the playhead is also held in the URL as `t` in seconds (`#/<story>?t=1.5`), by the one trial that owns the URL (the focused trial showing the routed story, else the first); opening such a URL, or a hash change bringing a new `t`, puts that trial paused there. Playing clears `t` once instead of rewriting the URL every frame.
+- 2f5ec92: `defineShellConfig` takes `title`, which names the workshop in its header and as the document title in place of `weaselforge`, and `cssVars: false`, which leaves out the CSS Vars panel. Both default to what the workshop showed before.
+- bf522cf: labkit: a lab can present one trial and nothing else — no lab chrome, no trial chrome, a transparent ground — for embedding it as a figure. `<Lab present>` or `?present` in the URL starts it that way, opened on `seed={{ instrument, config, state, view }}`; a stored lab then keeps its own records under `storageKey` + `':present'`, and a changed seed reopens the trial for returning visitors. `usePresentation()` gives `{ active, enter, exit }` inside any lab: `enter` presents the focused trial, Escape returns, and nothing remounts either way. While presenting, the page's root `color-scheme` is reset so an iframe embed stays transparent.
+  
+  core: `stableStringify`, JSON with object keys sorted, moves here from forge, which re-exports it.
+- Updated dependencies [75dd38d]
+- Updated dependencies [e07c4ca]
+- Updated dependencies [934f195]
+- Updated dependencies [b459d73]
+- Updated dependencies [5f76528]
+- Updated dependencies [2d97065]
+- Updated dependencies [bf522cf]
+- Updated dependencies [f8b3cb4]
+- Updated dependencies [934f195]
+- Updated dependencies [261c35f]
+- Updated dependencies [f9ebc47]
+- Updated dependencies [18a4994]
+- Updated dependencies [c93a52c]
+- Updated dependencies [fbe9bc3]
+- Updated dependencies [06e5299]
+- Updated dependencies [2fed994]
+- Updated dependencies [9003c69]
+- Updated dependencies [bbf8715]
+- Updated dependencies [4cb1e04]
+- Updated dependencies [c49c9e0]
+- Updated dependencies [f78b82d]
+- Updated dependencies [6e60eb1]
+- Updated dependencies [2123049]
+  - @weasel-js/theme@1.8.1
+  - @weasel-js/ui@1.8.1
+  - @weasel-js/core@1.8.1
+  - @weasel-js/labkit@1.8.1
+
 ## 1.8.0
 
 ### Patch Changes

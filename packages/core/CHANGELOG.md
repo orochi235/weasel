@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.8.1
+
+### Patch Changes
+
+- e07c4ca: An animation whose `onTick`, `onDone` or interpolator throws no longer stops the animator. The error is logged, that animation is removed, and every other animation keeps running — before, the rest of that frame's animations were skipped and no further frame was requested, while `isActive()` stayed true. `animator.watch` delivers a new `error` event carrying the thrown value, in place of `cancel`, or after `end` when `onDone` threw. A listener that switches exhaustively on `AnimatorEvent['type']` has one more case to handle.
+- 934f195: The gesture dispatcher no longer takes a press that lands on a control inside its host — a button, field, link or anything with a control role. It used to open a pointer session that captured the pointer, so the browser delivered the click to the host instead, and a button laid over a canvas (labkit's instrument overlay, for one) could not be clicked with a real pointer. `isInControlWithin` and `CONTROL_SELECTOR`, which answer that question, move from weasel-ui's internals to `@weasel-js/gestures`, re-exported by routing and core.
+- bf522cf: labkit: a lab can present one trial and nothing else — no lab chrome, no trial chrome, a transparent ground — for embedding it as a figure. `<Lab present>` or `?present` in the URL starts it that way, opened on `seed={{ instrument, config, state, view }}`; a stored lab then keeps its own records under `storageKey` + `':present'`, and a changed seed reopens the trial for returning visitors. `usePresentation()` gives `{ active, enter, exit }` inside any lab: `enter` presents the focused trial, Escape returns, and nothing remounts either way. While presenting, the page's root `color-scheme` is reset so an iframe embed stays transparent.
+  
+  core: `stableStringify`, JSON with object keys sorted, moves here from forge, which re-exports it.
+- c49c9e0: New package `@weasel-js/select`: selection as a value. `intentOf(modifiers, policy)` reads a press as `'replace'`, `'toggle'` or `'range'` under a policy naming which keys toggle and which range, and `select(state, id, intent, { order, eligible })` applies it to `{ ids, anchor }`. Ineligible ids — locked or disabled rows — are skipped by a range, dropped when a selection grows, and selected alone when pressed. `createSelectionStore` keeps ids outside a component, behind the `SelectionStore` contract, which core still exports under the same name.
+  
+  core's `useSelection`, and `Tree` and `LayerList` in `@weasel-js/ui`, now select through it rather than each keeping its own rules. `SelectionMode` and `SelectionExtendKey` are declared in `@weasel-js/select` and still exported from `@weasel-js/routing` and `@weasel-js/core`. Two edges change: `LayerList`'s Shift+arrow with its anchor hidden in a collapsed branch now selects the row it reaches instead of doing nothing, and a Cmd/Ctrl-press in a multi-select `Tree` drops any disabled row from the selection it builds on.
+- 2123049: A wheel the gesture dispatcher claims no longer reaches the element's other wheel listeners. It listens in the capture phase and stops the event there, so a labkit loupe over a canvas with its own camera controls — three.js `OrbitControls`, say — zooms the lens alone instead of the lens and the camera together. A wheel no binding claims still reaches them.
+- Updated dependencies [934f195]
+- Updated dependencies [7e72192]
+- Updated dependencies [412e53a]
+- Updated dependencies [6d800fb]
+- Updated dependencies [2d97065]
+- Updated dependencies [f9c137b]
+- Updated dependencies [c49c9e0]
+- Updated dependencies [2123049]
+  - @weasel-js/gestures@1.8.1
+  - @weasel-js/routing@1.8.1
+  - @weasel-js/geom@1.8.1
+  - @weasel-js/history@1.8.1
+  - @weasel-js/select@1.8.1
+  - @weasel-js/text@1.8.1
+  - @weasel-js/cursor@1.8.1
+  - @weasel-js/font@1.8.1
+  - @weasel-js/modes@1.8.1
+  - @weasel-js/paint@1.8.1
+  - @weasel-js/quantity@1.8.1
+  - @weasel-js/react@1.8.1
+  - @weasel-js/registry@1.8.1
+
 ## 1.8.0
 
 ### Minor Changes

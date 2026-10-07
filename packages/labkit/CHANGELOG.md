@@ -1,5 +1,67 @@
 # @weasel-js/labkit
 
+## 1.8.1
+
+### Patch Changes
+
+- 934f195: The gesture dispatcher no longer takes a press that lands on a control inside its host — a button, field, link or anything with a control role. It used to open a pointer session that captured the pointer, so the browser delivered the click to the host instead, and a button laid over a canvas (labkit's instrument overlay, for one) could not be clicked with a real pointer. `isInControlWithin` and `CONTROL_SELECTOR`, which answer that question, move from weasel-ui's internals to `@weasel-js/gestures`, re-exported by routing and core.
+- 5f76528: An `f.value` leaf whose kind can't be inferred from its default — `f.value(null)`, an object — now fails when its schema resolves, with an error naming the leaf's path and the fix (a typed builder, or `f.custom(kind, default)`). It used to resolve to a leaf with no `kind`, which the auto-config walk then took for a group and crashed on with `Cannot convert undefined or null to object` the first time a trial was added. A lab rule that supplies the kind still makes such a leaf valid.
+- 2d97065: A `<Workspace>` tile can be shown large: the expand button in its top-right corner fills most of the window with it, over a dimmed page. Escape, a click in the dimmed margin, or the close button puts it back, and focus returns to where it was. The tile is not remounted. Its element is lifted into the browser's top layer, so a WebGL context or scene inside it keeps running and only sees its box grow, and anything sizing itself from a `ResizeObserver` follows.
+  
+  The button is on every tile. `lightbox={false}` takes it off a workspace, and `lightbox={(id) => …}` decides per tile. A double-click opens a tile only where you ask, with `expandOnDoubleClick={(id) => id === 'output'}` — off by default, since most content has its own use for a double-click. Even then, a double-click on a control, inside `[data-lk-lightbox-ignore]`, or one a handler further in already called `preventDefault()` on does not open it.
+  
+  The same behavior is available on its own as `<Lightbox>`, with `label`, `disabled`, `expandOnDoubleClick`, and controlled `expanded` / `onExpandedChange`. Content inside reads the state with `useLightbox()`; a component that draws its own expand control calls `useLightboxControl()` instead, and the corner button steps aside while it is mounted.
+  
+  Every trial in a `<Lab>` has the toggle in its title bar — the built-in contribution `expand` — and `<Lab expandOnDoubleClick>` takes the same opt-in, as a boolean or a function of the trial's record. An expanded trial keeps what the lab's shared surface draws for it: annotation marks stay over it and still take new marks, and a `useSurfaceTile` tenant such as a 3D view keeps painting under it. The lab's two buffers now sit in layers of their own (`.lk-lab__layer--under` and `.lk-lab__layer--over`) rather than as bare canvases in the lab body, and tile rects are measured against the over layer. `<LightboxLayers below above>` declares such layers to every lightbox inside it, which lifts them around itself; a host owning its own surface uses it for its own buffers.
+  
+  `SurfaceHandle` gains `scope(el)`, `inScope(id)`, and `subscribeScope(listener)`: a scoped surface paints only the tiles inside `el`, so no other tile draws over an expanded one, and `useTileInScope(tileId)` tells a tenant's own chrome when to hide. Code that builds a `SurfaceHandle` by hand, such as a test fake, needs the three new members.
+  
+  The gesture dispatcher now calls `preventDefault()` on the browser's `dblclick` when it has already acted on that double click — a binding handled its `doubleclick`, or an `onDoubleClick` observer was given — so a double-click that edits a scene does not also open a lightbox around it.
+- bf522cf: labkit: a lab can present one trial and nothing else — no lab chrome, no trial chrome, a transparent ground — for embedding it as a figure. `<Lab present>` or `?present` in the URL starts it that way, opened on `seed={{ instrument, config, state, view }}`; a stored lab then keeps its own records under `storageKey` + `':present'`, and a changed seed reopens the trial for returning visitors. `usePresentation()` gives `{ active, enter, exit }` inside any lab: `enter` presents the focused trial, Escape returns, and nothing remounts either way. While presenting, the page's root `color-scheme` is reset so an iframe embed stays transparent.
+  
+  core: `stableStringify`, JSON with object keys sorted, moves here from forge, which re-exports it.
+- f8b3cb4: labkit's own `StatusBar` is gone; `@weasel-js/labkit` and `@weasel-js/labkit/primitives` now re-export `@weasel-js/ui`'s `StatusBar`, `StatusBarItem` and `StatusBarSpacer`. A bar written with `StatusBar.Section` needs `StatusBarItem` instead, a `StatusBarSpacer` before a section that was marked `end`, and `divided` on the bar to keep the hairlines between readouts. `StatusBarSectionProps` is gone with it.
+- 934f195: An instrument can declare `clock` to give its trials playback time labkit owns: a position, `elapsed`, moved by a signed `rate` (0 pauses, negative plays backward), with `ramp`, `seek`, `loop`, `pass` and `phase`. A canvas layer marked `timed` repaints every frame the clock moves and reads `elapsed`, `pass` and `phase` in its draw args; `useClockFrame` runs a callback per frame without re-rendering; `useTrialClock(trialId?)` reaches a trial's clock from inside it or from the lab's chrome. One frame loop per lab drives every clock and sleeps when all are paused. `seekable: false` makes a clock forward-only. Reset returns the clock to 0, and `TrialRecord.clock` keeps where it stood across a reload. `<CanvasStack>` takes `ticks`, and a layer descriptor `timed`, for the same repaint outside a trial.
+- 261c35f: A trial's state undo now runs on weasel-history. `TrialRecord.undoStack` is gone; a trial holds a `History` in `TrialRecord.history`, which it makes on its first snapshot, so a new, cloned, swapped or reloaded trial has none — the same session-only lifetime as before. The store's `updateTrialUndoStack` is replaced by `setTrialHistory`. Breaking for anything reading `undoStack` off a record. `emptyStack`, `pushSnapshot`, `undo`, `redo`, `clearUndo` and `UndoStack` are still exported but deprecated, for code that used them as an undo of its own; use `createHistory` from `@weasel-js/core` instead.
+- f9ebc47: A labkit loupe can now enlarge the pixels of any canvas, not only labkit's own 2D layers. `<TrialLoupe source={…}>` takes a canvas, a context on one (2D, WebGL or WebGL2), a function returning one once it exists, or a `CanvasSource`. With a `source` and no `render`, the lens is a pixel lens over that canvas, and `onColorChange` reads its color. With `render` as well, `render` draws the lens and the source answers `onColorChange`. The canvas's backing store is mapped to the lens through its laid-out box, so a canvas drawn at any device-pixel ratio, or stretched, lines up.
+  
+  A WebGL canvas made without `preserveDrawingBuffer` is cleared once the browser composites it, so a lens reading it on its own frame sees nothing. `createCanvasSource(gl)`, new in `@weasel-js/loupe` and re-exported from `@weasel-js/labkit/loupe`, handles this: the drawing code calls `source.capture()` right after each draw, and the source copies the frame while it still exists — only while a lens is up, so it costs nothing otherwise. A canvas that draws on demand passes `requestRedraw`, which the source calls when a lens comes up with no current frame. The reported color follows the source's frames: the first aim reports a color as soon as a frame is captured, and a still aim keeps reporting as the canvas redraws. That rides on two general pieces — `LoupeModel.resample()`, which samples the aim again without moving it, and `useLoupe`'s `subscribeResample`, which calls it on whatever signal the caller has while the lens is up. A source made from a WebGL context knows it needs capturing; if it is read for about two seconds with no capture, it logs one warning naming the fix. `SourceLoupe`, `drawSourceLens`, `sampleSource`, `sourceBoxIn` and `resolveLoupeSource` are the pieces `<TrialLoupe>` builds this from.
+- 18a4994: A hollow `<TrialLoupe>` under a tiled surface now invalidates only the tiles under the box it left and the box it moved to, so the host redraws those rather than the whole surface each time the lens moves. The surface gains `invalidateBox(box)`, which marks every tile a viewport-px box overlaps.
+- c93a52c: `<TrialLoupe hollow>` draws only the lens's ring, shadow and shape and leaves its inside clear, for a host that draws the magnified view itself; no painter runs, and a `source` still answers `onColorChange`. `onLens` reports where the lens is drawn and what it shows — `center`, `shows`, `width`, `height`, `factor`, `shape`, in host CSS px — whenever that changes, and `null` when a lens that was up goes away. `LoupeLens` is now exported from `types`; `@weasel-js/labkit/loupe` exports it as before.
+- fbe9bc3: `<TrialLoupe>` now opens under the pointer when it comes up without the pointer moving — the peek key pressed over a still pointer, or the lens turned on under one. It used to open at the host's top-left corner and sample there until the next move. A peek with the pointer outside the host still shows nothing until the pointer enters.
+  
+  The magnified point now sits exactly under the pointer. The lens's ring used to push it one border-width right and down, and inside a lab the ring also narrowed the area the lens draws into by twice its width, shrinking the picture to fit. The ring now sits outside a box that is exactly `diameter` across and centered on the aim.
+- 06e5299: A loupe can be square, and its host can say where it goes. `<TrialLoupe>` takes `shape: 'circle' | 'square'` and `place({ aim, factor })`, which returns the box to draw the lens in (`center`, `width`, `height`), and optionally the point it shows (`shows`) and the factor it shows it at (`factor`); `null` keeps the default `diameter` circle on the aim. `place` is called while the lens renders, with the wheel's factor. `placeBand` (`@weasel-js/loupe`, re-exported from `@weasel-js/labkit/loupe`) fits a lens to a region shown whole: magnified by the factor or by less where that would make the lens wider or taller than the host, and moved to stay on the host while still showing the region's middle.
+  
+  `useLoupe` returns the resolved `lens`; `onColorChange` still reports the color under the aim, and `pick` maps through the placed lens. Everything that took a lens `diameter` — `LoupeBubble`, the painters, `lensCamera`, `lensSourceRect`, `drawCanvasLens`, `drawSourceLens` and `sourceRegion` — now also takes `{ width, height }`. A `LoupeSurface.lens()` may return `shows` and `factor` beside its rectangle.
+- 2fed994: The loupe reads `--wzl-border-w` and `--wzl-radius-sm` without fallbacks, since every theme declares them.
+- 9003c69: A `Dialog` that mounts with `isOpen` already true no longer leaves the page inert. Its first render portalled into the body before the overlay found its themed host, and React Aria marked everything outside it `inert` — including the app root the dialog then moved into, so nothing in it took a click or a key. Every weasel overlay (`Dialog`, `Callout`, `Tooltip`, the `Select`, `ComboBox`, `MenuButton` and `PaintField` popovers, labkit's `ControlMatrix`) now renders only once its portal host is known, still before paint.
+- f78b82d: `StatusBar` takes `divided`, which draws a hairline between neighboring items, and now keeps to one line, clipping readouts it has no room for instead of letting them spill past its edge. labkit's chrome lays out its status region with it, putting the first readout marked `end` and those after it past a `StatusBarSpacer`. labkit's own `StatusBar` primitive is unchanged for now and will be retired.
+- 2123049: A wheel the gesture dispatcher claims no longer reaches the element's other wheel listeners. It listens in the capture phase and stops the event there, so a labkit loupe over a canvas with its own camera controls — three.js `OrbitControls`, say — zooms the lens alone instead of the lens and the camera together. A wheel no binding claims still reaches them.
+- Updated dependencies [75dd38d]
+- Updated dependencies [e07c4ca]
+- Updated dependencies [934f195]
+- Updated dependencies [b459d73]
+- Updated dependencies [7e72192]
+- Updated dependencies [bf522cf]
+- Updated dependencies [f9ebc47]
+- Updated dependencies [06e5299]
+- Updated dependencies [9003c69]
+- Updated dependencies [bbf8715]
+- Updated dependencies [4cb1e04]
+- Updated dependencies [c49c9e0]
+- Updated dependencies [f78b82d]
+- Updated dependencies [6e60eb1]
+- Updated dependencies [2123049]
+  - @weasel-js/theme@1.8.1
+  - @weasel-js/ui@1.8.1
+  - @weasel-js/core@1.8.1
+  - @weasel-js/geom@1.8.1
+  - @weasel-js/loupe@1.8.1
+  - @weasel-js/kernel3d@1.8.1
+  - @weasel-js/svg@1.8.1
+  - @weasel-js/quantity@1.8.1
+
 ## 1.8.0
 
 ### Patch Changes

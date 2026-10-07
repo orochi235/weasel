@@ -1,5 +1,25 @@
 # @weasel-js/hud
 
+## 1.8.1
+
+### Patch Changes
+
+- Updated dependencies [75dd38d]
+- Updated dependencies [e07c4ca]
+- Updated dependencies [934f195]
+- Updated dependencies [7e72192]
+- Updated dependencies [bf522cf]
+- Updated dependencies [f9ebc47]
+- Updated dependencies [06e5299]
+- Updated dependencies [c49c9e0]
+- Updated dependencies [2123049]
+  - @weasel-js/theme@1.8.1
+  - @weasel-js/core@1.8.1
+  - @weasel-js/geom@1.8.1
+  - @weasel-js/loupe@1.8.1
+  - @weasel-js/font@1.8.1
+  - @weasel-js/paint@1.8.1
+
 ## 1.8.0
 
 ### Patch Changes

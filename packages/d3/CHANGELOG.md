@@ -1,5 +1,16 @@
 # @weasel-js/d3
 
+## 1.8.1
+
+### Patch Changes
+
+- Updated dependencies [e07c4ca]
+- Updated dependencies [934f195]
+- Updated dependencies [bf522cf]
+- Updated dependencies [c49c9e0]
+- Updated dependencies [2123049]
+  - @weasel-js/core@1.8.1
+
 ## 1.8.0
 
 ### Patch Changes

@@ -1,5 +1,22 @@
 # @weasel-js/loupe
 
+## 1.8.1
+
+### Patch Changes
+
+- f9ebc47: A labkit loupe can now enlarge the pixels of any canvas, not only labkit's own 2D layers. `<TrialLoupe source={…}>` takes a canvas, a context on one (2D, WebGL or WebGL2), a function returning one once it exists, or a `CanvasSource`. With a `source` and no `render`, the lens is a pixel lens over that canvas, and `onColorChange` reads its color. With `render` as well, `render` draws the lens and the source answers `onColorChange`. The canvas's backing store is mapped to the lens through its laid-out box, so a canvas drawn at any device-pixel ratio, or stretched, lines up.
+  
+  A WebGL canvas made without `preserveDrawingBuffer` is cleared once the browser composites it, so a lens reading it on its own frame sees nothing. `createCanvasSource(gl)`, new in `@weasel-js/loupe` and re-exported from `@weasel-js/labkit/loupe`, handles this: the drawing code calls `source.capture()` right after each draw, and the source copies the frame while it still exists — only while a lens is up, so it costs nothing otherwise. A canvas that draws on demand passes `requestRedraw`, which the source calls when a lens comes up with no current frame. The reported color follows the source's frames: the first aim reports a color as soon as a frame is captured, and a still aim keeps reporting as the canvas redraws. That rides on two general pieces — `LoupeModel.resample()`, which samples the aim again without moving it, and `useLoupe`'s `subscribeResample`, which calls it on whatever signal the caller has while the lens is up. A source made from a WebGL context knows it needs capturing; if it is read for about two seconds with no capture, it logs one warning naming the fix. `SourceLoupe`, `drawSourceLens`, `sampleSource`, `sourceBoxIn` and `resolveLoupeSource` are the pieces `<TrialLoupe>` builds this from.
+- 06e5299: A loupe can be square, and its host can say where it goes. `<TrialLoupe>` takes `shape: 'circle' | 'square'` and `place({ aim, factor })`, which returns the box to draw the lens in (`center`, `width`, `height`), and optionally the point it shows (`shows`) and the factor it shows it at (`factor`); `null` keeps the default `diameter` circle on the aim. `place` is called while the lens renders, with the wheel's factor. `placeBand` (`@weasel-js/loupe`, re-exported from `@weasel-js/labkit/loupe`) fits a lens to a region shown whole: magnified by the factor or by less where that would make the lens wider or taller than the host, and moved to stay on the host while still showing the region's middle.
+  
+  `useLoupe` returns the resolved `lens`; `onColorChange` still reports the color under the aim, and `pick` maps through the placed lens. Everything that took a lens `diameter` — `LoupeBubble`, the painters, `lensCamera`, `lensSourceRect`, `drawCanvasLens`, `drawSourceLens` and `sourceRegion` — now also takes `{ width, height }`. A `LoupeSurface.lens()` may return `shows` and `factor` beside its rectangle.
+- Updated dependencies [e07c4ca]
+- Updated dependencies [934f195]
+- Updated dependencies [bf522cf]
+- Updated dependencies [c49c9e0]
+- Updated dependencies [2123049]
+  - @weasel-js/core@1.8.1
+
 ## 1.8.0
 
 ### Patch Changes
