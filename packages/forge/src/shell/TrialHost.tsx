@@ -16,6 +16,7 @@ import { runAxe } from '../frame/a11y';
 import { captureElement } from '../frame/capture';
 import { createOverrides, type Overrides, scanCssVars } from '../frame/cssVars';
 import type { FrameSetup } from '../frame/FrameController';
+import { IN_VIEW_MARGIN, useNearViewport } from '../frame/useNearViewport';
 import { createGlobalsTarget } from '../frame/globalsTarget';
 import type { CssVarReport, Globals, Layout, ToFrame } from '../protocol/messages';
 import { useCssOverrides } from './cssVars/overrides';
@@ -37,28 +38,7 @@ export interface TrialHostProps {
   onRendered?: () => void;
 }
 
-/** How far past the viewport a story stays mounted, so a small scroll back does not remount it. */
-const IN_VIEW_MARGIN = '50%';
 const VARS_SETTLE_MS = 100;
-
-/** Whether `ref`'s element is near the viewport; true where the browser cannot say. */
-function useInView(ref: RefObject<Element | null>): boolean {
-  const [inView, setInView] = useState(true);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const last = entries.at(-1);
-        if (last) setInView(last.isIntersecting);
-      },
-      { rootMargin: IN_VIEW_MARGIN },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [ref]);
-  return inView;
-}
 
 /** A selector matching only the element carrying `id`. */
 const scopeOf = (id: string) => `[data-fg-host="${id}"]`;
@@ -79,7 +59,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
   const hostId = trialId ?? reactId;
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const elementRef = useRef<HTMLDivElement | null>(null);
-  const inView = useInView(elementRef);
+  const inView = useNearViewport(elementRef, IN_VIEW_MARGIN);
   const [pending, setPending] = useState(true);
   const overridesRef = useRef<Overrides | null>(null);
   const latest = useLatest({ setup, onRendered });

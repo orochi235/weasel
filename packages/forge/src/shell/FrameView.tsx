@@ -3,6 +3,7 @@ import './shell.css';
 import { useLatest } from '@weasel-js/core';
 import { type RenderContext, TrialIdContext, useLabContext } from '@weasel-js/labkit';
 import { type RefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { IN_VIEW_MARGIN, useNearViewport } from '../frame/useNearViewport';
 import { type Channel, type Mismatch, openChannel } from '../protocol/channel';
 import {
   type FaultPhase,
@@ -42,27 +43,6 @@ const START_TIMEOUT_MS = 10_000;
 const HELLO_TIMEOUT_MS = 30_000;
 /** Distinguishes one frame request from the next; only ever compared, never read. */
 let requests = 0;
-/** How far past the viewport a frame stays mounted, so a small scroll back does not reload it. */
-const IN_VIEW_MARGIN = '50%';
-
-/** Whether `ref`'s element is near the viewport; true where the browser cannot say. */
-function useInView(ref: RefObject<Element | null>): boolean {
-  const [inView, setInView] = useState(true);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const last = entries.at(-1);
-        if (last) setInView(last.isIntersecting);
-      },
-      { rootMargin: IN_VIEW_MARGIN },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [ref]);
-  return inView;
-}
 
 interface Settle {
   resolve: (value: never) => void;
@@ -132,7 +112,7 @@ export function FrameView(props: FrameViewProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const slotRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(hostRef);
+  const inView = useNearViewport(hostRef, IN_VIEW_MARGIN);
   const link = useRef<Link | null>(null);
   const latest = useLatest({ ...props, globals, overrides, pool, lab, title });
   const [fault, setFault] = useState<Fault | null>(null);

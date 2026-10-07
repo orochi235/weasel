@@ -837,15 +837,6 @@ only story runner in the repo.
   iframe. Mount the provisional instrument under the same tree position, or learn
   the viewport before the first instrument is built.
 
-- **(P3, isolated stories only) Opening a trial in forge reloads another
-  trial's story.** Measured
-  2026-09-22 in the dev app: with one Button trial open, opening a second from
-  the route re-ran the first trial's `FrameView` frame effect, so its story
-  loaded again into a new frame. Whether labkit remounts the trial's body when
-  the tiling changes, or its host briefly leaves the `IntersectionObserver`
-  margin, is not yet known. Each reload also takes a frame from the warm pool
-  (`packages/forge/src/shell/framePool.ts`), which is why it keeps two.
-
 - **(P3) A trial tile narrower than 300px cuts off its content pane.** A trial's
   `Split` (`packages/labkit/src/primitives/Split.tsx`) holds the sidebar at its
   140px floor and the content at its 160px floor however narrow the tile gets,
@@ -866,11 +857,11 @@ only story runner in the repo.
 - **(P3, isolated stories only) Check forge's out-of-view frame unmounting in
   a browser.** `FrameView`
   (`packages/forge/src/shell/FrameView.tsx`) drops a trial's iframe once its host
-  is more than half a viewport outside the viewport (`IntersectionObserver`,
-  `rootMargin: '50%'`) and reloads it on return. Tested only against a stubbed
-  observer: confirm in the dev app that scrolling a trial away and back reloads
-  its story with the trial's config and state, and that the margin keeps a small
-  scroll from reloading it.
+  is more than half a viewport outside the viewport and reloads it on return.
+  `useNearViewport` (`packages/forge/src/frame/useNearViewport.ts`) has a browser
+  test for the margin; the reload itself is tested only against a stubbed
+  observer. Confirm in the dev app that scrolling a trial away and back reloads
+  its story with the trial's config and state.
 
 ---
 
