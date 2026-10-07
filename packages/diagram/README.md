@@ -92,6 +92,19 @@ nodes already sit, and a node carrying `pinned: true` that nothing moves.
 `force` is the exception to the second half of that: it is an iterative
 relaxation seeded from the current positions, so re-running it keeps relaxing.
 
+### From data
+
+`diagramScene` turns plain `{ nodes, edges }` into a laid-out scene, and
+`DiagramView` draws one read-only, with pan, zoom and picking:
+
+```tsx
+const specs = useMemo(() => diagramScene(data, { nodeStyle }), [data]);
+return <DiagramView specs={specs} width={360} height={600} selected={id} onSelect={setId} />;
+```
+
+Node sizes are estimated from line lengths, so layout runs without a canvas.
+It defaults to `layered` with `order: 'barycenter'`.
+
 ## Design notes
 
 Five decisions the code cannot explain on its own.

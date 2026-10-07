@@ -568,6 +568,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/DiagramLayoutDemo.tsx',
   },
   {
+    id: 'diagram-data',
+    title: 'Diagram from data',
+    package: 'diagram',
+    description:
+      'diagramScene takes plain nodes and edges and returns a laid-out scene; DiagramView draws it read-only, with pan, zoom and picking. Layout defaults to layered with order: barycenter, which reorders each rank to reduce crossings, since generated data has no arranged order to keep. Click a node to pick it.',
+    hint: 'Click a node: the picked readout follows. Drag to pan, scroll to zoom.',
+    load: () => import('./demos/DiagramDataDemo').then((m) => m.DiagramDataDemo),
+    path: 'apps/site/demos/DiagramDataDemo.tsx',
+  },
+  {
     id: 'diagram-live',
     title: 'Live diagram layout',
     package: 'diagram',
