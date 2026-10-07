@@ -950,6 +950,16 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P2) Three browser tests fail on CI's Linux Chromium and pass on macOS.**
+  `overlayAlignment.browser.test.tsx` ("Inter 12px super" exceeds the 0.75 `dRight`
+  bound at 0.83; "Small Caps" Inter 24px finds 8 overlay glyph runs against the
+  canvas's 9) and `FitLabel.browser.test.tsx` ("a inline enum toggle row shortens its
+  segments to fit", 93 > 86). They have failed the Node 24 job on every main push
+  since at least 1.8.0, so main's CI has not been green since then, and with fail-fast
+  they cancel the Node 22 job, which hid a separate Node 22 failure that was fixed for
+  1.8.1. Find whether the Linux font rasterization differs or the tolerance is just
+  too tight, and fix whichever one it is.
+
 - **(P3) jsdom 30.1.1 runs patched.** From 29.0.2 on, reading a custom property no
   ancestor sets doubles in cost with every level of DOM depth: `_getComputedPropertyValue`
   caches only properties in `propertyDefinitions`, so `--*` reads go uncached, and
