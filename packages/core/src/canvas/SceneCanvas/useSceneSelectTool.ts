@@ -192,9 +192,8 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         ...(camera ? { camera } : {}),
       });
       // `s` makes the slop a screen distance, so the grab zone stays the same
-      // apparent thickness at any zoom and on every axis. A stroke's `{px}`
-      // width resolves through the mean scale because that is what the
-      // renderer paints it at.
+      // apparent thickness at any zoom and on every axis. A `{ px }` stroke's
+      // reach is on screen too, and joins the slop there.
       const pointQuery = (px: number, py: number, s: { x: number; y: number }): PickQuery<TPose> => {
         const scale = meanScale(s);
         const tolerance = { px: pickTolerancePx, scale: s };
@@ -204,14 +203,12 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
             // that follows it, or it rejects points the refinement would have
             // claimed. A stroke reaches past the pose box by `outset` — a whole
             // stroke width for an outer align — on top of the pointer slop.
-            const outset = shapePicking
-              ? (findShapeInk(n as never, pose, { scale })?.outset ?? 0)
-              : 0;
+            const ink = shapePicking ? findShapeInk(n as never, pose, { scale }) : null;
             // A derived node's pose is a placeholder — typically zero-sized at
             // the origin — so its own box rejects every point the path covers.
             // The path is the region to test instead, and `poseContains` already
             // reads a path-like pose as one.
-            const slop = { ...tolerance, reach: outset };
+            const slop = { ...tolerance, px: tolerance.px + (ink?.outsetPx ?? 0), reach: ink?.outset ?? 0 };
             const admitted = derived
               ? poseContains(derived as never, px, py, slop, d as PoseDescriptor<unknown>)
               : poseContainsRotated(pose, px, py, slop, d as PoseDescriptor<unknown>);

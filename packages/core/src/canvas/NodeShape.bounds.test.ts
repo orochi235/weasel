@@ -14,7 +14,7 @@ import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
 import { cullDrawCommands } from '../renderer/cullDrawCommands';
 import { mat3 } from '../renderer/math/mat3';
 import { solid, strokeOf } from '../util/paint';
-import { PATH_C, PATH_M, PATH_Z, boundsOfPath } from '@weasel-js/geom';
+import { PATH_C, PATH_L, PATH_M, PATH_Z, boundsOfPath } from '@weasel-js/geom';
 import type { DrawCommand } from '../renderer';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -84,6 +84,27 @@ describe('defaultPaintBounds', () => {
     const n = node({ shape: 'rect', label: 'Zone A' });
     expect(defaultDrawOne(n, POSE, VIEW).some((c) => c.kind === 'text')).toBe(true);
     expect(defaultPaintBounds(n, POSE, VIEW)).toBeNull();
+  });
+
+  // A { px } head is built to its screen size in every direction. Across a
+  // line running along x at 4:1, a pixel is a whole world unit, so a 20px bar
+  // — 1.5 units either side plus half its 1-unit outline — reaches 40 world
+  // units; through the mean scale of 2 it was 20.
+  it('reaches as far as a { px } head does along the axis zoomed least', () => {
+    const pose = { x: 40, y: 40, width: 60, height: 0 };
+    const line = {
+      kind: 'polygon' as const,
+      commands: new Uint8Array([PATH_M, PATH_L]),
+      coords: new Float32Array([40, 40, 100, 40]),
+      fillRule: 'nonzero' as const,
+    };
+    const n = node({
+      path: line,
+      stroke: { ...strokeOf('#000', 1), width: { px: 2 }, markerEnd: { key: 'bar', size: { px: 20 } } },
+    });
+    const b = defaultPaintBounds(n, pose, { ...VIEW, scale: { x: 4, y: 1 } })!;
+    expect(b.y).toBeLessThanOrEqual(0);
+    expect(b.y + b.height).toBeGreaterThanOrEqual(80);
   });
 
   it('reads a screen-pixel stroke width at the view scale', () => {

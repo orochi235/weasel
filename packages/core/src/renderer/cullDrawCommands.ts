@@ -108,23 +108,26 @@ function pathMisses(path: Path, stroke: Stroke | undefined, m: GlMat3, box: Box)
 /** How far outside the geometry a stroke can paint, in the path's own units.
  *  A full width rather than half covers `'outer'` alignment, which the
  *  renderer draws as a doubled ribbon; the miter limit covers every join. A
- *  marker head sits on a vertex, so its reach is measured from the hull too.
- *
- *  A `{ px }` ribbon and its heads are built to their screen size in every
- *  direction, so in world they reach farthest along the direction the
- *  transform shrinks most. A head with a world size is built at that size in
- *  the ribbon's space, which the mean scale takes to the screen. */
+ *  marker head sits on a vertex, so its reach is measured from the hull too. */
 function strokeReach(stroke: Stroke, m: GlMat3): number {
-  const mean = mat3.meanScaleOf(m);
-  const least = mat3.minScaleOf(m);
-  if (typeof stroke.width !== 'object' || !(least > 0)) return strokeReachAt(stroke, mean);
-  const unitWidth = resolveStrokeWidth(stroke.width, mean);
-  return Math.max(strokeReachAt(stroke, least), markerReach(stroke, unitWidth, mean) * mean / least);
+  return strokeReachAt(stroke, mat3.meanScaleOf(m), mat3.minScaleOf(m));
 }
 
-/** {@link strokeReach} at a known world-to-screen scale — what a painter
- *  bounding its own output before it paints can know. */
-export function strokeReachAt(stroke: Stroke, scale: number): number {
+/**
+ * {@link strokeReach} at a known world-to-screen scale — what a painter
+ * bounding its own output before it paints can know. `least` is the scale
+ * along the axis the transform shrinks most, where it differs from `scale`.
+ *
+ * A `{ px }` ribbon and its heads are built to their screen size in every
+ * direction, so in world they reach farthest along that axis. A head with a
+ * world size is built at that size in the ribbon's space, which the mean
+ * scale takes to the screen.
+ */
+export function strokeReachAt(stroke: Stroke, scale: number, least = scale): number {
+  if (typeof stroke.width === 'object' && least > 0 && least < scale) {
+    const unitWidth = resolveStrokeWidth(stroke.width, scale);
+    return Math.max(strokeReachAt(stroke, least), markerReach(stroke, unitWidth, scale) * scale / least);
+  }
   const base = resolveStrokeWidth(stroke.width ?? 1, scale);
   let width = base;
   if (stroke.vertexWidths) {

@@ -69,3 +69,39 @@ describe.each(['pose', 'shape'] as const)('pick slop under 4:1 zoom, rotated nod
     for (const p of offEdges(POSE, SCALE, tol + 0.5)) expect(pick(p)).toEqual([]);
   });
 });
+
+// An outline-only rect stroked 8px wide: the ink reaches 4px past the edge and
+// the slop 4px more, on screen, so 8px off the left edge across x and 8px off
+// the top edge down y — and nothing in its empty middle.
+describe('picking a { px } outline under 4:1 zoom', () => {
+  const pose: Pose = { x: 0, y: 0, width: 40, height: 20 };
+  function outline() {
+    const initial: UseSceneOptions<Item, 'default', Pose>['initial'] = [{
+      id: asNodeId('n'), kind: 'leaf', layer: 'default', pose,
+      data: {
+        path: { kind: 'rect', x: 0, y: 0, width: 40, height: 20 },
+        fill: null,
+        stroke: { paint: { color: '#000' }, width: { px: 8 } },
+      } as Item,
+    }];
+    const { result } = renderHook(() => {
+      const scene = useScene<Item, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
+      const adapter = useSceneAdapter(scene);
+      return useSceneSelectTool({ scene, adapter });
+    });
+    return (x: number, y: number) => result.current.pickEvery(x, y, { scale: SCALE });
+  }
+
+  it('takes a pointer just inside the reach across and down', () => {
+    const pick = outline();
+    expect(pick(-7.5 / SCALE.x, 10)).toEqual(['n']);
+    expect(pick(20, -7.5 / SCALE.y)).toEqual(['n']);
+  });
+
+  it('refuses a pointer just outside it, and one in the middle', () => {
+    const pick = outline();
+    expect(pick(-8.5 / SCALE.x, 10)).toEqual([]);
+    expect(pick(20, -8.5 / SCALE.y)).toEqual([]);
+    expect(pick(20, 10)).toEqual([]);
+  });
+});

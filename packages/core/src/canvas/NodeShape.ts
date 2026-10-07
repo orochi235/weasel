@@ -68,7 +68,7 @@ import {
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { markerReach } from 'features/paths/markerCommands';
 import { strokeReachAt } from '../renderer/cullDrawCommands';
-import { hasSlop, slopForStrokeHit, type PickSlop } from 'core/viewport/screenSlop';
+import { hasSlop, slopForStrokeHit, widenSlop, type PickSlop } from 'core/viewport/screenSlop';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseRotationOf, rotatePathAround } from 'core/geometry/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
@@ -198,6 +198,12 @@ export interface NodeInk {
   outset: number;
   /** How far it reaches inside. */
   inset: number;
+  /** Reach past `outset` measured on screen, in pixels — a `{ px }` stroke's,
+   *  which the renderer holds exact in every direction, so no one world
+   *  distance stands for it under non-uniform zoom. */
+  outsetPx?: number;
+  /** Reach past `inset`, likewise. */
+  insetPx?: number;
 }
 
 /** Per-call context for {@link NodeShapeEntry.silhouette}. */
@@ -211,8 +217,12 @@ export interface NodeSilhouetteCtx {
 
 /** Per-call context for {@link NodeShapeEntry.ink}. */
 export interface NodeInkCtx {
-  /** View scale, for resolving `{ px }` stroke widths to world units. */
+  /** View scale, for resolving `{ px }` lengths to world units — the mean of
+   *  the two axes' under non-uniform zoom. */
   scale?: number;
+  /** The smaller axis's scale, where it differs from `scale`. A box bounding
+   *  a `{ px }` stroke reads its reach here, where a pixel is the most world. */
+  leastScale?: number;
 }
 
 /** What a painter that declares no `ink` is assumed to do. */
@@ -371,9 +381,9 @@ export function findShapeBounds<TData, TPose>(
 
 /** The pose rect grown by how far `stroke` can paint outside it — the paint
  *  box of every built-in painter whose geometry the pose box contains. */
-function poseBoxBounds(pose: unknown, stroke: Stroke | null, scale: number | undefined): Bounds | null {
+function poseBoxBounds(pose: unknown, stroke: Stroke | null, ctx: NodeInkCtx | undefined): Bounds | null {
   if (!isRectPose(pose)) return null;
-  const reach = stroke ? strokeReachAt(stroke, scale ?? 1) : 0;
+  const reach = stroke ? strokeReachAt(stroke, ctx?.scale ?? 1, ctx?.leastScale) : 0;
   const x = Math.min(pose.x, pose.x + pose.width);
   const y = Math.min(pose.y, pose.y + pose.height);
   return {
@@ -395,8 +405,8 @@ export interface ShapeCoversPointOptions {
    *  one can hit. Defaults to `0` so a caller that hasn't thought about the
    *  view still gets exact geometry rather than a wrong guess. */
   tolerance?: PickSlop;
-  /** View scale, passed to the painter's `ink` so a `{ px }` stroke width
-   *  resolves to world units. Defaults to 1. */
+  /** View scale, passed to the painter's `ink`, and what a screen reach is
+   *  read at under a world `tolerance`. Defaults to 1. */
   scale?: number;
   /** The node's derived path — see {@link NodeSilhouetteCtx.derivedPath}.
    *  Without it a derived node reports no silhouette and this answers `true`
@@ -447,9 +457,10 @@ export function shapeCoversPoint<TData, TPose>(
   // can actually land on, and also makes a filled shape grabbable a few pixels
   // outside its edge — which is what every editor does and what makes
   // edge-dragging feel possible.
-  const { extra, opts: hit } = slopForStrokeHit(opts.tolerance);
+  const slop = widenSlop(opts.tolerance, (inside ? ink.insetPx : ink.outsetPx) ?? 0, opts.scale);
+  const { extra, opts: hit } = slopForStrokeHit(slop);
   const reach = (inside ? ink.inset : ink.outset) + extra;
-  return (reach > 0 || hasSlop(opts.tolerance)) && strokeHitTest(sil, x, y, reach, hit);
+  return (reach > 0 || hasSlop(slop)) && strokeHitTest(sil, x, y, reach, hit);
 }
 
 /** Snapshot of the current painters in evaluation order — `'high'` tier
@@ -617,24 +628,29 @@ function strokeInPoseFrame(stroke: PaintedStroke, box: FillPoseBox): Stroke | nu
   return paint === stroke.paint ? stroke : { ...stroke, paint };
 }
 
-/** Per-side grab reach for a resolved stroke, in world units. */
+/** Per-side grab reach for a resolved stroke: world units, or screen pixels
+ *  for a `{ px }` stroke, whose ribbon and heads the renderer builds on
+ *  screen — a head with a world size included, at that size times `scale`. */
 function inkReach(
   stroke: Stroke | null,
   scale: number | undefined,
-): { outset: number; inset: number } {
+): Pick<NodeInk, 'outset' | 'inset' | 'outsetPx' | 'insetPx'> {
   if (stroke === null) return { outset: 0, inset: 0 };
-  const w = resolveStrokeWidth(stroke.width ?? 1, scale ?? 1);
+  const s = scale ?? 1;
+  const w = resolveStrokeWidth(stroke.width ?? 1, s);
   // A marker paints past the path's own end, and the kit's rule is that
   // visible chrome is hittable — so the reach has to cover it.
-  const reach = markerReach(stroke, w, scale);
-  switch (stroke.align ?? 'center') {
-    case 'inner':
-      return { outset: reach, inset: w };
-    case 'outer':
-      return { outset: w + reach, inset: 0 };
-    default:
-      return { outset: w / 2 + reach, inset: w / 2 };
-  }
+  const marker = markerReach(stroke, w, scale);
+  const sides = (width: number, heads: number) => {
+    switch (stroke.align ?? 'center') {
+      case 'inner': return { outset: heads, inset: width };
+      case 'outer': return { outset: width + heads, inset: 0 };
+      default: return { outset: width / 2 + heads, inset: width / 2 };
+    }
+  };
+  if (typeof stroke.width !== 'object') return sides(w, marker);
+  const px = sides(stroke.width.px, marker * s);
+  return { outset: 0, inset: 0, outsetPx: px.outset, insetPx: px.inset };
 }
 
 /** Apply {@link NodePaintCtx.vertexColors} to a path painter's body — its first
@@ -720,7 +736,7 @@ const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   },
   // `pathInPoseFrame` fits the path's own bounds to the pose box.
   bounds: (node, pose, ctx) =>
-    poseBoxBounds(pose, resolveNodeStroke((node.data as { stroke?: Stroke | null }).stroke), ctx?.scale),
+    poseBoxBounds(pose, resolveNodeStroke((node.data as { stroke?: Stroke | null }).stroke), ctx),
 };
 
 /** Built-in shape dispatcher — matches when `data.shape` names a kit-known
@@ -767,7 +783,7 @@ const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   },
   // Every shape kind is inscribed in the pose box.
   bounds: (node, pose, ctx) =>
-    poseBoxBounds(pose, resolveNodeStroke((node.data as { stroke?: Stroke | null }).stroke), ctx?.scale),
+    poseBoxBounds(pose, resolveNodeStroke((node.data as { stroke?: Stroke | null }).stroke), ctx),
 };
 
 const SHAPE_KINDS = new Set(['rect', 'ellipse', 'polygon', 'star']);
@@ -873,7 +889,7 @@ const IMAGE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
   },
   // The placeholder's 1-unit outline is the only thing that leaves the box.
-  bounds: (_node, pose, ctx) => poseBoxBounds(pose, IMAGE_PLACEHOLDER_STROKE, ctx?.scale),
+  bounds: (_node, pose, ctx) => poseBoxBounds(pose, IMAGE_PLACEHOLDER_STROKE, ctx),
 };
 
 const IMAGE_PLACEHOLDER_STROKE: Stroke = { paint: { color: '#000' }, width: 1 };

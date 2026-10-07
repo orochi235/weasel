@@ -97,7 +97,8 @@ export function defaultPaintBounds<TData, TLayer extends string, TPose>(
 ): Bounds | null {
   const data = node.data as { label?: string; text?: string } | null;
   if (data?.label && data.text == null) return null;
-  return findShapeBounds(node, pose, { scale: Math.sqrt(Math.abs(view.scale.x * view.scale.y)) });
+  const sx = Math.abs(view.scale.x), sy = Math.abs(view.scale.y);
+  return findShapeBounds(node, pose, { scale: Math.sqrt(sx * sy), leastScale: Math.min(sx, sy) });
 }
 
 /**

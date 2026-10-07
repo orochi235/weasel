@@ -189,11 +189,14 @@ describe('findShapeInk — a Stroke object on the node', () => {
       .toEqual({ filled: false, outset: 8, inset: 0 });
   });
 
-  it('resolves a { px } width against the view scale', () => {
+  // On screen, because that is where the renderer makes it exact: a world
+  // reach would have to pick one scale, and under non-uniform zoom no single
+  // one is right.
+  it('reports a { px } width as a reach in screen pixels, at any scale', () => {
     const n = strokeNode({ paint: { color: '#000' }, width: { px: 8 } });
-    expect(findShapeInk(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 2, inset: 2 });
-    // Without a scale, screen pixels are read as world units.
-    expect(findShapeInk(n, POSE)).toEqual({ filled: false, outset: 4, inset: 4 });
+    const screen = { filled: false, outset: 0, inset: 0, outsetPx: 4, insetPx: 4 };
+    expect(findShapeInk(n, POSE, { scale: 2 })).toEqual(screen);
+    expect(findShapeInk(n, POSE)).toEqual(screen);
   });
 
   it("passes a consumer painter's per-side ink straight through", () => {
@@ -325,5 +328,28 @@ describe('shapeCoversPoint — screen slop under non-uniform zoom', () => {
     expect(shapeCoversPoint(node, POSE, 102.1, 50, { tolerance })).toBe(false);
     expect(shapeCoversPoint(node, POSE, 50, 104.9, { tolerance })).toBe(true);
     expect(shapeCoversPoint(node, POSE, 50, 105.1, { tolerance })).toBe(false);
+  });
+});
+
+describe('shapeCoversPoint — a { px } stroke under non-uniform zoom', () => {
+  // An 8px stroke reaches 4px past the outline and a 4px slop 4px more: 8px on
+  // screen, which at 4:1 is 2 world units across x and 8 down y. Through the
+  // mean scale of 2 the stroke alone was 2 world units either way.
+  const node = pathNode({ stroke: { paint: { color: '#000' }, width: { px: 8 } } });
+  const tolerance = { px: 4, scale: { x: 4, y: 1 } };
+
+  it('measures the stroke on screen along with the slop', () => {
+    const at = (x: number, y: number) => shapeCoversPoint(node, POSE, x, y, { tolerance, scale: 2 });
+    expect(at(101.9, 50)).toBe(true);
+    expect(at(102.1, 50)).toBe(false);
+    expect(at(50, 107.9)).toBe(true);
+    expect(at(50, 108.1)).toBe(false);
+  });
+
+  it('reads the screen reach at the given scale under a world slop', () => {
+    // Half of 8px at scale 2 is 2 world units, and the slop 1 more.
+    const at = (x: number) => shapeCoversPoint(node, POSE, x, 50, { tolerance: 1, scale: 2 });
+    expect(at(102.9)).toBe(true);
+    expect(at(103.1)).toBe(false);
   });
 });
