@@ -1051,19 +1051,20 @@ function nextFreeSlot(staged: StagedBatchState): number {
  *
  * Batching trades a draw call for copying and re-uploading the mesh every
  * frame, where a mesh already in the persistent cache costs nothing per frame
- * beyond the draw. The cap was set near a break-even of about 200 vertices,
- * measured once in 2026-08 on an M2 Max by timing blocks of frames, a method
- * since retired (`tests/perf/README.md`, "Timing a frame"); no spec measures it
- * now. Near break-even, being wrong in either direction is a wash, which is
- * why it sits there rather than anywhere a big path pays a per-frame copy for a
- * draw call it barely saves.
+ * beyond the draw. Where those cross depends on whether the mesh's own draw
+ * also breaks a run around it; `tests/perf/mesh-batch.spec.ts` measures both,
+ * and `docs/TODO.md` holds what it found against this value.
  */
 const MAX_BATCHED_MESH_VERTICES = 256;
+
+/** The cap {@link canBatchMesh} reads. Mutable only so `mesh-batch.spec.ts`
+ *  can time both sides of it in one page; the barrel does not export it. */
+export const meshBatching = { maxVertices: MAX_BATCHED_MESH_VERTICES };
 
 /** Whether a mesh can join a run. Stencil fills need their own two-pass dance,
  *  and a mesh past the cap is cheaper as its own draw. */
 function canBatchMesh(mesh: Mesh): boolean {
-  return !mesh.requiresStencil && (mesh.vertices.length >> 1) <= MAX_BATCHED_MESH_VERTICES;
+  return !mesh.requiresStencil && (mesh.vertices.length >> 1) <= meshBatching.maxVertices;
 }
 
 /**
