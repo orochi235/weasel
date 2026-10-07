@@ -25,6 +25,7 @@
 
 import { pathFromD } from '@weasel-js/geom';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
+import { metricKey, type StrokeMetric } from 'features/paths/tessellate/metric';
 import type { Stroke } from '@weasel-js/paint';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { OUTLINE_FLATTEN_TOLERANCE } from './outlineMeshCache';
@@ -54,8 +55,9 @@ export function quantizeEmWidth(emWidth: number): number {
  * The em-space stroke tessellation of one glyph.
  *
  * `glyphKey` identifies the glyph (face identity plus codepoint, assembled by
- * `layoutRuns`); `emWidth` is the stroke width divided by the run's font
- * size, already quantized. `d` is only read on a miss.
+ * `layoutRuns`); `emWidth` is the stroke width in em, already quantized, and
+ * `stroke`'s dashes are in em too. Given a `metric`, the ribbon is built in its
+ * space and both are lengths there. `d` is only read on a miss.
  *
  * Returns `null` when the ribbon has no area — a zero or negative width, or a
  * glyph whose path is empty (a space).
@@ -65,11 +67,13 @@ export function outlineStrokeMesh(
   d: string,
   emWidth: number,
   stroke: Stroke,
+  metric?: StrokeMetric,
 ): Mesh | null {
   if (!(emWidth > 0)) return null;
   const key = [
     glyphKey, emWidth, stroke.join ?? 'miter', stroke.cap ?? 'butt',
     stroke.miterLimit ?? '', stroke.align ?? 'center', (stroke.dash ?? []).join(','),
+    metricKey(metric),
   ].join('|');
 
   const cached = cache.get(key);
@@ -79,7 +83,7 @@ export function outlineStrokeMesh(
   const mesh = tessellateStroke(
     pathFromD(d),
     { ...stroke, width: emWidth },
-    { flattenTolerance: OUTLINE_FLATTEN_TOLERANCE },
+    { flattenTolerance: OUTLINE_FLATTEN_TOLERANCE, metric },
   );
   cache.set(key, mesh);
   return mesh.indices.length === 0 ? null : mesh;

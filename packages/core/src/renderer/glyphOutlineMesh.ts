@@ -4,7 +4,9 @@
  */
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { LaidOutGroup, LaidOutOutlineGlyph } from '@weasel-js/text';
-import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
+import { strokeSpaceOf } from 'features/paths/tessellate/metric';
+import type { GlMat3 } from './math/mat3';
+import { quantizeStrokeScale } from './cache/strokeMeshCache';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
 import { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';
@@ -28,31 +30,58 @@ export function outlineGroupMesh(group: LaidOutGroup, dx: number, dy: number): M
  * em space and batched into one buffer, so a stroked paragraph is one extra
  * draw call rather than one per glyph.
  *
- * The width crosses into em space by dividing by the glyph's `scale`, which
- * is world units per em — so `stroke.width` stays a world-unit measure and
- * does not grow with `fontSize`, matching every other stroke in the kit.
+ * A world width crosses into em space by dividing by the glyph's `scale`,
+ * which is world units per em — so `stroke.width` stays a world-unit measure
+ * and does not grow with `fontSize`, matching every other stroke in the kit.
+ * Dashes cross with it.
  *
- * A synthetic oblique shears the ribbon along with the glyph. That is a real
- * (small) distortion — a sheared circle is an ellipse, so the outline is
- * marginally thicker across the lean than along it — and it is deliberate:
- * shearing the finished ribbon is what keeps the outline glued to the glyph
- * it outlines, which re-tessellating in sheared space would not.
+ * A synthetic oblique shears a world-width ribbon along with the glyph. That
+ * is a real (small) distortion — a sheared circle is an ellipse, so the
+ * outline is marginally thicker across the lean than along it — and it is
+ * deliberate: shearing the finished ribbon is what keeps the outline glued to
+ * the glyph it outlines, which re-tessellating in sheared space would not.
+ *
+ * A `{ px }` ribbon is built in the stretch of the whole em-to-screen map,
+ * shear included, as a path's is in its transform's (see `metric.ts`), so it
+ * is that many pixels wide in every direction on every glyph.
  */
 export function outlineGroupStrokeMesh(
   group: LaidOutGroup,
   dx: number,
   dy: number,
-  scale: number,
+  transform: GlMat3,
 ): Mesh | null {
   const stroke = group.stroke;
   if (!stroke) return null;
-  const width = resolveStrokeWidth(stroke.width ?? 1, scale);
+  const width = stroke.width ?? 1;
+  if (typeof width === 'object') {
+    if (!(width.px > 0)) return null;
+    const shear = shearOf(group);
+    const [a, b, c, d] = [transform[0], transform[1], transform[3], transform[4]];
+    return mergeGlyphMeshes(group, dx, dy, (glyph) => {
+      if (!(glyph.scale > 0)) return null;
+      const s = glyph.scale;
+      const space = strokeSpaceOf(s * a, s * b, s * (c - a * shear), s * (d - b * shear));
+      const pxPerEm = quantizeStrokeScale(width.px, space.scale);
+      if (!(pxPerEm > 0)) return null;
+      const dash = stroke.dash?.map((v) => v / pxPerEm);
+      return outlineStrokeMesh(
+        glyph.key, glyph.d, width.px / pxPerEm, { ...stroke, dash }, space.metric ?? undefined,
+      );
+    });
+  }
   if (!(width > 0)) return null;
   return mergeGlyphMeshes(group, dx, dy, (glyph) =>
     glyph.scale > 0
-      ? outlineStrokeMesh(glyph.key, glyph.d, quantizeEmWidth(width / glyph.scale), stroke)
+      ? outlineStrokeMesh(
+        glyph.key, glyph.d, quantizeEmWidth(width / glyph.scale),
+        { ...stroke, dash: stroke.dash?.map((v) => v / glyph.scale) },
+      )
       : null);
 }
+
+const shearOf = (group: LaidOutGroup): number =>
+  group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
 
 /**
  * Transform each glyph's em-space mesh into world space and concatenate.
@@ -81,7 +110,7 @@ function mergeGlyphMeshes(
   // Matches the SDF vertex shader's skew exactly: x moves by
   // `(baselineY - y) * tan(angle)`, and in em space `baselineY - y` is
   // `-ey * scale`, so above-baseline vertices (negative ey) lean right.
-  const shear = group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
+  const shear = shearOf(group);
 
   const vertices = new Float32Array(vertexFloats);
   const indices = new Uint32Array(indexCount);

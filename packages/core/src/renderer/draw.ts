@@ -2241,7 +2241,7 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
   // group, not a call per glyph.
   const strokePaint = group.stroke?.paint;
   if (!strokePaint) return;
-  const ribbon = outlineGroupStrokeMesh(group, dx, dy, mat3.meanScaleOf(ctx.state.transform));
+  const ribbon = outlineGroupStrokeMesh(group, dx, dy, ctx.state.transform);
   if (ribbon) drawOutlineMesh(ctx, strokePaint, ribbon);
 }
 
