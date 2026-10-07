@@ -27,6 +27,16 @@
  * Draw calls are counted in an untimed pass, so a variant whose run stopped
  * coalescing is visible as a count rather than inferred from a time.
  *
+ * Our sheets are 16x16 tiles, the largest under 1MB. Three knobs reach the
+ * consumer's instead:
+ *
+ *   - `WEASEL_PERF_SHEET`    — every sheet this many px square (theirs was
+ *                              5652, ~122MB), tiles kept at their size and
+ *                              cells sampling tiles spread across all of it.
+ *   - `WEASEL_PERF_CELLS`    — the rung ladder, e.g. `56,42,28` for 1:1,
+ *                              1.33:1 and 2:1 under `wall-min`.
+ *   - `WEASEL_PERF_VARIANTS` — the variants to run; only their sheets are built.
+ *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
 import { test, expect } from '@playwright/test';
@@ -42,17 +52,25 @@ const W = 1200;
 const H = 900;
 const GAP = 4;
 
+const list = (raw: string | undefined): string[] | undefined =>
+  raw?.split(',').map((x) => x.trim()).filter(Boolean);
+
 /** On-screen cell sizes, largest first — the ladder the consumer walked. */
-const CELLS = [56, 48, 32, 24, 16, 12, 8];
+const CELLS = list(process.env.WEASEL_PERF_CELLS)?.map(Number) ?? [56, 48, 32, 24, 16, 12, 8];
+
+/** Side of every sheet in px, or 0 for 16x16 tiles of the tile's size. */
+const SHEET = Number(process.env.WEASEL_PERF_SHEET ?? 0);
 
 const RUNS = rounds(3);
 
-const VARIANTS = [
+const ALL_VARIANTS = [
   'rect', 'img-1x', 'wall-1x',
   'wall-mag-near', 'wall-mag-lin',
   'wall-min-near', 'wall-min-lin',
 ] as const;
-type Variant = (typeof VARIANTS)[number];
+type Variant = (typeof ALL_VARIANTS)[number];
+const ONLY = list(process.env.WEASEL_PERF_VARIANTS);
+const VARIANTS: readonly Variant[] = ONLY ? ALL_VARIANTS.filter((v) => ONLY.includes(v)) : ALL_VARIANTS;
 
 interface Cell {
   run: number;
@@ -68,7 +86,10 @@ interface Counts { cellPx: number; variant: Variant; commands: number; calls: Re
 test.setTimeout(1_800_000);
 
 test('atlas wall: where per-command cost steps', async ({ page, browser, browserName }) => {
-  const run = startRun('atlas-wall', { viewport: `${W}x${H}`, dpr: 1, gap: GAP, cells: CELLS, variants: [...VARIANTS], runs: RUNS });
+  const run = startRun('atlas-wall', {
+    viewport: `${W}x${H}`, dpr: 1, gap: GAP, cells: CELLS, variants: [...VARIANTS], runs: RUNS,
+    sheetPx: SHEET || 'tile x 16',
+  });
   const errors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -84,6 +105,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
       run.params({ gcAvailable: Boolean(m.gcAvailable) });
       console.log('');
       console.log(`Atlas wall — ${W}x${H}, dpr 1, on ${String(m.glRenderer)}`);
+      console.log(`sheets: ${String(m.sheets)}`);
       console.log(`collected between measurements: ${String(m.gcAvailable)}`);
       console.log(`every variant paints something: ${String(m.allPaint)}`);
       if (m.notPainting) console.log(`  NOT PAINTING: ${String(m.notPainting)}`);
@@ -114,7 +136,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
   await page.waitForSelector('canvas');
 
   const { paints, glRenderer } = await page.evaluate(
-    async ({ root, w, h, gap, cellSizes, runs, variants }) => {
+    async ({ root, w, h, gap, cellSizes, runs, variants, sheetPx }) => {
       const report = (globalThis as unknown as {
         __wallReport: (m: unknown) => Promise<void>;
       }).__wallReport;
@@ -136,15 +158,17 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
         ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
         : gl.getParameter(gl.RENDERER));
 
-      /** One atlas per tile size: 16x16 tiles of `tile` px, each a distinct
-       *  block of color so a wrong source rect shows up as a flat cell. */
-      const TILES = 16;
+      /** One atlas per tile size: 16x16 tiles of `tile` px, or as many as fit
+       *  `sheetPx` square, each a distinct block of color so a wrong source
+       *  rect shows up as a flat cell. */
+      const tilesPerSide = (tile: number): number => (sheetPx ? Math.floor(sheetPx / tile) : 16);
       async function atlas(tile: number): Promise<ImageBitmap> {
-        const side = tile * TILES;
+        const side = sheetPx || tile * 16;
+        const across = tilesPerSide(tile);
         const px = new ImageData(side, side);
         for (let y = 0; y < side; y++) {
           for (let x = 0; x < side; x++) {
-            const t = (Math.floor(y / tile) * TILES + Math.floor(x / tile)) % 251;
+            const t = (Math.floor(y / tile) * across + Math.floor(x / tile)) % 251;
             const p = (y * side + x) * 4;
             px.data[p] = (t * 37) % 256;
             px.data[p + 1] = (t * 17 + (x % tile) * 8) % 256;
@@ -155,9 +179,18 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
         return createImageBitmap(px);
       }
 
-      const tileSizes = Array.from(new Set([...cellSizes, 8, 56]));
+      const tileFor = (variant: string, cellPx: number): number =>
+        variant.startsWith('wall-mag') ? 8 : variant.startsWith('wall-min') ? 56 : cellPx;
+      const tileSizes = Array.from(new Set(
+        variants.filter((v: string) => v !== 'rect')
+          .flatMap((v: string) => cellSizes.map((c: number) => tileFor(v, c))),
+      ));
       const sheets = new Map<number, ImageBitmap>();
       for (const t of tileSizes) sheets.set(t, await atlas(t));
+      const sheetsLabel = tileSizes.map((t) => {
+        const b = sheets.get(t)!;
+        return `${t}px tiles on ${b.width}px (${((b.width * b.height * 4) / 2 ** 20).toFixed(1)} MiB)`;
+      }).join('; ') || 'none';
 
       const renderer = new WeaselRenderer({ gl, canvas, width: w, height: h, dpr: 1 });
 
@@ -172,12 +205,10 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
 
       function build(rung: Rung, variant: string): unknown[] {
         const { cellPx, cols, n } = rung;
-        const tile = variant === 'wall-mag-near' || variant === 'wall-mag-lin'
-          ? 8
-          : variant === 'wall-min-near' || variant === 'wall-min-lin'
-            ? 56
-            : cellPx;
+        const tile = tileFor(variant, cellPx);
         const sheet = sheets.get(tile)!;
+        const across = tilesPerSide(tile);
+        const count = across * across;
         const sampling = variant.endsWith('-lin') ? 'linear' : 'nearest';
         const withGround = variant === 'rect' || variant.startsWith('wall');
         const withImage = variant !== 'rect';
@@ -193,13 +224,15 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
             });
           }
           if (withImage) {
-            const t = i % (TILES * TILES);
+            // On a large sheet, a stride coprime with the tile count spreads
+            // the wall's reads across all of it rather than its first rows.
+            const t = sheetPx ? (i * 7919) % count : i % count;
             out.push({
               kind: 'image',
               image: sheet,
               x, y, w: cellPx, h: cellPx,
               source: {
-                x: (t % TILES) * tile, y: Math.floor(t / TILES) * tile,
+                x: (t % across) * tile, y: Math.floor(t / across) * tile,
                 w: tile, h: tile,
               },
               sampling,
@@ -261,7 +294,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
       const notPainting = variants.filter((v: string) => !paints[v]);
 
       await report({
-        type: 'header', glRenderer, gcAvailable,
+        type: 'header', glRenderer, gcAvailable, sheets: sheetsLabel,
         allPaint: notPainting.length === 0,
         notPainting: notPainting.join(', '),
       });
@@ -298,7 +331,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
       renderer.dispose();
       return { paints, glRenderer };
     },
-    { root: repoRoot, w: W, h: H, gap: GAP, cellSizes: CELLS, runs: RUNS, variants: [...VARIANTS] },
+    { root: repoRoot, w: W, h: H, gap: GAP, cellSizes: CELLS, runs: RUNS, variants: [...VARIANTS], sheetPx: SHEET },
   );
 
   // ─── report ────────────────────────────────────────────────────────────
@@ -307,6 +340,8 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
   const at = (cellPx: number, v: Variant) =>
     cells.filter((c) => c.cellPx === cellPx && c.variant === v);
   const pad = (s: string, n: number) => s.padStart(n);
+  const gridCells = (cellPx: number) =>
+    Math.max(1, Math.floor((W + GAP) / (cellPx + GAP))) * Math.max(1, Math.floor((H + GAP) / (cellPx + GAP)));
 
   const lines: string[] = [
     '',
@@ -331,7 +366,7 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
     `| cell | cells | ${VARIANTS.map((v) => v).join(' | ')} |`,
     `|---:|---:|${VARIANTS.map(() => '---:').join('|')}|`);
   for (const cellPx of CELLS) {
-    const n = at(cellPx, 'rect')[0]?.commands ?? 0;
+    const n = gridCells(cellPx);
     const row = VARIANTS.map((v) => {
       const cs = at(cellPx, v);
       return cs.length ? med(cs.map((c) => c.perFrameMs)).toFixed(2) : '—';
@@ -339,11 +374,27 @@ test('atlas wall: where per-command cost steps', async ({ page, browser, browser
     lines.push(`| ${cellPx}px | ${n} | ${row.join(' | ')} |`);
   }
 
+  const pairs = (['mag', 'min'] as const).filter((k) =>
+    VARIANTS.includes(`wall-${k}-near`) && VARIANTS.includes(`wall-${k}-lin`));
+  if (pairs.length) {
+    lines.push('', '**nearest / linear**, per frame', '',
+      `| cell | ${pairs.map((k) => `wall-${k}`).join(' | ')} |`,
+      `|---:|${pairs.map(() => '---:').join('|')}|`);
+    for (const cellPx of CELLS) {
+      const row = pairs.map((k) => {
+        const near = med(at(cellPx, `wall-${k}-near`).map((c) => c.perFrameMs));
+        const lin = med(at(cellPx, `wall-${k}-lin`).map((c) => c.perFrameMs));
+        return (near / lin).toFixed(2);
+      });
+      lines.push(`| ${cellPx}px | ${row.join(' | ')} |`);
+    }
+  }
+
   lines.push('', '**Draw calls per frame** (drawElements + drawArrays / buffer writes)', '',
     `| cell | cmds | ${VARIANTS.map((v) => v).join(' | ')} |`,
     `|---:|---:|${VARIANTS.map(() => '---:').join('|')}|`);
   for (const cellPx of CELLS) {
-    const n = counts.find((c) => c.cellPx === cellPx && c.variant === 'rect')?.commands ?? 0;
+    const n = gridCells(cellPx);
     const row = VARIANTS.map((v) => {
       const c = counts.find((x) => x.cellPx === cellPx && x.variant === v);
       if (!c) return '—';
