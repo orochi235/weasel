@@ -7,6 +7,15 @@ export default defineConfig({
   base: '/weasel/labkit/',
   cleanUrls: true,
   srcExclude: ['superpowers/**', 'IDEAS.md'],
+  markdown: {
+    // Vue compiles inline code as template, so the README's `seed={{ … }}`
+    // examples would be evaluated; fenced blocks are already v-pre.
+    config: (md) => {
+      const inline = md.renderer.rules.code_inline;
+      if (!inline) return;
+      md.renderer.rules.code_inline = (...args) => inline(...args).replace('<code', '<code v-pre');
+    },
+  },
   themeConfig: {
     nav: [
       { text: 'Recipes', link: '/RECIPES' },
