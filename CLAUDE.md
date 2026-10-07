@@ -277,6 +277,11 @@ weasel-ui button inside a lab inherits it again.
 worktree can pop another session's work into it. Use a throwaway worktree for a baseline instead;
 if you must stash, `push -u -m <tag>`, `apply` by SHA, and drop your own entry by tag.
 
+**A worktree with no `node_modules` of its own builds against the main checkout's.** Node resolves
+`@weasel-js/*` up the tree, so a package build there reads main's stale `dist` for its siblings, and
+`test:smoke:consumer` calls `<repo>/node_modules/.bin/tsc` and fails with an empty error. Run
+`npm ci` in the worktree before building or smoke-testing anything in it.
+
 **A backtick in a GLSL comment ends the shader.** Every shader in this repo is
 a template literal, so a comment written the way the surrounding TypeScript is
 — `like this` — closes it and reopens it, and what was between becomes
