@@ -12,6 +12,7 @@ export interface DragGhostProps {
  *  `screenPos`. Renders nothing until mounted, so it is SSR-safe. */
 export function DragGhost({ item, screenPos }: DragGhostProps): ReactPortal | null {
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- portals only after mount, so server and client render alike
   useEffect(() => setMounted(true), []);
   if (!mounted || typeof document === 'undefined') return null;
   const style = {

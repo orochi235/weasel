@@ -193,6 +193,7 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
   const reg = useActionsRegistry();
   const [actions, setActions] = useState<readonly Action[]>(() => (reg ? reg.list() : []));
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs to the actions registry subscription
     if (!reg) { setActions([]); return; }
     setActions(reg.list());
     return reg.subscribe(() => setActions(reg.list()));

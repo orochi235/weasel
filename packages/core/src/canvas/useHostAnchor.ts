@@ -69,6 +69,7 @@ export function useHostAnchor(
   const raf = useVisibleRaf(recompute);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- measures layout
     recompute();
     const schedule = () => raf.request();
     window.addEventListener('scroll', schedule, true);

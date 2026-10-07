@@ -115,6 +115,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
   useEffect(() => {
     if (!framed) return;
     const next = createFramePool(frameUrl);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- publishes the frame pool this effect creates
     setPool(next);
     return () => {
       next.dispose();

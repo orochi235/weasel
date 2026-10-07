@@ -85,6 +85,7 @@ function Harness(props: { seen: Record<string, unknown>[]; children: ReactNode }
     registry.setDispatcher(createDispatcher({
       getAction: (id: string) => registry.list().find((a) => a.id === id),
     }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- renders children once the registrations this effect makes are in
     setReady(true);
   }, [registry, props.seen]);
   return ready ? <>{props.children}</> : null;

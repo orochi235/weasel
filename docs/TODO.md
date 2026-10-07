@@ -908,20 +908,15 @@ was hiding an assertion that read `.space` without narrowing.
 Deferred, with the rationale in `eslint.config.js` next to each:
 
 - **(P3) eslint-plugin-react-hooks v7 compiler rules still off.**
-  `static-components`, `use-memo` and `globals` (outside tests) are on. The rest:
+  `static-components`, `use-memo`, `globals` (outside tests) and
+  `set-state-in-effect` are on; each effect that sets state legitimately says
+  why in its disable comment. The rest:
   - `refs` — 387 reports; reading a ref during render is how a canvas library
     reaches frame state, and there is no writes-only mode
     (`weasel/no-render-ref-write` covers writes).
   - `immutability` — 52 reports, none a defect: `useVisibleRaf` loops
     re-requesting themselves, and writes to forwarded refs, DOM nodes and
     mutable engine objects.
-  - `set-state-in-effect` — 27 reports, one a defect (fixed). 12 are layout
-    measurement, subscription sync or resource creation, which the rule cannot
-    tell from derived state. The 14 that are derived state could be computed
-    in render instead: `ListEditor`, `useStoryRegistry`, `CommandPalette` (2),
-    `WeaselDemos`' tab reset, `LayeredCurveDemo`, `PerceptualColorSlidersDemo`,
-    draw's `App` (`docSelected`), `RegistryInspector` (2), `RegistryTree`, and
-    the `LayeredCurveEditor` (2) and `Slider` stories.
   - `preserve-manual-memoization` — reports where React Compiler would bail,
     and nothing here is compiled.
 

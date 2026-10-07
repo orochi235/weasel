@@ -65,6 +65,7 @@ export function useAsyncOptions<T extends Key = string>({
       inFlight.current?.abort();
       inFlight.current = null;
       applied.current = issued.current;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- cancels the in-flight request and resets its results
       setOptions([]);
       setIsLoading(false);
       setLoadError(null);

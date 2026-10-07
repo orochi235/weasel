@@ -41,6 +41,7 @@ export function ListEditor({
   useEffect(() => {
     if (focus === null) return;
     inputs.current[focus]?.focus();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- consumes a one-shot focus request once its input has committed
     setFocus(null);
   }, [focus]);
 

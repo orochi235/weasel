@@ -116,6 +116,7 @@ export function TimelineDemo() {
     const tl = animator.timeline({ tracks, loop });
     tl.setTimeScale(scaleRef.current);
     handle.current = tl;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads back the timeline this effect creates
     setDuration(tl.duration());
     setPlaying(true);
     const unsubscribe = tl.subscribe(() => setDuration(tl.duration()));

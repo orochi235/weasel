@@ -98,6 +98,7 @@ export function useFitScope(ref: RefObject<HTMLElement | null>): FitScopeValue {
       fittedFor.current = labels;
       steppedAt.current = null;
       if (own !== 0) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- measures layout
         setOwn(0);
         return;
       }

@@ -70,6 +70,7 @@ function BodyHost({ host, children }: { host: Host; children: ReactNode }) {
       outer.append(heading, target);
     }
     document.body.appendChild(outer);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- publishes the mount node this effect creates
     setMount(target);
     return () => outer.remove();
   }, [host]);

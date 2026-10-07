@@ -84,6 +84,7 @@ function useDetectedFacts(): DetectedDeviceFacts {
 
     // Re-sync once on mount: a query could have changed between the
     // useState initializer and the effect running.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- re-syncs media queries that may have changed before subscribing
     setFacts({
       coarsePointer: coarseMq.matches,
       canHover: hoverMq.matches,

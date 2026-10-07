@@ -167,6 +167,7 @@ function useHasBeenNearViewport(ref: RefObject<Element | null>): boolean {
 function useSourceText(tab: DemoSourceTab | undefined, enabled: boolean): string | null {
   const [text, setText] = useState<string | null>(null);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the last tab's text while the next one loads
     setText(null);
     if (!tab || !enabled) return;
     let live = true;

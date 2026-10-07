@@ -35,10 +35,6 @@ const CORE_ALIASES = (() => {
  *     re-requesting its own loop reads as use-before-declare, and assigning to
  *     a forwarded ref, a mutable engine object or a DOM node reads as
  *     mutating a hook's value.
- *   - `set-state-in-effect`: 27 reports, one a defect. Measuring layout,
- *     syncing to a subscription and creating a disposable resource all set
- *     state in an effect legitimately, and the rule cannot tell them apart
- *     from derived state.
  *   - `preserve-manual-memoization`: reports where React Compiler would skip
  *     a component, and nothing here is compiled.
  */
@@ -224,6 +220,7 @@ export default [
       'react-hooks/static-components': 'error',
       'react-hooks/use-memo': 'error',
       'react-hooks/globals': 'error',
+      'react-hooks/set-state-in-effect': 'error',
 
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',

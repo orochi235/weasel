@@ -20,6 +20,7 @@ export function useResolvedColorMode(preference: ColorModePreference): ColorMode
     if (preference !== 'auto') return;
     const mq = systemQuery();
     if (!mq) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs to the OS color-scheme query
     setSystem(mq.matches ? 'light' : 'dark');
     const onChange = (e: { matches: boolean }) => setSystem(e.matches ? 'light' : 'dark');
     mq.addEventListener('change', onChange);
