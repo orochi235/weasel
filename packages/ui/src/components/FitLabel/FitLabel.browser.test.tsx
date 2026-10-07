@@ -1,13 +1,18 @@
 import '@weasel-js/theme/tokens.css';
+import '@weasel-js/theme/faces.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { ToolPrefGroup } from '@weasel-js/core';
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, beforeAll, expect, test } from 'vitest';
 import { PropertyField } from '../Properties/PropertyField';
 import { ToggleBar } from '../ToggleBar';
 import { ToolOptionsBar } from '../ToolOptionsBar';
 import { FitLabel } from './FitLabel';
 
 // Which form fits is a question about real widths, so only a browser answers it.
+
+// Loaded rather than left to the system: without it the UI stack falls through
+// to whatever sans the machine has, and CI's DejaVu Sans overflows the inline row.
+beforeAll(() => document.fonts.load('16px Oswald'));
 
 afterEach(cleanup);
 
