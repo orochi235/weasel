@@ -12,7 +12,8 @@
  * like. Which edges get named depends only on the node order, so it is the same
  * every run.
  *
- * This is not crossing-minimization: within a rank, nodes keep the order they
+ * This is not crossing-minimization by default (`order: 'barycenter'` does
+ * reorder ranks): within a rank, nodes keep the order they
  * already have on the cross axis. An author who dragged two branches into an
  * order gets that order back, and re-running the layout is free.
  */
@@ -80,7 +81,7 @@ export function ranksOf(graph: Graph, back: ReadonlySet<string>): Map<string, nu
 
 /** The ranked layout: each edge points one rank further along `direction`.
  *  Within a rank, nodes keep their current cross-axis order, so a re-run
- *  moves nothing. */
+ *  moves nothing — except under `order: 'barycenter'`, which reorders them. */
 export const layered: LayoutFn = (graph, opts = {}) => {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
