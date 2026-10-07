@@ -20,6 +20,7 @@ export type { CanvasStackContextValue, CanvasStackSurface } from './CanvasStackC
 export { CanvasStackContext } from './CanvasStackContext';
 export type { ZoomAtOptions } from './camera';
 export { centerOn, zoomAt } from './camera';
+export type { CameraGestures } from './cameraGestures';
 export type { CameraRegistry } from './cameraRegistry';
 export {
   CameraPublishContext,

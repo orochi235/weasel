@@ -26,6 +26,7 @@ import type { AnnotationStorage, AnnotationsApi, AnnotationTargetInfo } from '..
 import type { CameraView } from '../canvas/CameraInput';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
+import { CameraGesturesContext } from '../canvas/cameraGestures';
 import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
 import { Stage } from '../canvas/Stage';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
@@ -246,6 +247,8 @@ function TrialRuntime({
 
   const stage = instrument.canvas ? undefined : instrument.stage;
   const stageHostRef = useRef<HTMLDivElement | null>(null);
+  const labGestures = useContext(CameraGesturesContext);
+  const gestures = { ...(instrument.canvas ?? stage)?.gestures, ...labGestures };
   const presented = useIsPresented(record.id);
   const placeView = useViewPlacement({
     instrument,
@@ -562,6 +565,7 @@ function TrialRuntime({
           minZoom={instrument.canvas.minZoom}
           maxZoom={instrument.canvas.maxZoom}
           ticks={ticks}
+          gestures={gestures}
         >
           {instrument.render(renderCtx)}
         </CanvasStack>
@@ -576,6 +580,7 @@ function TrialRuntime({
         onViewChange={setView}
         onResize={placeView}
         hostRef={stageHostRef}
+        gestures={gestures}
         minZoom={stage.minZoom}
         maxZoom={stage.maxZoom}
         overlay={stage.overlay?.(renderCtx)}

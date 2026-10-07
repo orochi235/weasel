@@ -5,6 +5,7 @@ import type { ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
+import { type CameraGestures, resolveGestures, touchMode } from './cameraGestures';
 import { LinkedCursor } from './LinkedCursor';
 import { DEFAULT_FRAME, type ViewportSize } from './worldSpec';
 
@@ -26,6 +27,8 @@ export interface StageProps {
   /** A yoke to join, from `useYoke()`: cameras on one yoke share their tool
    *  and gesture in flight. Omitted, this one keeps its own. */
   yoke?: Yoke;
+  /** Which gestures the camera takes; the rest reach the page. Omitted, all of them. */
+  gestures?: CameraGestures;
 }
 
 /**
@@ -64,6 +67,7 @@ export function Stage({
   overlay,
   children,
   yoke,
+  gestures,
 }: StageProps) {
   const view = normalize2DView(viewProp);
   const host = useRef<HTMLDivElement | null>(null);
@@ -124,13 +128,14 @@ export function Stage({
   return (
     <CameraScope yoke={yoke}>
       <CameraContext.Provider value={cameraCtx}>
-        <CameraInput hostRef={host} camera={camera} frame={DEFAULT_FRAME} />
+        <CameraInput hostRef={host} camera={camera} frame={DEFAULT_FRAME} gestures={gestures} />
         <div
           ref={(el) => {
             host.current = el;
             if (hostRef) hostRef.current = el;
           }}
           className="lk-stage"
+          data-lk-touch={touchMode(resolveGestures(gestures))}
         >
           <div className="lk-stage__content" style={cameraVars}>
             {children}

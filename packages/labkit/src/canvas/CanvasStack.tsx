@@ -5,6 +5,7 @@ import type { Point, ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { CameraContext, CameraInput, CameraScope, useCameraView } from './CameraInput';
 import { CanvasStackContext } from './CanvasStackContext';
+import { type CameraGestures, resolveGestures, touchMode } from './cameraGestures';
 import { LinkedCursor } from './LinkedCursor';
 import { type CanvasLayerDescriptor, useLayerScheduler } from './useLayerScheduler';
 import { resolveFrame, type ViewportSize, type WorldSpec } from './worldSpec';
@@ -30,6 +31,8 @@ export interface CanvasStackProps {
   /** A yoke to join, from `useYoke()`: cameras on one yoke share their tool
    *  and gesture in flight. Omitted, this one keeps its own. */
   yoke?: Yoke;
+  /** Which gestures the camera takes; the rest reach the page. Omitted, all of them. */
+  gestures?: CameraGestures;
   /** Frames after each of which every `timed` layer repaints — a trial clock's. */
   ticks?: (fn: () => void) => () => void;
 }
@@ -53,6 +56,7 @@ export function CanvasStack({
   children,
   yoke,
   ticks,
+  gestures,
 }: CanvasStackProps) {
   const view = normalize2DView(viewProp);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -137,10 +141,17 @@ export function CanvasStack({
     <CameraScope yoke={yoke}>
       <CameraContext.Provider value={cameraCtx}>
         <CanvasStackContext.Provider value={ctxValue}>
-          <CameraInput hostRef={containerRef} camera={camera} frame={frame} onTap={onHitTest} />
+          <CameraInput
+            hostRef={containerRef}
+            camera={camera}
+            frame={frame}
+            onTap={onHitTest}
+            gestures={gestures}
+          />
           <div
             ref={containerRef}
             className={className ? `lk-canvas-stack ${className}` : 'lk-canvas-stack'}
+            data-lk-touch={touchMode(resolveGestures(gestures))}
             style={containerStyle}
           >
             {layers.map((layer) => (

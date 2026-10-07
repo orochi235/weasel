@@ -12,6 +12,7 @@ import {
 import { useStore } from 'zustand/react';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { labAnnotationTools } from '../annotations/toolMap';
+import { type CameraGestures, CameraGesturesContext } from '../canvas/cameraGestures';
 import { CameraRegistryContext, createCameraRegistry } from '../canvas/cameraRegistry';
 import {
   LabAsideRegion,
@@ -61,7 +62,7 @@ import {
   presentStorageKey,
 } from './openLab';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
-import { hasPresentParam, PresentationContext } from './presentation';
+import { hasPresentParam, PresentationContext, useLabPresentation } from './presentation';
 import { useFocusPick } from './useFocusPick';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
@@ -139,6 +140,9 @@ interface LabBaseProps {
    *  holds a trial opened on this same seed keeps it; a changed seed replaces
    *  it. Ignored unless the lab starts presenting. */
   seed?: PresentationSeed;
+  /** Gestures every trial's camera takes, over its instrument's own one by
+   *  one — `{ wheel: false, pan: false }` lets the page scroll past an embed. */
+  gestures?: CameraGestures;
 }
 
 /** Props for `<Lab>`. With a `storageKey` the lab persists — to IndexedDB
@@ -300,6 +304,7 @@ function LabRuntime({
   tools,
   configRules,
   controls,
+  gestures,
   children,
   opened,
   startsPresenting,
@@ -320,20 +325,6 @@ function LabRuntime({
   const focusedTrialId = trials.some((t) => t.id === focusPick)
     ? focusPick
     : (trials[0]?.id ?? null);
-  // `mount` when the lab started presenting, `enter` when asked to since.
-  const [presentedBy, setPresentedBy] = useState<'mount' | 'enter' | null>(
-    startsPresenting ? 'mount' : null,
-  );
-  const presenting = presentedBy !== null;
-  const presentation = useMemo(
-    () => ({
-      active: presenting,
-      enter: () => setPresentedBy((by) => by ?? 'enter'),
-      exit: () => setPresentedBy(null),
-      trialId: presenting ? focusedTrialId : null,
-    }),
-    [presenting, focusedTrialId],
-  );
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const modeValue = useStore(store, (s) => s.mode);
   const layout = useStore(store, (s) => s.layout);
@@ -349,18 +340,8 @@ function LabRuntime({
   useLabFitWarning(labBody);
 
   useFocusPick(labBody, store, setFocusPick);
-
-  // Only a lab asked to present has a workspace to go back to.
-  useEffect(() => {
-    if (presentedBy !== 'enter' || !labBody) return;
-    const doc = labBody.ownerDocument;
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape' || event.defaultPrevented) return;
-      setPresentedBy(null);
-    };
-    doc.addEventListener('keydown', onKeyDown);
-    return () => doc.removeEventListener('keydown', onKeyDown);
-  }, [presentedBy, labBody]);
+  const presentation = useLabPresentation(startsPresenting, focusedTrialId, labBody);
+  const presenting = presentation.active;
   const workspacePanels = useMemo<PanelDescriptor[]>(
     () =>
       Object.entries(undockedPanels).map(([key, panel]) => ({
@@ -523,56 +504,58 @@ function LabRuntime({
           <LabContext.Provider value={contextValue}>
             <PresentationContext.Provider value={presentation}>
               <CameraRegistryContext.Provider value={cameras}>
-                <ClockRegistryContext.Provider value={clocks}>
-                  <ThemeProvider
-                    theme={theme}
-                    selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
-                    className={presenting ? 'lk-lab lk-lab--present' : 'lk-lab'}
-                    style={backdropStyle}
-                  >
-                    <LabShell
-                      title={title ?? 'Labkit'}
-                      mode={modeValue}
-                      {...(pages ? { pages } : {})}
-                      {...(path !== undefined ? { path } : {})}
-                      footer={
-                        hasFooterChrome ? (
-                          <>
-                            {footer}
-                            <LabFooterRegion contributions={labChromeAll} />
-                          </>
-                        ) : (
-                          footer
-                        )
-                      }
-                      header={
-                        <>
-                          <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
-                          {zoom && !presenting ? <LabZoom /> : null}
-                          {children}
-                          <LabHeaderRegion contributions={labChromeAll} />
-                          <LabThemeSwitcher />
-                        </>
-                      }
+                <CameraGesturesContext.Provider value={gestures ?? null}>
+                  <ClockRegistryContext.Provider value={clocks}>
+                    <ThemeProvider
+                      theme={theme}
+                      selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
+                      className={presenting ? 'lk-lab lk-lab--present' : 'lk-lab'}
+                      style={backdropStyle}
                     >
-                      <PanelHostContext.Provider value={panelHostsRef.current}>
-                        <LabSurface bodyRef={setLabBody}>
-                          {hasPaneChrome ? (
-                            <LabPanes contributions={labChromeAll}>
-                              <LabPalette contributions={labChromeAll} />
-                              {workspace}
-                            </LabPanes>
-                          ) : (
+                      <LabShell
+                        title={title ?? 'Labkit'}
+                        mode={modeValue}
+                        {...(pages ? { pages } : {})}
+                        {...(path !== undefined ? { path } : {})}
+                        footer={
+                          hasFooterChrome ? (
                             <>
-                              <LabPalette contributions={labChromeAll} />
-                              {workspace}
+                              {footer}
+                              <LabFooterRegion contributions={labChromeAll} />
                             </>
-                          )}
-                        </LabSurface>
-                      </PanelHostContext.Provider>
-                    </LabShell>
-                  </ThemeProvider>
-                </ClockRegistryContext.Provider>
+                          ) : (
+                            footer
+                          )
+                        }
+                        header={
+                          <>
+                            <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
+                            {zoom && !presenting ? <LabZoom /> : null}
+                            {children}
+                            <LabHeaderRegion contributions={labChromeAll} />
+                            <LabThemeSwitcher />
+                          </>
+                        }
+                      >
+                        <PanelHostContext.Provider value={panelHostsRef.current}>
+                          <LabSurface bodyRef={setLabBody}>
+                            {hasPaneChrome ? (
+                              <LabPanes contributions={labChromeAll}>
+                                <LabPalette contributions={labChromeAll} />
+                                {workspace}
+                              </LabPanes>
+                            ) : (
+                              <>
+                                <LabPalette contributions={labChromeAll} />
+                                {workspace}
+                              </>
+                            )}
+                          </LabSurface>
+                        </PanelHostContext.Provider>
+                      </LabShell>
+                    </ThemeProvider>
+                  </ClockRegistryContext.Provider>
+                </CameraGesturesContext.Provider>
               </CameraRegistryContext.Provider>
             </PresentationContext.Provider>
           </LabContext.Provider>

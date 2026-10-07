@@ -7,6 +7,7 @@ import {
   type Action,
   type ActionsRegistry,
   InputScope,
+  makePinchZoomAction,
   makeViewportZoomAction,
   PointerContextProvider,
   type PointerWorldPos,
@@ -34,6 +35,7 @@ import {
 import type { Point, ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
 import { CameraWheelContext } from './CameraWheelContext';
+import { type CameraGestures, resolveGestures } from './cameraGestures';
 import { usePublishCamera } from './cameraRegistry';
 import { clampZoomAbout, frameLocalToWorld, fromCameraView, toCameraView } from './cameraView';
 import type { ViewportSize, WorldFrame } from './worldSpec';
@@ -162,6 +164,8 @@ export interface CameraInputProps {
   /** A primary-button press released without crossing the drag threshold, at
    *  the world point it landed on. */
   onTap?: (world: Point) => void;
+  /** Which gestures the camera takes. Omitted, all of them. */
+  gestures?: CameraGestures;
 }
 
 /**
@@ -180,10 +184,12 @@ function CameraDispatch({
   camera,
   frame,
   onTap,
+  gestures,
   registry,
 }: CameraInputProps & { registry: ActionsRegistry }) {
   const frameRef = useLatest(frame);
   const onTapRef = useLatest(onTap);
+  const { pan, wheel, pinch, tap: taps } = resolveGestures(gestures);
 
   useDepSource('view', () => camera);
   useDepSource('rootView', () => camera);
@@ -191,16 +197,15 @@ function CameraDispatch({
   const actions = useMemo<Action[]>(() => {
     // Unclamped here: `camera.set` clamps, to a range widened around the
     // opening zoom, and anchors the clamp where the wheel was.
-    const zoom = makeViewportZoomAction({
-      wheel: 'plain',
-      min: 1e-9,
-      max: Number.POSITIVE_INFINITY,
-    });
-    // The wheel and the trackpad's two pinch forms only: the zoom keys listen
-    // on the window, and every trial on a page would take them at once.
-    const wheelOnly = (zoom.defaultBinding as { spec: { kind: string } }[]).filter(
-      (b) => b.spec.kind === 'wheel' || b.spec.kind === 'pinch',
-    );
+    const unclamped = { min: 1e-9, max: Number.POSITIVE_INFINITY };
+    const zoom = makeViewportZoomAction({ wheel: wheel || 'plain', ...unclamped });
+    // The wheel and the trackpad's two pinch forms (ctrl+wheel, WebKit's
+    // gesture events), in that order: the zoom keys listen on the window, and
+    // every trial on a page would take them at once.
+    const [wheelBinding, ...trackpadPinch] = (
+      zoom.defaultBinding as { spec: { kind: string } }[]
+    ).filter((b) => b.spec.kind === 'wheel' || b.spec.kind === 'pinch');
+    const zoomBindings = [...(wheel ? [wheelBinding] : []), ...(pinch ? trackpadPinch : [])];
     const tap: Action = {
       id: TAP_ID,
       label: 'Tap the canvas',
@@ -216,11 +221,14 @@ function CameraDispatch({
     };
     return [
       // A trial pans on a plain drag; the kit action binds none of its own.
-      { ...viewportDragPanAction, defaultBinding: { kind: 'drag' } },
-      { ...zoom, defaultBinding: wheelOnly as Action['defaultBinding'] },
-      tap,
+      ...(pan ? [{ ...viewportDragPanAction, defaultBinding: { kind: 'drag' } } as Action] : []),
+      ...(zoomBindings.length > 0
+        ? [{ ...zoom, defaultBinding: zoomBindings as Action['defaultBinding'] }]
+        : []),
+      ...(pinch ? [makePinchZoomAction(unclamped)] : []),
+      ...(taps ? [tap] : []),
     ];
-  }, [frameRef, onTapRef]);
+  }, [frameRef, onTapRef, pan, wheel, pinch, taps]);
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));

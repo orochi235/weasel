@@ -14,6 +14,7 @@ schedules its own layers; a foreign renderer wants rects and dirtiness only.
 | `CanvasStackContext.ts` | React context exposing the current `view` to descendants |
 | `useLayerScheduler.ts` | DPR-aware rAF scheduler; redraws dirty layers on view/state changes |
 | `CameraInput.tsx` | Pan, zoom and tap routed through weasel's gesture dispatcher; `CameraContext`; publishes the pointer |
+| `cameraGestures.ts` / `cameraTouch.less` | Which gestures a camera takes, and the `touch-action` that follows from them |
 | `cameraRegistry.ts` | Cameras by trial id, so chrome outside a trial (the lab header's zoom) can drive the focused one |
 | `cameraView.ts` | The camera as a weasel `View` over frame-local coordinates, and the anchored zoom clamp |
 | `LinkedCursor.tsx` | The crosshair on the camera's element while the pointer is over another view |
@@ -37,6 +38,7 @@ interface CanvasStackProps {
   height?: number | string;             // default '100%'
   className?: string;
   onHitTest?: (worldPos: Point) => void;  // fired on tap (no drag)
+  gestures?: CameraGestures;            // { pan, wheel: 'plain' | 'mod' | false, pinch, tap }
   children?: ReactNode;                 // rendered into the overlay layer
 }
 ```
@@ -129,6 +131,14 @@ a literal. labkit then leaves the trial's view `null` until the canvas is first
 measured and places it from `onResize` — so an instrument framing content it can
 only size against the viewport does not need a "have I centred yet" sentinel of
 its own. Reset nulls the view again, which re-frames.
+
+`gestures` (on `<CanvasStack>`, `<Stage>`, `<CameraInput>`, an instrument's
+`canvas` or `stage`, and `<Lab>`, whose keys win) turns each gesture off on its
+own: a drag pan, the wheel (`'plain'`, `'mod'` or `false`), a pinch — the
+trackpad's and two fingers' — and a tap. A gesture the camera does not bind is
+never claimed, so the page gets it: an unbound wheel scrolls, and the host's
+`touch-action` (from `data-lk-touch`) hands one finger to the page once the
+camera does not pan.
 
 Zoom is clamped to `[minZoom, maxZoom]` (defaults 0.1 / 32), settable via `CanvasStack`'s props and, for an instrument's own canvas, `CanvasCapability.minZoom` / `maxZoom`. The clamp always widens to admit whatever zoom the canvas opened at — an instrument declaring `initialView.zoom: 1600` with the default range is not clamped down to 32 on the first wheel event.
 

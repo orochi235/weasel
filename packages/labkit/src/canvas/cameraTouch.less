@@ -1,0 +1,14 @@
+// A camera's element hands the browser whatever touch its camera does not
+// take; `touchMode` in cameraGestures.ts picks the value.
+[data-lk-touch='none'] {
+  touch-action: none;
+}
+
+// One finger scrolls the page; two are the camera's pinch.
+[data-lk-touch='scroll'] {
+  touch-action: pan-x pan-y;
+}
+
+[data-lk-touch='auto'] {
+  touch-action: auto;
+}

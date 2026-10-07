@@ -139,6 +139,7 @@ export type { ContentSize, PaneSize } from './annotations/view';
 export { fitView, fromWeaselView, toWeaselView } from './annotations/view';
 export type {
   CameraContextValue,
+  CameraGestures,
   CameraRegistry,
   CameraView,
   CanvasLayerDescriptor,

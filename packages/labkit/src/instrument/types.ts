@@ -1,6 +1,7 @@
 import type { PointerContextValue } from '@weasel-js/core';
 import type { ReactNode } from 'react';
 import type { AnnotationsCapability } from '../annotations/types';
+import type { CameraGestures } from '../canvas/cameraGestures';
 import type { ViewportSize, WorldSpec } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
 import type { ClockCapability, TrialClock } from '../clock/trialClock';
@@ -90,6 +91,9 @@ export interface CanvasCapability<TS = unknown, TC = unknown> {
    *  regardless of these. */
   minZoom?: number;
   maxZoom?: number;
+  /** Which gestures the trial's camera takes; the rest reach the page.
+   *  `<Lab gestures>` overrides these one by one. Omitted, all of them. */
+  gestures?: CameraGestures;
 }
 
 /** Declares that an instrument's DOM is content of a fixed size, which the
@@ -103,6 +107,8 @@ export interface StageCapability<TS = unknown, TC = unknown> {
   initialView?: ViewTransform | ((viewport: ViewportSize) => ViewTransform);
   minZoom?: number;
   maxZoom?: number;
+  /** As `CanvasCapability.gestures`. */
+  gestures?: CameraGestures;
   /** Drawn over the content in viewport pixels, outside the camera — a legend,
    *  a floating panel, anything that must not zoom with the picture. */
   overlay?: (ctx: RenderContext<TS, TC>) => ReactNode;
