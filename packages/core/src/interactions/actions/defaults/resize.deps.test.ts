@@ -15,6 +15,7 @@
  * end-to-end rather than restating per-behavior math.
  */
 import { describe, it, expect } from 'vitest';
+import { stubDeps } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { resizeAction } from './resize';
 import type { InvocationCtx } from '@weasel-js/routing';
@@ -72,18 +73,18 @@ function makeCtx(opts: {
   sceneNodes: Record<string, { pose: unknown }>;
   anchor: ResizeAnchor;
   start: { x: number; y: number };
-  deps?: Partial<InvocationCtx['deps']>;
+  deps?: Record<string, unknown>;
 }): InvocationCtx {
   const scene = makeStubScene(opts.sceneNodes);
   return {
     world: { x: opts.start.x, y: opts.start.y },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: {
+    deps: stubDeps({
       selection: { get: () => opts.selectionIds as NodeId[] },
       scene,
       ...opts.deps,
-    },
+    }),
     drag: {
       start: opts.start,
       current: opts.start,
@@ -184,7 +185,7 @@ describe('resizeAction — behaviors[] via resizePolicy dep', () => {
       drag: { start: { x: 100, y: 100 }, current: { x: 150, y: 150 }, delta: { x: 50, y: 50 } },
     });
     handle.onEnd!(ctx, 'commit');
-    const scene = ctx.deps.scene as ReturnType<typeof makeStubScene>;
+    const scene = ctx.deps.scene as unknown as ReturnType<typeof makeStubScene>;
     const pose = scene.poses.get('a') as RectPose;
     expect(pose.width).toBe(100);
     expect(pose.height).toBe(100);
@@ -284,7 +285,7 @@ describe('resizeAction — expandIds via resizePolicy dep', () => {
 
     // Commit writes both leaves; the original 'g' pose is untouched.
     handle.onEnd!(ctx, 'commit');
-    const scene = ctx.deps.scene as ReturnType<typeof makeStubScene>;
+    const scene = ctx.deps.scene as unknown as ReturnType<typeof makeStubScene>;
     expect((scene.poses.get('leaf1') as RectPose).width).toBeCloseTo(100);
     expect((scene.poses.get('leaf2') as RectPose).width).toBeCloseTo(100);
     expect(scene.poses.get('g')).toEqual({ x: 0, y: 0, width: 0, height: 0 });
@@ -481,7 +482,7 @@ describe('resizeAction — a rotated leaf inside a group', () => {
       { x: 200, y: 100 },
     );
     handle.onEnd!(ctx, 'commit');
-    const scene = ctx.deps.scene as ReturnType<typeof makeStubScene>;
+    const scene = ctx.deps.scene as unknown as ReturnType<typeof makeStubScene>;
     const turned = scene.poses.get('turned') as RotatedPose;
     expect(turned.height).toBeCloseTo(20);
     expect(turned.width).toBeCloseTo(20);

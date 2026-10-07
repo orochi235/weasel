@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { stubDeps } from '../testUtils';
 import { setFillAction } from './setFill';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
@@ -21,7 +22,7 @@ describe('setFillAction', () => {
     const ctx: InvocationCtx = {
       world: { x: 0, y: 0 }, screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { selection: makeSelection(['a']) },
+      deps: stubDeps({ selection: makeSelection(['a']) }),
       params: { color: '#ff0000' },
     };
     const h = getInvoker().start(ctx, undefined);

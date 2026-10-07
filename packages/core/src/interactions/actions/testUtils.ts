@@ -1,4 +1,14 @@
+import type { ActionDeps } from '@weasel-js/routing';
 import type { EditAnchorsDep } from './depSchema';
+
+/**
+ * Deps for an action unit test, stubbing only the slice the action reads.
+ * Such stubs fall short of the full `DepSchema` types an action's deps carry,
+ * and this is where they are let through.
+ */
+export function stubDeps(deps: Record<string, unknown>): ActionDeps {
+  return deps as ActionDeps;
+}
 
 /**
  * Build an inert {@link EditAnchorsDep} for action unit tests. Every

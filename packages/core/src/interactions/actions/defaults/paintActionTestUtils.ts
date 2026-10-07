@@ -1,4 +1,5 @@
 import { vi, type Mock } from 'vitest';
+import { stubDeps } from '../testUtils';
 import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -82,11 +83,11 @@ export function makeCtx(opts: {
     world: { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: {
+    deps: stubDeps({
       selection: makeSelection(opts.selectionIds),
       scene: opts.scene,
       ...(opts.applyOps ? { applyOps: opts.applyOps } : {}),
-    },
+    }),
     params: opts.params,
   };
 }

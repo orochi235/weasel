@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { stubDeps } from '../testUtils';
 import {
   distributeHorizontalAction,
   distributeVerticalAction,
@@ -45,7 +46,7 @@ function runDescriptor(
   deps: { selection: ReturnType<typeof makeSelection>; scene: ReturnType<typeof makeScene>['scene'] },
   params?: Record<string, unknown>,
 ) {
-  (action.invoker as ImmediateInvoker).run(deps as Parameters<ImmediateInvoker['run']>[0], params);
+  (action.invoker as ImmediateInvoker).run(stubDeps(deps), params);
 }
 
 // ---------------------------------------------------------------------------

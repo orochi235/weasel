@@ -1,5 +1,5 @@
 import { describe, it, expectTypeOf } from 'vitest';
-import type { DepSchema } from '@weasel-js/routing';
+import type { ActionDeps, DepSchema, InvocationCtx } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { History } from '@weasel-js/history';
 import type { ActiveToolContextValue } from '@weasel-js/routing/react';
@@ -24,5 +24,17 @@ describe('DepSchema', () => {
 
   it('declares activeTool: ActiveToolContextValue', () => {
     expectTypeOf<DepSchema['activeTool']>().toEqualTypeOf<ActiveToolContextValue>();
+  });
+});
+
+describe('ActionDeps', () => {
+  it('resolves each declared dep through DepSchema', () => {
+    expectTypeOf<InvocationCtx['deps']['scene']>().toEqualTypeOf<DepSchema['scene'] | undefined>();
+    expectTypeOf<ActionDeps['selection']>().toEqualTypeOf<SelectionApi | undefined>();
+    expectTypeOf<ActionDeps['applyOps']>().toEqualTypeOf<DepSchema['applyOps'] | undefined>();
+  });
+
+  it('passes an undeclared dep through as unknown', () => {
+    expectTypeOf<ActionDeps['notADep']>().toEqualTypeOf<unknown>();
   });
 });

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { stubDeps } from '../testUtils';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildDepsFromRequires, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
@@ -43,11 +44,11 @@ describe('createOutlinesAction', () => {
   it('is enabled only while the selection holds text', () => {
     const text = { data: { text: 'a' }, pose: { x: 0, y: 0, width: 10, height: 10 } };
     const { adapter } = makeAdapter({ t: text });
-    expect(createOutlinesAction.enabled?.({ selection: selectionOf(['t']), createOutlinesAdapter: adapter }))
+    expect(createOutlinesAction.enabled?.(stubDeps({ selection: selectionOf(['t']), createOutlinesAdapter: adapter })))
       .toBe(true);
-    expect(createOutlinesAction.enabled?.({ selection: selectionOf(['shape']), createOutlinesAdapter: adapter }))
+    expect(createOutlinesAction.enabled?.(stubDeps({ selection: selectionOf(['shape']), createOutlinesAdapter: adapter })))
       .toBe(ActionDisabledReason.NotApplicable);
-    expect(createOutlinesAction.enabled?.({ selection: selectionOf([]), createOutlinesAdapter: adapter }))
+    expect(createOutlinesAction.enabled?.(stubDeps({ selection: selectionOf([]), createOutlinesAdapter: adapter })))
       .toBe(ActionDisabledReason.SelectionRequired);
   });
 

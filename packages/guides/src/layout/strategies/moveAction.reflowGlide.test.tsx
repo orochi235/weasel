@@ -10,6 +10,7 @@ import {
   createReflowTransition,
   decomposeRectPose,
   createScene,
+  type DepSchema,
   effectivePose,
   moveAction,
   useAnimator,
@@ -120,7 +121,7 @@ describe('moveAction under a reflow transition', () => {
     const grid = layout.getLayout(scene.get(a)!.parent as string);
     layout.getLayout = (id) => (id === D || id === scene.get(a)?.parent ? grid : null);
     const local = (c: InvocationCtx): InvocationCtx => {
-      c.deps.poseComposition = { compose: composeRectPose, decompose: decomposeRectPose };
+      c.deps.poseComposition = { compose: composeRectPose, decompose: decomposeRectPose } as DepSchema['poseComposition'];
       return c;
     };
     const h = (moveAction.invoker as OngoingInvoker).start(local(ctx()), {}) as OngoingHandle;

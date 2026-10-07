@@ -350,7 +350,7 @@ describe('inPlane', () => {
   it('reads the camera through the plane, so screen pixels convert at its scale', () => {
     const { seen, action } = probe();
     (action.invoker as OngoingInvoker).start(ctxOf(makeScene(), { x: 110, y: 60 }, { x: 110, y: 60 }));
-    expect((seen[0].deps.view as ViewApi).get()).toEqual({ x: 100, y: 0, scale: { x: 1, y: 1 } });
+    expect(seen[0].deps.view!.get()).toEqual({ x: 100, y: 0, scale: { x: 1, y: 1 } });
   });
 
   it('keeps world-point deps speaking the camera\'s world', () => {

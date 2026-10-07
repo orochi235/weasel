@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { stubDeps } from '../testUtils';
 import { pinchZoomAction } from './pinchZoom';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
@@ -22,7 +23,7 @@ function makeCtx(viewApi?: ViewApi, spreadOverride?: number): InvocationCtx {
     world: { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: viewApi ? { view: viewApi } : { view: { x: 0, y: 0, scale: 1 } },
+    deps: stubDeps(viewApi ? { view: viewApi } : { view: { x: 0, y: 0, scale: 1 } }),
     multiTouch: {
       centroid: { x: 100, y: 100 },
       spread: spreadOverride ?? 100,
@@ -91,7 +92,7 @@ describe('pinchZoomAction descriptor', () => {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: { view: { x: 0, y: 0, scale: 1 } },
+      deps: stubDeps({ view: { x: 0, y: 0, scale: 1 } }),
     };
     const handle = invoker.start(ctxNoMT, undefined);
     expect(handle).toEqual({});

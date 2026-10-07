@@ -19,6 +19,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { stubDeps } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import type { PoseOverrides } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
@@ -176,7 +177,7 @@ function immediate(action: Action): ImmediateInvoker {
 }
 
 function baseDeps(scene: StubScene, id: string) {
-  return {
+  return stubDeps({
     selection: { get: () => [id as NodeId] },
     scene,
     applyOps: applyOpsTo(scene),
@@ -191,7 +192,7 @@ function baseDeps(scene: StubScene, id: string) {
         return { ...data, path: transformPath(data.path, m) };
       },
     },
-  };
+  });
 }
 
 /** Drive an ongoing resize. `anchor` fixes a corner; (dx,dy) is the world

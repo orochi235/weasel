@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { stubDeps } from '../testUtils';
 import {
   alignLeftAction,
   alignRightAction,
@@ -48,7 +49,7 @@ function runDescriptor(
   action: typeof alignLeftAction,
   deps: { selection: ReturnType<typeof makeSelection>; scene: ReturnType<typeof makeScene>['scene'] },
 ) {
-  (action.invoker as ImmediateInvoker).run(deps as Parameters<ImmediateInvoker['run']>[0]);
+  (action.invoker as ImmediateInvoker).run(stubDeps(deps));
 }
 
 // ---------------------------------------------------------------------------

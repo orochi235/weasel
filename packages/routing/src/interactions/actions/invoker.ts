@@ -13,6 +13,7 @@ import type { ModifierState, ResizeAnchor } from '../../vocabulary';
 import type { ClaimableGesture } from '@weasel-js/gestures';
 
 import type { CursorSpec } from '@weasel-js/cursor';
+import type { DepSchema } from '../../index';
 
 export type { ModifierState } from '../../vocabulary';
 
@@ -232,17 +233,11 @@ export function resolveParams(
   return typeof params === 'function' ? params() : params;
 }
 
-/** Convention-shaped action dependencies bag. Actions declare which
- *  contexts they consume; the dispatcher composes them per call.
- *  Consumer-side contexts (e.g. ColorContext) plug in by extending. */
-export interface ActionDeps {
-  // Common kit contexts (all optional; actions consume what they need):
-  selection?: unknown;
-  view?: unknown;
-  scene?: unknown;
-  pointer?: unknown;
-  activeTool?: unknown;
-  // Consumer-side contexts pass through:
+/** The deps an action receives, composed per call from what it `requires`.
+ *  Each name resolves to its {@link DepSchema} entry, and is absent when no
+ *  source registered it; a name nothing has declared passes through as
+ *  `unknown`. */
+export interface ActionDeps extends Partial<DepSchema> {
   [k: string]: unknown;
 }
 

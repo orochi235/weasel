@@ -518,7 +518,7 @@ await writeFile(
   // (a) DepSchema must be the populated, merged interface, not the empty base;
   // (b) types re-exported across the package boundary must resolve to their
   //     real declarations in the sibling package, not to `any`/`never`.
-  `import type { Action, DepName, DepSchema, History, GestureSpec, SelectionApi, Op } from '@weasel-js/core';\n` +
+  `import type { Action, ActionDeps, DepName, DepSchema, History, GestureSpec, SelectionApi, Op } from '@weasel-js/core';\n` +
     `import type { Mat3 } from '@weasel-js/geom';\n` +
     `import type { History as HistoryDirect } from '@weasel-js/history';\n` +
     `type _Sel = DepSchema['selection'];\n` +
@@ -574,6 +574,12 @@ await writeFile(
     `const _augKey: keyof DepSchema = 'smokeDep';\n` +
     `declare const _augAction: Action;\n` +
     `const _augRequires: readonly DepName[] = ['smokeDep', ..._augAction.requires ?? []];\n` +
+    // An action's deps resolve each name through that same merged schema, the
+    // kit's entries and the consumer's alike. Lose the merge and both read as
+    // `unknown`, and these fail TS2322 / TS2339.
+    `declare const _augDeps: ActionDeps;\n` +
+    `const _depScene: DepSchema['scene'] | undefined = _augDeps.scene;\n` +
+    `const _depPing: number | undefined = _augDeps.smokeDep?.ping();\n` +
     // Core merges `RenderLayer` into routing's `OverlaySchema` the same way,
     // and routing's `defineTool` and `Tool` default their overlay to it — so a
     // tool routing builds must fit core's `tools` prop. If that merge is lost
@@ -595,6 +601,7 @@ await writeFile(
     `export const _key = _k;\n` +
     `export const _augK = _augKey;\n` +
     `export const _augR = _augRequires;\n` +
+    `export const _augD = [_depScene, _depPing];\n` +
     `export const _h = _viaDirect;\n` +
     siblingLines.join('') +
     siblingUse,

@@ -48,11 +48,11 @@ describe('Dispatcher.beginUiOngoing', () => {
     const action = makeOngoingAction('test', { onStart, onMove, onEnd });
     const d = createDispatcher({ getAction: (id) => id === 'test' ? action : undefined });
 
-    const ctrl = d.beginUiOngoing('test', { selection: 'sel-stub' }, { color: '#ff0000' });
+    const ctrl = d.beginUiOngoing('test', { stub: 'sel-stub' }, { color: '#ff0000' });
     expect(ctrl).not.toBeNull();
     expect(onStart).toHaveBeenCalledOnce();
     expect(onStart.mock.calls[0][0].params).toEqual({ color: '#ff0000' });
-    expect(onStart.mock.calls[0][0].deps).toEqual({ selection: 'sel-stub' });
+    expect(onStart.mock.calls[0][0].deps).toEqual({ stub: 'sel-stub' });
 
     ctrl!.update({ color: '#00ff00' });
     expect(onMove).toHaveBeenCalledOnce();

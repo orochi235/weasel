@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { stubDeps } from '../testUtils';
 import { undoAction, redoAction } from './undoRedo';
 
 describe('undoAction (descriptor)', () => {
@@ -32,7 +33,7 @@ describe('redoAction (descriptor)', () => {
 });
 
 describe('undo/redo enabled', () => {
-  const history = (canUndo: boolean, canRedo: boolean) => ({ history: { canUndo: () => canUndo, canRedo: () => canRedo } });
+  const history = (canUndo: boolean, canRedo: boolean) => stubDeps({ history: { canUndo: () => canUndo, canRedo: () => canRedo } });
 
   it('follows the history stacks', () => {
     expect(undoAction.enabled?.(history(true, false))).toBe(true);

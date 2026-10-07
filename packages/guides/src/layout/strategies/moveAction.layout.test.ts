@@ -897,7 +897,7 @@ describe('moveAction layout drop-target mode', () => {
     const { scene, layouts } = fixture;
     const ctx = (d?: Drag): InvocationCtx => {
       const c = makeCtx(scene, ['x'], d, layouts);
-      if (mode) (c.deps.layout as LayoutDep).dropTarget = mode;
+      if (mode) c.deps.layout!.dropTarget = mode;
       return c;
     };
     const invoker = moveAction.invoker;
@@ -981,7 +981,7 @@ describe('moveAction with a reflow transition', () => {
     ['C'],
   );
   const withReflow = (ctx: InvocationCtx, reflow: ReflowTransition<unknown>): InvocationCtx => {
-    (ctx.deps.layout as LayoutDep).reflow = reflow;
+    ctx.deps.layout!.reflow = reflow;
     return ctx;
   };
   const into = { start: { x: 25, y: 50 }, current: { x: 75, y: 50 }, delta: { x: 50, y: 0 } };

@@ -2,6 +2,7 @@
  * Tests for groupAction / ungroupAction descriptors and groupAction behavior.
  */
 import { describe, it, expect, vi } from 'vitest';
+import { stubDeps } from '../testUtils';
 import { groupAction, ungroupAction } from './group';
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';
@@ -366,7 +367,7 @@ describe('ungroupAction enabled', () => {
     const scene = makeScene();
     const leaf = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
     const box = scene.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
-    expect(ungroupAction.enabled?.({ scene, selection: makeSelection([leaf]) })).toBe('not-applicable');
-    expect(ungroupAction.enabled?.({ scene, selection: makeSelection([leaf, box]) })).toBe(true);
+    expect(ungroupAction.enabled?.(stubDeps({ scene, selection: makeSelection([leaf]) }))).toBe('not-applicable');
+    expect(ungroupAction.enabled?.(stubDeps({ scene, selection: makeSelection([leaf, box]) }))).toBe(true);
   });
 });

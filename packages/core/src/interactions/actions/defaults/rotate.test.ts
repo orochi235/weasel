@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { stubDeps } from '../testUtils';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 import { rotateAction } from './rotate';
 import type { InvocationCtx } from '@weasel-js/routing';
@@ -86,7 +87,7 @@ function makeCtx(
     world: overrides.world ?? { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection, scene, ...(overrides.applyOps ? { applyOps: overrides.applyOps } : {}) },
+    deps: stubDeps({ selection, scene, ...(overrides.applyOps ? { applyOps: overrides.applyOps } : {}) }),
     scene,
   } as InvocationCtx & { scene: StubScene };
 }
@@ -132,7 +133,7 @@ describe('rotateAction descriptor', () => {
       world: { x: 0, y: 0 },
       screen: { x: 0, y: 0 },
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps: {},
+      deps: stubDeps({}),
     };
     const handle = invoker.start(emptyCtx, undefined);
     expect(handle).toEqual({});
