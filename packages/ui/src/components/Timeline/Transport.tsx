@@ -1,8 +1,10 @@
 import type { ReactElement } from 'react';
 import { multiplier, qty } from '@weasel-js/quantity';
 import { DetentSlider } from '../DetentSlider';
+import { Slider } from '../Slider';
 import { PauseIcon, PlayIcon } from '../../icons';
 import s from './Timeline.module.css';
+import t from './Transport.module.css';
 
 const RATE = multiplier({ symbol: 'x' });
 
@@ -23,15 +25,27 @@ export interface TransportProps {
   onPause: () => void;
   onLoopChange: (loop: boolean | number) => void;
   onRateChange: (rate: number) => void;
+  /** Moves the playhead, in ms, as the scrub bar is dragged or stepped from
+   *  the keyboard. Omitted, there is no scrub bar. */
+  onSeek?: (playhead: number) => void;
+  /** Whether playback runs backward. */
+  reverse?: boolean;
+  /** Flips the direction. Omitted, there is no reverse switch. */
+  onReverseChange?: (reverse: boolean) => void;
 }
 
 const seconds = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
+const spokenSeconds = (ms: number): string => `${(ms / 1000).toFixed(2)} seconds`;
 const rateText = (r: number): string => qty(r, RATE).text;
 
-/** Play/pause, a loop switch, a rate slider, and the playhead over the
- *  duration in seconds. Holds no state: every control reports through a callback. */
+/** Play/pause, a reverse switch, a loop switch, a rate slider, a scrub bar,
+ *  and the playhead over the duration in seconds. Holds no state: every
+ *  control reports through a callback, and the reverse switch and scrub bar
+ *  appear only with theirs. */
 export function Transport(props: TransportProps): ReactElement {
-  const { paused, loop, rate, playhead, duration, onPlay, onPause, onLoopChange, onRateChange } = props;
+  const { paused, loop, rate, playhead, duration, onPlay, onPause, onLoopChange, onRateChange, onSeek, onReverseChange } = props;
+  const reverse = props.reverse ?? false;
+  const shown = Math.min(Math.max(playhead, 0), duration);
   const looping = loop !== false && loop !== 0;
   // The handle's scale is whatever anything holding it set, so an off-list rate
   // gets its own detent — `DetentSlider` would otherwise round it to the
@@ -50,6 +64,19 @@ export function Transport(props: TransportProps): ReactElement {
       >
         {paused ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
       </button>
+
+      {onReverseChange ? (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={reverse}
+          aria-label="Reverse"
+          className={s.transportButton}
+          onClick={() => onReverseChange(!reverse)}
+        >
+          <PlayIcon size={14} className={t.backward} />
+        </button>
+      ) : null}
 
       <button
         type="button"
@@ -81,9 +108,21 @@ export function Transport(props: TransportProps): ReactElement {
         </span>
       </div>
 
+      {onSeek ? (
+        <Slider
+          ariaLabel="Position"
+          thumbs={[{ value: shown, valueText: spokenSeconds(shown) }]}
+          min={0}
+          max={duration}
+          onInput={([thumb]) => onSeek(thumb.value)}
+          density="slim"
+          className={t.scrub}
+        />
+      ) : null}
+
       <span className={s.time}>
         <span data-testid="timeline-time">
-          {seconds(Math.min(Math.max(playhead, 0), duration))} / {seconds(duration)}
+          {seconds(shown)} / {seconds(duration)}
         </span>
         <span className={s.sizer} aria-hidden="true">
           <span>{seconds(duration)} / {seconds(duration)}</span>

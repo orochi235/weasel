@@ -81,4 +81,40 @@ describe('Transport', () => {
     render(<Transport {...props} rate={4} />);
     expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '4 times');
   });
+
+  it('offers no scrub bar or reverse switch it was given no handler for', () => {
+    render(<Transport {...props} />);
+    expect(screen.queryByRole('slider', { name: /position/i })).toBeNull();
+    expect(screen.queryByRole('switch', { name: /reverse/i })).toBeNull();
+  });
+
+  it('scrubs: a slider over the duration that speaks the playhead in seconds', () => {
+    render(<Transport {...props} playhead={480} onSeek={() => {}} />);
+    const scrub = screen.getByRole('slider', { name: /position/i });
+    expect(scrub).toHaveAttribute('aria-valuemin', '0');
+    expect(scrub).toHaveAttribute('aria-valuemax', '2000');
+    expect(scrub).toHaveAttribute('aria-valuenow', '480');
+    expect(scrub).toHaveAttribute('aria-valuetext', '0.48 seconds');
+  });
+
+  it('seeks from the keyboard', () => {
+    const onSeek = vi.fn();
+    render(<Transport {...props} playhead={480} onSeek={onSeek} />);
+    const scrub = screen.getByRole('slider', { name: /position/i });
+    fireEvent.keyDown(scrub, { key: 'ArrowRight' });
+    expect(onSeek).toHaveBeenLastCalledWith(500);
+    fireEvent.keyDown(scrub, { key: 'Home' });
+    expect(onSeek).toHaveBeenLastCalledWith(0);
+  });
+
+  it('reflects and flips the direction on the reverse switch', () => {
+    const onReverseChange = vi.fn();
+    const { rerender } = render(<Transport {...props} onReverseChange={onReverseChange} />);
+    const toggle = screen.getByRole('switch', { name: /reverse/i });
+    expect(toggle).not.toBeChecked();
+    fireEvent.click(toggle);
+    expect(onReverseChange).toHaveBeenCalledWith(true);
+    rerender(<Transport {...props} reverse onReverseChange={onReverseChange} />);
+    expect(screen.getByRole('switch', { name: /reverse/i })).toBeChecked();
+  });
 });

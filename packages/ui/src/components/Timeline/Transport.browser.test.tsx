@@ -40,6 +40,19 @@ test('the transport keeps its width as the playhead gains a digit', async () => 
   expect(await widthAt({ playhead: 10000 })).toBe(await widthAt({ playhead: 9990 }));
 });
 
+test('the scrub bar takes the slack of a transport given room', async () => {
+  const { getByRole } = render(
+    <div style={{ width: 900 }}>
+      <Transport {...base} onSeek={() => {}} onReverseChange={() => {}} />
+    </div>,
+  );
+  await document.fonts.ready;
+  const transport = getByRole('switch', { name: 'Reverse' }).parentElement as HTMLElement;
+  const thumb = getByRole('slider', { name: 'Position' });
+  const scrub = [...transport.children].find((el) => el.contains(thumb)) as HTMLElement;
+  expect(scrub.getBoundingClientRect().width).toBeGreaterThan(300);
+});
+
 test('the transport keeps its width across rates of different lengths', async () => {
   const at1 = await widthAt({ rate: 1 });
   for (const rate of [0.25, 0.5, 2, 4]) expect(await widthAt({ rate })).toBe(at1);

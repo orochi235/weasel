@@ -1,0 +1,10 @@
+/* The play glyph turned around, for the switch that runs playback backward. */
+.backward {
+  transform: scaleX(-1);
+}
+
+/* The one control in the bar with no natural width: it takes the slack. */
+.scrub {
+  flex: 1 1 auto;
+  min-width: 80px;
+}
