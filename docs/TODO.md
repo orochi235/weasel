@@ -741,6 +741,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   stops, the dialog scrim) for which the theme ships no shadow, gloss or scrim token. Each needs
   a semantic name before it can become one.
 
+- **(P2) A solid `Badge`'s white label is under 3:1 on most status fills.** `data-variant='solid'`
+  sets `--badge-fg: #fff` for every status, and measured in Chromium (`Badge.browser.test.tsx`,
+  the `WHITE_TOO_LIGHT` cases, written as `test.fails`) white reads at 2.18 on info, 2.30 on
+  success and 2.23 on warn in both modes, 1.62 on neutral in light and 2.77 on accent in dark.
+  Danger clears at 4.20; muted takes `--wzl-fg-inverse` and clears in both. The fix is a label
+  chosen from the fill's lightness — per-status tokens, or a relative color off `--badge-fill` —
+  which turns those labels dark, so it changes how every solid badge looks. When it lands, empty
+  `WHITE_TOO_LIGHT` and the cases become plain tests.
+
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
 - **(P3) `.lk-shell` falls back to the viewport's height.** It is `height:

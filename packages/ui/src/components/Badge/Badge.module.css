@@ -9,7 +9,6 @@
   font-size: var(--badge-font-size, var(--wzl-font-size-xs));
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--badge-fg, var(--wzl-fg-muted));
   --badge-status-edge: var(--wzl-border);
   /* A peer tone or a stance's accent paints over the status. */
   --badge-edge: var(--_s-accent, var(--badge-status-edge));
@@ -61,6 +60,9 @@
   align-items: baseline;
   gap: inherit;
   z-index: 1;
+  /* Text color stays off .badge: a currentColor-relative edge (muted) must resolve against the
+     surrounding text in the fill and stroke, not against solid's white label. */
+  color: var(--badge-fg, var(--wzl-fg-muted));
 }
 
 /* Status edges double as text color in the outline/subtle variants, so they
@@ -90,6 +92,9 @@
    variants (above) reuse it as the text color — re-assert the muted fg.
    Solid keeps the variant's white fg on the gray fill. */
 .badge[data-status='neutral']:not([data-variant='solid']) { --badge-fg: var(--_s-accent, var(--wzl-fg-muted)); }
+/* Muted's fill is the text color stepped down — light in dark mode — so white fails on it.
+   A tone or stance repaints the fill, and keeps the variant's white. */
+.badge[data-status='muted'][data-variant='solid']:not([data-tone], [data-stance]) { --badge-fg: var(--wzl-fg-inverse); }
 
 .badge {
   padding:
