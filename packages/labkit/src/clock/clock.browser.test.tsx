@@ -63,11 +63,9 @@ test('a timed layer repaints as the clock plays, and holds once it pauses', asyn
   // every layer — so only the clock can repaint after it.
   await wait(500);
   const a = red();
-  await wait(150);
+  await expect.poll(red).not.toBe(a);
   const b = red();
-  await wait(150);
-  expect(b).not.toBe(a);
-  expect(red()).not.toBe(b);
+  await expect.poll(red).not.toBe(b);
 
   fireEvent.click(screen.getByRole('button', { name: 'pause' }));
   await wait(100);
