@@ -865,7 +865,10 @@ only story runner in the repo.
   `useNearViewport` (`packages/forge/src/frame/useNearViewport.ts`) has a browser
   test for the margin; the reload itself is tested only against a stubbed
   observer. Confirm in the dev app that scrolling a trial away and back reloads
-  its story with the trial's config and state.
+  its story with the trial's config and state. While an `overflow` ancestor clips
+  the host to nothing its intersection ratio stays 0, so the observer reports no
+  move and `useNearViewport` keeps its last answer: a clipped trial scrolled far
+  away stays mounted until something unclips it.
 
 ---
 
