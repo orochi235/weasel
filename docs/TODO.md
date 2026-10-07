@@ -670,7 +670,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   (`packages/ui/src/overlays/portalHost.tsx`) to the provider once RAC exports it.
   The same switch lets a contained `ToastRegion` drop its own region for RAC's,
   which would make it an F6 landmark again. Still absent from RAC's index at
-  1.21.1, checked 2026-09-29.
+  1.21.1 (still `latest`) and at nightly `3.0.0-nightly-99e610236-261006`,
+  checked 2026-10-07.
 
 - **(P3) The grammar names no hover gesture.** The loupe now routes its peek key
   and its wheel through the dispatcher, but aiming the lens is still a plain
@@ -950,15 +951,6 @@ one dead `const` and four stale disable directives.
 ---
 
 ## Release-gate & build hygiene
-
-- **(P3) jsdom 30.1.1 runs patched.** From 29.0.2 on, reading a custom property no
-  ancestor sets doubles in cost with every level of DOM depth: `_getComputedPropertyValue`
-  caches only properties in `propertyDefinitions`, so `--*` reads go uncached, and
-  `getInheritedPropertyValue` re-walks the chain from each ancestor. `Select`'s
-  `--wzl-select-align` read turned one `Workshop.test.tsx` case from ~1s into ~150s.
-  `patches/jsdom+30.1.1.patch` caches custom properties too, applied by `postinstall`;
-  `Select/jsdomCustomProperty.test.ts` times out if it stops applying. Delete both, and
-  `patch-package`, once a jsdom release carries the fix.
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
