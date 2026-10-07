@@ -215,6 +215,7 @@ export default [
       'weasel/no-render-ref-write': 'error',
       'react-hooks/static-components': 'error',
       'react-hooks/use-memo': 'error',
+      'react-hooks/globals': 'error',
 
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unsafe-function-type': 'error',
@@ -252,11 +253,16 @@ export default [
      * malformed input, or asserting on a private field. The rule earns its
      * keep on shipped surface, where an `any` is a hole in the contract.
      *
-     * A probe component writing what it rendered into a ref is how a test
-     * observes a render, so render-time ref writes are the point here too.
+     * A probe component writing what it rendered into a ref or an outer
+     * variable is how a test observes a render, so render-time ref writes and
+     * `react-hooks/globals` are the point here too.
      */
     files: ['**/*.{test,spec}.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', '**/testing/**/*.{ts,tsx}'],
-    rules: { '@typescript-eslint/no-explicit-any': 'off', 'weasel/no-render-ref-write': 'off' },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      'weasel/no-render-ref-write': 'off',
+      'react-hooks/globals': 'off',
+    },
   },
   {
     files: ['**/*.{ts,tsx}'],
