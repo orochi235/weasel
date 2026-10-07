@@ -1,7 +1,7 @@
 {
-  "name": "@weasel-js/routing",
+  "name": "@weasel-js/select",
   "version": "1.8.0",
-  "description": "Binding-to-action routing: the gesture dispatcher, the action registry, tool and contribution declaration, and the eligibility rule algebra.",
+  "description": "Selection as a value: which ids a press selects, with toggle, range and anchor rules a surface configures. No React, no DOM.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
@@ -13,36 +13,14 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./react": {
-      "import": "./dist/react.js",
-      "types": "./dist/react.d.ts"
-    },
-    "./internal": {
-      "import": "./dist/internal.js",
-      "types": "./dist/internal.d.ts"
-    },
     "./package.json": "./package.json"
-  },
-  "peerDependencies": {
-    "react": ">=18"
-  },
-  "peerDependenciesMeta": {
-    "react": { "optional": true }
-  },
-  "dependencies": {
-    "@weasel-js/cursor": "1.8.0",
-    "@weasel-js/gestures": "1.8.0",
-    "@weasel-js/history": "1.8.0",
-    "@weasel-js/modes": "1.8.0",
-    "@weasel-js/react": "1.8.0",
-    "@weasel-js/select": "1.8.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/orochi235/weasel.git",
-    "directory": "packages/routing"
+    "directory": "packages/select"
   },
   "bugs": {
     "url": "https://github.com/orochi235/weasel/issues"

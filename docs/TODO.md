@@ -590,6 +590,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
+- **(P3) Range selection on the canvas.** `@weasel-js/select` ranges over an `order` the caller
+  supplies, and a canvas has none of its own, so core's `useSelection` never ranges and keeps no
+  anchor. The order could be z-order, tree order, or a layer panel's row order handed across;
+  which one is the open question, not the plumbing.
+
+- **(P3) Should `LayerList` toggle on shift, or range like `Tree`?** `LayerList` follows the
+  canvas convention (shift-press toggles a row), where `Tree`, Finder and most layer panels range
+  on shift and toggle on Cmd/Ctrl. Changing it is its `PRESS_POLICY`; the question is which
+  convention a layer panel beside a canvas should follow.
+
 - **(P3) Does disabled get its own signal, now that emphasis is an alpha?** Disabled is
   `opacity: 0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled
   control and a subtle label can read alike.

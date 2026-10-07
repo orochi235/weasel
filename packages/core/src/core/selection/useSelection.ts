@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useLatest } from '@weasel-js/react';
+import { createSelectionStore, intentOf, select, type SelectionStore as Store } from '@weasel-js/select';
 import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
 
@@ -13,11 +14,7 @@ export type { SelectionApi, SelectionMode, SelectionExtendKey };
 
 /** Somewhere selection can live outside this hook. `Scene` satisfies it;
  *  so does any store with the same three methods. */
-export interface SelectionStore {
-  getSelection(): readonly NodeId[];
-  setSelection(ids: readonly NodeId[]): void;
-  subscribe(listener: () => void): () => void;
-}
+export type SelectionStore = Store<NodeId>;
 
 /** Options for {@link useSelection}. */
 export interface UseSelectionOptions {
@@ -40,24 +37,6 @@ export interface UseSelectionOptions {
   lock?: boolean;
 }
 
-/** Where a hook with no `scene` keeps its selection, so `get()` reads one
- *  store either way and a write is visible before the re-render it causes. */
-function createLocalStore(initial: readonly NodeId[]): SelectionStore {
-  let ids: readonly NodeId[] = initial;
-  const listeners = new Set<() => void>();
-  return {
-    getSelection: () => ids,
-    setSelection: (next) => {
-      ids = next;
-      for (const l of listeners) l();
-    },
-    subscribe: (l) => {
-      listeners.add(l);
-      return () => { listeners.delete(l); };
-    },
-  };
-}
-
 /**
  * Default implementation of the `getSelection` / `setSelection` adapter
  * contract every action hook (delete, duplicate, nudge, group, ...) requires.
@@ -78,7 +57,9 @@ function createLocalStore(initial: readonly NodeId[]): SelectionStore {
  */
 export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
   const { mode = 'single', extend = 'shift', initial = [], lock = false, scene } = opts;
-  const [local] = useState(() => createLocalStore([...initial]));
+  // Without a `scene` the hook still keeps its ids in a store, so `get()` reads one store either
+  // way and a write is visible before the re-render it causes.
+  const [local] = useState(() => createSelectionStore<NodeId>([...initial]));
   const store = scene ?? local;
   const initialRef = useRef(initial);
 
@@ -125,8 +106,7 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
       contains: (id) => get().includes(id),
       applyClick(id, modifiers) {
         const { mode: m, extend: key } = optsRef.current;
-        if (m === 'multi' && modifiers[key]) set(get().includes(id) ? without(id) : [...get(), id]);
-        else set([id]);
+        set([...select({ ids: get(), anchor: null }, id, intentOf(modifiers, { mode: m, toggle: key })).ids]);
       },
       adapterMethods: {
         getSelection: () => get(),

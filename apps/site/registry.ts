@@ -681,6 +681,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/HistoryDemo.tsx',
   },
   {
+    id: 'select',
+    title: 'Selection rules',
+    package: 'select',
+    description: "`@weasel-js/select` on its own, with no canvas: a list whose clicks go through `intentOf` and `select`. `intentOf(modifiers, policy)` reads a press as replace, toggle or range under a policy naming the keys, and the switch at the top trades a list's convention (Cmd/Ctrl toggles, shift ranges from the anchor) for a canvas's (shift toggles). `select(state, id, intent, { order, eligible })` applies it to `{ ids, anchor }`, shown beside the list. A range walks `order` and keeps its anchor; any other press moves the anchor to the row pressed. Background is locked, so `eligible` turns it away: a range passes over it, a toggle drops it from the selection, and pressing it selects it alone.",
+    hint: 'Click a row, then shift-click another to range; Cmd/Ctrl-click to toggle. Click Background, then switch to the canvas convention and shift-click.',
+    load: () => import('./demos/SelectDemo').then((m) => m.SelectDemo),
+    path: 'apps/site/demos/SelectDemo.tsx',
+  },
+  {
     id: 'geom',
     title: 'Curve geometry',
     package: 'geom',

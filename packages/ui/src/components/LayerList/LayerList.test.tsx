@@ -359,6 +359,16 @@ describe('LayerList keyboard', () => {
     expect(onSelect).toHaveBeenLastCalledWith(['b', 'c']);
   });
 
+  it('selects the row Shift+arrow reaches when the anchor is hidden in a collapsed branch', () => {
+    const onSelect = vi.fn();
+    list({ items: TREE, selectedIds: [], onSelect });
+    act(() => row('One').focus());
+    fireEvent.keyDown(row('Group'), { key: 'ArrowLeft' });
+    expect(screen.queryByText('One')).toBeNull();
+    fireEvent.keyDown(row('Group'), { key: 'ArrowDown', shiftKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['b']);
+  });
+
   it('moves a row with Alt+arrows, as a drag of it would', () => {
     const onReorder = vi.fn();
     list({ onReorder });

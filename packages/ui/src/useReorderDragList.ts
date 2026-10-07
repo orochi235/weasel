@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
 import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
+import type { SelectModifiers } from '@weasel-js/select';
 
 /** One row in a reorderable list. */
 export interface ReorderItem {
@@ -40,6 +41,11 @@ export interface PressModifiers {
   ctrlKey: boolean;
   metaKey: boolean;
   altKey: boolean;
+}
+
+/** A press's modifiers as `@weasel-js/select` reads them. */
+export function selectModifiers(mods: PressModifiers): SelectModifiers {
+  return { shift: mods.shiftKey, meta: mods.metaKey, ctrl: mods.ctrlKey };
 }
 
 /**
