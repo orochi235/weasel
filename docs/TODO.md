@@ -980,6 +980,13 @@ one dead `const` and four stale disable directives.
     unchanged text command each frame. A layer-level skip for a HUD whose
     widgets are all unchanged would need `content` painters kept out of it.
 
+- **(P3) Four abandoned-render tests suspend inside a sync `act`.** React warns "A
+  component suspended inside an `act` scope, but the `act` call was not awaited" from
+  `refs.abandon.test.tsx`, `useGestureDispatcher.abandon.test.tsx`, `useTools.test.tsx`
+  (all in `packages/routing`) and `packages/react/src/useLatest.test.tsx`. They pass;
+  awaiting the `act` that suspends would silence it, once each is checked to still
+  assert the abandoned render rather than the retry.
+
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op factories, shape kinds and the `features` presets; public exports remain uncovered.
 
 - **(P2) What still breaks the batch, now that a rect clip does not.** A group
