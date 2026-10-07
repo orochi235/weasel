@@ -43,7 +43,7 @@ function LayerListDemoInner() {
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-      <SceneCanvas features={['pick']}
+      <SceneCanvas features={['outline']}
         width={W} height={H}
         className="ckd-canvas"
         scene={scene}

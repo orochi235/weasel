@@ -64,7 +64,7 @@ function PointSnapDemoInner() {
 
   return (
     <SceneCanvas
-      features={['transform']}
+      features={['resize']}
       ref={canvasRef}
       width={W}
       height={H}
@@ -85,7 +85,6 @@ function PointSnapDemoInner() {
             fill: { color: p.color },
           }],
         },
-        selectionOverlay: { rotationHandle: false },
       }}
     >
       <ResizePolicyBridge />

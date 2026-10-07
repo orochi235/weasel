@@ -45,7 +45,7 @@ function MultiSelectDemoInner() {
   }, []);
 
   return (
-    <SceneCanvas features={['pick', 'move', 'transform']}
+    <SceneCanvas features={['outline', 'move', 'transform']}
       ref={canvasRef}
       width={W}
       height={H}

@@ -244,7 +244,7 @@ function AnimationDemoInner({ animator }: { animator: Animator }) {
         </label>
         <span style={{ opacity: 0.7 }}>Tip: select one card to see the breathing pulse.</span>
       </div>
-      <SceneCanvas features={['pick', 'move']}
+      <SceneCanvas features={['outline', 'move']}
         width={W}
         height={H}
         className="ckd-canvas"
