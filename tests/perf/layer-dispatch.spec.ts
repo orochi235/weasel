@@ -19,9 +19,15 @@
  *   - `composite` — the live layer plus `N` screen-space layers of one
  *                   canvas-sized image each, standing in for a cached layer
  *                   texture: one texture bind, one quad and a full-canvas fill
- *                   with blending per layer. It does not price re-rendering a
- *                   layer into its texture when it changes, nor the texture
+ *                   with blending per layer. It does not price the texture
  *                   memory (a 2560x1600 RGBA layer is 16 MB).
+ *   - `submitDirty`    — `submit` with the first layer's `deps` changing every
+ *                        frame, so its command tree is rebuilt too.
+ *   - `compositeDirty` — `composite` with the first layer changing every frame:
+ *                        its `M` commands draw into an offscreen buffer as a
+ *                        group with one copy effect, which is then composited.
+ *                        The copy is one full-buffer pass a real layer texture
+ *                        would not need, so this is an upper bound.
  *
  * The composite quads cycle through 8 distinct bitmaps rather than holding 64
  * canvas-sized textures. A run of image quads shares one draw until it runs out of
@@ -54,7 +60,7 @@ const CMDS = ladder(process.env.WEASEL_PERF_CMDS, [10, 30, 100, 300, 1000]);
 
 const RUNS = rounds(3);
 
-const VARIANTS = ['control', 'submit', 'composite'] as const;
+const VARIANTS = ['control', 'submit', 'composite', 'submitDirty', 'compositeDirty'] as const;
 type Variant = (typeof VARIANTS)[number];
 
 interface Cell { run: number; layers: number; cmds: number; variant: Variant; perFrameMs: number; cpuMs: number }
@@ -99,7 +105,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
     cells.push({ run: c.run, layers: c.layers, cmds: c.cmds, variant: c.variant, perFrameMs: c.perFrameMs, cpuMs: c.cpuMs });
     console.log(
       `  ${String(c.index).padStart(3)}/${total}  run ${c.run}  `
-      + `${String(c.layers).padStart(2)} x ${String(c.cmds).padStart(4)}  ${c.variant.padEnd(9)}`
+      + `${String(c.layers).padStart(2)} x ${String(c.cmds).padStart(4)}  ${c.variant.padEnd(14)}`
       + ` ${c.perFrameMs.toFixed(3).padStart(8)} ms/frame  cpu ${c.cpuMs.toFixed(3).padStart(7)} ms`
       + `  ${((Date.now() - started) / 1000).toFixed(0).padStart(5)} s`,
     );
@@ -118,7 +124,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
       // One import of the renderer barrel, so the font registry the renderer
       // reads is the one written here; `render.ts` reaches the same module.
       const base = `/weasel/@fs${root}`;
-      const { WeaselRenderer, registerFont } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
+      const { WeaselRenderer, registerFont, registerEffect } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
       const { drawLayers } = await import(/* @vite-ignore */ `${base}/packages/core/src/core/layers/render.ts`);
       const { makeKindBuilders, imageBitmaps } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/kinds.ts`);
       const { timeInterleaved } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);
@@ -194,16 +200,35 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
         }],
       };
       const constDeps = [1] as const;
+      /** Bumped once a frame: what a dirty layer's `deps` read. */
+      let frameNo = 0;
+      const dirtyDeps = () => [frameNo];
+      const copy = [{
+        program: registerEffect('perf:copy', `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_source;
+out vec4 outColor;
+void main() { outColor = texture(u_source, v_uv); }
+`),
+      }];
 
       function stackFor(variant: string, n: number, m: number): Layer[] {
         const out: Layer[] = [];
-        if (variant === 'submit') {
+        const dirty = variant === 'submitDirty' || variant === 'compositeDirty';
+        if (variant === 'submit' || variant === 'submitDirty') {
           for (let l = 0; l < n; l++) {
             const cmds = Array.from({ length: m }, (_, j) => leaf(l * 7919 + j));
-            out.push({ id: `L${l}`, label: `L${l}`, draw: () => cmds, deps: () => constDeps });
+            const deps = dirty && l === 0 ? dirtyDeps : () => constDeps;
+            out.push({ id: `L${l}`, label: `L${l}`, draw: () => cmds, deps });
           }
-        } else if (variant === 'composite') {
+        } else if (variant === 'composite' || variant === 'compositeDirty') {
           for (let l = 0; l < n; l++) {
+            if (dirty && l === 0) {
+              const cmds = [{ kind: 'group', effects: copy, children: Array.from({ length: m }, (_, j) => leaf(j)) }];
+              out.push({ id: 'L0', label: 'L0', draw: () => cmds, deps: dirtyDeps });
+              continue;
+            }
             const cmds = [{ kind: 'image', image: layerTextures[l % layerTextures.length], x: 0, y: 0, w, h }];
             out.push({ id: `L${l}`, label: `L${l}`, space: 'screen', draw: () => cmds, deps: () => constDeps });
           }
@@ -224,6 +249,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
             const stacks = new Map<string, { layers: Layer[]; cache: Map<string, unknown> }>();
             for (const v of variants) stacks.set(v, { layers: stackFor(v, n, m), cache: new Map() });
             const frame = (v: string) => {
+              frameNo += 1;
               const s = stacks.get(v)!;
               renderer.render(drawLayers(s.layers, null, {}, undefined, view, dims, s.cache), identity);
             };
@@ -305,18 +331,23 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
     `median of ${RUNS} runs, ms per frame over the control (the live layer alone).`,
     '"cpu" is the renderer\'s own render() time; "draws" counts draw calls.',
     '',
-    '| layers | cmds | control | submit | composite | submit cpu | composite cpu | draws s / c | composite / submit |',
-    '|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
+    '"dirty" redraws the first layer every frame: submitted again, or drawn into its texture.',
+    '',
+    '| layers | cmds | control | submit | composite | submit dirty | composite dirty | submit cpu | composite cpu | draws s / c | composite / submit | dirty c / s |',
+    '|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
   ];
   for (const n of LAYERS) {
     for (const m of CMDS) {
       const s = over(n, m, 'submit');
       const c = over(n, m, 'composite');
+      const sd = over(n, m, 'submitDirty');
+      const cd = over(n, m, 'compositeDirty');
       lines.push(
         `| ${String(n).padStart(2)} | ${String(m).padStart(4)} | ${f(med(frames(n, m, 'control')), 6, 3)}`
-        + ` | ${f(s, 7, 3)} | ${f(c, 7, 3)} | ${f(med(cpus(n, m, 'submit')), 7, 3)} | ${f(med(cpus(n, m, 'composite')), 7, 3)}`
+        + ` | ${f(s, 7, 3)} | ${f(c, 7, 3)} | ${f(sd, 7, 3)} | ${f(cd, 7, 3)}`
+        + ` | ${f(med(cpus(n, m, 'submit')), 7, 3)} | ${f(med(cpus(n, m, 'composite')), 7, 3)}`
         + ` | ${String(draws(n, m, 'submit')).padStart(4)} / ${String(draws(n, m, 'composite')).padStart(3)}`
-        + ` | ${f(c / s, 6, 2)} |`,
+        + ` | ${f(c / s, 6, 2)} | ${f(cd / sd, 6, 2)} |`,
       );
     }
   }
@@ -344,6 +375,8 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
       }
       items.submitOverControl = metric(over(n, m, 'submit'), 'ms', 'medians');
       items.compositeOverControl = metric(over(n, m, 'composite'), 'ms', 'medians');
+      items.submitDirtyOverControl = metric(over(n, m, 'submitDirty'), 'ms', 'medians');
+      items.compositeDirtyOverControl = metric(over(n, m, 'compositeDirty'), 'ms', 'medians');
       run.item(`${n}x${m}`, items, { layers: n, cmds: m });
     }
   }
