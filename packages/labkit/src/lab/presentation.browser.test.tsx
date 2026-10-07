@@ -117,3 +117,37 @@ test('entering and leaving keeps every trial’s canvas element', async () => {
   expect(canvases()).toEqual(before);
   expect(canvases().filter(hasBox)).toHaveLength(2);
 });
+
+const Centered: Instrument = {
+  ...Painted,
+  name: 'Centered',
+  canvas: {
+    layers: Painted.canvas?.layers ?? [],
+    initialView: (size) => ({ zoom: 1, pan: { x: size.width / 2, y: size.height / 2 } }),
+  },
+};
+
+test('entering refits the view to the presented box, and leaving gives the tile its own back', async () => {
+  const { container } = render(
+    <div className="lk-present-frame">
+      <Lab instruments={[Centered]} defaultInstrument="Centered">
+        <Capture />
+      </Lab>
+    </div>,
+  );
+  await act(async () => lab?.addTrial('Centered'));
+  const focused = () => lab?.trials.find((t) => t.id === lab?.focusedTrialId);
+  await expect.poll(() => focused()?.view ?? null).not.toBeNull();
+  const tileView = focused()?.view;
+
+  await act(async () => presentation?.enter());
+  const presentedBox = box(container.querySelector('[data-lk-presented] .lk-canvas-stack'));
+  expect(presentedBox?.width).toBeGreaterThan(0);
+  expect(focused()?.view).toEqual({
+    zoom: 1,
+    pan: { x: (presentedBox?.width ?? 0) / 2, y: (presentedBox?.height ?? 0) / 2 },
+  });
+
+  await act(async () => presentation?.exit());
+  expect(focused()?.view).toEqual(tileView);
+});

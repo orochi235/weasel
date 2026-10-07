@@ -27,9 +27,9 @@ import type { CameraView } from '../canvas/CameraInput';
 import { CameraWheelContext, type CameraWheelSlot } from '../canvas/CameraWheelContext';
 import { CanvasStack } from '../canvas/CanvasStack';
 import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
-import { fitStage, Stage } from '../canvas/Stage';
+import { Stage } from '../canvas/Stage';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
-import { applyCamera, type ViewportSize } from '../canvas/worldSpec';
+import { applyCamera } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
 import { ClockRegistryContext, TrialClockContext } from '../clock/clockRegistry';
 import { createTrialClock } from '../clock/trialClock';
@@ -46,6 +46,7 @@ import type {
 } from '../instrument/types';
 import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
+import { useIsPresented } from '../lab/presentation';
 import { LayerList, type LayerListItem, moveLayers } from '../passthrough/weasel-ui';
 import { LabStoreContext, TrialIdProvider } from '../state/context';
 import type { LabStore } from '../state/store';
@@ -57,6 +58,7 @@ import { stateOp } from '../undo/stateOp';
 import { LoupeSwitchContext } from './loupeSwitch';
 import type { LoupeBindings, UndoBindings } from './TrialChrome';
 import { TrialChrome } from './TrialChrome';
+import { useViewPlacement } from './useViewPlacement';
 
 /** Props for `<Trial>`. */
 export interface TrialProps {
@@ -242,18 +244,16 @@ function TrialRuntime({
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
 
-  // A function `initialView` needs the canvas size, so `trialOps` leaves the
-  // view null and the first measurement resolves it. Reset nulls it again,
-  // which re-frames — so the guard is the null itself, not a "have I run" flag.
   const stage = instrument.canvas ? undefined : instrument.stage;
-  const placeView = (size: ViewportSize): void => {
-    const declared =
-      instrument.canvas?.initialView ??
-      (stage ? (stage.initialView ?? ((vp: ViewportSize) => fitStage(stage.size, vp))) : undefined);
-    if (typeof declared !== 'function') return;
-    if (record.view != null) return;
-    setView(declared(size));
-  };
+  const stageHostRef = useRef<HTMLDivElement | null>(null);
+  const presented = useIsPresented(record.id);
+  const placeView = useViewPlacement({
+    instrument,
+    view: record.view,
+    setView,
+    presented,
+    viewport: instrument.canvas ? canvasContainerRef : stageHostRef,
+  });
 
   // The capability's own `targets` thunk, re-read on every call: a target
   // resizing or gaining a dependency must not need the store rebuilt. Held in
@@ -575,6 +575,7 @@ function TrialRuntime({
         view={view2d ?? DEFAULT_VIEW}
         onViewChange={setView}
         onResize={placeView}
+        hostRef={stageHostRef}
         minZoom={stage.minZoom}
         maxZoom={stage.maxZoom}
         overlay={stage.overlay?.(renderCtx)}

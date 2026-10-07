@@ -23,6 +23,11 @@ export function usePresentation(): Presentation {
   return value;
 }
 
+/** Whether the trial `trialId` is the one its lab is presenting. */
+export function useIsPresented(trialId: string): boolean {
+  return useContext(PresentationContext)?.trialId === trialId;
+}
+
 /** Whether the trial `trialId` is the one its lab is presenting, and a ref for
  *  its root: while presented, the lab's shared surface is scoped to it, so the
  *  tiles hidden behind it stop painting. */
@@ -30,7 +35,7 @@ export function usePresentedTrial(trialId: string): {
   presented: boolean;
   ref: (el: HTMLElement | null) => void;
 } {
-  const presented = useContext(PresentationContext)?.trialId === trialId;
+  const presented = useIsPresented(trialId);
   const surface = useSurfaceOptional();
   const [el, ref] = useState<HTMLElement | null>(null);
   useLayoutEffect(() => {
