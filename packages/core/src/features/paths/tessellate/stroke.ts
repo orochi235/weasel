@@ -3,6 +3,9 @@ import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline, trimPolyline } from '@weasel-js/geom/tessellate';
 import { splitForDash } from './dash';
+import {
+  type StrokeMetric, coordsOutOfMetric, polylineIntoMetric, rectIntoMetric,
+} from './metric';
 
 /** Options for stroke tessellation. */
 export interface StrokeOptions {
@@ -15,6 +18,14 @@ export interface StrokeOptions {
    */
   startInset?: number;
   endInset?: number;
+  /**
+   * Build the ribbon in this metric's space and map it back out, so the
+   * transform it was derived from draws it at an exact screen width — see
+   * `./metric`. Width, dash and insets are then lengths in that space. The
+   * path is flattened in world first, so the ribbon follows the same
+   * vertices its fill does.
+   */
+  metric?: StrokeMetric;
 }
 
 const EMPTY_MESH: Mesh = {
@@ -78,9 +89,11 @@ export function tessellateStroke(
   // so the ribbon's center alignment lands the stroke on the desired side of
   // the original geometric edge. Arbitrary paths handle alignment via stencil
   // clipping at the renderer level (not here).
-  let workingPath = path;
-  if (path.kind === 'rect' && align !== 'center') {
-    const aligned = alignedStrokeRect(path, align, width);
+  const metric = opts.metric;
+  const rectInMetric = metric && path.kind === 'rect' ? rectIntoMetric(path, metric) : null;
+  let workingPath: Path = rectInMetric ?? path;
+  if (workingPath.kind === 'rect' && align !== 'center') {
+    const aligned = alignedStrokeRect(workingPath, align, width);
     workingPath = {
       kind: 'rect',
       x: aligned.x,
@@ -91,6 +104,7 @@ export function tessellateStroke(
   }
 
   const polylines = extractPolylines(workingPath, opts);
+  if (metric && !rectInMetric) for (const pl of polylines) polylineIntoMetric(pl, metric);
   // Derive per-polyline-point widths by lerping vertexWidths across
   // anchor pairs using each point's anchorT. When vertexWidths is absent
   // or invalid (length mismatch / non-finite values), polyline.widths is
@@ -118,8 +132,10 @@ export function tessellateStroke(
     }
   }
 
+  const vertices = new Float32Array(verts);
+  if (metric) coordsOutOfMetric(vertices, metric);
   return {
-    vertices: new Float32Array(verts),
+    vertices,
     indices: new Uint32Array(idx),
     anchorA: new Uint32Array(anchorA),
     anchorB: new Uint32Array(anchorB),

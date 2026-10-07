@@ -21,6 +21,7 @@ import {
 import { getMarker, markerGeneration } from '../../core/strokeMarkers';
 import { markerKeyOf } from '../../core/markerInset';
 import { STROKE_CONFIGS_PER_PATH } from './strokeMeshCache';
+import { metricKey, type StrokeMetric } from 'features/paths/tessellate/metric';
 
 interface Entry {
   readonly heads: MarkerHead[];
@@ -65,7 +66,8 @@ function mapFor(path: Path, source: Stroke, reads: string | null): Map<string, E
 
 /**
  * The marker commands for `path` under `stroke`, whose lengths are already
- * resolved to world units. `source` is the stroke before that resolution.
+ * resolved. `source` is the stroke before that resolution. Under the ribbon's
+ * `metric` those lengths are in its space, `pxPerUnit` screen pixels apiece.
  */
 export function cachedMarkerCommands(
   path: Path,
@@ -73,6 +75,8 @@ export function cachedMarkerCommands(
   stroke: Stroke,
   strokeWidth: number,
   flattenTolerance: number | undefined,
+  metric?: StrokeMetric,
+  pxPerUnit = 1,
 ): PathDrawCommand[] {
   if (stroke.markerStart === undefined && stroke.markerMid === undefined && stroke.markerEnd === undefined) {
     return [];
@@ -87,18 +91,36 @@ export function cachedMarkerCommands(
     refKey(stroke.markerMid),
     refKey(stroke.markerEnd),
     reads ?? '',
+    metricKey(metric),
+    metric ? pxPerUnit : '',
   ].join('|');
   let entry = map.get(key);
   if (entry === undefined) {
-    const heads = markerHeads(path, stroke, strokeWidth, flattenTolerance);
-    entry = { heads, paint: stroke.paint, cmds: headCommands(heads, stroke) };
+    const heads = markerHeads(path, stroke, strokeWidth, flattenTolerance, metric);
+    entry = { heads, paint: stroke.paint, cmds: commandsFor(heads, stroke, metric, pxPerUnit) };
     if (map.size >= STROKE_CONFIGS_PER_PATH) map.clear();
     map.set(key, entry);
   } else if (entry.paint !== stroke.paint) {
     entry.paint = stroke.paint;
-    entry.cmds = headCommands(entry.heads, stroke);
+    entry.cmds = commandsFor(entry.heads, stroke, metric, pxPerUnit);
   }
   return entry.cmds;
+}
+
+/** A head built in a metric's space is in world units once placed, but its
+ *  outline width is still a length in that space — so it goes out as the
+ *  screen width it stands for, and is stroked exactly like the line. */
+function commandsFor(
+  heads: MarkerHead[], stroke: Stroke, metric: StrokeMetric | undefined, pxPerUnit: number,
+): PathDrawCommand[] {
+  const cmds = headCommands(heads, stroke);
+  if (metric === undefined) return cmds;
+  return cmds.map((cmd) => {
+    const width = cmd.stroke?.width;
+    return typeof width === 'number'
+      ? { ...cmd, stroke: { ...cmd.stroke, width: { px: width * pxPerUnit } } }
+      : cmd;
+  });
 }
 
 /** Test helper. Do not call from product code. */

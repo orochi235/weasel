@@ -12,6 +12,7 @@ import type { Path } from '@weasel-js/core';
 import type { Stroke } from '@weasel-js/paint';
 import { tessellateStroke, resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { strokeInsets } from '../../core/markerInset';
+import { metricKey, type StrokeMetric } from 'features/paths/tessellate/metric';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 
 /**
@@ -53,7 +54,7 @@ let cache = new WeakMap<Path, Map<string, StrokeEntry>>();
  *  triangles at draw time. Marker *identity* is absent too — only the
  *  resolved trim distance affects these triangles, so two heads with the
  *  same inset share one entry. */
-function configKey(stroke: Stroke, flattenTolerance: number | undefined): string {
+function configKey(stroke: Stroke, flattenTolerance: number | undefined, metric: StrokeMetric | undefined): string {
   const width = resolveStrokeWidth(stroke.width ?? 1, 1);
   const insets = strokeInsets(stroke, width);
   return [
@@ -67,15 +68,18 @@ function configKey(stroke: Stroke, flattenTolerance: number | undefined): string
     flattenTolerance ?? '',
     insets.start,
     insets.end,
+    metricKey(metric),
   ].join('|');
 }
 
-/** The tessellated ribbon for `path` under `stroke`. The same `Mesh` object
- *  comes back for as long as the entry lives. */
+/** The tessellated ribbon for `path` under `stroke`, built in `metric`'s
+ *  space when one is given. The same `Mesh` object comes back for as long as
+ *  the entry lives. */
 export function strokeMesh(
   path: Path,
   stroke: Stroke,
   flattenTolerance: number | undefined,
+  metric?: StrokeMetric,
 ): Mesh {
   let byConfig = cache.get(path);
   if (byConfig === undefined) {
@@ -83,7 +87,7 @@ export function strokeMesh(
     cache.set(path, byConfig);
   }
 
-  const key = configKey(stroke, flattenTolerance);
+  const key = configKey(stroke, flattenTolerance, metric);
   const entry = byConfig.get(key);
   if (entry !== undefined && entry.vertexWidths === stroke.vertexWidths) {
     return entry.mesh;
@@ -95,6 +99,7 @@ export function strokeMesh(
     flattenTolerance,
     startInset: insets.start,
     endInset: insets.end,
+    metric,
   });
   // Only a new key grows the map; replacing one under a churning
   // `vertexWidths` must not evict the other configurations alongside it.

@@ -14,6 +14,7 @@ import { getMarker, type MarkerEntry, type MarkerPaint } from '../../core/stroke
 import { markerKeyOf, resolveMarkerSize } from '../../core/markerInset';
 import { extractPolylines } from '@weasel-js/geom/tessellate';
 import { markerSites, type MarkerSite } from './markerSites';
+import { coordsOutOfMetric, polylineIntoMetric, type StrokeMetric } from './tessellate/metric';
 
 /** Rotate + translate a marker's geometry onto its site. */
 function placed(path: Path, site: MarkerSite): PolygonPath {
@@ -46,13 +47,15 @@ export interface MarkerHead {
  * Every marker head for `path` under `stroke`, placed but unpainted.
  * `strokeWidth` is the already width-resolved stroke width; `flattenTolerance`
  * matches what the ribbon used, so heads land on the same flattened vertices
- * the stroke did.
+ * the stroke did. Given the ribbon's `metric`, heads are placed and sized in
+ * its space too and come back in world units, so they meet the line they cap.
  */
 export function markerHeads(
   path: Path,
   stroke: Stroke,
   strokeWidth: number,
   flattenTolerance: number | undefined,
+  metric?: StrokeMetric,
 ): MarkerHead[] {
   const want = {
     start: stroke.markerStart !== undefined,
@@ -66,6 +69,7 @@ export function markerHeads(
 
   const out: MarkerHead[] = [];
   for (const pl of extractPolylines(path, { flattenTolerance })) {
+    if (metric) polylineIntoMetric(pl, metric);
     for (const site of markerSites(pl, want)) {
       const ref = refFor(site.role);
       if (ref === undefined) continue;
@@ -73,7 +77,9 @@ export function markerHeads(
       if (entry === undefined) continue;
       const size = resolveMarkerSize(ref, strokeWidth);
       const angle = entry.orient === undefined || entry.orient === 'auto' ? site.angle : entry.orient;
-      out.push({ entry, size, path: placed(entry.path({ size, stroke }), { ...site, angle }) });
+      const head = placed(entry.path({ size, stroke }), { ...site, angle });
+      if (metric) coordsOutOfMetric(head.coords, metric);
+      out.push({ entry, size, path: head });
     }
   }
   return out;

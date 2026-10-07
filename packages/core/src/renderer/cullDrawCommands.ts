@@ -108,9 +108,18 @@ function pathMisses(path: Path, stroke: Stroke | undefined, m: GlMat3, box: Box)
 /** How far outside the geometry a stroke can paint, in the path's own units.
  *  A full width rather than half covers `'outer'` alignment, which the
  *  renderer draws as a doubled ribbon; the miter limit covers every join. A
- *  marker head sits on a vertex, so its reach is measured from the hull too. */
+ *  marker head sits on a vertex, so its reach is measured from the hull too.
+ *
+ *  A `{ px }` ribbon and its heads are built to their screen size in every
+ *  direction, so in world they reach farthest along the direction the
+ *  transform shrinks most. A head with a world size is built at that size in
+ *  the ribbon's space, which the mean scale takes to the screen. */
 function strokeReach(stroke: Stroke, m: GlMat3): number {
-  return strokeReachAt(stroke, mat3.meanScaleOf(m));
+  const mean = mat3.meanScaleOf(m);
+  const least = mat3.minScaleOf(m);
+  if (typeof stroke.width !== 'object' || !(least > 0)) return strokeReachAt(stroke, mean);
+  const unitWidth = resolveStrokeWidth(stroke.width, mean);
+  return Math.max(strokeReachAt(stroke, least), markerReach(stroke, unitWidth, mean) * mean / least);
 }
 
 /** {@link strokeReach} at a known world-to-screen scale — what a painter

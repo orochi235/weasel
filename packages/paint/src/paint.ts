@@ -188,10 +188,13 @@ export interface Stroke {
    */
   paint?: FillStyle;
   /** World units, or `{ px }` for screen pixels — resolved against the
-   *  accumulated transform scale at draw time, so it holds its on-screen
-   *  thickness as the view zooms. */
+   *  accumulated transform at draw time, so it holds its on-screen thickness
+   *  as the view zooms, in every direction even when one axis is zoomed more
+   *  than the other. */
   width?: ScreenLength;
-  /** Per `CanvasRenderingContext2D.setLineDash` — empty/omitted = solid. */
+  /** Per `CanvasRenderingContext2D.setLineDash` — empty/omitted = solid. In
+   *  the width's units: world, or screen pixels on a `{ px }` stroke, as SVG's
+   *  `non-scaling-stroke` measures them. */
   dash?: number[];
   /** Marker at the first vertex of each open subpath, rotated to point back
    *  along the line (SVG's `auto-start-reverse`, as the only behavior). */

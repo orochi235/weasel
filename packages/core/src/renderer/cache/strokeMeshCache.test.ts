@@ -6,6 +6,7 @@ import {
   _resetStrokeMeshCacheForTests,
   STROKE_CONFIGS_PER_PATH,
 } from './strokeMeshCache';
+import { strokeSpaceOf } from 'features/paths/tessellate/metric';
 
 const rect = (): RectPath => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
 const base: Stroke = { width: 2, paint: { color: '#000000' } };
@@ -41,6 +42,17 @@ describe('stroke ribbon cache', () => {
     expect(bevelled).not.toBe(first);
     expect(strokeMesh(path, { ...stroke, varyingWidthJoinThreshold: 0.1 }, undefined))
       .toBe(bevelled);
+  });
+
+  // The metric is the transform's stretch with its scale and rotation taken
+  // out, so a pan, a uniform zoom or a turned view keeps hitting.
+  it('keys on the metric, which a uniform zoom does not change', () => {
+    const path = rect();
+    const fourToOne = strokeSpaceOf(4, 0, 0, 1).metric!;
+    const first = strokeMesh(path, base, undefined, fourToOne);
+    expect(first).not.toBe(strokeMesh(path, base, undefined));
+    expect(strokeMesh(path, base, undefined, strokeSpaceOf(8, 0, 0, 2).metric!)).toBe(first);
+    expect(strokeMesh(path, base, undefined, strokeSpaceOf(1, 0, 0, 4).metric!)).not.toBe(first);
   });
 
   it('hits when only paint changes — colors are not geometry', () => {

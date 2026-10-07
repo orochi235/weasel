@@ -115,6 +115,14 @@ function meanScaleOf(m: GlMat3): number {
   return Math.sqrt(Math.abs(m[0] * m[4] - m[1] * m[3]));
 }
 
+/** The least any direction is scaled by the linear part — its smaller singular
+ *  value. What a screen length is worth in world units, at most. */
+function minScaleOf(m: GlMat3): number {
+  const sum = m[0] * m[0] + m[1] * m[1] + m[3] * m[3] + m[4] * m[4];
+  const det = m[0] * m[4] - m[1] * m[3];
+  return Math.sqrt(Math.max(0, (sum - Math.sqrt(Math.max(0, sum * sum - 4 * det * det))) / 2));
+}
+
 /** The renderer's 3x3 matrix operations, as one namespace. These work on the
  *  9-element `Float32Array` form the GL uniform upload wants — distinct from
  *  `@weasel-js/geom`'s 6-element affine `GlMat3`, though the logical element
@@ -130,4 +138,5 @@ export const mat3 = {
   apply,
   screenToClip,
   meanScaleOf,
+  minScaleOf,
 };

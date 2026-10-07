@@ -49,6 +49,24 @@ describe('cullDrawCommands', () => {
     expect(cullDrawCommands([stroked], zoomedOut, SCREEN)).toEqual([stroked]);
   });
 
+  // At 1:16 the mean scale is 4, so a 30px stroke resolved through it is 7.5
+  // world units — but across x, where a unit is one pixel, it paints 15px
+  // either side of the line, and the line is only 12 off the screen.
+  it('measures a { px } stroke along the axis the transform shrinks most', () => {
+    const tall = mat3.scaled(mat3.identity(), 1, 16);
+    const stroked: PathDrawCommand = {
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([PATH_M, PATH_L]),
+        coords: new Float32Array([-12, 0, -12, 10]),
+        fillRule: 'nonzero',
+      },
+      stroke: { width: { px: 30 }, miterLimit: 1, paint },
+    };
+    expect(cullDrawCommands([stroked], tall, SCREEN)).toEqual([stroked]);
+  });
+
   describe('a stroke carrying a marker', () => {
     // A line 60 above the screen; an arrow spans 1.5 size units either side of
     // it, so a size-60 head reaches 90 down — 30 into the screen.

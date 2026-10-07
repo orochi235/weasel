@@ -44,7 +44,8 @@ import { verticalAlignOffset, cachedLayoutRuns } from '@weasel-js/text';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
 import { strokeMesh } from './cache/strokeMeshCache';
-import { withResolvedStrokeLengths, type StrokedPathCommand } from './strokeLengths';
+import { resolveStrokeLengths, type StrokedPathCommand } from './strokeLengths';
+import { metricKeepsRects, type StrokeMetric } from 'features/paths/tessellate/metric';
 import { cachedMarkerCommands } from './cache/markerCommandCache';
 import { DrawBatch, type GradientUV } from './drawBatch';
 import { axisAlignedClipRect, intersectClipRects, type ClipRect } from './batchClip';
@@ -1950,28 +1951,32 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
 }
 
 function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
-  const cmd = withResolvedStrokeLengths(ctx.state.transform, rawCmd);
+  const { cmd, metric, pxPerUnit } = resolveStrokeLengths(ctx.state.transform, rawCmd);
   const stroke = cmd.stroke;
   const align = stroke.align ?? 'center';
-  if (cmd.path.kind === 'polygon' && align !== 'center') {
+  // A rect the metric turns is no longer a rect in the space its ribbon is
+  // built in, so it aligns through the stencil like any polygon.
+  const stenciled = cmd.path.kind === 'polygon' || (metric !== undefined && !metricKeepsRects(metric));
+  if (stenciled && align !== 'center') {
     flushForOwnDraw(ctx);
-    drawPathStrokeStenciled(ctx, cmd, align);
+    drawPathStrokeStenciled(ctx, cmd, align, metric);
   } else {
-    drawPathStrokeUnclipped(ctx, cmd);
+    drawPathStrokeUnclipped(ctx, cmd, metric);
   }
   // After the ribbon, so a head sits on top of the line it caps.
   const width = resolveStrokeWidth(stroke.width ?? 1, 1);
-  for (const marker of cachedMarkerCommands(cmd.path, rawCmd.stroke, stroke, width, ctx.flattenTolerance)) {
-    drawPath(ctx, marker);
-  }
+  const heads = cachedMarkerCommands(
+    cmd.path, rawCmd.stroke, stroke, width, ctx.flattenTolerance, metric, pxPerUnit,
+  );
+  for (const marker of heads) drawPath(ctx, marker);
 }
 
-function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand): void {
+function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, metric: StrokeMetric | undefined): void {
   const stroke = cmd.stroke;
   const paint = stroke.paint;
   const isSolid = paint.fill === undefined || paint.fill === 'solid';
   const solid = paint as { color: string; opacity?: number };
-  const mesh = strokeMesh(cmd.path, stroke, ctx.flattenTolerance);
+  const mesh = strokeMesh(cmd.path, stroke, ctx.flattenTolerance, metric);
   if (mesh.indices.length === 0) return;
 
   // Staged, a ribbon allocates nothing and joins the fill it sits on.
@@ -2047,6 +2052,7 @@ function drawPathStrokeStenciled(
   ctx: DrawContext,
   cmd: StrokedPathCommand,
   align: 'inner' | 'outer',
+  metric: StrokeMetric | undefined,
 ): void {
   const stroke = cmd.stroke;
   const paint = stroke.paint;
@@ -2062,7 +2068,7 @@ function drawPathStrokeStenciled(
   const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
 
   const fillHandle = fillMeshHandle(ctx, cmd.path);
-  const ribbonMesh = strokeMesh(cmd.path, widerStroke, ctx.flattenTolerance);
+  const ribbonMesh = strokeMesh(cmd.path, widerStroke, ctx.flattenTolerance, metric);
   if (ribbonMesh.indices.length === 0) return;
   // The VAO records the per-draw color attribute, so a vertex-colored draw
   // cannot share a persistent one with a draw that has no vertex colors.
