@@ -11,8 +11,6 @@
 
 import type { Action } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import type { EditAnchorsDep } from '../depSchema';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
 import { isBody } from '@weasel-js/routing';
 
@@ -33,8 +31,8 @@ export const enterPathEditAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run(deps) {
-      const editAnchors = deps.editAnchors as EditAnchorsDep | undefined;
-      const selection = deps.selection as SelectionApi | undefined;
+      const editAnchors = deps.editAnchors;
+      const selection = deps.selection;
       if (!editAnchors || !selection) return;
       const ids = selection.get() as NodeId[];
       // Use the dep's editability check rather than poking at node.pose

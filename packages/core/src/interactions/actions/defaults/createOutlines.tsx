@@ -1,6 +1,5 @@
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
 import { loadTextOutlines, type TextNodeSource } from 'features/text/textToPath';
 import {
@@ -43,14 +42,14 @@ export const createOutlinesAction: Action = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const adapter = deps.createOutlinesAdapter as CreateOutlinesAdapter | undefined;
+      const adapter = deps.createOutlinesAdapter;
       if (adapter) void runCreateOutlines(adapter);
     },
   } satisfies ImmediateInvoker,
   enabled: (deps) => {
-    const ids = (deps?.selection as SelectionApi | undefined)?.get() ?? [];
+    const ids = deps?.selection?.get() ?? [];
     if (ids.length === 0) return ActionDisabledReason.SelectionRequired;
-    const adapter = deps?.createOutlinesAdapter as CreateOutlinesAdapter | undefined;
+    const adapter = deps?.createOutlinesAdapter;
     return adapter && ids.some((id) => adapter.getTextSource(id) !== undefined)
       ? true
       : ActionDisabledReason.NotApplicable;

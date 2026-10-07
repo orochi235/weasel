@@ -79,8 +79,8 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const selection = deps.selection as SelectionApi | undefined;
-        const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+        const selection = deps.selection;
+        const scene = deps.scene;
         if (!selection || !scene) return;
         const mode = (params?.mode as DistributeMode | undefined) ?? 'centers';
         distributeSelection(selection, scene, axis, mode, poseDescriptorOf(deps.poseDescriptor), deps.poseComposition);
@@ -90,7 +90,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     // a constant disabled reason greys the entry out forever (see
     // `requiresSelection`).
     enabled: (deps) => {
-      const selection = deps?.selection as SelectionApi | undefined;
+      const selection = deps?.selection;
       const count = selection?.get().length ?? 0;
       return count >= 3 ? true : ActionDisabledReason.SelectionRequired;
     },

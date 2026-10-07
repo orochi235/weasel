@@ -166,15 +166,15 @@ export const flipAction: Action & { requires: string[] } = {
     run: (deps, params) => {
       const axis = (params?.axis as FlipAxis | undefined) ?? 'x';
       const pivot = (params?.pivot as FlipPivot | undefined) ?? 'each';
-      const selection = deps.selection as SelectionApi | undefined;
-      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
-      const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
-      const geometryProjection = deps.geometryProjection as GeometryProjection | undefined;
+      const selection = deps.selection;
+      const scene = deps.scene;
+      const applyOps = deps.applyOps;
+      const geometryProjection = deps.geometryProjection;
       if (!selection || !scene) return;
       flipSelection(
         selection, scene, axis, pivot, applyOps, geometryProjection,
         poseDescriptorOf(deps.poseDescriptor), deps.poseComposition,
-        params, deps.pointer as PointerContextValue | undefined,
+        params, deps.pointer,
       );
     },
   },

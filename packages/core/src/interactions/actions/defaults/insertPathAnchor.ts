@@ -16,7 +16,7 @@
 import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { CursorSpec } from '@weasel-js/cursor';
-import type { EditAnchorsDep, ViewApi } from '../depSchema';
+import type { EditAnchorsDep } from '../depSchema';
 import type { PolygonPath } from '@weasel-js/geom';
 import { pathToAnchors } from 'features/paths/anchors';
 import {
@@ -40,11 +40,11 @@ function segmentUnder(
   x: number,
   y: number,
 ): { dep: EditAnchorsDep; hit: SegmentHit } | null {
-  const dep = deps?.editAnchors as EditAnchorsDep | undefined;
+  const dep = deps?.editAnchors;
   if (!dep?.editingId) return null;
   const path = dep.getEditablePath(dep.editingId) as PolygonPath | null | undefined;
   if (!path || path.kind !== 'polygon') return null;
-  const scale = (deps?.view as ViewApi | undefined)?.get().scale;
+  const scale = deps?.view?.get().scale;
   const hit = segmentAt(pathToAnchors(path) as AnchorSet, x, y, {
     tolerancePx: SEGMENT_HIT_PX,
     ...(scale ? { scale } : {}),
@@ -80,7 +80,7 @@ export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
     },
   } as ImmediateInvoker,
   enabled: (deps, at) => {
-    const dep = deps?.editAnchors as EditAnchorsDep | undefined;
+    const dep = deps?.editAnchors;
     if (!dep?.editingId) return ActionDisabledReason.NotApplicable;
     if (at && !segmentUnder(deps, at.x, at.y)) return ActionDisabledReason.NotApplicable;
     return true;

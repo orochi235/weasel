@@ -99,9 +99,9 @@ export const reorderForwardAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps, params) => {
       const distance = (params?.distance as ReorderDistance | undefined) ?? 'adjacent';
-      const selection = deps.selection as SelectionApi | undefined;
-      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
-      const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const selection = deps.selection;
+      const scene = deps.scene;
+      const applyOps = deps.applyOps;
       if (!selection || !scene) return;
       reorderSelection(selection, scene, 'forward', distance, applyOps);
     },
@@ -147,9 +147,9 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps, params) => {
       const distance = (params?.distance as ReorderDistance | undefined) ?? 'adjacent';
-      const selection = deps.selection as SelectionApi | undefined;
-      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
-      const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const selection = deps.selection;
+      const scene = deps.scene;
+      const applyOps = deps.applyOps;
       if (!selection || !scene) return;
       reorderSelection(selection, scene, 'backward', distance, applyOps);
     },

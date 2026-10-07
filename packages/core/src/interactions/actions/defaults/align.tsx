@@ -109,12 +109,12 @@ function makeAlignAction(edge: AlignEdge): Action {
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const selection = deps.selection as SelectionApi | undefined;
-        const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+        const selection = deps.selection;
+        const scene = deps.scene;
         if (!selection || !scene) return;
         alignSelection(
           selection, scene, edge, poseDescriptorOf(deps.poseDescriptor), deps.poseComposition,
-          params, deps.pointer as PointerContextValue | undefined,
+          params, deps.pointer,
         );
       },
     } satisfies ImmediateInvoker,
@@ -123,7 +123,7 @@ function makeAlignAction(edge: AlignEdge): Action {
     // constant disabled reason greys the entry out forever (see
     // `requiresSelection`).
     enabled: (deps) => {
-      const selection = deps?.selection as SelectionApi | undefined;
+      const selection = deps?.selection;
       const count = selection?.get().length ?? 0;
       return count >= 1 ? true : ActionDisabledReason.SelectionRequired;
     },

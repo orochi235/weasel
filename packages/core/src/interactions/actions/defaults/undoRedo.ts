@@ -2,11 +2,8 @@ import { createElement } from 'react';
 import { RedoIcon, UndoIcon } from './icons/actionGlyphIcons';
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
 
-type HistoryReads = { canUndo?: () => boolean; canRedo?: () => boolean };
-
 function historyCan(deps: ActionDeps | undefined, which: 'canUndo' | 'canRedo'): true | ActionDisabledReason {
-  const history = deps?.history as HistoryReads | undefined;
-  return history?.[which]?.() ? true : ActionDisabledReason.NotApplicable;
+  return deps?.history?.[which]?.() ? true : ActionDisabledReason.NotApplicable;
 }
 
 /**
@@ -24,7 +21,7 @@ export const undoAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      (deps.history as { undo?: () => boolean } | undefined)?.undo?.();
+      deps.history?.undo?.();
     },
   },
   enabled: (deps) => historyCan(deps, 'canUndo'),
@@ -44,7 +41,7 @@ export const redoAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      (deps.history as { redo?: () => boolean } | undefined)?.redo?.();
+      deps.history?.redo?.();
     },
   },
   enabled: (deps) => historyCan(deps, 'canRedo'),

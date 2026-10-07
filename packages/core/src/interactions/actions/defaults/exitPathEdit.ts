@@ -9,7 +9,6 @@
 
 import type { Action } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import type { EditAnchorsDep } from '../depSchema';
 
 export const exitPathEditAction: Action & { requires: string[] } = {
   id: 'exitPathEdit',
@@ -20,7 +19,7 @@ export const exitPathEditAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run(deps) {
-      const editAnchors = deps.editAnchors as EditAnchorsDep | undefined;
+      const editAnchors = deps.editAnchors;
       editAnchors?.setEditingId(null);
     },
   } as ImmediateInvoker,

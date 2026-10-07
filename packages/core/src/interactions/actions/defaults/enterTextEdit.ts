@@ -65,8 +65,6 @@
  */
 
 import type { Action } from '@weasel-js/routing';
-import type { TextEditDep } from '../depSchema';
-import type { NodeId } from 'core/scene/types';
 
 // ---------------------------------------------------------------------------
 // TextEditDep
@@ -94,11 +92,11 @@ export const enterTextEditAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const sel = (deps.selection as { get(): NodeId[] } | undefined)?.get() ?? [];
+      const sel = deps.selection?.get() ?? [];
       if (sel.length !== 1) return;
 
       const id = sel[0];
-      const textEdit = deps.textEdit as TextEditDep | undefined;
+      const textEdit = deps.textEdit;
       if (!textEdit) return;
 
       // Self-guard: skip non-text nodes when the predicate is supplied.

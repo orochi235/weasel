@@ -40,8 +40,6 @@
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
-import type { EditAnchorsDep } from '../depSchema';
-import type { NodeId } from 'core/scene/types';
 
 /**
  * @experimental
@@ -61,11 +59,11 @@ export const clearSelectionAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      (deps.selection as { set(ids: NodeId[]): void } | undefined)?.set([]);
+      deps.selection?.set([]);
     },
   },
   enabled: (deps?: ActionDeps) => {
-    const editAnchors = deps?.editAnchors as EditAnchorsDep | undefined;
+    const editAnchors = deps?.editAnchors;
     // Absent dep means the consumer never wired anchor editing — nothing to
     // defer to, so the click is ours.
     if (editAnchors?.editingId) return ActionDisabledReason.NotApplicable;

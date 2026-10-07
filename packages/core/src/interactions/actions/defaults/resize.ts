@@ -43,7 +43,6 @@ import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type {
   GestureContext,
   ModifierState,
@@ -90,7 +89,7 @@ function resolveDeps(ctx: InvocationCtx): {
   policy: ResizePolicy<unknown> | undefined;
 } {
   const geometry = poseDescriptorOf(ctx.deps.poseDescriptor);
-  const dep = ctx.deps.resizePolicy as ResizePolicy<unknown> | undefined;
+  const dep = ctx.deps.resizePolicy;
   if (!dep) {
     return {
       // Standard kit behaviors (shift = aspect lock) apply even with no
@@ -322,10 +321,10 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
-      const selection = ctx.deps.selection as SelectionApi | undefined;
-      const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
-      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
-      const geometryProjection = ctx.deps.geometryProjection as GeometryProjection | undefined;
+      const selection = ctx.deps.selection;
+      const scene = ctx.deps.scene;
+      const applyOps = ctx.deps.applyOps;
+      const geometryProjection = ctx.deps.geometryProjection;
 
       if (!selection || !scene) return {};
 

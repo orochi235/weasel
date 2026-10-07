@@ -1,16 +1,6 @@
 import type { NodeId } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 
-/** The slice of a scene this action reads. Structural, so a consumer store
- *  that answers these is a valid `scene` dep without being a `Scene`. */
-interface SelectAllScene {
-  renderOrder?: () => Iterable<NodeId>;
-  renderOrderNodes?: () => readonly { id: NodeId; layer: string }[];
-  layers?: readonly { id: string; visible: boolean; locked?: boolean }[];
-  /** Consulted when present; a store without it is judged by layer alone. */
-  isLocked?: (id: NodeId) => boolean;
-}
-
 /**
  * @experimental
  * Static descriptor for the `selectAll` Action. Selects every scene node the
@@ -27,8 +17,8 @@ export const selectAllAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const scene = deps.scene as SelectAllScene | undefined;
-      const view = deps.view as { layerIsPainted?(layerId: string): boolean } | undefined;
+      const scene = deps.scene;
+      const view = deps.view;
       const skipped = new Set(
         (scene?.layers ?? []).filter((l) => !l.visible || l.locked === true).map((l) => l.id),
       );
@@ -44,7 +34,7 @@ export const selectAllAction: Action & { requires: string[] } = {
             && scene.isLocked?.(n.id) !== true)
           .map((n) => n.id);
       if (all.length === 0) return;
-      (deps.selection as { set(ids: NodeId[]): void } | undefined)?.set(all);
+      deps.selection?.set(all);
     },
   },
 };

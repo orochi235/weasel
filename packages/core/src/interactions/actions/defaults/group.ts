@@ -1,8 +1,7 @@
-import type { Node, NodeId, Scene } from 'core/scene/types';
+import type { Node, NodeId } from 'core/scene/types';
 import { createElement } from 'react';
 import { GroupIcon, UngroupIcon } from './icons/editIcons';
 import { asNodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
@@ -59,9 +58,9 @@ export const groupAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const selection = deps.selection as SelectionApi | undefined;
-      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
-      const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const selection = deps.selection;
+      const scene = deps.scene;
+      const applyOps = deps.applyOps;
       if (!selection || !scene) return;
 
       const ids = selection.get();
@@ -184,8 +183,8 @@ export const ungroupAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const selection = deps.selection as SelectionApi | undefined;
-      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+      const selection = deps.selection;
+      const scene = deps.scene;
       if (!selection || !scene) return;
 
       const ids = selection.get();
@@ -231,8 +230,8 @@ export const ungroupAction: Action & { requires: string[] } = {
     },
   },
   enabled: (deps) => {
-    const selection = deps?.selection as SelectionApi | undefined;
-    const scene = deps?.scene as Scene<unknown, string, unknown> | undefined;
+    const selection = deps?.selection;
+    const scene = deps?.scene;
     const any = selection?.get().some((id) => scene?.get(id as NodeId)?.kind === 'container');
     return any ? true : ActionDisabledReason.NotApplicable;
   },

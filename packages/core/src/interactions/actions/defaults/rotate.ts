@@ -38,7 +38,6 @@ import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides'
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import type { SelectionApi } from 'core/selection/useSelection';
 import { unionAABB } from 'core/geometry/unionBounds';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseDescriptorOf } from '../poseDescriptorDep';
@@ -144,9 +143,9 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts): OngoingHandle {
-      const selection = ctx.deps.selection as SelectionApi | undefined;
-      const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
-      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const selection = ctx.deps.selection;
+      const scene = ctx.deps.scene;
+      const applyOps = ctx.deps.applyOps;
       const params = resolveParams(opts?.params);
       const behaviors = (opts?.behaviors ?? []) as RotateBehavior<unknown>[];
 

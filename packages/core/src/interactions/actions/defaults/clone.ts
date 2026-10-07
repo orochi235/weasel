@@ -38,7 +38,6 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Node, Scene, NodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -110,9 +109,9 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
-      const selection = ctx.deps.selection as SelectionApi | undefined;
-      const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
-      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const selection = ctx.deps.selection;
+      const scene = ctx.deps.scene;
+      const applyOps = ctx.deps.applyOps;
 
       if (!selection || !scene) return {};
 

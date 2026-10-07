@@ -83,7 +83,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
-      const dep = ctx.deps.areaSelect as AreaSelectDep | undefined;
+      const dep = ctx.deps.areaSelect;
       if (!dep) return {};
 
       // Decline on anchor / control-handle affordances: the select tool's
@@ -107,13 +107,13 @@ export const areaSelectAction: Action & { requires: string[] } = {
       // that wired a mode registry — without one the dispatcher skips
       // eligibility entirely and areaSelect's active scope would beat
       // marqueeAnchors' ambient scope. Declining here covers both.
-      const editAnchors = ctx.deps.editAnchors as { editingId?: string } | undefined;
+      const editAnchors = ctx.deps.editAnchors;
       if (editAnchors?.editingId) return {};
 
       // Drag start is the world point at the moment start() is called.
       const scratch: AreaSelectScratch = {
         dep,
-        view: ctx.deps.view as ViewApi | undefined,
+        view: ctx.deps.view,
         startX: ctx.world.x,
         startY: ctx.world.y,
         shiftHeld: ctx.modifiers.shift,

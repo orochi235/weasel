@@ -55,8 +55,7 @@ import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import { createReparentOp } from 'core/ops/reparent';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
-import type { SelectionApi } from 'core/selection/useSelection';
-import type { NodeAtPointDep, LayoutDep } from '../depSchema';
+import type { LayoutDep } from '../depSchema';
 import type {
   LayoutStrategy,
   LayoutContainer,
@@ -726,7 +725,7 @@ function resolveDropTarget(
   endCtx: InvocationCtx,
   scratch: MoveScratch,
 ): DropTarget | null {
-  const dep = endCtx.deps['nodeAtPoint'] as NodeAtPointDep | undefined;
+  const dep = endCtx.deps.nodeAtPoint;
   if (!dep) return null;
 
   // Exclude moved roots + their descendants. Otherwise we'd happily
@@ -863,17 +862,17 @@ export const moveAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
-      const selection = ctx.deps.selection as SelectionApi | undefined;
-      const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
+      const selection = ctx.deps.selection;
+      const scene = ctx.deps.scene;
       const projection = poseDescriptorOf(ctx.deps.poseDescriptor);
-      const layout = ctx.deps.layout as LayoutDep | undefined;
-      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
-      const geometryProjection = ctx.deps.geometryProjection as GeometryProjection | undefined;
+      const layout = ctx.deps.layout;
+      const applyOps = ctx.deps.applyOps;
+      const geometryProjection = ctx.deps.geometryProjection;
       // Pose-composition strategy: how the consumer's scene folds local poses
       // up to world (and back). Absent → IDENTITY (absolute-pose: nodes store
       // world coords, parents are grouping-only). Local-pose consumers supply
       // { compose: composeRectPose, decompose: decomposeRectPose }.
-      const pc = (ctx.deps.poseComposition as PoseComposition<unknown> | undefined)
+      const pc = ctx.deps.poseComposition
         ?? IDENTITY_POSE_COMPOSITION;
 
       if (!selection || !scene) return {};

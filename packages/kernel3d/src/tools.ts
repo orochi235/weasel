@@ -11,15 +11,10 @@
 import { useMemo } from 'react';
 import { defineTool, type Action, type Tool } from '@weasel-js/core';
 import { dollyBy, orbitBy, type Camera3d } from './camera';
-import type { Camera3dDep } from './cameraDep';
 
 /** Radians per CSS pixel of drag. A full pane width is a bit over half a turn. */
 const ORBIT_RATE = 0.006;
 const DOLLY_RATE = 0.0015;
-
-function cameraDep(deps: unknown): Camera3dDep | undefined {
-  return (deps as { camera3d?: Camera3dDep }).camera3d;
-}
 
 /** `camera.orbit`: an ongoing drag that turns the `camera3d` dep about its
  *  target, relative to the camera as it was when the drag began. */
@@ -30,7 +25,7 @@ export const orbitAction: Action = {
   invoker: {
     timing: 'ongoing',
     start(ctx) {
-      const dep = cameraDep(ctx.deps);
+      const dep = ctx.deps.camera3d;
       const origin: Camera3d | undefined = dep?.get();
       return {
         kind: 'orbit',
@@ -64,7 +59,7 @@ export const dollyAction: Action = {
   invoker: {
     timing: 'immediate',
     run(deps, params) {
-      const dep = cameraDep(deps);
+      const dep = deps.camera3d;
       if (!dep) return;
       const amount = typeof params?.deltaY === 'number' ? params.deltaY : 0;
       dep.set(dollyBy(dep.get(), Math.exp(amount * DOLLY_RATE)));

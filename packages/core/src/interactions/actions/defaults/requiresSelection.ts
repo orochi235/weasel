@@ -1,4 +1,3 @@
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 
@@ -17,7 +16,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
  * selection, so dispatch correctness never relies on the gate alone.
  */
 export function requiresSelection(deps?: ActionDeps): true | ActionDisabledReason {
-  const selection = deps?.selection as SelectionApi | undefined;
+  const selection = deps?.selection;
   if (!selection || (selection.get() as unknown[]).length === 0) {
     return ActionDisabledReason.SelectionRequired;
   }

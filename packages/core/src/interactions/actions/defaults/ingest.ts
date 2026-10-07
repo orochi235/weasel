@@ -16,11 +16,7 @@
  * `via` ('drop' | 'paste'), plus `worldX`/`worldY` for drops. Absent
  * coords → `point: null`; handlers pick their own placement policy.
  */
-import type { Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
-import type { Op } from 'core/ops/types';
 import type { Action } from '@weasel-js/routing';
-import type { InsertDep, IngestionDep } from '../depSchema';
 import { runIngest, type IngestCtx } from 'features/ingestion/contentHandlers';
 import type { IngestItem } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -42,12 +38,12 @@ export const ingestAction: Action & { requires: string[] } = {
     run: (deps, params) => {
       const items = params?.items as IngestItem[] | undefined;
       if (!items || items.length === 0) return;
-      const ingestion = deps.ingestion as IngestionDep | undefined;
-      const insert = deps.insert as InsertDep | undefined;
-      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
-      const selection = deps.selection as SelectionApi | undefined;
+      const ingestion = deps.ingestion;
+      const insert = deps.insert;
+      const scene = deps.scene;
+      const selection = deps.selection;
       if (!ingestion || !insert || !scene || !selection) return;
-      const applyOps = deps.applyOps as ((ops: Op[], label?: string) => void) | undefined;
+      const applyOps = deps.applyOps;
 
       const point =
         typeof params?.worldX === 'number' && typeof params?.worldY === 'number'

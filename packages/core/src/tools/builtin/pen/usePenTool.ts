@@ -6,7 +6,7 @@ import type { ToolPrefGroup } from '../../prefs';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import type { AreaSelectDep, EditAnchorsDep, ViewApi } from 'interactions/actions/depSchema';
+import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import { pxExtent, withinPxRadius } from 'core/viewport/pxExtent';
 import { PenIcon } from '../../../icons';
 import type { PolygonPath } from '@weasel-js/geom';
@@ -15,7 +15,6 @@ import { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from 'features/
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
-import type { Scene } from 'core/scene/types';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { constrainTo45 } from '../../../util/constrainTo45';
 import { cursorFor } from '@weasel-js/cursor';
@@ -245,7 +244,7 @@ export function usePenTool<TPose>(
   const commit = useCallback((s: PenScratch, deps: ActionDeps): void => {
     const trailing = s.current && s.current.anchors.length > 0 ? s.current : null;
     if (s.continuing) {
-      commitContinuation(s, trailing, deps.editAnchors as EditAnchorsDep | undefined);
+      commitContinuation(s, trailing, deps.editAnchors);
       resetScratch(s);
       return;
     }
@@ -268,9 +267,9 @@ export function usePenTool<TPose>(
     if (!hit || hit.end === null || !s.current || s.current.anchors.length === 0) return false;
     const cont = s.continuing;
     if (cont && hit.id === cont.id && hit.sub === cont.sub) return false;
-    const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+    const scene = deps.scene;
     if (!scene && !deps.applyOps) return false;
-    if (!(cont ? (deps.editAnchors as EditAnchorsDep).editOps : optsRef.current.adapter.makeNode)) return false;
+    if (!(cont ? deps.editAnchors?.editOps : optsRef.current.adapter.makeNode)) return false;
     return cont?.id === hit.id || scene?.get(hit.id as never) !== undefined;
   }, [optsRef]);
 
@@ -280,8 +279,8 @@ export function usePenTool<TPose>(
    *  keeps its identity — a continued node keeps its id and style, and a new
    *  path is minted the way any pen path is. One op batch, so one undo. */
   const commitJoin = useCallback((s: PenScratch, deps: ActionDeps, hit: PathAnchorHit): void => {
-    const edit = deps.editAnchors as EditAnchorsDep;
-    const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+    const edit = deps.editAnchors!;
+    const scene = deps.scene;
     const current = s.current!;
     const { anchors: added, closed: addedClosed } = pathToAnchors(buildPath([...s.finishedSubpaths, current], null));
 
@@ -325,7 +324,7 @@ export function usePenTool<TPose>(
     }
     if (!sameNode) ops.push(createDeleteOp({ node: scene!.get(hit.id as never) as { id: string } }));
 
-    const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+    const applyOps = deps.applyOps;
     if (applyOps) applyOps(ops, label);
     else scene!.applyBatch(ops, label, defaultCommitAdapter(scene!));
     if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([keptId]);
@@ -342,7 +341,7 @@ export function usePenTool<TPose>(
     const scale = viewScale(deps);
     const hit = nearestPathAnchor(pathsNear(deps, wx, wy, radius), { x: wx, y: wy }, radius, scale, (h) => h.end !== null);
     if (!hit) return false;
-    const original = (deps.editAnchors as EditAnchorsDep).getEditablePath(hit.id) as PolygonPath;
+    const original = deps.editAnchors!.getEditablePath(hit.id) as PolygonPath;
     const picked = pathToAnchors(original).anchors[hit.sub];
     const reversed = hit.end === 'first' && picked.length > 1;
     scratch.current = { anchors: reversed ? reverseAnchors(picked) : picked, closed: false };
@@ -687,7 +686,7 @@ function applyOutHandle<S extends PenScratch>(
 }
 
 function viewScale(deps: ActionDeps): { x: number; y: number } {
-  return (deps.view as ViewApi | undefined)?.get().scale ?? { x: 1, y: 1 };
+  return deps.view?.get().scale ?? { x: 1, y: 1 };
 }
 
 /** Existing editable paths, world coords, with ink within `px` screen
@@ -699,10 +698,10 @@ function pathsNear(
   wy: number,
   px: number,
 ): Array<{ id: string; path: PolygonPath }> {
-  const area = deps.areaSelect as AreaSelectDep | undefined;
-  const edit = deps.editAnchors as EditAnchorsDep | undefined;
+  const area = deps.areaSelect;
+  const edit = deps.editAnchors;
   if (!area || !edit) return [];
-  const view = deps.view as ViewApi | undefined;
+  const view = deps.view;
   const e = pxExtent(px, viewScale(deps));
   const ids = area.hitTestArea({ x: wx - e.x, y: wy - e.y, width: 2 * e.x, height: 2 * e.y }, view);
   const out: Array<{ id: string; path: PolygonPath }> = [];

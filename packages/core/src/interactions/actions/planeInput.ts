@@ -29,14 +29,13 @@ import type {
 } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import {
   deriveParallaxView, fromPlane, planeMap, planeToPlane, rectFromPlane, rectToPlane, toPlane,
   type ParallaxOpts, type PlaneMap,
 } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { EditAnchorsDep, InsertDep, NodeAtPointDep, SnapDep, ViewApi } from './depSchema';
+import type { NodeAtPointDep, SnapDep, ViewApi } from './depSchema';
 
 type Point = { x: number; y: number };
 
@@ -46,13 +45,13 @@ type Point = { x: number; y: number };
 export type EditedLayerOf = (deps: ActionDeps, affordance?: AffordanceHit) => string | undefined;
 
 const layerOfNode = (deps: ActionDeps, id: string | null | undefined): string | undefined =>
-  (id ? (deps.scene as Scene<unknown, string, unknown> | undefined)?.get(asNodeId(id))?.layer : undefined);
+  (id ? deps.scene?.get(asNodeId(id))?.layer : undefined);
 
 /** The layer of the node a selection edit acts on: the affordance's target
  *  when the drag grabbed one, the first selected node otherwise. A selection
  *  spanning planes is edited in that one node's plane. */
 export const selectionLayer: EditedLayerOf = (deps, affordance) => {
-  const selection = deps.selection as SelectionApi | undefined;
+  const selection = deps.selection;
   for (const id of [...(affordance?.targetIds ?? []), ...(selection?.get() ?? [])]) {
     const layer = layerOfNode(deps, id);
     if (layer !== undefined) return layer;
@@ -62,11 +61,11 @@ export const selectionLayer: EditedLayerOf = (deps, affordance) => {
 
 /** The layer the `insert` dep will put a new node on. */
 export const insertLayer: EditedLayerOf = (deps) =>
-  (deps.insert as InsertDep | undefined)?.layer?.();
+  deps.insert?.layer?.();
 
 /** The layer of the path in anchor-edit mode. */
 export const editingLayer: EditedLayerOf = (deps) =>
-  layerOfNode(deps, (deps.editAnchors as EditAnchorsDep | undefined)?.editingId);
+  layerOfNode(deps, deps.editAnchors?.editingId);
 
 /** How the world an invocation edits in maps into the world `layer`'s nodes
  *  are stored in, read now. Null when they are the same world. */

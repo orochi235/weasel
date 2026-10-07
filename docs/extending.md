@@ -535,7 +535,7 @@ export const smearAction: Action = {
         previewPose: (id) => computed.get(id),
         onEnd: (e, reason) => {
           if (reason === 'cancel') return;
-          (e.deps.applyOps as ApplyOps)(buildOps(), 'Smear');
+          e.deps.applyOps?.(buildOps(), 'Smear');
         },
       };
     },

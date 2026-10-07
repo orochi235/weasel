@@ -40,7 +40,7 @@
  * This matches the behaviour of the dissolved `useKeyboardZoomTool`.
  */
 
-import type { Action, DebugSink } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
 import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
 import { wheelZoomFactor } from 'core/viewport/wheelHandler';
@@ -164,9 +164,9 @@ export function makeViewportZoomAction(
     invoker: {
       timing: 'immediate',
       run(deps, params) {
-        const view = deps.view as ViewApi | undefined;
+        const view = deps.view;
         if (!view) return;
-        const debug = deps.debug as DebugSink | undefined;
+        const debug = deps.debug;
         const current = view.get();
         // Report a zoom about `anchor` (canvas-local px) from `from` to `to`.
         const record = (from: View, to: View, anchor: { x: number; y: number }) => {

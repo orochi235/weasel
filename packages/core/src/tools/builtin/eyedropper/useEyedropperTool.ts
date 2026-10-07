@@ -5,7 +5,6 @@ import type { Tool } from '../../overlayBinding';
 import type { HotkeyTrigger } from '@weasel-js/routing';
 import type { ToolKeybinding } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';
-import type { NodeAtPointDep } from 'interactions/actions/depSchema';
 import { EyedropperIcon } from '../../../icons';
 import { cursorFor } from '@weasel-js/cursor';
 
@@ -63,7 +62,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
         run: (deps, params) => {
           const p = params as { pressX?: number; pressY?: number } | undefined;
           if (p?.pressX === undefined || p.pressY === undefined) return;
-          const nodeAtPoint = deps.nodeAtPoint as NodeAtPointDep | undefined;
+          const nodeAtPoint = deps.nodeAtPoint;
           const id = nodeAtPoint?.({ x: p.pressX, y: p.pressY }) ?? null;
           // Empty click is a no-op in v1 — `onPick(null)` is reserved for
           // "hit a node that has no color to sample."

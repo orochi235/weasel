@@ -25,7 +25,7 @@ export function centerRootOn(root: ViewApi, x: number, y: number): void {
 }
 
 function rootOf(deps: InvocationCtx['deps']): ViewApi | undefined {
-  return deps.rootView as ViewApi | undefined;
+  return deps.rootView;
 }
 
 /** Recenter the main camera on the pressed world point. */

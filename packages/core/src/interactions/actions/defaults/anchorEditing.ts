@@ -61,7 +61,7 @@ const BIG_STEP = 10;
 const ANCHOR_CLICK_SLOP = 10;
 
 function depOf(deps: ActionDeps | undefined): EditAnchorsDep | null {
-  const dep = deps?.editAnchors as EditAnchorsDep | undefined;
+  const dep = deps?.editAnchors;
   if (!dep || !dep.editingId) return null;
   return dep;
 }

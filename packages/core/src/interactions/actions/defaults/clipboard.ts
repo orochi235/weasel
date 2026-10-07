@@ -1,11 +1,7 @@
-import type { Scene } from 'core/scene/types';
 import { createElement } from 'react';
 import { CopyIcon, CutIcon, PasteIcon } from './icons/editIcons';
-import type { SelectionApi } from 'core/selection/useSelection';
-import type { Op } from 'core/ops/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import type { ClipboardDep } from '../depSchema';
 import { buildDeleteOps } from './delete';
 import { requiresSelection } from './requiresSelection';
 
@@ -29,7 +25,7 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      (deps.clipboard as ClipboardDep | undefined)?.copy();
+      deps.clipboard?.copy();
     },
   },
   enabled: requiresSelection,
@@ -51,10 +47,10 @@ export const clipboardCutAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const clipboard = deps.clipboard as ClipboardDep | undefined;
-      const selection = deps.selection as SelectionApi | undefined;
-      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
-      const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const clipboard = deps.clipboard;
+      const selection = deps.selection;
+      const scene = deps.scene;
+      const applyOps = deps.applyOps;
       if (!clipboard || !selection || !scene) return;
       const ids = selection.get();
       if (ids.length === 0) return;
@@ -90,11 +86,11 @@ export const clipboardPasteAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      (deps.clipboard as ClipboardDep | undefined)?.paste();
+      deps.clipboard?.paste();
     },
   },
   enabled: (deps) => {
-    const clipboard = deps?.clipboard as ClipboardDep | undefined;
+    const clipboard = deps?.clipboard;
     return clipboard && !clipboard.isEmpty() ? true : ActionDisabledReason.NotApplicable;
   },
 };

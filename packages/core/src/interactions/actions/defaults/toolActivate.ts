@@ -1,7 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import type { BoundGesture } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 
 /** Canonical id of the consolidated tool-activation action. One descriptor
  *  serves every tool; the matched binding (or imperative caller) supplies
@@ -70,7 +69,7 @@ export function makeToolActivateAction(
   const invoker: ImmediateInvoker = {
     timing: 'immediate',
     run: (deps, params) => {
-      const activeTool = deps.activeTool as ActiveToolContextValue | undefined;
+      const activeTool = deps.activeTool;
       const toolId = params?.toolId as string | undefined;
       if (!activeTool || !toolId) return;
       // Greyed out in the palette ⇒ not reachable by shortcut either. Before

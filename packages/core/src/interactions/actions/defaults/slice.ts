@@ -1,5 +1,4 @@
 import type { Action } from '@weasel-js/routing';
-import type { SliceDep } from '../depSchema';
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { BindingOpts, InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 
@@ -23,7 +22,7 @@ export const sliceAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
-      const dep = ctx.deps['slice'] as SliceDep | undefined;
+      const dep = ctx.deps.slice;
       const a: Point2 = ctx.drag?.start ?? ctx.world;
       let current: Point2 = ctx.drag?.current ?? ctx.world;
       let trail: ReadonlyArray<Point2> | undefined;

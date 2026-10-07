@@ -1,7 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 
 /** Canonical id of the "Escape returns to the default tool" action. */
 export const TOOL_RESET_TO_DEFAULT_ID = 'tool.resetToDefault';
@@ -36,7 +35,7 @@ export function makeToolResetToDefaultAction(
   const invoker: ImmediateInvoker = {
     timing: 'immediate',
     run: (deps) => {
-      const activeTool = deps.activeTool as ActiveToolContextValue | undefined;
+      const activeTool = deps.activeTool;
       const target = getTarget();
       if (!activeTool || !target) return;
       activeTool.setActive(target);

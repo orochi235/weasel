@@ -3,7 +3,6 @@ import { createElement } from 'react';
 import { DuplicateIcon } from './icons/editIcons';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -88,9 +87,9 @@ export const duplicateAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const selection = deps.selection as SelectionApi | undefined;
-      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
-      const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const selection = deps.selection;
+      const scene = deps.scene;
+      const applyOps = deps.applyOps;
       if (!selection || !scene) return;
       const ids = selection.get();
       if (ids.length === 0) return;

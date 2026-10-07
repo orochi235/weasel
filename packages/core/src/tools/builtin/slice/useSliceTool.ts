@@ -6,7 +6,6 @@ import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../../renderer';
 import type { Action, ActionDeps, InvocationCtx, ToolKeybinding } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { SliceDep, ViewApi } from 'interactions/actions/depSchema';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import { sliceAction } from 'interactions/actions/defaults/slice';
 import { withinPxRadius } from 'core/viewport/pxExtent';
@@ -87,19 +86,19 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {
     const commit = (deps: ActionDeps): void => {
       const cut = points().slice();
       reset();
-      if (cut.length >= 2) (deps.slice as SliceDep | undefined)?.commit(cut);
+      if (cut.length >= 2) deps.slice?.commit(cut);
     };
     const place = (deps: ActionDeps, x: number, y: number): void => {
       const pts = points();
       const first = pts[0];
-      const scale = (deps.view as ViewApi | undefined)?.get().scale ?? { x: 1, y: 1 };
+      const scale = deps.view?.get().scale ?? { x: 1, y: 1 };
       if (pts.length >= 3 && withinPxRadius(x - first.x, y - first.y, optsRef.current.closeHitRadius, scale)) {
         pts.push({ x: first.x, y: first.y });
         commit(deps);
         return;
       }
       pts.push({ x, y });
-      live.follow(deps.pointer as PointerContextValue | undefined);
+      live.follow(deps.pointer);
       live.notify();
     };
 

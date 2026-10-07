@@ -36,7 +36,6 @@ import type { ViewApi } from '../depSchema';
 import { zoomAt } from 'core/viewport/zoomAt';
 import { viewToTransform } from 'core/viewport/view';
 import { screenToWorld } from 'core/viewport/viewTransform';
-import type { DebugSink } from '@weasel-js/routing';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 
 // ---------------------------------------------------------------------------
@@ -87,7 +86,7 @@ export function makePinchZoomAction(
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx, _opts): OngoingHandle {
-        const view = ctx.deps.view as ViewApi | undefined;
+        const view = ctx.deps.view;
         if (!view) return {};
 
         const multiTouch = ctx.multiTouch;
@@ -98,7 +97,7 @@ export function makePinchZoomAction(
         const startSpread = multiTouch.spread > 0 ? multiTouch.spread : 1;
 
         const scratch: PinchScratch = { view, startSpread, centroid: multiTouch.centroid };
-        const debug = ctx.deps.debug as DebugSink | undefined;
+        const debug = ctx.deps.debug;
         const startView = view.get();
         const [ax, ay] = screenToWorld(multiTouch.centroid.x, multiTouch.centroid.y, viewToTransform(startView));
 

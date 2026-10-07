@@ -110,10 +110,10 @@ function makeNudgeAction(dir: Direction): Action & { requires: string[] } {
         const magnitude = (params?.magnitude as 'small' | 'big' | undefined) ?? 'small';
         const step = magnitude === 'big' ? BIG_STEP : SMALL_STEP;
         const { dx, dy } = delta(dir, step);
-        const selection = deps.selection as SelectionApi | undefined;
-        const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
-        const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
-        const geometryProjection = deps.geometryProjection as GeometryProjection | undefined;
+        const selection = deps.selection;
+        const scene = deps.scene;
+        const applyOps = deps.applyOps;
+        const geometryProjection = deps.geometryProjection;
         if (!selection || !scene) return;
         nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor));
       },

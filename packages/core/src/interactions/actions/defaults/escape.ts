@@ -1,7 +1,5 @@
-import type { NodeId } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { EditAnchorsDep } from '../depSchema';
 
 /**
  * @experimental
@@ -24,9 +22,9 @@ export const escapeAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const sel = (deps.selection as { get(): NodeId[] } | undefined)?.get() ?? [];
+      const sel = deps.selection?.get() ?? [];
       if (sel.length === 0) return;
-      (deps.selection as { set(ids: NodeId[]): void } | undefined)?.set([]);
+      deps.selection?.set([]);
     },
   },
   // Defer to `exitPathEditAction` while path-anchor edit mode is active.
@@ -37,9 +35,9 @@ export const escapeAction: Action & { requires: string[] } = {
   // With nothing selected there is nothing to clear, so the press falls
   // through to `tool.resetToDefault` instead of being spent here.
   enabled: (deps) => {
-    const editAnchors = deps?.editAnchors as EditAnchorsDep | undefined;
+    const editAnchors = deps?.editAnchors;
     if (editAnchors?.editingId) return ActionDisabledReason.NotApplicable;
-    const sel = (deps?.selection as { get(): NodeId[] } | undefined)?.get() ?? [];
+    const sel = deps?.selection?.get() ?? [];
     if (sel.length === 0) return ActionDisabledReason.NotApplicable;
     return true;
   },

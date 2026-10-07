@@ -116,7 +116,7 @@ An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `
       requires: ['selection'],
       invoker: {
         timing: 'immediate',
-        run: (deps) => publish((deps.selection as SelectionApi).get()),
+        run: (deps) => publish(deps.selection?.get() ?? []),
       },
     },
   }}

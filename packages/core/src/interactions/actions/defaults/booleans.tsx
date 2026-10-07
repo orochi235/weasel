@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
-import { applyBooleanOp, type BooleanOp, type BooleansAdapter } from '../booleans/booleans';
+import { applyBooleanOp, type BooleanOp } from '../booleans/booleans';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import type { SelectionApi } from 'core/selection/useSelection';
 import {
   UnionIcon,
   IntersectIcon,
@@ -57,14 +56,14 @@ function makePathfinderAction(op: BooleanOp): Action {
     invoker: {
       timing: 'immediate',
       run: (deps) => {
-        const adapter = deps.booleansAdapter as BooleansAdapter | undefined;
+        const adapter = deps.booleansAdapter;
         if (!adapter) return;
         const result = applyBooleanOp(adapter, op);
         if (result.kind === 'failed') console.warn(`[pathfinder] ${result.error.message}`);
       },
     } satisfies ImmediateInvoker,
     enabled: (deps) => {
-      const selection = deps?.selection as SelectionApi | undefined;
+      const selection = deps?.selection;
       const count = selection?.get().length ?? 0;
       return count >= 2 ? true : ActionDisabledReason.SelectionRequired;
     },

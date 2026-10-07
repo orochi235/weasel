@@ -1,5 +1,5 @@
 import type {
-  Action, ActionDeps, CanvasExtensionApi, ClaimableGesture, InvocationCtx, SurfaceContribution, View,
+  Action, ActionDeps, CanvasExtensionApi, ClaimableGesture, InvocationCtx, SurfaceContribution,
 } from '@weasel-js/core';
 import { attachHud, type AttachHudOptions } from './attach';
 import type { Hud } from './hud';
@@ -47,7 +47,7 @@ function hudHitClaiming(gesture: ClaimableGesture): (hit: unknown) => boolean {
 /** World → screen, the space widgets lay themselves out in. Reads the `view`
  *  dep; without it (no viewport wired) world coords pass through. */
 function toScreen(deps: ActionDeps, x: number, y: number): [number, number] {
-  const view = (deps.view as { get(): View } | undefined)?.get();
+  const view = deps.view?.get();
   if (!view) return [x, y];
   return worldToScreen(x, y, viewToTransform(view));
 }

@@ -149,7 +149,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
-      const dep = ctx.deps.editAnchors as EditAnchorsDep | undefined;
+      const dep = ctx.deps.editAnchors;
       if (!dep) return {};
 
       const affordance = ctx.drag?.affordance;

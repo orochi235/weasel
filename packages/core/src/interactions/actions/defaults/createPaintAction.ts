@@ -2,7 +2,6 @@ import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -91,9 +90,9 @@ export function createPaintAction<TState, TValue, K extends string>(
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
-        const selection = ctx.deps.selection as SelectionApi | undefined;
+        const selection = ctx.deps.selection;
         const scene = ctx.deps.scene as Scene<Data, string, unknown> | undefined;
-        const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+        const applyOps = ctx.deps.applyOps;
 
         if (!selection || !scene) return {};
 
@@ -156,7 +155,7 @@ export function createPaintAction<TState, TValue, K extends string>(
       },
     },
     enabled: (deps) => {
-      const sel = deps?.selection as SelectionApi | undefined;
+      const sel = deps?.selection;
       if (!sel || (sel.get() as unknown[]).length === 0) {
         return ActionDisabledReason.SelectionRequired;
       }

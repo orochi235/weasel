@@ -14,7 +14,6 @@ import type {
   Action,
   AnyTool,
   InvocationCtx,
-  NodeAtPointDep,
   OngoingHandle,
   RenderLayer,
   Simulation,
@@ -125,7 +124,7 @@ function usePinTool(
     invoker: {
       timing: 'ongoing' as const,
       start(ctx: InvocationCtx): OngoingHandle {
-        const nodeAtPoint = ctx.deps.nodeAtPoint as NodeAtPointDep | undefined;
+        const nodeAtPoint = ctx.deps.nodeAtPoint;
         const id = nodeAtPoint?.(ctx.world) ?? null;
         const node = id === null ? undefined : nodesRef.current.find((n) => n.id === id);
         if (!node) return {};

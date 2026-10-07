@@ -15,7 +15,6 @@ import type { NodeId } from 'core/scene/types';
 import { defineTool } from '../../overlayBinding';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { onEmptyCanvas } from './selectionContributions';
@@ -247,7 +246,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           affordance?: unknown;
           mods?: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
         } | undefined;
-        const selection = deps.selection as SelectionApi | undefined;
+        const selection = deps.selection;
         if (!selection || p?.worldX === undefined || p.worldY === undefined) return;
         const mods = p.mods ?? { alt: false, ctrl: false, meta: false, shift: false };
         const opts = optionsRef.current;
@@ -317,7 +316,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         const deferred = pressRef.current.deferredClickId;
         pressRef.current = { deferredClickId: null };
         if (deferred === null) return;
-        const selection = deps.selection as SelectionApi | undefined;
+        const selection = deps.selection;
         if (!selection) return;
         const p = params as {
           mods?: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };

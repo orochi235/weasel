@@ -1,7 +1,6 @@
 import { createElement } from 'react';
 import { DeleteIcon } from './icons/actionGlyphIcons';
 import type { Node, NodeId, Scene } from 'core/scene/types';
-import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -88,12 +87,12 @@ export const deleteAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const selection = deps.selection as SelectionApi | undefined;
-      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+      const selection = deps.selection;
+      const scene = deps.scene;
       // Optional consumer commit hook. When present, ops route through it
       // (consumer history) as one undo entry; otherwise they fall back to the
       // scene's own history via `scene.applyBatch`.
-      const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const applyOps = deps.applyOps;
       if (!selection || !scene) return;
       const ids = selection.get();
       if (ids.length === 0) return;

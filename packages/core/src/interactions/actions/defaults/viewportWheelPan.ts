@@ -20,8 +20,7 @@
  * outranks `swapAxis`: a shift-wheel routed into a barred axis moves nothing.
  */
 
-import type { Action, DebugSink } from '@weasel-js/routing';
-import type { ViewApi } from '../depSchema';
+import type { Action } from '@weasel-js/routing';
 import { wheelPan } from 'core/viewport/wheelHandler';
 
 // ---------------------------------------------------------------------------
@@ -57,7 +56,7 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run(deps, params) {
-      const view = deps.view as ViewApi | undefined;
+      const view = deps.view;
       if (!view) return;
       const axis = (params?.axis as 'both' | 'x' | 'y' | undefined) ?? 'both';
       const deltaX = (params?.deltaX as number | undefined) ?? 0;
@@ -65,7 +64,7 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
       const from = view.get();
       const next = wheelPan(from, { deltaX, deltaY }, { axis, swapAxis: params?.swapAxis === true });
       view.set(next);
-      (deps.debug as DebugSink | undefined)?.recordViewport('pan', from, next);
+      deps.debug?.recordViewport('pan', from, next);
     },
   },
   enabled: () => true,

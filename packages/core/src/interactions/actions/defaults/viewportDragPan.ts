@@ -32,7 +32,7 @@
  * @see useHandTool — the React hook this descriptor parallels.
  */
 
-import type { Action, DebugSink } from '@weasel-js/routing';
+import type { Action } from '@weasel-js/routing';
 import { resolveParams, type InvocationCtx, type OngoingHandle, type BindingOpts } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
@@ -112,7 +112,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
-      const view = ctx.deps.view as ViewApi | undefined;
+      const view = ctx.deps.view;
       if (!view) return {};
 
       const startView = view.get();
@@ -132,7 +132,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
         tracker: inertia && view.decay ? createVelocityTracker() : undefined,
         lastScreen: { x: 0, y: 0 },
       };
-      const debug = ctx.deps.debug as DebugSink | undefined;
+      const debug = ctx.deps.debug;
       const grab = ctx.drag?.start;
 
       return {

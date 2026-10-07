@@ -24,7 +24,7 @@ export const cancelGestureAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const d = deps.dispatcher as { cancelAll(reason: 'commit' | 'cancel'): void } | undefined;
+      const d = deps.dispatcher;
       d?.cancelAll('cancel');
     },
   },

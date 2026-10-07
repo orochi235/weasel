@@ -66,7 +66,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay, DragSample } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
-import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';
+import type { InsertDep, InsertExtras } from '../depSchema';
 import type { Op } from 'core/ops/types';
 import type { Scene } from 'core/scene/types';
 import type { GestureContext, InsertBehavior, InsertPoint } from '../../gestures/types';
@@ -377,7 +377,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
-      const dep = ctx.deps.insert as InsertDep | undefined;
+      const dep = ctx.deps.insert;
       if (!dep) return {};
 
       // Starting a draw retires any prior selection — the lingering halo
@@ -386,12 +386,12 @@ export const insertAction: Action & { requires: string[] } = inPlane({
       // continues over the selected node would otherwise drive the move
       // action via fall-through. The clear is unconditional: the user has
       // committed to "I'm making a new thing" by engaging a creation tool.
-      const selection = ctx.deps.selection as SelectionApi | undefined;
+      const selection = ctx.deps.selection;
       if (selection && selection.get().length > 0) {
         selection.clear();
       }
 
-      const snapDep = ctx.deps.snap as SnapDep | undefined;
+      const snapDep = ctx.deps.snap;
       const snap = snapDep
         ? (p: { x: number; y: number }) => snapDep.point(p)
         : (p: { x: number; y: number }) => p;
@@ -417,7 +417,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
 
       const scratch: InsertScratch = {
         dep,
-        textEdit: ctx.deps.textEdit as TextEditDep | undefined,
+        textEdit: ctx.deps.textEdit,
         snap,
         opts,
         behaviors,
@@ -425,8 +425,8 @@ export const insertAction: Action & { requires: string[] } = inPlane({
         readView,
         readPlane,
         shaped: { start: startPoint, current: startPoint },
-        scene: ctx.deps.scene as Scene<unknown, string, unknown> | undefined,
-        applyOps: ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined,
+        scene: ctx.deps.scene,
+        applyOps: ctx.deps.applyOps,
         selection,
         startX: ctx.world.x,
         startY: ctx.world.y,

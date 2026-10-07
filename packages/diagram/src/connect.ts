@@ -31,7 +31,6 @@ import {
   type OngoingHandle,
   type OngoingOverlay,
   type PoseDescriptor,
-  type Scene,
   type Stroke,
   type Vec2,
 } from '@weasel-js/core';
@@ -178,7 +177,7 @@ export function grabPortBindings(actionId: string = GRAB_PORT_ACTION_ID): Gestur
  * put its endpoints.
  */
 export function commitEdgeToScene(edge: PendingEdge, ctx: InvocationCtx): void {
-  const scene = ctx.deps['scene'] as Scene<unknown, string, unknown> | undefined;
+  const scene = ctx.deps.scene;
   if (scene === undefined) return;
   const trait: DiagramEdge = {
     from: { port: edge.from.id },

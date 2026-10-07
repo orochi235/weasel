@@ -142,12 +142,12 @@ export const lassoSelectAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts): OngoingHandle {
-      const dep = ctx.deps.lassoSelect as LassoSelectDep | undefined;
+      const dep = ctx.deps.lassoSelect;
       if (!dep) return {};
 
       const params = resolveParams(opts?.params) as
         { mode?: LassoHitMode; minVertexSpacing?: number } | undefined;
-      const view = ctx.deps.view as ViewApi | undefined;
+      const view = ctx.deps.view;
       const vertices: Point2[] = [{ x: ctx.world.x, y: ctx.world.y }];
       const behaviors = (opts?.behaviors ?? []) as LassoSelectBehavior[];
       let gesture: GestureContext<LassoSelectPose> | null = null;
