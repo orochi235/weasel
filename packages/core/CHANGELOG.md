@@ -1,5 +1,54 @@
 # Changelog
 
+## 1.9.0
+
+### Patch Changes
+
+- c06cc26: The built-in actions and tools read their deps at the types `DepSchema` declares instead of casting each one. `gestureViewReader` and `gesturePlaneReader` take `Pick<ActionDeps, 'view'>`, so a `view` that is not a `ViewApi` is a type error rather than a runtime one.
+- dc5bcfc: `@weasel-js/react` exports `assignRef(ref, value)`, which writes a value into a ref prop whether it is a callback ref or an object ref. `<DrawCanvas>`, `<SceneViewCanvas>`, `<MinimapCanvas>`, `<SceneCanvas>` and `ItemList` forward their refs through it.
+  
+  A callback ref passed as `<SceneViewCanvas canvasRef>` or `<MinimapCanvas canvasRef>` is now called only when the canvas attaches or detaches, or when the ref itself changes. It used to be called with `null` and then the element again on every render.
+- 0b8d6f8: Core depends on `@msb235/blits` 0.6.0, where it pinned 0.4.0. An app that depends on blits 0.6.0 itself, as klieg does, now installs one copy rather than two. Nothing core exports changes.
+- 0004749: `<SceneCanvas features>` takes four finer presets. `select` mounts the select tool and `outline` draws the selection outline, so a canvas supplying its own select tool can name `outline` without the built-in one mounting beside it. `resize` and `rotate` each draw and bind one kind of handle, so a resize-only canvas no longer hides the rotation handle by hand. The existing presets keep their meaning as abbreviations: `pick` is `select` + `outline`, `transform` is `resize` + `rotate`, and `draw` is every base preset. `COMPOSITE_FEATURES` lists what each abbreviates, and the new `selectionResizeContribution` / `selectionRotateContribution` (with their `…Bindings` and ids) are the ambient entries the two handle presets install; `selectionTransformContribution` still carries both.
+  
+  Additive for any canvas that names presets, but `FEATURE_ACTION_IDS` and the `BaseFeature` type are now keyed by the base presets — `select`, `outline`, `resize`, `rotate` in place of `pick` and `transform` — so code indexing that table by `pick` or `transform` has to expand through `COMPOSITE_FEATURES` first.
+- 1b22863: `fitViewToBounds` takes `anchor: 'start'`, which shows the left or top edge of bounds that overflow the viewport instead of their middle. `DiagramView` passes it through, alongside a new `minScale` floor on its initial fit.
+- ad0da6c: How big a mesh may be and still join a draw batch now depends on whether a batch is open when it arrives: up to 1,024 vertices when one is, and up to 96 when none is, where it used to be 256 either way. A mesh among rects or other batched fills draws with them far more often, and back-to-back meshes between 96 and 256 vertices draw on their own.
+- 2b03077: The text edit overlay sets `text-rendering: geometricPrecision` for faces the kit lays out itself, so it keeps the canvas's fractional glyph advances on Linux Chromium. Before, Chromium there rounded every advance to a whole pixel and the overlay ran ahead of the canvas glyphs as a line got longer: 3px over "Small Caps" at 24px. A family served by the canvas-font tier keeps the browser's default rendering, which is what the canvas measures it with.
+- 718769e: A `{ px }` stroke is now that many pixels wide in every direction under a non-uniform transform. It used to resolve through the mean of the two axis scales, so at a 4:1 view a 1px line painted 0.5px tall running across and 2px wide running down, and a rect outline, an ellipse or a diagonal came out uneven. The ribbon is built after the transform's stretch and mapped back to world, so it still batches and aligns like any other stroke. Marker heads on a `{ px }` stroke, and their outlines, are built the same way.
+  
+  Dashes on a `{ px }` stroke are now screen pixels, as SVG's `non-scaling-stroke` (which a `{ px }` width serializes to) measures them; they used to be world units that grew and shrank with the zoom. A stroke with a world-unit width keeps world-unit dashes.
+  
+  Picking and paint bounds follow. `NodeInk` gains `outsetPx` and `insetPx`, a reach measured on screen; the built-in painters report a `{ px }` stroke's reach there and leave `outset` and `inset` at 0 for it, so code that read a `{ px }` stroke's reach from `outset` must add `outsetPx`. `NodeInkCtx` gains `leastScale`, which `defaultPaintBounds` fills with the smaller axis scale so a node's paint box covers a `{ px }` stroke along the axis zoomed least, and culling measures the same way.
+- 3088756: Every part of a stroke is now built in the units its own size is given in, so each stays exact under a non-uniform transform.
+  
+  - A `{ px }` stroke on outlined text is that many pixels wide in every direction, as a path's is; at a 4:1 view a 1px outline used to paint 2px across and half a pixel down. A glyph stroke's dashes are in the width's units — world, or screen pixels on a `{ px }` stroke — where they used to be read in em, so a dash pattern on text came out solid.
+  - A `{ px }`-sized marker head on a world-width stroke is that many pixels in every direction. It used to resolve through the mean scale and come out stretched.
+  - On a `{ px }` stroke, a head with a world size and every `vertexWidths` entry are world lengths, stretched by the view like any world geometry. They used to be read as lengths in the stroke's screen space. A head with no size still takes the stroke width.
+  
+  Picking and culling follow each head's units: `NodeInk.outset` and `inset` carry what is built in world, `outsetPx` and `insetPx` what is built on screen, so a world-sized head on a `{ px }` stroke now reaches in `outset` and a `{ px }` head on a world-width stroke in `outsetPx`.
+- 63d0bf8: `<SceneCanvas onClick>` reports every click with the node under it, after the click's own behavior has run, including a click on a node that is already picked. `DiagramView` uses it, so `onSelect` fires on a re-click, and it now pans on a plain drag as well as the wheel. `diagramScene` throws on a repeated node id and drops a repeated edge with the same ends and label.
+- 4146713: A concretely typed `Scene<MyData, MyLayer, MyPose>` is now assignable to `Scene<unknown, string, unknown>`, the type the `scene` dep and the built-in actions take, so passing one no longer needs `as unknown as`. The pose callbacks a scene carries — `clipFromPose`, `derivePath`, `derivePose`, on nodes, on `AddNodeSpec` and in `SceneRegistry` — are checked the way method parameters are, which is what had made every typed scene unassignable. A callback written against an unrelated pose type is still a type error where the scene is built; one that asks for a narrower pose than the scene's is no longer caught. The clip callback's type is exported as `ClipFromPoseFn`, beside `DerivePathFn` and `DerivePoseFn`.
+- 24b2eaf: `SceneRegistry`, `DerivedDep`, `DerivePathFn` and `DerivePoseFn` take the scene's data and layer types after the pose (`SceneRegistry<TPose, TData, TLayer>`), defaulting to `unknown` and `string`. A `derivePath` or `derivePose` on a `Scene<MyData, MyLayer, MyPose>`, or in its registry, now reads its node's and its dependencies' `data` and `layer` typed instead of casting. `withKitRegistry` and `withDiagramRegistry` carry the same parameters through. Existing `SceneRegistry<TPose>` spellings are unchanged.
+- Updated dependencies [c06cc26]
+- Updated dependencies [dc5bcfc]
+- Updated dependencies [718769e]
+- Updated dependencies [63d0bf8]
+- Updated dependencies [3088756]
+  - @weasel-js/routing@1.9.0
+  - @weasel-js/react@1.9.0
+  - @weasel-js/paint@1.9.0
+  - @weasel-js/text@1.9.0
+  - @weasel-js/cursor@1.9.0
+  - @weasel-js/font@1.9.0
+  - @weasel-js/geom@1.9.0
+  - @weasel-js/gestures@1.9.0
+  - @weasel-js/history@1.9.0
+  - @weasel-js/modes@1.9.0
+  - @weasel-js/quantity@1.9.0
+  - @weasel-js/registry@1.9.0
+  - @weasel-js/select@1.9.0
+
 ## 1.8.1
 
 ### Patch Changes

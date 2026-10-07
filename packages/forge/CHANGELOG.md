@@ -1,5 +1,41 @@
 # @weasel-js/forge
 
+## 1.9.0
+
+### Patch Changes
+
+- 0fa52ba: A trial whose story an `overflow` ancestor clips away entirely now unmounts that story once a scroll carries it far from the viewport, and mounts it again on return. Before, the clipped story stayed mounted until something unclipped it, because the browser reports no further movement for an element of which nothing shows.
+- f7701b8: Opening another trial no longer reloads an isolated story's frame, or remounts a workshop story, in a trial that stays on screen. A trial unmounts its story when it is far from the viewport, and that was decided by whether any of the story showed; while the tiling changes a narrow tile clips its content away entirely for a moment, which read as out of view. It is now decided by where the story is relative to the viewport, whatever clips it.
+- 5dd2f9d: An index page no longer collapses a story that sizes itself from its container — a slider, a tiled workspace — to a 10px sliver. A padded story's cell now takes the column's width, as a page would give it, and a centered cell keeps a minimum width of `min(100%, 20rem)` while still hugging anything wider.
+- b176142: A workshop whose story index loses a story now forgets that story's ready description, loaded module and load fault in the same render that drops it, rather than in a second commit after it.
+- c069584: A native story now always runs under its index entry's title. When the plugin could not tell that a meta was forge's — its import, or `@weasel-js/forge` itself, resolved to nothing from the story file — the index titled the story by its path while the loaded module used the meta's `title`, so a link written from one named no story in the other. `loadStories` and `loadNativeModule` treat their title argument as the index entry's, and a native meta's own `title` no longer overrides it; a CSF meta's still does. `forgeTest` passes the indexed title to `runStory` likewise.
+  
+  The plugin also re-reads a story file when a module it imports from first appears, so a helper that re-exports forge's `meta` and is created after the story file now retitles that story without an edit to the story file.
+- 239d436: An isolated story with a `viewport` no longer loads its frame twice when first opened. Its trial's stage came only from the frame's `ready`, so the trial moved the frame into a stage once the story reported and the iframe reloaded. The index now reads a native story's `viewport` when both sides are number literals (`IndexEntry.viewport`), and the trial starts with that stage; a viewport the index cannot read still costs one reload.
+- Updated dependencies [c06cc26]
+- Updated dependencies [718769e]
+- Updated dependencies [dc5bcfc]
+- Updated dependencies [ee165ac]
+- Updated dependencies [0b8d6f8]
+- Updated dependencies [0004749]
+- Updated dependencies [1b22863]
+- Updated dependencies [a6b21fb]
+- Updated dependencies [d270868]
+- Updated dependencies [b83b452]
+- Updated dependencies [ad0da6c]
+- Updated dependencies [2b03077]
+- Updated dependencies [718769e]
+- Updated dependencies [3088756]
+- Updated dependencies [63d0bf8]
+- Updated dependencies [4146713]
+- Updated dependencies [24b2eaf]
+- Updated dependencies [7b24dba]
+- Updated dependencies [5df9a88]
+  - @weasel-js/core@1.9.0
+  - @weasel-js/labkit@1.9.0
+  - @weasel-js/ui@1.9.0
+  - @weasel-js/theme@1.9.0
+
 ## 1.8.1
 
 ### Patch Changes

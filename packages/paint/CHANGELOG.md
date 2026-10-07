@@ -1,5 +1,12 @@
 # @weasel-js/paint
 
+## 1.9.0
+
+### Patch Changes
+
+- 718769e: `Stroke.dash` documents its units: world units, or screen pixels on a `{ px }` stroke, which is how the renderer now draws them.
+- 3088756: `Stroke.vertexWidths` documents that its entries are world units, even on a `{ px }` stroke.
+
 ## 1.8.1
 
 No changes in this release.

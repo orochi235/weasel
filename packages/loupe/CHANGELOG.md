@@ -1,5 +1,23 @@
 # @weasel-js/loupe
 
+## 1.9.0
+
+### Patch Changes
+
+- Updated dependencies [c06cc26]
+- Updated dependencies [dc5bcfc]
+- Updated dependencies [0b8d6f8]
+- Updated dependencies [0004749]
+- Updated dependencies [1b22863]
+- Updated dependencies [ad0da6c]
+- Updated dependencies [2b03077]
+- Updated dependencies [718769e]
+- Updated dependencies [3088756]
+- Updated dependencies [63d0bf8]
+- Updated dependencies [4146713]
+- Updated dependencies [24b2eaf]
+  - @weasel-js/core@1.9.0
+
 ## 1.8.1
 
 ### Patch Changes
