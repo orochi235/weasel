@@ -16,6 +16,7 @@
  * already have on the cross axis. An author who dragged two branches into an
  * order gets that order back, and re-running the layout is free.
  */
+import { barycenterOrder } from './barycenter';
 import type { Graph, GraphNode } from './graph';
 import {
   DEFAULT_NODE_GAP,
@@ -86,7 +87,8 @@ export const layered: LayoutFn = (graph, opts = {}) => {
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
   const order = graphOrder(graph);
 
-  const ranks = ranksOf(graph, backEdges(graph));
+  const back = backEdges(graph);
+  const ranks = ranksOf(graph, back);
   const byRank = new Map<number, GraphNode[]>();
   for (const node of graph.nodes) {
     const rank = ranks.get(node.id) ?? 0;
@@ -96,11 +98,12 @@ export const layered: LayoutFn = (graph, opts = {}) => {
   }
 
   const rows = [...byRank.keys()].sort((a, b) => a - b);
+  let ordered = rows.map((rank) => seededOrder(byRank.get(rank)!, axes.cross, order));
+  if (opts.order === 'barycenter') ordered = barycenterOrder(graph, ordered, back);
   const packed = new Map<number, ReturnType<typeof packAcross>>();
   let widest = 0;
-  for (const rank of rows) {
-    const row = seededOrder(byRank.get(rank)!, axes.cross, order);
-    const p = packAcross(row, axes.cross, nodeGap);
+  for (const [i, rank] of rows.entries()) {
+    const p = packAcross(ordered[i]!, axes.cross, nodeGap);
     packed.set(rank, p);
     widest = Math.max(widest, p.span);
   }

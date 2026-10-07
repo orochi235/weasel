@@ -37,6 +37,11 @@ export interface LayoutOptions {
   nodeGap?: number;
   /** Between one rank and the next. Default 96. */
   rankGap?: number;
+  /** How `layered` orders nodes within a rank. `'seeded'` (default) keeps
+   *  the order they already sit in; `'barycenter'` reorders to reduce edge
+   *  crossings, for a generated diagram with no arranged order to keep.
+   *  Other layouts ignore it. */
+  order?: 'seeded' | 'barycenter';
   /** Ids layout must not move, on top of whatever carries `pinned: true`. */
   pin?: Iterable<string>;
   /** How far a node has to move to be worth moving, in world units. Default
