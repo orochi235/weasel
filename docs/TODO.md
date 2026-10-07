@@ -1146,11 +1146,36 @@ one dead `const` and four stale disable directives.
   the GPU process and the GPU. A composited layer costs 0.08–0.25 ms, almost
   none of it in `render()` (0.04–0.09 ms for the whole composite frame).
 
-  What the composite figures leave out, all of which count against building it:
-  rendering a layer into its texture whenever it changes, on top of that
-  frame's normal cost; the texture memory, 16 MB a layer at this canvas size
-  (1 GB at 64 layers); and quads bounded to a layer's content rather than the
-  whole canvas, which would cost less fill than measured here.
+  **With one layer changing every frame, the crossing moves to about 300
+  commands a layer, and past 1,000 for a single layer.** The changed layer
+  draws into an offscreen buffer as a group with one copy effect, then
+  composites with the rest (`compositeDirty`), against submitting every layer
+  with that one's `deps` changing (`submitDirty`). The copy is a full-buffer
+  pass a real layer texture would not need, so the composite side is an upper
+  bound. ms a frame over the control, `pass 1 / pass 2`:
+
+  | Layers | Cmds a layer | Submit, one dirty | Composite, one dirty |
+  |---:|---:|---:|---:|
+  |  1 |   100 |  0.17 /  0.20 |  0.63 /  0.63 |
+  |  1 |   300 |  0.43 /  0.45 |  0.88 /  0.87 |
+  |  1 | 1,000 |  1.42 /  1.17 |  1.79 /  1.54 |
+  |  4 |   300 |  1.64 /  1.50 |  2.31 /  2.33 |
+  |  4 | 1,000 |  5.13 /  6.91 |  3.06 /  3.27 |
+  | 16 |   100 |  2.69 /  2.58 |  6.64 /  7.14 |
+  | 16 |   300 |  6.32 /  6.12 |  5.74 /  5.85 |
+  | 16 | 1,000 | 14.53 / 14.74 |  2.63 /  2.70 |
+  | 64 |   100 |  5.86 /  5.17 |  8.64 /  7.89 |
+  | 64 |   300 | 16.94 / 17.06 |  6.75 /  6.72 |
+  | 64 | 1,000 | 58.96 / 57.77 |  7.09 /  7.02 |
+
+  A dirty layer adds 0.4–3.5 ms to the composite frame, most at 16 layers;
+  submitting barely notices it, since rebuilding one layer's command tree is
+  cheap next to submitting it. Full rows are in the result files.
+
+  Still left out, both counting against building it: the texture memory, 16 MB
+  a layer at this canvas size (1 GB at 64 layers); and quads bounded to a
+  layer's content rather than the whole canvas, which would cost less fill and
+  memory than measured here.
 
   Unexplained: the composite frame is identical down a layer count, yet it
   falls from 3.6 to 1.7 ms at 16 layers and 7.5 to 5.4 at 64 as the submit
@@ -1159,9 +1184,12 @@ one dead `const` and four stale disable directives.
   near zero while four measure 0.5–0.9 ms.
 
   Measured on teitou (Apple M5 Max, ANGLE Metal, headless Chromium 153),
-  2026-10-07, at the spec in `7e16a79d7`; load average 2.4–4.3 on 18 cores,
+  2026-10-07, at the spec in `7e16a79d7`, and the dirty rows at `a91417aea`,
+  whose clean rows reproduce the first run; load average 2.4–4.3 on 18 cores,
   no other fleet job running. Result files:
-  `tests/perf/recorded/layer-dispatch-2026-10-07/`. One GPU and backend only.
+  `tests/perf/recorded/layer-dispatch-2026-10-07/` and
+  `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`. One GPU and backend
+  only.
 - **(P3) Whether the benchmarks gate CI.** Every benchmark lives in
   `tests/perf/` and writes a result file per run; nothing gates anything. The
   vitest microbenchmarks keep a committed baseline in `tests/perf/bench/`. `tests/perf/README.md` argues a hard

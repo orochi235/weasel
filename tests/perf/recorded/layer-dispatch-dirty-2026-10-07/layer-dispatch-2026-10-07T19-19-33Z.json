@@ -1,0 +1,3124 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "layer-dispatch",
+  "git": {
+    "sha": "ee165acc8c287d8261cce4efc87fa826f73d023a",
+    "dirty": true
+  },
+  "timestamp": "2026-10-07T19:19:33.235Z",
+  "machine": {
+    "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+    "softwareGl": false,
+    "browser": "chromium 153.0.8010.12",
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.0.0 arm64",
+    "node": "v26.10.0",
+    "loadavg": [
+      2.46,
+      2.12,
+      2.85
+    ]
+  },
+  "params": {
+    "viewport": "1280x800",
+    "dpr": 2,
+    "layers": [
+      1,
+      4,
+      16,
+      64
+    ],
+    "cmds": [
+      10,
+      30,
+      100,
+      300,
+      1000
+    ],
+    "runs": 3,
+    "gcAvailable": true
+  },
+  "items": [
+    {
+      "id": "1x10",
+      "params": {
+        "layers": 1,
+        "cmds": 10
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.12,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.12,
+            0.165,
+            0.1
+          ]
+        },
+        "controlCpu": {
+          "value": 0.04,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.04,
+            0.065,
+            0.035
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 0.17,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.17,
+            0.185,
+            0.1
+          ]
+        },
+        "submitCpu": {
+          "value": 0.04,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.04,
+            0.045,
+            0.035
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 0.24,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.24,
+            0.25,
+            0.2
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.05,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.05,
+            0.05,
+            0.03
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 0.15,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.15,
+            0.185,
+            0.145
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.04,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.04,
+            0.04,
+            0.03
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 0.675,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.685,
+            0.675,
+            0.605
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.09,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.09,
+            0.09,
+            0.07
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 4,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 0.05000000000000002,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 0.12,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 0.555,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "1x30",
+      "params": {
+        "layers": 1,
+        "cmds": 30
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.165,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.165,
+            0.195,
+            0.125
+          ]
+        },
+        "controlCpu": {
+          "value": 0.045,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.045,
+            0.045,
+            0.03
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 0.235,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.235,
+            0.285,
+            0.18
+          ]
+        },
+        "submitCpu": {
+          "value": 0.1,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.145,
+            0.1,
+            0.08
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 0.21,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.21,
+            0.29,
+            0.17
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.035,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.035,
+            0.04,
+            0.025
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 0.255,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.255,
+            0.27,
+            0.23
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.08,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.125,
+            0.08,
+            0.075
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 0.715,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.725,
+            0.715,
+            0.65
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.125,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.155,
+            0.125,
+            0.105
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 4,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 0.06999999999999998,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 0.044999999999999984,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 0.09,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 0.5499999999999999,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "1x100",
+      "params": {
+        "layers": 1,
+        "cmds": 100
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.15,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.125,
+            0.155,
+            0.15
+          ]
+        },
+        "controlCpu": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.03,
+            0.035,
+            0.025
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 0.325,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.325,
+            0.355,
+            0.31
+          ]
+        },
+        "submitCpu": {
+          "value": 0.135,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.135,
+            0.13,
+            0.145
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 3,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 0.215,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.205,
+            0.275,
+            0.215
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.025,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.025,
+            0.035,
+            0.025
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 0.35,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.37,
+            0.35,
+            0.35
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.14,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.135,
+            0.15,
+            0.14
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 3,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 0.78,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.78,
+            0.855,
+            0.775
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.15,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.145,
+            0.175,
+            0.15
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 6,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 0.17500000000000002,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 0.065,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 0.19999999999999998,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 0.63,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "1x300",
+      "params": {
+        "layers": 1,
+        "cmds": 300
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.135,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.065,
+            0.175,
+            0.135
+          ]
+        },
+        "controlCpu": {
+          "value": 0.025,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.035,
+            0.025,
+            0.02
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 0.555,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.73,
+            0.495,
+            0.555
+          ]
+        },
+        "submitCpu": {
+          "value": 0.28,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.515,
+            0.19,
+            0.28
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 7,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 0.19,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.15,
+            0.235,
+            0.19
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.02,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.035,
+            0.02,
+            0.02
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 0.58,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.755,
+            0.5,
+            0.58
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.245,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.545,
+            0.19,
+            0.245
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 7,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 1,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.25,
+            0.925,
+            1
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.26,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.565,
+            0.21,
+            0.26
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 10,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 0.42000000000000004,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 0.05499999999999999,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 0.44499999999999995,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 0.865,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "1x1000",
+      "params": {
+        "layers": 1,
+        "cmds": 1000
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.18,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.21,
+            0.16,
+            0.18
+          ]
+        },
+        "controlCpu": {
+          "value": 0.025,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.025,
+            0.03,
+            0.02
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 1.425,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.31,
+            1.435,
+            1.425
+          ]
+        },
+        "submitCpu": {
+          "value": 0.485,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.485,
+            0.715,
+            0.45
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 21,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 0.245,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.245,
+            0.24,
+            0.255
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.02,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.02,
+            0.03,
+            0.02
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 1.345,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.34,
+            1.675,
+            1.345
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.485,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.485,
+            0.745,
+            0.445
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 21,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 1.72,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.71,
+            1.98,
+            1.72
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.5,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.5,
+            0.705,
+            0.49
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 24,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 1.245,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 0.065,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 1.165,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 1.54,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "4x10",
+      "params": {
+        "layers": 4,
+        "cmds": 10
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.17,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.17,
+            0.2,
+            0.155
+          ]
+        },
+        "controlCpu": {
+          "value": 0.045,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.035,
+            0.07,
+            0.045
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 0.19,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.19,
+            0.235,
+            0.17
+          ]
+        },
+        "submitCpu": {
+          "value": 0.075,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.07,
+            0.1,
+            0.075
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 1.255,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.255,
+            1.305,
+            1.215
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.035,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.035,
+            0.04,
+            0.035
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 0.245,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.265,
+            0.24,
+            0.245
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.065,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.06,
+            0.09,
+            0.065
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 2.105,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.1,
+            2.11,
+            2.105
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.1,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.085,
+            0.125,
+            0.1
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 4,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 0.01999999999999999,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 1.085,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 0.07499999999999998,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 1.935,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "4x30",
+      "params": {
+        "layers": 4,
+        "cmds": 30
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.125,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.11,
+            0.19,
+            0.125
+          ]
+        },
+        "controlCpu": {
+          "value": 0.04,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.03,
+            0.06,
+            0.04
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 0.27,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.27,
+            0.29,
+            0.26
+          ]
+        },
+        "submitCpu": {
+          "value": 0.175,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.135,
+            0.185,
+            0.175
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 1.31,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.315,
+            1.31,
+            1.305
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.04,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.035,
+            0.05,
+            0.04
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 0.255,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.255,
+            0.28,
+            0.255
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.17,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.13,
+            0.185,
+            0.17
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 2.225,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.16,
+            2.225,
+            2.235
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.135,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.11,
+            0.15,
+            0.135
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 4,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 0.14500000000000002,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 1.185,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 0.13,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 2.1,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "4x100",
+      "params": {
+        "layers": 4,
+        "cmds": 100
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.13,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.135,
+            0.13,
+            0.085
+          ]
+        },
+        "controlCpu": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.03,
+            0.03,
+            0.035
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 0.875,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.715,
+            0.905,
+            0.875
+          ]
+        },
+        "submitCpu": {
+          "value": 0.64,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.335,
+            0.69,
+            0.64
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 8,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 1.18,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.22,
+            1.16,
+            1.18
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.025,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.025,
+            0.03,
+            0.025
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 0.885,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.7,
+            0.885,
+            0.895
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.505,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.33,
+            0.505,
+            0.615
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 8,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 2.25,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.225,
+            2.25,
+            2.285
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.24,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.145,
+            0.24,
+            0.24
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 6,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 0.745,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 1.0499999999999998,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 0.755,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 2.12,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "4x300",
+      "params": {
+        "layers": 4,
+        "cmds": 300
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.145,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.145,
+            0.13,
+            0.17
+          ]
+        },
+        "controlCpu": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.03,
+            0.025,
+            0.035
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 1.625,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.61,
+            1.625,
+            2.605
+          ]
+        },
+        "submitCpu": {
+          "value": 0.575,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.565,
+            0.575,
+            1.44
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 24,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 1.24,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.24,
+            1.26,
+            1.225
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.02,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.02,
+            0.02,
+            0.025
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 1.645,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.645,
+            1.61,
+            2.435
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.575,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.575,
+            0.525,
+            1.105
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 24,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 2.47,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.47,
+            2.425,
+            2.69
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.225,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.225,
+            0.19,
+            0.36
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 10,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 1.48,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 1.095,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 1.5,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 2.325,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "4x1000",
+      "params": {
+        "layers": 4,
+        "cmds": 1000
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.15,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.115,
+            0.15,
+            0.16
+          ]
+        },
+        "controlCpu": {
+          "value": 0.035,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.045,
+            0.035,
+            0.025
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 6.31,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            6.31,
+            7.355,
+            5.225
+          ]
+        },
+        "submitCpu": {
+          "value": 2.605,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            2.605,
+            3.3,
+            1.6
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 80,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 1.235,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.235,
+            1.23,
+            1.28
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.035,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.035,
+            0.04,
+            0.025
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 7.055,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            7.055,
+            7.395,
+            5.395
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 2.68,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            2.68,
+            3.53,
+            1.59
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 80,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 3.42,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.42,
+            3.585,
+            3.185
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.72,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.72,
+            1,
+            0.445
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 24,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 6.159999999999999,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 1.0850000000000002,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 6.904999999999999,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 3.27,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "16x10",
+      "params": {
+        "layers": 16,
+        "cmds": 10
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": -0.005,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            -0.035,
+            -0.005,
+            0.05
+          ]
+        },
+        "controlCpu": {
+          "value": 0.035,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.04,
+            0.03,
+            0.035
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 0.22,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.21,
+            0.22,
+            0.305
+          ]
+        },
+        "submitCpu": {
+          "value": 0.205,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.205,
+            0.135,
+            0.29
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 3.55,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.5,
+            3.55,
+            3.775
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.055,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.055,
+            0.055,
+            0.06
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 3,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 0.35,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.345,
+            0.35,
+            0.39
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.265,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.265,
+            0.15,
+            0.285
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 6.105,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            6.105,
+            5.65,
+            6.195
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.095,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.095,
+            0.085,
+            0.11
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 6,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 0.225,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 3.5549999999999997,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 0.355,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 6.11,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "16x30",
+      "params": {
+        "layers": 16,
+        "cmds": 30
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": -0.025,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            -0.03,
+            -0.025,
+            -0.02
+          ]
+        },
+        "controlCpu": {
+          "value": 0.035,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.035,
+            0.035,
+            0.04
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 0.62,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.62,
+            0.65,
+            0.605
+          ]
+        },
+        "submitCpu": {
+          "value": 0.66,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.66,
+            0.665,
+            0.47
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 3.105,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.105,
+            3.285,
+            2.985
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.06,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.055,
+            0.065,
+            0.06
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 3,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 0.685,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.655,
+            0.74,
+            0.685
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.465,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.46,
+            0.68,
+            0.465
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 5.415,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            5.045,
+            5.415,
+            5.935
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.125,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.125,
+            0.15,
+            0.125
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 6,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 0.645,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 3.13,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 0.7100000000000001,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 5.44,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "16x100",
+      "params": {
+        "layers": 16,
+        "cmds": 100
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": -0.015,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            -0.01,
+            -0.115,
+            -0.015
+          ]
+        },
+        "controlCpu": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.03,
+            0.045,
+            0.03
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 2.59,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.59,
+            2.985,
+            2.58
+          ]
+        },
+        "submitCpu": {
+          "value": 2.215,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            2.215,
+            2.405,
+            1.72
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 31,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 3.715,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.715,
+            3.18,
+            4.385
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.05,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.05,
+            0.05,
+            0.045
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 3,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 2.565,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.565,
+            3.105,
+            2.52
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 1.685,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            1.685,
+            2.32,
+            1.565
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 31,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 7.12,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            7.455,
+            7.12,
+            7.01
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.235,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.215,
+            0.26,
+            0.235
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 8,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 2.605,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 3.73,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 2.58,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 7.135,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "16x300",
+      "params": {
+        "layers": 16,
+        "cmds": 300
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.05,
+            0.01,
+            0.03
+          ]
+        },
+        "controlCpu": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.025,
+            0.03,
+            0.035
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 6.23,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            6.25,
+            5.9,
+            6.23
+          ]
+        },
+        "submitCpu": {
+          "value": 2.345,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            2.295,
+            2.345,
+            3.235
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 96,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 3.08,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            3.08,
+            3.4,
+            2.69
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.045,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.045,
+            0.045,
+            0.05
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 3,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 6.145,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            6.145,
+            5.985,
+            6.46
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 2.57,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            2.57,
+            2.205,
+            3.005
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 96,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 5.875,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            6.14,
+            5.875,
+            5.805
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.24,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.24,
+            0.235,
+            0.29
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 12,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 6.2,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 3.0500000000000003,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 6.114999999999999,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 5.845,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "16x1000",
+      "params": {
+        "layers": 16,
+        "cmds": 1000
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": -0.08,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            -0.08,
+            -0.08,
+            -0.06
+          ]
+        },
+        "controlCpu": {
+          "value": 0.02,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.015,
+            0.02,
+            0.02
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 15.075,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            14.35,
+            15.075,
+            15.29
+          ]
+        },
+        "submitCpu": {
+          "value": 6.09,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            5.875,
+            6.125,
+            6.09
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 319,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 1.335,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.31,
+            1.335,
+            1.43
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.045,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.045,
+            0.045,
+            0.045
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 3,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 14.655,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            14.36,
+            14.655,
+            14.72
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 5.99,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            5.88,
+            6.075,
+            5.99
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 319,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 2.615,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            2.395,
+            2.615,
+            2.745
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.48,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.465,
+            0.495,
+            0.48
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 26,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 15.155,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 1.415,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 14.735,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 2.6950000000000003,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "64x10",
+      "params": {
+        "layers": 64,
+        "cmds": 10
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": -0.055,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            -0.07,
+            -0.055,
+            -0.045
+          ]
+        },
+        "controlCpu": {
+          "value": 0.055,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.055,
+            0.055,
+            0.04
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 0.5,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.5,
+            0.77,
+            0.425
+          ]
+        },
+        "submitCpu": {
+          "value": 0.44,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.44,
+            0.86,
+            0.295
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 2,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 5.23,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            5.59,
+            5.065,
+            5.23
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.1,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.1,
+            0.115,
+            0.065
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 10,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 0.61,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            0.61,
+            0.825,
+            0.45
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 0.405,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.405,
+            0.87,
+            0.3
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 2,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 7.32,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            7.735,
+            7.125,
+            7.32
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.135,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.135,
+            0.14,
+            0.08
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 12,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 0.555,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 5.285,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 0.665,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 7.375,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "64x30",
+      "params": {
+        "layers": 64,
+        "cmds": 30
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": -0.04,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            -0.04,
+            0,
+            -0.075
+          ]
+        },
+        "controlCpu": {
+          "value": 0.06,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.035,
+            0.06,
+            0.06
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 1.705,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.085,
+            1.705,
+            2.445
+          ]
+        },
+        "submitCpu": {
+          "value": 1.325,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.69,
+            1.325,
+            2.375
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 3,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 5.46,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            5.46,
+            5.26,
+            6.165
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.1,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.06,
+            0.105,
+            0.1
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 10,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 1.74,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            1.06,
+            1.74,
+            2.46
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 1.37,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.695,
+            1.37,
+            1.905
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 3,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 7.925,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            7.925,
+            7.405,
+            8.725
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.145,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.08,
+            0.145,
+            0.18
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 12,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 1.745,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 5.5,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 1.78,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 7.965,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "64x100",
+      "params": {
+        "layers": 64,
+        "cmds": 100
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": -0.065,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            -0.045,
+            -0.07,
+            -0.065
+          ]
+        },
+        "controlCpu": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.025,
+            0.03,
+            0.03
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 5.37,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            5.085,
+            5.37,
+            5.86
+          ]
+        },
+        "submitCpu": {
+          "value": 3.395,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            3.395,
+            3.275,
+            3.795
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 122,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 5.59,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            5.64,
+            5.52,
+            5.59
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.07,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.075,
+            0.065,
+            0.07
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 10,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 5.1,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            5.1,
+            5.1,
+            5.69
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 3.26,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            3.22,
+            3.26,
+            3.715
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 122,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 7.825,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            7.825,
+            7.76,
+            8.175
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.14,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.135,
+            0.14,
+            0.16
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 14,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 5.4350000000000005,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 5.655,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 5.165,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 7.890000000000001,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "64x300",
+      "params": {
+        "layers": 64,
+        "cmds": 300
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": -0.05,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            -0.025,
+            -0.07,
+            -0.05
+          ]
+        },
+        "controlCpu": {
+          "value": 0.025,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.025,
+            0.02,
+            0.025
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 17.045,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            17.045,
+            16.995,
+            17.895
+          ]
+        },
+        "submitCpu": {
+          "value": 6.635,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            6.58,
+            6.635,
+            7.45
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 383,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 4.7,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            4.7,
+            4.705,
+            4.67
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.075,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.065,
+            0.075,
+            0.075
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 10,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 17.005,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            16.91,
+            17.005,
+            17.63
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 6.58,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            6.53,
+            6.58,
+            7.46
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 383,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 6.67,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            6.68,
+            6.665,
+            6.67
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.215,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.205,
+            0.215,
+            0.215
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 18,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 17.095000000000002,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 4.75,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 17.055,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 6.72,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    },
+    {
+      "id": "64x1000",
+      "params": {
+        "layers": 64,
+        "cmds": 1000
+      },
+      "metrics": {
+        "controlPerFrame": {
+          "value": -0.075,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            -0.095,
+            -0.075,
+            -0.07
+          ]
+        },
+        "controlCpu": {
+          "value": 0.03,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.03,
+            0.025,
+            0.03
+          ]
+        },
+        "controlDrawCalls": {
+          "value": 1,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitPerFrame": {
+          "value": 58.49,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            58.39,
+            60.45,
+            58.49
+          ]
+        },
+        "submitCpu": {
+          "value": 20.405,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            19.815,
+            21.955,
+            20.405
+          ]
+        },
+        "submitDrawCalls": {
+          "value": 1274,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositePerFrame": {
+          "value": 4.715,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            4.655,
+            4.715,
+            4.73
+          ]
+        },
+        "compositeCpu": {
+          "value": 0.075,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.075,
+            0.075,
+            0.075
+          ]
+        },
+        "compositeDrawCalls": {
+          "value": 10,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitDirtyPerFrame": {
+          "value": 57.69,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            57.69,
+            59.82,
+            56.055
+          ]
+        },
+        "submitDirtyCpu": {
+          "value": 20.215,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            19.955,
+            21.33,
+            20.215
+          ]
+        },
+        "submitDirtyDrawCalls": {
+          "value": 1274,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "compositeDirtyPerFrame": {
+          "value": 6.94,
+          "unit": "ms",
+          "stat": "median of 3 runs; each the median of 40 single-frame samples less the least frame that draws, one frame a task (lib/frameTiming.ts)",
+          "samples": [
+            6.925,
+            6.945,
+            6.94
+          ]
+        },
+        "compositeDirtyCpu": {
+          "value": 0.43,
+          "unit": "ms",
+          "stat": "median of 3 runs of the median renderer.render() time",
+          "samples": [
+            0.42,
+            0.43,
+            0.43
+          ]
+        },
+        "compositeDirtyDrawCalls": {
+          "value": 32,
+          "unit": "count",
+          "stat": "one untimed frame"
+        },
+        "submitOverControl": {
+          "value": 58.565000000000005,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeOverControl": {
+          "value": 4.79,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "submitDirtyOverControl": {
+          "value": 57.765,
+          "unit": "ms",
+          "stat": "medians"
+        },
+        "compositeDirtyOverControl": {
+          "value": 7.015000000000001,
+          "unit": "ms",
+          "stat": "medians"
+        }
+      }
+    }
+  ]
+}
