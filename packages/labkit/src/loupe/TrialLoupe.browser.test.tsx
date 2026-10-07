@@ -85,12 +85,7 @@ function SourceScene({
 function RenderScene({ enabled, lab }: { enabled?: boolean; lab?: boolean }) {
   return (
     <div className={lab ? 'lk-root' : undefined} style={{ width: CSS_W, height: CSS_H }}>
-      <TrialLoupe
-        enabled={enabled}
-        factor={4}
-        diameter={DIAMETER}
-        render={() => <div />}
-      >
+      <TrialLoupe enabled={enabled} factor={4} diameter={DIAMETER} render={() => <div />}>
         <div style={{ width: CSS_W, height: CSS_H }} />
       </TrialLoupe>
     </div>

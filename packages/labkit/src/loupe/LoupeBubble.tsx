@@ -42,11 +42,7 @@ export function LoupeBubble({
   return (
     <div
       ref={hostRef}
-      className={[
-        'lk-loupe',
-        square && 'lk-loupe--square',
-        hollow && 'lk-loupe--hollow',
-      ]
+      className={['lk-loupe', square && 'lk-loupe--square', hollow && 'lk-loupe--hollow']
         .filter(Boolean)
         .join(' ')}
       style={style}
