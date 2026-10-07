@@ -16,8 +16,16 @@ vi.mock('@msb235/blits', async (importOriginal) => {
 });
 /** Per-subject records a mix still holds. Reads blits' internals: it has no public count. */
 const held = (m: unknown): number => {
-  const x = m as { chains: { strong: Map<unknown, unknown> }; voices: { parted: Map<unknown, unknown> | null }[] };
-  return x.chains.strong.size + x.voices.reduce((n, v) => n + (v.parted?.size ?? 0), 0);
+  type Store = { strong: Map<unknown, unknown> };
+  const x = m as {
+    chains: Store;
+    pose: Store;
+    named: Store;
+    strays: Store;
+    cued: { parted: Map<unknown, unknown> | null }[];
+  };
+  const stores = x.chains.strong.size + x.pose.strong.size + x.named.strong.size + x.strays.strong.size;
+  return stores + x.cued.reduce((n, v) => n + (v.parted?.size ?? 0), 0);
 };
 
 const linear = (u: number) => u;
@@ -241,7 +249,7 @@ describe('createCodec membership', () => {
     b.frame(16);
     expect(mixes).toHaveLength(1);
     expect(held(mixes[0])).toBeLessThan(10);
-    expect((mixes[0] as { voices: unknown[] }).voices.length).toBeLessThan(10);
+    expect((mixes[0] as { cued: unknown[] }).cued.length).toBeLessThan(10);
   });
 });
 
