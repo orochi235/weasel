@@ -1,8 +1,8 @@
 # The animator on blits
 
-**Status: steps 1, 2 and most of 3 are built and merged into `main`.** Tweens, springs, physics
-and decay compute their values in blits ("What step 3 built"), on `@msb235/blits` 0.4.0. Keyframe
-sampling, the rest of step 3, and steps 4–6 are not built. Delete this once it is all built or turned down.
+**Status: steps 1–3 are built and merged into `main`.** Tweens, springs, physics, decay and
+keyframe sampling compute their values in blits ("What step 3 built"), on `@msb235/blits` 0.7.0.
+Steps 4–6 are not built. Delete this once it is all built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
 several animations on one property, without keeping a second copy of the arithmetic that blits
@@ -127,7 +127,7 @@ Each of these is blits work.
    2026-10-01; see "What step 2 built".
 3. weasel: tween, spring and keyframe sampling reimplemented on blits patches under the same
    signatures. Tweens, springs, physics and decay done 2026-10-04; see "What step 3 built".
-   Keyframe sampling not started.
+   Keyframe sampling done 2026-10-08.
 4. weasel: `cancelKey` interrupts with momentum; global pause through the mix clock.
 5. weasel: color overrides and the camera as mixes.
 6. weasel: event tracks reading mix time.
@@ -153,6 +153,30 @@ reads every subject with one `mix.pull` per mix a frame.
   `engine/integrator.ts`.
 - **Pause and rate** of one call set its voice's rate; cancel and interrupt drop its voice.
 - `engine/blitsContract.test.ts` pins each blits behavior the codec relies on.
+- **Keyframe sampling.** `sampleTrack` builds a track's keys into a blits `keys` patch once per
+  `segmentCache`, so `timeline.edit`'s cache drop is still the one invalidation, and reads it at
+  the playhead's phase. Number arrays and numeric objects lerp without an `interpolate`; a track
+  with `interpolate` or `interpolator` gets its segment and easing from blits and makes the value
+  itself, as a tween does. Sampling exactly at a key's time returns that key's value, the later of
+  two sharing a time, where blits would return the earlier and reach an interior key as
+  `a + (b - a) * ease(1)`.
+
+  It cues no voice. The timeline keeps its own clock for seek, loops and nesting, and a voice
+  would have to be seeked to that playhead every frame; the codec pulls before the animator
+  ticks, so it would read a frame late on every seek and loop seam. Nor would a voice combine
+  anything while a track delivers through `onTick` rather than into a target mix. Revisit at
+  steps 4–5.
+
+  `tests/perf/bench/timeline-sampling.bench.ts`, teitou (M5 Max, Node 26.10.0), blits 0.7.0,
+  four-key tracks each sampled once a frame, mean ms per frame over three passes:
+
+  | Tracks | Today                    | On blits                 |
+  |-------:|-------------------------:|-------------------------:|
+  |    100 | 0.0013 / 0.0014 / 0.0013 | 0.0048 / 0.0046 / 0.0053 |
+  |  1,000 | 0.0161 / 0.0143 / 0.0145 | 0.0779 / 0.0770 / 0.0845 |
+  | 10,000 | 0.1894 / 0.1865 / 0.1714 | 0.5396 / 0.5473 / 0.5671 |
+
+  About 3× today's frame at 10k tracks and 5× at 1k. Not profiled yet.
 
 **One voice per animation, not grouping — decided 2026-10-03, Mike's call.** The first build grouped
 calls onto shared voices by easing or spring constants. Once blits gave one-subject voices shared
