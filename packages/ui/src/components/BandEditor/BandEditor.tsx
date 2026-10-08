@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
-import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
+import { decimal, qty, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import { clamp01, resolveScale, type BandScale } from './scale';
@@ -307,6 +307,12 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
         trackRef={trackRef}
         ticks={ticks?.filter((tick) => tick.at >= axisMin && tick.at <= axisMax)}
         display={props.display}
+        ends={
+          props.onRangeChange && [
+            { edge: 'min', at: lo, label: qty(shown[0]?.from ?? lo, display).text },
+            { edge: 'max', at: hi, label: qty(hi, display).text },
+          ]
+        }
         toUnit={toUnit}
         onPointerDown={onTrackPointerDown}
       />

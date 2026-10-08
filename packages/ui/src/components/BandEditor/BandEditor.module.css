@@ -45,6 +45,36 @@
   white-space: nowrap;
 }
 
+/* A tick that would collide with a range end's label gives way to it. */
+.tick[data-occluded] {
+  visibility: hidden;
+}
+
+/* The range's own ends: heavier than an ordinary tick, and labeled inward so
+ * the text stays over the track rather than hanging off it. */
+.endTick {
+  background: var(--wzl-fg-muted);
+}
+
+.endTick .tickLabel {
+  color: var(--wzl-fg);
+}
+
+/* Drawn just inside the track's right edge rather than one pixel past it. */
+.maxTick {
+  margin-left: -1px;
+}
+
+.startLabel {
+  transform: none;
+}
+
+.endLabel {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
 .bands {
   position: relative;
   height: var(--be-band-height, 34px);
