@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ToolPrefGroup } from '@weasel-js/core';
-import { addNode, isValidKey, moveNodes, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
+import { addNode, branchPaths, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
 
 const enc = { read: () => true, write: (on: boolean) => on };
 const ROOT: ToolPrefGroup = {
@@ -82,5 +82,28 @@ describe('schemaEdit', () => {
     expect(uniqueKey({}, 'constructor')).toBe('constructor');
     const leaf = { kind: 'boolean', name: 'C', description: '', default: false } as const;
     expect(keys(addNode(ROOT, null, 'constructor', leaf), null)).toContain('constructor');
+  });
+
+  it('says what is wrong with a key, or null', () => {
+    const kids = (ROOT.children.a as ToolPrefGroup).children;
+    expect(keyProblem(kids, 'x')).toMatch(/"x" is taken here/);
+    expect(keyProblem(kids, 'a.b')).toMatch(/"a\.b" is not a valid key/);
+    expect(keyProblem(kids, 'constructor')).toBeNull();
+    expect(keyProblem(kids, 'w')).toBeNull();
+  });
+
+  it('reports where each moved node came from', () => {
+    const { from, paths } = moveNodes(ROOT, ['a.x', 'a'], { parentPath: 'b', index: 0 });
+    expect(from).toEqual(['a']);
+    expect(paths).toEqual(['b.a']);
+  });
+
+  it('lists every path that holds children', () => {
+    expect(branchPaths(ROOT)).toEqual(['a', 'b', 'z']);
+  });
+
+  it('rebases paths at and beneath a moved node, leaving the rest', () => {
+    const next = rebasePaths(['a', 'a.x', 'ab', 'b'], [['a', 'b.a2'], ['b', 'c']]);
+    expect([...next].sort()).toEqual(['ab', 'b.a2', 'b.a2.x', 'c']);
   });
 });

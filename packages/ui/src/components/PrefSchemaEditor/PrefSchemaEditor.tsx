@@ -5,9 +5,12 @@ import { PrefsForm, type PrefRenderer } from '../Prefs';
 import { AttributesPane } from './AttributesPane';
 import { ExportPanel } from './ExportPanel';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
+import { branchPaths, rebasePaths } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
 import { StructurePane } from './StructurePane';
 import s from './PrefSchemaEditor.module.css';
+
+const NO_KINDS: CustomKinds = {};
 
 /** Props for {@link PrefSchemaEditor}. */
 export interface PrefSchemaEditorProps {
@@ -27,14 +30,13 @@ export interface PrefSchemaEditorProps {
  * `PrefsForm` of the result, and an export of it as a TypeScript literal and a list of changes. Edits stay in
  * `schema`; nothing is written back to source.
  */
-const NO_KINDS: CustomKinds = {};
-
 export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS, renderers, className }: PrefSchemaEditorProps) {
   const [first] = useState(schema);
   const base = original ?? first;
   const [selected, setSelected] = useState<string | null>(null);
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [notice, setNotice] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(() => new Set(branchPaths(schema)));
   const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);
   const changed = useMemo(() => changedPaths(changes), [changes]);
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(kinds)], [kinds]);
@@ -42,18 +44,25 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
     setSelected(path);
     setNotice(null);
   };
+  const rekey = (from: string, to: string) => {
+    setExpanded((e) => rebasePaths(e, [[from, to]]));
+    setSelected(to);
+  };
 
   return (
     <div className={[s.editor, className].filter(Boolean).join(' ')}>
-      <StructurePane schema={schema} onChange={onChange} selected={selected} onSelect={select} changed={changed} kinds={kindList} />
+      <StructurePane schema={schema} onChange={onChange} selected={selected} onSelect={select} changed={changed} kinds={kindList}
+        expanded={expanded} onExpandedChange={setExpanded} />
       <div className={s.middle}>
-        {notice && (
-          <div className={s.notice} role="status">
-            <span>{notice}</span>
-            <CloseButton ariaLabel="Dismiss" onClick={() => setNotice(null)} />
-          </div>
-        )}
-        <AttributesPane schema={schema} onChange={onChange} path={selected} onRekey={setSelected}
+        <div className={s.notice} role="status">
+          {notice && (
+            <>
+              <span>{notice}</span>
+              <CloseButton ariaLabel="Dismiss" onClick={() => setNotice(null)} />
+            </>
+          )}
+        </div>
+        <AttributesPane schema={schema} onChange={onChange} path={selected} onRekey={rekey}
           kinds={kindList} custom={kinds} renderers={renderers} onNotice={setNotice} />
       </div>
       <section className={s.pane} aria-label="Preview">

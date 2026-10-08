@@ -6,7 +6,7 @@ import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
 import s from './PrefSchemaEditor.module.css';
 
 function Copy({ text }: { text: string }) {
-  return <Button size="sm" onClick={() => { void navigator.clipboard?.writeText(text); }}>Copy</Button>;
+  return <Button size="sm" onClick={() => { void navigator.clipboard?.writeText(text).catch(() => {}); }}>Copy</Button>;
 }
 
 export function ExportPanel({ schema, changes }: { schema: ToolPrefGroup; changes: readonly SchemaChange[] }) {

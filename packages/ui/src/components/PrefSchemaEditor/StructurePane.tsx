@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import type { ToolPrefGroup } from '@weasel-js/core';
 import { Button } from '../Button';
 import { Code } from '../Code';
@@ -6,7 +6,7 @@ import { Select } from '../Select';
 import { Tree, type TreeNode } from '../Tree';
 import { isPrefLeaf } from '../Prefs/schema';
 import { blankGroup, blankLeaf } from './kindSchemas';
-import { addNode, childrenOf, joinPath, keyOf, moveNodes, nodeAt, parentPath, removeNode, uniqueKey, type SchemaNode } from './schemaEdit';
+import { addNode, childrenOf, joinPath, keyOf, moveNodes, nodeAt, parentPath, rebasePaths, removeNode, uniqueKey, type SchemaNode } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
 
 function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>): TreeNode[] {
@@ -31,12 +31,13 @@ export interface StructurePaneProps {
   onSelect(path: string | null): void;
   changed: ReadonlySet<string>;
   kinds: readonly string[];
+  expanded: ReadonlySet<string>;
+  onExpandedChange: Dispatch<SetStateAction<Set<string>>>;
 }
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange }: StructurePaneProps) {
   const nodes = useMemo(() => toTreeNodes(schema, null, changed), [schema, changed]);
   const [kind, setKind] = useState<string>('boolean');
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set(nodes.flatMap(function all(n): string[] { return n.children ? [n.id, ...n.children.flatMap(all)] : []; })));
 
   /** Where an add lands: inside the selection if it holds children, else after it. */
   const addTarget = (): { parent: string | null; index?: number } => {
@@ -50,7 +51,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
     const { parent, index } = addTarget();
     const key = uniqueKey(childrenOf(nodeAt(schema, parent)!) ?? {}, base);
     onChange(addNode(schema, parent, key, node, index));
-    if (parent !== null) setExpanded((e) => new Set(e).add(parent));
+    if (parent !== null) onExpandedChange((e) => new Set(e).add(parent));
     onSelect(joinPath(parent, key));
   };
 
@@ -71,7 +72,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         aria-label="Schema structure"
         nodes={nodes}
         expandedIds={expanded}
-        onExpandedChange={setExpanded}
+        onExpandedChange={onExpandedChange}
         selectionMode="single"
         selectedIds={selected === null ? [] : [selected]}
         onSelectionChange={(ids) => onSelect([...ids][0] ?? null)}
@@ -79,6 +80,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         onMove={(ids, t) => {
           const moved = moveNodes(schema, ids, { parentPath: t.parentId, index: t.index });
           onChange(moved.root);
+          onExpandedChange((e) => rebasePaths(e, moved.from.map((f, i) => [f, moved.paths[i]!] as const)));
           onSelect(moved.paths[0] ?? null);
         }}
       />

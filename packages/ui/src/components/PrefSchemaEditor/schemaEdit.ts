@@ -80,9 +80,16 @@ function insertAt(kids: ChildMap, entries: Array<[string, SchemaNode]>, index: n
   return Object.fromEntries(list);
 }
 
+/** Why `key` cannot join `kids`, in words for the person typing it; `null` when it can. */
+export function keyProblem(kids: ChildMap, key: string): string | null {
+  if (!isValidKey(key)) return `"${key}" is not a valid key: use letters, digits, _ or $, not starting with a digit.`;
+  if (Object.hasOwn(kids, key)) return `"${key}" is taken here.`;
+  return null;
+}
+
 function checkKey(kids: ChildMap, key: string): void {
-  if (!isValidKey(key)) throw new Error(`schemaEdit: "${key}" is not a valid key`);
-  if (Object.hasOwn(kids, key)) throw new Error(`schemaEdit: key "${key}" is taken`);
+  const problem = keyProblem(kids, key);
+  if (problem) throw new Error(`schemaEdit: ${problem}`);
 }
 
 export function addNode(root: ToolPrefGroup, parent: string | null, key: string, node: SchemaNode, index?: number): ToolPrefGroup {
@@ -132,9 +139,11 @@ export function setAttribute(root: ToolPrefGroup, path: string | null, key: stri
 /**
  * Move the nodes at `paths` to `target`, in the order given. A path beneath another moved path travels with it. A
  * moved key that collides with one already in the target parent is renamed with {@link uniqueKey}. Returns the
- * tree and each moved node's new path.
+ * tree, and each moved node's old path in `from` beside its new one in `paths`.
  */
-export function moveNodes(root: ToolPrefGroup, paths: readonly string[], target: SchemaTarget): { root: ToolPrefGroup; paths: string[] } {
+export function moveNodes(
+  root: ToolPrefGroup, paths: readonly string[], target: SchemaTarget,
+): { root: ToolPrefGroup; from: string[]; paths: string[] } {
   const tops = paths.filter((p) => !paths.some((q) => q !== p && p.startsWith(`${q}.`)));
   const dest = target.parentPath;
   if (dest !== null && tops.some((p) => dest === p || dest.startsWith(`${p}.`))) {
@@ -163,5 +172,30 @@ export function moveNodes(root: ToolPrefGroup, paths: readonly string[], target:
     });
     return insertAt(kids, entries, target.index - shift);
   });
-  return { root: next, paths: out };
+  return { root: next, from: moving.map((m) => m.path), paths: out };
+}
+
+/** Every path whose node can hold children, in tree order. */
+export function branchPaths(root: ToolPrefGroup): string[] {
+  const out: string[] = [];
+  const walk = (node: SchemaNode, path: string | null) => {
+    for (const [key, child] of Object.entries(childrenOf(node) ?? {})) {
+      if (!childrenOf(child)) continue;
+      const p = joinPath(path, key);
+      out.push(p);
+      walk(child, p);
+    }
+  };
+  walk(root, null);
+  return out;
+}
+
+/** `paths` with each one at or beneath a `from` re-rooted at its `to`; the moves apply all at once. */
+export function rebasePaths(paths: Iterable<string>, moves: ReadonlyArray<readonly [from: string, to: string]>): Set<string> {
+  const out = new Set<string>();
+  for (const p of paths) {
+    const hit = moves.find(([from]) => p === from || p.startsWith(`${from}.`));
+    out.add(hit ? hit[1] + p.slice(hit[0].length) : p);
+  }
+  return out;
 }

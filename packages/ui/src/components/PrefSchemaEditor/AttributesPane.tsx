@@ -8,7 +8,7 @@ import { isPrefLeaf } from '../Prefs/schema';
 import { Select } from '../Select';
 import { ATTR_RENDERERS } from './attrRenderers';
 import { attributeSchema, changeKind, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { isValidKey, joinPath, keyOf, nodeAt, parentPath, renameKey, setAttribute, childrenOf } from './schemaEdit';
+import { childrenOf, joinPath, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute } from './schemaEdit';
 import { KEEP, containsCode, printValue } from './schemaExport';
 import s from './PrefSchemaEditor.module.css';
 
@@ -16,7 +16,7 @@ export interface AttributesPaneProps {
   schema: ToolPrefGroup;
   onChange(next: ToolPrefGroup): void;
   path: string | null;
-  onRekey(path: string): void;
+  onRekey(from: string, to: string): void;
   kinds: readonly string[];
   custom: CustomKinds;
   /** Renderers the consumer passes for its own kinds — a custom kind's `default` may need one. */
@@ -40,10 +40,10 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
   const commitKey = () => {
     if (path === null || key === keyOf(path)) return;
     const parent = parentPath(path);
-    if (!isValidKey(key)) { setKeyError(`"${key}" is not a valid key: use letters, digits, _ or $, not starting with a digit.`); return; }
-    if (key in (childrenOf(nodeAt(schema, parent)!) ?? {})) { setKeyError(`"${key}" is taken here.`); return; }
+    const problem = keyProblem(childrenOf(nodeAt(schema, parent)!) ?? {}, key);
+    if (problem) { setKeyError(problem); return; }
     onChange(renameKey(schema, path, key));
-    onRekey(joinPath(parent, key));
+    onRekey(path, joinPath(parent, key));
   };
 
   return (
