@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.9.1
+
+### Patch Changes
+
+- c63f934: Pin `@msb235/blits` to 0.7.0. Nothing in core's own API changes.
+- @weasel-js/cursor@1.9.1
+  - @weasel-js/font@1.9.1
+  - @weasel-js/geom@1.9.1
+  - @weasel-js/gestures@1.9.1
+  - @weasel-js/history@1.9.1
+  - @weasel-js/modes@1.9.1
+  - @weasel-js/paint@1.9.1
+  - @weasel-js/quantity@1.9.1
+  - @weasel-js/react@1.9.1
+  - @weasel-js/registry@1.9.1
+  - @weasel-js/routing@1.9.1
+  - @weasel-js/select@1.9.1
+  - @weasel-js/text@1.9.1
+
 ## 1.9.0
 
 ### Patch Changes
