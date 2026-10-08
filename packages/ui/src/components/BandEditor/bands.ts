@@ -8,6 +8,8 @@ export interface Band<T, F extends Quantity = number> {
   /** Domain value where this band starts. The first band's is normalized to `min`. */
   from: F;
   data: T;
+  /** Holds this band's drawn length when the whole range is rescaled. Other edits ignore it. */
+  locked?: boolean;
 }
 
 /**
@@ -142,4 +144,78 @@ export function splitBands<T>(
 export function mergeBand<T>(bands: readonly Band<T>[], index: number): Band<T>[] {
   if (index <= 0 || index >= bands.length) return bands as Band<T>[];
   return bands.filter((_, i) => i !== index).map((b) => ({ ...b }));
+}
+
+/** One end of the whole range: `min` or `max`. */
+export type RangeEdge = 'min' | 'max';
+
+/** Flips band `index`'s lock. */
+export function toggleLock<T>(bands: readonly Band<T>[], index: number): Band<T>[] {
+  if (bands[index] === undefined) return bands as Band<T>[];
+  return bands.map((b, i) => {
+    if (i !== index) return { ...b };
+    const { locked, ...rest } = b;
+    return locked ? rest : { ...rest, locked: true };
+  });
+}
+
+/**
+ * How far `edge` can travel, in track units, with the other end held: inward
+ * until the unlocked bands have shrunk to nothing, outward to `limits`.
+ */
+export function edgeReach(
+  edges: readonly number[],
+  locked: readonly boolean[],
+  edge: RangeEdge,
+  limits: readonly [number, number] = [-Infinity, Infinity],
+): [number, number] {
+  const n = edges.length - 1;
+  let lockedSpan = 0;
+  for (let i = 0; i < n; i++) if (locked[i]) lockedSpan += edges[i + 1] - edges[i];
+  const allLocked = locked.slice(0, n).every(Boolean);
+  if (edge === 'min') {
+    const inner = edges[n] - lockedSpan;
+    return allLocked ? [inner, inner] : [Math.min(limits[0], inner), inner];
+  }
+  const inner = edges[0] + lockedSpan;
+  return allLocked ? [inner, inner] : [inner, Math.max(limits[1], inner)];
+}
+
+/**
+ * Band edges, in track units, after moving `edge` to `to` with the other end
+ * held. Locked bands keep their length; the rest share what is left in
+ * proportion to their current lengths, or equally if they are all empty.
+ * `null` when nothing would change or the range would collapse to a point.
+ */
+export function scaleEdges(
+  edges: readonly number[],
+  locked: readonly boolean[],
+  edge: RangeEdge,
+  to: number,
+  limits?: readonly [number, number],
+): number[] | null {
+  const n = edges.length - 1;
+  const [lo, hi] = edgeReach(edges, locked, edge, limits);
+  const at = Math.max(lo, Math.min(hi, to));
+  const total = edge === 'min' ? edges[n] - at : at - edges[0];
+  const current = edges[n] - edges[0];
+  if (!(total > 0) || total === current) return null;
+  let lockedSpan = 0;
+  let freeSpan = 0;
+  let freeCount = 0;
+  for (let i = 0; i < n; i++) {
+    const len = edges[i + 1] - edges[i];
+    if (locked[i]) lockedSpan += len;
+    else { freeSpan += len; freeCount++; }
+  }
+  const free = total - lockedSpan;
+  const next = [edge === 'min' ? at : edges[0]];
+  for (let i = 0; i < n; i++) {
+    const len = edges[i + 1] - edges[i];
+    const scaled = locked[i] ? len : freeSpan > 0 ? (len * free) / freeSpan : free / freeCount;
+    next.push(next[i] + scaled);
+  }
+  if (edge === 'min') next[n] = edges[n];
+  else next[n] = at;
+  return next;
 }

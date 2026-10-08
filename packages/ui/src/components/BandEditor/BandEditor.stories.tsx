@@ -52,6 +52,9 @@ const meta: Meta<typeof TypedBandEditor> = {
     renderBand: { table: { disable: true } },
     splitBand: { table: { disable: true } },
     className: { table: { disable: true } },
+    onRangeChange: { table: { disable: true } },
+    onRangeInput: { table: { disable: true } },
+    limits: { table: { disable: true } },
   },
 };
 
@@ -145,6 +148,39 @@ export const SplitMintsAPayload: Story = {
       initial={LADDER}
       hint="splitBand names the new band instead of duplicating the one it came from. Click the ruler."
       splitBand={(_at, from) => ({ name: `${from.name} (narrow)` })}
+    />
+  ),
+};
+
+function RangeWrapper({ initial, hint, ...rest }: WrapperProps) {
+  const [value, setValue] = useState<Band<Slice>[]>(initial);
+  const [range, setRange] = useState<[number, number]>([rest.min, rest.max]);
+  const [selected, setSelected] = useState<number | null>(null);
+  return (
+    <BandEditor<Slice>
+      {...rest}
+      label={hint}
+      value={value}
+      min={range[0]}
+      max={range[1]}
+      onChange={setValue}
+      onRangeChange={(min, max, bands) => {
+        setRange([min, max]);
+        setValue(bands);
+      }}
+      selectedIndex={selected}
+      onSelect={setSelected}
+      renderBand={(band) => band.data.name}
+    />
+  );
+}
+
+export const RescaleTheRange: Story = {
+  render: (args) => (
+    <RangeWrapper
+      {...args}
+      initial={[FOUR[0], FOUR[1], { ...FOUR[2], locked: true }, FOUR[3]]}
+      hint="Drag either end of the strip to rescale the whole sequence; pull past the track and the axis squeezes to fit. Right-click a band, or select it and press l, to lock it: a locked band is hatched and holds its length while the rest stretch."
     />
   ),
 };

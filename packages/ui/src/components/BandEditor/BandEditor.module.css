@@ -99,6 +99,17 @@
   color: var(--wzl-fg);
 }
 
+/* A locked band holds its length when the range is rescaled. The hatch is
+   layered over whatever fill the band already has, selected or not. */
+.band.locked,
+.band.locked:hover {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--wzl-fg-muted) 28%, transparent) 0 1px,
+    transparent 1px 6px
+  );
+}
+
 .bandContent {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -162,4 +173,16 @@
   outline: 2px solid var(--wzl-accent);
   outline-offset: 0;
   border-radius: var(--wzl-radius-sm);
+}
+
+/* An end of the whole range. Drawn heavier than a seam so it reads as the
+ * boundary the bands live inside rather than one more division. */
+.edge::before {
+  width: 2px;
+  left: 4px;
+}
+
+.edge:hover::before,
+.edge:focus-visible::before {
+  width: 3px;
 }

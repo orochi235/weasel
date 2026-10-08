@@ -358,6 +358,151 @@ describe('keyboard', () => {
   });
 });
 
+describe('range edges', () => {
+  function edges(container: HTMLElement) {
+    const at = (edge: string) => container.querySelector<HTMLElement>(`[data-range-edge="${edge}"]`)!;
+    return { min: at('min'), max: at('max') };
+  }
+
+  it('draws no edge handles unless onRangeChange is wired', () => {
+    const { container } = setup();
+    expect(container.querySelector('[data-range-edge]')).toBeNull();
+  });
+
+  it('puts the edges in tab order around the bands and seams', () => {
+    const { container } = setup({ onRangeChange: () => {} });
+    const stops = [...container.querySelectorAll<HTMLElement>('[data-band-index], [role="slider"]')];
+    expect(stops.map((el) => el.getAttribute('aria-label'))).toEqual([
+      'Range start', 'Band 1', 'Seam 1', 'Band 2', 'Seam 2', 'Band 3', 'Range end',
+    ]);
+  });
+
+  it('widens the range when max is dragged past the track, stretching every band, committing once', () => {
+    const onRangeInput = vi.fn();
+    const onRangeChange = vi.fn();
+    const { container, onChange } = setup({ onRangeInput, onRangeChange });
+    drag(edges(container).max, 400, [450, 500]);
+    expect(onRangeInput.mock.calls.map(([lo, hi]) => [lo, hi])).toEqual([[0, 112.5], [0, 125]]);
+    expect(onRangeChange).toHaveBeenCalledTimes(1);
+    const [lo, hi, next] = onRangeChange.mock.calls[0];
+    expect([lo, hi]).toEqual([0, 125]);
+    expect(froms(next)).toEqual([0, 25, 75]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('squeezes the axis to fit a range pulled past the track while the drag is live', () => {
+    const { container, bodies } = setup({ onRangeChange: () => {} });
+    fireEvent.pointerDown(edges(container).max, { clientX: 400, clientY: 20, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 500, clientY: 20 });
+    expect(bodies()[2].style.getPropertyValue('--be-to')).toBe('100%');
+    expect(container.querySelector<HTMLElement>('[data-seam-index="1"]')!.style.getPropertyValue('--be-at')).toBe('60%');
+    expect(container.querySelector<HTMLElement>('[data-band-ghost]')!.style.getPropertyValue('--be-at')).toBe('80%');
+  });
+
+  it('shortens the range when min is dragged inward, shrinking every band, leaving the vacated track empty', () => {
+    const onRangeChange = vi.fn();
+    const { container, bodies } = setup({ onRangeChange });
+    fireEvent.pointerDown(edges(container).min, { clientX: 0, clientY: 20, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 40, clientY: 20 });
+    expect(bodies()[0].style.getPropertyValue('--be-from')).toBe('10%');
+    fireEvent.pointerUp(document, { clientX: 40, clientY: 20 });
+    const [lo, hi, next] = onRangeChange.mock.calls[0];
+    expect([lo, hi]).toEqual([10, 100]);
+    expect(froms(next)).toEqual([10, 28, 64]);
+  });
+
+  it('holds a locked band at its length while the rest rescale', () => {
+    const onRangeChange = vi.fn();
+    const value = bands().map((b) => (b.data === 'b' ? { ...b, locked: true } : b));
+    const { container } = setup({ value, onRangeChange });
+    drag(edges(container).max, 400, [300]);
+    const [, hi, next] = onRangeChange.mock.calls[0];
+    expect(hi).toBe(75);
+    expect(froms(next)).toEqual([0, 11.666667, 51.666667]);
+    expect(next[1].locked).toBe(true);
+  });
+
+  it('stops an end once the unlocked bands have shrunk to nothing', () => {
+    const onRangeChange = vi.fn();
+    const value = bands().map((b) => (b.data === 'b' ? { ...b, locked: true } : b));
+    const { container } = setup({ value, onRangeChange });
+    drag(edges(container).max, 400, [0]);
+    const [, hi, next] = onRangeChange.mock.calls[0];
+    expect(hi).toBe(40);
+    expect(froms(next)).toEqual([0, 0, 40]);
+  });
+
+  it('stops an end at its limit', () => {
+    const onRangeChange = vi.fn();
+    const { container } = setup({ onRangeChange, limits: [-20, 110] });
+    drag(edges(container).max, 400, [800]);
+    drag(edges(container).min, 0, [-400]);
+    expect(onRangeChange.mock.calls.map(([lo, hi]) => [lo, hi])).toEqual([[0, 110], [-20, 100]]);
+  });
+
+  it('commits nothing for an edge drag that never moved', () => {
+    const onRangeChange = vi.fn();
+    const { container } = setup({ onRangeChange });
+    drag(edges(container).max, 400, []);
+    expect(onRangeChange).not.toHaveBeenCalled();
+  });
+
+  it('steps a focused end by one percent of the track, ten with shift', () => {
+    const onRangeChange = vi.fn();
+    const { container } = setup({ onRangeChange });
+    fireEvent.keyDown(edges(container).max, { key: 'ArrowRight' });
+    fireEvent.keyDown(edges(container).min, { key: 'ArrowLeft', shiftKey: true });
+    expect(onRangeChange.mock.calls.map(([lo, hi]) => [lo, hi])).toEqual([[0, 101], [-10, 100]]);
+  });
+
+  it('reports each end through the slider value triple', () => {
+    const { container } = setup({ onRangeChange: () => {}, limits: [-20, 110] });
+    const { min, max } = edges(container);
+    expect([min.getAttribute('aria-valuemin'), min.getAttribute('aria-valuenow'), min.getAttribute('aria-valuemax')])
+      .toEqual(['-20', '0', '100']);
+    expect([max.getAttribute('aria-valuemin'), max.getAttribute('aria-valuenow'), max.getAttribute('aria-valuemax')])
+      .toEqual(['0', '100', '110']);
+  });
+});
+
+describe('locking', () => {
+  it('locks a band on right-click, and unlocks it on the next', () => {
+    const { bodies, onChange, rerender } = setup({ onRangeChange: () => {} });
+    expect(fireEvent.contextMenu(bodies()[1])).toBe(false);
+    const locked = onChange.mock.calls[0][0];
+    expect(locked.map((b: Band<string>) => b.locked ?? false)).toEqual([false, true, false]);
+    rerender(<BandEditor value={locked} min={MIN} max={MAX} scale="linear" onChange={onChange} onRangeChange={() => {}} />);
+    fireEvent.contextMenu(bodies()[1]);
+    expect(onChange.mock.calls[1][0][1].locked).toBeUndefined();
+  });
+
+  it('toggles the selected band with l', () => {
+    const { bodies, onChange } = setup({ onRangeChange: () => {}, selectedIndex: 2 });
+    fireEvent.keyDown(bodies()[2], { key: 'l' });
+    expect(onChange.mock.calls[0][0][2].locked).toBe(true);
+  });
+
+  it('names a locked band as locked', () => {
+    const value = bands().map((b) => (b.data === 'c' ? { ...b, locked: true } : b));
+    const { bodies } = setup({ value, onRangeChange: () => {} });
+    expect(bodies()[2].getAttribute('aria-label')).toBe('Band 3, locked');
+  });
+
+  it('leaves the context menu alone when the range is fixed, since a lock would do nothing', () => {
+    const { bodies, onChange } = setup();
+    expect(fireEvent.contextMenu(bodies()[1])).toBe(true);
+    fireEvent.keyDown(bodies()[1], { key: 'l' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps a lock through a seam drag', () => {
+    const value = bands().map((b) => (b.data === 'b' ? { ...b, locked: true } : b));
+    const { seams, onChange } = setup({ value });
+    drag(seams()[0], 80, [120]);
+    expect(onChange.mock.calls[0][0][1].locked).toBe(true);
+  });
+});
+
 describe('log scale', () => {
   const LOG_MIN = 1 / 64;
   const LOG_MAX = 1 / 2;

@@ -6,30 +6,35 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactElement,
   type ReactNode,
 } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
-import { amount, decimal, qty, retag, type Display, type Quantity } from '@weasel-js/quantity';
+import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
 import { clamp01, resolveScale, type BandScale } from './scale';
+import { retagBands, untag } from './retag';
+import { isTextEntry, pct } from './track';
+import { RangeEdgeHandle, type RangeEdit } from './RangeEdgeHandle';
+import { Ruler } from './Ruler';
+import { SeamHandle } from './SeamHandle';
 import {
   bandBounds,
   clampBandShift,
-  clampSeamTo,
   mergeBand,
   moveBandEdges,
   normalizeBands,
-  seamBounds,
-  setSeam,
   splitBands,
+  toggleLock,
   unitEdges,
   type Band,
+  type RangeEdge,
 } from './bands';
 
-export type { Band, BandScale };
+export type { Band, BandScale, RangeEdge };
 
 /** Props for {@link BandEditor}. */
 export interface BandEditorProps<T, F extends Quantity = number> {
@@ -42,6 +47,18 @@ export interface BandEditorProps<T, F extends Quantity = number> {
   onChange: (next: Band<T, F>[]) => void;
   min: number;
   max: number;
+  /**
+   * Makes `min` and `max` draggable. Dragging an end rescales the whole
+   * sequence with the other end held: locked bands keep their length and the
+   * rest stretch in proportion. Carries the refitted bands too, so one gesture
+   * is one call, at its end — `onChange` is not called for it. Without it the
+   * range is fixed and no edge handles are drawn.
+   */
+  onRangeChange?: (min: number, max: number, bands: Band<T, F>[]) => void;
+  /** Live during an edge drag — wire for preview, do not write to history. */
+  onRangeInput?: (min: number, max: number, bands: Band<T, F>[]) => void;
+  /** How far outward `min` and `max` may be dragged. Default unbounded. */
+  limits?: readonly [number, number];
   /** Default `'log'`. */
   scale?: 'linear' | 'log' | BandScale;
   /** A tick with no `label` of its own is labeled through `display`, when given. */
@@ -63,47 +80,18 @@ export interface BandEditorProps<T, F extends Quantity = number> {
   className?: string;
 }
 
-/** A drag under way: the bands as the pointer has them, and which edges it took from where. */
-type Draft<T> = { bands: Band<T>[]; ghost: { seam: number } | { band: number } };
+/** A drag under way: the bands and range as the pointer has them, and which edges it took from where. */
+type Draft<T> = {
+  bands: Band<T>[];
+  range?: [number, number];
+  /** Where the dragged thing started, in domain units: a line, or a band's span. */
+  ghost: { at: number } | { from: number; to: number };
+};
 
 const SEAM_DISPLAY = decimal();
 
-function untag<T, F extends Quantity>(band: Band<T, F>): Band<T> {
-  return typeof band.from === 'number' ? (band as Band<T>) : { from: amount(band.from), data: band.data };
-}
-
-/**
- * `next` with each `from` in the shape the consumer gave it. A band keeps the
- * tag of the band at its index when the count is unchanged; after a split or
- * a merge it takes the tag of the input band carrying the same payload, else
- * the first tagged one — a split band inherits its parent's presentation.
- */
-function retagBands<T, F extends Quantity>(input: readonly Band<T, F>[], next: readonly Band<T>[]): Band<T, F>[] {
-  const firstTagged = input.find((b) => typeof b.from !== 'number');
-  if (!firstTagged) return next as Band<T, F>[];
-  return next.map((band, i) => {
-    const source =
-      (next.length === input.length ? input[i] : input.find((b) => b.data === band.data)) ?? firstTagged;
-    return { from: retag(source.from, band.from), data: band.data };
-  });
-}
-
-/** One arrow-key step, as a fraction of the track. */
-const KEY_STEP = 0.01;
-
-function pct(unit: number): string {
-  return `${clamp01(unit) * 100}%`;
-}
-
 function keepData<T>(_at: number, from: T): T {
   return from;
-}
-
-function isTextEntry(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.isContentEditable) return true;
-  const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 }
 
 /**
@@ -112,7 +100,7 @@ function isTextEntry(target: EventTarget | null): boolean {
  * renders through `renderBand`; the control itself knows nothing about what
  * a band means.
  *
- * The axis is always fully covered — N bands, N−1 interior seams, no gaps and
+ * The range is always fully covered — N bands, N−1 interior seams, no gaps and
  * no overlaps — so editing is editing a sorted list of seam positions. Seams
  * clamp at their neighbours rather than crossing, which means a drag can
  * never destroy a band: removal is only ever the explicit `x` / `Delete`
@@ -122,6 +110,8 @@ function isTextEntry(target: EventTarget | null): boolean {
  * | Gesture | Effect |
  * |---|---|
  * | drag a seam | resize the two bands either side |
+ * | drag `min` / `max` | rescale the whole range, locked bands holding their length (with `onRangeChange`) |
+ * | right-click a band, or `l` | lock or unlock it |
  * | drag a band body | move both its seams, preserving its span |
  * | click the ruler | split the band under the pointer |
  * | `x` / `Delete` | merge the selected band into its left neighbour |
@@ -137,6 +127,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     display = SEAM_DISPLAY,
     min,
     max,
+    limits,
     scale,
     ticks,
     renderBand,
@@ -162,17 +153,24 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   // wires `onInput`. Every edit reads `committed`.
   const bands = draft?.bands ?? committed;
   const shown = retagged(bands);
+  // An edge pulled past the track stretches the drawn axis to hold it until the drag ends; one pulled inward
+  // leaves the axis alone, so the track it vacated shows empty.
+  const [lo, hi] = draft?.range ?? [min, max];
+  const axisMin = Math.min(min, lo);
+  const axisMax = Math.max(max, hi);
   const sc = resolveScale(scale, min);
-  const toUnit = (v: number): number => clamp01(sc.toUnit(v, min, max));
-  const fromUnit = (u: number): number => sc.fromUnit(clamp01(u), min, max);
+  const toUnit = (v: number): number => clamp01(sc.toUnit(v, axisMin, axisMax));
+  const fromUnit = (u: number): number => sc.fromUnit(clamp01(u), axisMin, axisMax);
 
   const trackWidth = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;
 
-  const unitAt = (clientX: number): number => {
+  /** Unclamped: an edge drag reads the pointer past either end of the track. */
+  const rawUnitAt = (clientX: number): number => {
     const rect = trackRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0) return 0;
-    return clamp01((clientX - rect.left) / rect.width);
+    return (clientX - rect.left) / rect.width;
   };
+  const unitAt = (clientX: number): number => clamp01(rawUnitAt(clientX));
 
   const snapped = (unit: number, altKey: boolean): number => {
     if (!snap || altKey || !ticks || ticks.length === 0) return unit;
@@ -197,41 +195,9 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     }, { capture: false });
   };
 
-  const onSeamPointerDown = (index: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (typeof e.button === 'number' && e.button > 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const base = committed;
-    let latest: Band<T>[] | null = null;
-    drag(
-      e,
-      (ev) => {
-        const to = clampSeamTo(base, index, fromUnit(snapped(unitAt(ev.clientX), ev.altKey)), min, max);
-        latest = setSeam(base, index, to);
-        setDraft({ bands: latest, ghost: { seam: index } });
-        onInput?.(latest);
-      },
-      () => {
-        if (latest) onChange(latest);
-      },
-    );
-  };
-
-  const onSeamKeyDown = (index: number) => (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    const [lo, hi] = seamBounds(committed, index, min, max);
-    let target: number;
-    if (e.key === 'Home') target = lo;
-    else if (e.key === 'End') target = hi;
-    else {
-      let delta = 0;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') delta = e.shiftKey ? KEY_STEP * 10 : KEY_STEP;
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') delta = e.shiftKey ? -KEY_STEP * 10 : -KEY_STEP;
-      else return;
-      target = fromUnit(toUnit(committed[index + 1].from) + delta);
-    }
-    e.preventDefault();
-    const next = setSeam(committed, index, clampSeamTo(committed, index, target, min, max));
-    if (next !== committed) onChange(next);
+  const seamInput = (next: Band<T>[], ghost: number): void => {
+    setDraft({ bands: next, ghost: { at: ghost } });
+    onInput?.(next);
   };
 
   const onBandPointerDown = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>): void => {
@@ -254,7 +220,8 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
           fromUnit(edges[index] + shift),
           fromUnit(edges[index + 1] + shift),
         );
-        setDraft({ bands: latest, ghost: { band: index } });
+        const [from, to] = bandBounds(base, index, min, max);
+        setDraft({ bands: latest, ghost: { from, to } });
         onInput?.(latest);
       },
       () => {
@@ -267,6 +234,39 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     if (index !== selectedIndex) onSelect?.(index);
   };
 
+  const rangeInput = (edit: RangeEdit<T>): void => {
+    setDraft({ bands: edit.bands, range: edit.range, ghost: { at: edit.range[0] !== min ? min : max } });
+    props.onRangeInput?.(edit.range[0], edit.range[1], retagged(edit.bands));
+  };
+  const rangeCommit = (edit: RangeEdit<T>): void => {
+    props.onRangeChange?.(edit.range[0], edit.range[1], retagged(edit.bands));
+  };
+
+  const edgeHandle = (edge: RangeEdge): ReactNode => (
+    <RangeEdgeHandle
+      edge={edge}
+      committed={committed}
+      min={min}
+      max={max}
+      at={edge === 'min' ? lo : hi}
+      limits={limits}
+      scale={sc}
+      display={display}
+      tagged={edge === 'min' ? shown[0]?.from : undefined}
+      toUnit={toUnit}
+      pointerUnit={(clientX, altKey) => snapped(rawUnitAt(clientX), altKey)}
+      drag={drag}
+      onInput={rangeInput}
+      onCommit={rangeCommit}
+    />
+  );
+
+  const onBandContextMenu = (index: number) => (e: ReactMouseEvent<HTMLButtonElement>): void => {
+    if (!props.onRangeChange) return;
+    e.preventDefault();
+    onChange(toggleLock(committed, index));
+  };
+
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (typeof e.button === 'number' && e.button > 0) return;
     e.preventDefault();
@@ -275,12 +275,18 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   };
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    if (e.key !== 'x' && e.key !== 'Delete') return;
+    if (e.key !== 'x' && e.key !== 'Delete' && e.key !== 'l') return;
     // `x` is a bare letter and Cmd/Ctrl+X is cut: neither may be swallowed
     // when the keystroke belongs to something a consumer put in a band.
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (isTextEntry(e.target)) return;
     if (selectedIndex === null || selectedIndex === undefined) return;
+    if (e.key === 'l') {
+      if (!props.onRangeChange) return;
+      e.preventDefault();
+      onChange(toggleLock(committed, selectedIndex));
+      return;
+    }
     const next = mergeBand(committed, selectedIndex);
     if (next === committed) return;
     e.preventDefault();
@@ -297,75 +303,66 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
       onKeyDown={onRootKeyDown}
     >
       {label !== undefined && <div id={labelId} className={s.label}>{label}</div>}
-      <div className={s.ruler} ref={trackRef} data-band-ruler="" onPointerDown={onTrackPointerDown}>
-        {ticks?.map((tick, i) => (
-          <span
-            key={i}
-            className={s.tick}
-            data-tick-at={tick.at}
-            style={{ '--be-at': pct(toUnit(tick.at)) } as CSSProperties}
-          >
-            {(tick.label !== undefined || props.display !== undefined) && (
-              <span className={s.tickLabel}>{tick.label ?? qty(tick.at, props.display).text}</span>
-            )}
-          </span>
-        ))}
-      </div>
+      <Ruler
+        trackRef={trackRef}
+        ticks={ticks?.filter((tick) => tick.at >= axisMin && tick.at <= axisMax)}
+        display={props.display}
+        toUnit={toUnit}
+        onPointerDown={onTrackPointerDown}
+      />
       <div className={s.bands}>
+        {props.onRangeChange && edgeHandle('min')}
         {bands.map((_, i) => {
-          const [from, to] = bandBounds(bands, i, min, max);
+          const [from, to] = bandBounds(bands, i, lo, hi);
           const isSelected = selectedIndex === i;
           return (
             <Fragment key={i}>
               <button
                 type="button"
-                className={[s.band, isSelected ? s.selected : null].filter(Boolean).join(' ')}
+                className={[s.band, isSelected ? s.selected : null, bands[i].locked ? s.locked : null]
+                  .filter(Boolean)
+                  .join(' ')}
                 style={{ '--be-from': pct(toUnit(from)), '--be-to': pct(toUnit(to)) } as CSSProperties}
-                aria-label={`Band ${i + 1}`}
+                aria-label={bands[i].locked ? `Band ${i + 1}, locked` : `Band ${i + 1}`}
                 aria-pressed={isSelected}
                 data-band-index={i}
                 onPointerDown={onBandPointerDown(i)}
                 onFocus={onBandFocus(i)}
+                onContextMenu={onBandContextMenu(i)}
               >
                 <span className={s.bandContent}>{renderBand?.(shown[i]!, i)}</span>
               </button>
               {i < bands.length - 1 && (
-                <div
-                  role="slider"
-                  tabIndex={0}
-                  className={s.seam}
-                  style={{ '--be-at': pct(toUnit(bands[i + 1].from)) } as CSSProperties}
-                  aria-label={`Seam ${i + 1}`}
-                  aria-orientation="horizontal"
-                  aria-valuemin={seamBounds(bands, i, min, max)[0]}
-                  aria-valuemax={seamBounds(bands, i, min, max)[1]}
-                  aria-valuenow={bands[i + 1].from}
-                  aria-valuetext={qty(shown[i + 1]!.from, display).spoken}
-                  data-seam-index={i}
-                  onPointerDown={onSeamPointerDown(i)}
-                  onKeyDown={onSeamKeyDown(i)}
+                <SeamHandle
+                  index={i}
+                  committed={committed}
+                  bands={bands}
+                  min={lo}
+                  max={hi}
+                  display={display}
+                  tagged={shown[i + 1]!.from}
+                  toUnit={toUnit}
+                  fromUnit={fromUnit}
+                  pointerUnit={(clientX, altKey) => snapped(unitAt(clientX), altKey)}
+                  drag={drag}
+                  onInput={seamInput}
+                  onCommit={onChange}
                 />
               )}
             </Fragment>
           );
         })}
-        {draft && 'band' in draft.ghost && (
+        {props.onRangeChange && edgeHandle('max')}
+        {draft && (
           <div
-            className={s.bandGhost}
+            className={'at' in draft.ghost ? s.seamGhost : s.bandGhost}
             data-band-ghost=""
             aria-hidden="true"
-            style={{
-              '--be-from': pct(toUnit(bandBounds(committed, draft.ghost.band, min, max)[0])),
-              '--be-to': pct(toUnit(bandBounds(committed, draft.ghost.band, min, max)[1])),
-            } as CSSProperties}
-          />
-        )}
-        {draft && 'seam' in draft.ghost && (
-          <div
-            className={s.seamGhost}
-            data-band-ghost=""
-            aria-hidden="true"
-            style={{ '--be-at': pct(toUnit(committed[draft.ghost.seam + 1].from)) } as CSSProperties}
+            style={
+              ('at' in draft.ghost
+                ? { '--be-at': pct(toUnit(draft.ghost.at)) }
+                : { '--be-from': pct(toUnit(draft.ghost.from)), '--be-to': pct(toUnit(draft.ghost.to)) }) as Record<string, string> as CSSProperties
+            }
           />
         )}
       </div>

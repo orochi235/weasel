@@ -3,12 +3,15 @@ import {
   bandBounds,
   clampBandShift,
   clampSeamTo,
+  edgeReach,
   mergeBand,
+  scaleEdges,
   moveBandEdges,
   normalizeBands,
   seamBounds,
   setSeam,
   splitBands,
+  toggleLock,
   unitEdges,
   type Band,
 } from './bands';
@@ -174,5 +177,55 @@ describe('mergeBand', () => {
   it('ignores an out-of-range index', () => {
     const bands = normalizeBands(fixture(), MIN);
     expect(mergeBand(bands, 9)).toBe(bands);
+  });
+});
+
+describe('toggleLock', () => {
+  it('locks an unlocked band and unlocks a locked one', () => {
+    const once = toggleLock(fixture(), 1);
+    expect(once.map((b) => b.locked ?? false)).toEqual([false, true, false]);
+    expect('locked' in toggleLock(once, 1)[1]).toBe(false);
+  });
+});
+
+describe('edgeReach', () => {
+  const edges = [0, 0.25, 0.75, 1];
+
+  it('lets an end come inward until the unlocked bands vanish', () => {
+    expect(edgeReach(edges, [false, true, false], 'max')).toEqual([0.5, Infinity]);
+    expect(edgeReach(edges, [false, true, false], 'min', [-0.5, 2])).toEqual([-0.5, 0.5]);
+  });
+
+  it('pins both ends when every band is locked', () => {
+    expect(edgeReach(edges, [true, true, true], 'max')).toEqual([1, 1]);
+  });
+});
+
+describe('scaleEdges', () => {
+  const edges = [0, 0.2, 0.6, 1];
+  const round = (xs: number[] | null) => xs?.map((x) => Math.round(x * 1e6) / 1e6);
+
+  it('stretches every band in proportion when none is locked', () => {
+    expect(round(scaleEdges(edges, [false, false, false], 'max', 2))).toEqual([0, 0.4, 1.2, 2]);
+    expect(round(scaleEdges(edges, [false, false, false], 'min', 0.5))).toEqual([0.5, 0.6, 0.8, 1]);
+  });
+
+  it('holds a locked band at its length and gives the rest the difference', () => {
+    expect(round(scaleEdges(edges, [false, true, false], 'max', 1.6))).toEqual([0, 0.4, 0.8, 1.6]);
+  });
+
+  it('stops where the unlocked bands vanish, and at the limits', () => {
+    expect(round(scaleEdges(edges, [false, true, false], 'max', 0))).toEqual([0, 0, 0.4, 0.4]);
+    expect(round(scaleEdges(edges, [false, false, false], 'max', 9, [-Infinity, 1.5]))).toEqual([0, 0.3, 0.9, 1.5]);
+  });
+
+  it('shares the change equally among unlocked bands that are all empty', () => {
+    expect(round(scaleEdges([0, 0, 0.5, 0.5], [false, true, false], 'max', 1.5))).toEqual([0, 0.5, 1, 1.5]);
+  });
+
+  it('returns null for no change or a collapse to a point', () => {
+    expect(scaleEdges(edges, [false, false, false], 'max', 1)).toBeNull();
+    expect(scaleEdges(edges, [false, false, false], 'max', -1)).toBeNull();
+    expect(scaleEdges(edges, [true, true, true], 'max', 3)).toBeNull();
   });
 });
