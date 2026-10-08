@@ -34,8 +34,12 @@ Core's `ToolPref*` family was extracted from draw's `WeaselDrawPref*` and has
 since gained everything draw's has, except `registry-enum`. Draw still declares
 its own copy. Redefine draw's types over core's:
 
-- `number`, `boolean`, `string`, `enum`, `object` → core's `ToolPref*`.
+- `number`, `boolean`, `string`, `enum` → core's `ToolPref*`.
 - `registry-enum` → a `ToolPrefCustom` carrying `source` and `filter`.
+- draw's `object` is an opaque value with no `children` (`ui.panels`), which
+  core's `ToolPrefObject` is not — it becomes a custom kind `'data'`, rendered
+  by the same control. Stored values are unaffected; only the descriptor's
+  `kind` changes.
 - `WeaselDrawPrefGroup` → `ToolPrefGroup` (or an alias of it).
 
 `typeof PREFS` must still drive `WeaselDrawPrefPath`, and `PreferencesModal`
@@ -57,11 +61,14 @@ onMove?(ids: string[], target: TreeDropTarget): void;
 canDrop?(ids: readonly string[], target: TreeDropTarget): boolean;
 ```
 
-- `canDrop` defaults to "anywhere except into itself or a descendant". There
-  are no modes: siblings-only, leaves-only-in-groups and the like are all a
+- A drop into a dragged node or its descendants is always refused; `canDrop`
+  refuses further and defaults to allowing everything else. There are no
+  modes: siblings-only, leaves-only-in-groups and the like are all a
   `canDrop`.
 - Drop zones: a row's top and bottom quarters mean before/after it; the middle
-  half of a branch row means into it, appended. Hovering a collapsed branch
+  half of a branch row means into it, appended. Below the last visible row of a
+  subtree, the pointer's x picks the level — after the row, or after any
+  ancestor whose subtree ends there. Hovering a collapsed branch
   ~600ms expands it. A refused target shows no indicator; releasing there
   cancels.
 - Feedback: an insertion line indented to the target level, or a highlighted
