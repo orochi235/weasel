@@ -1,5 +1,19 @@
 # @weasel-js/ui
 
+## 1.9.1
+
+### Patch Changes
+
+- Updated dependencies [c63f934]
+  - @weasel-js/core@1.9.1
+  - @weasel-js/svg@1.9.1
+  - @weasel-js/font@1.9.1
+  - @weasel-js/modes@1.9.1
+  - @weasel-js/quantity@1.9.1
+  - @weasel-js/react@1.9.1
+  - @weasel-js/select@1.9.1
+  - @weasel-js/theme@1.9.1
+
 ## 1.9.0
 
 ### Patch Changes

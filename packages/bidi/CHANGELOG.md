@@ -1,5 +1,9 @@
 # @weasel-js/bidi
 
+## 1.9.1
+
+No changes in this release.
+
 ## 1.9.0
 
 No changes in this release.
