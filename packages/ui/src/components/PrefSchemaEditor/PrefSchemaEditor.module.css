@@ -1,5 +1,7 @@
 .options { display: grid; gap: var(--wzl-space-2); }
 .optionRow { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--wzl-space-2); align-items: center; }
+.number { composes: numeric from '@weasel-js/theme/numeric.module.css'; }
+.number input { text-align: right; }
 .editor {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(280px, 1.2fr) minmax(280px, 1.4fr);

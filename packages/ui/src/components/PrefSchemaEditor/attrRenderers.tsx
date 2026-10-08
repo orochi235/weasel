@@ -21,7 +21,7 @@ function OptionalNumber({ ctx }: { ctx: PrefRenderContext }) {
     else if (Number.isFinite(Number(t))) ctx.setValue(Number(t));
     else setDraft(shown);
   };
-  return <Input aria-label={ctx.pref.name} value={draft} onChange={setDraft} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} />;
+  return <Input className={s.number} aria-label={ctx.pref.name} value={draft} onChange={setDraft} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} />;
 }
 
 interface Option { value: string; label: string }
