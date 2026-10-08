@@ -194,7 +194,10 @@ export const Tree = forwardRef(function Tree(
   };
 
   const treeEl = useRef<HTMLUListElement | null>(null);
-  useImperativeHandle(ref, () => treeEl.current!, []);
+  const isEmpty = nodes.length === 0;
+  // The element behind the ref changes when the tree swaps with the empty state.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useImperativeHandle(ref, () => treeEl.current as HTMLUListElement, [isEmpty]);
   const drag = useTreeDrag({
     enabled: !!onMove,
     nodes, visible, expanded, selected,

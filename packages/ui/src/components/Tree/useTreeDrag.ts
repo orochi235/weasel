@@ -4,6 +4,7 @@ import { resolveDrop, type DropMark, type DropRow, type ResolvedDrop, type TreeD
 import { swallowNextClick, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
 import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
 import type { TreeNode } from './Tree';
+import { modsOf } from './treeUtils';
 
 const HOVER_EXPAND_MS = 600;
 
@@ -72,7 +73,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       ? { originX: first.getBoundingClientRect().left, indent: deepEl.getBoundingClientRect().left - parentEl.getBoundingClientRect().left }
       : undefined;
     const hit = resolveDrop(rows, { x, y }, indent);
-    if (landsInside(nodes, ids, hit.target)) return null;
+    if (landsInside(nodes, ids, hit.target) || isNoopMove(nodes, ids, hit.target)) return null;
     if (canDrop && !canDrop(ids, hit.target)) return null;
     return hit;
   }, [o]);
@@ -90,7 +91,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     if (o.current.visible.find((v) => v.node.id === id)?.node.disabled) return;
     if ((e.target as Element).closest('[data-tree-twisty]')) return;
     if (isInControlWithin(e.target, e.currentTarget)) return;
-    const mods: PressModifiers = { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };
+    const mods = modsOf(e);
     const rect = e.currentTarget.getBoundingClientRect();
     const grab = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     let ids: string[] = [];
@@ -122,7 +123,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       onMove: update,
       onCommit: (ev) => {
         const hit = resolve(ids, ev.clientX, ev.clientY);
-        if (hit && !isNoopMove(o.current.nodes, ids, hit.target)) o.current.onMove?.(ids, hit.target);
+        if (hit) o.current.onMove?.(ids, hit.target);
         reset();
       },
       onClick: () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { createRef, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Tree, type TreeNode } from './Tree';
@@ -131,6 +131,25 @@ describe('Tree — drag to reorder', () => {
     rerender(<Tree aria-label="T" nodes={NODES} onMove={vi.fn()} ref={cb} />);
     expect(cb).toHaveBeenCalledTimes(1);
     expect(cb.mock.calls[0]![0]).toBe(screen.getByRole('tree'));
+  });
+
+  it('points a ref at the tree once nodes arrive after an empty mount', () => {
+    const ref = createRef<HTMLUListElement>();
+    const { rerender } = render(<Tree aria-label="T" nodes={[]} ref={ref} />);
+    expect(ref.current).toBeNull();
+    rerender(<Tree aria-label="T" nodes={NODES} ref={ref} />);
+    expect(ref.current).toBe(screen.getByRole('tree'));
+    rerender(<Tree aria-label="T" nodes={[]} ref={ref} />);
+    expect(ref.current).toBeNull();
+  });
+
+  it('draws no drop mark where a drop would leave the row in place', () => {
+    const { tree, row } = setup();
+    press(row('Ex'), 30);
+    move(60);
+    move(30);
+    expect(screen.getByRole('treeitem', { name: 'Ex' })).toHaveAttribute('data-dragging', 'true');
+    expect(tree.querySelector('[data-drop]')).toBeNull();
   });
 });
 

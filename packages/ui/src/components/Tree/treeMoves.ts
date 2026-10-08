@@ -14,7 +14,7 @@ export function parentsOf(nodes: readonly TreeNode[]): Map<string, string | null
   return out;
 }
 
-function siblingsOf(nodes: readonly TreeNode[], parentId: string | null): readonly TreeNode[] {
+export function siblingsOf(nodes: readonly TreeNode[], parentId: string | null): readonly TreeNode[] {
   if (parentId === null) return nodes;
   const find = (list: readonly TreeNode[]): readonly TreeNode[] | undefined => {
     for (const n of list) {
