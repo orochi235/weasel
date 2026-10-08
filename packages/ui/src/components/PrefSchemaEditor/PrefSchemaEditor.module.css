@@ -1,0 +1,2 @@
+.options { display: grid; gap: var(--wzl-space-2); }
+.optionRow { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--wzl-space-2); align-items: center; }
