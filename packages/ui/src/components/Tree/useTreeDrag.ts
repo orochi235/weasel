@@ -87,6 +87,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     const { enabled, container } = o.current;
     const box = container();
     if (!enabled || !box || drag.current || e.button !== 0) return;
+    if (o.current.visible.find((v) => v.node.id === id)?.node.disabled) return;
     if ((e.target as Element).closest('[data-tree-twisty]')) return;
     if (isInControlWithin(e.target, e.currentTarget)) return;
     const mods: PressModifiers = { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };

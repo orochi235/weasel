@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Tree, type TreeNode } from './Tree';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const NODES: TreeNode[] = [
   { id: 'g', label: 'Group', children: [{ id: 'x', label: 'Ex' }, { id: 'y', label: 'Why' }] },
@@ -67,10 +70,13 @@ describe('Tree — drag to reorder', () => {
   });
 
   it('refuses a drop into the dragged node itself even when canDrop allows everything', () => {
-    const { onMove, row } = setup({ canDrop: () => true });
+    const canDrop = vi.fn(() => true);
+    const { onMove, row } = setup({ canDrop });
     press(row('Group'), 10);
     move(40);                // onto Ex, a child of g
+    expect(screen.getByRole('treeitem', { name: 'Group' })).toHaveAttribute('data-dragging', 'true');
     release(40);
+    expect(canDrop).not.toHaveBeenCalled(); // the built-in refusal runs before canDrop
     expect(onMove).not.toHaveBeenCalled();
   });
 
@@ -104,6 +110,25 @@ describe('Tree — drag to reorder', () => {
     move(12);
     vi.advanceTimersByTime(600);
     expect([...onExpandedChange.mock.calls.at(-1)![0]]).toEqual(['g']);
-    vi.useRealTimers();
+  });
+
+  it('does not start a drag from a disabled node', () => {
+    const nodes: TreeNode[] = [{ id: 'a', label: 'Aye', disabled: true }, { id: 'b', label: 'Bee' }];
+    const canDrop = vi.fn(() => true);
+    const { onMove, row } = setup({ nodes, canDrop });
+    press(row('Aye'), 10);
+    move(40);
+    expect(screen.getByRole('treeitem', { name: 'Aye' })).not.toHaveAttribute('data-dragging');
+    release(40);
+    expect(canDrop).not.toHaveBeenCalled();
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('calls a stable callback ref once across a rerender', () => {
+    const cb = vi.fn();
+    const { rerender } = render(<Tree aria-label="T" nodes={NODES} onMove={vi.fn()} ref={cb} />);
+    rerender(<Tree aria-label="T" nodes={NODES} onMove={vi.fn()} ref={cb} />);
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(cb.mock.calls[0]![0]).toBe(screen.getByRole('tree'));
   });
 });

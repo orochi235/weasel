@@ -17,7 +17,6 @@
 }
 
 .item {
-  position: relative;
   outline: none;
 }
 
@@ -102,6 +101,8 @@
 
 /* Drop marks: a line on the edge the drop lands at, or a ring on the branch it lands in. An 'after' mark sits on
    the li, which encloses the subtree, so it lands under the last descendant at the row's own indent. */
+.item[data-drop] { position: relative; }
+
 .item[data-drop='before']::before,
 .item[data-drop='after']::after {
   content: '';

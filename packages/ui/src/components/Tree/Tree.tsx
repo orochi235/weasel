@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useId,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -181,6 +182,7 @@ export const Tree = forwardRef(function Tree(
   };
 
   const treeEl = useRef<HTMLUListElement | null>(null);
+  useImperativeHandle(ref, () => treeEl.current!, []);
   const drag = useTreeDrag({
     enabled: !!onMove,
     nodes, visible, expanded, selected,
@@ -321,11 +323,7 @@ export const Tree = forwardRef(function Tree(
   return (
     <>
       <ul
-        ref={(el) => {
-          treeEl.current = el;
-          if (typeof ref === 'function') ref(el);
-          else if (ref) ref.current = el;
-        }}
+        ref={treeEl}
         role="tree"
         className={[s.tree, className].filter(Boolean).join(' ')}
         aria-label={ariaLabel}
