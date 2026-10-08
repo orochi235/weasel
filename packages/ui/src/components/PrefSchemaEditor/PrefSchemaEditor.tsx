@@ -1,0 +1,77 @@
+import { useMemo, useState } from 'react';
+import type { ToolPrefGroup } from '@weasel-js/core';
+import { CloseButton } from '../CloseButton';
+import { setAtPath } from '../SelectionPanel/model';
+import { PrefsForm, type PrefRenderer } from '../Prefs';
+import { AttributesPane } from './AttributesPane';
+import { ExportPanel } from './ExportPanel';
+import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
+import { branchPaths, rebasePaths } from './schemaEdit';
+import { changedPaths, diffSchemas } from './schemaExport';
+import { StructurePane } from './StructurePane';
+import s from './PrefSchemaEditor.module.css';
+
+const NO_KINDS: CustomKinds = {};
+
+/** Props for {@link PrefSchemaEditor}. */
+export interface PrefSchemaEditorProps {
+  schema: ToolPrefGroup;
+  onChange(next: ToolPrefGroup): void;
+  /** Baseline for the change list and the changed-row marks. Default: the first `schema` seen. */
+  original?: ToolPrefGroup;
+  /** Attribute schemas for custom kinds, by kind. A leaf of an unlisted custom kind edits its base fields only. */
+  kinds?: CustomKinds;
+  /** Renderers for custom kinds, used by the preview and by a custom kind's attributes. */
+  renderers?: Record<string, PrefRenderer>;
+  className?: string;
+}
+
+/**
+ * An editor for a preference schema: its structure as a tree, the selected node's attributes as a form, a live
+ * `PrefsForm` of the result, and an export of it as a TypeScript literal and a list of changes. Edits stay in
+ * `schema`; nothing is written back to source. Swapping `schema` for an unrelated one without remounting keeps the
+ * selection, expansion and baseline; give the editor a `key` to start fresh.
+ */
+export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS, renderers, className }: PrefSchemaEditorProps) {
+  const [first] = useState(schema);
+  const base = original ?? first;
+  const [selected, setSelected] = useState<string | null>(null);
+  const [values, setValues] = useState<Record<string, unknown>>({});
+  const [notice, setNotice] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(() => new Set(branchPaths(schema)));
+  const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);
+  const changed = useMemo(() => changedPaths(changes), [changes]);
+  const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(kinds)], [kinds]);
+  const select = (path: string | null) => {
+    setSelected(path);
+    setNotice(null);
+  };
+  const rekey = (from: string, to: string) => {
+    setExpanded((e) => rebasePaths(e, [[from, to]]));
+    setSelected(to);
+  };
+
+  return (
+    <div className={[s.editor, className].filter(Boolean).join(' ')}>
+      <StructurePane schema={schema} onChange={onChange} selected={selected} onSelect={select} changed={changed} kinds={kindList}
+        expanded={expanded} onExpandedChange={setExpanded} />
+      <div className={s.middle}>
+        <div className={s.notice} role="status">
+          {notice && (
+            <>
+              <span>{notice}</span>
+              <CloseButton ariaLabel="Dismiss" onClick={() => setNotice(null)} />
+            </>
+          )}
+        </div>
+        <AttributesPane schema={schema} onChange={onChange} path={selected} onRekey={rekey}
+          kinds={kindList} custom={kinds} renderers={renderers} onNotice={setNotice} />
+      </div>
+      <section className={s.pane} aria-label="Preview">
+        <PrefsForm schema={schema} values={values} renderers={renderers} showHidden
+          onChange={(path, v) => setValues((cur) => setAtPath(cur, path.split('.'), v) as Record<string, unknown>)} />
+      </section>
+      <ExportPanel schema={schema} changes={changes} />
+    </div>
+  );
+}

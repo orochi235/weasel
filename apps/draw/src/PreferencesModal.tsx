@@ -4,7 +4,7 @@
  *  filtering, built-in control mapping); this file supplies only what is
  *  WeaselDraw-specific: the values binding (`usePrefsValues` →
  *  localStorage), renderers for the app's two custom kinds
- *  (`registry-enum`, `object`), and the dev-only "Show hidden" switch.
+ *  (`registry-enum`, `data`), and the dev-only "Show hidden" switch.
  */
 import { useMemo, useState } from 'react';
 import {
@@ -19,8 +19,7 @@ import {
 import {
   PREFS,
   usePrefsValues,
-  type WeaselDrawPrefGroup,
-  type WeaselDrawPrefObject,
+  type WeaselDrawPrefData,
   type WeaselDrawPrefRegistryEnum,
 } from './prefs';
 import type { RegistryEnumSources } from './registry/types';
@@ -60,13 +59,13 @@ export function PreferencesModal({ open, onClose, registryEnumSources }: Prefere
         onOpenChange={(o) => { if (!o) onClose(); }}
         layout="rail"
         filterable
-        schema={PREFS as WeaselDrawPrefGroup}
+        schema={PREFS}
         values={values}
         onChange={setAt}
         showHidden={showHidden}
         renderers={{
           'registry-enum': RegistryEnumControl,
-          object: ObjectControl,
+          data: DataControl,
         }}
         headerExtra={
           dev ? (
@@ -80,7 +79,7 @@ export function PreferencesModal({ open, onClose, registryEnumSources }: Prefere
   );
 }
 
-function RegistryEnumControl(ctx: PrefRenderContext) {
+export function RegistryEnumControl(ctx: PrefRenderContext) {
   const pref = ctx.pref as WeaselDrawPrefRegistryEnum;
   return (
     <RegistrySelect
@@ -93,17 +92,17 @@ function RegistryEnumControl(ctx: PrefRenderContext) {
   );
 }
 
-function ObjectControl(ctx: PrefRenderContext) {
-  // `ui.panels` has a known shape; anything else object-kind is data
-  // other code paths own — show it read-only rather than guessing.
+export function DataControl(ctx: PrefRenderContext) {
+  // Only `ui.panels` has a known shape; any other data pref belongs to other
+  // code, so it shows read-only as a placeholder.
   if (ctx.path === 'ui.panels') return <PanelsEditor ctx={ctx} />;
-  return <Code status="muted" variant="plain" size="xs">(object)</Code>;
+  return <Code status="muted" variant="plain" size="xs">(data)</Code>;
 }
 
 type PanelRow = (typeof PANELS)[number];
 
 export function PanelsEditor({ ctx }: { ctx: PrefRenderContext }) {
-  const pref = ctx.pref as WeaselDrawPrefObject;
+  const pref = ctx.pref as WeaselDrawPrefData;
   const panels = (ctx.value ?? {}) as PanelsValue;
   const update = (id: string, field: 'hidden' | 'collapsed', next: boolean): void => {
     ctx.setValue({ ...panels, [id]: { ...panels[id], [field]: next } });

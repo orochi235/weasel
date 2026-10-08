@@ -6,14 +6,16 @@
 }
 
 .tree {
+  /* The fold mark's width (DisclosureMark's 13px) plus the row gap: the gutter a mark hangs in. */
+  --tree-gutter: calc(13px + var(--wzl-space-2));
   user-select: none;
   -webkit-user-select: none;
   width: 100%;
 }
 
-/* One twisty and one gap, so a child's twisty sits under its parent's label. */
+/* One gutter, so a child's mark sits under its parent's label. */
 .group {
-  padding-inline-start: var(--wzl-tree-indent, calc(var(--wzl-control-h-xs) + var(--wzl-space-2)));
+  padding-inline-start: var(--wzl-tree-indent, var(--tree-gutter));
 }
 
 .item {
@@ -24,7 +26,7 @@
   display: flex;
   align-items: center;
   gap: var(--wzl-space-2);
-  padding: 0 var(--wzl-space-2) 0 0;
+  padding: 0 var(--wzl-space-2) 0 var(--tree-gutter);
   height: var(--wzl-control-h);
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg);
@@ -56,14 +58,15 @@
   cursor: not-allowed;
 }
 
-/* A leaf keeps the empty box, so labels at one level line up whether or not
-   their rows are branches. */
+/* The mark hangs in the row's gutter, so every label at one level starts at the same x
+   whether or not its row is a branch. */
 .twisty {
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--wzl-control-h-xs);
+  width: 13px;
+  margin-inline-start: calc(-1 * var(--tree-gutter));
   align-self: stretch;
   color: var(--wzl-fg-muted);
 }
@@ -97,4 +100,36 @@
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);
   font-style: italic;
+}
+
+/* Drop marks: a line on the edge the drop lands at, or a ring on the branch it lands in. An 'after' mark sits on
+   the li, which encloses the subtree, so it lands under the last descendant at the row's own indent. */
+.item[data-drop] { position: relative; }
+
+.item[data-drop='before']::before,
+.item[data-drop='after']::after {
+  content: '';
+  position: absolute;
+  inset-inline: var(--tree-gutter) 0;
+  height: 2px;
+  background: var(--wzl-accent);
+  border-radius: 1px;
+  pointer-events: none;
+}
+.item[data-drop='before']::before { top: -1px; }
+.item[data-drop='after']::after { bottom: -1px; }
+
+.item[data-drop='into'] > .row {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: -2px;
+}
+
+.item[data-dragging] > .row { opacity: 0.5; }
+
+.ghostRow {
+  height: var(--wzl-control-h);
+  display: flex;
+  align-items: center;
+  padding-inline: var(--wzl-space-2);
+  font-size: var(--wzl-font-size-sm);
 }

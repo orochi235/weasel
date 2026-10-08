@@ -1,6 +1,8 @@
 import {
   forwardRef,
+  useEffect,
   useId,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -10,9 +12,14 @@ import {
   type Ref,
 } from 'react';
 import { intentOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
+import type { TreeDropTarget } from '../../dropTarget';
 import { selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { DisclosureMark } from '../Disclosure';
+import { DragGhost } from '../DragGhost';
 import s from './Tree.module.css';
+import { handleMoveKey } from './treeKeyboardMove';
+import { modsOf, textOf, useControlledSet } from './treeUtils';
+import { useTreeDrag } from './useTreeDrag';
 
 /** One node. A node with `children` is a branch, even when the array is empty. */
 export interface TreeNode {
@@ -65,12 +72,21 @@ export interface TreeProps {
 
   /** A row was activated — click, Enter or Space — with the modifiers held. */
   onAction?(id: string, mods: PressModifiers): void;
+
+  /** Drag-to-reorder and keyboard moves. Off unless given. Called with the
+   *  dragged ids in tree order and where they land; `Tree` never reorders
+   *  `nodes` itself. */
+  onMove?(ids: string[], target: TreeDropTarget): void;
+  /** Refuse a drop. A drop into a dragged node or beneath one is refused
+   *  regardless. Default: allow. */
+  canDrop?(ids: readonly string[], target: TreeDropTarget): boolean;
 }
 
 interface Visible {
   node: TreeNode;
   parentId: string | null;
   level: number;
+  index: number;
 }
 
 const TYPEAHEAD_MS = 500;
@@ -94,7 +110,9 @@ const LIST_KEYS = { toggle: ['meta', 'ctrl'], range: 'shift' } as const;
  * Home/End go to the first and last. Right opens a closed branch, then moves
  * into it; Left closes an open branch, else moves to the parent. Enter and
  * Space activate, as a click does. Typing moves to the next row whose text
- * starts with what was typed.
+ * starts with what was typed. With `onMove`, Alt+Up/Down move the focused node
+ * (or the selection holding it) among its siblings, and Alt+Left/Right outdent
+ * it and indent it under the sibling above; each goes through `canDrop`.
  *
  * **Activating** a row — click, Enter, Space — toggles it if it is a branch,
  * selects it under `selectionMode`, and calls `onAction`. Clicking the twisty
@@ -109,7 +127,7 @@ export const Tree = forwardRef(function Tree(
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange,
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
-    onAction,
+    onAction, onMove, canDrop,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
@@ -121,10 +139,10 @@ export const Tree = forwardRef(function Tree(
   const visible = useMemo(() => {
     const out: Visible[] = [];
     const walk = (list: readonly TreeNode[], parentId: string | null, level: number) => {
-      for (const node of list) {
-        out.push({ node, parentId, level });
+      list.forEach((node, index) => {
+        out.push({ node, parentId, level, index });
         if (node.children && expanded.has(node.id)) walk(node.children, node.id, level + 1);
-      }
+      });
     };
     walk(nodes, null, 1);
     return out;
@@ -135,14 +153,17 @@ export const Tree = forwardRef(function Tree(
   const [focusId, setFocusId] = useState<string | null>(null);
   const anchor = useRef<string | null>(null);
   const typed = useRef({ text: '', at: 0 });
+  const pendingFocus = useRef<string | null>(null);
+  useEffect(() => {
+    const id = pendingFocus.current;
+    if (id == null) return;
+    pendingFocus.current = null;
+    items.current.get(id)?.focus();
+  });
 
   const stopId = focusId != null && indexOf.has(focusId)
     ? focusId
     : (visible.find((v) => selectable && selected.has(v.node.id)) ?? visible[0])?.node.id;
-
-  if (nodes.length === 0) {
-    return <div className={[s.empty, className].filter(Boolean).join(' ')}>{empty ?? '—'}</div>;
-  }
 
   const focus = (id: string | undefined) => { if (id != null) items.current.get(id)?.focus(); };
 
@@ -172,11 +193,34 @@ export const Tree = forwardRef(function Tree(
     onAction?.(node.id, mods);
   };
 
+  const treeEl = useRef<HTMLUListElement | null>(null);
+  const isEmpty = nodes.length === 0;
+  // The element behind the ref changes when the tree swaps with the empty state.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useImperativeHandle(ref, () => treeEl.current as HTMLUListElement, [isEmpty]);
+  const drag = useTreeDrag({
+    enabled: !!onMove,
+    nodes, visible, expanded, selected,
+    container: () => treeEl.current,
+    rowEl: (id) => items.current.get(id)?.firstElementChild as HTMLElement | undefined,
+    canDrop, onMove,
+    onPress: (id, mods) => { const v = visible[indexOf.get(id) ?? -1]; if (v) activate(v.node, mods); },
+    expand: (id) => { if (!expanded.has(id)) setExpanded(new Set(expanded).add(id)); },
+  });
+
+  if (nodes.length === 0) {
+    return <div className={[s.empty, className].filter(Boolean).join(' ')}>{empty ?? '—'}</div>;
+  }
+
   const onKeyDown = (v: Visible) => (e: KeyboardEvent<HTMLLIElement>) => {
     if (e.target !== e.currentTarget) return;
     const i = indexOf.get(v.node.id)!;
     const { node } = v;
     const open = !!node.children && expanded.has(node.id);
+    if (onMove && handleMoveKey(e, node.id, {
+      nodes, selected, expanded, setExpanded, canDrop, onMove,
+      focusAfterMove: (id) => { pendingFocus.current = id; },
+    })) return;
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -268,12 +312,18 @@ export const Tree = forwardRef(function Tree(
           aria-disabled={node.disabled || undefined}
           aria-labelledby={trailingId ? `${labelId} ${trailingId}` : labelId}
           data-muted={node.muted ? 'true' : undefined}
+          data-drop={drag.state.mark?.id === node.id ? drag.state.mark.where : undefined}
+          data-dragging={drag.state.dragging?.includes(node.id) ? 'true' : undefined}
           tabIndex={node.id === stopId ? 0 : -1}
-          onKeyDown={onKeyDown({ node, parentId, level })}
+          onKeyDown={onKeyDown({ node, parentId, level, index: pos })}
           onFocus={(e) => { if (e.target === e.currentTarget) setFocusId(node.id); }}
         >
-          <div className={s.row} onClick={onRowClick(node)}>
-            <span className={s.twisty} aria-hidden="true" onClick={branch ? onTwistyClick(node) : undefined}>
+          <div
+            className={s.row}
+            onClick={onRowClick(node)}
+            onPointerDown={onMove ? (e) => drag.onPointerDown(node.id, e) : undefined}
+          >
+            <span className={s.twisty} aria-hidden="true" data-tree-twisty="" onClick={branch ? onTwistyClick(node) : undefined}>
               {branch && <DisclosureMark open={open} />}
             </span>
             {node.leading != null && <span className={s.leading}>{node.leading}</span>}
@@ -290,16 +340,26 @@ export const Tree = forwardRef(function Tree(
     });
 
   return (
-    <ul
-      ref={ref}
-      role="tree"
-      className={[s.tree, className].filter(Boolean).join(' ')}
-      aria-label={ariaLabel}
-      aria-labelledby={ariaLabelledBy}
-      aria-multiselectable={selectionMode === 'multiple' || undefined}
-    >
-      {renderLevel(nodes, null, 1)}
-    </ul>
+    <>
+      <ul
+        ref={treeEl}
+        role="tree"
+        className={[s.tree, className].filter(Boolean).join(' ')}
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
+        aria-multiselectable={selectionMode === 'multiple' || undefined}
+      >
+        {renderLevel(nodes, null, 1)}
+      </ul>
+      {drag.state.ghost && treeEl.current && (
+        <DragGhost at={drag.state.ghost} from={treeEl.current}>
+          {drag.state.ghost.ids.map((id) => {
+            const v = visible[indexOf.get(id) ?? -1];
+            return <div key={id} className={s.ghostRow}>{v?.node.label ?? id}</div>;
+          })}
+        </DragGhost>
+      )}
+    </>
   );
 });
 
@@ -342,26 +402,4 @@ export function treeBranchIds(nodes: readonly TreeNode[]): string[] {
   };
   walk(nodes);
   return out;
-}
-
-function textOf(node: TreeNode): string {
-  return node.textValue ?? (typeof node.label === 'string' ? node.label : '');
-}
-
-function modsOf(e: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }): PressModifiers {
-  return { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };
-}
-
-function useControlledSet(
-  value: Iterable<string> | undefined,
-  initial: Iterable<string> | undefined,
-  onChange: ((ids: Set<string>) => void) | undefined,
-): [ReadonlySet<string>, (next: Set<string>) => void] {
-  const [own, setOwn] = useState<ReadonlySet<string>>(() => new Set(initial));
-  const controlled = useMemo(() => (value === undefined ? undefined : new Set(value)), [value]);
-  const set = (next: Set<string>) => {
-    if (value === undefined) setOwn(next);
-    onChange?.(next);
-  };
-  return [controlled ?? own, set];
 }

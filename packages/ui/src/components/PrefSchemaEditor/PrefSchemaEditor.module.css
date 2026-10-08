@@ -1,0 +1,36 @@
+.options { display: grid; gap: var(--wzl-space-2); }
+.optionRow { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--wzl-space-2); align-items: center; }
+.number { composes: numeric from '@weasel-js/theme/numeric.module.css'; }
+.number input { text-align: right; }
+.editor {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(280px, 1.2fr) minmax(280px, 1.4fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--wzl-space-3);
+  min-height: 0;
+  height: 100%;
+}
+.middle { display: grid; align-content: start; gap: var(--wzl-space-2); min-height: 0; overflow: auto; }
+.pane { min-height: 0; overflow: auto; }
+.toolbar { display: flex; flex-wrap: wrap; gap: var(--wzl-space-2); margin-block-end: var(--wzl-space-2); }
+.identity { display: grid; gap: var(--wzl-space-2); margin-block-end: var(--wzl-space-3); }
+.notice:not(:empty) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wzl-space-2);
+  padding: var(--wzl-space-1) var(--wzl-space-2);
+  border-inline-start: 3px solid var(--wzl-warning);
+  border-radius: var(--wzl-radius-sm);
+  font-size: var(--wzl-font-size-sm);
+}
+.export { grid-column: 1 / -1; }
+.code {
+  margin: var(--wzl-space-2) 0 0;
+  max-height: 16rem;
+  overflow: auto;
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-xs);
+  white-space: pre;
+}
+.changed { font-weight: 600; }

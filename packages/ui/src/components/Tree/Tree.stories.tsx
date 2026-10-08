@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useMemo, useState } from 'react';
 import { Badge } from '../Badge';
 import { Input } from '../Input';
+import { applyMove } from './Tree.fixtures';
 import { Tree, filterTree, treeBranchIds, type TreeNode } from './Tree';
 
 const meta: Meta<typeof Tree> = {
@@ -125,6 +126,26 @@ export const Keyboard: Story = {
       <div style={{ width: 240 }}>
         <Tree aria-label="Files" nodes={FILES} selectionMode="single" onAction={setLast} />
         <p>Last activated: {last ?? 'nothing'}</p>
+      </div>
+    );
+  },
+};
+
+/** Pass `onMove` and rows drag to reorder, or move with Alt+arrows. A line marks
+ *  where the drop lands; moving the pointer left or right of it changes the
+ *  level. `selectionMode="multiple"` drags every selected row together. */
+export const Reorderable: Story = {
+  render: function Render() {
+    const [nodes, setNodes] = useState<readonly TreeNode[]>(FILES);
+    return (
+      <div style={{ width: 240 }}>
+        <Tree
+          aria-label="Files"
+          nodes={nodes}
+          defaultExpandedIds={['src', 'components']}
+          selectionMode="multiple"
+          onMove={(ids, target) => setNodes((n) => applyMove(n, ids, target))}
+        />
       </div>
     );
   },
