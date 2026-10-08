@@ -16,6 +16,12 @@ const ROOT: ToolPrefGroup = {
 };
 
 describe('printSchema', () => {
+  it('prints a class instance attribute as KEEP_FROM_SOURCE', () => {
+    class Unit { scale = 2; }
+    const tree: ToolPrefGroup = { name: 'R', children: { n: { kind: 'number', name: 'N', description: '', default: 1, unit: new Unit() as never } } };
+    expect(printSchema(tree)).toContain(`unit: ${KEEP}`);
+  });
+
   it('prints a literal that evaluates back to the tree, with code as KEEP_FROM_SOURCE', () => {
     const text = printSchema(ROOT);
     const STUB = Symbol('keep');

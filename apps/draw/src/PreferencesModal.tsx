@@ -93,10 +93,10 @@ export function RegistryEnumControl(ctx: PrefRenderContext) {
 }
 
 export function DataControl(ctx: PrefRenderContext) {
-  // `ui.panels` has a known shape; anything else data-kind is data
-  // other code paths own — show it read-only rather than guessing.
+  // Only `ui.panels` has a known shape; any other data pref belongs to other
+  // code, so it shows read-only as a placeholder.
   if (ctx.path === 'ui.panels') return <PanelsEditor ctx={ctx} />;
-  return <Code status="muted" variant="plain" size="xs">(object)</Code>;
+  return <Code status="muted" variant="plain" size="xs">(data)</Code>;
 }
 
 type PanelRow = (typeof PANELS)[number];

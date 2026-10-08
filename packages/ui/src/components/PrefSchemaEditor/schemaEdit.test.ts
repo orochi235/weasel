@@ -89,6 +89,7 @@ describe('schemaEdit', () => {
     expect(keyProblem(kids, 'x')).toMatch(/"x" is taken here/);
     expect(keyProblem(kids, 'a.b')).toMatch(/"a\.b" is not a valid key/);
     expect(keyProblem(kids, 'constructor')).toBeNull();
+    expect(keyProblem(kids, '__proto__')).toMatch(/reserved/);
     expect(keyProblem(kids, 'w')).toBeNull();
   });
 

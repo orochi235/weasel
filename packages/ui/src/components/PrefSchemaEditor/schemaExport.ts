@@ -1,16 +1,14 @@
-import type { ToolPrefGroup } from '@weasel-js/core';
+import { isPlainObject, type ToolPrefGroup } from '@weasel-js/core';
 import { isPrefLeaf } from '../Prefs/schema';
-import { childrenOf, joinPath, type SchemaNode } from './schemaEdit';
+import { childrenOf, isValidKey, joinPath, type SchemaNode } from './schemaEdit';
 
 /** What an attribute holding code prints as: an undeclared name, so the pasted literal fails typecheck until the
  *  original expression is put back. */
 export const KEEP = 'KEEP_FROM_SOURCE';
 
-const IDENT = /^[A-Za-z_$][\w$]*$/;
 const pad = (depth: number) => '  '.repeat(depth);
 const isScalar = (v: unknown) => v === null || ['string', 'number', 'boolean', 'undefined'].includes(typeof v);
-const isPlain = (v: unknown): v is Record<string, unknown> =>
-  Object.prototype.toString.call(v) === '[object Object]' && !Array.isArray(v);
+const isPlain = isPlainObject;
 
 /** Whether `v` is or holds something a literal cannot carry: a function, or a non-plain object. */
 export function containsCode(v: unknown): boolean {
@@ -25,7 +23,7 @@ function quote(s: string): string {
 }
 
 function printKey(k: string): string {
-  return IDENT.test(k) ? k : quote(k);
+  return isValidKey(k) ? k : quote(k);
 }
 
 function printInline(v: Record<string, unknown>): string {

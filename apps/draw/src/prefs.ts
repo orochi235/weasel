@@ -52,15 +52,13 @@ export type WeaselDrawPrefGroup = ToolPrefGroup;
  * keyed by tool id. The function is the identity at runtime — its only job
  * is to capture each contribution's literal type so `typeof PREFS` still
  * drives `WeaselDrawPrefPath` after composition.
- *
  */
 function composeToolPrefs<T extends Record<string, ToolPrefGroup>>(t: T): T {
   return t;
 }
 
-// Custom leaves are declared apart: inline, core's open `kind: string` leaf
-// widens the literal `kind` (dropping the path from `WeaselDrawPrefPath`) and
-// rejects `source` as an excess property.
+// Declared apart: inline, core's open `kind: string` leaf widens the literal
+// `kind` (dropping the path from `WeaselDrawPrefPath`) and rejects `source`.
 const PANELS_PREF = {
   kind: 'data',
   name: 'Panel visibility',

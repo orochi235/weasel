@@ -83,6 +83,7 @@ function insertAt(kids: ChildMap, entries: Array<[string, SchemaNode]>, index: n
 /** Why `key` cannot join `kids`, in words for the person typing it; `null` when it can. */
 export function keyProblem(kids: ChildMap, key: string): string | null {
   if (!isValidKey(key)) return `"${key}" is not a valid key: use letters, digits, _ or $, not starting with a digit.`;
+  if (key === '__proto__') return `"${key}" is reserved.`;
   if (Object.hasOwn(kids, key)) return `"${key}" is taken here.`;
   return null;
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ToolPrefGroup } from '@weasel-js/core';
 import { CloseButton } from '../CloseButton';
+import { setAtPath } from '../SelectionPanel/model';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
 import { AttributesPane } from './AttributesPane';
 import { ExportPanel } from './ExportPanel';
@@ -28,7 +29,8 @@ export interface PrefSchemaEditorProps {
 /**
  * An editor for a preference schema: its structure as a tree, the selected node's attributes as a form, a live
  * `PrefsForm` of the result, and an export of it as a TypeScript literal and a list of changes. Edits stay in
- * `schema`; nothing is written back to source.
+ * `schema`; nothing is written back to source. Swapping `schema` for an unrelated one without remounting keeps the
+ * selection, expansion and baseline; give the editor a `key` to start fresh.
  */
 export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS, renderers, className }: PrefSchemaEditorProps) {
   const [first] = useState(schema);
@@ -67,16 +69,9 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
       </div>
       <section className={s.pane} aria-label="Preview">
         <PrefsForm schema={schema} values={values} renderers={renderers} showHidden
-          onChange={(path, v) => setValues((cur) => setAtPath(cur, path, v))} />
+          onChange={(path, v) => setValues((cur) => setAtPath(cur, path.split('.'), v) as Record<string, unknown>)} />
       </section>
       <ExportPanel schema={schema} changes={changes} />
     </div>
   );
-}
-
-function setAtPath(root: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
-  const [head, ...rest] = path.split('.');
-  if (rest.length === 0) return { ...root, [head!]: value };
-  const child = (root[head!] as Record<string, unknown> | undefined) ?? {};
-  return { ...root, [head!]: setAtPath(child, rest.join('.'), value) };
 }
