@@ -490,6 +490,10 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   accepted on 2026-10-04, and 2.5–3.5× today's keyframe sampling (2026-10-08, not yet accepted;
   the rest of the gap is blits' read path).
   Left: steps 4–6, each needing a plan.
+  - **(P3) Two edges `sampleTrack` changed on blits.** A `NaN` time now samples as `NaN`, where it
+    used to return the first key. And at an interior key, a track with its own `interpolate`
+    returns that key's value object rather than a fresh `interpolate(a, b, 0)`, so a consumer
+    mutating it mutates the key.
 
 ### Earlier deferrals
 
