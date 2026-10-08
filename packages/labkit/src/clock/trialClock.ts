@@ -12,6 +12,19 @@ export interface ClockCapability {
   /** `false` for an instrument whose state is built up by running, so time can
    *  only move by running: no seek and no negative rate. Default `true`. */
   seekable?: boolean;
+  /** Makes the trial's blits mix, which then plays on this clock: its mix
+   *  time is kept at `elapsed`, synced forward and sought back, so scrubbing
+   *  and reverse reach it. Give it `history` with a `tape` reaching back over
+   *  the whole run, or a seek past it throws. Leave the mix's own `rate`
+   *  alone; the clock's is the one that plays. Read it with `useTrialMix`. */
+  mix?: () => ClockedMix;
+}
+
+/** What a trial clock needs of a blits `Mix`. */
+export interface ClockedMix {
+  sync(timestamp: number): void;
+  seek(time: number): void;
+  readonly now: number;
 }
 
 /**
@@ -58,6 +71,8 @@ export interface TrialClock {
 /** A clock, and what labkit alone does with it. */
 export interface TrialClockHandle {
   clock: TrialClock;
+  /** The mix `ClockCapability.mix` made, playing on `clock`. */
+  mix: ClockedMix | null;
   /** Back to 0 at the declared rate — the trial's Reset, allowed on a clock
    *  that is not seekable. */
   reset(): void;
@@ -99,6 +114,17 @@ export function createTrialClock(
   const wakes = new Set<() => void>();
   const subs = new Set<() => void>();
   const frames = new Set<(elapsed: number, pass: number) => void>();
+
+  const mix = spec.mix?.() ?? null;
+  // The mix's host clock: it only goes forward, by what the clock moved forward.
+  let host = 0;
+  const follow = (): void => {
+    if (!mix) return;
+    const ahead = elapsed - mix.now;
+    if (ahead > 0) mix.sync((host += ahead));
+    else if (ahead < 0) mix.seek(elapsed);
+  };
+  mix?.sync(host);
 
   const isInert = (): boolean => rate === 0 && ramp === null && !changed;
   const notify = (): void => {
@@ -213,6 +239,7 @@ export function createTrialClock(
       wakeFired = false;
       slept = isInert();
       if (elapsed !== before || wasChanged) {
+        follow();
         const pass = passAt();
         for (const fn of [...frames]) fn(elapsed, pass);
       }
@@ -237,8 +264,11 @@ export function createTrialClock(
     },
   };
 
+  follow();
+
   return {
     clock,
+    mix,
     reset() {
       elapsed = 0;
       rate = openRate;

@@ -516,15 +516,6 @@ is left:
   as a trial clock; `<TrialTransport>` then replaces its `Transport.tsx`.
 - **(P3) A still for poster capture, and `postMessage` play/pause** so a host
   page's play control can reach a live lab.
-- **(P3) A blits-driven trial clock is not seekable yet.** blits' `mix.seek`
-  (blits main 6d111d3, unreleased) seeks a mix either way in mix time, from a
-  history the host passes as `mix(kit, { history: { ms, tape: createHistory } })`.
-  `@weasel-js/history` 1.8.1 already has everything it calls. Once blits ships it,
-  a trial clock over a mix can report `seekable` and seek through it, which is
-  what brings `<TrialTransport>`'s scrub and reverse to those trials. Two limits
-  on blits' side: projecting ahead after a seek back does not replay the tape, and
-  a branch whose first call shares its mix time with a replayed call cannot be
-  reached on its own by seeking.
 
 ### labkit's deprecated snapshot undo
 

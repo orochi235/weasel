@@ -1,3 +1,3 @@
-export { useClockFrame, useTrialClock } from './hooks';
+export { useClockFrame, useTrialClock, useTrialMix } from './hooks';
 export { TrialTransport, type TrialTransportProps } from './TrialTransport';
-export type { ClockCapability, TrialClock } from './trialClock';
+export type { ClockCapability, ClockedMix, TrialClock } from './trialClock';

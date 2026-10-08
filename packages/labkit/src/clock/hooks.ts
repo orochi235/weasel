@@ -2,7 +2,7 @@ import { useLatest } from '@weasel-js/core';
 import { useContext, useEffect, useReducer, useSyncExternalStore } from 'react';
 import { LabContext } from '../lab/LabContext';
 import { ClockRegistryContext, TrialClockContext } from './clockRegistry';
-import type { TrialClock, TrialClockHandle } from './trialClock';
+import type { ClockedMix, TrialClock, TrialClockHandle } from './trialClock';
 
 const NO_SUBSCRIBE = () => () => {};
 
@@ -17,6 +17,15 @@ export function useTrialClock(trialId?: string): TrialClock | null {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => clock?.subscribe(bump), [clock]);
   return clock;
+}
+
+/**
+ * The blits mix the trial's `clock.mix` made, resolved as {@link useTrialClock};
+ * `null` when it declares none. Probe it per frame inside {@link useClockFrame}
+ * or a `timed` layer, which run after the mix has followed the clock.
+ */
+export function useTrialMix<M extends ClockedMix = ClockedMix>(trialId?: string): M | null {
+  return (useTrialClockHandle(trialId)?.mix ?? null) as M | null;
 }
 
 /** The handle behind {@link useTrialClock}, resolved the same way; re-renders

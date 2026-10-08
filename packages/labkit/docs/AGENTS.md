@@ -155,6 +155,12 @@ once (`loop: false`) unless declared otherwise.
   to 0. Making such an instrument seekable is blits' job, from a history the
   client supplies — not a labkit checkpoint-and-replay. Scrubbing never
   discards a recorded future.
+- **`clock.mix`** is how a blits-driven instrument stays seekable: labkit makes
+  one mix per trial and keeps its mix time at `elapsed`, `sync`ing it forward
+  on a host clock of its own and `seek`ing it back, once a frame, before any
+  `onFrame` reader. A blits mix's clock never runs backward, so reverse play is
+  a seek per frame. labkit types the mix structurally (`ClockedMix`) and takes
+  no blits dependency.
 - **Named after blits** (`elapsed`, `rate`, `ramp`, `seek`, `sync`, `rebase`,
   `inert`, `onWake`), which is meant to replace weasel's animation engine: in
   its terms a trial clock is an owner whose voices play under it. Keep new
