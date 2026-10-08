@@ -62,6 +62,11 @@ export interface PrefsFormProps {
    * them reads as a wall. Default false.
    */
   subPages?: boolean;
+  /**
+   * Rail layout: each top-level entry folds its nested entries away, shut
+   * until its group is the one open. Default false.
+   */
+  foldable?: boolean;
   /** Dotted paths whose leaves currently inherit: each still draws its control,
    *  dimmed, showing the value in `values` — pass it already resolved. Editing
    *  it calls `onChange` as usual, which is the owner's cue to pin it. */
@@ -216,6 +221,7 @@ function RailLayout(props: PrefsFormProps & {
         ariaLabel={schema.name}
         header={filterField}
         showCounts={query.trim() !== ''}
+        foldable={props.foldable === true}
       />
       {group === null ? (
         <div className={s.pane}>

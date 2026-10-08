@@ -204,3 +204,55 @@ describe('PrefsForm rail layout with subPages', () => {
     expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
   });
 });
+
+describe('PrefsForm rail layout, foldable', () => {
+  const renderRail = (props: Partial<Parameters<typeof PrefsForm>[0]> = {}) =>
+    render(
+      <PrefsForm schema={SCHEMA} onChange={() => {}} layout="rail" foldable defaultSection="io" {...props} />,
+    );
+  const snapping = () => screen.queryByRole('button', { name: /^Snapping/ });
+  const canvasEntry = () => document.querySelector<HTMLButtonElement>('[data-rail-fold="canvas"]')!;
+
+  it('starts every group shut but the open one', () => {
+    renderRail();
+    expect(snapping()).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Canvas', expanded: false })).toBeInTheDocument();
+  });
+
+  it('unfolds a group while it is open, and shuts it again when another opens', async () => {
+    const user = userEvent.setup();
+    renderRail();
+    await user.click(canvasEntry());
+    expect(snapping()).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Import/ }));
+    expect(snapping()).not.toBeInTheDocument();
+  });
+
+  it('folds by its mark without opening the group', async () => {
+    const user = userEvent.setup();
+    const onSectionChange = vi.fn();
+    renderRail({ onSectionChange });
+    await user.click(screen.getByRole('button', { name: 'Canvas', expanded: false }));
+    expect(snapping()).toBeInTheDocument();
+    expect(onSectionChange).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Canvas', expanded: true }));
+    expect(snapping()).not.toBeInTheDocument();
+  });
+
+  it('folds and unfolds with Right and Left on the entry', async () => {
+    const user = userEvent.setup();
+    renderRail();
+    canvasEntry().focus();
+    await user.keyboard('{ArrowRight}');
+    expect(snapping()).toBeInTheDocument();
+    await user.keyboard('{ArrowLeft}');
+    expect(snapping()).not.toBeInTheDocument();
+  });
+
+  it('unfolds everything while filtering', async () => {
+    const user = userEvent.setup();
+    renderRail({ filterable: true });
+    await user.type(screen.getByRole('textbox', { name: 'Filter Preferences' }), 'enabled');
+    expect(snapping()).toBeInTheDocument();
+  });
+});

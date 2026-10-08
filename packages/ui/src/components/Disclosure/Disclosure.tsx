@@ -57,6 +57,8 @@ export interface DisclosureProps {
    *  Default 13. */
   size?: number;
   disabled?: boolean;
+  /** `-1` keeps it out of the tab order, for a row whose own keys fold it. */
+  tabIndex?: number;
   className?: string;
 }
 
@@ -74,7 +76,7 @@ export interface DisclosureProps {
  * of the row's label rather than a child, so clicking to expand does not
  * actuate the label's own control.
  */
-export function Disclosure({ open, onToggle, label, controls, size = 13, disabled, className }: DisclosureProps) {
+export function Disclosure({ open, onToggle, label, controls, size = 13, disabled, tabIndex, className }: DisclosureProps) {
   return (
     <button
       type="button"
@@ -83,6 +85,7 @@ export function Disclosure({ open, onToggle, label, controls, size = 13, disable
       aria-controls={controls}
       aria-label={label}
       disabled={disabled}
+      tabIndex={tabIndex}
       onClick={onToggle}
     >
       <DisclosureMark open={open} size={size} />

@@ -239,6 +239,26 @@
   padding-left: var(--wzl-space-7);
 }
 
+/* A foldable rail: each depth-0 entry follows its fold mark, or a blank as wide where it has
+   nothing to fold, so every name starts at one edge. */
+.railRow {
+  display: flex;
+  align-items: center;
+}
+
+.railRow > .railItem {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.railFold {
+  flex: 0 0 var(--wzl-control-h-sm);
+}
+
+.railFoldable .railSub {
+  margin-left: var(--wzl-control-h-sm);
+}
+
 .railSub:not(.railOpen, .railInView) .railName {
   color: var(--wzl-fg-muted);
 }
