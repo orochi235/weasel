@@ -8,103 +8,44 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RegistryEnumFilter } from './registry/types';
 import { usePenTool } from '@weasel-js/core';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import type {
+  ToolPrefBase,
+  ToolPrefBoolean,
+  ToolPrefEnum,
+  ToolPrefEnumControl,
+  ToolPrefGroup,
+  ToolPrefKind,
+  ToolPrefLeaf,
+  ToolPrefNumber,
+  ToolPrefString,
+} from '@weasel-js/core';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────────────────────────────────
 
-export type WeaselDrawPrefKind = 'number' | 'boolean' | 'string' | 'enum' | 'registry-enum' | 'object';
+export type WeaselDrawPrefKind = ToolPrefKind | 'registry-enum' | 'data';
 
-interface WeaselDrawPrefBase<K extends WeaselDrawPrefKind, Value> {
-  kind: K;
-  /** Human-readable label, e.g. "Show grid". */
-  name: string;
-  /** Longer help text — shown in tooltips / a settings pane. */
-  description: string;
-  /** Fallback when nothing is persisted. */
-  default: Value;
-  /** Hidden from the Preferences modal in production. Used for prefs the
-   *  user shouldn't toggle directly — set by other code paths. In dev
-   *  mode, the "Show hidden" toggle reveals them. */
-  hidden?: boolean;
-  /** Render full-width with no label row (kit PrefsForm `block` leaves —
-   *  editors that bring their own chrome, like the panels editor). */
-  block?: boolean;
-}
+export type WeaselDrawPrefNumber = ToolPrefNumber;
+export type WeaselDrawPrefBoolean = ToolPrefBoolean;
+export type WeaselDrawPrefString = ToolPrefString;
+export type WeaselDrawPrefEnum<T extends string = string> = ToolPrefEnum<T>;
 
-/**
- * Optional rendering hint per kind. The renderer reads this to pick
- * between visually-equivalent presentations of the same value type —
- * e.g. a `'number'` with `control: 'slider'` becomes a range input,
- * while the same field without `control` stays a number input.
- *
- * Each kind exposes its own union so the type system can keep callers
- * honest: you can't set `control: 'slider'` on a boolean pref. Add
- * new variants here as the renderer learns to draw them — the
- * persisted value is unchanged either way, so legacy data keeps
- * working.
- */
-export type WeaselDrawPrefNumberControl = 'input' | 'slider';
-export type WeaselDrawPrefBooleanControl = 'checkbox' | 'switch';
-export type WeaselDrawPrefStringControl = 'input' | 'textarea';
-export type WeaselDrawPrefEnumControl = 'select' | 'radio';
-
-export interface WeaselDrawPrefNumber extends WeaselDrawPrefBase<'number', number> {
-  min?: number;
-  max?: number;
-  step?: number;
-  control?: WeaselDrawPrefNumberControl;
-}
-export interface WeaselDrawPrefBoolean extends WeaselDrawPrefBase<'boolean', boolean> {
-  control?: WeaselDrawPrefBooleanControl;
-}
-export interface WeaselDrawPrefString extends WeaselDrawPrefBase<'string', string> {
-  control?: WeaselDrawPrefStringControl;
-}
-export interface WeaselDrawPrefEnum<T extends string = string>
-  extends WeaselDrawPrefBase<'enum', T> {
-  options: readonly { value: T; label: string }[];
-  control?: WeaselDrawPrefEnumControl;
-}
-/** Enum whose options come from a runtime registry instead of a static
- *  list — e.g. `tools.lastTool` picks from whichever tools the app has
- *  registered. The Preferences modal resolves `source` against an
- *  injected `registryEnumSources` map (source id → resolver function).
- *  The value remains a string at rest; the source's ids are the legal
- *  values. */
-export interface WeaselDrawPrefRegistryEnum
-  extends WeaselDrawPrefBase<'registry-enum', string> {
-  /** Key into the modal's `registryEnumSources` prop. */
+/** Enum whose options come from a runtime registry — `tools.lastTool` picks
+ *  from whichever tools the app registered. `source` keys into the modal's
+ *  `registryEnumSources`; the value is a string at rest. */
+export interface WeaselDrawPrefRegistryEnum extends ToolPrefBase<'registry-enum', string> {
   source: string;
-  /** Same hints as a plain enum — `'select'` (default) or `'radio'`. */
-  control?: WeaselDrawPrefEnumControl;
-  /** Optional narrowing applied by the source's resolver. Two forms:
-   *   • a key/value criteria map (e.g. `{ kind: 'rect', layer: 'fg' }`)
-   *     — declarative; the resolver matches each candidate against it.
-   *   • a predicate callback `(item) => boolean` — imperative; the
-   *     resolver invokes it per candidate.
-   *  The item shape is source-defined; the resolver knows what `item`
-   *  looks like for its own universe. Omit `filter` to get everything. */
+  control?: ToolPrefEnumControl;
   filter?: RegistryEnumFilter;
 }
-/** Catch-all for non-primitive shapes (panels map, future color records). */
-export type WeaselDrawPrefObject<T = unknown> = WeaselDrawPrefBase<'object', T>;
 
-export type WeaselDrawPref =
-  | WeaselDrawPrefNumber
-  | WeaselDrawPrefBoolean
-  | WeaselDrawPrefString
-  | WeaselDrawPrefEnum
-  | WeaselDrawPrefRegistryEnum
-  | WeaselDrawPrefObject;
+/** A value other code owns and the form only displays or hands to a bespoke
+ *  editor (`ui.panels`). Unlike core's `object`, it has no `children`. */
+export type WeaselDrawPrefData<T = unknown> = ToolPrefBase<'data', T>;
 
-/** Nestable group: branch nodes in the registry tree. */
-export interface WeaselDrawPrefGroup {
-  name: string;
-  description?: string;
-  children: Record<string, WeaselDrawPref | WeaselDrawPrefGroup>;
-}
+export type WeaselDrawPref = ToolPrefLeaf;
+export type WeaselDrawPrefGroup = ToolPrefGroup;
 
 /**
  * Compose tool-contributed pref groups into a `Record<string, ToolPrefGroup>`
@@ -112,13 +53,29 @@ export interface WeaselDrawPrefGroup {
  * is to capture each contribution's literal type so `typeof PREFS` still
  * drives `WeaselDrawPrefPath` after composition.
  *
- * `ToolPrefGroup` is structurally a `WeaselDrawPrefGroup` (its kinds are a
- * subset), so the result slots into `PREFS.children.tools.children`
- * without a cast.
  */
 function composeToolPrefs<T extends Record<string, ToolPrefGroup>>(t: T): T {
   return t;
 }
+
+// Custom leaves are declared apart: inline, core's open `kind: string` leaf
+// widens the literal `kind` (dropping the path from `WeaselDrawPrefPath`) and
+// rejects `source` as an excess property.
+const PANELS_PREF = {
+  kind: 'data',
+  name: 'Panel visibility',
+  description: 'Hidden/collapsed state per right-sidebar panel.',
+  block: true,
+  default: {} as Record<string, { hidden?: boolean; collapsed?: boolean }>,
+} as const satisfies WeaselDrawPrefData;
+
+const LAST_TOOL = {
+  kind: 'registry-enum',
+  source: 'tools',
+  name: 'Last used tool',
+  description: 'Restored on app start.',
+  default: 'select',
+} as const satisfies WeaselDrawPrefRegistryEnum;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Registry — single source of truth for available prefs + their defaults.
@@ -151,13 +108,7 @@ export const PREFS = {
           min: 40,
           max: 200,
         },
-        panels: {
-          kind: 'object',
-          name: 'Panel visibility',
-          description: 'Hidden/collapsed state per right-sidebar panel.',
-          block: true,
-          default: {} as Record<string, { hidden?: boolean; collapsed?: boolean }>,
-        },
+        panels: PANELS_PREF,
       },
     },
     view: {
@@ -221,13 +172,7 @@ export const PREFS = {
       name: 'Tools',
       description: 'Tool memory and per-tool settings.',
       children: {
-        lastTool: {
-          kind: 'registry-enum',
-          source: 'tools',
-          name: 'Last used tool',
-          description: 'Restored on app start.',
-          default: 'select',
-        },
+        lastTool: LAST_TOOL,
         ...composeToolPrefs({
           pen: usePenTool.prefs,
         }),
@@ -248,7 +193,7 @@ type PrefValue<P> =
   P extends WeaselDrawPrefString  ? string  :
   P extends WeaselDrawPrefEnum<infer T>   ? T :
   P extends WeaselDrawPrefRegistryEnum    ? string :
-  P extends WeaselDrawPrefObject<infer T> ? T :
+  P extends WeaselDrawPrefData<infer T>   ? T :
   never;
 
 type PrefPaths<G, Prefix extends string = ''> =

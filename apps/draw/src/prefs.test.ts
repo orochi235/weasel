@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach, vi, beforeAll } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { PREFS_KEY, usePref, usePrefsValues, writePref } from './prefs';
+import type { ToolPrefGroup } from '@weasel-js/core';
+import { PREFS, PREFS_KEY, usePref, usePrefsValues, writePref } from './prefs';
 
 // jsdom 26 + Node 26 currently leaves `window.localStorage` returning
 // `undefined` from its native getter. Swap in a plain in-memory Storage so
@@ -165,5 +166,16 @@ describe('usePref', () => {
     writePref('view.gridDensity', 40);
     const { result } = renderHook(() => usePref('view.gridDensity'));
     expect(result.current[0]).toBe(40);
+  });
+});
+
+describe('PREFS is a core ToolPrefGroup', () => {
+  it('assigns to ToolPrefGroup without a cast', () => {
+    const asCore: ToolPrefGroup = PREFS;
+    expect(asCore.children.ui).toBeDefined();
+  });
+
+  it('stores the panel map under the custom data kind', () => {
+    expect(PREFS.children.ui.children.panels.kind).toBe('data');
   });
 });
