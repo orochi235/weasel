@@ -17,6 +17,7 @@
 }
 
 .item {
+  position: relative;
   outline: none;
 }
 
@@ -97,4 +98,34 @@
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);
   font-style: italic;
+}
+
+/* Drop marks: a line on the edge the drop lands at, or a ring on the branch it lands in. An 'after' mark sits on
+   the li, which encloses the subtree, so it lands under the last descendant at the row's own indent. */
+.item[data-drop='before']::before,
+.item[data-drop='after']::after {
+  content: '';
+  position: absolute;
+  inset-inline: var(--wzl-control-h-xs) 0;
+  height: 2px;
+  background: var(--wzl-accent);
+  border-radius: 1px;
+  pointer-events: none;
+}
+.item[data-drop='before']::before { top: -1px; }
+.item[data-drop='after']::after { bottom: -1px; }
+
+.item[data-drop='into'] > .row {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: -2px;
+}
+
+.item[data-dragging] > .row { opacity: 0.5; }
+
+.ghostRow {
+  height: var(--wzl-control-h);
+  display: flex;
+  align-items: center;
+  padding-inline: var(--wzl-space-2);
+  font-size: var(--wzl-font-size-sm);
 }

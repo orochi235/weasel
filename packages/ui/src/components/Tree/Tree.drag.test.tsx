@@ -1,0 +1,109 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { Tree, type TreeNode } from './Tree';
+
+afterEach(cleanup);
+
+const NODES: TreeNode[] = [
+  { id: 'g', label: 'Group', children: [{ id: 'x', label: 'Ex' }, { id: 'y', label: 'Why' }] },
+  { id: 'z', label: 'Zed' },
+];
+const ROW = 24;
+
+/** Stamp each visible row's box, in document order, as real layout would. */
+function stamp(tree: HTMLElement) {
+  const items = Array.from(tree.querySelectorAll<HTMLElement>('[role="treeitem"]'));
+  items.forEach((li, i) => {
+    const level = Number(li.getAttribute('aria-level'));
+    const row = li.firstElementChild as HTMLElement;
+    Object.defineProperty(row, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ top: i * ROW, height: ROW, left: (level - 1) * 16, width: 200, bottom: (i + 1) * ROW, right: 200, x: 0, y: i * ROW } as DOMRect),
+    });
+  });
+}
+
+function setup(props: Partial<Parameters<typeof Tree>[0]> = {}) {
+  const onMove = vi.fn();
+  render(<Tree aria-label="T" nodes={NODES} defaultExpandedIds={['g']} selectionMode="single" onMove={onMove} {...props} />);
+  const tree = screen.getByRole('tree');
+  tree.setPointerCapture = vi.fn();
+  tree.releasePointerCapture = vi.fn();
+  stamp(tree);
+  const row = (name: string) => screen.getByRole('treeitem', { name }).firstElementChild as HTMLElement;
+  return { onMove, tree, row };
+}
+
+const press = (el: HTMLElement, y: number, x = 100) =>
+  fireEvent.pointerDown(el, { pointerId: 1, button: 0, clientX: x, clientY: y });
+const move = (y: number, x = 100) => fireEvent.pointerMove(document, { pointerId: 1, clientX: x, clientY: y });
+const release = (y: number, x = 100) => fireEvent.pointerUp(document, { pointerId: 1, clientX: x, clientY: y });
+
+describe('Tree — drag to reorder', () => {
+  it('is off without onMove: no drag starts', () => {
+    const { row } = setup({ onMove: undefined });
+    press(row('Zed'), 80);
+    move(10);
+    release(10);
+    expect(screen.getByRole('treeitem', { name: 'Zed' })).not.toHaveAttribute('data-dragging');
+  });
+
+  it('moves a node before another across parents', () => {
+    const { onMove, row } = setup();
+    press(row('Zed'), 80);   // z is the 4th visible row: 72–96
+    move(30);                // upper half of Ex (24–48)
+    release(30);
+    expect(onMove).toHaveBeenCalledWith(['z'], { parentId: 'g', index: 0 });
+  });
+
+  it('marks the target row while dragging and clears it on drop', () => {
+    const { row } = setup();
+    press(row('Zed'), 80);
+    move(30);
+    expect(screen.getByRole('treeitem', { name: 'Ex' })).toHaveAttribute('data-drop', 'before');
+    expect(screen.getByRole('treeitem', { name: 'Zed' })).toHaveAttribute('data-dragging', 'true');
+    release(30);
+    expect(screen.getByRole('treeitem', { name: 'Ex' })).not.toHaveAttribute('data-drop');
+  });
+
+  it('refuses a drop into the dragged node itself even when canDrop allows everything', () => {
+    const { onMove, row } = setup({ canDrop: () => true });
+    press(row('Group'), 10);
+    move(40);                // onto Ex, a child of g
+    release(40);
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('asks canDrop and draws no mark for a refused target', () => {
+    const canDrop = vi.fn(() => false);
+    const { onMove, row } = setup({ canDrop });
+    press(row('Zed'), 80);
+    move(30);
+    expect(canDrop).toHaveBeenCalledWith(['z'], { parentId: 'g', index: 0 });
+    expect(screen.getByRole('treeitem', { name: 'Ex' })).not.toHaveAttribute('data-drop');
+    release(30);
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('still selects on a press that never drags', () => {
+    const onSelectionChange = vi.fn();
+    const { row } = setup({ onSelectionChange });
+    press(row('Zed'), 80);
+    release(80);
+    fireEvent.click(row('Zed'));
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
+    expect([...onSelectionChange.mock.calls[0]![0]]).toEqual(['z']);
+  });
+
+  it('opens a collapsed branch held over for 600ms', () => {
+    vi.useFakeTimers();
+    const onExpandedChange = vi.fn();
+    const { row } = setup({ defaultExpandedIds: [], onExpandedChange });
+    // collapsed: rows are Group (0–24), Zed (24–48)
+    press(row('Zed'), 40);
+    move(12);
+    vi.advanceTimersByTime(600);
+    expect([...onExpandedChange.mock.calls.at(-1)![0]]).toEqual(['g']);
+    vi.useRealTimers();
+  });
+});
