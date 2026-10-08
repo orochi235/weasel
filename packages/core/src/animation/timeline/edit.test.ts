@@ -65,6 +65,23 @@ describe('timeline editing', () => {
     expect(build).toHaveBeenCalledTimes(2);
   });
 
+  it('an edited key of a plain numeric track takes effect', () => {
+    const h = harness();
+    const seen: number[] = [];
+    const track: SampledTrack<number> = {
+      kind: 'sampled',
+      keys: [{ t: 0, value: 0 }, { t: 100, value: 100 }],
+      onTick: (v) => seen.push(v),
+    };
+    const tl = createTimeline(h.register, 1, { tracks: [track] });
+    h.advance(50);
+    expect(seen.at(-1)).toBe(50);
+
+    tl.edit(() => { track.keys[1].value = 1000; });
+    h.advance(50);
+    expect(seen.at(-1)).toBe(500);
+  });
+
   it('keeps firing later events after an edit deletes an earlier one', () => {
     const h = harness();
     const fired: string[] = [];
