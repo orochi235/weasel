@@ -958,6 +958,15 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P3) `clock.browser.test.tsx` fails under full-suite load.** "a timed layer
+  repaints as the clock plays, and holds once it pauses" failed once in an
+  `onto test` run on teitou (2026-10-08, 2213 ms), with a branch that touched no
+  clock code, and passed three runs out of three on its own. The log carries no
+  assertion message. The 2.2 s fits the 500 ms settle plus one `expect.poll`
+  timing out at its 1 s default, but it could also be the 100 ms wait after
+  `pause` being too short for a frame already queued. Both are wall-clock
+  budgets, so the fix is to wait on frames the clock reports, not on time.
+
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
   React overlay, and a DOM layer moved as one element, on an idle node
