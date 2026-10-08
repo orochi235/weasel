@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
 import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
 import type { SelectModifiers } from '@weasel-js/select';
+import { resolveDrop, type DropRow } from './dropTarget';
 
 /** One row in a reorderable list. */
 export interface ReorderItem {
@@ -178,13 +179,11 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     if (!c) return lo;
     const sel = optsRef.current.rowSelector;
     const rows = (sel ? Array.from(c.children).filter((el) => el.matches(sel)) : Array.from(c.children)) as HTMLElement[];
-    let raw = rows.length;
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row) continue;
+    const flat: DropRow[] = rows.map((row, i) => {
       const r = row.getBoundingClientRect();
-      if (clientY < r.top + r.height / 2) { raw = i; break; }
-    }
+      return { id: String(i), parentId: null, level: 1, index: i, branch: false, expanded: false, childCount: 0, top: r.top, height: r.height };
+    });
+    const raw = resolveDrop(flat, { x: 0, y: clientY }).target.index;
     return Math.max(lo, Math.min(raw, hi));
   }, [optsRef]);
 
@@ -291,7 +290,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
  * already reported this press, so that click is dropped rather than read as a
  * second one. It is dispatched in the same task as the release.
  */
-function swallowNextClick(container: HTMLElement): void {
+export function swallowNextClick(container: HTMLElement): void {
   const swallow = (e: Event) => { e.stopPropagation(); };
   container.addEventListener('click', swallow, true);
   setTimeout(() => { container.removeEventListener('click', swallow, true); }, 0);
