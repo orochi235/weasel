@@ -140,4 +140,29 @@ describe('sampleTrack', () => {
     expect(sampleTrack(t, 50, new Map())).toBe(500);
     expect(build).toHaveBeenCalledTimes(2);
   });
+  it('keeps two tracks apart when they share one cache', () => {
+    const cache = new Map<number, (u: number) => number>();
+    const a = track([{ t: 0, value: 0 }, { t: 100, value: 10 }]);
+    const b = track([{ t: 0, value: 0 }, { t: 100, value: 1000 }]);
+    expect([sampleTrack(a, 50, cache), sampleTrack(b, 50, cache)]).toEqual([5, 500]);
+  });
+
+  it('sees replaced keys on the next call through the same cache', () => {
+    const cache = new Map<number, (u: number) => number>();
+    const t = track([{ t: 0, value: 0 }, { t: 100, value: 10 }]);
+    expect(sampleTrack(t, 50, cache)).toBe(5);
+    t.keys = [{ t: 0, value: 0 }, { t: 100, value: 100 }];
+    expect(sampleTrack(t, 50, cache)).toBe(50);
+  });
+
+  it('reads a non-numeric track with no interpolate at and beyond its keys, throwing only between them', () => {
+    const t = {
+      kind: 'sampled', keys: [{ t: 0, value: 'a' }, { t: 100, value: 'b' }], onTick: () => {},
+    } as unknown as SampledTrack<string>;
+    expect(sampleTrack(t, -10)).toBe('a');
+    expect(sampleTrack(t, 0)).toBe('a');
+    expect(sampleTrack(t, 100)).toBe('b');
+    expect(sampleTrack(t, 200)).toBe('b');
+    expect(() => sampleTrack(t, 50)).toThrow(/interpolate/);
+  });
 });

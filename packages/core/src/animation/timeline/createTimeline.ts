@@ -90,7 +90,7 @@ export function createTimeline(
     : null;
   let warnedUnbooked = false;
 
-  // Per-sampled-track interpolator-factory caches, dropped wholesale by `edit`.
+  // Per-sampled-track sampling caches, dropped wholesale by `edit`.
   let caches = new WeakMap<object, Map<number, (u: number) => unknown>>();
   const cacheFor = (track: object): Map<number, (u: number) => unknown> => {
     let c = caches.get(track);

@@ -487,7 +487,8 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   the animator's control surface and moves every value computation onto blits. Built: pose
   overrides fold through a mix (step 2), and tweens, springs, physics, decay and keyframe
   sampling compute in blits (step 3), at about 3× today's tween frame for 10k nodes, which Mike
-  accepted on 2026-10-04, and 3–5× today's keyframe sampling (2026-10-08, not yet accepted).
+  accepted on 2026-10-04, and 2.5–3.5× today's keyframe sampling (2026-10-08, not yet accepted;
+  the rest of the gap is blits' read path).
   Left: steps 4–6, each needing a plan.
 
 ### Earlier deferrals

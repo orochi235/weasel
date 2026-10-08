@@ -9,6 +9,10 @@ type Out = { v: unknown };
 interface Box { i: number; value: unknown }
 
 interface Built {
+  /** What it was built from, so a cache handed another track, or new keys, rebuilds. */
+  track: object;
+  keys: readonly unknown[];
+  /** Null where there is nothing to interpolate: one key time, or values with no way to lerp. */
   patch: Patch<number, Out, void> | null;
   t0: number;
   span: number;
@@ -21,7 +25,9 @@ interface Built {
 }
 
 const NO_SETTING = {} as Setting<void>;
-const built = new WeakMap<object, Built>();
+/** Where a cache holds its track's `Built`; segment indexes start at 1. A `WeakMap` keyed on the
+ *  cache instead cost about a fifth of every sample. */
+const BUILT = -1;
 
 function build<T>(track: SampledTrack<T>, cache: Map<number, (u: number) => T> | undefined): Built {
   const { keys } = track;
@@ -34,7 +40,7 @@ function build<T>(track: SampledTrack<T>, cache: Map<number, (u: number) => T> |
     exact.set(k.t, k.value);
   }
   const span = t1 - t0;
-  const out: Built = { patch: null, t0, span, exact, first: keys[0].value, last: keys[keys.length - 1].value, read: (v) => v };
+  const out: Built = { track, keys, patch: null, t0, span, exact, first: keys[0].value, last: keys[keys.length - 1].value, read: (v) => v };
   if (span <= 0) return out;
 
   const ease = (k: (typeof keys)[number]) => (k.easing ? resolveEasing(k.easing) : undefined);
@@ -62,7 +68,7 @@ function build<T>(track: SampledTrack<T>, cache: Map<number, (u: number) => T> |
   }
 
   const axes = axesOf(keys[0].value);
-  if (!axes) throw new Error('sampleTrack: interpolate or interpolator is required for non-numeric keyframe values');
+  if (!axes) return out;
   for (const k of keys) {
     if (axesOf(k.value)?.shape !== axes.shape) {
       throw new Error(`sampleTrack: every key needs the shape of the first (${axes.shape})`);
@@ -82,9 +88,9 @@ function build<T>(track: SampledTrack<T>, cache: Map<number, (u: number) => T> |
  * `t` in any order — which is what makes scrubbing free.
  *
  * `segmentCache` holds what sampling builds from the keys: the track's blits
- * patch and its `interpolator` factories. A cache belongs to one track, and
- * callers that mutate keys must drop it; `createTimeline` drops it wholesale on
- * `edit`. With no cache, every call builds afresh.
+ * patch and its `interpolator` factories. Handed another track or a replaced
+ * `keys` array, it rebuilds; a key edited in place needs the cache dropped,
+ * which `createTimeline` does on `edit`. With no cache, every call builds afresh.
  */
 export function sampleTrack<T>(
   track: SampledTrack<T>,
@@ -92,13 +98,19 @@ export function sampleTrack<T>(
   segmentCache?: Map<number, (u: number) => T>,
 ): T | undefined {
   if (track.keys.length === 0) return undefined;
-  let b = segmentCache && built.get(segmentCache);
-  if (!b) {
+  const cache = segmentCache as Map<number, unknown> | undefined;
+  let b = cache?.get(BUILT) as Built | undefined;
+  if (!b || b.track !== track || b.keys !== track.keys) {
+    cache?.clear();
     b = build(track, segmentCache);
-    if (segmentCache) built.set(segmentCache, b);
+    cache?.set(BUILT, b);
   }
   const hit = b.exact.get(t);
   if (hit !== undefined || b.exact.has(t)) return hit as T;
-  if (!b.patch) return (t < b.t0 ? b.first : b.last) as T;
+  if (!b.patch) {
+    if (t < b.t0) return b.first as T;
+    if (t >= b.t0 + b.span) return b.last as T;
+    throw new Error('sampleTrack: interpolate or interpolator is required for non-numeric keyframe values');
+  }
   return b.read(b.patch.at((t - b.t0) / b.span, 0, NO_SETTING).v) as T;
 }
