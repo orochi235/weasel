@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Tree, type TreeNode } from './Tree';
@@ -130,5 +131,57 @@ describe('Tree — drag to reorder', () => {
     rerender(<Tree aria-label="T" nodes={NODES} onMove={vi.fn()} ref={cb} />);
     expect(cb).toHaveBeenCalledTimes(1);
     expect(cb.mock.calls[0]![0]).toBe(screen.getByRole('tree'));
+  });
+});
+
+describe('Tree — keyboard moves', () => {
+  const focusOn = (name: string) => screen.getByRole('treeitem', { name }).focus();
+  const key = (k: string) => fireEvent.keyDown(document.activeElement!, { key: k, altKey: true });
+
+  it('moves among siblings with Alt+Up/Down', () => {
+    const { onMove } = setup();
+    focusOn('Why');
+    key('ArrowUp');
+    expect(onMove).toHaveBeenLastCalledWith(['y'], { parentId: 'g', index: 0 });
+  });
+
+  it('outdents with Alt+Left and indents with Alt+Right', () => {
+    const { onMove } = setup();
+    focusOn('Ex');
+    key('ArrowLeft');
+    expect(onMove).toHaveBeenLastCalledWith(['x'], { parentId: null, index: 1 });
+    focusOn('Zed');
+    key('ArrowRight');
+    expect(onMove).toHaveBeenLastCalledWith(['z'], { parentId: 'g', index: 2 });
+  });
+
+  it('routes keyboard moves through canDrop', () => {
+    const { onMove } = setup({ canDrop: () => false });
+    focusOn('Why');
+    key('ArrowUp');
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('treats Alt+arrows as plain navigation without onMove', () => {
+    setup({ onMove: undefined });
+    focusOn('Ex');
+    key('ArrowLeft');
+    expect(document.activeElement).toBe(screen.getByRole('treeitem', { name: 'Group' }));
+  });
+
+  it('keeps focus on the moved node after it remounts under its new parent', () => {
+    function Live() {
+      const [nodes, setNodes] = useState<TreeNode[]>(NODES);
+      return (
+        <Tree aria-label="T" nodes={nodes} defaultExpandedIds={['g']} onMove={(ids, t) => {
+          // test-only: move z into g at t.index
+          if (ids[0] === 'z' && t.parentId === 'g') setNodes([{ ...NODES[0]!, children: [...NODES[0]!.children!, NODES[1]!] }]);
+        }} />
+      );
+    }
+    render(<Live />);
+    focusOn('Zed');
+    key('ArrowRight');
+    expect(document.activeElement).toBe(screen.getByRole('treeitem', { name: 'Zed' }));
   });
 });

@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useEffect,
   useId,
   useImperativeHandle,
   useMemo,
@@ -16,6 +17,8 @@ import { selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { DisclosureMark } from '../Disclosure';
 import { DragGhost } from '../DragGhost';
 import s from './Tree.module.css';
+import { handleMoveKey } from './treeKeyboardMove';
+import { modsOf, textOf, useControlledSet } from './treeUtils';
 import { useTreeDrag } from './useTreeDrag';
 
 /** One node. A node with `children` is a branch, even when the array is empty. */
@@ -107,7 +110,9 @@ const LIST_KEYS = { toggle: ['meta', 'ctrl'], range: 'shift' } as const;
  * Home/End go to the first and last. Right opens a closed branch, then moves
  * into it; Left closes an open branch, else moves to the parent. Enter and
  * Space activate, as a click does. Typing moves to the next row whose text
- * starts with what was typed.
+ * starts with what was typed. With `onMove`, Alt+Up/Down move the focused node
+ * (or the selection holding it) among its siblings, and Alt+Left/Right outdent
+ * it and indent it under the sibling above; each goes through `canDrop`.
  *
  * **Activating** a row — click, Enter, Space — toggles it if it is a branch,
  * selects it under `selectionMode`, and calls `onAction`. Clicking the twisty
@@ -148,6 +153,13 @@ export const Tree = forwardRef(function Tree(
   const [focusId, setFocusId] = useState<string | null>(null);
   const anchor = useRef<string | null>(null);
   const typed = useRef({ text: '', at: 0 });
+  const pendingFocus = useRef<string | null>(null);
+  useEffect(() => {
+    const id = pendingFocus.current;
+    if (id == null) return;
+    pendingFocus.current = null;
+    items.current.get(id)?.focus();
+  });
 
   const stopId = focusId != null && indexOf.has(focusId)
     ? focusId
@@ -202,6 +214,10 @@ export const Tree = forwardRef(function Tree(
     const i = indexOf.get(v.node.id)!;
     const { node } = v;
     const open = !!node.children && expanded.has(node.id);
+    if (onMove && handleMoveKey(e, node.id, {
+      nodes, selected, expanded, setExpanded, canDrop, onMove,
+      focusAfterMove: (id) => { pendingFocus.current = id; },
+    })) return;
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -383,26 +399,4 @@ export function treeBranchIds(nodes: readonly TreeNode[]): string[] {
   };
   walk(nodes);
   return out;
-}
-
-function textOf(node: TreeNode): string {
-  return node.textValue ?? (typeof node.label === 'string' ? node.label : '');
-}
-
-function modsOf(e: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean }): PressModifiers {
-  return { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey };
-}
-
-function useControlledSet(
-  value: Iterable<string> | undefined,
-  initial: Iterable<string> | undefined,
-  onChange: ((ids: Set<string>) => void) | undefined,
-): [ReadonlySet<string>, (next: Set<string>) => void] {
-  const [own, setOwn] = useState<ReadonlySet<string>>(() => new Set(initial));
-  const controlled = useMemo(() => (value === undefined ? undefined : new Set(value)), [value]);
-  const set = (next: Set<string>) => {
-    if (value === undefined) setOwn(next);
-    onChange?.(next);
-  };
-  return [controlled ?? own, set];
 }
