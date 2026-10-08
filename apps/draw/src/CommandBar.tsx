@@ -86,6 +86,7 @@ const RECORDING_PROFILES: ReadonlyArray<{ value: RecordingProfile; label: string
 const DEBUG_ROUTES: ReadonlyArray<{ value: string; label: string }> = [
   { value: '#/dev/toolkits', label: 'Toolkit Builder' },
   { value: '#/dev/registry', label: 'Bundle Inspector' },
+  { value: '#/dev/prefs', label: 'Prefs Schema' },
 ];
 
 function openDebugRoute(hash: string) {

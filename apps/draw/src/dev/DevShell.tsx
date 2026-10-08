@@ -7,6 +7,7 @@ export const DEV_PAGES: readonly LabPage[] = [
   { href: import.meta.env.BASE_URL, label: 'WeaselDraw' },
   { href: '#/dev/toolkits', label: 'Toolkit Builder' },
   { href: '#/dev/registry', label: 'Bundle Inspector' },
+  { href: '#/dev/prefs', label: 'Prefs Schema' },
 ];
 
 /** Page frame for a dev page: its title doubles as the switcher to the others

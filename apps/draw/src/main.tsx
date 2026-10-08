@@ -15,7 +15,7 @@ import { ColorModeProvider } from './colorMode';
 import { registerAvailableFonts } from './fonts';
 import { migrateLegacyPanelFlags } from './panels';
 
-// Both dev surfaces are only reachable at `#/dev/*`, and `RegistryInspector`
+// The dev surfaces are only reachable at `#/dev/*`, and `RegistryInspector`
 // reaches `dev/sourceLookup`, which embeds this app's own source as strings.
 // Importing them statically put all of that in the entry bundle for every
 // visitor who never opens them.
@@ -23,6 +23,9 @@ const ToolkitBuilder = lazy(() =>
   import('./dev/ToolkitBuilder').then((m) => ({ default: m.ToolkitBuilder })));
 const RegistryInspector = lazy(() =>
   import('./dev/RegistryInspector').then((m) => ({ default: m.RegistryInspector })));
+
+const PrefSchemaPage = lazy(() =>
+  import('./dev/PrefSchemaPage').then((m) => ({ default: m.PrefSchemaPage })));
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -67,8 +70,9 @@ registerAvailableFonts();
 
 migrateLegacyPanelFlags();
 
-/** Hash-based router: `#/dev/toolkits` mounts ToolkitBuilder, anything else
- *  mounts the main App. Independent surfaces — they don't share providers
+/** Hash-based router: `#/dev/toolkits` mounts ToolkitBuilder, `#/dev/registry`
+ *  the bundle inspector, `#/dev/prefs` the prefs schema editor, anything else
+ *  the main App. Independent surfaces — they don't share providers
  *  beyond the outer ActionsProvider / SelectionContextProvider scope. */
 function Root() {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -83,6 +87,8 @@ function Root() {
     <ToolkitBuilder />
   ) : inspector ? (
     <RegistryInspector />
+  ) : hash.startsWith('#/dev/prefs') ? (
+    <PrefSchemaPage />
   ) : (
     <App />
   );
