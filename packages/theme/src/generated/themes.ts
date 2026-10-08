@@ -152,6 +152,7 @@ export type TokenName =
   | '--wzl-success-base'
   | '--wzl-surface'
   | '--wzl-surface-hover'
+  | '--wzl-surface-popover'
   | '--wzl-surface-pressed'
   | '--wzl-surface-raised'
   | '--wzl-surface-sunken'
@@ -236,6 +237,7 @@ export const THEMES = {
         '--wzl-space-8': "16px",
         '--wzl-surface': "#181a1e",
         '--wzl-surface-raised': "#25272c",
+        '--wzl-surface-popover': "#25272c",
         '--wzl-surface-sunken': "#0e0f12",
         '--wzl-fg': "#e6e7e9",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.7)",
@@ -407,6 +409,7 @@ export const THEMES = {
         '--wzl-space-8': "16px",
         '--wzl-surface': "#181a1e",
         '--wzl-surface-raised': "#25272c",
+        '--wzl-surface-popover': "#25272c",
         '--wzl-surface-sunken': "#0e0f12",
         '--wzl-fg': "#e6e7e9",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.7)",
@@ -578,6 +581,7 @@ export const THEMES = {
         '--wzl-space-8': "16px",
         '--wzl-surface': "#181a1e",
         '--wzl-surface-raised': "#25272c",
+        '--wzl-surface-popover': "#25272c",
         '--wzl-surface-sunken': "#0e0f12",
         '--wzl-fg': "#e6e7e9",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.7)",
@@ -749,6 +753,7 @@ export const THEMES = {
         '--wzl-space-8': "16px",
         '--wzl-surface': "#f5f5f6",
         '--wzl-surface-raised': "#e6e7e9",
+        '--wzl-surface-popover': "#e6e7e9",
         '--wzl-surface-sunken': "#c9cbcf",
         '--wzl-fg': "#0e0f12",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.78)",
@@ -920,6 +925,7 @@ export const THEMES = {
         '--wzl-space-8': "16px",
         '--wzl-surface': "#f5f5f6",
         '--wzl-surface-raised': "#e6e7e9",
+        '--wzl-surface-popover': "#e6e7e9",
         '--wzl-surface-sunken': "#c9cbcf",
         '--wzl-fg': "#0e0f12",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.78)",
@@ -1091,6 +1097,7 @@ export const THEMES = {
         '--wzl-space-8': "16px",
         '--wzl-surface': "#f5f5f6",
         '--wzl-surface-raised': "#e6e7e9",
+        '--wzl-surface-popover': "#e6e7e9",
         '--wzl-surface-sunken': "#c9cbcf",
         '--wzl-fg': "#0e0f12",
         '--wzl-fg-muted': "rgb(from currentColor r g b / 0.78)",
@@ -1420,6 +1427,18 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         },
         "light": {
           "ref": "gray-100",
+          "type": "color"
+        }
+      },
+      "surface-popover": {
+        "by": "mode",
+        "dark": {
+          "ref": "surface-raised",
+          "type": "color",
+          "description": "Background of a dropdown, menu or other popover list. Follows surface-raised unless a theme needs floating lists to read differently from the panels beneath them."
+        },
+        "light": {
+          "ref": "surface-raised",
           "type": "color"
         }
       },
@@ -2657,6 +2676,18 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "light": {
           "type": "color",
           "value": "{gray-100}"
+        }
+      },
+      "surface-popover": {
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "{surface-raised}",
+          "description": "Background of a dropdown, menu or other popover list. Follows surface-raised unless a theme needs floating lists to read differently from the panels beneath them."
+        },
+        "light": {
+          "type": "color",
+          "value": "{surface-raised}"
         }
       },
       "surface-sunken": {

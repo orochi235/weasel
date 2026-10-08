@@ -196,6 +196,18 @@
         "type": "color"
       }
     },
+    "surface-popover": {
+      "by": "mode",
+      "dark": {
+        "ref": "surface-raised",
+        "type": "color",
+        "description": "Background of a dropdown, menu or other popover list. Follows surface-raised unless a theme needs floating lists to read differently from the panels beneath them."
+      },
+      "light": {
+        "ref": "surface-raised",
+        "type": "color"
+      }
+    },
     "surface-sunken": {
       "by": "mode",
       "dark": {
