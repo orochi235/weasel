@@ -762,13 +762,38 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   visual call that wants a browser.
 
 
-- **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a colour of
+- **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a color of
   its own.** Asked for: move the default treatment off "the aqua" and save it
-  for a theme that wants it. There is no ToggleBar colour to move — every
+  for a theme that wants it. There is no ToggleBar color to move — every
   surface in the ramp is `var(--wzl-accent)`, which seventeen components read,
   and `Button.variant_primary` is the same drawing. The panel's bars already sit
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
+
+- **(P3) Escape cancels a reorder drag.** Neither `Tree`'s drag (`useTreeDrag`) nor
+  `useReorderDragList` listens for Escape, so a drag can only end by releasing somewhere.
+  `ThresholdDragHandle.cancel` already exists; both hooks need the key wired to it, and the
+  dragged rows must stay where they were.
+
+- **(P3) `Tree` can steal focus after a keyboard move that never re-renders.** An Alt+arrow move
+  records the node to refocus and waits for the next render. If the consumer's `onMove` is async
+  or doesn't update `nodes`, the next unrelated render moves focus to that node. Clear the pending
+  focus when the move doesn't land within a frame.
+
+- **(P3) `PrefSchemaEditor` exports enum options with empty or duplicate values.** The options
+  editor adds a row as `{ value: '', label: '' }` and accepts repeats, and the exported literal
+  carries them as-is — an enum that cannot round-trip. Flag the bad rows in the editor rather
+  than export them silently.
+
+- **(P3) `PrefSchemaEditor` clears required custom attributes.** Emptying an attribute removes
+  it, which is right for optional built-in attributes but deletes a custom kind's required one —
+  `registry-enum`'s `source` on WeaselDraw's `#/dev/prefs`. `CustomKinds` has no way to mark an
+  attribute required; it needs one, and `blankLeaf` should seed those attributes for a custom kind.
+
+- **(P3) `PrefSchemaEditor` layout rough edges.** The preview's scratch values are keyed by path,
+  so after a rename or move they fall back to defaults. The always-mounted notice row adds one
+  grid gap above the attributes pane, and the Key/Kind rows are wider than the attribute form
+  under them. Seen on `#/dev/prefs` at 1440×900.
 
 ### WeaselDraw app follow-ups (defer)
 
