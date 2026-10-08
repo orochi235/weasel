@@ -62,6 +62,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-space-8', type: "dimension", group: "space", defaultValue: "16px", description: "", hook: false },
   { name: '--wzl-surface', type: "color", group: "surface", defaultValue: "#181a1e", description: "", hook: false },
   { name: '--wzl-surface-raised', type: "color", group: "surface", defaultValue: "#25272c", description: "", hook: false },
+  { name: '--wzl-surface-popover', type: "color", group: "surface", defaultValue: "#25272c", description: "Background of a dropdown, menu or other popover list. Follows surface-raised unless a theme needs floating lists to read differently from the panels beneath them.", hook: false },
   { name: '--wzl-surface-sunken', type: "color", group: "surface", defaultValue: "#0e0f12", description: "", hook: false },
   { name: '--wzl-fg', type: "color", group: "fg", defaultValue: "#e6e7e9", description: "", hook: false },
   { name: '--wzl-fg-muted', type: "color", group: "fg", defaultValue: "rgb(from currentColor r g b / 0.7)", description: "Secondary text: the text color in effect where it is used, at reduced alpha, so it steps down from whatever text it sits beside on any surface. The alpha is absolute, so muted text nested in muted text stays one step down. Under fg it clears WCAG 4.5:1 on surface, surface-raised, and surface-sunken in both modes.", hook: false },

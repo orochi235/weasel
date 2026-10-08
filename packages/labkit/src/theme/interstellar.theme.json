@@ -36,6 +36,13 @@
         "type": "color"
       }
     },
+    "surface-popover": {
+      "by": "mode",
+      "dark": {
+        "value": "rgba(20, 20, 36, 0.92)",
+        "type": "color"
+      }
+    },
     "surface-sunken": {
       "by": "mode",
       "dark": {

@@ -34,7 +34,7 @@ const EXPECTED_NAMES = [
   'swatch-red', 'swatch-blue', 'swatch-citron', 'swatch-rose', 'swatch-violet',
   'font-ui', 'font-numeric', 'font-display', 'font-body', 'font-mono',
   'font-weight-light', 'font-weight-normal', 'font-weight-medium', 'font-weight-bold',
-  'surface', 'surface-raised', 'surface-sunken',
+  'surface', 'surface-raised', 'surface-sunken', 'surface-popover',
   'fg', 'fg-muted', 'fg-subtle', 'fg-on-accent', 'fg-muted-on-accent', 'fg-subtle-on-accent',
   'border', 'border-strong',
   'accent', 'accent-fg', 'accent-hover',

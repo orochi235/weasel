@@ -1,7 +1,7 @@
 /* Shared by MenuButton, Select and ComboBox (`surface` + `list`) and by
    PaintField's popover (`surface` alone). */
 .surface {
-  background: var(--wzl-surface-raised);
+  background: var(--wzl-surface-popover);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-md);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
