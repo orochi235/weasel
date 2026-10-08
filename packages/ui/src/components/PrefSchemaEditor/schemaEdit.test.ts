@@ -76,4 +76,11 @@ describe('schemaEdit', () => {
   it('picks the next free key', () => {
     expect(uniqueKey({ x: {} as never, x2: {} as never }, 'x')).toBe('x3');
   });
+
+  it('does not mistake inherited names for keys', () => {
+    expect(nodeAt(ROOT, 'constructor')).toBeUndefined();
+    expect(uniqueKey({}, 'constructor')).toBe('constructor');
+    const leaf = { kind: 'boolean', name: 'C', description: '', default: false } as const;
+    expect(keys(addNode(ROOT, null, 'constructor', leaf), null)).toContain('constructor');
+  });
 });

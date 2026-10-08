@@ -36,17 +36,21 @@ export function joinPath(parent: string | null, key: string): string {
   return parent === null ? key : `${parent}.${key}`;
 }
 
+function ownChild(kids: ChildMap | undefined, key: string): SchemaNode | undefined {
+  return kids && Object.hasOwn(kids, key) ? kids[key] : undefined;
+}
+
 export function nodeAt(root: ToolPrefGroup, path: string | null): SchemaNode | undefined {
   if (path === null) return root;
   let cur: SchemaNode | undefined = root;
-  for (const k of path.split('.')) cur = cur && childrenOf(cur)?.[k];
+  for (const k of path.split('.')) cur = cur && ownChild(childrenOf(cur), k);
   return cur;
 }
 
 export function uniqueKey(kids: ChildMap, base: string): string {
-  if (!(base in kids)) return base;
+  if (!Object.hasOwn(kids, base)) return base;
   let n = 2;
-  while (`${base}${n}` in kids) n++;
+  while (Object.hasOwn(kids, `${base}${n}`)) n++;
   return `${base}${n}`;
 }
 
@@ -78,7 +82,7 @@ function insertAt(kids: ChildMap, entries: Array<[string, SchemaNode]>, index: n
 
 function checkKey(kids: ChildMap, key: string): void {
   if (!isValidKey(key)) throw new Error(`schemaEdit: "${key}" is not a valid key`);
-  if (key in kids) throw new Error(`schemaEdit: key "${key}" is taken`);
+  if (Object.hasOwn(kids, key)) throw new Error(`schemaEdit: key "${key}" is taken`);
 }
 
 export function addNode(root: ToolPrefGroup, parent: string | null, key: string, node: SchemaNode, index?: number): ToolPrefGroup {

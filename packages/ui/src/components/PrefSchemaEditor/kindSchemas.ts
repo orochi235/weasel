@@ -67,6 +67,11 @@ function defaultAttr(leaf: ToolPrefLeaf): ToolPrefLeaf | null {
   }
 }
 
+function kindAttrs(kind: string, custom: CustomKinds): KindAttrs {
+  if (Object.hasOwn(KIND_ATTRS, kind)) return KIND_ATTRS[kind as ToolPrefKind];
+  return Object.hasOwn(custom, kind) ? custom[kind]! : {};
+}
+
 export interface AttributeSchema {
   /** Editable attributes, rendered with `PrefsForm` over the node itself as values. */
   schema: ToolPrefGroup;
@@ -76,7 +81,7 @@ export interface AttributeSchema {
 
 export function attributeSchema(node: SchemaNode, custom: CustomKinds = {}): AttributeSchema {
   if (!isPrefLeaf(node)) return { schema: GROUP_ATTRS, readOnly: [] };
-  const own = (KIND_ATTRS as Record<string, KindAttrs>)[node.kind] ?? custom[node.kind] ?? {};
+  const own = kindAttrs(node.kind, custom);
   const def = defaultAttr(node);
   const children: KindAttrs = { ...LEAF_BASE, ...(def ? { default: def } : {}), ...own };
   const fields = node as unknown as Record<string, unknown>;
@@ -113,17 +118,25 @@ export function blankGroup(): ToolPrefGroup {
 
 const SHARED = ['name', 'description', 'hidden', 'block', 'icon', 'pair', 'short'];
 
+const PRIMITIVES = new Set(['string', 'number', 'boolean']);
+
+function carriesDefault(v: unknown, blank: Record<string, unknown>): boolean {
+  if (!PRIMITIVES.has(typeof v) || typeof v !== typeof blank.default) return false;
+  const options = blank.options as Array<{ value: unknown }> | undefined;
+  return options === undefined || options.some((o) => o.value === v);
+}
+
 /** Change a leaf's kind. Base fields carry over, as does a default of the same type; the rest is reported. */
 export function changeKind(root: ToolPrefGroup, path: string, kind: string, custom: CustomKinds = {}): { root: ToolPrefGroup; dropped: string[] } {
   const old = nodeAt(root, path) as unknown as Record<string, unknown>;
   const blank = blankLeaf(kind) as unknown as Record<string, unknown>;
-  const keep = new Set([...SHARED, ...Object.keys((KIND_ATTRS as Record<string, KindAttrs>)[kind] ?? custom[kind] ?? {})]);
+  const keep = new Set([...SHARED, ...Object.keys(kindAttrs(kind, custom))]);
   const next: Record<string, unknown> = { ...blank };
   const dropped: string[] = [];
   for (const [k, v] of Object.entries(old)) {
     if (k === 'kind' || v === undefined) continue;
     if (k === 'default') {
-      if (typeof v === typeof blank.default && v !== null) next.default = v;
+      if (carriesDefault(v, blank)) next.default = v;
       else dropped.push('default');
       continue;
     }
