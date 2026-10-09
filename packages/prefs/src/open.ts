@@ -29,7 +29,8 @@ export async function openPrefs<S extends PrefGroup>(
   options: PrefsOptions,
 ): Promise<PrefsStore<S>> {
   const cache = await openRecords({ storage: options.storage, prefix: options.prefix });
-  return prepare(schema, cache, options);
+  if (runPrefsMigrations(cache, options.migrations ?? [])) await cache.flush();
+  return finish(schema, cache, options);
 }
 
 /** `openPrefs` for an adapter that reads synchronously: the store is ready
@@ -39,16 +40,15 @@ export function openPrefsSync<S extends PrefGroup>(
   options: PrefsOptions & { storage: SyncStorageAdapter },
 ): PrefsStore<S> {
   const cache = openRecordsSync({ storage: options.storage, prefix: options.prefix });
-  return prepare(schema, cache, options);
+  if (runPrefsMigrations(cache, options.migrations ?? [])) void cache.flush();
+  return finish(schema, cache, options);
 }
 
-function prepare<S extends PrefGroup>(
+function finish<S extends PrefGroup>(
   schema: S,
   cache: OwnedRecordCache,
   options: PrefsOptions,
 ): PrefsStore<S> {
-  const migrations = options.migrations ?? [];
-  runPrefsMigrations(cache, migrations);
-  const stop = cache.writable ? watchPrefsVersion(cache, migrations.length) : undefined;
+  const stop = cache.writable ? watchPrefsVersion(cache, (options.migrations ?? []).length) : undefined;
   return createPrefsStore(schema, cache, options.validators, stop);
 }

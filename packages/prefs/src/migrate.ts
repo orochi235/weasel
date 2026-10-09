@@ -11,12 +11,13 @@ export type PrefsMigration = (records: Map<string, unknown>) => void;
  * Bring `cache` up to `migrations.length`, the current version. Every record
  * a migration leaves is written back, so a migration may replace values or
  * mutate them in place. Stops writing, and writes nothing, when the stored
- * version is newer than this build knows or a migration throws.
+ * version is newer than this build knows or a migration throws. Returns
+ * whether it wrote.
  */
 export function runPrefsMigrations(
   cache: OwnedRecordCache,
   migrations: readonly PrefsMigration[],
-): void {
+): boolean {
   const target = migrations.length;
   const raw = cache.get(VERSION_RECORD);
   if (cache.has(VERSION_RECORD) && !isVersion(raw)) {
@@ -24,7 +25,7 @@ export function runPrefsMigrations(
       `[prefs] "${cache.prefix}" has an unreadable ${VERSION_RECORD} (${JSON.stringify(raw)}); opening read-only`,
     );
     cache.stopWriting();
-    return;
+    return false;
   }
   const stored = cache.has(VERSION_RECORD) ? (raw as number) : 0;
   if (stored > target) {
@@ -32,9 +33,9 @@ export function runPrefsMigrations(
       `[prefs] "${cache.prefix}" was written at version ${stored}, newer than this build's ${target}; opening read-only`,
     );
     cache.stopWriting();
-    return;
+    return false;
   }
-  if (stored === target || !cache.writable) return;
+  if (stored === target || !cache.writable) return false;
 
   const before = cache.entries().filter(([name]) => name !== VERSION_RECORD);
   const records = new Map(before.map(([name, value]): [string, unknown] => [name, structuredClone(value)]));
@@ -47,7 +48,7 @@ export function runPrefsMigrations(
         error,
       );
       cache.stopWriting();
-      return;
+      return false;
     }
   }
   for (const [name] of before) if (!records.has(name)) cache.delete(name);
@@ -56,6 +57,7 @@ export function runPrefsMigrations(
     else cache.set(name, value);
   }
   cache.set(VERSION_RECORD, target);
+  return true;
 }
 
 /**

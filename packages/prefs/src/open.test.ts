@@ -41,6 +41,24 @@ describe('openPrefs', () => {
   });
 });
 
+describe('migrated records', () => {
+  const migrations = [(r: Map<string, unknown>) => r.set('density', 5)];
+
+  it('openPrefs persists them before resolving', async () => {
+    const backing = new Map<string, unknown>([['p.density', 20]]);
+    await openPrefs(SCHEMA, { storage: createMemoryAdapter(backing), prefix: 'p.', migrations });
+    expect(backing.get(`p.${VERSION_RECORD}`)).toBe(1);
+    expect(backing.get('p.density')).toBe(5);
+  });
+
+  it('openPrefsSync starts persisting them at once', async () => {
+    const backing = new Map<string, unknown>([['p.density', 20]]);
+    openPrefsSync(SCHEMA, { storage: createMemoryAdapter(backing), prefix: 'p.', migrations });
+    await Promise.resolve();
+    expect(backing.get(`p.${VERSION_RECORD}`)).toBe(1);
+  });
+});
+
 describe('openPrefsSync', () => {
   it('returns a ready store from an adapter that lists synchronously', () => {
     const backing = new Map<string, unknown>([['p.density', 20]]);
