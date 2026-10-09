@@ -12,8 +12,16 @@ afterEach(cleanup);
 
 type Rgba = [number, number, number, number];
 
-/** Chromium serializes a relative color as `color(srgb r g b / a)` in 0–1 and a plain one as `rgb[a](r, g, b[, a])`. */
+/** Chromium serializes a relative color as `color(srgb r g b / a)` in 0–1 or, from `oklch(from …)`,
+ *  as `oklch(l c h / a)`; a plain one as `rgb[a](r, g, b[, a])`. Only a gray oklch is converted. */
 function parse(css: string): Rgba {
+  const lch = /^oklch\(([\d.e-]+) ([\d.e-]+) [\d.e-]+(?: \/ ([\d.e-]+))?\)$/.exec(css);
+  if (lch) {
+    if (Number(lch[2]) !== 0) throw new Error(`chromatic oklch ${css}`);
+    const lin = Number(lch[1]) ** 3;
+    const c = 255 * (lin <= 0.0031308 ? lin * 12.92 : 1.055 * lin ** (1 / 2.4) - 0.055);
+    return [c, c, c, lch[3] === undefined ? 1 : Number(lch[3])];
+  }
   const srgb = /^color\(srgb ([\d.e-]+) ([\d.e-]+) ([\d.e-]+)(?: \/ ([\d.e-]+))?\)$/.exec(css);
   if (srgb) return [Number(srgb[1]) * 255, Number(srgb[2]) * 255, Number(srgb[3]) * 255, srgb[4] === undefined ? 1 : Number(srgb[4])];
   const rgb = /^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/.exec(css);
@@ -65,11 +73,6 @@ async function paint(root: HTMLElement, badge: HTMLElement) {
 
 const STATUSES: readonly BadgeStatus[] = ['accent', 'info', 'success', 'warn', 'danger', 'muted', 'neutral'];
 
-/** Solid fills light enough that the variant's white label falls under 3:1 — a known gap, in docs/TODO.md. */
-const WHITE_TOO_LIGHT: Record<'light' | 'dark', readonly BadgeStatus[]> = {
-  light: ['info', 'success', 'warn', 'neutral'],
-  dark: ['accent', 'info', 'success', 'warn'],
-};
 
 describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
   test('a gesture route\'s modifier chord is legible on its fill', async () => {
@@ -97,8 +100,7 @@ describe.each(['light', 'dark'] as const)('%s mode', (mode) => {
   });
 
   for (const status of STATUSES) {
-    const run = WHITE_TOO_LIGHT[mode].includes(status) ? test.fails : test;
-    run(`a solid ${status} badge's text is legible on its fill`, async () => {
+    test(`a solid ${status} badge's text is legible on its fill`, async () => {
       const { container } = render(
         <Surface mode={mode}>
           <Badge base="powerline" status={status} variant="solid">

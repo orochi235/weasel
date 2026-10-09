@@ -61,7 +61,7 @@
   gap: inherit;
   z-index: 1;
   /* Text color stays off .badge: a currentColor-relative edge (muted) must resolve against the
-     surrounding text in the fill and stroke, not against solid's white label. */
+     surrounding text in the fill and stroke, not against solid's label ink. */
   color: var(--badge-fg, var(--wzl-fg-muted));
 }
 
@@ -81,7 +81,9 @@
 }
 .badge[data-variant='solid'] {
   --badge-fill: var(--badge-edge);
-  --badge-fg: #fff;
+  /* White on a dark fill, near-black on a light one, flipping at OKLab L 0.65: a little above
+     where the two inks tie, so a mid fill like danger keeps white, which reads cleaner there. */
+  --badge-fg: oklch(from var(--badge-fill) clamp(0.18, (0.65 - l) * 1000, 1) 0 0 / 1);
   font-weight: var(--wzl-font-weight-bold);
 }
 .badge[data-variant='subtle'] {
@@ -89,12 +91,8 @@
   --badge-fg: var(--badge-edge);
 }
 /* Neutral's edge is a border gray that vanishes when the outline/subtle
-   variants (above) reuse it as the text color — re-assert the muted fg.
-   Solid keeps the variant's white fg on the gray fill. */
+   variants (above) reuse it as the text color — re-assert the muted fg. */
 .badge[data-status='neutral']:not([data-variant='solid']) { --badge-fg: var(--_s-accent, var(--wzl-fg-muted)); }
-/* Muted's fill is the text color stepped down — light in dark mode — so white fails on it.
-   A tone or stance repaints the fill, and keeps the variant's white. */
-.badge[data-status='muted'][data-variant='solid']:not([data-tone], [data-stance]) { --badge-fg: var(--wzl-fg-inverse); }
 
 .badge {
   padding:
