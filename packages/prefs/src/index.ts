@@ -10,6 +10,7 @@ export {
 } from './helpers';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export { type PrefsMigration, runPrefsMigrations } from './migrate';
+export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
 export { repairPrefValue, type PrefValidator } from './repair';
 export { createPrefsStore, type PrefChange, type PrefsStore, VERSION_RECORD } from './store';
 export {
