@@ -1,4 +1,6 @@
-enlist: 4
+enlist: 6
 plugin: node
-run: npm test
+# The test script as vitest's own binary: npm does not pass onto's reporter fd 3.
+# Keep the projects in step with package.json.
+run: node_modules/.bin/vitest run --project=core --project=site --project=weasel-ui --project=draw --project=labkit --project=forge --project=forge-node --project=smoke --project=browser
 runner: vitest
