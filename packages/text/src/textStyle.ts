@@ -12,6 +12,7 @@
 
 import type { FillStyle, ScreenLength, Stroke } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
+import { cssFamilyName } from '@weasel-js/font';
 import type { TextTransform } from './runs/textTransform';
 import type { FontVariantCaps } from './runs/smallCaps';
 
@@ -262,5 +263,5 @@ export function resolveTextStyle(
 
 /** Build a CSS `font` shorthand suitable for `ctx.font`. */
 export function fontString(s: ResolvedTextStyle): string {
-  return `${s.fontStyle} ${s.fontWeight} ${s.fontSize}px ${s.fontFamily}`;
+  return `${s.fontStyle} ${s.fontWeight} ${s.fontSize}px ${cssFamilyName(s.fontFamily)}`;
 }

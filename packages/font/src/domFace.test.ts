@@ -83,7 +83,7 @@ describe('cssFontFamily', () => {
     const bytes = new ArrayBuffer(8);
     const face = { unitsPerEm: 1000, ascender: 0.8, glyphD: () => null, advanceOf: () => 0.5, kernOf: () => 0 };
     registerFontOutlines('Custom', {}, bytes, { parser: () => face });
-    expect(cssFontFamily('Custom')).toBe('"weasel-face-0", Custom');
+    expect(cssFontFamily('Custom')).toBe('"weasel-face-0", "Custom"');
     await vi.waitFor(() => expect(StubFace.made).toHaveLength(1));
     expect(StubFace.made[0].source).toBe(bytes);
   });

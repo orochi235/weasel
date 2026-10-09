@@ -16,6 +16,7 @@
  */
 
 import type { FontStyle } from './fontStyle';
+import { cssFamilyName } from './cssFamily';
 import { resolveFontVariant, type FontVariant } from './registerFont';
 import {
   listFontOutlines, outlineCssSource, onOutlineBytes, type OutlineFaceInfo,
@@ -106,7 +107,7 @@ export function cssFontFamily(family: string, variant: FontVariant = {}): string
   if (!priv) return family;
   const name = nameFor(priv.target);
   for (const v of priv.variants) ensureFace(name, v.family, v.weight, v.style);
-  return `${JSON.stringify(name)}, ${family}`;
+  return `${JSON.stringify(name)}, ${cssFamilyName(family)}`;
 }
 
 /**

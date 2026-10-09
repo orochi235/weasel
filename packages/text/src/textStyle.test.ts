@@ -103,7 +103,7 @@ describe('fontString', () => {
     const s = resolveTextStyle({
       fontSize: 18, fontFamily: 'Helvetica', fontWeight: 600, fontStyle: 'italic',
     });
-    expect(fontString(s)).toBe('italic 600 18px Helvetica');
+    expect(fontString(s)).toBe('italic 600 18px "Helvetica"');
   });
 
   it('uses defaults when none specified', () => {

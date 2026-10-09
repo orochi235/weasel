@@ -1,6 +1,6 @@
 import { resolveScreenLength } from '@weasel-js/paint';
 import { markdownToRuns, type StyledRun } from './runs';
-import { faceMetricsFor, type FaceMetrics } from '@weasel-js/font';
+import { cssFamilyName, faceMetricsFor, type FaceMetrics } from '@weasel-js/font';
 import { numericWeight, scriptMetrics } from './runs/resolveRuns';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import { transformRunTexts } from './runs/textTransform';
@@ -211,7 +211,7 @@ function buildFont(
   const parts: string[] = [];
   if (italic) parts.push('italic');
   parts.push(weight);
-  parts.push(`${fontSize}px ${family}`);
+  parts.push(`${fontSize}px ${cssFamilyName(family)}`);
   return parts.join(' ');
 }
 

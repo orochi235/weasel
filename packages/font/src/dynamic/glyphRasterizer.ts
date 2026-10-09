@@ -35,6 +35,7 @@
  */
 
 import type { FontStyle } from '../fontStyle';
+import { cssFamilyName } from '../cssFamily';
 
 export const BAKE_SIZE = 48;
 export const PAD = 8;
@@ -67,7 +68,7 @@ type Canvas2D = OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
 const METRICS_SIZE = 1000;
 
 function cssFontString(weight: number, style: FontStyle, family: string, size = BAKE_SIZE): string {
-  return `${style === 'italic' ? 'italic ' : ''}${weight} ${size}px ${JSON.stringify(family)}`;
+  return `${style === 'italic' ? 'italic ' : ''}${weight} ${size}px ${cssFamilyName(family)}`;
 }
 
 export function createCanvasRasterizer(): GlyphRasterizer {

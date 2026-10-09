@@ -14,6 +14,7 @@
  * context, which a geometry module has no business owning. `canvasMeasure`
  * adapts the kit's own `measureText` for a caller that has one.
  */
+import { cssFamilyName } from '@weasel-js/core';
 import { boxForContent, contentBox, outlinePath, type Bounds, type Outline } from './outline';
 import { COMPASS } from './ports';
 import type { DiagramNode, PortSpec } from './types';
@@ -117,7 +118,7 @@ export function canvasMeasure(
 ): MeasureRowText {
   return (text, style) => {
     const size = style.fontSize ?? FALLBACK_LINE;
-    ctx.font = `${style.bold === true ? 'bold ' : ''}${size}px ${style.fontFamily ?? 'sans-serif'}`;
+    ctx.font = `${style.bold === true ? 'bold ' : ''}${size}px ${cssFamilyName(style.fontFamily ?? 'sans-serif')}`;
     return { width: ctx.measureText(text).width, height: Math.ceil(size * 1.2) };
   };
 }
