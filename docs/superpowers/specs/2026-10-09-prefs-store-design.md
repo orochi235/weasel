@@ -131,6 +131,8 @@ the schema's leaves; draw's legacy import uses it.
 |---|---|
 | Storage unreadable on open | Read-only, every leaf at its default (`openRecords`'s behavior). |
 | Stored `$version` > `migrations.length` | Read-only; warning names both versions. |
+| `$version` present but not a non-negative integer | Read-only; warning quotes the stored value. Migrations do not run. |
+| Another writer records a `$version` newer than this build while the store is open | Stops persisting; warning names both versions. |
 | A migration throws | Nothing from it is written; read-only on the pre-migration records; warning. |
 | A validator throws | Treated as invalid → default. |
 | A write fails | `RecordCache`'s existing write path. |

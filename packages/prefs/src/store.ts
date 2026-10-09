@@ -53,6 +53,7 @@ export function createPrefsStore<S extends PrefGroup>(
   schema: S,
   cache: OwnedRecordCache,
   validators?: Readonly<Record<string, PrefValidator>>,
+  onClose?: () => void,
 ): PrefsStore<S> {
   const leaves = prefLeaves(schema);
   let snapshot: Snapshot | null = null;
@@ -112,6 +113,7 @@ export function createPrefsStore<S extends PrefGroup>(
     },
     flush: () => cache.flush(),
     close: async () => {
+      onClose?.();
       stopCache();
       listeners.clear();
       await cache.close();

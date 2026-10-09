@@ -1,6 +1,6 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
-import { type PrefsMigration, runPrefsMigrations } from './migrate';
+import { type PrefsMigration, runPrefsMigrations, watchPrefsVersion } from './migrate';
 import { VERSION_RECORD } from './store';
 
 const cacheWith = (initial: [string, unknown][]) =>
@@ -78,5 +78,51 @@ describe('runPrefsMigrations', () => {
     });
     runPrefsMigrations(cache, [doubleDensity]);
     expect(cache.get('view.density')).toBe(10);
+  });
+
+  it.each([['"1"', '1'], ['1.5', 1.5], ['-1', -1], ['an object', { v: 1 }]])(
+    'opens read-only on an unreadable $version (%s), without re-running migrations',
+    (_label, bad) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const cache = cacheWith([[VERSION_RECORD, bad], ['view.density', 20]]);
+      runPrefsMigrations(cache, [doubleDensity]);
+      expect(cache.get('view.density')).toBe(20);
+      expect(cache.writable).toBe(false);
+      expect(warn.mock.calls[0]![0]).toContain('unreadable $version');
+      warn.mockRestore();
+    },
+  );
+
+  it('deletes a record a migration sets to undefined', () => {
+    const cache = cacheWith([['view.old', 1], ['view.density', 10]]);
+    runPrefsMigrations(cache, [(records) => records.set('view.old', undefined)]);
+    expect(cache.has('view.old')).toBe(false);
+    expect(cache.get('view.density')).toBe(10);
+  });
+});
+
+describe('watchPrefsVersion', () => {
+  it('stops writing when another writer migrates past this build', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>([['p.$version', 1]]);
+    const cache = createRecordCache({
+      storage: createMemoryAdapter(backing),
+      prefix: 'p.',
+      initial: [[VERSION_RECORD, 1]],
+    });
+    watchPrefsVersion(cache, 1);
+    await createMemoryAdapter(backing).set('p.$version', 2);
+    await vi.waitFor(() => expect(cache.writable).toBe(false));
+    expect(warn.mock.calls[0]![0]).toContain('migrated to version 2');
+    warn.mockRestore();
+  });
+
+  it('stops listening once unsubscribed', async () => {
+    const backing = new Map<string, unknown>();
+    const cache = createRecordCache({ storage: createMemoryAdapter(backing), prefix: 'p.' });
+    watchPrefsVersion(cache, 1)();
+    await createMemoryAdapter(backing).set('p.$version', 2);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(cache.writable).toBe(true);
   });
 });

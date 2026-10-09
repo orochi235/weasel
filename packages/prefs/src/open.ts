@@ -1,10 +1,11 @@
 import {
   openRecords,
   openRecordsSync,
+  type OwnedRecordCache,
   type StorageAdapter,
   type SyncStorageAdapter,
 } from '@weasel-js/storage';
-import { type PrefsMigration, runPrefsMigrations } from './migrate';
+import { type PrefsMigration, runPrefsMigrations, watchPrefsVersion } from './migrate';
 import type { PrefValidator } from './repair';
 import type { PrefGroup } from './schema';
 import { createPrefsStore, type PrefsStore } from './store';
@@ -28,8 +29,7 @@ export async function openPrefs<S extends PrefGroup>(
   options: PrefsOptions,
 ): Promise<PrefsStore<S>> {
   const cache = await openRecords({ storage: options.storage, prefix: options.prefix });
-  runPrefsMigrations(cache, options.migrations ?? []);
-  return createPrefsStore(schema, cache, options.validators);
+  return prepare(schema, cache, options);
 }
 
 /** `openPrefs` for an adapter that reads synchronously: the store is ready
@@ -39,6 +39,16 @@ export function openPrefsSync<S extends PrefGroup>(
   options: PrefsOptions & { storage: SyncStorageAdapter },
 ): PrefsStore<S> {
   const cache = openRecordsSync({ storage: options.storage, prefix: options.prefix });
-  runPrefsMigrations(cache, options.migrations ?? []);
-  return createPrefsStore(schema, cache, options.validators);
+  return prepare(schema, cache, options);
+}
+
+function prepare<S extends PrefGroup>(
+  schema: S,
+  cache: OwnedRecordCache,
+  options: PrefsOptions,
+): PrefsStore<S> {
+  const migrations = options.migrations ?? [];
+  runPrefsMigrations(cache, migrations);
+  const stop = cache.writable ? watchPrefsVersion(cache, migrations.length) : undefined;
+  return createPrefsStore(schema, cache, options.validators, stop);
 }

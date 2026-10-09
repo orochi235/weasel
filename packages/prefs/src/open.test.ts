@@ -1,5 +1,5 @@
 import { createMemoryAdapter, urlHashAdapter } from '@weasel-js/storage';
-import { describe, expect, expectTypeOf, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { openPrefs, openPrefsSync } from './open';
 import type { PrefGroup } from './schema';
 import { VERSION_RECORD } from './store';
@@ -49,8 +49,25 @@ describe('openPrefsSync', () => {
   });
 
   it('refuses, at compile time, an adapter that cannot', () => {
-    type Options = Parameters<typeof openPrefsSync<typeof SCHEMA>>[1];
-    expectTypeOf<{ storage: typeof urlHashAdapter; prefix: string }>().not.toMatchTypeOf<Options>();
-    expectTypeOf<{ storage: ReturnType<typeof createMemoryAdapter>; prefix: string }>().toMatchTypeOf<Options>();
+    const never = () => {
+      // @ts-expect-error urlHashAdapter cannot list synchronously
+      openPrefsSync(SCHEMA, { storage: urlHashAdapter, prefix: 'p.' });
+    };
+    expect(never).toBeTypeOf('function');
+  });
+
+  it('stops persisting when a peer migrates the store past this build', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>();
+    const store = openPrefsSync(SCHEMA, {
+      storage: createMemoryAdapter(backing),
+      prefix: 'p.',
+      migrations: [() => {}],
+    });
+    expect(store.writable).toBe(true);
+    await store.flush();
+    await createMemoryAdapter(backing).set('p.$version', 2);
+    await vi.waitFor(() => expect(store.writable).toBe(false));
+    warn.mockRestore();
   });
 });
