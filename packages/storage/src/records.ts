@@ -1,4 +1,4 @@
-import type { StorageAdapter, StorageChange } from './types';
+import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 
 /** One record changing, as a cache listener hears it. `value` is `undefined`
  *  for a delete. `local` changes were made through this cache; `remote` ones
@@ -216,4 +216,25 @@ export async function openRecords(options: RecordCacheOptions): Promise<OwnedRec
   stopEarly?.();
   (cache as unknown as { applyRemote: (c: StorageChange[]) => void }).applyRemote(early);
   return cache;
+}
+
+/** `openRecords` for an adapter that reads synchronously: the cache is ready
+ *  on return. A failed read opens it empty with writing off. */
+export function openRecordsSync(
+  options: RecordCacheOptions & { storage: SyncStorageAdapter },
+): OwnedRecordCache {
+  let listed: [string, unknown][];
+  try {
+    listed = options.storage.listSync(options.prefix);
+  } catch (error) {
+    console.warn(
+      `[storage] could not read "${options.prefix}"; opening empty and not persisting`,
+      error,
+    );
+    return createRecordCache({ ...options, writable: false });
+  }
+  return createRecordCache({
+    ...options,
+    initial: listed.map(([key, value]): [string, unknown] => [key.slice(options.prefix.length), value]),
+  });
 }

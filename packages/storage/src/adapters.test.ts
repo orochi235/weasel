@@ -139,3 +139,13 @@ describe('defaultStorage', () => {
     warn.mockRestore();
   });
 });
+
+describe('listSync', () => {
+  it('exists exactly on the adapters that can read without waiting', () => {
+    expect(localStorageAdapter.listSync).toBeTypeOf('function');
+    expect(sessionStorageAdapter.listSync).toBeTypeOf('function');
+    expect(createMemoryAdapter().listSync).toBeTypeOf('function');
+    expect(createIndexedDbAdapter({ database: 'no-sync' }).listSync).toBeUndefined();
+    expect(urlHashAdapter.listSync).toBeUndefined();
+  });
+});

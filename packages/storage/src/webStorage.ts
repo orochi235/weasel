@@ -1,24 +1,26 @@
 import { isJsonSafe, parse } from './json';
-import type { StorageAdapter } from './types';
+import type { StorageAdapter, SyncStorageAdapter } from './types';
 
-function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean): StorageAdapter {
+function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean): SyncStorageAdapter {
   const warned = new Set<string>();
-  const adapter: StorageAdapter = {
+  const listNow = (prefix: string): [string, unknown][] => {
+    const store = area();
+    const out: [string, unknown][] = [];
+    for (let i = 0; i < store.length; i++) {
+      const key = store.key(i);
+      if (key === null || !key.startsWith(prefix)) continue;
+      const raw = store.getItem(key);
+      if (raw !== null) out.push([key, parse(raw)]);
+    }
+    return out;
+  };
+  const adapter: SyncStorageAdapter = {
     get: async (key) => {
       const raw = area().getItem(key);
       return raw === null ? undefined : parse(raw);
     },
-    list: async (prefix) => {
-      const store = area();
-      const out: [string, unknown][] = [];
-      for (let i = 0; i < store.length; i++) {
-        const key = store.key(i);
-        if (key === null || !key.startsWith(prefix)) continue;
-        const raw = store.getItem(key);
-        if (raw !== null) out.push([key, parse(raw)]);
-      }
-      return out;
-    },
+    list: async (prefix) => listNow(prefix),
+    listSync: listNow,
     set: async (key, value) => {
       if (!warned.has(key) && !isJsonSafe(value)) {
         warned.add(key);
@@ -49,14 +51,14 @@ function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean)
 
 /** Persist to `localStorage`, one JSON value per record. Survives a reload and
  *  reaches other tabs through the `storage` event. */
-export const localStorageAdapter: StorageAdapter = webStorageAdapter(
+export const localStorageAdapter: SyncStorageAdapter = webStorageAdapter(
   () => localStorage,
   'localStorage',
   true,
 );
 
 /** Persist to `sessionStorage` — survives a reload but not a new tab. */
-export const sessionStorageAdapter: StorageAdapter = webStorageAdapter(
+export const sessionStorageAdapter: SyncStorageAdapter = webStorageAdapter(
   () => sessionStorage,
   'sessionStorage',
   false,

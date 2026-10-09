@@ -1,4 +1,4 @@
-import type { StorageAdapter, StorageChange } from './types';
+import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 
 interface MemorySubscriber {
   owner: StorageAdapter;
@@ -11,7 +11,7 @@ const memorySubscribers = new WeakMap<Map<string, unknown>, Set<MemorySubscriber
 /** An in-memory store, discarded on reload. Values are copied in and out, as a
  *  real substrate would. Adapters built over one shared `backing` hear each
  *  other's writes — two tabs, for a test. */
-export function createMemoryAdapter(backing: Map<string, unknown> = new Map()): StorageAdapter {
+export function createMemoryAdapter(backing: Map<string, unknown> = new Map()): SyncStorageAdapter {
   let subscribers = memorySubscribers.get(backing);
   if (!subscribers) {
     subscribers = new Set();
@@ -25,12 +25,14 @@ export function createMemoryAdapter(backing: Map<string, unknown> = new Map()): 
       queueMicrotask(() => sub.on([[key, copy]]));
     }
   };
-  const adapter: StorageAdapter = {
+  const listNow = (prefix: string): [string, unknown][] =>
+    [...backing]
+      .filter(([key]) => key.startsWith(prefix))
+      .map(([key, value]): [string, unknown] => [key, structuredClone(value)]);
+  const adapter: SyncStorageAdapter = {
     get: async (key) => (backing.has(key) ? structuredClone(backing.get(key)) : undefined),
-    list: async (prefix) =>
-      [...backing]
-        .filter(([key]) => key.startsWith(prefix))
-        .map(([key, value]): [string, unknown] => [key, structuredClone(value)]),
+    list: async (prefix) => listNow(prefix),
+    listSync: listNow,
     set: async (key, value) => {
       const copy = structuredClone(value);
       backing.set(key, copy);

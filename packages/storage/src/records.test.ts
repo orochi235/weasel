@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryAdapter } from './memory';
-import { createRecordCache, openRecords, type RecordChange } from './records';
+import { createRecordCache, openRecords, openRecordsSync, type RecordChange } from './records';
 import type { StorageAdapter } from './types';
 
 const PREFIX = 'lk:t:';
@@ -230,5 +230,37 @@ describe('two writers', () => {
     const cache = await openRecords({ storage: slowList, prefix: PREFIX });
     await tick();
     expect(cache.get('trial:late')).toEqual({ id: 'late' });
+  });
+});
+
+describe('openRecordsSync', () => {
+  it('holds every record under the prefix, names stripped, with no await', () => {
+    const backing = new Map<string, unknown>([['p.a', 1], ['p.b', 2], ['q.c', 3]]);
+    const cache = openRecordsSync({ storage: createMemoryAdapter(backing), prefix: 'p.' });
+    expect(cache.writable).toBe(true);
+    expect(cache.entries().sort()).toEqual([['a', 1], ['b', 2]]);
+  });
+
+  it('opens empty and read-only when the synchronous read throws', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const storage = {
+      ...createMemoryAdapter(),
+      listSync: () => {
+        throw new Error('no');
+      },
+    };
+    const cache = openRecordsSync({ storage, prefix: 'p.' });
+    expect(cache.writable).toBe(false);
+    expect(cache.entries()).toEqual([]);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('writes through to the adapter', async () => {
+    const backing = new Map<string, unknown>();
+    const cache = openRecordsSync({ storage: createMemoryAdapter(backing), prefix: 'p.' });
+    cache.set('a', 5);
+    await cache.flush();
+    expect(backing.get('p.a')).toBe(5);
   });
 });

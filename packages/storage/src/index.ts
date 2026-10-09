@@ -6,6 +6,7 @@ export { localStorageAdapter, sessionStorageAdapter } from './webStorage';
 export {
   createRecordCache,
   openRecords,
+  openRecordsSync,
   type OwnedRecordCache,
   type RecordCache,
   type RecordCacheOptions,
