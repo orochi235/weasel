@@ -28,10 +28,18 @@ could not read. The prefs store is a schema-aware layer over it.
 | `@weasel-js/ui` | Imports types and helpers from `prefs`. `prefRailItems` stays: it is the form's own model. |
 | `@weasel-js/labkit` | Imports from `storage` and `prefs`. `usePersistedState`, `<Persistence>` and lab records stay. |
 
-Moving the adapters must not strand existing lab data: `storage`'s IndexedDB
-defaults become `database: 'weasel'`, and labkit passes `database: 'labkit'`
-explicitly, keeping today's channel name `labkit:<db>:<store>`. Warning prefixes
-become `[storage]`.
+Moving the adapters must not strand existing lab data. `storage`'s
+`indexedDbAdapter` and `defaultStorage` use database `'weasel'`; labkit keeps
+its own `indexedDbAdapter` and `defaultStorage`, built with
+`createIndexedDbAdapter({ database: 'labkit' })`, so existing labs open on the
+data they have. The IndexedDB adapter's `BroadcastChannel` is named
+`weasel-storage:<database>:<store>` (was `labkit:<database>:<store>`): a tab on
+an older labkit and one on a newer one stop hearing each other until both
+reload. Warning prefixes become `[storage]`.
+
+`@weasel-js/ui` stops re-exporting the pref types and the moved helpers;
+consumers import them from `@weasel-js/prefs`. labkit's `weasel-ui`
+passthrough drops them the same way.
 
 `StorageAdapter` gains an optional `listSync(prefix)`, implemented by the
 web-storage and memory adapters; `openRecordsSync` uses it. `SyncStorageAdapter`
@@ -167,7 +175,8 @@ const { values, set, unset, reset } = usePrefsValues(store);
   validators, including one that throws; migrations in order; each read-only case
   in the table; remote changes reaching subscribers; `values()` and `unset()`
   keeping identity until a change; `reset` of a subtree; the hooks through
-  `renderSettled`.
+  `renderHook` and `act` (the store notifies synchronously, so `renderSettled` is
+  not needed).
 - draw: `prefs.test.ts` and `panels.test.ts` rewritten against the store; the
   legacy-blob import.
 - Repo checks: both packages join the changesets `fixed` group;
