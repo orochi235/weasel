@@ -143,7 +143,7 @@ The palette lab at `apps/theme-editor`, `#/palette`, generates a categorical
 color set from constraints. Its generator now lives in the engine,
 `packages/theme/src/engine/color/generate.ts`; the named crayons stay in the app.
 
-Run it with `npm run dev:theme-editor` (port 4713). Tests are in the `draw`
+Run it with `npm run dev:theme-editor` (port 33454). Tests are in the `draw`
 vitest project: `npx vitest run --project=draw apps/theme-editor`.
 
 The generator is `src/palette/generate.ts`. It takes a count, a hue-gap floor,
@@ -274,7 +274,7 @@ is not a guard.
 npm run typecheck
 npx vitest run --project=draw apps/theme-editor
 npm run lint
-npm run dev:theme-editor                           # port 4713, #/palette
+npm run dev:theme-editor                           # port 33454, #/palette
 ```
 
 `npm run check:test-projects` is the one that fails if a new app's tests are
@@ -401,4 +401,4 @@ row's weight is exactly zero.
   the wall ladder. Draw-bound, so it cannot see fragment cost.
 - A perf spec against a dev server left running from an earlier session fails as
   `Failed to fetch dynamically imported module`, not as anything about the code.
-  Kill whatever holds port 4722 first.
+  Kill whatever holds port 33463 first.
