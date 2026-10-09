@@ -1,4 +1,4 @@
-import { parse } from './webStorage';
+import { parse } from './json';
 import type { StorageAdapter, StorageChange } from './types';
 import { decodeUrlHash, encodeUrlHash } from './urlHash';
 
