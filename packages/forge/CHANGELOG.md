@@ -1,5 +1,39 @@
 # @weasel-js/forge
 
+## 1.9.2
+
+### Patch Changes
+
+- e32ef39: `TokenPanel` has one compact layout: a token to a line, names on a rail, values at the small text size. The `density` prop is gone (this breaks any caller passing it). `namePrefix` leaves a shared prefix such as `--wzl-` off every name, with the full name kept in the tooltip. Rows that share a group show the group's name once down the rail. Empty values read `unset`, and a reset is an icon in its own column. Scale steps span the panel's width, with their labels lined up over the digits.
+  
+  The small `ToggleBar`, `ButtonBar` and `OptionsBar` take their height from their font size, so descenders no longer clip. In light mode, the secondary `Button` drops its dark text shadow and the primary one lightens it.
+  
+  New icons: `drop`, `type`, `typeface` and `more`.
+  
+  labkit: a `SidebarSection` can carry `actions`, drawn in its title bar (docked or torn out) and hidden while it is folded. Section title bars stay pinned while their bodies scroll, and expose their height as `--lk-section-bar-h`. An `Instrument` can supply `renderTitle` to draw its trial's title as more than text.
+  
+  forge: the CSS Vars header has a bar of section icons that jumps to a section and highlights the one in view. Each folder in a trial's breadcrumb links to that folder in the story tree, opening the Tree or Gallery view if the current view doesn't have it. A global can name the `icon` on its popover button; Font now uses `typeface`. Package badges in the story tree now sit centered on their checkboxes.
+- 9db7d5f: The sidebar's story tree, its filter and its Tree / Components / Gallery switch take the small chrome type size, matching the sidebar's heading and package legend instead of the larger body size.
+- Updated dependencies [83c724a]
+- Updated dependencies [215418a]
+- Updated dependencies [e32ef39]
+- Updated dependencies [3ba97df]
+- Updated dependencies [1b7af8d]
+- Updated dependencies [a0aa0b7]
+- Updated dependencies [f2cd0b7]
+- Updated dependencies [34ffe05]
+- Updated dependencies [a82540f]
+- Updated dependencies [32009c0]
+- Updated dependencies [daab5be]
+- Updated dependencies [6e302e9]
+- Updated dependencies [586cf05]
+- Updated dependencies [fca8591]
+- Updated dependencies [97c215a]
+  - @weasel-js/ui@1.9.2
+  - @weasel-js/labkit@1.9.2
+  - @weasel-js/core@1.9.2
+  - @weasel-js/theme@1.9.2
+
 ## 1.9.1
 
 ### Patch Changes

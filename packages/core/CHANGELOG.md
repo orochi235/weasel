@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.9.2
+
+### Patch Changes
+
+- 3ba97df: `reconcileSpecs(scene, prev, next)` brings a scene from one list of node specs to another: it adds and removes by id and writes only the fields that changed between the two lists, as one untracked step. What the scene did since `prev` survives unless `next` changes that same field.
+  
+  `DiagramView` no longer remounts on a new `specs` array. It reconciles the new specs into the scene it holds, so the view, the pick and anything moved stay put. `onMove` turns on dragging and reports every node a drag or a layout run moved. `onConnect` makes ports grabbable and reports the edge a connect describes without drawing it, and `canConnect` and `portOptions` configure that. A `ref` gets `layout(algorithm)`, which re-runs a layout animated from where the nodes stand, and the run's `live` controls; `live` configures the run.
+  
+  `diagramScene` gives every spec an id, and takes `layout: 'none'` to leave each node at its `at`.
+  
+  `fitDiagram`'s scale and anchor arguments are now one options object.
+- 1b7af8d: `sampleTrack` and timeline keyframe tracks compute their values with blits, the same engine tweens and springs run on. A track of number arrays or numeric objects no longer needs an `interpolate`, and keys whose shapes differ throw. A `segmentCache` handed a different track or a replaced `keys` array rebuilds instead of answering for the old one. Edits to keys must go through `timeline.edit` (or a dropped `segmentCache`) to take effect, which numeric tracks used to get away without.
+- @weasel-js/cursor@1.9.2
+  - @weasel-js/font@1.9.2
+  - @weasel-js/geom@1.9.2
+  - @weasel-js/gestures@1.9.2
+  - @weasel-js/history@1.9.2
+  - @weasel-js/modes@1.9.2
+  - @weasel-js/paint@1.9.2
+  - @weasel-js/quantity@1.9.2
+  - @weasel-js/react@1.9.2
+  - @weasel-js/registry@1.9.2
+  - @weasel-js/routing@1.9.2
+  - @weasel-js/select@1.9.2
+  - @weasel-js/text@1.9.2
+
 ## 1.9.1
 
 ### Patch Changes
