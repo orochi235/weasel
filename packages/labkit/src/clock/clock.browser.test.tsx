@@ -12,6 +12,12 @@ import { Lab } from '../lab/Lab';
 
 afterEach(cleanup);
 
+const shade = (elapsed: number) => Math.floor(elapsed / 16) % 256;
+/** The `elapsed` of every paint of the layer, in order. */
+let painted: number[] = [];
+/** The clock's `elapsed` when the pause button stopped it. */
+let pausedAt = Number.NaN;
+
 /** Fills the view with a red that steps with the clock, 1 a frame-ish. */
 const Ticking: Instrument = {
   name: 'Ticking',
@@ -24,7 +30,8 @@ const Ticking: Instrument = {
         id: 'tick',
         timed: true,
         draw: (ctx, { elapsed }) => {
-          ctx.fillStyle = `rgb(${Math.floor(elapsed / 16) % 256}, 0, 0)`;
+          painted.push(elapsed);
+          ctx.fillStyle = `rgb(${shade(elapsed)}, 0, 0)`;
           ctx.fillRect(-1e5, -1e5, 2e5, 2e5);
         },
       },
@@ -34,7 +41,9 @@ const Ticking: Instrument = {
     <button
       type="button"
       onClick={() => {
-        if (ctx.trial.clock) ctx.trial.clock.rate = 0;
+        if (!ctx.trial.clock) return;
+        ctx.trial.clock.rate = 0;
+        pausedAt = ctx.trial.clock.elapsed;
       }}
     >
       pause
@@ -51,25 +60,38 @@ function red(): number {
   return ctx.getImageData(canvas.width >> 1, canvas.height >> 1, 1, 1).data[0] ?? -1;
 }
 
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const frames = async (n: number) => {
+  for (let i = 0; i < n; i++) await new Promise(requestAnimationFrame);
+};
+
+// Every wait is on paints the layer reports, never on wall-clock time: under a
+// loaded full run a frame can land long after any fixed budget.
+const POLL = { timeout: 10_000 };
 
 test('a timed layer repaints as the clock plays, and holds once it pauses', async () => {
+  painted = [];
+  pausedAt = Number.NaN;
   render(
     <div className="lk-clock-frame">
       <Lab title="T" instruments={[Ticking]} defaultInstrument="Ticking" />
     </div>,
   );
-  // Layout settles first — the first measurement places the view and repaints
-  // every layer — so only the clock can repaint after it.
-  await wait(500);
-  const a = red();
-  await expect.poll(red).not.toBe(a);
-  const b = red();
-  await expect.poll(red).not.toBe(b);
+  // Paints at three distinct times: only the clock moving explains that, since
+  // a layout repaint reads the same `elapsed` as the paint before it. Early
+  // paints can land before layout sizes the canvas, which wipes them, so the
+  // pixel is checked against the latest paint rather than once.
+  await expect
+    .poll(() => new Set(painted).size >= 3 && red() === shade(painted.at(-1) ?? -1), POLL)
+    .toBe(true);
 
   fireEvent.click(screen.getByRole('button', { name: 'pause' }));
-  await wait(100);
+  // A frame queued before the click still paints; wait until one has painted
+  // the time the clock stopped at.
+  await expect.poll(() => painted.at(-1), POLL).toBe(pausedAt);
   const held = red();
-  await wait(300);
+  expect(held).toBe(shade(pausedAt));
+  const since = painted.length;
+  await frames(20);
+  expect(painted.slice(since).every((e) => e === pausedAt)).toBe(true);
   expect(red()).toBe(held);
 });
