@@ -10,6 +10,7 @@ export {
 } from './helpers';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export { repairPrefValue, type PrefValidator } from './repair';
+export { createPrefsStore, type PrefChange, type PrefsStore, VERSION_RECORD } from './store';
 export {
   isBuiltinPref,
   PREF_KINDS,
