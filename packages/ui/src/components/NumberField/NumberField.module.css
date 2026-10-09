@@ -20,7 +20,13 @@
 .steppers {
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--wzl-border);
+  border-inline-start: 1px solid var(--wzl-border);
+}
+
+[data-stepper-side='start'] > .steppers {
+  order: -1;
+  border-inline-start: none;
+  border-inline-end: 1px solid var(--wzl-border);
 }
 
 .stepper {

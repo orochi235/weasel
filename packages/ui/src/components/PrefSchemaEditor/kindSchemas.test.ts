@@ -7,20 +7,23 @@ const num: ToolPrefLeaf = { kind: 'number', name: 'N', description: '', default:
 
 describe('kindSchemas', () => {
   it('describes a number leaf with base, default and number attributes', () => {
-    const { schema, readOnly } = attributeSchema(num);
-    expect(Object.keys(schema.children)).toEqual(expect.arrayContaining(['name', 'description', 'default', 'min', 'max', 'step', 'control', 'hidden']));
-    expect(schema.children.default).toMatchObject({ kind: 'number', min: 0, max: 10 });
+    const { shared, own, readOnly } = attributeSchema(num);
+    expect(Object.keys(shared)).toEqual(expect.arrayContaining(['name', 'description', 'hidden']));
+    expect(Object.keys(own)).toEqual(['default', 'min', 'max', 'step', 'control', 'endless']);
+    expect(own.default).toMatchObject({ kind: 'number', min: 0, max: 10 });
     expect(readOnly.map(([k]) => k)).toEqual(['unit']);
   });
 
   it('describes a group with name and description only', () => {
-    expect(Object.keys(attributeSchema({ name: 'G', children: {} }).schema.children)).toEqual(['name', 'description']);
+    const { shared, own } = attributeSchema({ name: 'G', children: {} });
+    expect(Object.keys(shared)).toEqual(['name', 'description']);
+    expect(own).toEqual({});
   });
 
   it('uses a custom kind\'s attributes, and treats unknown attributes as read-only', () => {
     const leaf = { kind: 'registry-enum', name: 'R', description: '', default: 'a', source: 'tools', extra: 1 } as ToolPrefLeaf;
-    const { schema, readOnly } = attributeSchema(leaf, { 'registry-enum': { source: { kind: 'string', name: 'Source', description: '', default: '' } } });
-    expect(schema.children.source).toBeDefined();
+    const { own, readOnly } = attributeSchema(leaf, { 'registry-enum': { source: { kind: 'string', name: 'Source', description: '', default: '' } } });
+    expect(own.source).toBeDefined();
     expect(readOnly).toEqual([['default', 'a'], ['extra', 1]]);
   });
 
@@ -69,6 +72,6 @@ describe('kindSchemas', () => {
   it('does not mistake inherited names for kinds', () => {
     const leaf = { kind: 'constructor', name: 'C', description: '', default: 1 } as unknown as ToolPrefLeaf;
     expect(attributeSchema(leaf).readOnly).toEqual([['default', 1]]);
-    expect(Object.keys(attributeSchema(leaf).schema.children)).not.toContain('min');
+    expect(Object.keys(attributeSchema(leaf).own)).not.toContain('min');
   });
 });

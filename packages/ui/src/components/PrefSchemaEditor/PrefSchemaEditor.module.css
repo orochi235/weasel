@@ -13,7 +13,6 @@
 .middle { display: grid; align-content: start; gap: var(--wzl-space-2); min-height: 0; overflow: auto; }
 .pane { min-height: 0; overflow: auto; }
 .toolbar { display: flex; flex-wrap: wrap; gap: var(--wzl-space-2); margin-block-end: var(--wzl-space-2); }
-.identity { display: grid; gap: var(--wzl-space-2); margin-block-end: var(--wzl-space-3); }
 .notice:not(:empty) {
   display: flex;
   align-items: center;

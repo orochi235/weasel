@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import type { ToolPrefGroup, ToolPrefLeaf } from '@weasel-js/core';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
 import { Input } from '../Input';
@@ -11,6 +11,14 @@ import { attributeSchema, changeKind, normalizeAttr, type CustomKinds } from './
 import { childrenOf, joinPath, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute } from './schemaEdit';
 import { KEEP, containsCode, printValue } from './schemaExport';
 import s from './PrefSchemaEditor.module.css';
+
+/** Form paths for the rows that are not attributes: the key, the kind, and the kind's own panel. */
+const KEY = '$key';
+const KIND = '$kind';
+const OWN = '$own';
+/** Kinds drawn by this pane's own renderers. */
+const KEY_KIND = 'schema-key';
+const KIND_KIND = 'schema-kind';
 
 export interface AttributesPaneProps {
   schema: ToolPrefGroup;
@@ -36,7 +44,8 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
   }
   if (!node) return <section className={s.pane} aria-label="Attributes" />;
 
-  const { schema: attrs, readOnly } = attributeSchema(node, custom);
+  const leaf = isPrefLeaf(node);
+  const { shared, own, readOnly } = attributeSchema(node, custom);
   const commitKey = () => {
     if (path === null || key === keyOf(path)) return;
     const parent = parentPath(path);
@@ -46,30 +55,38 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
     onRekey(path, joinPath(parent, key));
   };
 
+  const identity: Record<string, PrefRenderer> = {
+    [KEY_KIND]: () => (
+      <Input aria-label="Key" value={key} onChange={setKey} onBlur={commitKey}
+        onKeyDown={(e) => { if (e.key === 'Enter') commitKey(); }} errorMessage={keyError ?? undefined} isInvalid={keyError !== null} />
+    ),
+    [KIND_KIND]: () => leaf && path !== null && (
+      <Select aria-label="Kind" selectedKey={node.kind}
+        options={kinds.map((k) => ({ value: k, label: k }))}
+        onSelectionChange={(k) => {
+          const { root, dropped } = changeKind(schema, path, String(k), custom);
+          onChange(root);
+          onNotice(dropped.length ? `Dropped on kind change: ${dropped.join(', ')}` : null);
+        }} />
+    ),
+  };
+  const children: Record<string, ToolPrefLeaf | ToolPrefGroup> = {
+    ...(path !== null ? { [KEY]: { kind: KEY_KIND, name: 'Key', description: 'The name its value is stored under.', default: '' } as ToolPrefLeaf } : {}),
+    ...(leaf ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of its value, which picks the control that draws it.', default: '' } as ToolPrefLeaf } : {}),
+    ...shared,
+    ...(Object.keys(own).length > 0 ? { [OWN]: { name: leaf ? node.kind : 'group', children: own } } : {}),
+  };
+
   return (
     <section className={s.pane} aria-label="Attributes">
-      {path !== null && (
-        <div className={s.identity}>
-          <Input label="Key" orientation="row" value={key} onChange={setKey} onBlur={commitKey}
-            onKeyDown={(e) => { if (e.key === 'Enter') commitKey(); }} errorMessage={keyError ?? undefined} isInvalid={keyError !== null} />
-          {isPrefLeaf(node) && (
-            <Select label="Kind" orientation="row" selectedKey={node.kind}
-              options={kinds.map((k) => ({ value: k, label: k }))}
-              onSelectionChange={(k) => {
-                const { root, dropped } = changeKind(schema, path, String(k), custom);
-                onChange(root);
-                onNotice(dropped.length ? `Dropped on kind change: ${dropped.join(', ')}` : null);
-              }} />
-          )}
-        </div>
-      )}
       {/* One wrapping group: PrefsForm gives each loose top-level leaf a column of its own. */}
       <PrefsForm
-        schema={{ name: 'Attributes', children: { attrs: { ...attrs, name: isPrefLeaf(node) ? node.kind : 'group' } } }}
-        values={{ attrs: node }}
-        renderers={{ ...renderers, ...ATTR_RENDERERS }}
+        schema={{ name: 'Attributes', children: { attrs: { name: leaf ? 'Pref' : 'Group', children } } }}
+        values={{ attrs: { ...node, [OWN]: node } }}
+        renderers={{ ...renderers, ...ATTR_RENDERERS, ...identity }}
         onChange={(p, value) => {
-          const attr = p.slice('attrs.'.length);
+          const rest = p.slice('attrs.'.length);
+          const attr = rest.startsWith(`${OWN}.`) ? rest.slice(OWN.length + 1) : rest;
           onChange(setAttribute(schema, path, attr, normalizeAttr(attr, value)));
         }}
       />
