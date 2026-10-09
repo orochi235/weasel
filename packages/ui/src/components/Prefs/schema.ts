@@ -64,6 +64,38 @@ export function isPrefLeaf(node: ToolPrefLeaf | ToolPrefGroup): node is ToolPref
   return 'kind' in node;
 }
 
+/** One field a `field` leaf may name: the path its value is read and written
+ *  at, and what it is. */
+export interface PrefFieldChoice {
+  path: string;
+  name: string;
+  kind: string;
+}
+
+/**
+ * Every leaf under `group` as a choice for a `field` leaf, in schema order —
+ * an `object` leaf and each of its fields. `groupKeys` says whether a group's
+ * key is part of its leaves' paths, which is the surface's rule: a prefs form
+ * nests values by group, a node's property panel does not. Inside an object,
+ * groups never contribute.
+ */
+export function prefFieldChoices(group: ToolPrefGroup, groupKeys = true): PrefFieldChoice[] {
+  const out: PrefFieldChoice[] = [];
+  const walk = (node: ToolPrefGroup, prefix: string, keysCount: boolean): void => {
+    for (const [key, child] of Object.entries(node.children)) {
+      if (!isPrefLeaf(child)) {
+        walk(child, keysCount && prefix !== '' ? `${prefix}.${key}` : keysCount ? key : prefix, keysCount);
+        continue;
+      }
+      const path = prefix === '' ? key : `${prefix}.${key}`;
+      out.push({ path, name: child.name, kind: child.kind });
+      if (child.kind === 'object') walk(child as unknown as ToolPrefGroup, path, false);
+    }
+  };
+  walk(group, '', groupKeys);
+  return out;
+}
+
 /** Get the value at a dotted path inside a nested value tree. Returns
  *  `undefined` when a segment is missing or hits a non-object. */
 export function prefValueAtPath(values: unknown, path: string): unknown {

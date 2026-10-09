@@ -4,8 +4,10 @@ import { useScrollSpy } from '../../useScrollSpy';
 import {
   filterPrefSubtree,
   isPrefLeaf,
+  prefFieldChoices,
   prefRailItems,
   visiblePrefSubtree,
+  type PrefFieldChoice,
   type PrefGroup,
 } from './schema';
 import { PrefRow, type PrefRenderer, type WalkCtx } from './PrefsRow';
@@ -80,6 +82,9 @@ export interface PrefsFormProps {
   /** Which leaves can inherit, and so get a label toggle. Default: every leaf,
    *  once `onAutoChange` is given. */
   canInherit?: (path: string) => boolean;
+  /** The fields a `field` leaf may name. Default: this schema's own — a form
+   *  that edits another schema passes that one's. */
+  fields?: readonly PrefFieldChoice[];
   /** Small text after an inherited leaf's label, e.g. `() => 'from Defaults'`.
    *  Default: none. */
   inheritHint?: (path: string) => string | undefined;
@@ -115,7 +120,10 @@ export function PrefsForm(props: PrefsFormProps) {
     return visible === null ? null : filterPrefSubtree(visible, query);
   }, [schema, showHidden, query]);
 
-  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint };
+  // Every field of the whole schema, not only the visible ones: a reference may name a hidden field.
+  const own = useMemo(() => prefFieldChoices(schema), [schema]);
+  const fields = props.fields ?? own;
+  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint, fields };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

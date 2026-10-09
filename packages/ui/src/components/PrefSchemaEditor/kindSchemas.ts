@@ -1,5 +1,5 @@
 import { solid } from '@weasel-js/core';
-import type { ToolPrefEnum, ToolPrefGroup, ToolPrefKind, ToolPrefLeaf, ToolPrefNumber } from '@weasel-js/core';
+import type { ToolPrefEnum, ToolPrefField, ToolPrefGroup, ToolPrefKind, ToolPrefLeaf, ToolPrefNumber } from '@weasel-js/core';
 import { isPrefLeaf } from '../Prefs/schema';
 import { replaceNode, nodeAt, type SchemaNode } from './schemaEdit';
 import { containsCode } from './schemaExport';
@@ -7,7 +7,7 @@ import { containsCode } from './schemaExport';
 export type KindAttrs = Record<string, ToolPrefLeaf>;
 export type CustomKinds = Record<string, KindAttrs>;
 
-export const BUILTIN_KINDS: readonly ToolPrefKind[] = ['number', 'boolean', 'string', 'enum', 'color', 'paint', 'object'];
+export const BUILTIN_KINDS: readonly ToolPrefKind[] = ['number', 'boolean', 'string', 'enum', 'color', 'paint', 'object', 'field'];
 
 const text = (name: string, description: string, multiline = false): ToolPrefLeaf =>
   ({ kind: 'string', name, description, default: '', ...(multiline ? { control: 'textarea' } : {}) }) as ToolPrefLeaf;
@@ -23,7 +23,7 @@ const LEAF_BASE: KindAttrs = {
   hidden: flag('Hidden', 'Left out of a settings UI unless it shows hidden prefs.'),
   block: flag('Block', 'Full width with no label row, for a control with its own chrome.'),
   icon: text('Icon', 'Glyph name in the host\'s icon set.'),
-  pair: text('Pair', 'Leaves sharing this label share one row in compact property UIs.'),
+  pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
   short: { kind: 'string-list', name: 'Short names', description: 'Shorter forms of the name, longest first.', default: [] },
 };
 
@@ -45,6 +45,9 @@ const KIND_ATTRS: Record<ToolPrefKind, KindAttrs> = {
   color: { alpha: flag('Alpha', 'Offer an alpha channel.') },
   paint: { alpha: flag('Alpha', 'Offer an alpha channel.') },
   object: {},
+  field: {
+    kinds: { kind: 'string-list', name: 'Kinds', description: 'Only fields of these kinds may be named. Empty: any.', default: [] },
+  },
 };
 
 const GROUP_ATTRS: KindAttrs = { name: LEAF_BASE.name!, description: LEAF_BASE.description! };
@@ -63,6 +66,7 @@ function defaultAttr(leaf: ToolPrefLeaf): ToolPrefLeaf | null {
     case 'string': return { ...base, kind: 'string', default: '' } as ToolPrefLeaf;
     case 'enum': return { ...base, kind: 'enum', default: undefined, clearable: true, options: (leaf as ToolPrefEnum).options } as ToolPrefLeaf;
     case 'color': return { ...base, kind: 'color', default: '#000000' } as ToolPrefLeaf;
+    case 'field': return { ...base, kind: 'field', default: '', kinds: (leaf as ToolPrefField).kinds } as ToolPrefLeaf;
     default: return null;
   }
 }
@@ -111,6 +115,7 @@ export function blankLeaf(kind: string): ToolPrefLeaf {
     case 'color': return { ...base, default: '#000000' } as ToolPrefLeaf;
     case 'paint': return { ...base, default: solid('#000000') } as ToolPrefLeaf;
     case 'object': return { ...base, default: {}, children: {} } as ToolPrefLeaf;
+    case 'field': return { ...base, default: '' } as ToolPrefLeaf;
     default: return { ...base, default: undefined } as ToolPrefLeaf;
   }
 }

@@ -240,8 +240,8 @@ export const Nested: Story = {
 const degrees = prefUnit(ANGLE_RADIANS, 'deg', { precision: 1 });
 
 const presentation = f.schema({
-  x: f.number(120).label('X').pair('Offset'),
-  y: f.number(-40).label('Y').pair('Offset'),
+  x: f.number(120).label('X').pair({ with: 'y', label: 'Offset' }),
+  y: f.number(-40).label('Y'),
   spin: f
     .number(Math.PI / 4)
     .range(0, Math.PI * 2)

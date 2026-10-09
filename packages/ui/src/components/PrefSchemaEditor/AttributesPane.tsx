@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ToolPrefGroup, ToolPrefLeaf } from '@weasel-js/core';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
 import { Input } from '../Input';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
-import { isPrefLeaf } from '../Prefs/schema';
+import { isPrefLeaf, prefFieldChoices } from '../Prefs/schema';
 import { Select } from '../Select';
 import { ATTR_RENDERERS } from './attrRenderers';
 import { attributeSchema, changeKind, normalizeAttr, type CustomKinds } from './kindSchemas';
@@ -35,6 +35,8 @@ export interface AttributesPaneProps {
 
 export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom, renderers, onNotice }: AttributesPaneProps) {
   const node = nodeAt(schema, path);
+  // The edited schema's fields, by the prefs-form path rule: what a reference in it names.
+  const fields = useMemo(() => prefFieldChoices(schema), [schema]);
   const [key, setKey] = useState(path === null ? '' : keyOf(path));
   const [keyError, setKeyError] = useState<string | null>(null);
   const [seen, setSeen] = useState(path);
@@ -84,6 +86,7 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
       <PrefsForm
         schema={{ name: 'Attributes', children }}
         layout="list"
+        fields={fields}
         values={{ ...node, [OWN]: node }}
         renderers={{ ...renderers, ...ATTR_RENDERERS, ...identity }}
         onChange={(p, value) => {

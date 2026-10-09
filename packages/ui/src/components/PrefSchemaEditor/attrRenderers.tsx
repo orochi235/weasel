@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import type { ToolPrefPair } from '@weasel-js/core';
 import type { PrefRenderContext, PrefRenderer } from '../Prefs';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { Input } from '../Input';
 import { ListEditor } from '../ListEditor';
+import { Select } from '../Select';
 import s from './PrefSchemaEditor.module.css';
 
 /** A number that may be unset: empty text clears it, and text that is not a number is left uncommitted. */
@@ -43,7 +45,42 @@ function EnumOptions({ ctx }: { ctx: PrefRenderContext }) {
   );
 }
 
-export const ATTR_RENDERERS: Record<'optional-number' | 'string-list' | 'enum-options', PrefRenderer> = {
+/** The fields sharing a leaf's row, each picked from the schema's fields by path, and the row's label override.
+ *  Picking none removes the pairing. */
+function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
+  const pair = ctx.value as ToolPrefPair | undefined;
+  const partners = pair === undefined ? [] : typeof pair.with === 'string' ? [pair.with] : [...pair.with];
+  const label = pair?.label ?? '';
+  const write = (nextWith: readonly string[], nextLabel: string) => {
+    const kept = nextWith.filter((p) => p !== '');
+    ctx.setValue(kept.length === 0 ? undefined : {
+      with: kept.length === 1 ? kept[0]! : kept,
+      ...(nextLabel.trim() !== '' ? { label: nextLabel.trim() } : {}),
+    });
+  };
+  const options = (ctx.fields ?? []).map((f) => ({ value: f.path, label: `${f.name} (${f.path})` }));
+  return (
+    <div className={s.options}>
+      {partners.map((path, i) => (
+        <div key={i} className={s.pairRow}>
+          <Select aria-label={`Paired field ${i + 1}`} selectedKey={path}
+            options={options.some((o) => o.value === path) ? options : [{ value: path, label: path }, ...options]}
+            onSelectionChange={(k) => write(partners.map((p, j) => (j === i ? String(k) : p)), label)} />
+          <CloseButton ariaLabel={`Remove paired field ${i + 1}`} onClick={() => write(partners.filter((_, j) => j !== i), label)} />
+        </div>
+      ))}
+      <Select aria-label="Add a paired field" placeholder="Add field…" selectedKey={null} options={options}
+        onSelectionChange={(k) => write([...partners, String(k)], label)} />
+      {partners.length > 0 && (
+        <Input aria-label="Row label" placeholder="Row label (default: this pref's name)" value={label}
+          onChange={(v) => write(partners, v)} />
+      )}
+    </div>
+  );
+}
+
+export const ATTR_RENDERERS: Record<'optional-number' | 'string-list' | 'enum-options' | 'pair', PrefRenderer> = {
+  pair: (ctx) => <PairEditor ctx={ctx} />,
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,
   'string-list': (ctx) => <ListEditor aria-label={ctx.pref.name} value={(ctx.value as string[] | undefined) ?? []} onChange={ctx.setValue} />,
   'enum-options': (ctx) => <EnumOptions ctx={ctx} />,

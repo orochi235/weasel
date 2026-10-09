@@ -188,6 +188,16 @@ describe('PrefSchemaEditor', () => {
     expect(within(screen.getByRole('region', { name: 'Changes' })).getByText('No changes.')).toBeInTheDocument();
   });
 
+  it('pairs a leaf with another by picking it from the schema\'s fields', () => {
+    render(<Live />);
+    fireEvent.click(row('grid'));
+    const attrs = screen.getByRole('region', { name: 'Attributes' });
+    fireEvent.click(within(attrs).getByRole('button', { name: /Add a paired field/ }));
+    fireEvent.click(screen.getByRole('option', { name: 'Snap (view.snap)' }));
+    fireEvent.change(within(attrs).getByRole('textbox', { name: 'Row label' }), { target: { value: 'Grid' } });
+    expect(screen.getByTestId('schema-literal').textContent).toMatch(/pair: \{\s*with: 'view\.snap',\s*label: 'Grid',\s*\}/);
+  });
+
   it('exports a literal with the edit in it', () => {
     render(<Live />);
     fireEvent.click(row('grid'));

@@ -93,6 +93,7 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
     case 'boolean':
       return { key: path, label, type: 'checkbox', default: leaf.default as boolean };
     case 'string':
+    case 'field':
       return { key: path, label, type: 'text', default: leaf.default as string };
     case 'enum': {
       const e = leaf as PrefLeaf & {

@@ -1,4 +1,5 @@
 .options { display: grid; gap: var(--wzl-space-2); }
+.pairRow { display: grid; grid-template-columns: 1fr auto; gap: var(--wzl-space-2); align-items: center; }
 .optionRow { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--wzl-space-2); align-items: center; }
 .number { composes: numeric from '@weasel-js/theme/numeric.module.css'; }
 .number input { text-align: right; }

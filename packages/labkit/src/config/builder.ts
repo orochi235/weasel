@@ -1,3 +1,4 @@
+import type { ToolPrefPair } from '@weasel-js/core';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { PrefLeaf, PrefNumberUnit } from '@weasel-js/ui';
 import { type Auto, isAuto } from './auto';
@@ -77,8 +78,9 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
     return this.ann({ block: true });
   }
 
-  /** Pair with a sibling sharing this id, side-by-side on one row. */
-  pair(pair: string): this {
+  /** Share one row with the fields `pair.with` names, by full config path
+   *  (`'offset.y'`), labeled `pair.label` or else this field's label. */
+  pair(pair: ToolPrefPair): this {
     return this.ann({ pair });
   }
 

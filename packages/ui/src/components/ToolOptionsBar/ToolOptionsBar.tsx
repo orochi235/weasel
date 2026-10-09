@@ -9,6 +9,7 @@ import {
 } from '../SelectionPanel/renderLeaf';
 import { isGroup, pairRows, type PanelLeaf, type PanelRow } from '../SelectionPanel/model';
 import { FitLabel, FitScope, labelForms, useFitScope } from '../FitLabel/FitLabel';
+import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import s from './ToolOptionsBar.module.css';
 
 /** Props for {@link ToolOptionsBar}. */
@@ -69,6 +70,7 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
   // Every label on the line shortens together before the strip scrolls.
   const controls = useRef<HTMLDivElement>(null);
   const fit = useFitScope(controls);
+  const fields = schema !== undefined ? prefFieldChoices(schema) : [];
   return (
     <div className={cls} role="toolbar" aria-label={label}>
       {label !== undefined && <span className={s.label}>{label}</span>}
@@ -77,6 +79,7 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
           {schema !== undefined &&
             barRows(schema).map((row) => (
               <BarRow
+                fields={fields}
                 key={row.leaves[0]!.path}
                 row={row}
                 values={values}
@@ -113,12 +116,14 @@ function barRows(schema: ToolPrefGroup): PanelRow[] {
 
 /** One row of the bar: a single control, or a run of flags as one bar. */
 function BarRow({
+  fields,
   row,
   values,
   mixed,
   renderers,
   onChange,
 }: {
+  fields: readonly PrefFieldChoice[];
   row: PanelRow;
   values: Readonly<Record<string, unknown>> | undefined;
   mixed: ReadonlySet<string> | undefined;
@@ -127,9 +132,10 @@ function BarRow({
 }) {
   // The bar draws no row label, so a control carries its own name rather than
   // the panel's qualified "<pair> <leaf>" — the run's bar carries the pair.
-  const cells = row.leaves.map((panelLeaf) =>
-    barCell(panelLeaf, panelLeaf.leaf.name, values, mixed, renderers, onChange),
-  );
+  const cells = row.leaves.map((panelLeaf) => ({
+    ...barCell(panelLeaf, panelLeaf.leaf.name, values, mixed, renderers, onChange, fields),
+    ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
+  }));
   return (
     <>
       {renderCells(cells, renderers).map((cell) => (
@@ -167,6 +173,7 @@ function barCell(
   mixed: ReadonlySet<string> | undefined,
   renderers: Record<string, PropertyRenderer> | undefined,
   onChange: ((path: string, value: unknown) => void) | undefined,
+  fields: readonly PrefFieldChoice[],
 ): LeafCell {
   const { path, leaf } = panelLeaf;
   const isMixed = mixed?.has(path) === true;
@@ -181,6 +188,7 @@ function barCell(
     // One set of values, so there is one prior value to derive from.
     update: (fn) => onChange?.(path, fn(isMixed ? undefined : values?.[path])),
     valueAt: (p) => ({ value: values?.[p], mixed: mixed?.has(p) === true }),
+    fields,
   };
   return {
     key: path,

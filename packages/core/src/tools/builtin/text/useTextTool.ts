@@ -59,7 +59,6 @@ const flag = (name: string, icon: string) =>
     description: `${name} for the characters in the range.`,
     icon,
     control: 'toggle',
-    pair: 'Character style',
     default: false,
   }) as const;
 
@@ -76,7 +75,10 @@ useTextTool.options = {
   name: 'Text',
   description: 'Character styling for the selected range.',
   children: {
-    bold: flag('Bold', 'bold'),
+    bold: {
+      ...flag('Bold', 'bold'),
+      pair: { with: ['italic', 'underline', 'strikethrough', 'overline'], label: 'Character style' },
+    },
     italic: flag('Italic', 'italic'),
     underline: flag('Underline', 'underline'),
     strikethrough: flag('Strikethrough', 'strikethrough'),

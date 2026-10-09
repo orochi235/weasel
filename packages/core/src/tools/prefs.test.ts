@@ -1,5 +1,5 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
-import { TOOL_PREF_KINDS, isBuiltinToolPref, prefUnit } from './prefs';
+import { TOOL_PREF_KINDS, isBuiltinToolPref, pairRowsOf, prefUnit } from './prefs';
 import { ANGLE_RADIANS, METRIC_MM, type UnitSystem } from '@weasel-js/quantity';
 
 /** Temperature is the smallest system whose units disagree about zero. */
@@ -15,6 +15,7 @@ import type {
   ToolPrefGroup,
   ToolPrefLeaf,
   ToolPrefNumber,
+  ToolPrefPair,
 } from './prefs';
 
 describe('ToolPref schema additions', () => {
@@ -31,7 +32,7 @@ describe('ToolPref schema additions', () => {
       name: 'X',
       description: 'Left edge.',
       default: 0,
-      pair: 'Position',
+      pair: { with: 'pose.y', label: 'Position' },
     };
     const rotation: ToolPrefNumber = {
       kind: 'number',
@@ -65,7 +66,7 @@ describe('built-in kind table', () => {
     expectTypeOf<keyof typeof TOOL_PREF_KINDS>().toEqualTypeOf<ToolPrefKind>();
     expectTypeOf<ToolPref['kind']>().toEqualTypeOf<ToolPrefKind>();
     expect(Object.keys(TOOL_PREF_KINDS).sort()).toEqual(
-      ['boolean', 'color', 'enum', 'number', 'object', 'paint', 'string'],
+      ['boolean', 'color', 'enum', 'field', 'number', 'object', 'paint', 'string'],
     );
   });
 
@@ -134,5 +135,26 @@ describe('prefUnit', () => {
     expect(prefUnit(ANGLE_RADIANS, 'deg', { precision: 1, suffix: '°' }).format?.(Math.PI)).toBe(
       '180°',
     );
+  });
+});
+
+describe('pairRowsOf', () => {
+  const leaf = (name: string, pair?: ToolPrefPair): ToolPrefLeaf =>
+    ({ kind: 'number', name, description: '', default: 0, ...(pair ? { pair } : {}) });
+
+  it('puts the declaring leaf and every path it names on one row, labeled by the override', () => {
+    const rows = pairRowsOf([
+      ['pose.x', leaf('X', { with: 'pose.y', label: 'Position' })],
+      ['pose.y', leaf('Y')],
+      ['pose.w', leaf('W')],
+    ]);
+    expect(rows.get('pose.x')).toEqual({ key: 'pose.x', label: 'Position' });
+    expect(rows.get('pose.y')).toBe(rows.get('pose.x'));
+    expect(rows.has('pose.w')).toBe(false);
+  });
+
+  it("labels a row with the declaring leaf's name when no label overrides it", () => {
+    const rows = pairRowsOf([['a', leaf('Size', { with: ['b', 'c'] })], ['b', leaf('B')], ['c', leaf('C')]]);
+    expect(rows.get('c')).toEqual({ key: 'a', label: 'Size' });
   });
 });

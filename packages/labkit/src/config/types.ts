@@ -1,3 +1,4 @@
+import type { ToolPrefPair } from '@weasel-js/core';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { PrefGroup, PrefLeaf, PrefNumberUnit, PrefRenderer } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
@@ -26,7 +27,7 @@ export interface Annotations {
   description?: string;
   hidden?: boolean;
   block?: boolean;
-  pair?: string;
+  pair?: ToolPrefPair;
   min?: number;
   max?: number;
   step?: number;

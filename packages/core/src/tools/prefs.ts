@@ -12,7 +12,21 @@ import type { Display, InfinityText, Unit, UnitEntry, UnitScale, UnitSystem } fr
 
 /** The value types a built-in pref leaf can hold. */
 export type ToolPrefKind =
-  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object';
+  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object' | 'field';
+
+/**
+ * Leaves that share one row in a compact property UI (weasel-ui
+ * `SelectionPanel`, labkit's `ControlPanel`), declared on the first of them.
+ * Purely presentational.
+ */
+export interface ToolPrefPair {
+  /** The other leaves on the row, by the full path their values are read and
+   *  written at (`'pose.y'`, `'camera.type'`), in order. Each must follow the
+   *  one before it among its siblings. */
+  with: string | readonly string[];
+  /** What the row reads. Default: the declaring leaf's `name`. */
+  label?: string;
+}
 
 /** The fields every leaf pref shares, keyed by its `kind` and typed by its stored value. */
 export interface ToolPrefBase<K extends string, Value> {
@@ -35,11 +49,8 @@ export interface ToolPrefBase<K extends string, Value> {
    *  `pair`ed row is labeled by the pair, so its fields have only the glyph
    *  to tell them apart. */
   icon?: string;
-  /** Row-pairing hint for compact property UIs (weasel-ui
-   *  `SelectionPanel`): leaves sharing a `pair` id render side-by-side
-   *  on one row labeled with the `pair` string (e.g. `'Position'` for
-   *  `pose.x` / `pose.y`). Purely presentational. */
-  pair?: string;
+  /** Puts this leaf and the ones it names on one row. */
+  pair?: ToolPrefPair;
   /** Shorter forms of `name`, longest first. A surface short of room for
    *  `name` — a strip of controls on one line, a segment in a `pair`ed row —
    *  shows the longest of them that fits. `name` stays the accessible name, so
@@ -274,6 +285,16 @@ export interface ToolPrefObject extends ToolPrefBase<'object', unknown> {
   fromScalar?: (value: unknown) => Record<string, unknown>;
 }
 
+/**
+ * A reference to another field of the same schema, held as the full path its
+ * value is read and written at (`'camera.type'`) — the currency fields refer
+ * to each other in. A surface offers the fields it draws as the choices.
+ */
+export interface ToolPrefField extends ToolPrefBase<'field', string> {
+  /** Only fields of these kinds may be named. Default: any leaf. */
+  kinds?: readonly string[];
+}
+
 /** One built-in pref leaf. `ToolPrefLeaf` widens this to include
  *  app-defined kinds. */
 export type ToolPref =
@@ -283,7 +304,8 @@ export type ToolPref =
   | ToolPrefEnum
   | ToolPrefColor
   | ToolPrefPaint
-  | ToolPrefObject;
+  | ToolPrefObject
+  | ToolPrefField;
 
 // Compile-time tie: every built-in leaf kind must appear in ToolPrefKind
 // and vice versa (ToolPrefBase's K is open for ToolPrefCustom's sake, so
@@ -308,7 +330,26 @@ export const TOOL_PREF_KINDS: Record<ToolPrefKind, true> = {
   color: true,
   paint: true,
   object: true,
+  field: true,
 };
+
+/** Which row each pairing among `leaves` puts a path on: a `key` the row's
+ *  members share (the declaring leaf's path) and the `label` it reads. A
+ *  path no `pair` names is absent. `leaves` are given by the path each
+ *  surface reads and writes them at, so references resolve in its terms. */
+export function pairRowsOf(
+  leaves: Iterable<readonly [path: string, leaf: ToolPrefLeaf]>,
+): Map<string, { key: string; label: string }> {
+  const rows = new Map<string, { key: string; label: string }>();
+  for (const [path, leaf] of leaves) {
+    if (!leaf.pair || rows.has(path)) continue;
+    const row = { key: path, label: leaf.pair.label ?? leaf.name };
+    rows.set(path, row);
+    const partners = typeof leaf.pair.with === 'string' ? [leaf.pair.with] : leaf.pair.with;
+    for (const partner of partners) if (!rows.has(partner)) rows.set(partner, row);
+  }
+  return rows;
+}
 
 /**
  * Narrows a leaf to the built-in union, so a renderer's switch discriminates
