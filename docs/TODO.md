@@ -807,6 +807,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) A classic Mac OS theme.** Which era it follows, System 7's one-bit look or Mac OS 8–9's
   Platinum, is the first decision.
 
+- **(P3) `tone` doesn't take the kit's color type.** `StanceProps.tone` is `number | string`: a
+  number indexes the theme's tone list, and a string goes into `--wzl-tone` as raw CSS, so a
+  palette name like `{ ref: 'accent' }` has no way in. `@weasel-js/paint`'s `ColorSource` (a
+  literal, a `ColorRef`, or a function, resolved by `resolvePaletteColor`) is the named-color type,
+  but only core's renderer uses it; `ThemeProvider` hands out tones as a `ColorList` and no
+  `Palette`. Taking `ColorSource` means giving the theme context a palette (or an `ExternalColors`
+  resolver onto its ramps) and routing every stanced surface's tone through it, so the UI and the
+  renderer stop naming colors two ways.
+
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) Multi-page documents.**
