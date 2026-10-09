@@ -182,6 +182,10 @@
   min-inline-size: min(760px, 90vw);
 }
 
+.railBody.railBodyInline {
+  min-inline-size: 0;
+}
+
 .railBody > .railLayout {
   flex: 1 1 auto;
 }

@@ -76,9 +76,8 @@ describe('PrefSchemaEditor', () => {
     expect(within(dialog).getByRole('textbox', { name: 'Id' })).toHaveValue('lineWidth');
     pickKind(dialog, 'number');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Add pref' })).toBeNull();
     expect(within(structure()).getByText('Line width')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
     const exact = getDefaultNormalizer({ collapseWhitespace: false });
     expect(screen.getByText(/\+ view\.lineWidth {2}\(number\)/, { normalizer: exact })).toBeInTheDocument();
   });
@@ -183,12 +182,17 @@ describe('PrefSchemaEditor', () => {
     expect(within(preview()).getByRole('checkbox', { name: 'Shown' })).not.toBeChecked();
   });
 
+  it('shows the literal and the change list side by side', () => {
+    render(<Live />);
+    expect(screen.getByRole('region', { name: 'Literal' })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Changes' })).getByText('No changes.')).toBeInTheDocument();
+  });
+
   it('exports a literal with the edit in it', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
     const name = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
     fireEvent.change(name, { target: { value: 'Grid on' } });
-    fireEvent.click(screen.getByRole('tab', { name: 'Literal' }));
     expect(screen.getByTestId('schema-literal').textContent).toContain("name: 'Grid on',");
   });
 
@@ -257,7 +261,7 @@ describe('PrefSchemaEditor', () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     try {
       render(<Live />);
-      fireEvent.click(within(screen.getByRole('tabpanel')).getByRole('button', { name: 'Copy' }));
+      fireEvent.click(within(screen.getByRole('region', { name: 'Literal' })).getByRole('button', { name: 'Copy' }));
       await new Promise((r) => setTimeout(r, 0));
       expect(writeText).toHaveBeenCalled();
       expect(then).toHaveBeenCalledWith(undefined, expect.any(Function));

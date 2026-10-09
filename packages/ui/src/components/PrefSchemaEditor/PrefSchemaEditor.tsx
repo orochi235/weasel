@@ -4,7 +4,7 @@ import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { Switch } from '../Switch';
 import { setAtPath } from '../SelectionPanel/model';
-import { PrefsForm, type PrefRenderer } from '../Prefs';
+import { PrefsDialog, type PrefRenderer } from '../Prefs';
 import { AttributesPane } from './AttributesPane';
 import { ExportPanel } from './ExportPanel';
 import { PaneHeader } from './PaneHeader';
@@ -123,14 +123,15 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
         <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selected ?? ''}`)} path={selected} onRekey={rekey}
           kinds={kindList} custom={kinds} renderers={renderers} onNotice={setNotice} />
       </div>
-      <section className={s.pane} aria-label="Live preview">
+      <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
         <PaneHeader title="Live preview">
           <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch>
           <Button size="sm" variant="ghost" disabled={Object.keys(values).length === 0} onClick={() => setValues({})}>
             Reset values
           </Button>
         </PaneHeader>
-        <PrefsForm schema={schema} values={values} renderers={renderers} showHidden={showHidden}
+        <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" dialogClassName={s.previewDialog}
+          schema={schema} values={values} renderers={renderers} showHidden={showHidden}
           onChange={(path, v) => setValues((cur) => setAtPath(cur, path.split('.'), v) as Record<string, unknown>)} />
       </section>
       <ExportPanel schema={schema} changes={changes} />
