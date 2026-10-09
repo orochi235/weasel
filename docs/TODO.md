@@ -420,16 +420,16 @@ intercepting the press that drags the body.
   `kit:setLayer`. Widening the pull to those means deciding what a derivation
   is allowed to read, not just how a pose is compared.
 
-- **(P2) Diagram groups: container nodes that hold other nodes.** `diagramScene`
-  has no way to say "these nodes belong together" and draw a box around them
-  (a timing graph's `locus`, a subsystem in an architecture diagram). Drawing
-  the box after layout is not enough: `layered` and `tree` place each node
-  on its own, so members of one group land interleaved with another's and the
-  boxes overlap. The layouts need to treat a group as a cluster that keeps
-  its members together within each rank, and edges into a group need to say
-  whether they meet the group or a member. Then `DataNode.parent` (or a
-  `groups` list on `DiagramData`) can mint a container body around the
-  members, and `fitDiagram` keeps measuring containers.
+- **(P2) What diagram groups still cannot do.** `DiagramData.groups` draws a box around its
+  members, and `layered` and `tree` keep them together (`cluster.ts`). Three things are left:
+  - **Nesting.** A group is never a member of another, so a subsystem inside a system has no
+    shape. The column packer would recurse: lay a group's members out as a block, then pack that
+    block as one item of its parent.
+  - **`force` ignores groups.** It wants an attraction toward each group's centroid, and a
+    repulsion between boxes rather than only between nodes.
+  - **The box cannot be dragged.** It is `pickable: false`, because a drag would write a pose
+    its derivation overwrites on the next read. Dragging it should move its members, and that is
+    a move action reading the box's `dependsOn`.
 
 - **(P3) `ForceGraphDemo` is a second force-graph pipeline.** It runs d3-force
   through `useSimulation` and paints with its own render layer, beside

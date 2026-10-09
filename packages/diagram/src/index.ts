@@ -61,15 +61,30 @@ export type {
   BuildGraphOptions,
   Graph,
   GraphEdge,
+  GraphGroup,
   GraphNode,
   GraphNodeLike,
   GraphSource,
 } from './graph';
 export { DIAGRAM_LABEL, LABEL_DERIVE_POSE, diagramLabelOf, labelDerivePose } from './label';
 export type { DiagramLabel, LabelPoseOptions } from './label';
+export { DEFAULT_GROUP_INSET, expandGroupEdges, insetOf, packClusters, rankGaps } from './cluster';
+export type { GroupInset } from './cluster';
+export {
+  ANCHOR_DERIVE_POSE,
+  DIAGRAM_ANCHOR,
+  DIAGRAM_GROUP,
+  GROUP_DERIVE_POSE,
+  anchorDerivePose,
+  diagramAnchorOf,
+  diagramGroupOf,
+  groupDerivePose,
+} from './group';
+export type { DiagramAnchor, GroupPoseOptions } from './group';
 export { diagramScene, edgeIdOf } from './fromData';
 export type {
   DataEdge,
+  DataGroup,
   DataNode,
   DiagramData,
   DiagramSceneData,
@@ -148,7 +163,7 @@ export {
   isPinned,
 } from './trait';
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
-export type { DiagramNode, Port, PortAnchor, PortSpec } from './types';
+export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
 export type { DiagramViewApi, DiagramViewProps, NodeMove } from './DiagramView';
 export { useMirroredSelection } from './mirrorSelection';

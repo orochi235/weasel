@@ -577,6 +577,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/DiagramDataDemo.tsx',
   },
   {
+    id: 'diagram-groups',
+    title: 'Diagram groups',
+    package: 'diagram',
+    description: "A group in diagramScene's data draws a box around its members, and layered and tree keep those members together: each group gets a column on the cross axis that nothing else enters, in every rank from its first member's to its last. The box is a scene node that derives its pose from its members, so dragging a member carries the box with it. An edge naming a group meets the box, and ranks against the group's first stage.",
+    hint: 'Drag a box and its group follows. Press layered or tree and the two groups come back apart.',
+    load: () => import('./demos/DiagramGroupsDemo').then((m) => m.DiagramGroupsDemo),
+    path: 'apps/site/demos/DiagramGroupsDemo.tsx',
+  },
+  {
     id: 'diagram-live',
     title: 'Live diagram layout',
     package: 'diagram',

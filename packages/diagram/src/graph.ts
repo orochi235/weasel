@@ -12,6 +12,7 @@
  * scrambles a diagram the author has arranged.
  */
 import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core/math';
+import { expandGroupEdges, insetOf, type GroupInset } from './cluster';
 import { diagramEdgeOf } from './edge';
 import type { Bounds } from './outline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
@@ -34,6 +35,18 @@ export interface GraphNode {
   bounds: Bounds;
   /** Layout must not move it. */
   pinned: boolean;
+  /** The group it belongs to, when it belongs to one. */
+  group?: string;
+}
+
+/** A box drawn around some participants, which a layout keeps together and
+ *  leaves room for. */
+export interface GraphGroup {
+  id: string;
+  /** In source order. */
+  members: readonly string[];
+  /** Room the box keeps around its members, in world units. */
+  inset: GroupInset;
 }
 
 /** One connection. `id` is the edge node's own id, so a caller can go back to
@@ -54,6 +67,8 @@ export interface GraphEdge {
 export interface Graph {
   readonly nodes: readonly GraphNode[];
   readonly edges: readonly GraphEdge[];
+  /** Absent or empty for a graph with no groups. */
+  readonly groups?: readonly GraphGroup[];
   node(id: string): GraphNode | undefined;
   /** Edges leaving `id`, in source order. */
   outgoing(id: string): readonly GraphEdge[];
@@ -72,10 +87,12 @@ export interface BuildGraphOptions<TPose> {
  * Read a graph out of a source of scene nodes.
  *
  * A node is an edge if it carries the edge trait and names exactly two
- * dependencies; a participant if the reader hands back a `DiagramNode`;
- * neither, and it is not in the diagram at all. An edge whose endpoints are not
- * both participants is dropped — a dangling edge should not be ranking
- * anything.
+ * dependencies; a group if its trait carries `group`, with its dependencies as
+ * its members; a participant if the reader hands back any other
+ * `DiagramNode`; and otherwise not in the diagram at all. An edge whose
+ * endpoints are not both participants or groups is dropped — a dangling edge
+ * should not be ranking anything — and an edge to a group ranks against its
+ * members (see `expandGroupEdges`).
  */
 export function buildGraph<TPose>(
   source: GraphSource<TPose>,
@@ -85,6 +102,7 @@ export function buildGraph<TPose>(
   const nodes: GraphNode[] = [];
   const byId = new Map<string, GraphNode>();
   const candidates: GraphEdge[] = [];
+  const groupNodes: { id: string; members: readonly string[]; inset: GroupInset }[] = [];
 
   for (const { node, pose } of source()) {
     if (diagramEdgeOf(node) !== null) {
@@ -96,6 +114,15 @@ export function buildGraph<TPose>(
     }
     const trait = diagramNodeOf(node, opts.read);
     if (trait === null) continue;
+    if (trait.group !== undefined) {
+      const deps = node.dependsOn;
+      groupNodes.push({
+        id: node.id,
+        members: Array.isArray(deps) ? deps : [],
+        inset: insetOf(trait.group.inset),
+      });
+      continue;
+    }
     const entry: GraphNode = {
       id: node.id,
       bounds: geometry.getBounds(pose),
@@ -105,7 +132,20 @@ export function buildGraph<TPose>(
     byId.set(entry.id, entry);
   }
 
-  const edges = candidates.filter((e) => byId.has(e.from) && byId.has(e.to));
+  // A member is one only once: a node a second group also names stays in the first.
+  const groups: GraphGroup[] = [];
+  const claimed = new Set<string>();
+  for (const g of groupNodes) {
+    const members = g.members.filter((id) => byId.has(id) && !claimed.has(id));
+    for (const id of members) {
+      claimed.add(id);
+      byId.get(id)!.group = g.id;
+    }
+    groups.push({ ...g, members });
+  }
+  const live = groups.filter((g) => g.members.length > 0);
+  const known = (id: string) => byId.has(id) || live.some((g) => g.id === id);
+  const edges = expandGroupEdges(candidates.filter((e) => known(e.from) && known(e.to)), live);
   const out = new Map<string, GraphEdge[]>();
   const into = new Map<string, GraphEdge[]>();
   for (const edge of edges) {
@@ -117,6 +157,7 @@ export function buildGraph<TPose>(
   return {
     nodes,
     edges,
+    groups: live,
     node: (id) => byId.get(id),
     outgoing: (id) => out.get(id) ?? NONE,
     incoming: (id) => into.get(id) ?? NONE,

@@ -1,4 +1,5 @@
 import type { Vec2 } from '@weasel-js/core/math';
+import type { GroupInset } from './cluster';
 import type { Outline } from './outline';
 
 /**
@@ -45,6 +46,18 @@ export interface DiagramNode {
    *  participant that already had a look of its own — a text block, an image,
    *  a path — which keeps whatever painter it already matched. */
   outline?: Outline;
+  /** Present on a group's box: a node drawn around the participants it
+   *  depends on, which layout keeps together and leaves room for. The box
+   *  itself is never laid out — it derives its pose from its members — but an
+   *  edge can attach to it like any participant. */
+  group?: DiagramGroup;
+}
+
+/** The group half of a {@link DiagramNode}. */
+export interface DiagramGroup {
+  /** Room the box keeps around its members, in world units: one number for
+   *  every side, or per side. Default 12 on each. */
+  inset?: number | Partial<GroupInset>;
 }
 
 /** A port resolved against a node's current pose: where it is in world

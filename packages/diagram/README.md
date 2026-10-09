@@ -108,6 +108,22 @@ starting `at`, and a minimum `width`/`height`; `lines` is shorthand for one
 label row each. An edge can name `fromPort`/`toPort`, its own `router`,
 `waypoints` and `labelPlacement`.
 
+`groups` draws a box around some nodes, with an optional `label` inside it:
+
+```tsx
+diagramScene({ nodes, edges, groups: [{ id: 'ingest', members: ['fetch', 'decode'], label: 'ingest' }] });
+```
+
+`layered` and `tree` keep a group's members together. Each group gets a column
+on the cross axis that nothing else enters, in every rank from its first
+member's to its last, and rank gaps widen where a box needs the room. The box
+is an ordinary scene node that depends on its members and derives its pose from
+theirs (`groupDerivePose`), so dragging a member carries the box along. An edge
+whose `from` or `to` names a group meets the box, and ranks against the
+group's first stage. Groups are flat, and `force` ignores them. A scene built
+any other way joins in with a node whose trait carries `group` and whose
+`dependsOn` lists its members.
+
 Text is sized from character counts unless `measure` is given, so layout runs
 without a canvas. The layout defaults to `layered`, picked by name or passed as
 any `LayoutFn`; `layoutOptions` merge over `order: 'barycenter'`, and

@@ -18,6 +18,7 @@
  * order gets that order back, and re-running the layout is free.
  */
 import { barycenterOrder } from './barycenter';
+import { packClusters, rankGaps } from './cluster';
 import type { Graph, GraphNode } from './graph';
 import {
   DEFAULT_NODE_GAP,
@@ -101,30 +102,30 @@ export const layered: LayoutFn = (graph, opts = {}) => {
   const rows = [...byRank.keys()].sort((a, b) => a - b);
   let ordered = rows.map((rank) => seededOrder(byRank.get(rank)!, axes.cross, order));
   if (opts.order === 'barycenter') ordered = barycenterOrder(graph, ordered, back);
-  const packed = new Map<number, ReturnType<typeof packAcross>>();
-  let widest = 0;
-  for (const [i, rank] of rows.entries()) {
-    const p = packAcross(ordered[i]!, axes.cross, nodeGap);
-    packed.set(rank, p);
-    widest = Math.max(widest, p.span);
+  const packed = ordered.map((row) => packAcross(row, axes.cross, nodeGap));
+  const widest = Math.max(0, ...packed.map((p) => p.span));
+  const preferred = new Map<string, number>();
+  for (const [i, row] of ordered.entries()) {
+    const indent = (widest - packed[i]!.span) / 2;
+    for (const node of row) preferred.set(node.id, indent + packed[i]!.at.get(node.id)!);
   }
+  const grouped = (graph.groups?.length ?? 0) > 0;
+  const crossAt = grouped ? packClusters(graph, ordered, preferred, axes, nodeGap) : preferred;
+  const gaps = grouped ? rankGaps(graph, ordered, axes, rankGap) : ordered.slice(1).map(() => rankGap);
 
   const slots = new Map<string, Slot>();
   let along = 0;
-  for (const rank of rows) {
-    const row = byRank.get(rank)!;
-    const p = packed.get(rank)!;
-    const indent = (widest - p.span) / 2;
+  for (const [i, row] of ordered.entries()) {
     const depth = Math.max(0, ...row.map((n) => extent(n.bounds, axes.rank)));
     for (const node of row) {
       slots.set(node.id, {
-        cross: indent + p.at.get(node.id)!,
+        cross: crossAt.get(node.id)!,
         // Centered in its rank's band, so a tall node does not push its
         // neighbors' edges off the line they read along.
         rank: along + (depth - extent(node.bounds, axes.rank)) / 2,
       });
     }
-    along += depth + rankGap;
+    along += depth + (gaps[i] ?? 0);
   }
 
   return settle(graph, slots, opts);

@@ -16,6 +16,7 @@
  * space and buys an invariant an author can rely on — a subtree's extent is a
  * rectangle, and dragging one never lands it inside another.
  */
+import { packClusters, rankGaps } from './cluster';
 import type { Graph, GraphNode } from './graph';
 import {
   DEFAULT_NODE_GAP,
@@ -93,11 +94,15 @@ export const tree: LayoutFn = (graph, opts = {}) => {
     const at = depth.get(node.id) ?? 0;
     bands.set(at, Math.max(bands.get(at) ?? 0, extent(node.bounds, axes.rank)));
   }
+  const depths = [...bands.keys()].sort((a, b) => a - b);
+  const rowsAt = depths.map((at) => graph.nodes.filter((n) => (depth.get(n.id) ?? 0) === at));
+  const grouped = (graph.groups?.length ?? 0) > 0;
+  const gaps = grouped ? rankGaps(graph, rowsAt, axes, rankGap) : depths.slice(1).map(() => rankGap);
   const bandStart = new Map<number, number>();
   let along = 0;
-  for (const at of [...bands.keys()].sort((a, b) => a - b)) {
+  for (const [i, at] of depths.entries()) {
     bandStart.set(at, along);
-    along += bands.get(at)! + rankGap;
+    along += bands.get(at)! + (gaps[i] ?? 0);
   }
 
   const slots = new Map<string, Slot>();
@@ -142,6 +147,15 @@ export const tree: LayoutFn = (graph, opts = {}) => {
   for (const root of roots) {
     place(root, cursor);
     cursor += measure(root) + nodeGap;
+  }
+
+  if (grouped) {
+    // The subtree blocks are where each node would go; groups then push them
+    // apart only as far as their columns need.
+    const preferred = new Map([...slots].map(([id, slot]) => [id, slot.cross]));
+    const ordered = rowsAt.map((row) => [...row].sort((a, b) => preferred.get(a.id)! - preferred.get(b.id)!));
+    const crossAt = packClusters(graph, ordered, preferred, axes, nodeGap);
+    for (const [id, slot] of slots) slots.set(id, { ...slot, cross: crossAt.get(id) ?? slot.cross });
   }
 
   return settle(graph, slots, opts);

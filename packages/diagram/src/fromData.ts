@@ -7,10 +7,13 @@
  * the same answer in node and in a browser.
  */
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
+import { DEFAULT_GROUP_INSET, expandGroupEdges } from './cluster';
+import { groupSpecs, resolveGroups } from './dataGroups';
 import { buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { EDGE_DERIVE_PATH, type DiagramEdge } from './edge';
 import { force } from './force';
-import type { Graph, GraphEdge, GraphNode } from './graph';
+import type { Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
+import type { DiagramAnchor } from './group';
 import { LABEL_DERIVE_POSE, type DiagramLabel } from './label';
 import { layered } from './layered';
 import type { LayoutFn, LayoutOptions } from './layout';
@@ -46,6 +49,7 @@ export interface DataNode {
 }
 
 export interface DataEdge {
+  /** A node's id, or a group's: an edge naming a group meets its box. */
   from: string;
   to: string;
   /** The port to leave from or arrive at. Unset, the end facing the other
@@ -61,7 +65,28 @@ export interface DataEdge {
   waypoints?: readonly Vec2[];
 }
 
-export interface DiagramData { nodes: readonly DataNode[]; edges: readonly DataEdge[] }
+/** A box drawn around some nodes, which layout keeps together. */
+export interface DataGroup {
+  /** Shares one namespace with node ids. */
+  id: string;
+  /** Node ids. A node a later group also names stays in this one, and an id
+   *  that is not a node is ignored. */
+  members: readonly string[];
+  /** Drawn inside the box, above its members. */
+  label?: string;
+  /** Between the box and its members, and around the label. Default
+   *  `DiagramSceneOptions.groupPadding`. */
+  padding?: number;
+}
+
+export interface DiagramData {
+  nodes: readonly DataNode[];
+  edges: readonly DataEdge[];
+  /** Flat: a group is never a member of another. `layered` and `tree` keep
+   *  each group's members together; `force` and `'none'` ignore groups but
+   *  still draw them. */
+  groups?: readonly DataGroup[];
+}
 
 export interface NodeStyle {
   fill: string;
@@ -87,7 +112,7 @@ type Router = 'straight' | 'bezier' | 'orthogonal';
 type TextStyle = { fontFamily: string; fontSize: number; fontWeight?: number };
 
 export interface DiagramSceneData {
-  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel };
+  diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor };
   fill?: { color: string };
   stroke?: Stroke;
   text?: string;
@@ -122,12 +147,17 @@ export interface DiagramSceneOptions {
   /** Where edge labels sit. Default `{ at: 'mid', offset: 9 }`. */
   labelPlacement?: DiagramLabel;
   nodeStyle?: (node: DataNode) => NodeStyle;
+  /** Default 12. */
+  groupPadding?: number;
+  /** A group's box and label. `text` colors the label. */
+  groupStyle?: (group: DataGroup) => NodeStyle;
   edgeStyle?: (edge: DataEdge) => EdgeStyle;
 }
 
 const FONT = { fontFamily: 'sans-serif', fontSize: 12 };
 const NODE: NodeStyle = { fill: '#16222c', stroke: '#7ba7c7', text: '#dbe7f2' };
 const EDGE: EdgeStyle = { stroke: '#7ba7c7' };
+const GROUP: NodeStyle = { fill: 'rgba(123, 167, 199, 0.08)', stroke: '#7ba7c7', text: '#9fbdd6', strokeWidth: 1, dash: [4, 3] };
 const LABEL_PLACEMENT: DiagramLabel = { at: 'mid', offset: 9 };
 const LINE = 1.4;
 const GLYPH = 0.6;
@@ -137,7 +167,7 @@ const LAYOUTS = { layered, tree, force } as const;
 export const edgeIdOf = (e: DataEdge) =>
   `edge:${e.from}${e.fromPort ? `.${e.fromPort}` : ''}->${e.to}${e.toPort ? `.${e.toPort}` : ''}${e.label ? `:${e.label}` : ''}`;
 
-function graphOf(nodes: GraphNode[], edges: GraphEdge[]): Graph {
+function graphOf(nodes: GraphNode[], edges: GraphEdge[], groups: GraphGroup[] = []): Graph {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const out = new Map<string, GraphEdge[]>();
   const inc = new Map<string, GraphEdge[]>();
@@ -148,15 +178,17 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[]): Graph {
   return {
     nodes,
     edges,
+    groups,
     node: (id) => byId.get(id),
     outgoing: (id) => out.get(id) ?? [],
     incoming: (id) => inc.get(id) ?? [],
   };
 }
 
-/** Every spec carries an id — a node's own, `<id>/<k>` for its text, and
- *  `<edge id>/label` — so a later call's specs can be reconciled against this
- *  one's. Throws on a repeated node id, which names two nodes as one. An edge whose
+/** Every spec carries an id — a node's own, `<id>/<k>` for its text,
+ *  `<edge id>/label`, a group's own and `<group id>/label` — so a later call's
+ *  specs can be reconciled against this one's. Throws on a repeated id among
+ *  nodes and groups, which names two things as one. An edge whose
  *  end is not a node is dropped, and so is a repeat of an earlier edge with
  *  the same ends, ports and label: it would draw exactly on top of the first. */
 export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
@@ -178,6 +210,12 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     if (ids.has(n.id)) throw new Error(`diagramScene: node id "${n.id}" appears more than once`);
     ids.add(n.id);
   }
+  const nodeIds = new Set(ids);
+  const titleStyle = { ...font, fontSize: font.fontSize - 1 };
+  const groups = resolveGroups(data.groups ?? [], ids, nodeIds, {
+    padding: opts.groupPadding ?? DEFAULT_GROUP_INSET,
+    title: (text) => measure(text, titleStyle),
+  });
   const seen = new Set<string>();
   const edges = data.edges.filter((e) => {
     const id = edgeIdOf(e);
@@ -203,16 +241,33 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     );
     return { id: n.id, bounds: pose, pinned: n.pinned === true };
   });
-  const graph = graphOf(seeds, edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })));
+  const graphGroups: GraphGroup[] = groups.map((g) => ({ id: g.group.id, members: g.members, inset: g.inset }));
+  const seedOf = new Map(seeds.map((n) => [n.id, n]));
+  for (const g of groups) for (const m of g.members) seedOf.get(m)!.group = g.group.id;
+  const graph = graphOf(
+    seeds,
+    expandGroupEdges(edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })), graphGroups),
+    graphGroups,
+  );
   const layout = typeof opts.layout === 'function' ? opts.layout
     : opts.layout === 'none' ? null
     : LAYOUTS[opts.layout ?? 'layered'];
   const moved = layout === null ? new Map() : layout(graph, { order: 'barycenter', ...opts.layoutOptions });
 
   const specs: DiagramSpec[] = [];
-  for (const [i, n] of data.nodes.entries()) {
+  const placedAt = new Map(data.nodes.map((n, i) => {
     const seed = seeds[i]!.bounds;
     const at = moved.get(n.id) ?? seed;
+    return [n.id, { x: at.x, y: at.y, width: seed.width, height: seed.height }];
+  }));
+  // Behind every node, so a box never paints over what it holds.
+  specs.push(...groupSpecs(groups, placedAt, (g) => ({
+    style: opts.groupStyle?.(g) ?? GROUP,
+    text: styleOf(titleStyle),
+  })));
+  for (const [i, n] of data.nodes.entries()) {
+    const seed = seeds[i]!.bounds;
+    const at = placedAt.get(n.id)!;
     const style = opts.nodeStyle?.(n) ?? NODE;
     const textData = (text: string, s: RowTextStyle | undefined): DiagramSceneData =>
       ({ text, style: styleOf(s), fill: { color: style.text } });

@@ -28,6 +28,7 @@ import {
   type Vec2,
 } from '@weasel-js/core';
 import { portCurvePoints } from '@weasel-js/geom';
+import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_GROUP, GROUP_DERIVE_POSE } from './group';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
 import { portOf, portsOf, type PortsOptions } from './ports';
 import type { Port } from './types';
@@ -271,6 +272,8 @@ export function withDiagramRegistry<TPose, TData = unknown, TLayer extends strin
     },
     derivePose: {
       [DIAGRAM_LABEL]: LABEL_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
+      [DIAGRAM_GROUP]: GROUP_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
+      [DIAGRAM_ANCHOR]: ANCHOR_DERIVE_POSE as NonNullable<SceneRegistry<TPose, TData, TLayer>['derivePose']>[string],
       ...registry.derivePose,
     },
   };

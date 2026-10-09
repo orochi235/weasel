@@ -16,6 +16,7 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, 
 import type { CanConnect } from './connect';
 import { diagramPorts, type DiagramContributionOptions } from './contribution';
 import { withDiagramRegistry } from './edge';
+import { diagramGroupOf } from './group';
 import type { DataEdge, DiagramSceneData, DiagramSpec } from './fromData';
 import type { LayoutFn } from './layout';
 import { useLiveLayout, type LiveLayout, type UseLiveLayoutOptions } from './live';
@@ -227,14 +228,14 @@ export interface DiagramFit {
   padding?: number;
 }
 
-/** The view `DiagramView` opens on: every container in the box, never above
+/** The view `DiagramView` opens on: every node box and group box in view, never above
  *  `maxScale` (default 1) and never below `minScale`. */
 export function fitDiagram(
   specs: readonly DiagramSpec[],
   size: { width: number; height: number },
   fit: DiagramFit = {},
 ): View | undefined {
-  const boxes = specs.filter((s) => s.kind === 'container').map((s) => s.pose as RectPose);
+  const boxes = specs.filter((s) => s.kind === 'container' || diagramGroupOf(s) !== null).map((s) => s.pose as RectPose);
   if (boxes.length === 0) return undefined;
   const x = Math.min(...boxes.map((b) => b.x));
   const y = Math.min(...boxes.map((b) => b.y));
