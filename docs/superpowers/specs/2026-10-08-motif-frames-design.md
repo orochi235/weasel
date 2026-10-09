@@ -62,7 +62,7 @@ words stay out of the root barrel. `motifs.stereo` and `stereo` are the same fun
 | `stereo` | `side: 'top' \| 'right' \| 'bottom' \| 'left'`, `labelAlign: 'start' \| 'center' \| 'end'` (default `center`) | A bar along one whole edge, filled with the tone, carrying the title; the border is the same color as the bar | In the bar after the title, oriented with it |
 | `notch` | `align: 'center' \| 'start'` (default `center`) | transom's `Panel`: a `<fieldset>` whose `<legend>` cuts the title into the top border | `actions` held at the far end of the title line, with the displaced run of border drawn between them |
 | `tab` | `align: 'start' \| 'center' \| 'end'` (default `start`) | A folder tab rising from the top edge, holding the title | Inside the tab, after the title |
-| `plaque` | `ink?: string` (default: black or white, whichever the tone's lightness calls for) | The tone fills the whole frame; the title and contents sit on it in the ink | In the title row |
+| `plaque` | `mix?: number`, the percentage of the tone in the fill (default 100) | The tone fills the whole frame; the title and contents sit on it | In the title row |
 
 **stereo's text.** Two rules, in this order: the title is never upside-down, and then it faces
 the content. So top and bottom bars are horizontal; a left bar reads bottom to top and a right bar
@@ -73,12 +73,16 @@ bottom of a left bar and the top of a right bar.
 covers it. That cut is why it can sit on a translucent ground with no seam. Don't swap the fieldset
 for a positioned title.
 
-**plaque's ink.** Text and controls on an arbitrary tone need their own colors. `ink` is a plaque
-param, not a stance slot, so the motif is the one place it's set. Given, it's written on the root
-as `--wzl-plaque-ink`. Unset, the plaque falls back to black or white from the tone's lightness:
+**plaque's mix.** How fully the frame takes the tone is the plaque's own param, not the stance's
+`tone-mix` slot. That slot is tuned for a tinted panel (22% on `scope`), and astv overrides it to
+100% from outside to get this look. `mix` is written on the root as `--wzl-plaque-mix` and replaces
+`--_s-tone-mix` inside the plaque.
+
+**plaque's ink.** Text and controls on an arbitrary tone need their own colors: black or white,
+whichever the fill's lightness calls for, computed in CSS from the mixed fill:
 
 ```css
---_ink: var(--wzl-plaque-ink, oklch(from var(--_s-tone) clamp(0, (0.62 - l) * 1000, 1) 0 0));
+--_ink: oklch(from var(--_s-fill) clamp(0, (0.62 - l) * 1000, 1) 0 0);
 ```
 
 A plaque sets `--wzl-fg`, `--wzl-fg-muted`, and `--wzl-fg-subtle` from the ink mixed toward the
