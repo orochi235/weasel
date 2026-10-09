@@ -14,6 +14,7 @@ import { drawTheme } from './theme';
 import { ColorModeProvider } from './colorMode';
 import { registerAvailableFonts } from './fonts';
 import { migrateLegacyPanelFlags } from './panels';
+import { drawPrefs, importLegacyPrefs } from './prefs';
 
 // The dev surfaces are only reachable at `#/dev/*`, and `RegistryInspector`
 // reaches `dev/sourceLookup`, which embeds this app's own source as strings.
@@ -68,6 +69,8 @@ registerFontOutlines(
 // canvas-SDF tier, which rasterizes glyphs on demand. See `./fonts`.
 registerAvailableFonts();
 
+// The v2 blob lands first, so the panel flags fold into what it held.
+importLegacyPrefs(drawPrefs());
 migrateLegacyPanelFlags();
 
 /** Hash-based router: `#/dev/toolkits` mounts ToolkitBuilder, `#/dev/registry`

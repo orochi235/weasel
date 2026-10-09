@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { defaultNodeProperties } from '@weasel-js/core';
 import { PrefSchemaEditor, Select, type CustomKinds } from '@weasel-js/ui';
-import type { PrefGroup } from '@weasel-js/prefs';
+import { usePrefsValues, type PrefGroup } from '@weasel-js/prefs';
 import { DataControl, RegistryEnumControl } from '../PreferencesModal';
-import { PREFS, usePrefsValues } from '../prefs';
+import { drawPrefs, PREFS } from '../prefs';
 import { DevShell } from './DevShell';
 import s from './PrefSchemaPage.module.css';
 
@@ -29,7 +29,7 @@ export function PrefSchemaPage() {
   const [sourceId, setSourceId] = useState(SOURCES[0]!.id);
   const source = SOURCES.find((x) => x.id === sourceId)!;
   const [draft, setDraft] = useState<PrefGroup>(source.schema);
-  const [stored] = usePrefsValues();
+  const { values: stored } = usePrefsValues(drawPrefs());
   return (
     <DevShell
       title="Prefs Schema"

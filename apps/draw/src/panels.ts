@@ -2,7 +2,7 @@
 // the inline chevron / × and the Preferences dialog edit the same map.
 
 import { useCallback } from 'react';
-import { readPref, usePref, writePref } from './prefs';
+import { drawPrefs, usePref } from './prefs';
 
 export const PANELS = [
   { id: 'properties', label: 'Properties' },
@@ -54,13 +54,13 @@ export function migrateLegacyPanelFlags(storage: Storage | undefined = globalThi
     for (const [id, key] of Object.entries(LEGACY_COLLAPSED_KEYS)) {
       const raw = storage.getItem(key);
       if (raw == null) continue;
-      panels ??= { ...readPref('ui.panels') };
+      panels ??= { ...drawPrefs().get('ui.panels') };
       if (panels[id]?.collapsed === undefined) {
         panels[id] = { ...panels[id], collapsed: raw === '1' };
       }
       storage.removeItem(key);
     }
-    if (panels) writePref('ui.panels', panels);
+    if (panels) drawPrefs().set('ui.panels', panels);
   } catch {
     /* storage unavailable — nothing to migrate */
   }
