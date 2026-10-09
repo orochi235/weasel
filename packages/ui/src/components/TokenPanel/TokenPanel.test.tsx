@@ -156,11 +156,11 @@ describe('TokenPanel', () => {
     expect(within(screen.getByRole('group', { name: 'tracking' })).getAllByText('em')).toHaveLength(2);
   });
 
-  it('names a swatch in a tooltip the moment it is hovered', () => {
+  it('names a swatch and its value in a tooltip the moment it is hovered', () => {
     render(<TokenPanel tokens={tokens} onChange={() => {}} />);
     fireEvent.pointerMove(screen.getByRole('button', { name: '--wzl-gray-100' }), { pointerType: 'mouse' });
     fireEvent.pointerEnter(screen.getByRole('button', { name: '--wzl-gray-100' }), { pointerType: 'mouse' });
-    expect(screen.getByRole('tooltip')).toHaveTextContent('--wzl-gray-100');
+    expect(screen.getByRole('tooltip')).toHaveTextContent('--wzl-gray-100#e6e7e9');
   });
 
   it('gives a lone color a swatch and a value field', () => {
@@ -232,13 +232,35 @@ describe('TokenPanel', () => {
     expect(vi.mocked(toHex).mock.calls.map(([value]) => value)).toEqual(['#123456']);
   });
 
-  // A proxy: jsdom resolves no CSS, and the module proxy answers to any key, so this
-  // shows the prop reaches the class list — not that a rule lays the row out. The
-  // layout is checked by measuring a row in a browser.
-  it('asks for the tight layout when density says so', () => {
-    const { container, rerender } = render(<TokenPanel tokens={tokens} onChange={() => {}} />);
-    expect(container.firstElementChild?.className).not.toMatch(/tight/);
-    rerender(<TokenPanel tokens={tokens} onChange={() => {}} density="tight" />);
-    expect(container.firstElementChild?.className).toMatch(/tight/);
+  it('draws names without namePrefix and keeps the full name in the tooltip', () => {
+    render(
+      <TokenPanel
+        tokens={[{ name: '--wzl-leading', type: 'number', group: 'leading', value: '1.4' }]}
+        onChange={() => {}}
+        namePrefix="--wzl-"
+      />,
+    );
+    const name = screen.getByText('leading');
+    expect(name.getAttribute('title')).toBe('--wzl-leading');
+  });
+
+  it('names a group once down the rail for the rows that share it', () => {
+    render(
+      <TokenPanel
+        tokens={[
+          { name: '--wzl-checker-a', type: 'color', group: 'checker', value: '#111111' },
+          { name: '--wzl-checker-b', type: 'color', group: 'checker', value: '#222222' },
+          { name: '--wzl-shadow', type: 'color', group: 'shadow', value: '#000000' },
+        ]}
+        onChange={() => {}}
+        namePrefix="--wzl-"
+      />,
+    );
+    const rail = (name: string) => screen.getByRole('group', { name }).querySelector('span') as HTMLElement;
+    expect(rail('--wzl-checker-a').textContent).toBe('checkera');
+    expect(rail('--wzl-checker-b').textContent).toBe('checkerb');
+    expect(rail('--wzl-checker-b').querySelector('[data-hidden]')?.textContent).toBe('checker');
+    expect(rail('--wzl-checker-a').querySelector('[data-hidden]')).toBeNull();
+    expect(rail('--wzl-shadow').textContent).toBe('shadow');
   });
 });

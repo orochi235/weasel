@@ -238,6 +238,11 @@
   border: 0;
 }
 
+/* An inline badge rides the label's text baseline and hangs below the checkbox; as a flex item it is a box the label can center. */
+.fg-tree__library {
+  display: flex;
+}
+
 .fg-tree__libraries-legend {
   padding: 0;
   color: var(--wzl-fg-muted);
@@ -298,66 +303,6 @@
   .lk-trial.fg-flash {
     animation: none;
   }
-}
-
-.fg-css-vars {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-xs);
-}
-
-.fg-css-vars-focus {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-xs);
-  min-width: 0;
-}
-
-.fg-css-vars__trial {
-  margin: 0;
-  overflow: hidden;
-  color: var(--wzl-fg-muted);
-  font-size: var(--wzl-font-size-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Held at the top while the list scrolls the aside under it. */
-.fg-css-vars__controls {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-xs);
-  padding-block-end: var(--wzl-space-xs);
-  background: var(--wzl-surface);
-}
-
-.fg-css-vars__save {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--wzl-space-xs);
-}
-
-.fg-css-vars__notice {
-  margin: 0;
-  font-size: var(--wzl-font-size-sm);
-}
-
-.fg-css-vars__notice--saved {
-  color: var(--wzl-fg-muted);
-}
-
-.fg-css-vars__notice--error {
-  color: var(--wzl-danger);
-}
-
-.fg-css-vars__empty {
-  margin: 0;
-  color: var(--wzl-fg-muted);
-  font-size: var(--wzl-font-size-sm);
 }
 
 .fg-globals,

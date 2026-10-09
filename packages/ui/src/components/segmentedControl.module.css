@@ -146,7 +146,7 @@
    padding and font. Sized for dense surfaces (lab control panels, inline
    filters, etc.). */
 .size_sm {
-  height: 17px;
+  height: calc(var(--wzl-font-size-sm) * 1.4 + 2px);
   padding: 1px;
 }
 

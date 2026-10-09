@@ -1,0 +1,35 @@
+.fg-crumbs {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.fg-crumbs__sep {
+  color: var(--wzl-fg-subtle);
+}
+
+/* Reads as the title it is until pointed at. */
+.fg-crumbs__step {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.fg-crumbs__step:hover {
+  color: var(--wzl-accent-fg);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fg-crumbs__step:focus-visible {
+  outline: var(--wzl-line-width) solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+  border-radius: var(--wzl-radius-sm);
+}

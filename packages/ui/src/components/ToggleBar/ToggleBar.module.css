@@ -161,8 +161,10 @@
 /* Small variant — ~60% of the default height, with proportionally reduced
    padding and font. Sized for dense surfaces (lab control panels, inline
    filters, etc.). */
+/* Sized from its type rather than fixed: a segment clips, so a fixed height
+   under a taller face cuts the descenders off. */
 .size_sm {
-  height: 17px;
+  height: calc(var(--wzl-font-size-sm) * 1.4 + 2px);
   padding: 1px;
 }
 

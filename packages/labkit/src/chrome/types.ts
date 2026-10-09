@@ -58,6 +58,8 @@ export interface SidebarSection extends StanceProps {
   undockable?: boolean;
   /** Where the tear-out control sends it. Default `'tile'`. */
   undockAs?: 'tile' | 'floating';
+  /** Controls drawn in the section's title bar, after the title. They act on the body, so they are hidden while it is folded. */
+  actions?: ReactNode;
   body: ReactNode;
 }
 

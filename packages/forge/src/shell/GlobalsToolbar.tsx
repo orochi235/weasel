@@ -1,5 +1,5 @@
 import { Select, useLabContext, usePersistedState } from '@weasel-js/labkit';
-import { Button, Callout, TuneIcon } from '@weasel-js/ui';
+import { Button, Callout, Icon, type IconName } from '@weasel-js/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Globals } from '../protocol/messages';
 import { followApp, type GlobalDeclaration, type GlobalDeclarations, labGlobals, labOptions } from './globals';
@@ -54,7 +54,14 @@ export function GlobalsToolbar({ declarations }: { declarations: GlobalDeclarati
       {top.map(([key, declaration]) => {
         const nested = entries.filter(([, other]) => other.under === key);
         return nested.length > 0 ? (
-          <NestedGlobals key={key} label={declaration.label} nested={nested} values={values} set={set} />
+          <NestedGlobals
+            key={key}
+            label={declaration.label}
+            icon={declaration.icon ?? 'tune'}
+            nested={nested}
+            values={values}
+            set={set}
+          />
         ) : null;
       })}
     </div>
@@ -63,11 +70,13 @@ export function GlobalsToolbar({ declarations }: { declarations: GlobalDeclarati
 
 function NestedGlobals({
   label,
+  icon,
   nested,
   values,
   set,
 }: {
   label: string;
+  icon: IconName;
   nested: readonly [string, GlobalDeclaration][];
   values: Globals;
   set: (key: string, value: string) => void;
@@ -85,7 +94,7 @@ function NestedGlobals({
         pressed={open}
         onClick={() => setOpen((was) => !was)}
       >
-        <TuneIcon size={16} />
+        <Icon name={icon} size={16} />
       </Button>
       <Callout
         triggerRef={anchor}

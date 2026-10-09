@@ -1,5 +1,6 @@
 import { type CSSProperties, memo, useCallback, useMemo, useState } from 'react';
 import { Focusable } from 'react-aria-components';
+import { ResetIcon } from '../../icons';
 import { Button } from '../Button';
 import { DisclosureRow } from '../Disclosure';
 import { Input } from '../Input';
@@ -39,13 +40,8 @@ export interface TokenPanelProps {
   categorize?: (token: TokenEntry) => TokenCategory;
   /** The fewest colors, or sizes, sharing a group that draw as one row of swatches or one grid of steps. Default 3. */
   familySize?: number;
-  /**
-   * Row layout. `tight` puts a token on one line — name, control, Reset — with the
-   * names on a fixed rail so the values read down the panel as a column, and caps
-   * the field rather than letting it span the panel. Default `normal` stacks the
-   * control under its name.
-   */
-  density?: 'tight' | 'normal';
+  /** Left off every name the panel draws, so `--wzl-` does not repeat down the rail. The full name is in each tooltip. */
+  namePrefix?: string;
   className?: string;
 }
 
@@ -94,6 +90,51 @@ function stepLabels(names: readonly string[]): string[] {
   let shared = 0;
   while (split.every((segments) => segments.length > shared && segments[shared] === split[0]?.[shared])) shared++;
   return split.map((segments) => segments.slice(shared).join('-') || (segments.at(-1) ?? ''));
+}
+
+type RunLabel = { group: string; step: string; first: boolean };
+
+/** Rows standing together that share a group, each named by what it adds to the group's name, so the name is read
+ *  once down the rail. A row whose name does not start with its group stands alone. */
+function rowRuns(items: readonly Item[], prefix: string): Map<string, RunLabel> {
+  const out = new Map<string, RunLabel>();
+  let run: TokenEntry[] = [];
+  const flush = () => {
+    if (run.length >= 2) {
+      const group = shortName(run[0]?.group ?? '', prefix.replace(/^--/, ''));
+      run.forEach((token, i) => {
+        const short = shortName(token.name, prefix);
+        out.set(token.name, { group, step: short === group ? '' : short.slice(group.length + 1), first: i === 0 });
+      });
+    }
+    run = [];
+  };
+  for (const item of items) {
+    const token = item.kind === 'row' ? item.token : null;
+    const group = token && shortName(token.group, prefix.replace(/^--/, ''));
+    const short = token && shortName(token.name, prefix);
+    const fits = token && group && short && (short === group || short.startsWith(`${group}-`));
+    if (!fits || (run[0] && run[0].group !== token.group)) flush();
+    if (fits) run.push(token);
+  }
+  flush();
+  return out;
+}
+
+function shortName(name: string, prefix: string): string {
+  return prefix && name.startsWith(prefix) && name.length > prefix.length ? name.slice(prefix.length) : name;
+}
+
+function tipOf(token: TokenEntry): string {
+  return token.description ? `${token.name} — ${token.description}` : token.name;
+}
+
+function Reset({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Button className={s.reset} variant="ghost" size="sm" iconOnly ariaLabel={label} onClick={onPress}>
+      <ResetIcon size={12} />
+    </Button>
+  );
 }
 
 function Curve({ points, label }: { points: readonly [number, number, number, number]; label: string }) {
@@ -150,6 +191,7 @@ function TokenControl({ token, set }: { token: TokenEntry; set: (value: string) 
         className={s.field}
         aria-label={label}
         value={value}
+        placeholder="unset"
         onChange={set}
         leadingAdornment={
           type !== 'color' ? undefined : hex ? (
@@ -170,27 +212,50 @@ function TokenControl({ token, set }: { token: TokenEntry; set: (value: string) 
 }
 
 const TokenRow = memo(
-  function TokenRow({ token, onChange }: { token: TokenEntry; onChange: OnChange }) {
+  function TokenRow({
+    token,
+    label,
+    lead,
+    leadHidden,
+    onChange,
+  }: {
+    token: TokenEntry;
+    label: string;
+    /** The group a run of rows shares, drawn before the label; hidden but kept on every row after the first. */
+    lead?: string;
+    leadHidden?: boolean;
+    onChange: OnChange;
+  }) {
     const set = useCallback((value: string) => onChange(token.name, value), [onChange, token.name]);
     return (
-      <div className={s.row} role="group" aria-label={token.name}>
-        <span className={s.name} title={token.description || token.name}>
-          {token.name}
+      <div
+        className={s.row}
+        role="group"
+        aria-label={token.name}
+        data-overridden={token.overridden ? '' : undefined}
+        data-unset={token.value === '' ? '' : undefined}
+      >
+        <span className={s.name} title={tipOf(token)}>
+          {lead ? (
+            <span className={s.lead} aria-hidden={leadHidden || undefined} data-hidden={leadHidden ? '' : undefined}>
+              {lead}
+            </span>
+          ) : null}
+          {label}
         </span>
         <div className={s.edit}>
           <TokenControl token={token} set={set} />
-          {token.overridden ? (
-            <Button variant="ghost" size="sm" ariaLabel={`Reset ${token.name}`} onClick={() => onChange(token.name, null)}>
-              Reset
-            </Button>
-          ) : null}
         </div>
+        {token.overridden ? <Reset label={`Reset ${token.name}`} onPress={() => onChange(token.name, null)} /> : null}
       </div>
     );
   },
   // Consumers rebuild their entries each render; a row only has to redraw when what it shows changed.
   (a, b) =>
     a.onChange === b.onChange &&
+    a.label === b.label &&
+    a.lead === b.lead &&
+    a.leadHidden === b.leadHidden &&
     a.token.name === b.token.name &&
     a.token.type === b.token.type &&
     a.token.value === b.token.value &&
@@ -198,12 +263,27 @@ const TokenRow = memo(
     a.token.description === b.token.description,
 );
 
-function Family({ group, tokens, onChange }: { group: string; tokens: readonly TokenEntry[]; onChange: OnChange }) {
+function Family({
+  group,
+  tokens,
+  prefix,
+  onChange,
+}: {
+  group: string;
+  tokens: readonly TokenEntry[];
+  prefix: string;
+  onChange: OnChange;
+}) {
   const [picked, setPicked] = useState<string | null>(null);
-  const token = tokens.find((t) => t.name === picked) ?? null;
+  const labels = useMemo(() => stepLabels(tokens.map((t) => t.name)), [tokens]);
+  const at = tokens.findIndex((t) => t.name === picked);
+  const token = tokens[at] ?? null;
+  const overridden = tokens.filter((t) => t.overridden);
   return (
     <div className={s.family} role="group" aria-label={group}>
-      <span className={s.name}>{group}</span>
+      <span className={s.name} title={group}>
+        {shortName(group, prefix.replace(/^--/, ''))}
+      </span>
       <div className={s.strip}>
         {tokens.map((t) => (
           <TooltipTrigger key={t.name} delay={0}>
@@ -218,11 +298,24 @@ function Family({ group, tokens, onChange }: { group: string; tokens: readonly T
                 onClick={() => setPicked((current) => (current === t.name ? null : t.name))}
               />
             </Focusable>
-            <Tooltip>{t.name}</Tooltip>
+            <Tooltip>
+              <span className={s.tip}>
+                <span>{t.name}</span>
+                <code>{t.value}</code>
+              </span>
+            </Tooltip>
           </TooltipTrigger>
         ))}
       </div>
-      {token ? <TokenRow token={token} onChange={onChange} /> : null}
+      {overridden.length > 0 ? (
+        <Reset
+          label={`Reset ${group}`}
+          onPress={() => {
+            for (const t of overridden) onChange(t.name, null);
+          }}
+        />
+      ) : null}
+      {token ? <TokenRow token={token} label={`${group} ${labels[at] ?? ''}`.trim()} onChange={onChange} /> : null}
     </div>
   );
 }
@@ -245,7 +338,7 @@ function ScaleStep({
   const split = splitUnit(token.value);
   if (!split) return null;
   return (
-    <div className={s.step} title={token.description || token.name} data-overridden={token.overridden ? '' : undefined}>
+    <div className={s.step} title={tipOf(token)} data-overridden={token.overridden ? '' : undefined}>
       <span className={s.stepLabel}>{label}</span>
       <span className={s.stepEdit}>
         <NumberField
@@ -262,7 +355,7 @@ function ScaleStep({
       </span>
       {factor !== undefined && onFactorChange ? (
         <span className={s.stepEdit}>
-          <span className={s.unit}>×</span>
+          <span className={s.op}>×</span>
           <NumberField
             className={s.number}
             aria-label={`${token.name} factor`}
@@ -288,13 +381,11 @@ const RULES: readonly ToggleBarItem<TokenScaleRule['kind']>[] = [
 function ScaleRuleControls({
   group,
   scale,
-  unit,
   amounts,
   onScaleChange,
 }: {
   group: string;
   scale: TokenScale;
-  unit: string;
   amounts: readonly number[];
   onScaleChange: (scale: TokenScale) => void;
 }) {
@@ -319,7 +410,6 @@ function ScaleRuleControls({
             if (Number.isFinite(base)) onScaleChange({ ...scale, base });
           }}
         />
-        {unit ? <span className={s.unit}>{unit}</span> : null}
       </span>
       <ToggleBar
         ariaLabel={`${group} rule`}
@@ -332,7 +422,7 @@ function ScaleRuleControls({
       />
       {param ? (
         <span className={s.stepEdit}>
-          {param.key === 'ratio' ? <span className={s.unit}>×</span> : <span className={s.unit}>+</span>}
+          {param.key === 'ratio' ? <span className={s.op}>×</span> : <span className={s.op}>+</span>}
           <NumberField
             className={s.number}
             aria-label={`${group} ${param.key}`}
@@ -353,12 +443,14 @@ function Scale({
   group,
   tokens,
   generator,
+  prefix,
   onChange,
   onScaleChange,
 }: {
   group: string;
   tokens: readonly TokenEntry[];
   generator?: TokenScale;
+  prefix: string;
   onChange: OnChange;
   onScaleChange?: (group: string, scale: TokenScale) => void;
 }) {
@@ -368,27 +460,23 @@ function Scale({
   const overridden = tokens.filter((t) => t.overridden);
   return (
     <div className={s.scale} role="group" aria-label={group}>
-      <span className={s.scaleHead}>
-        <span className={s.name}>{group}</span>
-        {unit ? <span className={s.unit}>{unit}</span> : null}
-        {overridden.length > 0 ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            ariaLabel={`Reset ${group}`}
-            onClick={() => {
-              for (const t of overridden) onChange(t.name, null);
-            }}
-          >
-            Reset
-          </Button>
-        ) : null}
+      <span className={s.name} title={group}>
+        {shortName(group, prefix.replace(/^--/, ''))}
+        {unit ? <span className={s.unit}> {unit}</span> : null}
       </span>
+      {overridden.length > 0 ? (
+        <Reset
+          label={`Reset ${group}`}
+          onPress={() => {
+            for (const t of overridden) onChange(t.name, null);
+          }}
+        />
+      ) : null}
+      <div className={s.scaleBody}>
       {generator && onScaleChange ? (
         <ScaleRuleControls
           group={group}
           scale={generator}
-          unit={unit ?? ''}
           amounts={generator.tokens.map(
             (name) => splitUnit(tokens.find((t) => t.name === name)?.value ?? '')?.amount ?? generator.base,
           )}
@@ -421,21 +509,26 @@ function Scale({
           );
         })}
       </div>
+      </div>
     </div>
   );
 }
 
 function Section({
+  id,
   title,
   open,
   onToggle,
   tokens,
   familySize,
   scales,
+  prefix,
   onChange,
   onScaleChange,
 }: {
+  id: TokenCategory;
   title: string;
+  prefix: string;
   open: boolean;
   onToggle: () => void;
   tokens: readonly TokenEntry[];
@@ -445,8 +538,9 @@ function Section({
   onScaleChange?: (group: string, scale: TokenScale) => void;
 }) {
   const items = useMemo(() => itemsOf(tokens, familySize), [tokens, familySize]);
+  const runs = useMemo(() => rowRuns(items, prefix), [items, prefix]);
   return (
-    <section className={s.section} aria-label={title}>
+    <section className={s.section} aria-label={title} data-token-category={id}>
       <DisclosureRow className={s.sectionHead} open={open} onToggle={onToggle} label={title}>
         <span aria-hidden="true">{title}</span>
       </DisclosureRow>
@@ -454,18 +548,32 @@ function Section({
         <div className={s.sectionBody}>
           {items.map((item) =>
             item.kind === 'row' ? (
-              <TokenRow key={item.token.name} token={item.token} onChange={onChange} />
+              <TokenRow
+                key={item.token.name}
+                token={item.token}
+                label={runs.get(item.token.name)?.step ?? shortName(item.token.name, prefix)}
+                lead={runs.get(item.token.name)?.group}
+                leadHidden={runs.get(item.token.name)?.first === false}
+                onChange={onChange}
+              />
             ) : item.kind === 'scale' ? (
               <Scale
                 key={`scale:${item.group}`}
                 group={item.group}
                 tokens={item.tokens}
                 generator={scales?.[item.group]}
+                prefix={prefix}
                 onChange={onChange}
                 onScaleChange={onScaleChange}
               />
             ) : (
-              <Family key={`family:${item.group}`} group={item.group} tokens={item.tokens} onChange={onChange} />
+              <Family
+                key={`family:${item.group}`}
+                group={item.group}
+                tokens={item.tokens}
+                prefix={prefix}
+                onChange={onChange}
+              />
             ),
           )}
         </div>
@@ -475,7 +583,8 @@ function Section({
 }
 
 /**
- * Edits a set of design tokens by type: collapsible sections by category, a
+ * Edits a set of design tokens by type, a token to a line with the names on a
+ * rail: collapsible sections by category, a
  * color group drawn as one row of swatches sized to fit, a group of sizes drawn
  * as one grid of numbers labeled by step — with its base and rule above it when
  * `scales` says how it is generated — and a control for each
@@ -492,7 +601,7 @@ export function TokenPanel({
   onScaleChange,
   categorize = tokenCategory,
   familySize = 3,
-  density = 'normal',
+  namePrefix = '',
   className,
 }: TokenPanelProps) {
   const [ownCollapsed, setOwnCollapsed] = useState<Partial<Record<TokenCategory, boolean>>>({});
@@ -507,7 +616,7 @@ export function TokenPanel({
   }, [tokens, categorize]);
 
   return (
-    <div className={[s.panel, density === 'tight' && s.tight, className].filter(Boolean).join(' ')}>
+    <div className={[s.panel, className].filter(Boolean).join(' ')}>
       {TOKEN_CATEGORIES.map(({ id, title }) => {
         const inSection = byCategory.get(id);
         if (!inSection) return null;
@@ -515,6 +624,7 @@ export function TokenPanel({
         return (
           <Section
             key={id}
+            id={id}
             title={title}
             open={open}
             onToggle={() => {
@@ -524,6 +634,7 @@ export function TokenPanel({
             tokens={inSection}
             familySize={familySize}
             scales={scales}
+            prefix={namePrefix}
             onChange={onChange}
             onScaleChange={onScaleChange}
           />

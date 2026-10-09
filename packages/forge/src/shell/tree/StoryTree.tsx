@@ -1,10 +1,11 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
 import { Checkbox, DisclosureMark, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
-import { type FocusEvent, type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
+import { type FocusEvent, type KeyboardEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { indexEntries } from '../../story/indexPages';
 import { isGallery } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
 import { revealTrial } from '../revealTrial';
+import { onRevealInTree } from '../treeReveal';
 import { useRoute } from '../useRoute';
 import { buildTree, filterTree, type TreeNode } from './buildTree';
 import { buildComponents, componentNodes, filterComponents, librariesIn } from './buildComponents';
@@ -150,6 +151,49 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     activate(node.index, another);
   };
 
+  // A breadcrumb asks for a folder; it is shown the way clicking its row shows it, in the Tree view when the
+  // current one has no such folder. The row scrolls itself into view once it has rendered.
+  const scrollTo = useRef<string | null>(null);
+  const reveal = (path: string): void => {
+    const find = (nodes: readonly TreeNode[], at: string): Extract<TreeNode, { kind: 'folder' }> | undefined => {
+      for (const node of nodes) {
+        if (node.kind !== 'folder') continue;
+        if (node.path === at) return node;
+        const inner = find(node.children, at);
+        if (inner) return inner;
+      }
+      return undefined;
+    };
+    const nodesOf = (v: View): readonly TreeNode[] =>
+      v === 'tree' ? tree : componentNodes(v === 'gallery' ? galleries : components);
+    // The current view first; a folder only another view holds switches to it; failing all three, the nearest folder above.
+    const order = [view, ...VIEWS.map((item) => item.value).filter((v) => v !== view && enabled(v))];
+    let node: Extract<TreeNode, { kind: 'folder' }> | undefined;
+    let where: View = view;
+    for (let at = path; at && !node; at = at.includes('/') ? at.slice(0, at.lastIndexOf('/')) : '') {
+      for (const v of order) {
+        node = find(nodesOf(v), at);
+        if (node) {
+          where = v;
+          break;
+        }
+      }
+    }
+    const found = node;
+    if (!found) return;
+    if (where !== view) setView(where);
+    setQuery('');
+    const segments = found.path.split('/');
+    const above = segments.slice(0, -1).map((_, i) => segments.slice(0, i + 1).join('/'));
+    setFolds((prev) => ({ ...prev, ...Object.fromEntries(above.map((p) => [p, true])) }));
+    setFocusKey(keyOf(found));
+    scrollTo.current = keyOf(found);
+    if (found.index) openFolder(found, false);
+    else setFolds((prev) => ({ ...prev, [found.path]: true }));
+  };
+  // Resubscribed every commit, so the listener always reads this render's view and data.
+  useEffect(() => onRevealInTree(reveal));
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const at = rows.findIndex((row) => row.key === active);
     const row = rows[at];
@@ -197,6 +241,10 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
       ref: (el: HTMLElement | null) => {
         if (el) items.current.set(key, el);
         else items.current.delete(key);
+        if (el && scrollTo.current === key) {
+          scrollTo.current = null;
+          el.scrollIntoView({ block: 'nearest' });
+        }
       },
       // A folder item contains its children, so their focus bubbles through it.
       onFocus: (event: FocusEvent) => {
@@ -295,7 +343,9 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
             isSelected={!hidden[library]}
             onChange={(on) => setHidden((prev) => ({ ...prev, [library]: !on }))}
           >
-            <LibraryBadge library={library} />
+            <span className="fg-tree__library">
+              <LibraryBadge library={library} />
+            </span>
           </Checkbox>
         ))}
       </fieldset>

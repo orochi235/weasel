@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import type { FrameSetup } from '../frame/FrameController';
 import type { IndexEntry } from '../story/types';
 import { TrialTransport } from '../timeline/TransportBar';
-import { breadcrumb } from './breadcrumb';
+import { crumbTitle } from './Crumbs';
 import { type GlobalDeclarations, PLAYHEAD_KEY, withGlobals } from './globals';
 import { type IndexBundle, IndexTrial } from './IndexTrial';
 import { StoryTrial } from './StoryTrial';
@@ -33,7 +33,7 @@ export function documentInstrument(options: DocumentInstrumentOptions): Instrume
   const initialState = loaded.kind === 'story' ? loaded.story.initialState : null;
   return {
     name: entry.id,
-    title: breadcrumb(entry.title, entry.name),
+    ...crumbTitle(entry),
     config,
     defaultConfig: () => config.defaults(),
     initialState: (c) => initialState?.(c) ?? null,
@@ -86,7 +86,7 @@ export function pendingInstrument(options: PendingInstrumentOptions): Instrument
   const config = withGlobals(f.schema({}) as ConfigSchema<unknown>, globals);
   return {
     name: entry.id,
-    title: breadcrumb(entry.title, entry.name),
+    ...crumbTitle(entry),
     config,
     defaultConfig: () => config.defaults(),
     initialState: () => null,

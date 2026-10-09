@@ -1,4 +1,6 @@
 .lk-sidebar-section {
+  // Fixed so a body's own sticky header can sit right under the bar.
+  --lk-section-bar-h: calc(var(--wzl-control-h-sm) + var(--wzl-space-1) * 2);
   background: var(--_s-fill);
   border-bottom: var(--wzl-border-w) solid var(--_s-border-color);
 
@@ -163,9 +165,23 @@
 
 /* END GENERATED stance rules: sidebar-section */
 
+// Held at the top of the pane while its body scrolls under it, so the section
+// a reader is in stays named and its actions stay in reach.
 .lk-sidebar-section__bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
+  height: var(--lk-section-bar-h);
+  background: linear-gradient(var(--_s-fill), var(--_s-fill)), var(--wzl-surface);
+}
+
+.lk-sidebar-section__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--wzl-space-1);
 }
 
 .lk-sidebar-section__undock {

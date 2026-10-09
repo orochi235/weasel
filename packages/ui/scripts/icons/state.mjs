@@ -22,6 +22,16 @@ const expand = chevron([10, 4.4], [0, -1], 5.6, 48) + chevron([10, 15.6], [0, 1]
 // region's centroid* on (10,10). Bbox-centring lands the ink 0.19 high.
 const chevronDown = chevron([10, 12.4], [0, 1], 6.6, 48);
 
+// ── drop ─────────────────────────────────────────────────────────────────
+// A tip joined to a circle along its two tangents, so the sides meet the rim
+// without a kink: the tangent point sits at asin(r/d) off the tip-centre line.
+const DROP_TIP = [10, 2.8];
+const DROP_C = [10, 11.9];
+const DROP_R = 4.7;
+const dropTheta = Math.asin(DROP_R / (DROP_C[1] - DROP_TIP[1]));
+const dropDx = Math.round(DROP_R * Math.cos(dropTheta) * 100) / 100;
+const dropY = Math.round((DROP_C[1] - DROP_R * Math.sin(dropTheta)) * 100) / 100;
+const drop = `M${DROP_TIP[0]} ${DROP_TIP[1]}L${10 + dropDx} ${dropY}A${DROP_R} ${DROP_R} 0 1 1 ${10 - dropDx} ${dropY}Z`;
 
 // ── colour mode ──────────────────────────────────────────────────────────
 // Sun: disc plus eight rays on the axes and diagonals.
@@ -179,6 +189,21 @@ const STATE = {
   snap: `
     <path d="M5.4 15.6V9.4a4.6 4.6 0 0 1 9.2 0v6.2h-3.2V9.4a1.4 1.4 0 0 0-2.8 0v6.2z"/>
     <path d="M5.4 12.8h3.2M11.4 12.8h3.2" stroke-width="1"/>`,
+  drop: { d: drop, fill: drop },
+  type: `
+    <path d="M4.6 6.4V4.2h10.8v2.2"/>
+    <path d="M10 4.2v11.6M7.4 15.8h5.2"/>`,
+  // A serif A with a type specimen's contrast: a hairline left leg and crossbar
+  // against a heavy right leg, filled rather than stroked so its apex and foot
+  // cut flat instead of ending in round caps. The crossbar's ends sit on the
+  // hairline and on the heavy leg's inner edge at y=11.4.
+  typeface: `
+    <path d="M9.6 3.2 4.6 16M6.4 11.4h5.88M3 16h3.2M13.2 16h4" stroke-width="1"/>
+    <path d="M9.4 3.2H11.6L16.5 16H13.9Z" fill="currentColor" stroke="none"/>`,
+  more: `
+    <circle cx="4.8" cy="10" r="1.3" fill="currentColor" stroke="none"/>
+    <circle cx="10" cy="10" r="1.3" fill="currentColor" stroke="none"/>
+    <circle cx="15.2" cy="10" r="1.3" fill="currentColor" stroke="none"/>`,
   measure: `
     <rect x="2.6" y="7.4" width="14.8" height="5.2" rx="1.2"/>
     <path d="M6 7.4v2.2M9.4 7.4v3M12.8 7.4v2.2" stroke-width="1"/>`,
@@ -223,6 +248,7 @@ const SPLIT = {
     'crosshair', 'fullscreen', 'compare', 'search', 'loupe',
     'layers', 'page', 'link', 'collapse', 'expand', 'chevron',
     'tune', 'grid', 'snap', 'measure', 'randomize', 'refresh',
+    'drop', 'type', 'typeface', 'more',
   ],
 };
 

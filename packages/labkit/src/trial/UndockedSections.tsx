@@ -34,6 +34,7 @@ function Portalled({
     <>
       <div className="lk-panel-tile__titlebar">
         <span className="lk-panel-tile__title">{item.title}</span>
+        {item.actions ? <div className="lk-sidebar-section__actions">{item.actions}</div> : null}
         <button
           type="button"
           className="lk-panel-tile__dock"

@@ -106,6 +106,10 @@ export const ICON_PATHS = {
   measure: `<rect x="2.6" y="7.4" width="14.8" height="5.2" rx="1.2"/><path d="M6 7.4v2.2M9.4 7.4v3M12.8 7.4v2.2" stroke-width="1"/>`,
   randomize: `<rect x="3.6" y="3.6" width="12.8" height="12.8" rx="2"/><circle cx="7.2" cy="7.2" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="12.8" cy="12.8" r="1" fill="currentColor" stroke="none"/>`,
   refresh: `<path d="M4.27 12.09A6.1 6.1 0 0 1 14.67 6.08"/><path d="M14.67 3.38 14.67 6.08 12.01 5.61"/><path d="M15.73 7.91A6.1 6.1 0 0 1 5.33 13.92"/><path d="M5.33 16.62 5.33 13.92 7.99 14.39"/>`,
+  drop: `<path d="M10 2.8L14.02 9.47A4.7 4.7 0 1 1 5.98 9.47Z"/>`,
+  type: `<path d="M4.6 6.4V4.2h10.8v2.2"/><path d="M10 4.2v11.6M7.4 15.8h5.2"/>`,
+  typeface: `<path d="M9.6 3.2 4.6 16M6.4 11.4h5.88M3 16h3.2M13.2 16h4" stroke-width="1"/><path d="M9.4 3.2H11.6L16.5 16H13.9Z" fill="currentColor" stroke="none"/>`,
+  more: `<circle cx="4.8" cy="10" r="1.3" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.2" cy="10" r="1.3" fill="currentColor" stroke="none"/>`,
 
   // Stroke cap, join, align and dash
   strokeWidth: `<path d="M3.4 5.6h13.2" stroke-width="1"/><path d="M3.4 10h13.2" stroke-width="2"/><path d="M3.4 15.2h13.2" stroke-width="3.4"/>`,
@@ -280,6 +284,7 @@ export type IconName = keyof typeof ICON_PATHS;
  *  glyphs where an enclosed region means something have an entry. */
 export const ICON_FILLS = {
   bookmark: `<path d="M5.7 16.6V4.8a1.4 1.4 0 0 1 1.4-1.4h5.8a1.4 1.4 0 0 1 1.4 1.4V16.6L10 13.2Z" fill="currentColor" stroke="none"/>`,
+  drop: `<path d="M10 2.8L14.02 9.47A4.7 4.7 0 1 1 5.98 9.47Z" fill="currentColor" stroke="none"/>`,
   arcStraight: `<path d="M1.85 15L2.6 15H17.4L18.15 15L18.15 15.75L1.85 15.75Z" fill="currentColor" stroke="none"/>`,
   arcParabola: `<path d="M2.31 15.69L2.6 15Q10 -5 17.4 15L17.69 15.69L17.69 15.75L2.31 15.75Z" fill="currentColor" stroke="none"/>`,
   arcCircle: `<path d="M2.52 15.75L2.6 15A7.4 7.4 0 0 1 17.4 15L17.48 15.75L17.48 15.75L2.52 15.75Z" fill="currentColor" stroke="none"/>`,
@@ -528,6 +533,10 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'measure',
       'randomize',
       'refresh',
+      'drop',
+      'type',
+      'typeface',
+      'more',
     ],
   },
   {

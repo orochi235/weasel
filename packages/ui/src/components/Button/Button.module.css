@@ -136,9 +136,10 @@
      configurable angle (defaults below) — a near-black, lower-alpha stamp
      that sits underneath the glyphs and reads as recessed type. */
   text-shadow:
-    0 1px 0 rgba(0, 0, 0, var(--btn-text-shadow)),
-    var(--btn-text-inset-x) var(--btn-text-inset-y) 0 rgba(0, 0, 0, var(--btn-text-inset)),
-    0 0 6px rgba(0, 0, 0, calc(var(--btn-text-shadow) * 0.5));
+    0 1px 0 light-dark(rgba(0, 0, 0, calc(var(--btn-text-shadow) * 0.4)), rgba(0, 0, 0, var(--btn-text-shadow))),
+    var(--btn-text-inset-x) var(--btn-text-inset-y) 0
+      light-dark(transparent, rgba(0, 0, 0, var(--btn-text-inset))),
+    0 0 6px light-dark(transparent, rgba(0, 0, 0, calc(var(--btn-text-shadow) * 0.5)));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, var(--btn-inset-hi)),
     inset 0 -1px 2px rgba(0, 0, 0, var(--btn-inset-lo)),
@@ -179,9 +180,12 @@
   backdrop-filter: blur(var(--btn-blur)) saturate(var(--btn-saturate));
   -webkit-backdrop-filter: blur(var(--btn-blur)) saturate(var(--btn-saturate));
   color: var(--wzl-fg);
+  /* Dark type on a light body: a dark stamp under it reads as a smear of the
+     glyph rather than depth, so light mode drops it. */
   text-shadow:
-    0 1px 0 rgba(0, 0, 0, calc(var(--btn-text-shadow) * 0.7)),
-    var(--btn-text-inset-x) var(--btn-text-inset-y) 0 rgba(0, 0, 0, calc(var(--btn-text-inset) * 0.7));
+    0 1px 0 light-dark(transparent, rgba(0, 0, 0, calc(var(--btn-text-shadow) * 0.7))),
+    var(--btn-text-inset-x) var(--btn-text-inset-y) 0
+      light-dark(transparent, rgba(0, 0, 0, calc(var(--btn-text-inset) * 0.7)));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, calc(var(--btn-inset-hi) * 0.5)),
     inset 0 -1px 2px rgba(0, 0, 0, calc(var(--btn-inset-lo) * 0.83)),

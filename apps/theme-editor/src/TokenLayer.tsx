@@ -68,7 +68,7 @@ export function TokenLayer({ layer, draft, result, highlight, onChange }: TokenL
   }
   return (
     <div ref={ref} className={styles.tableScroll}>
-      <TokenPanel tokens={entries} onChange={write} density="tight" />
+      <TokenPanel tokens={entries} onChange={write} namePrefix={layer === 'seeds' ? 'seeds.' : ''} />
     </div>
   );
 }

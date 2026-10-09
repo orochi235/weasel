@@ -153,6 +153,29 @@ describe('StoryTree', () => {
     expect(item(second.treeEl, 'Kit')).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('shows a breadcrumb’s folder in the tree, switching to the view that has it', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    render(<Harness storage={createMemoryAdapter()} />);
+    const treeEl = await screen.findByRole('tree', { name: 'Stories' });
+    const [title] = trialsOf(slider);
+    fireEvent.click(within(title as HTMLElement).getByRole('button', { name: 'Kit' }));
+    expect(screen.getByRole('radio', { name: 'Tree' })).toHaveAttribute('aria-checked', 'true');
+    const kit = item(treeEl, 'Kit');
+    expect(kit).toHaveAttribute('aria-expanded', 'true');
+    expect(kit).toHaveAttribute('tabindex', '0');
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  });
+
+  it('opens a component’s index page from its breadcrumb, as its row would', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    render(<Harness storage={createMemoryAdapter()} />);
+    await screen.findByRole('tree', { name: 'Stories' });
+    const [title] = trialsOf(slider);
+    fireEvent.click(within(title as HTMLElement).getByRole('button', { name: 'Slider' }));
+    const sliderIndex = indexId('Kit/Slider');
+    await waitFor(() => expect(location.hash).toBe(`#/${encodeURIComponent(sliderIndex)}`));
+  });
+
   it('opens a component folder and runs its index page when its row is clicked', async () => {
     Element.prototype.scrollIntoView = vi.fn();
     const { treeEl } = await mount();

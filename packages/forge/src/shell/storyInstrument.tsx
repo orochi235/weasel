@@ -1,4 +1,4 @@
-import { breadcrumb } from './breadcrumb';
+import { crumbTitle } from './Crumbs';
 import type { Instrument } from '@weasel-js/labkit';
 import { type ConfigSchema, f } from '@weasel-js/labkit/config';
 import { schemaFromDescription } from '../protocol/schema';
@@ -30,7 +30,7 @@ export function storyInstrument(options: StoryInstrumentOptions): Instrument<unk
   const viewport = ready ? ready.viewport : entry.viewport;
   return {
     name: entry.id,
-    title: breadcrumb(entry.title, entry.name),
+    ...crumbTitle(entry),
     config,
     defaultConfig: () => config.defaults(),
     initialState: () => null,

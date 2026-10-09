@@ -280,6 +280,7 @@ export function TrialChrome({
     >
       <TrialTitleBar
         title={title}
+        titleContent={instrument.renderTitle?.(title)}
         lead={<TitleBarRegion placement="lead" contributions={inRegion('titlebar')} ctx={ctx} />}
       >
         <TitleBarRegion contributions={inRegion('titlebar')} ctx={ctx} />

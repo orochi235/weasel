@@ -171,6 +171,9 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   name: string;
   /** What a trial of this instrument and the add-trial menu read. Default: `name`. */
   title?: string;
+  /** Draws a trial's title in its title bar — as links, say — where the bare text would go. It is handed the
+   *  title the trial reads, which a rename may have changed; the text still names the trial everywhere else. */
+  renderTitle?: (title: string) => ReactNode;
   defaultConfig: () => TC;
   initialState: (config: TC) => TS;
   /** The instrument's config, declared once: values, types and controls.

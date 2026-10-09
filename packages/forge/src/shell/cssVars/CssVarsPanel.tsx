@@ -1,3 +1,4 @@
+import './cssVars.css';
 import {
   Input,
   inferTokenType,
@@ -17,7 +18,7 @@ import {
 } from '@weasel-js/labkit';
 import { THEME_SOURCES, TOKEN_MANIFEST } from '@weasel-js/theme';
 import { scale as generateScale, httpThemeApi, type ThemeApi } from '@weasel-js/theme/engine';
-import { Button } from '@weasel-js/ui';
+import { Button, SearchIcon } from '@weasel-js/ui';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import type { Globals } from '../../protocol/messages';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
@@ -25,6 +26,7 @@ import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { useTrialFrame } from '../trialFrames';
 import { useCssOverrides } from './overrides';
 import { applyScaleEdits, type ScaleEdit, selectionFor } from './saveScales';
+import { SectionJump } from './SectionJump';
 
 type Tab = 'theme' | 'story';
 
@@ -259,16 +261,26 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
   return (
     <div className="fg-css-vars">
       <div className="fg-css-vars__controls">
-        <ToggleBar
-          ariaLabel="Variables"
-          variant="flat"
-          items={TABS}
-          value={tab}
-          onChange={(next) => {
-            if (next) setTab(next);
-          }}
-        />
-        <Input aria-label="Filter" placeholder="Filter by name or value" value={filter} onChange={setFilter} />
+        <div className="fg-css-vars__bar">
+          <ToggleBar
+            ariaLabel="Variables"
+            variant="flat"
+            size="sm"
+            items={TABS}
+            value={tab}
+            onChange={(next) => {
+              if (next) setTab(next);
+            }}
+          />
+          <Input
+            className="fg-css-vars__filter"
+            aria-label="Filter"
+            placeholder="Filter"
+            value={filter}
+            onChange={setFilter}
+            leadingAdornment={<SearchIcon size={12} />}
+          />
+        </div>
         {tab === 'theme' && (unsaved.length > 0 || notice) ? (
           <div className="fg-css-vars__save">
             {unsaved.length > 0 ? (
@@ -294,6 +306,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
       ) : (
         <TokenPanel
           tokens={shown}
+          namePrefix="--wzl-"
           onChange={write}
           scales={scales}
           onScaleChange={onScaleChange}
@@ -326,5 +339,5 @@ function FocusedCssVars() {
 export const CSS_VARS_SECTION: LabContribution = {
   id: 'fg-css-vars',
   region: 'aside',
-  item: { title: 'CSS Vars', body: <FocusedCssVars /> },
+  item: { title: 'CSS Vars', actions: <SectionJump />, body: <FocusedCssVars /> },
 };

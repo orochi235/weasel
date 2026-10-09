@@ -1,4 +1,10 @@
+/* Every control in the panel sits at the smallest control height, so a set of
+   ninety tokens reads as a list rather than a form. */
 .panel {
+  --tp-rail: min(36%, 10rem);
+  --wzl-field-h: var(--wzl-control-h-xs);
+  --wzl-control-h-sm: var(--wzl-control-h-xs);
+  --wzl-font-size: var(--wzl-font-size-sm);
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -18,64 +24,111 @@
   padding-block: var(--wzl-space-xs);
   color: var(--wzl-fg-muted);
   font-family: var(--wzl-font-display);
-  font-size: var(--wzl-font-size-sm);
-  letter-spacing: 0.08em;
+  font-size: var(--wzl-font-size-xs);
+  letter-spacing: var(--wzl-tracking-wider);
   text-transform: uppercase;
 }
 
 .sectionBody {
   display: flex;
   flex-direction: column;
-  gap: var(--wzl-space-sm);
+  gap: var(--wzl-space-1);
   padding-block-end: var(--wzl-space-sm);
 }
 
+/* Name, control, reset: the third column holds the reset when there is one,
+   so a value never shifts sideways as it is overridden. */
 .row,
-.family {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-1);
+.family,
+.scale {
+  display: grid;
+  grid-template-columns: var(--tp-rail) minmax(0, 1fr) 16px;
+  align-items: center;
+  column-gap: var(--wzl-space-xs);
   min-width: 0;
 }
 
 .name {
+  grid-column: 1;
   overflow: hidden;
   color: var(--wzl-fg-muted);
-  font-family: var(--wzl-font-mono);
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-font-size-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.row[data-overridden] > .name,
+.family:has(.swatch[data-overridden]) > .name,
+.scale:has(.step[data-overridden]) > .name {
+  color: var(--wzl-accent-fg);
+}
+
+/* A run's group name, shown on its first row and held invisibly on the rest so their suffixes line up. */
+.lead {
+  margin-inline-end: 0.4em;
+  color: var(--wzl-fg-muted);
+}
+
+.lead[data-hidden] {
+  visibility: hidden;
+}
+
+.row[data-unset] > .name {
+  color: var(--wzl-fg-subtle);
+}
+
 .edit {
+  grid-column: 2;
   display: flex;
+  max-width: 18rem;
   align-items: center;
   gap: var(--wzl-space-xs);
   min-width: 0;
 }
 
+.reset {
+  --wzl-control-h-sm: 16px;
+  grid-column: 3;
+  justify-self: center;
+  color: var(--wzl-fg-muted);
+}
+
 .field {
   --wzl-font-ui: var(--wzl-font-mono);
+  --wzl-font-size: var(--wzl-font-size-xs);
   flex: 1;
   min-width: 0;
 }
 
 .number {
+  --wzl-font-size: var(--wzl-font-size-xs);
   flex: 1;
   min-width: 0;
 }
 
+/* A lone number needs a few digits, not the rail's whole remainder. */
+.edit > .number {
+  flex: 0 1 5rem;
+}
+
 .unit {
+  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-2xs);
+}
+
+/* × and + read as operators, so they sit at text size rather than unit size. */
+.op {
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-sm);
+  line-height: 1;
 }
 
 /* Padding inflates a native color input past its box in Chrome. */
 .swatchInput {
   box-sizing: border-box;
   flex-shrink: 0;
-  width: 18px;
-  height: 14px;
+  width: 14px;
+  height: 12px;
   padding: 0;
   background: transparent;
   border: 0;
@@ -85,8 +138,8 @@
 
 .chip {
   flex-shrink: 0;
-  width: 18px;
-  height: 14px;
+  width: 14px;
+  height: 12px;
   background: var(--token-color);
   border-radius: var(--wzl-radius-sm);
   box-shadow: inset 0 0 0 1px var(--wzl-line);
@@ -94,15 +147,16 @@
 
 .curve {
   flex-shrink: 0;
-  width: 24px;
+  width: 16px;
   /* Square easing-curve artwork: not-a-control */
-  height: 24px;
+  height: 16px;
   color: var(--wzl-fg);
 }
 
 .strip {
+  grid-column: 2;
   display: flex;
-  height: var(--wzl-control-h);
+  height: var(--wzl-control-h-xs);
   overflow: hidden;
   border: var(--wzl-border-w) solid var(--wzl-line);
   border-radius: var(--wzl-radius-sm);
@@ -131,43 +185,65 @@
   outline-offset: -2px;
 }
 
-/* A group of sizes: its name over a grid of steps, each labeled by what its name adds. */
+.tip {
+  display: flex;
+  gap: var(--wzl-space-sm);
+  align-items: baseline;
+}
+
+.tip code {
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-xs);
+}
+
+/* A picked swatch's editor opens under the strip, its name on the same rail. */
+.family > .row {
+  grid-column: 1 / -1;
+  margin-block-start: var(--wzl-space-1);
+}
+
 .scale {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-1);
-  min-width: 0;
+  row-gap: var(--wzl-space-1);
 }
 
-.scaleHead {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-xs);
-  min-width: 0;
+/* Its steps take the panel's full width under the name, where a rail-width
+   column would hold three of them. */
+.scaleBody {
+  display: contents;
 }
 
+.scaleBody > .rule {
+  grid-column: 2 / -1;
+  grid-row: 1;
+  justify-content: flex-end;
+}
+
+.scaleBody > .steps {
+  grid-column: 1 / -1;
+}
+
+/* A group of sizes: a grid of steps, each labeled by what its name adds. */
 .steps {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr));
-  gap: var(--wzl-space-1) var(--wzl-space-xs);
+  grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
+  gap: var(--wzl-space-1);
 }
 
 .rule {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wzl-space-xs) var(--wzl-space-sm);
+  gap: var(--wzl-space-1) var(--wzl-space-xs);
   min-width: 0;
 }
 
 .ruleLabel {
   color: var(--wzl-fg-subtle);
-  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-2xs);
 }
 
 .rule .number {
-  flex: 0 1 5ch;
+  flex: 0 0 4.5ch;
   text-align: end;
 }
 
@@ -179,10 +255,11 @@
 
 .stepLabel {
   overflow: hidden;
+  padding-inline-end: calc(var(--wzl-field-pad-x) + var(--wzl-border-w));
   text-align: end;
   color: var(--wzl-fg-subtle);
-  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-2xs);
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -206,58 +283,9 @@
   text-align: end;
 }
 
-/* Tight: a token to a line, with the names on a fixed rail so the values read
-   down the panel as a column. A stacked row spends its height on the name and
-   lets the field take the whole width, which a set of ninety cannot afford. */
-.tight .sectionBody {
-  gap: var(--wzl-space-1);
-  padding-block-end: var(--wzl-space-xs);
-}
-
-.tight .row {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--wzl-space-xs);
-}
-
-.tight .row > .name {
-  flex: 0 0 11rem;
-}
-
-.tight .edit {
-  flex: 1 1 auto;
-}
-
-.tight .field,
-.tight .number {
-  flex: 0 1 16rem;
-}
-
-.tight .scale {
-  display: grid;
-  grid-template-columns: 11rem minmax(0, 1fr);
-  align-items: start;
-  column-gap: var(--wzl-space-xs);
-}
-
-/* Grid rather than a row, so a picked swatch's editor still spans the full width. */
-.tight .family {
-  display: grid;
-  grid-template-columns: 11rem minmax(0, 1fr);
-  align-items: center;
-  column-gap: var(--wzl-space-xs);
-  row-gap: var(--wzl-space-1);
-}
-
-.tight .family > .row {
-  grid-column: 1 / -1;
-}
-
-.tight .strip {
-  height: 16px;
-}
-
-.tight .curve {
-  width: 16px;
-  height: 16px;
+/* The rule controls take the reset's column, so a scale's reset sits at the end of its name. */
+.scale > .reset {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: end;
 }

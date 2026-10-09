@@ -1,0 +1,68 @@
+.fg-css-vars,
+.fg-css-vars-focus {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-xs);
+  min-width: 0;
+}
+
+.fg-css-vars__trial {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Held under the section's own sticky title bar while the list scrolls the aside under it. */
+.fg-css-vars__controls {
+  position: sticky;
+  top: var(--lk-section-bar-h, 0);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-xs);
+  padding-block-end: var(--wzl-space-xs);
+  background: var(--wzl-surface);
+  border-bottom: var(--wzl-border-w) solid var(--wzl-line-subtle);
+}
+
+.fg-css-vars__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  --wzl-field-h: var(--wzl-control-h-sm);
+}
+
+.fg-css-vars__filter {
+  flex: 1 1 auto;
+  min-width: 0;
+  --wzl-font-size: var(--wzl-font-size-sm);
+}
+
+.fg-css-vars__save {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wzl-space-xs);
+}
+
+.fg-css-vars__notice {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.fg-css-vars__notice--saved {
+  color: var(--wzl-fg-muted);
+}
+
+.fg-css-vars__notice--error {
+  color: var(--wzl-danger);
+}
+
+.fg-css-vars__empty {
+  margin: 0;
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+}
