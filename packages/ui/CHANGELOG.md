@@ -1,5 +1,54 @@
 # @weasel-js/ui
 
+## 1.9.3
+
+### Patch Changes
+
+- 1d04be1: `Switch`, `Checkbox`, and `RadioGroup`'s radios now contain the visually hidden input React Aria renders inside each. It was positioned against the page rather than its control, so a control inside a scrolling pane left its input behind at the control's place in the pane's full height, and the page grew a scroll as tall as the pane's content.
+- bc984b8: `Dialog` takes `inline`, which draws its box where it is rendered (no overlay, portal, focus trap, or scroll lock) for showing what a dialog looks like. `PrefsDialog` passes it through and, inline, lets the rail layout's box fit its container instead of holding a 760px minimum. `Dialog` now declares `aria-label` and puts it on the dialog element; before, it reached the overlay.
+  
+  `PrefSchemaEditor`'s live preview is the whole preferences dialog, drawn inline with the rail layout's sections and subsections beside the settings, and its Literal and Changes sit side by side instead of in tabs.
+- 42691ed: A trial clock's `duration` is now writable, for a run whose length follows its content; a write keeps `pass` and `phase`. A `ClockCapability` can say where a run opens (`start`, a time or `'end'`) and which speeds a transport offers (`rates`), and weasel-ui's `<Transport>` takes `rates` to match, with `formatRate` for a speed that reads better in the lab's own units; `<TrialTransport>` and the presented transport pass it through.
+  
+  `<Lab clock>` gives a lab a clock of its own. An instrument declaring `clock: 'lab'` plays on it, so its trials share one time, and `useTrialClock` and `useClockFrame` fall back to it outside any trial. `useClockFrame` now takes a `trialId` and resolves its clock the way `useTrialClock` does.
+  
+  `<Lab>` also takes `opening`, the instruments a new lab opens a trial of each, and `documentTitle`. `transport={{ minWidth }}` sets the width below which a presented trial hides its play controls, which used to be a fixed 480px.
+  
+  `TrialRecord.clock` is now a `ClockPosition`, which carries a changed `duration` beside `elapsed` and `rate`.
+- 7cb27b7: Fields now refer to each other by the full path their values are read and written at (`'camera.type'`, `'pose.y'`).
+  
+  `pair` is no longer a shared label string. A row is declared once, on its first leaf: `pair: { with: 'pose.y', label: 'Position' }`, where `with` names the other leaves on the row (one path or several) and `label` overrides what the row reads, which is otherwise the declaring leaf's `name`. This is a breaking change to the shape: a schema that set `pair: 'Position'` on each member now sets `pair` on the first member only. labkit's builder follows: `.pair({ with: 'y', label: 'Offset' })`. `pairRowsOf` (core) resolves a surface's leaves to their rows, and `SelectionPanel`, `ToolOptionsBar`, and labkit's `ControlPanel` all group rows through it.
+  
+  A new built-in pref kind, `field`, holds such a path. Its control is a picker over the fields of the surface drawing it, labeled `Name (path)`, narrowed by the leaf's optional `kinds`. `prefFieldChoices` lists a schema's fields, with a flag for whether a group's key is part of a path, since a prefs form nests values by group and a node's property panel does not. `PrefsForm` takes `fields` for a form that edits another schema, and `PrefSchemaEditor` edits a leaf's `pair` by picking its partners from the schema's fields.
+- bd21190: A prefs rail no longer shows a blank entry for loose root-level prefs when the schema's root has no `name`: the entry, and the pane it opens, read "General" instead.
+  
+  A prefs row's control takes 60% of the row (at least 110px) instead of a fixed 110px, so in a wide pane the field grows rather than the gap before it. A long label still pushes it narrower.
+  
+  New `PrefKindBadge` draws a pref leaf's kind as a badge, each built-in kind in its own color from the theme's code tokens. Custom kinds are drawn muted. `PrefSchemaEditor`'s structure tree uses it, and its structure and attributes columns are now resizable from handles between the columns.
+- e05c820: `PrefSchemaEditor` now has undo and redo: Undo and Redo buttons over the structure, and Mod+Z, Shift+Mod+Z, and Mod+Y anywhere inside it. A run of edits to one node's attributes undoes as one step, and undo restores the selection. A `schema` the editor did not write itself starts the history over. Add pref and Add group no longer create a node with a made-up key: each opens a dialog asking for a name, an id, and a pref's kind; the id follows the name in camelCase until it is typed into, and a taken or invalid id is refused. The structure tree shows each node as its name with its key beside it, or its key alone when it has no name. Each pane has a header, and the preview's carries a Show hidden switch and Reset values. The exported literal is syntax-highlighted.
+  
+  `@weasel-js/ui` adds `CodeBlock`, a syntax-highlighted block of source with optional line numbers, built on `prism-react-renderer` and colored from the new `--wzl-code-keyword`, `--wzl-code-string`, `--wzl-code-number`, `--wzl-code-constant`, `--wzl-code-property`, and `--wzl-code-name` theme tokens, which have a value for each mode.
+  
+  `historyKey(event)` (`@weasel-js/routing`, re-exported from core) says whether a key event asks for undo or redo. labkit's trial chrome and `LayeredCurveEditor` now read their undo keys through it, so Mod+Y redoes in both.
+- f43d0dd: A select anywhere in a property row now drops its box and reads as its value, a bold underlined word, however deep the surface around it wraps the control. Prefs forms and inspector cells used to keep the boxed look with its caret. `--wzl-select-weight` sets the value's weight.
+  
+  `PrefsForm` takes `layout="list"`: the root's children down one column with no panel around them, nested groups as sub-panels. A group whose name is the empty string now draws no heading, as `ToolPrefGroup` documents; it drew an empty one. `PrefSchemaEditor`'s attributes use the list layout, so its fields sit directly under the pane's header.
+- 8cf0db6: `PrefSchemaEditor` sets its own font and text color, so a page that mounts it outside a labkit root no longer shows it in the browser's default serif.
+- 009b54b: `PrefSchemaEditor` takes `stored`, the values the app saves under the schema. Given, the structure pane splits: the tree above, and below it, behind a resize handle, every stored value no leaf describes. Choosing one opens the add dialog filled with its key, a name made from the key, and a kind read off the value, and adds the leaf where the value lives, with the stored value as its default, making any group on the way.
+- 5be8e39: A solid `Badge` now picks its label ink from its fill: white on a dark fill, near-black on a light one. White used to be the label on every status, and on the info, success, warn and light-mode neutral fills, and dark-mode accent, it measured under 3:1. Those labels now read dark, at 6.8:1 or better. Every status clears 4:1 in both modes. The ink follows whatever fill is painted, so a tone or stance that repaints the fill no longer keeps a fixed white.
+- Updated dependencies [6a1afa1]
+- Updated dependencies [c28a3cb]
+- Updated dependencies [7cb27b7]
+- Updated dependencies [e05c820]
+  - @weasel-js/font@1.9.3
+  - @weasel-js/core@1.9.3
+  - @weasel-js/theme@1.9.3
+  - @weasel-js/svg@1.9.3
+  - @weasel-js/modes@1.9.3
+  - @weasel-js/quantity@1.9.3
+  - @weasel-js/react@1.9.3
+  - @weasel-js/select@1.9.3
+
 ## 1.9.2
 
 ### Patch Changes

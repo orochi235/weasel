@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/react",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "Generic React hooks the weasel packages share: a committed-value ref and content-stable identity. No weasel domain in it.",
   "license": "MIT",
   "type": "module",

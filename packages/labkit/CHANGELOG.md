@@ -1,5 +1,55 @@
 # @weasel-js/labkit
 
+## 1.9.3
+
+### Patch Changes
+
+- ad00333: `<Lab header={false}>` renders no header bar: no title, add-trial or zoom controls, header contributions, or theme switcher, and none of the zoom controls' document-wide Mod+=, Mod+- and Mod+0. `<LabShell bar={false}>` is the same switch on the shell.
+  
+  A trial's Mod+Z, Mod+Shift+Z and Mod+S now answer only while their buttons are offered, so suppressing `undo`, `redo` or `snapshot` leaves the chord to the browser.
+  
+  The zoom controls, `scale` and `fps` are contributed only once a trial has a view, which an `initialView` sized to the viewport does not until the canvas is measured. They are now transient built-ins, so `suppress` no longer throws on them before then.
+- 42691ed: A trial clock's `duration` is now writable, for a run whose length follows its content; a write keeps `pass` and `phase`. A `ClockCapability` can say where a run opens (`start`, a time or `'end'`) and which speeds a transport offers (`rates`), and weasel-ui's `<Transport>` takes `rates` to match, with `formatRate` for a speed that reads better in the lab's own units; `<TrialTransport>` and the presented transport pass it through.
+  
+  `<Lab clock>` gives a lab a clock of its own. An instrument declaring `clock: 'lab'` plays on it, so its trials share one time, and `useTrialClock` and `useClockFrame` fall back to it outside any trial. `useClockFrame` now takes a `trialId` and resolves its clock the way `useTrialClock` does.
+  
+  `<Lab>` also takes `opening`, the instruments a new lab opens a trial of each, and `documentTitle`. `transport={{ minWidth }}` sets the width below which a presented trial hides its play controls, which used to be a fixed 480px.
+  
+  `TrialRecord.clock` is now a `ClockPosition`, which carries a changed `duration` beside `elapsed` and `rate`.
+- 7cb27b7: Fields now refer to each other by the full path their values are read and written at (`'camera.type'`, `'pose.y'`).
+  
+  `pair` is no longer a shared label string. A row is declared once, on its first leaf: `pair: { with: 'pose.y', label: 'Position' }`, where `with` names the other leaves on the row (one path or several) and `label` overrides what the row reads, which is otherwise the declaring leaf's `name`. This is a breaking change to the shape: a schema that set `pair: 'Position'` on each member now sets `pair` on the first member only. labkit's builder follows: `.pair({ with: 'y', label: 'Offset' })`. `pairRowsOf` (core) resolves a surface's leaves to their rows, and `SelectionPanel`, `ToolOptionsBar`, and labkit's `ControlPanel` all group rows through it.
+  
+  A new built-in pref kind, `field`, holds such a path. Its control is a picker over the fields of the surface drawing it, labeled `Name (path)`, narrowed by the leaf's optional `kinds`. `prefFieldChoices` lists a schema's fields, with a flag for whether a group's key is part of a path, since a prefs form nests values by group and a node's property panel does not. `PrefsForm` takes `fields` for a form that edits another schema, and `PrefSchemaEditor` edits a leaf's `pair` by picking its partners from the schema's fields.
+- e05c820: `PrefSchemaEditor` now has undo and redo: Undo and Redo buttons over the structure, and Mod+Z, Shift+Mod+Z, and Mod+Y anywhere inside it. A run of edits to one node's attributes undoes as one step, and undo restores the selection. A `schema` the editor did not write itself starts the history over. Add pref and Add group no longer create a node with a made-up key: each opens a dialog asking for a name, an id, and a pref's kind; the id follows the name in camelCase until it is typed into, and a taken or invalid id is refused. The structure tree shows each node as its name with its key beside it, or its key alone when it has no name. Each pane has a header, and the preview's carries a Show hidden switch and Reset values. The exported literal is syntax-highlighted.
+  
+  `@weasel-js/ui` adds `CodeBlock`, a syntax-highlighted block of source with optional line numbers, built on `prism-react-renderer` and colored from the new `--wzl-code-keyword`, `--wzl-code-string`, `--wzl-code-number`, `--wzl-code-constant`, `--wzl-code-property`, and `--wzl-code-name` theme tokens, which have a value for each mode.
+  
+  `historyKey(event)` (`@weasel-js/routing`, re-exported from core) says whether a key event asks for undo or redo. labkit's trial chrome and `LayeredCurveEditor` now read their undo keys through it, so Mod+Y redoes in both.
+- 7b6978f: A trial that nothing contributes a sidebar section to gives its whole body to its content. It used to keep an empty 320px sidebar pane and a seam beside the instrument. `TrialBody` takes `sidebar={null}` for the same.
+  
+  A `<TrialTransport keys>` that mounts before its trial's clock exists now answers Space and the other keys once the clock arrives. It used to look for its element only once, find nothing, and never listen.
+- Updated dependencies [1d04be1]
+- Updated dependencies [bc984b8]
+- Updated dependencies [6a1afa1]
+- Updated dependencies [c28a3cb]
+- Updated dependencies [42691ed]
+- Updated dependencies [7cb27b7]
+- Updated dependencies [bd21190]
+- Updated dependencies [e05c820]
+- Updated dependencies [f43d0dd]
+- Updated dependencies [8cf0db6]
+- Updated dependencies [009b54b]
+- Updated dependencies [5be8e39]
+  - @weasel-js/ui@1.9.3
+  - @weasel-js/core@1.9.3
+  - @weasel-js/theme@1.9.3
+  - @weasel-js/kernel3d@1.9.3
+  - @weasel-js/loupe@1.9.3
+  - @weasel-js/svg@1.9.3
+  - @weasel-js/geom@1.9.3
+  - @weasel-js/quantity@1.9.3
+
 ## 1.9.2
 
 ### Patch Changes
