@@ -63,7 +63,7 @@ describe('PropertyGroup collapse', () => {
     const heading = screen.getByRole('heading', { name: 'Aqua' });
     const twisty = screen.getByRole('button', { name: 'Aqua' });
     expect(heading).toContainElement(twisty);
-    expect(twisty.nextElementSibling).toHaveTextContent('Aqua');
+    expect(twisty.compareDocumentPosition(screen.getByText('Aqua')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     twisty.focus();
     fireEvent.keyDown(twisty, { key: 'Enter' });
     fireEvent.click(twisty);

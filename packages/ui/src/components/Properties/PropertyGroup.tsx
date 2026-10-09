@@ -1,6 +1,7 @@
 import { type ReactNode, useId, useState } from 'react';
 import { Disclosure } from '../Disclosure';
-import { type StanceProps, useStance } from '../stance';
+import { type Motif, MotifFrame } from '../MotifFrame';
+import type { StanceProps } from '../stance';
 import s from './Properties.module.css';
 import {
   type PropertyListPack,
@@ -11,8 +12,10 @@ import {
 
 /** Props for `<PropertyGroup>`. */
 export interface PropertyGroupProps extends PropertyMetricProps, StanceProps {
-  /** Title rendered between two rules at the top of the group. */
+  /** The group's title, which `motif` places. */
   title: ReactNode;
+  /** How the group draws its title and edge (`motifs.stereo()`, `motifs.notch()`, …). Defaults to `rule()`, a title between two rules. */
+  motif?: Motif;
   /** Before the title: a drag handle, an ordinal. Clicks here do not fold the group. */
   leading?: ReactNode;
   /** After the title: a summary of the group's value, a remove button. Clicks here do not fold the group. */
@@ -52,14 +55,16 @@ export interface PropertyGroupProps extends PropertyMetricProps, StanceProps {
  * inside a fill effect's controls).
  *
  * A collapsible group keeps its rows mounted and hides them, so a control's
- * local state survives being folded away. `stance` and `tone` work as on
- * `<PropertyPanel>`; a tone also draws the group's leading edge in it, which
- * is how a list of like groups — effects, tails — tells its members apart.
+ * local state survives being folded away. It draws itself as a `<MotifFrame>`
+ * in `motif`. `stance` and `tone` work as on `<PropertyPanel>`; in the default
+ * `rule` motif a tone also draws the group's leading edge, which is how a list
+ * of like groups — effects, tails — tells its members apart.
  * `leading` and `actions` put a handle and controls in the title row, and the
  * groups of a `<PropertyList>` reorder with `useReorderDragList`.
  */
 export function PropertyGroup({
   title,
+  motif,
   leading,
   actions,
   description,
@@ -78,9 +83,7 @@ export function PropertyGroup({
   tone,
 }: PropertyGroupProps) {
   const bodyId = useId();
-  const titleId = useId();
   const [own, setOwn] = useState(defaultCollapsed ?? false);
-  const stanced = useStance({ stance, tone });
   if (hidden) return null;
 
   const folds =
@@ -94,44 +97,30 @@ export function PropertyGroup({
 
   const base = `${s.group}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
   const cls = propertyMetricClass(span ? `${base} ${s.span}` : base, { density, align }, className);
-  // The twisty sits in the title, between the rules, so the two read as one
-  // unit, without moving the centered text. The heading is named by the title
-  // alone, not the twisty's label too.
-  const titled = (
-    <h3 className={s.groupTitle} aria-labelledby={folds ? titleId : undefined}>
-      <hr />
-      <span className={s.groupTitleMid}>
-        {folds ? (
+  return (
+    <MotifFrame
+      title={title}
+      motif={motif}
+      leading={leading}
+      actions={actions}
+      twisty={
+        folds ? (
           <Disclosure
             open={!folded}
             onToggle={toggle}
             label={typeof title === 'string' ? title : 'this section'}
             controls={bodyId}
-            className={s.groupTwisty}
           />
-        ) : null}
-        <span id={titleId}>{title}</span>
-      </span>
-      <hr />
-    </h3>
-  );
-  const heading =
-    leading === undefined && actions === undefined ? (
-      titled
-    ) : (
-      <div className={s.groupHeadRow}>
-        {leading === undefined ? null : <span className={s.groupLeading}>{leading}</span>}
-        {titled}
-        {actions === undefined ? null : <span className={s.groupActions}>{actions}</span>}
-      </div>
-    );
-  return (
-    <div className={cls} {...stanced}>
-      {heading}
+        ) : undefined
+      }
+      className={cls}
+      stance={stance}
+      tone={tone}
+    >
       {description !== undefined && description !== '' && <PropertyNote>{description}</PropertyNote>}
       <div id={bodyId} className={s.groupBody} hidden={folded}>
         {children}
       </div>
-    </div>
+    </MotifFrame>
   );
 }

@@ -1,0 +1,77 @@
+/* The title centered between two rules, on a sunken fill. Unlike the other
+   motifs, every part of the box comes from the stance slots: this is the look
+   the slots' defaults describe. */
+.rule {
+  background: var(--_s-fill);
+  border: var(--_s-border-width) var(--_s-border-style) var(--_s-border-color);
+  border-radius: var(--_s-radius);
+  padding: var(--_s-pad);
+}
+
+/* A toned frame is one of a list of like frames; its edge says which. */
+.rule[data-tone] {
+  border-left: 4px solid var(--wzl-tone);
+}
+
+.headRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  margin: 0 0 var(--wzl-prop-group-title-gap, 4px);
+}
+
+/* The row takes the title's bottom margin, so the handle and actions center on the title itself. */
+.headRow > .title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.leading,
+.actions {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
+.title {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  margin: 0 0 var(--wzl-prop-group-title-gap, 4px);
+  font-family: var(--_s-title-font);
+  font-weight: var(--_s-title-weight);
+  font-size: var(--_s-title-size);
+  letter-spacing: var(--_s-title-tracking);
+  text-transform: var(--_s-title-case);
+  color: var(--_s-title-color);
+}
+
+.title hr {
+  border: 0;
+  border-top: 1px solid var(--_s-border-color);
+  margin: 0;
+}
+
+/* The title between the rules. The twisty hangs off the text's leading edge,
+   out of flow, so the text centers as though it were not there. */
+.mid {
+  position: relative;
+  min-width: 0;
+}
+
+/* Being out of flow, the twisty would sit on the leading rule; the rule stops at its box instead. */
+.title:has(> .mid > .twisty) > hr:first-child {
+  margin-inline-end: calc(
+    var(--wzl-disclosure-target, var(--wzl-control-h-sm)) + var(--wzl-disclosure-gap, 4px) - var(--wzl-space-4)
+  );
+}
+
+.twisty {
+  position: absolute;
+  inset-inline-end: calc(100% + var(--wzl-disclosure-gap, 4px));
+  top: 50%;
+  translate: 0 -50%;
+}

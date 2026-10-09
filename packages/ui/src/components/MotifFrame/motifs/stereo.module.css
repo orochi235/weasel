@@ -1,0 +1,73 @@
+/* The back of an A/V receiver: a bar along one edge, filled with the edge
+   color, carries the title; the border around the rest is the same color. */
+.stereo {
+  display: flex;
+  background: var(--_s-fill);
+  border: 2px solid var(--_edge);
+  border-radius: var(--wzl-radius-sm);
+}
+
+.stereo[data-side='left'] {
+  flex-direction: row;
+}
+
+.stereo[data-side='right'] {
+  flex-direction: row-reverse;
+}
+
+.stereo[data-side='top'] {
+  flex-direction: column;
+}
+
+.stereo[data-side='bottom'] {
+  flex-direction: column-reverse;
+}
+
+.bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  padding: var(--wzl-space-1) var(--wzl-space-4);
+  background: var(--_edge);
+  color: var(--_edge-ink);
+  font-family: var(--_s-title-font);
+  font-weight: var(--wzl-font-weight-bold);
+  font-size: var(--_s-title-size);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.label {
+  letter-spacing: var(--_s-title-tracking);
+  text-transform: var(--_s-title-case);
+}
+
+/* Read from inside the frame: the letters' feet point at what the bar labels.
+   A side bar's writing mode turns its inline axis, so `labelAlign`'s start and
+   end follow the reading direction with no mapping of their own. */
+.stereo[data-side='left'] > .bar {
+  writing-mode: sideways-lr;
+}
+
+.stereo[data-side='right'] > .bar {
+  writing-mode: sideways-rl;
+}
+
+.bar[data-align='start'] {
+  justify-content: start;
+}
+
+.bar[data-align='center'] {
+  justify-content: center;
+}
+
+.bar[data-align='end'] {
+  justify-content: end;
+}
+
+.body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--_s-pad);
+}

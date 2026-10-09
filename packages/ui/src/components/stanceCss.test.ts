@@ -37,9 +37,9 @@ describe('stance rules', () => {
   });
 
   // check:labels accepts a title reading --_s-title-case, so the recipe has to
-  // arrive through the slot: a stanced panel's title, and every group and
+  // arrive through the slot: a stanced panel's title, and every frame and
   // subpanel title, are labels.
-  it.each(['panel', 'group', 'subpanel'])('%s titles take the params label recipe through their slots', (id) => {
+  it.each(['panel', 'frame', 'subpanel'])('%s titles take the params label recipe through their slots', (id) => {
     const surface = STANCE_SURFACES.find((s) => s.id === id)!;
     const look = { ...surface.base, ...surface.stanced };
     expect(look['title-case']).toMatch(CASE);

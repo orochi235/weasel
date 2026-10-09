@@ -256,7 +256,7 @@ A surface that holds a class of content says which with `stance` —
 `scope`, `aside`, `advanced`, `debug`, `danger`, `notice`, `important`,
 `preview` — and which of its peers it is with `tone`: an index into the theme's
 tone list (`ThemeDefinition.tones`, a `ColorList`; weasel's is the swatch ramp),
-or a color. `PropertyPanel`, `PropertyGroup`, `Subpanel`, `Callout`, `Dialog`,
+or a color. `PropertyPanel`, `PropertyGroup`, `MotifFrame`, `Subpanel`, `Callout`, `Dialog`,
 labkit's `ControlPanel` and sidebar sections take both; `LayerList`'s items
 take a tone only, since a list's cards are one kind of thing. `Badge`, `Code`,
 `Button` and `Powerline` segments take both too, beside the `status` they report
@@ -283,3 +283,32 @@ properties from the `--_s-*` names, and spread `useStance()` on its root.
 
 Tones mix `in oklab`. In `oklch` the mix takes its hue from weasel's slightly
 blue grays, so a green tone comes out blue.
+
+### Motifs
+
+A **motif** is how a titled frame draws its title and its edge: a visual idiom
+borrowed from something real. It's neither a stance (what a surface holds) nor a
+theme (token values). `<MotifFrame motif>` and `<PropertyGroup motif>` take one
+from a factory: `rule()` (a title between two rules, the default), `stereo()` (a
+label bar along one edge, as on the back of an A/V receiver), `notch()` (the
+title cut into the border), `tab()` and `plaque()` (the tone fills the frame).
+The root barrel has them as `motifs.stereo()`; `@weasel-js/ui/components/MotifFrame`
+exports the bare names.
+
+A motif renders the frame's root element itself, so it picks the element as well
+as the layout: `notch` must be a `<fieldset>`, because a `<legend>` cuts the
+border where a positioned title would only cover it. Geometry belongs to the
+motif and color to the stance. A motif paints its own border widths, padding and
+radii, and reads only colors and the title's type from the `--_s-*` slots,
+because a theme's stance tokens are tuned for one look (`scope` sets a border
+width of 0) and would erase the edge another motif is made of. `rule` is the
+exception: its look is the slots' defaults.
+
+To write a motif, return `{ id, params, render(frame) }` from a factory, spread
+`withMotifClass(frame.root, yourClass)` on the root, and place `frame.heading`'s
+parts. `--_edge` is the tone, or the stance's border color without one, and
+`--_edge-ink` is black or white, whichever reads on it. A motif that fills with
+something else redefines `--_edge` on its root, and the ink follows. The ink
+switches at oklch L 0.564: WCAG's 4.5:1 holds for white below a luminance of
+0.183 and for black above 0.175, so the switch has to sit within a hundredth of
+that lightness, or the losing side falls short there.

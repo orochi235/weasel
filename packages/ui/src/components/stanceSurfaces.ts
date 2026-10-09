@@ -41,9 +41,10 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     },
   },
   {
-    id: 'group',
-    file: 'packages/ui/src/components/Properties/Properties.module.css',
-    selector: '.group',
+    // Every motif's colors and title type; the base is the `rule` motif's look, today's PropertyGroup.
+    id: 'frame',
+    file: 'packages/ui/src/components/MotifFrame/MotifFrame.module.css',
+    selector: '.frame',
     fills: true,
     base: {
       surface: 'var(--wzl-surface-sunken)',

@@ -30,10 +30,11 @@ const BODY = [
   panel(`data-k="outer" data-stance="scope" ${tone('sky')}`, 'outer', panel('data-k="nested" data-stance="scope" data-nested', 'nested')),
   `<div class="pin">${panel('data-k="pinned" data-stance="aside"', 'pinned')}</div>`,
   panel('data-k="host"', 'host', [
-    `<div class="group" data-k="group"><h3 class="groupTitle"><hr><span>group</span><hr></h3>${rows}</div>`,
-    `<div class="group" data-k="group-danger" data-stance="danger"><h3 class="groupTitle"><hr><span>danger group</span><hr></h3>${rows}</div>`,
+    `<div class="frame rule group" data-k="group"><h3 class="title"><hr><span>group</span><hr></h3>${rows}</div>`,
+    `<div class="frame rule group" data-k="group-danger" data-stance="danger"><h3 class="title"><hr><span>danger group</span><hr></h3>${rows}</div>`,
     `<div class="subpanel" data-k="sub-important" data-stance="important"><h4 class="subpanelTitle"><span>important</span><hr></h4>${rows}</div>`,
-    `<div class="group" data-k="group-tone" ${tone('green')}><h3 class="groupTitle"><hr><span>toned group</span><hr></h3>${rows}</div>`,
+    `<div class="frame rule group" data-k="group-tone" ${tone('green')}><h3 class="title"><hr><span>toned group</span><hr></h3>${rows}</div>`,
+    `<div class="frame stereo" data-side="left" data-k="stereo-danger" data-stance="danger"><div class="bar"><span class="label">stereo</span></div><div class="body">${rows}</div></div>`,
   ].join('')),
 ].join('');
 
@@ -42,6 +43,9 @@ async function mount(page: Page, mode: 'dark' | 'light') {
     `<!doctype html><html data-wzl-theme="weasel" data-wzl-mode="${mode}" data-wzl-density="comfortable">
      <head><style>${read('packages/theme/src/generated/tokens.css')}</style>
      <style>${read('packages/ui/src/components/Properties/Properties.module.css')}</style>
+     <style>${read('packages/ui/src/components/MotifFrame/MotifFrame.module.css')}</style>
+     <style>${read('packages/ui/src/components/MotifFrame/motifs/rule.module.css')}</style>
+     <style>${read('packages/ui/src/components/MotifFrame/motifs/stereo.module.css')}</style>
      <style>body { background: var(--wzl-surface); display: grid; grid-template-columns: repeat(3, 240px); gap: 12px; padding: 12px; margin: 0 }
        .pin { --wzl-stance-aside-border-style: dotted; }</style></head><body>${BODY}</body></html>`,
   );
@@ -63,7 +67,7 @@ const looks = (page: Page) =>
     const out: Record<string, Record<string, string>> = {};
     for (const el of document.querySelectorAll<HTMLElement>('[data-k]')) {
       const cs = getComputedStyle(el);
-      const title = getComputedStyle(el.querySelector(':scope > .panelTitle, :scope > .groupTitle > span, :scope > .subpanelTitle')!);
+      const title = getComputedStyle(el.querySelector(':scope > .panelTitle, :scope > .title > span, :scope > .bar > .label, :scope > .subpanelTitle')!);
       const readout = getComputedStyle(el.querySelector('.readout')!);
       out[el.dataset.k!] = {
         bg: cs.backgroundColor,
@@ -142,6 +146,13 @@ for (const mode of ['dark', 'light'] as const) {
       expect(l['group-danger'].titleColor).toBe(l.ref.danger);
       expect(l['sub-important'].titleColor).toBe(l.ref.accentFg);
       expect(l['group-tone'].readout).toBe(l.ref.greenFg);
+    });
+
+    test('every motif takes the same stance: a danger stereo frame shares the danger group’s border color', async ({ page }) => {
+      await mount(page, mode);
+      const l = await looks(page);
+      expect(l['stereo-danger'].borderColor).toBe(l['group-danger'].borderColor);
+      expect(l['stereo-danger'].borderWidth).toBe('2px');
     });
 
     test('a stance slot set on an ancestor reaches the panels beneath it', async ({ page }) => {

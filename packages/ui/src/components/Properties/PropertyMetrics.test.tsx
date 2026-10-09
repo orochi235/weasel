@@ -24,6 +24,11 @@ const sheet = readFileSync(
   'utf8',
 );
 
+// A group draws as a MotifFrame, so the metrics that size its box are read there.
+const frameSheets = ['MotifFrame/MotifFrame.module.css', 'MotifFrame/motifs/rule.module.css']
+  .map((file) => readFileSync(resolve(process.cwd(), 'packages/ui/src/components', file), 'utf8'))
+  .join('');
+
 describe('density and align classes', () => {
   it('defines a rule for every class the components ask for', () => {
     for (const name of [
@@ -59,7 +64,7 @@ describe('density and align classes', () => {
       '--wzl-prop-row-align-content',
       '--wzl-prop-row-align-text',
     ]) {
-      expect(sheet, `${token} is never read`).toContain(`var(${token},`);
+      expect(`${sheet}${frameSheets}`, `${token} is never read`).toContain(`var(${token},`);
     }
   });
 });

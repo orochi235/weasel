@@ -1,0 +1,48 @@
+/* The tone fills the whole frame, and everything on it is drawn in an ink that
+   reads there: black or white, from the fill's own lightness. */
+.plaque {
+  /* The fill is the edge here, so the frame's edge ink is the plaque's ink. */
+  --_edge: color-mix(in oklab, var(--_s-tone) var(--wzl-plaque-mix, 100%), var(--_s-surface));
+  background: var(--_edge);
+  border-radius: var(--wzl-radius-md);
+  padding: var(--_s-pad);
+}
+
+/* The theme's colors redrawn against the fill. Set one element in, because
+   the frame's own generated accent rules sit on the root at a specificity a
+   motif's stylesheet can only tie, and a tie goes to load order. */
+.content {
+  /* A plaque inside this one names its own mix or takes the default, never this one's. */
+  --wzl-plaque-mix: initial;
+  --wzl-fg: var(--_edge-ink);
+  --wzl-fg-muted: color-mix(in oklab, var(--_edge-ink) 78%, var(--_edge));
+  --wzl-fg-subtle: color-mix(in oklab, var(--_edge-ink) 60%, var(--_edge));
+  --wzl-fg-on-accent: var(--_edge-ink);
+  --wzl-border: color-mix(in oklab, var(--_edge-ink) 25%, var(--_edge));
+  --wzl-surface-sunken: oklch(from var(--_edge) calc(l - 0.06) c h);
+  --wzl-accent: color-mix(in oklab, var(--_edge-ink) 18%, var(--_edge));
+  --wzl-accent-base: var(--wzl-accent);
+  --wzl-accent-strong: color-mix(in oklab, var(--_edge-ink) 40%, var(--_edge));
+  --wzl-accent-soft: color-mix(in oklab, var(--_edge-ink) 10%, var(--_edge));
+  --wzl-accent-hover: var(--wzl-accent-strong);
+  --wzl-accent-fg: var(--_edge-ink);
+  --wzl-focus-ring: var(--_edge-ink);
+  color: var(--wzl-fg);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  margin: 0 0 var(--wzl-prop-group-title-gap, 4px);
+  font-family: var(--_s-title-font);
+  font-weight: var(--wzl-font-weight-bold);
+  font-size: var(--_s-title-size);
+}
+
+.label {
+  flex: 1 1 auto;
+  min-width: 0;
+  letter-spacing: var(--_s-title-tracking);
+  text-transform: var(--_s-title-case);
+}

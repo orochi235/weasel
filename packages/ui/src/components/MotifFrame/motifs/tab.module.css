@@ -1,0 +1,58 @@
+/* A folder tab rising from the top edge, in the edge color, over an outlined box. */
+.tab {
+  display: flex;
+  flex-direction: column;
+}
+
+.tabRow {
+  display: flex;
+  padding-inline: var(--wzl-radius-md);
+}
+
+.tabRow[data-align='start'] {
+  justify-content: start;
+}
+
+.tabRow[data-align='center'] {
+  justify-content: center;
+}
+
+.tabRow[data-align='end'] {
+  justify-content: end;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  max-width: 100%;
+  padding: var(--wzl-space-1) var(--wzl-space-5);
+  background: var(--_edge);
+  color: var(--_edge-ink);
+  border-radius: var(--wzl-radius-md) var(--wzl-radius-md) 0 0;
+  font-family: var(--_s-title-font);
+  font-weight: var(--_s-title-weight);
+  font-size: var(--_s-title-size);
+  line-height: 1.2;
+}
+
+.text {
+  letter-spacing: var(--_s-title-tracking);
+  text-transform: var(--_s-title-case);
+}
+
+.box {
+  background: var(--_s-fill);
+  border: 1px solid var(--_edge);
+  border-radius: var(--wzl-radius-md);
+  padding: var(--_s-pad);
+}
+
+/* The tab grows out of the box's edge: where it starts or ends, that corner is square. */
+.tab:has(> .tabRow[data-align='start']) > .box {
+  border-start-start-radius: 0;
+}
+
+.tab:has(> .tabRow[data-align='end']) > .box {
+  border-start-end-radius: 0;
+}

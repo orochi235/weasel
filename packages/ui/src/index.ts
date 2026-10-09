@@ -40,6 +40,22 @@ export * from './components/FallthroughDiagram';
 export * from './components/Prefs';
 export * from './components/PrefSchemaEditor';
 export * from './components/Properties';
+// The factories' bare names (`rule`, `tab`, …) are too generic for the root barrel; they come
+// from `@weasel-js/ui/components/MotifFrame`, and here only as `motifs.rule`.
+export {
+  type FrameParts,
+  type HeadingParts,
+  type Motif,
+  MotifFrame,
+  type MotifFrameProps,
+  type NotchParams,
+  type PlaqueParams,
+  type RootProps,
+  type StereoParams,
+  type TabParams,
+  withMotifClass,
+} from './components/MotifFrame';
+export * as motifs from './components/MotifFrame/motifs';
 export { type Stance, type StanceAttrs, type StanceProps, useStance } from './components/stance';
 export type { SegmentTooltipFields } from './components/segmentTooltip';
 export * from './components/SelectionPanel';

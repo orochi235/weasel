@@ -1,0 +1,55 @@
+/* The title cut into the top border. A fieldset for the notch as much as the
+   grouping: a legend cuts the border rather than covering it, so the frame can
+   sit on a translucent ground with no seam showing through the line. */
+.notch {
+  margin: 0;
+  min-width: 0;
+  padding: var(--wzl-space-1) var(--wzl-space-5) var(--wzl-space-4);
+  border: 1px solid var(--_edge);
+  border-radius: var(--wzl-radius-md);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  padding-inline: var(--wzl-space-3);
+  font-family: var(--_s-title-font);
+  font-weight: var(--_s-title-weight);
+  font-size: var(--_s-title-size);
+  color: var(--_s-title-color);
+}
+
+.label {
+  letter-spacing: var(--_s-title-tracking);
+  text-transform: var(--_s-title-case);
+}
+
+/* A legend is laid out by its fieldset, so the autos move it where
+   `text-align` on either would not. */
+.legend[data-align='center'] {
+  margin-inline: auto;
+}
+
+.legend[data-align='start'] {
+  margin-inline: 0;
+}
+
+/* With actions, the legend spans the top edge: the title at one end, the
+   actions at the other, and the run of border the legend displaces drawn
+   between them. */
+.legend[data-actions] {
+  width: 100%;
+  margin-inline: 0;
+}
+
+.run {
+  flex: 1;
+  border-top: 1px solid var(--_edge);
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}

@@ -1,0 +1,207 @@
+/* What every motif shares: the stance slots (generated below) and the two
+   colors derived from them. A motif paints its own geometry — border width,
+   padding, radius — and reads only color and the title's type from the slots,
+   so a theme's stance tokens can't erase the edge a motif is made of. */
+.frame,
+.frame * {
+  box-sizing: border-box;
+}
+
+/* In `:where()` so a motif's own class can redefine the edge and the ink follows it. */
+:where(.frame) {
+  /* The edge a motif outlines or fills with: the tone where one is named. */
+  --_edge: var(--wzl-tone, var(--_s-border-color));
+  /* Black or white, whichever reads on the edge color. 0.564 is the lightness at
+     which the two reach WCAG's 4.5:1 together; the switch has to sit within a
+     hundredth of it, or the losing side falls short there. */
+  --_edge-ink: oklch(from var(--_edge) clamp(0, (0.564 - l) * 1000, 1) 0 0);
+}
+
+/* BEGIN GENERATED stance rules: frame — `npm run gen:stances`, do not edit. */
+
+.frame {
+  --wzl-tone: initial;
+}
+
+.frame {
+  --_s-surface: var(--wzl-surface-sunken);
+  --_s-border-color: var(--wzl-border);
+  --_s-border-style: solid;
+  --_s-border-width: 0px;
+  --_s-radius: var(--wzl-radius-md);
+  --_s-pad: var(--wzl-prop-group-pad, 6px 10px 8px);
+  --_s-tone-mix: var(--wzl-panel-tone-mix);
+  --_s-tone: var(--wzl-tone, var(--_s-surface));
+  --_s-accent: var(--wzl-tone);
+  --_s-title-font: var(--wzl-font-display);
+  --_s-title-weight: var(--wzl-font-weight-light);
+  --_s-title-size: var(--wzl-font-size-sm);
+  --_s-title-case: var(--wzl-params-label-case, uppercase);
+  --_s-title-tracking: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
+  --_s-title-color: var(--wzl-fg-subtle);
+}
+
+.frame[data-stance='scope'] {
+  --_s-surface: var(--wzl-stance-scope-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-scope-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-scope-border-style, solid);
+  --_s-border-width: var(--wzl-stance-scope-border-width, 0px);
+  --_s-radius: var(--wzl-stance-scope-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-scope-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tone-mix: var(--wzl-stance-scope-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-scope-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-scope-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-scope-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-scope-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-scope-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-scope-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-scope-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-scope-title-color, var(--wzl-fg-subtle));
+}
+
+.frame[data-stance='aside'] {
+  --_s-surface: var(--wzl-stance-aside-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-aside-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-aside-border-style, solid);
+  --_s-border-width: var(--wzl-stance-aside-border-width, 0px);
+  --_s-radius: var(--wzl-stance-aside-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-aside-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tone-mix: var(--wzl-stance-aside-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-aside-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-aside-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-aside-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-aside-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-aside-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-aside-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-aside-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-aside-title-color, var(--wzl-fg-subtle));
+}
+
+.frame[data-stance='advanced'] {
+  --_s-surface: var(--wzl-stance-advanced-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-advanced-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-advanced-border-style, solid);
+  --_s-border-width: var(--wzl-stance-advanced-border-width, 0px);
+  --_s-radius: var(--wzl-stance-advanced-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-advanced-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tone-mix: var(--wzl-stance-advanced-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-advanced-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-advanced-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-advanced-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-advanced-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-advanced-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-advanced-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-advanced-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-advanced-title-color, var(--wzl-fg-subtle));
+}
+
+.frame[data-stance='debug'] {
+  --_s-surface: var(--wzl-stance-debug-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-debug-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-debug-border-style, solid);
+  --_s-border-width: var(--wzl-stance-debug-border-width, 0px);
+  --_s-radius: var(--wzl-stance-debug-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-debug-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tone-mix: var(--wzl-stance-debug-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-debug-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-debug-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-debug-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-debug-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-debug-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-debug-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-debug-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-debug-title-color, var(--wzl-fg-subtle));
+}
+
+.frame[data-stance='danger'] {
+  --_s-surface: var(--wzl-stance-danger-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-danger-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-danger-border-style, solid);
+  --_s-border-width: var(--wzl-stance-danger-border-width, 0px);
+  --_s-radius: var(--wzl-stance-danger-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-danger-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tone-mix: var(--wzl-stance-danger-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-danger-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-danger-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-danger-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-danger-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-danger-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-danger-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-danger-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-danger-title-color, var(--wzl-fg-subtle));
+}
+
+.frame[data-stance='notice'] {
+  --_s-surface: var(--wzl-stance-notice-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-notice-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-notice-border-style, solid);
+  --_s-border-width: var(--wzl-stance-notice-border-width, 0px);
+  --_s-radius: var(--wzl-stance-notice-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-notice-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tone-mix: var(--wzl-stance-notice-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-notice-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-notice-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-notice-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-notice-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-notice-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-notice-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-notice-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-notice-title-color, var(--wzl-fg-subtle));
+}
+
+.frame[data-stance='important'] {
+  --_s-surface: var(--wzl-stance-important-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-important-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-important-border-style, solid);
+  --_s-border-width: var(--wzl-stance-important-border-width, 0px);
+  --_s-radius: var(--wzl-stance-important-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-important-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tone-mix: var(--wzl-stance-important-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-important-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-important-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-important-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-important-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-important-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-important-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-important-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-important-title-color, var(--wzl-fg-subtle));
+}
+
+.frame[data-stance='preview'] {
+  --_s-surface: var(--wzl-stance-preview-surface, var(--wzl-surface-sunken));
+  --_s-border-color: var(--wzl-stance-preview-border-color, var(--wzl-border));
+  --_s-border-style: var(--wzl-stance-preview-border-style, solid);
+  --_s-border-width: var(--wzl-stance-preview-border-width, 0px);
+  --_s-radius: var(--wzl-stance-preview-radius, var(--wzl-radius-md));
+  --_s-pad: var(--wzl-stance-preview-pad, var(--wzl-prop-group-pad, 6px 10px 8px));
+  --_s-tone-mix: var(--wzl-stance-preview-tone-mix, var(--wzl-panel-tone-mix));
+  --_s-tone: var(--wzl-tone, var(--wzl-stance-preview-tone, var(--_s-surface)));
+  --_s-accent: var(--wzl-stance-preview-accent, var(--wzl-tone));
+  --_s-title-font: var(--wzl-stance-preview-title-font, var(--wzl-font-display));
+  --_s-title-weight: var(--wzl-stance-preview-title-weight, var(--wzl-font-weight-light));
+  --_s-title-size: var(--wzl-stance-preview-title-size, var(--wzl-font-size-sm));
+  --_s-title-case: var(--wzl-stance-preview-title-case, var(--wzl-params-label-case, uppercase));
+  --_s-title-tracking: var(--wzl-stance-preview-title-tracking, var(--wzl-params-label-tracking, var(--wzl-tracking-wider)));
+  --_s-title-color: var(--wzl-stance-preview-title-color, var(--wzl-fg-subtle));
+}
+
+.frame {
+  --_s-fill: var(--_s-surface);
+}
+
+.frame[data-tone],
+.frame[data-stance] {
+  --_s-fill: color-mix(in oklab, var(--_s-tone) var(--_s-tone-mix), var(--_s-surface));
+}
+
+.frame[data-tone] {
+  --wzl-accent: var(--_s-accent);
+  --wzl-accent-base: var(--_s-accent);
+  --wzl-accent-strong: color-mix(in oklab, var(--_s-accent) 70%, var(--wzl-fg));
+  --wzl-accent-soft: color-mix(in oklab, var(--_s-accent) 45%, var(--wzl-surface));
+  --wzl-accent-hover: var(--wzl-accent-strong);
+  --wzl-accent-fg: var(--wzl-accent-strong);
+  --wzl-focus-ring: var(--wzl-accent-strong);
+}
+
+/* END GENERATED stance rules: frame */
