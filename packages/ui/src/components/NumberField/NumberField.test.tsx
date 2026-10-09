@@ -66,5 +66,11 @@ describe('NumberField', () => {
     const { container } = render(<NumberField aria-label="X" value={NaN} placeholder="Mixed" />);
     expect(getInput(container)).toHaveAttribute('placeholder', 'Mixed');
   });
-});
 
+  // A proxy: jsdom does no layout, so this pins the attribute the stylesheet orders by.
+  it('puts the steppers at the start unless told otherwise', () => {
+    const side = (el: HTMLElement) => getInput(el).parentElement!.getAttribute('data-stepper-side');
+    expect(side(render(<NumberField aria-label="A" defaultValue={1} />).container)).toBe('start');
+    expect(side(render(<NumberField aria-label="B" defaultValue={1} stepperSide="end" />).container)).toBe('end');
+  });
+});

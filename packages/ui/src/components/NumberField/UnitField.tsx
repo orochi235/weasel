@@ -28,6 +28,8 @@ export interface UnitFieldProps {
   placeholder?: string;
   /** Up and down buttons beside the value, which repeat while held. */
   steppers?: boolean;
+  /** Which end of the field the steppers sit at. Defaults to `'start'`. */
+  stepperSide?: StepperSide;
   /** Render with no box until focused, as {@link NumberField}'s `ghost` does. */
   ghost?: boolean;
   /** As {@link NumberField}'s `width`. */
@@ -37,6 +39,8 @@ export interface UnitFieldProps {
   id?: string;
   'aria-label'?: string;
 }
+
+export type StepperSide = 'start' | 'end';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
 
@@ -62,6 +66,7 @@ export function UnitField({
   display = FULL_PRECISION,
   placeholder,
   steppers,
+  stepperSide = 'start',
   ghost,
   width = 'fill',
   className,
@@ -164,7 +169,10 @@ export function UnitField({
         .filter(Boolean)
         .join(' ')}
     >
-      <div className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}>
+      <div
+        className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}
+        data-stepper-side={stepperSide}
+      >
         <input
           ref={input}
           id={id}

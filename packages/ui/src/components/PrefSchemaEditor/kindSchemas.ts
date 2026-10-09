@@ -47,7 +47,7 @@ const KIND_ATTRS: Record<ToolPrefKind, KindAttrs> = {
   object: {},
 };
 
-const GROUP_ATTRS: ToolPrefGroup = { name: 'Group', children: { name: LEAF_BASE.name!, description: LEAF_BASE.description! } };
+const GROUP_ATTRS: KindAttrs = { name: LEAF_BASE.name!, description: LEAF_BASE.description! };
 
 /** Written even when empty: a leaf without them is not a leaf. */
 const REQUIRED = new Set(['name', 'description', 'default', 'options']);
@@ -73,21 +73,24 @@ function kindAttrs(kind: string, custom: CustomKinds): KindAttrs {
 }
 
 export interface AttributeSchema {
-  /** Editable attributes, rendered with `PrefsForm` over the node itself as values. */
-  schema: ToolPrefGroup;
+  /** Attributes every kind has, edited beside the key and the kind. */
+  shared: KindAttrs;
+  /** The default and the attributes only this kind has; empty for a group. */
+  own: KindAttrs;
   /** Attributes shown but not edited: code, and anything the kind's schema does not describe. */
   readOnly: Array<[string, unknown]>;
 }
 
+/** Editable attributes, rendered with `PrefsForm` over the node itself as values. */
 export function attributeSchema(node: SchemaNode, custom: CustomKinds = {}): AttributeSchema {
-  if (!isPrefLeaf(node)) return { schema: GROUP_ATTRS, readOnly: [] };
-  const own = kindAttrs(node.kind, custom);
+  if (!isPrefLeaf(node)) return { shared: { ...GROUP_ATTRS }, own: {}, readOnly: [] };
   const def = defaultAttr(node);
-  const children: KindAttrs = { ...LEAF_BASE, ...(def ? { default: def } : {}), ...own };
+  const shared: KindAttrs = { ...LEAF_BASE };
+  const own: KindAttrs = { ...(def ? { default: def } : {}), ...kindAttrs(node.kind, custom) };
   const fields = node as unknown as Record<string, unknown>;
-  for (const k of Object.keys(children)) if (containsCode(fields[k])) delete children[k];
-  const readOnly = Object.entries(fields).filter(([k]) => k !== 'kind' && k !== 'children' && !(k in children));
-  return { schema: { name: 'Attributes', children }, readOnly };
+  for (const attrs of [shared, own]) for (const k of Object.keys(attrs)) if (containsCode(fields[k])) delete attrs[k];
+  const readOnly = Object.entries(fields).filter(([k]) => k !== 'kind' && k !== 'children' && !(k in shared) && !(k in own));
+  return { shared, own, readOnly };
 }
 
 /** The value to store for an edited attribute: an optional one left empty is removed rather than written. */

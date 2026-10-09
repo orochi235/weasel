@@ -1,0 +1,27 @@
+/* Under the name, across the panel's full width, as the grid of steps was. */
+.slider {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding-inline: var(--wzl-space-sm);
+}
+
+.readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  color: var(--wzl-fg-subtle);
+  font-size: var(--wzl-font-size-2xs);
+}
+
+.readout[data-overridden] .label {
+  color: var(--wzl-accent-fg);
+}
+
+.amount {
+  font-size: var(--wzl-font-size-2xs);
+}

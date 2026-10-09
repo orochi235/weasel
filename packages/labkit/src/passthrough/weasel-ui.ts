@@ -126,6 +126,7 @@ export {
   moveLayers,
   NumberField,
   type NumberFieldProps,
+  type StepperSide,
   OptionsBar,
   type OptionsBarItem,
   type OptionsBarProps,

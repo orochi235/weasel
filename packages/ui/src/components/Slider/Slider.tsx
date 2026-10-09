@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
 import { endlessAt, type Endless } from '../../endless';
 import { decimal, qty, type Display } from '@weasel-js/quantity';
@@ -701,18 +702,12 @@ function SliderBody<T extends Thumb = Thumb>(props: SliderProps<T> & { spokenAt?
       )}
       </div>
       {placement === 'below-thumb' && (
-        <div className={s.readoutsBelow}>
-          {thumbs.map((t, i) => (
-            <span
-              key={i}
-              data-readout="below"
-              className={s.readoutBelow}
-              style={{ left: `${valueToFraction(t.value) * 100}%` }}
-            >
-              {renderReadout ? renderReadout(t, i) : qty(t.value, display ?? READOUT).text}
-            </span>
-          ))}
-        </div>
+        <ReadoutsBelow
+          readouts={thumbs.map((t, i) => ({
+            fraction: valueToFraction(t.value),
+            content: renderReadout ? renderReadout(t, i) : qty(t.value, display ?? READOUT).text,
+          }))}
+        />
       )}
     </div>
   );

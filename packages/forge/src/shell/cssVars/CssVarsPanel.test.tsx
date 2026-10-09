@@ -112,7 +112,7 @@ describe('CssVarsPanel', () => {
     const font = row(vars(), 'font');
     const base = font.getByRole('textbox', { name: 'font base' });
     expect(base).toHaveValue(String(fontBase));
-    expect(font.getByRole('textbox', { name: '--wzl-font-size-2xs factor' })).toHaveValue(String(fontFactors[0]));
+    expect(font.getByRole('slider', { name: '--wzl-font-size-2xs' })).toHaveAttribute('aria-valuetext', expect.stringMatching(/px$/));
 
     act(() => {
       fireEvent.change(base, { target: { value: String(editedBase) } });

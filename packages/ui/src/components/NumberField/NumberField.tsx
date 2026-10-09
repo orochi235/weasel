@@ -11,6 +11,7 @@ import {
   type ValidationResult,
 } from 'react-aria-components';
 import type { FieldOrientation } from '../Field/Field';
+import type { StepperSide } from './UnitField';
 import f from '../field.module.css';
 import s from './NumberField.module.css';
 
@@ -27,6 +28,8 @@ export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className
   errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
   /** Hide the up/down stepper buttons. Defaults to false. */
   hideSteppers?: boolean;
+  /** Which end of the field the steppers sit at. Defaults to `'start'`. */
+  stepperSide?: StepperSide;
   /** Render with no box until focused — the readout treatment the property
    *  rows use, for a value that sits inside other chrome rather than in a form. */
   ghost?: boolean;
@@ -60,6 +63,7 @@ export const NumberField = forwardRef(function NumberField(
     description,
     errorMessage,
     hideSteppers,
+    stepperSide = 'start',
     ghost,
     placeholder,
     width = 'fill',
@@ -80,7 +84,10 @@ export const NumberField = forwardRef(function NumberField(
         .join(' ')}
     >
       {label !== undefined && <Label className={f.label}>{label}</Label>}
-      <Group className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}>
+      <Group
+        className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}
+        data-stepper-side={stepperSide}
+      >
         <RACInput ref={ref} placeholder={placeholder} />
         {!hideSteppers && (
           <div className={s.steppers}>

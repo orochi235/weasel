@@ -14,6 +14,12 @@ export interface TokenEntry {
   description?: string;
 }
 
+/** A token's new value, or null to drop its override. */
+export type OnTokenChange = (name: string, value: string | null) => void;
+
+/** How the panel's number fields show an amount. */
+export const NUMBER_FORMAT = { maximumFractionDigits: 4, useGrouping: false } as const;
+
 /** How a scale's steps follow from its base: one multiplier per step, a constant ratio, or a constant step. */
 export type TokenScaleRule =
   | { kind: 'factors'; factors: readonly number[] }

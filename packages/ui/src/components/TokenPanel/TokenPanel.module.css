@@ -59,7 +59,7 @@
 
 .row[data-overridden] > .name,
 .family:has(.swatch[data-overridden]) > .name,
-.scale:has(.step[data-overridden]) > .name {
+.scale:has([data-overridden]) > .name {
   color: var(--wzl-accent-fg);
 }
 
@@ -222,7 +222,7 @@
   grid-column: 1 / -1;
 }
 
-/* A group of sizes: a grid of steps, each labeled by what its name adds. */
+/* A scale the slider cannot draw: a grid of steps, each labeled by what its name adds. */
 .steps {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
@@ -273,10 +273,6 @@
   align-items: center;
   gap: var(--wzl-space-1);
   min-width: 0;
-}
-
-.step > .stepEdit + .stepEdit {
-  margin-block-start: var(--wzl-space-1);
 }
 
 .stepEdit .number {
