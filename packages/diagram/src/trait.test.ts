@@ -12,6 +12,11 @@ describe('dataKeyReader', () => {
     expect(dataKeyReader(node({ diagram: { from: {}, to: {}, router: 'straight' } }))).toBeNull();
   });
 
+  it('reads an edge label as no participant', () => {
+    // Read as one, a label takes a slot in every layout and grows four ports.
+    expect(dataKeyReader(node({ diagram: { label: { at: 'mid' } } }))).toBeNull();
+  });
+
   it('still reads a participant that declares nothing', () => {
     expect(diagramNodeOf(node({ diagram: {} }))).toEqual({});
   });

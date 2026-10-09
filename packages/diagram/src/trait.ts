@@ -48,13 +48,15 @@ export interface DiagramNodeEntry {
  *  An edge's trait lives under the same key, so `from` and `to` are what tells
  *  the two apart. Without that test an edge reads as a participant declaring
  *  no ports, and collects the four defaults on the degenerate pose an edge
- *  carries — four grabbable ports in the middle of nowhere. */
+ *  carries — four grabbable ports in the middle of nowhere. An edge label's
+ *  `label` trait is the same story, and also took a slot in every layout. */
 export const dataKeyReader: DiagramNodeReader = (node) => {
   const data = node.data;
   if (data === null || typeof data !== 'object') return null;
   const trait = (data as Record<string, unknown>)[DIAGRAM_TRAIT_KEY];
   if (trait === null || typeof trait !== 'object') return null;
   if ('from' in trait && 'to' in trait) return null;
+  if ('label' in trait) return null;
   return trait as DiagramNode;
 };
 
