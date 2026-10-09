@@ -131,7 +131,7 @@
   outline-offset: -2px;
 }
 
-/* A group of sizes: its name over a grid of steps, each labeled by what its name adds. */
+/* A group of sizes: its name over a slider with a thumb per step, each labeled by what its name adds. */
 .scale {
   display: flex;
   flex-direction: column;
@@ -150,6 +150,28 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr));
   gap: var(--wzl-space-1) var(--wzl-space-xs);
+}
+
+.scaleSlider {
+  min-width: 0;
+  padding-inline: var(--wzl-space-sm);
+}
+
+.stepReadout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepAmount {
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-2xs);
+}
+
+.stepReadout[data-overridden] .stepLabel {
+  color: var(--wzl-accent-fg);
 }
 
 .rule {
@@ -196,10 +218,6 @@
   align-items: center;
   gap: var(--wzl-space-1);
   min-width: 0;
-}
-
-.step > .stepEdit + .stepEdit {
-  margin-block-start: var(--wzl-space-1);
 }
 
 .stepEdit .number {

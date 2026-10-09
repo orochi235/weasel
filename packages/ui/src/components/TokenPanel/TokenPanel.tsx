@@ -5,23 +5,22 @@ import { DisclosureRow } from '../Disclosure';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';
 import { Select } from '../Select';
-import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import { toHex } from './color';
+import { Scale } from './Scale';
 import s from './TokenPanel.module.css';
 import {
   bezierPoints,
-  refitScale,
+  NUMBER_FORMAT,
+  type OnTokenChange as OnChange,
   splitUnit,
   TOKEN_CATEGORIES,
   type TokenCategory,
   type TokenEntry,
   type TokenScale,
-  type TokenScaleRule,
   tokenCategory,
 } from './tokenTypes';
 
-type OnChange = (name: string, value: string | null) => void;
 
 /** Props for `<TokenPanel>`. */
 export interface TokenPanelProps {
@@ -50,7 +49,6 @@ export interface TokenPanelProps {
 }
 
 const WEIGHTS = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
-const NUMBER_FORMAT = { maximumFractionDigits: 4, useGrouping: false } as const;
 
 type FamilyKind = 'family' | 'scale';
 type Item = { kind: 'row'; token: TokenEntry } | { kind: FamilyKind; group: string; tokens: TokenEntry[] };
@@ -86,14 +84,6 @@ function itemsOf(tokens: readonly TokenEntry[], familySize: number): Item[] {
     family.tokens.push(token);
   }
   return items;
-}
-
-/** Each name's segments past those every name in the set shares; a name that is all shared keeps its last. */
-function stepLabels(names: readonly string[]): string[] {
-  const split = names.map((name) => name.replace(/^--/, '').split('-'));
-  let shared = 0;
-  while (split.every((segments) => segments.length > shared && segments[shared] === split[0]?.[shared])) shared++;
-  return split.map((segments) => segments.slice(shared).join('-') || (segments.at(-1) ?? ''));
 }
 
 function Curve({ points, label }: { points: readonly [number, number, number, number]; label: string }) {
@@ -227,204 +217,6 @@ function Family({ group, tokens, onChange }: { group: string; tokens: readonly T
   );
 }
 
-function ScaleStep({
-  token,
-  label,
-  showUnit,
-  factor,
-  onChange,
-  onFactorChange,
-}: {
-  token: TokenEntry;
-  label: string;
-  showUnit: boolean;
-  factor?: number;
-  onChange: OnChange;
-  onFactorChange?: (factor: number) => void;
-}) {
-  const split = splitUnit(token.value);
-  if (!split) return null;
-  return (
-    <div className={s.step} title={token.description || token.name} data-overridden={token.overridden ? '' : undefined}>
-      <span className={s.stepLabel}>{label}</span>
-      <span className={s.stepEdit}>
-        <NumberField
-          className={s.number}
-          aria-label={`${token.name} value`}
-          value={split.amount}
-          hideSteppers
-          formatOptions={NUMBER_FORMAT}
-          onChange={(amount) => {
-            if (Number.isFinite(amount)) onChange(token.name, `${amount}${split.unit}`);
-          }}
-        />
-        {showUnit && split.unit ? <span className={s.unit}>{split.unit}</span> : null}
-      </span>
-      {factor !== undefined && onFactorChange ? (
-        <span className={s.stepEdit}>
-          <span className={s.unit}>×</span>
-          <NumberField
-            className={s.number}
-            aria-label={`${token.name} factor`}
-            value={factor}
-            hideSteppers
-            formatOptions={NUMBER_FORMAT}
-            onChange={(next) => {
-              if (Number.isFinite(next)) onFactorChange(next);
-            }}
-          />
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-const RULES: readonly ToggleBarItem<TokenScaleRule['kind']>[] = [
-  { value: 'factors', label: 'each', ariaLabel: 'factors' },
-  { value: 'ratio', label: 'ratio' },
-  { value: 'step', label: 'step' },
-];
-
-function ScaleRuleControls({
-  group,
-  scale,
-  unit,
-  amounts,
-  onScaleChange,
-}: {
-  group: string;
-  scale: TokenScale;
-  unit: string;
-  amounts: readonly number[];
-  onScaleChange: (scale: TokenScale) => void;
-}) {
-  const { rule } = scale;
-  const param =
-    rule.kind === 'ratio'
-      ? { key: 'ratio' as const, value: rule.ratio }
-      : rule.kind === 'step'
-        ? { key: 'step' as const, value: rule.step }
-        : null;
-  return (
-    <div className={s.rule}>
-      <span className={s.stepEdit}>
-        <span className={s.ruleLabel}>base</span>
-        <NumberField
-          className={s.number}
-          aria-label={`${group} base`}
-          value={scale.base}
-          hideSteppers
-          formatOptions={NUMBER_FORMAT}
-          onChange={(base) => {
-            if (Number.isFinite(base)) onScaleChange({ ...scale, base });
-          }}
-        />
-        {unit ? <span className={s.unit}>{unit}</span> : null}
-      </span>
-      <ToggleBar
-        ariaLabel={`${group} rule`}
-        size="sm"
-        items={RULES}
-        value={rule.kind}
-        onChange={(kind) => {
-          if (kind && kind !== rule.kind) onScaleChange(refitScale(scale, kind, amounts));
-        }}
-      />
-      {param ? (
-        <span className={s.stepEdit}>
-          {param.key === 'ratio' ? <span className={s.unit}>×</span> : <span className={s.unit}>+</span>}
-          <NumberField
-            className={s.number}
-            aria-label={`${group} ${param.key}`}
-            value={param.value}
-            hideSteppers
-            formatOptions={NUMBER_FORMAT}
-            onChange={(value) => {
-              if (Number.isFinite(value)) onScaleChange({ ...scale, rule: { kind: param.key, [param.key]: value } as TokenScaleRule });
-            }}
-          />
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-function Scale({
-  group,
-  tokens,
-  generator,
-  onChange,
-  onScaleChange,
-}: {
-  group: string;
-  tokens: readonly TokenEntry[];
-  generator?: TokenScale;
-  onChange: OnChange;
-  onScaleChange?: (group: string, scale: TokenScale) => void;
-}) {
-  const labels = useMemo(() => stepLabels(tokens.map((t) => t.name)), [tokens]);
-  const units = new Set(tokens.map((t) => splitUnit(t.value)?.unit ?? ''));
-  const unit = units.size === 1 ? [...units][0] : null;
-  const overridden = tokens.filter((t) => t.overridden);
-  return (
-    <div className={s.scale} role="group" aria-label={group}>
-      <span className={s.scaleHead}>
-        <span className={s.name}>{group}</span>
-        {unit ? <span className={s.unit}>{unit}</span> : null}
-        {overridden.length > 0 ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            ariaLabel={`Reset ${group}`}
-            onClick={() => {
-              for (const t of overridden) onChange(t.name, null);
-            }}
-          >
-            Reset
-          </Button>
-        ) : null}
-      </span>
-      {generator && onScaleChange ? (
-        <ScaleRuleControls
-          group={group}
-          scale={generator}
-          unit={unit ?? ''}
-          amounts={generator.tokens.map(
-            (name) => splitUnit(tokens.find((t) => t.name === name)?.value ?? '')?.amount ?? generator.base,
-          )}
-          onScaleChange={(next) => onScaleChange(group, next)}
-        />
-      ) : null}
-      <div className={s.steps}>
-        {tokens.map((t, i) => {
-          const rule = generator?.rule;
-          const at = generator ? generator.tokens.indexOf(t.name) : -1;
-          const factor = rule?.kind === 'factors' && at >= 0 ? rule.factors[at] : undefined;
-          return (
-            <ScaleStep
-              key={t.name}
-              token={t}
-              label={labels[i] ?? t.name}
-              showUnit={unit === null}
-              factor={factor}
-              onChange={onChange}
-              onFactorChange={
-                generator && onScaleChange && rule?.kind === 'factors'
-                  ? (next) =>
-                      onScaleChange(group, {
-                        ...generator,
-                        rule: { kind: 'factors', factors: rule.factors.map((f, j) => (j === at ? next : f)) },
-                      })
-                  : undefined
-              }
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function Section({
   title,
   open,
@@ -477,7 +269,7 @@ function Section({
 /**
  * Edits a set of design tokens by type: collapsible sections by category, a
  * color group drawn as one row of swatches sized to fit, a group of sizes drawn
- * as one grid of numbers labeled by step — with its base and rule above it when
+ * as one slider with a thumb per step — with its base and rule above it when
  * `scales` says how it is generated — and a control for each
  * type — a number with its unit for dimensions and durations, the nine weights
  * for a font weight, a curve beside a `cubic-bezier()`, a swatch beside a color,
