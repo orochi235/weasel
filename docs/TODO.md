@@ -973,11 +973,11 @@ one dead `const` and four stale disable directives.
 - **(P3) `clock.browser.test.tsx` fails under full-suite load.** "a timed layer
   repaints as the clock plays, and holds once it pauses" failed once in an
   `onto test` run on teitou (2026-10-08, 2213 ms), with a branch that touched no
-  clock code, and passed three runs out of three on its own. The log carries no
-  assertion message. The 2.2 s fits the 500 ms settle plus one `expect.poll`
-  timing out at its 1 s default, but it could also be the 100 ms wait after
-  `pause` being too short for a frame already queued. Both are wall-clock
-  budgets, so the fix is to wait on frames the clock reports, not on time.
+  clock code, and passed three runs out of three on its own. It failed again the
+  same way on teitou that evening (4715 ms), this time with `expected 45 to be
+  44` from the `held` check after `pause`: a frame already queued when the clock
+  paused landed after the 100 ms wait. The fix is to wait on frames the clock
+  reports rather than on wall-clock time.
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
