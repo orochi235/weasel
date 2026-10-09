@@ -16,7 +16,7 @@ import s from './Prefs.module.css';
 export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
 
 /** How a {@link PrefsForm} lays its groups out. */
-export type PrefsLayout = 'columns' | 'rail';
+export type PrefsLayout = 'columns' | 'rail' | 'list';
 
 /** Props for {@link PrefsForm}. */
 export interface PrefsFormProps {
@@ -43,7 +43,9 @@ export interface PrefsFormProps {
    * `'columns'` (the default) wraps each top-level group into its own panel
    * column. `'rail'` puts a two-level navigation rail beside one group's
    * settings at a time — what a dialog-sized surface wants, since columns
-   * overflow sideways once there are more than two.
+   * overflow sideways once there are more than two. `'list'` sets the root's
+   * children down one column with no panel around them, nested groups as
+   * sub-panels — for a form that is already the whole of a pane.
    */
   layout?: PrefsLayout;
   /** Show a filter field that narrows the form to matching leaves. */
@@ -135,6 +137,25 @@ export function PrefsForm(props: PrefsFormProps) {
         filterField={field}
         onClearFilter={() => setQuery('')}
       />
+    );
+  }
+
+  if (layout === 'list') {
+    return (
+      <div className={[s.columnsLayout, className].filter(Boolean).join(' ')}>
+        {field}
+        {root === null ? (
+          <NoMatches query={query} onClear={() => setQuery('')} />
+        ) : (
+          <div className={s.rows}>
+            {Object.entries(root.children).map(([key, child]) => (isPrefLeaf(child) ? (
+              <PrefRow key={key} ctx={ctx} path={key} pref={child} />
+            ) : (
+              <GroupBody key={key} ctx={ctx} group={child} path={key} depth={1} />
+            )))}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -294,12 +315,12 @@ function GroupBody({ ctx, group, path, depth }: {
 }) {
   return (
     <div className={depth === 0 ? s.panel : s.subpanel}>
-      <div className={s.groupHeader}>
-        <h3 className={s.groupTitle}>{group.name}</h3>
-        {group.description !== undefined && (
-          <p className={s.groupDesc}>{group.description}</p>
-        )}
-      </div>
+      {(group.name !== '' || group.description) && (
+        <div className={s.groupHeader}>
+          {group.name !== '' && <h3 className={s.groupTitle}>{group.name}</h3>}
+          {group.description && <p className={s.groupDesc}>{group.description}</p>}
+        </div>
+      )}
       <div className={s.rows}>
         {Object.entries(group.children).map(([key, child]) => {
           const childPath = `${path}.${key}`;

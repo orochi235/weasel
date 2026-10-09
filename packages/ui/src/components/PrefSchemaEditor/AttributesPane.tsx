@@ -81,14 +81,13 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
   return (
     <section className={s.pane} aria-label="Attributes">
       <PaneHeader title="Attributes" />
-      {/* One wrapping group: PrefsForm gives each loose top-level leaf a column of its own. */}
       <PrefsForm
-        schema={{ name: 'Attributes', children: { attrs: { name: leaf ? 'Pref' : 'Group', children } } }}
-        values={{ attrs: { ...node, [OWN]: node } }}
+        schema={{ name: 'Attributes', children }}
+        layout="list"
+        values={{ ...node, [OWN]: node }}
         renderers={{ ...renderers, ...ATTR_RENDERERS, ...identity }}
         onChange={(p, value) => {
-          const rest = p.slice('attrs.'.length);
-          const attr = rest.startsWith(`${OWN}.`) ? rest.slice(OWN.length + 1) : rest;
+          const attr = p.startsWith(`${OWN}.`) ? p.slice(OWN.length + 1) : p;
           onChange(setAttribute(schema, path, attr, normalizeAttr(attr, value)));
         }}
       />

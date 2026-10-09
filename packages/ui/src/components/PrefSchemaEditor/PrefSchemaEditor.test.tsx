@@ -47,12 +47,10 @@ describe('PrefSchemaEditor', () => {
   it('sets the attributes every kind shares beside Key and Kind, and the kind\'s own in a panel below', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
-    const attrs = screen.getByRole('region', { name: 'Attributes' });
+    const top = screen.getByRole('region', { name: 'Attributes' });
     // A group's heading sits in a header row, first in its panel.
-    const panelOf = (title: string) => within(attrs).getByRole('heading', { name: title }).parentElement!.parentElement!;
-    const top = panelOf('Pref');
-    const own = panelOf('boolean');
-    expect(top).toContainElement(own);
+    const own = within(top).getByRole('heading', { name: 'boolean' }).parentElement!.parentElement!;
+    expect(within(top).queryByRole('heading', { name: /^(Pref|Group)$/ })).toBeNull();
     for (const field of ['Key', 'Name', 'Description']) {
       expect(within(top).getByRole('textbox', { name: field })).toBeInTheDocument();
       expect(within(own).queryByRole('textbox', { name: field })).toBeNull();

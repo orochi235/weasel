@@ -939,13 +939,14 @@
   --wzl-select-h: var(--wzl-field-h, var(--wzl-control-h));
 }
 
-/* Set directly in a property row, it drops its box and underlines its value:
-   a dense row of settings reads its choices as words, and 10px of caret is a
-   tenth of a short value's width. The words are set at the label's size, so
-   label and value share a baseline. A surface that slots the control in a
-   wrapper of its own — a prefs form, an inspector cell — keeps the box. */
-.row > .select {
+/* Anywhere in a property row, however deep a surface wraps it, a select drops
+   its box and reads as its value: a bold word, underlined. A dense row of
+   settings reads its choices as words, and 10px of caret is a tenth of a short
+   value's width. The words are set at the label's size, so label and value
+   share a baseline. Set on the row because these hooks inherit. */
+.row {
   --wzl-select-font-size: var(--wzl-font-size-sm);
+  --wzl-select-weight: var(--wzl-font-weight-bold);
   --wzl-select-bg: transparent;
   --wzl-select-border: 1px solid transparent;
   --wzl-select-pad: 0;
