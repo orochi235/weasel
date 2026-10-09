@@ -26,6 +26,10 @@ export interface PrefsStore<S extends PrefGroup> {
   values(): Record<string, unknown>;
   /** The leaves following their default. The same set until something changes. */
   unset(): ReadonlySet<string>;
+  /** Every stored record as a nested tree, unrepaired, including records no
+   *  leaf describes. The same object until something changes. */
+  stored(): Record<string, unknown>;
+  /** `changes` is empty when only records no leaf describes changed. */
   subscribe(listener: (changes: PrefChange[]) => void): () => void;
   /** False when the store cannot persist: storage was unreadable, or written
    *  by a newer schema. Changes still apply for this session. */
@@ -86,11 +90,40 @@ export function createPrefsStore<S extends PrefGroup>(
   };
   const current = (): Snapshot => (snapshot ??= build());
 
+  let storedTree: Record<string, unknown> | null = null;
+  const buildStored = (): Record<string, unknown> => {
+    const tree: Record<string, unknown> = {};
+    const branches = new WeakSet<object>([tree]);
+    for (const [name, value] of cache.entries()) {
+      if (name === VERSION_RECORD) continue;
+      const parts = name.split('.');
+      let cursor = tree;
+      for (const part of parts.slice(0, -1)) {
+        const next = cursor[part];
+        // A record's own value is never descended into: one named `a` and
+        // another `a.b` cannot both show, and the branch wins.
+        if (typeof next === 'object' && next !== null && branches.has(next)) {
+          cursor = next as Record<string, unknown>;
+        } else {
+          const branch: Record<string, unknown> = {};
+          branches.add(branch);
+          cursor[part] = branch;
+          cursor = branch;
+        }
+      }
+      const last = parts[parts.length - 1]!;
+      if (!branches.has(cursor[last] as object)) cursor[last] = value;
+    }
+    return tree;
+  };
+
   const listeners = new Set<(changes: PrefChange[]) => void>();
   const stopCache = cache.subscribe((changes) => {
-    const mine = changes.filter((c) => leaves.has(c.name));
-    if (mine.length === 0) return;
-    snapshot = null;
+    const records = changes.filter((c) => c.name !== VERSION_RECORD);
+    if (records.length === 0) return;
+    storedTree = null;
+    const mine = records.filter((c) => leaves.has(c.name));
+    if (mine.length > 0) snapshot = null;
     const now = current();
     const out = mine.map((c): PrefChange => ({ path: c.name, value: now.byPath.get(c.name), origin: c.origin }));
     for (const listener of [...listeners]) listener(out);
@@ -115,6 +148,7 @@ export function createPrefsStore<S extends PrefGroup>(
     isSet: (path) => cache.has(path),
     values: () => current().tree,
     unset: () => current().unset,
+    stored: () => (storedTree ??= buildStored()),
     subscribe: (listener) => {
       listeners.add(listener);
       return () => {

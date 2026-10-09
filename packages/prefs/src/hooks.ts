@@ -29,20 +29,23 @@ export function usePref<S extends PrefGroup, P extends PrefPath<S>>(
 }
 
 /** The whole of `store` as React state, shaped for `PrefsForm`: `values`,
- *  `onChange={set}`, `auto={unset}`, and `reset` for `onAutoChange`. */
+ *  `onChange={set}`, `auto={unset}`, and `reset` for `onAutoChange`. `stored`
+ *  is `store.stored()`. */
 export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
   values: Record<string, unknown>;
   set: (path: string, value: unknown) => void;
   unset: ReadonlySet<string>;
+  stored: Record<string, unknown>;
   reset: (path?: string) => void;
 } {
   const subscribe = useCallback((onChange: () => void) => store.subscribe(onChange), [store]);
   const values = useSyncExternalStore(subscribe, store.values, store.values);
   const unset = useSyncExternalStore(subscribe, store.unset, store.unset);
+  const stored = useSyncExternalStore(subscribe, store.stored, store.stored);
   const set = useCallback(
     (path: string, value: unknown) => store.set(path as PrefPath<S>, value as never),
     [store],
   );
   const reset = useCallback((path?: string) => store.reset(path), [store]);
-  return { values, set, unset, reset };
+  return { values, set, unset, stored, reset };
 }

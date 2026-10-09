@@ -71,4 +71,16 @@ describe('usePrefsValues', () => {
     act(() => leaf.result.current[1](10));
     expect(tree.result.current.values.density).toBe(10);
   });
+
+  it('returns the raw stored records, and hears an orphan record change', async () => {
+    const backing = new Map<string, unknown>([['p.stray', 'x']]);
+    const store = openPrefsSync(SCHEMA, { storage: createMemoryAdapter(backing), prefix: 'p.' });
+    const { result } = renderHook(() => usePrefsValues(store));
+    expect(result.current.stored).toEqual({ stray: 'x' });
+    await act(async () => {
+      await createMemoryAdapter(backing).set('p.other', 2);
+      await Promise.resolve();
+    });
+    expect(result.current.stored).toEqual({ stray: 'x', other: 2 });
+  });
 });

@@ -1,7 +1,7 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from './schema';
-import { createPrefsStore, type PrefChange } from './store';
+import { createPrefsStore, type PrefChange, VERSION_RECORD } from './store';
 
 const SCHEMA = {
   name: 'Test',
@@ -81,6 +81,44 @@ describe('createPrefsStore', () => {
     store.set('name', 'other');
     expect(store.values()).not.toBe(first);
     expect(store.unset()).toEqual(new Set(['view.grid', 'view.density']));
+  });
+
+  it('builds the raw stored records as a tree, orphans in and $version out', () => {
+    const { store } = make([
+      ['view.density', 999],
+      ['old.flag', 'kept'],
+      [VERSION_RECORD, 3],
+    ]);
+    const first = store.stored();
+    expect(first).toEqual({ view: { density: 999 }, old: { flag: 'kept' } });
+    expect(store.stored()).toBe(first);
+    store.set('name', 'doc');
+    expect(store.stored()).not.toBe(first);
+    expect(store.stored()).toEqual({ view: { density: 999 }, old: { flag: 'kept' }, name: 'doc' });
+  });
+
+  it('shows a branch over a record of the same name, and never writes into a record', () => {
+    const held = { kept: true };
+    const { store } = make([['x', held], ['x.y', 1]]);
+    expect(store.stored()).toEqual({ x: { y: 1 } });
+    expect(held).toEqual({ kept: true });
+  });
+
+  it('rebuilds the stored tree and notifies, with no changes, when only an orphan changes', () => {
+    const backing = new Map<string, unknown>();
+    const { store } = make([], backing);
+    const peer = createMemoryAdapter(backing);
+    const before = store.stored();
+    const values = store.values();
+    const heard: PrefChange[][] = [];
+    store.subscribe((c) => heard.push(c));
+    void peer.set('p.old.flag', 1);
+    return vi.waitFor(() => {
+      expect(store.stored()).toEqual({ old: { flag: 1 } });
+      expect(store.stored()).not.toBe(before);
+      expect(store.values()).toBe(values);
+      expect(heard).toEqual([[]]);
+    });
   });
 
   it('tells subscribers what changed, with the value readers now see', () => {

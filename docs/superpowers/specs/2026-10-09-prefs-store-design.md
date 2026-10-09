@@ -88,6 +88,10 @@ interface PrefsStore<S extends PrefGroup> {
   values(): unknown;
   /** Leaves following their default. The same set until something changes. */
   unset(): ReadonlySet<string>;
+  /** Every stored record as a nested tree, unrepaired, orphans included,
+   *  `$version` excluded. The same object until something changes. */
+  stored(): Record<string, unknown>;
+  /** `changes` is empty when only records no leaf describes changed. */
   subscribe(fn: (changes: PrefChange[]) => void): () => void;
   readonly writable: boolean;
   flush(): Promise<void>;
@@ -140,7 +144,7 @@ the schema's leaves; draw's legacy import uses it.
 ### Hooks
 
 - `usePref(store, path)` → `[value, set]`.
-- `usePrefsValues(store)` → `{ values, set, unset, reset }`.
+- `usePrefsValues(store)` → `{ values, set, unset, stored, reset }`.
 
 Both use `useSyncExternalStore`. The store is an explicit argument, not context:
 a context type erases the schema's typed paths.
