@@ -1,5 +1,52 @@
 # @weasel-js/ui
 
+## 1.9.2
+
+### Patch Changes
+
+- 83c724a: A `BandEditor` with `onRangeChange` labels both range ends on its ruler, and hides any tick whose mark or label would collide with an end's. The end labels sit inside the track.
+- 215418a: `BandEditor` can rescale its whole range. Pass `onRangeChange(min, max, bands)` and both ends of the strip become draggable, keyboard-operable sliders. Dragging an end rescales the sequence with the other end held: every band stretches or shrinks in proportion to its length as drawn. Pull an end past the track and the axis squeezes to fit while the drag is live. Ends stop outward at `limits` when given. `onRangeInput` previews the drag.
+  
+  A band can be locked: right-click it, or select it and press `l`. A locked band (`Band.locked`) is hatched, and holds its length while the rest of the range rescales around it. Locking is offered only when `onRangeChange` is wired, since it affects nothing else.
+  
+  Ticks outside the drawn axis are now hidden rather than piled at its ends.
+- e32ef39: `TokenPanel` has one compact layout: a token to a line, names on a rail, values at the small text size. The `density` prop is gone (this breaks any caller passing it). `namePrefix` leaves a shared prefix such as `--wzl-` off every name, with the full name kept in the tooltip. Rows that share a group show the group's name once down the rail. Empty values read `unset`, and a reset is an icon in its own column. Scale steps span the panel's width, with their labels lined up over the digits.
+  
+  The small `ToggleBar`, `ButtonBar` and `OptionsBar` take their height from their font size, so descenders no longer clip. In light mode, the secondary `Button` drops its dark text shadow and the primary one lightens it.
+  
+  New icons: `drop`, `type`, `typeface` and `more`.
+  
+  labkit: a `SidebarSection` can carry `actions`, drawn in its title bar (docked or torn out) and hidden while it is folded. Section title bars stay pinned while their bodies scroll, and expose their height as `--lk-section-bar-h`. An `Instrument` can supply `renderTitle` to draw its trial's title as more than text.
+  
+  forge: the CSS Vars header has a bar of section icons that jumps to a section and highlights the one in view. Each folder in a trial's breadcrumb links to that folder in the story tree, opening the Tree or Gallery view if the current view doesn't have it. A global can name the `icon` on its popover button; Font now uses `typeface`. Package badges in the story tree now sit centered on their checkboxes.
+- f2cd0b7: `MotifFrame` is a titled frame around anything, drawn in a motif: how a frame draws its title and its edge. Five ship: `rule()` (a title between two rules), `stereo({ side, labelAlign })` (a label bar along any edge, as on the back of an A/V receiver), `notch({ align })` (the title cut into a fieldset's border), `tab({ align })` (a folder tab), and `plaque({ mix })` (the tone fills the frame, with text and controls redrawn in black or white to read on it). Every motif colors itself from the same `stance` and `tone`, and the root is a `group` named by its title. The root barrel exports the factories as `motifs.stereo()` and so on; `@weasel-js/ui/components/MotifFrame` exports the bare names, along with `withMotifClass` for writing a motif of your own.
+  
+  `PropertyGroup` now draws through `MotifFrame` and takes a `motif` prop. Its default, `rule()`, is the look it had before. Its root is now a `group` named by its title, so a `getByRole('group')` query that once found only a list's other groups can find it too.
+- 34ffe05: `NumberField` and `UnitField` steppers now sit at the start of the field, before the value, rather than after it. `stepperSide="end"` puts them back at the end.
+- a82540f: A `Select` set directly in a property row shows its value at the row label's size (`--wzl-font-size-sm`) instead of the body size, and sits on the label's baseline. `Select` takes a new `--wzl-select-font-size` hook for this. Before, a theme whose small size differed from its body size drew the value larger than the label and set it off the label's line. labkit's `ControlPanel` no longer centers its dropdown rows. The centering existed to cancel the step that the larger value caused against neighboring slider and checkbox rows.
+- 32009c0: New `PrefSchemaEditor`: edit a preference schema's structure and each leaf's attributes — key, kind and the attributes every kind shares in one panel, the kind's own beneath — with a live `PrefsForm` preview, and export the result as a TypeScript literal plus a list of changes. Attributes holding code (`encoding`, `unit`, `fromScalar`) are shown read-only and exported as `KEEP_FROM_SOURCE`, so a pasted literal fails typecheck until they are restored. Custom kinds describe their attributes through `kinds`. `printSchema`, `diffSchemas` and `formatChanges` are exported for use outside the component.
+- daab5be: `PrefsForm` and `PrefsDialog` take `foldable` in the rail layout: each top-level entry folds its nested entries away behind a fold mark, shut until its group is the one open. Click the mark, or press Right and Left on the entry, to unfold and fold it by hand. A filter unfolds everything, so every match shows.
+  
+  `Disclosure` takes `tabIndex`, for a row whose own keys fold it.
+- 6e302e9: New `--wzl-surface-popover` token: the background of dropdowns, menus and other popover lists (`Select`, `MenuButton`, `ComboBox`, `PaintField`'s popover). It follows `surface-raised` by default. The interstellar theme pins it at 92% opacity instead of its panels' 55%, so a list over busy content stays readable.
+- 586cf05: `TokenPanel` draws a scale as one slider with a thumb per step, on a logarithmic track so steps a constant ratio apart sit evenly, each labeled with its step name and amount. An arrow key moves a step by one unit of the scale's precision. Under the `each` rule a dragged step changes its own factor, so the scale stays generated; the factor fields under each step are gone. A scale with mixed units or a step at zero keeps the grid of numbers.
+  
+  `Slider`'s `below-thumb` readouts no longer overlap: one that would overlap its neighbor drops to a row of its own, and the readout area grows to fit.
+- fca8591: `Tree` reorders by drag and by Alt+arrow keys when given `onMove(ids, target)`, where `target` is `{ parentId, index }`. A drop into a dragged node or beneath it is always refused; `canDrop(ids, target)` refuses anything else the consumer forbids, such as leaving the parent. Without `onMove` there is no drag. `useReorderDragList` now resolves its drop index through the same model; its behavior is unchanged.
+  
+  Every `Tree` is also less deeply indented: a branch's fold mark now hangs in a gutter left of its label instead of sitting in a column that leaves reserved too, so labels at one depth line up and each level steps in by one mark's width. `--wzl-tree-indent` still overrides the step.
+- Updated dependencies [3ba97df]
+- Updated dependencies [1b7af8d]
+- Updated dependencies [6e302e9]
+  - @weasel-js/core@1.9.2
+  - @weasel-js/theme@1.9.2
+  - @weasel-js/svg@1.9.2
+  - @weasel-js/font@1.9.2
+  - @weasel-js/modes@1.9.2
+  - @weasel-js/quantity@1.9.2
+  - @weasel-js/react@1.9.2
+  - @weasel-js/select@1.9.2
+
 ## 1.9.1
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @weasel-js/theme
 
+## 1.9.2
+
+### Patch Changes
+
+- 6e302e9: New `--wzl-surface-popover` token: the background of dropdowns, menus and other popover lists (`Select`, `MenuButton`, `ComboBox`, `PaintField`'s popover). It follows `surface-raised` by default. The interstellar theme pins it at 92% opacity instead of its panels' 55%, so a list over busy content stays readable.
+- @weasel-js/paint@1.9.2
+
 ## 1.9.1
 
 ### Patch Changes

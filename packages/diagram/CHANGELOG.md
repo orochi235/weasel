@@ -1,5 +1,28 @@
 # @weasel-js/diagram
 
+## 1.9.2
+
+### Patch Changes
+
+- 227a3fb: `diagramScene` builds every box through `buildBody`, so a data node can set its `outline`, `rows` (label, field, ports and slot, with bold text), `padding`, `gap`, perimeter `ports`, `pinned`, a starting `at` and a minimum `width`/`height`. `lines` remains shorthand for label rows. Edges take `fromPort`/`toPort`, a per-edge `router`, `waypoints` and `labelPlacement`; `EdgeStyle` adds `dash`, `markerStart`, `markerEnd` and a `label` color, and `NodeStyle` adds `dash`. Options add `layout` by name (`'layered'`, `'tree'`, `'force'`), `measure`, `outline`, `padding`, `gap`, `minWidth` and `labelPlacement`, and `layoutOptions` now merge over the barycenter default instead of replacing it.
+  
+  Box sizes change: padding is the body's uniform 8 rather than 12 by 8, and rows are spaced by `gap`.
+  
+  `BodySpec.ports` replaces a body's four compass ports. `BodySpec.verticalAlign` (`'top'`, `'center'` or `'bottom'`) places the rows as a block when a body is taller than they need, and defaults to `'center'`: a body used to stack its rows from the top, so one built taller than its content now draws them lower. Data nodes and `diagramScene` options take `verticalAlign` too. A row's fallback height now follows its `fontSize` when no `measure` is given.
+  
+  `DiagramView` adds `maxScale`, `fitPadding`, `background`, and a controlled `view` with `onViewChange`.
+- 3ba97df: `reconcileSpecs(scene, prev, next)` brings a scene from one list of node specs to another: it adds and removes by id and writes only the fields that changed between the two lists, as one untracked step. What the scene did since `prev` survives unless `next` changes that same field.
+  
+  `DiagramView` no longer remounts on a new `specs` array. It reconciles the new specs into the scene it holds, so the view, the pick and anything moved stay put. `onMove` turns on dragging and reports every node a drag or a layout run moved. `onConnect` makes ports grabbable and reports the edge a connect describes without drawing it, and `canConnect` and `portOptions` configure that. A `ref` gets `layout(algorithm)`, which re-runs a layout animated from where the nodes stand, and the run's `live` controls; `live` configures the run.
+  
+  `diagramScene` gives every spec an id, and takes `layout: 'none'` to leave each node at its `at`.
+  
+  `fitDiagram`'s scale and anchor arguments are now one options object.
+- Updated dependencies [3ba97df]
+- Updated dependencies [1b7af8d]
+  - @weasel-js/core@1.9.2
+  - @weasel-js/geom@1.9.2
+
 ## 1.9.1
 
 ### Patch Changes
