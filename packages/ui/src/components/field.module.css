@@ -73,7 +73,7 @@
   border: var(--_frame-border, 1px solid var(--wzl-border));
   border-radius: var(--wzl-radius-sm);
   color: var(--_frame-fg, var(--wzl-fg));
-  font-size: var(--wzl-font-size);
+  font-size: var(--_frame-font-size, var(--wzl-font-size));
   line-height: 1;
   transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }

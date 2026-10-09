@@ -13,7 +13,11 @@ afterEach(cleanup);
 beforeAll(() => {
   const style = document.createElement('style');
   // A label track narrow enough that a long name wraps inside it.
-  style.textContent = '.narrow-labels { --wzl-params-label-width: 70px; width: 260px; }';
+  style.textContent = [
+    '.narrow-labels { --wzl-params-label-width: 70px; width: 260px; }',
+    // Label size and body size far enough apart that a value set in the wrong one shows.
+    '.split-sizes { --wzl-font-size-sm: 13px; --wzl-font-size: 18px; width: 260px; }',
+  ].join('\n');
   document.head.append(style);
 });
 
@@ -27,6 +31,25 @@ const rowOf = (control: Element) => {
   return el;
 };
 const labelOf = (control: Element) => rowOf(control).querySelector(':scope > [class*="rowLabel"]')!;
+
+/**
+ * Where an element's first text sits, from a zero-height inline box set beside it. The box goes in a span wrapped
+ * round the text: appended to a flex container it would be a flex item, off the line.
+ */
+const baselineOf = (el: Element) => {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, (n) =>
+    n.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
+  );
+  const text = walker.nextNode()!;
+  const wrap = document.createElement('span');
+  const probe = document.createElement('span');
+  probe.style.display = 'inline-block';
+  text.parentNode!.replaceChild(wrap, text);
+  wrap.append(text, probe);
+  const y = probe.getBoundingClientRect().bottom;
+  wrap.replaceWith(text);
+  return y;
+};
 
 /** Settles the ResizeObserver a row measures itself with. */
 const frames = () =>
@@ -107,4 +130,26 @@ test('a label that wraps puts its first line level with a one-line control', asy
   // centered as a whole, the field would sit halfway down the two lines.
   const line = Number.parseFloat(getComputedStyle(labelOf(field)).lineHeight);
   expect(Math.abs(label.top + line / 2 - mid(control))).toBeLessThan(2);
+});
+
+test('a dropdown row sets its value at the label size, on the label baseline', async () => {
+  render(
+    <PropertyList className="split-sizes">
+      <PropertyField
+        kind="enum"
+        label="Mode"
+        value="a"
+        options={[{ value: 'a', label: 'Alpha' }]}
+        onChange={() => {}}
+        layout="inline"
+      />
+    </PropertyList>,
+  );
+  await frames();
+  const trigger = screen.getByRole('button', { name: /Mode/ });
+  const label = labelOf(trigger);
+  const value = [...trigger.querySelectorAll('span')].find((el) => el.textContent === 'Alpha')!;
+  expect(getComputedStyle(value).fontSize).toBe('13px');
+  expect(getComputedStyle(label).fontSize).toBe('13px');
+  expect(Math.abs(baselineOf(value) - baselineOf(label))).toBeLessThan(0.5);
 });
