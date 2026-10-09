@@ -818,6 +818,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   grid gap above the attributes pane, and the Key/Kind rows are wider than the attribute form
   under them. Seen on `#/dev/prefs` at 1440×900.
 
+- **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
+  `f.section` keeps its sections, `showIf` rules, `.render` overrides and `.dialog` rows beside the
+  `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
+  export drops all four. Seen on astv's `/prefs-schema.html`, whose settings are sectioned rather
+  than nested because `f.group` would move their config paths.
+
 - **(P3) A Windows 9x theme.** Gray 3D bevels, a navy-to-blue gradient title strip and the
   system's pixel faces, as a full theme beside Interstellar rather than a one-component skin. Its
   titled groups want a titlebar frame motif (a solid title strip across the top), which was left
