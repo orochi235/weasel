@@ -19,6 +19,16 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P2) A canvas's keyboard shortcuts claim keys page-wide.** The gesture dispatcher listens
+  on `window`, and a page with one canvas has it as the active scope, so held Space pans that
+  canvas from anywhere on the page — a read-only canvas in a side panel takes Space from a
+  page that wants it (the blits playground's space-to-play listens in the capture phase to
+  get there first). Keys aimed at an editable field, or Space/Enter on a focused button or
+  link (`activatesFocusedControl`), are already left alone, and `enableKeybindings={false}`
+  turns a canvas's keys off. Left: deciding when a canvas owns a key that reaches the body —
+  focus inside the canvas, the pointer over it, or the last canvas interacted with — without
+  breaking an app like WeaselDraw, whose shortcuts work from the body today.
+
 - **(P1) "Tool" still names two things outside the kit's own code.** Inside the kit it now
   means one: a contribution that can hold focus, picked from a palette or held on a key
   (`isTool`), and every container holding any entry says "entry" (see "Tool" in

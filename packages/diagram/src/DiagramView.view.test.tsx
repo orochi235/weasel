@@ -63,3 +63,29 @@ describe('DiagramView', () => {
     expect(ids).toEqual(['b', 'c']);
   });
 });
+
+describe('DiagramView keyboard', () => {
+  const spaceOnBody = async () => {
+    const e = new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true });
+    await act(async () => { document.body.dispatchEvent(e); });
+    await act(async () => {
+      document.body.dispatchEvent(new KeyboardEvent('keyup', { key: ' ', code: 'Space', bubbles: true }));
+    });
+    return e;
+  };
+
+  it('leaves held Space to the page when the diagram is view-only', async () => {
+    render(<DiagramView specs={diagramScene(DATA)} width={300} height={300} />);
+    expect((await spaceOnBody()).defaultPrevented).toBe(false);
+  });
+
+  it('claims held Space for panning when the diagram is editable', async () => {
+    render(<DiagramView specs={diagramScene(DATA)} width={300} height={300} onMove={() => {}} />);
+    expect((await spaceOnBody()).defaultPrevented).toBe(true);
+  });
+
+  it('follows enableKeybindings over the default', async () => {
+    render(<DiagramView specs={diagramScene(DATA)} width={300} height={300} onMove={() => {}} enableKeybindings={false} />);
+    expect((await spaceOnBody()).defaultPrevented).toBe(false);
+  });
+});

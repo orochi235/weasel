@@ -14,7 +14,7 @@
  */
 import { useCallback, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
-import { isEditableTarget } from '../keyHelpers';
+import { activatesFocusedControl, isEditableTarget } from '../keyHelpers';
 import { useLatest } from '@weasel-js/react';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
@@ -736,7 +736,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // -----------------------------------------------------------------------
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || isEditableTarget(e.target)) return;
+      if (e.defaultPrevented || isEditableTarget(e.target) || activatesFocusedControl(e)) return;
       // Every dispatcher hears keys on window; only the active scope's act.
       if (!registryRef.current.isActive()) return;
 

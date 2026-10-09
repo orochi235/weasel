@@ -152,7 +152,7 @@ export * from './tools/routing';
 export { reportRouteConflicts } from './tools/routing/reflection/conflicts';
 
 // ─── input plumbing ───────────────────────────────────────────────────────
-export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
+export { activatesFocusedControl, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
 export type { KeyBinding } from './interactions/keyHelpers';
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';
 export type { ScratchKey, ScratchStore } from './interactions/scratchKey';

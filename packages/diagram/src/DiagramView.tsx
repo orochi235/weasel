@@ -47,6 +47,11 @@ export interface DiagramViewProps {
   /** Set to make ports grabbable. Dragging one port onto another reports the
    *  edge it describes and draws nothing; add it to the data to keep it. */
   onConnect?: (edge: DataEdge) => void;
+  /** Whether the canvas's keyboard shortcuts — held Space to pan among them —
+   *  run. They listen page-wide, so a view-only diagram beside other UI would
+   *  claim keys meant for the page. Default: on when `onMove` or `onConnect`
+   *  is set. */
+  enableKeybindings?: boolean;
   /** Which ports may be joined. Default: a port may not join itself, and two
    *  typed ports must share a type. */
   canConnect?: CanConnect;
@@ -106,7 +111,7 @@ export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function
 });
 
 function Inner({
-  specs, width, height, selected, onSelect, onMove, onConnect, canConnect, portOptions, live: liveOpts,
+  specs, width, height, selected, onSelect, onMove, onConnect, enableKeybindings, canConnect, portOptions, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, background, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
   useEffect(() => registerDiagramShape<RectPose>(), []);
@@ -200,6 +205,7 @@ function Inner({
       scene={scene}
       selection={selection}
       features={onMove ? ['view', 'pick', 'move'] : ['view', 'pick']}
+      enableKeybindings={enableKeybindings ?? (onMove !== undefined || onConnect !== undefined)}
       ambient={ambient}
       onClick={onClick}
       width={width}
