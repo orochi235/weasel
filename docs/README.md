@@ -28,7 +28,7 @@ OIDC trusted publishing, and how to publish by hand when CI can't.
 
 For working code, the `apps/site/` directory has runnable consumers
 (`TransformDemo`, `CompoundPathsDemo`, `InsertDemo`, …); run them
-with `npm run dev:kit` from the repo root (port 33451; every dev server's
+with `npm run dev:kit` from the repo root (port 33451, or 33421 when that is taken; every dev server's
 port is in `scripts/dev-ports.json`).
 
 `docs/specs/` and `docs/TODO.md` are internal — design notes and open work. They are not part of the

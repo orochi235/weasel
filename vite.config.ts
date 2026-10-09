@@ -86,7 +86,7 @@ export default defineConfig({
     demoTimestamps({ root: import.meta.dirname }),
     demoSources({ root: import.meta.dirname }),
     changelogs({ root: import.meta.dirname }),
-    localWake(),
+    localWake({ fallback: [ports.siteBackup] }),
   ],
   define: weaselDefines(import.meta.dirname),
   // Pre-bundle demo-only deps at server start so they don't trigger lazy
