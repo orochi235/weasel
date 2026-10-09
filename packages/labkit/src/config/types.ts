@@ -27,6 +27,8 @@ export interface Annotations {
   hidden?: boolean;
   block?: boolean;
   pair?: string;
+  /** Draw the control in the title row of the section or group holding it. */
+  heading?: boolean;
   min?: number;
   max?: number;
   step?: number;

@@ -827,6 +827,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   export drops all four. Seen on astv's `/prefs-schema.html`, whose settings are sectioned rather
   than nested because `f.group` would move their config paths.
 
+- **(P3) `sectionTree` doesn't lift heading controls.** `ControlPanel` draws a `.heading()` leaf,
+  or a first row repeating its heading ("Pump" under "Pumping"), in the heading's title row and
+  warns about the repeat. The prefs rail `sectionTree` feeds to `PrefsForm` still draws that leaf
+  as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
+  a control in a rail item or subsection heading.
+
 - **(P3) A Windows 9x theme.** Gray 3D bevels, a navy-to-blue gradient title strip and the
   system's pixel faces, as a full theme beside Interstellar rather than a one-component skin. Its
   titled groups want a titlebar frame motif (a solid title strip across the top), which was left

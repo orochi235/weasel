@@ -77,6 +77,13 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
     return this.ann({ block: true });
   }
 
+  /** Draw the control in the title row of the heading above it — the section,
+   *  the group, or the panel's `title` — with that title as its accessible
+   *  name: a section's on/off switch or kind picker. A boolean or enum only. */
+  heading(): this {
+    return this.ann({ heading: true });
+  }
+
   /** Pair with a sibling sharing this id, side-by-side on one row. */
   pair(pair: string): this {
     return this.ann({ pair });
