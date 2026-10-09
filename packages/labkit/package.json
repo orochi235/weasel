@@ -125,6 +125,7 @@
     "@weasel-js/kernel3d": "1.9.2",
     "@weasel-js/loupe": "1.9.2",
     "@weasel-js/quantity": "1.9.2",
+    "@weasel-js/storage": "1.9.2",
     "@weasel-js/svg": "1.9.2",
     "@weasel-js/ui": "1.9.2",
     "earcut": "3.2.3",

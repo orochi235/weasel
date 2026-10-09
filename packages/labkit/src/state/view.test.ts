@@ -1,6 +1,6 @@
 import { ZOOM_FLOOR } from '@weasel-js/core';
+import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
-import { createMemoryAdapter } from './adapters';
 import { openLabStore } from './openLabStore';
 import { createLabStore } from './store';
 import { as2DView, DEFAULT_VIEW, normalize2DView, withZoom } from './view';

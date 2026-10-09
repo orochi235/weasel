@@ -4,6 +4,20 @@
 // package emits no binding in the bundle.
 // The playback glyphs ride along for the same reason: chrome that labels a control with
 // one should not need `@weasel-js/ui` in its manifest to draw a play button.
+
+export {
+  createIndexedDbAdapter,
+  createMemoryAdapter,
+  type IndexedDbAdapterOptions,
+  localStorageAdapter,
+  noneAdapter,
+  type RecordCache,
+  type RecordChange,
+  type StorageAdapter,
+  type StorageChange,
+  sessionStorageAdapter,
+  urlHashAdapter,
+} from '@weasel-js/storage';
 export type {
   ButtonProps,
   ButtonSize,
@@ -280,16 +294,6 @@ export * from './lightbox';
 export * from './primitives';
 export { SPECIMEN_SECTIONS, Specimen } from './specimen/Specimen';
 export {
-  createIndexedDbAdapter,
-  createMemoryAdapter,
-  type IndexedDbAdapterOptions,
-  indexedDbAdapter,
-  localStorageAdapter,
-  noneAdapter,
-  sessionStorageAdapter,
-  urlHashAdapter,
-} from './state/adapters';
-export {
   LabStoreContext,
   LabStoreProvider,
   TrialIdContext,
@@ -298,9 +302,9 @@ export {
   useTrialId,
 } from './state/context';
 export { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './state/document';
+export { indexedDbAdapter } from './state/labStorage';
 export { type OpenedLabStore, type OpenLabStoreOptions, openLabStore } from './state/openLabStore';
 export { Persistence, type PersistenceProps } from './state/Persistence';
-export type { RecordCache, RecordChange } from './state/records';
 export type {
   CreateLabStoreOptions,
   LabDensity,
@@ -309,8 +313,6 @@ export type {
   LabStoreState,
   SavedSnapshot,
   SerializedTrial,
-  StorageAdapter,
-  StorageChange,
   TrialInfo,
   TrialRecord,
   TrialStateHandle,

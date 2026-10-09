@@ -1,13 +1,18 @@
 export {
   createIndexedDbAdapter,
   createMemoryAdapter,
+  decodeUrlHash,
+  encodeUrlHash,
   type IndexedDbAdapterOptions,
-  indexedDbAdapter,
   localStorageAdapter,
   noneAdapter,
+  type RecordCache,
+  type RecordChange,
+  type StorageAdapter,
+  type StorageChange,
   sessionStorageAdapter,
   urlHashAdapter,
-} from './adapters';
+} from '@weasel-js/storage';
 export {
   LabStoreContext,
   LabStoreProvider,
@@ -22,15 +27,13 @@ export {
   quarantineKey,
 } from './document';
 export {
-  decodeUrlHash,
   deserializeTrials,
-  encodeUrlHash,
   labStorageKey,
   serializeTrials,
 } from './helpers';
+export { indexedDbAdapter } from './labStorage';
 export { type OpenedLabStore, type OpenLabStoreOptions, openLabStore } from './openLabStore';
 export { Persistence, type PersistenceProps } from './Persistence';
-export type { RecordCache, RecordChange } from './records';
 export {
   SingletonExperimentProvider,
   type SingletonExperimentProviderProps,
@@ -45,8 +48,6 @@ export type {
   Migration,
   SavedSnapshot,
   SerializedTrial,
-  StorageAdapter,
-  StorageChange,
   TrialRecord,
   TrialStateHandle,
 } from './types';

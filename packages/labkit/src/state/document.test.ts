@@ -1,5 +1,5 @@
+import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
-import { createMemoryAdapter } from './adapters';
 import {
   CURRENT_DOCUMENT_VERSION,
   deleteConfirmed,

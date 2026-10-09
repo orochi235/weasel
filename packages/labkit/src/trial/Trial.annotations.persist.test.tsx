@@ -6,6 +6,7 @@
  */
 import { act, screen, waitFor } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { createMemoryAdapter } from '@weasel-js/storage';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAnnotations } from '../annotations/AnnotationsContext';
 import type { AnnotationsApi, SerializedAnnotations } from '../annotations/types';
@@ -13,7 +14,6 @@ import { defineInstrument } from '../instrument/defineInstrument';
 import type { InstrumentList } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { LabContext, type LabContextValue } from '../lab/LabContext';
-import { createMemoryAdapter } from '../state/adapters';
 import { labPrefix } from '../state/labRecords';
 
 beforeAll(() => {

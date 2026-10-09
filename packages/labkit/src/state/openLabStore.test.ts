@@ -1,12 +1,12 @@
 import { createHistory } from '@weasel-js/core';
+import { createMemoryAdapter, type StorageAdapter } from '@weasel-js/storage';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
-import { createMemoryAdapter } from './adapters';
 import { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './document';
 import { labStorageKey } from './helpers';
 import { labPrefix, recordsOfDocument } from './labRecords';
 import { type OpenLabStoreOptions, openLabStore } from './openLabStore';
-import type { LabDocument, StorageAdapter, TrialRecord } from './types';
+import type { LabDocument, TrialRecord } from './types';
 
 const VIEW = { zoom: 1, pan: { x: 0, y: 0 } };
 const P = labPrefix('test');

@@ -1,11 +1,16 @@
 import { stableStringify } from '@weasel-js/core';
+import {
+  createRecordCache,
+  noneAdapter,
+  type RecordCache,
+  type StorageAdapter,
+} from '@weasel-js/storage';
 import type { InstrumentList } from '../instrument/types';
-import { defaultStorage, noneAdapter } from '../state/adapters';
 import { valueRecord } from '../state/labRecords';
+import { defaultStorage } from '../state/labStorage';
 import { type OpenedLabStore, openLabStore } from '../state/openLabStore';
-import { createRecordCache, type RecordCache } from '../state/records';
 import { createLabStore, type LabStore } from '../state/store';
-import type { LabMode, StorageAdapter } from '../state/types';
+import type { LabMode } from '../state/types';
 import { addTrial as addTrialOp } from '../trial/trialOps';
 
 export interface OpenedLab extends OpenedLabStore {

@@ -1,6 +1,6 @@
+import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
 import type { Instrument, InstrumentList } from '../instrument/types';
-import { createMemoryAdapter } from '../state/adapters';
 import { openStoredLab, openUnstoredLab, presentStorageKey } from './openLab';
 
 const counter: Instrument<{ count: number }, { n: number }> = {

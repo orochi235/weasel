@@ -1,8 +1,8 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { createMemoryAdapter } from '@weasel-js/storage';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
-import { createMemoryAdapter } from '../state/adapters';
 import { labPrefix } from '../state/labRecords';
 import { Lab, type LabProps } from './Lab';
 import { LabContext, type LabContextValue } from './LabContext';

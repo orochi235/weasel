@@ -1,5 +1,5 @@
 import { isJsonSafe, parse } from './json';
-import type { StorageAdapter, SyncStorageAdapter } from './types';
+import type { SyncStorageAdapter } from './types';
 
 function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean): SyncStorageAdapter {
   const warned = new Set<string>();
