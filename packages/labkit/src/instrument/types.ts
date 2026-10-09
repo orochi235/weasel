@@ -210,8 +210,9 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   /** Chrome this instrument contributes beyond what its capabilities imply. */
   chrome?: TrialContribution[];
   /** Gives the trial a clock: playback time that layers, renderers and chrome
-   *  read and drive. */
-  clock?: ClockCapability;
+   *  read and drive. `'lab'` plays on the lab's own clock, which `<Lab clock>`
+   *  declares, so every trial declaring it shares one time. */
+  clock?: ClockCapability | 'lab';
   /** Work too slow to do during a render. The runtime starts it, aborts it on
    *  unmount and on a `key` change, and renders progress into the trial. */
   job?: JobCapability<TS, TC, TItem>;

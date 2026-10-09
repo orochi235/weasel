@@ -1,4 +1,3 @@
-import { TRANSPORT_RATES } from '../passthrough/weasel-ui';
 import type { TrialClock } from './trialClock';
 
 /**
@@ -8,7 +7,7 @@ import type { TrialClock } from './trialClock';
  */
 export interface TransportControl {
   readonly playing: boolean;
-  /** Unsigned, one of `TRANSPORT_RATES` or whatever the clock opened at. */
+  /** Unsigned, one of the clock's `rates` or whatever it opened at. */
   readonly speed: number;
   readonly backward: boolean;
   /** The playhead within the current pass, ms. */
@@ -65,7 +64,7 @@ export function transportControl(
       if (playing) clock.rate = signed(speed, held.backward);
     },
     stepSpeed(direction) {
-      const rates: readonly number[] = TRANSPORT_RATES;
+      const rates = clock.rates;
       const next =
         direction > 0
           ? rates.find((r) => r > held.speed)

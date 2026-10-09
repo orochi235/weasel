@@ -35,8 +35,6 @@
   }
 
   [data-lk-presented] {
-    // The play controls ask its width, not the page's: an embed is a box.
-    container-type: size;
     position: absolute;
     inset: 0;
     display: flex;
@@ -75,8 +73,6 @@
   overflow: hidden;
 }
 
-@container (width < 480px) {
-  .lk-presented-transport {
-    display: none;
-  }
+.lk-presented-transport--narrow {
+  display: none;
 }

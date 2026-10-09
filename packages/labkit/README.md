@@ -95,8 +95,9 @@ its bottom: play and pause, speed and loop, and — for a seekable clock with a
 duration — a scrub bar and a reverse switch. Space plays and pauses, the arrows
 step, Home and End jump, R reverses and `<` / `>` change speed. A run that ends
 plays again after three seconds until a visitor touches the controls, and the
-controls hide in a box narrower than 480px. `<Lab transport={false}>` leaves
-them off; `<TrialTransport>` is the same controls for any lab chrome.
+controls hide in a box narrower than 480px — `<Lab transport={{ minWidth: 760
+}}>` moves that line. `<Lab transport={false}>` leaves them off;
+`<TrialTransport>` is the same controls for any lab chrome.
 
 `gestures` on `<Lab>` decides what the trials' cameras take — `{ pan, wheel:
 'plain' | 'mod' | false, pinch, tap }`, over each instrument's own

@@ -32,7 +32,7 @@ import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { applyCamera } from '../canvas/worldSpec';
 import type { TrialContribution } from '../chrome/types';
 import { ClockRegistryContext, TrialClockContext } from '../clock/clockRegistry';
-import { createTrialClock } from '../clock/trialClock';
+import { clockPosition, createTrialClock } from '../clock/trialClock';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
@@ -176,21 +176,28 @@ function TrialRuntime({
 
   // Read once: `record.clock` is where a reopened trial's clock stood, and the
   // clock is the truth from then on. A swap mounts a new trial under a new id.
-  const [clockHandle] = useState(() =>
-    instrument.clock ? createTrialClock(instrument.clock, record.clock) : null,
-  );
+  // A trial on the lab's clock holds the lab's: the lab keeps where it stands.
   const clocks = useContext(ClockRegistryContext);
+  const spec = instrument.clock;
+  const [clockHandle] = useState(() => {
+    if (spec === 'lab') {
+      if (!clocks?.lab)
+        throw new Error(
+          `[labkit] instrument "${instrument.name}" plays on the lab's clock, and its <Lab> declares no \`clock\``,
+        );
+      return clocks.lab;
+    }
+    return spec ? createTrialClock(spec, record.clock) : null;
+  });
   useEffect(() => {
     if (!clockHandle || !clocks) return;
     return clocks.register(record.id, clockHandle);
   }, [clocks, clockHandle, record.id]);
   useEffect(() => {
-    if (!clockHandle) return;
+    if (!clockHandle || spec === 'lab') return;
     const { clock } = clockHandle;
-    return clock.subscribe(() =>
-      updateTrialClock(record.id, { elapsed: clock.elapsed, rate: clock.rate }),
-    );
-  }, [clockHandle, record.id, updateTrialClock]);
+    return clock.subscribe(() => updateTrialClock(record.id, clockPosition(clock, spec?.duration)));
+  }, [clockHandle, spec, record.id, updateTrialClock]);
   const ticks = useMemo(
     () => (clockHandle ? (fn: () => void) => clockHandle.onFrame(() => fn()) : undefined),
     [clockHandle],

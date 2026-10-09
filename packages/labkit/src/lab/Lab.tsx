@@ -24,11 +24,18 @@ import {
 import type { LabContribution } from '../chrome/labTypes';
 import type { TrialContribution } from '../chrome/types';
 import { ClockRegistryContext, createClockRegistry } from '../clock/clockRegistry';
+import {
+  type ClockCapability,
+  type ClockPosition,
+  clockPosition,
+  createTrialClock,
+} from '../clock/trialClock';
 import { useClockLoop } from '../clock/useClockLoop';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import { Split } from '../primitives/Split';
 import { LabStoreContext } from '../state/context';
+import { valueRecord } from '../state/labRecords';
 import { PersistenceContext } from '../state/Persistence';
 import type { LabDensity, LabMode, StorageAdapter, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
@@ -62,7 +69,12 @@ import {
   presentStorageKey,
 } from './openLab';
 import { createPanelHostRegistry, PanelHostContext } from './panelHost';
-import { hasPresentParam, PresentationContext, useLabPresentation } from './presentation';
+import {
+  hasPresentParam,
+  PresentationContext,
+  type PresentedTransportOptions,
+  useLabPresentation,
+} from './presentation';
 import { useFocusPick } from './useFocusPick';
 import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
@@ -72,6 +84,13 @@ interface LabBaseProps {
    *  refilled, so hoist or memoize the list. */
   instruments: InstrumentList;
   defaultInstrument: string;
+  /** The instruments a lab with no trials opens, a trial of each, in order.
+   *  Default `[defaultInstrument]`. */
+  opening?: readonly string[];
+  /** The lab's own clock: one time that every trial whose instrument declares
+   *  `clock: 'lab'` plays on, and that `useTrialClock` falls back to outside
+   *  any trial. A stored lab keeps where it stands. Read once, at mount. */
+  clock?: ClockCapability;
   mode?: LabMode;
   /** How much room the lab's chrome takes. Default `'comfortable'`; a lab whose
    *  window is the whole app, rather than a panel beside one, reads better at
@@ -92,6 +111,8 @@ interface LabBaseProps {
    */
   nebula?: ColorList;
   title?: string;
+  /** Set as `document.title` while the lab is mounted. */
+  documentTitle?: string;
   /** The project's other labs. Given two or more, the title becomes the way to
    *  reach them — the same switcher `<LabShell>` renders, so a lab reached from
    *  one is not a dead end. */
@@ -146,8 +167,8 @@ interface LabBaseProps {
   /** Play controls over a presented trial whose instrument declares a clock:
    *  hidden in a box too narrow for them, answering Space and friends, and
    *  replaying an ended run after a hold until a visitor touches them.
-   *  Default `true`. */
-  transport?: boolean;
+   *  Default `true`; options say how narrow is too narrow. */
+  transport?: boolean | PresentedTransportOptions;
 }
 
 /** Props for `<Lab>`. With a `storageKey` the lab persists — to IndexedDB
@@ -159,6 +180,8 @@ export type LabProps = LabBaseProps &
     | { storageKey: string; storage?: StorageAdapter }
   );
 
+const LAB_CLOCK_RECORD = valueRecord(null, 'lk-lab-clock');
+
 function LabFallback({
   title,
   mode,
@@ -166,7 +189,11 @@ function LabFallback({
   theme = interstellarTheme,
   pages,
   path,
-}: Pick<LabBaseProps, 'title' | 'mode' | 'density' | 'theme' | 'pages' | 'path'>) {
+  documentTitle,
+}: Pick<
+  LabBaseProps,
+  'title' | 'documentTitle' | 'mode' | 'density' | 'theme' | 'pages' | 'path'
+>) {
   const resolvedMode = useResolvedColorMode(mode ?? 'auto');
   return (
     <ThemeProvider
@@ -177,6 +204,7 @@ function LabFallback({
       <LabShell
         title={title ?? 'Labkit'}
         mode={mode}
+        {...(documentTitle !== undefined ? { documentTitle } : {})}
         {...(pages ? { pages } : {})}
         {...(path !== undefined ? { path } : {})}
       >
@@ -253,8 +281,8 @@ export function Lab(props: LabProps) {
   if (process.env.NODE_ENV !== 'production' && props.instruments.length === 0) {
     throw new Error('[labkit] <Lab> requires a non-empty `instruments` array');
   }
-  const { storageKey, storage, present } = props;
-  useWarnIgnoredChange('<Lab>', { storageKey, storage, present });
+  const { storageKey, storage, present, clock } = props;
+  useWarnIgnoredChange('<Lab>', { storageKey, storage, present, clock });
   const [startsPresenting] = useState(() => present === true || hasPresentParam());
   if (process.env.NODE_ENV !== 'production' && props.seed && !startsPresenting) {
     warnSeedIgnored();
@@ -272,6 +300,7 @@ export function Lab(props: LabProps) {
     return (
       <LabFallback
         title={props.title}
+        {...(props.documentTitle !== undefined ? { documentTitle: props.documentTitle } : {})}
         mode={props.mode}
         density={props.density}
         {...(props.theme ? { theme: props.theme } : {})}
@@ -297,6 +326,8 @@ function LabRuntime({
   theme = interstellarTheme,
   nebula,
   title,
+  documentTitle,
+  clock,
   pages,
   path,
   footer,
@@ -325,7 +356,20 @@ function LabRuntime({
 
   const trials = useStore(store, (s) => s.trials);
   const [cameras] = useState(createCameraRegistry);
-  const [clocks] = useState(createClockRegistry);
+  const [clocks] = useState(() =>
+    createClockRegistry(
+      clock
+        ? createTrialClock(clock, opened.records.get(LAB_CLOCK_RECORD) as ClockPosition | undefined)
+        : null,
+    ),
+  );
+  useEffect(() => {
+    const lab = clocks.lab;
+    if (!lab) return;
+    return lab.clock.subscribe(() =>
+      opened.records.set(LAB_CLOCK_RECORD, clockPosition(lab.clock, clock?.duration)),
+    );
+  }, [clocks, clock, opened.records]);
   useClockLoop(clocks);
   const [focusPick, setFocusPick] = useState<string | null>(null);
   const focusedTrialId = trials.some((t) => t.id === focusPick)
@@ -433,7 +477,9 @@ function LabRuntime({
               : w,
           ),
         }));
-        clocks.get(id)?.reset();
+        const handle = clocks.get(id);
+        // The lab's clock is every trial's on it, so resetting one leaves it.
+        if (handle !== clocks.lab) handle?.reset();
       },
       savedSnapshots,
       saveSnapshot: (trialId, name) => {
@@ -521,6 +567,7 @@ function LabRuntime({
                       <LabShell
                         title={title ?? 'Labkit'}
                         mode={modeValue}
+                        {...(documentTitle !== undefined ? { documentTitle } : {})}
                         {...(pages ? { pages } : {})}
                         {...(path !== undefined ? { path } : {})}
                         footer={

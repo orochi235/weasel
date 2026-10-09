@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createTrialClock } from './trialClock';
+import { clockPosition, createTrialClock } from './trialClock';
 
 /** A clock already synced once at t=0, so the next sync advances it. */
 function started(...args: Parameters<typeof createTrialClock>) {
@@ -281,5 +281,96 @@ describe('createTrialClock', () => {
     expect(() => {
       clock.rate = Number.POSITIVE_INFINITY;
     }).toThrow();
+  });
+
+  describe('duration', () => {
+    it('keeps pass and phase when it changes', () => {
+      const { clock } = createTrialClock({ duration: 100, loop: 3 });
+      clock.seek(150);
+      clock.duration = 400;
+      expect(clock.pass).toBe(1);
+      expect(clock.phase).toBeCloseTo(0.5);
+      expect(clock.elapsed).toBeCloseTo(600);
+    });
+
+    it('keeps an ended run ended', () => {
+      const { clock } = createTrialClock({ duration: 100, start: 'end' });
+      clock.duration = 250;
+      expect(clock.ended).toBe(true);
+      expect(clock.elapsed).toBe(250);
+    });
+
+    it('notifies, and wakes the frame loop', () => {
+      const { clock } = createTrialClock({ duration: 100 });
+      const sub = vi.fn();
+      const wake = vi.fn();
+      clock.subscribe(sub);
+      clock.onWake(wake);
+      clock.duration = 200;
+      expect(sub).toHaveBeenCalledTimes(1);
+      expect(wake).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects a duration that is not positive', () => {
+      const { clock } = createTrialClock({ duration: 100 });
+      expect(() => {
+        clock.duration = 0;
+      }).toThrow(RangeError);
+      expect(() => createTrialClock({ duration: -1 })).toThrow(RangeError);
+    });
+
+    it('reopens at the duration it was changed to', () => {
+      const { clock } = createTrialClock({ duration: 100 });
+      clock.duration = 300;
+      clock.seek(150);
+      const position = clockPosition(clock, 100);
+      expect(position).toEqual({ elapsed: 150, rate: 0, duration: 300 });
+      const reopened = createTrialClock({ duration: 100 }, position).clock;
+      expect(reopened.duration).toBe(300);
+      expect(reopened.phase).toBeCloseTo(0.5);
+      expect(clockPosition(createTrialClock({ duration: 100 }).clock, 100)).toEqual({
+        elapsed: 0,
+        rate: 0,
+      });
+    });
+  });
+
+  describe('start', () => {
+    it('opens where it is told, clamped to the run', () => {
+      expect(createTrialClock({ duration: 100, start: 40 }).clock.elapsed).toBe(40);
+      expect(createTrialClock({ duration: 100, start: 400 }).clock.elapsed).toBe(100);
+      const end = createTrialClock({ duration: 100, loop: 2, start: 'end' }).clock;
+      expect(end.elapsed).toBe(200);
+      expect(end.ended).toBe(true);
+    });
+
+    it("has no 'end' for a run that never ends", () => {
+      expect(() => createTrialClock({ start: 'end' })).toThrow(RangeError);
+      expect(() => createTrialClock({ duration: 100, loop: true, start: 'end' })).toThrow(
+        RangeError,
+      );
+    });
+
+    it('is where Reset goes, and gives way to a reopened position', () => {
+      const c = createTrialClock({ duration: 100, start: 'end' });
+      c.clock.seek(10);
+      c.reset();
+      expect(c.clock.elapsed).toBe(100);
+      expect(
+        createTrialClock({ duration: 100, start: 'end' }, { elapsed: 30, rate: 0 }).clock.elapsed,
+      ).toBe(30);
+    });
+  });
+
+  describe('rates', () => {
+    it('offers the transport defaults unless told otherwise, sorted', () => {
+      expect(createTrialClock({}).clock.rates).toEqual([0.25, 0.5, 1, 2, 4]);
+      expect(createTrialClock({ rates: [1, 0.125, 0.5] }).clock.rates).toEqual([0.125, 0.5, 1]);
+    });
+
+    it('rejects an empty list or a rate that is not positive', () => {
+      expect(() => createTrialClock({ rates: [] })).toThrow(RangeError);
+      expect(() => createTrialClock({ rates: [1, 0] })).toThrow(RangeError);
+    });
   });
 });

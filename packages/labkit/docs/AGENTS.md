@@ -129,16 +129,27 @@ Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all
 A trial whose instrument declares `clock` owns its playback time: a position,
 `elapsed` (ms, counted across passes), moved by a signed `rate` — 0 pauses, a
 negative rate plays backward. `pass` and `phase` (0–1 through the pass) derive
-from it; `elapsed` itself never wraps. It opens paused (`rate: 0`) and plays
-once (`loop: false`) unless declared otherwise.
+from it; `elapsed` itself never wraps. It opens paused (`rate: 0`) at 0 and
+plays once (`loop: false`) unless declared otherwise; `start` opens it elsewhere,
+`'end'` on the finished run, and Reset returns there.
+
+- **`duration` is writable**, for a run whose length follows its content: a
+  write keeps `pass` and `phase`, so the playhead holds its place in the
+  content and the pace is whatever the app makes it.
+- **`rates`** are the speeds a transport offers for that clock; the default is
+  weasel-ui's `TRANSPORT_RATES`.
+- **The lab's clock**: `<Lab clock={…}>` gives the lab one clock of its own, and
+  an instrument declaring `clock: 'lab'` plays on it, so every such trial shares
+  one time. A trial's Reset leaves it alone, since it is every trial's.
 
 - **Read it** three ways: a canvas layer marked `timed` gets `elapsed`, `pass`
   and `phase` in its draw args and repaints every frame the clock moves; an
   imperative renderer, or text that changes per frame, uses `useClockFrame`;
   anything that controls time uses `useTrialClock()`, which re-renders on rate,
   seek and loop changes only.
-- **Reach it from chrome** with `useTrialClock(trialId?)`: that trial's, else
-  the one rendered inside, else the lab's focused trial's.
+- **Reach it from chrome** with `useTrialClock(trialId?)` or
+  `useClockFrame(fn, trialId?)`: that trial's, else the one rendered inside,
+  else the lab's focused trial's, else the lab's own.
 - **Play controls** are `<TrialTransport>` (`src/clock/TrialTransport.tsx`):
   weasel-ui's `<Transport>` over the clock, resolved the same way. The clock
   holds one signed rate, so the speed and direction a pause returns to live in
@@ -165,8 +176,10 @@ once (`loop: false`) unless declared otherwise.
   `inert`, `onWake`), which is meant to replace weasel's animation engine: in
   its terms a trial clock is an owner whose voices play under it. Keep new
   members in that vocabulary.
-- **Persistence**: `TrialRecord.clock` holds `{ elapsed, rate }`, written on
-  rate, seek and loop changes, never per frame.
+- **Persistence**: `TrialRecord.clock` holds a `ClockPosition` — `{ elapsed,
+  rate }`, and `duration` once it differs from the declared one — written on
+  rate, seek, loop and duration changes, never per frame. The lab's clock keeps
+  its own in a lab record.
 
 ## Presentation mode
 

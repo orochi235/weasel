@@ -30,4 +30,15 @@ describe('createClockRegistry', () => {
     releaseFirst();
     expect(registry.get('t1')).toBe(second);
   });
+
+  it("lists the lab's clock, and each clock once however many trials hold it", () => {
+    const lab = createTrialClock({});
+    const registry = createClockRegistry(lab);
+    expect(registry.lab).toBe(lab);
+    registry.register('t1', lab);
+    registry.register('t2', lab);
+    const own = createTrialClock({});
+    registry.register('t3', own);
+    expect([...registry.all()]).toEqual([lab, own]);
+  });
 });

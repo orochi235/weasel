@@ -15,6 +15,8 @@ export interface TrialTransportProps {
   /** Play a run that has ended again from the start after this many ms, until
    *  anyone touches the transport. Omitted, an ended run stays ended. */
   replay?: number;
+  /** How a speed reads, shown and spoken. Default a multiplier, `0.5x`. */
+  formatRate?: (rate: number) => string;
   className?: string;
 }
 
@@ -24,7 +26,13 @@ export interface TrialTransportProps {
  * over the current pass and a reverse switch. Renders nothing for a trial
  * without a clock.
  */
-export function TrialTransport({ trialId, keys = false, replay, className }: TrialTransportProps) {
+export function TrialTransport({
+  trialId,
+  keys = false,
+  replay,
+  formatRate,
+  className,
+}: TrialTransportProps) {
   const clock = useTrialClock(trialId);
   const handle = useTrialClockHandle(trialId);
   const [, frame] = useReducer((n: number) => n + 1, 0);
@@ -66,6 +74,8 @@ export function TrialTransport({ trialId, keys = false, replay, className }: Tri
         paused={!control.playing}
         loop={clock.loop}
         rate={control.speed}
+        rates={clock.rates}
+        {...(formatRate ? { formatRate } : {})}
         playhead={control.playhead}
         duration={control.length}
         onPlay={touching(control.play)}

@@ -1,5 +1,6 @@
 import type { History } from '@weasel-js/core';
 import type { ColorModePreference } from '@weasel-js/theme';
+import type { ClockPosition } from '../clock/trialClock';
 import type { Auto } from '../config/auto';
 import type { ConfigPath, ResolvedConfig, ValueAtPath } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
@@ -59,7 +60,7 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
   history?: History;
   /** Where the trial's clock stood at its last rate or seek change, for a
    *  trial whose instrument declares `clock`. */
-  clock?: { elapsed: number; rate: number };
+  clock?: ClockPosition;
 }
 
 /** A named, saved copy of a trial's config and state, restorable into any

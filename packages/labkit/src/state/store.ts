@@ -1,5 +1,6 @@
 import type { History } from '@weasel-js/core';
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import type { ClockPosition } from '../clock/trialClock';
 import { applyConfigWrite } from '../config/autoConfig';
 import { fillConfigDefaults } from '../config/path';
 import {
@@ -46,7 +47,7 @@ export interface LabStoreActions {
   /** Give a trial the undo history it made on its first snapshot. */
   setTrialHistory: (id: string, history: History) => void;
   /** Record where a trial's clock stands. */
-  updateTrialClock: (id: string, clock: { elapsed: number; rate: number }) => void;
+  updateTrialClock: (id: string, clock: ClockPosition) => void;
   setTrialInstrument: (id: string, instrumentName: string) => void;
   saveSnapshot: (trialId: string, name: string) => void;
   loadSnapshot: (snapshotId: string, trialId: string) => void;

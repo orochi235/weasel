@@ -8,9 +8,8 @@ import t from './Transport.module.css';
 
 const RATE = multiplier({ symbol: 'x' });
 
-/** Playback rates the transport offers, slowest first. */
+/** Playback rates the transport offers by default, slowest first. */
 export const TRANSPORT_RATES = [0.25, 0.5, 1, 2, 4] as const;
-const RATES = TRANSPORT_RATES;
 
 /** Props for {@link Transport}. Times are in ms. */
 export interface TransportProps {
@@ -20,6 +19,10 @@ export interface TransportProps {
   loop: boolean | number;
   /** Playback speed multiplier. A rate off the offered detents gets one of its own. */
   rate: number;
+  /** The rates offered, slowest first. Default `TRANSPORT_RATES`. */
+  rates?: readonly number[];
+  /** How a rate reads, shown and spoken. Default a multiplier, `0.5x`. */
+  formatRate?: (rate: number) => string;
   playhead: number;
   duration: number;
   onPlay: () => void;
@@ -37,7 +40,8 @@ export interface TransportProps {
 
 const seconds = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
 const spokenSeconds = (ms: number): string => `${(ms / 1000).toFixed(2)} seconds`;
-const rateText = (r: number): string => qty(r, RATE).text;
+const multiplierText = (r: number): string => qty(r, RATE).text;
+const multiplierSpoken = (r: number): string => qty(r, RATE).spoken;
 
 /** Play/pause, a reverse switch, a loop switch, a rate slider, a scrub bar,
  *  and the playhead over the duration in seconds. Holds no state: every
@@ -51,9 +55,10 @@ export function Transport(props: TransportProps): ReactElement {
   // The handle's scale is whatever anything holding it set, so an off-list rate
   // gets its own detent — `DetentSlider` would otherwise round it to the
   // nearest and label the thumb with a rate the timeline is not running at.
-  const rates = RATES.includes(rate as typeof RATES[number])
-    ? (RATES as readonly number[])
-    : [...RATES, rate].sort((a, b) => a - b);
+  const offered: readonly number[] = props.rates ?? TRANSPORT_RATES;
+  const rateText = props.formatRate ?? multiplierText;
+  const rateSpoken = props.formatRate ?? multiplierSpoken;
+  const rates = offered.includes(rate) ? offered : [...offered, rate].sort((a, b) => a - b);
 
   return (
     <div className={s.transport}>
@@ -94,7 +99,7 @@ export function Transport(props: TransportProps): ReactElement {
         Rate
         <DetentSlider
           ariaLabel="Rate"
-          items={rates.map((r) => ({ value: r, ariaLabel: qty(r, RATE).spoken }))}
+          items={rates.map((r) => ({ value: r, ariaLabel: rateSpoken(r) }))}
           value={rate}
           onChange={onRateChange}
           formatLabel={rateText}

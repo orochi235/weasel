@@ -120,10 +120,15 @@ test('entering and leaving keeps every trial’s canvas element', async () => {
 
 const Timed: Instrument = { ...Painted, name: 'Timed', clock: { duration: 1000 } };
 
-function mountTimed(frame: string) {
+function mountTimed(frame: string, transport?: { minWidth: number }) {
   return render(
     <div className={frame}>
-      <Lab instruments={[Timed]} defaultInstrument="Timed" present>
+      <Lab
+        instruments={[Timed]}
+        defaultInstrument="Timed"
+        present
+        {...(transport ? { transport } : {})}
+      >
         <Capture />
       </Lab>
     </div>,
@@ -151,6 +156,15 @@ test('play controls are hidden in a presented box too narrow for them', async ()
   const play = await findByRole('button', { name: 'Play', hidden: true });
   await expect.poll(() => box(container.querySelector('[data-lk-presented]'))?.width).toBe(360);
   expect(hasBox(play)).toBe(false);
+});
+
+test('a lab says how narrow is too narrow for its play controls', async () => {
+  const { container, findByRole } = mountTimed('lk-present-frame lk-present-frame--narrow', {
+    minWidth: 300,
+  });
+  const play = await findByRole('button', { name: 'Play' });
+  await expect.poll(() => box(container.querySelector('[data-lk-presented]'))?.width).toBe(360);
+  await expect.poll(() => hasBox(play)).toBe(true);
 });
 
 const Centered: Instrument = {

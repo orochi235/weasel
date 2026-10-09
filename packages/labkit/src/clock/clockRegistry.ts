@@ -1,18 +1,22 @@
 import { createContext } from 'react';
 import type { TrialClockHandle } from './trialClock';
 
-/** A lab's trial clocks, by trial id. A trial has at most one. */
+/** A lab's clocks: each trial's, by trial id, and the lab's own. A trial has at
+ *  most one, and trials playing on the lab's clock all hold that one. */
 export interface ClockRegistry {
   /** Publish `handle` under `trialId` and return its release. */
   register(trialId: string, handle: TrialClockHandle): () => void;
   get(trialId: string): TrialClockHandle | null;
+  /** The lab's own clock, when `<Lab clock>` declares one. */
+  readonly lab: TrialClockHandle | null;
+  /** Every clock once, however many trials hold it. */
   all(): Iterable<TrialClockHandle>;
   /** Fires after any register or release. Shaped for `useSyncExternalStore`. */
   subscribe(listener: () => void): () => void;
 }
 
-/** An empty in-memory `ClockRegistry`. */
-export function createClockRegistry(): ClockRegistry {
+/** An in-memory `ClockRegistry`, holding the lab's own clock when given one. */
+export function createClockRegistry(lab: TrialClockHandle | null = null): ClockRegistry {
   const handles = new Map<string, TrialClockHandle>();
   const listeners = new Set<() => void>();
   const notify = (): void => {
@@ -29,7 +33,8 @@ export function createClockRegistry(): ClockRegistry {
       };
     },
     get: (trialId) => handles.get(trialId) ?? null,
-    all: () => handles.values(),
+    lab,
+    all: () => new Set(lab ? [lab, ...handles.values()] : handles.values()),
     subscribe(listener) {
       listeners.add(listener);
       return () => {
@@ -39,8 +44,8 @@ export function createClockRegistry(): ClockRegistry {
   };
 }
 
-/** The registry a lab keeps its trials' clocks in. */
+/** The registry a lab keeps its clocks in. */
 export const ClockRegistryContext = createContext<ClockRegistry | null>(null);
 
-/** The clock of the trial a component renders inside, when it declares one. */
+/** The clock of the trial a component renders inside, when it has one. */
 export const TrialClockContext = createContext<TrialClockHandle | null>(null);

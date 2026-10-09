@@ -111,6 +111,26 @@ describe('<TrialTransport>', () => {
     expect(c().elapsed).toBe(1000);
   });
 
+  it("offers the clock's rates, and steps through them", async () => {
+    await mount({ duration: 64_000, rates: [1 / 16, 0.25, 1] }, { keys: true });
+    key(' ');
+    key('<');
+    expect(c().rate).toBe(0.25);
+    key('<');
+    expect(c().rate).toBe(1 / 16);
+    key('<');
+    expect(c().rate).toBe(1 / 16);
+    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuemax', '2');
+  });
+
+  it('reads a speed the way it is told to', async () => {
+    await mount({ duration: 1000, rates: [0.5, 1] }, { formatRate: (r) => `${1 / r} s/turn` });
+    expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute(
+      'aria-valuetext',
+      '1 s/turn',
+    );
+  });
+
   describe('with keys', () => {
     it('answers Space, the arrows, Home and End, R, and < and >', async () => {
       await mount({ duration: 1000 }, { keys: true });

@@ -8,7 +8,7 @@ const NO_SUBSCRIBE = () => () => {};
 
 /**
  * A trial's clock: `trialId`'s, else the one of the trial this renders inside,
- * else the lab's focused trial's. `null` when that trial declares no clock.
+ * else the lab's focused trial's, else the lab's own. `null` when there is none.
  * Re-renders on rate, seek and loop changes, never per frame — read `elapsed`
  * per frame through {@link useClockFrame}.
  */
@@ -39,18 +39,19 @@ export function useTrialClockHandle(trialId?: string): TrialClockHandle | null {
     if (trialId !== undefined) return registry?.get(trialId) ?? null;
     if (own) return own;
     const focused = lab?.focusedTrialId;
-    return focused ? (registry?.get(focused) ?? null) : null;
+    return (focused ? registry?.get(focused) : null) ?? registry?.lab ?? null;
   }
   return resolve();
 }
 
 /**
- * Run `fn` after each frame the clock of the trial this renders inside moves,
- * with its `elapsed` and `pass`, outside React's render — for a renderer that
- * draws imperatively, or text that changes every frame written into a ref.
+ * Run `fn` after each frame a clock moves, with its `elapsed` and `pass`,
+ * outside React's render — for a renderer that draws imperatively, or text that
+ * changes every frame written into a ref. The clock is resolved as
+ * {@link useTrialClock}, so a lab-level readout follows one too.
  */
-export function useClockFrame(fn: (elapsed: number, pass: number) => void): void {
-  const handle = useContext(TrialClockContext);
+export function useClockFrame(fn: (elapsed: number, pass: number) => void, trialId?: string): void {
+  const handle = useTrialClockHandle(trialId);
   const latest = useLatest(fn);
   useEffect(
     () => handle?.onFrame((elapsed, pass) => latest.current(elapsed, pass)),

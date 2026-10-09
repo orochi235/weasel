@@ -12,8 +12,17 @@ export interface Presentation {
 interface PresentationContextValue extends Presentation {
   /** The trial being presented, while one is. */
   trialId: string | null;
-  /** Whether a presented trial with a clock shows its play controls. */
-  transport: boolean;
+  /** A presented trial's play controls, when it shows them. */
+  transport: PresentedTransportOptions | null;
+}
+
+/** How a presented trial shows its play controls. */
+export interface PresentedTransportOptions {
+  /** Below this width, in CSS pixels, the presented box hides them. They stay
+   *  mounted, so their keys and replay still run. Default 480. */
+  minWidth?: number;
+  /** How a speed reads, as `<TrialTransport formatRate>`. */
+  formatRate?: (rate: number) => string;
 }
 
 export const PresentationContext = createContext<PresentationContextValue | null>(null);
@@ -24,8 +33,11 @@ export function useLabPresentation(
   startsPresenting: boolean,
   focusedTrialId: string | null,
   labBody: HTMLElement | null,
-  transport: boolean,
+  transport: boolean | PresentedTransportOptions,
 ): PresentationContextValue {
+  const minWidth =
+    transport === false ? null : transport === true ? 480 : (transport.minWidth ?? 480);
+  const formatRate = typeof transport === 'object' ? transport.formatRate : undefined;
   // `mount` when the lab started presenting, `enter` when asked to since.
   const [presentedBy, setPresentedBy] = useState<'mount' | 'enter' | null>(
     startsPresenting ? 'mount' : null,
@@ -50,9 +62,9 @@ export function useLabPresentation(
       enter: () => setPresentedBy((by) => by ?? 'enter'),
       exit: () => setPresentedBy(null),
       trialId: presenting ? focusedTrialId : null,
-      transport,
+      transport: minWidth === null ? null : { minWidth, ...(formatRate ? { formatRate } : {}) },
     }),
-    [presenting, focusedTrialId, transport],
+    [presenting, focusedTrialId, minWidth, formatRate],
   );
 }
 
@@ -68,10 +80,11 @@ export function useIsPresented(trialId: string): boolean {
   return useContext(PresentationContext)?.trialId === trialId;
 }
 
-/** Whether the trial `trialId` is presented with its play controls. */
-export function usePresentedTransport(trialId: string): boolean {
+/** How the trial `trialId` shows its play controls, while it is presented
+ *  with them. */
+export function usePresentedTransport(trialId: string): PresentedTransportOptions | null {
   const value = useContext(PresentationContext);
-  return value?.trialId === trialId && value.transport;
+  return value?.trialId === trialId ? value.transport : null;
 }
 
 /** Whether the trial `trialId` is the one its lab is presenting, and a ref for

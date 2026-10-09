@@ -1,14 +1,22 @@
+import { TRANSPORT_RATES } from '../passthrough/weasel-ui';
+
 /**
  * What an instrument declares to get a clock: how long a pass runs, how many
  * passes, and how it opens. Shaped like a blits voice spec.
  */
 export interface ClockCapability {
-  /** ms per pass. Omitted, the run never ends. */
+  /** ms per pass. Omitted, the run never ends. `TrialClock.duration` changes
+   *  it later, for a run whose length follows its content. */
   duration?: number;
   /** Passes: `true` endless, `false` one, `n` that many. Default `false`. */
   loop?: boolean | number;
   /** The rate it opens at; `0`, the default, opens paused. */
   rate?: number;
+  /** Where a new run opens, in ms, clamped to the run; `'end'` is the end of
+   *  its last pass. Default `0`. A reopened trial opens where it stood. */
+  start?: number | 'end';
+  /** The speeds a transport offers, unsigned. Default `TRANSPORT_RATES`. */
+  rates?: readonly number[];
   /** `false` for an instrument whose state is built up by running, so time can
    *  only move by running: no seek and no negative rate. Default `true`. */
   seekable?: boolean;
@@ -39,8 +47,11 @@ export interface TrialClock {
   readonly pass: number;
   /** How far through its pass, 0 to 1; 1 once the run is over. 0 with no duration. */
   readonly phase: number;
-  /** ms per pass, as declared; `Infinity` for a run that never ends. */
-  readonly duration: number;
+  /** ms per pass; `Infinity` for a run that never ends. A write keeps `pass`
+   *  and `phase`, so the playhead holds its place in the content. */
+  duration: number;
+  /** The speeds a transport offers, unsigned and ascending. */
+  readonly rates: readonly number[];
   /** Whether `seek` and a negative `rate` are allowed. */
   readonly seekable: boolean;
   /** A finite run has played to its end. */
@@ -68,20 +79,44 @@ export interface TrialClock {
   subscribe(fn: () => void): () => void;
 }
 
+/** Where a clock stood, as a trial record keeps it. */
+export interface ClockPosition {
+  elapsed: number;
+  rate: number;
+  /** Absent when the clock still ran at its declared duration. */
+  duration?: number;
+}
+
 /** A clock, and what labkit alone does with it. */
 export interface TrialClockHandle {
   clock: TrialClock;
   /** The mix `ClockCapability.mix` made, playing on `clock`. */
   mix: ClockedMix | null;
-  /** Back to 0 at the declared rate — the trial's Reset, allowed on a clock
-   *  that is not seekable. */
+  /** Back to where it opened, at the declared rate — the trial's Reset,
+   *  allowed on a clock that is not seekable. */
   reset(): void;
   /** Called after each sync that moved the clock or followed a change. */
   onFrame(fn: (elapsed: number, pass: number) => void): () => void;
 }
 
+/** Where `clock` stands, for a record to reopen it at; `declared` is the
+ *  duration its capability gave. */
+export function clockPosition(clock: TrialClock, declared: number | undefined): ClockPosition {
+  const duration = declared ?? Number.POSITIVE_INFINITY;
+  return {
+    elapsed: clock.elapsed,
+    rate: clock.rate,
+    ...(clock.duration !== duration ? { duration: clock.duration } : {}),
+  };
+}
+
 const passesOf = (loop: boolean | number): number =>
   loop === true ? Number.POSITIVE_INFINITY : loop === false ? 1 : Math.max(1, loop);
+
+const checkDuration = (duration: number): void => {
+  if (!(duration > 0))
+    throw new RangeError(`labkit: a clock's duration is positive, not ${duration}`);
+};
 
 const checkRate = (rate: number, seekable: boolean): void => {
   if (!Number.isFinite(rate)) throw new RangeError(`labkit: a clock's rate is finite, not ${rate}`);
@@ -91,19 +126,27 @@ const checkRate = (rate: number, seekable: boolean): void => {
 
 /** A trial's clock, opened from its declaration and, for a trial reopened,
  *  where it stood. */
-export function createTrialClock(
-  spec: ClockCapability,
-  start?: { elapsed: number; rate: number },
-): TrialClockHandle {
-  const duration = spec.duration ?? Number.POSITIVE_INFINITY;
+export function createTrialClock(spec: ClockCapability, start?: ClockPosition): TrialClockHandle {
+  let duration = start?.duration ?? spec.duration ?? Number.POSITIVE_INFINITY;
+  checkDuration(duration);
   const seekable = spec.seekable ?? true;
   const openRate = spec.rate ?? 0;
   checkRate(openRate, seekable);
+  const rates = [...(spec.rates ?? TRANSPORT_RATES)].sort((a, b) => a - b);
+  if (rates.length === 0 || rates.some((r) => !(r > 0) || !Number.isFinite(r)))
+    throw new RangeError('labkit: a clock offers at least one rate, each finite and positive');
 
   let loop = spec.loop ?? false;
   let span = duration * passesOf(loop);
+  const clamp = (ms: number): number => Math.min(Math.max(0, ms), span);
+  const opening = (): number => {
+    if (spec.start !== 'end') return clamp(spec.start ?? 0);
+    if (!Number.isFinite(span))
+      throw new RangeError("labkit: a run that never ends has no 'end' to start at");
+    return span;
+  };
   let rate = start ? start.rate : openRate;
-  let elapsed = start ? Math.min(Math.max(0, start.elapsed), span) : 0;
+  let elapsed = start ? clamp(start.elapsed) : opening();
   let ramp: { to: number; left: number } | null = null;
   let last = Number.NaN;
   /** Changed since the last sync, so the next one is due even when paused. */
@@ -176,7 +219,27 @@ export function createTrialClock(
     get phase() {
       return phaseAt();
     },
-    duration,
+    get duration() {
+      return duration;
+    },
+    set duration(next: number) {
+      checkDuration(next);
+      if (next === duration) return;
+      if (Number.isFinite(duration) && Number.isFinite(next)) {
+        const ended = elapsed >= span;
+        const at = passAt() + phaseAt();
+        duration = next;
+        span = duration * passesOf(loop);
+        elapsed = ended ? span : clamp(at * duration);
+      } else {
+        duration = next;
+        span = duration * passesOf(loop);
+        elapsed = clamp(elapsed);
+      }
+      change();
+      notify();
+    },
+    rates,
     seekable,
     get ended() {
       return Number.isFinite(span) && elapsed >= span;
@@ -213,7 +276,7 @@ export function createTrialClock(
     },
     seek(target) {
       if (!seekable) throw new Error('labkit: this clock is not seekable');
-      elapsed = Math.min(Math.max(0, target), span);
+      elapsed = clamp(target);
       change();
       notify();
     },
@@ -270,7 +333,7 @@ export function createTrialClock(
     clock,
     mix,
     reset() {
-      elapsed = 0;
+      elapsed = opening();
       rate = openRate;
       ramp = null;
       change();

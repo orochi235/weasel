@@ -16,6 +16,7 @@ export interface OpenedLab extends OpenedLabStore {
 export interface OpenLabOptions {
   instruments: InstrumentList;
   defaultInstrument: string;
+  opening?: readonly string[] | undefined;
   mode?: LabMode | undefined;
 }
 
@@ -62,26 +63,25 @@ function seedPresentedTrial(
   records.set(SEED_RECORD, fingerprint);
 }
 
-function seedDefaultTrial(
+function seedDefaultTrials(
   store: LabStore,
-  instruments: InstrumentList,
-  defaultInstrument: string,
+  { instruments, defaultInstrument, opening }: OpenLabOptions,
 ): void {
   if (store.getState().trials.length > 0) return;
-  const record = addTrialOp([], instruments, defaultInstrument)[0];
-  if (!record) return;
-  store.getState().addTrial(record);
+  let trials: ReturnType<typeof addTrialOp> = [];
+  for (const name of opening ?? [defaultInstrument]) trials = addTrialOp(trials, instruments, name);
+  for (const record of trials) store.getState().addTrial(record);
 }
 
 /** A lab with nothing to load renders at once. Its records hold
  *  `usePersistedState` values for the session and write nothing. With a
  *  `seed`, the lab is presented and opens on it. */
 export function openUnstoredLab(options: OpenLabOptions, seed?: PresentationSeed): OpenedLab {
-  const { instruments, defaultInstrument, mode } = options;
+  const { instruments, mode } = options;
   const store = createLabStore({ initialMode: mode ?? 'auto', instruments });
   const records = createRecordCache({ storage: noneAdapter, prefix: '', writable: false });
   if (seed) seedPresentedTrial(store, records, options, seed);
-  else seedDefaultTrial(store, instruments, defaultInstrument);
+  else seedDefaultTrials(store, options);
   return { store, records, close: () => records.close(), marks: new Map() };
 }
 
@@ -91,7 +91,7 @@ export async function openStoredLab(
   storage: StorageAdapter | undefined,
   seed?: PresentationSeed,
 ): Promise<OpenedLab> {
-  const { instruments, defaultInstrument, mode } = options;
+  const { instruments, mode } = options;
   // The store reads the instruments' serializers and defaults while it is being
   // built, so they go in with it rather than being pushed onto it afterwards.
   const opened = await openLabStore({
@@ -101,7 +101,7 @@ export async function openStoredLab(
     instruments,
   });
   if (seed) seedPresentedTrial(opened.store, opened.records, options, seed);
-  else seedDefaultTrial(opened.store, instruments, defaultInstrument);
+  else seedDefaultTrials(opened.store, options);
   const marks = new Map<string, unknown>();
   await Promise.all(
     opened.store.getState().trials.map(async (trial) => {
