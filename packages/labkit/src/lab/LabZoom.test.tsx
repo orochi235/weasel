@@ -164,6 +164,16 @@ describe("the lab header's zoom controls", () => {
     expect(stageZoom(container)).toBe(1);
   });
 
+  it('are gone with the header, and leave their keys to the browser', async () => {
+    const { container } = await renderSettled(
+      <Lab instruments={[staged]} defaultInstrument="Staged" header={false} />,
+    );
+    expect(screen.queryByRole('toolbar', { name: 'Zoom' })).toBeNull();
+    expect(container.querySelector('header')).toBeNull();
+    expect(await key('=')).toBe(false);
+    expect(stageZoom(container)).toBe(1);
+  });
+
   it('go inert over a trial with no camera, and leave its keys to the browser', async () => {
     await renderSettled(<Lab instruments={[plain]} defaultInstrument="Plain" />);
     for (const name of ['Zoom out', 'Zoom in']) {

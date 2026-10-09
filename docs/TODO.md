@@ -889,6 +889,13 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
+- **(P2) Five isolated-frame tests fail on `main`.** `shell/storyInstrument.test.tsx`
+  (no `init` reaches the frame in three cases, and "follows the frame's answers in the
+  settings panel" fails) and `shell/useStoryRegistry.test.tsx` ("keeps its iframe when the
+  ready brings the viewport the index already read" gets a new iframe). They fail as of
+  `7b6978f38` (2026-10-09), so they predate that day's labkit and ui work; a full fleet run
+  on `main` shows them as the only failures outside the files that day changed.
+
 - **(P3) The served page is titled "weaselforge" until the shell config loads.**
   `ShellConfig.title` sets `document.title` at runtime, but the HTML the plugin
   serves and builds (`packages/forge/src/vite/html.ts`) hard-codes

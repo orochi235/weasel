@@ -196,7 +196,10 @@ describe('inferredNodeProperties', () => {
     const script = character.children.script as ToolPrefEnum;
     expect(script).toMatchObject({ control: 'toggle', clearable: true });
     expect(script.options.map((o) => o.icon)).toEqual(['superscript', 'subscript']);
-    expect([...flags, script].map((d) => d.pair)).toEqual(['Style', 'Style', 'Style', 'Style', 'Style']);
+    expect(flags[0]!.pair).toEqual({
+      with: ['data.style.underline', 'data.style.strikethrough', 'data.style.overline', 'data.style.script'],
+      label: 'Style',
+    });
   });
 
   it('stores italic as the fontStyle it is, and upright as no field at all', () => {

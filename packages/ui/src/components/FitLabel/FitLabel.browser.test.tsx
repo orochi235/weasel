@@ -146,7 +146,7 @@ const BAR_SCHEMA: ToolPrefGroup = {
       short: ['B'],
       description: 'Heavier weight.',
       control: 'toggle',
-      pair: 'Style',
+      pair: { with: 'italic', label: 'Style' },
       default: false,
     },
     italic: {
@@ -155,7 +155,6 @@ const BAR_SCHEMA: ToolPrefGroup = {
       short: ['I'],
       description: 'Sloped face.',
       control: 'toggle',
-      pair: 'Style',
       default: false,
     },
   },

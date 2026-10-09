@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { createHistory, historyKey, useLatest, type Op, type ToolPrefGroup } from '@weasel-js/core';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { Switch } from '../Switch';
 import { setAtPath } from '../SelectionPanel/model';
-import { PrefsForm, type PrefRenderer } from '../Prefs';
+import { PrefsDialog, type PrefRenderer } from '../Prefs';
+import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { ExportPanel } from './ExportPanel';
 import { PaneHeader } from './PaneHeader';
@@ -40,6 +41,9 @@ export interface PrefSchemaEditorProps {
   kinds?: CustomKinds;
   /** Renderers for custom kinds, used by the preview and by a custom kind's attributes. */
   renderers?: Record<string, PrefRenderer>;
+  /** The values the app stores under this schema, nested by group as a prefs form writes them. Given, the
+   *  values no leaf describes are listed under the tree, each a way to add the leaf that would. */
+  stored?: unknown;
   className?: string;
 }
 
@@ -51,7 +55,7 @@ export interface PrefSchemaEditorProps {
  * unrelated one without remounting keeps the selection, expansion and baseline; give the editor a `key` to start
  * fresh.
  */
-export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS, renderers, className }: PrefSchemaEditorProps) {
+export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS, renderers, stored, className }: PrefSchemaEditorProps) {
   const [first] = useState(schema);
   const base = original ?? first;
   const [selected, setSelected] = useState<string | null>(null);
@@ -59,6 +63,8 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
   const [notice, setNotice] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(() => new Set(branchPaths(schema)));
   const [showHidden, setShowHidden] = useState(true);
+  const [structureWidth, setStructureWidth] = useState(300);
+  const [attributesWidth, setAttributesWidth] = useState(320);
 
   const latest = useLatest({ schema, onChange, selected });
   const emitted = useRef(schema);
@@ -98,19 +104,22 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
 
   return (
     // Capture: React Aria's fields and tree stop a keydown from bubbling past them.
-    <div className={[s.editor, className].filter(Boolean).join(' ')} onKeyDownCapture={(e) => {
+    <div className={[s.editor, className].filter(Boolean).join(' ')}
+      style={{ '--structure-w': `${structureWidth}px`, '--attributes-w': `${attributesWidth}px` } as CSSProperties}
+      onKeyDownCapture={(e) => {
       const step = historyKey(e);
       if (!step) return;
       e.preventDefault();
       history[step]();
     }}>
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
-        expanded={expanded} onExpandedChange={setExpanded} tools={
+        expanded={expanded} onExpandedChange={setExpanded} stored={stored} tools={
           <>
             <Button size="sm" variant="ghost" disabled={!history.canUndo()} onClick={() => history.undo()}>Undo</Button>
             <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => history.redo()}>Redo</Button>
           </>
         } />
+      <ResizeHandle value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">
           {notice && (
@@ -123,14 +132,16 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
         <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selected ?? ''}`)} path={selected} onRekey={rekey}
           kinds={kindList} custom={kinds} renderers={renderers} onNotice={setNotice} />
       </div>
-      <section className={s.pane} aria-label="Live preview">
+      <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
+      <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
         <PaneHeader title="Live preview">
           <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch>
           <Button size="sm" variant="ghost" disabled={Object.keys(values).length === 0} onClick={() => setValues({})}>
             Reset values
           </Button>
         </PaneHeader>
-        <PrefsForm schema={schema} values={values} renderers={renderers} showHidden={showHidden}
+        <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" dialogClassName={s.previewDialog}
+          schema={schema} values={values} renderers={renderers} showHidden={showHidden}
           onChange={(path, v) => setValues((cur) => setAtPath(cur, path.split('.'), v) as Record<string, unknown>)} />
       </section>
       <ExportPanel schema={schema} changes={changes} />

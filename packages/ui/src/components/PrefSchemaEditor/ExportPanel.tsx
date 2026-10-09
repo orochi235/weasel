@@ -2,31 +2,28 @@ import { useMemo } from 'react';
 import type { ToolPrefGroup } from '@weasel-js/core';
 import { Button } from '../Button';
 import { CodeBlock } from '../CodeBlock';
-import { Tab, TabList, TabPanel, Tabs } from '../Tabs';
+import { PaneHeader } from './PaneHeader';
 import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
 import s from './PrefSchemaEditor.module.css';
 
 function Copy({ text }: { text: string }) {
-  return <Button size="sm" onClick={() => { void navigator.clipboard?.writeText(text).catch(() => {}); }}>Copy</Button>;
+  return <Button size="sm" variant="ghost" onClick={() => { void navigator.clipboard?.writeText(text).catch(() => {}); }}>Copy</Button>;
 }
 
+/** The schema as a TypeScript literal beside the list of changes since the baseline. */
 export function ExportPanel({ schema, changes }: { schema: ToolPrefGroup; changes: readonly SchemaChange[] }) {
   const literal = useMemo(() => printSchema(schema), [schema]);
   const list = useMemo(() => formatChanges(changes) || 'No changes.', [changes]);
   return (
-    <Tabs className={s.export}>
-      <TabList aria-label="Export">
-        <Tab id="literal">Literal</Tab>
-        <Tab id="changes">Changes</Tab>
-      </TabList>
-      <TabPanel id="literal" className={s.exportPanel}>
-        <Copy text={literal} />
+    <div className={s.export}>
+      <section className={s.exportPane} aria-label="Literal">
+        <PaneHeader title="Literal"><Copy text={literal} /></PaneHeader>
         <CodeBlock code={literal} language="tsx" className={s.code} data-testid="schema-literal" />
-      </TabPanel>
-      <TabPanel id="changes" className={s.exportPanel}>
-        <Copy text={list} />
-        <pre className={s.code}>{list}</pre>
-      </TabPanel>
-    </Tabs>
+      </section>
+      <section className={s.exportPane} aria-label="Changes">
+        <PaneHeader title="Changes"><Copy text={list} /></PaneHeader>
+        <pre className={`${s.code} ${s.changeList}`}>{list}</pre>
+      </section>
+    </div>
   );
 }

@@ -8,13 +8,15 @@
  * `ToolOptionsBar` renders a tool's options through the same functions.
  */
 import { Fragment, type ReactNode } from 'react';
-import type {
-  ToolPrefBoolean,
-  ToolPrefGroup,
-  ToolPrefLeaf,
-  ToolPrefObject,
+import {
+  pairRowsOf,
+  type ToolPrefBoolean,
+  type ToolPrefGroup,
+  type ToolPrefLeaf,
+  type ToolPrefObject,
 } from '@weasel-js/core';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
+import type { PrefFieldChoice } from '../Prefs/schema';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { PropertyControl, type PropertyBooleanFieldProps } from '../Properties/PropertyField';
 import { ToggleBar } from '../ToggleBar';
@@ -27,6 +29,8 @@ import s from './SelectionPanel.module.css';
 export interface PropertyRenderContext {
   /** Dotted node path of the leaf (`pose.x`, `data.fill`). */
   path: string;
+  /** The panel's fields, which a `field` leaf names one of. */
+  fields?: readonly PrefFieldChoice[];
   /** The schema leaf. App renderers narrow it to their own kind shape. */
   pref: ToolPrefLeaf;
   /** Aggregated value across the selection; `undefined` when mixed or unset. */
@@ -112,6 +116,8 @@ export interface LeafCell {
   ariaLabel: string;
   /** Renders the leaf on its own, chrome and all. */
   render: () => ReactNode;
+  /** The paired row the leaf shares, by the path that declared it and what it reads. */
+  pair?: { key: string; label: string };
 }
 
 /** A cell's content, once the run it belongs to has been decided. */
@@ -121,6 +127,7 @@ export interface RenderedCell {
   leaf: ToolPrefLeaf;
   block: boolean;
   content: ReactNode;
+  pair?: { key: string; label: string };
 }
 
 /**
@@ -132,7 +139,7 @@ export function isFlagCell(cell: LeafCell, renderers?: Record<string, PropertyRe
   return (
     leaf.kind === 'boolean' &&
     (leaf as ToolPrefBoolean).control === 'toggle' &&
-    leaf.pair !== undefined &&
+    cell.pair !== undefined &&
     renderers?.[cell.ctx.path] === undefined &&
     renderers?.[leaf.kind] === undefined
   );
@@ -153,7 +160,7 @@ export function renderCells(
     if (!isFlagCell(cell, renderers)) {
       const content = cell.render();
       if (content != null) {
-        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true, content });
+        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true, content, ...(cell.pair ? { pair: cell.pair } : {}) });
       }
       i += 1;
       continue;
@@ -162,7 +169,7 @@ export function renderCells(
     while (
       j < cells.length &&
       isFlagCell(cells[j], renderers) &&
-      cells[j].leaf.pair === cell.leaf.pair
+      cells[j].pair?.key === cell.pair?.key
     ) {
       j += 1;
     }
@@ -171,7 +178,8 @@ export function renderCells(
       key: cell.key,
       leaf: cell.leaf,
       block: run.every((c) => c.leaf.block === true),
-      content: <FlagBar run={run} ariaLabel={cell.leaf.pair as string} />,
+      content: <FlagBar run={run} ariaLabel={cell.pair?.label ?? cell.leaf.name} />,
+      ...(cell.pair ? { pair: cell.pair } : {}),
     });
     i = j;
   }
@@ -247,6 +255,7 @@ export function renderBuiltin(
     value,
     mixed,
     unset,
+    fields: ctx.fields,
     siblings: ctx.siblings,
     setValue,
     ...perNodeState(ctx),
@@ -392,6 +401,18 @@ function ObjectLeaf({
   // own heading would stack onto the first one and name nothing new.
   const allGrouped = Object.values(pref.children).every((child) => !('kind' in child));
 
+  // Every field's full path, groups contributing nothing, so a `pair` resolves
+  // against the paths the fields are written at.
+  const fieldPaths: [string, ToolPrefLeaf][] = [];
+  const gather = (children: Record<string, ToolPrefLeaf | ToolPrefGroup>): void => {
+    for (const [key, child] of Object.entries(children)) {
+      if ('kind' in child) fieldPaths.push([`${ctx.path}.${key}`, child]);
+      else gather(child.children);
+    }
+  };
+  gather(pref.children);
+  const pairs = pairRowsOf(fieldPaths);
+
   // `indent` is false when nothing visible sits above these rows: depth is
   // drawn only where a label marks it.
   const rowsOf = (
@@ -407,17 +428,17 @@ function ObjectLeaf({
     // fields ends the run, exactly as it ends a paired row.
     let pending: LeafCell[] = [];
     const flush = (): void => {
-      for (const { key, leaf, block, content } of renderCells(pending, renderers)) {
+      for (const { key, leaf, block, content, pair } of renderCells(pending, renderers)) {
         const prev = out[out.length - 1];
-        if (leaf.pair !== undefined && isRow(prev) && prev.pair === leaf.pair) {
+        if (pair !== undefined && isRow(prev) && prev.pair === pair.key) {
           prev.controls.push(<Fragment key={key}>{content}</Fragment>);
           prev.block &&= block;
           continue;
         }
         out.push({
           key,
-          pair: leaf.pair,
-          label: leaf.pair ?? leaf.name,
+          ...(pair ? { pair: pair.key } : {}),
+          label: pair?.label ?? leaf.name,
           title: leaf.description,
           block,
           controls: [<Fragment key={key}>{content}</Fragment>],
@@ -477,6 +498,7 @@ function ObjectLeaf({
         });
       const childCtx: PropertyRenderContext = {
         path: childPath,
+        ...(ctx.fields ? { fields: ctx.fields } : {}),
         pref: child,
         value: field.mixed ? undefined : field.value,
         mixed: field.mixed,
@@ -492,11 +514,13 @@ function ObjectLeaf({
         update,
         setValue: (v) => update(() => v),
       };
+      const pair = pairs.get(childPath);
       pending.push({
         key: childPath,
         leaf: child,
         ctx: childCtx,
         ariaLabel: child.name,
+        ...(pair ? { pair } : {}),
         render: () => {
           const custom = renderers?.[childPath] ?? renderers?.[child.kind];
           const rendered = custom
@@ -507,7 +531,7 @@ function ObjectLeaf({
           // column, so the glyph is all that names it on screen. The control
           // already carries `name` as its accessible name, which leaves the
           // glyph decorative.
-          const unlabeled = child.pair !== undefined || child.block === true;
+          const unlabeled = pairs.has(childPath) || child.block === true;
           const glyph = unlabeled && child.icon && child.icon in ICON_PATHS;
           if (!glyph) return rendered;
           return (

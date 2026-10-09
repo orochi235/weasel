@@ -240,6 +240,45 @@ describe('<TrialChrome>', () => {
     fireEvent.keyDown(region, { key: 's', metaKey: true });
     expect(saveSnapshot).toHaveBeenCalledWith('ws-1', undefined);
   });
+
+  it('leaves Cmd+S to the browser once the snapshot button is suppressed', async () => {
+    const saveSnapshot = vi.fn();
+    await renderSettled(<ChromeHarness labOverrides={{ saveSnapshot }} suppress={['snapshot']} />);
+    const region = screen.getByRole('region', { name: /trial/i });
+    expect(fireEvent.keyDown(region, { key: 's', metaKey: true })).toBe(true);
+    expect(saveSnapshot).not.toHaveBeenCalled();
+  });
+
+  it('answers Cmd+Z only where the undo buttons are offered', async () => {
+    const undo = vi.fn();
+    const bindings = { canUndo: true, canRedo: false, undo, redo: vi.fn() };
+    const { unmount } = await renderSettled(
+      <ChromeHarness instrument={{ ...stubInstrument, undo: {} }} undoBindings={bindings} />,
+    );
+    expect(
+      fireEvent.keyDown(screen.getByRole('region', { name: /trial/i }), {
+        key: 'z',
+        metaKey: true,
+      }),
+    ).toBe(false);
+    expect(undo).toHaveBeenCalledTimes(1);
+    unmount();
+
+    await renderSettled(
+      <ChromeHarness
+        instrument={{ ...stubInstrument, undo: {} }}
+        undoBindings={bindings}
+        suppress={['undo', 'redo']}
+      />,
+    );
+    expect(
+      fireEvent.keyDown(screen.getByRole('region', { name: /trial/i }), {
+        key: 'z',
+        metaKey: true,
+      }),
+    ).toBe(true);
+    expect(undo).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('chrome regions in a mounted lab', () => {

@@ -94,10 +94,10 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
       layout: {
         name: 'Layout',
         children: {
-          'pose.x': { kind: 'number', name: 'X', description: 'Left edge, world units.', default: 0, pair: 'Position' },
-          'pose.y': { kind: 'number', name: 'Y', description: 'Top edge, world units.', default: 0, pair: 'Position' },
-          'pose.width': { kind: 'number', name: 'W', description: 'Width, world units.', default: 0, min: 0, pair: 'Size' },
-          'pose.height': { kind: 'number', name: 'H', description: 'Height, world units.', default: 0, min: 0, pair: 'Size' },
+          'pose.x': { kind: 'number', name: 'X', description: 'Left edge, world units.', default: 0, pair: { with: 'pose.y', label: 'Position' } },
+          'pose.y': { kind: 'number', name: 'Y', description: 'Top edge, world units.', default: 0 },
+          'pose.width': { kind: 'number', name: 'W', description: 'Width, world units.', default: 0, min: 0, pair: { with: 'pose.height', label: 'Size' } },
+          'pose.height': { kind: 'number', name: 'H', description: 'Height, world units.', default: 0, min: 0 },
           'pose.rotation': { kind: 'number', name: 'Rotation', description: 'Rotation about the box center.', default: 0, step: 1, unit: rotationDegreesUnit },
         },
       },
@@ -149,16 +149,16 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
               // Three options each: a segmented control shows every one at
               // once where a select shows the current one and hides the rest
               // behind a click.
-              cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', default: 'butt', control: 'toggle', block: true, pair: 'Line', options: [{ value: 'butt', label: 'Butt', icon: 'capButt' }, { value: 'round', label: 'Round', icon: 'capRound' }, { value: 'square', label: 'Square', icon: 'capSquare' }] },
-              join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', default: 'miter', control: 'toggle', block: true, pair: 'Line', options: [{ value: 'miter', label: 'Miter', icon: 'joinMiter' }, { value: 'round', label: 'Round', icon: 'joinRound' }, { value: 'bevel', label: 'Bevel', icon: 'joinBevel' }] },
-              align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', default: 'center', control: 'toggle', block: true, pair: 'Line', options: [{ value: 'inner', label: 'Inner', icon: 'alignInner' }, { value: 'center', label: 'Center', icon: 'alignCenter' }, { value: 'outer', label: 'Outer', icon: 'alignOuter' }] },
+              cap: { kind: 'enum', name: 'Cap', description: 'How an open end is drawn.', default: 'butt', control: 'toggle', block: true, pair: { with: ['data.stroke.join', 'data.stroke.align'], label: 'Line' }, options: [{ value: 'butt', label: 'Butt', icon: 'capButt' }, { value: 'round', label: 'Round', icon: 'capRound' }, { value: 'square', label: 'Square', icon: 'capSquare' }] },
+              join: { kind: 'enum', name: 'Join', description: 'How a corner is drawn.', default: 'miter', control: 'toggle', block: true, options: [{ value: 'miter', label: 'Miter', icon: 'joinMiter' }, { value: 'round', label: 'Round', icon: 'joinRound' }, { value: 'bevel', label: 'Bevel', icon: 'joinBevel' }] },
+              align: { kind: 'enum', name: 'Align', description: 'Where the ribbon sits relative to the edge.', default: 'center', control: 'toggle', block: true, options: [{ value: 'inner', label: 'Inner', icon: 'alignInner' }, { value: 'center', label: 'Center', icon: 'alignCenter' }, { value: 'outer', label: 'Outer', icon: 'alignOuter' }] },
               // Its own row: three bars already fill the one above, and the
               // dash pattern is a property of the line rather than of how the
               // ribbon meets the geometry.
               dash: { kind: 'enum', name: 'Style', description: 'Solid, dashed or dotted. Dash lengths are multiples of the stroke width, so a style holds as the width changes.', default: 'solid', control: 'toggle', block: true, encoding: strokeDashEncoding, options: [{ value: 'solid', label: 'Solid', icon: 'dashSolid' }, { value: 'dashed', label: 'Dashed', icon: 'dashDashed' }, { value: 'dotted', label: 'Dotted', icon: 'dashDotted' }, { value: 'custom', label: 'Custom', icon: 'dashCustom', disabled: true }] },
-              markerStart: { kind: 'enum', name: 'Start', description: 'Marker at the first vertex of each open subpath.', default: '', control: 'select', block: true, pair: 'Markers', encoding: markerEncoding, options: markerOptions() },
-              markerMid: { kind: 'enum', name: 'Mid', description: 'Marker at every interior authored vertex.', default: '', control: 'select', block: true, pair: 'Markers', encoding: markerEncoding, options: markerOptions() },
-              markerEnd: { kind: 'enum', name: 'End', description: 'Marker at the last vertex of each open subpath.', default: '', control: 'select', block: true, pair: 'Markers', encoding: markerEncoding, options: markerOptions() },
+              markerStart: { kind: 'enum', name: 'Start', description: 'Marker at the first vertex of each open subpath.', default: '', control: 'select', block: true, pair: { with: ['data.stroke.markerMid', 'data.stroke.markerEnd'], label: 'Markers' }, encoding: markerEncoding, options: markerOptions() },
+              markerMid: { kind: 'enum', name: 'Mid', description: 'Marker at every interior authored vertex.', default: '', control: 'select', block: true, encoding: markerEncoding, options: markerOptions() },
+              markerEnd: { kind: 'enum', name: 'End', description: 'Marker at the last vertex of each open subpath.', default: '', control: 'select', block: true, encoding: markerEncoding, options: markerOptions() },
             },
           },
         },
@@ -187,17 +187,17 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                       name: 'Character',
                       children: {
                         fontFamily: { kind: 'font-family', name: 'Font', description: 'Registered font family.', default: 'sans-serif' },
-                        fontSize: { kind: 'number', name: 'Size', description: 'Font size, world units.', default: 16, min: 1, step: 1, pair: 'Size / weight' },
-                        fontWeight: { kind: 'font-weight', name: 'Weight', description: 'Font weight, from the faces the family has.', default: 400, pair: 'Size / weight' },
+                        fontSize: { kind: 'number', name: 'Size', description: 'Font size, world units.', default: 16, min: 1, step: 1, pair: { with: 'data.style.fontWeight', label: 'Size / weight' } },
+                        fontWeight: { kind: 'font-weight', name: 'Weight', description: 'Font weight, from the faces the family has.', default: 400 },
                         // One row of segments, the strip every text editor
                         // draws: the slant, the three rules, then the two
                         // scripts. Italic is a flag here although the field
                         // is `fontStyle`, whose only other value is upright.
-                        fontStyle: { kind: 'boolean', name: 'Italic', description: 'Set the text in its italic face.', default: false, control: 'toggle', icon: 'italic', short: ['I'], pair: 'Style', encoding: italicEncoding },
-                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false, control: 'toggle', icon: 'underline', short: ['U'], pair: 'Style' },
-                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false, control: 'toggle', icon: 'strikethrough', short: ['S'], pair: 'Style' },
-                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', default: false, control: 'toggle', icon: 'overline', short: ['O'], pair: 'Style' },
-                        script: { kind: 'enum', name: 'Script', description: 'Set the text smaller and raised or lowered, on the line it would otherwise hold.', default: undefined, control: 'toggle', clearable: true, pair: 'Style', options: [{ value: 'super', label: 'Superscript', icon: 'superscript' }, { value: 'sub', label: 'Subscript', icon: 'subscript' }] },
+                        fontStyle: { kind: 'boolean', name: 'Italic', description: 'Set the text in its italic face.', default: false, control: 'toggle', icon: 'italic', short: ['I'], pair: { with: ['data.style.underline', 'data.style.strikethrough', 'data.style.overline', 'data.style.script'], label: 'Style' }, encoding: italicEncoding },
+                        underline: { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false, control: 'toggle', icon: 'underline', short: ['U'] },
+                        strikethrough: { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false, control: 'toggle', icon: 'strikethrough', short: ['S'] },
+                        overline: { kind: 'boolean', name: 'Overline', description: 'Rule the text above its ascent.', default: false, control: 'toggle', icon: 'overline', short: ['O'] },
+                        script: { kind: 'enum', name: 'Script', description: 'Set the text smaller and raised or lowered, on the line it would otherwise hold.', default: undefined, control: 'toggle', clearable: true, options: [{ value: 'super', label: 'Superscript', icon: 'superscript' }, { value: 'sub', label: 'Subscript', icon: 'subscript' }] },
                         letterSpacing: { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
                         textTransform: { kind: 'enum', name: 'Case', description: 'Draw the text in capitals, lowercase or title case. The text itself is unchanged.', default: 'none', control: 'toggle', options: [{ value: 'none', label: 'None', short: ['–'] }, { value: 'uppercase', label: 'Uppercase', short: ['AA'] }, { value: 'lowercase', label: 'Lowercase', short: ['aa'] }, { value: 'capitalize', label: 'Capitalize', short: ['Aa'] }] },
                         fontVariantCaps: { kind: 'enum', name: 'Small caps', description: 'Draw lowercase letters as smaller capitals. The text itself is unchanged.', default: 'normal', control: 'toggle', options: [{ value: 'normal', label: 'Normal', short: ['–'] }, { value: 'small-caps', label: 'Small caps', short: ['Sc'] }] },

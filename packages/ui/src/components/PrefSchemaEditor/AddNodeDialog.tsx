@@ -19,25 +19,30 @@ export interface AddNodeDialogProps {
   /** The children the new node joins, so its id cannot collide with one of them. */
   siblings: ChildMap;
   kinds: readonly string[];
+  /** What the form opens filled with. */
+  initial?: Partial<NewNode>;
   onAdd(node: NewNode): void;
   onClose(): void;
 }
 
 /** Asks for the least a new pref or group needs before it exists: a name, the id it is keyed by, and a pref's kind.
  *  The id follows the name until it is typed into. */
-export function AddNodeDialog({ what, siblings, kinds, onAdd, onClose }: AddNodeDialogProps) {
+export function AddNodeDialog({ what, siblings, kinds, initial, onAdd, onClose }: AddNodeDialogProps) {
   return (
     <Dialog isOpen={what !== null} onOpenChange={(open) => { if (!open) onClose(); }}
       title={what === 'group' ? 'Add group' : 'Add pref'}>
-      {what && <AddNodeForm key={what} what={what} siblings={siblings} kinds={kinds} onAdd={onAdd} onClose={onClose} />}
+      {what && (
+        <AddNodeForm key={`${what}:${initial?.key ?? ''}`} what={what} siblings={siblings} kinds={kinds} initial={initial}
+          onAdd={onAdd} onClose={onClose} />
+      )}
     </Dialog>
   );
 }
 
-function AddNodeForm({ what, siblings, kinds, onAdd, onClose }: Omit<AddNodeDialogProps, 'what'> & { what: 'pref' | 'group' }) {
-  const [name, setName] = useState('');
-  const [typedKey, setTypedKey] = useState<string | null>(null);
-  const [kind, setKind] = useState<string | null>(null);
+function AddNodeForm({ what, siblings, kinds, initial, onAdd, onClose }: Omit<AddNodeDialogProps, 'what'> & { what: 'pref' | 'group' }) {
+  const [name, setName] = useState(initial?.name ?? '');
+  const [typedKey, setTypedKey] = useState<string | null>(initial?.key ?? null);
+  const [kind, setKind] = useState<string | null>(initial?.kind ?? null);
   const key = typedKey ?? keyFromName(name);
   const problem = keyProblem(siblings, key);
   const missing = what === 'pref' && (name.trim() === '' || kind === null);

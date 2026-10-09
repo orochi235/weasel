@@ -1,4 +1,6 @@
 .switch {
+  /* Holds react-aria's hidden input, which otherwise escapes any scrolling ancestor. */
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--wzl-space-4);

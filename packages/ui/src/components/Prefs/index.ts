@@ -9,14 +9,17 @@ export { prefFieldProps, type PrefFieldState } from './prefField';
 export { PrefsRail, type PrefsRailProps } from './PrefsRail';
 export { PrefsPane, type PrefsPaneProps } from './PrefsPane';
 export { PrefsDialog, type PrefsDialogProps } from './PrefsDialog';
+export { PrefKindBadge, type PrefKindBadgeProps } from './PrefKindBadge';
 export {
   filterPrefSubtree,
   isPrefLeaf,
   prefDisplayBounds,
+  prefFieldChoices,
   prefRailItems,
   prefValueAtPath,
   visiblePrefSubtree,
   type PrefRailItem,
+  type PrefFieldChoice,
   type BuiltinPref,
   type PrefBoolean,
   type PrefBooleanControl,

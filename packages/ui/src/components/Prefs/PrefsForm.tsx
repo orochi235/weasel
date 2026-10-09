@@ -4,8 +4,11 @@ import { useScrollSpy } from '../../useScrollSpy';
 import {
   filterPrefSubtree,
   isPrefLeaf,
+  prefFieldChoices,
+  looseEntryName,
   prefRailItems,
   visiblePrefSubtree,
+  type PrefFieldChoice,
   type PrefGroup,
 } from './schema';
 import { PrefRow, type PrefRenderer, type WalkCtx } from './PrefsRow';
@@ -16,7 +19,7 @@ import s from './Prefs.module.css';
 export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
 
 /** How a {@link PrefsForm} lays its groups out. */
-export type PrefsLayout = 'columns' | 'rail';
+export type PrefsLayout = 'columns' | 'rail' | 'list';
 
 /** Props for {@link PrefsForm}. */
 export interface PrefsFormProps {
@@ -43,7 +46,9 @@ export interface PrefsFormProps {
    * `'columns'` (the default) wraps each top-level group into its own panel
    * column. `'rail'` puts a two-level navigation rail beside one group's
    * settings at a time — what a dialog-sized surface wants, since columns
-   * overflow sideways once there are more than two.
+   * overflow sideways once there are more than two. `'list'` sets the root's
+   * children down one column with no panel around them, nested groups as
+   * sub-panels — for a form that is already the whole of a pane.
    */
   layout?: PrefsLayout;
   /** Show a filter field that narrows the form to matching leaves. */
@@ -78,6 +83,9 @@ export interface PrefsFormProps {
   /** Which leaves can inherit, and so get a label toggle. Default: every leaf,
    *  once `onAutoChange` is given. */
   canInherit?: (path: string) => boolean;
+  /** The fields a `field` leaf may name. Default: this schema's own — a form
+   *  that edits another schema passes that one's. */
+  fields?: readonly PrefFieldChoice[];
   /** Small text after an inherited leaf's label, e.g. `() => 'from Defaults'`.
    *  Default: none. */
   inheritHint?: (path: string) => string | undefined;
@@ -113,7 +121,10 @@ export function PrefsForm(props: PrefsFormProps) {
     return visible === null ? null : filterPrefSubtree(visible, query);
   }, [schema, showHidden, query]);
 
-  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint };
+  // Every field of the whole schema, not only the visible ones: a reference may name a hidden field.
+  const own = useMemo(() => prefFieldChoices(schema), [schema]);
+  const fields = props.fields ?? own;
+  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint, fields };
   const field = filterable ? (
     <div className={s.filter}>
       <Input
@@ -135,6 +146,25 @@ export function PrefsForm(props: PrefsFormProps) {
         filterField={field}
         onClearFilter={() => setQuery('')}
       />
+    );
+  }
+
+  if (layout === 'list') {
+    return (
+      <div className={[s.columnsLayout, className].filter(Boolean).join(' ')}>
+        {field}
+        {root === null ? (
+          <NoMatches query={query} onClear={() => setQuery('')} />
+        ) : (
+          <div className={s.rows}>
+            {Object.entries(root.children).map(([key, child]) => (isPrefLeaf(child) ? (
+              <PrefRow key={key} ctx={ctx} path={key} pref={child} />
+            ) : (
+              <GroupBody key={key} ctx={ctx} group={child} path={key} depth={1} />
+            )))}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -246,7 +276,7 @@ function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup |
     );
     return Object.keys(children).length === 0
       ? null
-      : { ...root, name: rootName, children };
+      : { ...root, name: looseEntryName(rootName), children };
   }
   let node: PrefGroup | undefined;
   let cursor = root;
@@ -294,12 +324,12 @@ function GroupBody({ ctx, group, path, depth }: {
 }) {
   return (
     <div className={depth === 0 ? s.panel : s.subpanel}>
-      <div className={s.groupHeader}>
-        <h3 className={s.groupTitle}>{group.name}</h3>
-        {group.description !== undefined && (
-          <p className={s.groupDesc}>{group.description}</p>
-        )}
-      </div>
+      {(group.name !== '' || group.description) && (
+        <div className={s.groupHeader}>
+          {group.name !== '' && <h3 className={s.groupTitle}>{group.name}</h3>}
+          {group.description && <p className={s.groupDesc}>{group.description}</p>}
+        </div>
+      )}
       <div className={s.rows}>
         {Object.entries(group.children).map(([key, child]) => {
           const childPath = `${path}.${key}`;

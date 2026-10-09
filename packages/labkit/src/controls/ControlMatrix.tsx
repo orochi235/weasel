@@ -29,6 +29,7 @@ import { auto as autoValue } from '../config/auto';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { ControlRow } from './ControlPanel';
+import { FieldChoicesContext, useFieldChoices, useFieldChoicesOf } from './fieldChoices';
 import { summarizeValue } from './inDialog';
 
 /** One column of a {@link ControlMatrix}: a config group, every one the same shape. */
@@ -115,6 +116,7 @@ export function ControlMatrix({
   const hintFor =
     inheritHint ?? ((_: ControlMatrixColumn) => (fallback ? `from ${nameOf(fallback)}` : ''));
   const [open, setOpen] = useState<OpenCell | null>(null);
+  const choices = useFieldChoicesOf(schema.group);
   const triggerRef = useRef<HTMLElement | null>(null);
   const { anchor, portalProps, ready } = useOverlayPortal();
 
@@ -253,12 +255,15 @@ export function ControlMatrix({
     </div>
   );
 
-  if (title === undefined && stance === undefined && tone === undefined) return table;
-  return (
-    <PropertyPanel title={title} stance={stance} tone={tone}>
-      {table}
-    </PropertyPanel>
-  );
+  const panel =
+    title === undefined && stance === undefined && tone === undefined ? (
+      table
+    ) : (
+      <PropertyPanel title={title} stance={stance} tone={tone}>
+        {table}
+      </PropertyPanel>
+    );
+  return <FieldChoicesContext.Provider value={choices}>{panel}</FieldChoicesContext.Provider>;
 }
 
 /**
@@ -280,10 +285,12 @@ function Editor({
   close: () => void;
 }) {
   const { path, leaf } = open;
+  const choices = useFieldChoices();
   const field = isBuiltinToolPref(leaf)
     ? prefFieldProps(leaf, {
         value: valueAtPath(config, path) ?? leaf.default,
         setValue: (next) => setConfig(path, next),
+        fields: choices,
       })
     : null;
   if (field?.kind === 'enum') {
@@ -398,8 +405,9 @@ function Cell({
 }) {
   const shown = value ?? leaf.default;
   const write = (next: unknown): void => setConfig(path, next);
+  const choices = useFieldChoices();
   const field = isBuiltinToolPref(leaf)
-    ? prefFieldProps(leaf, { value: shown, setValue: write })
+    ? prefFieldProps(leaf, { value: shown, setValue: write, fields: choices })
     : null;
   const label = hint ? `${name}, ${hint}` : name;
 

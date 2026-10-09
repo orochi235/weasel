@@ -85,11 +85,12 @@
   cursor: default;
 }
 
-/* Control slot — fixed width so the label can take the rest of the row.
- * Kit form controls render as block-level flex columns that fill it. */
+/* Control slot — a share of the row rather than a fixed width, so a wide pane
+ * widens the field instead of the gap before it. A long label still pushes it
+ * narrower, down to the floor. Kit form controls are flex columns that fill it. */
 .rowControl {
-  flex: 0 0 110px;
-  min-width: 0;
+  flex: 0 1 60%;
+  min-width: 110px;
   display: flex;
   align-items: center;
 }
@@ -180,6 +181,10 @@
   /* Same reason across: a filter that narrows the schema to two rows should
      not pull the dialog's edges in around them. */
   min-inline-size: min(760px, 90vw);
+}
+
+.railBody.railBodyInline {
+  min-inline-size: 0;
 }
 
 .railBody > .railLayout {

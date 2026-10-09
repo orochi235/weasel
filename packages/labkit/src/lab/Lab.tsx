@@ -141,6 +141,11 @@ interface LabBaseProps {
   /** Offer the header's zoom controls, which act on the focused trial's camera
    *  and answer Mod+=, Mod+- and Mod+0. Default `true`. */
   zoom?: boolean;
+  /** Render the lab's header bar: its title, add-trial and zoom controls,
+   *  header contributions and theme switcher. Default `true`; `false` drops
+   *  all of them, the zoom keys with the controls, for a lab embedded in a page
+   *  that frames it. `children` go in the header, so they go too. */
+  header?: boolean;
   /** Tools offered lab-wide. A trial whose instrument declares none of its own
    *  reflects and writes this slot. */
   tools?: readonly TrialTool[];
@@ -337,6 +342,7 @@ function LabRuntime({
   expandOnDoubleClick = false,
   addTrial,
   zoom = true,
+  header = true,
   tools,
   configRules,
   controls,
@@ -566,6 +572,7 @@ function LabRuntime({
                     >
                       <LabShell
                         title={title ?? 'Labkit'}
+                        bar={header}
                         mode={modeValue}
                         {...(documentTitle !== undefined ? { documentTitle } : {})}
                         {...(pages ? { pages } : {})}
@@ -581,13 +588,15 @@ function LabRuntime({
                           )
                         }
                         header={
-                          <>
-                            <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
-                            {zoom && !presenting ? <LabZoom /> : null}
-                            {children}
-                            <LabHeaderRegion contributions={labChromeAll} />
-                            <LabThemeSwitcher />
-                          </>
+                          header && (
+                            <>
+                              <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
+                              {zoom && !presenting ? <LabZoom /> : null}
+                              {children}
+                              <LabHeaderRegion contributions={labChromeAll} />
+                              <LabThemeSwitcher />
+                            </>
+                          )
                         }
                       >
                         <PanelHostContext.Provider value={panelHostsRef.current}>

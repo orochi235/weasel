@@ -949,8 +949,8 @@ describe('<ControlPanel> pair', () => {
   const paired = () =>
     resolveConfigSchema(
       f.schema({
-        x: f.number(10).label('X').pair('Offset'),
-        y: f.number(20).label('Y').pair('Offset'),
+        x: f.number(10).label('X').pair({ with: 'y', label: 'Offset' }),
+        y: f.number(20).label('Y'),
         scale: f.number(1).label('Scale'),
       }),
       [],
@@ -981,8 +981,12 @@ describe('<ControlPanel> pair', () => {
   it('keeps a segmented leaf segmented when it shares a row, and gives that row the width', () => {
     const schema = resolveConfigSchema(
       f.schema({
-        camera: f.enum<'2d' | '3d'>('3d', ['2d', '3d']).radio().label('').pair('Camera'),
-        hold: f.boolean(true).toggle().label('Hold front').pair('Camera'),
+        camera: f
+          .enum<'2d' | '3d'>('3d', ['2d', '3d'])
+          .radio()
+          .label('')
+          .pair({ with: 'hold', label: 'Camera' }),
+        hold: f.boolean(true).toggle().label('Hold front'),
       }),
       [],
     );

@@ -1,4 +1,4 @@
-import { isBuiltinToolPref } from '@weasel-js/core';
+import { isBuiltinToolPref, pairRowsOf, type ToolPrefLeaf } from '@weasel-js/core';
 import {
   Button,
   DialogRow,
@@ -26,6 +26,7 @@ import { fromConfigFields } from '../config/fromConfigField';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafVisible } from '../config/visible';
+import { FieldChoicesContext, useFieldChoices, useFieldChoicesOf } from './fieldChoices';
 import { BareControl, extra, isSliderLeaf, labField, useDebouncedText } from './fields';
 import { headingLeaf } from './headingControl';
 import { inDialog, summarizeValue } from './inDialog';
@@ -186,6 +187,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   className,
 }: ControlPanelProps<TC>) {
   const resolved = useMemo(() => schema ?? fromConfigFields(fields ?? []), [schema, fields]);
+  const choices = useFieldChoicesOf(resolved.group);
 
   // An owner that tracks the set decides what a dot means; one that does not
   // gets a panel that decides for itself, because the alternative is handing it
@@ -328,10 +330,13 @@ export function ControlPanel<TC extends Record<string, unknown>>({
    * presentational, so a leaf whose control the lab draws itself, or one whose
    * control needs the whole row, keeps its own row instead.
    */
-  const pairable = (path: string): { leaf: PrefLeaf; pair: string } | undefined => {
+  const pairable = (
+    path: string,
+    pairs: ReadonlyMap<string, { key: string; label: string }>,
+  ): { leaf: PrefLeaf; pair: { key: string; label: string } } | undefined => {
     const found = schemaNodeAtPath(resolved.group, path);
     if (!found || !isPrefLeaf(found)) return undefined;
-    const pair = extra<string>(found, 'pair');
+    const pair = pairs.get(path);
     if (pair === undefined) return undefined;
     if (!isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden))
       return undefined;
@@ -347,12 +352,18 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     return { leaf: found, pair };
   };
 
-  /** A run of sibling paths as rows, merging each run of adjacent leaves
-   *  sharing a `pair` id into one row named by the pair. */
+  /** A run of sibling paths as rows, merging each leaf a `pair` names into
+   *  the row of the leaf naming it, where they run adjacent. */
   const rowsFor = (paths: readonly string[], rows: Rows): ReactNode[] => {
+    const pairs = pairRowsOf(
+      paths.flatMap((p) => {
+        const found = schemaNodeAtPath(resolved.group, p);
+        return found && isPrefLeaf(found) ? [[p, found as ToolPrefLeaf] as const] : [];
+      }),
+    );
     const out: ReactNode[] = [];
     for (let i = 0; i < paths.length; ) {
-      const head = pairable(paths[i]);
+      const head = pairable(paths[i], pairs);
       if (!head) {
         out.push(node(paths[i], rows));
         i += 1;
@@ -362,14 +373,14 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       const cells = [{ path: paths[i], leaf: head.leaf }];
       let j = i + 1;
       for (; j < paths.length; j += 1) {
-        const next = pairable(paths[j]);
-        if (!next || next.pair !== pair) break;
+        const next = pairable(paths[j], pairs);
+        if (!next || next.pair.key !== pair.key) break;
         cells.push({ path: paths[j], leaf: next.leaf });
       }
       out.push(
         <PairedRow
           key={paths[i]}
-          label={pair}
+          label={pair.label}
           cells={cells}
           shown={shown}
           setConfig={setConfig}
@@ -429,18 +440,21 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       {body(resolved.group, '', { pack, layout, grid: gridPack }, titled.path)}
     </PropertyList>
   );
-  if (title === undefined && stance === undefined && tone === undefined) return list;
-  return (
-    <PropertyPanel
-      title={title}
-      actions={titled.control}
-      stance={stance}
-      tone={tone}
-      density={density}
-    >
-      {list}
-    </PropertyPanel>
-  );
+  const panel =
+    title === undefined && stance === undefined && tone === undefined ? (
+      list
+    ) : (
+      <PropertyPanel
+        title={title}
+        actions={titled.control}
+        stance={stance}
+        tone={tone}
+        density={density}
+      >
+        {list}
+      </PropertyPanel>
+    );
+  return <FieldChoicesContext.Provider value={choices}>{panel}</FieldChoicesContext.Provider>;
 }
 
 /** How a section is keyed for folding: its label at the root, and its group's
@@ -481,6 +495,7 @@ export function ControlRow<TC extends Record<string, unknown>>({
   setRowAuto,
 }: ControlRowProps<TC>) {
   const write = (value: unknown): void => setConfig(path, value);
+  const choices = useFieldChoices();
   const fallback = extra<unknown>(leaf, 'default');
   const pinned = valueAtPath(config, path) ?? fallback;
 
@@ -542,7 +557,7 @@ export function ControlRow<TC extends Record<string, unknown>>({
     );
   }
 
-  const field = labField(leaf, value, write);
+  const field = labField(leaf, value, write, choices);
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
   switch (field.kind) {

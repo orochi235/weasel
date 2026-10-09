@@ -24,6 +24,7 @@ import {
   type AnyNode,
   type PanelLeaf,
 } from './model';
+import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import s from './SelectionPanel.module.css';
 
 export type { PropertyRenderContext, PropertyRenderer } from './renderLeaf';
@@ -85,6 +86,16 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const kinds = nodes.map((n) => classifyKind(n, routing));
   const selectionKey = nodes.map((n) => n.id).join(',');
   const sections = effectiveSections(kinds, properties);
+  // A node path is a leaf's own key, groups contributing nothing.
+  const fields = prefFieldChoices(
+    {
+      name: '',
+      children: Object.fromEntries(
+        sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf]))),
+      ),
+    },
+    false,
+  );
 
   if (nodes.length === 0) {
     return <div className={[s.root, className].filter(Boolean).join(' ')}>{emptyState}</div>;
@@ -133,8 +144,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
         const rows = section.rows
           .map((row) => {
             const controls = renderCells(
-              row.leaves.map((panelLeaf) =>
-                leafCell(
+              row.leaves.map((panelLeaf) => ({
+                ...leafCell(
                   panelLeaf,
                   row.leaves.length > 1
                     ? `${row.label} ${panelLeaf.leaf.name}`
@@ -143,8 +154,10 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                   renderers,
                   commit,
                   selectionKey,
+                  fields,
                 ),
-              ),
+                ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
+              })),
               renderers,
             );
             return { row, controls };
@@ -196,6 +209,7 @@ function leafCell(
   renderers: Record<string, PropertyRenderer> | undefined,
   commit: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void,
   selectionKey: string,
+  fields: readonly PrefFieldChoice[],
 ): LeafCell {
   const { path, leaf } = panelLeaf;
   const aggregated = aggregateValue(nodes, path);
@@ -216,6 +230,7 @@ function leafCell(
       return at === MIXED ? { value: undefined, mixed: true } : { value: at, mixed: false };
     },
     selectionKey,
+    fields,
   };
 
   return {

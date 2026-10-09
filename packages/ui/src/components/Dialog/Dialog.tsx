@@ -29,10 +29,16 @@ export type DialogProps = Omit<
     children?: ReactNode;
     /** Footer slot — typically action buttons. */
     footer?: ReactNode;
+    /** The dialog's accessible name, where `title` is not plain text. */
+    'aria-label'?: string;
     /** ARIA role. Defaults to `dialog`. Use `alertdialog` for confirms. */
     role?: RACDialogProps['role'];
     /** Class applied to the modal box (inside the overlay). */
     className?: string;
+    /** Draw the dialog's box where it is rendered, in the page's flow: no
+     *  overlay, portal, focus trap or scroll lock, and `isOpen` is ignored. For
+     *  showing what a dialog looks like — a preview, a story, a document. */
+    inline?: boolean;
     /** Class applied to the scrolling body. For content that owns its own
      *  scrolling — a form with a fixed navigation rail beside a scrolling
      *  pane — this is where the body's padding and overflow come off. */
@@ -58,6 +64,8 @@ export function Dialog(props: DialogProps) {
     role = 'dialog',
     className,
     bodyClassName,
+    inline = false,
+    'aria-label': ariaLabel,
     isOpen,
     onOpenChange,
     portalContainer,
@@ -69,6 +77,31 @@ export function Dialog(props: DialogProps) {
 
   const showClose = showCloseButton ?? Boolean(onOpenChange);
   const { anchor, portalProps, ready } = useOverlayPortal(portalContainer);
+  const box = (close: () => void) => (
+    <>
+      {(title !== undefined || showClose) && (
+        <header className={s.header}>
+          {title !== undefined && (
+            <Heading slot="title" className={s.title}>{title}</Heading>
+          )}
+          {showClose && (
+            <CloseButton ariaLabel="Close dialog" onClick={close} />
+          )}
+        </header>
+      )}
+      <div className={[s.body, bodyClassName].filter(Boolean).join(' ')}>{children}</div>
+      {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
+    </>
+  );
+  if (inline) {
+    return (
+      <div className={[s.modal, s.inline, className].filter(Boolean).join(' ')} {...stanced}>
+        <RACDialog role={role} className={s.dialog} aria-label={ariaLabel}>
+          {box(() => onOpenChange?.(false))}
+        </RACDialog>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -83,23 +116,8 @@ export function Dialog(props: DialogProps) {
           {...portalProps}
         >
           <RACModal className={[s.modal, className].filter(Boolean).join(' ')} {...stanced}>
-            <RACDialog role={role} className={s.dialog}>
-              {({ close }) => (
-                <>
-                  {(title !== undefined || showClose) && (
-                    <header className={s.header}>
-                      {title !== undefined && (
-                        <Heading slot="title" className={s.title}>{title}</Heading>
-                      )}
-                      {showClose && (
-                        <CloseButton ariaLabel="Close dialog" onClick={close} />
-                      )}
-                    </header>
-                  )}
-                  <div className={[s.body, bodyClassName].filter(Boolean).join(' ')}>{children}</div>
-                  {footer !== undefined && <footer className={s.footer}>{footer}</footer>}
-                </>
-              )}
+            <RACDialog role={role} className={s.dialog} aria-label={ariaLabel}>
+              {({ close }) => box(close)}
             </RACDialog>
           </RACModal>
         </ModalOverlay>

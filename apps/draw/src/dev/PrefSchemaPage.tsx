@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { defaultNodeProperties, type ToolPrefGroup } from '@weasel-js/core';
 import { PrefSchemaEditor, Select, type CustomKinds } from '@weasel-js/ui';
 import { DataControl, RegistryEnumControl } from '../PreferencesModal';
-import { PREFS } from '../prefs';
+import { PREFS, usePrefsValues } from '../prefs';
 import { DevShell } from './DevShell';
 import s from './PrefSchemaPage.module.css';
 
-const SOURCES: ReadonlyArray<{ id: string; label: string; schema: ToolPrefGroup }> = [
-  { id: 'prefs', label: 'WeaselDraw preferences', schema: PREFS },
+/** `stored`: whether the app's saved preference values sit under this schema. */
+const SOURCES: ReadonlyArray<{ id: string; label: string; schema: ToolPrefGroup; stored?: true }> = [
+  { id: 'prefs', label: 'WeaselDraw preferences', schema: PREFS, stored: true },
   ...defaultNodeProperties.map((e) => ({ id: `node:${e.name}`, label: `Node: ${e.name}`, schema: e.schema })),
 ];
 
@@ -27,6 +28,7 @@ export function PrefSchemaPage() {
   const [sourceId, setSourceId] = useState(SOURCES[0]!.id);
   const source = SOURCES.find((x) => x.id === sourceId)!;
   const [draft, setDraft] = useState<ToolPrefGroup>(source.schema);
+  const [stored] = usePrefsValues();
   return (
     <DevShell
       title="Prefs Schema"
@@ -41,7 +43,7 @@ export function PrefSchemaPage() {
       }
     >
       <PrefSchemaEditor key={sourceId} className={s.editor} schema={draft} onChange={setDraft}
-        original={source.schema} kinds={KINDS} renderers={RENDERERS} />
+        original={source.schema} kinds={KINDS} renderers={RENDERERS} stored={source.stored ? stored : undefined} />
     </DevShell>
   );
 }

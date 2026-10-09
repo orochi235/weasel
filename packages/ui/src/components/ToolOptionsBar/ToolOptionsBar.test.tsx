@@ -59,7 +59,7 @@ const optionsSchema: ToolPrefGroup = {
       description: 'Heavier weight.',
       short: ['B'],
       control: 'toggle',
-      pair: 'Style',
+      pair: { with: 'italic', label: 'Style' },
       default: false,
     },
     italic: {
@@ -68,7 +68,6 @@ const optionsSchema: ToolPrefGroup = {
       description: 'Sloped face.',
       short: ['I'],
       control: 'toggle',
-      pair: 'Style',
       default: false,
     },
     align: {

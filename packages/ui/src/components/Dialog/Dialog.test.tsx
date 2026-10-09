@@ -23,6 +23,21 @@ describe('Dialog', () => {
     expect(modal.style.getPropertyValue('--wzl-tone')).toBe('var(--wzl-swatch-fuchsia)');
   });
 
+  it('draws inline where it is rendered, whatever isOpen says, with its close reporting through onOpenChange', () => {
+    const onOpenChange = vi.fn();
+    const { container } = render(
+      <div data-testid="host">
+        <Dialog inline isOpen={false} onOpenChange={onOpenChange} title="Preview" footer={<span>foot</span>}>body</Dialog>
+      </div>,
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Preview' });
+    expect(screen.getByTestId('host')).toContainElement(dialog);
+    expect(container.querySelector('[data-weasel-overlay]')).toBeNull();
+    expect(screen.getByText('foot')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close dialog' }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it('uses alertdialog role when requested', () => {
     render(<Dialog isOpen title="Confirm" role="alertdialog">body</Dialog>);
     expect(screen.getByRole('alertdialog')).toBeTruthy();

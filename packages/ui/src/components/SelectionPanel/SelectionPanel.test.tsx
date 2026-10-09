@@ -31,8 +31,8 @@ const properties: NodePropertiesEntry[] = [
         layout: {
           name: 'Layout',
           children: {
-            'pose.x': { kind: 'number', name: 'X', description: 'x', default: 0, pair: 'Position' },
-            'pose.y': { kind: 'number', name: 'Y', description: 'y', default: 0, pair: 'Position' },
+            'pose.x': { kind: 'number', name: 'X', description: 'x', default: 0, pair: { with: 'pose.y', label: 'Position' } },
+            'pose.y': { kind: 'number', name: 'Y', description: 'y', default: 0 },
             'pose.rotation': { kind: 'number', name: 'Rotation', description: 'r', default: 0, unit: rotationDegreesUnit },
           },
         },
@@ -348,8 +348,8 @@ describe('SelectionPanel', () => {
             layout: {
               name: 'Layout',
               children: {
-                'pose.x': { kind: 'number', name: 'X', description: 'x', default: 0, pair: 'Position' },
-                'pose.y': { kind: 'number', name: 'Y', description: 'y', default: 0, pair: 'Position' },
+                'pose.x': { kind: 'number', name: 'X', description: 'x', default: 0, pair: { with: 'pose.y', label: 'Position' } },
+                'pose.y': { kind: 'number', name: 'Y', description: 'y', default: 0 },
               },
             },
             appearance: {
@@ -1191,15 +1191,16 @@ describe('SelectionPanel — boolean controls', () => {
               },
               'data.underline': {
                 kind: 'boolean', name: 'Underline', description: 'u', default: false,
-                control: 'toggle', short: ['U'], pair: 'Decoration',
+                control: 'toggle', short: ['U'],
+                pair: { with: ['data.strikethrough', 'data.overline'], label: 'Decoration' },
               },
               'data.strikethrough': {
                 kind: 'boolean', name: 'Strikethrough', description: 's', default: false,
-                control: 'toggle', short: ['S'], pair: 'Decoration',
+                control: 'toggle', short: ['S'],
               },
               'data.overline': {
                 kind: 'boolean', name: 'Overline', description: 'o', default: false,
-                control: 'toggle', short: ['O'], pair: 'Decoration',
+                control: 'toggle', short: ['O'],
               },
             },
           },
@@ -1325,15 +1326,16 @@ describe('SelectionPanel — flags inside an object leaf', () => {
                 children: {
                   underline: {
                     kind: 'boolean', name: 'Underline', description: 'u', default: false,
-                    control: 'toggle', short: ['U'], pair: 'Decoration',
+                    control: 'toggle', short: ['U'],
+                    pair: { with: ['data.style.strikethrough', 'data.style.overline'], label: 'Decoration' },
                   },
                   strikethrough: {
                     kind: 'boolean', name: 'Strikethrough', description: 's', default: false,
-                    control: 'toggle', short: ['S'], pair: 'Decoration',
+                    control: 'toggle', short: ['S'],
                   },
                   overline: {
                     kind: 'boolean', name: 'Overline', description: 'o', default: false,
-                    control: 'toggle', short: ['O'], pair: 'Decoration',
+                    control: 'toggle', short: ['O'],
                   },
                 },
               },

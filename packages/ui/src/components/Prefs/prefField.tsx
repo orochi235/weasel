@@ -7,7 +7,7 @@ import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
-import { prefDisplayBounds, prefUnitAccepts, type PrefLeaf } from './schema';
+import { prefDisplayBounds, prefUnitAccepts, type PrefFieldChoice, type PrefLeaf } from './schema';
 
 /** What {@link prefFieldProps} is told about one leaf's value. */
 export interface PrefFieldState {
@@ -33,6 +33,8 @@ export interface PrefFieldState {
   fontVariant?: { weight?: unknown; style?: unknown };
   /** A font weight's family, where it is not `siblings`' own `fontFamily`. */
   fontFamily?: unknown;
+  /** The fields a `field` leaf may name, by the surface's own paths. */
+  fields?: readonly PrefFieldChoice[];
 }
 
 /**
@@ -194,6 +196,15 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
     }
     case 'object':
       return null;
+    case 'field': {
+      const choices = (state.fields ?? []).filter((f) => !leaf.kinds || leaf.kinds.includes(f.kind));
+      const current = mixed || unset ? undefined : typeof value === 'string' && value !== '' ? value : undefined;
+      const options = choices.map((f) => ({ value: f.path, label: `${f.name} (${f.path})` }));
+      // A reference to a field this surface does not draw still shows what it names.
+      if (current !== undefined && !choices.some((f) => f.path === current))
+        options.unshift({ value: current, label: current });
+      return { kind: 'enum', control: 'select', value: current, mixed, unset, options, onChange: setValue };
+    }
     default: {
       // Not reachable while every built-in kind has an arm — and a new kind
       // that lacks one is a compile error here, never a blank row.

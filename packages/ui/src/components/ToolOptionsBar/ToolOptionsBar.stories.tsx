@@ -83,7 +83,7 @@ const TEXT_OPTIONS: ToolPrefGroup = {
       description: 'Heavier weight.',
       short: ['B'],
       control: 'toggle',
-      pair: 'Style',
+      pair: { with: 'italic', label: 'Style' },
       default: false,
     },
     italic: {
@@ -92,7 +92,6 @@ const TEXT_OPTIONS: ToolPrefGroup = {
       description: 'Sloped face.',
       short: ['I'],
       control: 'toggle',
-      pair: 'Style',
       default: false,
     },
     fontSize: {

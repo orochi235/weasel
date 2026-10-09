@@ -1,11 +1,13 @@
 import { getAlpha01, isBuiltinToolPref, toHex8, withAlpha01 } from '@weasel-js/core';
 import {
+  type PrefFieldChoice,
   type PrefLeaf,
   PropertyControl,
   type PropertyControlProps,
   prefFieldProps,
 } from '@weasel-js/ui';
 import { useEffect, useRef, useState } from 'react';
+import { useFieldChoices } from './fieldChoices';
 
 /** Whether this leaf draws as a slider, mirroring the condition the `number`
  *  arm below branches on. A slider is the one control whose value cannot be
@@ -35,9 +37,10 @@ export function labField(
   leaf: PrefLeaf,
   value: unknown,
   write: (value: unknown) => void,
+  fields: readonly PrefFieldChoice[],
 ): PropertyControlProps | null {
   if (!isBuiltinToolPref(leaf) || leaf.kind === 'paint' || leaf.kind === 'object') return null;
-  const field = prefFieldProps(leaf, { value, setValue: write });
+  const field = prefFieldProps(leaf, { value, setValue: write, fields });
   if (field === null) return null;
   switch (field.kind) {
     case 'number':
@@ -89,7 +92,7 @@ export function BareControl({
     write,
     extra<number>(leaf, 'debounceMs') ?? 150,
   );
-  const field = labField(leaf, value, write);
+  const field = labField(leaf, value, write, useFieldChoices());
   // Unreachable for null: callers admit only kinds with a field.
   if (field === null) return null;
   switch (field.kind) {

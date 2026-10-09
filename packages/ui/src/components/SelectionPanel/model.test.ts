@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { styleAtRange, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import { styleAtRange, type NodePropertiesEntry, type NodeRoutingEntry, type ToolPrefPair } from '@weasel-js/core';
 import {
   MIXED,
   aggregateValue,
@@ -15,7 +15,7 @@ const routing: NodeRoutingEntry[] = [
   { name: 'text', matches: (d) => (d as { kind?: string })?.kind === 'text' },
 ];
 
-const num = (name: string, pair?: string) =>
+const num = (name: string, pair?: ToolPrefPair) =>
   ({ kind: 'number', name, description: name, default: 0, ...(pair ? { pair } : {}) }) as const;
 
 const entries: NodePropertiesEntry[] = [
@@ -27,9 +27,9 @@ const entries: NodePropertiesEntry[] = [
         layout: {
           name: 'Layout',
           children: {
-            'pose.x': num('X', 'Position'),
-            'pose.y': num('Y', 'Position'),
-            'pose.width': num('W', 'Size'),
+            'pose.x': num('X', { with: 'pose.y', label: 'Position' }),
+            'pose.y': num('Y'),
+            'pose.width': num('W', { with: 'pose.height', label: 'Size' }),
           },
         },
         appearance: {
@@ -49,7 +49,7 @@ const entries: NodePropertiesEntry[] = [
       children: {
         layout: {
           name: 'Layout',
-          children: { 'pose.x': num('X', 'Position'), 'pose.y': num('Y', 'Position') },
+          children: { 'pose.x': num('X', { with: 'pose.y', label: 'Position' }), 'pose.y': num('Y') },
         },
         appearance: {
           name: 'Appearance',

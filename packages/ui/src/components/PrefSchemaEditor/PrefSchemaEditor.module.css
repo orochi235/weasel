@@ -1,17 +1,52 @@
 .options { display: grid; gap: var(--wzl-space-2); }
+.pairRow { display: grid; grid-template-columns: 1fr auto; gap: var(--wzl-space-2); align-items: center; }
 .optionRow { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--wzl-space-2); align-items: center; }
 .number { composes: numeric from '@weasel-js/theme/numeric.module.css'; }
 .number input { text-align: right; }
+/* A whole surface a host may mount anywhere, so it brings its face rather than inheriting the page's. */
 .editor {
+  font-family: var(--wzl-font-ui);
+  color: var(--wzl-fg);
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(280px, 1.2fr) minmax(280px, 1.4fr);
+  grid-template-columns: var(--structure-w) auto var(--attributes-w) auto minmax(320px, 1fr);
   grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
-  gap: var(--wzl-space-3);
+  gap: var(--wzl-space-3) var(--wzl-space-2);
   min-height: 0;
   height: 100%;
 }
 .middle { display: grid; align-content: start; gap: var(--wzl-space-2); min-height: 0; overflow: auto; }
 .pane { min-height: 0; overflow: auto; }
+.structurePane { display: flex; flex-direction: column; overflow: hidden; }
+.treeArea { flex: 1; min-height: 0; overflow: auto; }
+.storedArea { flex: 0 0 var(--stored-h); min-height: 0; overflow: auto; }
+.storedList { list-style: none; margin: 0; padding: 0; display: grid; }
+.storedEntry {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: var(--wzl-space-3);
+  padding: var(--wzl-space-1) var(--wzl-space-2);
+  border: none;
+  border-radius: var(--wzl-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.storedEntry:hover { background: var(--wzl-surface-hover); }
+.storedPath { font-family: var(--wzl-font-mono); font-size: var(--wzl-font-size-xs); }
+.storedValue {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wzl-fg-muted);
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-xs);
+}
+.storedEmpty { margin: 0; color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-sm); }
+.previewPane { display: flex; flex-direction: column; overflow: hidden; }
+.previewDialog { flex: 1; min-height: 0; }
 .toolbar { display: flex; flex-wrap: wrap; gap: var(--wzl-space-2); margin-block-end: var(--wzl-space-2); }
 .paneHeader {
   display: flex;
@@ -45,14 +80,20 @@
   border-radius: var(--wzl-radius-sm);
   font-size: var(--wzl-font-size-sm);
 }
-.export { grid-column: 1 / -1; min-height: 0; }
-/* Fills the row the grid gives the export, so the literal scrolls inside all of it. */
-.exportPanel { display: flex; flex-direction: column; align-items: start; flex: 1; min-height: 0; padding-block-end: 0; }
+.export {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--wzl-space-3);
+  min-height: 0;
+}
+/* Each pane fills the row the grid gives the export, so its text scrolls inside all of it. */
+.exportPane { display: flex; flex-direction: column; min-height: 0; }
 .code {
   flex: 1;
-  align-self: stretch;
   min-height: 0;
-  margin: var(--wzl-space-2) 0 0;
+  margin: 0;
   font-size: var(--wzl-font-size-xs);
 }
+.changeList { overflow: auto; font-family: var(--wzl-font-mono); white-space: pre; }
 .changed { font-weight: 600; }

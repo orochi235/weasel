@@ -8,7 +8,10 @@ import s from './Prefs.module.css';
  * the dialog's own open state and chrome.
  */
 export interface PrefsDialogProps extends PrefsFormProps {
+  /** Ignored when `inline`. */
   isOpen: boolean;
+  /** Draw the dialog in place rather than as a modal, as `Dialog`'s `inline`. */
+  inline?: boolean;
   onOpenChange: (open: boolean) => void;
   /** Dialog heading. Defaults to the schema root's `name`. */
   title?: ReactNode;
@@ -34,16 +37,17 @@ export interface PrefsDialogProps extends PrefsFormProps {
  * sideways past two groups, and this box is 900px at its widest.
  */
 export function PrefsDialog(props: PrefsDialogProps) {
-  const { isOpen, onOpenChange, title, headerExtra, footer, dialogClassName, ...form } = props;
+  const { isOpen, onOpenChange, inline, title, headerExtra, footer, dialogClassName, ...form } = props;
   const rail = form.layout === 'rail';
   return (
     <Dialog
       isOpen={isOpen}
       onOpenChange={onOpenChange}
+      inline={inline}
       aria-label={typeof title === 'string' ? title : form.schema.name}
       className={dialogClassName}
       footer={footer}
-      bodyClassName={rail ? s.railBody : undefined}
+      bodyClassName={rail ? (inline ? `${s.railBody} ${s.railBodyInline}` : s.railBody) : undefined}
       title={
         headerExtra !== undefined ? (
           <span className={s.titleRow}>

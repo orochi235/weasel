@@ -14,6 +14,7 @@ import {
   type SceneNode,
   type ToolPrefGroup,
   type ToolPrefLeaf,
+  pairRowsOf,
 } from '@weasel-js/core';
 
 // Re-exported under its existing public name here: the kit-wide "these
@@ -41,6 +42,8 @@ export interface PanelLeaf {
 export interface PanelRow {
   label: string;
   leaves: PanelLeaf[];
+  /** The path of the leaf whose `pair` made the row, when one did. */
+  pair?: string;
 }
 
 /**
@@ -99,19 +102,22 @@ function flatten(schema: ToolPrefGroup): PanelSection[] {
   return sections;
 }
 
-/** Merge consecutive leaves sharing a `pair` id into one labeled row. */
+/** Merge each leaf a `pair` names into the row of the leaf that names it,
+ *  where they run consecutively, labeled as the pair says. */
 export function pairRows(leaves: readonly PanelLeaf[]): PanelRow[] {
+  const pairs = pairRowsOf(leaves.map(({ path, leaf }) => [path, leaf] as const));
   const rows: PanelRow[] = [];
   for (const item of leaves) {
-    const pair = item.leaf.pair;
+    const pair = pairs.get(item.path);
     const prev = rows[rows.length - 1];
-    if (pair !== undefined && prev !== undefined && prev.label === pair) {
+    if (pair !== undefined && prev !== undefined && prev.pair === pair.key) {
       prev.leaves.push(item);
     } else {
-      rows.push({ label: pair ?? item.leaf.name, leaves: [item] });
+      rows.push({ label: pair?.label ?? item.leaf.name, leaves: [item], ...(pair ? { pair: pair.key } : {}) });
     }
   }
-  return rows;
+  // A pairing whose partners are absent here leaves a row of one, which is no pair.
+  return rows.map((row) => (row.leaves.length > 1 ? row : { label: row.label, leaves: row.leaves }));
 }
 
 /**

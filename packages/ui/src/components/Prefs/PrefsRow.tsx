@@ -8,6 +8,7 @@ import {
   type PrefGroup,
   type PrefLeaf,
   type PrefObject,
+  type PrefFieldChoice,
 } from './schema';
 import s from './Prefs.module.css';
 
@@ -24,6 +25,8 @@ export interface PrefRenderContext {
   auto: boolean;
   /** Toggle this leaf's auto state. */
   setAuto: (next: boolean) => void;
+  /** The form's fields, which a `field` leaf names one of. */
+  fields?: readonly PrefFieldChoice[];
 }
 
 /**
@@ -40,6 +43,7 @@ export interface WalkCtx {
   onAutoChange?: (path: string, next: boolean) => void;
   inheritHint?: (path: string) => string | undefined;
   canInherit?: (path: string) => boolean;
+  fields?: readonly PrefFieldChoice[];
 }
 
 export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
@@ -57,6 +61,7 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
     setValue: (v) => ctx.onChange(path, v),
     auto: inherited,
     setAuto,
+    ...(ctx.fields ? { fields: ctx.fields } : {}),
   };
 
   const custom = ctx.renderers?.[pref.kind];
@@ -93,7 +98,7 @@ function renderBuiltin(
 ): ReactNode {
   const { pref, value, setValue } = ctx;
   if (pref.kind === 'object') return <ObjectLeaf ctx={ctx} />;
-  const field = prefFieldProps(pref, { value, siblings, setValue });
+  const field = prefFieldProps(pref, { value, siblings, setValue, fields: ctx.fields });
   if (field === null) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a
     // crash — a missing wiring should be visible and recoverable.

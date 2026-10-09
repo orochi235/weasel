@@ -36,6 +36,18 @@ describe('PrefSchemaEditor', () => {
     expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
   });
 
+  it('resizes the structure and attributes columns from the handles between them', () => {
+    const { container } = render(<Live />);
+    const editor = container.firstElementChild as HTMLElement;
+    const before = (v: string) => editor.style.getPropertyValue(v);
+    const structureWidth = before('--structure-w');
+    const attributesWidth = before('--attributes-w');
+    fireEvent.keyDown(screen.getByRole('separator', { name: 'Resize structure' }), { key: 'ArrowRight' });
+    fireEvent.keyDown(screen.getByRole('separator', { name: 'Resize attributes' }), { key: 'ArrowLeft' });
+    expect(parseFloat(before('--structure-w'))).toBeGreaterThan(parseFloat(structureWidth));
+    expect(parseFloat(before('--attributes-w'))).toBeLessThan(parseFloat(attributesWidth));
+  });
+
   it('edits a leaf attribute and the preview follows', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
@@ -47,12 +59,10 @@ describe('PrefSchemaEditor', () => {
   it('sets the attributes every kind shares beside Key and Kind, and the kind\'s own in a panel below', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
-    const attrs = screen.getByRole('region', { name: 'Attributes' });
+    const top = screen.getByRole('region', { name: 'Attributes' });
     // A group's heading sits in a header row, first in its panel.
-    const panelOf = (title: string) => within(attrs).getByRole('heading', { name: title }).parentElement!.parentElement!;
-    const top = panelOf('Pref');
-    const own = panelOf('boolean');
-    expect(top).toContainElement(own);
+    const own = within(top).getByRole('heading', { name: 'boolean' }).parentElement!.parentElement!;
+    expect(within(top).queryByRole('heading', { name: /^(Pref|Group)$/ })).toBeNull();
     for (const field of ['Key', 'Name', 'Description']) {
       expect(within(top).getByRole('textbox', { name: field })).toBeInTheDocument();
       expect(within(own).queryByRole('textbox', { name: field })).toBeNull();
@@ -78,9 +88,8 @@ describe('PrefSchemaEditor', () => {
     expect(within(dialog).getByRole('textbox', { name: 'Id' })).toHaveValue('lineWidth');
     pickKind(dialog, 'number');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Add pref' })).toBeNull();
     expect(within(structure()).getByText('Line width')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
     const exact = getDefaultNormalizer({ collapseWhitespace: false });
     expect(screen.getByText(/\+ view\.lineWidth {2}\(number\)/, { normalizer: exact })).toBeInTheDocument();
   });
@@ -185,12 +194,47 @@ describe('PrefSchemaEditor', () => {
     expect(within(preview()).getByRole('checkbox', { name: 'Shown' })).not.toBeChecked();
   });
 
+  it('shows the literal and the change list side by side', () => {
+    render(<Live />);
+    expect(screen.getByRole('region', { name: 'Literal' })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Changes' })).getByText('No changes.')).toBeInTheDocument();
+  });
+
+  it('pairs a leaf with another by picking it from the schema\'s fields', () => {
+    render(<Live />);
+    fireEvent.click(row('grid'));
+    const attrs = screen.getByRole('region', { name: 'Attributes' });
+    fireEvent.click(within(attrs).getByRole('button', { name: /Add a paired field/ }));
+    fireEvent.click(screen.getByRole('option', { name: 'Snap (view.snap)' }));
+    fireEvent.change(within(attrs).getByRole('textbox', { name: 'Row label' }), { target: { value: 'Grid' } });
+    expect(screen.getByTestId('schema-literal').textContent).toMatch(/pair: \{\s*with: 'view\.snap',\s*label: 'Grid',\s*\}/);
+  });
+
+  it('lists stored values no leaf describes, and adds the leaf for one where it lives', () => {
+    function WithStored() {
+      const [schema, setSchema] = useState(START);
+      return <PrefSchemaEditor schema={schema} onChange={setSchema} stored={{ view: { grid: true, zoomStep: 1.5 }, misc: { theme: 'dark' } }} />;
+    }
+    render(<WithStored />);
+    const list = screen.getByRole('list', { name: 'Stored values with no leaf' });
+    expect(within(list).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Add a leaf for view.zoomStep', 'Add a leaf for misc.theme',
+    ]);
+    fireEvent.click(within(list).getByRole('button', { name: 'Add a leaf for misc.theme' }));
+    const dialog = screen.getByRole('dialog', { name: 'Add pref' });
+    expect(within(dialog).getByRole('textbox', { name: 'Name' })).toHaveValue('Theme');
+    expect(within(dialog).getByRole('textbox', { name: 'Id' })).toHaveValue('theme');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
+    expect(within(structure()).getByRole('treeitem', { name: /^Theme \(theme\)/ })).toBeInTheDocument();
+    expect(screen.getByTestId('schema-literal').textContent).toMatch(/misc: \{[\s\S]*theme: \{[\s\S]*default: 'dark'/);
+    expect(within(list).queryByRole('button', { name: 'Add a leaf for misc.theme' })).toBeNull();
+  });
+
   it('exports a literal with the edit in it', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
     const name = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
     fireEvent.change(name, { target: { value: 'Grid on' } });
-    fireEvent.click(screen.getByRole('tab', { name: 'Literal' }));
     expect(screen.getByTestId('schema-literal').textContent).toContain("name: 'Grid on',");
   });
 
@@ -259,7 +303,7 @@ describe('PrefSchemaEditor', () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     try {
       render(<Live />);
-      fireEvent.click(within(screen.getByRole('tabpanel')).getByRole('button', { name: 'Copy' }));
+      fireEvent.click(within(screen.getByRole('region', { name: 'Literal' })).getByRole('button', { name: 'Copy' }));
       await new Promise((r) => setTimeout(r, 0));
       expect(writeText).toHaveBeenCalled();
       expect(then).toHaveBeenCalledWith(undefined, expect.any(Function));

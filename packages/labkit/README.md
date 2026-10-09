@@ -268,7 +268,12 @@ data the region lays out, or a `render` function that opts out of that layout:
 
 Contributions passed to `<Lab>` apply to every trial; an instrument's own
 `chrome` field applies to its trials only. `suppress` drops a built-in by id and
-throws on an id that is not there.
+throws on an id that is not there. A suppressed button takes its shortcut with
+it: with `snapshot` gone, Mod+S is the browser's again.
+
+`header={false}` drops the lab's own header bar — title, add-trial, zoom, and
+theme switcher — and the zoom keys with it, for a lab embedded in a page that
+frames it.
 
 A sidebar section can be torn out of the trial into the workspace — as a tile
 beside the trials, or as a floating panel — with the trial still rendering into
