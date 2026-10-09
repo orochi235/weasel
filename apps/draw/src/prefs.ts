@@ -169,8 +169,9 @@ export const PREFS = {
 // Store
 // ──────────────────────────────────────────────────────────────────────────
 
-/** Every pref is one localStorage record under this prefix. */
-export const PREFS_PREFIX = 'weaseldraw.prefs.';
+/** Every pref is one localStorage record under this prefix. Not a prefix of
+ *  `LEGACY_PREFS_KEY`, so the old blob never loads as a record. */
+export const PREFS_PREFIX = 'weaseldraw.prefs/';
 
 /** Where prefs lived before the store: one JSON blob of the whole tree. */
 export const LEGACY_PREFS_KEY = 'weaseldraw.prefs.v2';

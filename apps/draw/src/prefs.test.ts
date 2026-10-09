@@ -70,6 +70,20 @@ describe('openDrawPrefs', () => {
 describe('importLegacyPrefs', () => {
   beforeEach(() => window.localStorage.clear());
 
+  it('keeps the legacy key outside the store\'s prefix', () => {
+    expect(LEGACY_PREFS_KEY.startsWith(PREFS_PREFIX)).toBe(false);
+  });
+
+  it('leaves only leaf records under the prefix after import', async () => {
+    window.localStorage.setItem(LEGACY_PREFS_KEY, JSON.stringify({ version: 2, view: { gridDensity: 40 } }));
+    const backing = new Map<string, unknown>([[LEGACY_PREFS_KEY, { version: 2 }]]);
+    const store = openDrawPrefs(createMemoryAdapter(backing));
+    importLegacyPrefs(store, window.localStorage);
+    await store.flush();
+    const records = [...backing.keys()].filter((k) => k.startsWith(PREFS_PREFIX));
+    expect(records).toEqual([`${PREFS_PREFIX}view.gridDensity`]);
+  });
+
   it('copies every leaf of the v2 blob into the store, then removes the blob', () => {
     window.localStorage.setItem(
       LEGACY_PREFS_KEY,
