@@ -70,6 +70,13 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
     return this.ann({ hidden: true });
   }
 
+  /** Draw the control across the whole row, with no label beside it: for an
+   *  editor too wide for the control column. Showing the leaf's name and
+   *  description is then the control's job. */
+  block(): this {
+    return this.ann({ block: true });
+  }
+
   /** Pair with a sibling sharing this id, side-by-side on one row. */
   pair(pair: string): this {
     return this.ann({ pair });

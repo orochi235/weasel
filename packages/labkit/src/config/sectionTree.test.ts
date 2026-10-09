@@ -139,7 +139,7 @@ describe('sectionTree', () => {
     expect(Object.keys(group.children)).toEqual(['hold-on', 'hold-on-2']);
   });
 
-  it('ignores a section nested under a group, which buckets rows in a pane', () => {
+  it('nests a section declared inside a group as a group of its own there', () => {
     const resolved = resolveConfigSchema(
       f.schema({
         cards: f.group({ floor: f.number(1).section('Size') }).section('View'),
@@ -147,6 +147,49 @@ describe('sectionTree', () => {
     );
     const { group } = sectionTree(resolved, { cards: { floor: 1 } });
     expect(Object.keys(group.children)).toEqual(['view']);
-    expect(Object.keys(groupAt(groupAt(group, 'view'), 'cards').children)).toEqual(['floor']);
+    const cards = groupAt(groupAt(group, 'view'), 'cards');
+    expect(Object.keys(cards.children)).toEqual(['size']);
+    expect(Object.keys(groupAt(cards, 'size').children)).toEqual(['floor']);
+  });
+});
+
+describe('sectionTree, sections inside a group', () => {
+  const resolved = resolveConfigSchema(
+    f.schema({
+      timing: f
+        .group({
+          pick: f.number(1),
+          line: f.number(2).section('A changed line').block(),
+          orb: f.number(3).section('An orb landing'),
+          scroll: f.number(4),
+        })
+        .section('Playback'),
+    }),
+  );
+  const config = { timing: { pick: 1, line: 2, orb: 3, scroll: 4 } };
+
+  it('makes each a group of its own inside the group, in schema order', () => {
+    const { group } = sectionTree(resolved, config);
+    const timing = groupAt(groupAt(group, 'playback'), 'timing');
+    expect(Object.keys(timing.children)).toEqual(['pick', 'a-changed-line', 'an-orb-landing', 'scroll']);
+    expect(groupAt(timing, 'a-changed-line').name).toBe('A changed line');
+    expect(Object.keys(groupAt(timing, 'a-changed-line').children)).toEqual(['line']);
+  });
+
+  it('renests the config to match, and maps a path inside one back to its config path', () => {
+    const { values, pathAt } = sectionTree(resolved, config);
+    expect(values).toEqual({
+      playback: {
+        timing: { pick: 1, 'a-changed-line': { line: 2 }, 'an-orb-landing': { orb: 3 }, scroll: 4 },
+      },
+    });
+    expect(pathAt('playback.timing.a-changed-line.line')).toBe('timing.line');
+    expect(pathAt('playback.timing.pick')).toBe('timing.pick');
+  });
+
+  it('carries block onto the leaf', () => {
+    const { group } = sectionTree(resolved, config);
+    const timing = groupAt(groupAt(group, 'playback'), 'timing');
+    expect(groupAt(timing, 'a-changed-line').children.line).toMatchObject({ block: true });
   });
 });
