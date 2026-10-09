@@ -1,10 +1,3 @@
-// The property-panel family, DetailList, LayerList, Input, Select, TokenPanel, ToggleBar and Button live in
-// `@weasel-js/ui`; labkit re-exports them so chrome built on labkit needs no
-// direct ui dependency. Named, not `export *` — a star re-export of an external
-// package emits no binding in the bundle.
-// The playback glyphs ride along for the same reason: chrome that labels a control with
-// one should not need `@weasel-js/ui` in its manifest to draw a play button.
-
 export {
   createIndexedDbAdapter,
   createMemoryAdapter,
@@ -18,6 +11,12 @@ export {
   sessionStorageAdapter,
   urlHashAdapter,
 } from '@weasel-js/storage';
+// The property-panel family, DetailList, LayerList, Input, Select, TokenPanel, ToggleBar and Button live in
+// `@weasel-js/ui`; labkit re-exports them so chrome built on labkit needs no
+// direct ui dependency. Named, not `export *` — a star re-export of an external
+// package emits no binding in the bundle.
+// The playback glyphs ride along for the same reason: chrome that labels a control with
+// one should not need `@weasel-js/ui` in its manifest to draw a play button.
 export type {
   ButtonProps,
   ButtonSize,
