@@ -1,9 +1,9 @@
 import { useMemo, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import type { ToolPrefGroup } from '@weasel-js/core';
 import { Button } from '../Button';
-import { Code } from '../Code';
 import { Tree, type TreeNode } from '../Tree';
 import { isPrefLeaf } from '../Prefs/schema';
+import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
@@ -24,7 +24,7 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
       id: p,
       label: name ? <>{name} <span className={s.treeKey}>({key})</span></> : key,
       textValue: name ? `${name} ${key}` : key,
-      trailing: <Code size="xs" status="muted" variant="plain">{isPrefLeaf(child) ? child.kind : 'group'}</Code>,
+      trailing: <PrefKindBadge kind={isPrefLeaf(child) ? child.kind : 'group'} />,
       className: changed.has(p) ? s.changed : undefined,
       ...(kids ? { children: toTreeNodes(child, p, changed) } : {}),
     };

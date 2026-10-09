@@ -36,6 +36,18 @@ describe('PrefSchemaEditor', () => {
     expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
   });
 
+  it('resizes the structure and attributes columns from the handles between them', () => {
+    const { container } = render(<Live />);
+    const editor = container.firstElementChild as HTMLElement;
+    const before = (v: string) => editor.style.getPropertyValue(v);
+    const structureWidth = before('--structure-w');
+    const attributesWidth = before('--attributes-w');
+    fireEvent.keyDown(screen.getByRole('separator', { name: 'Resize structure' }), { key: 'ArrowRight' });
+    fireEvent.keyDown(screen.getByRole('separator', { name: 'Resize attributes' }), { key: 'ArrowLeft' });
+    expect(parseFloat(before('--structure-w'))).toBeGreaterThan(parseFloat(structureWidth));
+    expect(parseFloat(before('--attributes-w'))).toBeLessThan(parseFloat(attributesWidth));
+  });
+
   it('edits a leaf attribute and the preview follows', () => {
     render(<Live />);
     fireEvent.click(row('grid'));

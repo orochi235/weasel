@@ -5,6 +5,7 @@ import {
   filterPrefSubtree,
   isPrefLeaf,
   prefFieldChoices,
+  looseEntryName,
   prefRailItems,
   visiblePrefSubtree,
   type PrefFieldChoice,
@@ -275,7 +276,7 @@ function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup |
     );
     return Object.keys(children).length === 0
       ? null
-      : { ...root, name: rootName, children };
+      : { ...root, name: looseEntryName(rootName), children };
   }
   let node: PrefGroup | undefined;
   let cursor = root;

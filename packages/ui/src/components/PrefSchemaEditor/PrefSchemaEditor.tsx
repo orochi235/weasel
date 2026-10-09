@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { createHistory, historyKey, useLatest, type Op, type ToolPrefGroup } from '@weasel-js/core';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { Switch } from '../Switch';
 import { setAtPath } from '../SelectionPanel/model';
 import { PrefsDialog, type PrefRenderer } from '../Prefs';
+import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { ExportPanel } from './ExportPanel';
 import { PaneHeader } from './PaneHeader';
@@ -62,6 +63,8 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
   const [notice, setNotice] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(() => new Set(branchPaths(schema)));
   const [showHidden, setShowHidden] = useState(true);
+  const [structureWidth, setStructureWidth] = useState(300);
+  const [attributesWidth, setAttributesWidth] = useState(320);
 
   const latest = useLatest({ schema, onChange, selected });
   const emitted = useRef(schema);
@@ -101,7 +104,9 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
 
   return (
     // Capture: React Aria's fields and tree stop a keydown from bubbling past them.
-    <div className={[s.editor, className].filter(Boolean).join(' ')} onKeyDownCapture={(e) => {
+    <div className={[s.editor, className].filter(Boolean).join(' ')}
+      style={{ '--structure-w': `${structureWidth}px`, '--attributes-w': `${attributesWidth}px` } as CSSProperties}
+      onKeyDownCapture={(e) => {
       const step = historyKey(e);
       if (!step) return;
       e.preventDefault();
@@ -114,6 +119,7 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
             <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => history.redo()}>Redo</Button>
           </>
         } />
+      <ResizeHandle value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">
           {notice && (
@@ -126,6 +132,7 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
         <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selected ?? ''}`)} path={selected} onRekey={rekey}
           kinds={kindList} custom={kinds} renderers={renderers} onNotice={setNotice} />
       </div>
+      <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
       <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
         <PaneHeader title="Live preview">
           <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch>

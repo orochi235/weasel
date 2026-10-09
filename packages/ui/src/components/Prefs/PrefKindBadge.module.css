@@ -1,0 +1,11 @@
+/* Two classes, so these outrank Badge's own `.badge` default without a source-order tie.
+   The six code tokens are tuned per mode; the two swatches are not, so they lean toward the
+   foreground to stay legible on either ground. */
+.kind.number { --badge-status-edge: var(--wzl-code-number); }
+.kind.boolean { --badge-status-edge: var(--wzl-code-constant); }
+.kind.string { --badge-status-edge: var(--wzl-code-string); }
+.kind.enum { --badge-status-edge: var(--wzl-code-keyword); }
+.kind.object { --badge-status-edge: var(--wzl-code-property); }
+.kind.field { --badge-status-edge: var(--wzl-code-name); }
+.kind.color { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-fuchsia) 55%, var(--wzl-fg)); }
+.kind.paint { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-citron) 55%, var(--wzl-fg)); }

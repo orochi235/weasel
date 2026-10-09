@@ -8,9 +8,9 @@
   font-family: var(--wzl-font-ui);
   color: var(--wzl-fg);
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(260px, 1fr) minmax(420px, 1.8fr);
+  grid-template-columns: var(--structure-w) auto var(--attributes-w) auto minmax(320px, 1fr);
   grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
-  gap: var(--wzl-space-3);
+  gap: var(--wzl-space-3) var(--wzl-space-2);
   min-height: 0;
   height: 100%;
 }

@@ -139,6 +139,11 @@ export interface PrefRailItem {
   matches: number;
 }
 
+/** What the rail and pane call a root's loose leaves: the root's name, or `General` when it has none. */
+export function looseEntryName(rootName: string): string {
+  return rootName === '' ? 'General' : rootName;
+}
+
 /** Leaves anywhere under `node`, counted. */
 function countPrefLeaves(node: ToolPrefLeaf | ToolPrefGroup): number {
   if (isPrefLeaf(node)) return 1;
@@ -159,7 +164,7 @@ export function prefRailItems(root: ToolPrefGroup): PrefRailItem[] {
   const items: PrefRailItem[] = [];
   const loose = Object.values(root.children).filter(isPrefLeaf).length;
   if (loose > 0) {
-    items.push({ path: '', name: root.name, depth: 0, section: '', matches: loose });
+    items.push({ path: '', name: looseEntryName(root.name), depth: 0, section: '', matches: loose });
   }
   for (const [key, child] of Object.entries(root.children)) {
     if (isPrefLeaf(child)) continue;

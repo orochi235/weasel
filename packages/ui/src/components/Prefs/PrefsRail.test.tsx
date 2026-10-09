@@ -64,6 +64,14 @@ describe('prefRailItems', () => {
     const items = prefRailItems(withLoose);
     expect(items[0]).toMatchObject({ path: '', name: 'Preferences', depth: 0, matches: 1 });
   });
+
+  it('names the loose-leaf entry General when the root has no name', () => {
+    const unnamed: PrefGroup = {
+      name: '',
+      children: { theme: { kind: 'string', name: 'Theme', description: 'Named theme.', default: 'dark' } },
+    };
+    expect(prefRailItems(unnamed)[0]).toMatchObject({ path: '', name: 'General' });
+  });
 });
 
 describe('filterPrefSubtree', () => {
