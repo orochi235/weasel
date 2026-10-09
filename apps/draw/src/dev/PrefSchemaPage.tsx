@@ -29,7 +29,7 @@ export function PrefSchemaPage() {
   const [sourceId, setSourceId] = useState(SOURCES[0]!.id);
   const source = SOURCES.find((x) => x.id === sourceId)!;
   const [draft, setDraft] = useState<PrefGroup>(source.schema);
-  const { values: stored } = usePrefsValues(drawPrefs());
+  const { stored } = usePrefsValues(drawPrefs());
   return (
     <DevShell
       title="Prefs Schema"

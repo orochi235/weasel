@@ -1,6 +1,6 @@
-import { describe, expect, it, beforeEach, beforeAll } from 'vitest';
+import { describe, expect, it, beforeEach, beforeAll, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import type { PrefGroup } from '@weasel-js/prefs';
+import { prefLeaves, type PrefGroup, VERSION_RECORD } from '@weasel-js/prefs';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import {
   LEGACY_PREFS_KEY,
@@ -84,7 +84,7 @@ describe('importLegacyPrefs', () => {
     expect(records).toEqual([`${PREFS_PREFIX}view.gridDensity`]);
   });
 
-  it('copies every leaf of the v2 blob into the store, then removes the blob', () => {
+  it('copies every leaf of the v2 blob into the store', () => {
     window.localStorage.setItem(
       LEGACY_PREFS_KEY,
       JSON.stringify({ version: 2, view: { gridDensity: 40, gridVisible: false }, stray: 1 }),
@@ -93,7 +93,39 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     expect(store.get('view.gridDensity')).toBe(40);
     expect(store.get('view.gridVisible')).toBe(false);
-    expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull();
+  });
+
+  it('removes the blob only once the new records are on disk', async () => {
+    window.localStorage.setItem(LEGACY_PREFS_KEY, JSON.stringify({ version: 2, view: { gridDensity: 40 } }));
+    const backing = new Map<string, unknown>();
+    const store = openDrawPrefs(createMemoryAdapter(backing));
+    importLegacyPrefs(store, window.localStorage);
+    expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
+    await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toBe(40);
+  });
+
+  it('leaves the blob in place when the store cannot persist', async () => {
+    const blob = JSON.stringify({ version: 2, view: { gridDensity: 40 } });
+    window.localStorage.setItem(LEGACY_PREFS_KEY, blob);
+    const store = openDrawPrefs(createMemoryAdapter(new Map([[`${PREFS_PREFIX}${VERSION_RECORD}`, 99]])));
+    expect(store.writable).toBe(false);
+    importLegacyPrefs(store, window.localStorage);
+    await store.flush();
+    await Promise.resolve();
+    expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBe(blob);
+    expect(store.isSet('view.gridDensity')).toBe(false);
+  });
+
+  it('neither imports nor removes a blob of another version', async () => {
+    const blob = JSON.stringify({ version: 1, view: { gridDensity: 40 } });
+    window.localStorage.setItem(LEGACY_PREFS_KEY, blob);
+    const store = openDrawPrefs(createMemoryAdapter());
+    importLegacyPrefs(store, window.localStorage);
+    await store.flush();
+    await Promise.resolve();
+    expect(store.isSet('view.gridDensity')).toBe(false);
+    expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBe(blob);
   });
 
   it('does not overwrite a leaf the store already holds', () => {
@@ -103,12 +135,25 @@ describe('importLegacyPrefs', () => {
     expect(store.get('view.gridDensity')).toBe(8);
   });
 
-  it('drops a blob it cannot parse', () => {
+  it('drops a blob it cannot parse, storing nothing', async () => {
     window.localStorage.setItem(LEGACY_PREFS_KEY, '{not json');
     const store = openDrawPrefs(createMemoryAdapter());
     importLegacyPrefs(store, window.localStorage);
-    expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull();
-    expect(store.unset().size).toBeGreaterThan(0);
+    expect(store.unset().size).toBe(prefLeaves(PREFS).size);
+    await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
+  });
+});
+
+describe('draw validators', () => {
+  it('reads a non-string last tool as the default', () => {
+    const store = openDrawPrefs(createMemoryAdapter(new Map([[`${PREFS_PREFIX}tools.lastTool`, 5]])));
+    expect(store.get('tools.lastTool')).toBe('select');
+  });
+
+  it('passes a data pref through as stored', () => {
+    const panels = { layers: { hidden: true } };
+    const store = openDrawPrefs(createMemoryAdapter(new Map([[`${PREFS_PREFIX}ui.panels`, panels]])));
+    expect(store.get('ui.panels')).toEqual(panels);
   });
 });
 

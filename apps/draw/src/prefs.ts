@@ -11,6 +11,7 @@ import {
   type PrefGroup,
   type PrefPath,
   type PrefsStore,
+  type PrefValidator,
   type PrefValueAt,
 } from '@weasel-js/prefs';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
@@ -179,9 +180,14 @@ export const LEGACY_PREFS_KEY = 'weaseldraw.prefs.v2';
 export type DrawPrefPath = PrefPath<typeof PREFS>;
 export type DrawPrefValue<P extends DrawPrefPath> = PrefValueAt<typeof PREFS, P>;
 
+// `data` has no validator: its shape belongs to the code that owns the value.
+const VALIDATORS: Record<string, PrefValidator> = {
+  'registry-enum': (v) => (typeof v === 'string' ? v : undefined),
+};
+
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {
-  return openPrefsSync(PREFS, { storage, prefix: PREFS_PREFIX });
+  return openPrefsSync(PREFS, { storage, prefix: PREFS_PREFIX, validators: VALIDATORS });
 }
 
 let store: PrefsStore<typeof PREFS> | null = null;
@@ -192,13 +198,14 @@ export function drawPrefs(): PrefsStore<typeof PREFS> {
   return (store ??= openDrawPrefs(localStorageAdapter));
 }
 
-/** Fold the pre-store blob into the store once, then delete it. A leaf the
- *  store already holds wins. */
+/** Fold the pre-store blob into the store once, and delete it once the new
+ *  records are on disk. A leaf the store already holds wins. A store that
+ *  cannot persist, or a blob of another version, leaves the blob alone. */
 export function importLegacyPrefs(
   target: PrefsStore<typeof PREFS>,
   storage: Pick<Storage, 'getItem' | 'removeItem'> | undefined = globalThis.localStorage,
 ): void {
-  if (!storage) return;
+  if (!storage || !target.writable) return;
   let raw: string | null;
   try {
     raw = storage.getItem(LEGACY_PREFS_KEY);
@@ -206,15 +213,24 @@ export function importLegacyPrefs(
     return;
   }
   if (raw === null) return;
+  let parsed: unknown;
   try {
-    const parsed: unknown = JSON.parse(raw);
-    for (const [path, value] of flattenPrefValues(PREFS, parsed)) {
-      if (!target.isSet(path as DrawPrefPath)) target.set(path as DrawPrefPath, value as never);
-    }
+    parsed = JSON.parse(raw);
   } catch {
-    /* unparseable: nothing to keep */
+    parsed = undefined;
   }
-  storage.removeItem(LEGACY_PREFS_KEY);
+  if (parsed !== undefined && (parsed as { version?: unknown } | null)?.version !== 2) return;
+  for (const [path, value] of flattenPrefValues(PREFS, parsed)) {
+    if (!target.isSet(path as DrawPrefPath)) target.set(path as DrawPrefPath, value as never);
+  }
+  void target.flush().then(() => {
+    if (!target.writable) return;
+    try {
+      storage.removeItem(LEGACY_PREFS_KEY);
+    } catch {
+      /* storage gone: the next open imports it again, and every leaf is already set */
+    }
+  });
 }
 
 /** One leaf of the app's prefs, as React state. */

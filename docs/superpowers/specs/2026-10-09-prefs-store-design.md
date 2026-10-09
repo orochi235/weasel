@@ -164,11 +164,18 @@ const { values, set, unset, reset } = usePrefsValues(store);
 
 ## Draw's migration
 
-- Opens with `openPrefsSync(PREFS, { storage: localStorageAdapter, prefix: 'weaseldraw.prefs.' })`,
-  keeping its pre-mount reads.
-- After opening, if `weaseldraw.prefs.v2` exists: `flattenPrefValues` it, `set`
-  each leaf, remove the old key. This is app code because migrations only see
+- Opens with `openPrefsSync(PREFS, { storage: localStorageAdapter, prefix: 'weaseldraw.prefs/' })`,
+  keeping its pre-mount reads. The prefix must not be a prefix of the legacy key
+  `weaseldraw.prefs.v2`, or the store would load the old blob as a record.
+- After opening, if `weaseldraw.prefs.v2` exists and holds `version: 2`:
+  `flattenPrefValues` it and `set` each leaf the store does not already hold,
+  then `flush`, and remove the old key only once the flush resolves, so a
+  reload in between imports it again rather than losing it. A store that cannot
+  persist, or a blob of another version, leaves the key in place; an
+  unparseable one is removed. This is app code because migrations only see
   records under the prefix.
+- `registry-enum` leaves validate as strings; `data` leaves pass through as
+  stored, since their shape belongs to the code that owns them.
 - `apps/draw/src/prefs.ts` shrinks to the schema; `usePref` / `readPref` /
   `writePref` / `usePrefsValues` call sites move to the store and its hooks.
 - `WeaselDrawPref*` aliases follow the rename to `Pref*`.
