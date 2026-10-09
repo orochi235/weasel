@@ -28,6 +28,22 @@ const _schema = {
         { value: 'evenodd', label: 'Even-odd' },
       ],
     },
+    clear: {
+      kind: 'enum',
+      name: 'Clear',
+      description: '',
+      default: 'a',
+      clearable: true,
+      options: [{ value: 'a', label: 'A' }],
+    },
+    paint: { kind: 'paint', name: 'Paint', description: '', default: '#000' },
+    box: {
+      kind: 'object',
+      name: 'Box',
+      description: '',
+      default: {},
+      children: { w: { kind: 'number', name: 'W', description: '', default: 0 } },
+    },
     custom: { kind: 'registry-enum', name: 'Custom', description: '', default: 'select' as string },
   },
 } satisfies PrefGroup;
@@ -36,14 +52,26 @@ type Schema = typeof _schema;
 describe('PrefPath', () => {
   it('names every leaf by its dotted path, group keys included', () => {
     expectTypeOf<PrefPath<Schema>>().toEqualTypeOf<
-      'loose' | 'view.density' | 'view.grid.color' | 'fill' | 'custom'
+      'loose' | 'view.density' | 'view.grid.color' | 'fill' | 'clear' | 'paint' | 'box' | 'custom'
     >();
+  });
+
+  it('degrades to string on a schema widened to PrefGroup', () => {
+    expectTypeOf<PrefPath<PrefGroup>>().toEqualTypeOf<string>();
+  });
+
+  it('includes an object leaf but not its fields', () => {
+    expectTypeOf<Extract<PrefPath<Schema>, 'box' | 'box.w'>>().toEqualTypeOf<'box'>();
   });
 });
 
 describe('PrefAtPath', () => {
   it('finds the leaf at a nested path', () => {
     expectTypeOf<PrefAtPath<Schema, 'view.grid.color'>['kind']>().toEqualTypeOf<'color'>();
+  });
+
+  it('does not descend into an object leaf', () => {
+    expectTypeOf<PrefAtPath<Schema, 'box.w'>>().toBeNever();
   });
 });
 
@@ -53,6 +81,11 @@ describe('PrefValueAt', () => {
     expectTypeOf<PrefValueAt<Schema, 'view.density'>>().toEqualTypeOf<number>();
     expectTypeOf<PrefValueAt<Schema, 'view.grid.color'>>().toEqualTypeOf<string>();
     expectTypeOf<PrefValueAt<Schema, 'custom'>>().toEqualTypeOf<string>();
-    expectTypeOf<PrefValueAt<Schema, 'fill'>>().toMatchTypeOf<string>();
+    expectTypeOf<PrefValueAt<Schema, 'fill'>>().toEqualTypeOf<string>();
+  });
+
+  it('adds undefined for a clearable enum and leaves a paint open', () => {
+    expectTypeOf<PrefValueAt<Schema, 'clear'>>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<PrefValueAt<Schema, 'paint'>>().toEqualTypeOf<unknown>();
   });
 });

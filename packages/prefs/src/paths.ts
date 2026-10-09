@@ -4,13 +4,15 @@ type Join<A extends string, B extends string> = A extends '' ? B : `${A}.${B}`;
  *  `object` leaf is one path, its fields are not. */
 export type PrefPath<G, Prefix extends string = ''> =
   G extends { children: infer C }
-    ? {
-        [K in keyof C & string]: C[K] extends { kind: string }
-          ? Join<Prefix, K>
-          : C[K] extends { children: Record<string, unknown> }
-            ? PrefPath<C[K], Join<Prefix, K>>
-            : never;
-      }[keyof C & string]
+    ? string extends keyof C
+      ? string
+      : {
+          [K in keyof C & string]: C[K] extends { kind: string }
+            ? Join<Prefix, K>
+            : C[K] extends { children: Record<string, unknown> }
+              ? PrefPath<C[K], Join<Prefix, K>>
+              : never;
+        }[keyof C & string]
     : never;
 
 /** The leaf at `P`. */
@@ -18,7 +20,9 @@ export type PrefAtPath<G, P extends string> =
   G extends { children: infer C }
     ? P extends `${infer H}.${infer Rest}`
       ? H extends keyof C
-        ? PrefAtPath<C[H], Rest>
+        ? C[H] extends { kind: string }
+          ? never
+          : PrefAtPath<C[H], Rest>
         : never
       : P extends keyof C
         ? C[P] extends { kind: string }
@@ -33,7 +37,9 @@ export type PrefValueOf<L> =
   L extends { kind: 'number' } ? number
   : L extends { kind: 'boolean' } ? boolean
   : L extends { kind: 'string' | 'color' | 'field' } ? string
-  : L extends { kind: 'enum'; options: readonly { value: infer T }[] } ? T
+  : L extends { kind: 'paint' } ? unknown
+  : L extends { kind: 'enum'; options: readonly { value: infer T }[] }
+    ? L extends { clearable: true } ? T | undefined : T
   : L extends { default: infer D } ? D
   : unknown;
 

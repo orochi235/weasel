@@ -1,4 +1,4 @@
-import type { PrefBoolean, PrefEnum, PrefLeaf, PrefNumber } from './schema';
+import type { PrefBoolean, PrefEnum, PrefLeaf, PrefNumber, PrefObject } from './schema';
 
 /** Decides what a stored value reads as for one kind of leaf: the value to
  *  read, or `undefined` for "invalid, read the default". */
@@ -34,12 +34,20 @@ export function repairPrefValue(
       if (e.encoding) return stored;
       return e.options.some((o) => o.value === stored) ? stored : leaf.default;
     }
+    case 'object':
+      if ((leaf as PrefObject).fromScalar || isPlainObject(stored)) return stored;
+      return leaf.default;
     default:
       return stored;
   }
 }
 
-function repairNumber(leaf: PrefNumber, stored: unknown): unknown {
+function isPlainObject(v: unknown): boolean {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
+function repairNumber(leaf: PrefNumber, raw: unknown): unknown {
+  const stored = raw === 'Infinity' ? Infinity : raw === '-Infinity' ? -Infinity : raw;
   if (typeof stored !== 'number' || Number.isNaN(stored)) return leaf.default;
   const { endless } = leaf;
   if (stored === Infinity && (endless === 'max' || endless === 'both')) return stored;

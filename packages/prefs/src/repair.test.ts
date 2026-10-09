@@ -32,6 +32,14 @@ describe('repairPrefValue', () => {
     expect(repairPrefValue(num({ max: undefined }), Infinity)).toBe(10);
   });
 
+  it('reads the strings JSON turns infinity into as infinity, under the same endless rules', () => {
+    expect(repairPrefValue(num({ endless: 'max' }), 'Infinity')).toBe(Infinity);
+    expect(repairPrefValue(num({ endless: 'min' }), '-Infinity')).toBe(-Infinity);
+    expect(repairPrefValue(num({ endless: 'max' }), '-Infinity')).toBe(0);
+    expect(repairPrefValue(num(), 'Infinity')).toBe(100);
+    expect(repairPrefValue(num(), '42')).toBe(10);
+  });
+
   it('defaults an enum value no option has', () => {
     expect(repairPrefValue(en, 'b')).toBe('b');
     expect(repairPrefValue(en, 'gone')).toBe('a');
@@ -55,6 +63,17 @@ describe('repairPrefValue', () => {
     expect(repairPrefValue(s, 4)).toBe('x');
     expect(repairPrefValue(c, '#fff')).toBe('#fff');
     expect(repairPrefValue(c, 0xffffff)).toBe('#000');
+  });
+
+  it('defaults an object leaf that is not a plain object, unless it lifts scalars', () => {
+    const obj = { kind: 'object', name: 'O', description: '', default: { x: 1 }, children: {} } as PrefLeaf;
+    const lifting = { ...obj, fromScalar: (v: unknown) => ({ x: v }) } as PrefLeaf;
+    const stored = { x: 5 };
+    expect(repairPrefValue(obj, stored)).toBe(stored);
+    expect(repairPrefValue(obj, 5)).toEqual({ x: 1 });
+    expect(repairPrefValue(obj, [1])).toEqual({ x: 1 });
+    expect(repairPrefValue(obj, null)).toEqual({ x: 1 });
+    expect(repairPrefValue(lifting, 5)).toBe(5);
   });
 
   it('passes kinds it has no rule for through unchanged', () => {
