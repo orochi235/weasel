@@ -38,6 +38,15 @@ export function describeAdapterContract(name: string, setup: () => AdapterHarnes
       expect(sorted(adapter.listSync('sync:'))).toEqual([['sync:a', 1], ['sync:b', { x: 2 }]]);
     });
 
+    it('lists synchronously as copies, where it can', async () => {
+      const { adapter } = setup();
+      if (!adapter.listSync) return;
+      await adapter.set('copy:a', { n: 1 });
+      const [[, first]] = adapter.listSync('copy:');
+      (first as { n: number }).n = 99;
+      expect(adapter.listSync('copy:')).toEqual([['copy:a', { n: 1 }]]);
+    });
+
     it('reads back what it stored, as a copy', async () => {
       const { adapter } = setup();
       const value = { trial: 'a', nested: { n: 1, list: [1, 'two', null] } };

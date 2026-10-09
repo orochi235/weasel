@@ -234,14 +234,15 @@ describe('two writers', () => {
 });
 
 describe('openRecordsSync', () => {
-  it('holds every record under the prefix, names stripped, with no await', () => {
+  it('holds every record under the prefix, names stripped, with no await', async () => {
     const backing = new Map<string, unknown>([['p.a', 1], ['p.b', 2], ['q.c', 3]]);
     const cache = openRecordsSync({ storage: createMemoryAdapter(backing), prefix: 'p.' });
     expect(cache.writable).toBe(true);
     expect(cache.entries().sort()).toEqual([['a', 1], ['b', 2]]);
+    await cache.close();
   });
 
-  it('opens empty and read-only when the synchronous read throws', () => {
+  it('opens empty and read-only when the synchronous read throws', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const storage = {
       ...createMemoryAdapter(),
@@ -252,7 +253,8 @@ describe('openRecordsSync', () => {
     const cache = openRecordsSync({ storage, prefix: 'p.' });
     expect(cache.writable).toBe(false);
     expect(cache.entries()).toEqual([]);
-    expect(warn).toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('[storage]'), expect.any(Error));
+    await cache.close();
     warn.mockRestore();
   });
 
@@ -262,5 +264,6 @@ describe('openRecordsSync', () => {
     cache.set('a', 5);
     await cache.flush();
     expect(backing.get('p.a')).toBe(5);
+    await cache.close();
   });
 });

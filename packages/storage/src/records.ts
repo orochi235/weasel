@@ -188,6 +188,18 @@ export function createRecordCache(
   return cache;
 }
 
+function stripPrefix(prefix: string, rows: [string, unknown][]): [string, unknown][] {
+  return rows.map(([key, value]): [string, unknown] => [key.slice(prefix.length), value]);
+}
+
+function unreadable(options: RecordCacheOptions, error: unknown): OwnedRecordCache {
+  console.warn(
+    `[storage] could not read "${options.prefix}"; opening empty and not persisting`,
+    error,
+  );
+  return createRecordCache({ ...options, writable: false });
+}
+
 /** Read every record under `prefix` and hold them. A failed read opens the
  *  cache empty with writing off, so it never overwrites what it could not
  *  read. */
@@ -200,18 +212,11 @@ export async function openRecords(options: RecordCacheOptions): Promise<OwnedRec
     listed = await options.storage.list(options.prefix);
   } catch (error) {
     stopEarly?.();
-    console.warn(
-      `[storage] could not read "${options.prefix}"; opening empty and not persisting`,
-      error,
-    );
-    return createRecordCache({ ...options, writable: false });
+    return unreadable(options, error);
   }
   const cache = createRecordCache({
     ...options,
-    initial: listed.map(([key, value]): [string, unknown] => [
-      key.slice(options.prefix.length),
-      value,
-    ]),
+    initial: stripPrefix(options.prefix, listed),
   });
   stopEarly?.();
   (cache as unknown as { applyRemote: (c: StorageChange[]) => void }).applyRemote(early);
@@ -227,14 +232,10 @@ export function openRecordsSync(
   try {
     listed = options.storage.listSync(options.prefix);
   } catch (error) {
-    console.warn(
-      `[storage] could not read "${options.prefix}"; opening empty and not persisting`,
-      error,
-    );
-    return createRecordCache({ ...options, writable: false });
+    return unreadable(options, error);
   }
   return createRecordCache({
     ...options,
-    initial: listed.map(([key, value]): [string, unknown] => [key.slice(options.prefix.length), value]),
+    initial: stripPrefix(options.prefix, listed),
   });
 }

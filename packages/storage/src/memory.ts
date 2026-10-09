@@ -54,9 +54,10 @@ export function createMemoryAdapter(backing: Map<string, unknown> = new Map()): 
 }
 
 /** Persists nothing and reads back nothing. */
-export const noneAdapter: StorageAdapter = {
+export const noneAdapter: SyncStorageAdapter = {
   get: async () => undefined,
   list: async () => [],
+  listSync: () => [],
   set: async () => {},
   delete: async () => {},
 };
