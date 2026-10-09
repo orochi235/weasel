@@ -258,12 +258,15 @@ export function TrialChrome({
     const mod = e.metaKey || e.ctrlKey;
     // A presented trial has no chrome, so nothing the chrome's keys act on.
     if (!mod || presented) return;
+    // A chord is its button's: suppress the button and the chord goes with it.
+    const offered = (id: string) => contributions.some((c) => c.id === id);
     const step = historyKey(e);
     if (step) {
+      if (!offered(step)) return;
       e.preventDefault();
       if (step === 'redo') ctx.redo();
       else ctx.undo();
-    } else if (e.key === 's' || e.key === 'S') {
+    } else if ((e.key === 's' || e.key === 'S') && offered('snapshot')) {
       e.preventDefault();
       ctx.saveSnapshot();
     }

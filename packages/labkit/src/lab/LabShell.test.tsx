@@ -22,6 +22,18 @@ describe('LabShell', () => {
     expect(screen.getByRole('button', { name: 'action' })).toBeInTheDocument();
   });
 
+  test('renders no header bar when bar is false', () => {
+    render(
+      <LabShell title="My Lab" bar={false} header={<button type="button">action</button>}>
+        body
+      </LabShell>,
+    );
+    expect(screen.queryByRole('banner')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'My Lab' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'action' })).toBeNull();
+    expect(screen.getByText('body')).toBeInTheDocument();
+  });
+
   test('stamps the requested mode under the interstellar theme', () => {
     const { container } = render(
       <LabShell title="t" mode="light">

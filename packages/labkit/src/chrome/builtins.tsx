@@ -42,9 +42,20 @@ function groupFolds(
 }
 
 /** Built-in ids contributed only while runtime state says so — the loupe
- *  toggle appears once a lens mounts, after the trial's first render, and the
- *  expand toggle only inside a lightbox. */
-export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set(['loupe', 'expand']);
+ *  toggle appears once a lens mounts, after the trial's first render, the
+ *  expand toggle only inside a lightbox, and the zoom controls, scale and FPS
+ *  meter once the trial has a view, which an `initialView` sized to the
+ *  viewport does not until the canvas is measured. */
+export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
+  'loupe',
+  'expand',
+  'zoom-out',
+  'zoom-in',
+  'actual-size',
+  'zoom-control',
+  'scale',
+  'fps',
+]);
 
 /**
  * The contributions a trial gets from what its instrument declared. This is

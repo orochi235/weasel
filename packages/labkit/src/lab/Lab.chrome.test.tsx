@@ -59,6 +59,26 @@ describe('<Lab> chrome', () => {
     ).toThrow(/duplicate contribution id "clone"/);
   });
 
+  it('suppresses the view controls before the trial has a view to size them by', async () => {
+    const sized: Instrument = {
+      ...bare,
+      name: 'Sized',
+      canvas: {
+        layers: [],
+        initialView: ({ width }) => ({ zoom: width / 100, pan: { x: 0, y: 0 } }),
+      },
+    };
+    await renderSettled(
+      <Lab
+        title="T"
+        instruments={[sized]}
+        defaultInstrument="Sized"
+        suppress={['zoom-out', 'zoom-in', 'actual-size', 'zoom-control', 'scale', 'fps']}
+      />,
+    );
+    expect(document.querySelector('.lk-viewport-controls')).toBeNull();
+  });
+
   it('throws when suppressing an id that is not there', async () => {
     silenceRenderError();
     expect(() =>
