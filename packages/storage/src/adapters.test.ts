@@ -1,17 +1,11 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { describeAdapterContract } from './adapterContract';
-import {
-  createIndexedDbAdapter,
-  createMemoryAdapter,
-  defaultStorage,
-  indexedDbAdapter,
-  localStorageAdapter,
-  noneAdapter,
-  resetDefaultStorage,
-  sessionStorageAdapter,
-  urlHashAdapter,
-} from './adapters';
+import { defaultStorage, resetDefaultStorage } from './defaultStorage';
+import { createIndexedDbAdapter, indexedDbAdapter } from './indexedDb';
+import { createMemoryAdapter, noneAdapter } from './memory';
+import { urlHashAdapter } from './urlHashAdapter';
+import { localStorageAdapter, sessionStorageAdapter } from './webStorage';
 import { decodeUrlHash, encodeUrlHash } from './urlHash';
 
 describeAdapterContract('createMemoryAdapter', () => {
@@ -134,9 +128,10 @@ describe('defaultStorage', () => {
     vi.stubGlobal('indexedDB', undefined);
     // The shared adapter may already hold an open database from the case above.
     vi.resetModules();
-    const fresh = await import('./adapters');
+    const fresh = await import('./defaultStorage');
+    const freshWeb = await import('./webStorage');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    expect(await fresh.defaultStorage()).toBe(fresh.localStorageAdapter);
+    expect(await fresh.defaultStorage()).toBe(freshWeb.localStorageAdapter);
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining('IndexedDB would not open'),
       expect.anything(),

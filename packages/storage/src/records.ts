@@ -19,8 +19,8 @@ export interface RecordChange {
  */
 export interface RecordCache {
   readonly prefix: string;
-  /** False once writing is off — the records could not be read, or were
-   *  written by a newer version of the app — so nothing here can overwrite them. */
+  /** False once writing is off — the records could not be read, or the
+   *  opener marked them read-only — so nothing here can overwrite them. */
   readonly writable: boolean;
   has(name: string): boolean;
   get(name: string): unknown;

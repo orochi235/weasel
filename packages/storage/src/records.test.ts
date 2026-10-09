@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createMemoryAdapter } from './adapters';
+import { createMemoryAdapter } from './memory';
 import { createRecordCache, openRecords, type RecordChange } from './records';
 import type { StorageAdapter } from './types';
 

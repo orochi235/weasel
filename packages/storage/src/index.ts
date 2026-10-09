@@ -1,16 +1,8 @@
-export {
-  createIndexedDbAdapter,
-  createMemoryAdapter,
-  defaultStorage,
-  fallbackStorage,
-  type IndexedDbAdapterOptions,
-  indexedDbAdapter,
-  localStorageAdapter,
-  noneAdapter,
-  resetDefaultStorage,
-  sessionStorageAdapter,
-  urlHashAdapter,
-} from './adapters';
+export { defaultStorage, fallbackStorage } from './defaultStorage';
+export { type IndexedDbAdapterOptions, createIndexedDbAdapter, indexedDbAdapter } from './indexedDb';
+export { createMemoryAdapter, noneAdapter } from './memory';
+export { urlHashAdapter } from './urlHashAdapter';
+export { localStorageAdapter, sessionStorageAdapter } from './webStorage';
 export {
   createRecordCache,
   openRecords,
