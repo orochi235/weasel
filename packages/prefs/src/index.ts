@@ -8,6 +8,7 @@ export {
   setPrefValueAtPath,
   visiblePrefSubtree,
 } from './helpers';
+export { usePref, usePrefsValues } from './hooks';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export { type PrefsMigration, runPrefsMigrations } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
