@@ -20,7 +20,7 @@ export interface RecordChange {
 export interface RecordCache {
   readonly prefix: string;
   /** False once writing is off — the records could not be read, or were
-   *  written by a newer labkit — so nothing here can overwrite them. */
+   *  written by a newer version of the app — so nothing here can overwrite them. */
   readonly writable: boolean;
   has(name: string): boolean;
   get(name: string): unknown;
@@ -99,7 +99,7 @@ export function createRecordCache(
           if (value === DELETED) await storage.delete(key);
           else await storage.set(key, value);
         } catch (error) {
-          console.warn(`[labkit] could not write "${key}"; keeping it in memory`, error);
+          console.warn(`[storage] could not write "${key}"; keeping it in memory`, error);
         }
       }),
     );
@@ -201,7 +201,7 @@ export async function openRecords(options: RecordCacheOptions): Promise<OwnedRec
   } catch (error) {
     stopEarly?.();
     console.warn(
-      `[labkit] could not read "${options.prefix}"; opening empty and not persisting`,
+      `[storage] could not read "${options.prefix}"; opening empty and not persisting`,
       error,
     );
     return createRecordCache({ ...options, writable: false });

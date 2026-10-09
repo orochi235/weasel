@@ -12,7 +12,7 @@ import {
   sessionStorageAdapter,
   urlHashAdapter,
 } from './adapters';
-import { decodeUrlHash, encodeUrlHash } from './helpers';
+import { decodeUrlHash, encodeUrlHash } from './urlHash';
 
 describeAdapterContract('createMemoryAdapter', () => {
   const backing = new Map<string, unknown>();

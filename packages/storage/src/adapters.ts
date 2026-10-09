@@ -1,5 +1,5 @@
-import { decodeUrlHash, encodeUrlHash } from './helpers';
 import type { StorageAdapter, StorageChange } from './types';
+import { decodeUrlHash, encodeUrlHash } from './urlHash';
 
 /** JSON-backed substrates held raw strings before records existed — a theme
  *  bucket stored `dark`, not `"dark"` — so an unparseable value comes back as
@@ -61,7 +61,7 @@ function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean)
       if (!warned.has(key) && !isJsonSafe(value)) {
         warned.add(key);
         console.warn(
-          `[labkit] "${key}" holds a value JSON cannot keep exactly; ${name} stores what JSON keeps. Use IndexedDB for binary or non-JSON state.`,
+          `[storage] "${key}" holds a value JSON cannot keep exactly; ${name} stores what JSON keeps. Use IndexedDB for binary or non-JSON state.`,
         );
       }
       area().setItem(key, JSON.stringify(value));
@@ -230,7 +230,7 @@ export const noneAdapter: StorageAdapter = {
 
 /** Options for `createIndexedDbAdapter`. */
 export interface IndexedDbAdapterOptions {
-  /** Default `'labkit'`. */
+  /** Default `'weasel'`. */
   database?: string;
   /** Default `'records'`. One object store per database: a store added to a
    *  database that already exists is not created. */
@@ -245,14 +245,14 @@ interface NodeChannel extends BroadcastChannel {
  *  arrays, `Map`s, `Blob`s — and holds far more than localStorage. Other tabs
  *  hear writes through a `BroadcastChannel`. The database opens on first use. */
 export function createIndexedDbAdapter({
-  database = 'labkit',
+  database = 'weasel',
   store = 'records',
 }: IndexedDbAdapterOptions = {}): StorageAdapter {
   let opened: Promise<IDBDatabase> | null = null;
   const open = (): Promise<IDBDatabase> => {
     opened ??= new Promise((resolve, reject) => {
       if (typeof indexedDB === 'undefined') {
-        reject(new Error('[labkit] IndexedDB is not available here'));
+        reject(new Error('[storage] IndexedDB is not available here'));
         return;
       }
       const request = indexedDB.open(database, 1);
@@ -264,13 +264,13 @@ export function createIndexedDbAdapter({
       request.onsuccess = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(store)) {
-          reject(new Error(`[labkit] IndexedDB database "${database}" has no store "${store}"`));
+          reject(new Error(`[storage] IndexedDB database "${database}" has no store "${store}"`));
           return;
         }
         resolve(db);
       };
       request.onerror = () => reject(request.error);
-      request.onblocked = () => reject(new Error(`[labkit] IndexedDB "${database}" is blocked`));
+      request.onblocked = () => reject(new Error(`[storage] IndexedDB "${database}" is blocked`));
     });
     return opened;
   };
@@ -291,7 +291,7 @@ export function createIndexedDbAdapter({
   const getChannel = (): NodeChannel | null => {
     if (typeof BroadcastChannel === 'undefined') return null;
     if (!channel) {
-      channel = new BroadcastChannel(`labkit:${database}:${store}`) as NodeChannel;
+      channel = new BroadcastChannel(`weasel-storage:${database}:${store}`) as NodeChannel;
       // Node keeps its event loop alive for an open channel; a browser has no unref.
       channel.unref?.();
     }
@@ -348,18 +348,26 @@ export function createIndexedDbAdapter({
 /** IndexedDB under the default database and store. */
 export const indexedDbAdapter: StorageAdapter = createIndexedDbAdapter();
 
+/** `preferred` if it opens, otherwise `fallback` — with a warning. */
+export async function fallbackStorage(
+  preferred: StorageAdapter,
+  fallback: StorageAdapter = localStorageAdapter,
+): Promise<StorageAdapter> {
+  try {
+    await preferred.list(' ');
+    return preferred;
+  } catch (error) {
+    console.warn('[storage] IndexedDB would not open; persisting to localStorage instead', error);
+    return fallback;
+  }
+}
+
 let resolvedDefault: Promise<StorageAdapter> | null = null;
 
-/** What a lab given only a `storageKey` persists to: IndexedDB, or
- *  localStorage — with a warning — where IndexedDB will not open. */
+/** IndexedDB under the default database, or localStorage where it will not
+ *  open. Resolved once per page. */
 export function defaultStorage(): Promise<StorageAdapter> {
-  resolvedDefault ??= indexedDbAdapter.list(' ').then(
-    () => indexedDbAdapter,
-    (error) => {
-      console.warn('[labkit] IndexedDB would not open; persisting to localStorage instead', error);
-      return localStorageAdapter;
-    },
-  );
+  resolvedDefault ??= fallbackStorage(indexedDbAdapter);
   return resolvedDefault;
 }
 
