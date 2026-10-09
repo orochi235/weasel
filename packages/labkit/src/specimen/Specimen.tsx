@@ -1,4 +1,5 @@
 import type { FillStyle, Track } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import {
   Badge,
   type Band,
@@ -73,7 +74,6 @@ import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { Split } from '../primitives/Split';
 import { Toolbar } from '../primitives/Toolbar';
 import { ZoomControl } from '../primitives/ZoomControl';
-import { type PrefGroup } from '@weasel-js/prefs';
 
 /** The specimen's sections, in page order. */
 export const SPECIMEN_SECTIONS = [

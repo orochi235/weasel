@@ -1,9 +1,9 @@
 import {
   isBuiltinPref,
   isPrefLeaf,
-  pairRowsOf,
   type PrefGroup,
   type PrefLeaf,
+  pairRowsOf,
 } from '@weasel-js/prefs';
 import {
   Button,

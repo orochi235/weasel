@@ -39,8 +39,8 @@ export interface PrefBase<K extends string, Value> {
    *  its own chrome). */
   block?: boolean;
   /** Glyph naming this leaf in a host UI's icon set (weasel-ui resolves it
-   *  against `ICON_PATHS`). A plain string because core ships no icon set and
-   *  cannot depend on one. Read where a leaf's `name` has nowhere to go — a
+   *  against `ICON_PATHS`). A plain string because this package ships no
+   *  icon set and cannot depend on one. Read where a leaf's `name` has nowhere to go — a
    *  `pair`ed row is labeled by the pair, so its fields have only the glyph
    *  to tell them apart. */
   icon?: string;
@@ -199,9 +199,8 @@ export interface PrefEnum<T extends string = string>
    *  control too narrow for the full one — down to a capital or two. `icon`
    *  names a glyph in the host UI's set (weasel-ui resolves it against
    *  `ICON_PATHS`), drawn in place of any text form where it resolves. It is
-   *  a plain string because core ships no icon set and cannot depend on one.
-   *  The full `label` stays the accessible name, so
-   *  neither the abbreviation nor the glyph becomes the only thing naming
+   *  a plain string because this package ships no icon set and cannot
+   *  depend on one. The full `label` stays the accessible name, so neither the abbreviation nor the glyph becomes the only thing naming
    *  the option.
    *
    *  `disabled` marks an option a control reports but cannot author — the

@@ -10,8 +10,8 @@ import {
   type NodeRoutingEntry,
   type SelectionApi,
 } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
-import { type PrefGroup } from '@weasel-js/prefs';
 
 interface Data { kind: string; fill?: string; label?: string }
 type Layer = 'default';

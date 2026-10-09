@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import type { PrefBoolean, PrefEnum, PrefGroup, PrefObject } from '@weasel-js/prefs';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { inferredNodeRouting } from './defaultNodeRouting';
-import type { PrefBoolean, PrefEnum, PrefGroup, PrefObject } from '@weasel-js/prefs';
 import type { TextStyle } from '@weasel-js/text';
 
 /** Colors the edit overlay reads, which are chrome rather than document. */

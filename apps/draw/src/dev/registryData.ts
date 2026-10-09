@@ -3,8 +3,8 @@ import * as Weasel from '@weasel-js/core';
 import { defaultNodeRouting, defaultNodeProperties, type NodeRoutingEntry, type NodePropertiesEntry } from '@weasel-js/core';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import type { ShortcutInput } from '@weasel-js/ui';
+import type { PrefGroup } from '@weasel-js/prefs';
 import * as AppIcons from '../actionIcons';
-import { type PrefGroup } from '@weasel-js/prefs';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
 export type TreeEntry =

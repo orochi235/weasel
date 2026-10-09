@@ -171,7 +171,12 @@ describe('sectionTree, sections inside a group', () => {
   it('makes each a group of its own inside the group, in schema order', () => {
     const { group } = sectionTree(resolved, config);
     const timing = groupAt(groupAt(group, 'playback'), 'timing');
-    expect(Object.keys(timing.children)).toEqual(['pick', 'a-changed-line', 'an-orb-landing', 'scroll']);
+    expect(Object.keys(timing.children)).toEqual([
+      'pick',
+      'a-changed-line',
+      'an-orb-landing',
+      'scroll',
+    ]);
     expect(groupAt(timing, 'a-changed-line').name).toBe('A changed line');
     expect(Object.keys(groupAt(timing, 'a-changed-line').children)).toEqual(['line']);
   });

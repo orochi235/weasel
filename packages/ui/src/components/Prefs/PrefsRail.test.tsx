@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 import { prefRailItems } from './schema';
-import type { PrefGroup } from '@weasel-js/prefs';
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',

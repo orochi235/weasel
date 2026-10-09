@@ -1,4 +1,5 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
+import { isBuiltinPref, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
 import {
   Button,
   Focusable,
@@ -29,7 +30,6 @@ import type { ResolvedConfig } from '../config/types';
 import { ControlRow } from './ControlPanel';
 import { FieldChoicesContext, useFieldChoices, useFieldChoicesOf } from './fieldChoices';
 import { summarizeValue } from './inDialog';
-import { isBuiltinPref, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
 
 /** One column of a {@link ControlMatrix}: a config group, every one the same shape. */
 export interface ControlMatrixColumn {

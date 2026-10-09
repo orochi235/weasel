@@ -99,9 +99,7 @@ function prune(
     replace(children, reordered);
     replace(values, revalued);
   }
-  return Object.keys(children).length === 0
-    ? null
-    : { group: { ...group, children }, values };
+  return Object.keys(children).length === 0 ? null : { group: { ...group, children }, values };
 }
 
 function replace<V>(target: Record<string, V>, from: Record<string, V>): void {

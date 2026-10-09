@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useReducer, useRef, createElement } from 'react';
 import { useLatest } from '@weasel-js/react';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
-import type { PrefGroup } from '@weasel-js/prefs';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';

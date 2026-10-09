@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { defaultNodeProperties } from '@weasel-js/core';
 import { PrefSchemaEditor, Select, type CustomKinds } from '@weasel-js/ui';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { DataControl, RegistryEnumControl } from '../PreferencesModal';
 import { PREFS, usePrefsValues } from '../prefs';
 import { DevShell } from './DevShell';
 import s from './PrefSchemaPage.module.css';
-import { type PrefGroup } from '@weasel-js/prefs';
 
 /** `stored`: whether the app's saved preference values sit under this schema. */
 const SOURCES: ReadonlyArray<{ id: string; label: string; schema: PrefGroup; stored?: true }> = [

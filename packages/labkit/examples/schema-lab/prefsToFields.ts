@@ -1,8 +1,6 @@
-import { isBuiltinPref, type PrefGroup } from '@weasel-js/prefs';
 import { type ConfigField, withValueAtPath } from '@weasel-js/labkit';
+import { isBuiltinPref, type PrefGroup } from '@weasel-js/prefs';
 
-/** weasel's own property-schema group. */
-export type { PrefGroup };
 type PrefNode = PrefGroup['children'][string];
 type PrefLeaf = Exclude<PrefNode, PrefGroup>;
 

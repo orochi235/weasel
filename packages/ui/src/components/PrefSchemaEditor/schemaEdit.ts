@@ -1,11 +1,11 @@
 import { isPlainObject } from '@weasel-js/core';
-import { prefFieldChoices } from '../Prefs/schema';
 import {
   isPrefLeaf,
   type PrefGroup,
   type PrefLeaf,
   type PrefObject,
 } from '@weasel-js/prefs';
+import { prefFieldChoices } from '../Prefs/schema';
 
 export type SchemaNode = PrefLeaf | PrefGroup;
 export type ChildMap = Record<string, SchemaNode>;

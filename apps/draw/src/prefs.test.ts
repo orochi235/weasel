@@ -171,8 +171,8 @@ describe('usePref', () => {
 
 describe('PREFS is a PrefGroup', () => {
   it('assigns to PrefGroup without a cast', () => {
-    const asCore: PrefGroup = PREFS;
-    expect(asCore.children.ui).toBeDefined();
+    const asGroup: PrefGroup = PREFS;
+    expect(asGroup.children.ui).toBeDefined();
   });
 
   it('stores the panel map under the custom data kind', () => {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { styleAtRange, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
+import type { PrefPair } from '@weasel-js/prefs';
 import {
   MIXED,
   aggregateValue,
@@ -9,7 +10,6 @@ import {
   nodeValueAt,
   setAtPath,
 } from './model';
-import { type PrefPair } from '@weasel-js/prefs';
 
 const routing: NodeRoutingEntry[] = [
   { name: 'rect', matches: (d) => (d as { kind?: string })?.kind === 'rect' },

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { createHistory, historyKey, useLatest, type Op } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { Switch } from '../Switch';
@@ -14,7 +15,6 @@ import { branchPaths, rebasePaths } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
 import { StructurePane } from './StructurePane';
 import s from './PrefSchemaEditor.module.css';
-import { type PrefGroup } from '@weasel-js/prefs';
 
 const NO_KINDS: CustomKinds = {};
 

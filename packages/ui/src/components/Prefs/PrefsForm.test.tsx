@@ -1,7 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { PrefsDialog } from './PrefsDialog';
-import { PrefsForm, type PrefRenderContext } from './PrefsForm';
 import {
   PREF_KINDS,
   type PrefEnumEncoding,
@@ -9,6 +7,8 @@ import {
   type PrefKind,
   type PrefNumber,
 } from '@weasel-js/prefs';
+import { PrefsDialog } from './PrefsDialog';
+import { PrefsForm, type PrefRenderContext } from './PrefsForm';
 import { rotationDegreesUnit } from '@weasel-js/core';
 
 const SCHEMA: PrefGroup = {

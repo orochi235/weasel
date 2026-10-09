@@ -1,11 +1,6 @@
 import { createHistory } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
-import {
-  deserializeTrials,
-  labStorageKey,
-  newId,
-  serializeTrials,
-} from './helpers';
+import { deserializeTrials, labStorageKey, newId, serializeTrials } from './helpers';
 
 describe('labStorageKey', () => {
   it('produces namespaced keys', () => {

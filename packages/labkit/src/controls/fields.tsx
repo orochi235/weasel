@@ -1,4 +1,5 @@
 import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
+import { isBuiltinPref, type PrefLeaf } from '@weasel-js/prefs';
 import {
   type PrefFieldChoice,
   PropertyControl,
@@ -7,7 +8,6 @@ import {
 } from '@weasel-js/ui';
 import { useEffect, useRef, useState } from 'react';
 import { useFieldChoices } from './fieldChoices';
-import { isBuiltinPref, type PrefLeaf } from '@weasel-js/prefs';
 
 /** Whether this leaf draws as a slider, mirroring the condition the `number`
  *  arm below branches on. A slider is the one control whose value cannot be

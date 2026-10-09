@@ -1,4 +1,10 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  filterPrefSubtree,
+  isPrefLeaf,
+  visiblePrefSubtree,
+  type PrefGroup,
+} from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { useScrollSpy } from '../../useScrollSpy';
 import {
@@ -11,12 +17,6 @@ import { PrefRow, type PrefRenderer, type WalkCtx } from './PrefsRow';
 import { PrefsPane } from './PrefsPane';
 import { PrefsRail } from './PrefsRail';
 import s from './Prefs.module.css';
-import {
-  filterPrefSubtree,
-  isPrefLeaf,
-  visiblePrefSubtree,
-  type PrefGroup,
-} from '@weasel-js/prefs';
 
 export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
 

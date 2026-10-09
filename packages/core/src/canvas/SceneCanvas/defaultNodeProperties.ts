@@ -1,3 +1,4 @@
+import { prefUnit, type PrefBooleanEncoding, type PrefEnumEncoding, type PrefGroup, type PrefNumberUnit } from '@weasel-js/prefs';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { listMarkers } from 'core/strokeMarkers';
@@ -5,7 +6,6 @@ import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import { resolveAlign, type TextAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import { ANGLE_RADIANS } from '@weasel-js/quantity';
-import { prefUnit, type PrefBooleanEncoding, type PrefEnumEncoding, type PrefGroup, type PrefNumberUnit } from '@weasel-js/prefs';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as

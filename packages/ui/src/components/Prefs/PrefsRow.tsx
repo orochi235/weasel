@@ -1,9 +1,4 @@
 import { type ReactNode } from 'react';
-import { PropertyControl } from '../Properties/PropertyField';
-import { PropertyRow } from '../Properties/PropertyPanel';
-import { prefFieldProps } from './prefField';
-import { type PrefFieldChoice } from './schema';
-import s from './Prefs.module.css';
 import {
   isPrefLeaf,
   prefValueAtPath,
@@ -11,6 +6,11 @@ import {
   type PrefLeaf,
   type PrefObject,
 } from '@weasel-js/prefs';
+import { PropertyControl } from '../Properties/PropertyField';
+import { PropertyRow } from '../Properties/PropertyPanel';
+import { prefFieldProps } from './prefField';
+import type { PrefFieldChoice } from './schema';
+import s from './Prefs.module.css';
 
 /** What a {@link PrefRenderer} is given for the leaf it is rendering. */
 export interface PrefRenderContext {

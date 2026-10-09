@@ -1,6 +1,6 @@
+import type { PrefGroup } from '@weasel-js/prefs';
 import { type PrefFieldChoice, prefFieldChoices } from '@weasel-js/ui';
 import { createContext, useContext, useMemo } from 'react';
-import { type PrefGroup } from '@weasel-js/prefs';
 
 /** The fields of the config a panel draws, which a `field` leaf names one of. */
 export const FieldChoicesContext = createContext<readonly PrefFieldChoice[]>([]);

@@ -6,8 +6,6 @@
 // the tree's *value* shape under a single localStorage key.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { RegistryEnumFilter } from './registry/types';
-import { usePenTool } from '@weasel-js/core';
 import type {
   PrefBase,
   PrefBoolean,
@@ -19,6 +17,8 @@ import type {
   PrefNumber,
   PrefString,
 } from '@weasel-js/prefs';
+import { usePenTool } from '@weasel-js/core';
+import type { RegistryEnumFilter } from './registry/types';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
