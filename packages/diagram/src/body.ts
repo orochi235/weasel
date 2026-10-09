@@ -57,6 +57,9 @@ export interface BodySpec {
   padding?: number;
   /** Space between adjacent rows. Default 4. */
   gap?: number;
+  /** The perimeter ports, replacing the four compass midpoints. A `ports`
+   *  row's own ports are added either way. */
+  ports?: readonly PortSpec[];
 }
 
 /** What {@link buildBody} emits: the `AddNodeSpec` fields it fills in. Named
@@ -121,7 +124,10 @@ export function canvasMeasure(
 function measureRow(row: Row, measure: MeasureRowText | undefined): { width: number; height: number } {
   const text = (s: string, style?: RowTextStyle): { width: number; height: number } =>
     measure === undefined
-      ? { width: s.length * (((style?.fontSize ?? FALLBACK_LINE) * 0.6)), height: FALLBACK_LINE }
+      ? {
+          width: s.length * (style?.fontSize ?? FALLBACK_LINE) * 0.6,
+          height: style?.fontSize === undefined ? FALLBACK_LINE : Math.ceil(style.fontSize * 1.2),
+        }
       : measure(s, style ?? {});
 
   switch (row.kind) {
@@ -257,13 +263,13 @@ export function layoutRowPorts(
  */
 export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowText): DiagramNode {
   const outline = spec.outline;
-  const compass: PortSpec[] = [
+  const compass: readonly PortSpec[] = spec.ports ?? [
     { id: 'n', at: COMPASS.n },
     { id: 'e', at: COMPASS.e },
     { id: 's', at: COMPASS.s },
     { id: 'w', at: COMPASS.w },
   ];
-  if (bounds.height <= 0) return { outline, ports: compass };
+  if (bounds.height <= 0) return { outline, ports: [...compass] };
 
   const rowPorts: PortSpec[] = [];
   let hasLeft = false;
@@ -280,7 +286,7 @@ export function bodyTrait(spec: BodySpec, bounds: Bounds, measure?: MeasureRowTe
       ));
     }
   }
-  const kept = compass.filter((p) =>
+  const kept = spec.ports !== undefined ? compass : compass.filter((p) =>
     !(p.id === 'w' && hasLeft) && !(p.id === 'e' && hasRight));
   return { outline, ports: [...kept, ...rowPorts] };
 }

@@ -102,8 +102,15 @@ const specs = useMemo(() => diagramScene(data, { nodeStyle }), [data]);
 return <DiagramView specs={specs} width={360} height={600} selected={id} onSelect={setId} />;
 ```
 
-Node sizes are estimated from line lengths, so layout runs without a canvas.
-It defaults to `layered` with `order: 'barycenter'`. Labels paint only in a
+Every box is a `buildBody` body, so a data node takes the same knobs a body
+does — `outline`, `rows`, `padding`, `gap`, `ports` — plus `pinned`, a
+starting `at`, and a minimum `width`/`height`; `lines` is shorthand for one
+label row each. An edge can name `fromPort`/`toPort`, its own `router`,
+`waypoints` and `labelPlacement`.
+
+Text is sized from character counts unless `measure` is given, so layout runs
+without a canvas. The layout defaults to `layered`, picked by name or passed as
+any `LayoutFn`; `layoutOptions` merge over `order: 'barycenter'`. Labels paint only in a
 registered font family, and the default is sans-serif, so call
 `registerCanvasFont('sans-serif')` once or they render blank. `minScale` stops
 the initial fit from shrinking a wide diagram past readable; the rest is a pan

@@ -13,18 +13,25 @@ describe('fitDiagram', () => {
   });
 
   it('stops at minScale, leaving the rest to a pan', () => {
-    expect(fitDiagram(wide, size, 0.75)!.scale).toEqual({ x: 0.75, y: 0.75 });
+    expect(fitDiagram(wide, size, { minScale: 0.75 })!.scale).toEqual({ x: 0.75, y: 0.75 });
   });
 
   it('does not raise a diagram that already fits above the floor', () => {
     const small = [
       { id: 'a', kind: 'container', pose: { x: 0, y: 0, width: 100, height: 100 } },
     ] as unknown as DiagramSpec[];
-    expect(fitDiagram(small, size, 0.75)!.scale).toEqual({ x: 1, y: 1 });
+    expect(fitDiagram(small, size, { minScale: 0.75 })!.scale).toEqual({ x: 1, y: 1 });
   });
 
   it("opens on the start of a floored diagram with anchor 'start'", () => {
-    const v = fitDiagram(wide, size, 0.75, 'start')!;
+    const v = fitDiagram(wide, size, { minScale: 0.75, anchor: 'start' })!;
     expect(v.x * v.scale.x).toBeCloseTo(-16); // left edge 16px in from the box
+  });
+
+  it('raises a small diagram up to maxScale', () => {
+    const small = [
+      { id: 'a', kind: 'container', pose: { x: 0, y: 0, width: 100, height: 100 } },
+    ] as unknown as DiagramSpec[];
+    expect(fitDiagram(small, size, { maxScale: 2 })!.scale).toEqual({ x: 2, y: 2 });
   });
 });

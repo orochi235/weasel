@@ -5,6 +5,7 @@ import {
   useScene,
   useSelection,
   WeaselProvider,
+  type FillStyle,
   type RectPose,
   type View,
 } from '@weasel-js/core';
@@ -30,7 +31,28 @@ export interface DiagramViewProps {
   /** Which part of a diagram too big for the box it opens on: its middle
    *  (default) or its top-left, where a layered flow begins. */
   anchor?: 'center' | 'start';
+  /** The largest scale the initial fit may use. Default 1, so a small
+   *  diagram opens at its own size rather than blown up. */
+  maxScale?: number;
+  /** Space kept clear around the diagram by the initial fit, in CSS pixels.
+   *  Default 16. */
+  fitPadding?: number;
+  /** What the canvas paints behind the diagram. Unset, it is transparent. */
+  background?: FillStyle;
+  /** The view, controlled. Set it and the initial fit is skipped; pair it
+   *  with `onViewChange` or panning does nothing. */
+  view?: View;
+  /** Every view change, from a pan, a zoom or the initial fit. */
+  onViewChange?: (view: View) => void;
   className?: string;
+}
+
+/** How `fitDiagram` frames a diagram in its box. */
+export interface DiagramFit {
+  minScale?: number;
+  maxScale?: number;
+  anchor?: 'center' | 'start';
+  padding?: number;
 }
 
 let made = 0;
@@ -56,7 +78,10 @@ export function DiagramView(props: DiagramViewProps) {
   );
 }
 
-function Inner({ specs, width, height, selected, onSelect, minScale, anchor, className }: DiagramViewProps) {
+function Inner({
+  specs, width, height, selected, onSelect, minScale, maxScale, anchor, fitPadding,
+  background, view, onViewChange, className,
+}: DiagramViewProps) {
   useEffect(() => registerDiagramShape<RectPose>(), []);
   const registry = useMemo(() => withDiagramRegistry<RectPose>(), []);
   const scene = useScene<DiagramSceneData, 'main', RectPose>({
@@ -66,9 +91,12 @@ function Inner({ specs, width, height, selected, onSelect, minScale, anchor, cla
   });
   const selection = useSelection({ scene, mode: 'single' });
   const onClick = useMirroredSelection(selection, selected, onSelect);
+  const controlled = view !== undefined;
   const defaultView = useMemo(
-    () => fitDiagram(specs, { width, height }, minScale, anchor),
-    [specs, width, height, minScale, anchor],
+    () => controlled
+      ? undefined
+      : fitDiagram(specs, { width, height }, { minScale, maxScale, anchor, padding: fitPadding }),
+    [controlled, specs, width, height, minScale, maxScale, anchor, fitPadding],
   );
   return (
     <SceneCanvas
@@ -81,17 +109,19 @@ function Inner({ specs, width, height, selected, onSelect, minScale, anchor, cla
       height={height}
       className={className}
       {...(defaultView ? { defaultView } : {})}
+      {...(view ? { view } : {})}
+      {...(onViewChange ? { onViewChange } : {})}
+      {...(background ? { backgroundFill: background } : {})}
     />
   );
 }
 
-/** The view `DiagramView` opens on: every container in the box, never above 1:1
- *  and never below `minScale`. */
+/** The view `DiagramView` opens on: every container in the box, never above
+ *  `maxScale` (default 1) and never below `minScale`. */
 export function fitDiagram(
   specs: readonly DiagramSpec[],
   size: { width: number; height: number },
-  minScale?: number,
-  anchor?: 'center' | 'start',
+  fit: DiagramFit = {},
 ): View | undefined {
   const boxes = specs.filter((s) => s.kind === 'container').map((s) => s.pose as RectPose);
   if (boxes.length === 0) return undefined;
@@ -104,8 +134,9 @@ export function fitDiagram(
     height: Math.max(...boxes.map((b) => b.y + b.height)) - y,
   };
   return fitViewToBounds(bounds, size, { x: 0, y: 0, scale: { x: 1, y: 1 } }, {
-    maxScale: 1,
-    ...(minScale !== undefined ? { minScale } : {}),
-    ...(anchor !== undefined ? { anchor } : {}),
+    maxScale: fit.maxScale ?? 1,
+    ...(fit.minScale !== undefined ? { minScale: fit.minScale } : {}),
+    ...(fit.anchor !== undefined ? { anchor: fit.anchor } : {}),
+    ...(fit.padding !== undefined ? { padding: fit.padding } : {}),
   });
 }
