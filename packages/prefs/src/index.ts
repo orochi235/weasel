@@ -1,10 +1,14 @@
 export {
   filterPrefSubtree,
+  flattenPrefValues,
   isPrefLeaf,
   prefDisplayBounds,
+  prefLeaves,
   prefValueAtPath,
+  setPrefValueAtPath,
   visiblePrefSubtree,
 } from './helpers';
+export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export {
   isBuiltinPref,
   PREF_KINDS,

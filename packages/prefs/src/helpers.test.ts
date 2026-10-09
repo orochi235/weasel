@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ANGLE_RADIANS } from '@weasel-js/quantity';
-import { filterPrefSubtree, prefDisplayBounds, visiblePrefSubtree } from './helpers';
+import {
+  filterPrefSubtree,
+  flattenPrefValues,
+  prefDisplayBounds,
+  prefLeaves,
+  setPrefValueAtPath,
+  visiblePrefSubtree,
+} from './helpers';
 import { prefUnit, type PrefGroup, type PrefNumber, type PrefNumberUnit } from './schema';
 
 const SCHEMA: PrefGroup = {
@@ -121,5 +128,51 @@ describe('prefDisplayBounds', () => {
       kind: 'number', name: 'R', description: '', default: 0, unit: degrees,
     };
     expect(prefDisplayBounds(leaf)).toEqual({ min: undefined, max: undefined, step: 1 });
+  });
+});
+
+const TREE_SCHEMA: PrefGroup = {
+  name: 'Test',
+  children: {
+    a: { kind: 'number', name: 'A', description: '', default: 1 },
+    g: {
+      name: 'G',
+      children: {
+        b: { kind: 'boolean', name: 'B', description: '', default: false },
+        o: {
+          kind: 'object',
+          name: 'O',
+          description: '',
+          default: {},
+          children: { x: { kind: 'number', name: 'X', description: '', default: 0 } },
+        },
+      },
+    },
+  },
+};
+
+describe('prefLeaves', () => {
+  it('maps each leaf path to its leaf, stopping at object leaves', () => {
+    expect([...prefLeaves(TREE_SCHEMA).keys()]).toEqual(['a', 'g.b', 'g.o']);
+  });
+});
+
+describe('setPrefValueAtPath', () => {
+  it('returns a new root with the value set, creating branches and sharing nothing it changed', () => {
+    const root = { g: { b: true }, keep: { z: 1 } };
+    const next = setPrefValueAtPath(root, 'g.c.d', 5);
+    expect(next).toEqual({ g: { b: true, c: { d: 5 } }, keep: { z: 1 } });
+    expect(root).toEqual({ g: { b: true }, keep: { z: 1 } });
+    expect(next.keep).toBe(root.keep);
+    expect(next.g).not.toBe(root.g);
+  });
+});
+
+describe('flattenPrefValues', () => {
+  it('lists each leaf present in the tree as a path and value, skipping absent ones', () => {
+    expect(flattenPrefValues(TREE_SCHEMA, { a: 2, g: { o: { x: 3 } }, stray: 9 })).toEqual([
+      ['a', 2],
+      ['g.o', { x: 3 }],
+    ]);
   });
 });

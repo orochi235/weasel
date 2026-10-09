@@ -60,6 +60,54 @@ export function visiblePrefSubtree<T extends PrefLeaf | PrefGroup>(
   return { ...node, children };
 }
 
+/** Every leaf under `schema`, by dotted path, in schema order. */
+export function prefLeaves(schema: PrefGroup): Map<string, PrefLeaf> {
+  const out = new Map<string, PrefLeaf>();
+  const walk = (group: PrefGroup, prefix: string): void => {
+    for (const [key, child] of Object.entries(group.children)) {
+      const path = prefix === '' ? key : `${prefix}.${key}`;
+      if (isPrefLeaf(child)) out.set(path, child);
+      else walk(child, path);
+    }
+  };
+  walk(schema, '');
+  return out;
+}
+
+/** `root` with `value` at the dotted `path`: a new object along the path,
+ *  every untouched branch shared. Missing or non-object segments become
+ *  objects. */
+export function setPrefValueAtPath<T extends Record<string, unknown>>(
+  root: T,
+  path: string,
+  value: unknown,
+): T {
+  const parts = path.split('.');
+  const out: Record<string, unknown> = { ...root };
+  let cursor = out;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const seg = parts[i]!;
+    const next = cursor[seg];
+    const branch: Record<string, unknown> =
+      next !== null && typeof next === 'object' ? { ...(next as Record<string, unknown>) } : {};
+    cursor[seg] = branch;
+    cursor = branch;
+  }
+  cursor[parts[parts.length - 1]!] = value;
+  return out as T;
+}
+
+/** Each of `schema`'s leaves that `tree` holds a value for, as a path and
+ *  that value — the inverse of building a tree from per-leaf records. */
+export function flattenPrefValues(schema: PrefGroup, tree: unknown): [string, unknown][] {
+  const out: [string, unknown][] = [];
+  for (const path of prefLeaves(schema).keys()) {
+    const value = prefValueAtPath(tree, path);
+    if (value !== undefined) out.push([path, value]);
+  }
+  return out;
+}
+
 /** Whether one leaf answers to a filter query, by name, description or path. */
 function prefLeafMatches(pref: PrefLeaf, path: string, query: string): boolean {
   if (pref.name.toLowerCase().includes(query)) return true;
