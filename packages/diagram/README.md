@@ -95,7 +95,7 @@ relaxation seeded from the current positions, so re-running it keeps relaxing.
 ### From data
 
 `diagramScene` turns plain `{ nodes, edges }` into a laid-out scene, and
-`DiagramView` draws one read-only, with pan, zoom and picking:
+`DiagramView` draws it, with pan, zoom and picking:
 
 ```tsx
 const specs = useMemo(() => diagramScene(data, { nodeStyle }), [data]);
@@ -110,11 +110,34 @@ label row each. An edge can name `fromPort`/`toPort`, its own `router`,
 
 Text is sized from character counts unless `measure` is given, so layout runs
 without a canvas. The layout defaults to `layered`, picked by name or passed as
-any `LayoutFn`; `layoutOptions` merge over `order: 'barycenter'`. Labels paint only in a
-registered font family, and the default is sans-serif, so call
-`registerCanvasFont('sans-serif')` once or they render blank. `minScale` stops
-the initial fit from shrinking a wide diagram past readable; the rest is a pan
-away.
+any `LayoutFn`; `layoutOptions` merge over `order: 'barycenter'`, and
+`'none'` leaves every node at its `at`.
+
+`DiagramView` is the front door for the whole package. The data owns the
+diagram: a new `specs` array is reconciled into the scene the view already
+holds (`reconcileSpecs` in core), so the view, the pick and anything moved
+since survive it. Editing reports rather than writes —
+
+```tsx
+<DiagramView
+  ref={view}
+  specs={specs}
+  onMove={(moves) => setNodes((ns) => withPositions(ns, moves))}
+  onConnect={(edge) => setEdges((es) => [...es, edge])}
+/>
+```
+
+— `onMove` turns on dragging and hears every node a drag or a layout run
+moved; `onConnect` makes ports grabbable and hears the edge a connect
+describes. Store a move as the node's `at`, with `pinned: true` unless the
+scene uses `layout: 'none'`, or the next `diagramScene` lays it out again.
+`view.current.layout('layered')` re-runs a layout animated from where the
+nodes stand; `'force'` relaxes live.
+
+Labels paint only in a registered font family, and the default is
+sans-serif, so call `registerCanvasFont('sans-serif')` once or they render
+blank. `minScale` stops the initial fit from shrinking a wide diagram past
+readable; the rest is a pan away.
 
 ## Design notes
 

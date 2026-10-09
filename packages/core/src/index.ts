@@ -946,7 +946,7 @@ export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
 export {
   createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId,
   createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose,
-  UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused,
+  UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused, reconcileSpecs,
 } from './core/scene';
 export type { PoseSource, PosedNode } from './core/scene';
 export type {

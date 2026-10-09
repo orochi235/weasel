@@ -410,6 +410,24 @@ intercepting the press that drags the body.
   `kit:setLayer`. Widening the pull to those means deciding what a derivation
   is allowed to read, not just how a pose is compared.
 
+- **(P2) Diagram groups: container nodes that hold other nodes.** `diagramScene`
+  has no way to say "these nodes belong together" and draw a box around them
+  (a timing graph's `locus`, a subsystem in an architecture diagram). Drawing
+  the box after layout is not enough: `layered` and `tree` place each node
+  on its own, so members of one group land interleaved with another's and the
+  boxes overlap. The layouts need to treat a group as a cluster that keeps
+  its members together within each rank, and edges into a group need to say
+  whether they meet the group or a member. Then `DataNode.parent` (or a
+  `groups` list on `DiagramData`) can mint a container body around the
+  members, and `fitDiagram` keeps measuring containers.
+
+- **(P3) `ForceGraphDemo` is a second force-graph pipeline.** It runs d3-force
+  through `useSimulation` and paints with its own render layer, beside
+  `@weasel-js/diagram`'s `force` layout and `DiagramView`. `force.ts` reserves
+  that route for graphs too big for a scene node per edge, but the demo has 24
+  nodes. Decide whether it stays as the large-graph example (and says so, at a
+  size that shows why) or is rebuilt on `DiagramView`.
+
 ### `useScene` follow-ups
 
 - **(P3) Scene layout: what the first cut left.** A container declares its layout

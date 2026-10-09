@@ -78,7 +78,7 @@ describe('diagramScene', () => {
       nodes: [{ id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }],
       edges: [{ from: 'a', to: 'b' }, { from: 'a', to: 'b' }, { from: 'a', to: 'b', label: 'x' }],
     };
-    const ids = diagramScene(data).map((s) => s.id).filter((id) => String(id).startsWith('edge:'));
+    const ids = diagramScene(data).map((s) => s.id).filter((id) => String(id).startsWith('edge:') && !String(id).includes('/'));
     expect(ids).toEqual(['edge:a->b', 'edge:a->b:x']);
   });
 
@@ -163,5 +163,20 @@ describe('diagramScene', () => {
     const ranks = containers(diagramScene(DATA, { layout: 'tree', layoutOptions: { direction: 'right' } }))
       .map((s) => (s.pose as { x: number }).x);
     expect(ranks[0]).toBeLessThan(ranks[2]!);
+  });
+
+  it('gives every spec an id, the same on every call', () => {
+    const a = diagramScene(DATA).map((s) => s.id);
+    expect(a.every((id) => id !== undefined)).toBe(true);
+    expect(new Set(a).size).toBe(a.length);
+    expect(diagramScene(DATA).map((s) => s.id)).toEqual(a);
+  });
+
+  it("leaves every node at its own position under layout 'none'", () => {
+    const specs = diagramScene(
+      { nodes: [{ id: 'a', lines: ['a'], at: { x: 300, y: 7 } }, { id: 'b', lines: ['b'], at: { x: 0, y: 0 } }], edges: [{ from: 'a', to: 'b' }] },
+      { layout: 'none' },
+    );
+    expect(containers(specs).map((s) => s.pose)).toMatchObject([{ x: 300, y: 7 }, { x: 0, y: 0 }]);
   });
 });

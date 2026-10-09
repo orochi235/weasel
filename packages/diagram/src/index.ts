@@ -150,5 +150,5 @@ export {
 export type { DiagramNodeEntry, DiagramNodeLike, DiagramNodeReader } from './trait';
 export type { DiagramNode, Port, PortAnchor, PortSpec } from './types';
 export { DiagramView } from './DiagramView';
-export type { DiagramViewProps } from './DiagramView';
+export type { DiagramViewApi, DiagramViewProps, NodeMove } from './DiagramView';
 export { useMirroredSelection } from './mirrorSelection';

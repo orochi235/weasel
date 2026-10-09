@@ -95,8 +95,9 @@ export interface DiagramSceneData {
 export type DiagramSpec = AddNodeSpec<DiagramSceneData, 'main', RectPose>;
 
 export interface DiagramSceneOptions {
-  /** A layout by name, or any `LayoutFn`. Default `'layered'`. */
-  layout?: 'layered' | 'tree' | 'force' | LayoutFn;
+  /** A layout by name, or any `LayoutFn`. Default `'layered'`. `'none'`
+   *  leaves every node at its `at`. */
+  layout?: 'layered' | 'tree' | 'force' | 'none' | LayoutFn;
   /** Merged over `{ order: 'barycenter' }`. */
   layoutOptions?: LayoutOptions;
   /** Default `'bezier'`. */
@@ -149,7 +150,9 @@ function graphOf(nodes: GraphNode[], edges: GraphEdge[]): Graph {
   };
 }
 
-/** Throws on a repeated node id, which names two nodes as one. An edge whose
+/** Every spec carries an id — a node's own, `<id>/<k>` for its text, and
+ *  `<edge id>/label` — so a later call's specs can be reconciled against this
+ *  one's. Throws on a repeated node id, which names two nodes as one. An edge whose
  *  end is not a node is dropped, and so is a repeat of an earlier edge with
  *  the same ends, ports and label: it would draw exactly on top of the first. */
 export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}): DiagramSpec[] {
@@ -196,8 +199,10 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     return { id: n.id, bounds: pose, pinned: n.pinned === true };
   });
   const graph = graphOf(seeds, edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })));
-  const layout = typeof opts.layout === 'function' ? opts.layout : LAYOUTS[opts.layout ?? 'layered'];
-  const moved = layout(graph, { order: 'barycenter', ...opts.layoutOptions });
+  const layout = typeof opts.layout === 'function' ? opts.layout
+    : opts.layout === 'none' ? null
+    : LAYOUTS[opts.layout ?? 'layered'];
+  const moved = layout === null ? new Map() : layout(graph, { order: 'barycenter', ...opts.layoutOptions });
 
   const specs: DiagramSpec[] = [];
   for (const [i, n] of data.nodes.entries()) {
@@ -227,7 +232,9 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
         portLabel: (text) => textData(text, undefined),
       },
     );
-    for (const s of built.specs) specs.push(s as DiagramSpec);
+    for (const [k, s] of built.specs.entries()) {
+      specs.push({ ...s, ...(k === 0 ? {} : { id: `${n.id}/${k}` }) } as DiagramSpec);
+    }
   }
 
   for (const e of edges) {
@@ -262,6 +269,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     if (e.label) {
       const labelStyle = { ...font, fontSize: font.fontSize - 2 };
       specs.push({
+        id: `${id}/label` as never,
         kind: 'leaf',
         layer: 'main',
         pickable: false,

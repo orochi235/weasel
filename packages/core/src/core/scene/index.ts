@@ -30,6 +30,7 @@ export type {
   UseSceneOptions,
 } from './types';
 export { createPoseOverrides } from './poseOverrides';
+export { reconcileSpecs } from './reconcileSpecs';
 export { SceneArrivalRefused } from './arrivals';
 export { definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose } from './effectivePose';
 export { createPoseFeed } from './poseFeed';
