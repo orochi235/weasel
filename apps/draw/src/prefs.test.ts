@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach, vi, beforeAll } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { PREFS, PREFS_KEY, usePref, usePrefsValues, writePref } from './prefs';
 
 // jsdom 26 + Node 26 currently leaves `window.localStorage` returning
@@ -169,9 +169,9 @@ describe('usePref', () => {
   });
 });
 
-describe('PREFS is a core ToolPrefGroup', () => {
-  it('assigns to ToolPrefGroup without a cast', () => {
-    const asCore: ToolPrefGroup = PREFS;
+describe('PREFS is a PrefGroup', () => {
+  it('assigns to PrefGroup without a cast', () => {
+    const asCore: PrefGroup = PREFS;
     expect(asCore.children.ui).toBeDefined();
   });
 

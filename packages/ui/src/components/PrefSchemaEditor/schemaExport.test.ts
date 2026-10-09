@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { diffSchemas, formatChanges, KEEP, printSchema } from './schemaExport';
 import { moveNodes, renameKey, setAttribute } from './schemaEdit';
 
-const ROOT: ToolPrefGroup = {
+const ROOT: PrefGroup = {
   name: 'Root',
   description: "It's here",
   children: {
@@ -18,7 +18,7 @@ const ROOT: ToolPrefGroup = {
 describe('printSchema', () => {
   it('prints a class instance attribute as KEEP_FROM_SOURCE', () => {
     class Unit { scale = 2; }
-    const tree: ToolPrefGroup = { name: 'R', children: { n: { kind: 'number', name: 'N', description: '', default: 1, unit: new Unit() as never } } };
+    const tree: PrefGroup = { name: 'R', children: { n: { kind: 'number', name: 'N', description: '', default: 1, unit: new Unit() as never } } };
     expect(printSchema(tree)).toContain(`unit: ${KEEP}`);
   });
 

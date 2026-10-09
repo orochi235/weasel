@@ -1,9 +1,10 @@
 import { isValidElement, type ComponentType } from 'react';
 import * as Weasel from '@weasel-js/core';
-import { defaultNodeRouting, defaultNodeProperties, type NodeRoutingEntry, type NodePropertiesEntry, type ToolPrefGroup } from '@weasel-js/core';
+import { defaultNodeRouting, defaultNodeProperties, type NodeRoutingEntry, type NodePropertiesEntry } from '@weasel-js/core';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import type { ShortcutInput } from '@weasel-js/ui';
 import * as AppIcons from '../actionIcons';
+import { type PrefGroup } from '@weasel-js/prefs';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
 export type TreeEntry =
@@ -632,14 +633,14 @@ export function collectPropertiesTrait(
   // An object leaf's fields are what the kind exposes; the leaf itself is
   // the container. Groups inside one are organisational and add nothing to
   // the path, exactly as they do at the top level.
-  const objectPaths = (prefix: string, children: ToolPrefGroup['children']): string[] =>
+  const objectPaths = (prefix: string, children: PrefGroup['children']): string[] =>
     Object.entries(children).flatMap(([key, child]) =>
       'kind' in child ? [`${prefix}.${key}`] : objectPaths(prefix, child.children),
     );
-  const flattenPaths = (group: ToolPrefGroup): string[] =>
+  const flattenPaths = (group: PrefGroup): string[] =>
     Object.entries(group.children).flatMap(([key, child]) => {
       if (!('kind' in child)) return flattenPaths(child);
-      const kids = (child as { kind: string; children?: ToolPrefGroup['children'] });
+      const kids = (child as { kind: string; children?: PrefGroup['children'] });
       return kids.kind === 'object' && kids.children
         ? objectPaths(key, kids.children)
         : [key];

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { ToolOptionsBar } from './ToolOptionsBar';
 
 const listFontWeights = vi.fn((_family: string) => [300, 600]);
@@ -11,7 +11,7 @@ vi.mock('@weasel-js/font', async (importOriginal) => ({
 
 describe('ToolOptionsBar font weight', () => {
   it('lists the weights of the family in the leaf beside it', () => {
-    const schema: ToolPrefGroup = {
+    const schema: PrefGroup = {
       name: 'Text',
       children: {
         fontFamily: { kind: 'font-family', name: 'Font', description: 'Family.', default: undefined },
@@ -42,7 +42,7 @@ describe('ToolOptionsBar', () => {
   });
 });
 
-const optionsSchema: ToolPrefGroup = {
+const optionsSchema: PrefGroup = {
   name: 'Text',
   children: {
     size: { kind: 'number', name: 'Size', description: 'Type size.', default: 12, min: 1 },

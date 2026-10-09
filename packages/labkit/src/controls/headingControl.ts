@@ -1,5 +1,4 @@
-import { isBuiltinToolPref } from '@weasel-js/core';
-import { isPrefLeaf, type PrefLeaf } from '@weasel-js/ui';
+import { isBuiltinPref, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
 import { schemaNodeAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { extra } from './fields';
@@ -53,7 +52,7 @@ export function headingLeaf(
   if (path === undefined || leaf === undefined) return undefined;
   const compact =
     (leaf.kind === 'boolean' || leaf.kind === 'enum') &&
-    isBuiltinToolPref(leaf) &&
+    isBuiltinPref(leaf) &&
     !(
       renderers?.[path] ??
       resolved.renderers[path] ??

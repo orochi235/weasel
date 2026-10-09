@@ -1,8 +1,7 @@
 import { useMemo, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { Tree, type TreeNode } from '../Tree';
-import { isPrefLeaf } from '../Prefs/schema';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
@@ -32,8 +31,8 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
 }
 
 export interface StructurePaneProps {
-  schema: ToolPrefGroup;
-  onChange(next: ToolPrefGroup): void;
+  schema: PrefGroup;
+  onChange(next: PrefGroup): void;
   selected: string | null;
   onSelect(path: string | null): void;
   changed: ReadonlySet<string>;

@@ -1,8 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
+import { PREF_KINDS, type PrefKind, type PrefLeaf } from '@weasel-js/prefs';
 import { compact } from '@weasel-js/quantity';
-import type { PrefLeaf } from '@weasel-js/ui';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { auto } from '../config/auto';
@@ -360,9 +359,9 @@ describe('<ControlPanel> visibility and sections', () => {
 });
 
 describe('<ControlPanel> built-in kind coverage', () => {
-  const KIND = 'spline' as ToolPrefKind;
+  const KIND = 'spline' as PrefKind;
   afterEach(() => {
-    delete (TOOL_PREF_KINDS as Record<string, true>)[KIND];
+    delete (PREF_KINDS as Record<string, true>)[KIND];
   });
 
   const schemaWith = (...leaves: PrefLeaf[]): ResolvedConfig => ({
@@ -398,7 +397,7 @@ describe('<ControlPanel> built-in kind coverage', () => {
   });
 
   it('throws for a built-in kind with no case arm', () => {
-    (TOOL_PREF_KINDS as Record<string, true>)[KIND] = true;
+    (PREF_KINDS as Record<string, true>)[KIND] = true;
     expect(() =>
       render(
         <ControlPanel

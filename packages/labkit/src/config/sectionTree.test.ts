@@ -1,4 +1,4 @@
-import { isPrefLeaf, type PrefGroup } from '@weasel-js/ui';
+import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';

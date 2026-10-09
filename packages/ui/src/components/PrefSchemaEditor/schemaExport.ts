@@ -1,5 +1,5 @@
-import { isPlainObject, type ToolPrefGroup } from '@weasel-js/core';
-import { isPrefLeaf } from '../Prefs/schema';
+import { isPlainObject } from '@weasel-js/core';
+import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { childrenOf, isValidKey, joinPath, type SchemaNode } from './schemaEdit';
 
 /** What an attribute holding code prints as: an undeclared name, so the pasted literal fails typecheck until the
@@ -61,7 +61,7 @@ function printNode(node: SchemaNode, depth: number): string {
 }
 
 /** Code-bearing attributes print as {@link KEEP}; the tree around them prints in full. */
-export function printSchema(root: ToolPrefGroup): string {
+export function printSchema(root: PrefGroup): string {
   return printNode(root, 0);
 }
 
@@ -74,7 +74,7 @@ export type SchemaChange =
 
 const kindOf = (n: SchemaNode) => (isPrefLeaf(n) ? n.kind : 'group');
 
-function flatten(root: ToolPrefGroup): Map<string, SchemaNode> {
+function flatten(root: PrefGroup): Map<string, SchemaNode> {
   const out = new Map<string, SchemaNode>();
   const walk = (node: SchemaNode, path: string | null) => {
     for (const [k, child] of Object.entries(childrenOf(node) ?? {})) {
@@ -106,7 +106,7 @@ function attrChanges(path: string, a: SchemaNode, b: SchemaNode): SchemaChange[]
  * kind and name that arrived at another are taken as one node moved, and a moved node's descendants travel with
  * it unreported. Reordering a node's children is one `reorder` for that node (`''` is the root).
  */
-export function diffSchemas(before: ToolPrefGroup, after: ToolPrefGroup): SchemaChange[] {
+export function diffSchemas(before: PrefGroup, after: PrefGroup): SchemaChange[] {
   const a = flatten(before);
   const b = flatten(after);
   const out: SchemaChange[] = [];
@@ -132,7 +132,7 @@ export function diffSchemas(before: ToolPrefGroup, after: ToolPrefGroup): Schema
   for (const p of a.keys()) if (b.has(p)) pairs.push([p, p]);
   for (const [from, to] of pairs) out.push(...attrChanges(to, a.get(from)!, b.get(to)!));
   // Only keys present on both sides count, so a child arriving or leaving is not a reorder.
-  const keysAt = (root: ToolPrefGroup, map: Map<string, SchemaNode>, path: string) =>
+  const keysAt = (root: PrefGroup, map: Map<string, SchemaNode>, path: string) =>
     Object.keys(childrenOf(path === '' ? root : map.get(path)!) ?? {});
   for (const p of ['', ...[...a.keys()].filter((x) => b.has(x))]) {
     const was = keysAt(before, a, p);

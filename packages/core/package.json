@@ -97,6 +97,7 @@
     "@weasel-js/modes": "1.9.2",
     "@weasel-js/quantity": "1.9.2",
     "@weasel-js/paint": "1.9.2",
+    "@weasel-js/prefs": "1.9.2",
     "@weasel-js/react": "1.9.2",
     "@weasel-js/registry": "1.9.2",
     "@weasel-js/routing": "1.9.2",

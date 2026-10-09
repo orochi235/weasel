@@ -1,7 +1,7 @@
-import { ANGLE_RADIANS, prefUnit } from '@weasel-js/core';
+import { ANGLE_RADIANS } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { compact } from '@weasel-js/quantity';
-import { type PrefNumberUnit, PropertyRow } from '@weasel-js/ui';
+import { PropertyRow } from '@weasel-js/ui';
 import { useState } from 'react';
 import { f } from '../config/builder';
 import { withValueAtPath } from '../config/path';
@@ -9,6 +9,7 @@ import { resolveConfigSchema } from '../config/resolve';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import { ControlPanel } from './ControlPanel';
 import type { ConfigField } from './types';
+import { type PrefNumberUnit, prefUnit } from '@weasel-js/prefs';
 
 const meta: Meta<typeof ControlPanel> = {
   title: 'labkit/Controls/ControlPanel',

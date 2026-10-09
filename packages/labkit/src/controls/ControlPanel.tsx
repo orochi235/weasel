@@ -1,11 +1,14 @@
-import { isBuiltinToolPref, pairRowsOf, type ToolPrefLeaf } from '@weasel-js/core';
+import {
+  isBuiltinPref,
+  isPrefLeaf,
+  pairRowsOf,
+  type PrefGroup,
+  type PrefLeaf,
+} from '@weasel-js/prefs';
 import {
   Button,
   DialogRow,
-  isPrefLeaf,
   ListEditor,
-  type PrefGroup,
-  type PrefLeaf,
   type PropertyAlign,
   type PropertyControlProps,
   type PropertyDensity,
@@ -347,7 +350,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       renderers?.[found.kind]
     )
       return undefined;
-    if (!isBuiltinToolPref(found)) return undefined;
+    if (!isBuiltinPref(found)) return undefined;
     if (found.kind === 'paint' || found.kind === 'object' || isSliderLeaf(found)) return undefined;
     return { leaf: found, pair };
   };
@@ -358,7 +361,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     const pairs = pairRowsOf(
       paths.flatMap((p) => {
         const found = schemaNodeAtPath(resolved.group, p);
-        return found && isPrefLeaf(found) ? [[p, found as ToolPrefLeaf] as const] : [];
+        return found && isPrefLeaf(found) ? [[p, found as PrefLeaf] as const] : [];
       }),
     );
     const out: ReactNode[] = [];

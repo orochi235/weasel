@@ -11,7 +11,7 @@ npm run dev:schema -w @weasel-js/labkit
 
 `defaultNodeProperties` (`@weasel-js/core`) is weasel's published property
 schema for its own node kinds — the one `<SelectionPanel>` reads. Its leaves are
-dotted node paths (`pose.x`, `data.fill`) carrying a `ToolPref` descriptor:
+dotted node paths (`pose.x`, `data.fill`) carrying a `BuiltinPref` descriptor:
 kind, label, bounds, and an optional display unit.
 
 `prefsToFields.ts` translates that into labkit's `ConfigField[]`

@@ -1,17 +1,12 @@
-// src/tools/prefs.ts
-//
-// Minimal pref descriptor for tools that want to expose user-facing
-// settings (commit-on-close, snap thresholds, etc.). Host apps compose
-// these into their own preferences registry; the kit ships no storage
-// or UI of its own. The shape is intentionally narrow — number,
-// boolean, string, enum, plus rendering hints — so it's a clean
-// structural subset of whatever a host app already has.
+// The preferences schema: groups of typed leaves. Tools declare theirs as a
+// `PrefGroup`; apps compose them into one registry, which `PrefsForm` renders
+// and `openPrefs` stores.
 
 import { formatUnit, unitScale } from '@weasel-js/quantity';
 import type { Display, InfinityText, Unit, UnitEntry, UnitScale, UnitSystem } from '@weasel-js/quantity';
 
 /** The value types a built-in pref leaf can hold. */
-export type ToolPrefKind =
+export type PrefKind =
   | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object' | 'field';
 
 /**
@@ -19,7 +14,7 @@ export type ToolPrefKind =
  * `SelectionPanel`, labkit's `ControlPanel`), declared on the first of them.
  * Purely presentational.
  */
-export interface ToolPrefPair {
+export interface PrefPair {
   /** The other leaves on the row, by the full path their values are read and
    *  written at (`'pose.y'`, `'camera.type'`), in order. Each must follow the
    *  one before it among its siblings. */
@@ -29,7 +24,7 @@ export interface ToolPrefPair {
 }
 
 /** The fields every leaf pref shares, keyed by its `kind` and typed by its stored value. */
-export interface ToolPrefBase<K extends string, Value> {
+export interface PrefBase<K extends string, Value> {
   kind: K;
   /** Human-readable label. */
   name: string;
@@ -50,7 +45,7 @@ export interface ToolPrefBase<K extends string, Value> {
    *  to tell them apart. */
   icon?: string;
   /** Puts this leaf and the ones it names on one row. */
-  pair?: ToolPrefPair;
+  pair?: PrefPair;
   /** Shorter forms of `name`, longest first. A surface short of room for
    *  `name` — a strip of controls on one line, a segment in a `pair`ed row —
    *  shows the longest of them that fits. `name` stays the accessible name, so
@@ -59,18 +54,18 @@ export interface ToolPrefBase<K extends string, Value> {
 }
 
 /** How a schema-driven UI should present a number pref. */
-export type ToolPrefNumberControl = 'input' | 'slider';
+export type PrefNumberControl = 'input' | 'slider';
 /** How a schema-driven UI should present a boolean pref. */
-export type ToolPrefBooleanControl = 'checkbox' | 'switch' | 'toggle';
+export type PrefBooleanControl = 'checkbox' | 'switch' | 'toggle';
 /** How a schema-driven UI should present a string pref. */
-export type ToolPrefStringControl = 'input' | 'textarea';
+export type PrefStringControl = 'input' | 'textarea';
 /** How a schema-driven UI should present an enum pref. */
-export type ToolPrefEnumControl = 'select' | 'radio' | 'toggle';
+export type PrefEnumControl = 'select' | 'radio' | 'toggle';
 
 /** Display-unit conversion for number leaves whose stored value uses a
  *  canonical unit the user shouldn't see (e.g. radians stored, degrees
  *  shown). The stored value stays canonical; UIs convert at the edge. */
-export interface ToolPrefNumberUnit {
+export interface PrefNumberUnit {
   toDisplay: (stored: number) => number;
   fromDisplay: (display: number) => number;
   /** Shown after the input, e.g. `'°'`. */
@@ -94,7 +89,7 @@ export function prefUnit(
   system: UnitSystem,
   display: Unit,
   opts?: { precision?: number; suffix?: string },
-): ToolPrefNumberUnit {
+): PrefNumberUnit {
   let self: Required<UnitScale>;
   try {
     self = unitScale(system, display);
@@ -131,15 +126,15 @@ export function prefUnit(
 
 /** A numeric pref, optionally bounded and stepped, and optionally stored in a
  *  different unit from the one shown. */
-export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
+export interface PrefNumber extends PrefBase<'number', number> {
   min?: number;
   max?: number;
   step?: number;
-  control?: ToolPrefNumberControl;
+  control?: PrefNumberControl;
   /** How the value shows, speaks and reads back when typed — `compact()`
    *  reads `2.00M`. Presentation only: the stored value stays a number. */
   display?: Display;
-  unit?: ToolPrefNumberUnit;
+  unit?: PrefNumberUnit;
   /** Which end of a slider stands for infinity: the value there is ±Infinity. */
   endless?: 'min' | 'max' | 'both';
   /** The word infinity shows as — `'never'`, `'uncapped'`. Default `∞`. */
@@ -147,10 +142,10 @@ export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
 }
 /**
  * Stored-value bridge for a boolean leaf whose field is not a boolean — the
- * flag counterpart of {@link ToolPrefEnumEncoding}. `TextStyle.fontStyle` is
+ * flag counterpart of {@link PrefEnumEncoding}. `TextStyle.fontStyle` is
  * the case: it stores `'italic'`, and the control is an Italic toggle.
  */
-export interface ToolPrefBooleanEncoding {
+export interface PrefBooleanEncoding {
   /** Whether `stored` reads as on. */
   read: (stored: unknown, siblings: Record<string, unknown> | undefined) => boolean;
   /** What to store for `on`. `undefined` removes the field. */
@@ -158,17 +153,17 @@ export interface ToolPrefBooleanEncoding {
 }
 
 /** An on/off pref. */
-export interface ToolPrefBoolean extends ToolPrefBase<'boolean', boolean> {
-  control?: ToolPrefBooleanControl;
-  encoding?: ToolPrefBooleanEncoding;
+export interface PrefBoolean extends PrefBase<'boolean', boolean> {
+  control?: PrefBooleanControl;
+  encoding?: PrefBooleanEncoding;
 }
 /** A free-text pref. */
-export interface ToolPrefString extends ToolPrefBase<'string', string> {
-  control?: ToolPrefStringControl;
+export interface PrefString extends PrefBase<'string', string> {
+  control?: PrefStringControl;
 }
 /**
  * Stored-value bridge for an enum leaf whose value is not the option string —
- * the counterpart of {@link ToolPrefNumberUnit}, which does the same for a
+ * the counterpart of {@link PrefNumberUnit}, which does the same for a
  * number stored in a canonical unit.
  *
  * A dash array is the case that needs it: `Stroke.dash` stores lengths, and
@@ -176,7 +171,7 @@ export interface ToolPrefString extends ToolPrefBase<'string', string> {
  * width, so both directions are given the object's other fields — a style is
  * meaningless without the width it is a multiple of.
  */
-export interface ToolPrefEnumEncoding<T extends string = string> {
+export interface PrefEnumEncoding<T extends string = string> {
   /**
    * The option `stored` reads as, or `undefined` for none — which a UI shows
    * the way it shows a mixed selection, by selecting nothing.
@@ -190,9 +185,9 @@ export interface ToolPrefEnumEncoding<T extends string = string> {
 }
 
 /** A pref with a fixed set of labeled choices. `default` is `undefined` only
- *  for a {@link ToolPrefEnum.clearable} leaf, whose absence is a value. */
-export interface ToolPrefEnum<T extends string = string>
-  extends ToolPrefBase<'enum', T | undefined> {
+ *  for a {@link PrefEnum.clearable} leaf, whose absence is a value. */
+export interface PrefEnum<T extends string = string>
+  extends PrefBase<'enum', T | undefined> {
   /**
    * The field may hold none of the options, and that absence is a state of
    * its own rather than a missing value — a script that is neither super nor
@@ -220,13 +215,13 @@ export interface ToolPrefEnum<T extends string = string>
     icon?: string;
     disabled?: boolean;
   }[];
-  control?: ToolPrefEnumControl;
-  encoding?: ToolPrefEnumEncoding<T>;
+  control?: PrefEnumControl;
+  encoding?: PrefEnumEncoding<T>;
 }
 
 /** A single color, stored as a hex string. For a value that may also be a
- *  gradient or a pattern, use {@link ToolPrefPaint} instead. */
-export interface ToolPrefColor extends ToolPrefBase<'color', string> {
+ *  gradient or a pattern, use {@link PrefPaint} instead. */
+export interface PrefColor extends PrefBase<'color', string> {
   /** Value is `#rrggbb`, or `#rrggbbaa` when `alpha` is set (UIs then
    *  offer an opacity control). */
   alpha?: boolean;
@@ -238,7 +233,7 @@ export interface ToolPrefColor extends ToolPrefBase<'color', string> {
  * app-supplied renderer. Deliberately NOT index-signatured so concrete
  * app interfaces stay assignable. Mirrors weasel-ui's `PrefCustom`.
  */
-export type ToolPrefCustom = ToolPrefBase<string, unknown>;
+export type PrefCustom = PrefBase<string, unknown>;
 
 /**
  * A whole `FillStyle`, not a color inside one. Use it wherever the value is
@@ -251,7 +246,7 @@ export type ToolPrefCustom = ToolPrefBase<string, unknown>;
  * `'color' in paint` checks then paint flat solid. The union has to be
  * edited as a union.
  */
-export interface ToolPrefPaint extends ToolPrefBase<'paint', unknown> {
+export interface PrefPaint extends PrefBase<'paint', unknown> {
   /** Offer an opacity control alongside the color. */
   alpha?: boolean;
 }
@@ -268,14 +263,14 @@ export interface ToolPrefPaint extends ToolPrefBase<'paint', unknown> {
  *
  * `children` paths are relative to the object. They are ordinary leaves, so a
  * field that is itself a union (a stroke's `paint`) declares the kind that
- * edits that union. A child may also be a {@link ToolPrefGroup}, which
+ * edits that union. A child may also be a {@link PrefGroup}, which
  * organises the fields under a heading without contributing to the path —
  * the same rule group keys follow at the top level. A `TextStyle` needs it:
  * its character and paragraph fields belong to one value but read as two
  * lists.
  */
-export interface ToolPrefObject extends ToolPrefBase<'object', unknown> {
-  children: Record<string, ToolPrefLeaf | ToolPrefGroup>;
+export interface PrefObject extends PrefBase<'object', unknown> {
+  children: Record<string, PrefLeaf | PrefGroup>;
   /**
    * Lift a non-object value into the object form, for a consumer field that
    * may also be held as a scalar. Called before a child edit is applied;
@@ -290,39 +285,39 @@ export interface ToolPrefObject extends ToolPrefBase<'object', unknown> {
  * value is read and written at (`'camera.type'`) — the currency fields refer
  * to each other in. A surface offers the fields it draws as the choices.
  */
-export interface ToolPrefField extends ToolPrefBase<'field', string> {
+export interface PrefField extends PrefBase<'field', string> {
   /** Only fields of these kinds may be named. Default: any leaf. */
   kinds?: readonly string[];
 }
 
-/** One built-in pref leaf. `ToolPrefLeaf` widens this to include
+/** One built-in pref leaf. `PrefLeaf` widens this to include
  *  app-defined kinds. */
-export type ToolPref =
-  | ToolPrefNumber
-  | ToolPrefBoolean
-  | ToolPrefString
-  | ToolPrefEnum
-  | ToolPrefColor
-  | ToolPrefPaint
-  | ToolPrefObject
-  | ToolPrefField;
+export type BuiltinPref =
+  | PrefNumber
+  | PrefBoolean
+  | PrefString
+  | PrefEnum
+  | PrefColor
+  | PrefPaint
+  | PrefObject
+  | PrefField;
 
-// Compile-time tie: every built-in leaf kind must appear in ToolPrefKind
-// and vice versa (ToolPrefBase's K is open for ToolPrefCustom's sake, so
+// Compile-time tie: every built-in leaf kind must appear in PrefKind
+// and vice versa (PrefBase's K is open for PrefCustom's sake, so
 // the union no longer enforces it).
-type _BuiltinKindsExact = [ToolPref['kind']] extends [ToolPrefKind]
-  ? [ToolPrefKind] extends [ToolPref['kind']] ? true : never
+type _BuiltinKindsExact = [BuiltinPref['kind']] extends [PrefKind]
+  ? [PrefKind] extends [BuiltinPref['kind']] ? true : never
   : never;
 const _builtinKindsExact: _BuiltinKindsExact = true;
 void _builtinKindsExact;
 
 /**
- * The built-in kinds, as a table. A kind added to {@link ToolPrefKind} is a
+ * The built-in kinds, as a table. A kind added to {@link PrefKind} is a
  * compile error here, and from here it is one in every renderer's `never`
  * guard — the only thing standing between a new kind and rendering as
  * nothing in four places at once.
  */
-export const TOOL_PREF_KINDS: Record<ToolPrefKind, true> = {
+export const PREF_KINDS: Record<PrefKind, true> = {
   number: true,
   boolean: true,
   string: true,
@@ -338,7 +333,7 @@ export const TOOL_PREF_KINDS: Record<ToolPrefKind, true> = {
  *  path no `pair` names is absent. `leaves` are given by the path each
  *  surface reads and writes them at, so references resolve in its terms. */
 export function pairRowsOf(
-  leaves: Iterable<readonly [path: string, leaf: ToolPrefLeaf]>,
+  leaves: Iterable<readonly [path: string, leaf: PrefLeaf]>,
 ): Map<string, { key: string; label: string }> {
   const rows = new Map<string, { key: string; label: string }>();
   for (const [path, leaf] of leaves) {
@@ -353,19 +348,19 @@ export function pairRowsOf(
 
 /**
  * Narrows a leaf to the built-in union, so a renderer's switch discriminates
- * on {@link ToolPrefKind} instead of the open `string` that
- * {@link ToolPrefCustom} widens `kind` to. An app-defined kind answers false
+ * on {@link PrefKind} instead of the open `string` that
+ * {@link PrefCustom} widens `kind` to. An app-defined kind answers false
  * and belongs to the renderer's custom-renderer path.
  */
-export function isBuiltinToolPref(leaf: ToolPrefLeaf): leaf is ToolPref {
-  return Object.hasOwn(TOOL_PREF_KINDS, leaf.kind);
+export function isBuiltinPref(leaf: PrefLeaf): leaf is BuiltinPref {
+  return Object.hasOwn(PREF_KINDS, leaf.kind);
 }
 
 /** Built-in or app-defined leaf. */
-export type ToolPrefLeaf = ToolPref | ToolPrefCustom;
+export type PrefLeaf = BuiltinPref | PrefCustom;
 
 /** Nestable group: branch nodes a tool can use to organize its prefs. */
-export interface ToolPrefGroup {
+export interface PrefGroup {
   /** Heading for the group's rows. **Empty means no heading** — for a group
    *  that exists to organise, not to name: one whose children are themselves
    *  groups carrying the labels a reader needs. Give it a name whenever the
@@ -373,5 +368,5 @@ export interface ToolPrefGroup {
    *  reads as nothing without it). */
   name: string;
   description?: string;
-  children: Record<string, ToolPrefLeaf | ToolPrefGroup>;
+  children: Record<string, PrefLeaf | PrefGroup>;
 }

@@ -2,7 +2,7 @@ import { useCallback, useMemo, useReducer, useRef, createElement } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
-import type { ToolPrefGroup } from '../../prefs';
+import type { PrefGroup } from '@weasel-js/prefs';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
@@ -659,7 +659,7 @@ usePenTool.prefs = {
       default: true,
     },
   },
-} satisfies ToolPrefGroup;
+} satisfies PrefGroup;
 
 /** Point the anchor's outgoing handle at `target`, optionally snapped and
  *  optionally constrained to 45° steps. When `linked` and not Alt-broken,

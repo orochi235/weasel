@@ -14,6 +14,7 @@
       "@weasel-js/history",
       "@weasel-js/quantity",
       "@weasel-js/storage",
+      "@weasel-js/prefs",
       "@weasel-js/select",
       "@weasel-js/registry",
       "@weasel-js/react",

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { isBuiltinToolPref, numericWeight, type FillStyle } from '@weasel-js/core';
+import { numericWeight, type FillStyle } from '@weasel-js/core';
 import { endless as withInfinity } from '@weasel-js/quantity';
 import { endlessAllows } from '../../endless';
 import { stepDisplay } from '../Properties/NumberControls';
@@ -7,7 +7,8 @@ import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
-import { prefDisplayBounds, prefUnitAccepts, type PrefFieldChoice, type PrefLeaf } from './schema';
+import { prefUnitAccepts, type PrefFieldChoice } from './schema';
+import { isBuiltinPref, prefDisplayBounds, type PrefLeaf } from '@weasel-js/prefs';
 
 /** What {@link prefFieldProps} is told about one leaf's value. */
 export interface PrefFieldState {
@@ -77,7 +78,7 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
       fontStyle: style === 'italic' ? 'italic' : undefined,
     };
   }
-  if (!isBuiltinToolPref(leaf)) return null;
+  if (!isBuiltinPref(leaf)) return null;
   switch (leaf.kind) {
     case 'boolean': {
       const coded = leaf.encoding ? throughEncoding(leaf.encoding, state) : undefined;

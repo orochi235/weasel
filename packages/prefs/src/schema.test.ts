@@ -1,5 +1,5 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
-import { TOOL_PREF_KINDS, isBuiltinToolPref, pairRowsOf, prefUnit } from './prefs';
+import { PREF_KINDS, isBuiltinPref, pairRowsOf, prefUnit } from './schema';
 import { ANGLE_RADIANS, METRIC_MM, type UnitSystem } from '@weasel-js/quantity';
 
 /** Temperature is the smallest system whose units disagree about zero. */
@@ -8,33 +8,33 @@ const TEMPERATURE_K: UnitSystem = {
   units: { K: 1, degC: { factor: 1, offset: 273.15 } },
 };
 import type {
-  ToolPref,
-  ToolPrefKind,
-  ToolPrefColor,
-  ToolPrefCustom,
-  ToolPrefGroup,
-  ToolPrefLeaf,
-  ToolPrefNumber,
-  ToolPrefPair,
-} from './prefs';
+  BuiltinPref,
+  PrefKind,
+  PrefColor,
+  PrefCustom,
+  PrefGroup,
+  PrefLeaf,
+  PrefNumber,
+  PrefPair,
+} from './schema';
 
-describe('ToolPref schema additions', () => {
+describe('BuiltinPref schema additions', () => {
   it('accepts color, custom, pair, and unit fields', () => {
-    const fill: ToolPrefColor = {
+    const fill: PrefColor = {
       kind: 'color',
       name: 'Fill',
       description: 'Fill color.',
       default: '#000000ff',
       alpha: true,
     };
-    const x: ToolPrefNumber = {
+    const x: PrefNumber = {
       kind: 'number',
       name: 'X',
       description: 'Left edge.',
       default: 0,
       pair: { with: 'pose.y', label: 'Position' },
     };
-    const rotation: ToolPrefNumber = {
+    const rotation: PrefNumber = {
       kind: 'number',
       name: 'Rotation',
       description: 'Rotation about center.',
@@ -45,17 +45,17 @@ describe('ToolPref schema additions', () => {
         suffix: '°',
       },
     };
-    const custom: ToolPrefCustom = {
+    const custom: PrefCustom = {
       kind: 'my-app-kind',
       name: 'Special',
       description: 'App-defined leaf.',
       default: null,
     };
-    const group: ToolPrefGroup = {
+    const group: PrefGroup = {
       name: 'Layout',
       children: { 'pose.x': x, 'pose.rotation': rotation, 'data.fill': fill, 'data.special': custom },
     };
-    const leaves: ToolPrefLeaf[] = [fill, x, rotation, custom];
+    const leaves: PrefLeaf[] = [fill, x, rotation, custom];
     expect(Object.keys(group.children)).toHaveLength(4);
     expect(leaves).toHaveLength(4);
   });
@@ -63,25 +63,25 @@ describe('ToolPref schema additions', () => {
 
 describe('built-in kind table', () => {
   it('lists exactly the kinds the built-in union declares', () => {
-    expectTypeOf<keyof typeof TOOL_PREF_KINDS>().toEqualTypeOf<ToolPrefKind>();
-    expectTypeOf<ToolPref['kind']>().toEqualTypeOf<ToolPrefKind>();
-    expect(Object.keys(TOOL_PREF_KINDS).sort()).toEqual(
+    expectTypeOf<keyof typeof PREF_KINDS>().toEqualTypeOf<PrefKind>();
+    expectTypeOf<BuiltinPref['kind']>().toEqualTypeOf<PrefKind>();
+    expect(Object.keys(PREF_KINDS).sort()).toEqual(
       ['boolean', 'color', 'enum', 'field', 'number', 'object', 'paint', 'string'],
     );
   });
 
   it('narrows a built-in leaf and rejects an app-defined one', () => {
-    const custom: ToolPrefCustom = {
+    const custom: PrefCustom = {
       kind: 'registry-enum', name: 'Shape', description: '', default: null,
     };
-    const color: ToolPrefColor = {
+    const color: PrefColor = {
       kind: 'color', name: 'Fill', description: '', default: '#000000',
     };
-    expect(isBuiltinToolPref(custom)).toBe(false);
-    expect(isBuiltinToolPref(color)).toBe(true);
+    expect(isBuiltinPref(custom)).toBe(false);
+    expect(isBuiltinPref(color)).toBe(true);
     // A leaf whose kind collides with an Object.prototype key is app-defined
     // like any other — `in` would answer true here.
-    expect(isBuiltinToolPref({ ...custom, kind: 'toString' })).toBe(false);
+    expect(isBuiltinPref({ ...custom, kind: 'toString' })).toBe(false);
   });
 });
 
@@ -139,7 +139,7 @@ describe('prefUnit', () => {
 });
 
 describe('pairRowsOf', () => {
-  const leaf = (name: string, pair?: ToolPrefPair): ToolPrefLeaf =>
+  const leaf = (name: string, pair?: PrefPair): PrefLeaf =>
     ({ kind: 'number', name, description: '', default: 0, ...(pair ? { pair } : {}) });
 
   it('puts the declaring leaf and every path it names on one row, labeled by the override', () => {

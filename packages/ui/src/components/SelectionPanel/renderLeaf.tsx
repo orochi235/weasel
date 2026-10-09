@@ -1,5 +1,5 @@
 /**
- * A selection's leaves as cells: one `ToolPrefLeaf` and its aggregated value
+ * A selection's leaves as cells: one `PrefLeaf` and its aggregated value
  * in, one rendered cell out, plus the run logic that turns a row of paired
  * toggles into a single segmented bar and the rows of an object leaf.
  *
@@ -10,11 +10,11 @@
 import { Fragment, type ReactNode } from 'react';
 import {
   pairRowsOf,
-  type ToolPrefBoolean,
-  type ToolPrefGroup,
-  type ToolPrefLeaf,
-  type ToolPrefObject,
-} from '@weasel-js/core';
+  type PrefBoolean,
+  type PrefGroup,
+  type PrefLeaf,
+  type PrefObject,
+} from '@weasel-js/prefs';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
@@ -32,7 +32,7 @@ export interface PropertyRenderContext {
   /** The panel's fields, which a `field` leaf names one of. */
   fields?: readonly PrefFieldChoice[];
   /** The schema leaf. App renderers narrow it to their own kind shape. */
-  pref: ToolPrefLeaf;
+  pref: PrefLeaf;
   /** Aggregated value across the selection; `undefined` when mixed or unset. */
   value: unknown;
   /** True when selected nodes disagree at this path. */
@@ -109,7 +109,7 @@ export type PropertyRenderer = (ctx: PropertyRenderContext) => ReactNode;
  */
 export interface LeafCell {
   key: string;
-  leaf: ToolPrefLeaf;
+  leaf: PrefLeaf;
   ctx: PropertyRenderContext;
   /** The accessible name this leaf's control carries — qualified by the row's
    *  pair where the row holds more than one leaf. */
@@ -124,7 +124,7 @@ export interface LeafCell {
 export interface RenderedCell {
   key: string;
   /** The leaf that names the cell — the run's first, for a flag bar. */
-  leaf: ToolPrefLeaf;
+  leaf: PrefLeaf;
   block: boolean;
   content: ReactNode;
   pair?: { key: string; label: string };
@@ -138,7 +138,7 @@ export function isFlagCell(cell: LeafCell, renderers?: Record<string, PropertyRe
   const { leaf } = cell;
   return (
     leaf.kind === 'boolean' &&
-    (leaf as ToolPrefBoolean).control === 'toggle' &&
+    (leaf as PrefBoolean).control === 'toggle' &&
     cell.pair !== undefined &&
     renderers?.[cell.ctx.path] === undefined &&
     renderers?.[leaf.kind] === undefined
@@ -389,7 +389,7 @@ function ObjectLeaf({
   renderers?: Record<string, PropertyRenderer>;
   selectionKey?: string;
 }): ReactNode {
-  const pref = ctx.pref as ToolPrefObject;
+  const pref = ctx.pref as PrefObject;
   const held = typeof ctx.value === 'object' && ctx.value !== null
     ? (ctx.value as Record<string, unknown>)
     : undefined;
@@ -403,8 +403,8 @@ function ObjectLeaf({
 
   // Every field's full path, groups contributing nothing, so a `pair` resolves
   // against the paths the fields are written at.
-  const fieldPaths: [string, ToolPrefLeaf][] = [];
-  const gather = (children: Record<string, ToolPrefLeaf | ToolPrefGroup>): void => {
+  const fieldPaths: [string, PrefLeaf][] = [];
+  const gather = (children: Record<string, PrefLeaf | PrefGroup>): void => {
     for (const [key, child] of Object.entries(children)) {
       if ('kind' in child) fieldPaths.push([`${ctx.path}.${key}`, child]);
       else gather(child.children);
@@ -416,7 +416,7 @@ function ObjectLeaf({
   // `indent` is false when nothing visible sits above these rows: depth is
   // drawn only where a label marks it.
   const rowsOf = (
-    children: Record<string, ToolPrefLeaf | ToolPrefGroup>,
+    children: Record<string, PrefLeaf | PrefGroup>,
     indent: boolean,
   ): ReactNode[] => {
     const out: (ReactNode | ObjectRow)[] = [];

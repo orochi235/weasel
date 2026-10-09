@@ -2,7 +2,7 @@ import { useMemo, createElement } from 'react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
-import type { ToolPrefGroup } from '../../prefs';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { TextIcon } from '../../../icons';
 
 const PRESENTATION = {
@@ -164,4 +164,4 @@ useTextTool.options = {
       default: '#000000',
     },
   },
-} satisfies ToolPrefGroup;
+} satisfies PrefGroup;

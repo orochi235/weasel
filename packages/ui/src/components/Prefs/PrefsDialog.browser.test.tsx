@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test } from 'vitest';
 import { PrefsDialog } from './PrefsDialog';
-import type { PrefGroup, PrefLeaf } from './schema';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 
 // The modal sets only `max-height`, so a percentage height inside it resolves
 // against nothing; only real layout shows whether the pane is the box that scrolls.

@@ -5,12 +5,12 @@ import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import { resolveAlign, type TextAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
 import { ANGLE_RADIANS } from '@weasel-js/quantity';
-import { prefUnit, type ToolPrefBooleanEncoding, type ToolPrefEnumEncoding, type ToolPrefGroup, type ToolPrefNumberUnit } from 'tools/prefs';
+import { prefUnit, type PrefBooleanEncoding, type PrefEnumEncoding, type PrefGroup, type PrefNumberUnit } from '@weasel-js/prefs';
 
 /** Radians-stored / degrees-shown conversion for `pose.rotation` leaves.
  *  Display rounds to 0.1° so a canonical radian value doesn't render as
  *  a 15-digit float. */
-export const rotationDegreesUnit: ToolPrefNumberUnit = prefUnit(ANGLE_RADIANS, 'deg', {
+export const rotationDegreesUnit: PrefNumberUnit = prefUnit(ANGLE_RADIANS, 'deg', {
   precision: 1,
   suffix: '°',
 });
@@ -28,7 +28,7 @@ function strokeWidthOf(stroke: Record<string, unknown> | undefined): number | { 
 /** `Stroke.dash` — a stored array of lengths — read and written as a named
  *  style. The presets are multiples of the sibling `width`, which is why the
  *  encoding is handed the whole stroke rather than the field. */
-const strokeDashEncoding: ToolPrefEnumEncoding = {
+const strokeDashEncoding: PrefEnumEncoding = {
   read: (dash, stroke) =>
     stroke === undefined
       ? undefined
@@ -46,7 +46,7 @@ const strokeDashEncoding: ToolPrefEnumEncoding = {
 
 /** `Stroke.markerStart` / `markerMid` / `markerEnd` — a `MarkerRef` — read and
  *  written as a bare key, with the empty string standing for no marker. */
-const markerEncoding: ToolPrefEnumEncoding = {
+const markerEncoding: PrefEnumEncoding = {
   read: (ref) => {
     if (typeof ref === 'string') return ref;
     if (ref && typeof ref === 'object' && 'key' in ref) return String((ref as { key: string }).key);
@@ -57,7 +57,7 @@ const markerEncoding: ToolPrefEnumEncoding = {
 
 /** `TextStyle.fontStyle` as an Italic flag. Off removes the field rather than
  *  storing `'normal'`, which is what an absent one already means. */
-const italicEncoding: ToolPrefBooleanEncoding = {
+const italicEncoding: PrefBooleanEncoding = {
   read: (stored) => stored === 'italic',
   write: (on) => (on ? 'italic' : undefined),
 };
@@ -66,7 +66,7 @@ const italicEncoding: ToolPrefBooleanEncoding = {
  *  also holds the reading-order pair `start` / `end`, which the segments would
  *  otherwise leave unlit; they read through `direction`, and a click writes the
  *  edge. */
-const alignEncoding: ToolPrefEnumEncoding = {
+const alignEncoding: PrefEnumEncoding = {
   read: (stored, style) => {
     if (stored === undefined || stored === 'justify') return stored;
     const direction = style?.direction === 'rtl' ? 'rtl' : 'ltr';
@@ -87,7 +87,7 @@ const markerOptions = () => [
  *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
  *  builtin-shape data template (`{ path, fill, stroke?, text? }`,
  *  `useBuiltinShapeTools`). */
-function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
+function shapeSchema(opts: { text?: boolean } = {}): PrefGroup {
   return {
     name: 'Properties',
     children: {

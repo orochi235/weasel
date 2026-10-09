@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { styleAtRange, type NodePropertiesEntry, type NodeRoutingEntry, type ToolPrefPair } from '@weasel-js/core';
+import { styleAtRange, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import {
   MIXED,
   aggregateValue,
@@ -9,13 +9,14 @@ import {
   nodeValueAt,
   setAtPath,
 } from './model';
+import { type PrefPair } from '@weasel-js/prefs';
 
 const routing: NodeRoutingEntry[] = [
   { name: 'rect', matches: (d) => (d as { kind?: string })?.kind === 'rect' },
   { name: 'text', matches: (d) => (d as { kind?: string })?.kind === 'text' },
 ];
 
-const num = (name: string, pair?: ToolPrefPair) =>
+const num = (name: string, pair?: PrefPair) =>
   ({ kind: 'number', name, description: name, default: 0, ...(pair ? { pair } : {}) }) as const;
 
 const entries: NodePropertiesEntry[] = [

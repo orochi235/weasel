@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PrefsForm } from './PrefsForm';
-import { filterPrefSubtree, prefRailItems, type PrefGroup } from './schema';
+import { prefRailItems } from './schema';
+import type { PrefGroup } from '@weasel-js/prefs';
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',
@@ -71,38 +72,6 @@ describe('prefRailItems', () => {
       children: { theme: { kind: 'string', name: 'Theme', description: 'Named theme.', default: 'dark' } },
     };
     expect(prefRailItems(unnamed)[0]).toMatchObject({ path: '', name: 'General' });
-  });
-});
-
-describe('filterPrefSubtree', () => {
-  it('keeps only matching leaves and prunes the groups left empty', () => {
-    const filtered = filterPrefSubtree(SCHEMA, 'author');
-    expect(Object.keys(filtered?.children ?? {})).toEqual(['io']);
-  });
-
-  it('matches a leaf on its description as well as its name', () => {
-    const filtered = filterPrefSubtree(SCHEMA, 'alignment');
-    const canvas = filtered?.children.canvas as PrefGroup;
-    expect(Object.keys(canvas.children)).toEqual(['showGrid']);
-  });
-
-  it('keeps every leaf of a group whose own name matches', () => {
-    const filtered = filterPrefSubtree(SCHEMA, 'snapping');
-    const canvas = filtered?.children.canvas as PrefGroup;
-    expect(Object.keys(canvas.children)).toEqual(['snapping']);
-    expect(Object.keys((canvas.children.snapping as PrefGroup).children)).toEqual([
-      'enabled',
-      'wrap',
-    ]);
-  });
-
-  it('returns the tree unchanged for an empty or blank query', () => {
-    expect(filterPrefSubtree(SCHEMA, '')).toBe(SCHEMA);
-    expect(filterPrefSubtree(SCHEMA, '   ')).toBe(SCHEMA);
-  });
-
-  it('is null when nothing matches', () => {
-    expect(filterPrefSubtree(SCHEMA, 'zzz')).toBeNull();
   });
 });
 

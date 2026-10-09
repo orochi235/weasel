@@ -1,20 +1,27 @@
 import { solid } from '@weasel-js/core';
-import type { ToolPrefEnum, ToolPrefField, ToolPrefGroup, ToolPrefKind, ToolPrefLeaf, ToolPrefNumber } from '@weasel-js/core';
-import { isPrefLeaf } from '../Prefs/schema';
+import {
+  isPrefLeaf,
+  type PrefEnum,
+  type PrefField,
+  type PrefGroup,
+  type PrefKind,
+  type PrefLeaf,
+  type PrefNumber,
+} from '@weasel-js/prefs';
 import { replaceNode, nodeAt, type SchemaNode } from './schemaEdit';
 import { containsCode } from './schemaExport';
 
-export type KindAttrs = Record<string, ToolPrefLeaf>;
+export type KindAttrs = Record<string, PrefLeaf>;
 export type CustomKinds = Record<string, KindAttrs>;
 
-export const BUILTIN_KINDS: readonly ToolPrefKind[] = ['number', 'boolean', 'string', 'enum', 'color', 'paint', 'object', 'field'];
+export const BUILTIN_KINDS: readonly PrefKind[] = ['number', 'boolean', 'string', 'enum', 'color', 'paint', 'object', 'field'];
 
-const text = (name: string, description: string, multiline = false): ToolPrefLeaf =>
-  ({ kind: 'string', name, description, default: '', ...(multiline ? { control: 'textarea' } : {}) }) as ToolPrefLeaf;
-const flag = (name: string, description: string): ToolPrefLeaf => ({ kind: 'boolean', name, description, default: false });
-const optNumber = (name: string, description: string): ToolPrefLeaf => ({ kind: 'optional-number', name, description, default: undefined });
-const choice = (name: string, description: string, values: readonly string[]): ToolPrefLeaf =>
-  ({ kind: 'enum', name, description, default: undefined, clearable: true, options: values.map((v) => ({ value: v, label: v })) }) as ToolPrefLeaf;
+const text = (name: string, description: string, multiline = false): PrefLeaf =>
+  ({ kind: 'string', name, description, default: '', ...(multiline ? { control: 'textarea' } : {}) }) as PrefLeaf;
+const flag = (name: string, description: string): PrefLeaf => ({ kind: 'boolean', name, description, default: false });
+const optNumber = (name: string, description: string): PrefLeaf => ({ kind: 'optional-number', name, description, default: undefined });
+const choice = (name: string, description: string, values: readonly string[]): PrefLeaf =>
+  ({ kind: 'enum', name, description, default: undefined, clearable: true, options: values.map((v) => ({ value: v, label: v })) }) as PrefLeaf;
 const control = (values: readonly string[]) => choice('Control', 'Which control draws it. Unset: the kind\'s default.', values);
 
 const LEAF_BASE: KindAttrs = {
@@ -27,7 +34,7 @@ const LEAF_BASE: KindAttrs = {
   short: { kind: 'string-list', name: 'Short names', description: 'Shorter forms of the name, longest first.', default: [] },
 };
 
-const KIND_ATTRS: Record<ToolPrefKind, KindAttrs> = {
+const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   number: {
     min: optNumber('Min', 'Lowest value.'),
     max: optNumber('Max', 'Highest value.'),
@@ -55,24 +62,24 @@ const GROUP_ATTRS: KindAttrs = { name: LEAF_BASE.name!, description: LEAF_BASE.d
 /** Written even when empty: a leaf without them is not a leaf. */
 const REQUIRED = new Set(['name', 'description', 'default', 'options']);
 
-function defaultAttr(leaf: ToolPrefLeaf): ToolPrefLeaf | null {
+function defaultAttr(leaf: PrefLeaf): PrefLeaf | null {
   const base = { name: 'Default', description: 'The value before anything is stored.' };
   switch (leaf.kind) {
     case 'number': {
-      const n = leaf as ToolPrefNumber;
-      return { ...base, kind: 'number', default: 0, min: n.min, max: n.max, step: n.step } as ToolPrefLeaf;
+      const n = leaf as PrefNumber;
+      return { ...base, kind: 'number', default: 0, min: n.min, max: n.max, step: n.step } as PrefLeaf;
     }
     case 'boolean': return { ...base, kind: 'boolean', default: false };
-    case 'string': return { ...base, kind: 'string', default: '' } as ToolPrefLeaf;
-    case 'enum': return { ...base, kind: 'enum', default: undefined, clearable: true, options: (leaf as ToolPrefEnum).options } as ToolPrefLeaf;
-    case 'color': return { ...base, kind: 'color', default: '#000000' } as ToolPrefLeaf;
-    case 'field': return { ...base, kind: 'field', default: '', kinds: (leaf as ToolPrefField).kinds } as ToolPrefLeaf;
+    case 'string': return { ...base, kind: 'string', default: '' } as PrefLeaf;
+    case 'enum': return { ...base, kind: 'enum', default: undefined, clearable: true, options: (leaf as PrefEnum).options } as PrefLeaf;
+    case 'color': return { ...base, kind: 'color', default: '#000000' } as PrefLeaf;
+    case 'field': return { ...base, kind: 'field', default: '', kinds: (leaf as PrefField).kinds } as PrefLeaf;
     default: return null;
   }
 }
 
 function kindAttrs(kind: string, custom: CustomKinds): KindAttrs {
-  if (Object.hasOwn(KIND_ATTRS, kind)) return KIND_ATTRS[kind as ToolPrefKind];
+  if (Object.hasOwn(KIND_ATTRS, kind)) return KIND_ATTRS[kind as PrefKind];
   return Object.hasOwn(custom, kind) ? custom[kind]! : {};
 }
 
@@ -105,22 +112,22 @@ export function normalizeAttr(key: string, value: unknown): unknown {
   return value;
 }
 
-export function blankLeaf(kind: string): ToolPrefLeaf {
+export function blankLeaf(kind: string): PrefLeaf {
   const base = { kind, name: 'New pref', description: '' };
   switch (kind) {
-    case 'number': return { ...base, default: 0 } as ToolPrefLeaf;
-    case 'boolean': return { ...base, default: false } as ToolPrefLeaf;
-    case 'string': return { ...base, default: '' } as ToolPrefLeaf;
-    case 'enum': return { ...base, default: 'a', options: [{ value: 'a', label: 'A' }] } as ToolPrefLeaf;
-    case 'color': return { ...base, default: '#000000' } as ToolPrefLeaf;
-    case 'paint': return { ...base, default: solid('#000000') } as ToolPrefLeaf;
-    case 'object': return { ...base, default: {}, children: {} } as ToolPrefLeaf;
-    case 'field': return { ...base, default: '' } as ToolPrefLeaf;
-    default: return { ...base, default: undefined } as ToolPrefLeaf;
+    case 'number': return { ...base, default: 0 } as PrefLeaf;
+    case 'boolean': return { ...base, default: false } as PrefLeaf;
+    case 'string': return { ...base, default: '' } as PrefLeaf;
+    case 'enum': return { ...base, default: 'a', options: [{ value: 'a', label: 'A' }] } as PrefLeaf;
+    case 'color': return { ...base, default: '#000000' } as PrefLeaf;
+    case 'paint': return { ...base, default: solid('#000000') } as PrefLeaf;
+    case 'object': return { ...base, default: {}, children: {} } as PrefLeaf;
+    case 'field': return { ...base, default: '' } as PrefLeaf;
+    default: return { ...base, default: undefined } as PrefLeaf;
   }
 }
 
-export function blankGroup(): ToolPrefGroup {
+export function blankGroup(): PrefGroup {
   return { name: 'New group', description: '', children: {} };
 }
 
@@ -135,7 +142,7 @@ function carriesDefault(v: unknown, blank: Record<string, unknown>): boolean {
 }
 
 /** Change a leaf's kind. Base fields carry over, as does a default of the same type; the rest is reported. */
-export function changeKind(root: ToolPrefGroup, path: string, kind: string, custom: CustomKinds = {}): { root: ToolPrefGroup; dropped: string[] } {
+export function changeKind(root: PrefGroup, path: string, kind: string, custom: CustomKinds = {}): { root: PrefGroup; dropped: string[] } {
   const old = nodeAt(root, path) as unknown as Record<string, unknown>;
   const blank = blankLeaf(kind) as unknown as Record<string, unknown>;
   const keep = new Set([...SHARED, ...Object.keys(kindAttrs(kind, custom))]);

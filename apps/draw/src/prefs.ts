@@ -9,51 +9,51 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RegistryEnumFilter } from './registry/types';
 import { usePenTool } from '@weasel-js/core';
 import type {
-  ToolPrefBase,
-  ToolPrefBoolean,
-  ToolPrefEnum,
-  ToolPrefEnumControl,
-  ToolPrefGroup,
-  ToolPrefKind,
-  ToolPrefLeaf,
-  ToolPrefNumber,
-  ToolPrefString,
-} from '@weasel-js/core';
+  PrefBase,
+  PrefBoolean,
+  PrefEnum,
+  PrefEnumControl,
+  PrefGroup,
+  PrefKind,
+  PrefLeaf,
+  PrefNumber,
+  PrefString,
+} from '@weasel-js/prefs';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────────────────────────────────
 
-export type WeaselDrawPrefKind = ToolPrefKind | 'registry-enum' | 'data';
+export type WeaselDrawPrefKind = PrefKind | 'registry-enum' | 'data';
 
-export type WeaselDrawPrefNumber = ToolPrefNumber;
-export type WeaselDrawPrefBoolean = ToolPrefBoolean;
-export type WeaselDrawPrefString = ToolPrefString;
-export type WeaselDrawPrefEnum<T extends string = string> = ToolPrefEnum<T>;
+export type WeaselDrawPrefNumber = PrefNumber;
+export type WeaselDrawPrefBoolean = PrefBoolean;
+export type WeaselDrawPrefString = PrefString;
+export type WeaselDrawPrefEnum<T extends string = string> = PrefEnum<T>;
 
 /** Enum whose options come from a runtime registry — `tools.lastTool` picks
  *  from whichever tools the app registered. `source` keys into the modal's
  *  `registryEnumSources`; the value is a string at rest. */
-export interface WeaselDrawPrefRegistryEnum extends ToolPrefBase<'registry-enum', string> {
+export interface WeaselDrawPrefRegistryEnum extends PrefBase<'registry-enum', string> {
   source: string;
-  control?: ToolPrefEnumControl;
+  control?: PrefEnumControl;
   filter?: RegistryEnumFilter;
 }
 
 /** A value other code owns and the form only displays or hands to a bespoke
  *  editor (`ui.panels`). Unlike core's `object`, it has no `children`. */
-export type WeaselDrawPrefData<T = unknown> = ToolPrefBase<'data', T>;
+export type WeaselDrawPrefData<T = unknown> = PrefBase<'data', T>;
 
-export type WeaselDrawPref = ToolPrefLeaf;
-export type WeaselDrawPrefGroup = ToolPrefGroup;
+export type WeaselDrawPref = PrefLeaf;
+export type WeaselDrawPrefGroup = PrefGroup;
 
 /**
- * Compose tool-contributed pref groups into a `Record<string, ToolPrefGroup>`
+ * Compose tool-contributed pref groups into a `Record<string, PrefGroup>`
  * keyed by tool id. The function is the identity at runtime — its only job
  * is to capture each contribution's literal type so `typeof PREFS` still
  * drives `WeaselDrawPrefPath` after composition.
  */
-function composeToolPrefs<T extends Record<string, ToolPrefGroup>>(t: T): T {
+function composeToolPrefs<T extends Record<string, PrefGroup>>(t: T): T {
   return t;
 }
 

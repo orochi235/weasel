@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { rotationDegreesUnit } from '@weasel-js/core';
 import { endless, unit } from '@weasel-js/quantity';
 import { prefFieldProps } from '../Prefs/prefField';
-import type { PrefLeaf } from '../Prefs/schema';
+import type { PrefLeaf } from '@weasel-js/prefs';
 import { PropertyControl, PropertyField, type PropertyNumberFieldProps } from './PropertyField';
 
 type SliderProps = Omit<PropertyNumberFieldProps, 'name'>;

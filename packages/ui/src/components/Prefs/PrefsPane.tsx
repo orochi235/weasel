@@ -1,5 +1,5 @@
 import { type RefObject } from 'react';
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from './schema';
+import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { PrefRow, type WalkCtx } from './PrefsRow';
 import s from './Prefs.module.css';
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
-import { createHistory, historyKey, useLatest, type Op, type ToolPrefGroup } from '@weasel-js/core';
+import { createHistory, historyKey, useLatest, type Op } from '@weasel-js/core';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { Switch } from '../Switch';
@@ -14,6 +14,7 @@ import { branchPaths, rebasePaths } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
 import { StructurePane } from './StructurePane';
 import s from './PrefSchemaEditor.module.css';
+import { type PrefGroup } from '@weasel-js/prefs';
 
 const NO_KINDS: CustomKinds = {};
 
@@ -21,7 +22,7 @@ const NO_KINDS: CustomKinds = {};
 const COALESCE_MS = 800;
 
 /** An edit as the swap of one whole schema for another: schemas are immutable, so the snapshots cost nothing. */
-function swapOp(before: ToolPrefGroup, after: ToolPrefGroup, emit: (s: ToolPrefGroup) => void, coalesceKey?: string): Op {
+function swapOp(before: PrefGroup, after: PrefGroup, emit: (s: PrefGroup) => void, coalesceKey?: string): Op {
   const forward: Op = {
     label: 'edit schema',
     ...(coalesceKey !== undefined ? { coalesceKey } : {}),
@@ -33,10 +34,10 @@ function swapOp(before: ToolPrefGroup, after: ToolPrefGroup, emit: (s: ToolPrefG
 
 /** Props for {@link PrefSchemaEditor}. */
 export interface PrefSchemaEditorProps {
-  schema: ToolPrefGroup;
-  onChange(next: ToolPrefGroup): void;
+  schema: PrefGroup;
+  onChange(next: PrefGroup): void;
   /** Baseline for the change list and the changed-row marks. Default: the first `schema` seen. */
-  original?: ToolPrefGroup;
+  original?: PrefGroup;
   /** Attribute schemas for custom kinds, by kind. A leaf of an unlisted custom kind edits its base fields only. */
   kinds?: CustomKinds;
   /** Renderers for custom kinds, used by the preview and by a custom kind's attributes. */
@@ -83,11 +84,11 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
     emitted.current = schema;
     history.clear();
   }, [schema, history]);
-  const emit = (next: ToolPrefGroup) => {
+  const emit = (next: PrefGroup) => {
     emitted.current = next;
     latest.current.onChange(next);
   };
-  const commit = (next: ToolPrefGroup, coalesceKey?: string) =>
+  const commit = (next: PrefGroup, coalesceKey?: string) =>
     history.applyOps([swapOp(latest.current.schema, next, emit, coalesceKey)], 'edit schema');
 
   const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);

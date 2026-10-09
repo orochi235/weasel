@@ -1,4 +1,4 @@
-import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { isAuto } from './auto';
 import { isRecord, withValueAtPath } from './path';
 import type { ResolvedConfig } from './types';

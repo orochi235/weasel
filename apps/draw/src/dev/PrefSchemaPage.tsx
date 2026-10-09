@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { defaultNodeProperties, type ToolPrefGroup } from '@weasel-js/core';
+import { defaultNodeProperties } from '@weasel-js/core';
 import { PrefSchemaEditor, Select, type CustomKinds } from '@weasel-js/ui';
 import { DataControl, RegistryEnumControl } from '../PreferencesModal';
 import { PREFS, usePrefsValues } from '../prefs';
 import { DevShell } from './DevShell';
 import s from './PrefSchemaPage.module.css';
+import { type PrefGroup } from '@weasel-js/prefs';
 
 /** `stored`: whether the app's saved preference values sit under this schema. */
-const SOURCES: ReadonlyArray<{ id: string; label: string; schema: ToolPrefGroup; stored?: true }> = [
+const SOURCES: ReadonlyArray<{ id: string; label: string; schema: PrefGroup; stored?: true }> = [
   { id: 'prefs', label: 'WeaselDraw preferences', schema: PREFS, stored: true },
   ...defaultNodeProperties.map((e) => ({ id: `node:${e.name}`, label: `Node: ${e.name}`, schema: e.schema })),
 ];
@@ -27,7 +28,7 @@ const RENDERERS = { 'registry-enum': RegistryEnumControl, data: DataControl };
 export function PrefSchemaPage() {
   const [sourceId, setSourceId] = useState(SOURCES[0]!.id);
   const source = SOURCES.find((x) => x.id === sourceId)!;
-  const [draft, setDraft] = useState<ToolPrefGroup>(source.schema);
+  const [draft, setDraft] = useState<PrefGroup>(source.schema);
   const [stored] = usePrefsValues();
   return (
     <DevShell
