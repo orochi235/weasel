@@ -799,6 +799,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   grid gap above the attributes pane, and the Key/Kind rows are wider than the attribute form
   under them. Seen on `#/dev/prefs` at 1440×900.
 
+- **(P3) A Windows 9x theme.** Gray 3D bevels, a navy-to-blue gradient title strip and the
+  system's pixel faces, as a full theme beside Interstellar rather than a one-component skin. Its
+  titled groups want a titlebar frame motif (a solid title strip across the top), which was left
+  out of the first set of frame motifs for this theme to bring.
+
+- **(P3) A classic Mac OS theme.** Which era it follows, System 7's one-bit look or Mac OS 8–9's
+  Platinum, is the first decision.
+
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) Multi-page documents.**
