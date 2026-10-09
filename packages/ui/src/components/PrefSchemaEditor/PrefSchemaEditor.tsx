@@ -40,6 +40,9 @@ export interface PrefSchemaEditorProps {
   kinds?: CustomKinds;
   /** Renderers for custom kinds, used by the preview and by a custom kind's attributes. */
   renderers?: Record<string, PrefRenderer>;
+  /** The values the app stores under this schema, nested by group as a prefs form writes them. Given, the
+   *  values no leaf describes are listed under the tree, each a way to add the leaf that would. */
+  stored?: unknown;
   className?: string;
 }
 
@@ -51,7 +54,7 @@ export interface PrefSchemaEditorProps {
  * unrelated one without remounting keeps the selection, expansion and baseline; give the editor a `key` to start
  * fresh.
  */
-export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS, renderers, className }: PrefSchemaEditorProps) {
+export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS, renderers, stored, className }: PrefSchemaEditorProps) {
   const [first] = useState(schema);
   const base = original ?? first;
   const [selected, setSelected] = useState<string | null>(null);
@@ -105,7 +108,7 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
       history[step]();
     }}>
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
-        expanded={expanded} onExpandedChange={setExpanded} tools={
+        expanded={expanded} onExpandedChange={setExpanded} stored={stored} tools={
           <>
             <Button size="sm" variant="ghost" disabled={!history.canUndo()} onClick={() => history.undo()}>Undo</Button>
             <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => history.redo()}>Redo</Button>

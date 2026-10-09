@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { ToolPrefGroup } from '@weasel-js/core';
-import { addNode, branchPaths, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
+import type { ToolPrefGroup, ToolPrefLeaf } from '@weasel-js/core';
+import { addNode, branchPaths, isValidKey, keyProblem, kindOfValue, undescribedValues, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
 
 const enc = { read: () => true, write: (on: boolean) => on };
 const ROOT: ToolPrefGroup = {
@@ -106,5 +106,32 @@ describe('schemaEdit', () => {
   it('rebases paths at and beneath a moved node, leaving the rest', () => {
     const next = rebasePaths(['a', 'a.x', 'ab', 'b'], [['a', 'b.a2'], ['b', 'c']]);
     expect([...next].sort()).toEqual(['ab', 'b.a2', 'b.a2.x', 'c']);
+  });
+});
+
+describe('undescribedValues', () => {
+  const root: ToolPrefGroup = { name: 'R', children: {
+    view: { name: 'View', children: { grid: { kind: 'boolean', name: 'Grid', description: '', default: true } } },
+    panels: { kind: 'data', name: 'Panels', description: '', default: {} } as ToolPrefLeaf,
+  } };
+
+  it('lists stored values no leaf describes, walking objects that are not leaves', () => {
+    const stored = { view: { grid: false, zoom: 2 }, panels: { left: { open: true } }, theme: 'dark' };
+    expect(undescribedValues(root, stored)).toEqual([
+      { path: 'view.zoom', value: 2 },
+      { path: 'theme', value: 'dark' },
+    ]);
+  });
+
+  it('lists nothing when nothing is stored', () => {
+    expect(undescribedValues(root, undefined)).toEqual([]);
+  });
+});
+
+describe('kindOfValue', () => {
+  it('reads a kind off a stored value\'s shape', () => {
+    expect([true, 3, 'a', '#ff8800', '#ff880080', [1], null].map(kindOfValue)).toEqual(
+      ['boolean', 'number', 'string', 'color', 'color', undefined, undefined],
+    );
   });
 });

@@ -198,6 +198,26 @@ describe('PrefSchemaEditor', () => {
     expect(screen.getByTestId('schema-literal').textContent).toMatch(/pair: \{\s*with: 'view\.snap',\s*label: 'Grid',\s*\}/);
   });
 
+  it('lists stored values no leaf describes, and adds the leaf for one where it lives', () => {
+    function WithStored() {
+      const [schema, setSchema] = useState(START);
+      return <PrefSchemaEditor schema={schema} onChange={setSchema} stored={{ view: { grid: true, zoomStep: 1.5 }, misc: { theme: 'dark' } }} />;
+    }
+    render(<WithStored />);
+    const list = screen.getByRole('list', { name: 'Stored values with no leaf' });
+    expect(within(list).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Add a leaf for view.zoomStep', 'Add a leaf for misc.theme',
+    ]);
+    fireEvent.click(within(list).getByRole('button', { name: 'Add a leaf for misc.theme' }));
+    const dialog = screen.getByRole('dialog', { name: 'Add pref' });
+    expect(within(dialog).getByRole('textbox', { name: 'Name' })).toHaveValue('Theme');
+    expect(within(dialog).getByRole('textbox', { name: 'Id' })).toHaveValue('theme');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
+    expect(within(structure()).getByRole('treeitem', { name: /^Theme \(theme\)/ })).toBeInTheDocument();
+    expect(screen.getByTestId('schema-literal').textContent).toMatch(/misc: \{[\s\S]*theme: \{[\s\S]*default: 'dark'/);
+    expect(within(list).queryByRole('button', { name: 'Add a leaf for misc.theme' })).toBeNull();
+  });
+
   it('exports a literal with the edit in it', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
