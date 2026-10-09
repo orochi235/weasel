@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/guides",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "Placement aids for weasel: grids, alignment guides, snapping to them, and container layout strategies, built on core's snap and behavior seams.",
   "license": "MIT",
   "type": "module",
@@ -29,8 +29,8 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/core": "1.9.2",
-    "@weasel-js/geom": "1.9.2"
+    "@weasel-js/core": "1.9.3",
+    "@weasel-js/geom": "1.9.3"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

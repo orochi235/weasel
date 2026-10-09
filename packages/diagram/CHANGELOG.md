@@ -1,5 +1,26 @@
 # @weasel-js/diagram
 
+## 1.9.3
+
+### Patch Changes
+
+- b3e3fc6: `diagramScene` takes `groups`: each draws a box around its member nodes, with an optional label inside it, and `layered` and `tree` keep a group's members together. Each group gets a column on the cross axis that nothing else enters, in every rank from its first member's to its last, and rank gaps widen where a box needs the room. The box is a scene node that derives its pose from its members, so dragging a member carries it along. An edge naming a group meets the box, and ranks against the group's first stage.
+  
+  Underneath, `Graph` carries `groups` and each `GraphNode` its `group`, and `buildGraph` reads a group from a node whose trait carries `group`, its `dependsOn` naming the members, so `applyLayout`, `useLiveLayout` and `DiagramView` keep groups together too. `packClusters`, `rankGaps` and `expandGroupEdges` are exported for a custom `LayoutFn`. `groupDerivePose` and `anchorDerivePose` (a node held at a point on another's bounds, as a group's label is) are registered by `withDiagramRegistry`. `fitDiagram` frames group boxes as well as node boxes. Groups are flat, and `force` ignores them.
+- 37bcee9: An edge label is no longer read as a diagram participant. The default trait reader took its `data.diagram.label` for a participant's trait, so a scene layout (`applyLayout`, `useLiveLayout`, `DiagramView`) gave every label a slot of its own, and the port affordance gave each one four ports.
+- 6a1afa1: Canvas text in a CSS generic family — `sans-serif`, `monospace`, `system-ui` and the rest — now renders in that family. The dynamic glyph atlas quoted every family, and a quoted `"sans-serif"` names a font nobody has, so the browser drew it in its default serif; every `DiagramView` on default options was affected.
+  
+  Every font string the kit builds now goes through one helper, `cssFamilyName`, exported from `@weasel-js/font` and `@weasel-js/core`: a generic keyword stays bare, a single named family is quoted, and a family list passes through as written. `fontString` and the DOM face's fallback therefore now quote a named family (`"Helvetica"`), which CSS reads the same.
+- c28a3cb: A canvas no longer claims Space or Enter when focus is on a control those keys activate — a button, a link, a checkbox — so a mounted canvas stops canceling a focused button's activation with its held-Space pan. Other shortcuts still reach the canvas from a focused button. The test is exported as `activatesFocusedControl`, beside `isEditableTarget`.
+  
+  `DiagramView` takes `enableKeybindings`, and a view-only diagram (no `onMove` or `onConnect`) now defaults it off, so it no longer takes held Space from the rest of the page. Pass `enableKeybindings` to keep a view-only diagram's keys on.
+- Updated dependencies [6a1afa1]
+- Updated dependencies [c28a3cb]
+- Updated dependencies [7cb27b7]
+- Updated dependencies [e05c820]
+  - @weasel-js/core@1.9.3
+  - @weasel-js/geom@1.9.3
+
 ## 1.9.2
 
 ### Patch Changes

@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.9.3
+
+### Patch Changes
+
+- 6a1afa1: Canvas text in a CSS generic family — `sans-serif`, `monospace`, `system-ui` and the rest — now renders in that family. The dynamic glyph atlas quoted every family, and a quoted `"sans-serif"` names a font nobody has, so the browser drew it in its default serif; every `DiagramView` on default options was affected.
+  
+  Every font string the kit builds now goes through one helper, `cssFamilyName`, exported from `@weasel-js/font` and `@weasel-js/core`: a generic keyword stays bare, a single named family is quoted, and a family list passes through as written. `fontString` and the DOM face's fallback therefore now quote a named family (`"Helvetica"`), which CSS reads the same.
+- c28a3cb: A canvas no longer claims Space or Enter when focus is on a control those keys activate — a button, a link, a checkbox — so a mounted canvas stops canceling a focused button's activation with its held-Space pan. Other shortcuts still reach the canvas from a focused button. The test is exported as `activatesFocusedControl`, beside `isEditableTarget`.
+  
+  `DiagramView` takes `enableKeybindings`, and a view-only diagram (no `onMove` or `onConnect`) now defaults it off, so it no longer takes held Space from the rest of the page. Pass `enableKeybindings` to keep a view-only diagram's keys on.
+- 7cb27b7: Fields now refer to each other by the full path their values are read and written at (`'camera.type'`, `'pose.y'`).
+  
+  `pair` is no longer a shared label string. A row is declared once, on its first leaf: `pair: { with: 'pose.y', label: 'Position' }`, where `with` names the other leaves on the row (one path or several) and `label` overrides what the row reads, which is otherwise the declaring leaf's `name`. This is a breaking change to the shape: a schema that set `pair: 'Position'` on each member now sets `pair` on the first member only. labkit's builder follows: `.pair({ with: 'y', label: 'Offset' })`. `pairRowsOf` (core) resolves a surface's leaves to their rows, and `SelectionPanel`, `ToolOptionsBar`, and labkit's `ControlPanel` all group rows through it.
+  
+  A new built-in pref kind, `field`, holds such a path. Its control is a picker over the fields of the surface drawing it, labeled `Name (path)`, narrowed by the leaf's optional `kinds`. `prefFieldChoices` lists a schema's fields, with a flag for whether a group's key is part of a path, since a prefs form nests values by group and a node's property panel does not. `PrefsForm` takes `fields` for a form that edits another schema, and `PrefSchemaEditor` edits a leaf's `pair` by picking its partners from the schema's fields.
+- e05c820: `PrefSchemaEditor` now has undo and redo: Undo and Redo buttons over the structure, and Mod+Z, Shift+Mod+Z, and Mod+Y anywhere inside it. A run of edits to one node's attributes undoes as one step, and undo restores the selection. A `schema` the editor did not write itself starts the history over. Add pref and Add group no longer create a node with a made-up key: each opens a dialog asking for a name, an id, and a pref's kind; the id follows the name in camelCase until it is typed into, and a taken or invalid id is refused. The structure tree shows each node as its name with its key beside it, or its key alone when it has no name. Each pane has a header, and the preview's carries a Show hidden switch and Reset values. The exported literal is syntax-highlighted.
+  
+  `@weasel-js/ui` adds `CodeBlock`, a syntax-highlighted block of source with optional line numbers, built on `prism-react-renderer` and colored from the new `--wzl-code-keyword`, `--wzl-code-string`, `--wzl-code-number`, `--wzl-code-constant`, `--wzl-code-property`, and `--wzl-code-name` theme tokens, which have a value for each mode.
+  
+  `historyKey(event)` (`@weasel-js/routing`, re-exported from core) says whether a key event asks for undo or redo. labkit's trial chrome and `LayeredCurveEditor` now read their undo keys through it, so Mod+Y redoes in both.
+- Updated dependencies [6a1afa1]
+- Updated dependencies [c28a3cb]
+- Updated dependencies [e05c820]
+  - @weasel-js/font@1.9.3
+  - @weasel-js/text@1.9.3
+  - @weasel-js/routing@1.9.3
+  - @weasel-js/cursor@1.9.3
+  - @weasel-js/geom@1.9.3
+  - @weasel-js/gestures@1.9.3
+  - @weasel-js/history@1.9.3
+  - @weasel-js/modes@1.9.3
+  - @weasel-js/paint@1.9.3
+  - @weasel-js/quantity@1.9.3
+  - @weasel-js/react@1.9.3
+  - @weasel-js/registry@1.9.3
+  - @weasel-js/select@1.9.3
+
 ## 1.9.2
 
 ### Patch Changes

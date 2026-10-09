@@ -1,5 +1,28 @@
 # @weasel-js/forge
 
+## 1.9.3
+
+### Patch Changes
+
+- Updated dependencies [1d04be1]
+- Updated dependencies [bc984b8]
+- Updated dependencies [6a1afa1]
+- Updated dependencies [c28a3cb]
+- Updated dependencies [ad00333]
+- Updated dependencies [42691ed]
+- Updated dependencies [7cb27b7]
+- Updated dependencies [bd21190]
+- Updated dependencies [e05c820]
+- Updated dependencies [f43d0dd]
+- Updated dependencies [8cf0db6]
+- Updated dependencies [009b54b]
+- Updated dependencies [5be8e39]
+- Updated dependencies [7b6978f]
+  - @weasel-js/ui@1.9.3
+  - @weasel-js/core@1.9.3
+  - @weasel-js/labkit@1.9.3
+  - @weasel-js/theme@1.9.3
+
 ## 1.9.2
 
 ### Patch Changes
