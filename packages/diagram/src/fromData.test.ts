@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from '@weasel-js/core';
-import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
+import { diagramScene, edgeIdOf, type DataNode, type DiagramData, type DiagramSceneOptions } from './fromData';
 import { withDiagramRegistry } from './edge';
 import type { DiagramNode } from './types';
 
@@ -127,6 +127,19 @@ describe('diagramScene', () => {
     const [roomy] = containers(diagramScene({ nodes: [{ id: 'a', lines: ['x'], padding: 30 }], edges: [] }));
     const [tight] = containers(diagramScene({ nodes: [{ id: 'a', lines: ['x'], padding: 2 }], edges: [] }));
     expect((roomy!.pose as { height: number }).height).toBeGreaterThan((tight!.pose as { height: number }).height);
+  });
+
+  it('centers a short label in a tall box unless the node or the scene says otherwise', () => {
+    const labelY = (node: Partial<DataNode>, opts?: DiagramSceneOptions) => {
+      const specs = diagramScene({ nodes: [{ id: 'a', lines: ['x'], height: 90, ...node }], edges: [] }, opts);
+      const box = containers(specs)[0]!.pose as { y: number; height: number };
+      const text = specs.find((s) => s.data?.text === 'x')!.pose as { y: number; height: number };
+      return (text.y + text.height / 2 - box.y) / box.height;
+    };
+    expect(labelY({})).toBeCloseTo(0.5);
+    expect(labelY({ verticalAlign: 'top' })).toBeLessThan(0.3);
+    expect(labelY({}, { verticalAlign: 'bottom' })).toBeGreaterThan(0.7);
+    expect(labelY({ verticalAlign: 'top' }, { verticalAlign: 'bottom' })).toBeLessThan(0.3);
   });
 
   it('measures with a given measure', () => {

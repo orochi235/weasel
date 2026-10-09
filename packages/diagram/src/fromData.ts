@@ -7,7 +7,7 @@
  * the same answer in node and in a browser.
  */
 import type { AddNodeSpec, MarkerRef, RectPose, Stroke } from '@weasel-js/core';
-import { buildBody, measureBody, sizeToBody, type MeasureRowText, type Row, type RowTextStyle } from './body';
+import { buildBody, measureBody, sizeToBody, type BodySpec, type MeasureRowText, type Row, type RowTextStyle } from './body';
 import { EDGE_DERIVE_PATH, type DiagramEdge } from './edge';
 import { force } from './force';
 import type { Graph, GraphEdge, GraphNode } from './graph';
@@ -41,6 +41,8 @@ export interface DataNode {
   padding?: number;
   /** Default `DiagramSceneOptions.gap`. */
   gap?: number;
+  /** Default `DiagramSceneOptions.verticalAlign`. */
+  verticalAlign?: BodySpec['verticalAlign'];
 }
 
 export interface DataEdge {
@@ -113,6 +115,8 @@ export interface DiagramSceneOptions {
   padding?: number;
   /** Between adjacent rows. Default 4. */
   gap?: number;
+  /** Where a box's rows sit when it is taller than they need. Default `'center'`. */
+  verticalAlign?: BodySpec['verticalAlign'];
   /** The narrowest a box may be. Default 64. */
   minWidth?: number;
   /** Where edge labels sit. Default `{ at: 'mid', offset: 9 }`. */
@@ -187,6 +191,7 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     rows: n.rows ?? (n.lines ?? []).map((text): Row => ({ kind: 'label', text })),
     padding: n.padding ?? opts.padding ?? 8,
     gap: n.gap ?? opts.gap ?? 4,
+    verticalAlign: n.verticalAlign ?? opts.verticalAlign ?? 'center',
     ...(n.ports ? { ports: n.ports } : {}),
   }));
   // Seeded on the diagonal in source order, so whichever axis a layout reads

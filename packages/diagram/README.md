@@ -103,7 +103,7 @@ return <DiagramView specs={specs} width={360} height={600} selected={id} onSelec
 ```
 
 Every box is a `buildBody` body, so a data node takes the same knobs a body
-does — `outline`, `rows`, `padding`, `gap`, `ports` — plus `pinned`, a
+does — `outline`, `rows`, `padding`, `gap`, `verticalAlign`, `ports` — plus `pinned`, a
 starting `at`, and a minimum `width`/`height`; `lines` is shorthand for one
 label row each. An edge can name `fromPort`/`toPort`, its own `router`,
 `waypoints` and `labelPlacement`.

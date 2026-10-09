@@ -6,6 +6,6 @@
 
 Box sizes change: padding is the body's uniform 8 rather than 12 by 8, and rows are spaced by `gap`.
 
-`BodySpec.ports` replaces a body's four compass ports. A row's fallback height now follows its `fontSize` when no `measure` is given.
+`BodySpec.ports` replaces a body's four compass ports. `BodySpec.verticalAlign` (`'top'`, `'center'` or `'bottom'`) places the rows as a block when a body is taller than they need, and defaults to `'center'`: a body used to stack its rows from the top, so one built taller than its content now draws them lower. Data nodes and `diagramScene` options take `verticalAlign` too. A row's fallback height now follows its `fontSize` when no `measure` is given.
 
 `DiagramView` adds `maxScale`, `fitPadding`, `background`, and a controlled `view` with `onViewChange`.

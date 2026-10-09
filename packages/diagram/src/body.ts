@@ -57,6 +57,8 @@ export interface BodySpec {
   padding?: number;
   /** Space between adjacent rows. Default 4. */
   gap?: number;
+  /** Where the rows sit as a block when the body is taller than they need. Default `'center'`. */
+  verticalAlign?: 'top' | 'center' | 'bottom';
   /** The perimeter ports, replacing the four compass midpoints. A `ports`
    *  row's own ports are added either way. */
   ports?: readonly PortSpec[];
@@ -189,8 +191,8 @@ export function sizeToBody<TPose extends Bounds>(pose: TPose, floor: BodyFloor):
 }
 
 /** Where each row sits inside `bounds`, top to bottom. Rows keep their
- *  measured heights; the leftover goes unclaimed at the bottom rather than
- *  being distributed, so a row does not move when a sibling grows. */
+ *  measured heights rather than sharing out the leftover; `verticalAlign`
+ *  places the block of them within it. */
 export function layoutBody(
   spec: BodySpec,
   bounds: Bounds,
@@ -200,9 +202,13 @@ export function layoutBody(
   const gap = spec.gap ?? DEFAULT_GAP;
   const inner = contentBox(spec.outline, bounds);
   const width = Math.max(inner.width - padding * 2, 0);
-  let y = inner.y + padding;
+  const heights = spec.rows.map((row) => measureRow(row, measure).height);
+  const used = heights.reduce((sum, h) => sum + h, 0) + gap * Math.max(heights.length - 1, 0);
+  const slack = Math.max(inner.height - padding * 2 - used, 0);
+  const share = { top: 0, center: 0.5, bottom: 1 }[spec.verticalAlign ?? 'center'];
+  let y = inner.y + padding + slack * share;
   return spec.rows.map((row, index) => {
-    const h = measureRow(row, measure).height;
+    const h = heights[index];
     const box: RowBox = { row, index, x: inner.x + padding, y, width, height: h };
     y += h + gap;
     return box;

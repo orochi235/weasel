@@ -8,8 +8,9 @@ import type { Bounds } from './outline';
 /** Every glyph 10 wide, every line 20 tall. Makes a floor arithmetic. */
 const measure: MeasureRowText = (text) => ({ width: text.length * 10, height: 20 });
 
+/** Top-aligned, so a row's position reads straight off the padding and gaps. */
 const spec = (rows: BodySpec['rows'], rest: Partial<BodySpec> = {}): BodySpec =>
-  ({ outline: 'rect', rows, padding: 0, gap: 0, ...rest });
+  ({ outline: 'rect', rows, padding: 0, gap: 0, verticalAlign: 'top', ...rest });
 
 describe('measureBody', () => {
   it('is the widest row and the sum of the heights', () => {
@@ -106,9 +107,38 @@ describe('layoutBody', () => {
     expect(boxes[0]!.width).toBe(190);
   });
 
-  it('leaves the slack at the bottom rather than distributing it', () => {
+  it('keeps each row at its measured height rather than distributing the slack', () => {
     const boxes = layoutBody(spec([{ kind: 'label', text: 'a' }]), BOUNDS, measure);
     expect(boxes[0]!.height).toBe(20);
+  });
+
+  describe('verticalAlign', () => {
+    const rows: BodySpec['rows'] = [{ kind: 'label', text: 'a' }, { kind: 'label', text: 'b' }];
+    // 100 tall, padding 5 and one gap of 5 around two 20-tall rows: 45 of slack.
+    const ys = (rest: Partial<BodySpec>) =>
+      layoutBody(spec(rows, { padding: 5, gap: 5, ...rest }), BOUNDS, measure).map((b) => b.y);
+
+    it('centers the block of rows by default', () => {
+      expect(ys({ verticalAlign: undefined })).toEqual([47.5, 72.5]);
+    });
+
+    it('puts the block at the bottom of the padded box', () => {
+      expect(ys({ verticalAlign: 'bottom' })).toEqual([70, 95]);
+    });
+
+    it('claims no slack from a box shorter than its rows', () => {
+      const short = layoutBody(spec(rows, { verticalAlign: 'bottom' }), { ...BOUNDS, height: 30 }, measure);
+      expect(short.map((b) => b.y)).toEqual([20, 40]);
+    });
+
+    it('moves row ports with their rows', () => {
+      const trait = bodyTrait(
+        spec([{ kind: 'ports', left: [{ id: 'in' }], height: 20 }], { verticalAlign: undefined }),
+        BOUNDS,
+        measure,
+      );
+      expect(trait.ports!.find((p) => p.id === 'in')!.at).toEqual({ u: 0, v: 0.5 });
+    });
   });
 
   it('carries each row and its index through', () => {
