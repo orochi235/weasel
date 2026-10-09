@@ -18,11 +18,11 @@ export function ExportPanel({ schema, changes }: { schema: ToolPrefGroup; change
         <Tab id="literal">Literal</Tab>
         <Tab id="changes">Changes</Tab>
       </TabList>
-      <TabPanel id="literal">
+      <TabPanel id="literal" className={s.exportPanel}>
         <Copy text={literal} />
         <pre className={s.code} data-testid="schema-literal">{literal}</pre>
       </TabPanel>
-      <TabPanel id="changes">
+      <TabPanel id="changes" className={s.exportPanel}>
         <Copy text={list} />
         <pre className={s.code}>{list}</pre>
       </TabPanel>
