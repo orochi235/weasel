@@ -155,6 +155,13 @@ describe('prefLeaves', () => {
   it('maps each leaf path to its leaf, stopping at object leaves', () => {
     expect([...prefLeaves(TREE_SCHEMA).keys()]).toEqual(['a', 'g.b', 'g.o']);
   });
+
+  it('rejects a key containing a dot', () => {
+    const leaf = { kind: 'boolean', name: 'L', description: '', default: true } as const;
+    expect(() => prefLeaves({ name: 'T', children: { 'a.b': leaf } })).toThrow(
+      '[prefs] schema key "a.b" contains "."; group keys are path segments',
+    );
+  });
 });
 
 describe('setPrefValueAtPath', () => {

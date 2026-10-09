@@ -1,5 +1,5 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { prefLeaves } from './helpers';
+import { assignPrefValueAtPath, prefLeaves } from './helpers';
 import type { PrefPath, PrefValueAt } from './paths';
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefGroup, PrefLeaf } from './schema';
@@ -18,7 +18,7 @@ export interface PrefsStore<S extends PrefGroup> {
   /** The leaf's value, repaired against the schema; its default when unset. */
   get<P extends PrefPath<S>>(path: P): PrefValueAt<S, P>;
   set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P>): void;
-  /** Unset the leaf at `path` and every leaf under it; with no path, all. */
+  /** Unset every leaf at or under `path`; with no path, all. */
   reset(path?: string): void;
   /** Whether the leaf has a value of its own rather than following its default. */
   isSet(path: PrefPath<S>): boolean;
@@ -66,19 +66,14 @@ export function createPrefsStore<S extends PrefGroup>(
       const value = has ? repairPrefValue(leaf, cache.get(path), validators) : leaf.default;
       if (!has) unset.add(path);
       byPath.set(path, value);
-      const parts = path.split('.');
-      let cursor = tree;
-      for (let i = 0; i < parts.length - 1; i++) {
-        cursor = (cursor[parts[i]!] ??= {}) as Record<string, unknown>;
-      }
-      cursor[parts[parts.length - 1]!] = value;
+      assignPrefValueAtPath(tree, path, value);
     }
     return { byPath, tree, unset };
   };
   const current = (): Snapshot => (snapshot ??= build());
 
   const listeners = new Set<(changes: PrefChange[]) => void>();
-  cache.subscribe((changes) => {
+  const stopCache = cache.subscribe((changes) => {
     const mine = changes.filter((c) => leaves.has(c.name));
     if (mine.length === 0) return;
     snapshot = null;
@@ -116,6 +111,10 @@ export function createPrefsStore<S extends PrefGroup>(
       return cache.writable;
     },
     flush: () => cache.flush(),
-    close: () => cache.close(),
+    close: async () => {
+      stopCache();
+      listeners.clear();
+      await cache.close();
+    },
   };
 }

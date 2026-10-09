@@ -80,7 +80,7 @@ interface PrefsStore<S extends PrefGroup> {
   readonly schema: S;
   get<P extends PrefPath<S>>(path: P): PrefValueAt<S, P>;
   set<P extends PrefPath<S>>(path: P, value: PrefValueAt<S, P>): void;
-  /** Delete the record at `path` and every record under it; no path, all. */
+  /** Unset every leaf at or under `path`; no path, all. */
   reset(path?: string): void;
   /** A record exists: the leaf is pinned. */
   isSet(path: PrefPath<S>): boolean;

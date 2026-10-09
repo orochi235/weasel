@@ -106,6 +106,15 @@ describe('createPrefsStore', () => {
     });
   });
 
+  it('stops hearing the cache after close', async () => {
+    const { cache, store } = make();
+    const heard: PrefChange[][] = [];
+    store.subscribe((c) => heard.push(c));
+    await store.close();
+    cache.set('name', 'late');
+    expect(heard).toEqual([]);
+  });
+
   it('exposes its schema', () => {
     expect(make().store.schema).toBe(SCHEMA);
   });

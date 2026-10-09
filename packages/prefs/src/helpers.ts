@@ -65,6 +65,9 @@ export function prefLeaves(schema: PrefGroup): Map<string, PrefLeaf> {
   const out = new Map<string, PrefLeaf>();
   const walk = (group: PrefGroup, prefix: string): void => {
     for (const [key, child] of Object.entries(group.children)) {
+      if (key.includes('.')) {
+        throw new Error(`[prefs] schema key "${key}" contains "."; group keys are path segments`);
+      }
       const path = prefix === '' ? key : `${prefix}.${key}`;
       if (isPrefLeaf(child)) out.set(path, child);
       else walk(child, path);
@@ -72,6 +75,16 @@ export function prefLeaves(schema: PrefGroup): Map<string, PrefLeaf> {
   };
   walk(schema, '');
   return out;
+}
+
+/** Set `value` at the dotted `path` in `root` itself, creating missing branches. */
+export function assignPrefValueAtPath(root: Record<string, unknown>, path: string, value: unknown): void {
+  const parts = path.split('.');
+  let cursor = root;
+  for (let i = 0; i < parts.length - 1; i++) {
+    cursor = (cursor[parts[i]!] ??= {}) as Record<string, unknown>;
+  }
+  cursor[parts[parts.length - 1]!] = value;
 }
 
 /** `root` with `value` at the dotted `path`: a new object along the path,

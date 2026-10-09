@@ -96,4 +96,10 @@ describe('repairPrefValue', () => {
   it('lets a validator override a built-in kind', () => {
     expect(repairPrefValue(num(), 150, { number: (v) => v })).toBe(150);
   });
+
+  it('decodes a stored infinity before a number validator sees it', () => {
+    const seen: unknown[] = [];
+    repairPrefValue(num(), 'Infinity', { number: (v) => (seen.push(v), v) });
+    expect(seen).toEqual([Infinity]);
+  });
 });

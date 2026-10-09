@@ -11,6 +11,10 @@ export function repairPrefValue(
   stored: unknown,
   validators?: Readonly<Record<string, PrefValidator>>,
 ): unknown {
+  if (leaf.kind === 'number') {
+    if (stored === 'Infinity') stored = Infinity;
+    else if (stored === '-Infinity') stored = -Infinity;
+  }
   const validate = validators?.[leaf.kind];
   if (validate) {
     try {
@@ -46,8 +50,7 @@ function isPlainObject(v: unknown): boolean {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
 
-function repairNumber(leaf: PrefNumber, raw: unknown): unknown {
-  const stored = raw === 'Infinity' ? Infinity : raw === '-Infinity' ? -Infinity : raw;
+function repairNumber(leaf: PrefNumber, stored: unknown): unknown {
   if (typeof stored !== 'number' || Number.isNaN(stored)) return leaf.default;
   const { endless } = leaf;
   if (stored === Infinity && (endless === 'max' || endless === 'both')) return stored;
