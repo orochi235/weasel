@@ -37,6 +37,7 @@ const EXPECTED_NAMES = [
   'surface', 'surface-raised', 'surface-sunken', 'surface-popover',
   'fg', 'fg-muted', 'fg-subtle', 'fg-on-accent', 'fg-muted-on-accent', 'fg-subtle-on-accent',
   'border', 'border-strong',
+  'code-keyword', 'code-string', 'code-number', 'code-constant', 'code-property', 'code-name',
   'accent', 'accent-fg', 'accent-hover',
   'secondary', 'secondary-fg',
   'danger', 'warning', 'success', 'focus-ring', 'glass-tint',
