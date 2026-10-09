@@ -68,11 +68,18 @@ export function runPrefsMigrations(
 export function watchPrefsVersion(cache: OwnedRecordCache, target: number): () => void {
   return cache.subscribe((changes) => {
     for (const change of changes) {
-      if (change.name !== VERSION_RECORD || !isVersion(change.value) || change.value <= target) continue;
-      console.warn(
-        `[prefs] "${cache.prefix}" was migrated to version ${change.value} by another writer; this build knows ${target}; no longer persisting`,
-      );
-      cache.stopWriting();
+      if (change.origin !== 'remote' || change.name !== VERSION_RECORD || change.value === undefined) continue;
+      if (!isVersion(change.value)) {
+        console.warn(
+          `[prefs] "${cache.prefix}" has an unreadable ${VERSION_RECORD} (${JSON.stringify(change.value)}) from another writer; no longer persisting`,
+        );
+        cache.stopWriting();
+      } else if (change.value > target) {
+        console.warn(
+          `[prefs] "${cache.prefix}" was migrated to version ${change.value} by another writer; this build knows ${target}; no longer persisting`,
+        );
+        cache.stopWriting();
+      }
     }
   });
 }

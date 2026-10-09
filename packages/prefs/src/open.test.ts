@@ -86,6 +86,43 @@ describe('openPrefsSync', () => {
     await store.flush();
     await createMemoryAdapter(backing).set('p.$version', 2);
     await vi.waitFor(() => expect(store.writable).toBe(false));
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('migrated to version 2 by another writer'),
+    );
+    warn.mockRestore();
+  });
+
+  it('stops persisting when a peer writes a malformed $version', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>();
+    const store = openPrefsSync(SCHEMA, {
+      storage: createMemoryAdapter(backing),
+      prefix: 'p.',
+      migrations: [() => {}],
+    });
+    await store.flush();
+    await createMemoryAdapter(backing).set('p.$version', 'two');
+    await vi.waitFor(() => expect(store.writable).toBe(false));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('unreadable $version'));
+    warn.mockRestore();
+  });
+});
+
+describe('a peer migrating while the open is in flight', () => {
+  it('is acted on, not just stored', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>();
+    const peer = createMemoryAdapter(backing);
+    const inner = createMemoryAdapter(backing);
+    const storage = {
+      ...inner,
+      set: async (key: string, value: unknown) => {
+        if (key === 'p.$version') await peer.set(key, 2);
+        await inner.set(key, value);
+      },
+    };
+    const store = await openPrefs(SCHEMA, { storage, prefix: 'p.', migrations: [() => {}] });
+    expect(store.writable).toBe(false);
     warn.mockRestore();
   });
 });

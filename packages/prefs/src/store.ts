@@ -57,18 +57,31 @@ export function createPrefsStore<S extends PrefGroup>(
 ): PrefsStore<S> {
   const leaves = prefLeaves(schema);
   let snapshot: Snapshot | null = null;
+  let previous: { raw: Map<string, unknown>; byPath: Map<string, unknown> } | null = null;
 
   const build = (): Snapshot => {
     const byPath = new Map<string, unknown>();
+    const raw = new Map<string, unknown>();
     const unset = new Set<string>();
     const tree: Record<string, unknown> = {};
     for (const [path, leaf] of leaves) {
       const has = cache.has(path);
-      const value = has ? repairPrefValue(leaf, cache.get(path), validators) : leaf.default;
-      if (!has) unset.add(path);
+      let value: unknown;
+      if (!has) {
+        value = leaf.default;
+        unset.add(path);
+      } else {
+        const stored = cache.get(path);
+        raw.set(path, stored);
+        value =
+          previous?.raw.has(path) && previous.raw.get(path) === stored
+            ? previous.byPath.get(path)
+            : repairPrefValue(leaf, stored, validators);
+      }
       byPath.set(path, value);
       assignPrefValueAtPath(tree, path, value);
     }
+    previous = { raw, byPath };
     return { byPath, tree, unset };
   };
   const current = (): Snapshot => (snapshot ??= build());

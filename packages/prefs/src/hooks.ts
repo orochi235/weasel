@@ -12,7 +12,8 @@ export function usePref<S extends PrefGroup, P extends PrefPath<S>>(
   (next: PrefValueAt<S, P> | ((prev: PrefValueAt<S, P>) => PrefValueAt<S, P>)) => void,
 ] {
   const subscribe = useCallback((onChange: () => void) => store.subscribe(onChange), [store]);
-  const value = useSyncExternalStore(subscribe, () => store.get(path));
+  const getSnapshot = () => store.get(path);
+  const value = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const set = useCallback(
     (next: PrefValueAt<S, P> | ((prev: PrefValueAt<S, P>) => PrefValueAt<S, P>)) => {
       store.set(
@@ -36,8 +37,8 @@ export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
   reset: (path?: string) => void;
 } {
   const subscribe = useCallback((onChange: () => void) => store.subscribe(onChange), [store]);
-  const values = useSyncExternalStore(subscribe, store.values);
-  const unset = useSyncExternalStore(subscribe, store.unset);
+  const values = useSyncExternalStore(subscribe, store.values, store.values);
+  const unset = useSyncExternalStore(subscribe, store.unset, store.unset);
   const set = useCallback(
     (path: string, value: unknown) => store.set(path as PrefPath<S>, value as never),
     [store],

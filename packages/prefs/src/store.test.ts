@@ -119,6 +119,20 @@ describe('createPrefsStore', () => {
     expect(make().store.schema).toBe(SCHEMA);
   });
 
+  it("keeps a leaf's identity when another leaf changes, whatever the validator returns", () => {
+    const cache = createRecordCache({
+      storage: createMemoryAdapter(),
+      prefix: 'p.',
+      initial: [['name', { a: 1 }]],
+    });
+    const store = createPrefsStore(SCHEMA, cache, {
+      string: (stored) => (typeof stored === 'object' ? { ...(stored as object) } : stored),
+    });
+    const before = store.get('name');
+    store.set('view.density', 100);
+    expect(store.get('name')).toBe(before);
+  });
+
   it('writes an infinity as a string and reads it back as the infinity', async () => {
     const schema = {
       name: 'T',

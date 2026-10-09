@@ -32,6 +32,16 @@ describe('usePref', () => {
     expect(result.current[0]).toBe(73);
   });
 
+  it('composes two functional updates in one act', () => {
+    const store = open();
+    const { result } = renderHook(() => usePref(store, 'density'));
+    act(() => {
+      result.current[1]((d) => d + 1);
+      result.current[1]((d) => d + 1);
+    });
+    expect(result.current[0]).toBe(74);
+  });
+
   it('hears a write made through another binding', () => {
     const store = open();
     const a = renderHook(() => usePref(store, 'grid'));
