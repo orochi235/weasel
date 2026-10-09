@@ -54,9 +54,9 @@ function replaceAtPath(tracks: readonly Track[], path: readonly number[], next: 
  *  addressed track's own time, not the ruler's — a nested track's keys are
  *  measured from its parent's `at`.
  *
- *  Re-sorts, and reports the moved entry's new index. `sampleTrack` binary-
- *  searches without sorting first, so a drag past a neighbour that left the list
- *  unsorted would sample the wrong segment and raise nothing. */
+ *  Re-sorts, and reports the moved entry's new index. An event track is binary-
+ *  searched without sorting first, so a drag past a neighbour that left the list
+ *  unsorted would skip events and raise nothing. */
 export function moveKey(
   tracks: readonly Track[], sel: KeySelection, toMs: number,
 ): KeyEdit {

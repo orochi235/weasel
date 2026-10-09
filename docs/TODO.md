@@ -485,11 +485,15 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - **(P3) The animator on blits** — weasel has no model for two animations on one property; every
   case is last-writer-wins. Proposal: `docs/proposals/2026-09-30-animator-on-blits.md`, which keeps
   the animator's control surface and moves every value computation onto blits. Built: pose
-  overrides fold through a mix (step 2), and tweens, springs, physics and decay compute in blits
-  (most of step 3), at about 3× today's tween frame for 10k nodes, which Mike accepted on
-  2026-10-04. Left, in order:
-  - Keyframe sampling (`timeline/sampleTrack.ts`) on blits, the rest of step 3. Needs a plan.
-  - Steps 4–6.
+  overrides fold through a mix (step 2), and tweens, springs, physics, decay and keyframe
+  sampling compute in blits (step 3), at about 3× today's tween frame for 10k nodes, which Mike
+  accepted on 2026-10-04, and 2.5–3.5× today's keyframe sampling, which Mike accepted on 2026-10-08
+  (the rest of that gap is blits' read path).
+  Left: steps 4–6, each needing a plan.
+  - **(P3) Two edges `sampleTrack` changed on blits.** A `NaN` time now samples as `NaN`, where it
+    used to return the first key. And at an interior key, a track with its own `interpolate`
+    returns that key's value object rather than a fresh `interpolate(a, b, 0)`, so a consumer
+    mutating it mutates the key.
 
 ### Earlier deferrals
 

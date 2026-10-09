@@ -15,9 +15,11 @@ export interface Keyframe<T> {
 export interface SampledTrack<T> {
   kind: 'sampled';
   label?: string;
-  /** Sorted ascending by `t`. `sampleTrack` assumes this and does not sort. */
+  /** Sorted ascending by `t`. Of keys sharing a time, the last in the array is
+   *  the value at exactly that time. */
   keys: Keyframe<T>[];
-  /** Required when T is not `number`; defaults to numeric lerp otherwise. */
+  /** Required unless every key's value is a number, a number array or a plain
+   *  object of numbers, all of one shape; those are lerped field by field. */
   interpolate?: Interpolate<T>;
   /** Built once per segment and cached. Takes precedence over `interpolate`. */
   interpolator?: InterpolatorFactory<T>;
