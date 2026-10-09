@@ -280,6 +280,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
       <ToggleBar
         ariaLabel="Sidebar view"
         variant="flat"
+        size="sm"
         items={views}
         value={view}
         onChange={(next) => {
