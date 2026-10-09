@@ -302,14 +302,16 @@ export function TrialChrome({
               .join(' ') || undefined
           }
           sidebar={
-            <>
-              <SidebarRegion contributions={inRegion('sidebar')} ctx={ctx} />
-              <UndockedSections
-                trialId={trialId}
-                sections={inRegion('sidebar').filter((c) => undockedIds.includes(c.id))}
-                onDock={ctx.dockPanel}
-              />
-            </>
+            inRegion('sidebar').length === 0 ? null : (
+              <>
+                <SidebarRegion contributions={inRegion('sidebar')} ctx={ctx} />
+                <UndockedSections
+                  trialId={trialId}
+                  sections={inRegion('sidebar').filter((c) => undockedIds.includes(c.id))}
+                  onDock={ctx.dockPanel}
+                />
+              </>
+            )
           }
         >
           {children}

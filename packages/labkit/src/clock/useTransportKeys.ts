@@ -22,9 +22,12 @@ export function useTransportKeys(
   touch: () => void,
 ): void {
   const latest = useLatest({ control, touch });
+  // The transport renders its anchor only once it has a control, so the
+  // listener has to wait for that commit rather than run once without one.
+  const ready = control !== null;
   useEffect(() => {
     const doc = anchor.current?.ownerDocument;
-    if (!enabled || !doc) return;
+    if (!enabled || !ready || !doc) return;
     const onKeyDown = (event: KeyboardEvent): void => {
       const { control: c, touch: touched } = latest.current;
       if (!c || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -37,7 +40,7 @@ export function useTransportKeys(
     };
     doc.addEventListener('keydown', onKeyDown);
     return () => doc.removeEventListener('keydown', onKeyDown);
-  }, [anchor, enabled, latest]);
+  }, [anchor, enabled, ready, latest]);
 }
 
 function keyAction(key: string, c: TransportControl): (() => void) | null {

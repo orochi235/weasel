@@ -541,12 +541,27 @@ chrome, for portfolio embeds, with a refit view, play controls and `gestures`;
 README "Presenting a lab" and `packages/labkit/docs/AGENTS.md` cover it. What
 is left:
 
-- **(P2) Move agnew and rosee onto `<Lab>`.** Both hand-roll a bare mode
-  (agnew's `?bare` in `apps/lab/src/App.tsx`, rosee's `Bare.tsx` with its own
-  playhead and transport) because neither mounts `<Lab>`: agnew calls
-  `LabShell` directly and rosee has a `Lab` of its own. Presentation mode
-  reaches them only once each runs as instruments and trials, rosee's playhead
-  as a trial clock; `<TrialTransport>` then replaces its `Transport.tsx`.
+- **(P2) agnew and rosee on `<Lab>`: built, waiting on a release and two calls.** Each repo
+  has an unpushed `lab-onto-labkit-lab` branch (2026-10-09) that mounts `<Lab>` and serves its
+  `?bare` embed through presentation. rosee's lab view needs labkit's empty-sidebar fix to
+  ship in a labkit release first, since each of its trials otherwise keeps an empty 320px pane
+  and squeezes its tile into what is left. rosee's branch also narrows the speed range and lets
+  the pace per turn drift after a pattern change; both trace to the clock gaps below, and both
+  are the owner's call.
+- **(P2) Clock gaps the two migrations hit.**
+  - A clock's `duration` is read once, when its trial opens, so it cannot follow the trial's
+    content. agnew's run length is its curve's length over its trace speed, so it kept its own
+    transport; rosee's pass length is fixed at the pattern the lab opened on.
+  - `TRANSPORT_RATES` is fixed at 0.25×–4×, and a lab cannot add rates. rosee's slow end, 64 s a
+    turn, is gone.
+  - Trials cannot share one clock, and a lab has none of its own. rosee links its four in
+    `cut.ts`.
+  - `useClockFrame` only works inside a trial, so a lab-level readout cannot follow a clock.
+  - A seeded clock cannot say where it starts; rosee seeks it to the end on mount.
+  - The presented transport hides below 480px through a fixed container query. rosee mounts its
+    own `<TrialTransport>` to tie the threshold to its 760px lightbox instead.
+- **(P3) `<Lab>` opens one trial, and takes no `documentTitle`.** rosee adds its other three
+  trials in an effect, and moved its page title into `index.html`.
 - **(P3) A still for poster capture, and `postMessage` play/pause** so a host
   page's play control can reach a live lab.
 
