@@ -60,6 +60,14 @@ describe('PrefPath', () => {
     expectTypeOf<PrefPath<PrefGroup>>().toEqualTypeOf<string>();
   });
 
+  it('keeps the prefix on a nested group widened to PrefGroup', () => {
+    type Partly = {
+      name: 'r';
+      children: { tools: PrefGroup; a: { kind: 'boolean'; name: 'A'; description: ''; default: true } };
+    };
+    expectTypeOf<PrefPath<Partly>>().toEqualTypeOf<'a' | `tools.${string}`>();
+  });
+
   it('includes an object leaf but not its fields', () => {
     expectTypeOf<Extract<PrefPath<Schema>, 'box' | 'box.w'>>().toEqualTypeOf<'box'>();
   });

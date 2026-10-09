@@ -5,7 +5,7 @@ type Join<A extends string, B extends string> = A extends '' ? B : `${A}.${B}`;
 export type PrefPath<G, Prefix extends string = ''> =
   G extends { children: infer C }
     ? string extends keyof C
-      ? string
+      ? Join<Prefix, string>
       : {
           [K in keyof C & string]: C[K] extends { kind: string }
             ? Join<Prefix, K>
