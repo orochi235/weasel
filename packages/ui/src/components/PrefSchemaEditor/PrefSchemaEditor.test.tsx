@@ -25,25 +25,28 @@ function Live({ start = START }: { start?: ToolPrefGroup }) {
 }
 
 const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
+/** A row in the structure tree, by the key it shows after its name. */
+const row = (key: string) => within(structure()).getByText(`(${key})`);
+const preview = () => screen.getByRole('region', { name: 'Live preview' });
 
 describe('PrefSchemaEditor', () => {
   it('shows the schema as a tree and the preview as a form', () => {
     render(<Live />);
     expect(within(structure()).getByRole('treeitem', { name: /view/ })).toBeInTheDocument();
-    expect(within(screen.getByRole('region', { name: 'Preview' })).getByText('Show grid')).toBeInTheDocument();
+    expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
   });
 
   it('edits a leaf attribute and the preview follows', () => {
     render(<Live />);
-    fireEvent.click(within(structure()).getByText('grid'));
+    fireEvent.click(row('grid'));
     const name = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
     fireEvent.change(name, { target: { value: 'Grid on' } });
-    expect(within(screen.getByRole('region', { name: 'Preview' })).getByText('Grid on')).toBeInTheDocument();
+    expect(within(preview()).getByText('Grid on')).toBeInTheDocument();
   });
 
   it('sets the attributes every kind shares beside Key and Kind, and the kind\'s own in a panel below', () => {
     render(<Live />);
-    fireEvent.click(within(structure()).getByText('grid'));
+    fireEvent.click(row('grid'));
     const attrs = screen.getByRole('region', { name: 'Attributes' });
     // A group's heading sits in a header row, first in its panel.
     const panelOf = (title: string) => within(attrs).getByRole('heading', { name: title }).parentElement!.parentElement!;
@@ -58,19 +61,133 @@ describe('PrefSchemaEditor', () => {
     expect(within(own).getByRole('checkbox', { name: 'Default' })).toBeInTheDocument();
   });
 
-  it('adds a pref into the selected group and lists it under Changes', () => {
+  const openAdd = (what: 'Add pref' | 'Add group') => {
+    fireEvent.click(screen.getByRole('button', { name: what }));
+    return screen.getByRole('dialog', { name: what });
+  };
+  const pickKind = (dialog: HTMLElement, kind: string) => {
+    fireEvent.click(within(dialog).getByRole('button', { name: /Kind/ }));
+    fireEvent.click(screen.getByRole('option', { name: kind }));
+  };
+
+  it('adds a pref into the selected group from a name, an id and a kind, and lists it under Changes', () => {
     render(<Live />);
-    fireEvent.click(within(structure()).getByText('view'));
-    fireEvent.click(screen.getByRole('button', { name: 'Add pref' }));
-    expect(within(structure()).getByText('newPref')).toBeInTheDocument();
+    fireEvent.click(row('view'));
+    const dialog = openAdd('Add pref');
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), { target: { value: 'Line width' } });
+    expect(within(dialog).getByRole('textbox', { name: 'Id' })).toHaveValue('lineWidth');
+    pickKind(dialog, 'number');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(within(structure()).getByText('Line width')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Changes' }));
     const exact = getDefaultNormalizer({ collapseWhitespace: false });
-    expect(screen.getByText(/\+ view\.newPref {2}\(boolean\)/, { normalizer: exact })).toBeInTheDocument();
+    expect(screen.getByText(/\+ view\.lineWidth {2}\(number\)/, { normalizer: exact })).toBeInTheDocument();
+  });
+
+  it('adds nothing until a pref has a name, a free id and a kind', () => {
+    render(<Live />);
+    fireEvent.click(row('view'));
+    const dialog = openAdd('Add pref');
+    const add = within(dialog).getByRole('button', { name: 'Add' });
+    expect(add).toBeDisabled();
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), { target: { value: 'Snap' } });
+    pickKind(dialog, 'boolean');
+    expect(within(dialog).getByText(/"snap" is taken here/)).toBeInTheDocument();
+    expect(add).toBeDisabled();
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Id' }), { target: { value: 'snapAngle' } });
+    expect(add).toBeEnabled();
+  });
+
+  it('adds a group with no name, keyed by the id given', () => {
+    render(<Live />);
+    const dialog = openAdd('Add group');
+    fireEvent.change(within(dialog).getByRole('textbox', { name: 'Id' }), { target: { value: 'misc' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
+    expect(within(structure()).getByText('misc')).toBeInTheDocument();
+  });
+
+  it('shows a row as its name with its key, and a nameless one as its key alone', () => {
+    render(<Live start={{ name: 'Prefs', children: { bare: { name: '', children: {} }, view: START.children.view! } }} />);
+    expect(within(structure()).getByRole('treeitem', { name: /^View \(view\)/ })).toBeInTheDocument();
+    expect(within(structure()).getByRole('treeitem', { name: /^bare group/ })).toBeInTheDocument();
+  });
+
+  it('undoes and redoes an edit, from its buttons and from the keyboard', () => {
+    render(<Live />);
+    fireEvent.click(row('grid'));
+    const undo = screen.getByRole('button', { name: 'Undo' });
+    expect(undo).toBeDisabled();
+    const name = () => within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
+    fireEvent.change(name(), { target: { value: 'Grid on' } });
+    fireEvent.click(undo);
+    expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(within(preview()).getByText('Grid on')).toBeInTheDocument();
+    fireEvent.keyDown(name(), { key: 'z', metaKey: true });
+    expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
+    fireEvent.keyDown(name(), { key: 'z', metaKey: true, shiftKey: true });
+    expect(within(preview()).getByText('Grid on')).toBeInTheDocument();
+  });
+
+  it('undoes a run of keystrokes in one field as one step', () => {
+    render(<Live />);
+    fireEvent.click(row('grid'));
+    const name = () => within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
+    for (const typed of ['G', 'Gr', 'Gri', 'Grid']) fireEvent.change(name(), { target: { value: typed } });
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(within(preview()).getByText('Show grid')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  });
+
+  it('undoes a removal, and selects the node again', () => {
+    render(<Live />);
+    fireEvent.click(row('snap'));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    expect(within(structure()).queryByText('(snap)')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(within(structure()).getByRole('treeitem', { name: /^Snap \(snap\)/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('starts the history over on a schema it did not write', () => {
+    function Swap() {
+      const [schema, setSchema] = useState(START);
+      return (
+        <>
+          <button type="button" onClick={() => setSchema({ name: 'Other', children: {} })}>swap</button>
+          <PrefSchemaEditor schema={schema} onChange={setSchema} />
+        </>
+      );
+    }
+    render(<Swap />);
+    fireEvent.click(row('snap'));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'swap' }));
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  });
+
+  it('labels the preview, and can hide hidden prefs and reset what was set in it', () => {
+    const start: ToolPrefGroup = { name: 'Prefs', children: {
+      shown: { kind: 'boolean', name: 'Shown', description: '', default: false },
+      secret: { kind: 'boolean', name: 'Secret', description: '', default: false, hidden: true },
+    } };
+    render(<Live start={start} />);
+    expect(within(preview()).getByRole('heading', { name: 'Live preview' })).toBeInTheDocument();
+    expect(within(preview()).getByText('Secret')).toBeInTheDocument();
+    fireEvent.click(within(preview()).getByRole('switch', { name: 'Show hidden' }));
+    expect(within(preview()).queryByText('Secret')).toBeNull();
+    const reset = within(preview()).getByRole('button', { name: 'Reset values' });
+    expect(reset).toBeDisabled();
+    fireEvent.click(within(preview()).getByRole('checkbox', { name: 'Shown' }));
+    expect(within(preview()).getByRole('checkbox', { name: 'Shown' })).toBeChecked();
+    fireEvent.click(reset);
+    expect(within(preview()).getByRole('checkbox', { name: 'Shown' })).not.toBeChecked();
   });
 
   it('exports a literal with the edit in it', () => {
     render(<Live />);
-    fireEvent.click(within(structure()).getByText('grid'));
+    fireEvent.click(row('grid'));
     const name = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
     fireEvent.change(name, { target: { value: 'Grid on' } });
     fireEvent.click(screen.getByRole('tab', { name: 'Literal' }));
@@ -87,7 +204,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   const rekey = (from: string, to: string) => {
-    fireEvent.click(within(structure()).getByText(from));
+    fireEvent.click(row(from));
     const key = screen.getByRole('textbox', { name: 'Key' });
     fireEvent.change(key, { target: { value: to } });
     fireEvent.blur(key);
@@ -108,25 +225,25 @@ describe('PrefSchemaEditor', () => {
   it('accepts a key that only names an inherited property', () => {
     render(<Live />);
     rekey('grid', 'constructor');
-    expect(within(structure()).getByText('constructor')).toBeInTheDocument();
+    expect(row('constructor')).toBeInTheDocument();
     expect(screen.queryByText(/is taken here/)).toBeNull();
   });
 
   it('keeps a renamed group open', () => {
     render(<Live />);
     // Activating a branch toggles it, so the second click reopens the group the first selected and closed.
-    fireEvent.click(within(structure()).getByText('view'));
+    fireEvent.click(row('view'));
     rekey('view', 'display');
-    expect(within(structure()).getByRole('treeitem', { name: /^display/ })).toHaveAttribute('aria-expanded', 'true');
-    expect(within(structure()).getByText('grid')).toBeInTheDocument();
+    expect(within(structure()).getByRole('treeitem', { name: /\(display\)/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(row('grid')).toBeInTheDocument();
   });
 
   it('keeps a moved group open', () => {
     render(<Live />);
-    act(() => within(structure()).getByRole('treeitem', { name: /^panels/ }).focus());
+    act(() => within(structure()).getByRole('treeitem', { name: /\(panels\)/ }).focus());
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight', altKey: true });
-    expect(within(structure()).getByRole('treeitem', { name: /^panels/ })).toHaveAttribute('aria-level', '2');
-    expect(within(structure()).getByText('dock')).toBeInTheDocument();
+    expect(within(structure()).getByRole('treeitem', { name: /\(panels\)/ })).toHaveAttribute('aria-level', '2');
+    expect(row('dock')).toBeInTheDocument();
   });
 
   it('keeps the notice region mounted while it is empty', () => {

@@ -10,6 +10,7 @@ import { ATTR_RENDERERS } from './attrRenderers';
 import { attributeSchema, changeKind, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { childrenOf, joinPath, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute } from './schemaEdit';
 import { KEEP, containsCode, printValue } from './schemaExport';
+import { PaneHeader } from './PaneHeader';
 import s from './PrefSchemaEditor.module.css';
 
 /** Form paths for the rows that are not attributes: the key, the kind, and the kind's own panel. */
@@ -42,7 +43,7 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
     setKey(path === null ? '' : keyOf(path));
     setKeyError(null);
   }
-  if (!node) return <section className={s.pane} aria-label="Attributes" />;
+  if (!node) return <section className={s.pane} aria-label="Attributes"><PaneHeader title="Attributes" /></section>;
 
   const leaf = isPrefLeaf(node);
   const { shared, own, readOnly } = attributeSchema(node, custom);
@@ -79,6 +80,7 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
 
   return (
     <section className={s.pane} aria-label="Attributes">
+      <PaneHeader title="Attributes" />
       {/* One wrapping group: PrefsForm gives each loose top-level leaf a column of its own. */}
       <PrefsForm
         schema={{ name: 'Attributes', children: { attrs: { name: leaf ? 'Pref' : 'Group', children } } }}

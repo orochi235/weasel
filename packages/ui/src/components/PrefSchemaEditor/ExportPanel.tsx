@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { ToolPrefGroup } from '@weasel-js/core';
 import { Button } from '../Button';
+import { CodeBlock } from '../CodeBlock';
 import { Tab, TabList, TabPanel, Tabs } from '../Tabs';
 import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
 import s from './PrefSchemaEditor.module.css';
@@ -20,7 +21,7 @@ export function ExportPanel({ schema, changes }: { schema: ToolPrefGroup; change
       </TabList>
       <TabPanel id="literal" className={s.exportPanel}>
         <Copy text={literal} />
-        <pre className={s.code} data-testid="schema-literal">{literal}</pre>
+        <CodeBlock code={literal} language="tsx" className={s.code} data-testid="schema-literal" />
       </TabPanel>
       <TabPanel id="changes" className={s.exportPanel}>
         <Copy text={list} />

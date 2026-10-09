@@ -20,6 +20,12 @@ export type TokenName =
   | '--wzl-checker-a'
   | '--wzl-checker-b'
   | '--wzl-checker-size'
+  | '--wzl-code-constant'
+  | '--wzl-code-keyword'
+  | '--wzl-code-name'
+  | '--wzl-code-number'
+  | '--wzl-code-property'
+  | '--wzl-code-string'
   | '--wzl-control-h'
   | '--wzl-control-h-sm'
   | '--wzl-control-h-xs'
@@ -250,6 +256,12 @@ export const THEMES = {
         '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-code-keyword': "#955cf9",
+        '--wzl-code-string': "#48e628",
+        '--wzl-code-number': "#e69628",
+        '--wzl-code-constant': "#3ee1cb",
+        '--wzl-code-property': "#36bff2",
+        '--wzl-code-name': "#fa4590",
         '--wzl-panel-surface': "#25272c",
         '--wzl-panel-border-color': "#25272c",
         '--wzl-panel-border-style': "solid",
@@ -422,6 +434,12 @@ export const THEMES = {
         '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-code-keyword': "#955cf9",
+        '--wzl-code-string': "#48e628",
+        '--wzl-code-number': "#e69628",
+        '--wzl-code-constant': "#3ee1cb",
+        '--wzl-code-property': "#36bff2",
+        '--wzl-code-name': "#fa4590",
         '--wzl-panel-surface': "#25272c",
         '--wzl-panel-border-color': "#25272c",
         '--wzl-panel-border-style': "solid",
@@ -594,6 +612,12 @@ export const THEMES = {
         '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-code-keyword': "#955cf9",
+        '--wzl-code-string': "#48e628",
+        '--wzl-code-number': "#e69628",
+        '--wzl-code-constant': "#3ee1cb",
+        '--wzl-code-property': "#36bff2",
+        '--wzl-code-name': "#fa4590",
         '--wzl-panel-surface': "#25272c",
         '--wzl-panel-border-color': "#25272c",
         '--wzl-panel-border-style': "solid",
@@ -766,6 +790,12 @@ export const THEMES = {
         '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-code-keyword': "#6d28d9",
+        '--wzl-code-string': "#15803d",
+        '--wzl-code-number': "#b45309",
+        '--wzl-code-constant': "#0f766e",
+        '--wzl-code-property': "#0369a1",
+        '--wzl-code-name': "#be123c",
         '--wzl-panel-surface': "#e6e7e9",
         '--wzl-panel-border-color': "#c9cbcf",
         '--wzl-panel-border-style': "solid",
@@ -938,6 +968,12 @@ export const THEMES = {
         '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-code-keyword': "#6d28d9",
+        '--wzl-code-string': "#15803d",
+        '--wzl-code-number': "#b45309",
+        '--wzl-code-constant': "#0f766e",
+        '--wzl-code-property': "#0369a1",
+        '--wzl-code-name': "#be123c",
         '--wzl-panel-surface': "#e6e7e9",
         '--wzl-panel-border-color': "#c9cbcf",
         '--wzl-panel-border-style': "solid",
@@ -1110,6 +1146,12 @@ export const THEMES = {
         '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-code-keyword': "#6d28d9",
+        '--wzl-code-string': "#15803d",
+        '--wzl-code-number': "#b45309",
+        '--wzl-code-constant': "#0f766e",
+        '--wzl-code-property': "#0369a1",
+        '--wzl-code-name': "#be123c",
         '--wzl-panel-surface': "#e6e7e9",
         '--wzl-panel-border-color': "#c9cbcf",
         '--wzl-panel-border-style': "solid",
@@ -1584,6 +1626,78 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         },
         "light": {
           "value": "rgba(0, 0, 0, 0.18)",
+          "type": "color"
+        }
+      },
+      "code-keyword": {
+        "by": "mode",
+        "dark": {
+          "ref": "swatch-violet",
+          "type": "color",
+          "description": "Keywords in highlighted code."
+        },
+        "light": {
+          "value": "#6d28d9",
+          "type": "color"
+        }
+      },
+      "code-string": {
+        "by": "mode",
+        "dark": {
+          "ref": "swatch-green",
+          "type": "color",
+          "description": "String literals in highlighted code."
+        },
+        "light": {
+          "value": "#15803d",
+          "type": "color"
+        }
+      },
+      "code-number": {
+        "by": "mode",
+        "dark": {
+          "ref": "swatch-amber",
+          "type": "color",
+          "description": "Numbers in highlighted code."
+        },
+        "light": {
+          "value": "#b45309",
+          "type": "color"
+        }
+      },
+      "code-constant": {
+        "by": "mode",
+        "dark": {
+          "ref": "swatch-teal",
+          "type": "color",
+          "description": "true, false, null and undefined in highlighted code."
+        },
+        "light": {
+          "value": "#0f766e",
+          "type": "color"
+        }
+      },
+      "code-property": {
+        "by": "mode",
+        "dark": {
+          "ref": "swatch-sky",
+          "type": "color",
+          "description": "Property keys and attribute names in highlighted code."
+        },
+        "light": {
+          "value": "#0369a1",
+          "type": "color"
+        }
+      },
+      "code-name": {
+        "by": "mode",
+        "dark": {
+          "ref": "swatch-rose",
+          "type": "color",
+          "description": "Functions, classes and other names in highlighted code."
+        },
+        "light": {
+          "value": "#be123c",
           "type": "color"
         }
       }
@@ -2836,6 +2950,78 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "light": {
           "type": "color",
           "value": "rgba(0, 0, 0, 0.18)"
+        }
+      },
+      "code-keyword": {
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "{swatch-violet}",
+          "description": "Keywords in highlighted code."
+        },
+        "light": {
+          "type": "color",
+          "value": "#6d28d9"
+        }
+      },
+      "code-string": {
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "{swatch-green}",
+          "description": "String literals in highlighted code."
+        },
+        "light": {
+          "type": "color",
+          "value": "#15803d"
+        }
+      },
+      "code-number": {
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "{swatch-amber}",
+          "description": "Numbers in highlighted code."
+        },
+        "light": {
+          "type": "color",
+          "value": "#b45309"
+        }
+      },
+      "code-constant": {
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "{swatch-teal}",
+          "description": "true, false, null and undefined in highlighted code."
+        },
+        "light": {
+          "type": "color",
+          "value": "#0f766e"
+        }
+      },
+      "code-property": {
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "{swatch-sky}",
+          "description": "Property keys and attribute names in highlighted code."
+        },
+        "light": {
+          "type": "color",
+          "value": "#0369a1"
+        }
+      },
+      "code-name": {
+        "by": "mode",
+        "dark": {
+          "type": "color",
+          "value": "{swatch-rose}",
+          "description": "Functions, classes and other names in highlighted code."
+        },
+        "light": {
+          "type": "color",
+          "value": "#be123c"
         }
       },
       "panel-surface": {

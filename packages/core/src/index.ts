@@ -115,7 +115,7 @@ export { sceneNodeClientRect } from './core/viewport/sceneNodeClientRect';
 export type { SceneNodeClientRectOpts, NodeClientRect } from './core/viewport/sceneNodeClientRect';
 export * from './core/viewport/useAutoCenter';
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
-export { activatesFocusedControl, isEditableTarget, matchesKeyBinding } from '@weasel-js/routing';
+export { activatesFocusedControl, historyKey, isEditableTarget, matchesKeyBinding } from '@weasel-js/routing';
 export type { KeyBinding } from '@weasel-js/routing';
 // ─── Key-state poll: which physical keys are down right now ────────────────
 export { createKeyState } from './input/keyState';

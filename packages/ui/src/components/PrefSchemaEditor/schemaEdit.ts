@@ -17,6 +17,16 @@ export function isValidKey(key: string): boolean {
   return KEY.test(key);
 }
 
+/** `name` as a camelCase key: `'Line width'` gives `'lineWidth'`. Empty when the name holds no letter or digit;
+ *  prefixed with `_` when it would start with a digit. */
+export function keyFromName(name: string): string {
+  const words = name.match(/[A-Za-z0-9]+/g) ?? [];
+  const key = words
+    .map((w, i) => (i === 0 ? w.charAt(0).toLowerCase() + w.slice(1) : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join('');
+  return /^\d/.test(key) ? `_${key}` : key;
+}
+
 /** The children of a group, or of an `object` leaf; `undefined` for anything that cannot hold any. */
 export function childrenOf(node: SchemaNode): ChildMap | undefined {
   if (!isPrefLeaf(node)) return node.children;

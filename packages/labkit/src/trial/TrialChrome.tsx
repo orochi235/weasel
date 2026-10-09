@@ -1,3 +1,4 @@
+import { historyKey } from '@weasel-js/core';
 import {
   type KeyboardEvent,
   type ReactNode,
@@ -257,9 +258,10 @@ export function TrialChrome({
     const mod = e.metaKey || e.ctrlKey;
     // A presented trial has no chrome, so nothing the chrome's keys act on.
     if (!mod || presented) return;
-    if (e.key === 'z' || e.key === 'Z') {
+    const step = historyKey(e);
+    if (step) {
       e.preventDefault();
-      if (e.shiftKey) ctx.redo();
+      if (step === 'redo') ctx.redo();
       else ctx.undo();
     } else if (e.key === 's' || e.key === 'S') {
       e.preventDefault();

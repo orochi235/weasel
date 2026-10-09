@@ -77,6 +77,18 @@
   --wzl-fg-inverse: var(--wzl-gray-900);
   /* Elevation. Always darker than any surface — never derived from fg, which is near-white on dark. */
   --wzl-shadow: rgba(0, 0, 0, 0.6);
+  /* Keywords in highlighted code. */
+  --wzl-code-keyword: var(--wzl-swatch-violet);
+  /* String literals in highlighted code. */
+  --wzl-code-string: var(--wzl-swatch-green);
+  /* Numbers in highlighted code. */
+  --wzl-code-number: var(--wzl-swatch-amber);
+  /* true, false, null and undefined in highlighted code. */
+  --wzl-code-constant: var(--wzl-swatch-teal);
+  /* Property keys and attribute names in highlighted code. */
+  --wzl-code-property: var(--wzl-swatch-sky);
+  /* Functions, classes and other names in highlighted code. */
+  --wzl-code-name: var(--wzl-swatch-rose);
   /* Fill of a PropertyPanel. */
   --wzl-panel-surface: var(--wzl-surface-raised);
   --wzl-panel-border-color: var(--wzl-border);
@@ -268,6 +280,12 @@
   --wzl-accent-fg: var(--wzl-accent-strong);
   --wzl-fg-inverse: var(--wzl-gray-900);
   --wzl-shadow: rgba(0, 0, 0, 0.6);
+  --wzl-code-keyword: var(--wzl-swatch-violet);
+  --wzl-code-string: var(--wzl-swatch-green);
+  --wzl-code-number: var(--wzl-swatch-amber);
+  --wzl-code-constant: var(--wzl-swatch-teal);
+  --wzl-code-property: var(--wzl-swatch-sky);
+  --wzl-code-name: var(--wzl-swatch-rose);
   --wzl-secondary-fg: var(--wzl-secondary-base);
   --wzl-panel-surface: var(--wzl-surface-raised);
   --wzl-panel-border-color: var(--wzl-border);
@@ -319,6 +337,12 @@
   --wzl-accent-fg: var(--wzl-accent-base);
   --wzl-fg-inverse: var(--wzl-gray-50);
   --wzl-shadow: rgba(0, 0, 0, 0.18);
+  --wzl-code-keyword: #6d28d9;
+  --wzl-code-string: #15803d;
+  --wzl-code-number: #b45309;
+  --wzl-code-constant: #0f766e;
+  --wzl-code-property: #0369a1;
+  --wzl-code-name: #be123c;
   --wzl-secondary-fg: var(--wzl-secondary-soft);
   --wzl-panel-surface: var(--wzl-surface-raised);
   --wzl-panel-border-color: var(--wzl-border);

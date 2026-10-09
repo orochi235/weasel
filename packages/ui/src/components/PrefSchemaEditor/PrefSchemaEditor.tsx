@@ -1,10 +1,13 @@
-import { useMemo, useState } from 'react';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { createHistory, historyKey, useLatest, type Op, type ToolPrefGroup } from '@weasel-js/core';
+import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
+import { Switch } from '../Switch';
 import { setAtPath } from '../SelectionPanel/model';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
 import { AttributesPane } from './AttributesPane';
 import { ExportPanel } from './ExportPanel';
+import { PaneHeader } from './PaneHeader';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { branchPaths, rebasePaths } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
@@ -12,6 +15,20 @@ import { StructurePane } from './StructurePane';
 import s from './PrefSchemaEditor.module.css';
 
 const NO_KINDS: CustomKinds = {};
+
+/** Edits to one node's attributes this close together undo as one, so typing a name is one step. */
+const COALESCE_MS = 800;
+
+/** An edit as the swap of one whole schema for another: schemas are immutable, so the snapshots cost nothing. */
+function swapOp(before: ToolPrefGroup, after: ToolPrefGroup, emit: (s: ToolPrefGroup) => void, coalesceKey?: string): Op {
+  const forward: Op = {
+    label: 'edit schema',
+    ...(coalesceKey !== undefined ? { coalesceKey } : {}),
+    apply: () => emit(after),
+    invert: () => ({ label: 'edit schema', apply: () => emit(before), invert: () => forward }),
+  };
+  return forward;
+}
 
 /** Props for {@link PrefSchemaEditor}. */
 export interface PrefSchemaEditorProps {
@@ -29,8 +46,10 @@ export interface PrefSchemaEditorProps {
 /**
  * An editor for a preference schema: its structure as a tree, the selected node's attributes as a form, a live
  * `PrefsForm` of the result, and an export of it as a TypeScript literal and a list of changes. Edits stay in
- * `schema`; nothing is written back to source. Swapping `schema` for an unrelated one without remounting keeps the
- * selection, expansion and baseline; give the editor a `key` to start fresh.
+ * `schema`; nothing is written back to source. Its own edits undo and redo, from its buttons or Mod+Z, Shift+Mod+Z,
+ * and Mod+Y anywhere inside it; a `schema` it did not write itself starts the history over. Swapping `schema` for an
+ * unrelated one without remounting keeps the selection, expansion and baseline; give the editor a `key` to start
+ * fresh.
  */
 export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS, renderers, className }: PrefSchemaEditorProps) {
   const [first] = useState(schema);
@@ -39,6 +58,32 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(() => new Set(branchPaths(schema)));
+  const [showHidden, setShowHidden] = useState(true);
+
+  const latest = useLatest({ schema, onChange, selected });
+  const emitted = useRef(schema);
+  const [history] = useState(() =>
+    createHistory(null, {
+      coalesceWindowMs: COALESCE_MS,
+      selection: {
+        get: () => (latest.current.selected === null ? [] : [latest.current.selected]),
+        set: (ids) => setSelected(ids[0] ?? null),
+      },
+    }),
+  );
+  useSyncExternalStore(history.subscribe, history.getVersion);
+  useEffect(() => {
+    if (schema === emitted.current) return;
+    emitted.current = schema;
+    history.clear();
+  }, [schema, history]);
+  const emit = (next: ToolPrefGroup) => {
+    emitted.current = next;
+    latest.current.onChange(next);
+  };
+  const commit = (next: ToolPrefGroup, coalesceKey?: string) =>
+    history.applyOps([swapOp(latest.current.schema, next, emit, coalesceKey)], 'edit schema');
+
   const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);
   const changed = useMemo(() => changedPaths(changes), [changes]);
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(kinds)], [kinds]);
@@ -52,9 +97,20 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
   };
 
   return (
-    <div className={[s.editor, className].filter(Boolean).join(' ')}>
-      <StructurePane schema={schema} onChange={onChange} selected={selected} onSelect={select} changed={changed} kinds={kindList}
-        expanded={expanded} onExpandedChange={setExpanded} />
+    // Capture: React Aria's fields and tree stop a keydown from bubbling past them.
+    <div className={[s.editor, className].filter(Boolean).join(' ')} onKeyDownCapture={(e) => {
+      const step = historyKey(e);
+      if (!step) return;
+      e.preventDefault();
+      history[step]();
+    }}>
+      <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
+        expanded={expanded} onExpandedChange={setExpanded} tools={
+          <>
+            <Button size="sm" variant="ghost" disabled={!history.canUndo()} onClick={() => history.undo()}>Undo</Button>
+            <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => history.redo()}>Redo</Button>
+          </>
+        } />
       <div className={s.middle}>
         <div className={s.notice} role="status">
           {notice && (
@@ -64,11 +120,17 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
             </>
           )}
         </div>
-        <AttributesPane schema={schema} onChange={onChange} path={selected} onRekey={rekey}
+        <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selected ?? ''}`)} path={selected} onRekey={rekey}
           kinds={kindList} custom={kinds} renderers={renderers} onNotice={setNotice} />
       </div>
-      <section className={s.pane} aria-label="Preview">
-        <PrefsForm schema={schema} values={values} renderers={renderers} showHidden
+      <section className={s.pane} aria-label="Live preview">
+        <PaneHeader title="Live preview">
+          <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch>
+          <Button size="sm" variant="ghost" disabled={Object.keys(values).length === 0} onClick={() => setValues({})}>
+            Reset values
+          </Button>
+        </PaneHeader>
+        <PrefsForm schema={schema} values={values} renderers={renderers} showHidden={showHidden}
           onChange={(path, v) => setValues((cur) => setAtPath(cur, path.split('.'), v) as Record<string, unknown>)} />
       </section>
       <ExportPanel schema={schema} changes={changes} />

@@ -352,6 +352,78 @@
         "value": "rgba(0, 0, 0, 0.18)",
         "type": "color"
       }
+    },
+    "code-keyword": {
+      "by": "mode",
+      "dark": {
+        "ref": "swatch-violet",
+        "type": "color",
+        "description": "Keywords in highlighted code."
+      },
+      "light": {
+        "value": "#6d28d9",
+        "type": "color"
+      }
+    },
+    "code-string": {
+      "by": "mode",
+      "dark": {
+        "ref": "swatch-green",
+        "type": "color",
+        "description": "String literals in highlighted code."
+      },
+      "light": {
+        "value": "#15803d",
+        "type": "color"
+      }
+    },
+    "code-number": {
+      "by": "mode",
+      "dark": {
+        "ref": "swatch-amber",
+        "type": "color",
+        "description": "Numbers in highlighted code."
+      },
+      "light": {
+        "value": "#b45309",
+        "type": "color"
+      }
+    },
+    "code-constant": {
+      "by": "mode",
+      "dark": {
+        "ref": "swatch-teal",
+        "type": "color",
+        "description": "true, false, null and undefined in highlighted code."
+      },
+      "light": {
+        "value": "#0f766e",
+        "type": "color"
+      }
+    },
+    "code-property": {
+      "by": "mode",
+      "dark": {
+        "ref": "swatch-sky",
+        "type": "color",
+        "description": "Property keys and attribute names in highlighted code."
+      },
+      "light": {
+        "value": "#0369a1",
+        "type": "color"
+      }
+    },
+    "code-name": {
+      "by": "mode",
+      "dark": {
+        "ref": "swatch-rose",
+        "type": "color",
+        "description": "Functions, classes and other names in highlighted code."
+      },
+      "light": {
+        "value": "#be123c",
+        "type": "color"
+      }
     }
   },
   "components": {

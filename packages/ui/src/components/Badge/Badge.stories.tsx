@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { historyKey } from '@weasel-js/core';
 import { applyToPoint, invert } from '@weasel-js/geom';
 import { Badge } from './Badge';
 import { CloseButton } from '../CloseButton';
@@ -1104,12 +1105,10 @@ function ComposeLabView({ status: statusArg, variant: variantArg, label: labelAr
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const mod = e.metaKey || e.ctrlKey;
-      if (!mod) return;
-      const key = e.key.toLowerCase();
-      // Cmd/Ctrl+Z = undo; Cmd/Ctrl+Shift+Z (or Cmd/Ctrl+Y) = redo.
-      if (key === 'z' && !e.shiftKey) { e.preventDefault(); onUndo(); }
-      else if ((key === 'z' && e.shiftKey) || key === 'y') { e.preventDefault(); onRedo(); }
+      const step = historyKey(e);
+      if (step) e.preventDefault();
+      if (step === 'undo') onUndo();
+      else if (step === 'redo') onRedo();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

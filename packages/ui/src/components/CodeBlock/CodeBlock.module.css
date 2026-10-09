@@ -1,0 +1,77 @@
+.block {
+  margin: 0;
+  overflow: auto;
+  font-family: var(--wzl-font-mono);
+  color: var(--wzl-fg);
+  tab-size: 2;
+}
+
+.block code {
+  display: grid;
+  font: inherit;
+}
+
+.line {
+  display: block;
+  white-space: pre;
+}
+
+.numbered .line {
+  display: grid;
+  grid-template-columns: var(--code-gutter) 1fr;
+  column-gap: 1.5ch;
+}
+
+.lineNo {
+  color: var(--wzl-fg-muted);
+  text-align: end;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* prism's token classes, which it sets on each span. */
+.block :global(.token.keyword),
+.block :global(.token.builtin),
+.block :global(.token.operator.arrow) {
+  color: var(--wzl-code-keyword);
+}
+
+.block :global(.token.string),
+.block :global(.token.char),
+.block :global(.token.template-string),
+.block :global(.token.attr-value),
+.block :global(.token.regex) {
+  color: var(--wzl-code-string);
+}
+
+.block :global(.token.number) {
+  color: var(--wzl-code-number);
+}
+
+.block :global(.token.boolean),
+.block :global(.token.constant),
+.block :global(.token.null),
+.block :global(.token.nil) {
+  color: var(--wzl-code-constant);
+}
+
+.block :global(.token.property),
+.block :global(.token.attr-name),
+.block :global(.token.tag) {
+  color: var(--wzl-code-property);
+}
+
+.block :global(.token.function),
+.block :global(.token.class-name),
+.block :global(.token.maybe-class-name) {
+  color: var(--wzl-code-name);
+}
+
+.block :global(.token.punctuation),
+.block :global(.token.comment) {
+  color: var(--wzl-fg-muted);
+}
+
+.block :global(.token.comment) {
+  font-style: italic;
+}

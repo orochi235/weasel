@@ -430,30 +430,9 @@ a:hover { text-decoration: underline; }
   height: 240px;
 }
 
-.ckd-source pre,
-.ckd-source code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+.ckd-source pre {
   font-size: calc(var(--wzl-font-size-sm) + 1px);
   line-height: 1.5;
-  color: #c8b89a;
-  white-space: pre;
-}
-
-.ckd-line {
-  display: flex;
-  gap: 12px;
-}
-
-.ckd-line-no {
-  flex: none;
-  color: #6b6553;
-  user-select: none;
-  text-align: right;
-}
-
-.ckd-line-content {
-  flex: 1 1 auto;
-  white-space: pre;
 }
 
 /* ---------- Theme overrides for weasel-ui's --wzl-* tokens.

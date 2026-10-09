@@ -13,6 +13,28 @@
 .middle { display: grid; align-content: start; gap: var(--wzl-space-2); min-height: 0; overflow: auto; }
 .pane { min-height: 0; overflow: auto; }
 .toolbar { display: flex; flex-wrap: wrap; gap: var(--wzl-space-2); margin-block-end: var(--wzl-space-2); }
+.paneHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wzl-space-2);
+  padding-block: var(--wzl-space-1);
+  margin-block-end: var(--wzl-space-2);
+  border-block-end: 1px solid var(--wzl-border);
+}
+.paneTitle {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
+  letter-spacing: var(--wzl-params-label-tracking, var(--wzl-tracking-wider));
+  text-transform: var(--wzl-params-label-case, uppercase);
+}
+.paneTools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); }
+.treeKey { font-family: var(--wzl-font-mono); font-size: 0.9em; color: var(--wzl-fg-muted); }
+.addForm { display: grid; gap: var(--wzl-space-3); min-width: min(360px, 80vw); }
+.idField input { font-family: var(--wzl-font-mono); }
+.addActions { display: flex; justify-content: flex-end; gap: var(--wzl-space-2); }
 .notice:not(:empty) {
   display: flex;
   align-items: center;
@@ -31,9 +53,6 @@
   align-self: stretch;
   min-height: 0;
   margin: var(--wzl-space-2) 0 0;
-  overflow: auto;
-  font-family: var(--wzl-font-mono);
   font-size: var(--wzl-font-size-xs);
-  white-space: pre;
 }
 .changed { font-weight: 600; }

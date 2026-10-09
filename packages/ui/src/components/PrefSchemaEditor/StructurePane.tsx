@@ -1,22 +1,24 @@
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import type { ToolPrefGroup } from '@weasel-js/core';
 import { Button } from '../Button';
 import { Code } from '../Code';
-import { Select } from '../Select';
 import { Tree, type TreeNode } from '../Tree';
 import { isPrefLeaf } from '../Prefs/schema';
+import { AddNodeDialog, type NewNode } from './AddNodeDialog';
+import { PaneHeader } from './PaneHeader';
 import { blankGroup, blankLeaf } from './kindSchemas';
-import { addNode, childrenOf, joinPath, keyOf, moveNodes, nodeAt, parentPath, rebasePaths, removeNode, uniqueKey, type SchemaNode } from './schemaEdit';
+import { addNode, childrenOf, joinPath, keyOf, moveNodes, nodeAt, parentPath, rebasePaths, removeNode, type SchemaNode } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
 
 function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>): TreeNode[] {
   return Object.entries(childrenOf(node) ?? {}).map(([key, child]) => {
     const p = joinPath(path, key);
     const kids = childrenOf(child);
+    const { name } = child;
     return {
       id: p,
-      label: key,
-      textValue: key,
+      label: name ? <>{name} <span className={s.treeKey}>({key})</span></> : key,
+      textValue: name ? `${name} ${key}` : key,
       trailing: <Code size="xs" status="muted" variant="plain">{isPrefLeaf(child) ? child.kind : 'group'}</Code>,
       className: changed.has(p) ? s.changed : undefined,
       ...(kids ? { children: toTreeNodes(child, p, changed) } : {}),
@@ -33,23 +35,26 @@ export interface StructurePaneProps {
   kinds: readonly string[];
   expanded: ReadonlySet<string>;
   onExpandedChange: Dispatch<SetStateAction<Set<string>>>;
+  /** Controls for the whole editor, set beside the pane's own. */
+  tools?: ReactNode;
 }
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, tools }: StructurePaneProps) {
   const nodes = useMemo(() => toTreeNodes(schema, null, changed), [schema, changed]);
-  const [kind, setKind] = useState<string>('boolean');
+  const [adding, setAdding] = useState<'pref' | 'group' | null>(null);
 
   /** Where an add lands: inside the selection if it holds children, else after it. */
   const addTarget = (): { parent: string | null; index?: number } => {
-    if (selected === null) return { parent: null };
+    if (selected === null || !nodeAt(schema, selected)) return { parent: null };
     if (childrenOf(nodeAt(schema, selected)!)) return { parent: selected };
     const parent = parentPath(selected);
     const sibs = Object.keys(childrenOf(nodeAt(schema, parent)!) ?? {});
     return { parent, index: sibs.indexOf(keyOf(selected)) + 1 };
   };
-  const add = (base: string, node: SchemaNode) => {
+  const add = ({ key, name, kind }: NewNode) => {
     const { parent, index } = addTarget();
-    const key = uniqueKey(childrenOf(nodeAt(schema, parent)!) ?? {}, base);
+    const node: SchemaNode = kind !== undefined ? { ...blankLeaf(kind), name } : { ...blankGroup(), name };
+    setAdding(null);
     onChange(addNode(schema, parent, key, node, index));
     if (parent !== null) onExpandedChange((e) => new Set(e).add(parent));
     onSelect(joinPath(parent, key));
@@ -57,17 +62,18 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
 
   return (
     <section className={s.pane} aria-label="Structure">
+      <PaneHeader title="Structure">{tools}</PaneHeader>
       <div className={s.toolbar}>
-        <Select aria-label="Kind to add" width="fit" selectedKey={kind} onSelectionChange={(k) => setKind(String(k))}
-          options={kinds.map((k) => ({ value: k, label: k }))} />
-        <Button size="sm" onClick={() => add('newPref', blankLeaf(kind))}>Add pref</Button>
-        <Button size="sm" onClick={() => add('newGroup', blankGroup())}>Add group</Button>
+        <Button size="sm" onClick={() => setAdding('pref')}>Add pref</Button>
+        <Button size="sm" onClick={() => setAdding('group')}>Add group</Button>
         <Button size="sm" disabled={selected === null} onClick={() => {
           if (selected === null) return;
           onChange(removeNode(schema, selected));
           onSelect(parentPath(selected));
         }}>Remove</Button>
       </div>
+      <AddNodeDialog what={adding} siblings={childrenOf(nodeAt(schema, addTarget().parent)!) ?? {}} kinds={kinds}
+        onAdd={add} onClose={() => setAdding(null)} />
       <Tree
         aria-label="Schema structure"
         nodes={nodes}

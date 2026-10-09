@@ -5,7 +5,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
+import { historyKey, openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import {
   Plot2D,
   type Plot2DHandle,
@@ -369,15 +369,12 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     const ctx = makeCtx(modifiers);
     const ls = layersRef.current;
     // History first.
-    if (historyEnabled && (e.metaKey || e.ctrlKey)) {
-      const k = e.key.toLowerCase();
-      if (k === 'z') {
-        if (e.shiftKey) redo();
-        else undo();
-        e.preventDefault();
-        return;
-      }
-      if (k === 'y') { redo(); e.preventDefault(); return; }
+    const step = historyEnabled ? historyKey(e) : null;
+    if (step) {
+      if (step === 'redo') redo();
+      else undo();
+      e.preventDefault();
+      return;
     }
     // Then layers (top-to-bottom).
     for (let i = ls.length - 1; i >= 0; i--) {
