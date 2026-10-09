@@ -3,7 +3,10 @@
 .optionRow { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--wzl-space-2); align-items: center; }
 .number { composes: numeric from '@weasel-js/theme/numeric.module.css'; }
 .number input { text-align: right; }
+/* A whole surface a host may mount anywhere, so it brings its face rather than inheriting the page's. */
 .editor {
+  font-family: var(--wzl-font-ui);
+  color: var(--wzl-fg);
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(260px, 1fr) minmax(420px, 1.8fr);
   grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
