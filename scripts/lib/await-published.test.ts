@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error — plain .mjs with no typings; `scripts/` is outside tsconfig's include.
-import { awaitPublished } from './await-published.mjs';
+import { awaitPublished, waitMinutes } from './await-published.mjs';
 
 type Pkg = { name: string; version: string };
 
@@ -85,5 +85,15 @@ describe('awaitPublished', () => {
     expect(hudLines.at(-1)).toMatch(/ok/);
     expect(hudLines[0]).toMatch(/MISSING/);
     expect(reg.lines.filter((l) => l.includes('a@1.6.1'))).toHaveLength(1);
+  });
+});
+
+describe('waitMinutes', () => {
+  const opts = { label: 'test', defaultMinutes: 15 };
+
+  it('is 0 without the flag, the default for a bare one, and the number given', () => {
+    expect(waitMinutes(['--keep'], opts)).toBe(0);
+    expect(waitMinutes(['--wait'], opts)).toBe(15);
+    expect(waitMinutes(['--wait=4'], opts)).toBe(4);
   });
 });

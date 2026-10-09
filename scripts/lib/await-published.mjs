@@ -8,6 +8,22 @@
 /** Seconds between attempts: doubling from 15s, capped at 2 minutes. */
 export const DEFAULT_DELAYS_MS = [15_000, 30_000, 60_000, 120_000];
 
+/**
+ * Minutes to wait, from a `--wait` or `--wait=<minutes>` flag in `argv`: 0
+ * without one, `defaultMinutes` for a bare `--wait`. Exits on a bad value.
+ */
+export function waitMinutes(argv, { label, defaultMinutes }) {
+  const flag = argv.find((a) => a === '--wait' || a.startsWith('--wait='));
+  if (!flag) return 0;
+  if (flag === '--wait') return defaultMinutes;
+  const n = Number(flag.slice('--wait='.length));
+  if (!Number.isFinite(n) || n < 0) {
+    console.error(`${label} — --wait takes a number of minutes, got "${flag}"`);
+    process.exit(2);
+  }
+  return n;
+}
+
 const formatElapsed = (ms) => {
   const s = Math.round(ms / 1000);
   return `${String(Math.floor(s / 60)).padStart(2, ' ')}m${String(s % 60).padStart(2, '0')}s`;

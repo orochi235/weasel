@@ -20,23 +20,9 @@
 // the registry has never seen.
 import { publishableWorkspaces } from './lib/workspaces.mjs';
 import { hasVersion, registryBase } from './lib/registry.mjs';
-import { awaitPublished } from './lib/await-published.mjs';
+import { awaitPublished, waitMinutes } from './lib/await-published.mjs';
 
-const DEFAULT_WAIT_MINUTES = 60;
-
-function waitMinutes(argv) {
-  const flag = argv.find((a) => a === '--wait' || a.startsWith('--wait='));
-  if (!flag) return 0;
-  if (flag === '--wait') return DEFAULT_WAIT_MINUTES;
-  const n = Number(flag.slice('--wait='.length));
-  if (!Number.isFinite(n) || n < 0) {
-    console.error(`check:published — --wait takes a number of minutes, got "${flag}"`);
-    process.exit(2);
-  }
-  return n;
-}
-
-const minutes = waitMinutes(process.argv.slice(2));
+const minutes = waitMinutes(process.argv.slice(2), { label: 'check:published', defaultMinutes: 60 });
 const packages = publishableWorkspaces().map(({ manifest: { name, version } }) => ({ name, version }));
 
 const { missing } = await awaitPublished(packages, {

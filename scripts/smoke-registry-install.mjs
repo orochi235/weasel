@@ -15,10 +15,18 @@
 // Complements `test:smoke:consumer`, which bundles and typechecks against
 // locally packed tarballs. That one proves the tarballs are right; this one
 // proves the registry is serving them.
+//
+//   npm run test:smoke:registry -- --wait     retry a failed install for up to 15 minutes
+//   npm run test:smoke:registry -- --wait=5   ... or for that many minutes
+//
+// The release job waits: a version `check:published` has just seen can still be
+// missing from the packument npm resolves against. 1.9.2's install ran one
+// second after labkit listed, and resolved it as `labkit@undefined`.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DEFAULT_DELAYS_MS, waitMinutes } from './lib/await-published.mjs';
 import { publishableWorkspaces } from './lib/workspaces.mjs';
 
 const packages = publishableWorkspaces().map(({ manifest }) => ({
@@ -27,8 +35,8 @@ const packages = publishableWorkspaces().map(({ manifest }) => ({
 }));
 
 const workDir = mkdtempSync(join(tmpdir(), 'weasel-registry-smoke-'));
-const cacheDir = join(workDir, 'npm-cache');
 const keep = process.argv.includes('--keep');
+const budgetMs = waitMinutes(process.argv.slice(2), { label: 'test:smoke:registry', defaultMinutes: 15 }) * 60_000;
 
 // No `dependencies` — the install below is the whole point, and pre-declaring
 // them would let a lockfile or a workspace link answer instead of the registry.
@@ -40,13 +48,33 @@ writeFileSync(
 const specs = packages.map(({ name, version }) => `${name}@${version}`);
 console.log(`[registry-smoke] installing ${specs.length} package(s) into ${workDir}`);
 
-try {
-  execFileSync('npm', ['install', '--no-audit', '--no-fund', '--loglevel', 'error', ...specs], {
-    cwd: workDir,
-    stdio: 'inherit',
-    env: { ...process.env, npm_config_cache: cacheDir },
-  });
-} catch {
+// Each attempt gets its own cache, so a retry cannot be answered by the
+// packument the failed one fetched.
+const install = (attempt) => {
+  try {
+    execFileSync('npm', ['install', '--no-audit', '--no-fund', '--loglevel', 'error', ...specs], {
+      cwd: workDir,
+      stdio: 'inherit',
+      env: { ...process.env, npm_config_cache: join(workDir, `npm-cache-${attempt}`) },
+    });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const started = Date.now();
+let attempt = 1;
+let ok;
+while (!(ok = install(attempt))) {
+  const delay = DEFAULT_DELAYS_MS[Math.min(attempt - 1, DEFAULT_DELAYS_MS.length - 1)];
+  if (Date.now() - started + delay > budgetMs) break;
+  console.log(`[registry-smoke] attempt ${attempt} failed; trying again in ${delay / 1000}s`);
+  await new Promise((resolve) => setTimeout(resolve, delay));
+  attempt += 1;
+}
+
+if (!ok) {
   console.error(
     [
       '',

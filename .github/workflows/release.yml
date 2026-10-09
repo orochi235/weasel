@@ -116,4 +116,4 @@ jobs:
       # person installing it days later.
       - name: Install the release from the registry
         if: steps.changesets.outputs.published == 'true'
-        run: npm run test:smoke:registry
+        run: npm run test:smoke:registry -- --wait
