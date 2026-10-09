@@ -11,6 +11,7 @@ When work merges, retire its entry here in the same change.
 
 Priority tags:
 - **(P1)** — foundational genericity gap; the kit can't do this today
+- **(P1.5)** — ranked between P1 and P2
 - **(P2)** — broad reuse, or friction-likely
 - **(P3)** — specialized, or resting on a foundation not built yet
 
@@ -807,14 +808,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) A classic Mac OS theme.** Which era it follows, System 7's one-bit look or Mac OS 8–9's
   Platinum, is the first decision.
 
-- **(P3) `tone` doesn't take the kit's color type.** `StanceProps.tone` is `number | string`: a
-  number indexes the theme's tone list, and a string goes into `--wzl-tone` as raw CSS, so a
-  palette name like `{ ref: 'accent' }` has no way in. `@weasel-js/paint`'s `ColorSource` (a
-  literal, a `ColorRef`, or a function, resolved by `resolvePaletteColor`) is the named-color type,
-  but only core's renderer uses it; `ThemeProvider` hands out tones as a `ColorList` and no
-  `Palette`. Taking `ColorSource` means giving the theme context a palette (or an `ExternalColors`
-  resolver onto its ramps) and routing every stanced surface's tone through it, so the UI and the
-  renderer stop naming colors two ways.
+- **(P1.5) `@weasel-js/ui` names colors as raw CSS strings, not `ColorSource`.** `@weasel-js/paint`'s
+  `ColorSource` (a literal, a `ColorRef` like `{ ref: 'accent' }`, or a function, resolved by
+  `resolvePaletteColor`) is the kit's color type, but only core's renderer uses it. In the ui package
+  every color prop is a string passed through as CSS: `StanceProps.tone` (`number | string`, the
+  number indexing the theme's tone list), `Plot2D`'s series colors, `CurveField`'s band and line
+  colors, `createFunctionLayer`'s `color`, `Badge`'s effect colors. So a palette name has no way into
+  any of them, and the UI and the renderer name colors two ways. Adopting it means giving the theme
+  context a `Palette` (or an `ExternalColors` resolver onto its ramps; `ThemeProvider` hands out tones
+  only as a `ColorList` today) and resolving every one of those props through it.
 
 ### WeaselDraw app follow-ups (defer)
 
@@ -978,15 +980,6 @@ one dead `const` and four stale disable directives.
 ---
 
 ## Release-gate & build hygiene
-
-- **(P3) `clock.browser.test.tsx` fails under full-suite load.** "a timed layer
-  repaints as the clock plays, and holds once it pauses" failed once in an
-  `onto test` run on teitou (2026-10-08, 2213 ms), with a branch that touched no
-  clock code, and passed three runs out of three on its own. It failed again the
-  same way on teitou that evening (4715 ms), this time with `expected 45 to be
-  44` from the `held` check after `pause`: a frame already queued when the clock
-  paused landed after the 100 ms wait. The fix is to wait on frames the clock
-  reports rather than on wall-clock time.
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
