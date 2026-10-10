@@ -11,5 +11,13 @@
   "excludeExternals": true,
   "exclude": ["**/*.test.ts", "**/*.test.tsx"],
   "readme": "README.md",
-  "skipErrorChecking": true
+  "skipErrorChecking": true,
+  // Quantity has no doc site of its own; core's re-exports document it.
+  "externalSymbolLinkMappings": {
+    "@weasel-js/quantity": {
+      "UnitSystem": "../api/interfaces/UnitSystem.html"
+    }
+  },
+  // `PrefPath`'s string-joining step, not a type a consumer names.
+  "intentionallyNotExported": ["Join"]
 }
