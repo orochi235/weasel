@@ -159,6 +159,24 @@ describe('PrefSchemaEditor', () => {
     expect(within(screen.getByRole('region', { name: 'Structure' })).queryByRole('button', { name: 'Add pref' })).toBeNull();
   });
 
+  it('drops what it submitted from the changes once the host says the source took it', async () => {
+    const renamed: PrefGroup = { ...START, children: { ...START.children, view: { ...(START.children.view as PrefGroup), name: 'Viewing' } } };
+    function Host({ original, taken }: { original: PrefGroup; taken: boolean }) {
+      const [schema, setSchema] = useState(renamed);
+      return <PrefSchemaEditor schema={schema} onChange={setSchema} original={original} taken={taken} onSubmit={async () => {}} />;
+    }
+    const changes = () => screen.getByRole('region', { name: 'Changes' });
+    const { rerender } = render(<Host original={START} taken={false} />);
+    expect(within(changes()).queryByText('No changes.')).toBeNull();
+    await act(async () => { fireEvent.click(within(changes()).getByRole('button', { name: 'Submit' })); });
+    // The source took the rename in words of its own, which only the host's say-so tells from an edit still owed.
+    const took: PrefGroup = { ...START, children: { ...START.children, view: { ...(START.children.view as PrefGroup), name: 'Views' } } };
+    rerender(<Host original={took} taken={false} />);
+    expect(within(changes()).queryByText('No changes.')).toBeNull();
+    rerender(<Host original={took} taken />);
+    expect(within(changes()).getByText('No changes.')).toBeInTheDocument();
+  });
+
   it('undoes and redoes an edit, from its buttons and from the keyboard', () => {
     render(<Live />);
     fireEvent.click(row('grid'));

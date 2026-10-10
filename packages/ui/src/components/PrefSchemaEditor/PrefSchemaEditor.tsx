@@ -14,6 +14,7 @@ import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
+import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
 import { drawsNode, previewDrop, previewMark, previewTarget, railTakesInto, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
 import { StructurePane, type DropOutside } from './StructurePane';
@@ -75,6 +76,9 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
   /** Somewhere to send the changes: given, the Changes pane draws a Submit button that hands over the changes
    *  since `original` and the schema's literal. A promise it returns sets the button to "Sent" or "Failed". */
   onSubmit?: SubmitChanges;
+  /** Nothing submitted is still waiting: what `onSubmit` last handed over is in `original` now. Once true, the
+   *  editor drops those changes from its draft and keeps the edits made since. */
+  taken?: boolean;
   /** The host's own controls, set first in the bar across the editor's top. */
   bar?: ReactNode;
   className?: string;
@@ -91,7 +95,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, onSubmit, bar, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, onSubmit, taken = false, bar, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
@@ -142,6 +146,24 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     if (opened.met === 'carried') saveDraft(draftKey, opened.schema, base, history.serialize(), opened.savedAt);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a draft is opened once, by the editor that finds it
   }, []);
+  const sent = useRef<unknown>(null);
+  useEffect(() => {
+    sent.current ??= draftKey === undefined ? null : openSent(draftKey);
+    if (!taken || sent.current === null) return;
+    const next = afterTaken(emitted.current, sent.current, base);
+    sent.current = null;
+    if (draftKey !== undefined) dropSent(draftKey);
+    hand(next);
+    history.clear();
+    keep();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the host's word is the only thing that sets this off
+  }, [taken]);
+  const submit: SubmitChanges | undefined = onSubmit && (async (changes, literal) => {
+    const packed = packSent(emitted.current, base);
+    await onSubmit(changes, literal);
+    sent.current = packed;
+    if (draftKey !== undefined) saveSent(draftKey, packed);
+  });
   // The panes edit either root; each hands back the kind it was given.
   const commit = (next: SchemaRoot, coalesceKey?: string) => {
     history.applyOps([swapOp(latest.current.schema, next as S, hand, coalesceKey)], 'edit schema');
@@ -261,7 +283,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={previewDrag.onPointerDown} ghost={previewDrag.ghost} />
-      <ExportPanel schema={schema} changes={changes} onSubmit={onSubmit} />
+      <ExportPanel schema={schema} changes={changes} onSubmit={submit} />
     </div>
   );
 }
