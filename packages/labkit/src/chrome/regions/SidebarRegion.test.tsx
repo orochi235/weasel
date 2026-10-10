@@ -28,7 +28,11 @@ describe('<SidebarRegion> stance and tone', () => {
 
 describe('<SidebarRegion> actions', () => {
   const contributions: RegionContribution<TrialChromeContext>[] = [
-    { id: 'a', region: 'sidebar', item: { title: 'Vars', body: 'x', actions: <button type="button">Jump</button> } },
+    {
+      id: 'a',
+      region: 'sidebar',
+      item: { title: 'Vars', body: 'x', actions: <button type="button">Jump</button> },
+    },
   ];
 
   it('draws a section’s actions in its title bar', () => {

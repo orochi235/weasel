@@ -26,7 +26,6 @@
   color: var(--wzl-fg-muted);
   text-align: end;
   user-select: none;
-  font-variant-numeric: tabular-nums;
 }
 
 /* prism's token classes, which it sets on each span. */

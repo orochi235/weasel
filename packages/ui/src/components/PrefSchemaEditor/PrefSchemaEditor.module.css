@@ -66,7 +66,7 @@
   text-transform: var(--wzl-params-label-case, uppercase);
 }
 .paneTools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); }
-.treeKey { font-family: var(--wzl-font-mono); font-size: 0.9em; color: var(--wzl-fg-muted); }
+.treeKey { font-family: var(--wzl-font-mono); font-size: var(--wzl-font-size-sm); color: var(--wzl-fg-muted); }
 .addForm { display: grid; gap: var(--wzl-space-3); min-width: min(360px, 80vw); }
 .idField input { font-family: var(--wzl-font-mono); }
 .addActions { display: flex; justify-content: flex-end; gap: var(--wzl-space-2); }
@@ -96,4 +96,4 @@
   font-size: var(--wzl-font-size-xs);
 }
 .changeList { overflow: auto; font-family: var(--wzl-font-mono); white-space: pre; }
-.changed { font-weight: 600; }
+.changed { font-weight: var(--wzl-font-weight-bold); }

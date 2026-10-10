@@ -113,7 +113,7 @@
   inset-inline: var(--tree-gutter) 0;
   height: 2px;
   background: var(--wzl-accent);
-  border-radius: 1px;
+  border-radius: var(--wzl-radius-pill);
   pointer-events: none;
 }
 .item[data-drop='before']::before { top: -1px; }

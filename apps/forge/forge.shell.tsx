@@ -1,19 +1,9 @@
 import { defineShellConfig, FOLLOW_APP } from '@weasel-js/forge';
-import { interstellarTheme } from '@weasel-js/labkit';
-import { defineTheme } from '@weasel-js/theme';
 import { FORGE_LAB, LABS } from '../shared/labs';
 import { FONT_GLOBALS, fontTheme, loadWebFonts } from './fonts';
-import { THEME_GLOBAL } from './themes';
+import { chromeTheme, THEME_GLOBAL } from './themes';
 
 if (typeof document !== 'undefined') loadWebFonts(document);
-
-/** The workshop's chrome runs roomy, where body text is 18px; controls and values take the
- *  small step instead, the size its labels and the story tree already use. */
-const chromeTheme = defineTheme({
-  name: 'forge-chrome',
-  extends: interstellarTheme,
-  pins: { 'font-size': { value: '{font-size-sm}', type: 'dimension' } },
-});
 
 export default defineShellConfig({
   pages: LABS,

@@ -15,7 +15,13 @@ export interface TrialTitleBarProps {
 
 // `useDragHandle` needs a node id and windease's DragProvider, so the draggable
 // form is a separate component rather than a conditional hook.
-function Draggable({ nodeId, title, titleContent, lead, children }: TrialTitleBarProps & { nodeId: NodeId }) {
+function Draggable({
+  nodeId,
+  title,
+  titleContent,
+  lead,
+  children,
+}: TrialTitleBarProps & { nodeId: NodeId }) {
   const handlers = useDragHandle(nodeId);
   return (
     <div className="lk-trial__titlebar lk-trial__titlebar--draggable" {...handlers}>

@@ -164,8 +164,10 @@ export function createTrialClock(spec: ClockCapability, start?: ClockPosition): 
   const follow = (): void => {
     if (!mix) return;
     const ahead = elapsed - mix.now;
-    if (ahead > 0) mix.sync((host += ahead));
-    else if (ahead < 0) mix.seek(elapsed);
+    if (ahead > 0) {
+      host += ahead;
+      mix.sync(host);
+    } else if (ahead < 0) mix.seek(elapsed);
   };
   mix?.sync(host);
 

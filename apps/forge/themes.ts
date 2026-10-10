@@ -1,7 +1,7 @@
 import type { GlobalDeclaration, StoryContext } from '@weasel-js/forge';
 // The theme module alone: labkit's barrel is most of what a frame would otherwise load.
 import { interstellarTheme } from '@weasel-js/labkit/theme/interstellar';
-import { applyTheme, type Theme, weaselTheme } from '@weasel-js/theme';
+import { applyTheme, defineTheme, type Theme, weaselTheme } from '@weasel-js/theme';
 
 /** The themes a trial can take, by name; the first is the default. */
 export const THEMES: Readonly<Record<string, Theme>> = {
@@ -10,6 +10,14 @@ export const THEMES: Readonly<Record<string, Theme>> = {
 };
 
 const DEFAULT_THEME = Object.keys(THEMES)[0]!;
+
+/** The workshop's chrome runs roomy, where body text is 18px; controls and values take the
+ *  small step instead, the size its labels and the story tree already use. */
+export const chromeTheme = defineTheme({
+  name: 'forge-chrome',
+  extends: interstellarTheme,
+  pins: { 'font-size': { value: '{font-size-sm}', type: 'dimension' } },
+});
 
 const capitalize = (name: string) => name.charAt(0).toUpperCase() + name.slice(1);
 

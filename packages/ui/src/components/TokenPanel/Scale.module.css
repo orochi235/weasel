@@ -6,11 +6,11 @@
 }
 
 .readout {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: flex;
   flex-direction: column;
   align-items: center;
   line-height: 1.2;
-  font-variant-numeric: tabular-nums;
 }
 
 .label {

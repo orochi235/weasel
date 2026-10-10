@@ -43,7 +43,9 @@ function Section({
         >
           {title}
         </button>
-        {actions && !collapsed ? <div className="lk-sidebar-section__actions">{actions}</div> : null}
+        {actions && !collapsed ? (
+          <div className="lk-sidebar-section__actions">{actions}</div>
+        ) : null}
         {onUndock ? (
           <button
             type="button"
