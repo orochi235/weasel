@@ -97,15 +97,27 @@
   border-radius: var(--wzl-radius-sm);
 }
 
-/* Where a drag would drop: a bar on the side of a row it would land beside,
-   and a ring round a group it would land in. */
-:is(.railLayout, .columnsLayout) [data-drop='before'] { box-shadow: 0 -2px 0 0 var(--wzl-accent); }
-:is(.railLayout, .columnsLayout) [data-drop='after'] { box-shadow: 0 2px 0 0 var(--wzl-accent); }
-.railLayout[data-across='2'] [data-drop='before'] { box-shadow: -3px 0 0 0 var(--wzl-accent); }
-.railLayout[data-across='2'] [data-drop='after'] { box-shadow: 3px 0 0 0 var(--wzl-accent); }
-:is(.railLayout, .columnsLayout) [data-drop='into'] {
+/* A drag over the form: what it holds, drawn where it would land, and the rail entry it would go into. */
+[data-drop-placeholder] {
+  outline: 1px dashed var(--wzl-accent);
+  outline-offset: 3px;
+  border-radius: var(--wzl-radius-sm);
+  background: color-mix(in oklab, var(--wzl-accent) 10%, transparent);
+  pointer-events: none;
+}
+
+[data-drop-placeholder] > * {
+  opacity: 0.6;
+}
+
+.railItem[data-drop='into'] {
   outline: 2px solid var(--wzl-accent);
   outline-offset: -2px;
+}
+
+/* The browser would otherwise scroll a pane to hold its rows still when a placeholder lands above them. */
+[data-dropping] .pane {
+  overflow-anchor: none;
 }
 
 /* `kind: 'label'`: text among the rows. */

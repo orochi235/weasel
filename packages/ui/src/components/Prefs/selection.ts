@@ -1,53 +1,24 @@
 import { useEffect, useRef, type FocusEvent, type PointerEvent, type RefObject } from 'react';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
+import { isDropPath, isDropTop } from './drop';
 
 /** On the element a form draws for a leaf or a group, its dotted path. */
 export const PATH_ATTR = 'data-pref-path';
 
-/** Where a drop would land in a form: beside the leaf at `path`, or into the group there. `''` is the root. */
-export interface PrefDropMark {
-  path: string;
-  where: 'before' | 'after' | 'into';
-  /** The mark belongs on the group's rail entry, which is what the pointer is over. */
-  rail?: boolean;
-}
-
-/** What a form marks while it draws: the selection, and where a drag would drop. */
+/** What a form marks while it draws: the selection. */
 export interface PrefMarks {
   selected?: string | null;
-  dropMark?: PrefDropMark | null;
 }
 
 /** The attributes of the element a form draws for the leaf (`leaf`) or the group at `path`. */
 export function selectionAttrs(path: string, marks: PrefMarks, leaf = false): Record<string, string | undefined> {
-  const drop = marks.dropMark;
+  // A placeholder is not in the schema, so there is nothing to select or to drop beside.
+  if (isDropPath(path)) return { 'data-drop-placeholder': isDropTop(path) ? '' : undefined };
   return {
     [PATH_ATTR]: path === '' ? undefined : path,
     'data-pref-leaf': leaf ? '' : undefined,
     'data-selected': path !== '' && path === marks.selected ? '' : undefined,
-    'data-drop': drop != null && !drop.rail && path !== '' && drop.path === path ? drop.where : undefined,
   };
-}
-
-/**
- * Where a drop at a client point inside a form would land: before or after the leaf under it — by the half of its
- * row the point is in, across (`'x'`) for rows set side by side — or into the group under it. Null over neither.
- */
-export function prefDropTargetAt(root: Element, x: number, y: number, split: 'x' | 'y' = 'y'): PrefDropMark | null {
-  const el = root.ownerDocument.elementFromPoint?.(x, y);
-  if (!el || !root.contains(el)) return null;
-  const rail = el.closest('[data-pref-rail]');
-  if (rail) return { path: rail.getAttribute('data-pref-rail')!, where: 'into', rail: true };
-  const hit = el.closest(`[${PATH_ATTR}]`);
-  if (!hit) {
-    const pane = el.closest('[data-pref-into]');
-    return pane ? { path: pane.getAttribute('data-pref-into')!, where: 'into' } : null;
-  }
-  const path = hit.getAttribute(PATH_ATTR)!;
-  if (!hit.hasAttribute('data-pref-leaf')) return { path, where: 'into' };
-  const r = hit.getBoundingClientRect();
-  const before = split === 'x' ? x < r.left + r.width / 2 : y < r.top + r.height / 2;
-  return { path, where: before ? 'before' : 'after' };
 }
 
 /**

@@ -50,9 +50,11 @@ export interface PaletteDrag {
  * Tool buttons to drag into the tree or the live preview, each making one new node where it is dropped. The button holds
  * the pointer for the whole drag, so the drag is the palette's own and what it is over is the owner's to work out.
  */
-export function Palette({ sections = false, onDrag, onDrop }: {
+export function Palette({ sections = false, ghost = true, onDrag, onDrop }: {
   /** The schema's root is a section, so what it makes are sections. */
   sections?: boolean;
+  /** Draw the dragged node beside the pointer. Off while something else draws it where it would land. */
+  ghost?: boolean;
   /** The drag moved, or ended (`null`) without a drop. */
   onDrag(drag: PaletteDrag | null): void;
   onDrop(drag: PaletteDrag): void;
@@ -91,7 +93,7 @@ export function Palette({ sections = false, onDrag, onDrop }: {
           </span>
         ))}
       </ToolGroup>
-      {drag && root.current && (
+      {drag && ghost && root.current && (
         // Offset from the pointer so what is under it stays visible.
         <DragGhost at={{ left: drag.x + 10, top: drag.y + 10, width: GHOST_WIDTH[ghostIsPage(drag.node, true) ? 'page' : 'node'] }} from={root.current}>
           <NodeGhost node={drag.node} topLevel />

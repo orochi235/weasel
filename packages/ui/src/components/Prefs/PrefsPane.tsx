@@ -39,8 +39,7 @@ export function PrefsPane(props: PrefsPaneProps) {
   const groups = entries.filter(([, child]) => !isPrefLeaf(child));
 
   return (
-    <div className={[s.pane, className].filter(Boolean).join(' ')} ref={scrollRef} data-pref-into={path}
-      data-drop={ctx.dropMark && !ctx.dropMark.rail && ctx.dropMark.where === 'into' && ctx.dropMark.path === path && path === '' ? 'into' : undefined}>
+    <div className={[s.pane, className].filter(Boolean).join(' ')} ref={scrollRef} data-pref-into={path} data-pref-scroll="">
       <div className={s.paneHead} {...selectionAttrs(path, ctx)}>
         <h3 className={s.paneTitle}>{group.name}</h3>
         {group.description !== undefined && (
@@ -163,7 +162,7 @@ function PaneTabs({ ctx, tabs, depth, box }: {
         id: p,
         name: g.name,
         // The open tab's mark is its panel's, so a selection is drawn once.
-        attrs: selectionAttrs(p, p === open ? { dropMark: ctx.dropMark } : ctx),
+        attrs: selectionAttrs(p, p === open ? {} : ctx),
         panelAttrs: selectionAttrs(p, ctx),
         content: (
           <>

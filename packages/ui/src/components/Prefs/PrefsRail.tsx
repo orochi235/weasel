@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
+import { isDropPath } from './drop';
 import type { PrefRailItem } from './schema';
 import s from './Prefs.module.css';
 
@@ -28,7 +29,8 @@ export interface PrefsRailProps {
    * and fold it. Everything is unfolded while filtering, so every match shows.
    */
   foldable?: boolean;
-  /** Path of the entry to mark as where a drag would drop. */
+  /** Path of the entry to mark as the one a drag would drop into. An entry whose path is a drop placeholder's is
+   *  drawn as one. */
   dropInto?: string | null;
 }
 
@@ -82,7 +84,7 @@ export function PrefsRail(props: PrefsRailProps) {
   };
 
   return (
-    <nav className={s.rail} aria-label={ariaLabel}>
+    <nav className={s.rail} aria-label={ariaLabel} data-pref-scroll="">
       {header}
       <div
         className={foldable ? `${s.railList} ${s.railFoldable}` : s.railList}
@@ -102,7 +104,8 @@ export function PrefsRail(props: PrefsRailProps) {
                 .join(' ')}
               aria-current={open ? 'page' : inView ? 'location' : undefined}
               data-rail-fold={nested ? item.path : undefined}
-              data-pref-rail={item.path}
+              data-pref-rail={isDropPath(item.path) ? undefined : item.path}
+              data-drop-placeholder={isDropPath(item.path) ? '' : undefined}
               data-drop={dropInto === item.path ? 'into' : undefined}
               onClick={() => activate(index)}
             >

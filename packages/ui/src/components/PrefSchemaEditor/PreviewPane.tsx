@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, ty
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { DragGhost } from '../DragGhost';
-import { PrefsDialog, type PrefDropMark, type PrefRenderer } from '../Prefs';
+import { PrefsDialog, type PrefDrop, type PrefRenderer } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPanel';
 import { Switch } from '../Switch';
 import type { DefaultEdit } from './defaults';
 import { NodeGhost } from './NodeGhost';
+import { drawsNode } from './previewDrop';
 import { PaneHeader } from './PaneHeader';
 import { keysOf, pathOf, type SchemaRoot } from './schemaEdit';
 import type { PreviewGhost } from './usePreviewDrag';
@@ -25,8 +26,8 @@ export interface PreviewPaneProps {
   onDefaults(edits: readonly DefaultEdit[]): void;
   /** Set to the element the preferences form is drawn in, for a drag to be hit-tested against. */
   stageRef?: RefObject<HTMLDivElement | null>;
-  /** Where a drag would drop in the form. */
-  dropMark?: PrefDropMark | null;
+  /** A drag over the form, which draws what is dragged where it would land. */
+  drop?: PrefDrop | null;
   /** A press on the form, which may pick up what is under it. */
   onStagePointerDown?(e: PointerEvent): void;
   /** What follows the pointer while something from the form is dragged. */
@@ -34,20 +35,20 @@ export interface PreviewPaneProps {
 }
 
 /** The schema drawn the way its reader draws it: a preferences form for a group, a properties panel for a section. */
-export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, dropMark, onStagePointerDown, ghost }: PreviewPaneProps) {
+export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: PreviewPaneProps) {
   return isPrefSection(schema)
     ? <SectionPreview schema={schema} renderers={propertyRenderers} onDefaults={onDefaults} />
-    : <GroupPreview schema={schema} renderers={renderers} selected={selected ?? null} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} dropMark={dropMark} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
+    : <GroupPreview schema={schema} renderers={renderers} selected={selected ?? null} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
 }
 
-function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, dropMark, onStagePointerDown, ghost }: {
+function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: {
   schema: PrefGroup;
   renderers?: Record<string, PrefRenderer>;
   selected: string | null;
   onSelect?: (path: string) => void;
   onDefaults(edits: readonly DefaultEdit[]): void;
   stageRef?: RefObject<HTMLDivElement | null>;
-  dropMark?: PrefDropMark | null;
+  drop?: PrefDrop | null;
   onStagePointerDown?(e: PointerEvent): void;
   ghost?: PreviewGhost | null;
 }) {
@@ -62,14 +63,14 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
       <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
         schema={schema} values={NO_VALUES} renderers={renderers} showHidden={showHidden}
         // An empty group is drawn too: it is somewhere to drop into.
-        showEmpty dropMark={dropMark}
+        showEmpty drop={drop}
         // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
         selected={selected === null ? undefined : keysOf(selected).join('.')}
         onSelect={onSelect && ((path) => onSelect(pathOf(path.split('.'))!))}
         onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
       <ResizeHandle value={width} min={360} max={900} onInput={setWidth} ariaLabel="Resize preview" />
-      {ghost && stageRef?.current && (
-        <DragGhost at={ghost} from={stageRef.current}><NodeGhost node={ghost.node} renderers={renderers} /></DragGhost>
+      {ghost && stageRef?.current && !drawsNode(drop) && (
+        <DragGhost at={ghost} from={stageRef.current}><NodeGhost node={ghost.node} topLevel={ghost.topLevel} renderers={renderers} /></DragGhost>
       )}
       </div>
     </section>

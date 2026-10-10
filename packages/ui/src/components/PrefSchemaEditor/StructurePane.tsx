@@ -59,6 +59,8 @@ export interface StructurePaneProps {
   stored?: unknown;
   /** Somewhere else a drag from this pane may end: the live preview. */
   outside?: DropOutside;
+  /** `outside` is drawing what is dragged where it would land, so the palette draws no ghost of it. */
+  outsideDraws?: boolean;
   /** Remove the selected node. */
   onRemove(): void;
   /** Move the nodes at `paths` to `target`, keeping them open and selected. */
@@ -85,7 +87,7 @@ const nameOfKey = (key: string): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, tools, stored, outside, onMove: move, onRemove }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, tools, stored, outside, outsideDraws = false, onMove: move, onRemove }: StructurePaneProps) {
   const nodes = useMemo(() => {
     const all = toTreeNodes(schema, null, changed);
     const loose = new Set(generalKeys(schema));
@@ -181,7 +183,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         <Button size="sm" onClick={() => setAdding('branch')}>Add {branch}</Button>
         <Button size="sm" disabled={selected === null} onClick={onRemove}>Remove</Button>
       </div>
-      <Palette sections={isPrefSection(schema)} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+      <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
       <AddNodeDialog what={adding === 'branch' ? branch : adding} kinds={kinds} onAdd={add}
         siblings={(host && childrenOf(host)) ?? {}} dottedKey={adding === 'pref' && branch === 'section'}
         initial={fromStored ? {

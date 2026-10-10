@@ -16,5 +16,6 @@ export {
   type PrefRailItem,
   type PrefFieldChoice,
 } from './schema';
-export { prefDropTargetAt, type PrefDropMark } from './selection';
+export { type PrefDrop, type PrefDropMark } from './drop';
+export { prefDropTargetAt } from './dropTarget';
 export { GroupTabs, type GroupTab, type GroupTabsProps } from './GroupTabs';

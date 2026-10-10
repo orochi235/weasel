@@ -3,7 +3,7 @@ import { createHistory, historyKey, useLatest, type Op } from '@weasel-js/core';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
-import { prefDropTargetAt, type PrefDropMark, type PrefRenderer } from '../Prefs';
+import { prefDropTargetAt, type PrefDrop, type PrefRenderer } from '../Prefs';
 import type { PropertyRenderer } from '../SelectionPanel';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
@@ -12,9 +12,9 @@ import { packDraft, readDraft, unpackDraft, writeDraft } from './draft';
 import { ExportPanel } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
-import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
-import { previewTarget } from './previewDrop';
+import { drawsNode, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
 import { StructurePane, type DropOutside } from './StructurePane';
 import s from './PrefSchemaEditor.module.css';
@@ -143,24 +143,21 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   };
   // The live preview as a place to drop: the form says what is under the pointer, the schema whether it fits there.
   const stage = useRef<HTMLDivElement | null>(null);
-  const [dropMark, setDropMark] = useState<PrefDropMark | null>(null);
+  const [drop, setDrop] = useState<PrefDrop | null>(null);
   const opening = useRef<{ path: string; timer: ReturnType<typeof setTimeout> } | null>(null);
   const stopOpening = () => {
     if (opening.current) clearTimeout(opening.current.timer);
     opening.current = null;
   };
-  const dropAt: DropOutside['target'] = (nodes, paths, point) => {
-    const mark = stage.current && prefDropTargetAt(stage.current, point.x, point.y, 'x');
-    return previewTarget(latest.current.schema, mark || null, nodes, paths);
-  };
+  const markAt = (nodes: readonly SchemaNode[], point: { x: number; y: number }) =>
+    previewMark((stage.current && prefDropTargetAt(stage.current, point.x, point.y)) || null, nodes);
   const outside: DropOutside = {
     over(nodes, paths, point) {
-      const mark = (stage.current && prefDropTargetAt(stage.current, point.x, point.y, 'x')) || null;
-      const taken = previewTarget(latest.current.schema, mark, nodes, paths) !== null;
-      const next = taken ? mark : null;
-      setDropMark((cur) => (cur?.path === next?.path && cur?.where === next?.where && cur?.rail === next?.rail ? cur : next));
-      // Held over a rail entry, the drag opens that page, so a row on it can be aimed at.
-      if (next?.rail) {
+      const mark = markAt(nodes, point);
+      const next = mark && previewTarget(latest.current.schema, mark, nodes, paths) !== null ? previewDrop(mark, nodes, paths) : null;
+      setDrop((cur) => (sameDrop(cur, next) ? cur : next));
+      // Held on the middle of a rail entry, the drag opens that page, so a row on it can be aimed at.
+      if (next?.rail && next.where === 'into') {
         if (opening.current?.path !== next.path) {
           stopOpening();
           const path = next.path;
@@ -169,12 +166,12 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       } else {
         stopOpening();
       }
-      return taken;
+      return next !== null;
     },
-    target: dropAt,
+    target: (nodes, paths, point) => previewTarget(latest.current.schema, markAt(nodes, point), nodes, paths),
     end() {
       stopOpening();
-      setDropMark(null);
+      setDrop(null);
     },
   };
   const moveTo = (paths: readonly string[], target: SchemaTarget) => {
@@ -216,7 +213,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       }
     }}>
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
-        expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} onMove={moveTo} onRemove={remove} tools={
+        expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onRemove={remove} tools={
           <>
             <Button size="sm" variant="ghost" disabled={!history.canUndo()} onClick={() => history.undo()}>Undo</Button>
             <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => history.redo()}>Redo</Button>
@@ -243,7 +240,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           kinds={kindList} custom={custom} renderers={renderers} onNotice={setNotice} />
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
-      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} onDefaults={setDefaultsFrom} stageRef={stage} dropMark={dropMark} onStagePointerDown={previewDrag.onPointerDown} ghost={previewDrag.ghost} />
+      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={previewDrag.onPointerDown} ghost={previewDrag.ghost} />
       <ExportPanel schema={schema} changes={changes} />
     </div>
   );

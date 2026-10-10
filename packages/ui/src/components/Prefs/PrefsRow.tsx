@@ -10,7 +10,8 @@ import { PropertyRow } from '../Properties/PropertyPanel';
 import { GroupTabs, type GroupTab } from './GroupTabs';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
-import { selectionAttrs, type PrefDropMark } from './selection';
+import { dropValuePath, type PrefDrop } from './drop';
+import { selectionAttrs } from './selection';
 import s from './Prefs.module.css';
 
 /** What a {@link PrefRenderer} is given for the leaf it is rendering. */
@@ -47,13 +48,15 @@ export interface WalkCtx {
   fields?: readonly PrefFieldChoice[];
   /** Path of the row or group the form marks as selected. */
   selected?: string | null;
-  /** Where a drag would drop, which the form marks. */
-  dropMark?: PrefDropMark | null;
+  /** The drop the form is drawing. */
+  drop?: PrefDrop | null;
 }
 
 export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
-  const stored = prefValueAtPath(ctx.values, path);
-  const inherited = ctx.auto?.has(path) ?? false;
+  // A placeholder shows what its node shows where it was dragged from.
+  const from = dropValuePath(ctx.drop, path);
+  const stored = prefValueAtPath(ctx.values, from);
+  const inherited = ctx.auto?.has(from) ?? false;
   const { onAutoChange } = ctx;
   const toggles = onAutoChange !== undefined && (ctx.canInherit?.(path) ?? true);
   const setAuto = (next: boolean): void => {
