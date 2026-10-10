@@ -442,7 +442,6 @@
   grid-template-columns:
     minmax(140px, var(--wzl-params-label-width, 240px))
     minmax(180px, 260px);
-  align-items: center;
 }
 
 /* `rowsAcross={2}`: two rows side by side. */
@@ -459,7 +458,6 @@
 .railLayout[data-across='2'] .row {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: var(--wzl-space-1) var(--wzl-space-3);
 }
 
