@@ -832,6 +832,23 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   grid gap above the attributes pane, and the Key/Kind rows are wider than the attribute form
   under them. Seen on `#/dev/prefs` at 1440×900.
 
+- **(P2) `PrefSchemaEditor` layout by dragging, what is left.** Rows in the live preview cannot be
+  dragged themselves: a drag starts in the structure tree or the palette. A stored value in the
+  Unplaced list cannot be dragged either; it is still added by a click. A `label` is a kind only
+  `PrefsForm`'s rail and columns rows draw: `SelectionPanel` and labkit's `ControlPanel` show it as
+  an unknown kind, `prefFieldChoices` offers it as a field, and `@weasel-js/prefs` does not know
+  the kind. Dragging in the preview was tried by hand on astv's page; no test drives a pointer
+  through it, only the drop-target arithmetic.
+
+- **(P3) `subPages` and `foldable` overlap a group's `as`.** `PrefsForm`'s form-wide `subPages`
+  and `foldable` props decide what `as: 'page'` on a nested group and a folding panel should;
+  fold both into `as`. `as: 'page'` means nothing where there is no rail (`ControlPanel`, the
+  columns and list layouts, any `PrefSection`) and draws as the default there.
+
+- **(P3) `PrefSchemaEditor`'s properties-panel preview ignores the selection.** For a group
+  schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s
+  `selected`/`onSelect`. A section schema previews through `SelectionPanel`, which has neither.
+
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides and `.dialog` rows beside the
   `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
