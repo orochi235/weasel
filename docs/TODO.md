@@ -705,6 +705,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
   action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
+- **(P3) `PropertyHelp` trips react-aria's "`<Focusable>` child must be focusable" warning.** Seen
+  in forge on 2026-10-10: the `ui/Properties/Rows/PropertyRow` story `AutoValue` logs it once per ⓘ
+  button on load, and a story with no ⓘ logs none. The child is a real `<button>`, and the tooltip
+  opens from the keyboard, so the check in `useFocusable.js` is failing on something other than
+  the element's kind. Cause not found.
+
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
   but dragging a palette item onto a canvas is `useDragDrop`

@@ -9,9 +9,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Focusable } from 'react-aria-components';
 import { type StanceProps, useStance } from '../stance';
-import { Tooltip, TooltipTrigger } from '../Tooltip';
+import { PropertyHelp } from './PropertyHelp';
 import s from './Properties.module.css';
 
 /**
@@ -245,6 +244,10 @@ export interface PropertyRowProps extends PropertyMetricProps {
   autoControl?: 'hidden' | 'dimmed';
   /** Small muted text after the label — where an inherited value comes from. */
   hint?: ReactNode;
+  /** What the row reads when it is auto, whether or not it is now. Shown as the
+   *  last line of the ⓘ tooltip, after the word `auto`; with no `description`
+   *  the tooltip is that line alone. */
+  autoValue?: ReactNode;
 }
 
 /** The label-plus-control frame `<PropertyField>` draws its rows in. Use it
@@ -266,6 +269,7 @@ export function PropertyRow({
   onAutoChange,
   autoControl = 'hidden',
   hint,
+  autoValue,
 }: PropertyRowProps) {
   const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
   // Each variant already lays out one way; a class is only needed for the
@@ -303,7 +307,9 @@ export function PropertyRow({
         label
       )}
       {hint != null && <span className={s.rowHint}>{hint}</span>}
-      {description ? <PropertyHelp label={label} description={description} /> : null}
+      {description || autoValue != null ? (
+        <PropertyHelp label={label} description={description} autoValue={autoValue} />
+      ) : null}
       {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
     </span>
   );
@@ -410,40 +416,5 @@ function AutoToggle({
     >
       {label}
     </span>
-  );
-}
-
-/** Props for `<PropertyHelp>`. */
-export interface PropertyHelpProps {
-  /** What the help is about; a string names the button `About <label>`. */
-  label: ReactNode;
-  description: string;
-}
-
-/** The ⓘ beside a row label that shows its `description` in a tooltip. Exported
- *  for surfaces that draw a params label outside a `<PropertyRow>`. A tooltip
- *  trigger has to be interactive to be keyboard-reachable, so this is a real
- *  button. */
-export function PropertyHelp({ label, description }: PropertyHelpProps) {
-  const name = typeof label === 'string' ? label : 'this setting';
-  return (
-    <TooltipTrigger>
-      <Focusable>
-        <button
-          type="button"
-          className={s.help}
-          aria-label={`About ${name}`}
-          onClick={(e) => {
-            // The wrapping <label> would otherwise actuate the row's control.
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          ⓘ
-        </button>
-      </Focusable>
-      <Tooltip>{description}</Tooltip>
-    </TooltipTrigger>
   );
 }

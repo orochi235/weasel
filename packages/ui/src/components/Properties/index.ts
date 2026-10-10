@@ -19,10 +19,11 @@ export type {
   PropertyStringFieldProps,
 } from './PropertyField';
 export { PropertyControl, PropertyField } from './PropertyField';
+export type { PropertyHelpProps } from './PropertyHelp';
+export { PropertyHelp } from './PropertyHelp';
 export type {
   PropertyAlign,
   PropertyDensity,
-  PropertyHelpProps,
   PropertyListPack,
   PropertyListProps,
   PropertyMetricProps,
@@ -34,7 +35,6 @@ export type {
   PropertySpanProps,
 } from './PropertyPanel';
 export {
-  PropertyHelp,
   PropertyList,
   PropertyNote,
   PropertyPanel,

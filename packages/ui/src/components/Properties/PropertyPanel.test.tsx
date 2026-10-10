@@ -87,19 +87,38 @@ describe('PropertyRow', () => {
     expect(screen.getByRole('button', { name: 'About Opacity' })).toBeInTheDocument();
   });
 
+  it('ends the help tooltip with what the row reads when auto, and shows it alone with no description', () => {
+    const { rerender } = render(
+      <PropertyRow label="Opacity" description="How see-through it is." autoValue="0.5">
+        <input type="text" defaultValue="x" />
+      </PropertyRow>,
+    );
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => screen.getByRole('button', { name: 'About Opacity' }).focus());
+    const tip = screen.getByRole('tooltip');
+    expect(tip).toHaveTextContent('How see-through it is.auto 0.5');
+    expect(tip.lastElementChild).toHaveTextContent(/^auto 0\.5$/);
+    rerender(
+      <PropertyRow label="Opacity" autoValue="0.5">
+        <input type="text" defaultValue="x" />
+      </PropertyRow>,
+    );
+    expect(screen.getByRole('button', { name: 'About Opacity' })).toBeInTheDocument();
+  });
+
   it('renders no help affordance for an empty or absent description', () => {
-    const { container, rerender } = render(
+    const { rerender } = render(
       <PropertyRow label="Opacity" description="">
         <input type="text" defaultValue="x" />
       </PropertyRow>,
     );
-    expect(container.querySelector(`.${s.help}`)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'About Opacity' })).toBeNull();
     rerender(
       <PropertyRow label="Opacity">
         <input type="text" defaultValue="x" />
       </PropertyRow>,
     );
-    expect(container.querySelector(`.${s.help}`)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'About Opacity' })).toBeNull();
   });
 
   it('shows the description in a tooltip on keyboard focus', () => {

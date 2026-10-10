@@ -52,3 +52,26 @@ export const Variants: Story = {
     </div>
   ),
 };
+
+/** The ⓘ tooltip ends with what the row reads when it is auto: under the
+ *  description on a pinned row, and alone on a row with none. The second row is
+ *  auto now, so its readout shows the same word. */
+export const AutoValue: Story = {
+  render: () => (
+    // Headroom for the tooltip, which opens above its row.
+    <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 80 }}>
+      <PropertyRow
+        label="Gap"
+        layout="inline"
+        description="Space between tiles, in pixels."
+        autoValue="13.3333"
+        onAutoChange={() => {}}
+      >
+        <input type="text" defaultValue="12" />
+      </PropertyRow>
+      <PropertyRow label="Columns" layout="inline" auto readout="auto" autoValue="4" onAutoChange={() => {}}>
+        <input type="text" defaultValue="3" />
+      </PropertyRow>
+    </div>
+  ),
+};

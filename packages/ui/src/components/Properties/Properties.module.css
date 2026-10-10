@@ -691,37 +691,6 @@
   padding: 1px 0;
 }
 
-/* ⓘ help affordance beside a row label. */
-.help {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.15em;
-  height: 1.15em;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--wzl-fg-subtle);
-  font: inherit;
-  font-size: var(--wzl-font-size-sm);
-  line-height: 1;
-  letter-spacing: normal;
-  cursor: help;
-  border-radius: var(--wzl-radius-sm);
-}
-
-.help:hover {
-  color: var(--wzl-fg);
-  border-color: transparent;
-}
-
-.help:focus-visible {
-  outline: 2px solid var(--wzl-focus-ring);
-  outline-offset: 1px;
-  color: var(--wzl-fg);
-}
-
 /* The pinned/auto affordance. Invisible at rest so a panel of thirty rows is
    not thirty dots; revealed by the row, and permanent once the row is auto. */
 /* The row's label is also its pin, so it says so when pointed at — the same
@@ -1535,7 +1504,11 @@
    the control, so the label's case reached one and not the other: the same word
    read `AUTO` in one row and `auto` in the next. An auto row's readout is a
    word, not a number, so it takes the label recipe and both rows read alike. */
-.rowAuto .readout {
+/* `.autoWord` is the same word outside a row: the help tooltip's last line. */
+.rowAuto .readout,
+.autoWord {
+  font-style: normal;
+  font-weight: var(--wzl-font-weight-medium);
   font-size: var(--wzl-font-size-xs);
   color: var(--wzl-secondary-fg);
   text-transform: var(--wzl-params-label-case, uppercase);

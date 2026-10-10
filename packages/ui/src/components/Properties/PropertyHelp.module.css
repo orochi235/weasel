@@ -1,0 +1,40 @@
+/* ⓘ help affordance beside a row label. */
+.help {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wzl-fg-subtle);
+  font: inherit;
+  font-size: var(--wzl-font-size-sm);
+  line-height: 1;
+  letter-spacing: normal;
+  cursor: help;
+  border-radius: var(--wzl-radius-sm);
+}
+
+.help:hover {
+  color: var(--wzl-fg);
+  border-color: transparent;
+}
+
+.help:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+  color: var(--wzl-fg);
+}
+
+/* What the row reads when it is auto: its own line, under the description. */
+.auto {
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+
+.autoAfter {
+  margin-block-start: var(--wzl-space-1);
+}

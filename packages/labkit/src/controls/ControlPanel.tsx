@@ -482,6 +482,12 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   setRowAuto: (path: string, next: boolean, value: unknown) => void;
 }
 
+/** An auto value as tooltip text. A computed number is cut to 6 significant
+ *  digits, so `0.1 + 0.2` reads `0.3`. */
+function summarizeAuto(value: unknown): string {
+  return summarizeValue(typeof value === 'number' ? Number(value.toPrecision(6)) : value);
+}
+
 /** One leaf's row, as the panel draws it. Shared with `ControlMatrix`, whose
  *  popover edits one cell with exactly this row. */
 export function ControlRow<TC extends Record<string, unknown>>({
@@ -516,7 +522,24 @@ export function ControlRow<TC extends Record<string, unknown>>({
   const onAutoChange = canAuto ? setAuto : undefined;
   // An auto row hides its control, so the word is all the row has to say.
   const autoReadout = isAutoRow ? 'auto' : undefined;
-  const autoProps = { auto: isAutoRow, onAutoChange };
+  // What the row would read as auto, pinned or not: the config resolved with
+  // this path unpinned beside the ones that already are.
+  const resolves = canAuto && extra<unknown>(leaf, 'autoResolve') !== undefined;
+  const wouldBe = useMemo(() => {
+    if (!resolves) return undefined;
+    if (isAutoRow) return valueAtPath(shown, path);
+    try {
+      return valueAtPath(
+        resolveAutoConfig(resolved, config, new Set([...(auto ?? []), path])),
+        path,
+      );
+    } catch {
+      // Unpinning this path would close a resolver cycle; the row has no auto value to quote.
+      return undefined;
+    }
+  }, [resolves, isAutoRow, shown, resolved, config, auto, path]);
+  const autoValue = wouldBe === undefined ? undefined : summarizeAuto(wouldBe);
+  const autoProps = { auto: isAutoRow, onAutoChange, autoValue };
 
   // Most specific wins, and within a tier the lab's entry beats the
   // instrument's: controls[path] -> node .render/.dialog -> controls[kind] -> built-in.

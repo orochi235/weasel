@@ -754,6 +754,30 @@ describe('<ControlPanel> auto', () => {
     expect(screen.queryByText(/auto · /)).toBeNull();
   });
 
+  it('quotes what a pinned row would read as auto in its help tooltip, and nothing for a row with no resolver', () => {
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({
+            size: f.number(40).range(0, 100),
+            gap: f
+              .number(12)
+              .auto((c) => (c.size as number) / 3)
+              .range(0, 48),
+          }),
+          [],
+        )}
+        config={{ size: 40, gap: 12 }}
+        auto={new Set()}
+        setConfig={() => {}}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'About Size' })).toBeNull();
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => screen.getByRole('button', { name: 'About Gap' }).focus());
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/^auto 13\.3333$/);
+  });
+
   it('writes the sentinel when the dot turns a row auto', async () => {
     const setConfig = vi.fn();
     render(

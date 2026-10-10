@@ -27,6 +27,8 @@ export interface DialogRowProps extends PropertyMetricProps {
   auto?: boolean;
   /** Toggles `auto` from the row's label — see `<PropertyRow onAutoChange>`. */
   onAutoChange?: (next: boolean) => void;
+  /** What the row reads when it is auto — see `<PropertyRow autoValue>`. */
+  autoValue?: ReactNode;
 }
 
 /**
@@ -48,6 +50,7 @@ export function DialogRow({
   align,
   auto,
   onAutoChange,
+  autoValue,
 }: DialogRowProps) {
   const [open, setOpen] = useState(false);
   const close = (): void => setOpen(false);
@@ -63,6 +66,7 @@ export function DialogRow({
       align={align}
       auto={auto}
       onAutoChange={onAutoChange}
+      autoValue={autoValue}
       // A `<label>` hands a click on its text to its button, which would open
       // the dialog from the label — and the label is the auto toggle.
       group
