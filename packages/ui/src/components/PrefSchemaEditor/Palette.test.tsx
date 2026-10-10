@@ -30,4 +30,28 @@ describe('Palette', () => {
     expect(onDrop).toHaveBeenCalledWith(expect.objectContaining({ x: 50, y: 70, node: expect.objectContaining({ as: 'panel' }) }));
     expect(onDrag).toHaveBeenLastCalledWith(null);
   });
+
+  it('drops nothing when Escape ends the drag', () => {
+    const onDrag = vi.fn();
+    const onDrop = vi.fn();
+    render(<Palette onDrag={onDrag} onDrop={onDrop} />);
+    const panel = screen.getByRole('button', { name: 'Panel' });
+    fireEvent.pointerDown(panel, { button: 0, clientX: 5, clientY: 5 });
+    fireEvent.pointerMove(panel, { clientX: 40, clientY: 60 });
+    fireEvent.keyDown(panel, { key: 'Escape' });
+    expect(onDrag).toHaveBeenLastCalledWith(null);
+    fireEvent.pointerUp(panel, { clientX: 50, clientY: 70 });
+    expect(onDrop).not.toHaveBeenCalled();
+  });
+
+  it('makes nothing of a press that never moves', () => {
+    const onDrag = vi.fn();
+    const onDrop = vi.fn();
+    render(<Palette onDrag={onDrag} onDrop={onDrop} />);
+    const panel = screen.getByRole('button', { name: 'Panel' });
+    fireEvent.pointerDown(panel, { button: 0, clientX: 5, clientY: 5 });
+    fireEvent.pointerUp(panel, { clientX: 5, clientY: 5 });
+    expect(onDrag).not.toHaveBeenCalled();
+    expect(onDrop).not.toHaveBeenCalled();
+  });
 });

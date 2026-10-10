@@ -1,12 +1,37 @@
-import { isPlainObject } from '@weasel-js/core';
+import { isPlainObject, type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/core';
 import { childrenOf, joinPath, nodeAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { containsCode } from './schemaExport';
 
-/** A schema as storage can hold it, and when it was saved. */
+/** A schema as storage can hold it, when it was saved, and the steps that led to it. */
 export interface StoredDraft {
   savedAt: number;
   schema: unknown;
+  steps?: StoredSteps;
 }
+
+/** The name of the editor's one op: a whole schema swapped for another. */
+export const SWAP = 'schema.swap';
+
+/** What a {@link SWAP} op carries: the schema it leaves and the one it makes. */
+export interface SwapArgs<R extends SchemaRoot = SchemaRoot> {
+  before: R;
+  after: R;
+}
+
+/**
+ * An editor's undo and redo steps as storage can hold them. Every step holds two whole schemas and its neighbours
+ * hold the same ones, so each is written once in `schemas`, `null` standing for the source, and a step names its
+ * two by index.
+ */
+export interface StoredSteps {
+  schemas: unknown[];
+  /** Which of `schemas` the editor stood on. */
+  current: number;
+  stacks: SerializedHistory;
+}
+
+/** How many steps back a draft keeps, and as many forward. Each costs a schema's worth of storage. */
+export const STEPS_KEPT = 20;
 
 /** Stands for an attribute that holds code: where the source schema keeps the same value. */
 const FROM = '$from';
@@ -56,6 +81,31 @@ export function packDraft(schema: SchemaRoot, source: SchemaRoot): unknown {
   return packNode(schema, null, codeOrigins(source));
 }
 
+/** The nearest `keep` steps each way of `stacks`, whose ops are all {@link SWAP}s, and the schema they stand on. */
+export function packSteps(stacks: SerializedHistory, current: SchemaRoot, source: SchemaRoot, keep = STEPS_KEPT): StoredSteps {
+  const origins = codeOrigins(source);
+  const schemas: unknown[] = [];
+  const seen = new Map<SchemaRoot, number>();
+  const index = (schema: SchemaRoot): number => {
+    const known = seen.get(schema);
+    if (known !== undefined) return known;
+    seen.set(schema, schemas.length);
+    return schemas.push(schema === source ? null : packNode(schema, null, origins)) - 1;
+  };
+  const ops = (list: readonly SerializedOp[]): SerializedOp[] => list.map((op) => {
+    const { before, after } = op.args as SwapArgs;
+    return { name: op.name, args: { before: index(before), after: index(after) } };
+  });
+  const entry = (e: SerializedHistoryEntry): SerializedHistoryEntry => ({ ...e, forwardOps: ops(e.forwardOps), baseOps: ops(e.baseOps) });
+  // Both stacks end on the step nearest where the editor stands.
+  const near = (list: readonly SerializedHistoryEntry[]) => (keep > 0 ? list.slice(-keep) : []).map(entry);
+  return {
+    current: index(current),
+    stacks: { version: 1, undoStack: near(stacks.undoStack), redoStack: near(stacks.redoStack), nextEntryId: stacks.nextEntryId, droppedEntries: 0 },
+    schemas,
+  };
+}
+
 function unpack(value: unknown, source: SchemaRoot): unknown {
   if (Array.isArray(value)) return value.map((v) => unpack(v, source));
   if (!isPlainObject(value)) return value;
@@ -78,6 +128,30 @@ export function unpackDraft<R extends SchemaRoot>(packed: unknown, source: R): R
   return unpack(packed, source) as R;
 }
 
+/** The steps {@link packSteps} wrote, each op holding its schemas again; `null` when they do not read as steps. */
+export function unpackSteps<R extends SchemaRoot>(stored: StoredSteps, source: R): { current: R; stacks: SerializedHistory } | null {
+  try {
+    const schemas = stored.schemas.map((packed) => (packed === null ? source : unpackDraft(packed, source)));
+    const live = (i: unknown): R => {
+      const schema = schemas[i as number];
+      if (schema === undefined) throw new Error('no such schema');
+      return schema;
+    };
+    const ops = (list: readonly SerializedOp[]): SerializedOp[] => list.map((op) => {
+      const { before, after } = op.args as { before: number; after: number };
+      return { name: op.name, args: { before: live(before), after: live(after) } satisfies SwapArgs<R> };
+    });
+    const entry = (e: SerializedHistoryEntry): SerializedHistoryEntry => ({ ...e, forwardOps: ops(e.forwardOps), baseOps: ops(e.baseOps) });
+    const { stacks } = stored;
+    return {
+      current: live(stored.current),
+      stacks: { ...stacks, undoStack: stacks.undoStack.map(entry), redoStack: stacks.redoStack.map(entry), branches: [] },
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** The draft saved under `key`; `null` when there is none, or storage cannot be read. */
 export function readDraft(key: string): StoredDraft | null {
   try {
@@ -89,12 +163,29 @@ export function readDraft(key: string): StoredDraft | null {
   }
 }
 
-/** Save `draft` under `key`, or with `null` remove what is there. A browser that refuses storage keeps nothing. */
-export function writeDraft(key: string, draft: StoredDraft | null): void {
+/**
+ * Save `schema` under `key` with the steps around it. A browser short of room is asked again for half the steps,
+ * down to the schema alone; one that refuses storage keeps nothing.
+ */
+export function saveDraft(key: string, schema: SchemaRoot, source: SchemaRoot, stacks: SerializedHistory, savedAt: number): void {
+  const packed = packDraft(schema, source);
+  for (let keep = STEPS_KEPT; ; keep >>= 1) {
+    const draft: StoredDraft = { savedAt, schema: packed, ...(keep > 0 ? { steps: packSteps(stacks, schema, source, keep) } : {}) };
+    try {
+      localStorage.setItem(key, JSON.stringify(draft));
+      return;
+    } catch {
+      // Private windows and full quotas throw; the editor goes on with what was kept before.
+      if (keep === 0) return;
+    }
+  }
+}
+
+/** Remove the draft under `key`. */
+export function dropDraft(key: string): void {
   try {
-    if (draft === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, JSON.stringify(draft));
+    localStorage.removeItem(key);
   } catch {
-    // Private windows and full quotas throw; the editor goes on without a draft.
+    // Storage that cannot be reached holds nothing to remove.
   }
 }

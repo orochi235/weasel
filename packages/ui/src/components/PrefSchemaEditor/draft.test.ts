@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { packDraft, unpackDraft } from './draft';
+import type { SerializedHistory } from '@weasel-js/core';
+import { packDraft, packSteps, SWAP, unpackDraft, unpackSteps } from './draft';
 import { moveNodes, nodeAt, renameKey, setAttribute } from './schemaEdit';
 
 const enc = { read: () => true, write: (on: boolean) => on };
@@ -43,5 +44,47 @@ describe('a schema draft', () => {
       snap: { kind: 'boolean', name: 'Snap', description: '', default: false },
     } } } };
     expect(nodeAt(unpackDraft(packed, bare), 'view/snap')).not.toHaveProperty('encoding');
+  });
+
+  describe('with its steps', () => {
+    const a = setAttribute(SOURCE, 'view/snap', 'name', 'One');
+    const b = setAttribute(a, 'view/snap', 'name', 'Two');
+    const c = setAttribute(b, 'view/snap', 'name', 'Three');
+    const swap = (before: PrefGroup, after: PrefGroup) => ({ name: SWAP, args: { before, after } });
+    const entry = (id: number, before: PrefGroup, after: PrefGroup) => ({ id, label: 'edit schema', forwardOps: [swap(before, after)], baseOps: [swap(before, after)] });
+    const stacks: SerializedHistory = {
+      version: 1, nextEntryId: 4, droppedEntries: 0,
+      undoStack: [entry(1, SOURCE, a), entry(2, a, b)],
+      redoStack: [entry(3, b, c)],
+    };
+    const through = (keep?: number) => unpackSteps(JSON.parse(JSON.stringify(packSteps(stacks, b, SOURCE, keep))), SOURCE)!;
+
+    it('writes each schema once, and the source not at all', () => {
+      const stored = packSteps(stacks, b, SOURCE);
+      expect(stored.schemas).toHaveLength(4);
+      expect(stored.schemas.filter((x) => x === null)).toHaveLength(1);
+    });
+
+    it('comes back with every step sharing its neighbours’ schemas, the first leaving the source itself', () => {
+      const { current, stacks: back } = through();
+      const args = (e: { forwardOps: { args: unknown }[] }) => e.forwardOps[0]!.args as { before: PrefGroup; after: PrefGroup };
+      const [first, second] = back.undoStack.map(args);
+      expect(first!.before).toBe(SOURCE);
+      expect(second!.before).toBe(first!.after);
+      expect(current).toBe(second!.after);
+      expect(args(back.redoStack[0]!).before).toBe(current);
+      expect(nodeAt(args(back.redoStack[0]!).after, 'view/snap')).toMatchObject({ name: 'Three', encoding: enc });
+    });
+
+    it('keeps only the steps nearest where the editor stands', () => {
+      const { stacks: back } = through(1);
+      expect(back.undoStack.map((e) => e.id)).toEqual([2]);
+      expect(back.redoStack.map((e) => e.id)).toEqual([3]);
+    });
+
+    it('reads as nothing when a step names a schema that is not there', () => {
+      const stored = packSteps(stacks, b, SOURCE);
+      expect(unpackSteps({ ...stored, schemas: stored.schemas.slice(0, 2) }, SOURCE)).toBeNull();
+    });
   });
 });

@@ -833,11 +833,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   under them. Seen on `#/dev/prefs` at 1440×900.
 
 - **(P2) `PrefSchemaEditor` layout by dragging, what is left.** A stored value in the Unplaced
-  list cannot be dragged; it is still added by a click. A `label` is a kind only
-  `PrefsForm`'s rail and columns rows draw: `SelectionPanel` and labkit's `ControlPanel` show it as
-  an unknown kind, `prefFieldChoices` offers it as a field, and `@weasel-js/prefs` does not know
-  the kind. `PrefsForm.drop.browser.test.tsx` checks the form's drop target and reflow in a real
-  browser; no test drives a pointer through the editor itself.
+  list cannot be dragged; it is still added by a click. A `label` is a kind only `PrefsForm`'s rail
+  and columns rows draw: `SelectionPanel` and labkit's `ControlPanel` show it as an unknown kind,
+  `prefFieldChoices` offers it as a field, and `@weasel-js/prefs` does not know the kind.
+  `PrefsForm.drop.browser.test.tsx` checks the form's drop target and reflow in a real browser; no
+  test in the repo drives a pointer through the editor itself. Palette, row, rail, and tree drags
+  were driven through a headless browser on astv's page and on the editor's story on 2026-10-10.
 
 - **(P3) `PrefsForm`'s drop reflow, rough edges.** Rows jump to their new places; nothing
   animates them, and the hit test already ignores where they are drawn, so a transform on them
@@ -845,6 +846,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   scrollbar then moves every row a few pixels. A row dragged off every target is drawn back at
   home at full strength until it finds one. A sticky section title over a scrolled row does not
   hide the row from `prefDropTargetAt`.
+
+- **(P3) `PrefSchemaEditor`: undoing a move made through a rail entry leaves the moved node out of
+  sight.** Holding a drag over a rail entry opens that page by selecting its group, so the step
+  records that group as the selection to go back to. Undo puts the node back on its own page and
+  selects the group, and the preview stays on the page the node just left.
 
 - **(P3) `subPages` and `foldable` overlap a group's `as`.** `PrefsForm`'s form-wide `subPages`
   and `foldable` props decide what `as: 'page'` on a nested group and a folding panel should;

@@ -8,8 +8,8 @@ import type { PropertyRenderer } from '../SelectionPanel';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
-import { packDraft, readDraft, unpackDraft, writeDraft } from './draft';
-import { ExportPanel } from './ExportPanel';
+import { dropDraft, readDraft, saveDraft, SWAP, unpackDraft, unpackSteps, type SwapArgs } from './draft';
+import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
@@ -32,9 +32,12 @@ const DRAFT_TIME = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute:
 const TEXT_ENTRY = 'input, textarea, select, [contenteditable]';
 
 /** An edit as the swap of one whole schema for another: schemas are immutable, so the snapshots cost nothing. */
-function swapOp<S>(before: S, after: S, emit: (s: S) => void, coalesceKey?: string): Op {
+function swapOp<S extends SchemaRoot>(before: S, after: S, emit: (s: S) => void, coalesceKey?: string): Op {
   const forward: Op = {
     label: 'edit schema',
+    // Named, with what it swaps, so a draft can keep the step.
+    name: SWAP,
+    args: { before, after } satisfies SwapArgs<S>,
     ...(coalesceKey !== undefined ? { coalesceKey } : {}),
     apply: () => emit(after),
     invert: () => ({ label: 'edit schema', apply: () => emit(before), invert: () => forward }),
@@ -60,9 +63,12 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
    *  add the leaf that would. */
   stored?: unknown;
   /** A name to keep the edited schema under in this browser's `localStorage`, so a reload opens on the edits and
-   *  not on `schema`. Code the schema holds is not stored: it is taken back from the baseline. Give each schema
+   *  not on `schema`, with the nearest steps still there to undo and redo. Code the schema holds is not stored: it is taken back from the baseline. Give each schema
    *  the editor opens a name of its own. */
   draftKey?: string;
+  /** Somewhere to send the changes: given, the Changes pane draws a Submit button that hands over the changes
+   *  since `original` and the schema's literal. A promise it returns sets the button to "Sent" or "Failed". */
+  onSubmit?: SubmitChanges;
   className?: string;
 }
 
@@ -71,12 +77,13 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * attributes as a form, a live preview of the result (a `PrefsForm` for the first, a `SelectionPanel` over one
  * scratch node for the second), and an export of it as a TypeScript literal and a list of changes. Edits stay in
  * `schema`; nothing is written back to source. Its own edits undo and redo, from its buttons or Mod+Z, Shift+Mod+Z,
- * and Mod+Y anywhere inside it; a `schema` it did not write itself starts the history over. Swapping `schema` for an
+ * and Mod+Y anywhere inside it; a `schema` it did not write itself starts the history over, and a `draftKey` keeps the
+ * nearest steps with the draft. Swapping `schema` for an
  * unrelated one without remounting keeps the selection, expansion and baseline; give the editor a `key` to start
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, onSubmit, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
@@ -88,6 +95,10 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
 
   const latest = useLatest({ schema, onChange, selected });
   const emitted = useRef(schema);
+  const hand = (next: S) => {
+    emitted.current = next;
+    latest.current.onChange(next);
+  };
   const [history] = useState(() =>
     createHistory(null, {
       coalesceWindowMs: COALESCE_MS,
@@ -95,6 +106,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
         get: () => (latest.current.selected === null ? [] : [latest.current.selected]),
         set: (ids) => setSelected(ids[0] ?? null),
       },
+      rebuildOp: (name, args) => (name === SWAP ? swapOp((args as SwapArgs<S>).before, (args as SwapArgs<S>).after, hand) : null),
     }),
   );
   useSyncExternalStore(history.subscribe, history.getVersion);
@@ -103,27 +115,32 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     emitted.current = schema;
     history.clear();
   }, [schema, history]);
-  const hand = (next: S) => {
-    emitted.current = next;
-    latest.current.onChange(next);
-  };
-  // The draft follows every edit, undo and redo among them; back at the baseline there is nothing to keep.
+  // The draft follows every step, with the steps around it; back at the baseline there is nothing to keep.
   const [draftSavedAt, setDraftSavedAt] = useState(() => (draftKey === undefined ? null : readDraft(draftKey)?.savedAt ?? null));
-  const emit = (next: S) => {
-    hand(next);
+  const keep = () => {
     if (draftKey === undefined) return;
-    const savedAt = next === base ? null : Date.now();
-    writeDraft(draftKey, savedAt === null ? null : { savedAt, schema: packDraft(next, base) });
+    const savedAt = emitted.current === base ? null : Date.now();
+    if (savedAt === null) dropDraft(draftKey);
+    else saveDraft(draftKey, emitted.current, base, history.serialize(), savedAt);
     setDraftSavedAt(savedAt);
   };
   useEffect(() => {
     const draft = draftKey === undefined ? null : readDraft(draftKey);
-    if (draft) hand(unpackDraft(draft.schema, base));
+    if (!draft) return;
+    const steps = draft.steps ? unpackSteps(draft.steps, base) : null;
+    hand(steps ? steps.current : unpackDraft(draft.schema, base));
+    if (steps) history.restore(steps.stacks);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a draft is opened once, by the editor that finds it
   }, []);
   // The panes edit either root; each hands back the kind it was given.
-  const commit = (next: SchemaRoot, coalesceKey?: string) =>
-    history.applyOps([swapOp(latest.current.schema, next as S, emit, coalesceKey)], 'edit schema');
+  const commit = (next: SchemaRoot, coalesceKey?: string) => {
+    history.applyOps([swapOp(latest.current.schema, next as S, hand, coalesceKey)], 'edit schema');
+    keep();
+  };
+  const step = (to: 'undo' | 'redo') => {
+    history[to]();
+    keep();
+  };
 
   const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);
   const changed = useMemo(() => changedPaths(changes), [changes]);
@@ -176,6 +193,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   };
   const moveTo = (paths: readonly string[], target: SchemaTarget) => {
     const moved = moveNodes(latest.current.schema, paths, target);
+    // Dropped where it already was: nothing to step back from.
+    if (moved.root === latest.current.schema) return;
     commit(moved.root);
     setExpanded((e) => rebasePaths(e, moved.from.map((f, i) => [f, moved.paths[i]!] as const)));
     select(moved.paths[0] ?? null);
@@ -200,10 +219,10 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     <div className={[s.editor, className].filter(Boolean).join(' ')}
       style={{ '--structure-w': `${structureWidth}px`, '--attributes-w': `${attributesWidth}px` } as CSSProperties}
       onKeyDownCapture={(e) => {
-      const step = historyKey(e);
-      if (step) {
+      const to = historyKey(e);
+      if (to) {
         e.preventDefault();
-        history[step]();
+        step(to);
         return;
       }
       // In a field the key edits the text; anywhere else it removes what is selected.
@@ -215,8 +234,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
         expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onRemove={remove} tools={
           <>
-            <Button size="sm" variant="ghost" disabled={!history.canUndo()} onClick={() => history.undo()}>Undo</Button>
-            <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => history.redo()}>Redo</Button>
+            <Button size="sm" variant="ghost" disabled={!history.canUndo()} onClick={() => step('undo')}>Undo</Button>
+            <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => step('redo')}>Redo</Button>
             {draftSavedAt !== null && (
               <>
                 <Button size="sm" variant="ghost" onClick={() => { commit(base); select(null); }}>Discard draft</Button>
@@ -241,7 +260,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={previewDrag.onPointerDown} ghost={previewDrag.ghost} />
-      <ExportPanel schema={schema} changes={changes} />
+      <ExportPanel schema={schema} changes={changes} onSubmit={onSubmit} />
     </div>
   );
 }

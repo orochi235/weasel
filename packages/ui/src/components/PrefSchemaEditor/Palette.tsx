@@ -1,4 +1,5 @@
-import { useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { Icon, type IconName } from '../../icons';
 import { DragGhost } from '../DragGhost';
@@ -47,8 +48,8 @@ export interface PaletteDrag {
 }
 
 /**
- * Tool buttons to drag into the tree or the live preview, each making one new node where it is dropped. The button holds
- * the pointer for the whole drag, so the drag is the palette's own and what it is over is the owner's to work out.
+ * Tool buttons to drag into the tree or the live preview, each making one new node where it is dropped. The drag is
+ * the palette's own, and what it is over is the owner's to work out.
  */
 export function Palette({ sections = false, ghost = true, onDrag, onDrop }: {
   /** The schema's root is a section, so what it makes are sections. */
@@ -61,34 +62,40 @@ export function Palette({ sections = false, ghost = true, onDrag, onDrop }: {
 }) {
   const [drag, setDrag] = useState<PaletteDrag | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
+  const session = useRef<ThresholdDragHandle | null>(null);
+  useEffect(() => () => { session.current?.cancel(); }, []);
   const move = (next: PaletteDrag | null) => {
     setDrag(next);
     onDrag(next);
   };
-  const at = (e: PointerEvent, from: PaletteDrag): PaletteDrag => ({ ...from, x: e.clientX, y: e.clientY });
+  const press = (item: PaletteItem, e: PointerEvent) => {
+    if (e.button !== 0 || session.current || !root.current) return;
+    const node = item.make();
+    const at = (ev: { clientX: number; clientY: number }): PaletteDrag => ({ item, node, x: ev.clientX, y: ev.clientY });
+    session.current = startThresholdDrag(e, {
+      // The palette, not the button: the tree redraws around a drag and the session must outlast that.
+      origin: root.current,
+      onActivate: (ev) => move(at(ev)),
+      onMove: (ev) => move(at(ev)),
+      onCommit: (ev) => {
+        session.current = null;
+        setDrag(null);
+        onDrop(at(ev));
+        onDrag(null);
+      },
+      onClick: () => { session.current = null; },
+      onCancel: () => {
+        session.current = null;
+        move(null);
+      },
+    });
+  };
   return (
     <div className={s.palette} ref={root}>
       <ToolGroup orientation="horizontal" ariaLabel="Drag to add">
         {(sections ? SECTION_PALETTE : PALETTE).map((item) => (
           // The drag rides on a wrapper: a ToolButton takes a press and nothing else.
-          <span
-            key={item.id}
-            className={s.paletteTool}
-            onPointerDown={(e) => {
-              if (e.button !== 0) return;
-              e.currentTarget.setPointerCapture?.(e.pointerId);
-              move({ item, node: item.make(), x: e.clientX, y: e.clientY });
-            }}
-            onPointerMove={(e) => { if (drag) move(at(e, drag)); }}
-            onPointerUp={(e) => {
-              if (!drag) return;
-              const last = at(e, drag);
-              setDrag(null);
-              onDrop(last);
-              onDrag(null);
-            }}
-            onPointerCancel={() => { if (drag) move(null); }}
-          >
+          <span key={item.id} className={s.paletteTool} onPointerDown={(e) => press(item, e)}>
             <ToolButton icon={<Icon name={item.icon} />} label={item.label} title={`Drag to add a ${item.label.toLowerCase()}`} onClick={() => {}} />
           </span>
         ))}

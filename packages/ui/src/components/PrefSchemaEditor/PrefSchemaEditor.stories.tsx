@@ -85,6 +85,18 @@ export const Default: Story = {
   },
 };
 
+/** With somewhere to send them, the Changes pane offers to submit what was edited. */
+export const Submitting: Story = {
+  render: function SubmittingStory() {
+    const [schema, setSchema] = useState(SCHEMA);
+    return (
+      <div className={s.frame}>
+        <PrefSchemaEditor schema={schema} onChange={setSchema} onSubmit={() => new Promise((resolve) => { setTimeout(resolve, 800); })} />
+      </div>
+    );
+  },
+};
+
 /** A node's property schema: sections for headings, each leaf keyed by its node path, previewed as a properties panel. */
 export const NodeProperties: Story = {
   render: function NodePropertiesStory() {
