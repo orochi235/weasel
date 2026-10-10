@@ -86,10 +86,11 @@ const KIT_IDS = [
   'enterTextEdit',
   'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity',
   'ingest',
-  // No 'clipboard.paste' — Cmd+V arrives as a DOM paste event and routes
-  // through `ingest`; a key binding would double-fire. See clipboard.ts.
   'clipboard.copy', 'clipboard.cut', 'clipboard.paste',
 ] as const;
+
+// Bound to the same paste as `ingest`, so it registers only without it.
+const PASTE_EVENT_ID = 'clipboard.pasteEvent';
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -119,7 +120,34 @@ describe('useStandardActions', () => {
         <ProbeIds onIds={(ids) => seen.push(ids)} />
       </Providers>,
     );
-    expect([...KIT_STANDARD_ACTION_IDS].sort()).toEqual([...seen.at(-1)!].sort());
+    expect([...KIT_STANDARD_ACTION_IDS].sort()).toEqual([...seen.at(-1)!, PASTE_EVENT_ID].sort());
+  });
+
+  it('registers clipboard.pasteEvent only while ingest is excluded', () => {
+    const seen: string[][] = [];
+    const { rerender } = render(
+      <Providers>
+        <Host opts={{ exclude: ['ingest'] }} />
+        <ProbeIds onIds={(ids) => seen.push(ids)} />
+      </Providers>,
+    );
+    expect(seen.at(-1)!).toContain(PASTE_EVENT_ID);
+    expect(seen.at(-1)!).not.toContain('ingest');
+    rerender(
+      <Providers>
+        <Host opts={{ exclude: [] }} />
+        <ProbeIds onIds={(ids) => seen.push(ids)} />
+      </Providers>,
+    );
+    expect(seen.at(-1)!).toContain('ingest');
+    expect(seen.at(-1)!).not.toContain(PASTE_EVENT_ID);
+    rerender(
+      <Providers>
+        <Host opts={{ exclude: ['ingest', PASTE_EVENT_ID] }} />
+        <ProbeIds onIds={(ids) => seen.push(ids)} />
+      </Providers>,
+    );
+    expect(seen.at(-1)!).not.toContain(PASTE_EVENT_ID);
   });
 
   it('does not register an action named in `exclude`', () => {

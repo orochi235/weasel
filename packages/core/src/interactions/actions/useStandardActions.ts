@@ -77,7 +77,9 @@ import { setStrokeAction } from './defaults/setStroke';
 import { setFillOpacityAction } from './defaults/setFillOpacity';
 import { setStrokeOpacityAction } from './defaults/setStrokeOpacity';
 import { ingestAction } from './defaults/ingest';
-import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from './defaults/clipboard';
+import {
+  clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction,
+} from './defaults/clipboard';
 
 // viewportWheelPanAction / viewportZoomAction are NOT in KIT_STANDARD_DESCRIPTORS.
 // They are wired conditionally by SceneCanvas via `useViewportActions`
@@ -175,11 +177,23 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   clipboardCutAction,
   clipboardCopyAction,
   clipboardPasteAction,
+  clipboardPasteEventAction,
 ];
 
-/** Every id `useStandardActions` registers, in registration order. */
+/** Every id `useStandardActions` can register, in registration order. It
+ *  holds `clipboard.pasteEvent` back unless `ingest` is excluded. */
 export const KIT_STANDARD_ACTION_IDS: readonly string[] =
   KIT_STANDARD_DESCRIPTORS.map((a) => a.id);
+
+/**
+ * Kit-standard actions that stay unregistered while another one is
+ * registered, because that one binds the same gesture and does everything
+ * this one does: both answering it would act twice. Keyed by the action that
+ * yields.
+ */
+const YIELDS_TO: Readonly<Record<string, string>> = {
+  'clipboard.pasteEvent': 'ingest',
+};
 
 /**
  * @experimental
@@ -245,6 +259,10 @@ export function useStandardActions(opts: UseStandardActionsOptions): void {
     const excluded = new Set(excludeKey ? excludeKey.split('\u0000') : []);
     const unregisters = KIT_STANDARD_DESCRIPTORS
       .filter((a) => !excluded.has(a.id))
+      .filter((a) => {
+        const over = YIELDS_TO[a.id];
+        return over === undefined || excluded.has(over);
+      })
       .map((a) => reg.register(a));
     return () => { for (const u of unregisters) u(); };
   }, [reg, depReg, excludeKey]);

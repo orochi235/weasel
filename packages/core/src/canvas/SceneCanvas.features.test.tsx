@@ -260,8 +260,15 @@ describe('<SceneCanvas features>', () => {
     expect(tools().active).toBe('select');
     expect(Object.keys(tools().registry).sort()).toEqual(['hand', 'select']);
     const missing = KIT_STANDARD_ACTION_IDS.filter((i) => !seen.actionIds.includes(i));
-    // Only the actions that belong to insert and text tools stay out.
-    expect(missing.sort()).toEqual(['enterTextEdit', 'insert', 'insert.adjustRotation']);
+    // The actions that belong to insert and text tools stay out, and so does
+    // the paste `edit` binds, because `ingest` answers the same event.
+    expect(missing.sort()).toEqual(['clipboard.pasteEvent', 'enterTextEdit', 'insert', 'insert.adjustRotation']);
+  });
+
+  it("'edit' without 'ingest' registers the paste-event action in its place", () => {
+    const { seen } = mount({ features: ['edit'] });
+    expect(seen.actionIds).toContain('clipboard.pasteEvent');
+    expect(seen.actionIds).not.toContain('ingest');
   });
 
   it('registers the kit actions a registered tool binds', () => {

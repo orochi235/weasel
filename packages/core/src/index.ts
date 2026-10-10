@@ -171,6 +171,7 @@ export {
   clipboardCopyAction,
   clipboardCutAction,
   clipboardPasteAction,
+  clipboardPasteEventAction,
 } from './interactions/actions/defaults/clipboard';
 export { enterTextEditAction } from './interactions/actions/defaults/enterTextEdit';
 export type { SliceDep, ClipboardDep, TextEditDep } from './interactions/actions/depSchema';

@@ -109,6 +109,7 @@ curly quote, so both codepoints are listed.
 | `cutPathAtAnchor` | Alt+Shift+click |
 | `viewport.pinchZoom` | two-finger `multiTouch` |
 | `ingest` | `drop` or `paste`, any modifiers |
+| `clipboard.pasteEvent` | `paste` carrying `text/plain`, any modifiers — registered only where `ingest` is not |
 
 **No default binding**
 
@@ -203,8 +204,10 @@ Binds no keys. Companion exports: `WEASEL_CLIPBOARD_MIME`,
 `parseWeaselClipboardText`, `embedWeaselMetadataInSvg`,
 `extractWeaselClipboardFromSvg`.
 
-Inbound Cmd+V goes through the `ingest` action and the content-handler
-registry, not through this hook.
+Inbound Cmd+V arrives as a DOM `paste` event and does not go through this
+hook. On a canvas with `ingest` it runs the `ingest` action and the
+content-handler registry; on one with `edit` and no `ingest` it runs
+`clipboard.pasteEvent`, which accepts only the node payload a copy writes.
 
 ### `useAlign(options)` / `useDistribute(options)`
 

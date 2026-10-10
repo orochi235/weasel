@@ -7,7 +7,9 @@
  * `runIngest(items, ctx)`, which partitions the items across registered
  * handlers in priority order — the first matching handler takes every item
  * it matches; leftovers continue down the list. Same per-trait registry
- * idiom as `NodeShape` / `NodeRouting`.
+ * idiom as `NodeShape` / `NodeRouting`. The `clipboard.pasteEvent` action
+ * calls it too, with `RunIngestOptions.handlers` naming the one handler it
+ * accepts.
  *
  * MIME matching delegates to `mimeMatchesGlob` from `@weasel-js/gestures` —
  * the SAME matcher the binding-level `types` filter uses, so a binding that
@@ -89,10 +91,27 @@ export function registerContentHandler(entry: ContentHandlerEntry): () => void {
   };
 }
 
+function byPriority(handlers: readonly ContentHandlerEntry[]): ContentHandlerEntry[] {
+  return [...handlers].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+}
+
 /** Snapshot of registered handlers, priority-ordered (stable within ties —
  *  registration order; Array.prototype.sort is stable per ES2019). */
 export function getContentHandlers(): readonly ContentHandlerEntry[] {
-  return [...HANDLERS].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  return byPriority(HANDLERS);
+}
+
+/** Options for {@link runIngest}. */
+export interface RunIngestOptions {
+  /**
+   * The handlers to route through, in place of the registry. The registry is
+   * shared by every canvas on the page, so this is how one arrival path
+   * accepts a narrower set of content than the page has handlers for: the
+   * `clipboard.pasteEvent` action passes the kit's node-payload handler alone.
+   * Ordered by `priority` like registered handlers; an item none of them
+   * matches is ignored.
+   */
+  handlers?: readonly ContentHandlerEntry[];
 }
 
 function entryMatches(entry: ContentHandlerEntry, item: IngestItem): boolean {
@@ -120,11 +139,16 @@ function entryMatches(entry: ContentHandlerEntry, item: IngestItem): boolean {
  * write and the reading handler reads before its first `await`.
  * Unmatched items are ignored with a debug-gated `dwarn('ingest', ...)`.
  */
-export async function runIngest(items: IngestItem[], ctx: IngestCtx): Promise<void> {
+export async function runIngest(
+  items: IngestItem[],
+  ctx: IngestCtx,
+  opts: RunIngestOptions = {},
+): Promise<void> {
   let remaining = items;
   const runs: Promise<void>[] = [];
+  const handlers = opts.handlers ? byPriority(opts.handlers) : getContentHandlers();
 
-  for (const entry of getContentHandlers()) {
+  for (const entry of handlers) {
     if (remaining.length === 0) break;
     const mine = remaining.filter((it) => entryMatches(entry, it));
     if (mine.length === 0) continue;

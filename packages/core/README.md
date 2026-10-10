@@ -47,10 +47,10 @@ A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from
 | `resize` | resize handles |
 | `rotate` | the rotation handle |
 | `transform` | `resize` and `rotate` |
-| `edit` | undo/redo, delete, duplicate, group/ungroup, nudge, select-all, Escape, cut/copy/paste, fill and stroke, and their keys |
+| `edit` | undo/redo, delete, duplicate, group/ungroup, nudge, select-all, Escape, cut/copy/paste, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
 | `arrange` | align, distribute, reorder, flip |
 | `paths` | pathfinder operations, path editing and anchor editing |
-| `ingest` | dropped and pasted content |
+| `ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
 | `draw` | every preset above |
 
 `defaultTools` adds built-in tools on top, and each brings the actions it binds: `defaultTools={['rect']}` brings `insert`.

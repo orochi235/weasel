@@ -51,6 +51,12 @@ describe('resolveFeatures', () => {
     expect(ids.has('rotate')).toBe(false);
   });
 
+  it('gives edit the paste-event action, apart from ingest', () => {
+    const ids = featureActionIds(resolveFeatures(['edit']));
+    expect(ids.has('clipboard.pasteEvent')).toBe(true);
+    expect(ids.has('ingest')).toBe(false);
+  });
+
   it('composes presets independently', () => {
     const ids = featureActionIds(resolveFeatures(['move', 'arrange']));
     expect(ids.has('move')).toBe(true);

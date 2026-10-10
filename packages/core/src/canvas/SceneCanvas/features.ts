@@ -54,6 +54,13 @@ export const COMPOSITE_FEATURES: Readonly<Record<CompositeFeature, readonly Base
  * also bring the ambient bindings that route drags to their actions, `select`
  * brings the select tool, and `outline`, `resize` and `rotate` bring their
  * selection chrome; this table is only the registration half.
+ *
+ * Cmd/Ctrl+V arrives as a DOM `paste` event, and two presets answer it.
+ * `edit` brings `clipboard.pasteEvent`, which pastes nodes a kit canvas
+ * copied and nothing else; `ingest` brings `ingest`, which takes those plus
+ * images, SVG, files, consumer content handlers, and every OS drop. With both
+ * on, `ingest` answers alone: `useStandardActions` holds
+ * `clipboard.pasteEvent` back wherever `ingest` is registered.
  */
 export const FEATURE_ACTION_IDS: Readonly<Record<BaseFeature, readonly string[]>> = {
   view: ['viewport.dragPan', 'viewport.pinchZoom'],
@@ -66,7 +73,7 @@ export const FEATURE_ACTION_IDS: Readonly<Record<BaseFeature, readonly string[]>
     'escape', 'cancelGesture', 'selectAll', 'duplicate', 'delete',
     'group', 'ungroup', 'undo', 'redo',
     'nudge.up', 'nudge.down', 'nudge.left', 'nudge.right',
-    'clipboard.cut', 'clipboard.copy', 'clipboard.paste',
+    'clipboard.cut', 'clipboard.copy', 'clipboard.paste', 'clipboard.pasteEvent',
     'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity',
   ],
   arrange: [

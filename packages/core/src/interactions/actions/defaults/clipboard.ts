@@ -4,6 +4,8 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { buildDeleteOps } from './delete';
 import { requiresSelection } from './requiresSelection';
+import { kitWeaselJsonHandler } from 'features/ingestion/weaselJsonHandler';
+import { ANY_INGEST_MODS, INGEST_REQUIRES, ingestFromEvent } from './ingest';
 
 /**
  * @experimental
@@ -72,9 +74,10 @@ export const clipboardCutAction: Action & { requires: string[] } = {
 /**
  * @experimental
  * Static descriptor for the `clipboard.paste` Action — what a Paste button or
- * menu item triggers. It has no key binding: Cmd/Ctrl+V already arrives as a
- * DOM `paste` event, which the dispatcher routes to `ingest`, and a binding
- * here would fire alongside it and paste twice.
+ * menu item triggers, pasting the last copy this canvas made. It has no key
+ * binding: Cmd/Ctrl+V already arrives as a DOM `paste` event, which the
+ * dispatcher routes to `clipboard.pasteEvent` or `ingest`, and a binding here
+ * would fire alongside it and paste twice.
  */
 export const clipboardPasteAction: Action & { requires: string[] } = {
   id: 'clipboard.paste',
@@ -93,4 +96,31 @@ export const clipboardPasteAction: Action & { requires: string[] } = {
     const clipboard = deps?.clipboard;
     return clipboard && !clipboard.isEmpty() ? true : ActionDisabledReason.NotApplicable;
   },
+};
+
+const PASTE_EVENT_HANDLERS = [kitWeaselJsonHandler];
+
+/**
+ * @experimental
+ * Static descriptor for the `clipboard.pasteEvent` Action — Cmd/Ctrl+V on a
+ * canvas that edits and does not ingest. It answers the DOM `paste` event by
+ * pasting nodes a kit canvas copied to the OS clipboard, in this tab or
+ * another, and nothing else: an image, SVG, or file on the clipboard, and
+ * every consumer content handler, need `ingest`. `ingest` binds the same
+ * event and takes this payload among the rest, so `useStandardActions`
+ * leaves this one unregistered wherever `ingest` is registered.
+ *
+ * Bound to `text/plain` because that is the only flavor of a copy a paste
+ * event carries; a paste without text stays the page's.
+ */
+export const clipboardPasteEventAction: Action & { requires: string[] } = {
+  id: 'clipboard.pasteEvent',
+  label: 'Paste copied nodes',
+  defaultBinding: { kind: 'paste', types: ['text/plain'], mods: ANY_INGEST_MODS },
+  requires: [...INGEST_REQUIRES],
+  invoker: {
+    timing: 'immediate',
+    run: (deps, params) => ingestFromEvent(deps, params, { handlers: PASTE_EVENT_HANDLERS }),
+  },
+  enabled: () => true,
 };

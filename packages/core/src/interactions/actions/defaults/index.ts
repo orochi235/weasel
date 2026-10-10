@@ -24,7 +24,7 @@ export {
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
 export { undoAction, redoAction } from './undoRedo';
-export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from './clipboard';
+export { clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction } from './clipboard';
 export { makeToolOffhandAction, buildToolOffhandBindings, TOOL_OFFHAND_ID, type ToolOffhandBindingSpec } from '@weasel-js/routing';
 export {
   makeToolActivateAction,

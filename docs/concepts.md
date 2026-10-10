@@ -102,10 +102,10 @@ Behavior is turned on by naming presets in `features`. Each is independent:
 | `resize` | the resize handles, drawn and bound |
 | `rotate` | the rotation handle, drawn and bound |
 | `transform` | `resize` and `rotate` |
-| `edit` | undo/redo, delete, duplicate, group/ungroup, nudge, select-all, Escape, cancel-gesture, clipboard, fill and stroke, and their keys |
+| `edit` | undo/redo, delete, duplicate, group/ungroup, nudge, select-all, Escape, cancel-gesture, clipboard, fill and stroke, and their keys; Cmd/Ctrl+V pastes nodes a kit canvas copied, and nothing else |
 | `arrange` | align, distribute, reorder, flip |
 | `paths` | pathfinder operations, path-edit entry, anchor editing |
-| `ingest` | dropped and pasted content |
+| `ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
 | `draw` | every preset above |
 
 `FEATURE_ACTION_IDS` is the table of which kit action each preset registers,

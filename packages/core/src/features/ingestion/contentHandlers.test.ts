@@ -100,6 +100,22 @@ describe('runIngest', () => {
     );
   });
 
+  it('`handlers` routes through that list and leaves the registry out', async () => {
+    const registered = vi.fn();
+    const low = vi.fn();
+    const high = vi.fn();
+    registerContentHandler({ id: 'registered', match: () => true, priority: 100, handle: registered });
+    await runIngest([png, txt], ctx, {
+      handlers: [
+        { id: 'low', match: () => true, priority: 0, handle: low },
+        { id: 'high', match: 'text/plain', priority: 5, handle: high },
+      ],
+    });
+    expect(registered).not.toHaveBeenCalled();
+    expect(high).toHaveBeenCalledWith([txt], ctx);
+    expect(low).toHaveBeenCalledWith([png], ctx);
+  });
+
   it('handlers run concurrently (deadlocks under sequential execution)', async () => {
     // Handler A awaits a deferred that handler B resolves synchronously on its
     // own items. If handlers ran sequentially A would never get its resolution.

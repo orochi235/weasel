@@ -9,6 +9,7 @@ import { render, act } from '@testing-library/react';
 import { createRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
+import type { Feature } from './SceneCanvas/features';
 import { ActionsProvider } from '@weasel-js/routing/react';
 // The real unpacker, to keep this an end-to-end check of the injected seam.
 import { unpackSvgFiles } from '@weasel-js/svg';
@@ -16,6 +17,7 @@ import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import {
   getContentHandlers,
+  registerContentHandler,
   _resetContentHandlersForTests,
   type ContentHandlerEntry,
 } from 'features/ingestion/contentHandlers';
@@ -331,5 +333,153 @@ describe('SceneCanvasApi.ingest', () => {
     // The consumer resolver's URL landed on the node — not the data URI the
     // (still-stubbed) fileToDataUri seam would have produced.
     expect((imageNodes(scene)[0].data as D).image!.src).toBe('https://cdn/x.png');
+  });
+});
+
+// jsdom has no ClipboardEvent, DragEvent, or DataTransfer, so these events are
+// plain `Event`s carrying the fields the dispatcher's listeners read. They
+// prove what the canvas does with a paste or drop it is handed, not that a
+// browser hands it one; `ingest` alone inserting from the same events is the
+// control that they carry content at all.
+describe('SceneCanvas paste and drop events, by preset', () => {
+  beforeEach(() => {
+    __setImageMeasureForTests(async () => ({ width: 100, height: 80 }));
+    __setFileToDataUriForTests(async () => 'data:image/png;base64,TEST');
+    __setSvgMeasureForTests(async () => ({ width: 100, height: 80 }));
+  });
+
+  const NODE_TEXT = buildWeaselClipboardText([
+    {
+      kind: 'leaf', id: 'src-1', layer: 'main', parent: null,
+      pose: { x: 10, y: 10, width: 20, height: 20 }, data: {},
+    },
+  ]);
+  const SVG_TEXT = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
+
+  function mount(features: readonly Feature[]) {
+    const scene = makeScene();
+    const { container } = render(
+      <SceneCanvas features={features} scene={scene} layers={{}} width={64} height={64} />,
+    );
+    return { scene, canvas: container.querySelector('canvas')! };
+  }
+
+  function paste(data: { text?: string; files?: File[] }): Event {
+    const ev = new Event('paste', { cancelable: true });
+    Object.assign(ev, {
+      clipboardData: {
+        files: data.files ?? [],
+        getData: (t: string) => (t === 'text/plain' ? data.text ?? '' : ''),
+      },
+    });
+    act(() => { window.dispatchEvent(ev); });
+    return ev;
+  }
+
+  function dropFile(canvas: Element, file: File): void {
+    const ev = new Event('drop', { bubbles: true, cancelable: true });
+    Object.assign(ev, {
+      dataTransfer: { items: [], files: [file] },
+      clientX: 50, clientY: 60,
+      altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+    });
+    act(() => { canvas.dispatchEvent(ev); });
+  }
+
+  /** Long enough for the fire-and-forget ingest pipeline to have inserted. */
+  const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+
+  it('edit alone pastes copied nodes from a paste event', async () => {
+    const { scene } = mount(['edit']);
+    const ev = paste({ text: NODE_TEXT });
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
+    expect(scene.get(scene.roots[0])!.id).not.toBe('src-1');
+    expect(ev.defaultPrevented).toBe(true);
+    act(() => scene.undo());
+    expect(scene.roots).toHaveLength(0);
+  });
+
+  it('edit alone honors ingestion.clipboard.enabled === false', async () => {
+    const scene = makeScene();
+    render(
+      <SceneCanvas features={['edit']} scene={scene} layers={{}} width={64} height={64}
+        ingestion={CLIPBOARD_DISABLED_INGESTION} />,
+    );
+    paste({ text: NODE_TEXT });
+    await settle();
+    expect(scene.roots).toHaveLength(0);
+  });
+
+  it('edit alone leaves a pasted image to the page', async () => {
+    const { scene } = mount(['edit']);
+    const ev = paste({ files: [pngFile()] });
+    await settle();
+    expect(scene.roots).toHaveLength(0);
+    expect(ev.defaultPrevented).toBe(false);
+  });
+
+  it('edit alone inserts nothing for pasted SVG text or a pasted SVG file', async () => {
+    const { scene } = mount(['edit']);
+    paste({ text: SVG_TEXT });
+    paste({ files: [new File([SVG_TEXT], 'art.svg', { type: 'image/svg+xml' })] });
+    await settle();
+    expect(scene.roots).toHaveLength(0);
+  });
+
+  it('edit alone ignores a drop', async () => {
+    const { scene, canvas } = mount(['edit']);
+    dropFile(canvas, pngFile());
+    await settle();
+    expect(scene.roots).toHaveLength(0);
+  });
+
+  it('edit alone runs no handler another canvas registered', async () => {
+    const handle = vi.fn();
+    // A bare canvas registers its `ingestion.handlers` and binds no paste, so
+    // only the edit canvas answers the event.
+    render(
+      <SceneCanvas scene={makeScene()} layers={{}} width={64} height={64}
+        ingestion={{ handlers: [{ id: 'app:text', match: 'text/plain', handle }] }} />,
+    );
+    expect(getContentHandlers().some((h) => h.id === 'app:text')).toBe(true);
+    const { scene } = mount(['edit']);
+    paste({ text: NODE_TEXT });
+    paste({ text: 'plain words' });
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
+    await settle();
+    expect(handle).not.toHaveBeenCalled();
+  });
+
+  it('edit with ingest pastes copied nodes once, and still pastes SVG text', async () => {
+    const { scene } = mount(['edit', 'ingest']);
+    paste({ text: NODE_TEXT });
+    await settle();
+    expect(scene.roots).toHaveLength(1);
+    // The dispatcher runs one binding per event, so a second paste cannot
+    // show here; what shows `ingest` answered is content only it accepts.
+    paste({ text: SVG_TEXT });
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(2));
+  });
+
+  it('ingest alone still pastes nodes, images, and SVG, and takes drops', async () => {
+    const { scene, canvas } = mount(['ingest']);
+    paste({ text: NODE_TEXT });
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(1));
+    const img = paste({ files: [pngFile()] });
+    expect(img.defaultPrevented).toBe(true);
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(2));
+    paste({ text: SVG_TEXT });
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(3));
+    dropFile(canvas, pngFile());
+    await vi.waitFor(() => expect(scene.roots).toHaveLength(4));
+  });
+
+  it('ingest alone runs a registered consumer handler on a paste', async () => {
+    const handle = vi.fn();
+    const off = registerContentHandler({ id: 'app:text', match: 'text/plain', handle });
+    mount(['ingest']);
+    paste({ text: 'plain words' });
+    await vi.waitFor(() => expect(handle).toHaveBeenCalledTimes(1));
+    off();
   });
 });

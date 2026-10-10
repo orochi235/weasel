@@ -555,6 +555,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  canvas it declines inert (a dwarn, nothing ingested) rather than
      *  falling through. Only items that never match (non-weasel text)
      *  flow on to other handlers.
+     *  `clipboard` also governs Cmd/Ctrl+V under the `edit` preset; the rest
+     *  takes the `ingest` preset.
      *  Memoize `handlers` (useState/useMemo/module const) — an inline array
      *  literal re-registers the handlers on every render. The same applies
      *  to `clipboard.reviver`: an inline function identity-churns the
@@ -608,10 +610,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * - `transform` — `resize` and `rotate`.
      * - `edit` — undo/redo, delete, duplicate, group/ungroup, nudge,
      *   select-all, Escape, cancel-gesture, cut/copy/paste, fill and stroke,
-     *   and their keys.
+     *   and their keys. Cmd/Ctrl+V pastes nodes a kit canvas copied, from
+     *   this tab or another, and nothing else.
      * - `arrange` — align, distribute, reorder, flip.
      * - `paths` — pathfinder operations, path-edit entry and anchor editing.
-     * - `ingest` — dropped and pasted content (Cmd/Ctrl+V arrives as a paste).
+     * - `ingest` — dropped and pasted content: images, SVG, files, and
+     *   whatever `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop.
      * - `draw` — all of the above.
      *
      * Tools add the actions they bind — a shape tool brings `insert` — so
