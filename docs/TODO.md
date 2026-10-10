@@ -838,6 +838,23 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   dotted keys and a preview that reads a section. Beside it: the editor's button and dialog still
   say "Add group" when the target is an object leaf, where what it adds is a section.
 
+- **(P2) A record cache drops a write its adapter rejected.** `flush` in
+  `packages/storage/src/records.ts` empties `queued` before the writes resolve, and a write that
+  throws is warned about ("keeping it in memory") and never queued again. The page keeps showing
+  the new value, storage never gets it, the next `flush()` resolves true, and `writable` stays
+  true, so over a server adapter a pref changed while the server restarts reverts at the next
+  load. Read from the code here; reproduced against a fake async adapter in review of astv's
+  server-backed prefs, whose adapter resends refused writes itself to get around it. Wants the
+  failed names put back in `queued`, unless a newer write to the name is already there, and
+  flushed again on a backoff.
+
+- **(P2) A record cache takes a remote change over its own write in flight.** `applyRemote`
+  skips a name only while it is in `queued`, and `flush` clears `queued` before awaiting the
+  adapter. Page A sets `mode=light` and its flush is in flight; page B's `mode=auto` lands and is
+  announced; then A's write lands. A shows `auto` while storage holds `light`. Same provenance as
+  the entry above. Wants the names of an in-flight batch held alongside `queued`, so a remote
+  change to one is ignored until its write settles.
+
 - **(P3) Two callers still treat an unread record cache as final.** A cache whose first read
   failed now reads again and recovers, but labkit's lab store opts out (`retryMs: false` in
   `openLabStore.ts`): `readLab` answers an unwritable cache with an empty lab, so records landing
