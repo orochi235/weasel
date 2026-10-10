@@ -126,3 +126,76 @@ describe('a peer migrating while the open is in flight', () => {
     warn.mockRestore();
   });
 });
+
+describe('storage that is away at open', () => {
+  /** An adapter over `backing` whose first list, of either kind, fails. */
+  const awayAtFirst = (backing: Map<string, unknown>) => {
+    const memory = createMemoryAdapter(backing);
+    let away = true;
+    const orFail = <T,>(read: () => T): T => {
+      if (away) {
+        away = false;
+        throw new Error('server away');
+      }
+      return read();
+    };
+    return {
+      ...memory,
+      list: async (prefix: string) => orFail(() => memory.listSync(prefix)),
+      listSync: (prefix: string) => orFail(() => memory.listSync(prefix)),
+    };
+  };
+
+  it('shows the stored values and persists once a read lands', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>([['p.density', 20]]);
+    const store = await openPrefs(SCHEMA, { storage: awayAtFirst(backing), prefix: 'p.' });
+    expect(store.writable).toBe(false);
+    expect(store.get('density')).toBe(72);
+    const heard: unknown[] = [];
+    store.subscribe((changes) => heard.push(...changes));
+
+    expect(await store.read()).toBe(true);
+    expect(store.writable).toBe(true);
+    expect(store.get('density')).toBe(20);
+    expect(heard).toEqual([{ path: 'density', value: 20, origin: 'remote' }]);
+    store.set('density', 30);
+    expect(await store.flush()).toBe(true);
+    expect(backing.get('p.density')).toBe(30);
+    await store.close();
+    warn.mockRestore();
+  });
+
+  it('keeps a value set meanwhile, and persists it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>([['p.density', 20]]);
+    const store = openPrefsSync(SCHEMA, { storage: awayAtFirst(backing), prefix: 'p.' });
+    store.set('density', 30);
+    await store.read();
+    expect(store.get('density')).toBe(30);
+    expect(await store.flush()).toBe(true);
+    expect(backing.get('p.density')).toBe(30);
+    await store.close();
+    warn.mockRestore();
+  });
+
+  it('stays read-only when the records that land are from a newer build', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>([
+      ['p.$version', 2],
+      ['p.density', 20],
+    ]);
+    const store = await openPrefs(SCHEMA, {
+      storage: awayAtFirst(backing),
+      prefix: 'p.',
+      migrations: [() => {}],
+    });
+    store.set('density', 30);
+    await store.read();
+    expect(store.writable).toBe(false);
+    await store.flush();
+    expect(backing.get('p.density')).toBe(20);
+    await store.close();
+    warn.mockRestore();
+  });
+});

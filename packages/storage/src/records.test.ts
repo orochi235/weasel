@@ -35,7 +35,7 @@ describe('openRecords', () => {
     expect(cache.entries('trial:')).toEqual([['trial:a', { id: 'a' }]]);
   });
 
-  it('opens empty and never writes when the read fails', async () => {
+  it('opens empty and never writes while the read keeps failing', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const set = vi.fn(async () => {});
     const broken: StorageAdapter = {
@@ -295,6 +295,188 @@ describe('openRecordsSync', () => {
     cache.set('a', 5);
     await cache.flush();
     expect(backing.get('p.a')).toBe(5);
+    await cache.close();
+  });
+});
+
+/** An adapter over `backing` whose first `failures` lists fail. */
+function awayAtFirst(backing: Map<string, unknown>, failures = 1) {
+  const memory = createMemoryAdapter(backing);
+  let left = failures;
+  const fail = () => {
+    if (left-- > 0) throw new Error('server away');
+  };
+  const list = vi.fn(async (prefix: string) => {
+    fail();
+    return memory.list(prefix);
+  });
+  const listSync = vi.fn((prefix: string) => {
+    fail();
+    return memory.listSync(prefix);
+  });
+  return { storage: { ...memory, list, listSync }, list, listSync };
+}
+
+describe('a first read that fails', () => {
+  let warn: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    vi.useFakeTimers();
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    warn.mockRestore();
+  });
+
+  it('is tried again, and what lands is held, reported as remote, and writable', async () => {
+    const backing = new Map<string, unknown>([['lk:t:a', 1], ['lk:t:b', 2]]);
+    const { storage } = awayAtFirst(backing);
+    const cache = await openRecords({ storage, prefix: PREFIX });
+    expect(cache.writable).toBe(false);
+    expect(cache.entries()).toEqual([]);
+    const heard: RecordChange[][] = [];
+    cache.subscribe((c) => heard.push(c));
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(cache.writable).toBe(true);
+    expect(cache.get('a')).toBe(1);
+    expect(heard).toEqual([
+      [
+        { name: 'a', value: 1, origin: 'remote' },
+        { name: 'b', value: 2, origin: 'remote' },
+      ],
+    ]);
+
+    cache.set('c', 3);
+    await cache.flush();
+    expect(backing.get('lk:t:c')).toBe(3);
+    await createMemoryAdapter(backing).set('lk:t:d', 4);
+    await tick();
+    expect(cache.get('d')).toBe(4);
+    await cache.close();
+  });
+
+  it('recovers a cache opened synchronously', async () => {
+    const backing = new Map<string, unknown>([['lk:t:a', 1]]);
+    const { storage } = awayAtFirst(backing);
+    const cache = openRecordsSync({ storage, prefix: PREFIX });
+    expect(cache.writable).toBe(false);
+    const heard: RecordChange[] = [];
+    cache.subscribe((c) => heard.push(...c));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(cache.writable).toBe(true);
+    expect(heard).toEqual([{ name: 'a', value: 1, origin: 'remote' }]);
+    await createMemoryAdapter(backing).set('lk:t:d', 4);
+    await tick();
+    expect(cache.get('d')).toBe(4);
+    await cache.close();
+  });
+
+  it('backs off, doubling up to the cap', async () => {
+    const { storage, list } = awayAtFirst(new Map(), Infinity);
+    const cache = await openRecords({ storage, prefix: PREFIX, retryMs: 100, retryMaxMs: 400 });
+    const callsAt = async (ms: number) => {
+      await vi.advanceTimersByTimeAsync(ms - Date.now());
+      return list.mock.calls.length;
+    };
+    vi.setSystemTime(0);
+    expect(await callsAt(99)).toBe(1);
+    expect(await callsAt(100)).toBe(2);
+    expect(await callsAt(299)).toBe(2);
+    expect(await callsAt(300)).toBe(3);
+    expect(await callsAt(700)).toBe(4);
+    expect(await callsAt(1099)).toBe(4);
+    expect(await callsAt(1100)).toBe(5);
+    expect(warn).toHaveBeenCalledTimes(1);
+    await cache.close();
+  });
+
+  it('lets writes made meanwhile win over what lands, and sends them', async () => {
+    const backing = new Map<string, unknown>([['lk:t:a', 1], ['lk:t:b', 2], ['lk:t:gone', 9]]);
+    const { storage } = awayAtFirst(backing);
+    const cache = await openRecords({ storage, prefix: PREFIX });
+    const heard: RecordChange[] = [];
+    cache.subscribe((c) => heard.push(...c));
+    cache.set('a', 'mine');
+    cache.delete('gone');
+    await vi.advanceTimersByTimeAsync(999);
+    expect(backing.get('lk:t:a')).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(cache.get('a')).toBe('mine');
+    expect(cache.has('gone')).toBe(false);
+    expect(heard).toEqual([
+      { name: 'a', value: 'mine', origin: 'local' },
+      { name: 'gone', value: undefined, origin: 'local' },
+      { name: 'b', value: 2, origin: 'remote' },
+    ]);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(backing.get('lk:t:a')).toBe('mine');
+    expect(backing.has('lk:t:gone')).toBe(false);
+    expect(backing.get('lk:t:b')).toBe(2);
+    await cache.close();
+  });
+
+  it('stays read-only once its opener stops writing', async () => {
+    const backing = new Map<string, unknown>([['lk:t:a', 1]]);
+    const { storage, list } = awayAtFirst(backing);
+    const cache = await openRecords({ storage, prefix: PREFIX });
+    cache.stopWriting();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(await cache.read()).toBe(false);
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(cache.writable).toBe(false);
+    cache.set('c', 3);
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(backing.has('lk:t:c')).toBe(false);
+  });
+
+  it('stays read-only when a listener stops writing over what landed', async () => {
+    const backing = new Map<string, unknown>([['lk:t:a', 1]]);
+    const { storage } = awayAtFirst(backing);
+    const cache = await openRecords({ storage, prefix: PREFIX });
+    cache.set('c', 3);
+    cache.subscribe((changes) => {
+      if (changes.some((c) => c.origin === 'remote')) cache.stopWriting();
+    });
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(cache.get('a')).toBe(1);
+    expect(cache.writable).toBe(false);
+    expect(backing.has('lk:t:c')).toBe(false);
+  });
+
+  it('stops trying once closed', async () => {
+    const { storage, list } = awayAtFirst(new Map(), Infinity);
+    const cache = await openRecords({ storage, prefix: PREFIX });
+    await cache.close();
+    expect(vi.getTimerCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(list).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not try again with retrying off, until asked to read', async () => {
+    const backing = new Map<string, unknown>([['lk:t:a', 1]]);
+    const { storage, list } = awayAtFirst(backing, 2);
+    const cache = await openRecords({ storage, prefix: PREFIX, retryMs: false });
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(cache.writable).toBe(false);
+
+    expect(await cache.read()).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(await cache.read()).toBe(true);
+    expect(cache.writable).toBe(true);
+    expect(cache.get('a')).toBe(1);
+    await cache.close();
+  });
+
+  it('reads at once when asked, ahead of the backoff', async () => {
+    const backing = new Map<string, unknown>([['lk:t:a', 1]]);
+    const { storage } = awayAtFirst(backing);
+    const cache = await openRecords({ storage, prefix: PREFIX });
+    expect(await cache.read()).toBe(true);
+    expect(cache.get('a')).toBe(1);
+    expect(vi.getTimerCount()).toBe(0);
     await cache.close();
   });
 });

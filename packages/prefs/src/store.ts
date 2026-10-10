@@ -31,9 +31,13 @@ export interface PrefsStore<S extends PrefGroup> {
   stored(): Record<string, unknown>;
   /** `changes` is empty when only records no leaf describes changed. */
   subscribe(listener: (changes: PrefChange[]) => void): () => void;
-  /** False when the store cannot persist: storage was unreadable, or written
-   *  by a newer schema. Changes still apply for this session. */
+  /** False while the store cannot persist: storage has not been read yet, or
+   *  was written by a newer schema. Changes still apply for this session, and
+   *  ones made before a late read lands are persisted when it does. */
   readonly writable: boolean;
+  /** Try again now to read storage that could not be read at open, ahead of
+   *  the store's own retries. Resolves whether storage has been read. */
+  read(): Promise<boolean>;
   /** Resolves true when every queued write reached storage. */
   flush(): Promise<boolean>;
   close(): Promise<void>;
@@ -156,6 +160,7 @@ export function createPrefsStore<S extends PrefGroup>(
     get writable() {
       return cache.writable;
     },
+    read: () => cache.read(),
     flush: () => cache.flush(),
     close: async () => {
       onClose?.();

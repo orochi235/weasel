@@ -47,6 +47,7 @@ export function openPrefsSync<S extends PrefGroup>(
 }
 
 /** Attached before migrations run, so a peer's version bump during the open's
- *  own flush is heard. */
-const watch = (cache: OwnedRecordCache, options: PrefsOptions): (() => void) | undefined =>
-  cache.writable ? watchPrefsVersion(cache, (options.migrations ?? []).length) : undefined;
+ *  own flush is heard, and on an unread cache too, whose late read reports a
+ *  newer version the same way. */
+const watch = (cache: OwnedRecordCache, options: PrefsOptions): (() => void) =>
+  watchPrefsVersion(cache, (options.migrations ?? []).length);

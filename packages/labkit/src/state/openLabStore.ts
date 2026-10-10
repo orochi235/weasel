@@ -69,6 +69,8 @@ export async function openLabStore(options: OpenLabStoreOptions): Promise<Opened
   const records = await openRecords({
     storage: options.storage,
     prefix: labPrefix(options.storageKey),
+    // Records landing after open would skip `readLab`'s migrations and fold.
+    retryMs: false,
   });
   const { doc, orders } = await readLab(options, records);
   const store = createLabStore({ ...options, initial: doc });
