@@ -26,7 +26,15 @@
   /* Keeps the box the thumb is placed in; the track's fill shows through it. */
   border: 1px solid transparent;
   border-radius: var(--wzl-radius-pill);
-  transition: background-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
+  transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
+}
+
+.switch[data-hovered] .track {
+  border-color: var(--wzl-border-strong);
+}
+
+.switch[data-hovered][data-selected] .track {
+  border-color: color-mix(in oklab, var(--wzl-accent-strong) 60%, var(--wzl-fg));
 }
 
 .switch[data-focus-visible] .track {
