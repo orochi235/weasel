@@ -65,6 +65,8 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
     minItems: optNumber('Fewest', 'Entries cannot be removed at this many.'),
     maxItems: optNumber('Most', 'Entries cannot be added at this many.'),
   },
+  map: {},
+  union: { tag: text('Tag', 'The field of the value that names its variant.') },
   action: { label: text('Button', 'The button\'s text. Unset: the name.') },
 };
 
@@ -80,7 +82,10 @@ const SECTION_ATTRS: KindAttrs = {
 };
 
 /** Written even when empty: a leaf without them is not a leaf. */
-const REQUIRED = new Set(['name', 'description', 'default', 'options']);
+const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag']);
+
+/** Where a node keeps the nodes under it, which the tree edits and the attributes pane leaves alone. */
+const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
 function defaultAttr(leaf: PrefLeaf): PrefLeaf | null {
   const base = { name: 'Default', description: 'The value before anything is stored.' };
@@ -124,7 +129,7 @@ export function attributeSchema(node: SchemaNode, custom: CustomKinds = {}): Att
   const own: KindAttrs = { ...(def ? { default: def } : {}), ...kindAttrs(node.kind, custom) };
   const fields = node as unknown as Record<string, unknown>;
   for (const attrs of [shared, own]) for (const k of Object.keys(attrs)) if (containsCode(fields[k])) delete attrs[k];
-  const readOnly = Object.entries(fields).filter(([k]) => k !== 'kind' && k !== 'children' && !(k in shared) && !(k in own));
+  const readOnly = Object.entries(fields).filter(([k]) => k !== 'kind' && !SLOTS.has(k) && !(k in shared) && !(k in own));
   return { shared, own, readOnly };
 }
 
@@ -148,6 +153,11 @@ export function blankLeaf(kind: string): PrefLeaf {
     case 'object': return { ...base, default: {}, children: {} } as PrefLeaf;
     case 'field': return { ...base, default: '' } as PrefLeaf;
     case 'list': return { ...base, default: [], item: { kind: 'string', name: 'Entry', description: '', default: '' } } as PrefLeaf;
+    case 'map': return { ...base, default: {}, item: { kind: 'string', name: 'Value', description: '', default: '' } } as PrefLeaf;
+    case 'union': return {
+      ...base, default: { type: 'a' }, tag: 'type',
+      variants: { a: { kind: 'object', name: 'A', description: '', default: {}, children: {} } },
+    } as PrefLeaf;
     case 'action': return { ...base, default: undefined, run: () => {} } as PrefLeaf;
     default: return { ...base, default: undefined } as PrefLeaf;
   }
@@ -185,7 +195,12 @@ export function changeKind<R extends SchemaRoot>(root: R, path: string, kind: st
       else dropped.push('default');
       continue;
     }
-    if (k === 'children' && 'children' in blank) { next.children = v; continue; }
+    if (SLOTS.has(k)) {
+      // What is under a node goes with it to any kind that keeps its nodes the same way.
+      if (k in blank) next[k] = v;
+      else dropped.push(k);
+      continue;
+    }
     if (keep.has(k)) next[k] = v;
     else dropped.push(k);
   }

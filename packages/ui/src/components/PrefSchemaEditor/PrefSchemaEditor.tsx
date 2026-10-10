@@ -12,7 +12,7 @@ import { dropDraft, openDraft, saveDraft, SWAP, type SwapArgs } from './draft';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
-import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { branchPaths, isFixed, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
 import { drawsNode, previewDrop, previewMark, previewTarget, railTakesInto, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
@@ -215,7 +215,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     commit(setDefaults(latest.current.schema, edits), `default:${edits.map(([path]) => path.join('.')).join(',')}`);
   const remove = () => {
     const path = latest.current.selected;
-    if (path === null) return;
+    if (path === null || isFixed(latest.current.schema, path)) return;
     commit(removeNode(latest.current.schema, path));
     select(parentPath(path));
   };

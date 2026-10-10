@@ -14,11 +14,16 @@ import {
   type PrefAction,
   type PrefBoolean,
   type PrefLeaf,
+  type PrefMap,
+  type PrefUnion,
+  prefVariantOf,
   type PrefObject,
   prefSectionLeaves,
 } from '@weasel-js/prefs';
 import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
+import { MapEditor } from '../Prefs/MapEditor';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
+import { UnionPicker } from '../Prefs/UnionPicker';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
@@ -265,6 +270,59 @@ export function renderBuiltin(
           return custom ? custom(item) : renderBuiltin(item, name, renderers, selectionKey, true);
         }}
       />
+    );
+  }
+  if (pref.kind === 'map') {
+    if (mixed) return <span className={s.unrenderable}>Mixed</span>;
+    const map = pref as PrefMap;
+    return (
+      <MapEditor
+        pref={map}
+        value={value}
+        onChange={setValue}
+        renderValue={(held, set, name, key) => {
+          const item: PropertyRenderContext = {
+            ...ctx,
+            path: `${ctx.path}.${key}`,
+            pref: map.item,
+            value: held,
+            mixed: false,
+            unset: held === undefined,
+            siblings: undefined,
+            each: [held],
+            eachSiblings: undefined,
+            setValue: set,
+            update: (fn) => set(fn(held)),
+          };
+          const custom = renderers?.[map.item.kind];
+          return custom ? custom(item) : renderBuiltin(item, name, renderers, selectionKey, true);
+        }}
+      />
+    );
+  }
+  if (pref.kind === 'union') {
+    const union = pref as PrefUnion;
+    // Nodes of different variants share no fields to draw.
+    const split = mixed && new Set(ctx.each.map((v) => prefVariantOf(union, v)?.[0])).size > 1;
+    return (
+      <UnionPicker pref={union} value={mixed ? ctx.each[0] : value} mixed={split} onChange={setValue}>
+        {(variant, key) => (
+          <ObjectLeaf
+            ctx={{
+              ...ctx,
+              pref: variant,
+              // A node holding no object yet is built from the variant's default, which carries no tag.
+              update: (fn) =>
+                ctx.update((prev, siblings) => {
+                  const next = fn(prev, siblings);
+                  return next !== null && typeof next === 'object' ? { ...next, [union.tag]: key } : next;
+                }),
+            }}
+            renderers={renderers}
+            selectionKey={selectionKey}
+          />
+        )}
+      </UnionPicker>
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;

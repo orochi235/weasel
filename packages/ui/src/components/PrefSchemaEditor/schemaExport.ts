@@ -1,6 +1,6 @@
 import { isPlainObject } from '@weasel-js/core';
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
-import { childrenOf, isUnder, isValidKey, joinPath, keysOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { childrenOf, isUnder, isValidKey, ITEM, joinPath, keysOf, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** What an attribute holding code prints as: an undeclared name, so the pasted literal fails typecheck until the
  *  original expression is put back. */
@@ -50,11 +50,13 @@ export function printValue(v: unknown, depth = 0): string {
 
 function printNode(node: SchemaNode, depth: number): string {
   const kids = childrenOf(node);
-  const slot = isPrefSection(node) ? 'members' : 'children';
+  const slot = slotOf(node);
   const rows = Object.entries(node as unknown as Record<string, unknown>)
     .filter(([k, x]) => x !== undefined && !(k === slot && kids))
     .map(([k, x]) => `${pad(depth + 1)}${printKey(k)}: ${printValue(x, depth + 1)},`);
-  if (kids) {
+  if (kids && slot === ITEM) {
+    rows.push(`${pad(depth + 1)}${ITEM}: ${printNode(kids[ITEM]!, depth + 1)},`);
+  } else if (kids) {
     const inner = Object.entries(kids).map(([k, c]) => `${pad(depth + 2)}${printKey(k)}: ${printNode(c, depth + 2)},`);
     rows.push(`${pad(depth + 1)}${slot}: ${inner.length ? `{\n${inner.join('\n')}\n${pad(depth + 1)}}` : '{}'},`);
   }
@@ -93,8 +95,7 @@ const same = (a: unknown, b: unknown) => a === b || (!containsCode(a) && !contai
 
 function attrChanges(path: string, a: SchemaNode, b: SchemaNode): SchemaChange[] {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  keys.delete('children');
-  keys.delete('members');
+  for (const slot of ['children', 'members', 'variants', ITEM]) keys.delete(slot);
   const out: SchemaChange[] = [];
   for (const k of keys) {
     const from = (a as unknown as Record<string, unknown>)[k];

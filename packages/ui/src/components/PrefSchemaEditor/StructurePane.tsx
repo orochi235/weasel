@@ -17,7 +17,7 @@ import { treeTakesNew } from './previewDrop';
 import { StoredList } from './StoredList';
 import { blankGroup, blankLeaf, blankSection } from './kindSchemas';
 import {
-  addNode, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, keysOf, kindOfValue, nodeAt, parentPath, pathOf,
+  addNode, branchUnder, childrenOf, fitsUnder, holdsFixed, isFixed, joinPath, keyOf, keysOf, kindOfValue, nodeAt, parentPath, pathOf,
   undescribedValues, uniqueKey, type SchemaNode, type SchemaRoot, type SchemaTarget, type UndescribedValue,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
@@ -131,15 +131,21 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
 
   /** Where an add lands: inside the selection if it holds children, else after it. */
   const addTarget = (): { parent: string | null; index?: number } => {
-    if (selected === null || !nodeAt(schema, selected)) return { parent: null };
-    if (childrenOf(nodeAt(schema, selected)!)) return { parent: selected };
-    const parent = parentPath(selected);
+    const node = selected === null ? undefined : nodeAt(schema, selected);
+    if (selected === null || !node) return { parent: null };
+    if (childrenOf(node) && !holdsFixed(node)) return { parent: selected };
+    // A list's item has no siblings to join: the add lands after the list.
+    let at = selected;
+    while (isFixed(schema, at)) at = parentPath(at)!;
+    const parent = parentPath(at);
     const sibs = Object.keys(childrenOf(nodeAt(schema, parent)!) ?? {});
-    return { parent, index: sibs.indexOf(keyOf(selected)) + 1 };
+    return { parent, index: sibs.indexOf(keyOf(at)) + 1 };
   };
   /** What a new node joins: the stored value's parent when it has one yet, else where an add lands. */
   const host = fromStored ? nodeAt(schema, storedParent) : nodeAt(schema, addTarget().parent) ?? schema;
   const branch = branchUnder(host ?? schema);
+  // A union's children are its variants, each an object leaf.
+  const variants = !!host && isPrefLeaf(host) && host.kind === 'union';
   const add = ({ key, name, kind }: NewNode) => {
     const node: SchemaNode = kind !== undefined ? { ...blankLeaf(kind), name } : { ...(branch === 'section' ? blankSection() : blankGroup()), name };
     setAdding(null);
@@ -196,12 +202,12 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         <>
           <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
           <Button size="sm" onClick={() => setAdding('pref')}>Add pref</Button>
-          <Button size="sm" onClick={() => setAdding('branch')}>Add {branch}</Button>
-          <Button size="sm" disabled={selected === null} onClick={onRemove}>Remove</Button>
+          <Button size="sm" disabled={variants} onClick={() => setAdding('branch')}>Add {branch}</Button>
+          <Button size="sm" disabled={selected === null || isFixed(schema, selected)} onClick={onRemove}>Remove</Button>
         </>,
         toolSlot,
       )}
-      <AddNodeDialog what={adding === 'branch' ? branch : adding} kinds={kinds} onAdd={add}
+      <AddNodeDialog what={adding === 'branch' ? branch : adding} kinds={variants && !fromStored ? ['object'] : kinds} onAdd={add}
         siblings={(host && childrenOf(host)) ?? {}} dottedKey={adding === 'pref' && branch === 'section'}
         initial={fromStored ? {
           key: storedKeys.at(-1)!,
@@ -243,6 +249,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
           // A place among the rows shown is not that place among all of them.
           if (sought !== '') return false;
           if (ids.length === 0) return paletteDrag !== null && treeTakesNew(schema, paletteDrag.node, t.parentId);
+          if ([...ids].some((id) => isFixed(schema, id))) return false;
           const general = generalAllows(schema, [...ids], t.parentId);
           if (general !== undefined) return general;
           const parent = nodeAt(schema, t.parentId)!;

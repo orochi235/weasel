@@ -35,7 +35,7 @@ export type PrefAtPath<G, P extends string> =
 
 /** What a leaf holds: its kind's value type for a built-in kind, the type of
  *  its `default` for an app-defined one. A list holds an array of what its
- *  `item` holds. */
+ *  `item` holds, and a map a record of it. */
 export type PrefValueOf<L> =
   L extends { kind: 'number' } ? number
   : L extends { kind: 'boolean' } ? boolean
@@ -44,6 +44,7 @@ export type PrefValueOf<L> =
   : L extends { kind: 'enum'; options: readonly { value: infer T }[] }
     ? L extends { clearable: true } ? T | undefined : T
   : L extends { kind: 'list'; item: infer I } ? PrefValueOf<I>[]
+  : L extends { kind: 'map'; item: infer I } ? Record<string, PrefValueOf<I>>
   : L extends { default: infer D } ? D
   : unknown;
 

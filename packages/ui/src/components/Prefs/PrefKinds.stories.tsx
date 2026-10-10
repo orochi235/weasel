@@ -5,7 +5,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 
 const meta: Meta<typeof PrefsForm> = {
-  title: 'Primitives/Prefs/Lists and actions',
+  title: 'Primitives/Prefs/Compound kinds',
   component: PrefsForm,
 };
 export default meta;
@@ -14,7 +14,7 @@ type Story = StoryObj<typeof PrefsForm>;
 
 const DEFAULT_PHASES = [0.5, 2, 0.25];
 
-function ListsAndActionsStory() {
+function CompoundKindsStory() {
   const [values, setValues] = useState<Record<string, unknown>>({});
   const schema: PrefGroup = {
     name: 'Timing',
@@ -53,10 +53,40 @@ function ListsAndActionsStory() {
           },
         },
       },
+      limits: {
+        kind: 'map',
+        name: 'Limits',
+        description: 'A map: a cap per host, keyed by whatever is typed.',
+        default: { studio: 8, laptop: 2 },
+        item: { kind: 'number', name: 'Limit', description: '', default: 4, min: 0 },
+      },
+      ramp: {
+        kind: 'union',
+        name: 'Ramp',
+        description: 'A union: the fields follow the variant chosen.',
+        tag: 'type',
+        default: { type: 'linear', angle: 90 },
+        variants: {
+          linear: {
+            kind: 'object',
+            name: 'Linear',
+            description: '',
+            default: { angle: 90 },
+            children: { angle: { kind: 'number', name: 'Angle', description: '', default: 90, min: 0, max: 360 } },
+          },
+          radial: {
+            kind: 'object',
+            name: 'Radial',
+            description: '',
+            default: { radius: 1 },
+            children: { radius: { kind: 'number', name: 'Radius', description: '', default: 1, min: 0 } },
+          },
+        },
+      },
       reset: {
         kind: 'action',
         name: 'Timing defaults',
-        description: 'Put every list back to its default.',
+        description: 'Put every value here back to its default.',
         default: undefined,
         label: 'Reset',
         run: () => setValues({}),
@@ -72,8 +102,8 @@ function ListsAndActionsStory() {
   );
 }
 
-export const ListsAndActions: Story = {
-  render: () => <ListsAndActionsStory />,
+export const CompoundKinds: Story = {
+  render: () => <CompoundKindsStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Remove Phase 3' }));

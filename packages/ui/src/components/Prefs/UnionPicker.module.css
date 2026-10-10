@@ -1,0 +1,6 @@
+.union {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+  inline-size: 100%;
+}

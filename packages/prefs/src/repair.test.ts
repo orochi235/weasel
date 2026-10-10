@@ -137,4 +137,70 @@ describe('repairPrefValue', () => {
       expect(repairPrefValue(tags, ['#a', 'b'], validators)).toEqual(['#a', 'none']);
     });
   });
+
+  describe('object fields', () => {
+    const box = {
+      kind: 'object', name: 'Box', description: '', default: { w: 1 },
+      children: {
+        w: num(),
+        look: { name: 'Look', members: { style: en } },
+      },
+    } as unknown as PrefLeaf;
+
+    it('reads each field it holds as that field\'s leaf would, sections included', () => {
+      expect(repairPrefValue(box, { w: 500, style: 'zzz' })).toEqual({ w: 100, style: 'a' });
+    });
+
+    it('leaves an omitted field omitted and an undescribed one alone', () => {
+      expect(repairPrefValue(box, { extra: 'kept' })).toEqual({ extra: 'kept' });
+    });
+
+    it('returns the stored object itself when every field is already valid', () => {
+      const stored = { w: 5, style: 'b' };
+      expect(repairPrefValue(box, stored)).toBe(stored);
+    });
+
+    it('checks each entry of a list of objects', () => {
+      const boxes = { kind: 'list', name: 'Boxes', description: '', default: [], item: box } as PrefLeaf;
+      expect(repairPrefValue(boxes, [{ w: -5 }, 7])).toEqual([{ w: 0 }, { w: 1 }]);
+    });
+  });
+
+  describe('map', () => {
+    const map = { kind: 'map', name: 'M', description: '', default: { a: 1 }, item: num() } as PrefLeaf;
+
+    it('defaults a stored value that is not a plain object', () => {
+      expect(repairPrefValue(map, [1])).toEqual({ a: 1 });
+      expect(repairPrefValue(map, 'nope')).toEqual({ a: 1 });
+    });
+
+    it('reads each value as its item leaf would, under its own key', () => {
+      expect(repairPrefValue(map, { x: 5, y: 500, z: 'bad' })).toEqual({ x: 5, y: 100, z: 10 });
+    });
+
+    it('returns the stored object itself when every value is already valid', () => {
+      const stored = { x: 5 };
+      expect(repairPrefValue(map, stored)).toBe(stored);
+    });
+  });
+
+  describe('union', () => {
+    const shape = {
+      kind: 'union', name: 'Shape', description: '', tag: 'type', default: { type: 'circle', r: 10 },
+      variants: {
+        circle: { kind: 'object', name: 'Circle', description: '', default: { r: 10 }, children: { r: num() } },
+        box: { kind: 'object', name: 'Box', description: '', default: { w: 10 }, children: { w: num() } },
+      },
+    } as unknown as PrefLeaf;
+
+    it('defaults a value whose tag names no variant', () => {
+      expect(repairPrefValue(shape, { type: 'star', r: 3 })).toEqual({ type: 'circle', r: 10 });
+      expect(repairPrefValue(shape, { r: 3 })).toEqual({ type: 'circle', r: 10 });
+      expect(repairPrefValue(shape, 'circle')).toEqual({ type: 'circle', r: 10 });
+    });
+
+    it('reads the fields as the tagged variant\'s leaves would, keeping the tag', () => {
+      expect(repairPrefValue(shape, { type: 'box', w: 900 })).toEqual({ type: 'box', w: 100 });
+    });
+  });
 });

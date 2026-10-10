@@ -167,3 +167,69 @@ describe('PrefsForm action leaf', () => {
     expect(button).not.toBeDisabled();
   });
 });
+
+describe('PrefsForm map leaf', () => {
+  const schema: PrefGroup = {
+    name: 'Root',
+    children: { on: { kind: 'map', name: 'On', description: '', default: { left: false, right: false }, item: flag } },
+  };
+
+  it('draws a key and the item\'s control per entry, and commits the whole record', () => {
+    const onChange = vi.fn();
+    render(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
+    expect(screen.getAllByRole('textbox').map((el) => (el as HTMLInputElement).value)).toEqual(['left', 'right']);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Flag right' }));
+    expect(onChange).toHaveBeenCalledWith('on', { left: false, right: true });
+  });
+
+  it('keeps a new entry\'s row while it has no key, and writes it once it has one', () => {
+    const onChange = vi.fn();
+    render(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onChange).toHaveBeenLastCalledWith('on', { left: false, right: false });
+    expect(screen.getAllByRole('textbox')).toHaveLength(3);
+    fireEvent.change(screen.getAllByRole('textbox')[2]!, { target: { value: 'top' } });
+    expect(onChange).toHaveBeenLastCalledWith('on', { left: false, right: false, top: true });
+  });
+
+  it('renames a key in place and removes an entry', () => {
+    const onChange = vi.fn();
+    render(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
+    fireEvent.change(screen.getAllByRole('textbox')[0]!, { target: { value: 'port' } });
+    expect(onChange).toHaveBeenLastCalledWith('on', { port: false, right: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Flag 2' }));
+    expect(onChange).toHaveBeenLastCalledWith('on', { port: false });
+  });
+});
+
+describe('PrefsForm union leaf', () => {
+  const schema: PrefGroup = {
+    name: 'Root',
+    children: {
+      shape: {
+        kind: 'union',
+        name: 'Shape',
+        description: '',
+        tag: 'type',
+        default: { type: 'circle', filled: true },
+        variants: {
+          circle: { kind: 'object', name: 'Circle', description: '', default: { filled: true }, children: { filled: { ...flag, name: 'Filled' } } },
+          box: { kind: 'object', name: 'Box', description: '', default: { square: false }, children: { square: { ...flag, name: 'Square' } } },
+        },
+      },
+    },
+  };
+
+  it('draws the fields of the variant its value is, and keeps the tag on an edit', () => {
+    const onChange = vi.fn();
+    render(<PrefsForm schema={schema} values={{ shape: { type: 'box', square: false } }} onChange={onChange} />);
+    expect(screen.queryByRole('checkbox', { name: 'Filled' })).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Square' }));
+    expect(onChange).toHaveBeenCalledWith('shape', { type: 'box', square: true });
+  });
+
+  it('draws no fields for a value whose tag names no variant', () => {
+    render(<PrefsForm schema={schema} values={{ shape: { type: 'star' } }} onChange={() => {}} />);
+    expect(screen.queryByRole('checkbox')).toBeNull();
+  });
+});

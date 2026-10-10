@@ -1,17 +1,19 @@
 import { type ReactNode } from 'react';
 import {
-  isPrefLeaf,
   prefValueAtPath,
   type PrefAction,
   type PrefLeaf,
-  type PrefList,
-  type PrefObject,
+  type PrefMap,
+  type PrefUnion,
 } from '@weasel-js/prefs';
 import { PrefActionButton } from './PrefActionButton';
+import { drawsRows, drawsSeveral } from './compound';
 import { ListLeaf } from './ListLeaf';
+import { MapEditor } from './MapEditor';
+import { ObjectLeaf } from './ObjectLeaf';
+import { UnionPicker } from './UnionPicker';
 import { PropertyControl } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyPanel';
-import { GroupTabs, type GroupTab } from './GroupTabs';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
@@ -89,23 +91,20 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx, ctx.renderers);
   if (custom && control === null) return null;
 
-  // An entry that is rows of its own needs the row's whole width, so the label goes above the list.
-  const item = pref.kind === 'list' ? (pref as PrefList).item : undefined;
-  const stacked = item?.kind === 'object' || item?.kind === 'list';
+  const stacked = drawsRows(pref);
 
   // `block` leaves own their chrome (embedded editors with their own
   // header) — no label/tooltip row.
   if (pref.block) return <div className={s.rowSlot} data-wide="" {...selectionAttrs(path, ctx, true)}>{control}</div>;
 
   return (
-    <div className={s.rowSlot} data-wide={pref.kind === 'object' || Array.isArray(pref.default) ? '' : undefined} {...selectionAttrs(path, ctx, true)}>
+    <div className={s.rowSlot} data-wide={pref.kind === 'object' || stacked || Array.isArray(pref.default) ? '' : undefined} {...selectionAttrs(path, ctx, true)}>
     <PropertyRow
       label={pref.name}
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
       className={s.row}
-      // Several controls, or a button: a <label> would hand a click on the row's text to the first of them.
-      group={pref.kind === 'list' || pref.kind === 'action'}
+      group={drawsSeveral(pref)}
       // The owner passes an inherited leaf's value already resolved, so the
       // control keeps drawing it; editing it pins, through `onChange`.
       auto={inherited}
@@ -137,9 +136,32 @@ function renderBuiltin(
   siblings?: Record<string, unknown>,
 ): ReactNode {
   const { pref, value, setValue } = ctx;
-  if (pref.kind === 'object') return <ObjectLeaf ctx={ctx} renderers={renderers} />;
+  const object = (of: PrefRenderContext): ReactNode => (
+    <ObjectLeaf ctx={of} renderField={(field, held) => renderNested(field, renderers, held)} />
+  );
+  if (pref.kind === 'object') return object(ctx);
   if (pref.kind === 'list')
     return <ListLeaf ctx={ctx} renderers={renderers} renderItem={(item) => renderNested(item, renderers)} />;
+  if (pref.kind === 'map') {
+    const map = pref as PrefMap;
+    return (
+      <MapEditor
+        pref={map}
+        value={value}
+        onChange={setValue}
+        renderValue={(held, set, name, key) =>
+          renderNested({ ...ctx, path: `${ctx.path}.${key}`, pref: { ...map.item, name }, value: held, setValue: set }, renderers)
+        }
+      />
+    );
+  }
+  if (pref.kind === 'union') {
+    return (
+      <UnionPicker pref={pref as PrefUnion} value={value} onChange={setValue}>
+        {(variant) => object({ ...ctx, pref: variant })}
+      </UnionPicker>
+    );
+  }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
   const field = prefFieldProps(pref, { value, siblings, setValue, fields: ctx.fields });
   if (field === null) {
@@ -167,65 +189,3 @@ function renderBuiltin(
 }
 
 const settledOnly = (): void => {};
-
-/** One value with its fields hanging off it: each field renders its own
- *  control and commits the parent object whole. */
-function ObjectLeaf({ ctx, renderers }: { ctx: PrefRenderContext; renderers?: Record<string, PrefRenderer> }) {
-  const pref = ctx.pref as PrefObject;
-  const { value, setValue } = ctx;
-  const held = typeof value === 'object' && value !== null
-    ? (value as Record<string, unknown>)
-    : undefined;
-  const objectRows = (children: PrefObject['children']): ReactNode[] => {
-    const out: ReactNode[] = [];
-    // A run of neighboring `tab` sections, held until something else ends it.
-    let tabs: GroupTab[] = [];
-    const flushTabs = (): void => {
-      if (tabs.length > 0) out.push(<GroupTabs key={`tabs:${tabs[0]!.id}`} tabs={tabs} />);
-      tabs = [];
-    };
-    for (const [key, child] of Object.entries(children)) {
-      if (!isPrefLeaf(child)) {
-        const inner = objectRows(child.members);
-        if (inner.length === 0) continue;
-        if (child.as === 'tab') {
-          tabs.push({ id: key, name: child.name, content: inner });
-          continue;
-        }
-        flushTabs();
-        const heading = <h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>;
-        if (child.as === 'panel') out.push(<div key={`panel:${key}`} className={s.panePanel}>{heading}{inner}</div>);
-        else out.push(heading, ...inner);
-        continue;
-      }
-      flushTabs();
-      out.push(
-        <PropertyRow
-          key={key}
-          label={child.name}
-          layout="inline"
-              className={s.objectRow}
-        >
-          <span className={s.rowControl}>
-            {renderNested({
-              path: `${ctx.path}.${key}`,
-              pref: child,
-              value: held?.[key],
-              setValue: (v) => {
-                const base = held ?? pref.fromScalar?.(value) ?? {};
-                setValue({ ...base, [key]: v });
-              },
-              // A field is not pinned on its own — it shares the state of
-              // the object leaf it hangs off.
-              auto: ctx.auto,
-              setAuto: ctx.setAuto,
-            }, renderers, held)}
-          </span>
-        </PropertyRow>,
-      );
-    }
-    flushTabs();
-    return out;
-  };
-  return <div className={s.objectLeaf}>{objectRows(pref.children)}</div>;
-}

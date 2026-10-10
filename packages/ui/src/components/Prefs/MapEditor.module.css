@@ -1,0 +1,17 @@
+.entry {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wzl-space-2);
+}
+
+.key {
+  flex: 0 1 9rem;
+  min-inline-size: 4rem;
+}
+
+.value {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  display: flex;
+  justify-content: flex-end;
+}

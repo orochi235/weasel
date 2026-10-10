@@ -59,6 +59,13 @@ const _schema = {
       default: [],
       item: { kind: 'list', name: 'Row', description: '', default: [], item: { kind: 'string', name: 'Cell', description: '', default: '' } },
     },
+    limits: {
+      kind: 'map',
+      name: 'Limits',
+      description: '',
+      default: {},
+      item: { kind: 'number', name: 'Limit', description: '', default: 0 },
+    },
     wipe: { kind: 'action', name: 'Wipe', description: '', default: undefined, run: () => {} },
   },
 } satisfies PrefGroup;
@@ -67,7 +74,7 @@ type Schema = typeof _schema;
 describe('PrefPath', () => {
   it('names every leaf by its dotted path, group keys included', () => {
     expectTypeOf<PrefPath<Schema>>().toEqualTypeOf<
-      'loose' | 'view.density' | 'view.grid.color' | 'fill' | 'clear' | 'paint' | 'box' | 'custom' | 'phases' | 'grid2'
+      'loose' | 'view.density' | 'view.grid.color' | 'fill' | 'clear' | 'paint' | 'box' | 'custom' | 'phases' | 'grid2' | 'limits'
     >();
   });
 
@@ -110,6 +117,7 @@ describe('PrefValueAt', () => {
   it('types a list by what its item holds, however deep', () => {
     expectTypeOf<PrefValueAt<Schema, 'phases'>>().toEqualTypeOf<number[]>();
     expectTypeOf<PrefValueAt<Schema, 'grid2'>>().toEqualTypeOf<string[][]>();
+    expectTypeOf<PrefValueAt<Schema, 'limits'>>().toEqualTypeOf<Record<string, number>>();
   });
 
   it('adds undefined for a clearable enum and leaves a paint open', () => {

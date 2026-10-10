@@ -1,6 +1,6 @@
 import { isPlainObject, type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/core';
 import { carry } from './carry';
-import { childrenOf, joinPath, nodeAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { childrenOf, ITEM, joinPath, nodeAt, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { containsCode } from './schemaExport';
 
 /** A schema as storage can hold it, when it was saved, and the steps that led to it. */
@@ -82,12 +82,12 @@ function pack(value: unknown, origins: Map<unknown, Origin>, at: Origin | null):
 
 function packNode(node: SchemaNode, path: string | null, origins: Map<unknown, Origin>): unknown {
   const kids = childrenOf(node);
-  const slot = 'members' in node ? 'members' : 'children';
+  const slot = slotOf(node);
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(node)) {
-    out[key] = kids && key === slot
-      ? Object.fromEntries(Object.entries(kids).map(([k, child]) => [k, packNode(child, joinPath(path, k), origins)]))
-      : pack(value, origins, [path, key]);
+    if (!kids || key !== slot) out[key] = pack(value, origins, [path, key]);
+    else if (slot === ITEM) out[key] = packNode(kids[ITEM]!, joinPath(path, ITEM), origins);
+    else out[key] = Object.fromEntries(Object.entries(kids).map(([k, child]) => [k, packNode(child, joinPath(path, k), origins)]));
   }
   return out;
 }

@@ -10,4 +10,6 @@
 .kind.color { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-fuchsia) 55%, var(--wzl-fg)); }
 .kind.paint { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-citron) 55%, var(--wzl-fg)); }
 .kind.list { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-teal) 55%, var(--wzl-fg)); }
+.kind.map { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-sky) 55%, var(--wzl-fg)); }
+.kind.union { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-violet) 55%, var(--wzl-fg)); }
 .kind.action { --badge-status-edge: color-mix(in oklab, var(--wzl-swatch-rose) 55%, var(--wzl-fg)); }

@@ -8,7 +8,7 @@ import { prefFieldChoices } from '../Prefs/schema';
 import { Select } from '../Select';
 import { ATTR_RENDERERS } from './attrRenderers';
 import { attributeSchema, changeKind, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { childrenOf, joinPath, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, type SchemaRoot } from './schemaEdit';
+import { childrenOf, holdsFixed, joinPath, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, type SchemaRoot } from './schemaEdit';
 import { KEEP, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
 import s from './PrefSchemaEditor.module.css';
@@ -48,6 +48,10 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
   if (!node) return <section className={s.pane} aria-label="Attributes"><PaneHeader title="Attributes" /></section>;
 
   const leaf = isPrefLeaf(node);
+  const above = path === null ? undefined : nodeAt(schema, parentPath(path));
+  // A list's item is held under a key that is not its to change, and a union's variant is an object and nothing else.
+  const keyed = path !== null && !(above && holdsFixed(above));
+  const anyKind = leaf && !(above && isPrefLeaf(above) && above.kind === 'union');
   const { shared, own, readOnly } = attributeSchema(node, custom);
   const commitKey = () => {
     if (path === null || key === keyOf(path)) return;
@@ -75,8 +79,8 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
     ),
   };
   const children: Record<string, PrefLeaf | PrefGroup> = {
-    ...(path !== null ? { [KEY]: { kind: KEY_KIND, name: 'Key', description: 'The name its value is stored under.', default: '' } as PrefLeaf } : {}),
-    ...(leaf ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of its value, which picks the control that draws it.', default: '' } as PrefLeaf } : {}),
+    ...(keyed ? { [KEY]: { kind: KEY_KIND, name: 'Key', description: 'The name its value is stored under.', default: '' } as PrefLeaf } : {}),
+    ...(anyKind ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of its value, which picks the control that draws it.', default: '' } as PrefLeaf } : {}),
     ...shared,
     ...(Object.keys(own).length > 0 ? { [OWN]: { name: leaf ? node.kind : 'group', children: own } } : {}),
   };

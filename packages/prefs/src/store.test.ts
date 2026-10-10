@@ -227,4 +227,20 @@ describe('createPrefsStore', () => {
     const store = createPrefsStore(schema, cache);
     expect(store.values()).toEqual({ on: true });
   });
+
+  it('writes an infinity inside a map as a string and reads it back', async () => {
+    const schema = {
+      name: 'T',
+      children: {
+        caps: { kind: 'map', name: 'Caps', description: '', default: {}, item: { kind: 'number', name: 'Cap', description: '', default: 0, endless: 'max' } },
+      },
+    } satisfies PrefGroup;
+    const backing = new Map<string, unknown>();
+    const cache = createRecordCache({ storage: createMemoryAdapter(backing), prefix: 'p.' });
+    const store = createPrefsStore(schema, cache);
+    store.set('caps', { a: 1, b: Infinity });
+    await cache.flush();
+    expect(backing.get('p.caps')).toEqual({ a: 1, b: 'Infinity' });
+    expect(store.get('caps')).toEqual({ a: 1, b: Infinity });
+  });
 });

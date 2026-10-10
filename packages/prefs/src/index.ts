@@ -17,6 +17,8 @@ export {
 } from './helpers';
 export type { PrefAction, PrefActionContext } from './action';
 export type { PrefList } from './list';
+export type { PrefMap } from './map';
+export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';
 export { prefGroupIsPage } from './groups';
 export type { PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';

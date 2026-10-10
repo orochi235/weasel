@@ -1,4 +1,7 @@
+import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
+import type { PrefMap } from './map';
+import { prefVariantOf, type PrefUnion } from './union';
 import type { PrefBoolean, PrefEnum, PrefLeaf, PrefNumber, PrefObject } from './schema';
 
 /** Decides what a stored value reads as for one kind of leaf: the value to
@@ -40,13 +43,48 @@ export function repairPrefValue(
       return e.options.some((o) => o.value === stored) ? stored : leaf.default;
     }
     case 'object':
-      if ((leaf as PrefObject).fromScalar || isPlainObject(stored)) return stored;
-      return leaf.default;
+      if (isPlainObject(stored)) return repairFields(leaf as PrefObject, stored as Record<string, unknown>, validators);
+      return (leaf as PrefObject).fromScalar ? stored : leaf.default;
+    case 'map':
+      return repairMap(leaf as PrefMap, stored, validators);
+    case 'union': {
+      const variant = prefVariantOf(leaf as PrefUnion, stored);
+      return variant ? repairFields(variant[1], stored as Record<string, unknown>, validators) : leaf.default;
+    }
     case 'list':
       return repairList(leaf as PrefList, stored, validators);
     default:
       return stored;
   }
+}
+
+type Validators = Readonly<Record<string, PrefValidator>> | undefined;
+
+/**
+ * Each field the object holds reads as its own leaf would. A field it omits
+ * stays omitted: absent is a state of its own (no dash, no shadow), and not
+ * the field at its default. Fields no leaf describes pass through.
+ */
+function repairFields(leaf: PrefObject, stored: Record<string, unknown>, validators: Validators): unknown {
+  let out: Record<string, unknown> | undefined;
+  for (const [key, field] of prefSectionLeaves(leaf.children)) {
+    if (!Object.hasOwn(stored, key) || stored[key] === undefined) continue;
+    const read = repairPrefValue(field, stored[key], validators);
+    if (read !== stored[key]) (out ??= { ...stored })[key] = read;
+  }
+  return out ?? stored;
+}
+
+/** Each value reads as `item` would on its own, under the key it was stored at. */
+function repairMap(leaf: PrefMap, stored: unknown, validators: Validators): unknown {
+  if (!isPlainObject(stored)) return leaf.default;
+  const held = stored as Record<string, unknown>;
+  let out: Record<string, unknown> | undefined;
+  for (const [key, value] of Object.entries(held)) {
+    const read = repairPrefValue(leaf.item, value, validators);
+    if (read !== value) (out ??= { ...held })[key] = read;
+  }
+  return out ?? stored;
 }
 
 /** Each entry reads as `item` would on its own, so one bad entry costs that entry and not the list. */

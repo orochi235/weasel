@@ -11,6 +11,8 @@ const KIND_CLASS: Record<PrefKind, string | undefined> = {
   paint: s.paint,
   object: s.object,
   list: s.list,
+  map: s.map,
+  union: s.union,
   field: s.field,
   action: s.action,
 };

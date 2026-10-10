@@ -866,23 +866,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s
   `selected`/`onSelect`. A section schema previews through `SelectionPanel`, which has neither.
 
-- **(P2) A prefs schema has no map and no tagged union.** `@weasel-js/prefs` has `object` for a
-  value with fixed typed fields and `list` for an array of one `item` leaf. A value keyed by
-  arbitrary strings, and a value that is one of several shapes told apart by a tag, still have to
-  be custom kinds with a hand-written validator and renderer; `paint` is a union hard-coded as a
-  kind of its own. A `map` would carry `item` the way `list` does. A union needs a decision on how
-  a variant is named and where its tag is stored.
-- **(P2) `repairPrefValue` does not look inside an `object` leaf.** A stored object passes if it
-  is a plain object, whatever its fields hold, so each entry of a list of objects is checked only
-  that far. `list` repairs every entry through its `item` leaf; `object` could do the same through
-  `children`, but a field the object omits is not the same as a field at its default (`fromScalar`,
-  an absent `dash`), so it has to leave absent fields absent.
-- **(P2) `PrefSchemaEditor` shows a `list` leaf's `item` read-only.** Its `minItems`, `maxItems`,
-  and default are editable, and a new list holds strings. The item is a whole leaf, so it wants to
-  be a node under the list in the structure tree, edited in the attributes pane like any other;
-  `childrenOf` in `schemaEdit.ts` knows only groups, sections and `object` leaves, and every move
-  and insert assumes a parent holds any number of keyed children. An `action` leaf's `run` is code,
-  which the editor never writes: a new one exports as `KEEP_FROM_SOURCE`.
+- **(P3) labkit draws no `object`, `map`, or `union` leaf.** `ControlPanel` shows "no control for"
+  on each unless the lab supplies a renderer, and `f` builds none of them: `labField` in
+  `controls/fields.tsx` declines an object because a flat row would write one field of it.
+  weasel-ui's `ObjectLeaf`, `MapEditor`, and `UnionPicker` draw all three for `PrefsForm`; a panel
+  row would open them in a `DialogRow`, as it does a list.
+- **(P3) A `union` leaf's value is typed by its `default`.** `PrefValueOf` gives a list and a map
+  the type of their `item`, and leaves a union (and an object) as whatever `default` was declared
+  as. The variants hold enough to derive the discriminated union: each key as the tag's literal,
+  beside that variant's fields.
+- **(P3) `PrefSchemaEditor` cannot write an `action` leaf's `run`.** It is code, which the editor
+  never authors, so a new action exports with `run: KEEP_FROM_SOURCE` and nothing in the source to
+  keep.
 
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides and `.dialog` rows beside the

@@ -1,6 +1,7 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, VERSION_RECORD } from './helpers';
 import type { PrefList } from './list';
+import type { PrefMap } from './map';
 import type { PrefPath, PrefValueAt } from './paths';
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefGroup } from './groups';
@@ -56,6 +57,10 @@ const encodeInfinity = (leaf: PrefLeaf, value: unknown): unknown => {
   if (leaf.kind === 'list' && Array.isArray(value)) {
     const { item } = leaf as PrefList;
     return value.map((entry) => encodeInfinity(item, entry));
+  }
+  if (leaf.kind === 'map' && value !== null && typeof value === 'object') {
+    const { item } = leaf as PrefMap;
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, encodeInfinity(item, entry)]));
   }
   return leaf.kind === 'number' && (value === Infinity || value === -Infinity) ? String(value) : value;
 };
