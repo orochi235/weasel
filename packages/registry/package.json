@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/registry",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "Keyed registries with a uniform reflection surface: enumerate the entries, see which ones displaced others, subscribe to changes. No React, no DOM.",
   "license": "MIT",
   "type": "module",

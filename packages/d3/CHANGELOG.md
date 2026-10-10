@@ -1,5 +1,15 @@
 # @weasel-js/d3
 
+## 1.9.3
+
+### Patch Changes
+
+- Updated dependencies [6a1afa1]
+- Updated dependencies [c28a3cb]
+- Updated dependencies [7cb27b7]
+- Updated dependencies [e05c820]
+  - @weasel-js/core@1.9.3
+
 ## 1.9.2
 
 ### Patch Changes

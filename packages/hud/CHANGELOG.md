@@ -1,5 +1,20 @@
 # @weasel-js/hud
 
+## 1.9.3
+
+### Patch Changes
+
+- Updated dependencies [6a1afa1]
+- Updated dependencies [c28a3cb]
+- Updated dependencies [7cb27b7]
+- Updated dependencies [e05c820]
+  - @weasel-js/font@1.9.3
+  - @weasel-js/core@1.9.3
+  - @weasel-js/theme@1.9.3
+  - @weasel-js/loupe@1.9.3
+  - @weasel-js/geom@1.9.3
+  - @weasel-js/paint@1.9.3
+
 ## 1.9.2
 
 ### Patch Changes
