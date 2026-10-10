@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { describeAdapterContract } from './adapterContract';
-import { defaultStorage, resetDefaultStorage } from './defaultStorage';
+import { createDefaultStorage, defaultStorage, resetDefaultStorage } from './defaultStorage';
 import { createIndexedDbAdapter, indexedDbAdapter } from './indexedDb';
 import { createMemoryAdapter, noneAdapter } from './memory';
 import { urlHashAdapter } from './urlHashAdapter';
@@ -134,6 +134,32 @@ describe('defaultStorage', () => {
     expect(await fresh.defaultStorage()).toBe(freshWeb.localStorageAdapter);
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining('IndexedDB would not open'),
+      expect.anything(),
+    );
+    warn.mockRestore();
+  });
+});
+
+describe('createDefaultStorage', () => {
+  it('probes the preferred adapter once until reset', async () => {
+    const preferred = createMemoryAdapter();
+    const list = vi.spyOn(preferred, 'list');
+    const { defaultStorage: pick, resetDefaultStorage: reset } = createDefaultStorage(preferred);
+    expect(await pick()).toBe(preferred);
+    expect(await pick()).toBe(preferred);
+    expect(list).toHaveBeenCalledTimes(1);
+    reset();
+    await pick();
+    expect(list).toHaveBeenCalledTimes(2);
+  });
+
+  it('falls back to localStorage under its label where the preferred adapter will not open', async () => {
+    const broken = { ...createMemoryAdapter(), list: () => Promise.reject(new Error('no')) };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { defaultStorage: pick } = createDefaultStorage(broken, 'the test store');
+    expect(await pick()).toBe(localStorageAdapter);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('the test store would not open'),
       expect.anything(),
     );
     warn.mockRestore();

@@ -17,16 +17,21 @@ export async function fallbackStorage(
   }
 }
 
-let resolvedDefault: Promise<StorageAdapter> | null = null;
-
-/** IndexedDB under the default database, or localStorage where it will not
- *  open. Resolved once per page. */
-export function defaultStorage(): Promise<StorageAdapter> {
-  resolvedDefault ??= fallbackStorage(indexedDbAdapter, localStorageAdapter, 'IndexedDB');
-  return resolvedDefault;
+/** A page-wide default: `preferred`, or localStorage where it will not open,
+ *  chosen on first call and kept until `resetDefaultStorage` (tests only). */
+export function createDefaultStorage(
+  preferred: StorageAdapter,
+  label?: string,
+): { defaultStorage: () => Promise<StorageAdapter>; resetDefaultStorage: () => void } {
+  let resolved: Promise<StorageAdapter> | null = null;
+  return {
+    defaultStorage: () => (resolved ??= fallbackStorage(preferred, localStorageAdapter, label)),
+    resetDefaultStorage: () => {
+      resolved = null;
+    },
+  };
 }
 
-/** Forget which default was chosen. Tests only. */
-export function resetDefaultStorage(): void {
-  resolvedDefault = null;
-}
+/** IndexedDB under the default database, 'weasel', or localStorage where it
+ *  will not open. Resolved once per page. */
+export const { defaultStorage, resetDefaultStorage } = createDefaultStorage(indexedDbAdapter, 'IndexedDB');

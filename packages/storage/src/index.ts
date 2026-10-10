@@ -1,4 +1,4 @@
-export { defaultStorage, fallbackStorage } from './defaultStorage';
+export { createDefaultStorage, defaultStorage, fallbackStorage } from './defaultStorage';
 export { type IndexedDbAdapterOptions, createIndexedDbAdapter, indexedDbAdapter } from './indexedDb';
 export { createMemoryAdapter, noneAdapter } from './memory';
 export { urlHashAdapter } from './urlHashAdapter';
