@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest';
-import type { PrefAtPath, PrefPath, PrefValueAt } from './paths';
+import type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
+import type { PrefUnion } from './union';
 import type { PrefGroup } from './groups';
 
 const _schema = {
@@ -66,6 +67,26 @@ const _schema = {
       default: {},
       item: { kind: 'number', name: 'Limit', description: '', default: 0 },
     },
+    ramp: {
+      kind: 'union',
+      name: 'Ramp',
+      description: '',
+      tag: 'type' as const,
+      default: { type: 'linear', angle: 90 },
+      variants: {
+        linear: {
+          kind: 'object', name: 'Linear', description: '', default: {},
+          children: { angle: { kind: 'number', name: 'Angle', description: '', default: 90 } },
+        },
+        radial: {
+          kind: 'object', name: 'Radial', description: '', default: {},
+          children: {
+            radius: { kind: 'number', name: 'Radius', description: '', default: 1 },
+            look: { name: 'Look', members: { soft: { kind: 'boolean', name: 'Soft', description: '', default: false } } },
+          },
+        },
+      },
+    },
     wipe: { kind: 'action', name: 'Wipe', description: '', default: undefined, run: () => {} },
   },
 } satisfies PrefGroup;
@@ -74,7 +95,7 @@ type Schema = typeof _schema;
 describe('PrefPath', () => {
   it('names every leaf by its dotted path, group keys included', () => {
     expectTypeOf<PrefPath<Schema>>().toEqualTypeOf<
-      'loose' | 'view.density' | 'view.grid.color' | 'fill' | 'clear' | 'paint' | 'box' | 'custom' | 'phases' | 'grid2' | 'limits'
+      'loose' | 'view.density' | 'view.grid.color' | 'fill' | 'clear' | 'paint' | 'box' | 'custom' | 'phases' | 'grid2' | 'limits' | 'ramp'
     >();
   });
 
@@ -118,6 +139,15 @@ describe('PrefValueAt', () => {
     expectTypeOf<PrefValueAt<Schema, 'phases'>>().toEqualTypeOf<number[]>();
     expectTypeOf<PrefValueAt<Schema, 'grid2'>>().toEqualTypeOf<string[][]>();
     expectTypeOf<PrefValueAt<Schema, 'limits'>>().toEqualTypeOf<Record<string, number>>();
+  });
+
+  it('types a union as each variant\'s fields under its tag, and a widened one by its default', () => {
+    type Ramp = PrefValueAt<Schema, 'ramp'>;
+    expectTypeOf<Extract<Ramp, { type: 'linear' }>['angle']>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<Extract<Ramp, { type: 'radial' }>['radius']>().toEqualTypeOf<number | undefined>();
+    expectTypeOf<Extract<Ramp, { type: 'radial' }>['soft']>().toEqualTypeOf<boolean | undefined>();
+    expectTypeOf<Ramp['type']>().toEqualTypeOf<'linear' | 'radial'>();
+    expectTypeOf<PrefValueOf<PrefUnion & { default: { type: string } }>>().toEqualTypeOf<{ type: string }>();
   });
 
   it('adds undefined for a clearable enum and leaves a paint open', () => {

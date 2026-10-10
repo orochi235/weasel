@@ -13,7 +13,7 @@ import {
   type PrefSection,
 } from '@weasel-js/prefs';
 import { replaceNode, nodeAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
-import { containsCode } from './schemaExport';
+import { containsCode, STUB } from './schemaExport';
 
 export type KindAttrs = Record<string, PrefLeaf>;
 export type CustomKinds = Record<string, KindAttrs>;
@@ -158,7 +158,7 @@ export function blankLeaf(kind: string): PrefLeaf {
       ...base, default: { type: 'a' }, tag: 'type',
       variants: { a: { kind: 'object', name: 'A', description: '', default: {}, children: {} } },
     } as PrefLeaf;
-    case 'action': return { ...base, default: undefined, run: () => {} } as PrefLeaf;
+    case 'action': return { ...base, default: undefined, run: STUB } as PrefLeaf;
     default: return { ...base, default: undefined } as PrefLeaf;
   }
 }

@@ -33,9 +33,18 @@ export type PrefAtPath<G, P extends string> =
         : never
     : never;
 
+type AllOf<U> = (U extends unknown ? (x: U) => void : never) extends (x: infer I) => void ? I : never;
+
+/** The fields an `object` leaf's `children` describe, sections folded in. Each is optional: an object may omit any. */
+type PrefFieldsOf<C> = {
+  [K in keyof C as C[K] extends { kind: string } ? K : never]?: PrefValueOf<C[K]>;
+} & AllOf<{ [K in keyof C]: C[K] extends { members: infer M } ? PrefFieldsOf<M> : never }[keyof C]>;
+
 /** What a leaf holds: its kind's value type for a built-in kind, the type of
  *  its `default` for an app-defined one. A list holds an array of what its
- *  `item` holds, and a map a record of it. */
+ *  `item` holds, a map a record of it, and a union one variant's fields
+ *  under that variant's tag — where the schema keeps `tag` a literal
+ *  (`tag: 'type' as const`); one widened to `string` is typed by its default. */
 export type PrefValueOf<L> =
   L extends { kind: 'number' } ? number
   : L extends { kind: 'boolean' } ? boolean
@@ -45,6 +54,10 @@ export type PrefValueOf<L> =
     ? L extends { clearable: true } ? T | undefined : T
   : L extends { kind: 'list'; item: infer I } ? PrefValueOf<I>[]
   : L extends { kind: 'map'; item: infer I } ? Record<string, PrefValueOf<I>>
+  : L extends { kind: 'union'; tag: infer T extends string; variants: infer V; default: infer D }
+    ? string extends keyof V | T
+      ? D
+      : { [K in keyof V & string]: { [P in T]: K } & (V[K] extends { children: infer C } ? PrefFieldsOf<C> : unknown) }[keyof V & string]
   : L extends { default: infer D } ? D
   : unknown;
 

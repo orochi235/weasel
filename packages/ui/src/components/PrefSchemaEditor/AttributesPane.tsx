@@ -9,7 +9,7 @@ import { Select } from '../Select';
 import { ATTR_RENDERERS } from './attrRenderers';
 import { attributeSchema, changeKind, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { childrenOf, holdsFixed, joinPath, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, type SchemaRoot } from './schemaEdit';
-import { KEEP, containsCode, printValue } from './schemaExport';
+import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
 import s from './PrefSchemaEditor.module.css';
 
@@ -103,7 +103,7 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
         <DetailList>
           {readOnly.map(([k, v]) => (
             <DetailRow key={k} label={k}>
-              <Code size="xs" status="muted">{containsCode(v) ? `${KEEP} (code)` : printValue(v).replace(/\s*\n\s*/g, ' ')}</Code>
+              <Code size="xs" status="muted">{containsCode(v) && v !== STUB ? `${KEEP} (code)` : printValue(v).replace(/\s*\n\s*/g, ' ')}</Code>
             </DetailRow>
           ))}
         </DetailList>

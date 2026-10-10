@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { packDraft, unpackDraft } from './draft';
-import { attributeSchema, changeKind } from './kindSchemas';
+import { attributeSchema, blankLeaf, changeKind } from './kindSchemas';
 import {
   addNode, branchPaths, childrenOf, fitsUnder, isFixed, moveNodes, nodeAt, removeNode, renameKey, setAttribute,
 } from './schemaEdit';
-import { diffSchemas, formatChanges, printSchema } from './schemaExport';
+import { diffSchemas, formatChanges, printSchema, STUB } from './schemaExport';
 
 const enc = { read: () => true, write: (on: boolean) => on };
 const num = { kind: 'number', name: 'Phase', description: '', default: 0, min: 0 } as const;
@@ -99,5 +99,12 @@ describe('the nodes under a list, a map and a union', () => {
     const item = (nodeAt(back, 'flags') as unknown as { item: PrefLeaf & { encoding: unknown } }).item;
     expect(item).toMatchObject({ kind: 'boolean', name: 'On' });
     expect(item.encoding).toBe(enc);
+  });
+
+  it('prints a new action\'s run as the stub it is, and brings it back from a draft', () => {
+    const next = addNode(ROOT, null, 'wipe', blankLeaf('action'));
+    expect(printSchema(next)).toContain('run: () => {},');
+    const back = unpackDraft(JSON.parse(JSON.stringify(packDraft(next, ROOT))), ROOT);
+    expect((nodeAt(back, 'wipe') as unknown as { run: unknown }).run).toBe(STUB);
   });
 });

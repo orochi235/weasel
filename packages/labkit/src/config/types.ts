@@ -4,6 +4,7 @@ import type {
   PrefGroupAs,
   PrefLeaf,
   PrefNumberUnit,
+  PrefObject,
   PrefPair,
 } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
@@ -62,6 +63,11 @@ export interface Annotations {
   item?: PrefLeaf;
   minItems?: number;
   maxItems?: number;
+  /** An object leaf's fields. */
+  children?: PrefObject['children'];
+  /** The field of a union leaf's value that names its variant. */
+  tag?: string;
+  variants?: Record<string, PrefObject>;
   /** What an action leaf's button calls. */
   run?: PrefAction['run'];
 }

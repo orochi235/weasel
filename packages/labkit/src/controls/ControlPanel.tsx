@@ -14,6 +14,7 @@ import {
   GroupTabs,
   ListEditor,
   PrefActionButton,
+  PrefControl,
   type PropertyAlign,
   type PropertyControlProps,
   type PropertyDensity,
@@ -40,6 +41,9 @@ import { BareControl, extra, isSliderLeaf, labField, useDebouncedText } from './
 import { headingLeaf } from './headingControl';
 import { inDialog, summarizeValue } from './inDialog';
 import type { ConfigField } from './types';
+
+/** Leaves whose value is made of other leaves' values: too much for a row, so the row opens them in a dialog. */
+const COMPOUND = new Set(['list', 'object', 'map', 'union']);
 
 /** How a panel packs its rows into the two-column property grid.
  *   - `'auto'`: narrow controls (numbers, checkboxes, dropdowns, colors) sit
@@ -638,46 +642,39 @@ export function ControlRow<TC extends Record<string, unknown>>({
     );
   }
 
-  if (leaf.kind === 'list') {
-    const { item, minItems, maxItems } = leaf as PrefList;
-    const entries = Array.isArray(value) ? (value as unknown[]) : [];
-    const drawn = renderers?.[item.kind];
-    const bounds = { 'aria-label': item.name || label, onChange: write, minItems, maxItems };
+  if (COMPOUND.has(leaf.kind)) {
+    const item = leaf.kind === 'list' ? (leaf as PrefList).item : undefined;
+    // Plain text entries keep the list's own fields, and the placeholder only they have.
+    const texts = item?.kind === 'string' && !renderers?.string;
     return (
       <DialogRow
         label={label}
-        summary={summarizeValue(entries)}
+        summary={summarizeValue(value)}
         readout={autoReadout}
         layout={layout}
         description={description}
         {...autoProps}
       >
         {() =>
-          item.kind === 'string' && !drawn ? (
+          texts ? (
             <ListEditor
-              {...bounds}
-              value={entries.map((e) => (typeof e === 'string' ? e : ''))}
+              aria-label={item?.name || label}
+              value={(Array.isArray(value) ? value : []).map((e) =>
+                typeof e === 'string' ? e : '',
+              )}
+              onChange={write}
+              minItems={(leaf as PrefList).minItems}
+              maxItems={(leaf as PrefList).maxItems}
               placeholder={extra<string>(leaf, 'placeholder')}
             />
           ) : (
-            <ListEditor<unknown>
-              {...bounds}
-              value={entries}
-              newEntry={() => item.default}
-              renderEntry={(entry, set, name) =>
-                drawn ? (
-                  drawn({
-                    path,
-                    pref: { ...item, name },
-                    value: entry,
-                    setValue: set,
-                    auto: false,
-                    setAuto: () => {},
-                  })
-                ) : (
-                  <BareControl leaf={item} value={entry} write={set} name={name} />
-                )
-              }
+            <PrefControl
+              pref={leaf}
+              path={path}
+              value={value}
+              onChange={write}
+              renderers={renderers}
+              fields={choices}
             />
           )
         }

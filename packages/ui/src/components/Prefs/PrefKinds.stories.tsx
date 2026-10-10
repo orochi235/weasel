@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect, userEvent, within } from '@weasel-js/forge/play';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import { PrefControl } from './PrefControl';
 import { PrefsForm } from './PrefsForm';
 
 const meta: Meta<typeof PrefsForm> = {
@@ -111,4 +112,25 @@ export const CompoundKinds: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Reset' }));
     await expect(canvas.queryByRole('button', { name: 'Remove Phase 3' })).not.toBeNull();
   },
+};
+
+const STOP: PrefLeaf = {
+  kind: 'object',
+  name: 'Stop',
+  description: '',
+  default: { at: 0.5, color: '#1d4ed8' },
+  children: {
+    at: { kind: 'number', name: 'At', description: '', default: 0.5, min: 0, max: 1, step: 0.05 },
+    color: { kind: 'color', name: 'Color', description: '', default: '#888888' },
+  },
+};
+
+function BareControlStory() {
+  const [value, setValue] = useState<unknown>(undefined);
+  return <PrefControl pref={STOP} value={value} onChange={setValue} />;
+}
+
+/** `PrefControl`: one leaf's control with no row around it, for a surface that lays out its own. */
+export const BareControl: Story = {
+  render: () => <BareControlStory />,
 };

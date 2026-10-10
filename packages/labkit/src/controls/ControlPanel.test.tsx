@@ -375,7 +375,7 @@ describe('<ControlPanel> built-in kind coverage', () => {
     dialogs: {},
   });
 
-  it('declines paint and object with a named row rather than a blank one', () => {
+  it('declines paint with a named row rather than a blank one, and opens an object in a dialog', () => {
     render(
       <ControlPanel
         schema={schemaWith(
@@ -393,7 +393,8 @@ describe('<ControlPanel> built-in kind coverage', () => {
       />,
     );
     expect(screen.getByText(/no control for .paint./)).toBeInTheDocument();
-    expect(screen.getByText(/no control for .object./)).toBeInTheDocument();
+    expect(screen.queryByText(/no control for .object./)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit Stroke' })).toBeInTheDocument();
   });
 
   it('throws for a built-in kind with no case arm', () => {

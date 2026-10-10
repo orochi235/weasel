@@ -6,6 +6,13 @@ import { childrenOf, isUnder, isValidKey, ITEM, joinPath, keysOf, slotOf, type S
  *  original expression is put back. */
 export const KEEP = 'KEEP_FROM_SOURCE';
 
+/**
+ * The one piece of code the editor writes: what a new `action` leaf runs until someone gives it a body. It prints as
+ * itself, having no place in any source to be kept from.
+ */
+export const STUB = (): void => {};
+const STUB_TEXT = '() => {}';
+
 const pad = (depth: number) => '  '.repeat(depth);
 const isScalar = (v: unknown) => v === null || ['string', 'number', 'boolean', 'undefined'].includes(typeof v);
 const isPlain = isPlainObject;
@@ -33,6 +40,7 @@ function printInline(v: Record<string, unknown>): string {
 
 /** `v` as TypeScript source, indented from `depth`. */
 export function printValue(v: unknown, depth = 0): string {
+  if (v === STUB) return STUB_TEXT;
   if (containsCode(v)) return KEEP;
   if (typeof v === 'string') return quote(v);
   if (isScalar(v)) return String(v);

@@ -859,19 +859,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s
   `selected`/`onSelect`. A section schema previews through `SelectionPanel`, which has neither.
 
-- **(P3) labkit draws no `object`, `map`, or `union` leaf.** `ControlPanel` shows "no control for"
-  on each unless the lab supplies a renderer, and `f` builds none of them: `labField` in
-  `controls/fields.tsx` declines an object because a flat row would write one field of it.
-  weasel-ui's `ObjectLeaf`, `MapEditor`, and `UnionPicker` draw all three for `PrefsForm`; a panel
-  row would open them in a `DialogRow`, as it does a list.
-- **(P3) A `union` leaf's value is typed by its `default`.** `PrefValueOf` gives a list and a map
-  the type of their `item`, and leaves a union (and an object) as whatever `default` was declared
-  as. The variants hold enough to derive the discriminated union: each key as the tag's literal,
-  beside that variant's fields.
-- **(P3) `PrefSchemaEditor` cannot write an `action` leaf's `run`.** It is code, which the editor
-  never authors, so a new action exports with `run: KEEP_FROM_SOURCE` and nothing in the source to
-  keep.
-
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides and `.dialog` rows beside the
   `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its

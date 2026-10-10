@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { BUILTIN_KINDS, attributeSchema, blankLeaf, changeKind, normalizeAttr } from './kindSchemas';
 import { nodeAt } from './schemaEdit';
+import { STUB } from './schemaExport';
 
 const num: PrefLeaf = { kind: 'number', name: 'N', description: '', default: 3, min: 0, max: 10, unit: { toDisplay: (v: number) => v } as never } as PrefLeaf;
 
@@ -47,6 +48,7 @@ describe('kindSchemas', () => {
 
   it('makes blank leaves whose attributes are all described, bar the read-only ones', () => {
     const intentional: Record<string, string[]> = { paint: ['default'], object: ['default'], map: ['default'], union: ['default'], action: ['default', 'run'] };
+    expect(blankLeaf('action')).toMatchObject({ run: STUB });
     for (const k of BUILTIN_KINDS) {
       const { readOnly } = attributeSchema(blankLeaf(k));
       expect([k, readOnly.map(([key]) => key)]).toEqual([k, intentional[k] ?? []]);

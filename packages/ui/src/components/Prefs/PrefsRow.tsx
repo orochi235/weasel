@@ -118,8 +118,8 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   );
 }
 
-/** A leaf nested in another's value, drawn as it would be on a row of its own: by the app's renderer for its kind, where it has one. */
-function renderNested(
+/** A leaf's control with no row around it, as it is drawn nested in another's value: by the app's renderer for its kind, where it has one. */
+export function renderPrefControl(
   ctx: PrefRenderContext,
   renderers: Record<string, PrefRenderer> | undefined,
   siblings?: Record<string, unknown>,
@@ -137,11 +137,11 @@ function renderBuiltin(
 ): ReactNode {
   const { pref, value, setValue } = ctx;
   const object = (of: PrefRenderContext): ReactNode => (
-    <ObjectLeaf ctx={of} renderField={(field, held) => renderNested(field, renderers, held)} />
+    <ObjectLeaf ctx={of} renderField={(field, held) => renderPrefControl(field, renderers, held)} />
   );
   if (pref.kind === 'object') return object(ctx);
   if (pref.kind === 'list')
-    return <ListLeaf ctx={ctx} renderers={renderers} renderItem={(item) => renderNested(item, renderers)} />;
+    return <ListLeaf ctx={ctx} renderers={renderers} renderItem={(item) => renderPrefControl(item, renderers)} />;
   if (pref.kind === 'map') {
     const map = pref as PrefMap;
     return (
@@ -150,7 +150,7 @@ function renderBuiltin(
         value={value}
         onChange={setValue}
         renderValue={(held, set, name, key) =>
-          renderNested({ ...ctx, path: `${ctx.path}.${key}`, pref: { ...map.item, name }, value: held, setValue: set }, renderers)
+          renderPrefControl({ ...ctx, path: `${ctx.path}.${key}`, pref: { ...map.item, name }, value: held, setValue: set }, renderers)
         }
       />
     );

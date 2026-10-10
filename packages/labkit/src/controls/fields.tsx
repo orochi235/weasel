@@ -29,9 +29,9 @@ export function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
 
 /**
  * A leaf as the field it draws, with the labkit-only extras `prefFieldProps`
- * knows nothing of. `null` for a kind the panel declines: a paint, which a
- * hex swatch would flatten to a solid, and an object, which a flat row would
- * write one field of. Override with `render` to edit either.
+ * knows nothing of. `null` for a kind with no one field: a paint, which a
+ * hex swatch would flatten to a solid and the panel declines, and an object,
+ * which a flat row would write one field of and the panel opens in a dialog.
  */
 export function labField(
   leaf: PrefLeaf,

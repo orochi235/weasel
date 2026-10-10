@@ -201,8 +201,11 @@ export {
   GroupNode,
   isConfigBranch,
   ListNode,
+  MapNode,
   NumberNode,
+  ObjectNode,
   StringNode,
+  UnionNode,
   ValueNode,
 } from './config/builder';
 export { fromConfigFields } from './config/fromConfigField';

@@ -284,4 +284,54 @@ describe('resolveConfigSchema / nested groups', () => {
     });
     expect(schema.defaults()).toEqual({ wipe: undefined });
   });
+
+  it('resolves an object to one leaf whose fields are named for their keys', () => {
+    const schema = f.schema({
+      stop: f.object({ at: f.number(0.5).range(0, 1), tintColor: f.color('#888888') }),
+    });
+    expect(schema.defaults()).toEqual({ stop: { at: 0.5, tintColor: '#888888' } });
+    expect(leafAt(resolveConfigSchema(schema, []), 'stop')).toMatchObject({
+      kind: 'object',
+      default: { at: 0.5, tintColor: '#888888' },
+      children: {
+        at: { kind: 'number', name: 'At', min: 0, max: 1, default: 0.5 },
+        tintColor: { kind: 'color', name: 'Tint color' },
+      },
+    });
+  });
+
+  it('resolves a map to a leaf carrying its item', () => {
+    const r = resolveConfigSchema(
+      f.schema({ limits: f.map({ studio: 8 }, f.number(4).label('Limit')) }),
+      [],
+    );
+    expect(leafAt(r, 'limits')).toMatchObject({
+      kind: 'map',
+      default: { studio: 8 },
+      item: { kind: 'number', name: 'Limit', default: 4 },
+    });
+  });
+
+  it('resolves a union that starts as its first variant, tagged', () => {
+    const schema = f.schema({
+      ramp: f.union('type', {
+        linear: f.object({ angle: f.number(90) }),
+        radial: f.object({ radius: f.number(1) }).label('Round'),
+      }),
+    });
+    expect(schema.defaults()).toEqual({ ramp: { type: 'linear', angle: 90 } });
+    expect(leafAt(resolveConfigSchema(schema, []), 'ramp')).toMatchObject({
+      kind: 'union',
+      tag: 'type',
+      variants: {
+        linear: {
+          kind: 'object',
+          name: 'Linear',
+          default: { angle: 90 },
+          children: { angle: { kind: 'number' } },
+        },
+        radial: { kind: 'object', name: 'Round', default: { radius: 1 } },
+      },
+    });
+  });
 });

@@ -1,7 +1,7 @@
 import { isPlainObject, type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/core';
 import { carry } from './carry';
 import { childrenOf, ITEM, joinPath, nodeAt, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
-import { containsCode } from './schemaExport';
+import { containsCode, STUB } from './schemaExport';
 
 /** A schema as storage can hold it, when it was saved, and the steps that led to it. */
 export interface StoredDraft {
@@ -51,6 +51,8 @@ export const STEPS_KEPT = 20;
 
 /** Stands for an attribute that holds code: where the source schema keeps the same value. */
 const FROM = '$from';
+/** Stands for {@link STUB}, which no source holds. */
+const NEW = '$stub';
 /** Stands for a number JSON has no word for. */
 const NUM = '$num';
 
@@ -68,6 +70,7 @@ function codeOrigins(root: SchemaRoot): Map<unknown, Origin> {
 }
 
 function pack(value: unknown, origins: Map<unknown, Origin>, at: Origin | null): unknown {
+  if (value === STUB) return { [NEW]: true };
   if (containsCode(value)) {
     // An attribute keeps its value's identity through every edit beside it, so the value finds its place in the
     // source wherever its node has moved to. One rebuilt since falls back to the place it sits now.
@@ -126,6 +129,7 @@ function unpack(value: unknown, source: SchemaRoot): unknown {
   if (Array.isArray(value)) return value.map((v) => unpack(v, source));
   if (!isPlainObject(value)) return value;
   if (NUM in value) return Number(value[NUM]);
+  if (NEW in value) return STUB;
   if (FROM in value) {
     const [path, attribute] = value[FROM] as Origin;
     return (nodeAt(source, path) as Record<string, unknown> | undefined)?.[attribute];
