@@ -137,7 +137,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.12",
-    "@msb235/blits": "0.7.0",
+    "@msb235/blits": "0.8.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@weasel-js/guides": "1.9.3",
     "@weasel-js/history": "1.9.3",
