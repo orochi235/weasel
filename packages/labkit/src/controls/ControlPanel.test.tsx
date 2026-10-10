@@ -1217,7 +1217,7 @@ describe('<ControlPanel> resettable group', () => {
 });
 
 describe('<ControlPanel> endless number', () => {
-  it('reads its word at the top of the range and writes Infinity there', () => {
+  it('reads its word at the stop past the top of the range and writes Infinity there', () => {
     const schema = resolveConfigSchema(
       f.schema({ cut: f.number(Infinity).range(0, 5000).step(50).suffix('ms').endless('never') }),
       [],
@@ -1242,6 +1242,8 @@ describe('<ControlPanel> endless number', () => {
     fireEvent.change(screen.getByRole('slider'), { target: { value: '4950' } });
     expect(setConfig).toHaveBeenLastCalledWith('cut', 4950);
     fireEvent.change(screen.getByRole('slider'), { target: { value: '5000' } });
+    expect(setConfig).toHaveBeenLastCalledWith('cut', 5000);
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '5050' } });
     expect(setConfig).toHaveBeenLastCalledWith('cut', Infinity);
   });
 });

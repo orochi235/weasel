@@ -1254,12 +1254,13 @@ describe('Slider thumb fit', () => {
 });
 
 describe('Slider endless', () => {
-  it('sits a thumb given Infinity at the stop, and reads the display’s word', () => {
+  it('sits a thumb given Infinity at a stop one step past the range, and reads the display’s word', () => {
     const { getByRole, container } = render(
-      <Slider min={0} max={5000} endless="max" display={endless(unit('ms'), 'never')} readoutPlacement="inline-after" thumbs={[{ value: Infinity }]} onInput={() => {}} />,
+      <Slider min={0} max={5000} step={50} endless="max" display={endless(unit('ms'), 'never')} readoutPlacement="inline-after" thumbs={[{ value: Infinity }]} onInput={() => {}} />,
     );
     const thumb = getByRole('slider');
-    expect(thumb).toHaveAttribute('aria-valuenow', '5000');
+    expect(thumb).toHaveAttribute('aria-valuenow', '5050');
+    expect(thumb).toHaveAttribute('aria-valuemax', '5050');
     expect(thumb).toHaveAttribute('aria-valuetext', 'never');
     expect(container.querySelector('[data-readout="inline"]')!.textContent).toBe('never');
   });
@@ -1268,6 +1269,8 @@ describe('Slider endless', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();
     const { getByRole } = render(<Slider min={0} max={100} step={10} endless="max" thumbs={[{ value: 90 }]} onInput={onInput} onChange={onChange} />);
+    fireEvent.keyDown(getByRole('slider'), { key: 'ArrowRight' });
+    expect(onChange).toHaveBeenLastCalledWith([{ value: 100 }]);
     fireEvent.keyDown(getByRole('slider'), { key: 'End' });
     expect(onChange).toHaveBeenLastCalledWith([{ value: Infinity }]);
     fireEvent.keyDown(getByRole('slider'), { key: 'Home' });
@@ -1280,5 +1283,16 @@ describe('Slider endless', () => {
     expect(getByRole('slider')).toHaveAttribute('aria-valuetext', 'minus infinity');
     fireEvent.keyDown(getByRole('slider'), { key: 'End' });
     expect(onChange).toHaveBeenLastCalledWith([{ value: 100 }]);
+  });
+
+  it('adds a stop for infinity after the last of evenly spaced stops, labeled with its word', () => {
+    const onChange = vi.fn();
+    const { getByRole, container } = render(
+      <Slider min={0} max={60} stops={[1, 5, 60]} spacing="even" snap="strict" endless="max" display={endless(unit('s'), 'never')} thumbs={[{ value: 60 }]} onInput={() => {}} onChange={onChange} />,
+    );
+    const labels = [...container.querySelectorAll('[data-slider-stop-label]')].map(el => el.textContent);
+    expect(labels).toContain('never');
+    fireEvent.keyDown(getByRole('slider'), { key: 'End' });
+    expect(onChange).toHaveBeenLastCalledWith([{ value: Infinity }]);
   });
 });

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type Keybo
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
-import { endlessAt, type Endless } from '../../endless';
+import { endlessTrack, type Endless } from '../../endless';
 import { decimal, qty, type Display } from '@weasel-js/quantity';
 
 /**
@@ -140,10 +140,11 @@ export type SliderProps<T extends Thumb = Thumb> = {
    *  three decimals shown, nothing spoken beyond `aria-valuenow`. */
   display?: Display;
   readoutPlacement?: 'none' | 'inline-after' | 'below-thumb';
-  /** Which end stop stands for infinity: a thumb there reports `Infinity`
-   *  (`-Infinity` at `min`), and a thumb given ±Infinity sits there. Its
-   *  readout and spoken text are `display`'s word for infinity —
-   *  `endless(unit('ms'), 'never')` — else `∞`. */
+  /** Which end gets a stop for infinity, one `step` beyond `min` or `max`
+   *  (under `spacing: 'even'`, one stop beyond the first or last): a thumb
+   *  there reports `Infinity` (`-Infinity` below `min`), and a thumb given
+   *  ±Infinity sits there. Its readout and spoken text are `display`'s word
+   *  for infinity — `endless(unit('ms'), 'never')` — else `∞`. */
   endless?: Endless;
   ariaLabel?: string;
   className?: string;
@@ -267,24 +268,46 @@ function useSpan(props: Pick<SliderProps, 'stops' | 'min' | 'max' | 'spacing'>) 
  */
 export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement {
   const { endless, display, renderReadout, onInput, onChange } = props;
-  const { min, max } = useSpan(props);
+  const span = useSpan(props);
+  const { stopList } = span;
+  // Evenly spaced stops are a stop apart whatever their values, so the added
+  // one takes the last gap; a linear track takes a step.
+  const gap = (a: number, b: number) => (span.even ? Math.abs(stopList[a].value - stopList[b].value) : props.step);
+  const last = stopList.length - 1;
+  const lower = endlessTrack(span.min, span.max, gap(0, Math.min(1, last)), endless);
+  const upper = endlessTrack(span.min, span.max, gap(last, Math.max(0, last - 1)), endless);
+  const track = { min: lower.min, max: upper.max };
+  const fromTrack = (v: number) => (v > span.max ? upper.fromTrack(v) : lower.fromTrack(v));
+  const word = (v: number) => qty(v, display ?? READOUT).text;
   const thumbs = useMemo(
-    () => props.thumbs.map(t => (t.value === Infinity ? { ...t, value: max } : t.value === -Infinity ? { ...t, value: min } : t)),
-    [props.thumbs, min, max],
+    () => props.thumbs.map(t => (t.value === Infinity ? { ...t, value: track.max } : t.value === -Infinity ? { ...t, value: track.min } : t)),
+    [props.thumbs, track.min, track.max],
   );
-  if (endless === undefined) return <SliderBody {...props} />;
-  const fromTrack = (v: number) =>
-    endlessAt(endless, 1) && v >= max ? Infinity : endlessAt(endless, -1) && v <= min ? -Infinity : v;
+  const stops = useMemo(
+    () =>
+      span.even
+        ? [
+            ...(track.min < span.min ? [{ value: track.min, label: qty(-Infinity, display ?? READOUT).text }] : []),
+            ...stopList,
+            ...(track.max > span.max ? [{ value: track.max, label: qty(Infinity, display ?? READOUT).text }] : []),
+          ]
+        : props.stops,
+    [span.even, stopList, props.stops, track.min, track.max, span.min, span.max, display],
+  );
+  if (endless === undefined) return <SliderBody {...props} thumbs={thumbs} />;
   const outward = (next: T[]) => next.map(t => ({ ...t, value: fromTrack(t.value) }));
   return (
     <SliderBody
       {...props}
+      min={track.min}
+      max={track.max}
+      stops={stops}
       thumbs={thumbs}
       onInput={next => onInput(outward(next))}
       onChange={onChange && (next => onChange(outward(next)))}
       renderReadout={(t, i) => {
         const shown = { ...t, value: fromTrack(t.value) };
-        return renderReadout ? renderReadout(shown, i) : qty(shown.value, display ?? READOUT).text;
+        return renderReadout ? renderReadout(shown, i) : word(shown.value);
       }}
       spokenAt={v => (Number.isFinite(fromTrack(v)) ? undefined : qty(fromTrack(v), display ?? READOUT).spoken)}
     />

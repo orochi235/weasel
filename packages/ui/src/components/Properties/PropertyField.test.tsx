@@ -400,7 +400,8 @@ describe('an endless slider end', () => {
     expect(screen.getByRole('spinbutton', { name: 'Cut' })).toHaveValue('never');
     expect(screen.getByRole('spinbutton', { name: 'Cut' })).toHaveAttribute('aria-valuetext', 'never');
     expect(screen.queryByText('ms')).toBeNull();
-    expect((screen.getByRole('slider', { name: 'Cut' }) as HTMLInputElement).value).toBe('5000');
+    expect((screen.getByRole('slider', { name: 'Cut' }) as HTMLInputElement).value).toBe('5050');
+    expect(screen.getByRole('slider', { name: 'Cut' })).toHaveAttribute('max', '5050');
   });
 
   it('keeps the unit on a finite value', () => {
@@ -409,20 +410,29 @@ describe('an endless slider end', () => {
     expect(screen.getByText('ms')).toBeInTheDocument();
   });
 
-  it('reports Infinity for the stop, from the track and from the keyboard', () => {
+  it('reports Infinity for the stop one step past the range, from the track and from the keyboard', () => {
     const onChange = vi.fn();
-    render(<PropertyControl kind="number" control="slider" name="Cut" value={4950} min={0} max={5000} step={50} endless="max" onChange={onChange} />);
-    fireEvent.input(screen.getByRole('slider', { name: 'Cut' }), { target: { value: '5000' } });
+    render(<PropertyControl kind="number" control="slider" name="Cut" value={5000} min={0} max={5000} step={50} endless="max" onChange={onChange} />);
+    fireEvent.input(screen.getByRole('slider', { name: 'Cut' }), { target: { value: '5050' } });
     expect(onChange).toHaveBeenLastCalledWith(Infinity);
     fireEvent.keyDown(screen.getByRole('spinbutton', { name: 'Cut' }), { key: 'ArrowUp' });
     expect(onChange).toHaveBeenLastCalledWith(Infinity);
   });
 
-  it('steps down off infinity onto the last finite stop', () => {
+  it('keeps the top of the range as a value of its own', () => {
+    const onChange = vi.fn();
+    render(<PropertyControl kind="number" control="slider" name="Cut" value={4950} min={0} max={5000} step={50} endless="max" onChange={onChange} />);
+    fireEvent.input(screen.getByRole('slider', { name: 'Cut' }), { target: { value: '5000' } });
+    expect(onChange).toHaveBeenLastCalledWith(5000);
+    fireEvent.keyDown(screen.getByRole('spinbutton', { name: 'Cut' }), { key: 'ArrowUp' });
+    expect(onChange).toHaveBeenLastCalledWith(5000);
+  });
+
+  it('steps down off infinity onto the top of the range', () => {
     const onChange = vi.fn();
     render(<PropertyControl kind="number" control="slider" name="Cut" value={Infinity} min={0} max={5000} step={50} endless="max" onChange={onChange} />);
     fireEvent.keyDown(screen.getByRole('spinbutton', { name: 'Cut' }), { key: 'ArrowDown' });
-    expect(onChange).toHaveBeenLastCalledWith(4950);
+    expect(onChange).toHaveBeenLastCalledWith(5000);
   });
 
   it('commits Infinity when its word is typed, and clamps it on a bounded end', () => {
@@ -460,6 +470,8 @@ describe('an endless slider end', () => {
     fireEvent.input(screen.getByRole('slider', { name: 'Cap' }), { target: { value: '24' } });
     expect(write).toHaveBeenLastCalledWith(24);
     fireEvent.input(screen.getByRole('slider', { name: 'Cap' }), { target: { value: '64' } });
+    expect(write).toHaveBeenLastCalledWith(64);
+    fireEvent.input(screen.getByRole('slider', { name: 'Cap' }), { target: { value: '72' } });
     expect(write).toHaveBeenLastCalledWith(Infinity);
   });
 });

@@ -175,10 +175,10 @@ export class NumberNode extends BaseNode<number> {
   }
 
   /**
-   * Make the top of the range mean infinity: the slider's `max` stop stores
-   * `Infinity` and reads `word` — `.range(0, 5000).endless('never')`. A value
-   * of `Infinity` sits at that stop. `at: 'min'` puts it at the bottom
-   * instead, as `-Infinity`; `'both'` does both.
+   * Add a stop for infinity one step past the top of the range: it stores
+   * `Infinity` and reads `word` — `.range(0, 5000).endless('never')` — and
+   * every value up to `max` stays reachable. `at: 'min'` adds it below the
+   * bottom instead, as `-Infinity`; `'both'` does both.
    */
   endless(word?: InfinityText, at: 'min' | 'max' | 'both' = 'max'): this {
     return this.ann(word === undefined ? { endless: at } : { endless: at, infinity: word });

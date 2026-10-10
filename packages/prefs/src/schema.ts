@@ -137,7 +137,7 @@ export interface PrefNumber extends PrefBase<'number', number> {
    *  reads `2.00M`. Presentation only: the stored value stays a number. */
   display?: Display;
   unit?: PrefNumberUnit;
-  /** Which end of a slider stands for infinity: the value there is ±Infinity. */
+  /** Which end of a slider gets a stop for ±Infinity, one step beyond the range. */
   endless?: 'min' | 'max' | 'both';
   /** The word infinity shows as — `'never'`, `'uncapped'`. Default `∞`. */
   infinity?: InfinityText;

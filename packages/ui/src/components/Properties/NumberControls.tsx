@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { decimal, parseAs, qty, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
-import { endlessAt } from '../../endless';
+import { endlessTrack } from '../../endless';
 import { UnitField } from '../NumberField';
 import { spinKey } from '../spin';
 import shared from '../range.module.css';
@@ -141,28 +141,32 @@ export function stepDisplay(step = 1): Display {
   return decimal({ places: step >= 1 ? 0 : Math.min(6, Math.max(0, Math.ceil(-Math.log10(step)))), grouping: false });
 }
 
-/** A slider's bounds, with the 0..100 fallback for an unbounded track, and
- *  `settle`, which clamps a value onto the track and turns an endless end's
- *  stop into ±Infinity. */
-function sliderBounds(p: PropertyNumberFieldProps): { min: number; max: number; step: number; settle: (v: number) => number } {
-  const min = p.min ?? 0;
-  const max = p.max ?? 100;
-  const settle = (v: number) =>
-    endlessAt(p.endless, 1) && v >= max ? Infinity
-    : endlessAt(p.endless, -1) && v <= min ? -Infinity
-    : Math.min(max, Math.max(min, v));
-  return { min, max, step: p.step ?? 1, settle };
+/** A slider's track, with the 0..100 fallback for an unbounded one: `min` and
+ *  `max` are the track's ends, one stop beyond the range at an endless end.
+ *  `settle` turns a track position or a typed number into a value, ±Infinity
+ *  at that stop, and `onTrack` puts a value back on the track. */
+function sliderBounds(p: PropertyNumberFieldProps): {
+  min: number;
+  max: number;
+  step: number;
+  settle: (v: number) => number;
+  onTrack: (v: number) => number;
+} {
+  const step = p.step ?? 1;
+  const track = endlessTrack(p.min ?? 0, p.max ?? 100, step, p.endless);
+  const onTrack = (v: number) => Math.min(track.max, Math.max(track.min, track.toTrack(v)));
+  return { min: track.min, max: track.max, step, settle: track.fromTrack, onTrack };
 }
 
 function SliderTrack(p: PropertyNumberFieldProps) {
-  const { min, max, step, settle } = sliderBounds(p);
+  const { min, max, step, settle, onTrack } = sliderBounds(p);
   const live = p.onInput ?? p.onChange;
   const commit = p.onInput ? p.onChange : undefined;
   const range = useCommitListener(commit && ((raw) => commit(settle(Number(raw)))));
   const known = isKnown(p);
   // The thumb clamps to the track; the readout beside it does not, so a value
   // past `max` is still reported as what it is.
-  const value = known ? Math.min(Math.max(p.value as number, min), max) : min;
+  const value = known ? onTrack(p.value as number) : min;
   return (
     // The shared skin with no fill: `InlineRange`'s filled-to-value track is its
     // own, and the property rows' 18% track is the one the kit converges on.
@@ -190,7 +194,7 @@ function SliderTrack(p: PropertyNumberFieldProps) {
 }
 
 function SliderReadout(p: PropertyNumberFieldProps) {
-  const { min, max, step, settle } = sliderBounds(p);
+  const { min, max, step, settle, onTrack } = sliderBounds(p);
   if (!isKnown(p)) return <>{boxedReadout('—')}</>;
   return (
     <EditableReadout
@@ -200,6 +204,7 @@ function SliderReadout(p: PropertyNumberFieldProps) {
       max={max}
       step={step}
       settle={settle}
+      onTrack={onTrack}
       display={p.display ?? stepDisplay(step)}
       format={p.format}
       unit={p.unit}
@@ -236,8 +241,11 @@ interface EditableReadoutProps {
   min: number;
   max: number;
   step: number;
-  /** Clamps onto the track, turning an endless end's stop into ±Infinity. */
+  /** The value a track position or a typed number stands for: ±Infinity at an
+   *  endless end's stop. */
   settle: (v: number) => number;
+  /** Where a value sits on the track. */
+  onTrack: (v: number) => number;
   display: Display;
   format?: (value: number) => ReactNode;
   unit?: ReactNode;
@@ -249,17 +257,17 @@ interface EditableReadoutProps {
  * cancels on Escape, and steps like the track beside it. Clicks are stopped so
  * a wrapping <label> doesn't forward focus to the slider thumb.
  */
-function EditableReadout({ name, value, min, max, step, settle, display, format, unit, onCommit }: EditableReadoutProps) {
+function EditableReadout({ name, value, min, max, step, settle, onTrack, display, format, unit, onCommit }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
   const text = (n: number) => (format ? String(format(n)) : qty(n, display).text);
   const read = (typed: string) => parseAs(typed, display);
   const displayValue = draft !== null ? draft : text(value);
-  // The widest value the range can show, which the stylesheet widens the box to fit.
-  const fit = { '--wzl-property-readout-fit': `${Math.max(text(settle(min)).length, text(settle(max)).length)}ch` };
-  // Where the value sits on the track: an endless end's ±Infinity at its stop.
-  const onTrack = (v: number) => Math.min(max, Math.max(min, v));
+  // The widest value the range can show, which the stylesheet widens the box to
+  // fit: each end of the track, and the stop inside it where the end is infinity's.
+  const widest = Math.max(...[min, min + step, max - step, max].map((at) => text(settle(at)).length));
+  const fit = { '--wzl-property-readout-fit': `${widest}ch` };
 
   const commit = () => {
     if (draft !== null) {
