@@ -4,7 +4,6 @@ import type { PrefRenderContext, PrefRenderer } from '../Prefs';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { Input } from '../Input';
-import { ListEditor } from '../ListEditor';
 import { Select } from '../Select';
 import s from './PrefSchemaEditor.module.css';
 
@@ -86,9 +85,8 @@ function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
   );
 }
 
-export const ATTR_RENDERERS: Record<'optional-number' | 'string-list' | 'enum-options' | 'pair', PrefRenderer> = {
+export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair', PrefRenderer> = {
   pair: (ctx) => <PairEditor ctx={ctx} />,
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,
-  'string-list': (ctx) => <ListEditor aria-label={ctx.pref.name} value={(ctx.value as string[] | undefined) ?? []} onChange={ctx.setValue} />,
   'enum-options': (ctx) => <EnumOptions ctx={ctx} />,
 };

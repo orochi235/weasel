@@ -46,7 +46,7 @@ describe('kindSchemas', () => {
   });
 
   it('makes blank leaves whose attributes are all described, bar the read-only ones', () => {
-    const intentional: Record<string, string[]> = { paint: ['default'], object: ['default'] };
+    const intentional: Record<string, string[]> = { paint: ['default'], object: ['default'], list: ['item'], action: ['default', 'run'] };
     for (const k of BUILTIN_KINDS) {
       const { readOnly } = attributeSchema(blankLeaf(k));
       expect([k, readOnly.map(([key]) => key)]).toEqual([k, intentional[k] ?? []]);

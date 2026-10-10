@@ -1,4 +1,11 @@
-import type { PrefGroup, PrefGroupAs, PrefLeaf, PrefNumberUnit, PrefPair } from '@weasel-js/prefs';
+import type {
+  PrefAction,
+  PrefGroup,
+  PrefGroupAs,
+  PrefLeaf,
+  PrefNumberUnit,
+  PrefPair,
+} from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { PrefRenderer } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
@@ -51,6 +58,12 @@ export interface Annotations {
   maxLength?: number;
   /** Milliseconds to debounce a string leaf's live writes. Default 150. */
   debounceMs?: number;
+  /** What each entry of a list leaf is. */
+  item?: PrefLeaf;
+  minItems?: number;
+  maxItems?: number;
+  /** What an action leaf's button calls. */
+  run?: PrefAction['run'];
 }
 
 /** What a rule contributes. `kind` is honored only while it is still unset,

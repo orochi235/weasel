@@ -4,12 +4,14 @@
 // stores.
 
 import { formatUnit, unitScale } from '@weasel-js/quantity';
+import type { PrefAction } from './action';
 import type { PrefSection } from './groups';
+import type { PrefList } from './list';
 import type { Display, InfinityText, Unit, UnitEntry, UnitScale, UnitSystem } from '@weasel-js/quantity';
 
 /** The value types a built-in pref leaf can hold. */
 export type PrefKind =
-  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object' | 'field';
+  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object' | 'list' | 'field' | 'action';
 
 /**
  * Leaves that share one row in a compact property UI (weasel-ui
@@ -300,7 +302,9 @@ export type BuiltinPref =
   | PrefColor
   | PrefPaint
   | PrefObject
-  | PrefField;
+  | PrefList
+  | PrefField
+  | PrefAction;
 
 // Compile-time tie: every built-in leaf kind must appear in PrefKind
 // and vice versa (PrefBase's K is open for PrefCustom's sake, so
@@ -325,7 +329,9 @@ export const PREF_KINDS: Record<PrefKind, true> = {
   color: true,
   paint: true,
   object: true,
+  list: true,
   field: true,
+  action: true,
 };
 
 /** Which row each pairing among `leaves` puts a path on: a `key` the row's

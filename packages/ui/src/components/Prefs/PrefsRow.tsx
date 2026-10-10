@@ -2,9 +2,12 @@ import { type ReactNode } from 'react';
 import {
   isPrefLeaf,
   prefValueAtPath,
+  type PrefAction,
   type PrefLeaf,
   type PrefObject,
 } from '@weasel-js/prefs';
+import { PrefActionButton } from './PrefActionButton';
+import { ListLeaf } from './ListLeaf';
 import { PropertyControl } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyPanel';
 import { GroupTabs, type GroupTab } from './GroupTabs';
@@ -82,7 +85,7 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
       </div>
     );
   }
-  const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx);
+  const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx, ctx.renderers);
   if (custom && control === null) return null;
 
   // `block` leaves own their chrome (embedded editors with their own
@@ -96,6 +99,8 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
       description={pref.description}
       layout="inline"
       className={s.row}
+      // Several controls, or a button: a <label> would hand a click on the row's text to the first of them.
+      group={pref.kind === 'list' || pref.kind === 'action'}
       // The owner passes an inherited leaf's value already resolved, so the
       // control keeps drawing it; editing it pins, through `onChange`.
       auto={inherited}
@@ -109,14 +114,28 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   );
 }
 
+/** A leaf nested in another's value, drawn as it would be on a row of its own: by the app's renderer for its kind, where it has one. */
+function renderNested(
+  ctx: PrefRenderContext,
+  renderers: Record<string, PrefRenderer> | undefined,
+  siblings?: Record<string, unknown>,
+): ReactNode {
+  const custom = renderers?.[ctx.pref.kind];
+  return custom ? custom(ctx) : renderBuiltin(ctx, renderers, siblings);
+}
+
 function renderBuiltin(
   ctx: PrefRenderContext,
+  renderers: Record<string, PrefRenderer> | undefined,
   // The object a nested leaf is a field of — what an enum `encoding` and a
   // font's weight and slant read against. Undefined for a top-level leaf.
   siblings?: Record<string, unknown>,
 ): ReactNode {
   const { pref, value, setValue } = ctx;
-  if (pref.kind === 'object') return <ObjectLeaf ctx={ctx} />;
+  if (pref.kind === 'object') return <ObjectLeaf ctx={ctx} renderers={renderers} />;
+  if (pref.kind === 'list')
+    return <ListLeaf ctx={ctx} renderers={renderers} renderItem={(item) => renderNested(item, renderers)} />;
+  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
   const field = prefFieldProps(pref, { value, siblings, setValue, fields: ctx.fields });
   if (field === null) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a
@@ -146,7 +165,7 @@ const settledOnly = (): void => {};
 
 /** One value with its fields hanging off it: each field renders its own
  *  control and commits the parent object whole. */
-function ObjectLeaf({ ctx }: { ctx: PrefRenderContext }) {
+function ObjectLeaf({ ctx, renderers }: { ctx: PrefRenderContext; renderers?: Record<string, PrefRenderer> }) {
   const pref = ctx.pref as PrefObject;
   const { value, setValue } = ctx;
   const held = typeof value === 'object' && value !== null
@@ -183,7 +202,7 @@ function ObjectLeaf({ ctx }: { ctx: PrefRenderContext }) {
               className={s.objectRow}
         >
           <span className={s.rowControl}>
-            {renderBuiltin({
+            {renderNested({
               path: `${ctx.path}.${key}`,
               pref: child,
               value: held?.[key],
@@ -195,7 +214,7 @@ function ObjectLeaf({ ctx }: { ctx: PrefRenderContext }) {
               // the object leaf it hangs off.
               auto: ctx.auto,
               setAuto: ctx.setAuto,
-            }, held)}
+            }, renderers, held)}
           </span>
         </PropertyRow>,
       );

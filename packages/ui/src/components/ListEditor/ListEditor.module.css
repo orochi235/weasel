@@ -28,6 +28,11 @@
   padding: 0 var(--wzl-field-pad-x);
 }
 
+.control {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .empty {
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);

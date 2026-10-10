@@ -2,11 +2,13 @@ import { solid } from '@weasel-js/core';
 import {
   isPrefLeaf,
   isPrefSection,
+  PREF_KINDS,
   type PrefEnum,
   type PrefField,
   type PrefGroup,
   type PrefKind,
   type PrefLeaf,
+  type PrefList,
   type PrefNumber,
   type PrefSection,
 } from '@weasel-js/prefs';
@@ -16,7 +18,7 @@ import { containsCode } from './schemaExport';
 export type KindAttrs = Record<string, PrefLeaf>;
 export type CustomKinds = Record<string, KindAttrs>;
 
-export const BUILTIN_KINDS: readonly PrefKind[] = ['number', 'boolean', 'string', 'enum', 'color', 'paint', 'object', 'field'];
+export const BUILTIN_KINDS = Object.keys(PREF_KINDS) as readonly PrefKind[];
 
 const text = (name: string, description: string, multiline = false): PrefLeaf =>
   ({ kind: 'string', name, description, default: '', ...(multiline ? { control: 'textarea' } : {}) }) as PrefLeaf;
@@ -24,6 +26,8 @@ const flag = (name: string, description: string): PrefLeaf => ({ kind: 'boolean'
 const optNumber = (name: string, description: string): PrefLeaf => ({ kind: 'optional-number', name, description, default: undefined });
 const choice = (name: string, description: string, values: readonly string[]): PrefLeaf =>
   ({ kind: 'enum', name, description, default: undefined, clearable: true, options: values.map((v) => ({ value: v, label: v })) }) as PrefLeaf;
+const strings = (name: string, description: string): PrefLeaf =>
+  ({ kind: 'list', name, description, default: [], item: { kind: 'string', name: '', description: '', default: '' } }) as PrefLeaf;
 const control = (values: readonly string[]) => choice('Control', 'Which control draws it. Unset: the kind\'s default.', values);
 
 const LEAF_BASE: KindAttrs = {
@@ -33,7 +37,7 @@ const LEAF_BASE: KindAttrs = {
   block: flag('Block', 'Full width with no label row, for a control with its own chrome.'),
   icon: text('Icon', 'Glyph name in the host\'s icon set.'),
   pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
-  short: { kind: 'string-list', name: 'Short names', description: 'Shorter forms of the name, longest first.', default: [] },
+  short: strings('Short names', 'Shorter forms of the name, longest first.'),
 };
 
 const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
@@ -55,8 +59,13 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   paint: { alpha: flag('Alpha', 'Offer an alpha channel.') },
   object: {},
   field: {
-    kinds: { kind: 'string-list', name: 'Kinds', description: 'Only fields of these kinds may be named. Empty: any.', default: [] },
+    kinds: strings('Kinds', 'Only fields of these kinds may be named. Empty: any.'),
   },
+  list: {
+    minItems: optNumber('Fewest', 'Entries cannot be removed at this many.'),
+    maxItems: optNumber('Most', 'Entries cannot be added at this many.'),
+  },
+  action: { label: text('Button', 'The button\'s text. Unset: the name.') },
 };
 
 const GROUP_ATTRS: KindAttrs = {
@@ -85,6 +94,10 @@ function defaultAttr(leaf: PrefLeaf): PrefLeaf | null {
     case 'enum': return { ...base, kind: 'enum', default: undefined, clearable: true, options: (leaf as PrefEnum).options } as PrefLeaf;
     case 'color': return { ...base, kind: 'color', default: '#000000' } as PrefLeaf;
     case 'field': return { ...base, kind: 'field', default: '', kinds: (leaf as PrefField).kinds } as PrefLeaf;
+    case 'list': {
+      const l = leaf as PrefList;
+      return { ...base, kind: 'list', default: [], item: l.item, minItems: l.minItems, maxItems: l.maxItems } as PrefLeaf;
+    }
     default: return null;
   }
 }
@@ -134,6 +147,8 @@ export function blankLeaf(kind: string): PrefLeaf {
     case 'paint': return { ...base, default: solid('#000000') } as PrefLeaf;
     case 'object': return { ...base, default: {}, children: {} } as PrefLeaf;
     case 'field': return { ...base, default: '' } as PrefLeaf;
+    case 'list': return { ...base, default: [], item: { kind: 'string', name: 'Entry', description: '', default: '' } } as PrefLeaf;
+    case 'action': return { ...base, default: undefined, run: () => {} } as PrefLeaf;
     default: return { ...base, default: undefined } as PrefLeaf;
   }
 }

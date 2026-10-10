@@ -198,4 +198,33 @@ describe('createPrefsStore', () => {
     expect(await store.flush()).toBe(false);
     warn.mockRestore();
   });
+
+  it('writes an infinity inside a list as a string and reads it back', async () => {
+    const schema = {
+      name: 'T',
+      children: {
+        caps: { kind: 'list', name: 'Caps', description: '', default: [], item: { kind: 'number', name: 'Cap', description: '', default: 0, endless: 'max' } },
+      },
+    } satisfies PrefGroup;
+    const backing = new Map<string, unknown>();
+    const cache = createRecordCache({ storage: createMemoryAdapter(backing), prefix: 'p.' });
+    const store = createPrefsStore(schema, cache);
+    store.set('caps', [1, Infinity]);
+    await cache.flush();
+    expect(backing.get('p.caps')).toEqual([1, 'Infinity']);
+    expect(store.get('caps')).toEqual([1, Infinity]);
+  });
+
+  it('holds nothing for an action leaf', () => {
+    const schema = {
+      name: 'T',
+      children: {
+        clear: { kind: 'action', name: 'Clear', description: '', default: undefined, run: () => {} },
+        on: { kind: 'boolean', name: 'On', description: '', default: true },
+      },
+    } satisfies PrefGroup;
+    const cache = createRecordCache({ storage: createMemoryAdapter(new Map()), prefix: 'p.' });
+    const store = createPrefsStore(schema, cache);
+    expect(store.values()).toEqual({ on: true });
+  });
 });

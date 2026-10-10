@@ -46,8 +46,8 @@ export interface PrefFieldState {
  * The conversions every schema-driven surface needs live here once — a
  * number's display unit and its bounds, an enum's `encoding`, a color's
  * alpha, an icon resolved to a glyph. A leaf that is not a single control —
- * an `object`, whose fields each are, or an app-defined kind — returns
- * `null`, and the surface draws it.
+ * an `object`, whose fields each are, a `list`, whose entries each are, an
+ * `action`, or an app-defined kind — returns `null`, and the surface draws it.
  *
  * Spread the result and add what the surface decides: `chrome`, `name`, a
  * class, a different default `control`.
@@ -196,6 +196,8 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
       };
     }
     case 'object':
+    case 'list':
+    case 'action':
       return null;
     case 'field': {
       const choices = (state.fields ?? []).filter((f) => !leaf.kinds || leaf.kinds.includes(f.kind));

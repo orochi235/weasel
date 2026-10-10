@@ -16,8 +16,24 @@ const kindFromValue: ConfigRule = (ctx) => {
   const t = typeof ctx.default;
   if (t === 'boolean' || t === 'number' || t === 'string') return { kind: t };
   const d = ctx.default;
-  if (Array.isArray(d) && d.every((v) => typeof v === 'string')) return { kind: 'list' };
+  if (Array.isArray(d) && entryKind(d) !== undefined) return { kind: 'list' };
   return null;
+};
+
+/** The primitive every entry of `list` is; a string for an empty one. */
+function entryKind(list: readonly unknown[]): 'string' | 'number' | 'boolean' | undefined {
+  const kind = list.length === 0 ? 'string' : typeof list[0];
+  if (kind !== 'string' && kind !== 'number' && kind !== 'boolean') return undefined;
+  return list.every((v) => typeof v === kind) ? kind : undefined;
+}
+
+const ITEM_DEFAULT = { string: '', number: 0, boolean: false };
+
+/** A list not told what it holds holds what its default does. */
+const listItemFromDefault: ConfigRule = (ctx) => {
+  if (ctx.leaf.kind !== 'list' || ctx.leaf.item || !Array.isArray(ctx.default)) return null;
+  const kind = entryKind(ctx.default) ?? 'string';
+  return { item: { kind, name: '', description: '', default: ITEM_DEFAULT[kind] } };
 };
 
 const labelFromKey: ConfigRule = (ctx) => ({ name: titleCase(ctx.key) });
@@ -41,6 +57,7 @@ const descriptionDefault: ConfigRule = () => ({ description: '' });
  */
 export const builtinRules: readonly ConfigRule[] = [
   kindFromValue,
+  listItemFromDefault,
   labelFromKey,
   sliderWhenBounded,
   descriptionDefault,

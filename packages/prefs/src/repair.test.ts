@@ -102,4 +102,39 @@ describe('repairPrefValue', () => {
     repairPrefValue(num(), 'Infinity', { number: (v) => (seen.push(v), v) });
     expect(seen).toEqual([Infinity]);
   });
+
+  describe('list', () => {
+    const list = (extra: object = {}): PrefLeaf =>
+      ({ kind: 'list', name: 'L', description: '', default: [1, 2, 3], item: num(), ...extra }) as PrefLeaf;
+
+    it('defaults a stored value that is not an array', () => {
+      expect(repairPrefValue(list(), 'nope')).toEqual([1, 2, 3]);
+      expect(repairPrefValue(list(), { 0: 1 })).toEqual([1, 2, 3]);
+    });
+
+    it('reads each entry as its item leaf would, so one bad entry costs only itself', () => {
+      expect(repairPrefValue(list(), [5, 500, 'x'])).toEqual([5, 100, 10]);
+    });
+
+    it('returns the stored array itself when every entry is already valid', () => {
+      const stored = [4, 5];
+      expect(repairPrefValue(list(), stored)).toBe(stored);
+    });
+
+    it('defaults a list shorter than minItems and cuts one longer than maxItems', () => {
+      expect(repairPrefValue(list({ minItems: 3 }), [7, 8])).toEqual([1, 2, 3]);
+      expect(repairPrefValue(list({ maxItems: 2 }), [7, 8, 9])).toEqual([7, 8]);
+    });
+
+    it('nests: a list of lists repairs the inner entries', () => {
+      const outer = { kind: 'list', name: 'O', description: '', default: [], item: list() } as PrefLeaf;
+      expect(repairPrefValue(outer, [[1, 'x'], 'nope'])).toEqual([[1, 10], [1, 2, 3]]);
+    });
+
+    it('hands an entry of an app-defined kind to that kind\'s validator', () => {
+      const tags = { kind: 'list', name: 'T', description: '', default: [], item: { kind: 'tag', name: 'Tag', description: '', default: 'none' } } as PrefLeaf;
+      const validators = { tag: (v: unknown) => (typeof v === 'string' && v.startsWith('#') ? v : undefined) };
+      expect(repairPrefValue(tags, ['#a', 'b'], validators)).toEqual(['#a', 'none']);
+    });
+  });
 });

@@ -11,12 +11,14 @@ import { Fragment, type ReactNode } from 'react';
 import {
   isPrefLeaf,
   pairRowsOf,
+  type PrefAction,
   type PrefBoolean,
   type PrefLeaf,
   type PrefObject,
   prefSectionLeaves,
 } from '@weasel-js/prefs';
 import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
+import { PrefActionButton } from '../Prefs/PrefActionButton';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
@@ -24,6 +26,7 @@ import { PropertyControl, type PropertyBooleanFieldProps } from '../Properties/P
 import { ToggleBar } from '../ToggleBar';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
+import { ListLeaf } from './ListLeaf';
 import s from './SelectionPanel.module.css';
 
 
@@ -253,6 +256,18 @@ export function renderBuiltin(
     // whole, so a field is never set on a half-built object.
     return <ObjectLeaf ctx={ctx} renderers={renderers} selectionKey={selectionKey} />;
   }
+  if (pref.kind === 'list') {
+    return (
+      <ListLeaf
+        ctx={ctx}
+        renderItem={(item, name) => {
+          const custom = renderers?.[item.pref.kind];
+          return custom ? custom(item) : renderBuiltin(item, name, renderers, selectionKey, true);
+        }}
+      />
+    );
+  }
+  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
   const field = prefFieldProps(pref, {
     value,
     mixed,

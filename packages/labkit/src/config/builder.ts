@@ -1,4 +1,4 @@
-import type { PrefLeaf, PrefNumberUnit, PrefPair } from '@weasel-js/prefs';
+import type { PrefAction, PrefLeaf, PrefNumberUnit, PrefPair } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import { type Auto, isAuto } from './auto';
 import type {
@@ -223,14 +223,47 @@ export class StringNode extends BaseNode<string> {
   }
 }
 
-/** A string-list leaf, built by `f.list`. */
-export class ListNode extends BaseNode<string[]> {
+/** A list leaf, built by `f.list`: strings, unless it was given what an entry is. */
+export class ListNode<T = string> extends BaseNode<T[]> {
   readonly kind = 'list';
 
-  /** Shown in an empty entry. */
+  /** Shown in an empty entry of a list of strings. */
   placeholder(placeholder: string): this {
     return this.ann({ placeholder });
   }
+
+  /** The fewest and the most entries the list may hold. */
+  count(min: number | undefined, max?: number): this {
+    return this.ann({ minItems: min, maxItems: max });
+  }
+}
+
+/** A button among the rows, built by `f.action`. Holds no value. */
+export class ActionNode extends BaseNode<undefined> {
+  readonly kind = 'action';
+}
+
+/** A node as the leaf a list holds entries of. Its name names one entry. */
+function itemLeaf(node: ConfigNode): PrefLeaf {
+  const kind = node.kind ?? typeof node.default;
+  if (node.kind === null && kind !== 'string' && kind !== 'number' && kind !== 'boolean') {
+    throw new Error(
+      `[labkit] f.list was given an f.value item whose kind cannot be inferred from its default (${String(node.default)})`,
+    );
+  }
+  return {
+    name: '',
+    description: '',
+    ...node.annotations,
+    kind,
+    default: node.default,
+  } as PrefLeaf;
+}
+
+function listOf(def: readonly string[]): ListNode;
+function listOf<T>(def: readonly T[], item: ConfigNode<T>): ListNode<T>;
+function listOf<T>(def: readonly T[], item?: ConfigNode<T>): ListNode<T> {
+  return new ListNode<T>([...def], item ? { item: itemLeaf(item) } : {});
 }
 
 /** A color leaf holding a hex string, built by `f.color`. */
@@ -370,9 +403,13 @@ export const f = {
   boolean: (def: boolean): BooleanNode => new BooleanNode(def),
   string: (def: string): StringNode => new StringNode(def),
   color: (def: string): ColorNode => new ColorNode(def),
-  /** A list of strings. Its row summarizes the list, and opens a dialog to
-   *  edit it one entry per field. */
-  list: (def: readonly string[]): ListNode => new ListNode([...def]),
+  /** A list: of strings, or of whatever `item` builds — `f.list([0, 1], f.number(0).range(0, 9))`.
+   *  Its row summarizes the list, and opens a dialog to edit it one entry per
+   *  control. */
+  list: listOf,
+
+  /** A button among the rows, which calls `run`. Its label is the button's text. */
+  action: (run: PrefAction['run']): ActionNode => new ActionNode(undefined, { run }),
 
   /** A fixed set of choices. The default's literal type flows into the config
    *  type, so `f.enum('fast', ['fast', 'accurate'])` gives

@@ -866,18 +866,23 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s
   `selected`/`onSelect`. A section schema previews through `SelectionPanel`, which has neither.
 
-- **(P1) A prefs schema cannot say "a list of X".** `@weasel-js/prefs` has `object` for one
-  compound value with typed `children`, and nothing for an array. labkit's `f.list` holds strings
-  only and is not among the package's built-in kinds, so `PrefSchemaEditor` treats it as an unknown
-  custom kind and edits its base fields alone. A list of numbers, enums or objects has to be a
-  custom kind with a hand-written validator and renderer: astv's timing chains are `number[]`
-  declared as `f.custom('phases:<chain>', …)` for that reason. There is no map type either.
-  Proposed, not agreed: a built-in `list` leaf carrying `item`, itself an ordinary leaf, the way
-  `object` carries `children`, with `minItems`/`maxItems`, so
-  `{ kind: 'list', item: { kind: 'number', min: 0 }, minItems: 3, maxItems: 3 }` replaces the
-  validator and `f.list` becomes its `item: { kind: 'string' }` case. Touches the schema type,
-  `PrefsForm`'s list control (`ListEditor` edits strings), and the editor's kind table
-  (`kindSchemas.ts`).
+- **(P2) A prefs schema has no map and no tagged union.** `@weasel-js/prefs` has `object` for a
+  value with fixed typed fields and `list` for an array of one `item` leaf. A value keyed by
+  arbitrary strings, and a value that is one of several shapes told apart by a tag, still have to
+  be custom kinds with a hand-written validator and renderer; `paint` is a union hard-coded as a
+  kind of its own. A `map` would carry `item` the way `list` does. A union needs a decision on how
+  a variant is named and where its tag is stored.
+- **(P2) `repairPrefValue` does not look inside an `object` leaf.** A stored object passes if it
+  is a plain object, whatever its fields hold, so each entry of a list of objects is checked only
+  that far. `list` repairs every entry through its `item` leaf; `object` could do the same through
+  `children`, but a field the object omits is not the same as a field at its default (`fromScalar`,
+  an absent `dash`), so it has to leave absent fields absent.
+- **(P2) `PrefSchemaEditor` shows a `list` leaf's `item` read-only.** Its `minItems`, `maxItems`,
+  and default are editable, and a new list holds strings. The item is a whole leaf, so it wants to
+  be a node under the list in the structure tree, edited in the attributes pane like any other;
+  `childrenOf` in `schemaEdit.ts` knows only groups, sections and `object` leaves, and every move
+  and insert assumes a parent holds any number of keyed children. An `action` leaf's `run` is code,
+  which the editor never writes: a new one exports as `KEEP_FROM_SOURCE`.
 
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides and `.dialog` rows beside the

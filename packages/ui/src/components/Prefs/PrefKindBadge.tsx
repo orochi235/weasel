@@ -10,7 +10,9 @@ const KIND_CLASS: Record<PrefKind, string | undefined> = {
   color: s.color,
   paint: s.paint,
   object: s.object,
+  list: s.list,
   field: s.field,
+  action: s.action,
 };
 
 /** Props for {@link PrefKindBadge}. */

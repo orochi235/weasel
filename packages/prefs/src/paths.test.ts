@@ -45,6 +45,21 @@ const _schema = {
       children: { w: { kind: 'number', name: 'W', description: '', default: 0 } },
     },
     custom: { kind: 'registry-enum', name: 'Custom', description: '', default: 'select' as string },
+    phases: {
+      kind: 'list',
+      name: 'Phases',
+      description: '',
+      default: [],
+      item: { kind: 'number', name: 'Phase', description: '', default: 0 },
+    },
+    grid2: {
+      kind: 'list',
+      name: 'Rows',
+      description: '',
+      default: [],
+      item: { kind: 'list', name: 'Row', description: '', default: [], item: { kind: 'string', name: 'Cell', description: '', default: '' } },
+    },
+    wipe: { kind: 'action', name: 'Wipe', description: '', default: undefined, run: () => {} },
   },
 } satisfies PrefGroup;
 type Schema = typeof _schema;
@@ -52,7 +67,7 @@ type Schema = typeof _schema;
 describe('PrefPath', () => {
   it('names every leaf by its dotted path, group keys included', () => {
     expectTypeOf<PrefPath<Schema>>().toEqualTypeOf<
-      'loose' | 'view.density' | 'view.grid.color' | 'fill' | 'clear' | 'paint' | 'box' | 'custom'
+      'loose' | 'view.density' | 'view.grid.color' | 'fill' | 'clear' | 'paint' | 'box' | 'custom' | 'phases' | 'grid2'
     >();
   });
 
@@ -90,6 +105,11 @@ describe('PrefValueAt', () => {
     expectTypeOf<PrefValueAt<Schema, 'view.grid.color'>>().toEqualTypeOf<string>();
     expectTypeOf<PrefValueAt<Schema, 'custom'>>().toEqualTypeOf<string>();
     expectTypeOf<PrefValueAt<Schema, 'fill'>>().toEqualTypeOf<string>();
+  });
+
+  it('types a list by what its item holds, however deep', () => {
+    expectTypeOf<PrefValueAt<Schema, 'phases'>>().toEqualTypeOf<number[]>();
+    expectTypeOf<PrefValueAt<Schema, 'grid2'>>().toEqualTypeOf<string[][]>();
   });
 
   it('adds undefined for a clearable enum and leaves a paint open', () => {

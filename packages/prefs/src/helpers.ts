@@ -31,6 +31,11 @@ export function isPrefLeaf(node: PrefLeaf | PrefGroup | PrefSection): node is Pr
   return 'kind' in node;
 }
 
+/** Whether a leaf has a value to store: an `action` is a button, and holds none. */
+export function prefHoldsValue(leaf: PrefLeaf): boolean {
+  return leaf.kind !== 'action';
+}
+
 /** Distinguishes a section, whose key adds nothing to a path, from a group, whose key is a segment. */
 export function isPrefSection(node: PrefLeaf | PrefGroup | PrefSection): node is PrefSection {
   return !isPrefLeaf(node) && 'members' in node;

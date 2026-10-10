@@ -1,5 +1,6 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { assignPrefValueAtPath, prefLeaves, VERSION_RECORD } from './helpers';
+import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, VERSION_RECORD } from './helpers';
+import type { PrefList } from './list';
 import type { PrefPath, PrefValueAt } from './paths';
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefGroup } from './groups';
@@ -51,8 +52,13 @@ interface Snapshot {
 }
 
 /** JSON storage cannot keep an infinity; `repairPrefValue` reads these back. */
-const encodeInfinity = (leaf: PrefLeaf, value: unknown): unknown =>
-  leaf.kind === 'number' && (value === Infinity || value === -Infinity) ? String(value) : value;
+const encodeInfinity = (leaf: PrefLeaf, value: unknown): unknown => {
+  if (leaf.kind === 'list' && Array.isArray(value)) {
+    const { item } = leaf as PrefList;
+    return value.map((entry) => encodeInfinity(item, entry));
+  }
+  return leaf.kind === 'number' && (value === Infinity || value === -Infinity) ? String(value) : value;
+};
 
 /** A store over an open cache. `openPrefs` / `openPrefsSync` are the usual
  *  way in; they run migrations first. */
@@ -62,7 +68,7 @@ export function createPrefsStore<S extends PrefGroup>(
   validators?: Readonly<Record<string, PrefValidator>>,
   onClose?: () => void,
 ): PrefsStore<S> {
-  const leaves = prefLeaves(schema);
+  const leaves = new Map([...prefLeaves(schema)].filter(([, leaf]) => prefHoldsValue(leaf)));
   let snapshot: Snapshot | null = null;
   let previous: { raw: Map<string, unknown>; byPath: Map<string, unknown> } | null = null;
 

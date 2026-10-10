@@ -85,8 +85,10 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
       return { key: path, label, type: 'color', default: (leaf.default as string).slice(0, 7) };
     case 'paint':
     case 'object':
+    case 'list':
+    case 'action':
       // Declined: a `ConfigField` is a scalar control, and neither a paint
-      // union nor an object leaf survives being flattened into one.
+      // union, an object leaf nor a list survives being flattened into one.
       return null;
     default: {
       const _exhaustive: never = leaf;

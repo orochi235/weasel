@@ -244,4 +244,44 @@ describe('resolveConfigSchema / nested groups', () => {
     expect(leafAt(r, 'plain').unpinned).toBeUndefined();
     expect(leafAt(r, 'plain').manual).toBeUndefined();
   });
+
+  it('gives a list of strings a string item, and a typed list the item it was built with', () => {
+    const r = resolveConfigSchema(
+      f.schema({
+        globs: f.list(['a']),
+        phases: f.list([0, 1], f.number(0).range(0, 9).label('Phase')).count(2, 2),
+      }),
+      [],
+    );
+    expect(leafAt(r, 'globs').item).toMatchObject({ kind: 'string', default: '' });
+    expect(leafAt(r, 'phases')).toMatchObject({
+      kind: 'list',
+      default: [0, 1],
+      minItems: 2,
+      maxItems: 2,
+      item: { kind: 'number', name: 'Phase', default: 0, min: 0 },
+    });
+  });
+
+  it('infers a list, and what it holds, from an f.value default of one primitive', () => {
+    const r = resolveConfigSchema(f.schema({ weights: f.value([1, 2]) }), []);
+    expect(leafAt(r, 'weights')).toMatchObject({
+      kind: 'list',
+      item: { kind: 'number', default: 0 },
+    });
+    expect(() => resolveConfigSchema(f.schema({ mixed: f.value([1, 'a']) }), [])).toThrow(
+      /cannot be inferred/,
+    );
+  });
+
+  it('resolves an action to a leaf carrying its callback and no value', () => {
+    const run = (): void => {};
+    const schema = f.schema({ wipe: f.action(run).label('Wipe') });
+    expect(leafAt(resolveConfigSchema(schema, []), 'wipe')).toMatchObject({
+      kind: 'action',
+      name: 'Wipe',
+      run,
+    });
+    expect(schema.defaults()).toEqual({ wipe: undefined });
+  });
 });

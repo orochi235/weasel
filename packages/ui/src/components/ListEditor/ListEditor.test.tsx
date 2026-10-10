@@ -53,4 +53,27 @@ describe('ListEditor', () => {
     render(<ListEditor value={[]} onChange={vi.fn()} empty="No globs" />);
     expect(screen.getByText('No globs')).toBeTruthy();
   });
+
+  it('draws entries that are not strings through renderEntry, and adds what newEntry makes', () => {
+    const onChange = vi.fn();
+    render(
+      <ListEditor<number>
+        aria-label="Phase"
+        value={[1, 2]}
+        onChange={onChange}
+        newEntry={() => 0}
+        renderEntry={(entry, set, name) => <button onClick={() => set(entry + 10)}>{`${name}: ${entry}`}</button>}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Phase 2: 2' }));
+    expect(onChange).toHaveBeenLastCalledWith([1, 12]);
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onChange).toHaveBeenLastCalledWith([1, 2, 0]);
+  });
+
+  it('disables add at maxItems and remove at minItems', () => {
+    render(<ListEditor aria-label="Glob" value={['a']} onChange={() => {}} minItems={1} maxItems={1} />);
+    expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Remove Glob 1' })).toBeDisabled();
+  });
 });

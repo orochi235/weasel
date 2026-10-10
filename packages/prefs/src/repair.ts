@@ -1,3 +1,4 @@
+import type { PrefList } from './list';
 import type { PrefBoolean, PrefEnum, PrefLeaf, PrefNumber, PrefObject } from './schema';
 
 /** Decides what a stored value reads as for one kind of leaf: the value to
@@ -41,9 +42,24 @@ export function repairPrefValue(
     case 'object':
       if ((leaf as PrefObject).fromScalar || isPlainObject(stored)) return stored;
       return leaf.default;
+    case 'list':
+      return repairList(leaf as PrefList, stored, validators);
     default:
       return stored;
   }
+}
+
+/** Each entry reads as `item` would on its own, so one bad entry costs that entry and not the list. */
+function repairList(
+  leaf: PrefList,
+  stored: unknown,
+  validators?: Readonly<Record<string, PrefValidator>>,
+): unknown {
+  if (!Array.isArray(stored)) return leaf.default;
+  if (leaf.minItems !== undefined && stored.length < leaf.minItems) return leaf.default;
+  const kept = leaf.maxItems !== undefined && stored.length > leaf.maxItems ? stored.slice(0, leaf.maxItems) : stored;
+  const read = kept.map((entry) => repairPrefValue(leaf.item, entry, validators));
+  return kept === stored && read.every((entry, i) => entry === stored[i]) ? stored : read;
 }
 
 function isPlainObject(v: unknown): boolean {

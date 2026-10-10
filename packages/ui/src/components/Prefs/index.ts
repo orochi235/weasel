@@ -6,6 +6,7 @@ export {
   type PrefRenderContext,
 } from './PrefsForm';
 export { prefFieldProps, type PrefFieldState } from './prefField';
+export { PrefActionButton } from './PrefActionButton';
 export { PrefsRail, type PrefsRailProps } from './PrefsRail';
 export { PrefsPane, type PrefsPaneProps } from './PrefsPane';
 export { PrefsDialog, type PrefsDialogProps } from './PrefsDialog';

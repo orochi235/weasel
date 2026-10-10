@@ -1,8 +1,10 @@
 import {
   isBuiltinPref,
   isPrefLeaf,
+  type PrefAction,
   type PrefGroup,
   type PrefLeaf,
+  type PrefList,
   pairRowsOf,
 } from '@weasel-js/prefs';
 import {
@@ -11,6 +13,7 @@ import {
   DialogRow,
   GroupTabs,
   ListEditor,
+  PrefActionButton,
   type PropertyAlign,
   type PropertyControlProps,
   type PropertyDensity,
@@ -627,8 +630,19 @@ export function ControlRow<TC extends Record<string, unknown>>({
   const wide = pack === 'auto';
   const row = { label, description, layout, readout: autoReadout, ...autoProps };
 
+  if (leaf.kind === 'action') {
+    return (
+      <PropertyRow label={label} description={description} layout={layout}>
+        <PrefActionButton pref={leaf as PrefAction} path={path} />
+      </PropertyRow>
+    );
+  }
+
   if (leaf.kind === 'list') {
-    const entries = Array.isArray(value) ? (value as string[]) : [];
+    const { item, minItems, maxItems } = leaf as PrefList;
+    const entries = Array.isArray(value) ? (value as unknown[]) : [];
+    const drawn = renderers?.[item.kind];
+    const bounds = { 'aria-label': item.name || label, onChange: write, minItems, maxItems };
     return (
       <DialogRow
         label={label}
@@ -638,14 +652,35 @@ export function ControlRow<TC extends Record<string, unknown>>({
         description={description}
         {...autoProps}
       >
-        {() => (
-          <ListEditor
-            aria-label={label}
-            value={entries}
-            onChange={write}
-            placeholder={extra<string>(leaf, 'placeholder')}
-          />
-        )}
+        {() =>
+          item.kind === 'string' && !drawn ? (
+            <ListEditor
+              {...bounds}
+              value={entries.map((e) => (typeof e === 'string' ? e : ''))}
+              placeholder={extra<string>(leaf, 'placeholder')}
+            />
+          ) : (
+            <ListEditor<unknown>
+              {...bounds}
+              value={entries}
+              newEntry={() => item.default}
+              renderEntry={(entry, set, name) =>
+                drawn ? (
+                  drawn({
+                    path,
+                    pref: { ...item, name },
+                    value: entry,
+                    setValue: set,
+                    auto: false,
+                    setAuto: () => {},
+                  })
+                ) : (
+                  <BareControl leaf={item} value={entry} write={set} name={name} />
+                )
+              }
+            />
+          )
+        }
       </DialogRow>
     );
   }

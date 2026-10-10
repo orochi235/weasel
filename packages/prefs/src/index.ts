@@ -8,12 +8,15 @@ export {
   isPrefLeaf,
   isPrefSection,
   prefDisplayBounds,
+  prefHoldsValue,
   prefLeaves,
   prefSectionLeaves,
   prefValueAtPath,
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
+export type { PrefAction, PrefActionContext } from './action';
+export type { PrefList } from './list';
 export { prefGroupIsPage } from './groups';
 export type { PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';

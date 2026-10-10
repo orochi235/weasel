@@ -1,7 +1,8 @@
 type Join<A extends string, B extends string> = A extends '' ? B : `${A}.${B}`;
 
-/** Every leaf's dotted path in a `PrefGroup` schema, where a group's key is a
- *  segment; an `object` leaf is one path, its fields are not. A `PrefSection`
+/** Every value's dotted path in a `PrefGroup` schema, where a group's key is a
+ *  segment; an `object` leaf is one path, its fields are not, and an `action`
+ *  leaf, holding no value, has none. A `PrefSection`
  *  has no such paths: each of its leaves is addressed by its own key. */
 export type PrefPath<G, Prefix extends string = ''> =
   G extends { children: infer C }
@@ -9,7 +10,7 @@ export type PrefPath<G, Prefix extends string = ''> =
       ? Join<Prefix, string>
       : {
           [K in keyof C & string]: C[K] extends { kind: string }
-            ? Join<Prefix, K>
+            ? C[K] extends { kind: 'action' } ? never : Join<Prefix, K>
             : C[K] extends { children: Record<string, unknown> }
               ? PrefPath<C[K], Join<Prefix, K>>
               : never;
@@ -33,7 +34,8 @@ export type PrefAtPath<G, P extends string> =
     : never;
 
 /** What a leaf holds: its kind's value type for a built-in kind, the type of
- *  its `default` for an app-defined one. */
+ *  its `default` for an app-defined one. A list holds an array of what its
+ *  `item` holds. */
 export type PrefValueOf<L> =
   L extends { kind: 'number' } ? number
   : L extends { kind: 'boolean' } ? boolean
@@ -41,6 +43,7 @@ export type PrefValueOf<L> =
   : L extends { kind: 'paint' } ? unknown
   : L extends { kind: 'enum'; options: readonly { value: infer T }[] }
     ? L extends { clearable: true } ? T | undefined : T
+  : L extends { kind: 'list'; item: infer I } ? PrefValueOf<I>[]
   : L extends { default: infer D } ? D
   : unknown;
 

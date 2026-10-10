@@ -1,2 +1,2 @@
 export { ListEditor } from './ListEditor';
-export type { ListEditorProps } from './ListEditor';
+export type { ItemListEditorProps, ListEditorProps } from './ListEditor';
