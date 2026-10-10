@@ -29,6 +29,13 @@ Priority tags:
   focus inside the canvas, the pointer over it, or the last canvas interacted with — without
   breaking an app like WeaselDraw, whose shortcuts work from the body today.
 
+- **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior
+  presets (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source
+  directory bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a
+  "feature" too. The two are unrelated and both names stand for now, with the taxonomy saying so.
+  Left: one of them takes a new word. The prop is at 215 call sites and is consumer API; the
+  directory is one path, its imports, and a section of the taxonomy.
+
 - **(P1) "Tool" still names two things outside the kit's own code.** Inside the kit it now
   means one: a contribution that can hold focus, picked from a palette or held on a key
   (`isTool`), and every container holding any entry says "entry" (see "Tool" in
@@ -839,11 +846,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   schema type, two answers to "what is this leaf's path". Decide which is right for which surface
   and make the type say so.
 
-- **(P2) A record cache whose first read failed never recovers.** `openRecords` answers a rejected
-  `list` with an empty cache that has writing off, never subscribes and never reads again, so a
-  prefs store opened over a server adapter while the server is away shows defaults and persists
-  nothing until the page reloads. Nothing turns writing back on. Wants a retry that re-lists and
-  makes the cache writable once the read lands, reporting what it read as `remote` changes.
+- **(P3) Two callers still treat an unread record cache as final.** A cache whose first read
+  failed now reads again and recovers, but labkit's lab store opts out (`retryMs: false` in
+  `openLabStore.ts`): `readLab` answers an unwritable cache with an empty lab, so records landing
+  later would skip its migrations and its fold of the old storage keys. And draw's
+  `importLegacyPrefs` (`apps/draw/src/prefs.ts`) checks `writable` once at boot, so a store that
+  recovers mid-session imports its legacy prefs only on the next load. Both want the same thing
+  the prefs entry below does: the open-time work rerun when the records arrive.
 
 - **(P3) Prefs migrate only at open, so an older version arriving later is never migrated.**
   `watchPrefsVersion` reacts to another writer's `$version` only when it is above this build's.
