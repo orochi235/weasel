@@ -1,5 +1,5 @@
 ---
-'@weasel-js/ui': minor
+'@weasel-js/ui': patch
 ---
 
 Under `subPages`, `PrefsForm`'s rail lists every nested group, at any depth, and each opens a page
