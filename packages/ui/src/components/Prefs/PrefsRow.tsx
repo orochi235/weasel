@@ -4,6 +4,7 @@ import {
   prefValueAtPath,
   type PrefAction,
   type PrefLeaf,
+  type PrefList,
   type PrefObject,
 } from '@weasel-js/prefs';
 import { PrefActionButton } from './PrefActionButton';
@@ -88,6 +89,10 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx, ctx.renderers);
   if (custom && control === null) return null;
 
+  // An entry that is rows of its own needs the row's whole width, so the label goes above the list.
+  const item = pref.kind === 'list' ? (pref as PrefList).item : undefined;
+  const stacked = item?.kind === 'object' || item?.kind === 'list';
+
   // `block` leaves own their chrome (embedded editors with their own
   // header) — no label/tooltip row.
   if (pref.block) return <div className={s.rowSlot} data-wide="" {...selectionAttrs(path, ctx, true)}>{control}</div>;
@@ -97,7 +102,7 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
     <PropertyRow
       label={pref.name}
       description={pref.description}
-      layout="inline"
+      layout={stacked ? 'block' : 'inline'}
       className={s.row}
       // Several controls, or a button: a <label> would hand a click on the row's text to the first of them.
       group={pref.kind === 'list' || pref.kind === 'action'}
