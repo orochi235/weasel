@@ -9,7 +9,7 @@ import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
 import { dropDraft, readDraft, saveDraft, SWAP, unpackDraft, unpackSteps, type SwapArgs } from './draft';
-import { ExportPanel } from './ExportPanel';
+import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
@@ -66,6 +66,9 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
    *  not on `schema`, with the nearest steps still there to undo and redo. Code the schema holds is not stored: it is taken back from the baseline. Give each schema
    *  the editor opens a name of its own. */
   draftKey?: string;
+  /** Somewhere to send the changes: given, the Changes pane draws a Submit button that hands over the changes
+   *  since `original` and the schema's literal. A promise it returns sets the button to "Sent" or "Failed". */
+  onSubmit?: SubmitChanges;
   className?: string;
 }
 
@@ -80,7 +83,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, onSubmit, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
@@ -260,7 +263,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} onDefaults={setDefaultsFrom} stageRef={stage} dropMark={dropMark} onStagePointerDown={previewDrag.onPointerDown} ghost={previewDrag.ghost} />
-      <ExportPanel schema={schema} changes={changes} />
+      <ExportPanel schema={schema} changes={changes} onSubmit={onSubmit} />
     </div>
   );
 }

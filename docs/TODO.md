@@ -832,13 +832,17 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   grid gap above the attributes pane, and the Key/Kind rows are wider than the attribute form
   under them. Seen on `#/dev/prefs` at 1440×900.
 
-- **(P2) `PrefSchemaEditor` layout by dragging, what is left.** Rows in the live preview cannot be
-  dragged themselves: a drag starts in the structure tree or the palette. A stored value in the
-  Unplaced list cannot be dragged either; it is still added by a click. A `label` is a kind only
-  `PrefsForm`'s rail and columns rows draw: `SelectionPanel` and labkit's `ControlPanel` show it as
-  an unknown kind, `prefFieldChoices` offers it as a field, and `@weasel-js/prefs` does not know
-  the kind. Dragging in the preview was tried by hand on astv's page; no test drives a pointer
-  through it, only the drop-target arithmetic.
+- **(P2) `PrefSchemaEditor` layout by dragging, what is left.** A stored value in the Unplaced
+  list cannot be dragged; it is still added by a click. A `label` is a kind only `PrefsForm`'s rail
+  and columns rows draw: `SelectionPanel` and labkit's `ControlPanel` show it as an unknown kind,
+  `prefFieldChoices` offers it as a field, and `@weasel-js/prefs` does not know the kind. No test
+  in the repo drives a pointer through the preview, only the drop-target arithmetic; palette, row,
+  rail, and tree drags were driven through a headless browser on astv's page on 2026-10-10.
+
+- **(P3) `PrefSchemaEditor`: undoing a move made through a rail entry leaves the moved node out of
+  sight.** Holding a drag over a rail entry opens that page by selecting its group, so the step
+  records that group as the selection to go back to. Undo puts the node back on its own page and
+  selects the group, and the preview stays on the page the node just left.
 
 - **(P3) `subPages` and `foldable` overlap a group's `as`.** `PrefsForm`'s form-wide `subPages`
   and `foldable` props decide what `as: 'page'` on a nested group and a folding panel should;
