@@ -839,6 +839,21 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   schema type, two answers to "what is this leaf's path". Decide which is right for which surface
   and make the type say so.
 
+- **(P2) A record cache whose first read failed never recovers.** `openRecords` answers a rejected
+  `list` with an empty cache that has writing off, never subscribes and never reads again, so a
+  prefs store opened over a server adapter while the server is away shows defaults and persists
+  nothing until the page reloads. Nothing turns writing back on. Wants a retry that re-lists and
+  makes the cache writable once the read lands, reporting what it read as `remote` changes.
+
+- **(P3) Prefs migrate only at open, so an older version arriving later is never migrated.**
+  `watchPrefsVersion` reacts to another writer's `$version` only when it is above this build's.
+  Read from the code, not reproduced: two tabs on different builds opening the same unmigrated
+  `localStorage` at once each migrate and flush, and when the older build's writes land second the
+  newer tab takes its older-shape records through `applyRemote` and runs on them for the session,
+  then writes newer-shape records into a store marked with the older version, which the next open
+  migrates a second time. Any adapter that delivers a server's records after open has the same
+  gap. Rerun the migrations over a remote batch that leaves `$version` below target.
+
 - **(P3) A Windows 9x theme.** Gray 3D bevels, a navy-to-blue gradient title strip and the
   system's pixel faces, as a full theme beside Interstellar rather than a one-component skin. Its
   titled groups want a titlebar frame motif (a solid title strip across the top), which was left
