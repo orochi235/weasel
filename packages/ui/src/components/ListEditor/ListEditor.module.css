@@ -2,7 +2,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-4);
-  min-width: min(28rem, calc(100vw - 64px));
+  /* A width that yields, not a floor: a dialog sizes to it, and a form row narrower than it keeps the editor inside. */
+  inline-size: 28rem;
+  max-inline-size: 100%;
 }
 
 .list {
