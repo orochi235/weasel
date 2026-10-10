@@ -72,6 +72,12 @@ describe('schemaEdit', () => {
     expect(keys(root, null)).toEqual(['b', 'z', 'a']);
   });
 
+  it('hands back the same tree when a move leaves every node where it was', () => {
+    expect(moveNodes(ROOT, ['b'], { parentPath: null, index: 1 }).root).toBe(ROOT);
+    expect(moveNodes(ROOT, ['b'], { parentPath: null, index: 2 }).root).toBe(ROOT);
+    expect(moveNodes(ROOT, ['a/x', 'a/y'], { parentPath: 'a', index: 0 })).toEqual({ root: ROOT, from: ['a/x', 'a/y'], paths: ['a/x', 'a/y'] });
+  });
+
   it('renames a moved node rather than overwrite a sibling with its key', () => {
     const { root, paths } = moveNodes(ROOT, ['a/x'], { parentPath: 'b', index: 1 });
     expect(keys(root, 'b')).toEqual(['x', 'x2']);

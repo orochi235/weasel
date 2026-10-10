@@ -208,7 +208,8 @@ export function setAttribute<R extends SchemaRoot>(root: R, path: string | null,
 /**
  * Move the nodes at `paths` to `target`, in the order given. A path beneath another moved path travels with it. A
  * moved key that collides with one already in the target parent is renamed with {@link uniqueKey}. Returns the
- * tree, and each moved node's old path in `from` beside its new one in `paths`.
+ * tree, `root` itself when nothing ends up anywhere new, and each moved node's old path in `from` beside its new
+ * one in `paths`.
  */
 export function moveNodes<R extends SchemaRoot>(
   root: R, paths: readonly string[], target: SchemaTarget,
@@ -243,7 +244,10 @@ export function moveNodes<R extends SchemaRoot>(
     });
     return insertAt(kids, entries, target.index - shift);
   });
-  return { root: next, from: moving.map((m) => m.path), paths: out };
+  const from = moving.map((m) => m.path);
+  const settled = Object.keys(childrenOf(nodeAt(next, dest) ?? next) ?? {});
+  if (out.every((p, i) => p === from[i]) && settled.every((k, i) => k === destKeys[i])) return { root, from, paths: from };
+  return { root: next, from, paths: out };
 }
 
 /** Every path whose node can hold children, in tree order. */

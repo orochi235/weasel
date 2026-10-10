@@ -208,6 +208,39 @@ describe('startThresholdDrag', () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
+  it('cancels a live drag on Escape, and keeps the key from whatever else listens for it', () => {
+    const start = makeStart(0, 0);
+    const onCancel = vi.fn();
+    const onCommit = vi.fn();
+    const outer = vi.fn();
+    document.addEventListener('keydown', outer);
+    startThresholdDrag(start as unknown as React.PointerEvent, { onMove: () => {}, onCommit, onCancel });
+    fireMove(50, 50);
+    const key = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    document.body.dispatchEvent(key);
+    document.removeEventListener('keydown', outer);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(outer).not.toHaveBeenCalled();
+    fireUp(50, 50);
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it('leaves Escape alone before the press is a drag, and after it ends', () => {
+    const start = makeStart(0, 0);
+    const onCancel = vi.fn();
+    const outer = vi.fn();
+    document.addEventListener('keydown', outer);
+    startThresholdDrag(start as unknown as React.PointerEvent, { onMove: () => {}, onCommit: () => {}, onCancel });
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(onCancel).not.toHaveBeenCalled();
+    fireMove(50, 50);
+    fireUp(50, 50);
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    document.removeEventListener('keydown', outer);
+    expect(outer).toHaveBeenCalledTimes(2);
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
   it('removes listeners after commit so a stray pointermove does nothing', () => {
     const start = makeStart(0, 0);
     const onMove = vi.fn();

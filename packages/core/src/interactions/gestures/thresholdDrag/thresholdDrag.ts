@@ -19,7 +19,7 @@ export interface ThresholdDragOptions {
   onCommit: (e: PointerEvent) => void;
   /** Released below the threshold — the click the press turned out to be. */
   onClick?: (e: PointerEvent) => void;
-  /** Ended without a release: pointercancel, lost capture, or `cancel()`. */
+  /** Ended without a release: pointercancel, lost capture, Escape during the drag, or `cancel()`. */
   onCancel?: () => void;
 }
 
@@ -27,8 +27,7 @@ export interface ThresholdDragOptions {
 export interface ThresholdDragHandle {
   /** True after the pointer has moved past `threshold` and the drag is live. */
   isDragging: () => boolean;
-  /** End the gesture now, as a cancel. For an unmount, an Escape, or any other
-   *  rule the caller owns. */
+  /** End the gesture now, as a cancel. For an unmount, or any other rule the caller owns. */
   cancel: () => void;
 }
 
@@ -47,16 +46,32 @@ export function startThresholdDrag(
     opts.onActivate?.(ev);
   };
 
-  const session = openPointerSession(opts.origin ?? (e.currentTarget as Element), e, {
+  const origin = opts.origin ?? (e.currentTarget as Element);
+  const keys: EventTarget = origin.ownerDocument.defaultView ?? origin.ownerDocument;
+  // Window capture, and stopped there: the Escape that ends a drag must not also close the dialog the drag is in.
+  const onKey = (ev: Event) => {
+    if (!activated || (ev as KeyboardEvent).key !== 'Escape') return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    session.cancel();
+  };
+  const unlisten = () => keys.removeEventListener('keydown', onKey, true);
+  keys.addEventListener('keydown', onKey, true);
+
+  const session = openPointerSession(origin, e, {
     onMove: (ev) => {
       maybeActivate(ev);
       if (activated) opts.onMove(ev);
     },
     onEnd: (ev) => {
+      unlisten();
       if (activated) opts.onCommit(ev);
       else opts.onClick?.(ev);
     },
-    onCancel: () => { opts.onCancel?.(); },
+    onCancel: () => {
+      unlisten();
+      opts.onCancel?.();
+    },
   });
 
   return {
