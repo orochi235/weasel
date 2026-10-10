@@ -62,3 +62,27 @@ export const Toned: Story = {
     </div>
   ),
 };
+
+/** Two toned panels that fold from the twisty before their titles, the second
+ *  starting folded, and a subpanel inside the first that folds on its own. */
+export const Collapsible: Story = {
+  render: () => (
+    <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <PropertyPanel title="Tail" stance="scope" tone={0} collapsible>
+        <PropertyList pack="pairs">
+          <PropertyField kind="number" control="slider" label="Angle" value={115} min={0} max={359} unit="°" onChange={() => {}} />
+          <PropertyField kind="number" control="slider" label="Bend" value={0} min={-1} max={1} step={0.02} onChange={() => {}} />
+          <Subpanel title="Bubbles" collapsible>
+            <PropertyField kind="number" control="slider" label="Size" value={30} min={8} max={120} unit="px" onChange={() => {}} />
+            <PropertyField kind="number" control="slider" label="Count" value={3} min={1} max={8} onChange={() => {}} />
+          </Subpanel>
+        </PropertyList>
+      </PropertyPanel>
+      <PropertyPanel title="Code" stance="scope" tone={2} defaultCollapsed>
+        <PropertyList>
+          <PropertyField kind="number" control="slider" label="Size" value={12} min={6} max={32} unit="px" onChange={() => {}} />
+        </PropertyList>
+      </PropertyPanel>
+    </div>
+  ),
+};

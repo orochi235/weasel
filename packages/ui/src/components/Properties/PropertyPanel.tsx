@@ -5,11 +5,14 @@ import {
   type Ref,
   type RefObject,
   useContext,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react';
+import { Disclosure } from '../Disclosure';
 import { type StanceProps, useStance } from '../stance';
+import { type CollapseProps, useCollapse } from './collapse';
 import { PropertyHelp } from './PropertyHelp';
 import s from './Properties.module.css';
 
@@ -66,7 +69,7 @@ export function propertyMetricClass(
 }
 
 /** Props for `<PropertyPanel>`. */
-export interface PropertyPanelProps extends PropertyMetricProps, StanceProps {
+export interface PropertyPanelProps extends PropertyMetricProps, StanceProps, CollapseProps {
   title?: ReactNode;
   /** Controls on the trailing edge of the title row — a switch, a clear
    *  button. They sit outside the heading, so they neither take its type nor
@@ -103,24 +106,46 @@ export function PropertyPanel({
   align,
   stance,
   tone,
+  collapsible,
+  defaultCollapsed,
+  collapsed,
+  onCollapsedChange,
 }: PropertyPanelProps) {
   const nested = useContext(PanelNesting);
   const attrs = useStance({ stance, tone });
+  const bodyId = useId();
+  const { folds, folded, toggle } = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange });
   const heading = title != null && <h2 className={s.panelTitle}>{title}</h2>;
+  const twisty = folds && (
+    <Disclosure
+      open={!folded}
+      onToggle={toggle}
+      label={typeof title === 'string' ? title : 'this panel'}
+      controls={bodyId}
+    />
+  );
+  const body = <PanelNesting.Provider value>{children}</PanelNesting.Provider>;
   return (
     <div
       className={propertyMetricClass(s.panel, { density, align }, className)}
       {...attrs}
       data-nested={nested || undefined}
       data-selectable={(selectable ?? stance === 'debug') || undefined}
+      data-collapsed={folded || undefined}
     >
-      {actions != null ? (
+      {actions != null || folds ? (
         <div className={s.panelHeader}>
+          {twisty}
           {heading}
-          <div className={s.panelActions}>{actions}</div>
+          {actions != null && <div className={s.panelActions}>{actions}</div>}
         </div>
       ) : heading}
-      <PanelNesting.Provider value>{children}</PanelNesting.Provider>
+      {/* Folded contents stay mounted, so a control's local state survives. */}
+      {folds ? (
+        <div id={bodyId} className={s.panelBody} hidden={folded}>
+          {body}
+        </div>
+      ) : body}
     </div>
   );
 }

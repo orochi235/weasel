@@ -94,6 +94,15 @@
   margin: 0;
 }
 
+/* A folded panel is its header alone, so the gap under the title goes too. */
+.panel[data-collapsed] > .panelHeader {
+  margin-bottom: 0;
+}
+
+.panelBody[hidden] {
+  display: none;
+}
+
 .panelActions {
   display: flex;
   flex: none;
@@ -1438,12 +1447,24 @@
 
 /* END GENERATED stance rules: subpanel */
 
-.subpanel > * {
+/* A folding subpanel wraps its rows so it can hide them; the wrapper draws no
+   box, so they stay items of the subpanel's grid. */
+.subpanelBody {
+  display: contents;
+}
+
+.subpanelBody[hidden] {
+  display: none;
+}
+
+.subpanel > *,
+.subpanelBody > * {
   min-width: 0;
 }
 
 .subpanel > .subpanelTitle,
-.subpanel > .span {
+.subpanel > .span,
+.subpanelBody > .span {
   grid-column: 1 / -1;
 }
 
@@ -1462,8 +1483,10 @@
   gap: var(--wzl-space-4);
 }
 
-.subpanelTitle > span {
+.subpanelTitle > h4 {
   flex: 0 0 auto;
+  margin: 0;
+  font: inherit;
 }
 
 .subpanelTitle > hr {

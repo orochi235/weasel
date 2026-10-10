@@ -115,9 +115,16 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
   auto?: ReadonlySet<string>;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
-  /** Heads the panel. With `title`, `stance` or `tone` given, the rows sit in a
-   *  `<PropertyPanel>` carrying them; with none, they are the bare list. */
+  /** Heads the panel. With `title`, `stance` or `tone` given, or with the panel
+   *  made to fold, the rows sit in a `<PropertyPanel>` carrying them; with
+   *  none, they are the bare list. */
   title?: ReactNode;
+  /** Give the whole panel a twisty that folds it down to its title. Its state
+   *  rides with the sections': the key is `''`, the root's own path, in both
+   *  `collapsed` and `onCollapse`. */
+  collapsible?: boolean;
+  /** Start the panel folded. Implies `collapsible`. */
+  defaultCollapsed?: boolean;
   className?: string;
 }
 
@@ -182,6 +189,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   collapse,
   collapsed,
   onCollapse,
+  collapsible,
+  defaultCollapsed,
   auto: given,
   showHidden = false,
   title,
@@ -443,8 +452,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       {body(resolved.group, '', { pack, layout, grid: gridPack }, titled.path)}
     </PropertyList>
   );
+  const panelFolds = collapsible ?? defaultCollapsed !== undefined;
   const panel =
-    title === undefined && stance === undefined && tone === undefined ? (
+    title === undefined && stance === undefined && tone === undefined && !panelFolds ? (
       list
     ) : (
       <PropertyPanel
@@ -453,6 +463,14 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         stance={stance}
         tone={tone}
         density={density}
+        {...(panelFolds
+          ? {
+              collapsible: true,
+              defaultCollapsed,
+              collapsed: collapsed ? (collapsed[''] ?? defaultCollapsed ?? false) : undefined,
+              onCollapsedChange: onCollapse ? (next: boolean) => onCollapse('', next) : undefined,
+            }
+          : {})}
       >
         {list}
       </PropertyPanel>

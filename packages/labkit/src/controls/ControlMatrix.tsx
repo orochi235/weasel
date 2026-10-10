@@ -2,6 +2,7 @@ import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
 import { isBuiltinPref, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
 import {
   Button,
+  type CollapseProps,
   Focusable,
   type PropertyControlProps,
   PropertyField,
@@ -49,9 +50,9 @@ export interface ControlMatrixRow {
   label?: string;
 }
 
-export interface ControlMatrixProps extends StanceProps {
-  /** Heads the matrix. With `title`, `stance` or `tone` given it sits in a
-   *  `<PropertyPanel>`, as a `ControlPanel` does. */
+export interface ControlMatrixProps extends StanceProps, CollapseProps {
+  /** Heads the matrix. With `title`, `stance` or `tone` given, or with any of
+   *  the fold props, it sits in a `<PropertyPanel>`, as a `ControlPanel` does. */
   title?: ReactNode;
   /** The whole resolved schema. A cell's leaf is looked up at
    *  `${column.key}.${row.key}`; a cell with none draws a dash. */
@@ -110,6 +111,10 @@ export function ControlMatrix({
   onColumnClick,
   inheritHint,
   className,
+  collapsible,
+  defaultCollapsed,
+  collapsed,
+  onCollapsedChange,
 }: ControlMatrixProps): ReactElement {
   const fallback = columns[0];
   const hintFor =
@@ -254,11 +259,13 @@ export function ControlMatrix({
     </div>
   );
 
+  const fold = { collapsible, defaultCollapsed, collapsed, onCollapsedChange };
+  const folds = Object.values(fold).some((v) => v !== undefined);
   const panel =
-    title === undefined && stance === undefined && tone === undefined ? (
+    title === undefined && stance === undefined && tone === undefined && !folds ? (
       table
     ) : (
-      <PropertyPanel title={title} stance={stance} tone={tone}>
+      <PropertyPanel title={title} stance={stance} tone={tone} {...fold}>
         {table}
       </PropertyPanel>
     );

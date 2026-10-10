@@ -1,3 +1,5 @@
+export type { CollapseProps } from './collapse';
+export { useCollapse } from './collapse';
 export type { CurveFieldProps, CurveMark } from './CurveField';
 export { CurveField } from './CurveField';
 export type { DialogRowProps } from './DialogRow';

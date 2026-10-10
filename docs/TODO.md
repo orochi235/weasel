@@ -705,6 +705,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
   action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
+- **(P3) Split `Properties.module.css`.** It is 73 KB and styles the panel, list, rows, group,
+  subpanel, cards, and every field in one file, with three generated stance blocks inside it. Its
+  header says the rules that cross components (`.listPairs > .subpanel`,
+  `.groupBody > :not(.rowColor)`) are why it is one module. Wants those few shared names in one
+  small module the rest compose from, and each component's rules beside the component, as
+  `PropertyHelp.module.css` already is.
+
 - **(P3) `PropertyHelp` trips react-aria's "`<Focusable>` child must be focusable" warning.** Seen
   in forge on 2026-10-10: the `ui/Properties/Rows/PropertyRow` story `AutoValue` logs it once per ⓘ
   button on load, and a story with no ⓘ logs none. The child is a real `<button>`, and the tooltip
