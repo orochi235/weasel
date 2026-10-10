@@ -6,7 +6,7 @@ import { dropSlot, isDropPath } from './drop';
 /** On the element a form draws for a leaf or a group, its dotted path. */
 export const PATH_ATTR = 'data-pref-path';
 
-/** On a rail entry, the dotted path of the group it opens. */
+/** On a rail entry, the dotted path of the group it opens; empty on the entry for the root's own leaves. */
 export const RAIL_ATTR = 'data-pref-rail';
 
 /** What a form marks while it draws: the selection. */
@@ -80,7 +80,7 @@ export function useSelectedRow(
     // A rail entry stands for its group as much as the group's heading in the pane does.
     const el = (e.target as Element).closest?.(`[${PATH_ATTR}], [${RAIL_ATTR}]`);
     const path = el?.getAttribute(PATH_ATTR) ?? el?.getAttribute(RAIL_ATTR);
-    if (path == null || path === '' || path === selected) return;
+    if (path == null || path === selected) return;
     reported.current = path;
     onSelect(path);
   };

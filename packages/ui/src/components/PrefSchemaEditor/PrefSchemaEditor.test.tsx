@@ -152,6 +152,24 @@ describe('PrefSchemaEditor', () => {
     expect(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' })).toHaveValue('panels');
   });
 
+  it('selects the root, the tree\'s General row, from a press on the rail entry for the root\'s own leaves', () => {
+    const start: PrefGroup = {
+      name: 'Prefs',
+      children: { ...START.children, loose: { kind: 'boolean', name: 'Loose', description: '', default: false } },
+    };
+    render(<Live start={start} />);
+    fireEvent.click(row('grid'));
+    const attributes = () => screen.getByRole('region', { name: 'Attributes' });
+    expect(within(attributes()).getByRole('textbox', { name: 'Key' })).toHaveValue('grid');
+    const entry = within(preview()).getByRole('button', { name: 'Prefs' });
+    fireEvent.pointerDown(entry, { button: 0, clientX: 5, clientY: 5 });
+    fireEvent.pointerUp(entry, { clientX: 5, clientY: 5 });
+    expect(within(structure()).getByRole('treeitem', { name: /^Prefs/, selected: true })).toBeInTheDocument();
+    // The root has a name and no key.
+    expect(within(attributes()).queryByRole('textbox', { name: 'Key' })).toBeNull();
+    expect(within(attributes()).getByRole('textbox', { name: 'Name' })).toHaveValue('Prefs');
+  });
+
   it('narrows the tree to the rows a filter matches, under the branches that hold them', () => {
     render(<Live />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'dock' } });

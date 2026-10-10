@@ -187,9 +187,9 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     setNotice(null);
   };
   /** Select a node picked outside the tree, opening the branches above it so the tree shows it. */
-  const reveal = (path: string) => {
+  const reveal = (path: string | null) => {
     const above: string[] = [];
-    for (let p = parentPath(path); p !== null; p = parentPath(p)) above.push(p);
+    for (let p = path === null ? null : parentPath(path); p !== null; p = parentPath(p)) above.push(p);
     setExpanded((e) => new Set([...e, ...above]));
     select(path);
   };

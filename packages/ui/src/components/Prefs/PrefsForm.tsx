@@ -96,7 +96,9 @@ export interface PrefsFormProps {
    *  brings it into view, and a rail opens the group that holds it. A path the
    *  form does not draw marks nothing. */
   selected?: string;
-  /** The reader pressed or focused into a leaf's row or a group. */
+  /** The reader pressed or focused into a leaf's row, a group, or a group's
+   *  entry in a rail. The empty path is the root, from the rail entry for its
+   *  own leaves. */
   onSelect?: (path: string) => void;
   /** A drag over the form. The form lays out as it would after the drop,
    *  with the dragged nodes drawn where they would land: `prefDropTargetAt`

@@ -94,4 +94,15 @@ describe('onSelect', () => {
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Import / Export' }));
     expect(onSelect).toHaveBeenLastCalledWith('io');
   });
+
+  it('reports the root, as the empty path, from the rail entry for its own leaves', () => {
+    const onSelect = vi.fn();
+    const schema: PrefGroup = {
+      name: 'Preferences',
+      children: { ...SCHEMA.children, loose: { kind: 'boolean', name: 'Loose', description: '', default: false } },
+    };
+    render(<PrefsForm layout="rail" schema={schema} selected="io" onChange={() => {}} onSelect={onSelect} />);
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Preferences' }));
+    expect(onSelect).toHaveBeenLastCalledWith('');
+  });
 });

@@ -20,8 +20,8 @@ export interface PreviewPaneProps {
   propertyRenderers?: Record<string, PropertyRenderer>;
   /** Tree path of the node to mark and bring into view. */
   selected?: string | null;
-  /** The reader picked a node in the preview; its tree path. */
-  onSelect?: (path: string) => void;
+  /** The reader picked a node in the preview; its tree path, or `null` for the root. */
+  onSelect?: (path: string | null) => void;
   /** The reader set values in the preview; each becomes its leaf's default. */
   onDefaults(edits: readonly DefaultEdit[]): void;
   /** Set to the element the preferences form is drawn in, for a drag to be hit-tested against. */
@@ -45,7 +45,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
   schema: PrefGroup;
   renderers?: Record<string, PrefRenderer>;
   selected: string | null;
-  onSelect?: (path: string) => void;
+  onSelect?: (path: string | null) => void;
   onDefaults(edits: readonly DefaultEdit[]): void;
   stageRef?: RefObject<HTMLDivElement | null>;
   drop?: PrefDrop | null;
@@ -66,7 +66,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
         showEmpty drop={drop}
         // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
         selected={selected === null ? undefined : keysOf(selected).join('.')}
-        onSelect={onSelect && ((path) => onSelect(pathOf(path.split('.'))!))}
+        onSelect={onSelect && ((path) => onSelect(path === '' ? null : pathOf(path.split('.'))))}
         onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
       <ResizeHandle value={width} min={360} max={900} onInput={setWidth} ariaLabel="Resize preview" />
       {ghost && stageRef?.current && !drawsNode(drop) && (
