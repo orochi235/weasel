@@ -2,6 +2,8 @@ import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'rea
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, PACKAGES, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
 import { sessionStore } from './chunkReload';
 import { PageBoundary } from './PageBoundary';
+import { Wordmark } from './FrontPage/Wordmark';
+import { DEMOS_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront, routeOf } from './routes';
 
 // All three are lazy so the entry bundle carries only the nav: `Releases`
 // pulls in `virtual:changelogs` (every published changelog entry), and
@@ -9,9 +11,7 @@ import { PageBoundary } from './PageBoundary';
 const SourceView = lazy(() => import('./SourceView'));
 const WhatsNew = lazy(() => import('./WhatsNew').then((m) => ({ default: m.WhatsNew })));
 const Releases = lazy(() => import('./Releases').then((m) => ({ default: m.Releases })));
-
-const WHATS_NEW_ID = '__whats_new';
-const RELEASES_ID = '__releases';
+const GetStarted = lazy(() => import('./FrontPage/GetStarted').then((m) => ({ default: m.GetStarted })));
 
 /** Format a git-ISO date as "3d ago" / "2w ago" / "Apr 2024" — close
  *  in time gets a relative phrasing; older falls back to a static
@@ -33,9 +33,8 @@ import { VERSION } from '@weasel-js/core';
 import { buildTitle } from '../shared/buildInfo';
 
 function readHash(): string {
-  const h = window.location.hash.replace(/^#/, '');
-  if (h === WHATS_NEW_ID || h === RELEASES_ID) return h;
-  return DEMOS_BY_ID.has(h) ? h : DEMOS[0].id;
+  if (window.location.hash === `#${DEMOS_ID}`) return DEMOS[0].id;
+  return routeOf(window.location.hash, (id) => DEMOS_BY_ID.has(id));
 }
 
 export function WeaselDemos() {
@@ -50,12 +49,16 @@ export function WeaselDemos() {
   }, []);
 
   useEffect(() => {
-    if (window.location.hash.replace(/^#/, '') !== activeId) {
+    // A hash that named nothing: hand the page back to the front page.
+    if (activeId === FRONT_ID) goFront();
+    else if (window.location.hash.replace(/^#/, '') !== activeId) {
       window.history.replaceState(null, '', `#${activeId}`);
     }
   }, [activeId]);
 
   const active = DEMOS_BY_ID.get(activeId) ?? null;
+
+  if (activeId === FRONT_ID) return null;
 
   return (
     <div className="ckd-app">
@@ -63,13 +66,16 @@ export function WeaselDemos() {
         <header className="ckd-sidebar-header">
           <img src={logoUrl} alt="weasel logo" className="ckd-sidebar-logo" />
           <h1>
-            w<span className="ckd-sidebar-rainbow">easel</span>
+            <a
+              href="./"
+              className="ckd-sidebar-home"
+              aria-label="weasel home"
+              onClick={(e) => { e.preventDefault(); goFront(); }}
+            ><Wordmark /></a>
             <span className="ckd-sidebar-version" title={buildTitle()}>v{VERSION}</span>
           </h1>
           <p>Domain-agnostic 2D scene-graph hooks for React + canvas.</p>
           <p><a href="./api/">API reference →</a></p>
-          <p><a href="./api-gestures/">weasel-gestures API →</a></p>
-          <p><a href="./api-prefs/">weasel-prefs API →</a></p>
           <p><a href="./docs/ui/forge/">Component workshop →</a></p>
           <p><a href="./draw/">WeaselDraw →</a></p>
           <p><a href="./draw/#/dev/toolkits">Toolkit builder →</a></p>
@@ -77,6 +83,13 @@ export function WeaselDemos() {
         <nav className="ckd-nav">
           <section className="ckd-nav-section ckd-nav-whatsnew">
             <ul>
+              <li>
+                <a
+                  href={`#${GET_STARTED_ID}`}
+                  className={activeId === GET_STARTED_ID ? 'active' : ''}
+                  onClick={(e) => { e.preventDefault(); setActiveId(GET_STARTED_ID); }}
+                >🚀 Get started</a>
+              </li>
               <li>
                 <a
                   href={`#${WHATS_NEW_ID}`}
@@ -117,6 +130,7 @@ export function WeaselDemos() {
         <PageBoundary key={activeId} reload={() => window.location.reload()} store={sessionStore()}>
           {active ? <DemoView entry={active} key={active.id} /> : null}
           <Suspense fallback={null}>
+            {!active && activeId === GET_STARTED_ID ? <GetStarted /> : null}
             {!active && activeId === RELEASES_ID ? <Releases /> : null}
             {!active && activeId === WHATS_NEW_ID ? <WhatsNew onSelect={setActiveId} /> : null}
           </Suspense>

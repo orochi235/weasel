@@ -120,8 +120,8 @@ this rule governs the consumer boundary, not kit internals.
 `@internal` symbol on a consumer entry; `npx typedoc` must report no
 warnings, and its usual one is a documented export referencing a type the
 barrel does not export. Run both before adding an export. Export the
-referenced type rather than listing it in `typedoc.json`'s
-`intentionallyNotExported`.
+referenced type rather than listing it in the package's
+`typedoc.config.mjs` under `intentionallyNotExported`.
 
 Test-only reset hooks go on the package's `test-seams` entry; types a sibling
 package fills across the boundary go on an `internal` entry

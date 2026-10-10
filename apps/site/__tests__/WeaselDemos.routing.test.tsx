@@ -1,11 +1,14 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEMOS } from '../registry';
+import { App } from '../App';
 import { WeaselDemos } from '../WeaselDemos';
 // The views `WeaselDemos` loads lazily, loaded here at collection so their transform is not
 // paid inside a test's timeout. `lazy()`'s own import then resolves from the module cache.
 import '../Releases';
 import '../WhatsNew';
+import '../FrontPage/GetStarted';
+import '../Shell';
 
 // jsdom has no IntersectionObserver, and `WeaselDemos` builds one to defer
 // work until a demo scrolls into view. Without this the page boundary catches
@@ -42,16 +45,42 @@ beforeEach(() => go(''));
 afterEach(cleanup);
 
 describe('the hash router', () => {
-  it('falls back to the first demo when the hash names nothing', async () => {
-    go('#no-such-demo');
-    render(<WeaselDemos />);
-    await heading(DEMOS[0].title);
+  it('shows the front page, and no sidebar, when there is no hash', () => {
+    render(<App />);
+    expect(screen.getByRole('heading', { level: 1, name: 'weasel' })).toBeTruthy();
+    expect(screen.queryByRole('complementary')).toBeNull();
   });
 
-  it('rewrites an unresolvable hash to the demo it settled on', async () => {
-    go('#no-such-demo');
-    render(<WeaselDemos />);
+  it('shows the front page when the hash names nothing, and drops the hash', async () => {
+    go('?pkg=core#no-such-demo');
+    render(<App />);
+    expect(await screen.findByRole('link', { name: /get started/i })).toBeTruthy();
+    expect(window.location.hash).toBe('');
+    expect(window.location.search).toBe('?pkg=core');
+  });
+
+  it('opens the first demo from the front page\'s Demos link', async () => {
+    render(<App />);
+    go('#__demos');
+    act(() => { window.dispatchEvent(new HashChangeEvent('hashchange')); });
+    await heading(DEMOS[0].title);
     await waitFor(() => expect(window.location.hash).toBe(`#${DEMOS[0].id}`));
+  });
+
+  it('opens get started on its own id', async () => {
+    go('#__get_started');
+    render(<WeaselDemos />);
+    await heading('Get started');
+    expect(within(screen.getByRole('main')).getByRole('heading', { level: 2, name: 'Install' })).toBeTruthy();
+  });
+
+  it('returns to the front page from the sidebar wordmark', async () => {
+    go(`#${DEMOS[0].id}`);
+    render(<App />);
+    fireEvent.click(await screen.findByRole('link', { name: 'weasel home' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'weasel' })).toBeTruthy();
+    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(window.location.hash).toBe('');
   });
 
   it('opens the demo the hash names', async () => {
@@ -76,6 +105,7 @@ describe('the hash router', () => {
 
   it('follows a hashchange after mount, so back and forward work', async () => {
     const target = DEMOS[2] ?? DEMOS[0];
+    go(`#${DEMOS[0].id}`);
     render(<WeaselDemos />);
     await heading(DEMOS[0].title);
     go(`#${target.id}`);
@@ -93,6 +123,7 @@ describe('the hash router', () => {
 
 describe('the sidebar', () => {
   it('lists package demos under Packages, by package, and nowhere else', () => {
+    go(`#${DEMOS[0].id}`);
     render(<WeaselDemos />);
     const nav = screen.getByRole('navigation');
     const packages = within(nav).getByRole('heading', { level: 2, name: 'Packages' }).closest('section')!;

@@ -1,0 +1,12 @@
+{
+  // The root config's options and path mappings over package sources alone.
+  // TypeDoc builds one program per package from this list, so the apps and
+  // tests the root config also names are paid for once per package.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "types": ["node"]
+  },
+  "include": ["../packages/*/src"],
+  "exclude": ["../node_modules", "../**/dist", "../**/*.test.ts", "../**/*.test.tsx", "../**/*.stories.tsx"]
+}
