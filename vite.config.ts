@@ -7,11 +7,12 @@ import { weaselDefines } from './scripts/vite-build-info.ts';
 import { demoTimestamps } from './scripts/vite-demo-timestamps.ts';
 import { demoSources } from './scripts/vite-demo-sources.ts';
 import { changelogs } from './scripts/vite-changelogs.ts';
+import { getStarted } from './scripts/vite-get-started.ts';
 import { localWake } from './scripts/vite-wake.ts';
 import ports from './scripts/dev-ports.json' with { type: 'json' };
 
 /**
- * Dev-only middleware: serve `dist-demo/api/*` at `/api/*`. The deployed
+ * Dev-only middleware: serve `dist-demo/api/*` at `/weasel/api/*`. The deployed
  * site (GitHub Pages) gets the typedoc output bundled into `dist-demo/`
  * via `npm run build:demo`, so the sidebar's "API reference →" link
  * (`./api/`) resolves correctly there. Vite's dev server doesn't serve
@@ -37,7 +38,8 @@ function serveApiDocsInDev(): PluginOption {
     name: 'serve-api-docs-in-dev',
     apply: 'serve',
     configureServer(server) {
-      server.middlewares.use('/api', (req, res, next) => {
+      // Under the site's `base`, where the page's `./api/` link points.
+      server.middlewares.use('/weasel/api', (req, res, next) => {
         if (!existsSync(apiRoot)) {
           res.statusCode = 404;
           res.setHeader('content-type', 'text/html; charset=utf-8');
@@ -86,6 +88,7 @@ export default defineConfig({
     demoTimestamps({ root: import.meta.dirname }),
     demoSources({ root: import.meta.dirname }),
     changelogs({ root: import.meta.dirname }),
+    getStarted({ root: import.meta.dirname }),
     localWake({ fallback: [ports.siteBackup] }),
   ],
   define: weaselDefines(import.meta.dirname),

@@ -1012,6 +1012,27 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P2) A docs minisite per package: overview, guides, and demos.** The API reference half is
+  built: `npm run build:api` documents every published package in one TypeDoc site at `/api/`,
+  each package a module with its README as the landing page. Still to design: an overview and
+  hand-written guides per package (only labkit has any, in its own VitePress site), and the
+  demos that exercise a package shown from its pages. Rendering TypeDoc's JSON output inside the
+  site's own shell is the route that puts all four in one place.
+- **(P2) The API reference build reports warnings in the packages it newly covers.**
+  `docs/conventions.md` says `npx typedoc` reports none; that held while it read only core.
+  Most are a documented export referencing a type its barrel does not export, each one a call
+  between exporting the type and listing it under `intentionallyNotExported` in that package's
+  `typedoc.config.mjs`. The rest are `{@link}`s that resolve to nothing (`Field` in labkit,
+  `textCommand` in text, `Focusable` and `KEEP` in ui), a README image path in hud, and `xml`
+  code fences in svg's README that need `highlightLanguages`.
+- **(P3) A symbol core re-exports from a sibling is documented twice.** `ClaimableGesture` has a
+  page under `@weasel-js/core` and another under `@weasel-js/gestures`, with the same text.
+  TypeDoc's `packages` strategy converts each package on its own, so core's copy is a full
+  declaration, not a pointer. Type references do cross: core's pages link into the sibling's.
+- **(P3) The front page's palette is undecided.** It ships three behind a toggle (charcoal,
+  the project's maroon and lime, paper). Pick one, then delete the toggle and the other two from
+  `apps/site/FrontPage/palettes.ts`. The page is deliberately plain; a live canvas beside the
+  pitch was drawn and set aside for later.
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
 ---

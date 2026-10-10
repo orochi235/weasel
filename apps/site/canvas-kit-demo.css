@@ -67,17 +67,7 @@ a:hover { text-decoration: underline; }
 /* Warm gradient on the "easel" half of the wordmark — green → yellow → red,
    drawn from the divide-colors palette already used elsewhere
    (see BooleanOpsDemo). */
-.ckd-sidebar-rainbow {
-  background-image: linear-gradient(
-    90deg,
-    #7fb069 0%,
-    #d4c469 50%,
-    #d47a7a 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
+.ckd-sidebar-home:hover { text-decoration: none; }
 
 .ckd-sidebar-header p {
   font-size: calc(var(--wzl-font-size-sm) + 1px);

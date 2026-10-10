@@ -10,6 +10,7 @@ import { weaselDefines } from './scripts/vite-build-info.ts';
 import { demoTimestamps } from './scripts/vite-demo-timestamps.ts';
 import { demoSources } from './scripts/vite-demo-sources.ts';
 import { changelogs } from './scripts/vite-changelogs.ts';
+import { getStarted } from './scripts/vite-get-started.ts';
 import { browserCommands } from './scripts/vitest-browser-commands.ts';
 
 // One vitest config; named projects per surface. Each project owns its
@@ -76,6 +77,7 @@ export default defineConfig({
           demoTimestamps({ root: import.meta.dirname }),
           demoSources({ root: import.meta.dirname }),
           changelogs({ root: import.meta.dirname }),
+          getStarted({ root: import.meta.dirname }),
         ],
         test: {
           name: 'site',

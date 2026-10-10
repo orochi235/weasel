@@ -1,0 +1,16 @@
+/* The mark's own colors, the same on every theme: the "w" is the gradient's
+   first stop, so the word reads as one run. */
+.wordmark {
+  --mark-start: #7fb069;
+  color: var(--mark-start);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.tail {
+  background-image: linear-gradient(90deg, var(--mark-start) 0%, #d4c469 50%, #d47a7a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

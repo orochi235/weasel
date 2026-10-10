@@ -31,3 +31,10 @@ declare module 'virtual:changelogs' {
   const releases: import('../shared/releases').Release[];
   export default releases;
 }
+
+/** Provided by the `get-started` vite plugin (`scripts/vite-get-started.ts`).
+ *  Core's README sections for the "Get started" page, rendered to HTML. */
+declare module 'virtual:get-started' {
+  const html: string;
+  export default html;
+}
