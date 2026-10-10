@@ -339,8 +339,8 @@ export const THEMES = {
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-slop': "6px",
         '--wzl-slider-thumb-slop': "6px",
-        '--wzl-slider-track-mix': "18%",
-        '--wzl-slider-thumb-mix': "70%",
+        '--wzl-slider-track-mix': "40%",
+        '--wzl-slider-thumb-mix': "100%",
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
@@ -517,8 +517,8 @@ export const THEMES = {
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-slop': "6px",
         '--wzl-slider-thumb-slop': "6px",
-        '--wzl-slider-track-mix': "18%",
-        '--wzl-slider-thumb-mix': "70%",
+        '--wzl-slider-track-mix': "40%",
+        '--wzl-slider-thumb-mix': "100%",
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
@@ -695,8 +695,8 @@ export const THEMES = {
         '--wzl-slider-thumb-size': "8px",
         '--wzl-slider-track-slop': "6px",
         '--wzl-slider-thumb-slop': "6px",
-        '--wzl-slider-track-mix': "18%",
-        '--wzl-slider-thumb-mix': "70%",
+        '--wzl-slider-track-mix': "40%",
+        '--wzl-slider-thumb-mix': "100%",
         '--wzl-handle-size': "9px",
         '--wzl-handle-size-sm': "7px",
         '--wzl-handle-size-lg': "10px",
@@ -2208,14 +2208,30 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
         "description": "How far past a range thumb's edge a press still grabs the thumb rather than landing on the track. Sits over the track's own slop."
       },
       "slider-track-mix": {
-        "value": "18%",
-        "type": "dimension",
-        "description": "Accent proportion in a range track, as a color-mix percentage — not a color. Mixed into a real property, never into another custom property."
+        "by": "mode",
+        "dark": {
+          "value": "40%",
+          "type": "dimension",
+          "description": "Proportion of accent-fg in a range track, as a color-mix percentage — not a color. Mixed into a real property, never into another custom property. Higher in dark mode, where a light tint of the accent sinks into the surface."
+        },
+        "light": {
+          "value": "18%",
+          "type": "dimension",
+          "description": "Proportion of accent-fg in a range track, as a color-mix percentage — not a color."
+        }
       },
       "slider-thumb-mix": {
-        "value": "70%",
-        "type": "dimension",
-        "description": "Accent proportion in a range thumb, as a color-mix percentage — not a color."
+        "by": "mode",
+        "dark": {
+          "value": "100%",
+          "type": "dimension",
+          "description": "Proportion of accent-fg in a range thumb, as a color-mix percentage — not a color. Solid in dark mode."
+        },
+        "light": {
+          "value": "70%",
+          "type": "dimension",
+          "description": "Proportion of accent-fg in a range thumb, as a color-mix percentage — not a color."
+        }
       },
       "handle-size": {
         "value": "9px",
@@ -3411,14 +3427,30 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
         "description": "How far past a range thumb's edge a press still grabs the thumb rather than landing on the track. Sits over the track's own slop."
       },
       "slider-track-mix": {
-        "type": "dimension",
-        "value": "18%",
-        "description": "Accent proportion in a range track, as a color-mix percentage — not a color. Mixed into a real property, never into another custom property."
+        "by": "mode",
+        "dark": {
+          "type": "dimension",
+          "value": "40%",
+          "description": "Proportion of accent-fg in a range track, as a color-mix percentage — not a color. Mixed into a real property, never into another custom property. Higher in dark mode, where a light tint of the accent sinks into the surface."
+        },
+        "light": {
+          "type": "dimension",
+          "value": "18%",
+          "description": "Proportion of accent-fg in a range track, as a color-mix percentage — not a color."
+        }
       },
       "slider-thumb-mix": {
-        "type": "dimension",
-        "value": "70%",
-        "description": "Accent proportion in a range thumb, as a color-mix percentage — not a color."
+        "by": "mode",
+        "dark": {
+          "type": "dimension",
+          "value": "100%",
+          "description": "Proportion of accent-fg in a range thumb, as a color-mix percentage — not a color. Solid in dark mode."
+        },
+        "light": {
+          "type": "dimension",
+          "value": "70%",
+          "description": "Proportion of accent-fg in a range thumb, as a color-mix percentage — not a color."
+        }
       },
       "handle-size": {
         "type": "dimension",

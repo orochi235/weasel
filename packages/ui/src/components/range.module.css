@@ -32,7 +32,7 @@
   border-radius: var(--wzl-radius-sm);
   background: var(
     --wzl-range-track-bg,
-    color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-mix), transparent)
+    color-mix(in srgb, var(--wzl-accent-fg) var(--wzl-slider-track-mix), transparent)
   );
 }
 
@@ -41,7 +41,7 @@
   border-radius: var(--wzl-radius-sm);
   background: var(
     --wzl-range-track-bg,
-    color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-track-mix), transparent)
+    color-mix(in srgb, var(--wzl-accent-fg) var(--wzl-slider-track-mix), transparent)
   );
 }
 
@@ -52,7 +52,7 @@
   height: var(--wzl-slider-thumb-size);
   border: none;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-mix), transparent);
+  background: color-mix(in srgb, var(--wzl-accent-fg) var(--wzl-slider-thumb-mix), transparent);
   /* WebKit and Blink hang the thumb from the track's top edge. A transform, not
      margin-top: Blink rounds a thumb margin to a whole CSS pixel, which leaves an
      odd track/thumb gap half a pixel off center at every DPR. */
@@ -64,7 +64,7 @@
   height: var(--wzl-slider-thumb-size);
   border: none;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--wzl-accent) var(--wzl-slider-thumb-mix), transparent);
+  background: color-mix(in srgb, var(--wzl-accent-fg) var(--wzl-slider-thumb-mix), transparent);
 }
 
 /* :where() keeps these at the specificity of `.range` alone, which is what a bare

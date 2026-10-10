@@ -22,7 +22,9 @@
   flex: 0 0 auto;
   width: 28px;
   height: 16px;
-  background: var(--wzl-surface-sunken);
+  /* A share of the text color, not a surface: a sunken fill vanishes on a surface as dark as it is,
+     and leaves the thumb a dot with nothing round it. */
+  background: color-mix(in srgb, var(--wzl-fg) 22%, transparent);
   /* Keeps the box the thumb is placed in; the track's fill shows through it. */
   border: 1px solid transparent;
   border-radius: var(--wzl-radius-pill);

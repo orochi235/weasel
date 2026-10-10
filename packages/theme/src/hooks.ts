@@ -162,4 +162,34 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     value: 'calc(var(--wzl-control-h-xs) + var(--wzl-space-2))',
     description: 'Indent of each Tree level. Unset, it is one twisty and one gap, so a child’s twisty sits under its parent’s label.',
   },
+  {
+    name: 'tree-font-size',
+    type: 'dimension',
+    value: 'var(--wzl-font-size-sm)',
+    description: 'Size of a Tree row’s text.',
+  },
+  {
+    name: 'dialog-max-width',
+    type: 'dimension',
+    value: '900px',
+    description: 'Widest a Dialog grows, modal or inline, before its contents wrap or scroll.',
+  },
+  {
+    name: 'prefs-across-gap',
+    type: 'dimension',
+    value: '28px',
+    description: 'Gap between the two columns of rows a PrefsForm pane sets side by side.',
+  },
+  {
+    name: 'prefs-control-min',
+    type: 'dimension',
+    value: '80px',
+    description: 'Narrowest a PrefsForm row’s control gets in a two-across pane before the row wraps it under its label.',
+  },
+  {
+    name: 'prop-panel-actions-basis',
+    type: 'dimension',
+    value: 'auto',
+    description: 'Width a PropertyPanel’s title row gives its actions. Set, it holds that width whatever the actions are.',
+  },
 ];

@@ -186,10 +186,10 @@
   --wzl-slider-track-slop: 6px;
   /* How far past a range thumb's edge a press still grabs the thumb rather than landing on the track. Sits over the track's own slop. */
   --wzl-slider-thumb-slop: 6px;
-  /* Accent proportion in a range track, as a color-mix percentage — not a color. Mixed into a real property, never into another custom property. */
-  --wzl-slider-track-mix: 18%;
-  /* Accent proportion in a range thumb, as a color-mix percentage — not a color. */
-  --wzl-slider-thumb-mix: 70%;
+  /* Proportion of accent-fg in a range track, as a color-mix percentage — not a color. Mixed into a real property, never into another custom property. Higher in dark mode, where a light tint of the accent sinks into the surface. */
+  --wzl-slider-track-mix: 40%;
+  /* Proportion of accent-fg in a range thumb, as a color-mix percentage — not a color. Solid in dark mode. */
+  --wzl-slider-thumb-mix: 100%;
   /* Edge of a draggable handle on a plot or timeline — a keyframe diamond, a timeline key, an event mark. The default rank; -sm and -lg are the two deliberate departures from it. */
   --wzl-handle-size: 9px;
   /* A handle that is drawn but not draggable — a locked or pinned point. Smaller so it reads as inert next to a live one. */
@@ -286,6 +286,8 @@
   --wzl-code-constant: var(--wzl-swatch-teal);
   --wzl-code-property: var(--wzl-swatch-sky);
   --wzl-code-name: var(--wzl-swatch-rose);
+  --wzl-slider-track-mix: 40%;
+  --wzl-slider-thumb-mix: 100%;
   --wzl-secondary-fg: var(--wzl-secondary-base);
   --wzl-panel-surface: var(--wzl-surface-raised);
   --wzl-panel-border-color: var(--wzl-border);
@@ -343,6 +345,8 @@
   --wzl-code-constant: #0f766e;
   --wzl-code-property: #0369a1;
   --wzl-code-name: #be123c;
+  --wzl-slider-track-mix: 18%;
+  --wzl-slider-thumb-mix: 70%;
   --wzl-secondary-fg: var(--wzl-secondary-soft);
   --wzl-panel-surface: var(--wzl-surface-raised);
   --wzl-panel-border-color: var(--wzl-border);

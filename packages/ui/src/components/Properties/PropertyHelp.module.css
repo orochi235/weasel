@@ -31,8 +31,8 @@
 
 /* What the row reads when it is auto: its own line, under the description. */
 .auto {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: block;
-  font-variant-numeric: tabular-nums;
 }
 
 .autoAfter {

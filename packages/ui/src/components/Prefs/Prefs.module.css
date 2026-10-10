@@ -128,6 +128,10 @@
   min-width: 110px;
   display: flex;
   align-items: center;
+  /* A control narrower than the slot sits at the row's far edge, so the values line up down a pane;
+     a select fills the slot, so its value is set to that edge inside it. */
+  justify-content: flex-end;
+  --wzl-select-align: end;
 }
 
 .unrenderable {
@@ -262,7 +266,8 @@
   background: none;
   color: var(--wzl-fg);
   font: inherit;
-  font-size: var(--wzl-font-size-sm);
+  /* The size of a control's text in the pane beside it. */
+  font-size: var(--wzl-font-size);
   text-align: start;
   cursor: default;
 }
