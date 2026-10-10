@@ -230,6 +230,40 @@ describe('PrefSchemaEditor', () => {
     expect(within(item(/^Prefs/)).getAllByText('1')[0]).toBeInTheDocument();
   });
 
+  describe('with a draft key', () => {
+    function Kept() {
+      const [schema, setSchema] = useState(START);
+      return <PrefSchemaEditor schema={schema} onChange={setSchema} original={START} draftKey="test-draft" />;
+    }
+    afterEach(() => localStorage.removeItem('test-draft'));
+
+    it('opens on the edits a previous editor left, still listed as changes from the baseline', () => {
+      const first = render(<Kept />);
+      expect(screen.queryByRole('button', { name: 'Discard draft' })).toBeNull();
+      fireEvent.click(row('snap'));
+      fireEvent.keyDown(structure(), { key: 'Delete' });
+      expect(screen.getByText(/Draft saved/)).toBeInTheDocument();
+      first.unmount();
+      render(<Kept />);
+      expect(within(structure()).queryByText('(snap)')).toBeNull();
+      expect(row('grid')).toBeInTheDocument();
+      expect(screen.getByText(/− view\/snap/)).toBeInTheDocument();
+    });
+
+    it('goes back to the baseline on Discard draft, and keeps nothing for the next editor', () => {
+      const first = render(<Kept />);
+      fireEvent.click(row('snap'));
+      fireEvent.keyDown(structure(), { key: 'Delete' });
+      fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }));
+      expect(row('snap')).toBeInTheDocument();
+      expect(localStorage.getItem('test-draft')).toBeNull();
+      first.unmount();
+      render(<Kept />);
+      expect(row('snap')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Discard draft' })).toBeNull();
+    });
+  });
+
   it('marks in the preview what the tree selects, and selects in the tree what the preview is pressed on', () => {
     render(<Live />);
     fireEvent.click(row('dock'));

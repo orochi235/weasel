@@ -132,3 +132,4 @@
 }
 /* How many leaves a branch holds, before its kind. */
 .treeCount { composes: numeric from '@weasel-js/theme/numeric.module.css'; margin-inline-end: var(--wzl-space-1); }
+.draftNote { composes: numeric from '@weasel-js/theme/numeric.module.css'; color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-xs); }

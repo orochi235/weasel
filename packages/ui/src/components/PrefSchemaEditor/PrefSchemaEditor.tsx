@@ -8,6 +8,7 @@ import type { PropertyRenderer } from '../SelectionPanel';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
+import { packDraft, readDraft, unpackDraft, writeDraft } from './draft';
 import { ExportPanel } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
@@ -25,6 +26,8 @@ const COALESCE_MS = 800;
 
 /** How long a drag rests on a rail entry before the preview opens that page. */
 const RAIL_OPEN_MS = 500;
+const DRAFT_TIME = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+
 /** Where Delete and Backspace belong to the control and not to the selection. */
 const TEXT_ENTRY = 'input, textarea, select, [contenteditable]';
 
@@ -56,6 +59,10 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
    *  a node's property schema. Given, the values no leaf describes are listed under the tree, each a way to
    *  add the leaf that would. */
   stored?: unknown;
+  /** A name to keep the edited schema under in this browser's `localStorage`, so a reload opens on the edits and
+   *  not on `schema`. Code the schema holds is not stored: it is taken back from the baseline. Give each schema
+   *  the editor opens a name of its own. */
+  draftKey?: string;
   className?: string;
 }
 
@@ -69,7 +76,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
@@ -96,10 +103,24 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     emitted.current = schema;
     history.clear();
   }, [schema, history]);
-  const emit = (next: S) => {
+  const hand = (next: S) => {
     emitted.current = next;
     latest.current.onChange(next);
   };
+  // The draft follows every edit, undo and redo among them; back at the baseline there is nothing to keep.
+  const [draftSavedAt, setDraftSavedAt] = useState(() => (draftKey === undefined ? null : readDraft(draftKey)?.savedAt ?? null));
+  const emit = (next: S) => {
+    hand(next);
+    if (draftKey === undefined) return;
+    const savedAt = next === base ? null : Date.now();
+    writeDraft(draftKey, savedAt === null ? null : { savedAt, schema: packDraft(next, base) });
+    setDraftSavedAt(savedAt);
+  };
+  useEffect(() => {
+    const draft = draftKey === undefined ? null : readDraft(draftKey);
+    if (draft) hand(unpackDraft(draft.schema, base));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a draft is opened once, by the editor that finds it
+  }, []);
   // The panes edit either root; each hands back the kind it was given.
   const commit = (next: SchemaRoot, coalesceKey?: string) =>
     history.applyOps([swapOp(latest.current.schema, next as S, emit, coalesceKey)], 'edit schema');
@@ -199,6 +220,13 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           <>
             <Button size="sm" variant="ghost" disabled={!history.canUndo()} onClick={() => history.undo()}>Undo</Button>
             <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => history.redo()}>Redo</Button>
+            {draftSavedAt !== null && (
+              <>
+                <Button size="sm" variant="ghost" onClick={() => { commit(base); select(null); }}>Discard draft</Button>
+                {/* Last: the time changes, and nothing sits after it to be pushed about. */}
+                <span className={s.draftNote}>Draft saved {DRAFT_TIME.format(draftSavedAt)}</span>
+              </>
+            )}
           </>
         } />
       <ResizeHandle value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
