@@ -135,6 +135,14 @@ describe('PrefSchemaEditor', () => {
     expect(leading('grid')).toBeUndefined();
   });
 
+  it('opens a page from a press and release on its rail entry in the preview, with no click of the browser\'s', () => {
+    render(<Live />);
+    const entry = within(preview()).getByRole('button', { name: 'Panels' });
+    fireEvent.pointerDown(entry, { button: 0, clientX: 5, clientY: 5 });
+    fireEvent.pointerUp(entry, { clientX: 5, clientY: 5 });
+    expect(within(preview()).getByText('Dock')).toBeInTheDocument();
+  });
+
   it('undoes and redoes an edit, from its buttons and from the keyboard', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
