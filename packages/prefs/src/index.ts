@@ -9,14 +9,14 @@ export {
   prefDisplayBounds,
   prefLeaves,
   prefValueAtPath,
-  setPrefValueAtPath,
+  VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
-export { type PrefsMigration, runPrefsMigrations } from './migrate';
+export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
 export { repairPrefValue, type PrefValidator } from './repair';
-export { createPrefsStore, type PrefChange, type PrefsStore, VERSION_RECORD } from './store';
+export type { PrefChange, PrefsStore } from './store';
 export {
   isBuiltinPref,
   PREF_KINDS,

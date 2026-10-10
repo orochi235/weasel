@@ -5,7 +5,7 @@ import {
   flattenPrefValues,
   prefDisplayBounds,
   prefLeaves,
-  setPrefValueAtPath,
+  VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
 import { prefUnit, type PrefGroup, type PrefNumber, type PrefNumberUnit } from './schema';
@@ -162,16 +162,15 @@ describe('prefLeaves', () => {
       '[prefs] schema key "a.b" contains "."; group keys are path segments',
     );
   });
-});
 
-describe('setPrefValueAtPath', () => {
-  it('returns a new root with the value set, creating branches and sharing nothing it changed', () => {
-    const root = { g: { b: true }, keep: { z: 1 } };
-    const next = setPrefValueAtPath(root, 'g.c.d', 5);
-    expect(next).toEqual({ g: { b: true, c: { d: 5 } }, keep: { z: 1 } });
-    expect(root).toEqual({ g: { b: true }, keep: { z: 1 } });
-    expect(next.keep).toBe(root.keep);
-    expect(next.g).not.toBe(root.g);
+  it('rejects a top-level key named like the version record', () => {
+    const leaf = { kind: 'boolean', name: 'L', description: '', default: true } as const;
+    expect(() => prefLeaves({ name: 'T', children: { [VERSION_RECORD]: leaf } })).toThrow(
+      '[prefs] schema key "$version" is reserved',
+    );
+    expect(() =>
+      prefLeaves({ name: 'T', children: { g: { name: 'G', children: { [VERSION_RECORD]: leaf } } } }),
+    ).not.toThrow();
   });
 });
 

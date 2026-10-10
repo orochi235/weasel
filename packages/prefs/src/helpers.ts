@@ -60,6 +60,10 @@ export function visiblePrefSubtree<T extends PrefLeaf | PrefGroup>(
   return { ...node, children };
 }
 
+/** The record holding the schema version the stored values were written at.
+ *  Reserved: no top-level schema key may take its name. */
+export const VERSION_RECORD = '$version';
+
 /** Every leaf under `schema`, by dotted path, in schema order. */
 export function prefLeaves(schema: PrefGroup): Map<string, PrefLeaf> {
   const out = new Map<string, PrefLeaf>();
@@ -67,6 +71,9 @@ export function prefLeaves(schema: PrefGroup): Map<string, PrefLeaf> {
     for (const [key, child] of Object.entries(group.children)) {
       if (key.includes('.')) {
         throw new Error(`[prefs] schema key "${key}" contains "."; group keys are path segments`);
+      }
+      if (prefix === '' && key === VERSION_RECORD) {
+        throw new Error(`[prefs] schema key "${VERSION_RECORD}" is reserved`);
       }
       const path = prefix === '' ? key : `${prefix}.${key}`;
       if (isPrefLeaf(child)) out.set(path, child);
@@ -85,29 +92,6 @@ export function assignPrefValueAtPath(root: Record<string, unknown>, path: strin
     cursor = (cursor[parts[i]!] ??= {}) as Record<string, unknown>;
   }
   cursor[parts[parts.length - 1]!] = value;
-}
-
-/** `root` with `value` at the dotted `path`: a new object along the path,
- *  every untouched branch shared. Missing or non-object segments become
- *  objects. */
-export function setPrefValueAtPath<T extends Record<string, unknown>>(
-  root: T,
-  path: string,
-  value: unknown,
-): T {
-  const parts = path.split('.');
-  const out: Record<string, unknown> = { ...root };
-  let cursor = out;
-  for (let i = 0; i < parts.length - 1; i++) {
-    const seg = parts[i]!;
-    const next = cursor[seg];
-    const branch: Record<string, unknown> =
-      next !== null && typeof next === 'object' ? { ...(next as Record<string, unknown>) } : {};
-    cursor[seg] = branch;
-    cursor = branch;
-  }
-  cursor[parts[parts.length - 1]!] = value;
-  return out as T;
 }
 
 /** Each of `schema`'s leaves that `tree` holds a value for, as a path and

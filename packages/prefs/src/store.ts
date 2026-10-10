@@ -1,5 +1,5 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { assignPrefValueAtPath, prefLeaves } from './helpers';
+import { assignPrefValueAtPath, prefLeaves, VERSION_RECORD } from './helpers';
 import type { PrefPath, PrefValueAt } from './paths';
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefGroup, PrefLeaf } from './schema';
@@ -38,9 +38,6 @@ export interface PrefsStore<S extends PrefGroup> {
   flush(): Promise<boolean>;
   close(): Promise<void>;
 }
-
-/** The record holding the schema version the stored values were written at. */
-export const VERSION_RECORD = '$version';
 
 interface Snapshot {
   byPath: Map<string, unknown>;
