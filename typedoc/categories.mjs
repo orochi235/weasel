@@ -57,8 +57,6 @@ export const RULES = [
   ['packages/quantity/src', 'Scene'],
   ['packages/react/src', 'Extension points'],
   ['packages/registry/src', 'Extension points'],
-  ['packages/storage/src', 'Extension points'],
-  ['packages/prefs/src', 'Extension points'],
   ['packages/text/src', 'Text'],
 
   // Routing moved out of core; each part keeps the category its core directory had.

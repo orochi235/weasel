@@ -18,10 +18,14 @@
   },
   "customJs": "./typedoc/expandNav.js",
   "skipErrorChecking": true,
-  // `InputEvent` and friends are re-exported from @weasel-js/gestures, which
-  // builds its own doc site next door (see build:api:gestures). Point the links
-  // at those real pages rather than dropping them.
+  // `InputEvent` and friends are re-exported from @weasel-js/gestures, and
+  // `NodePropertiesEntry.schema` is a @weasel-js/prefs `PrefGroup`; each builds
+  // its own doc site next door (build:api:gestures, build:api:prefs). Point the
+  // links at those real pages rather than dropping them.
   "externalSymbolLinkMappings": {
+    "@weasel-js/prefs": {
+      "PrefGroup": "../api-prefs/interfaces/PrefGroup.html"
+    },
     "@weasel-js/gestures": {
       "PointerDownEvent": "../api-gestures/interfaces/PointerDownEvent.html",
       "PointerMoveEvent": "../api-gestures/interfaces/PointerMoveEvent.html",
