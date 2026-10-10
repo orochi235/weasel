@@ -1061,6 +1061,12 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
+- **(P3) labkit's clock browser test failed once on the fleet.** `clock.browser.test.tsx`, "a timed
+  layer repaints as the clock plays, and holds once it pauses", line 92: the canvas read back red
+  0 where the paused frame's shade was 3, in a full run on teitou on 2026-10-10 that passed the
+  other 16,953 tests. Seen once and not rerun, so whether it is a race between the last paint and
+  the readback or a real missed repaint is not known.
+
 - **(P2) A docs minisite per package: overview, guides, and demos.** The API reference half is
   built: `npm run build:api` documents every published package in one TypeDoc site at `/api/`,
   each package a module with its README as the landing page. Still to design: an overview and
