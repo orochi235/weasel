@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
-import { usePref, usePrefsValues } from './hooks';
+import { usePref, usePrefsValues } from './react';
 import { openPrefsSync } from './open';
 import type { PrefGroup } from './schema';
 

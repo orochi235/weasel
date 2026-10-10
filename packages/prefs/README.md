@@ -15,5 +15,6 @@ repair stored values that no longer fit the schema without writing them back.
 `openPrefsSync` opens from an adapter that reads synchronously, such as
 `localStorageAdapter`, with no `await`.
 
-`usePref(store, path)` and `usePrefsValues(store)` bind it to React;
-`usePrefsValues` returns exactly what `@weasel-js/ui`'s `PrefsForm` takes.
+`usePref(store, path)` and `usePrefsValues(store)` bind it to React. They
+live in `@weasel-js/prefs/react`, so the main entry never loads React.
+`usePrefsValues` returns the pieces `@weasel-js/ui`'s `PrefsForm` takes.

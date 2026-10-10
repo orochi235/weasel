@@ -16,7 +16,7 @@ import {
   type DataGridColumn,
   type PrefRenderContext,
 } from '@weasel-js/ui';
-import { usePrefsValues } from '@weasel-js/prefs';
+import { usePrefsValues } from '@weasel-js/prefs/react';
 import {
   drawPrefs,
   PREFS,

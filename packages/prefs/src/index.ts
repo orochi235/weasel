@@ -1,3 +1,7 @@
+/**
+ * @weasel-js/prefs — the preferences schema and the store over it. No React:
+ * the hooks live behind `@weasel-js/prefs/react`.
+ */
 export {
   filterPrefSubtree,
   flattenPrefValues,
@@ -8,7 +12,6 @@ export {
   setPrefValueAtPath,
   visiblePrefSubtree,
 } from './helpers';
-export { usePref, usePrefsValues } from './hooks';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export { type PrefsMigration, runPrefsMigrations } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';

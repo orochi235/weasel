@@ -71,6 +71,7 @@
       "@weasel-js/quantity": ["./packages/quantity/src/index.ts"],
       "@weasel-js/storage": ["./packages/storage/src/index.ts"],
       "@weasel-js/prefs": ["./packages/prefs/src/index.ts"],
+      "@weasel-js/prefs/react": ["./packages/prefs/src/react.ts"],
       "@weasel-js/select": ["./packages/select/src/index.ts"],
       "@weasel-js/registry": ["./packages/registry/src/index.ts"],
       "@weasel-js/react": ["./packages/react/src/index.ts"],

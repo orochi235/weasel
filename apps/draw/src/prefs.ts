@@ -5,7 +5,6 @@ import { usePenTool } from '@weasel-js/core';
 import {
   flattenPrefValues,
   openPrefsSync,
-  usePref as usePrefOf,
   type PrefBase,
   type PrefEnumControl,
   type PrefGroup,
@@ -14,6 +13,7 @@ import {
   type PrefValidator,
   type PrefValueAt,
 } from '@weasel-js/prefs';
+import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import type { RegistryEnumFilter } from './registry/types';
 

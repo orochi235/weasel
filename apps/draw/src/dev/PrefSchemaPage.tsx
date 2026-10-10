@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { defaultNodeProperties } from '@weasel-js/core';
 import { PrefSchemaEditor, Select, type CustomKinds } from '@weasel-js/ui';
-import { usePrefsValues, type PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup } from '@weasel-js/prefs';
+import { usePrefsValues } from '@weasel-js/prefs/react';
 import { DataControl, RegistryEnumControl } from '../PreferencesModal';
 import { drawPrefs, PREFS } from '../prefs';
 import { DevShell } from './DevShell';
