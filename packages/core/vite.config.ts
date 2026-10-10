@@ -13,6 +13,7 @@ import react from '@vitejs/plugin-react';
 import { rolldown } from 'rolldown';
 import { defineConfig, type Plugin } from 'vite';
 import { entries } from './entries.ts';
+import { stableScopedName } from '../../scripts/vite-css-modules.ts';
 
 const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as {
   version: string;
@@ -78,6 +79,7 @@ export default defineConfig({
   // `scripts/vite-build-info.ts`.
   define: { __WEASEL_CORE_VERSION__: JSON.stringify(pkg.version) },
   resolve: { tsconfigPaths: true },
+  css: { modules: { generateScopedName: stableScopedName } },
   build: {
     lib: {
       entry: Object.fromEntries(

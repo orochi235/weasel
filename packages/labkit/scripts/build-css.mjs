@@ -22,13 +22,19 @@
 // unnoticed through a release. The consumer smoke test now checks layer 2.
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const packages = join(pkgRoot, '..');
+
+// core's and ui's builds end by calling this with --if-built, so a rebuild of
+// either alone cannot leave the sheet behind the CSS it was copied from. In a
+// full build they run before labkit has a dist, and labkit's own build makes
+// the sheet.
+if (process.argv.includes('--if-built') && !existsSync(join(pkgRoot, 'dist/styles.css'))) process.exit(0);
 
 // styles.less imports the theme's faces as a bare CSS @import, which a bundler
 // resolves in a source build. A consumer's page may have no bundler, so the dist

@@ -15,6 +15,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { stableScopedName } from '../../scripts/vite-css-modules.ts';
 
 /**
  * One entry per component directory, plus the barrel.
@@ -43,6 +44,7 @@ for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
 
 export default defineConfig({
   plugins: [react()],
+  css: { modules: { generateScopedName: stableScopedName } },
   build: {
     lib: {
       entry: entries,

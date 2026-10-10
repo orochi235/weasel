@@ -58,7 +58,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json"
+    "build": "vite build && tsc -p tsconfig.build.json && node ../labkit/scripts/build-css.mjs --if-built"
   },
   "publishConfig": {
     "access": "public",

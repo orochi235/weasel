@@ -81,7 +81,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "vite build && tsup",
+    "build": "vite build && tsup && node ../labkit/scripts/build-css.mjs --if-built",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
