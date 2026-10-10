@@ -36,22 +36,13 @@ Priority tags:
   Left: one of them takes a new word. The prop is at 215 call sites and is consumer API; the
   directory is one path, its imports, and a section of the taxonomy.
 
-- **(P1) "Tool" still names two things outside the kit's own code.** Inside the kit it now
-  means one: a contribution that can hold focus, picked from a palette or held on a key
-  (`isTool`), and every container holding any entry says "entry" (see "Tool" in
-  `docs/taxonomy.md`). Still undecided:
-  - a command given a place on a tool rail: forge's Info, labkit's `ToolItem` with `onActivate`.
-    It takes a palette slot but holds no focus and binds no input;
-  - `select`, which only chooses: pick, marquee, clear. It is a tool by the definition above,
-    though acting on the selection belongs to the always-live contributions in
-    `selectionContributions.ts`.
-
-  A bare `<SceneCanvas>` now only renders, and `features` presets turn behavior on
-  (`canvas/SceneCanvas/features.ts`). Still waiting on the answer:
-  - **`features` now names two things.** The `<SceneCanvas features>` prop is unrelated to the
-    `features/` source directories `docs/taxonomy.md` describes, and the two will be confused.
-  - **`edit` cannot paste from the keyboard alone.** Cmd/Ctrl+V arrives as a DOM `paste`,
-    which only `ingest` binds; `clipboard.paste` is the button-and-menu half.
+- **(P3) A canvas without `ingest` is still a drop target.** `SceneCanvas` attaches the
+  dispatcher's drop listeners whatever `features` says, so an OS drag over a bare or `edit`-only
+  canvas shows the copy cursor and `weasel-dropover`, and the drop is swallowed with nothing
+  inserted. `DispatcherChannels.ingest` covers drop and paste together and would need splitting,
+  which also decides whether a consumer's own drop binding works without the preset. Beside it:
+  `SceneCanvasApi.ingest()` is a silent no-op without the `ingest` preset, because it triggers an
+  action that was never registered.
 
 - **(P3) `Widget.claims` is static.** A widget that is decoration in one mode
   and interactive in another can't change what it consumes without being
