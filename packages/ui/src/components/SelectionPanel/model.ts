@@ -14,7 +14,7 @@ import {
   type NodeRoutingEntry,
   type SceneNode,
 } from '@weasel-js/core';
-import { isPrefLeaf, type PrefLeaf, type PrefSection, pairRowsOf, prefSectionLeaves } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefLeaf, type PrefSection, type PrefSectionAs, pairRowsOf, prefSectionLeaves } from '@weasel-js/prefs';
 
 // Re-exported under its existing public name here: the kit-wide "these
 // values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
@@ -52,6 +52,8 @@ export interface PanelRow {
 export interface PanelSection {
   key: string;
   name: string;
+  /** How the section is drawn; unset, a heading over its rows. */
+  as?: PrefSectionAs;
   rows: PanelRow[];
 }
 
@@ -80,7 +82,7 @@ function flatten(schema: PrefSection): PanelSection[] {
       untitled.push({ path: key, leaf: child });
     } else {
       const leaves = prefSectionLeaves(child.members).map(([path, leaf]) => ({ path, leaf }));
-      sections.push({ key, name: child.name, rows: pairRows(leaves) });
+      sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), rows: pairRows(leaves) });
     }
   }
   if (untitled.length > 0) {

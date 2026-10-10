@@ -26,6 +26,10 @@ export interface UseTreeDragOptions {
   rowEl(id: string): HTMLElement | undefined;
   canDrop?(ids: readonly string[], target: TreeDropTarget): boolean;
   onMove?(ids: string[], target: TreeDropTarget): void;
+  onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null): boolean;
+  onDropOutside?(ids: string[], point: { x: number; y: number }): void;
+  externalDrag?: { x: number; y: number } | null;
+  onExternalTarget?(target: TreeDropTarget | null): void;
   /** A press released without dragging — the row's activation. */
   onPress(id: string, mods: PressModifiers): void;
   expand(id: string): void;
@@ -78,11 +82,34 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     return hit;
   }, [o]);
 
+  // Whether something outside the tree has said it would take the drag in flight.
+  const outside = useRef<readonly string[] | null>(null);
+  const leaveOutside = useCallback(() => {
+    if (outside.current) o.current.onDragOutside?.(outside.current, null);
+    outside.current = null;
+  }, [o]);
+
   const reset = useCallback(() => {
     drag.current = null;
     clearHover();
+    leaveOutside();
     setState(IDLE);
-  }, []);
+  }, [leaveOutside]);
+
+  // A drag begun elsewhere: mark where it would land here, and say so.
+  const [external, setExternal] = useState<ResolvedDrop | null>(null);
+  const at = opts.externalDrag;
+  const atX = at?.x;
+  const atY = at?.y;
+  useEffect(() => {
+    const box = o.current.container()?.getBoundingClientRect();
+    const inside = box && atX !== undefined && atY !== undefined
+      && atX >= box.left && atX <= box.right && atY >= box.top && atY <= box.bottom;
+    const hit = inside ? resolve([], atX, atY) : null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the mark comes from measured row rects, which only an effect may read
+    setExternal(hit);
+    o.current.onExternalTarget?.(hit?.target ?? null);
+  }, [atX, atY, o, resolve]);
 
   const onPointerDown = useCallback((id: string, e: ReactPointerEvent<HTMLElement>) => {
     const { enabled, container } = o.current;
@@ -97,7 +124,12 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     let ids: string[] = [];
 
     const update = (ev: { clientX: number; clientY: number }) => {
-      const hit = resolve(ids, ev.clientX, ev.clientY);
+      const r = box.getBoundingClientRect();
+      const out = ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom;
+      const taken = out && o.current.onDragOutside?.(ids, { x: ev.clientX, y: ev.clientY }) === true;
+      if (taken) outside.current = ids;
+      else leaveOutside();
+      const hit = taken ? null : resolve(ids, ev.clientX, ev.clientY);
       const into = hit?.mark?.where === 'into' ? hit.mark.id : null;
       if (into && !o.current.expanded.has(into)) {
         if (hover.current?.id !== into) {
@@ -122,8 +154,12 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       },
       onMove: update,
       onCommit: (ev) => {
-        const hit = resolve(ids, ev.clientX, ev.clientY);
-        if (hit) o.current.onMove?.(ids, hit.target);
+        if (outside.current) {
+          o.current.onDropOutside?.(ids, { x: ev.clientX, y: ev.clientY });
+        } else {
+          const hit = resolve(ids, ev.clientX, ev.clientY);
+          if (hit) o.current.onMove?.(ids, hit.target);
+        }
         reset();
       },
       onClick: () => {
@@ -133,7 +169,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       },
       onCancel: reset,
     });
-  }, [o, resolve, reset]);
+  }, [o, resolve, reset, leaveOutside]);
 
-  return { state, onPointerDown };
+  return { state: state.mark || !external ? state : { ...state, mark: external.mark ?? null }, onPointerDown };
 }

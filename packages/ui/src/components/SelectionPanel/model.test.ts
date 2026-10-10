@@ -194,3 +194,18 @@ describe('setAtPath', () => {
     expect(root.style.fontSize).toBe(12);
   });
 });
+
+describe('a section\'s `as`', () => {
+  it('rides from the schema onto the panel\'s section', () => {
+    const leaf = { kind: 'number' as const, name: 'X', description: '', default: 0 };
+    const sections = effectiveSections(['box'], [{
+      name: 'box',
+      schema: { name: 'Box', members: {
+        a: { name: 'A', as: 'tab', members: { 'pose.x': leaf } },
+        b: { name: 'B', as: 'panel', members: { 'pose.y': leaf } },
+        c: { name: 'C', members: { 'pose.z': leaf } },
+      } },
+    }]);
+    expect(sections.map((s) => [s.name, s.as])).toEqual([['A', 'tab'], ['B', 'panel'], ['C', undefined]]);
+  });
+});

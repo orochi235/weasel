@@ -194,6 +194,28 @@ describe('PrefSchemaEditor', () => {
     expect(within(preview()).getByRole('checkbox', { name: 'Shown' })).not.toBeChecked();
   });
 
+  it('marks in the preview what the tree selects, and selects in the tree what the preview is pressed on', () => {
+    render(<Live />);
+    fireEvent.click(row('dock'));
+    expect(within(preview()).getByText('Dock').closest('[data-pref-path]')).toHaveAttribute('data-selected');
+    fireEvent.pointerDown(within(preview()).getByText('Dock'));
+    fireEvent.click(within(preview()).getByRole('button', { name: /View/ }));
+    fireEvent.pointerDown(within(preview()).getByText('Snap'));
+    expect(within(structure()).getByRole('treeitem', { name: /snap/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('lists the root\'s own leaves under a General branch, as the preview does, and selects the root from it', () => {
+    const start: PrefGroup = { name: '', children: { ...START.children, author: { kind: 'string', name: 'Author', description: '', default: '' } } };
+    render(<Live start={start} />);
+    const general = within(structure()).getByRole('treeitem', { name: /General/ });
+    expect(within(general).getByText('(author)')).toBeInTheDocument();
+    expect(general).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(row('dock'));
+    expect(general).toHaveAttribute('aria-selected', 'false');
+    fireEvent.click(within(general).getByText('General'));
+    expect(general).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('shows the literal and the change list side by side', () => {
     render(<Live />);
     expect(screen.getByRole('region', { name: 'Literal' })).toBeInTheDocument();

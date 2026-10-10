@@ -9,6 +9,7 @@ import {
   Button,
   type CollapseProps,
   DialogRow,
+  GroupTabs,
   ListEditor,
   type PropertyAlign,
   type PropertyControlProps,
@@ -22,6 +23,7 @@ import {
   type PropertyRowLayout,
   ResetIcon,
   type StanceProps,
+  Subpanel,
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
@@ -317,6 +319,15 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         setConfig={setConfig}
       />
     ) : undefined;
+    // `as: 'section'` is a heading over the rows, with none of a group's frame.
+    if (found.as === 'section') {
+      const { pack: _pack, ...folds } = fold(path, undefined, rows.grid);
+      return (
+        <Subpanel key={path} title={found.name} {...folds}>
+          {body(found, path, rows)}
+        </Subpanel>
+      );
+    }
     return (
       <PropertyGroup
         key={path}
@@ -381,6 +392,37 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     );
     const out: ReactNode[] = [];
     for (let i = 0; i < paths.length; ) {
+      // A run of groups drawn as tabs shares one strip.
+      const run: Array<{ path: string; name: string }> = [];
+      let past = i;
+      for (; past < paths.length; past += 1) {
+        const found = schemaNodeAtPath(resolved.group, paths[past]!);
+        if (!found || isPrefLeaf(found) || found.as !== 'tab') break;
+        if (isLeafVisible(resolved, paths[past]!, config as Record<string, unknown>, showHidden)) {
+          run.push({ path: paths[past]!, name: found.name });
+        }
+      }
+      if (past > i) {
+        if (run.length > 0) {
+          out.push(
+            <GroupTabs
+              key={paths[i]}
+              className="lk-control-tabs"
+              tabs={run.map(({ path, name }) => ({
+                id: path,
+                name,
+                content: (
+                  <PropertyList pack={rows.grid} density={density} align={align}>
+                    {body(schemaNodeAtPath(resolved.group, path) as PrefGroup, path, rows)}
+                  </PropertyList>
+                ),
+              }))}
+            />,
+          );
+        }
+        i = past;
+        continue;
+      }
       const head = pairable(paths[i], pairs);
       if (!head) {
         out.push(node(paths[i], rows));

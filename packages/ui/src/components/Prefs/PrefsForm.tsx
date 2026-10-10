@@ -1,11 +1,13 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   filterPrefSubtree,
   isPrefLeaf,
+  prefGroupIsPage,
   visiblePrefSubtree,
   type PrefGroup,
 } from '@weasel-js/prefs';
 import { Input } from '../Input';
+import { ResizeHandle } from '../ResizeHandle';
 import { useScrollSpy } from '../../useScrollSpy';
 import {
   prefFieldChoices,
@@ -13,9 +15,10 @@ import {
   prefRailItems,
   type PrefFieldChoice,
 } from './schema';
-import { PrefRow, type PrefRenderer, type WalkCtx } from './PrefsRow';
-import { PrefsPane } from './PrefsPane';
+import type { PrefRenderer, WalkCtx } from './PrefsRow';
+import { paneChildren, PrefsPane } from './PrefsPane';
 import { PrefsRail } from './PrefsRail';
+import { selectionAttrs, shownPath, useSelectedRow, type PrefDropMark, type SelectionRoot } from './selection';
 import s from './Prefs.module.css';
 
 export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
@@ -55,6 +58,13 @@ export interface PrefsFormProps {
   layout?: PrefsLayout;
   /** Show a filter field that narrows the form to matching leaves. */
   filterable?: boolean;
+  /** Rail layout: how many rows the pane sets side by side. At 2 a block or
+   *  object leaf spans both. Default 1. */
+  rowsAcross?: 1 | 2;
+  /** Rail layout: put a handle between the rail and the pane that drags the
+   *  rail wider or narrower. The width is the form's own and starts at the
+   *  default, 176px. */
+  resizableRail?: boolean;
   /** Rail layout: path of the open top-level group. Controlled. */
   section?: string;
   /** Rail layout: path of the group open before the reader picks one.
@@ -91,6 +101,18 @@ export interface PrefsFormProps {
   /** Small text after an inherited leaf's label, e.g. `() => 'from Defaults'`.
    *  Default: none. */
   inheritHint?: (path: string) => string | undefined;
+  /** Dotted path of a leaf or a group to mark. Each time it changes the form
+   *  brings it into view, and a rail opens the group that holds it. A path the
+   *  form does not draw marks nothing. */
+  selected?: string;
+  /** The reader pressed or focused into a leaf's row or a group. */
+  onSelect?: (path: string) => void;
+  /** Where a drag would drop, for the form to mark: `prefDropTargetAt` finds
+   *  one from a pointer position. */
+  dropMark?: PrefDropMark | null;
+  /** Draw groups that hold no leaves, which the form otherwise leaves out —
+   *  for an editor, where an empty group is somewhere to drop into. */
+  showEmpty?: boolean;
   className?: string;
 }
 
@@ -119,14 +141,16 @@ export function PrefsForm(props: PrefsFormProps) {
   } = props;
   const [query, setQuery] = useState('');
   const root = useMemo(() => {
-    const visible = visiblePrefSubtree(schema, showHidden);
+    const visible = visiblePrefSubtree(schema, showHidden, props.showEmpty === true);
     return visible === null ? null : filterPrefSubtree(visible, query);
-  }, [schema, showHidden, query]);
+  }, [schema, showHidden, query, props.showEmpty]);
 
   // Every field of the whole schema, not only the visible ones: a reference may name a hidden field.
   const own = useMemo(() => prefFieldChoices(schema), [schema]);
   const fields = props.fields ?? own;
-  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint, fields };
+  const shown = useMemo(() => shownPath(root, props.selected), [root, props.selected]);
+  const selection = useSelectedRow(props.selected, shown, props.onSelect);
+  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint, fields, selected: shown, dropMark: props.dropMark };
   const field = filterable ? (
     <div className={s.filter}>
       <Input
@@ -145,6 +169,7 @@ export function PrefsForm(props: PrefsFormProps) {
         root={root}
         ctx={ctx}
         query={query}
+        selection={selection}
         filterField={field}
         onClearFilter={() => setQuery('')}
       />
@@ -153,17 +178,15 @@ export function PrefsForm(props: PrefsFormProps) {
 
   if (layout === 'list') {
     return (
-      <div className={[s.columnsLayout, className].filter(Boolean).join(' ')}>
+      <div className={[s.columnsLayout, className].filter(Boolean).join(' ')} {...selection}>
         {field}
         {root === null ? (
           <NoMatches query={query} onClear={() => setQuery('')} />
         ) : (
           <div className={s.rows}>
-            {Object.entries(root.children).map(([key, child]) => (isPrefLeaf(child) ? (
-              <PrefRow key={key} ctx={ctx} path={key} pref={child} />
-            ) : (
-              <GroupBody key={key} ctx={ctx} group={child} path={key} depth={1} />
-            )))}
+            {paneChildren(ctx, Object.entries(root.children), '', 1, (key, child, path) => (
+              <GroupBody key={key} ctx={ctx} group={child} path={path} depth={1} />
+            ))}
           </div>
         )}
       </div>
@@ -171,22 +194,17 @@ export function PrefsForm(props: PrefsFormProps) {
   }
 
   return (
-    <div className={[s.columnsLayout, className].filter(Boolean).join(' ')}>
+    <div className={[s.columnsLayout, className].filter(Boolean).join(' ')} {...selection}>
       {field}
       {root === null ? (
         <NoMatches query={query} onClear={() => setQuery('')} />
       ) : (
         <div className={s.columns}>
-          {Object.entries(root.children).map(([key, child]) => (
-            <div key={key} className={s.column}>
-              {isPrefLeaf(child) ? (
-                // Top-level leaves are unusual but legal — give each its own
-                // column for symmetry with grouped siblings.
-                <PrefRow ctx={ctx} path={key} pref={child} />
-              ) : (
-                <GroupBody ctx={ctx} group={child} path={key} depth={0} />
-              )}
-            </div>
+          {/* A column per top-level child; a run of tabs shares one. */}
+          {paneChildren(ctx, Object.entries(root.children), '', 0, (key, child, path) => (
+            <GroupBody key={key} ctx={ctx} group={child} path={path} depth={0} />
+          )).map((child, i) => (
+            <div key={i} className={s.column}>{child}</div>
           ))}
         </div>
       )}
@@ -194,21 +212,26 @@ export function PrefsForm(props: PrefsFormProps) {
   );
 }
 
+/** The rail's width before a drag; the stylesheet's fallback for `--wzl-prefs-rail-width`. */
+const RAIL_WIDTH = 176;
+
 /** The rail layout's own state: which group is open, and where the pane is
  *  scrolled to within it. Split out so the columns layout runs none of it. */
 function RailLayout(props: PrefsFormProps & {
   root: PrefGroup | null;
   ctx: WalkCtx;
   query: string;
+  selection: SelectionRoot;
   filterField: ReactNode;
   onClearFilter: () => void;
 }) {
-  const { schema, root, ctx, query, filterField, onClearFilter, className } = props;
+  const { schema, root, ctx, query, selection, filterField, onClearFilter, className } = props;
   const items = useMemo(() => (root === null ? [] : prefRailItems(root)), [root]);
   const [uncontrolled, setUncontrolled] = useState(
     () => props.defaultSection ?? '',
   );
   const subPages = props.subPages === true;
+  const [railWidth, setRailWidth] = useState<number | null>(null);
   const requested = props.section ?? uncontrolled;
   // A filter can take the open group out of the rail entirely, and a section
   // the schema never had can arrive from a consumer's stale state. Either way
@@ -230,20 +253,36 @@ function RailLayout(props: PrefsFormProps & {
   );
   const spy = useScrollSpy({ rootRef: scrollRef, ids: sectionIds });
 
-  const setOpen = (path: string): void => {
+  const show = (path: string): void => {
     if (props.section === undefined) setUncontrolled(path);
     props.onSectionChange?.(path);
+  };
+  const setOpen = (path: string): void => {
+    show(path);
     // Optional-called: jsdom's elements have no `scrollTo`, and neither does
     // a pane that is not the scrolling box in some consumer's layout.
     scrollRef.current?.scrollTo?.({ top: 0 });
   };
+
+  // The page holding the selection: the deepest rail entry it is or lies under, else the loose leaves.
+  const selected = ctx.selected ?? null;
+  const home = selected === null ? null : items
+    .filter((i) => (i.depth === 0 || subPages) && (selected === i.path || selected.startsWith(`${i.path}.`)))
+    .reduce((best, i) => (i.path.length > best.length ? i.path : best), '');
+  const latest = useRef({ home, open, show });
+  useEffect(() => { latest.current = { home, open, show }; });
+  useEffect(() => {
+    const now = latest.current;
+    if (now.home !== null && now.home !== now.open) now.show(now.home);
+  }, [props.selected]);
 
   const whole = root === null ? null : paneGroup(root, open, schema.name);
   const opensTop = items.some((i) => i.path === open && i.depth === 0);
   const group = subPages && opensTop && whole !== null ? leavesOf(whole) : whole;
 
   return (
-    <div className={[s.railLayout, className].filter(Boolean).join(' ')}>
+    <div className={[s.railLayout, className].filter(Boolean).join(' ')} data-across={props.rowsAcross === 2 ? 2 : undefined}
+      style={railWidth === null ? undefined : ({ '--wzl-prefs-rail-width': `${railWidth}px` } as CSSProperties)} {...selection}>
       <PrefsRail
         items={items}
         section={open}
@@ -254,10 +293,14 @@ function RailLayout(props: PrefsFormProps & {
         header={filterField}
         showCounts={query.trim() !== ''}
         foldable={props.foldable === true}
+        dropInto={props.dropMark?.rail ? props.dropMark.path : null}
       />
+      {props.resizableRail === true && (
+        <ResizeHandle value={railWidth ?? RAIL_WIDTH} min={120} max={360} onInput={setRailWidth} ariaLabel="Resize sections" />
+      )}
       {group === null ? (
-        <div className={s.pane}>
-          <NoMatches query={query} onClear={onClearFilter} />
+        <div className={s.pane} data-pref-into="">
+          {query.trim() !== '' && <NoMatches query={query} onClear={onClearFilter} />}
         </div>
       ) : (
         <PrefsPane ctx={ctx} group={group} path={open} scrollRef={scrollRef} />
@@ -274,7 +317,7 @@ function RailLayout(props: PrefsFormProps & {
 function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup | null {
   if (path === '') {
     const children = Object.fromEntries(
-      Object.entries(root.children).filter(([, child]) => isPrefLeaf(child)),
+      Object.entries(root.children).filter(([, child]) => isPrefLeaf(child) || !prefGroupIsPage(child)),
     );
     return Object.keys(children).length === 0
       ? null
@@ -325,7 +368,7 @@ function GroupBody({ ctx, group, path, depth }: {
   depth: number;
 }) {
   return (
-    <div className={depth === 0 ? s.panel : s.subpanel}>
+    <div className={depth === 0 ? s.panel : s.subpanel} {...selectionAttrs(path, ctx)}>
       {(group.name !== '' || group.description) && (
         <div className={s.groupHeader}>
           {group.name !== '' && <h3 className={s.groupTitle}>{group.name}</h3>}
@@ -333,14 +376,9 @@ function GroupBody({ ctx, group, path, depth }: {
         </div>
       )}
       <div className={s.rows}>
-        {Object.entries(group.children).map(([key, child]) => {
-          const childPath = `${path}.${key}`;
-          return isPrefLeaf(child) ? (
-            <PrefRow key={key} ctx={ctx} path={childPath} pref={child} />
-          ) : (
-            <GroupBody key={key} ctx={ctx} group={child} path={childPath} depth={depth + 1} />
-          );
-        })}
+        {paneChildren(ctx, Object.entries(group.children), path, depth + 1, (key, child, childPath) => (
+          <GroupBody key={key} ctx={ctx} group={child} path={childPath} depth={depth + 1} />
+        ))}
       </div>
     </div>
   );

@@ -1247,3 +1247,31 @@ describe('<ControlPanel> endless number', () => {
     expect(setConfig).toHaveBeenLastCalledWith('cut', Infinity);
   });
 });
+
+describe('<ControlPanel> groups drawn `as`', () => {
+  const schema = resolveConfigSchema(
+    f.schema({
+      light: f.group({ glow: f.boolean(true) }).as('tab'),
+      dark: f.group({ dim: f.boolean(false) }).as('tab'),
+      notes: f.group({ shout: f.boolean(false) }).as('section'),
+    }),
+    [],
+  );
+
+  it('sets neighboring tab groups under one strip and shows the rows of the one picked', async () => {
+    render(<ControlPanel schema={schema} config={{}} setConfig={vi.fn()} />);
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Light', 'Dark']);
+    expect(screen.getByLabelText('Glow')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Dim')).toBeNull();
+    await userEvent.click(screen.getByRole('tab', { name: 'Dark' }));
+    expect(screen.getByLabelText('Dim')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Glow')).toBeNull();
+  });
+
+  it('heads a section group with its name and no frame', () => {
+    render(<ControlPanel schema={schema} config={{}} setConfig={vi.fn()} />);
+    expect(screen.getByRole('heading', { name: 'Notes' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Notes' })).toBeNull();
+    expect(screen.getByLabelText('Shout')).toBeInTheDocument();
+  });
+});

@@ -28,6 +28,8 @@ export interface PrefsRailProps {
    * and fold it. Everything is unfolded while filtering, so every match shows.
    */
   foldable?: boolean;
+  /** Path of the entry to mark as where a drag would drop. */
+  dropInto?: string | null;
 }
 
 /**
@@ -41,7 +43,7 @@ export interface PrefsRailProps {
  * `aria-current="location"`.
  */
 export function PrefsRail(props: PrefsRailProps) {
-  const { items, section, current, onOpen, onScrollTo, ariaLabel, header, showCounts } = props;
+  const { items, section, current, onOpen, onScrollTo, ariaLabel, header, showCounts, dropInto } = props;
   const foldable = props.foldable === true;
   const selected = items.find((i) => i.path === section)?.section ?? null;
   // Folds the reader set by hand, by section; any other group is unfolded only while it is selected.
@@ -100,6 +102,8 @@ export function PrefsRail(props: PrefsRailProps) {
                 .join(' ')}
               aria-current={open ? 'page' : inView ? 'location' : undefined}
               data-rail-fold={nested ? item.path : undefined}
+              data-pref-rail={item.path}
+              data-drop={dropInto === item.path ? 'into' : undefined}
               onClick={() => activate(index)}
             >
               <span className={s.railName}>{item.name}</span>

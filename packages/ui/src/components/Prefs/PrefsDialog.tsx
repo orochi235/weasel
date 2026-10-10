@@ -34,7 +34,8 @@ export interface PrefsDialogProps extends PrefsFormProps {
  * directly; this wrapper is intentionally thin.
  *
  * `layout="rail"` is what a dialog usually wants: the default columns wrap
- * sideways past two groups, and this box is 900px at its widest.
+ * sideways past two groups, and this box is 900px at its widest
+ * (`--wzl-dialog-max-width`).
  */
 export function PrefsDialog(props: PrefsDialogProps) {
   const { isOpen, onOpenChange, inline, title, headerExtra, footer, dialogClassName, ...form } = props;

@@ -113,9 +113,12 @@ function resolveEntry(
       entry.annotations.name ?? titleCase(key),
       sink,
     );
-    return entry.annotations.description === undefined
-      ? group
-      : { ...group, description: entry.annotations.description };
+    const { description, as } = entry.annotations;
+    return {
+      ...group,
+      ...(description === undefined ? {} : { description }),
+      ...(as === undefined ? {} : { as }),
+    };
   }
   if (entry.options.manual && entry.options.unpinned) {
     throw new Error(

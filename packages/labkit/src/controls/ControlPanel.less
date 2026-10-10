@@ -28,3 +28,9 @@
   inline-size: var(--wzl-params-label-width, auto);
   white-space: nowrap;
 }
+
+// A run of tab groups is a block of rows, not a control: it takes the whole
+// row of the list it sits in.
+.lk-control-tabs {
+  grid-column: 1 / -1;
+}

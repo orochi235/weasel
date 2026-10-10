@@ -28,6 +28,16 @@
   border-block-end: 1px solid var(--wzl-border);
 }
 
+/* `as: 'panel'`: a section in a box of its own. */
+.sectionPanel,
+.objectPanel {
+  margin-block: var(--wzl-space-3);
+  padding: var(--wzl-space-3) var(--wzl-space-4);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-sunken);
+}
+
 .section:last-child {
   border-block-end: none;
 }

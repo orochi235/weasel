@@ -14,10 +14,13 @@ describe('kindSchemas', () => {
     expect(readOnly.map(([k]) => k)).toEqual(['unit']);
   });
 
-  it('describes a group with name and description only', () => {
+  it('describes a group and a section each with a name, a description and how it is drawn, a section with no page', () => {
     const { shared, own } = attributeSchema({ name: 'G', children: {} });
-    expect(Object.keys(shared)).toEqual(['name', 'description']);
+    expect(Object.keys(shared)).toEqual(['name', 'description', 'as']);
     expect(own).toEqual({});
+    const section = attributeSchema({ name: 'S', members: {} }).shared;
+    expect(Object.keys(section)).toEqual(['name', 'description', 'as']);
+    expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section']);
   });
 
   it('uses a custom kind\'s attributes, and treats unknown attributes as read-only', () => {

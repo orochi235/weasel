@@ -4,7 +4,7 @@ import s from './PrefSchemaEditor.module.css';
 
 /** The values the app stores that no leaf describes yet, each a way to add the leaf that would. */
 export function StoredList({ entries, onPick }: { entries: readonly UndescribedValue[]; onPick(entry: UndescribedValue): void }) {
-  if (entries.length === 0) return <p className={s.storedEmpty}>Every stored value has a leaf.</p>;
+  if (entries.length === 0) return <p className={s.storedEmpty}>Nothing unplaced: every stored value has a leaf.</p>;
   return (
     <ul className={s.storedList} aria-label="Stored values with no leaf">
       {entries.map((entry) => (

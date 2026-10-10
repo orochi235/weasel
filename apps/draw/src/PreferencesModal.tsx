@@ -60,6 +60,8 @@ export function PreferencesModal({ open, onClose, registryEnumSources }: Prefere
         isOpen={open}
         onOpenChange={(o) => { if (!o) onClose(); }}
         layout="rail"
+        rowsAcross={2}
+        resizableRail
         filterable
         schema={PREFS}
         values={values}

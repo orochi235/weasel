@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { Tree, type TreeNode } from '../Tree';
@@ -6,11 +6,15 @@ import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
+import { looseEntryName } from '../Prefs/schema';
+import { GENERAL, generalAllows, generalKeys, schemaTarget } from './generalBranch';
+import { Palette, type PaletteDrag } from './Palette';
+import { treeTakesNew } from './previewDrop';
 import { StoredList } from './StoredList';
 import { blankGroup, blankLeaf, blankSection } from './kindSchemas';
 import {
-  addNode, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, keysOf, kindOfValue, moveNodes, nodeAt, parentPath, pathOf, rebasePaths, removeNode,
-  undescribedValues, type SchemaNode, type SchemaRoot, type UndescribedValue,
+  addNode, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, keysOf, kindOfValue, nodeAt, parentPath, pathOf, removeNode,
+  undescribedValues, uniqueKey, type SchemaNode, type SchemaRoot, type SchemaTarget, type UndescribedValue,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
 
@@ -23,7 +27,7 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
       id: p,
       label: name ? <>{name} <span className={s.treeKey}>({key})</span></> : key,
       textValue: name ? `${name} ${key}` : key,
-      trailing: <PrefKindBadge kind={isPrefLeaf(child) ? child.kind : isPrefSection(child) ? 'section' : 'group'} />,
+      trailing: <PrefKindBadge kind={isPrefLeaf(child) ? child.kind : child.as ?? (isPrefSection(child) ? 'section' : 'group')} />,
       className: changed.has(p) ? s.changed : undefined,
       ...(kids ? { children: toTreeNodes(child, p, changed) } : {}),
     };
@@ -43,6 +47,20 @@ export interface StructurePaneProps {
   tools?: ReactNode;
   /** The values the app stores under the schema; those no leaf describes are listed under the tree. */
   stored?: unknown;
+  /** Somewhere else a drag from this pane may end: the live preview. */
+  outside?: DropOutside;
+  /** Move the nodes at `paths` to `target`, keeping them open and selected. */
+  onMove(paths: readonly string[], target: SchemaTarget): void;
+}
+
+/** A place outside the structure pane that takes drops of schema nodes. */
+export interface DropOutside {
+  /** Whether it would take `nodes` (already at `paths`, or new with none) at this client point; it marks where. */
+  over(nodes: readonly SchemaNode[], paths: readonly string[], point: { x: number; y: number }): boolean;
+  /** Where a drop at the point lands in the schema, if it takes one. */
+  target(nodes: readonly SchemaNode[], paths: readonly string[], point: { x: number; y: number }): SchemaTarget | null;
+  /** The drag left or ended. */
+  end(): void;
 }
 
 /** Every path above `path`, nearest last. */
@@ -55,11 +73,30 @@ const nameOfKey = (key: string): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, tools, stored }: StructurePaneProps) {
-  const nodes = useMemo(() => toTreeNodes(schema, null, changed), [schema, changed]);
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, tools, stored, outside, onMove: move }: StructurePaneProps) {
+  const nodes = useMemo(() => {
+    const all = toTreeNodes(schema, null, changed);
+    const loose = new Set(generalKeys(schema));
+    if (loose.size === 0) return all;
+    // A preferences form files the root's own leaves under one rail entry; the tree shows them the same way.
+    const general: TreeNode = {
+      id: GENERAL,
+      label: looseEntryName(schema.name),
+      textValue: looseEntryName(schema.name),
+      children: all.filter((n) => loose.has(n.id)),
+    };
+    return [general, ...all.filter((n) => !loose.has(n.id))];
+  }, [schema, changed]);
+  const hasGeneral = nodes[0]?.id === GENERAL;
+  const [generalOpen, setGeneralOpen] = useState(true);
   const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);
   const [fromStored, setFromStored] = useState<UndescribedValue | null>(null);
   const [storedHeight, setStoredHeight] = useState(180);
+  const treeArea = useRef<HTMLDivElement | null>(null);
+  // A selection made in the preview may sit outside the tree's scrolled view. Optional-called for jsdom.
+  useEffect(() => {
+    treeArea.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({ block: 'nearest' });
+  }, [selected]);
   const undescribed = useMemo(() => (stored === undefined ? [] : undescribedValues(schema, stored)), [schema, stored]);
   // Where a stored value's leaf goes: under a group root its value path names a group per step; under a section
   // root the whole path is the leaf's key.
@@ -101,6 +138,28 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
     onSelect(joinPath(parent, key));
   };
 
+  const nodesAt = (ids: readonly string[]): SchemaNode[] => ids.map((id) => nodeAt(schema, id)!);
+
+  // A drag from the palette: over the tree it lands where the tree marks, and elsewhere wherever `outside` takes it.
+  const [paletteDrag, setPaletteDrag] = useState<PaletteDrag | null>(null);
+  const treeTarget = useRef<{ parentId: string | null; index: number } | null>(null);
+  const onPaletteDrag = (drag: PaletteDrag | null) => {
+    setPaletteDrag(drag);
+    if (drag) outside?.over([drag.node], [], drag);
+    else outside?.end();
+  };
+  const onPaletteDrop = (drag: PaletteDrag) => {
+    const at = treeTarget.current;
+    const target = at ? schemaTarget(schema, at.parentId, at.index) : outside?.target([drag.node], [], drag) ?? null;
+    if (!target) return;
+    const kids = childrenOf(nodeAt(schema, target.parentPath)!) ?? {};
+    const key = uniqueKey(kids, drag.item.key);
+    onChange(addNode(schema, target.parentPath, key, drag.node, target.index));
+    const path = joinPath(target.parentPath, key);
+    onExpandedChange((e) => new Set([...e, ...ancestorsOf(path), path]));
+    onSelect(path);
+  };
+
   return (
     <section className={`${s.pane} ${s.structurePane}`} aria-label="Structure">
       <PaneHeader title="Structure">{tools}</PaneHeader>
@@ -113,6 +172,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
           onSelect(parentPath(selected));
         }}>Remove</Button>
       </div>
+      <Palette sections={isPrefSection(schema)} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
       <AddNodeDialog what={adding === 'branch' ? branch : adding} kinds={kinds} onAdd={add}
         siblings={(host && childrenOf(host)) ?? {}} dottedKey={adding === 'pref' && branch === 'section'}
         initial={fromStored ? {
@@ -121,25 +181,41 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
           ...(kindOfValue(fromStored.value) ? { kind: kindOfValue(fromStored.value)! } : {}),
         } : undefined}
         onClose={() => { setAdding(null); setFromStored(null); }} />
-      <div className={s.treeArea}>
+      <div className={s.treeArea} ref={treeArea}>
       <Tree
         aria-label="Schema structure"
         nodes={nodes}
-        expandedIds={expanded}
-        onExpandedChange={onExpandedChange}
+        expandedIds={generalOpen ? new Set([...expanded, GENERAL]) : expanded}
+        onExpandedChange={(next) => {
+          setGeneralOpen(next.has(GENERAL));
+          onExpandedChange(new Set([...next].filter((id) => id !== GENERAL)));
+        }}
         selectionMode="single"
-        selectedIds={selected === null ? [] : [selected]}
-        onSelectionChange={(ids) => onSelect([...ids][0] ?? null)}
+        // General is the root's row: with nothing selected the attributes pane shows the root's.
+        selectedIds={selected === null ? (hasGeneral ? [GENERAL] : []) : [selected]}
+        onSelectionChange={(ids) => {
+          const id = [...ids][0] ?? null;
+          onSelect(id === GENERAL ? null : id);
+        }}
+        externalDrag={paletteDrag}
+        onExternalTarget={(t) => { treeTarget.current = t; }}
+        onDragOutside={outside && ((ids, point) => {
+          if (point) return outside.over(nodesAt(ids), ids, point);
+          outside.end();
+          return false;
+        })}
+        onDropOutside={outside && ((ids, point) => {
+          const target = outside.target(nodesAt(ids), ids, point);
+          if (target) move(ids, target);
+        })}
         canDrop={(ids, t) => {
+          if (ids.length === 0) return paletteDrag !== null && treeTakesNew(schema, paletteDrag.node, t.parentId);
+          const general = generalAllows(schema, [...ids], t.parentId);
+          if (general !== undefined) return general;
           const parent = nodeAt(schema, t.parentId)!;
           return !!childrenOf(parent) && [...ids].every((id) => fitsUnder(parent, nodeAt(schema, id)!));
         }}
-        onMove={(ids, t) => {
-          const moved = moveNodes(schema, ids, { parentPath: t.parentId, index: t.index });
-          onChange(moved.root);
-          onExpandedChange((e) => rebasePaths(e, moved.from.map((f, i) => [f, moved.paths[i]!] as const)));
-          onSelect(moved.paths[0] ?? null);
-        }}
+        onMove={(ids, t) => move(ids, schemaTarget(schema, t.parentId, t.index))}
       />
       </div>
       {stored !== undefined && (
@@ -147,7 +223,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
           <ResizeHandle orientation="horizontal" invert value={storedHeight} min={60} max={600}
             onInput={setStoredHeight} ariaLabel="Resize stored values" />
           <div className={s.storedArea} style={{ '--stored-h': `${storedHeight}px` } as CSSProperties}>
-            <PaneHeader title="Stored, not in the schema" />
+            <PaneHeader title="Unplaced" />
             <StoredList entries={undescribed} onPick={(entry) => { setFromStored(entry); setAdding('pref'); }} />
           </div>
         </>

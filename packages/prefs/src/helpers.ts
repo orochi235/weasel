@@ -59,20 +59,22 @@ export function prefValueAtPath(values: unknown, path: string): unknown {
 
 /**
  * Recursively drop `hidden` leaves (unless `showHidden`), pruning groups
- * that end up empty. Returns null when the entire subtree is hidden.
+ * that end up empty (unless `keepEmpty`). Returns null when the entire
+ * subtree is pruned.
  */
 export function visiblePrefSubtree<T extends PrefLeaf | PrefGroup>(
   node: T,
   showHidden: boolean,
+  keepEmpty = false,
 ): T | null {
   if (isPrefLeaf(node)) return node.hidden && !showHidden ? null : node;
   const group = node as PrefGroup;
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   for (const [key, child] of Object.entries(group.children)) {
-    const kept = visiblePrefSubtree(child, showHidden);
+    const kept = visiblePrefSubtree(child, showHidden, keepEmpty);
     if (kept) children[key] = kept;
   }
-  if (Object.keys(children).length === 0) return null;
+  if (Object.keys(children).length === 0 && !keepEmpty) return null;
   return { ...node, children };
 }
 

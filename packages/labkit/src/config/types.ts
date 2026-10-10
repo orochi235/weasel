@@ -1,4 +1,4 @@
-import type { PrefGroup, PrefLeaf, PrefNumberUnit, PrefPair } from '@weasel-js/prefs';
+import type { PrefGroup, PrefGroupAs, PrefLeaf, PrefNumberUnit, PrefPair } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import type { PrefRenderer } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
@@ -176,10 +176,11 @@ export interface BranchOptions {
   resettable?: boolean;
 }
 
-/** A group's own annotations: what it is called and, optionally, why. */
+/** A group's own annotations: what it is called, optionally why, and how it is drawn. */
 export interface BranchAnnotations {
   name?: string;
   description?: string;
+  as?: PrefGroupAs;
 }
 
 /** The builder's leaf: a kind (or null, to be decided by rules), a default,

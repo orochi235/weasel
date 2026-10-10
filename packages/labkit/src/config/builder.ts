@@ -308,6 +308,13 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
     return this.with({ ...this.annotations, description }, this.options);
   }
 
+  /** How the group is drawn: a `tab` beside its neighbors, a bordered `panel`,
+   *  a `section` heading over its rows, or a `page` of its own where the
+   *  surface has pages. Carried on the resolved `PrefGroup`. */
+  as(kind: NonNullable<BranchAnnotations['as']>): GroupNode<S> {
+    return this.with({ ...this.annotations, as: kind }, this.options);
+  }
+
   /** Render this whole group under a named section heading. */
   section(label: string, opts: Omit<SectionOption, 'label'> = {}): GroupNode<S> {
     return this.with(this.annotations, { ...this.options, section: { label, ...opts } });

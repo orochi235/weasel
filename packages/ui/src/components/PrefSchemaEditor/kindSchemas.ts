@@ -1,6 +1,7 @@
 import { solid } from '@weasel-js/core';
 import {
   isPrefLeaf,
+  isPrefSection,
   type PrefEnum,
   type PrefField,
   type PrefGroup,
@@ -58,7 +59,16 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   },
 };
 
-const GROUP_ATTRS: KindAttrs = { name: LEAF_BASE.name!, description: LEAF_BASE.description! };
+const GROUP_ATTRS: KindAttrs = {
+  name: LEAF_BASE.name!,
+  description: LEAF_BASE.description!,
+  as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, or a heading over its rows. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section']),
+};
+const SECTION_ATTRS: KindAttrs = {
+  name: LEAF_BASE.name!,
+  description: LEAF_BASE.description!,
+  as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, or a heading over its rows. Unset: a heading.', ['tab', 'panel', 'section']),
+};
 
 /** Written even when empty: a leaf without them is not a leaf. */
 const REQUIRED = new Set(['name', 'description', 'default', 'options']);
@@ -95,7 +105,7 @@ export interface AttributeSchema {
 
 /** Editable attributes, rendered with `PrefsForm` over the node itself as values. */
 export function attributeSchema(node: SchemaNode, custom: CustomKinds = {}): AttributeSchema {
-  if (!isPrefLeaf(node)) return { shared: { ...GROUP_ATTRS }, own: {}, readOnly: [] };
+  if (!isPrefLeaf(node)) return { shared: { ...(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS) }, own: {}, readOnly: [] };
   const def = defaultAttr(node);
   const shared: KindAttrs = { ...LEAF_BASE };
   const own: KindAttrs = { ...(def ? { default: def } : {}), ...kindAttrs(node.kind, custom) };

@@ -16,6 +16,7 @@ import {
   type PrefObject,
   prefSectionLeaves,
 } from '@weasel-js/prefs';
+import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
@@ -442,20 +443,34 @@ function ObjectLeaf({
       pending = [];
     };
 
+    // A run of neighboring `tab` sections, held until something else ends it.
+    let tabs: GroupTab[] = [];
+    const flushTabs = (): void => {
+      if (tabs.length > 0) out.push(<GroupTabs key={`tabs:${tabs[0]!.id}`} tabs={tabs} />);
+      tabs = [];
+    };
+
     for (const [key, child] of Object.entries(children)) {
       if (!isPrefLeaf(child)) {
         const labeled = child.name !== '';
-        const inner = rowsOf(child.members, labeled);
+        const inner = rowsOf(child.members, labeled && child.as !== 'tab');
         if (inner.length === 0) continue;
         flush();
+        if (child.as === 'tab') {
+          tabs.push({ id: key, name: child.name, content: inner });
+          continue;
+        }
+        flushTabs();
+        const cls = child.as === 'panel' ? s.objectPanel : labeled && indent ? s.objectGroup : undefined;
         out.push(
-          <div key={`group:${key}`} className={labeled && indent ? s.objectGroup : undefined}>
+          <div key={`group:${key}`} className={cls}>
             {labeled && <h5 className={s.sectionTitle}>{child.name}</h5>}
             {inner}
           </div>,
         );
         continue;
       }
+      flushTabs();
       const childPath = `${ctx.path}.${key}`;
       // Nodes whose objects differ still agree or disagree field by field: two
       // styles at different sizes are both upright, and saying "mixed" for
@@ -536,6 +551,7 @@ function ObjectLeaf({
       });
     }
     flush();
+    flushTabs();
     return out.map((entry) =>
       typeof entry === 'object' && entry !== null && 'controls' in entry ? (
         entry.block ? (

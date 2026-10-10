@@ -23,7 +23,9 @@ import {
   setAtPath,
   type AnyNode,
   type PanelLeaf,
+  type PanelSection,
 } from './model';
+import { GroupTabs } from '../Prefs/GroupTabs';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import s from './SelectionPanel.module.css';
 
@@ -133,7 +135,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
           </>
         )}
       </header>
-      {sections.map((section) => {
+      {drawn(sections.flatMap((section) => {
         // Render controls before emitting row chrome so a null-rendering
         // leaf (custom renderer opting out) collapses its cell — and the
         // whole row / section when nothing survives. PrefsForm precedent.
@@ -159,10 +161,11 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
             return { row, controls };
           })
           .filter(({ controls }) => controls.length > 0);
-        if (rows.length === 0) return null;
-        return (
-          <section key={section.key} className={s.section}>
-            {section.name !== '' && <h3 className={s.sectionTitle}>{section.name}</h3>}
+        if (rows.length === 0) return [];
+        const tab = section.as === 'tab';
+        const content = (
+          <>
+            {section.name !== '' && !tab && <h3 className={s.sectionTitle}>{section.name}</h3>}
             {rows.map(({ row, controls }) => (
               // A `block` leaf brings its own chrome — it spans the section
               // instead of sitting in a labeled row's control cell. Under a
@@ -190,13 +193,33 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
               </div>
               )
             ))}
-          </section>
+          </>
         );
-      })}
+        return [{ section, content }];
+      }))}
     </div>
   );
 }
 
+/** The sections in order: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
+function drawn(sections: ReadonlyArray<{ section: PanelSection; content: ReactNode }>): ReactNode[] {
+  const out: ReactNode[] = [];
+  for (let i = 0; i < sections.length; i++) {
+    const { section, content } = sections[i]!;
+    if (section.as !== 'tab') {
+      const cls = section.as === 'panel' ? `${s.section} ${s.sectionPanel}` : s.section;
+      out.push(<section key={section.key} className={cls}>{content}</section>);
+      continue;
+    }
+    const run = [];
+    for (; i < sections.length && sections[i]!.section.as === 'tab'; i++) {
+      run.push({ id: sections[i]!.section.key, name: sections[i]!.section.name, content: sections[i]!.content });
+    }
+    i--;
+    out.push(<GroupTabs key={section.key} className={s.section} tabs={run} />);
+  }
+  return out;
+}
 
 function leafCell(
   panelLeaf: PanelLeaf,

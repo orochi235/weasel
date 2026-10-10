@@ -7,8 +7,10 @@ import {
 } from '@weasel-js/prefs';
 import { PropertyControl } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyPanel';
+import { GroupTabs, type GroupTab } from './GroupTabs';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
+import { selectionAttrs, type PrefDropMark } from './selection';
 import s from './Prefs.module.css';
 
 /** What a {@link PrefRenderer} is given for the leaf it is rendering. */
@@ -43,6 +45,10 @@ export interface WalkCtx {
   inheritHint?: (path: string) => string | undefined;
   canInherit?: (path: string) => boolean;
   fields?: readonly PrefFieldChoice[];
+  /** Path of the row or group the form marks as selected. */
+  selected?: string | null;
+  /** Where a drag would drop, which the form marks. */
+  dropMark?: PrefDropMark | null;
 }
 
 export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
@@ -64,14 +70,24 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   };
 
   const custom = ctx.renderers?.[pref.kind];
+  // Text among the rows, holding no value: its name is the line and its description the note under it.
+  if (pref.kind === 'label' && !custom) {
+    return (
+      <div className={`${s.rowSlot} ${s.labelRow}`} data-wide="" {...selectionAttrs(path, ctx, true)}>
+        <span className={s.labelText}>{pref.name}</span>
+        {pref.description !== '' && <span className={s.paneDesc}>{pref.description}</span>}
+      </div>
+    );
+  }
   const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx);
   if (custom && control === null) return null;
 
   // `block` leaves own their chrome (embedded editors with their own
   // header) — no label/tooltip row.
-  if (pref.block) return <>{control}</>;
+  if (pref.block) return <div className={s.rowSlot} data-wide="" {...selectionAttrs(path, ctx, true)}>{control}</div>;
 
   return (
+    <div className={s.rowSlot} data-wide={pref.kind === 'object' ? '' : undefined} {...selectionAttrs(path, ctx, true)}>
     <PropertyRow
       label={pref.name}
       description={pref.description}
@@ -86,6 +102,7 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
     >
       <span className={s.rowControl}>{control}</span>
     </PropertyRow>
+    </div>
   );
 }
 
@@ -134,13 +151,27 @@ function ObjectLeaf({ ctx }: { ctx: PrefRenderContext }) {
     : undefined;
   const objectRows = (children: PrefObject['children']): ReactNode[] => {
     const out: ReactNode[] = [];
+    // A run of neighboring `tab` sections, held until something else ends it.
+    let tabs: GroupTab[] = [];
+    const flushTabs = (): void => {
+      if (tabs.length > 0) out.push(<GroupTabs key={`tabs:${tabs[0]!.id}`} tabs={tabs} />);
+      tabs = [];
+    };
     for (const [key, child] of Object.entries(children)) {
       if (!isPrefLeaf(child)) {
         const inner = objectRows(child.members);
         if (inner.length === 0) continue;
-        out.push(<h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>, ...inner);
+        if (child.as === 'tab') {
+          tabs.push({ id: key, name: child.name, content: inner });
+          continue;
+        }
+        flushTabs();
+        const heading = <h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>;
+        if (child.as === 'panel') out.push(<div key={`panel:${key}`} className={s.panePanel}>{heading}{inner}</div>);
+        else out.push(heading, ...inner);
         continue;
       }
+      flushTabs();
       out.push(
         <PropertyRow
           key={key}
@@ -166,6 +197,7 @@ function ObjectLeaf({ ctx }: { ctx: PrefRenderContext }) {
         </PropertyRow>,
       );
     }
+    flushTabs();
     return out;
   };
   return <div className={s.objectLeaf}>{objectRows(pref.children)}</div>;

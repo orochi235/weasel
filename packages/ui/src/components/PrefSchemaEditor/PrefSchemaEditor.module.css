@@ -1,6 +1,11 @@
 .options { display: grid; gap: var(--wzl-space-2); }
 .pairRow { display: grid; grid-template-columns: 1fr auto; gap: var(--wzl-space-2); align-items: center; }
 .optionRow { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--wzl-space-2); align-items: center; }
+.optionHeads { color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-xs); }
+/* Holds the remove button's column open, so the heads sit over the fields. */
+.optionHeadSpacer { inline-size: var(--wzl-icon-button-size); }
+/* The stored value is code and the label is prose; the faces say which is which on every row. */
+.optionValue input { font-family: var(--wzl-font-mono); }
 .number { composes: numeric from '@weasel-js/theme/numeric.module.css'; }
 .number input { text-align: right; }
 /* A whole surface a host may mount anywhere, so it brings its face rather than inheriting the page's. */
@@ -46,8 +51,10 @@
 }
 .storedEmpty { margin: 0; color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-sm); }
 .previewPane { display: flex; flex-direction: column; overflow: hidden; }
-.previewDialog { flex: 1; min-height: 0; }
-.previewPanel { flex: 1; min-height: 0; overflow: auto; }
+/* The dialog at a width the reader drags, to see the form at the sizes an app might give it. */
+.previewStage { flex: 1; min-height: 0; display: flex; }
+.previewDialog { flex: 0 1 var(--preview-w); min-width: 0; min-height: 0; }
+.previewPanel { flex: 1; min-height: 0; overflow: auto; max-inline-size: 420px; }
 .toolbar { display: flex; flex-wrap: wrap; gap: var(--wzl-space-2); margin-block-end: var(--wzl-space-2); }
 .paneHeader {
   display: flex;
@@ -98,3 +105,18 @@
 }
 .changeList { overflow: auto; font-family: var(--wzl-font-mono); white-space: pre; }
 .changed { font-weight: var(--wzl-font-weight-bold); }
+/* Chips dragged into the tree or the preview to add a node there. */
+.palette { display: flex; flex-wrap: wrap; gap: var(--wzl-space-1); margin-block-end: var(--wzl-space-2); }
+.paletteChip {
+  padding: var(--wzl-space-1) var(--wzl-space-3);
+  border: 1px dashed var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-sm);
+  background: none;
+  color: var(--wzl-fg-muted);
+  font: inherit;
+  font-size: var(--wzl-font-size-xs);
+  cursor: grab;
+  touch-action: none;
+}
+.paletteChip:hover { color: var(--wzl-fg); border-color: var(--wzl-accent); }
+.paletteGhost { padding: var(--wzl-space-1) var(--wzl-space-3); font-family: var(--wzl-font-ui); font-size: var(--wzl-font-size-xs); color: var(--wzl-fg); }

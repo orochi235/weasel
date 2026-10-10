@@ -80,6 +80,21 @@ export interface TreeProps {
   /** Refuse a drop. A drop into a dragged node or beneath one is refused
    *  regardless. Default: allow. */
   canDrop?(ids: readonly string[], target: TreeDropTarget): boolean;
+  /**
+   * Asked while a drag begun in this tree is outside it: whether what is under
+   * the client point would take the drop. While it answers true the tree marks
+   * nothing, and a release there calls `onDropOutside` and not `onMove`.
+   * Called with `null` when the drag comes back inside or ends.
+   */
+  onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null): boolean;
+  onDropOutside?(ids: string[], point: { x: number; y: number }): void;
+  /**
+   * A drag begun outside the tree, at this client point. The tree marks where
+   * it would land — asking `canDrop` with no ids — and reports the target
+   * through `onExternalTarget`, `null` while the point is off its rows.
+   */
+  externalDrag?: { x: number; y: number } | null;
+  onExternalTarget?(target: TreeDropTarget | null): void;
 }
 
 interface Visible {
@@ -127,7 +142,7 @@ export const Tree = forwardRef(function Tree(
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange,
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
-    onAction, onMove, canDrop,
+    onAction, onMove, canDrop, onDragOutside, onDropOutside, externalDrag, onExternalTarget,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
@@ -200,6 +215,7 @@ export const Tree = forwardRef(function Tree(
   useImperativeHandle(ref, () => treeEl.current as HTMLUListElement, [isEmpty]);
   const drag = useTreeDrag({
     enabled: !!onMove,
+    onDragOutside, onDropOutside, externalDrag, onExternalTarget,
     nodes, visible, expanded, selected,
     container: () => treeEl.current,
     rowEl: (id) => items.current.get(id)?.firstElementChild as HTMLElement | undefined,

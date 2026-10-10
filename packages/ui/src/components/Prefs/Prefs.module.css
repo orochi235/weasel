@@ -85,6 +85,41 @@
   cursor: default;
 }
 
+/* What a leaf's row sits in, so a selected one can be marked and found. */
+.rowSlot {
+  border-radius: var(--wzl-radius-sm);
+}
+
+[data-pref-path][data-selected] {
+  background: color-mix(in oklab, var(--wzl-accent) 12%, transparent);
+  outline: 1px solid var(--wzl-accent);
+  outline-offset: 3px;
+  border-radius: var(--wzl-radius-sm);
+}
+
+/* Where a drag would drop: a bar on the side of a row it would land beside,
+   and a ring round a group it would land in. */
+:is(.railLayout, .columnsLayout) [data-drop='before'] { box-shadow: 0 -2px 0 0 var(--wzl-accent); }
+:is(.railLayout, .columnsLayout) [data-drop='after'] { box-shadow: 0 2px 0 0 var(--wzl-accent); }
+.railLayout[data-across='2'] [data-drop='before'] { box-shadow: -3px 0 0 0 var(--wzl-accent); }
+.railLayout[data-across='2'] [data-drop='after'] { box-shadow: 3px 0 0 0 var(--wzl-accent); }
+:is(.railLayout, .columnsLayout) [data-drop='into'] {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: -2px;
+}
+
+/* `kind: 'label'`: text among the rows. */
+.labelRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+}
+
+.labelText {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg);
+}
+
 /* Control slot — a share of the row rather than a fixed width, so a wide pane
  * widens the field instead of the gap before it. A long label still pushes it
  * narrower, down to the floor. Kit form controls are flex columns that fill it. */
@@ -180,9 +215,10 @@
   min-block-size: min(60vh, 420px);
   /* Same reason across: a filter that narrows the schema to two rows should
      not pull the dialog's edges in around them. */
-  min-inline-size: min(760px, 90vw);
+  min-inline-size: min(800px, 90vw);
 }
 
+/* Drawn in place, the box is as wide as what holds it makes it. */
 .railBody.railBodyInline {
   min-inline-size: 0;
 }
@@ -197,7 +233,7 @@
      too thin to hold a row. The clamp belongs on the flex basis — an
      `inline-size` here is simply ignored, which is what made a first attempt
      at this look right and do nothing. */
-  flex: 0 1 min(var(--wzl-prefs-rail-width, 216px), 40%);
+  flex: 0 1 min(var(--wzl-prefs-rail-width, 176px), 40%);
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-2);
@@ -331,6 +367,30 @@
   margin-top: var(--wzl-space-6);
 }
 
+/* `as: 'panel'`: the one group in a pane that draws its own box. */
+.panePanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+  margin-top: var(--wzl-space-4);
+  padding: var(--wzl-space-4);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
+  background: var(--wzl-surface-sunken);
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  font-weight: var(--wzl-font-weight-bold);
+  color: var(--wzl-fg);
+}
+
+/* `as: 'tab'`: a `Tabs` strip, set off from the rows above it. */
+.paneTabs {
+  margin-top: var(--wzl-space-4);
+}
+
 .paneSubsection {
   display: flex;
   flex-direction: column;
@@ -378,6 +438,44 @@
     minmax(140px, var(--wzl-params-label-width, 240px))
     minmax(180px, 260px);
   align-items: center;
+}
+
+/* `rowsAcross={2}`: two rows side by side. */
+.railLayout[data-across='2'] .rows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Wide between the columns: a row's control ends where the next row's label begins. */
+  gap: var(--wzl-space-3) var(--wzl-prefs-across-gap, 28px);
+  align-items: start;
+}
+
+/* The label sits beside its control while both fit, and the control drops
+   under it when they do not: a label never narrows below its own text. */
+.railLayout[data-across='2'] .row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-1) var(--wzl-space-3);
+}
+
+/* One share of the row for every label short enough to take it, so a
+   column's controls start at one x. */
+.railLayout[data-across='2'] .row > :first-child {
+  flex: 1 0 40%;
+  min-inline-size: max-content;
+  max-inline-size: 100%;
+}
+
+.railLayout[data-across='2'] .rowControl {
+  /* No `min-inline-size: 0`: a control wider than what is left of the line
+     has to wrap under the label rather than run past the column. */
+  flex: 1 1 var(--wzl-prefs-control-min, 80px);
+  max-inline-size: 100%;
+}
+
+/* Anything in the grid that is not one leaf's row is a group, and runs the full width. */
+.railLayout[data-across='2'] .rows > :is(:not(.rowSlot), [data-wide]) {
+  grid-column: 1 / -1;
 }
 
 .railLayout .rowControl {

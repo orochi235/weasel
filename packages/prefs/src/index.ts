@@ -14,7 +14,8 @@ export {
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
-export type { PrefGroup, PrefSection } from './groups';
+export { prefGroupIsPage } from './groups';
+export type { PrefGroup, PrefGroupAs, PrefSection, PrefSectionAs } from './groups';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';

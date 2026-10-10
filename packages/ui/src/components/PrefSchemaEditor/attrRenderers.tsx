@@ -33,10 +33,17 @@ function EnumOptions({ ctx }: { ctx: PrefRenderContext }) {
   const set = (i: number, patch: Partial<Option>) => ctx.setValue(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   return (
     <div className={s.options}>
+      {rows.length > 0 && (
+        <div className={`${s.optionRow} ${s.optionHeads}`} aria-hidden="true">
+          <span>Value stored</span>
+          <span>Label shown</span>
+          <span className={s.optionHeadSpacer} />
+        </div>
+      )}
       {rows.map((r, i) => (
         <div key={i} className={s.optionRow}>
-          <Input aria-label={`Option ${i + 1} value`} value={r.value} onChange={(v) => set(i, { value: v })} />
-          <Input aria-label={`Option ${i + 1} label`} value={r.label} onChange={(v) => set(i, { label: v })} />
+          <Input className={s.optionValue} placeholder="value" aria-label={`Option ${i + 1} value`} value={r.value} onChange={(v) => set(i, { value: v })} />
+          <Input placeholder="Label" aria-label={`Option ${i + 1} label`} value={r.label} onChange={(v) => set(i, { label: v })} />
           <CloseButton ariaLabel={`Remove option ${i + 1}`} onClick={() => ctx.setValue(rows.filter((_, j) => j !== i))} />
         </div>
       ))}

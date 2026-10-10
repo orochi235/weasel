@@ -3,22 +3,27 @@ import { createHistory, historyKey, useLatest, type Op } from '@weasel-js/core';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
-import type { PrefRenderer } from '../Prefs';
+import { prefDropTargetAt, type PrefDropMark, type PrefRenderer } from '../Prefs';
 import type { PropertyRenderer } from '../SelectionPanel';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { ExportPanel } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
-import { branchPaths, rebasePaths, type SchemaRoot } from './schemaEdit';
+import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
-import { StructurePane } from './StructurePane';
+import { previewTarget } from './previewDrop';
+import { usePreviewDrag } from './usePreviewDrag';
+import { StructurePane, type DropOutside } from './StructurePane';
 import s from './PrefSchemaEditor.module.css';
 
 const NO_KINDS: CustomKinds = {};
 
 /** Edits to one node's attributes this close together undo as one, so typing a name is one step. */
 const COALESCE_MS = 800;
+
+/** How long a drag rests on a rail entry before the preview opens that page. */
+const RAIL_OPEN_MS = 500;
 
 /** An edit as the swap of one whole schema for another: schemas are immutable, so the snapshots cost nothing. */
 function swapOp<S>(before: S, after: S, emit: (s: S) => void, coalesceKey?: string): Op {
@@ -98,11 +103,63 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
 
   const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);
   const changed = useMemo(() => changedPaths(changes), [changes]);
-  const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(kinds)], [kinds]);
+  // `label` is a kind the form draws itself: text among the rows, with no attributes of its own.
+  const custom = useMemo(() => ({ label: {}, ...kinds }), [kinds]);
+  const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);
   const select = (path: string | null) => {
     setSelected(path);
     setNotice(null);
   };
+  /** Select a node picked outside the tree, opening the branches above it so the tree shows it. */
+  const reveal = (path: string) => {
+    const above: string[] = [];
+    for (let p = parentPath(path); p !== null; p = parentPath(p)) above.push(p);
+    setExpanded((e) => new Set([...e, ...above]));
+    select(path);
+  };
+  // The live preview as a place to drop: the form says what is under the pointer, the schema whether it fits there.
+  const stage = useRef<HTMLDivElement | null>(null);
+  const [dropMark, setDropMark] = useState<PrefDropMark | null>(null);
+  const opening = useRef<{ path: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const stopOpening = () => {
+    if (opening.current) clearTimeout(opening.current.timer);
+    opening.current = null;
+  };
+  const dropAt: DropOutside['target'] = (nodes, paths, point) => {
+    const mark = stage.current && prefDropTargetAt(stage.current, point.x, point.y, 'x');
+    return previewTarget(latest.current.schema, mark || null, nodes, paths);
+  };
+  const outside: DropOutside = {
+    over(nodes, paths, point) {
+      const mark = (stage.current && prefDropTargetAt(stage.current, point.x, point.y, 'x')) || null;
+      const taken = previewTarget(latest.current.schema, mark, nodes, paths) !== null;
+      const next = taken ? mark : null;
+      setDropMark((cur) => (cur?.path === next?.path && cur?.where === next?.where && cur?.rail === next?.rail ? cur : next));
+      // Held over a rail entry, the drag opens that page, so a row on it can be aimed at.
+      if (next?.rail) {
+        if (opening.current?.path !== next.path) {
+          stopOpening();
+          const path = next.path;
+          opening.current = { path, timer: setTimeout(() => select(path === '' ? null : pathOf(path.split('.'))), RAIL_OPEN_MS) };
+        }
+      } else {
+        stopOpening();
+      }
+      return taken;
+    },
+    target: dropAt,
+    end() {
+      stopOpening();
+      setDropMark(null);
+    },
+  };
+  const moveTo = (paths: readonly string[], target: SchemaTarget) => {
+    const moved = moveNodes(latest.current.schema, paths, target);
+    commit(moved.root);
+    setExpanded((e) => rebasePaths(e, moved.from.map((f, i) => [f, moved.paths[i]!] as const)));
+    select(moved.paths[0] ?? null);
+  };
+  const previewDrag = usePreviewDrag({ stage, schema: () => latest.current.schema, place: outside, onMove: moveTo });
   const rekey = (from: string, to: string) => {
     setExpanded((e) => rebasePaths(e, [[from, to]]));
     setSelected(to);
@@ -119,7 +176,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       history[step]();
     }}>
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
-        expanded={expanded} onExpandedChange={setExpanded} stored={stored} tools={
+        expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} onMove={moveTo} tools={
           <>
             <Button size="sm" variant="ghost" disabled={!history.canUndo()} onClick={() => history.undo()}>Undo</Button>
             <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => history.redo()}>Redo</Button>
@@ -136,10 +193,10 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           )}
         </div>
         <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selected ?? ''}`)} path={selected} onRekey={rekey}
-          kinds={kindList} custom={kinds} renderers={renderers} onNotice={setNotice} />
+          kinds={kindList} custom={custom} renderers={renderers} onNotice={setNotice} />
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
-      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} />
+      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} stageRef={stage} dropMark={dropMark} onStagePointerDown={previewDrag.onPointerDown} ghost={previewDrag.ghost} />
       <ExportPanel schema={schema} changes={changes} />
     </div>
   );

@@ -2,6 +2,7 @@ import type { UnitTable } from '@weasel-js/quantity';
 import {
   isPrefLeaf,
   isPrefSection,
+  prefGroupIsPage,
   type PrefGroup,
   type PrefLeaf,
   type PrefNumberUnit,
@@ -85,12 +86,14 @@ function countPrefLeaves(node: PrefLeaf | PrefGroup): number {
  */
 export function prefRailItems(root: PrefGroup): PrefRailItem[] {
   const items: PrefRailItem[] = [];
-  const loose = Object.values(root.children).filter(isPrefLeaf).length;
-  if (loose > 0) {
-    items.push({ path: '', name: looseEntryName(root.name), depth: 0, section: '', matches: loose });
+  // The root's own page holds its leaves and every top-level group that is not a page itself.
+  const loose = Object.values(root.children).filter((c) => isPrefLeaf(c) || !prefGroupIsPage(c));
+  if (loose.length > 0) {
+    const matches = loose.reduce((n, c) => n + countPrefLeaves(c), 0);
+    items.push({ path: '', name: looseEntryName(root.name), depth: 0, section: '', matches });
   }
   for (const [key, child] of Object.entries(root.children)) {
-    if (isPrefLeaf(child)) continue;
+    if (isPrefLeaf(child) || !prefGroupIsPage(child)) continue;
     items.push({
       path: key,
       name: child.name,
@@ -99,7 +102,8 @@ export function prefRailItems(root: PrefGroup): PrefRailItem[] {
       matches: countPrefLeaves(child),
     });
     for (const [subKey, sub] of Object.entries(child.children)) {
-      if (isPrefLeaf(sub)) continue;
+      // A tab or a panel is found on its page, not scrolled to from the rail.
+      if (isPrefLeaf(sub) || (sub.as !== undefined && sub.as !== 'section')) continue;
       items.push({
         path: `${key}.${subKey}`,
         name: sub.name,
