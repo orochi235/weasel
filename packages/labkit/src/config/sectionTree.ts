@@ -1,4 +1,4 @@
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { valueAtPath } from './path';
 import type { ResolvedConfig } from './types';
 import { isLeafVisible } from './visible';
