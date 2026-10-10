@@ -38,6 +38,34 @@
   text-overflow: ellipsis;
 }
 
+// The headers of a titled matrix, drawn in the panel's title row. The panel
+// gives them the share of its width the value columns take, so equal tracks
+// here land over the table's equal columns.
+.lk-control-matrix-panel {
+  --wzl-prop-panel-actions-basis: calc(100% - var(--lk-control-matrix-label-width, 30%));
+}
+
+.lk-control-matrix__heads {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.lk-control-matrix__heads > .lk-control-matrix__head {
+  padding: 0;
+}
+
+.lk-control-matrix__table thead.is-lifted :is(th, td) {
+  height: 0;
+  padding: 0;
+  border: 0;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+}
+
 // The fallback scope every other column inherits from.
 .lk-control-matrix__head.is-first {
   color: var(--wzl-fg);

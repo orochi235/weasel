@@ -60,19 +60,39 @@ describe('<ControlPanel> folding the whole panel', () => {
 });
 
 describe('<ControlMatrix> folding', () => {
+  const matrix = (props: Partial<Parameters<typeof ControlMatrix>[0]>) => (
+    <ControlMatrix
+      schema={resolveConfigSchema(f.schema({ a: f.group({ gap: f.number(1) }) }), [])}
+      columns={[{ key: 'a', label: 'Def', title: 'Defaults' }]}
+      rows={[{ key: 'gap' }]}
+      config={{ a: { gap: 1 } }}
+      auto={new Set()}
+      setConfig={() => {}}
+      onColumnClick={() => {}}
+      {...props}
+    />
+  );
+
   it('starts folded when told to', () => {
-    render(
-      <ControlMatrix
-        title="Looks"
-        defaultCollapsed
-        schema={resolveConfigSchema(f.schema({ a: f.group({ gap: f.number(1) }) }), [])}
-        columns={[{ key: 'a', label: 'A', title: 'A' }]}
-        rows={[{ key: 'gap' }]}
-        config={{ a: { gap: 1 } }}
-        auto={new Set()}
-        setConfig={() => {}}
-      />,
-    );
+    render(matrix({ title: 'Looks', defaultCollapsed: true }));
     expect(screen.getByRole('button', { name: 'Looks' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it("draws a titled matrix's column headers in the title row, and none while it is folded", () => {
+    render(matrix({ title: 'Looks', collapsible: true }));
+    const head = screen.getByRole('button', { name: 'Defaults' });
+    expect(head.closest('table')).toBeNull();
+    expect(head.parentElement?.parentElement).toHaveClass('lk-control-matrix__heads');
+    // The table keeps a header row to name its column.
+    expect(screen.getByRole('columnheader', { name: 'Defaults' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Looks' }));
+    expect(screen.queryByRole('button', { name: 'Defaults' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Looks' }));
+    expect(screen.getByRole('button', { name: 'Defaults' })).toBeInTheDocument();
+  });
+
+  it('keeps the headers in the table of a matrix with no title', () => {
+    render(matrix({}));
+    expect(screen.getByRole('button', { name: 'Defaults' }).closest('table')).not.toBeNull();
   });
 });

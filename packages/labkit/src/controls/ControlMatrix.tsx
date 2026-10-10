@@ -13,6 +13,7 @@ import {
   type StanceProps,
   Tooltip,
   TooltipTrigger,
+  useCollapse,
   useOverlayPortal,
 } from '@weasel-js/ui';
 import {
@@ -52,7 +53,9 @@ export interface ControlMatrixRow {
 
 export interface ControlMatrixProps extends StanceProps, CollapseProps {
   /** Heads the matrix. With `title`, `stance` or `tone` given, or with any of
-   *  the fold props, it sits in a `<PropertyPanel>`, as a `ControlPanel` does. */
+   *  the fold props, it sits in a `<PropertyPanel>`, as a `ControlPanel` does.
+   *  A titled matrix draws its column headers in the panel's title row, over
+   *  their columns, and a folded one draws only the title. */
   title?: ReactNode;
   /** The whole resolved schema. A cell's leaf is looked up at
    *  `${column.key}.${row.key}`; a cell with none draws a dash. */
@@ -135,20 +138,33 @@ export function ControlMatrix({
     return { row, leaves, label: row.label ?? named?.name ?? row.key, about: named?.description };
   });
 
+  const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange });
+  // With a title row to sit in, the headers leave the table for it.
+  const lifted = title !== undefined;
+  const headClass = (i: number): string =>
+    i === 0 ? 'lk-control-matrix__head is-first' : 'lk-control-matrix__head';
+  const heads = (
+    <div className="lk-control-matrix__heads">
+      {columns.map((column, i) => (
+        <span key={column.key} className={headClass(i)}>
+          <ColumnHeader column={column} onClick={onColumnClick} />
+        </span>
+      ))}
+    </div>
+  );
+
   const table = (
     <div className={className ? `lk-control-matrix ${className}` : 'lk-control-matrix'}>
       {anchor}
       <table className="lk-control-matrix__table">
-        <thead>
+        {/* A lifted header row stays, drawn at no height: it still sizes the
+            columns and names them for a screen reader. */}
+        <thead className={lifted ? 'is-lifted' : undefined}>
           <tr>
             <td className="lk-control-matrix__corner" />
             {columns.map((column, i) => (
-              <th
-                key={column.key}
-                scope="col"
-                className={i === 0 ? 'lk-control-matrix__head is-first' : 'lk-control-matrix__head'}
-              >
-                <ColumnHeader column={column} onClick={onColumnClick} />
+              <th key={column.key} scope="col" className={headClass(i)}>
+                {lifted ? nameOf(column) : <ColumnHeader column={column} onClick={onColumnClick} />}
               </th>
             ))}
           </tr>
@@ -259,13 +275,20 @@ export function ControlMatrix({
     </div>
   );
 
-  const fold = { collapsible, defaultCollapsed, collapsed, onCollapsedChange };
-  const folds = Object.values(fold).some((v) => v !== undefined);
   const panel =
-    title === undefined && stance === undefined && tone === undefined && !folds ? (
+    title === undefined && stance === undefined && tone === undefined && !fold.folds ? (
       table
     ) : (
-      <PropertyPanel title={title} stance={stance} tone={tone} {...fold}>
+      <PropertyPanel
+        className="lk-control-matrix-panel"
+        title={title}
+        actions={lifted && !fold.folded ? heads : undefined}
+        stance={stance}
+        tone={tone}
+        {...(fold.folds
+          ? { collapsible: true, collapsed: fold.folded, onCollapsedChange: fold.toggle }
+          : {})}
+      >
         {table}
       </PropertyPanel>
     );

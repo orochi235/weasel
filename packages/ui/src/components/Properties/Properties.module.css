@@ -103,9 +103,12 @@
   display: none;
 }
 
+/* The basis is a hook for content that has to line up with the panel's body:
+   a percentage of it is a share of the same width the body gets. */
 .panelActions {
   display: flex;
-  flex: none;
+  flex: 0 0 var(--wzl-prop-panel-actions-basis, auto);
+  min-width: 0;
   align-items: center;
   gap: var(--wzl-space-2);
   margin-inline-start: auto;
