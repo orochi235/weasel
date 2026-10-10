@@ -1,5 +1,5 @@
 import { carry } from './carry';
-import { packDraft, unpackDraft } from './draft';
+import { packDraft, unpackDraft, type DraftStorage } from './draft';
 import type { SchemaRoot } from './schemaEdit';
 
 const sentKey = (draftKey: string): string => `${draftKey}:sent`;
@@ -11,27 +11,27 @@ export function packSent(schema: SchemaRoot, source: SchemaRoot): unknown {
 }
 
 /** Keep what was submitted beside the draft under `draftKey`, to tell it later from edits made since. */
-export function saveSent(draftKey: string, sent: unknown): void {
+export function saveSent(draftKey: string, sent: unknown, storage?: DraftStorage): void {
   try {
-    localStorage.setItem(sentKey(draftKey), JSON.stringify(sent));
+    (storage ?? localStorage).setItem(sentKey(draftKey), JSON.stringify(sent));
   } catch {
     // Without storage the editor that sent it still holds it, until a reload.
   }
 }
 
 /** What was last submitted beside the draft under `draftKey`; `null` with none. */
-export function openSent(draftKey: string): unknown {
+export function openSent(draftKey: string, storage?: DraftStorage): unknown {
   try {
-    const raw = localStorage.getItem(sentKey(draftKey));
+    const raw = (storage ?? localStorage).getItem(sentKey(draftKey));
     return raw === null ? null : (JSON.parse(raw) as unknown);
   } catch {
     return null;
   }
 }
 
-export function dropSent(draftKey: string): void {
+export function dropSent(draftKey: string, storage?: DraftStorage): void {
   try {
-    localStorage.removeItem(sentKey(draftKey));
+    (storage ?? localStorage).removeItem(sentKey(draftKey));
   } catch {
     // Storage that cannot be reached holds nothing to remove.
   }

@@ -12,6 +12,12 @@ export interface StoredDraft {
   steps?: StoredSteps;
 }
 
+/**
+ * Where a draft is kept: the calls of a `Storage` the editor makes. `setItem` may throw when the text is more
+ * than it can hold, and is then asked again with fewer steps.
+ */
+export type DraftStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
 /** A draft as an editor opens it. */
 export interface OpenedDraft<R extends SchemaRoot> {
   savedAt: number;
@@ -169,9 +175,9 @@ export function unpackSteps<R extends SchemaRoot>(stored: StoredSteps, source: R
 }
 
 /** The draft saved under `key`; `null` when there is none, or storage cannot be read. */
-function readDraft(key: string): StoredDraft | null {
+function readDraft(key: string, storage?: DraftStorage): StoredDraft | null {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = (storage ?? localStorage).getItem(key);
     const draft: unknown = raw === null ? null : JSON.parse(raw);
     return isPlainObject(draft) && typeof draft.savedAt === 'number' && isPlainObject(draft.schema) ? (draft as unknown as StoredDraft) : null;
   } catch {
@@ -184,15 +190,15 @@ function readDraft(key: string): StoredDraft | null {
  * one, so only what the reader changed still differs from it. `null` when there is no draft, storage cannot be
  * read, or carrying it leaves nothing the source does not already say; that last one is removed.
  */
-export function openDraft<R extends SchemaRoot>(key: string, source: R): OpenedDraft<R> | null {
-  const draft = readDraft(key);
+export function openDraft<R extends SchemaRoot>(key: string, source: R, storage?: DraftStorage): OpenedDraft<R> | null {
+  const draft = readDraft(key, storage);
   if (!draft) return null;
   const now = JSON.parse(JSON.stringify(packDraft(source, source))) as unknown;
   const moved = draft.source !== undefined && JSON.stringify(draft.source) !== JSON.stringify(now);
   const onto = (packed: unknown): unknown => (moved ? carry(packed, draft.source, now) : packed);
   const schema = onto(draft.schema);
   if (moved && JSON.stringify(schema) === JSON.stringify(now)) {
-    dropDraft(key);
+    dropDraft(key, storage);
     return null;
   }
   const steps = draft.steps && unpackSteps({ ...draft.steps, schemas: draft.steps.schemas?.map((packed) => (packed === null ? null : onto(packed))) }, source);
@@ -208,12 +214,12 @@ export function openDraft<R extends SchemaRoot>(key: string, source: R): OpenedD
  * Save `schema` under `key` with the steps around it. A browser short of room is asked again for half the steps,
  * down to the schema alone; one that refuses storage keeps nothing.
  */
-export function saveDraft(key: string, schema: SchemaRoot, source: SchemaRoot, stacks: SerializedHistory, savedAt: number): void {
+export function saveDraft(key: string, schema: SchemaRoot, source: SchemaRoot, stacks: SerializedHistory, savedAt: number, storage?: DraftStorage): void {
   const packed = packDraft(schema, source);
   for (let keep = STEPS_KEPT; ; keep >>= 1) {
     const draft: StoredDraft = { savedAt, schema: packed, source: packDraft(source, source), ...(keep > 0 ? { steps: packSteps(stacks, schema, source, keep) } : {}) };
     try {
-      localStorage.setItem(key, JSON.stringify(draft));
+      (storage ?? localStorage).setItem(key, JSON.stringify(draft));
       return;
     } catch {
       // Private windows and full quotas throw; the editor goes on with what was kept before.
@@ -223,9 +229,9 @@ export function saveDraft(key: string, schema: SchemaRoot, source: SchemaRoot, s
 }
 
 /** Remove the draft under `key`. */
-export function dropDraft(key: string): void {
+export function dropDraft(key: string, storage?: DraftStorage): void {
   try {
-    localStorage.removeItem(key);
+    (storage ?? localStorage).removeItem(key);
   } catch {
     // Storage that cannot be reached holds nothing to remove.
   }
