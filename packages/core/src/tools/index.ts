@@ -6,29 +6,4 @@ export { useKeybindings } from './useKeybindings';
 export type { UseKeybindingsOptions } from './useKeybindings';
 export type { Tool, AnyTool, Overlay } from './overlayBinding';
 export type { ToolCtx, ToolLifecycleCtx, ToolModifiers, ToolSlot, ToolKeybinding } from '@weasel-js/routing';
-export { TOOL_PREF_KINDS, isBuiltinToolPref, pairRowsOf, prefUnit } from './prefs';
-export type {
-  ToolPref,
-  ToolPrefBase,
-  ToolPrefGroup,
-  ToolPrefKind,
-  ToolPrefNumber,
-  ToolPrefBoolean,
-  ToolPrefString,
-  ToolPrefEnum,
-  ToolPrefColor,
-  ToolPrefPaint,
-  ToolPrefObject,
-  ToolPrefField,
-  ToolPrefPair,
-  ToolPrefCustom,
-  ToolPrefLeaf,
-  ToolPrefNumberUnit,
-  ToolPrefNumberControl,
-  ToolPrefBooleanControl,
-  ToolPrefStringControl,
-  ToolPrefEnumControl,
-  ToolPrefEnumEncoding,
-  ToolPrefBooleanEncoding,
-} from './prefs';
 export * from './builtin';

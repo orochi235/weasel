@@ -1,4 +1,5 @@
 import type { FillStyle, Track } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import {
   Badge,
   type Band,
@@ -32,7 +33,6 @@ import {
   Plot2D,
   PointPlotter,
   Powerline,
-  type PrefGroup,
   PrefsForm,
   PropertyField,
   PropertyGroup,

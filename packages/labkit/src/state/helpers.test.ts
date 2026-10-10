@@ -1,31 +1,12 @@
 import { createHistory } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
-import {
-  decodeUrlHash,
-  deserializeTrials,
-  encodeUrlHash,
-  labStorageKey,
-  newId,
-  serializeTrials,
-} from './helpers';
+import { deserializeTrials, labStorageKey, newId, serializeTrials } from './helpers';
 
 describe('labStorageKey', () => {
   it('produces namespaced keys', () => {
     expect(labStorageKey('my-lab', 'workspaces')).toBe('lk:my-lab:workspaces');
     expect(labStorageKey('my-lab', 'saves')).toBe('lk:my-lab:saves');
     expect(labStorageKey('my-lab', 'theme')).toBe('lk:my-lab:theme');
-  });
-});
-
-describe('encodeUrlHash / decodeUrlHash', () => {
-  it('round-trips a string', () => {
-    const original = JSON.stringify({ trials: '[]', saves: '[]' });
-    expect(decodeUrlHash(encodeUrlHash(original))).toBe(original);
-  });
-
-  it('returns null for an empty or invalid hash', () => {
-    expect(decodeUrlHash('')).toBeNull();
-    expect(decodeUrlHash('not-base64!!!')).toBeNull();
   });
 });
 

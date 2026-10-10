@@ -1,9 +1,9 @@
+import type { StorageAdapter } from '@weasel-js/storage';
 import type { ReactNode } from 'react';
-import { defaultStorage } from './adapters';
 import { LabStoreProvider, TrialIdProvider } from './context';
+import { defaultStorage } from './labStorage';
 import { openLabStore } from './openLabStore';
 import { PersistenceContext } from './Persistence';
-import type { StorageAdapter } from './types';
 import { useOpenOnce, useWarnIgnoredChange } from './useOpenOnce';
 
 const SINGLETON_INSTRUMENT = '__singleton__';

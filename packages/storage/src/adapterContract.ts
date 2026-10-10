@@ -27,6 +27,26 @@ const settle = (): Promise<void> => new Promise((r) => setTimeout(r, 50));
 /** Every shipped adapter answers to these. `setup` runs once per test. */
 export function describeAdapterContract(name: string, setup: () => AdapterHarness): void {
   describe(`${name} — the adapter contract`, () => {
+    it('lists synchronously the same records it lists asynchronously, where it can', async () => {
+      const { adapter } = setup();
+      if (!adapter.listSync) return;
+      await adapter.set('sync:a', 1);
+      await adapter.set('sync:b', { x: 2 });
+      await adapter.set('other', 3);
+      const sorted = (rows: [string, unknown][]) => [...rows].sort(([a], [b]) => a.localeCompare(b));
+      expect(sorted(adapter.listSync('sync:'))).toEqual(sorted(await adapter.list('sync:')));
+      expect(sorted(adapter.listSync('sync:'))).toEqual([['sync:a', 1], ['sync:b', { x: 2 }]]);
+    });
+
+    it('lists synchronously as copies, where it can', async () => {
+      const { adapter } = setup();
+      if (!adapter.listSync) return;
+      await adapter.set('copy:a', { n: 1 });
+      const [[, first]] = adapter.listSync('copy:');
+      (first as { n: number }).n = 99;
+      expect(adapter.listSync('copy:')).toEqual([['copy:a', { n: 1 }]]);
+    });
+
     it('reads back what it stored, as a copy', async () => {
       const { adapter } = setup();
       const value = { trial: 'a', nested: { n: 1, list: [1, 'two', null] } };

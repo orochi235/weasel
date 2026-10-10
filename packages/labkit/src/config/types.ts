@@ -1,6 +1,6 @@
-import type { ToolPrefPair } from '@weasel-js/core';
+import type { PrefGroup, PrefLeaf, PrefNumberUnit, PrefPair } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
-import type { PrefGroup, PrefLeaf, PrefNumberUnit, PrefRenderer } from '@weasel-js/ui';
+import type { PrefRenderer } from '@weasel-js/ui';
 import type { ReactNode } from 'react';
 
 /**
@@ -27,7 +27,7 @@ export interface Annotations {
   description?: string;
   hidden?: boolean;
   block?: boolean;
-  pair?: ToolPrefPair;
+  pair?: PrefPair;
   /** Draw the control in the title row of the section or group holding it. */
   heading?: boolean;
   min?: number;

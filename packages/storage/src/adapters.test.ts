@@ -1,18 +1,12 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { describeAdapterContract } from './adapterContract';
-import {
-  createIndexedDbAdapter,
-  createMemoryAdapter,
-  defaultStorage,
-  indexedDbAdapter,
-  localStorageAdapter,
-  noneAdapter,
-  resetDefaultStorage,
-  sessionStorageAdapter,
-  urlHashAdapter,
-} from './adapters';
-import { decodeUrlHash, encodeUrlHash } from './helpers';
+import { createDefaultStorage, defaultStorage, resetDefaultStorage } from './defaultStorage';
+import { createIndexedDbAdapter, indexedDbAdapter } from './indexedDb';
+import { createMemoryAdapter, noneAdapter } from './memory';
+import { urlHashAdapter } from './urlHashAdapter';
+import { localStorageAdapter, sessionStorageAdapter } from './webStorage';
+import { decodeUrlHash, encodeUrlHash } from './urlHash';
 
 describeAdapterContract('createMemoryAdapter', () => {
   const backing = new Map<string, unknown>();
@@ -134,13 +128,51 @@ describe('defaultStorage', () => {
     vi.stubGlobal('indexedDB', undefined);
     // The shared adapter may already hold an open database from the case above.
     vi.resetModules();
-    const fresh = await import('./adapters');
+    const fresh = await import('./defaultStorage');
+    const freshWeb = await import('./webStorage');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    expect(await fresh.defaultStorage()).toBe(fresh.localStorageAdapter);
+    expect(await fresh.defaultStorage()).toBe(freshWeb.localStorageAdapter);
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining('IndexedDB would not open'),
       expect.anything(),
     );
     warn.mockRestore();
+  });
+});
+
+describe('createDefaultStorage', () => {
+  it('probes the preferred adapter once until reset', async () => {
+    const preferred = createMemoryAdapter();
+    const list = vi.spyOn(preferred, 'list');
+    const { defaultStorage: pick, resetDefaultStorage: reset } = createDefaultStorage(preferred);
+    expect(await pick()).toBe(preferred);
+    expect(await pick()).toBe(preferred);
+    expect(list).toHaveBeenCalledTimes(1);
+    reset();
+    await pick();
+    expect(list).toHaveBeenCalledTimes(2);
+  });
+
+  it('falls back to localStorage under its label where the preferred adapter will not open', async () => {
+    const broken = { ...createMemoryAdapter(), list: () => Promise.reject(new Error('no')) };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { defaultStorage: pick } = createDefaultStorage(broken, 'the test store');
+    expect(await pick()).toBe(localStorageAdapter);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('the test store would not open'),
+      expect.anything(),
+    );
+    warn.mockRestore();
+  });
+});
+
+describe('listSync', () => {
+  it('exists exactly on the adapters that can read without waiting', () => {
+    expect(localStorageAdapter.listSync).toBeTypeOf('function');
+    expect(sessionStorageAdapter.listSync).toBeTypeOf('function');
+    expect(createMemoryAdapter().listSync).toBeTypeOf('function');
+    expect(noneAdapter.listSync).toBeTypeOf('function');
+    expect(createIndexedDbAdapter({ database: 'no-sync' }).listSync).toBeUndefined();
+    expect(urlHashAdapter.listSync).toBeUndefined();
   });
 });

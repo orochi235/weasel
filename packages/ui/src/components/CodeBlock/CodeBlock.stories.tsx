@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { CodeBlock } from './CodeBlock';
 
 const SAMPLE = `// A pref group, as the schema editor exports it.
-const prefs: ToolPrefGroup = {
+const prefs: PrefGroup = {
   name: 'View',
   children: {
     grid: { kind: 'boolean', name: 'Show grid', default: true },

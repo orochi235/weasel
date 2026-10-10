@@ -1,12 +1,6 @@
+import type { StorageAdapter } from '@weasel-js/storage';
 import { labStorageKey } from './helpers';
-import type {
-  LabDocument,
-  LabMode,
-  Migration,
-  SavedSnapshot,
-  SerializedTrial,
-  StorageAdapter,
-} from './types';
+import type { LabDocument, LabMode, Migration, SavedSnapshot, SerializedTrial } from './types';
 import type { UndockedPanels } from './undock';
 
 /** Bumped whenever the persisted shape changes; every bump needs a migration. */

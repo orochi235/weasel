@@ -1,16 +1,15 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { PrefsDialog } from './PrefsDialog';
-import { PrefsForm, type PrefRenderContext } from './PrefsForm';
 import {
-  prefDisplayBounds,
-  visiblePrefSubtree,
+  PREF_KINDS,
   type PrefEnumEncoding,
   type PrefGroup,
+  type PrefKind,
   type PrefNumber,
-  type PrefNumberUnit,
-} from './schema';
-import { rotationDegreesUnit, TOOL_PREF_KINDS, type ToolPrefKind } from '@weasel-js/core';
+} from '@weasel-js/prefs';
+import { PrefsDialog } from './PrefsDialog';
+import { PrefsForm, type PrefRenderContext } from './PrefsForm';
+import { rotationDegreesUnit } from '@weasel-js/core';
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',
@@ -303,24 +302,6 @@ describe('PrefsForm — union-valued leaves', () => {
   });
 });
 
-describe('visiblePrefSubtree', () => {
-  it('prunes groups whose leaves are all hidden', () => {
-    const schema: PrefGroup = {
-      name: 'Root',
-      children: {
-        ghost: {
-          name: 'Ghost',
-          children: {
-            a: { kind: 'boolean', name: 'A', description: '', default: false, hidden: true },
-          },
-        },
-      },
-    };
-    expect(visiblePrefSubtree(schema, false)).toBeNull();
-    expect(visiblePrefSubtree(schema, true)).not.toBeNull();
-  });
-});
-
 describe('PrefsForm — encoded enum leaves', () => {
   // The shape core's `stroke.dash` leaf uses: the stored value is a dash
   // array scaled by the sibling stroke width, and the thing chosen is a style.
@@ -402,9 +383,9 @@ describe('PrefsForm — encoded enum leaves', () => {
 });
 
 describe('PrefsForm — exhaustiveness over built-in kinds', () => {
-  const KIND = 'spline' as ToolPrefKind;
+  const KIND = 'spline' as PrefKind;
   afterEach(() => {
-    delete (TOOL_PREF_KINDS as Record<string, true>)[KIND];
+    delete (PREF_KINDS as Record<string, true>)[KIND];
   });
 
   const schemaWith = (kind: string): PrefGroup => ({
@@ -423,7 +404,7 @@ describe('PrefsForm — exhaustiveness over built-in kinds', () => {
   });
 
   it('throws for a built-in kind with no case arm', () => {
-    (TOOL_PREF_KINDS as Record<string, true>)[KIND] = true;
+    (PREF_KINDS as Record<string, true>)[KIND] = true;
     expect(() =>
       render(<PrefsForm schema={schemaWith(KIND)} onChange={() => {}} />),
     ).toThrow(/spline/);
@@ -554,45 +535,6 @@ describe('PrefsForm — number leaves with a display unit', () => {
     fireEvent.blur(field);
     expect(onChange).toHaveBeenCalledWith('layout.width', 34);
     expect(screen.queryByText('°')).toBeNull();
-  });
-});
-
-describe('prefDisplayBounds', () => {
-  it('passes a unitless leaf\'s bounds through, defaulting only the step', () => {
-    const leaf: PrefNumber = { kind: 'number', name: 'W', description: '', default: 0, min: 2, max: 8 };
-    expect(prefDisplayBounds(leaf)).toEqual({ min: 2, max: 8, step: 1 });
-  });
-
-  it('converts min and max as points and step as a distance', () => {
-    const leaf: PrefNumber = {
-      kind: 'number', name: 'R', description: '', default: 0,
-      min: 0, max: Math.PI, step: Math.PI / 180, unit: rotationDegreesUnit,
-    };
-    const b = prefDisplayBounds(leaf);
-    expect(b.min).toBe(0);
-    expect(b.max).toBe(180);
-    expect(b.step).toBe(1);
-  });
-
-  // An offset unit is why `step` converts as a distance rather than a point:
-  // read as a point it would come back as 98 rather than 2.
-  it('swaps the ends when the conversion decreases, and keeps step a distance', () => {
-    const remaining: PrefNumberUnit = {
-      toDisplay: (v) => 100 - v,
-      fromDisplay: (v) => 100 - v,
-    };
-    const leaf: PrefNumber = {
-      kind: 'number', name: 'D', description: '', default: 0,
-      min: 0, max: 10, step: 2, unit: remaining,
-    };
-    expect(prefDisplayBounds(leaf)).toEqual({ min: 90, max: 100, step: 2 });
-  });
-
-  it('leaves an omitted bound omitted', () => {
-    const leaf: PrefNumber = {
-      kind: 'number', name: 'R', description: '', default: 0, unit: rotationDegreesUnit,
-    };
-    expect(prefDisplayBounds(leaf)).toEqual({ min: undefined, max: undefined, step: 1 });
   });
 });
 

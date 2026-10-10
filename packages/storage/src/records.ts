@@ -1,4 +1,4 @@
-import type { StorageAdapter, StorageChange } from './types';
+import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 
 /** One record changing, as a cache listener hears it. `value` is `undefined`
  *  for a delete. `local` changes were made through this cache; `remote` ones
@@ -19,8 +19,8 @@ export interface RecordChange {
  */
 export interface RecordCache {
   readonly prefix: string;
-  /** False once writing is off — the records could not be read, or were
-   *  written by a newer labkit — so nothing here can overwrite them. */
+  /** False once writing is off — the records could not be read, or the
+   *  opener marked them read-only — so nothing here can overwrite them. */
   readonly writable: boolean;
   has(name: string): boolean;
   get(name: string): unknown;
@@ -29,8 +29,10 @@ export interface RecordCache {
   set(name: string, value: unknown): void;
   delete(name: string): void;
   subscribe(listener: (changes: RecordChange[]) => void): () => void;
-  /** Send queued writes now. */
-  flush(): Promise<void>;
+  /** Send queued writes now. Resolves true when every queued write landed or
+   *  none was queued; false when a write threw (its value stays in memory) or
+   *  writing is off and writes were queued. */
+  flush(): Promise<boolean>;
   /** Send queued writes and stop hearing other writers. */
   close(): Promise<void>;
 }
@@ -85,24 +87,28 @@ export function createRecordCache(
     }, wait);
   };
 
-  async function flush(): Promise<void> {
+  async function flush(): Promise<boolean> {
     if (timer) clearTimeout(timer);
     timer = null;
     firstQueuedAt = null;
-    if (!writable || queued.size === 0) return;
+    if (queued.size === 0) return true;
+    if (!writable) return false;
     const batch = [...queued];
     queued.clear();
-    await Promise.all(
+    const landed = await Promise.all(
       batch.map(async ([name, value]) => {
         const key = prefix + name;
         try {
           if (value === DELETED) await storage.delete(key);
           else await storage.set(key, value);
+          return true;
         } catch (error) {
-          console.warn(`[labkit] could not write "${key}"; keeping it in memory`, error);
+          console.warn(`[storage] could not write "${key}"; keeping it in memory`, error);
+          return false;
         }
       }),
     );
+    return landed.every(Boolean);
   }
 
   const applyRemote = (changes: StorageChange[]): void => {
@@ -188,6 +194,18 @@ export function createRecordCache(
   return cache;
 }
 
+function stripPrefix(prefix: string, rows: [string, unknown][]): [string, unknown][] {
+  return rows.map(([key, value]): [string, unknown] => [key.slice(prefix.length), value]);
+}
+
+function unreadable(options: RecordCacheOptions, error: unknown): OwnedRecordCache {
+  console.warn(
+    `[storage] could not read "${options.prefix}"; opening empty and not persisting`,
+    error,
+  );
+  return createRecordCache({ ...options, writable: false });
+}
+
 /** Read every record under `prefix` and hold them. A failed read opens the
  *  cache empty with writing off, so it never overwrites what it could not
  *  read. */
@@ -200,20 +218,30 @@ export async function openRecords(options: RecordCacheOptions): Promise<OwnedRec
     listed = await options.storage.list(options.prefix);
   } catch (error) {
     stopEarly?.();
-    console.warn(
-      `[labkit] could not read "${options.prefix}"; opening empty and not persisting`,
-      error,
-    );
-    return createRecordCache({ ...options, writable: false });
+    return unreadable(options, error);
   }
   const cache = createRecordCache({
     ...options,
-    initial: listed.map(([key, value]): [string, unknown] => [
-      key.slice(options.prefix.length),
-      value,
-    ]),
+    initial: stripPrefix(options.prefix, listed),
   });
   stopEarly?.();
   (cache as unknown as { applyRemote: (c: StorageChange[]) => void }).applyRemote(early);
   return cache;
+}
+
+/** `openRecords` for an adapter that reads synchronously: the cache is ready
+ *  on return. A failed read opens it empty with writing off. */
+export function openRecordsSync(
+  options: RecordCacheOptions & { storage: SyncStorageAdapter },
+): OwnedRecordCache {
+  let listed: [string, unknown][];
+  try {
+    listed = options.storage.listSync(options.prefix);
+  } catch (error) {
+    return unreadable(options, error);
+  }
+  return createRecordCache({
+    ...options,
+    initial: stripPrefix(options.prefix, listed),
+  });
 }

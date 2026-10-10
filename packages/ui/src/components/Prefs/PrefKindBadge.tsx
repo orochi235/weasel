@@ -1,5 +1,5 @@
+import type { PrefKind } from '@weasel-js/prefs';
 import { Badge, type BadgeSize } from '../Badge';
-import type { PrefKind } from './schema';
 import s from './PrefKindBadge.module.css';
 
 const KIND_CLASS: Record<PrefKind, string | undefined> = {

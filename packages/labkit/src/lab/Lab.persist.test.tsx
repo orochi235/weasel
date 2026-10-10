@@ -1,11 +1,11 @@
 import 'fake-indexeddb/auto';
 import { act, render, screen, waitFor } from '@testing-library/react';
+import { createMemoryAdapter, type StorageAdapter } from '@weasel-js/storage';
 import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Instrument } from '../instrument/types';
-import { createMemoryAdapter, indexedDbAdapter, resetDefaultStorage } from '../state/adapters';
 import { labPrefix } from '../state/labRecords';
-import type { StorageAdapter } from '../state/types';
+import { indexedDbAdapter, resetDefaultStorage } from '../state/labStorage';
 import { Lab } from './Lab';
 import { LabContext, type LabContextValue } from './LabContext';
 

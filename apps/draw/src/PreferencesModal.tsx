@@ -2,8 +2,8 @@
  *
  *  The kit owns the walk (the navigation rail, label rows, filtering, hidden
  *  filtering, built-in control mapping); this file supplies only what is
- *  WeaselDraw-specific: the values binding (`usePrefsValues` →
- *  localStorage), renderers for the app's two custom kinds
+ *  WeaselDraw-specific: the values binding (`usePrefsValues` over the
+ *  app's prefs store), renderers for the app's two custom kinds
  *  (`registry-enum`, `data`), and the dev-only "Show hidden" switch.
  */
 import { useMemo, useState } from 'react';
@@ -16,9 +16,11 @@ import {
   type DataGridColumn,
   type PrefRenderContext,
 } from '@weasel-js/ui';
+import { usePrefsValues } from '@weasel-js/prefs/react';
 import {
+  drawPrefs,
   PREFS,
-  usePrefsValues,
+  type DrawPrefPath,
   type WeaselDrawPrefData,
   type WeaselDrawPrefRegistryEnum,
 } from './prefs';
@@ -50,7 +52,7 @@ export function PreferencesModal({ open, onClose, registryEnumSources }: Prefere
   const sources = useMemo(() => registryEnumSources ?? {}, [registryEnumSources]);
   const [dev] = useState(isDevMode);
   const [showHidden, setShowHidden] = useState(false);
-  const [values, setAt] = usePrefsValues();
+  const { values, set, unset, reset } = usePrefsValues(drawPrefs());
 
   return (
     <RegistryEnumSourcesContext.Provider value={sources}>
@@ -61,7 +63,9 @@ export function PreferencesModal({ open, onClose, registryEnumSources }: Prefere
         filterable
         schema={PREFS}
         values={values}
-        onChange={setAt}
+        onChange={set}
+        auto={unset}
+        onAutoChange={(path, next) => (next ? reset(path) : set(path, drawPrefs().get(path as DrawPrefPath)))}
         showHidden={showHidden}
         renderers={{
           'registry-enum': RegistryEnumControl,

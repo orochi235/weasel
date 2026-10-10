@@ -1,9 +1,8 @@
-import { getAlpha01, isBuiltinToolPref, toHex8, withAlpha01 } from '@weasel-js/core';
+import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
+import { isBuiltinPref, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
 import {
   Button,
   Focusable,
-  isPrefLeaf,
-  type PrefLeaf,
   type PropertyControlProps,
   PropertyField,
   PropertyHelp,
@@ -286,7 +285,7 @@ function Editor({
 }) {
   const { path, leaf } = open;
   const choices = useFieldChoices();
-  const field = isBuiltinToolPref(leaf)
+  const field = isBuiltinPref(leaf)
     ? prefFieldProps(leaf, {
         value: valueAtPath(config, path) ?? leaf.default,
         setValue: (next) => setConfig(path, next),
@@ -406,7 +405,7 @@ function Cell({
   const shown = value ?? leaf.default;
   const write = (next: unknown): void => setConfig(path, next);
   const choices = useFieldChoices();
-  const field = isBuiltinToolPref(leaf)
+  const field = isBuiltinPref(leaf)
     ? prefFieldProps(leaf, { value: shown, setValue: write, fields: choices })
     : null;
   const label = hint ? `${name}, ${hint}` : name;

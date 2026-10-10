@@ -1,6 +1,6 @@
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
-import { createMemoryAdapter } from './adapters';
 import { labPrefix } from './labRecords';
 import { SingletonExperimentProvider } from './SingletonExperiment';
 import { useTrialState } from './useTrialState';

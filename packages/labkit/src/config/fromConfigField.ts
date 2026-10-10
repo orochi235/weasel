@@ -1,4 +1,4 @@
-import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import type { ConfigField } from '../controls/types';
 import type { LeafPatch, ResolvedConfig } from './types';
 

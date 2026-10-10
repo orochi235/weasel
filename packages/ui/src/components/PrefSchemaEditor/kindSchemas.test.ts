@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ToolPrefGroup, ToolPrefLeaf } from '@weasel-js/core';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { BUILTIN_KINDS, attributeSchema, blankLeaf, changeKind, normalizeAttr } from './kindSchemas';
 import { nodeAt } from './schemaEdit';
 
-const num: ToolPrefLeaf = { kind: 'number', name: 'N', description: '', default: 3, min: 0, max: 10, unit: { toDisplay: (v: number) => v } as never } as ToolPrefLeaf;
+const num: PrefLeaf = { kind: 'number', name: 'N', description: '', default: 3, min: 0, max: 10, unit: { toDisplay: (v: number) => v } as never } as PrefLeaf;
 
 describe('kindSchemas', () => {
   it('describes a number leaf with base, default and number attributes', () => {
@@ -21,7 +21,7 @@ describe('kindSchemas', () => {
   });
 
   it('uses a custom kind\'s attributes, and treats unknown attributes as read-only', () => {
-    const leaf = { kind: 'registry-enum', name: 'R', description: '', default: 'a', source: 'tools', extra: 1 } as ToolPrefLeaf;
+    const leaf = { kind: 'registry-enum', name: 'R', description: '', default: 'a', source: 'tools', extra: 1 } as PrefLeaf;
     const { own, readOnly } = attributeSchema(leaf, { 'registry-enum': { source: { kind: 'string', name: 'Source', description: '', default: '' } } });
     expect(own.source).toBeDefined();
     expect(readOnly).toEqual([['default', 'a'], ['extra', 1]]);
@@ -36,7 +36,7 @@ describe('kindSchemas', () => {
   });
 
   it('changes kind, keeping base fields and reporting dropped attributes', () => {
-    const root: ToolPrefGroup = { name: 'R', children: { n: { ...num, unit: undefined, hidden: true } as ToolPrefLeaf } };
+    const root: PrefGroup = { name: 'R', children: { n: { ...num, unit: undefined, hidden: true } as PrefLeaf } };
     const { root: next, dropped } = changeKind(root, 'n', 'boolean');
     expect(nodeAt(next, 'n')).toMatchObject({ kind: 'boolean', name: 'N', hidden: true, default: false });
     expect(dropped.sort()).toEqual(['default', 'max', 'min']);
@@ -53,10 +53,10 @@ describe('kindSchemas', () => {
   });
 
   it('carries a default only between compatible kinds', () => {
-    const root = (leaf: object): ToolPrefGroup => ({ name: 'R', children: { n: { name: 'N', description: '', ...leaf } as ToolPrefLeaf } });
+    const root = (leaf: object): PrefGroup => ({ name: 'R', children: { n: { name: 'N', description: '', ...leaf } as PrefLeaf } });
     const to = (leaf: object, kind: string) => {
       const r = changeKind(root(leaf), 'n', kind);
-      return { leaf: nodeAt(r.root, 'n') as ToolPrefLeaf, dropped: r.dropped };
+      return { leaf: nodeAt(r.root, 'n') as PrefLeaf, dropped: r.dropped };
     };
     const paint = to({ kind: 'paint', default: { kind: 'solid', color: '#fff' } }, 'object');
     expect(paint.leaf).toMatchObject({ default: {} });
@@ -70,7 +70,7 @@ describe('kindSchemas', () => {
   });
 
   it('does not mistake inherited names for kinds', () => {
-    const leaf = { kind: 'constructor', name: 'C', description: '', default: 1 } as unknown as ToolPrefLeaf;
+    const leaf = { kind: 'constructor', name: 'C', description: '', default: 1 } as unknown as PrefLeaf;
     expect(attributeSchema(leaf).readOnly).toEqual([['default', 1]]);
     expect(Object.keys(attributeSchema(leaf).own)).not.toContain('min');
   });

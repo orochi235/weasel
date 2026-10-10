@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import type { ToolPrefGroup, ToolPrefLeaf } from '@weasel-js/core';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import {
   renderBuiltin,
   renderCells,
@@ -34,7 +34,7 @@ export interface ToolOptionsBarProps {
    * mapping `SelectionPanel` uses, so a kind gets its control decided in one
    * place; groups organize without drawing, since the bar is one line.
    */
-  schema?: ToolPrefGroup;
+  schema?: PrefGroup;
   /** Each leaf's value, keyed by dotted path. A path with no entry is unset. */
   values?: Readonly<Record<string, unknown>>;
   /** A leaf edit, as the dotted path it was declared at and its new value. */
@@ -101,9 +101,9 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
  * leaves and no chrome — but its path segment still names them, so a leaf
  * reads back at the path the tool declared it at.
  */
-function barRows(schema: ToolPrefGroup): PanelRow[] {
+function barRows(schema: PrefGroup): PanelRow[] {
   const leaves: PanelLeaf[] = [];
-  const collect = (group: ToolPrefGroup, prefix: string): void => {
+  const collect = (group: PrefGroup, prefix: string): void => {
     for (const [key, child] of Object.entries(group.children)) {
       const path = prefix === '' ? key : `${prefix}.${key}`;
       if (isGroup(child)) collect(child, path);
@@ -162,7 +162,7 @@ function BarRow({
  * would repeat what the control already says. `name` stays the accessible
  * name either way, so this costs a screen reader nothing.
  */
-function needsLabel(leaf: ToolPrefLeaf): boolean {
+function needsLabel(leaf: PrefLeaf): boolean {
   return leaf.kind === 'number' || leaf.kind === 'string';
 }
 
@@ -192,7 +192,7 @@ function barCell(
   };
   return {
     key: path,
-    leaf: leaf as ToolPrefLeaf,
+    leaf: leaf as PrefLeaf,
     ctx,
     ariaLabel,
     render: () => {

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { useState } from 'react';
 import { ToolOptionsBar } from './ToolOptionsBar';
 import { Button } from '../Button';
@@ -74,7 +74,7 @@ export const ManyControlsOverflow: Story = {
 // Driven by a tool's option schema rather than by children: the leaves draw
 // through the same mapping the selection panel uses, and the two paired
 // toggles collapse into one segmented bar.
-const TEXT_OPTIONS: ToolPrefGroup = {
+const TEXT_OPTIONS: PrefGroup = {
   name: 'Text',
   children: {
     bold: {

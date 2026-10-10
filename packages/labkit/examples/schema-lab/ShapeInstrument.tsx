@@ -1,8 +1,9 @@
 import { createScene, defaultNodeProperties, solid, strokeOf } from '@weasel-js/core';
 import type { FillStyle, RectPose, Scene, Stroke } from '@weasel-js/core';
 import { defineInstrument, hasConfigPath, type RenderContext, valueAtPath, withValueAtPath } from '@weasel-js/labkit';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { useEffect, useRef } from 'react';
-import { decodePrefValue, flattenPrefs, type PrefGroup, prefDefaults, prefsToFields, setAtPath } from './prefsToFields';
+import { decodePrefValue, flattenPrefs, prefDefaults, prefsToFields, setAtPath } from './prefsToFields';
 import { SceneFrame } from './SceneHost';
 
 /** weasel's published property schema for a `rect` node — the same one

@@ -1,3 +1,4 @@
+import type { StorageAdapter } from '@weasel-js/storage';
 import { type ColorList, colorCount, type Theme } from '@weasel-js/theme';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
 import {
@@ -37,7 +38,7 @@ import { Split } from '../primitives/Split';
 import { LabStoreContext } from '../state/context';
 import { valueRecord } from '../state/labRecords';
 import { PersistenceContext } from '../state/Persistence';
-import type { LabDensity, LabMode, StorageAdapter, TrialRecord } from '../state/types';
+import type { LabDensity, LabMode, TrialRecord } from '../state/types';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { usePersistedState } from '../state/usePersistedState';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';

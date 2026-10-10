@@ -25,6 +25,7 @@
   "dependencies": {
     "@weasel-js/font": "1.9.2",
     "@weasel-js/modes": "1.9.2",
+    "@weasel-js/prefs": "1.9.2",
     "@weasel-js/quantity": "1.9.2",
     "@weasel-js/react": "1.9.2",
     "@weasel-js/select": "1.9.2",

@@ -1,7 +1,8 @@
-import { ANGLE_RADIANS, prefUnit } from '@weasel-js/core';
+import { ANGLE_RADIANS } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import { type PrefNumberUnit, prefUnit } from '@weasel-js/prefs';
 import { compact } from '@weasel-js/quantity';
-import { type PrefNumberUnit, PropertyRow } from '@weasel-js/ui';
+import { PropertyRow } from '@weasel-js/ui';
 import { useState } from 'react';
 import { f } from '../config/builder';
 import { withValueAtPath } from '../config/path';

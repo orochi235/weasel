@@ -1,4 +1,4 @@
-import type { ToolPrefGroup } from 'tools/prefs';
+import type { PrefGroup } from '@weasel-js/prefs';
 
 /**
  * NodePropertiesEntry — one kind's entry in the **properties trait's**
@@ -21,7 +21,7 @@ export interface NodePropertiesEntry {
   /** Kind name — same vocabulary as the routing trait. */
   name: string;
   /** Property schema for this kind. */
-  schema: ToolPrefGroup;
+  schema: PrefGroup;
 }
 
 /**

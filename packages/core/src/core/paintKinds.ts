@@ -121,7 +121,7 @@ export interface PaintKindEntry {
   id: string;
   label: string;
   /** Glyph naming this kind in an editor's kind bar, as an icon name the UI
-   *  layer resolves — the same indirection `ToolPrefBase.icon` uses. A kind
+   *  layer resolves — the same indirection `PrefBase.icon` uses. A kind
    *  without one is named by its `label`. */
   icon?: string;
   /** A paint of this kind seeded from a color — what an editor writes when a

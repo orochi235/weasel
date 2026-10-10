@@ -1,4 +1,10 @@
 import {
+  type OwnedRecordCache,
+  openRecords,
+  type RecordCache,
+  type StorageAdapter,
+} from '@weasel-js/storage';
+import {
   CURRENT_DOCUMENT_VERSION,
   deleteConfirmed,
   emptyDocument,
@@ -27,7 +33,6 @@ import {
   trialValuesPrefix,
   UNDOCK_RECORD,
 } from './labRecords';
-import { type OwnedRecordCache, openRecords, type RecordCache } from './records';
 import { createLabStore, hydrateSnapshots, hydrateTrials, type LabStore } from './store';
 import type {
   CreateLabStoreOptions,
@@ -35,7 +40,6 @@ import type {
   LabMode,
   SavedSnapshot,
   SerializedTrial,
-  StorageAdapter,
   TrialRecord,
 } from './types';
 

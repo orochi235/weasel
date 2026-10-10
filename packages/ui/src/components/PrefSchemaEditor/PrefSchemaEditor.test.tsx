@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, getDefaultNormalizer, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 
 afterEach(cleanup);
 
-const START: ToolPrefGroup = {
+const START: PrefGroup = {
   name: 'Prefs',
   children: {
     view: { name: 'View', children: {
@@ -19,7 +19,7 @@ const START: ToolPrefGroup = {
   },
 };
 
-function Live({ start = START }: { start?: ToolPrefGroup }) {
+function Live({ start = START }: { start?: PrefGroup }) {
   const [schema, setSchema] = useState(start);
   return <PrefSchemaEditor schema={schema} onChange={setSchema} />;
 }
@@ -177,7 +177,7 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('labels the preview, and can hide hidden prefs and reset what was set in it', () => {
-    const start: ToolPrefGroup = { name: 'Prefs', children: {
+    const start: PrefGroup = { name: 'Prefs', children: {
       shown: { kind: 'boolean', name: 'Shown', description: '', default: false },
       secret: { kind: 'boolean', name: 'Secret', description: '', default: false, hidden: true },
     } };
@@ -240,7 +240,7 @@ describe('PrefSchemaEditor', () => {
 
   it('exports a function-valued attribute as KEEP_FROM_SOURCE', () => {
     const encoding = { read: () => true, write: (on: boolean) => on };
-    const start: ToolPrefGroup = { name: 'Prefs', children: {
+    const start: PrefGroup = { name: 'Prefs', children: {
       flag: { kind: 'boolean', name: 'Flag', description: '', default: false, encoding },
     } };
     render(<Live start={start} />);

@@ -12,10 +12,8 @@ import {
   type NodePropertiesEntry,
   type NodeRoutingEntry,
   type SceneNode,
-  type ToolPrefGroup,
-  type ToolPrefLeaf,
-  pairRowsOf,
 } from '@weasel-js/core';
+import { type PrefGroup, type PrefLeaf, pairRowsOf } from '@weasel-js/prefs';
 
 // Re-exported under its existing public name here: the kit-wide "these
 // values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
@@ -32,7 +30,7 @@ export type AnyNode = SceneNode<unknown, string, unknown>;
 export interface PanelLeaf {
   /** Dotted node path — the leaf's key in the schema. */
   path: string;
-  leaf: ToolPrefLeaf;
+  leaf: PrefLeaf;
 }
 
 /**
@@ -70,17 +68,17 @@ export function classifyKind(
   return 'unknown';
 }
 
-export function isGroup(n: ToolPrefLeaf | ToolPrefGroup): n is ToolPrefGroup {
+export function isGroup(n: PrefLeaf | PrefGroup): n is PrefGroup {
   return !('kind' in n);
 }
 
 /** Flatten a schema to sections of leaves. Nested groups fold into their
  *  top-level section; top-level leaves get an untitled leading section. */
-function flatten(schema: ToolPrefGroup): PanelSection[] {
+function flatten(schema: PrefGroup): PanelSection[] {
   const sections: PanelSection[] = [];
   const untitled: PanelLeaf[] = [];
 
-  const collect = (group: ToolPrefGroup, into: PanelLeaf[]): void => {
+  const collect = (group: PrefGroup, into: PanelLeaf[]): void => {
     for (const [key, child] of Object.entries(group.children)) {
       if (isGroup(child)) collect(child, into);
       else into.push({ path: key, leaf: child });
@@ -135,7 +133,7 @@ export function effectiveSections(
   const byName = new Map(entries.map((e) => [e.name, e]));
   const schemas = uniq.map((k) => byName.get(k)?.schema);
   if (schemas.some((s) => s === undefined)) return [];
-  const [first, ...rest] = schemas as ToolPrefGroup[];
+  const [first, ...rest] = schemas as PrefGroup[];
 
   const flatFirst = flatten(first);
   if (rest.length === 0) return flatFirst;

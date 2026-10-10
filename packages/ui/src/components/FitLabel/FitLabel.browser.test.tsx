@@ -1,7 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/faces.css';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { PropertyField } from '../Properties/PropertyField';
 import { ToggleBar } from '../ToggleBar';
@@ -130,7 +130,7 @@ test('a wide enum toggle row keeps its full labels', () => {
   expect(shown()).toEqual(tier(0));
 });
 
-const BAR_SCHEMA: ToolPrefGroup = {
+const BAR_SCHEMA: PrefGroup = {
   name: 'Text',
   children: {
     tracking: {

@@ -5,8 +5,8 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
-import type { PrefGroup } from './schema';
 
 const listFonts = vi.fn();
 const listCanvasFonts = vi.fn();

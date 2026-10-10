@@ -833,6 +833,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
+- **(P2) One path rule for pref schemas.** `PrefsForm`, the prefs store and labkit's config
+  resolver treat a group's key as a path segment (`view.gridDensity`); `SelectionPanel`'s model
+  treats it as a heading only, and `PrefObject`'s doc comment states that rule as general. Same
+  schema type, two answers to "what is this leaf's path". Decide which is right for which surface
+  and make the type say so.
+
 - **(P3) A Windows 9x theme.** Gray 3D bevels, a navy-to-blue gradient title strip and the
   system's pixel faces, as a full theme beside Interstellar rather than a one-component skin. Its
   titled groups want a titlebar frame motif (a solid title strip across the top), which was left
@@ -1020,6 +1026,15 @@ one dead `const` and four stale disable directives.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P2) `@weasel-js/diagram/layout` loads React again, and nothing runs the check that says so.**
+  `npm run check:react-free` fails on main: `packages/diagram/dist/layout.js` reaches
+  `react` and `react/jsx-runtime` across 503 modules (run on teitou, 2026-10-09). The
+  cause is `packages/diagram/src/body.ts:17` importing `cssFamilyName` from the
+  `@weasel-js/core` barrel (6a1afa10e); the function lives in `@weasel-js/font`, which is
+  React-free. Importing it from there means diagram declares `@weasel-js/font`, as a peer
+  like its others. The check itself is in no CI job or `prepublishOnly`, which is how this
+  landed unseen — wire it in after the build step.
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a

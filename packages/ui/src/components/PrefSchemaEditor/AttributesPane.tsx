@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import type { ToolPrefGroup, ToolPrefLeaf } from '@weasel-js/core';
+import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
 import { Input } from '../Input';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
-import { isPrefLeaf, prefFieldChoices } from '../Prefs/schema';
+import { prefFieldChoices } from '../Prefs/schema';
 import { Select } from '../Select';
 import { ATTR_RENDERERS } from './attrRenderers';
 import { attributeSchema, changeKind, normalizeAttr, type CustomKinds } from './kindSchemas';
@@ -22,8 +22,8 @@ const KEY_KIND = 'schema-key';
 const KIND_KIND = 'schema-kind';
 
 export interface AttributesPaneProps {
-  schema: ToolPrefGroup;
-  onChange(next: ToolPrefGroup): void;
+  schema: PrefGroup;
+  onChange(next: PrefGroup): void;
   path: string | null;
   onRekey(from: string, to: string): void;
   kinds: readonly string[];
@@ -73,9 +73,9 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
         }} />
     ),
   };
-  const children: Record<string, ToolPrefLeaf | ToolPrefGroup> = {
-    ...(path !== null ? { [KEY]: { kind: KEY_KIND, name: 'Key', description: 'The name its value is stored under.', default: '' } as ToolPrefLeaf } : {}),
-    ...(leaf ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of its value, which picks the control that draws it.', default: '' } as ToolPrefLeaf } : {}),
+  const children: Record<string, PrefLeaf | PrefGroup> = {
+    ...(path !== null ? { [KEY]: { kind: KEY_KIND, name: 'Key', description: 'The name its value is stored under.', default: '' } as PrefLeaf } : {}),
+    ...(leaf ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of its value, which picks the control that draws it.', default: '' } as PrefLeaf } : {}),
     ...shared,
     ...(Object.keys(own).length > 0 ? { [OWN]: { name: leaf ? node.kind : 'group', children: own } } : {}),
   };

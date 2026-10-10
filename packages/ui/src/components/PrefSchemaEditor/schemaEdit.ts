@@ -1,7 +1,13 @@
-import { isPlainObject, type ToolPrefGroup, type ToolPrefLeaf, type ToolPrefObject } from '@weasel-js/core';
-import { isPrefLeaf, prefFieldChoices } from '../Prefs/schema';
+import { isPlainObject } from '@weasel-js/core';
+import {
+  isPrefLeaf,
+  type PrefGroup,
+  type PrefLeaf,
+  type PrefObject,
+} from '@weasel-js/prefs';
+import { prefFieldChoices } from '../Prefs/schema';
 
-export type SchemaNode = ToolPrefLeaf | ToolPrefGroup;
+export type SchemaNode = PrefLeaf | PrefGroup;
 export type ChildMap = Record<string, SchemaNode>;
 
 /** Where moved nodes land: among `parentPath`'s children (`null` is the root), at `index` counted before the move. */
@@ -30,7 +36,7 @@ export function keyFromName(name: string): string {
 /** The children of a group, or of an `object` leaf; `undefined` for anything that cannot hold any. */
 export function childrenOf(node: SchemaNode): ChildMap | undefined {
   if (!isPrefLeaf(node)) return node.children;
-  return node.kind === 'object' ? (node as ToolPrefObject).children : undefined;
+  return node.kind === 'object' ? (node as PrefObject).children : undefined;
 }
 
 export function parentPath(path: string): string | null {
@@ -50,7 +56,7 @@ function ownChild(kids: ChildMap | undefined, key: string): SchemaNode | undefin
   return kids && Object.hasOwn(kids, key) ? kids[key] : undefined;
 }
 
-export function nodeAt(root: ToolPrefGroup, path: string | null): SchemaNode | undefined {
+export function nodeAt(root: PrefGroup, path: string | null): SchemaNode | undefined {
   if (path === null) return root;
   let cur: SchemaNode | undefined = root;
   for (const k of path.split('.')) cur = cur && ownChild(childrenOf(cur), k);
@@ -69,7 +75,7 @@ function withChildren(node: SchemaNode, kids: ChildMap): SchemaNode {
 }
 
 /** `root` with the children of the node at `parent` replaced by `edit` of them. */
-function editChildren(root: ToolPrefGroup, parent: string | null, edit: (kids: ChildMap) => ChildMap): ToolPrefGroup {
+function editChildren(root: PrefGroup, parent: string | null, edit: (kids: ChildMap) => ChildMap): PrefGroup {
   const keys = parent === null ? [] : parent.split('.');
   const go = (node: SchemaNode, depth: number): SchemaNode => {
     const kids = childrenOf(node);
@@ -81,7 +87,7 @@ function editChildren(root: ToolPrefGroup, parent: string | null, edit: (kids: C
     if (!child) throw new Error(`schemaEdit: no node at ${keys.slice(0, depth + 1).join('.')}`);
     return withChildren(node, { ...kids, [k]: go(child, depth + 1) });
   };
-  return go(root, 0) as ToolPrefGroup;
+  return go(root, 0) as PrefGroup;
 }
 
 function insertAt(kids: ChildMap, entries: Array<[string, SchemaNode]>, index: number): ChildMap {
@@ -103,14 +109,14 @@ function checkKey(kids: ChildMap, key: string): void {
   if (problem) throw new Error(`schemaEdit: ${problem}`);
 }
 
-export function addNode(root: ToolPrefGroup, parent: string | null, key: string, node: SchemaNode, index?: number): ToolPrefGroup {
+export function addNode(root: PrefGroup, parent: string | null, key: string, node: SchemaNode, index?: number): PrefGroup {
   return editChildren(root, parent, (kids) => {
     checkKey(kids, key);
     return insertAt(kids, [[key, node]], index ?? Object.keys(kids).length);
   });
 }
 
-export function removeNode(root: ToolPrefGroup, path: string): ToolPrefGroup {
+export function removeNode(root: PrefGroup, path: string): PrefGroup {
   const key = keyOf(path);
   return editChildren(root, parentPath(path), (kids) => {
     const { [key]: _gone, ...rest } = kids;
@@ -118,7 +124,7 @@ export function removeNode(root: ToolPrefGroup, path: string): ToolPrefGroup {
   });
 }
 
-export function renameKey(root: ToolPrefGroup, path: string, next: string): ToolPrefGroup {
+export function renameKey(root: PrefGroup, path: string, next: string): PrefGroup {
   const key = keyOf(path);
   if (next === key) return root;
   return editChildren(root, parentPath(path), (kids) => {
@@ -127,8 +133,8 @@ export function renameKey(root: ToolPrefGroup, path: string, next: string): Tool
   });
 }
 
-export function replaceNode(root: ToolPrefGroup, path: string | null, fn: (n: SchemaNode) => SchemaNode): ToolPrefGroup {
-  if (path === null) return fn(root) as ToolPrefGroup;
+export function replaceNode(root: PrefGroup, path: string | null, fn: (n: SchemaNode) => SchemaNode): PrefGroup {
+  if (path === null) return fn(root) as PrefGroup;
   const key = keyOf(path);
   return editChildren(root, parentPath(path), (kids) => {
     const node = kids[key];
@@ -138,7 +144,7 @@ export function replaceNode(root: ToolPrefGroup, path: string | null, fn: (n: Sc
 }
 
 /** Set one attribute; `undefined` removes it. Every other field keeps its value, functions included. */
-export function setAttribute(root: ToolPrefGroup, path: string | null, key: string, value: unknown): ToolPrefGroup {
+export function setAttribute(root: PrefGroup, path: string | null, key: string, value: unknown): PrefGroup {
   return replaceNode(root, path, (node) => {
     const next: Record<string, unknown> = { ...node };
     if (value === undefined) delete next[key];
@@ -153,8 +159,8 @@ export function setAttribute(root: ToolPrefGroup, path: string | null, key: stri
  * tree, and each moved node's old path in `from` beside its new one in `paths`.
  */
 export function moveNodes(
-  root: ToolPrefGroup, paths: readonly string[], target: SchemaTarget,
-): { root: ToolPrefGroup; from: string[]; paths: string[] } {
+  root: PrefGroup, paths: readonly string[], target: SchemaTarget,
+): { root: PrefGroup; from: string[]; paths: string[] } {
   const tops = paths.filter((p) => !paths.some((q) => q !== p && p.startsWith(`${q}.`)));
   const dest = target.parentPath;
   if (dest !== null && tops.some((p) => dest === p || dest.startsWith(`${p}.`))) {
@@ -187,7 +193,7 @@ export function moveNodes(
 }
 
 /** Every path whose node can hold children, in tree order. */
-export function branchPaths(root: ToolPrefGroup): string[] {
+export function branchPaths(root: PrefGroup): string[] {
   const out: string[] = [];
   const walk = (node: SchemaNode, path: string | null) => {
     for (const [key, child] of Object.entries(childrenOf(node) ?? {})) {
@@ -221,7 +227,7 @@ export interface UndescribedValue {
  * Each value in `stored` that no leaf of `root` describes, by its dotted path, in stored order. A leaf's own path
  * and everything under it are described; a plain object anywhere else is walked rather than listed.
  */
-export function undescribedValues(root: ToolPrefGroup, stored: unknown): UndescribedValue[] {
+export function undescribedValues(root: PrefGroup, stored: unknown): UndescribedValue[] {
   const leaves = new Set(prefFieldChoices(root).map((f) => f.path));
   const described = (path: string): boolean => {
     for (let at = path; at !== ''; at = at.includes('.') ? at.slice(0, at.lastIndexOf('.')) : '') {

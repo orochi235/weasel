@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect } from '@weasel-js/forge/play';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm, type PrefRenderContext } from './PrefsForm';
 import { PrefsDialog } from './PrefsDialog';
-import type { PrefGroup } from './schema';
 import { Button } from '../Button';
 import { Select } from '../Select';
 

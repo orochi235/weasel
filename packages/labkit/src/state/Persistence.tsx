@@ -1,8 +1,7 @@
+import { openRecords, type RecordCache, type StorageAdapter } from '@weasel-js/storage';
 import { createContext, type ReactNode } from 'react';
-import { defaultStorage } from './adapters';
 import { labPrefix } from './labRecords';
-import { openRecords, type RecordCache } from './records';
-import type { StorageAdapter } from './types';
+import { defaultStorage } from './labStorage';
 import { useOpenOnce, useWarnIgnoredChange } from './useOpenOnce';
 
 /** The records `usePersistedState` reads and writes. `<Lab>`,

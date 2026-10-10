@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { createIndexedDbAdapter } from '@weasel-js/storage';
 import { afterEach, expect, test } from 'vitest';
-import { createIndexedDbAdapter } from './adapters';
 import { Persistence } from './Persistence';
 import { usePersistedState } from './usePersistedState';
 

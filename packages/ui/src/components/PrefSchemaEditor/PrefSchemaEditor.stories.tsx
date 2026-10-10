@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { solid, type ToolPrefGroup } from '@weasel-js/core';
+import { solid } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import s from './PrefSchemaEditor.stories.module.css';
 
@@ -12,7 +13,7 @@ export default meta;
 
 type Story = StoryObj<typeof PrefSchemaEditor>;
 
-const SCHEMA: ToolPrefGroup = {
+const SCHEMA: PrefGroup = {
   name: 'Preferences',
   children: {
     canvas: {

@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeAll, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { migrateLegacyPanelFlags, usePanel } from './panels';
-import { PREFS_KEY, readPref } from './prefs';
+import { drawPrefs } from './prefs';
 
 // Same in-memory Storage shim as prefs.test.ts: jsdom 26 + Node 26 can
 // leave `window.localStorage` undefined.
@@ -20,20 +20,20 @@ beforeAll(() => {
   }
 });
 
-const flush = async () => { await Promise.resolve(); await Promise.resolve(); };
-
 describe('usePanel', () => {
-  beforeEach(async () => { await flush(); window.localStorage.clear(); });
+  beforeEach(() => {
+    drawPrefs().reset();
+    window.localStorage.clear();
+  });
 
-  it('toggles collapsed and hides through ui.panels', async () => {
+  it('toggles collapsed and hides through ui.panels', () => {
     const { result } = renderHook(() => usePanel('layers'));
     expect(result.current).toMatchObject({ hidden: false, collapsed: false });
     act(() => { result.current.onToggleCollapse(); });
     expect(result.current.collapsed).toBe(true);
     act(() => { result.current.onHide(); });
     expect(result.current.hidden).toBe(true);
-    await flush();
-    expect(JSON.parse(window.localStorage.getItem(PREFS_KEY)!).ui.panels)
+    expect(drawPrefs().get('ui.panels'))
       .toEqual({ layers: { collapsed: true, hidden: true } });
   });
 
@@ -47,13 +47,16 @@ describe('usePanel', () => {
 });
 
 describe('migrateLegacyPanelFlags', () => {
-  beforeEach(async () => { await flush(); window.localStorage.clear(); });
+  beforeEach(() => {
+    drawPrefs().reset();
+    window.localStorage.clear();
+  });
 
-  it('folds wd:panel:*:collapsed into ui.panels and removes the old keys', async () => {
+  it('folds wd:panel:*:collapsed into ui.panels and removes the old keys', () => {
     window.localStorage.setItem('wd:panel:layers:collapsed', '1');
     window.localStorage.setItem('wd:panel:history:collapsed', '0');
     migrateLegacyPanelFlags(window.localStorage);
-    expect(readPref('ui.panels')).toEqual({
+    expect(drawPrefs().get('ui.panels')).toEqual({
       layers: { collapsed: true },
       history: { collapsed: false },
     });
@@ -61,16 +64,15 @@ describe('migrateLegacyPanelFlags', () => {
     expect(window.localStorage.getItem('wd:panel:history:collapsed')).toBeNull();
   });
 
-  it('does not overwrite a value already in ui.panels', async () => {
-    window.localStorage.setItem(PREFS_KEY, JSON.stringify({ version: 2, ui: { panels: { layers: { collapsed: false } } } }));
+  it('does not overwrite a value already in ui.panels', () => {
+    drawPrefs().set('ui.panels', { layers: { collapsed: false } });
     window.localStorage.setItem('wd:panel:layers:collapsed', '1');
     migrateLegacyPanelFlags(window.localStorage);
-    expect(readPref('ui.panels')).toEqual({ layers: { collapsed: false } });
+    expect(drawPrefs().get('ui.panels')).toEqual({ layers: { collapsed: false } });
   });
 
-  it('is a no-op without legacy keys', async () => {
+  it('is a no-op without legacy keys', () => {
     migrateLegacyPanelFlags(window.localStorage);
-    await flush();
-    expect(window.localStorage.getItem(PREFS_KEY)).toBeNull();
+    expect(drawPrefs().isSet('ui.panels')).toBe(false);
   });
 });

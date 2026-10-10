@@ -38,6 +38,10 @@ const ENTRIES = [
     file: 'packages/diagram/dist/layout.js',
     why: 'measurement, ranking, force and ports, for a server-side layout',
   },
+  {
+    file: 'packages/prefs/dist/index.js',
+    why: 'the schema and the store; the hooks live behind @weasel-js/prefs/react',
+  },
 ];
 
 /** A specifier that must not appear anywhere in a React-free closure. */

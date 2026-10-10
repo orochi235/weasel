@@ -28,8 +28,9 @@ A map of the library so agents can find what they need quickly.
 | Concept | Source |
 |---|---|
 | Zustand store factory | `src/state/store.ts` |
-| Storage adapters (IndexedDB, local, session, URL hash, memory, none) | `src/state/adapters.ts` |
-| Record cache: debounced writes, other writers, conflicts | `src/state/records.ts` |
+| Storage adapters (IndexedDB, local, session, URL hash, memory, none) | `@weasel-js/storage` (`packages/storage/src`) |
+| Record cache: debounced writes, other writers, conflicts | `@weasel-js/storage` (`packages/storage/src/records.ts`) |
+| labkit's `'labkit'` IndexedDB database and `defaultStorage` | `src/state/labStorage.ts` |
 | Record names, and a document split into records | `src/state/labRecords.ts` |
 | Opening a stored lab; store ↔ records binding | `src/state/openLabStore.ts` |
 | `usePersistedState`, `<Persistence>` | `src/state/usePersistedState.ts`, `src/state/Persistence.tsx` |
@@ -45,7 +46,7 @@ A map of the library so agents can find what they need quickly.
 | Capability types (`Instrument`, `RenderContext`, ...) | `src/instrument/types.ts` |
 | Config builder (`f.schema`, `f.number`, ...) | `src/config/builder.ts` |
 | Rule chain + labkit's own inference | `src/config/rules.ts` |
-| Schema -> weasel-ui `PrefGroup` | `src/config/resolve.ts` |
+| Schema -> `@weasel-js/prefs` `PrefGroup` | `src/config/resolve.ts` |
 | Config paths (read, write, fill defaults) | `src/config/path.ts` |
 | Legacy `ConfigField[]` adapter | `src/config/fromConfigField.ts` |
 | Config schema validator | `src/instrument/validateConfigSchema.ts` |

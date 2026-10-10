@@ -1,8 +1,6 @@
-import { isBuiltinToolPref, type ToolPrefGroup } from '@weasel-js/core';
 import { type ConfigField, withValueAtPath } from '@weasel-js/labkit';
+import { isBuiltinPref, type PrefGroup } from '@weasel-js/prefs';
 
-/** weasel's own property-schema group. */
-export type PrefGroup = ToolPrefGroup;
 type PrefNode = PrefGroup['children'][string];
 type PrefLeaf = Exclude<PrefNode, PrefGroup>;
 
@@ -56,7 +54,7 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
   const label = leaf.name;
   // An app-defined kind is the lab's own business; only the built-ins are
   // this function's to translate.
-  if (!isBuiltinToolPref(leaf)) return null;
+  if (!isBuiltinPref(leaf)) return null;
   switch (leaf.kind) {
     case 'number': {
       const n = leaf as PrefLeaf & {
@@ -147,7 +145,7 @@ export function prefDefaults(group: PrefGroup): Record<string, unknown> {
  *  leaf is a field of — a dash preset is a multiple of the sibling `width`.
  *  `undefined` means the field is removed. */
 export function decodePrefValue(leaf: PrefLeaf, value: unknown, siblings?: Record<string, unknown>): unknown {
-  if (isBuiltinToolPref(leaf) && leaf.kind === 'enum' && leaf.encoding && typeof value === 'string') {
+  if (isBuiltinPref(leaf) && leaf.kind === 'enum' && leaf.encoding && typeof value === 'string') {
     return leaf.encoding.write(value, siblings);
   }
   const unit = (leaf as { unit?: { fromDisplay: (v: number) => number } }).unit;

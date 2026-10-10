@@ -1,6 +1,5 @@
-import type { ToolPrefPair } from '@weasel-js/core';
+import type { PrefLeaf, PrefNumberUnit, PrefPair } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
-import type { PrefLeaf, PrefNumberUnit } from '@weasel-js/ui';
 import { type Auto, isAuto } from './auto';
 import type {
   Annotations,
@@ -87,7 +86,7 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
 
   /** Share one row with the fields `pair.with` names, by full config path
    *  (`'offset.y'`), labeled `pair.label` or else this field's label. */
-  pair(pair: ToolPrefPair): this {
+  pair(pair: PrefPair): this {
     return this.ann({ pair });
   }
 

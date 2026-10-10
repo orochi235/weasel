@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ToolPrefPair } from '@weasel-js/core';
+import type { PrefPair } from '@weasel-js/prefs';
 import type { PrefRenderContext, PrefRenderer } from '../Prefs';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
@@ -48,7 +48,7 @@ function EnumOptions({ ctx }: { ctx: PrefRenderContext }) {
 /** The fields sharing a leaf's row, each picked from the schema's fields by path, and the row's label override.
  *  Picking none removes the pairing. */
 function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
-  const pair = ctx.value as ToolPrefPair | undefined;
+  const pair = ctx.value as PrefPair | undefined;
   const partners = pair === undefined ? [] : typeof pair.with === 'string' ? [pair.with] : [...pair.with];
   const label = pair?.label ?? '';
   const write = (nextWith: readonly string[], nextLabel: string) => {

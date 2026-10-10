@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { ToolPrefGroup } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { prefFieldProps } from './prefField';
 import { PrefsForm } from './PrefsForm';
@@ -7,7 +7,7 @@ import { prefFieldChoices } from './schema';
 
 afterEach(cleanup);
 
-const SCHEMA: ToolPrefGroup = {
+const SCHEMA: PrefGroup = {
   name: 'Root',
   children: {
     camera: { name: 'Camera', children: {

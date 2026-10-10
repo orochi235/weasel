@@ -1,4 +1,4 @@
-import type { PrefGroup } from '@weasel-js/ui';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { auto } from './auto';
 import { f } from './builder';

@@ -1,4 +1,4 @@
-import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
+import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { isAuto } from './auto';
 import { isRecord, withValueAtPath } from './path';
 import type { ResolvedConfig } from './types';
@@ -11,11 +11,12 @@ function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
-/** Every leaf in a resolved schema, in schema order, with its dotted path. */
+/** Every leaf in a resolved schema, in schema order, with its dotted path.
+ *  Not `prefLeaves`, which rejects the `$version` key a prefs store reserves. */
 function* leaves(group: PrefGroup, at = ''): Generator<[string, PrefLeaf]> {
   for (const [key, child] of Object.entries(group.children)) {
     const path = at === '' ? key : `${at}.${key}`;
-    if ('kind' in child) yield [path, child];
+    if (isPrefLeaf(child)) yield [path, child];
     else yield* leaves(child, path);
   }
 }

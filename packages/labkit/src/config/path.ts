@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
-import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 
 /**
  * Reading and writing a config tree by dotted path. A schema's leaves address

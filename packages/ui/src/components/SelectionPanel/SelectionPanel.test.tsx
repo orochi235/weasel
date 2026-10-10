@@ -8,9 +8,9 @@ import {
   strokeDashStyleOf,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
-  type ToolPrefGroup,
   type SelectionApi,
 } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
 
 interface Data { kind: string; fill?: string; label?: string }
@@ -214,7 +214,7 @@ describe('SelectionPanel', () => {
   // back as 6.283 (2π), the max.
   it('converts a unit leaf\'s bounds into the unit it displays', () => {
     const scene = makeScene();
-    const layout = properties[0]!.schema.children.layout as ToolPrefGroup;
+    const layout = properties[0]!.schema.children.layout as PrefGroup;
     const bounded: NodePropertiesEntry[] = [
       {
         ...properties[0]!,

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ToolPrefGroup, ToolPrefLeaf } from '@weasel-js/core';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { addNode, branchPaths, isValidKey, keyProblem, kindOfValue, undescribedValues, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
 
 const enc = { read: () => true, write: (on: boolean) => on };
-const ROOT: ToolPrefGroup = {
+const ROOT: PrefGroup = {
   name: 'Root',
   children: {
     a: { name: 'A', children: {
@@ -14,7 +14,7 @@ const ROOT: ToolPrefGroup = {
     z: { kind: 'object', name: 'Z', description: '', default: {}, children: {} },
   },
 };
-const keys = (root: ToolPrefGroup, path: string | null) => Object.keys((nodeAt(root, path) as ToolPrefGroup).children);
+const keys = (root: PrefGroup, path: string | null) => Object.keys((nodeAt(root, path) as PrefGroup).children);
 
 describe('schemaEdit', () => {
   it('finds nodes by dotted path, and the root by null', () => {
@@ -85,7 +85,7 @@ describe('schemaEdit', () => {
   });
 
   it('says what is wrong with a key, or null', () => {
-    const kids = (ROOT.children.a as ToolPrefGroup).children;
+    const kids = (ROOT.children.a as PrefGroup).children;
     expect(keyProblem(kids, 'x')).toMatch(/"x" is taken here/);
     expect(keyProblem(kids, 'a.b')).toMatch(/"a\.b" is not a valid key/);
     expect(keyProblem(kids, 'constructor')).toBeNull();
@@ -110,9 +110,9 @@ describe('schemaEdit', () => {
 });
 
 describe('undescribedValues', () => {
-  const root: ToolPrefGroup = { name: 'R', children: {
+  const root: PrefGroup = { name: 'R', children: {
     view: { name: 'View', children: { grid: { kind: 'boolean', name: 'Grid', description: '', default: true } } },
-    panels: { kind: 'data', name: 'Panels', description: '', default: {} } as ToolPrefLeaf,
+    panels: { kind: 'data', name: 'Panels', description: '', default: {} } as PrefLeaf,
   } };
 
   it('lists stored values no leaf describes, walking objects that are not leaves', () => {

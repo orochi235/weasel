@@ -69,6 +69,9 @@
       "@weasel-js/gestures": ["./packages/gestures/src/index.ts"],
       "@weasel-js/history": ["./packages/history/src/index.ts"],
       "@weasel-js/quantity": ["./packages/quantity/src/index.ts"],
+      "@weasel-js/storage": ["./packages/storage/src/index.ts"],
+      "@weasel-js/prefs": ["./packages/prefs/src/index.ts"],
+      "@weasel-js/prefs/react": ["./packages/prefs/src/react.ts"],
       "@weasel-js/select": ["./packages/select/src/index.ts"],
       "@weasel-js/registry": ["./packages/registry/src/index.ts"],
       "@weasel-js/react": ["./packages/react/src/index.ts"],
@@ -103,7 +106,7 @@
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, the rest of tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/history/src", "packages/quantity/src", "packages/registry/src", "packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
+  "include": ["apps", "tests/perf/bench", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/paint/src", "packages/text/src", "packages/history/src", "packages/quantity/src", "packages/storage/src", "packages/prefs/src", "packages/registry/src", "packages/react/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/diagram/src", "packages/guides/src", "packages/labkit/src", "packages/labkit/examples", "packages/audio/src", "packages/kernel3d/src", "packages/forge/src", "packages/routing/src", "packages/cursor/src", "packages/bidi/src", "packages/loupe/src"],
   // Browser tests are typechecked by packages/tsconfig.json, which says why.
   "exclude": ["node_modules", "dist", "**/*.browser.test.ts", "**/*.browser.test.tsx"]
 }

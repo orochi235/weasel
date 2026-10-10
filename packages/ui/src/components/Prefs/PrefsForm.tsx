@@ -1,15 +1,17 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
-import { Input } from '../Input';
-import { useScrollSpy } from '../../useScrollSpy';
 import {
   filterPrefSubtree,
   isPrefLeaf,
+  visiblePrefSubtree,
+  type PrefGroup,
+} from '@weasel-js/prefs';
+import { Input } from '../Input';
+import { useScrollSpy } from '../../useScrollSpy';
+import {
   prefFieldChoices,
   looseEntryName,
   prefRailItems,
-  visiblePrefSubtree,
   type PrefFieldChoice,
-  type PrefGroup,
 } from './schema';
 import { PrefRow, type PrefRenderer, type WalkCtx } from './PrefsRow';
 import { PrefsPane } from './PrefsPane';
@@ -23,7 +25,7 @@ export type PrefsLayout = 'columns' | 'rail' | 'list';
 
 /** Props for {@link PrefsForm}. */
 export interface PrefsFormProps {
-  /** Root of the schema tree. Core `ToolPrefGroup`s assign structurally. */
+  /** Root of the schema tree. */
   schema: PrefGroup;
   /** Nested value tree (shape mirrors the schema). Sparse is fine —
    *  missing leaves fall back to their schema `default`. */

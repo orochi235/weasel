@@ -1,4 +1,4 @@
-import type { PrefGroup, PrefLeaf } from '@weasel-js/ui';
+import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { valueAtPath } from './path';
 import type { ResolvedConfig } from './types';
 import { isLeafVisible } from './visible';
@@ -20,12 +20,6 @@ export interface SectionTree {
   values: Record<string, unknown>;
   /** The config path a path within `group` stands for. */
   pathAt: (railPath: string) => string;
-}
-
-/** Structural rather than `isPrefLeaf`, so the config entry stays free of a
- *  runtime import from ui. */
-function isLeaf(node: PrefLeaf | PrefGroup): node is PrefLeaf {
-  return 'kind' in node;
 }
 
 /** A section label as an object key: no dots, since a dotted path is how every
@@ -60,7 +54,7 @@ function prune(
   for (const [key, child] of Object.entries(group.children)) {
     const path = at === '' ? key : `${at}.${key}`;
     if (!isLeafVisible(resolved, path, config, showHidden)) continue;
-    if (isLeaf(child)) {
+    if (isPrefLeaf(child)) {
       children[key] = child;
       values[key] = valueAtPath(config, path);
       continue;
@@ -99,9 +93,7 @@ function prune(
     replace(children, reordered);
     replace(values, revalued);
   }
-  return Object.keys(children).length === 0
-    ? null
-    : { group: { ...group, children }, values };
+  return Object.keys(children).length === 0 ? null : { group: { ...group, children }, values };
 }
 
 function replace<V>(target: Record<string, V>, from: Record<string, V>): void {
@@ -137,7 +129,7 @@ export function sectionTree(
       claimed.add(path);
       const child = resolved.group.children[path];
       if (!child || !isLeafVisible(resolved, path, config, showHidden)) continue;
-      if (isLeaf(child)) {
+      if (isPrefLeaf(child)) {
         kept[path] = child;
         held[path] = valueAtPath(config, path);
       } else {
@@ -158,7 +150,7 @@ export function sectionTree(
   // gathers loose leaves into one item named for the root.
   for (const [key, child] of Object.entries(resolved.group.children)) {
     if (claimed.has(key) || !isLeafVisible(resolved, key, config, showHidden)) continue;
-    if (isLeaf(child)) {
+    if (isPrefLeaf(child)) {
       children[key] = child;
       values[key] = valueAtPath(config, key);
     } else {

@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
-import type { PrefGroup } from './schema';
 
 afterEach(cleanup);
 
