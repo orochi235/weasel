@@ -705,6 +705,17 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   is an input-taxonomy change: it has no press to own, so it cannot be an ongoing
   action, and `docs/taxonomy.md` would need to say what a hover binding claims.
 
+- **(P3) A ui build alone leaves labkit's stylesheet naming classes ui no longer emits.**
+  `packages/labkit/scripts/build-css.mjs` copies ui's CSS modules out of `packages/ui/dist` into
+  `labkit/dist/styles.css`, and only labkit's own `build` runs it. `npm run build -w @weasel-js/ui`
+  after a stylesheet edit mints new class hashes in ui's JS while labkit's sheet keeps the old
+  ones, so a consumer that links both by path and loads CSS through
+  `@weasel-js/labkit/styles.css` renders the changed component unstyled, with no error. Measured
+  by astv on 2026-10-10: ui's dist named the schema editor `_editor_s6qnh_7`, labkit's sheet held
+  `_editor_1db2f_7`, and `npm run build:css` in `packages/labkit` fixed the page. Wants either
+  ui's build to rebuild that sheet, or a check that every class in ui's `dist/style.css` is in
+  labkit's.
+
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
   but dragging a palette item onto a canvas is `useDragDrop`
