@@ -9,7 +9,8 @@ import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
 import { looseEntryName } from '../Prefs/schema';
 import { GENERAL, generalAllows, generalKeys, schemaTarget } from './generalBranch';
-import { Palette, type PaletteDrag } from './Palette';
+import { Icon } from '../../icons';
+import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
 import { StoredList } from './StoredList';
 import { blankGroup, blankLeaf, blankSection } from './kindSchemas';
@@ -35,6 +36,8 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
       id: p,
       label: name ? <>{name} <span className={s.treeKey}>({key})</span></> : key,
       textValue: name ? `${name} ${key}` : key,
+      // Unset, a group is drawn by its depth: a page under the root, a section below that.
+      ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
       trailing: isPrefLeaf(child)
         ? <PrefKindBadge kind={child.kind} />
         : <>{countBadge(leafCount([child]))}<PrefKindBadge kind={child.as ?? (isPrefSection(child) ? 'section' : 'group')} /></>,

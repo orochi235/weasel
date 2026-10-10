@@ -19,6 +19,14 @@ export interface PaletteItem {
   make(): SchemaNode;
 }
 
+/** The glyph for each way a group is drawn, on the palette's tools and beside a group in the tree. */
+export const GROUP_ICON: Record<NonNullable<PrefGroup['as']>, IconName> = {
+  page: 'formPage',
+  tab: 'formTab',
+  panel: 'formPanel',
+  section: 'formSection',
+};
+
 const group = (name: string, as: PrefGroup['as']): PrefGroup => ({ name, description: '', as, children: {} });
 
 const section = (name: string, as: PrefSection['as']): PrefSection => ({ name, description: '', as, members: {} });
@@ -26,17 +34,17 @@ const LABEL: PaletteItem = { id: 'label', label: 'Label', icon: 'formLabel', key
 
 /** What a section root takes: the same, less the page, each a section. */
 export const SECTION_PALETTE: readonly PaletteItem[] = [
-  { id: 'tab', label: 'Tab', icon: 'formTab', key: 'tab', make: () => section('New tab', 'tab') },
-  { id: 'panel', label: 'Panel', icon: 'formPanel', key: 'panel', make: () => section('New panel', 'panel') },
-  { id: 'section', label: 'Section', icon: 'formSection', key: 'section', make: () => section('New section', 'section') },
+  { id: 'tab', label: 'Tab', icon: GROUP_ICON.tab, key: 'tab', make: () => section('New tab', 'tab') },
+  { id: 'panel', label: 'Panel', icon: GROUP_ICON.panel, key: 'panel', make: () => section('New panel', 'panel') },
+  { id: 'section', label: 'Section', icon: GROUP_ICON.section, key: 'section', make: () => section('New section', 'section') },
   LABEL,
 ];
 
 export const PALETTE: readonly PaletteItem[] = [
-  { id: 'page', label: 'Page', icon: 'formPage', key: 'page', make: () => group('New page', 'page') },
-  { id: 'tab', label: 'Tab', icon: 'formTab', key: 'tab', make: () => group('New tab', 'tab') },
-  { id: 'panel', label: 'Panel', icon: 'formPanel', key: 'panel', make: () => group('New panel', 'panel') },
-  { id: 'section', label: 'Section', icon: 'formSection', key: 'section', make: () => group('New section', 'section') },
+  { id: 'page', label: 'Page', icon: GROUP_ICON.page, key: 'page', make: () => group('New page', 'page') },
+  { id: 'tab', label: 'Tab', icon: GROUP_ICON.tab, key: 'tab', make: () => group('New tab', 'tab') },
+  { id: 'panel', label: 'Panel', icon: GROUP_ICON.panel, key: 'panel', make: () => group('New panel', 'panel') },
+  { id: 'section', label: 'Section', icon: GROUP_ICON.section, key: 'section', make: () => group('New section', 'section') },
   LABEL,
 ];
 

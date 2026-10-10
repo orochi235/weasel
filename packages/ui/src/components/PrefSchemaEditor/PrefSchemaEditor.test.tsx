@@ -122,6 +122,19 @@ describe('PrefSchemaEditor', () => {
     expect(within(structure()).getByRole('treeitem', { name: /^bare 0 ?group/ })).toBeInTheDocument();
   });
 
+  it('draws a group\'s row with the glyph of the palette tool that makes it, and a leaf\'s with none', () => {
+    render(<Live start={{ name: 'Prefs', children: { view: { ...START.children.view!, children: {
+      box: { name: 'Box', as: 'panel', children: {} },
+      grid: (START.children.view as PrefGroup).children.grid!,
+    } } } }} />);
+    const glyph = (el: Element | null) => el?.querySelector('svg')?.innerHTML;
+    const tool = (name: string) => glyph(screen.getByRole('button', { name }));
+    const leading = (key: string) => glyph(row(key).closest('[role="treeitem"]')!.querySelector('[class*="leading"]'));
+    expect(leading('view')).toBe(tool('Page'));
+    expect(leading('box')).toBe(tool('Panel'));
+    expect(leading('grid')).toBeUndefined();
+  });
+
   it('undoes and redoes an edit, from its buttons and from the keyboard', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
