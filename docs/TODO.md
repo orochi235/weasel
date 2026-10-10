@@ -832,13 +832,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   grid gap above the attributes pane, and the Key/Kind rows are wider than the attribute form
   under them. Seen on `#/dev/prefs` at 1440×900.
 
-- **(P2) `PrefSchemaEditor` layout by dragging, what is left.** Rows in the live preview cannot be
-  dragged themselves: a drag starts in the structure tree or the palette. A stored value in the
-  Unplaced list cannot be dragged either; it is still added by a click. A `label` is a kind only
+- **(P2) `PrefSchemaEditor` layout by dragging, what is left.** A stored value in the Unplaced
+  list cannot be dragged; it is still added by a click. A `label` is a kind only
   `PrefsForm`'s rail and columns rows draw: `SelectionPanel` and labkit's `ControlPanel` show it as
   an unknown kind, `prefFieldChoices` offers it as a field, and `@weasel-js/prefs` does not know
-  the kind. Dragging in the preview was tried by hand on astv's page; no test drives a pointer
-  through it, only the drop-target arithmetic.
+  the kind. `PrefsForm.drop.browser.test.tsx` checks the form's drop target and reflow in a real
+  browser; no test drives a pointer through the editor itself.
+
+- **(P3) `PrefsForm`'s drop reflow, rough edges.** Rows jump to their new places; nothing
+  animates them, and the hit test already ignores where they are drawn, so a transform on them
+  would be safe. The line a placeholder adds can be the one that makes the pane scroll, and the
+  scrollbar then moves every row a few pixels. A row dragged off every target is drawn back at
+  home at full strength until it finds one. A sticky section title over a scrolled row does not
+  hide the row from `prefDropTargetAt`.
 
 - **(P3) `subPages` and `foldable` overlap a group's `as`.** `PrefsForm`'s form-wide `subPages`
   and `foldable` props decide what `as: 'page'` on a nested group and a folding panel should;
@@ -848,6 +854,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) `PrefSchemaEditor`: a drag begun in the structure tree shows the tree's rows as its ghost over the live preview.** A
   palette drag and a drag begun in the preview show the node as the form draws it (`NodeGhost`). `Tree` draws its
   own ghost and has no way to be handed one, so it needs a prop for what to draw, and for when the drag has left it.
+  Over the preview that ghost now also sits on top of the node the form draws where it would land; the palette's and
+  the preview's own ghosts step aside for it (`drawsNode`).
 - **(P3) `PrefSchemaEditor`'s properties-panel preview ignores the selection.** For a group
   schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s
   `selected`/`onSelect`. A section schema previews through `SelectionPanel`, which has neither.

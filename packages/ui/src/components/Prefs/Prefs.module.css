@@ -110,6 +110,11 @@
   opacity: 0.6;
 }
 
+/* Rail entries sit a pixel apart, so the outline is drawn inside the entry. */
+.railItem[data-drop-placeholder] {
+  outline-offset: -1px;
+}
+
 .railItem[data-drop='into'] {
   outline: 2px solid var(--wzl-accent);
   outline-offset: -2px;

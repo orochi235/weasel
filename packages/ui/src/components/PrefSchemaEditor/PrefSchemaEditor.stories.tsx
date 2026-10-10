@@ -44,6 +44,33 @@ const SCHEMA: PrefGroup = {
         },
       },
     },
+    export: {
+      name: 'Export',
+      description: 'What a saved file carries.',
+      children: {
+        format: {
+          kind: 'enum',
+          name: 'Format',
+          description: 'File type written by Export.',
+          default: 'svg',
+          options: [{ value: 'svg', label: 'SVG' }, { value: 'png', label: 'PNG' }],
+        },
+        embedFonts: { kind: 'boolean', name: 'Embed fonts', description: 'Carry the fonts the page uses.', default: false },
+        raster: {
+          name: 'Raster',
+          children: {
+            scale: { kind: 'number', name: 'Scale', description: 'Pixels per unit.', default: 2, min: 1, max: 8 },
+            transparent: { kind: 'boolean', name: 'Transparent', description: 'Leave the page background out.', default: true },
+          },
+        },
+      },
+    },
+    shortcuts: {
+      name: 'Shortcuts',
+      children: {
+        holdToPan: { kind: 'boolean', name: 'Hold Space to pan', description: 'Space turns the pointer into the hand.', default: true },
+      },
+    },
   },
 };
 

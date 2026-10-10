@@ -1,7 +1,7 @@
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { GENERAL } from './generalBranch';
-import { previewTarget, treeTakesNew } from './previewDrop';
+import { drawsNode, previewDrop, previewMark, previewTarget, sameDrop, treeTakesNew } from './previewDrop';
 
 const leaf = (name: string): PrefLeaf => ({ kind: 'boolean', name, description: '', default: false });
 const ROOT: PrefGroup = {
@@ -30,6 +30,38 @@ describe('previewTarget', () => {
     expect(previewTarget(ROOT, { path: 'author', where: 'into' }, [leaf('X')], [])).toBeNull();
     expect(previewTarget(ROOT, { path: 'gone', where: 'before' }, [leaf('X')], [])).toBeNull();
     expect(previewTarget(ROOT, null, [leaf('X')], [])).toBeNull();
+  });
+});
+
+describe('a drag over the preview', () => {
+  it('goes into a rail entry\'s group when it holds a leaf, and beside the entry when it holds only groups', () => {
+    const edge = { path: 'canvas', where: 'before', rail: true } as const;
+    expect(previewMark(edge, [leaf('X')])).toEqual({ path: 'canvas', where: 'into', rail: true });
+    expect(previewMark(edge, [PAGE])).toBe(edge);
+    expect(previewMark({ path: 'canvas.grid', where: 'before' }, [leaf('X')])).toEqual({ path: 'canvas.grid', where: 'before' });
+    expect(previewTarget(ROOT, edge, [PAGE], [])).toEqual({ parentPath: null, index: 1 });
+  });
+
+  it('hands the form the nodes and the value paths they sit at', () => {
+    const box = (ROOT.children.canvas as PrefGroup).children.box!;
+    expect(previewDrop({ path: 'author', where: 'after' }, [box], ['canvas/box'])).toEqual({ path: 'author', where: 'after', nodes: [box], from: ['canvas.box'] });
+  });
+
+  it('is the same drop while it would draw the same form', () => {
+    const x = leaf('X');
+    const a = previewDrop({ path: 'author', where: 'after' }, [x], []);
+    expect(sameDrop(a, previewDrop({ path: 'author', where: 'after' }, [x], []))).toBe(true);
+    expect(sameDrop(a, previewDrop({ path: 'author', where: 'before' }, [x], []))).toBe(false);
+    expect(sameDrop(a, previewDrop({ path: 'author', where: 'after' }, [leaf('X')], []))).toBe(false);
+    expect(sameDrop(a, null)).toBe(false);
+    expect(sameDrop(null, null)).toBe(true);
+  });
+
+  it('wants no ghost while the form draws the node, which it may not for a drop into a rail entry', () => {
+    expect(drawsNode(null)).toBe(false);
+    expect(drawsNode({ path: 'author', where: 'after', nodes: [] })).toBe(true);
+    expect(drawsNode({ path: 'canvas', where: 'before', rail: true, nodes: [] })).toBe(true);
+    expect(drawsNode({ path: 'canvas', where: 'into', rail: true, nodes: [] })).toBe(false);
   });
 });
 

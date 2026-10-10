@@ -1,1 +1,2 @@
-.frame { width: 900px; height: 640px; }
+/* As wide as the workshop gives it: at 900px the preview got 320px, too narrow to set two rows across. */
+.frame { inline-size: 100%; min-inline-size: 900px; block-size: 640px; }
