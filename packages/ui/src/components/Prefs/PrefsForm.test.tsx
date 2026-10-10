@@ -640,3 +640,20 @@ describe('PrefsForm — inherited leaves', () => {
     expect(onAutoChange).toHaveBeenCalledWith('window.glow', false);
   });
 });
+
+describe('PrefsForm rows side by side', () => {
+  it('gives a leaf whose value is a list the full width, and leaves a scalar in its column', () => {
+    render(
+      <PrefsForm layout="rail" rowsAcross={2} values={{}} onChange={() => {}}
+        renderers={{ list: () => <span>globs</span> }}
+        schema={{ name: 'Prefs', children: { icons: { name: 'Icons', children: {
+          paths: { kind: 'list', name: 'Draw as icons', description: '', default: ['**/dist'] },
+          size: { kind: 'number', name: 'Size', description: '', default: 1 },
+        } } } }}
+      />,
+    );
+    const slot = (text: string) => screen.getByText(text).closest('[class*="rowSlot"]');
+    expect(slot('Draw as icons')).toHaveAttribute('data-wide');
+    expect(slot('Size')).not.toHaveAttribute('data-wide');
+  });
+});
