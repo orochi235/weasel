@@ -90,7 +90,7 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   if (pref.block) return <div className={s.rowSlot} data-wide="" {...selectionAttrs(path, ctx, true)}>{control}</div>;
 
   return (
-    <div className={s.rowSlot} data-wide={pref.kind === 'object' ? '' : undefined} {...selectionAttrs(path, ctx, true)}>
+    <div className={s.rowSlot} data-wide={pref.kind === 'object' || Array.isArray(pref.default) ? '' : undefined} {...selectionAttrs(path, ctx, true)}>
     <PropertyRow
       label={pref.name}
       description={pref.description}

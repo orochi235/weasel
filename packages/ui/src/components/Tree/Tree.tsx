@@ -60,6 +60,10 @@ export interface TreeProps {
   /** The whole set a toggle would produce. Called whether or not controlled. */
   onExpandedChange?(ids: Set<string>): void;
 
+  /** What folds a branch on a click of its own. Default `'twisty'`, the mark in the row's gutter. `'leading'`
+   *  draws no mark and gives the job to the branch's `leading`, which carries `data-open` while it is open. */
+  foldBy?: 'twisty' | 'leading';
+
   /** Default `'none'`. `'multiple'` adds to the selection with Cmd/Ctrl and
    *  extends it over visible rows with Shift. */
   selectionMode?: TreeSelectionMode;
@@ -140,7 +144,7 @@ export const Tree = forwardRef(function Tree(
   {
     nodes, empty, className,
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
-    expandedIds, defaultExpandedIds, onExpandedChange,
+    expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty',
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
     onAction, onMove, canDrop, onDragOutside, onDropOutside, externalDrag, onExternalTarget,
   }: TreeProps,
@@ -339,10 +343,14 @@ export const Tree = forwardRef(function Tree(
             onClick={onRowClick(node)}
             onPointerDown={onMove ? (e) => drag.onPointerDown(node.id, e) : undefined}
           >
-            <span className={s.twisty} aria-hidden="true" data-tree-twisty="" onClick={branch ? onTwistyClick(node) : undefined}>
-              {branch && <DisclosureMark open={open} />}
-            </span>
-            {node.leading != null && <span className={s.leading}>{node.leading}</span>}
+            {foldBy === 'twisty' && (
+              <span className={s.twisty} aria-hidden="true" data-tree-twisty="" onClick={branch ? onTwistyClick(node) : undefined}>
+                {branch && <DisclosureMark open={open} />}
+              </span>
+            )}
+            {node.leading != null && (foldBy === 'leading' && branch
+              ? <span className={s.leading} data-tree-twisty="" data-open={open ? '' : undefined} onClick={onTwistyClick(node)}>{node.leading}</span>
+              : <span className={s.leading}>{node.leading}</span>)}
             <span id={labelId} className={s.label}>{node.label}</span>
             {trailingId && <span id={trailingId} className={s.trailing}>{node.trailing}</span>}
           </div>

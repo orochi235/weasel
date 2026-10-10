@@ -14,16 +14,30 @@
   color: var(--wzl-fg);
   display: grid;
   grid-template-columns: var(--structure-w) auto var(--attributes-w) auto minmax(320px, 1fr);
-  grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 2fr) minmax(0, 1fr);
   gap: var(--wzl-space-3) var(--wzl-space-2);
   min-height: 0;
   height: 100%;
 }
+/* Across the top of every pane: what acts on the schema as a whole. */
+.bar {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  padding-block-end: var(--wzl-space-2);
+  border-block-end: 1px solid var(--wzl-border);
+}
+.barTools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); margin-inline-end: auto; }
+.treeFilter { margin-block-end: var(--wzl-space-2); }
 .middle { display: grid; align-content: start; gap: var(--wzl-space-2); min-height: 0; overflow: auto; }
 .pane { min-height: 0; overflow: auto; }
 .structurePane { display: flex; flex-direction: column; overflow: hidden; }
 /* The tree reads at the size of the fields in the pane beside it. */
 .treeArea { flex: 1; min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); }
+/* A group's glyph folds it, and says it is open. */
+.treeArea [data-tree-twisty][data-open] { color: var(--wzl-secondary-fg); }
 .storedArea { flex: 0 0 var(--stored-h); min-height: 0; overflow: auto; }
 .storedList { list-style: none; margin: 0; padding: 0; display: grid; }
 .storedEntry {
@@ -56,7 +70,6 @@
 .previewStage { flex: 1; min-height: 0; display: flex; }
 .previewDialog { flex: 0 1 var(--preview-w); min-width: 0; min-height: 0; }
 .previewPanel { flex: 1; min-height: 0; overflow: auto; max-inline-size: 420px; }
-.toolbar { display: flex; flex-wrap: wrap; gap: var(--wzl-space-2); margin-block-end: var(--wzl-space-2); }
 .paneHeader {
   display: flex;
   flex-wrap: wrap;
@@ -109,8 +122,7 @@
 /* Tool buttons dragged into the tree or the preview to add a node there. */
 .palette {
   inline-size: fit-content;
-  margin-block-end: var(--wzl-space-2);
-  padding: var(--wzl-space-2);
+  padding: var(--wzl-space-1) var(--wzl-space-2);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   background: var(--wzl-surface);

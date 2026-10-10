@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react';
+import { createPortal } from 'react-dom';
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
 import { Button } from '../Button';
-import { Tree, type TreeNode } from '../Tree';
+import { Input } from '../Input';
+import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
 import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
@@ -9,7 +11,8 @@ import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
 import { looseEntryName } from '../Prefs/schema';
 import { GENERAL, generalAllows, generalKeys, schemaTarget } from './generalBranch';
-import { Palette, type PaletteDrag } from './Palette';
+import { Icon } from '../../icons';
+import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
 import { StoredList } from './StoredList';
 import { blankGroup, blankLeaf, blankSection } from './kindSchemas';
@@ -35,6 +38,8 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
       id: p,
       label: name ? <>{name} <span className={s.treeKey}>({key})</span></> : key,
       textValue: name ? `${name} ${key}` : key,
+      // Unset, a group is drawn by its depth: a page under the root, a section below that.
+      ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
       trailing: isPrefLeaf(child)
         ? <PrefKindBadge kind={child.kind} />
         : <>{countBadge(leafCount([child]))}<PrefKindBadge kind={child.as ?? (isPrefSection(child) ? 'section' : 'group')} /></>,
@@ -53,8 +58,8 @@ export interface StructurePaneProps {
   kinds: readonly string[];
   expanded: ReadonlySet<string>;
   onExpandedChange: Dispatch<SetStateAction<Set<string>>>;
-  /** Controls for the whole editor, set beside the pane's own. */
-  tools?: ReactNode;
+  /** Where in the editor's bar the pane draws the tools that add and remove nodes; `null` until the bar is up. */
+  toolSlot: HTMLElement | null;
   /** The values the app stores under the schema; those no leaf describes are listed under the tree. */
   stored?: unknown;
   /** Somewhere else a drag from this pane may end: the live preview. */
@@ -87,7 +92,7 @@ const nameOfKey = (key: string): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, tools, stored, outside, outsideDraws = false, onMove: move, onRemove }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, stored, outside, outsideDraws = false, onMove: move, onRemove }: StructurePaneProps) {
   const nodes = useMemo(() => {
     const all = toTreeNodes(schema, null, changed);
     const loose = new Set(generalKeys(schema));
@@ -95,6 +100,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
     // A preferences form files the root's own leaves under one rail entry; the tree shows them the same way.
     const general: TreeNode = {
       id: GENERAL,
+      leading: <Icon size={16} name={GROUP_ICON.page} />,
       label: looseEntryName(schema.name),
       textValue: looseEntryName(schema.name),
       trailing: countBadge(leafCount([...loose].map((key) => nodeAt(schema, key)!))),
@@ -102,6 +108,12 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
     };
     return [general, ...all.filter((n) => !loose.has(n.id))];
   }, [schema, changed]);
+  const [query, setQuery] = useState('');
+  const sought = query.trim().toLowerCase();
+  const shown = useMemo(
+    () => (sought === '' ? nodes : filterTree(nodes, (n) => (n.textValue ?? '').toLowerCase().includes(sought))),
+    [nodes, sought],
+  );
   const hasGeneral = nodes[0]?.id === GENERAL;
   const [generalOpen, setGeneralOpen] = useState(true);
   const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);
@@ -177,13 +189,19 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
 
   return (
     <section className={`${s.pane} ${s.structurePane}`} aria-label="Structure">
-      <PaneHeader title="Structure">{tools}</PaneHeader>
-      <div className={s.toolbar}>
-        <Button size="sm" onClick={() => setAdding('pref')}>Add pref</Button>
-        <Button size="sm" onClick={() => setAdding('branch')}>Add {branch}</Button>
-        <Button size="sm" disabled={selected === null} onClick={onRemove}>Remove</Button>
+      <PaneHeader title="Structure" />
+      <div className={s.treeFilter}>
+        <Input value={query} onChange={setQuery} aria-label="Filter structure" placeholder="Filter" />
       </div>
-      <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+      {toolSlot && createPortal(
+        <>
+          <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+          <Button size="sm" onClick={() => setAdding('pref')}>Add pref</Button>
+          <Button size="sm" onClick={() => setAdding('branch')}>Add {branch}</Button>
+          <Button size="sm" disabled={selected === null} onClick={onRemove}>Remove</Button>
+        </>,
+        toolSlot,
+      )}
       <AddNodeDialog what={adding === 'branch' ? branch : adding} kinds={kinds} onAdd={add}
         siblings={(host && childrenOf(host)) ?? {}} dottedKey={adding === 'pref' && branch === 'section'}
         initial={fromStored ? {
@@ -195,9 +213,13 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
       <div className={s.treeArea} ref={treeArea}>
       <Tree
         aria-label="Schema structure"
-        nodes={nodes}
-        expandedIds={generalOpen ? new Set([...expanded, GENERAL]) : expanded}
+        foldBy="leading"
+        nodes={shown}
+        empty={sought === '' ? undefined : 'Nothing matches.'}
+        // Filtered, every match shows, and what is folded stays as it was for when the filter goes.
+        expandedIds={sought !== '' ? treeBranchIds(shown) : generalOpen ? new Set([...expanded, GENERAL]) : expanded}
         onExpandedChange={(next) => {
+          if (sought !== '') return;
           setGeneralOpen(next.has(GENERAL));
           onExpandedChange(new Set([...next].filter((id) => id !== GENERAL)));
         }}
@@ -220,6 +242,8 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
           if (target) move(ids, target);
         })}
         canDrop={(ids, t) => {
+          // A place among the rows shown is not that place among all of them.
+          if (sought !== '') return false;
           if (ids.length === 0) return paletteDrag !== null && treeTakesNew(schema, paletteDrag.node, t.parentId);
           const general = generalAllows(schema, [...ids], t.parentId);
           if (general !== undefined) return general;

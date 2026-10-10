@@ -49,8 +49,8 @@ export interface PrefsFormProps {
   layout?: PrefsLayout;
   /** Show a filter field that narrows the form to matching leaves. */
   filterable?: boolean;
-  /** Rail layout: how many rows the pane sets side by side. At 2 a block or
-   *  object leaf spans both. Default 1. */
+  /** Rail layout: how many rows the pane sets side by side. At 2 a block leaf,
+   *  an object leaf, or a leaf whose value is a list spans both. Default 1. */
   rowsAcross?: 1 | 2;
   /** Rail layout: put a handle between the rail and the pane that drags the
    *  rail wider or narrower. The width is the form's own and starts at the

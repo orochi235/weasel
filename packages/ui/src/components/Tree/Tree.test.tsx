@@ -113,6 +113,21 @@ describe('Tree — expansion', () => {
     expect(screen.queryByText('Apple')).toBeNull();
   });
 
+  it('folds by a branch\'s leading in place of the twisty, marking it while the branch is open', () => {
+    const onAction = vi.fn();
+    render(<Tree aria-label="Food" foldBy="leading" onAction={onAction} nodes={[
+      { id: 'fruit', label: 'Fruit', leading: <i data-testid="glyph" />, children: [{ id: 'apple', label: 'Apple', leading: <i data-testid="leaf" /> }] },
+    ]} />);
+    const fold = screen.getByTestId('glyph').parentElement!;
+    expect(document.querySelectorAll('[data-tree-twisty]')).toHaveLength(1);
+    expect(fold).not.toHaveAttribute('data-open');
+    fireEvent.click(fold);
+    expect(item('Fruit')).toHaveAttribute('aria-expanded', 'true');
+    expect(fold).toHaveAttribute('data-open');
+    expect(screen.getByTestId('leaf').parentElement).not.toHaveAttribute('data-tree-twisty');
+    expect(onAction).not.toHaveBeenCalled();
+  });
+
   it('toggles a branch from its twisty without activating the row', () => {
     const onAction = vi.fn();
     render(<Tree aria-label="Food" nodes={NODES} onAction={onAction} selectionMode="single" />);

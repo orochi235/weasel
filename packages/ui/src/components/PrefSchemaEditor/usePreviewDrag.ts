@@ -34,7 +34,7 @@ export function usePreviewDrag({ stage, schema, place, onMove }: {
     // The entry for the root's own leaves has the empty path, and names no node to pick up.
     const entry = target.closest?.('[data-pref-rail]:not([data-pref-rail=""])');
     const el = entry ?? target.closest?.('[data-pref-path]');
-    // A rail entry is a button whose press is also the pick-up; a release that did not travel still opens it.
+    // A rail entry is a button whose press is also the pick-up.
     if (!box || !el || drag.current || e.button !== 0 || (!entry && isInControlWithin(target, el))) return;
     // A leaf's row is its label and then its control; only the label picks the row up.
     const row = el.firstElementChild;
@@ -66,7 +66,11 @@ export function usePreviewDrag({ stage, schema, place, onMove }: {
         end();
         if (to) onMove([path], to);
       },
-      onClick: end,
+      onClick: () => {
+        end();
+        // The session holds the pointer, so the release is not a click on the entry.
+        (entry as HTMLElement | null)?.click();
+      },
       onCancel: end,
     });
   };

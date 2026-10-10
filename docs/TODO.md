@@ -859,6 +859,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s
   `selected`/`onSelect`. A section schema previews through `SelectionPanel`, which has neither.
 
+- **(P1) A prefs schema cannot say "a list of X".** `@weasel-js/prefs` has `object` for one
+  compound value with typed `children`, and nothing for an array. labkit's `f.list` holds strings
+  only and is not among the package's built-in kinds, so `PrefSchemaEditor` treats it as an unknown
+  custom kind and edits its base fields alone. A list of numbers, enums or objects has to be a
+  custom kind with a hand-written validator and renderer: astv's timing chains are `number[]`
+  declared as `f.custom('phases:<chain>', …)` for that reason. There is no map type either.
+  Proposed, not agreed: a built-in `list` leaf carrying `item`, itself an ordinary leaf, the way
+  `object` carries `children`, with `minItems`/`maxItems`, so
+  `{ kind: 'list', item: { kind: 'number', min: 0 }, minItems: 3, maxItems: 3 }` replaces the
+  validator and `f.list` becomes its `item: { kind: 'string' }` case. Touches the schema type,
+  `PrefsForm`'s list control (`ListEditor` edits strings), and the editor's kind table
+  (`kindSchemas.ts`).
+
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides and `.dialog` rows beside the
   `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its

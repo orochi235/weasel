@@ -81,6 +81,10 @@
   align-items: center;
 }
 
+.leading[data-tree-twisty] {
+  cursor: pointer;
+}
+
 .label {
   flex: 1 1 auto;
   min-width: 0;

@@ -122,6 +122,61 @@ describe('PrefSchemaEditor', () => {
     expect(within(structure()).getByRole('treeitem', { name: /^bare 0 ?group/ })).toBeInTheDocument();
   });
 
+  it('draws a group\'s row with the glyph of the palette tool that makes it, and a leaf\'s with none', () => {
+    render(<Live start={{ name: 'Prefs', children: { view: { ...START.children.view!, children: {
+      box: { name: 'Box', as: 'panel', children: {} },
+      grid: (START.children.view as PrefGroup).children.grid!,
+    } } } }} />);
+    const glyph = (el: Element | null) => el?.querySelector('svg')?.innerHTML;
+    const tool = (name: string) => glyph(screen.getByRole('button', { name }));
+    const leading = (key: string) => glyph(row(key).closest('[role="treeitem"]')!.querySelector('[class*="leading"]'));
+    expect(leading('view')).toBe(tool('Page'));
+    expect(leading('box')).toBe(tool('Panel'));
+    expect(leading('grid')).toBeUndefined();
+  });
+
+  it('opens a page from a press and release on its rail entry in the preview, with no click of the browser\'s', () => {
+    render(<Live />);
+    const entry = within(preview()).getByRole('button', { name: 'Panels' });
+    fireEvent.pointerDown(entry, { button: 0, clientX: 5, clientY: 5 });
+    fireEvent.pointerUp(entry, { clientX: 5, clientY: 5 });
+    expect(within(preview()).getByText('Dock')).toBeInTheDocument();
+  });
+
+  it('narrows the tree to the rows a filter matches, under the branches that hold them', () => {
+    render(<Live />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'dock' } });
+    expect(within(structure()).getByRole('treeitem', { name: /\(dock\)/ })).toBeInTheDocument();
+    expect(within(structure()).getByRole('treeitem', { name: /\(panels\)/ })).toBeInTheDocument();
+    expect(within(structure()).queryByRole('treeitem', { name: /\(view\)/ })).toBeNull();
+  });
+
+  it('sets the host\'s controls, the palette, and the add and remove buttons in one bar above the panes', () => {
+    render(<PrefSchemaEditor schema={START} onChange={() => {}} bar={<button type="button">Source</button>} />);
+    const bar = screen.getByRole('group', { name: 'Schema tools' });
+    for (const name of ['Source', 'Page', 'Add pref', 'Add group', 'Remove', 'Undo', 'Redo'])
+      expect(within(bar).getByRole('button', { name })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Structure' })).queryByRole('button', { name: 'Add pref' })).toBeNull();
+  });
+
+  it('drops what it submitted from the changes once the host says the source took it', async () => {
+    const renamed: PrefGroup = { ...START, children: { ...START.children, view: { ...(START.children.view as PrefGroup), name: 'Viewing' } } };
+    function Host({ original, taken }: { original: PrefGroup; taken: boolean }) {
+      const [schema, setSchema] = useState(renamed);
+      return <PrefSchemaEditor schema={schema} onChange={setSchema} original={original} taken={taken} onSubmit={async () => {}} />;
+    }
+    const changes = () => screen.getByRole('region', { name: 'Changes' });
+    const { rerender } = render(<Host original={START} taken={false} />);
+    expect(within(changes()).queryByText('No changes.')).toBeNull();
+    await act(async () => { fireEvent.click(within(changes()).getByRole('button', { name: 'Submit' })); });
+    // The source took the rename in words of its own, which only the host's say-so tells from an edit still owed.
+    const took: PrefGroup = { ...START, children: { ...START.children, view: { ...(START.children.view as PrefGroup), name: 'Views' } } };
+    rerender(<Host original={took} taken={false} />);
+    expect(within(changes()).queryByText('No changes.')).toBeNull();
+    rerender(<Host original={took} taken />);
+    expect(within(changes()).getByText('No changes.')).toBeInTheDocument();
+  });
+
   it('undoes and redoes an edit, from its buttons and from the keyboard', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
