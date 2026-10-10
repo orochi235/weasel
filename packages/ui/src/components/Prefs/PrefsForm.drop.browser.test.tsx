@@ -41,9 +41,14 @@ interface Harness {
   /** Point the drag at a client point: what the form says is there, drawn. */
   aim(x: number, y: number): PrefDropMark | null;
   select(path: string): void;
+  /** The drag has nowhere to land. */
+  hold(): void;
+  /** The drag is over. */
+  clear(): void;
 }
 
-function mount(across: 1 | 2, from?: string, height = 420): Harness {
+/** `settle` ends the rows' slide to their new places at once, so a rect read after `aim` is where the row lies. */
+function mount(across: 1 | 2, from?: string, height = 420, settle = true): Harness {
   let setDrop!: (d: PrefDrop | null) => void;
   let setSelected!: (p: string) => void;
   const node = from === undefined ? NEW : (SCHEMA.children.canvas as PrefGroup).children[from.split('.')[1]!]!;
@@ -53,7 +58,7 @@ function mount(across: 1 | 2, from?: string, height = 420): Harness {
     setDrop = set;
     setSelected = pick;
     return (
-      <div style={{ width: 720, height, display: 'flex' }}>
+      <div style={{ width: 720, height, display: 'grid' }}>
         <PrefsForm layout="rail" rowsAcross={across} schema={SCHEMA} values={{}} onChange={() => {}} drop={drop} selected={selected} />
       </div>
     );
@@ -65,9 +70,12 @@ function mount(across: 1 | 2, from?: string, height = 420): Harness {
     aim(x, y) {
       const mark = prefDropTargetAt(box, x, y);
       act(() => setDrop(mark && { ...mark, nodes: [node], ...(from === undefined ? {} : { from: [from] }) }));
+      if (settle) for (const a of box.getAnimations({ subtree: true })) a.finish();
       return mark;
     },
     select: (path) => act(() => setSelected(path)),
+    hold: () => act(() => setDrop({ path: '', where: 'home', nodes: [node], from: [from!] })),
+    clear: () => act(() => setDrop(null)),
   };
 }
 
@@ -87,8 +95,7 @@ describe.each([1, 2] as const)('a drop drawn at %i across', (across) => {
     const y = across === 2 ? before.y : before.r.top + before.r.height / 4;
     expect(h.aim(x, y)).toEqual({ path: 'canvas.b', where: 'before' });
     const gap = placeholder(h.box)!.getBoundingClientRect();
-    // To within a scrollbar: the line the gap adds can be the one that makes the pane scroll.
-    expect(Math.abs(gap.left - before.r.left)).toBeLessThan(16);
+    expect(gap.left).toBeCloseTo(before.r.left, 0);
     expect(gap.top).toBeCloseTo(before.r.top, 0);
     expect(placeholder(h.box)!.textContent).toContain('Dropped');
     const after = rowAt(h.box, 'canvas.b').getBoundingClientRect();
@@ -159,4 +166,52 @@ it('drops beside a rail entry from either half when asked never to drop into one
   const beside = (y: number) => prefDropTargetAt(h.box, x, y, { railInto: false });
   expect(beside(r.top + r.height / 2 - 2)).toEqual({ path: 'io', where: 'before', rail: true });
   expect(beside(r.top + r.height / 2 + 2)).toEqual({ path: 'io', where: 'after', rail: true });
+});
+
+it('slides a row from where it was to where the drop puts it', () => {
+  const h = mount(1, undefined, 420, false);
+  const row = rowAt(h.box, 'canvas.b');
+  const before = center(row);
+  h.aim(before.x, before.r.top + 2);
+  const [slide] = row.getAnimations();
+  expect(slide).toBeDefined();
+  slide!.pause();
+  slide!.currentTime = 0;
+  expect(row.getBoundingClientRect().top).toBeCloseTo(before.r.top, 0);
+  slide!.finish();
+  expect(row.getBoundingClientRect().top).toBeGreaterThan(before.r.bottom - 1);
+  // A row the drop does not move is left alone.
+  expect(rowAt(h.box, 'canvas.a').getAnimations()).toHaveLength(0);
+});
+
+it('reads a form whose rows are still sliding as it will lie', () => {
+  const h = mount(1, 'canvas.a', 420, false);
+  const e = center(rowAt(h.box, 'canvas.e'));
+  const b = center(rowAt(h.box, 'canvas.b'));
+  h.aim(e.x, e.r.bottom - 2);
+  // The drag is let go and another begins before the rows are back.
+  h.clear();
+  expect(h.aim(b.x, b.r.top + 2)).toEqual({ path: 'canvas.b', where: 'before' });
+});
+
+it('takes a point on a section title stuck over its rows as the section, not the row under it', () => {
+  const h = mount(1, undefined, 110);
+  const pane = h.box.querySelector('[data-pref-into]')!;
+  pane.scrollTop = pane.scrollHeight;
+  const title = h.box.querySelector('[data-pref-path="canvas.snapping"] > h4')!;
+  const hidden = ['f', 'g', 'h'].map((k) => center(rowAt(h.box, `canvas.snapping.${k}`)))
+    .find((c) => title.contains(document.elementFromPoint(c.x, c.y)));
+  expect(hidden, 'a row of the section lies under its title').toBeDefined();
+  expect(h.aim(hidden!.x, hidden!.y)).toEqual({ path: 'canvas.snapping', where: 'into' });
+});
+
+it('draws a row held with nowhere to land as a placeholder where it sits, and reads the form as it lies', () => {
+  const h = mount(1, 'canvas.b');
+  const b = center(rowAt(h.box, 'canvas.b'));
+  const c = center(rowAt(h.box, 'canvas.c'));
+  h.hold();
+  expect(h.box.querySelector('[data-pref-path="canvas.b"]')).toBeNull();
+  expect(placeholder(h.box)!.getBoundingClientRect().top).toBeCloseTo(b.r.top, 0);
+  expect(rowAt(h.box, 'canvas.c').getBoundingClientRect().top).toBeCloseTo(c.r.top, 0);
+  expect(h.aim(c.x, c.r.bottom - 2)).toEqual({ path: 'canvas.c', where: 'after' });
 });

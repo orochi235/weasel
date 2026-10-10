@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { prefersReducedMotion } from './reducedMotion';
 
 /** One observed section: its id and its top edge, in the container's
  *  coordinates (its `getBoundingClientRect().top` less the container's). */
@@ -131,9 +132,4 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
   }, []);
 
   return { active, scrollTo };
-}
-
-function prefersReducedMotion(): boolean {
-  return typeof matchMedia === 'function'
-    && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }

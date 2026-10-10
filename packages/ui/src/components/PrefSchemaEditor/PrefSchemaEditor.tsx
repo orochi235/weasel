@@ -14,7 +14,7 @@ import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
-import { drawsNode, previewDrop, previewMark, previewTarget, railTakesInto, sameDrop } from './previewDrop';
+import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, railTakesInto, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
 import { StructurePane, type DropOutside } from './StructurePane';
 import s from './PrefSchemaEditor.module.css';
@@ -179,7 +179,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const outside: DropOutside = {
     over(nodes, paths, point) {
       const mark = markAt(nodes, point);
-      const next = mark && previewTarget(latest.current.schema, mark, nodes, paths) !== null ? previewDrop(mark, nodes, paths) : null;
+      const landing = mark && previewTarget(latest.current.schema, mark, nodes, paths) !== null ? previewDrop(mark, nodes, paths) : null;
+      const next = landing ?? heldDrop(latest.current.schema, nodes, paths);
       setDrop((cur) => (sameDrop(cur, next) ? cur : next));
       // Held on the middle of a rail entry, the drag opens that page, so a row on it can be aimed at.
       if (next?.rail && next.where === 'into') {
@@ -191,7 +192,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       } else {
         stopOpening();
       }
-      return next !== null;
+      return landing !== null;
     },
     target: (nodes, paths, point) => previewTarget(latest.current.schema, markAt(nodes, point), nodes, paths),
     end() {

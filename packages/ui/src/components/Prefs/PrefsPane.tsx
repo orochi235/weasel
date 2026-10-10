@@ -110,7 +110,7 @@ function PaneSection({ ctx, group, path, depth, box }: {
       {...selectionAttrs(path, ctx)}
       aria-label={group.name}
     >
-      <Heading className={depth === 0 ? s.sectionTitle : s.subsectionTitle}>
+      <Heading className={depth === 0 ? s.sectionTitle : s.subsectionTitle} data-pref-sticky={depth === 0 ? '' : undefined}>
         {group.name}
       </Heading>
       {group.description !== undefined && (

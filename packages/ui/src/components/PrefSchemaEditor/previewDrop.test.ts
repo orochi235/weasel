@@ -1,7 +1,7 @@
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { GENERAL } from './generalBranch';
-import { drawsNode, previewDrop, previewMark, previewTarget, railTakesInto, sameDrop, treeTakesNew } from './previewDrop';
+import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, railTakesInto, sameDrop, treeTakesNew } from './previewDrop';
 
 const leaf = (name: string): PrefLeaf => ({ kind: 'boolean', name, description: '', default: false });
 const ROOT: PrefGroup = {
@@ -69,6 +69,14 @@ describe('a drag over the preview', () => {
     expect(drawsNode({ path: 'author', where: 'after', nodes: [] })).toBe(true);
     expect(drawsNode({ path: 'canvas', where: 'before', rail: true, nodes: [] })).toBe(true);
     expect(drawsNode({ path: 'canvas', where: 'into', rail: true, nodes: [] })).toBe(false);
+    expect(drawsNode({ path: '', where: 'home', nodes: [] })).toBe(false);
+  });
+
+  it('holds a node of the schema where it sits while it has nowhere to land, and draws nothing for a new one', () => {
+    const grid = (ROOT.children.canvas as PrefGroup).children.grid!;
+    expect(heldDrop(ROOT, [grid], ['canvas.grid'])).toEqual({ path: '', where: 'home', nodes: [grid], from: ['canvas.grid'] });
+    expect(heldDrop(ROOT, [TAB], [])).toBeNull();
+    expect(heldDrop({ name: 'Rect', description: '', members: {} }, [grid], ['grid'])).toBeNull();
   });
 });
 

@@ -358,6 +358,8 @@
   flex: 1;
   min-width: 0;
   overflow-y: auto;
+  /* A placeholder's line can be the one that makes the pane scroll, and a scrollbar arriving would move every row. */
+  scrollbar-gutter: stable;
   padding: var(--wzl-space-5) var(--wzl-space-6);
 }
 
