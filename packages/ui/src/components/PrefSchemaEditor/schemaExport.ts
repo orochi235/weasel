@@ -1,6 +1,6 @@
 import { isPlainObject } from '@weasel-js/core';
-import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
-import { childrenOf, isValidKey, joinPath, type SchemaNode } from './schemaEdit';
+import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
+import { childrenOf, isUnder, isValidKey, joinPath, keysOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** What an attribute holding code prints as: an undeclared name, so the pasted literal fails typecheck until the
  *  original expression is put back. */
@@ -62,10 +62,11 @@ function printNode(node: SchemaNode, depth: number): string {
 }
 
 /** Code-bearing attributes print as {@link KEEP}; the tree around them prints in full. */
-export function printSchema(root: PrefGroup): string {
+export function printSchema(root: SchemaRoot): string {
   return printNode(root, 0);
 }
 
+/** One difference between two schemas. A path is a node's keys from the root down, joined by `/`. */
 export type SchemaChange =
   | { op: 'add'; path: string; kind: string }
   | { op: 'remove'; path: string; kind: string }
@@ -75,7 +76,7 @@ export type SchemaChange =
 
 const kindOf = (n: SchemaNode) => (isPrefLeaf(n) ? n.kind : isPrefSection(n) ? 'section' : 'group');
 
-function flatten(root: PrefGroup): Map<string, SchemaNode> {
+function flatten(root: SchemaRoot): Map<string, SchemaNode> {
   const out = new Map<string, SchemaNode>();
   const walk = (node: SchemaNode, path: string | null) => {
     for (const [k, child] of Object.entries(childrenOf(node) ?? {})) {
@@ -108,7 +109,7 @@ function attrChanges(path: string, a: SchemaNode, b: SchemaNode): SchemaChange[]
  * kind and name that arrived at another are taken as one node moved, and a moved node's descendants travel with
  * it unreported. Reordering a node's children is one `reorder` for that node (`''` is the root).
  */
-export function diffSchemas(before: PrefGroup, after: PrefGroup): SchemaChange[] {
+export function diffSchemas(before: SchemaRoot, after: SchemaRoot): SchemaChange[] {
   const a = flatten(before);
   const b = flatten(after);
   const out: SchemaChange[] = [];
@@ -116,8 +117,8 @@ export function diffSchemas(before: PrefGroup, after: PrefGroup): SchemaChange[]
   const gone = [...a.keys()].filter((p) => !b.has(p));
   const added = new Set([...b.keys()].filter((p) => !a.has(p)));
   const moved = new Map<string, string>();
-  for (const from of gone.sort((x, y) => x.split('.').length - y.split('.').length)) {
-    const via = [...moved].find(([f]) => from.startsWith(`${f}.`));
+  for (const from of gone.sort((x, y) => keysOf(x).length - keysOf(y).length)) {
+    const via = [...moved].find(([f]) => isUnder(from, f));
     if (via) {
       const to = via[1] + from.slice(via[0].length);
       if (added.has(to)) { added.delete(to); pairs.push([from, to]); continue; }
@@ -134,7 +135,7 @@ export function diffSchemas(before: PrefGroup, after: PrefGroup): SchemaChange[]
   for (const p of a.keys()) if (b.has(p)) pairs.push([p, p]);
   for (const [from, to] of pairs) out.push(...attrChanges(to, a.get(from)!, b.get(to)!));
   // Only keys present on both sides count, so a child arriving or leaving is not a reorder.
-  const keysAt = (root: PrefGroup, map: Map<string, SchemaNode>, path: string) =>
+  const keysAt = (root: SchemaRoot, map: Map<string, SchemaNode>, path: string) =>
     Object.keys(childrenOf(path === '' ? root : map.get(path)!) ?? {});
   for (const p of ['', ...[...a.keys()].filter((x) => b.has(x))]) {
     const was = keysAt(before, a, p);

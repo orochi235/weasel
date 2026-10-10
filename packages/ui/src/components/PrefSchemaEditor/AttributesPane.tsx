@@ -8,7 +8,7 @@ import { prefFieldChoices } from '../Prefs/schema';
 import { Select } from '../Select';
 import { ATTR_RENDERERS } from './attrRenderers';
 import { attributeSchema, changeKind, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { childrenOf, joinPath, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute } from './schemaEdit';
+import { childrenOf, joinPath, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, type SchemaRoot } from './schemaEdit';
 import { KEEP, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
 import s from './PrefSchemaEditor.module.css';
@@ -22,8 +22,8 @@ const KEY_KIND = 'schema-key';
 const KIND_KIND = 'schema-kind';
 
 export interface AttributesPaneProps {
-  schema: PrefGroup;
-  onChange(next: PrefGroup): void;
+  schema: SchemaRoot;
+  onChange(next: SchemaRoot): void;
   path: string | null;
   onRekey(from: string, to: string): void;
   kinds: readonly string[];
@@ -35,7 +35,7 @@ export interface AttributesPaneProps {
 
 export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom, renderers, onNotice }: AttributesPaneProps) {
   const node = nodeAt(schema, path);
-  // The edited schema's fields, by the prefs-form path rule: what a reference in it names.
+  // The edited schema's fields, by its own path rule: what a reference in it names.
   const fields = useMemo(() => prefFieldChoices(schema), [schema]);
   const [key, setKey] = useState(path === null ? '' : keyOf(path));
   const [keyError, setKeyError] = useState<string | null>(null);
@@ -52,7 +52,8 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
   const commitKey = () => {
     if (path === null || key === keyOf(path)) return;
     const parent = parentPath(path);
-    const problem = keyProblem(childrenOf(nodeAt(schema, parent)!) ?? {}, key);
+    const host = nodeAt(schema, parent)!;
+    const problem = keyProblem(childrenOf(host) ?? {}, key, takesDottedKey(host, node));
     if (problem) { setKeyError(problem); return; }
     onChange(renameKey(schema, path, key));
     onRekey(path, joinPath(parent, key));

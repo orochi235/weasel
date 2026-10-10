@@ -9,9 +9,17 @@ import {
 } from '@weasel-js/prefs';
 import { prefFieldChoices } from '../Prefs/schema';
 
-/** A node of a `PrefGroup` schema. A section appears only inside an `object` leaf. */
+/** A schema the editor opens: a preferences schema, or a node's property schema. */
+export type SchemaRoot = PrefGroup | PrefSection;
+/** A node of a schema. Under a `PrefGroup` root a section appears only inside an `object` leaf. */
 export type SchemaNode = PrefLeaf | PrefGroup | PrefSection;
 export type ChildMap = Record<string, SchemaNode>;
+
+/**
+ * A node's address in the tree: the keys from the root down, joined by `/`. Not the path its value is stored at —
+ * a section's key is no part of that one, and a leaf's key under a section may be a dotted path itself.
+ */
+const SEP = '/';
 
 /** Where moved nodes land: among `parentPath`'s children (`null` is the root), at `index` counted before the move. */
 export interface SchemaTarget {
@@ -24,6 +32,11 @@ const KEY = /^[A-Za-z_$][\w$]*$/;
 /** A key is one path segment, so it can hold no `.`; an identifier also prints bare in the exported literal. */
 export function isValidKey(key: string): boolean {
   return KEY.test(key);
+}
+
+/** Whether `node`'s key under `parent` may be a dotted path: a leaf where sections nest is keyed by where its value lives. */
+export function takesDottedKey(parent: SchemaNode, node: SchemaNode): boolean {
+  return isPrefLeaf(node) && branchUnder(parent) === 'section';
 }
 
 /** `name` as a camelCase key: `'Line width'` gives `'lineWidth'`. Empty when the name holds no letter or digit;
@@ -58,26 +71,40 @@ function checkFits(parent: SchemaNode | undefined, node: SchemaNode): void {
 }
 
 export function parentPath(path: string): string | null {
-  const i = path.lastIndexOf('.');
+  const i = path.lastIndexOf(SEP);
   return i === -1 ? null : path.slice(0, i);
 }
 
 export function keyOf(path: string): string {
-  return path.slice(path.lastIndexOf('.') + 1);
+  return path.slice(path.lastIndexOf(SEP) + 1);
 }
 
 export function joinPath(parent: string | null, key: string): string {
-  return parent === null ? key : `${parent}.${key}`;
+  return parent === null ? key : `${parent}${SEP}${key}`;
+}
+
+/** The keys from the root down to `path`; none for the root. */
+export function keysOf(path: string | null): string[] {
+  return path === null ? [] : path.split(SEP);
+}
+
+/** The path `keys` lead to; `null`, the root, for none. */
+export function pathOf(keys: readonly string[]): string | null {
+  return keys.length === 0 ? null : keys.join(SEP);
+}
+
+/** Whether `path` lies beneath `ancestor`. */
+export function isUnder(path: string, ancestor: string): boolean {
+  return path.startsWith(`${ancestor}${SEP}`);
 }
 
 function ownChild(kids: ChildMap | undefined, key: string): SchemaNode | undefined {
   return kids && Object.hasOwn(kids, key) ? kids[key] : undefined;
 }
 
-export function nodeAt(root: PrefGroup, path: string | null): SchemaNode | undefined {
-  if (path === null) return root;
+export function nodeAt(root: SchemaRoot, path: string | null): SchemaNode | undefined {
   let cur: SchemaNode | undefined = root;
-  for (const k of path.split('.')) cur = cur && ownChild(childrenOf(cur), k);
+  for (const k of keysOf(path)) cur = cur && ownChild(childrenOf(cur), k);
   return cur;
 }
 
@@ -93,19 +120,19 @@ function withChildren(node: SchemaNode, kids: ChildMap): SchemaNode {
 }
 
 /** `root` with the children of the node at `parent` replaced by `edit` of them. */
-function editChildren(root: PrefGroup, parent: string | null, edit: (kids: ChildMap) => ChildMap): PrefGroup {
-  const keys = parent === null ? [] : parent.split('.');
+function editChildren<R extends SchemaRoot>(root: R, parent: string | null, edit: (kids: ChildMap) => ChildMap): R {
+  const keys = keysOf(parent);
   const go = (node: SchemaNode, depth: number): SchemaNode => {
     const kids = childrenOf(node);
-    const here = keys.slice(0, depth).join('.') || '(root)';
+    const here = pathOf(keys.slice(0, depth)) ?? '(root)';
     if (!kids) throw new Error(`schemaEdit: ${here} cannot hold children`);
     if (depth === keys.length) return withChildren(node, edit(kids));
     const k = keys[depth]!;
     const child = kids[k];
-    if (!child) throw new Error(`schemaEdit: no node at ${keys.slice(0, depth + 1).join('.')}`);
+    if (!child) throw new Error(`schemaEdit: no node at ${pathOf(keys.slice(0, depth + 1))}`);
     return withChildren(node, { ...kids, [k]: go(child, depth + 1) });
   };
-  return go(root, 0) as PrefGroup;
+  return go(root, 0) as R;
 }
 
 function insertAt(kids: ChildMap, entries: Array<[string, SchemaNode]>, index: number): ChildMap {
@@ -114,28 +141,32 @@ function insertAt(kids: ChildMap, entries: Array<[string, SchemaNode]>, index: n
   return Object.fromEntries(list);
 }
 
-/** Why `key` cannot join `kids`, in words for the person typing it; `null` when it can. */
-export function keyProblem(kids: ChildMap, key: string): string | null {
-  if (!isValidKey(key)) return `"${key}" is not a valid key: use letters, digits, _ or $, not starting with a digit.`;
-  if (key === '__proto__') return `"${key}" is reserved.`;
+/** Why `key` cannot join `kids`, in words for the person typing it; `null` when it can. `dotted`: see {@link takesDottedKey}. */
+export function keyProblem(kids: ChildMap, key: string, dotted = false): string | null {
+  const parts = dotted ? key.split('.') : [key];
+  if (!parts.every(isValidKey)) {
+    return `"${key}" is not a valid key: use letters, digits, _ or $, not starting with a digit${dotted ? ', with . between the steps of a path' : ''}.`;
+  }
+  if (parts.includes('__proto__')) return `"${key}" is reserved.`;
   if (Object.hasOwn(kids, key)) return `"${key}" is taken here.`;
   return null;
 }
 
-function checkKey(kids: ChildMap, key: string): void {
-  const problem = keyProblem(kids, key);
+function checkKey(kids: ChildMap, key: string, dotted: boolean): void {
+  const problem = keyProblem(kids, key, dotted);
   if (problem) throw new Error(`schemaEdit: ${problem}`);
 }
 
-export function addNode(root: PrefGroup, parent: string | null, key: string, node: SchemaNode, index?: number): PrefGroup {
-  checkFits(nodeAt(root, parent), node);
+export function addNode<R extends SchemaRoot>(root: R, parent: string | null, key: string, node: SchemaNode, index?: number): R {
+  const host = nodeAt(root, parent);
+  checkFits(host, node);
   return editChildren(root, parent, (kids) => {
-    checkKey(kids, key);
+    checkKey(kids, key, !!host && takesDottedKey(host, node));
     return insertAt(kids, [[key, node]], index ?? Object.keys(kids).length);
   });
 }
 
-export function removeNode(root: PrefGroup, path: string): PrefGroup {
+export function removeNode<R extends SchemaRoot>(root: R, path: string): R {
   const key = keyOf(path);
   return editChildren(root, parentPath(path), (kids) => {
     const { [key]: _gone, ...rest } = kids;
@@ -143,17 +174,19 @@ export function removeNode(root: PrefGroup, path: string): PrefGroup {
   });
 }
 
-export function renameKey(root: PrefGroup, path: string, next: string): PrefGroup {
+export function renameKey<R extends SchemaRoot>(root: R, path: string, next: string): R {
   const key = keyOf(path);
   if (next === key) return root;
+  const host = nodeAt(root, parentPath(path));
+  const node = nodeAt(root, path);
   return editChildren(root, parentPath(path), (kids) => {
-    checkKey(kids, next);
+    checkKey(kids, next, !!host && !!node && takesDottedKey(host, node));
     return Object.fromEntries(Object.entries(kids).map(([k, v]) => [k === key ? next : k, v]));
   });
 }
 
-export function replaceNode(root: PrefGroup, path: string | null, fn: (n: SchemaNode) => SchemaNode): PrefGroup {
-  if (path === null) return fn(root) as PrefGroup;
+export function replaceNode<R extends SchemaRoot>(root: R, path: string | null, fn: (n: SchemaNode) => SchemaNode): R {
+  if (path === null) return fn(root) as R;
   const key = keyOf(path);
   return editChildren(root, parentPath(path), (kids) => {
     const node = kids[key];
@@ -163,7 +196,7 @@ export function replaceNode(root: PrefGroup, path: string | null, fn: (n: Schema
 }
 
 /** Set one attribute; `undefined` removes it. Every other field keeps its value, functions included. */
-export function setAttribute(root: PrefGroup, path: string | null, key: string, value: unknown): PrefGroup {
+export function setAttribute<R extends SchemaRoot>(root: R, path: string | null, key: string, value: unknown): R {
   return replaceNode(root, path, (node) => {
     const next: Record<string, unknown> = { ...node };
     if (value === undefined) delete next[key];
@@ -177,12 +210,12 @@ export function setAttribute(root: PrefGroup, path: string | null, key: string, 
  * moved key that collides with one already in the target parent is renamed with {@link uniqueKey}. Returns the
  * tree, and each moved node's old path in `from` beside its new one in `paths`.
  */
-export function moveNodes(
-  root: PrefGroup, paths: readonly string[], target: SchemaTarget,
-): { root: PrefGroup; from: string[]; paths: string[] } {
-  const tops = paths.filter((p) => !paths.some((q) => q !== p && p.startsWith(`${q}.`)));
+export function moveNodes<R extends SchemaRoot>(
+  root: R, paths: readonly string[], target: SchemaTarget,
+): { root: R; from: string[]; paths: string[] } {
+  const tops = paths.filter((p) => !paths.some((q) => isUnder(p, q)));
   const dest = target.parentPath;
-  if (dest !== null && tops.some((p) => dest === p || dest.startsWith(`${p}.`))) {
+  if (dest !== null && tops.some((p) => dest === p || isUnder(dest, p))) {
     throw new Error('schemaEdit: cannot move a node into itself');
   }
   const moving = tops.map((p) => {
@@ -214,7 +247,7 @@ export function moveNodes(
 }
 
 /** Every path whose node can hold children, in tree order. */
-export function branchPaths(root: PrefGroup): string[] {
+export function branchPaths(root: SchemaRoot): string[] {
   const out: string[] = [];
   const walk = (node: SchemaNode, path: string | null) => {
     for (const [key, child] of Object.entries(childrenOf(node) ?? {})) {
@@ -232,13 +265,13 @@ export function branchPaths(root: PrefGroup): string[] {
 export function rebasePaths(paths: Iterable<string>, moves: ReadonlyArray<readonly [from: string, to: string]>): Set<string> {
   const out = new Set<string>();
   for (const p of paths) {
-    const hit = moves.find(([from]) => p === from || p.startsWith(`${from}.`));
+    const hit = moves.find(([from]) => p === from || isUnder(p, from));
     out.add(hit ? hit[1] + p.slice(hit[0].length) : p);
   }
   return out;
 }
 
-/** A value stored under a path no leaf of the schema describes. */
+/** A value stored under a dotted value path no leaf of the schema describes. */
 export interface UndescribedValue {
   path: string;
   value: unknown;
@@ -248,7 +281,7 @@ export interface UndescribedValue {
  * Each value in `stored` that no leaf of `root` describes, by its dotted path, in stored order. A leaf's own path
  * and everything under it are described; a plain object anywhere else is walked rather than listed.
  */
-export function undescribedValues(root: PrefGroup, stored: unknown): UndescribedValue[] {
+export function undescribedValues(root: SchemaRoot, stored: unknown): UndescribedValue[] {
   const leaves = new Set(prefFieldChoices(root).map((f) => f.path));
   const described = (path: string): boolean => {
     for (let at = path; at !== ''; at = at.includes('.') ? at.slice(0, at.lastIndexOf('.')) : '') {

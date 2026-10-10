@@ -47,6 +47,7 @@
 .storedEmpty { margin: 0; color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-sm); }
 .previewPane { display: flex; flex-direction: column; overflow: hidden; }
 .previewDialog { flex: 1; min-height: 0; }
+.previewPanel { flex: 1; min-height: 0; overflow: auto; }
 .toolbar { display: flex; flex-wrap: wrap; gap: var(--wzl-space-2); margin-block-end: var(--wzl-space-2); }
 .paneHeader {
   display: flex;

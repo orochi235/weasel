@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
+import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { Tree, type TreeNode } from '../Tree';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
@@ -9,8 +9,8 @@ import { ResizeHandle } from '../ResizeHandle';
 import { StoredList } from './StoredList';
 import { blankGroup, blankLeaf, blankSection } from './kindSchemas';
 import {
-  addNode, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, kindOfValue, moveNodes, nodeAt, parentPath, rebasePaths, removeNode, undescribedValues,
-  type SchemaNode, type UndescribedValue,
+  addNode, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, keysOf, kindOfValue, moveNodes, nodeAt, parentPath, pathOf, rebasePaths, removeNode,
+  undescribedValues, type SchemaNode, type SchemaRoot, type UndescribedValue,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
 
@@ -31,8 +31,8 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
 }
 
 export interface StructurePaneProps {
-  schema: PrefGroup;
-  onChange(next: PrefGroup): void;
+  schema: SchemaRoot;
+  onChange(next: SchemaRoot): void;
   selected: string | null;
   onSelect(path: string | null): void;
   changed: ReadonlySet<string>;
@@ -47,21 +47,24 @@ export interface StructurePaneProps {
 
 /** Every path above `path`, nearest last. */
 const ancestorsOf = (path: string): string[] =>
-  path.split('.').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('.'));
+  keysOf(path).slice(0, -1).map((_, i, keys) => pathOf(keys.slice(0, i + 1))!);
 
 /** `'gridVisible'` as `'Grid visible'`. */
 const nameOfKey = (key: string): string => {
-  const words = key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ').trim().toLowerCase();
+  const words = key.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[._-]+/g, ' ').trim().toLowerCase();
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
 export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, tools, stored }: StructurePaneProps) {
   const nodes = useMemo(() => toTreeNodes(schema, null, changed), [schema, changed]);
-  const [adding, setAdding] = useState<'pref' | 'group' | null>(null);
+  const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);
   const [fromStored, setFromStored] = useState<UndescribedValue | null>(null);
   const [storedHeight, setStoredHeight] = useState(180);
   const undescribed = useMemo(() => (stored === undefined ? [] : undescribedValues(schema, stored)), [schema, stored]);
-  const storedParent = fromStored && fromStored.path.includes('.') ? fromStored.path.slice(0, fromStored.path.lastIndexOf('.')) : null;
+  // Where a stored value's leaf goes: under a group root its value path names a group per step; under a section
+  // root the whole path is the leaf's key.
+  const storedKeys = fromStored ? (isPrefSection(schema) ? [fromStored.path] : fromStored.path.split('.')) : [];
+  const storedParent = pathOf(storedKeys.slice(0, -1));
 
   /** Where an add lands: inside the selection if it holds children, else after it. */
   const addTarget = (): { parent: string | null; index?: number } => {
@@ -71,17 +74,18 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
     const sibs = Object.keys(childrenOf(nodeAt(schema, parent)!) ?? {});
     return { parent, index: sibs.indexOf(keyOf(selected)) + 1 };
   };
+  /** What a new node joins: the stored value's parent when it has one yet, else where an add lands. */
+  const host = fromStored ? nodeAt(schema, storedParent) : nodeAt(schema, addTarget().parent) ?? schema;
+  const branch = branchUnder(host ?? schema);
   const add = ({ key, name, kind }: NewNode) => {
-    const host = fromStored ? schema : nodeAt(schema, addTarget().parent) ?? schema;
-    const branch = branchUnder(host) === 'section' ? blankSection() : blankGroup();
-    const node: SchemaNode = kind !== undefined ? { ...blankLeaf(kind), name } : { ...branch, name };
+    const node: SchemaNode = kind !== undefined ? { ...blankLeaf(kind), name } : { ...(branch === 'section' ? blankSection() : blankGroup()), name };
     setAdding(null);
     if (fromStored) {
       // A stored value's leaf goes where the value lives, making any group its path passes through.
       setFromStored(null);
       let root = schema;
       let at: string | null = null;
-      for (const segment of storedParent?.split('.') ?? []) {
+      for (const segment of storedKeys.slice(0, -1)) {
         const next = joinPath(at, segment);
         if (!nodeAt(root, next)) root = addNode(root, at, segment, { ...blankGroup(), name: nameOfKey(segment) });
         at = next;
@@ -102,19 +106,18 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
       <PaneHeader title="Structure">{tools}</PaneHeader>
       <div className={s.toolbar}>
         <Button size="sm" onClick={() => setAdding('pref')}>Add pref</Button>
-        <Button size="sm" onClick={() => setAdding('group')}>Add group</Button>
+        <Button size="sm" onClick={() => setAdding('branch')}>Add {branch}</Button>
         <Button size="sm" disabled={selected === null} onClick={() => {
           if (selected === null) return;
           onChange(removeNode(schema, selected));
           onSelect(parentPath(selected));
         }}>Remove</Button>
       </div>
-      <AddNodeDialog what={adding} kinds={kinds} onAdd={add}
-        siblings={fromStored ? (nodeAt(schema, storedParent) ? childrenOf(nodeAt(schema, storedParent)!) ?? {} : {})
-          : childrenOf(nodeAt(schema, addTarget().parent)!) ?? {}}
+      <AddNodeDialog what={adding === 'branch' ? branch : adding} kinds={kinds} onAdd={add}
+        siblings={(host && childrenOf(host)) ?? {}} dottedKey={adding === 'pref' && branch === 'section'}
         initial={fromStored ? {
-          key: fromStored.path.slice(fromStored.path.lastIndexOf('.') + 1),
-          name: nameOfKey(fromStored.path.slice(fromStored.path.lastIndexOf('.') + 1)),
+          key: storedKeys.at(-1)!,
+          name: nameOfKey(storedKeys.at(-1)!),
           ...(kindOfValue(fromStored.value) ? { kind: kindOfValue(fromStored.value)! } : {}),
         } : undefined}
         onClose={() => { setAdding(null); setFromStored(null); }} />

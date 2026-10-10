@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, getDefaultNormalizer, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 
 afterEach(cleanup);
@@ -71,7 +71,7 @@ describe('PrefSchemaEditor', () => {
     expect(within(own).getByRole('checkbox', { name: 'Default' })).toBeInTheDocument();
   });
 
-  const openAdd = (what: 'Add pref' | 'Add group') => {
+  const openAdd = (what: 'Add pref' | 'Add group' | 'Add section') => {
     fireEvent.click(screen.getByRole('button', { name: what }));
     return screen.getByRole('dialog', { name: what });
   };
@@ -91,7 +91,7 @@ describe('PrefSchemaEditor', () => {
     expect(screen.queryByRole('dialog', { name: 'Add pref' })).toBeNull();
     expect(within(structure()).getByText('Line width')).toBeInTheDocument();
     const exact = getDefaultNormalizer({ collapseWhitespace: false });
-    expect(screen.getByText(/\+ view\.lineWidth {2}\(number\)/, { normalizer: exact })).toBeInTheDocument();
+    expect(screen.getByText(/\+ view\/lineWidth {2}\(number\)/, { normalizer: exact })).toBeInTheDocument();
   });
 
   it('adds nothing until a pref has a name, a free id and a kind', () => {
@@ -310,5 +310,65 @@ describe('PrefSchemaEditor', () => {
     } finally {
       Reflect.deleteProperty(navigator, 'clipboard');
     }
+  });
+
+  describe('over a node property schema', () => {
+    const NODE: PrefSection = {
+      name: 'Rect',
+      members: {
+        layout: { name: 'Layout', members: {
+          'pose.x': { kind: 'number', name: 'X', description: 'Left edge.', default: 0 },
+        } },
+        content: { name: 'Content', members: {
+          'data.text': { kind: 'string', name: 'Text', description: 'Text content.', default: 'hello' },
+        } },
+      },
+    };
+    function LiveNode() {
+      const [schema, setSchema] = useState(NODE);
+      return <PrefSchemaEditor schema={schema} onChange={setSchema} />;
+    }
+
+    it('opens a leaf keyed by a dotted node path and previews the schema as a properties panel', () => {
+      render(<LiveNode />);
+      fireEvent.click(row('pose.x'));
+      const attrs = screen.getByRole('region', { name: 'Attributes' });
+      expect(within(attrs).getByRole('textbox', { name: 'Key' })).toHaveValue('pose.x');
+      fireEvent.change(within(attrs).getByRole('textbox', { name: 'Name' }), { target: { value: 'Left' } });
+      expect(within(structure()).getByText('Left')).toBeInTheDocument();
+      expect(within(preview()).getByRole('heading', { name: 'Layout' })).toBeInTheDocument();
+      expect(within(preview()).getByRole('textbox', { name: 'Text' })).toHaveValue('hello');
+      expect(screen.getByText(/~ layout\/pose\.x\.name/)).toBeInTheDocument();
+    });
+
+    it('previews a default until a value is typed over it, and again after a reset', () => {
+      render(<LiveNode />);
+      const text = () => within(preview()).getByRole('textbox', { name: 'Text' });
+      const reset = () => within(preview()).getByRole('button', { name: 'Reset values' });
+      expect(reset()).toBeDisabled();
+      fireEvent.change(text(), { target: { value: 'typed' } });
+      fireEvent.blur(text());
+      expect(text()).toHaveValue('typed');
+      fireEvent.click(reset());
+      expect(text()).toHaveValue('hello');
+      expect(reset()).toBeDisabled();
+    });
+
+    it('adds a section where a preferences schema adds a group, and a pref under a dotted id', () => {
+      render(<LiveNode />);
+      expect(screen.queryByRole('button', { name: 'Add group' })).toBeNull();
+      fireEvent.click(row('layout'));
+      const dialog = openAdd('Add pref');
+      fireEvent.change(within(dialog).getByRole('textbox', { name: 'Name' }), { target: { value: 'Width' } });
+      fireEvent.change(within(dialog).getByRole('textbox', { name: 'Id' }), { target: { value: 'pose.width' } });
+      pickKind(dialog, 'number');
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
+      expect(row('pose.width')).toBeInTheDocument();
+      fireEvent.click(row('layout'));
+      const section = openAdd('Add section');
+      fireEvent.change(within(section).getByRole('textbox', { name: 'Id' }), { target: { value: 'more' } });
+      fireEvent.click(within(section).getByRole('button', { name: 'Add' }));
+      expect(screen.getByTestId('schema-literal')).toHaveTextContent(/more: \{[^}]*members: \{\}/);
+    });
   });
 });

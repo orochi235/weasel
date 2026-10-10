@@ -5,11 +5,15 @@ import { PrefSchemaPage } from './PrefSchemaPage';
 afterEach(cleanup);
 
 describe('PrefSchemaPage', () => {
-  it('opens on WeaselDraw preferences, and offers no node property schema', () => {
+  it('opens on WeaselDraw preferences, and opens a node property schema picked as the source', () => {
     render(<PrefSchemaPage />);
-    expect(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(tools)')).toBeInTheDocument();
+    const tree = () => screen.getByRole('tree', { name: 'Schema structure' });
+    expect(within(tree()).getByText('(tools)')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Source/ }));
-    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['WeaselDraw preferences']);
+    fireEvent.click(screen.getByRole('option', { name: 'Node: rect' }));
+    fireEvent.click(within(tree()).getByText('(pose.x)'));
+    expect(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' })).toHaveValue('pose.x');
+    expect(within(screen.getByRole('region', { name: 'Live preview' })).getByRole('heading', { name: 'Layout' })).toBeInTheDocument();
   });
 
   it('describes registry-enum attributes, so its source is editable', () => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { solid } from '@weasel-js/core';
+import { defaultNodeProperties, solid } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
@@ -50,6 +50,18 @@ const SCHEMA: PrefGroup = {
 export const Default: Story = {
   render: function DefaultStory() {
     const [schema, setSchema] = useState(SCHEMA);
+    return (
+      <div className={s.frame}>
+        <PrefSchemaEditor schema={schema} onChange={setSchema} />
+      </div>
+    );
+  },
+};
+
+/** A node's property schema: sections for headings, each leaf keyed by its node path, previewed as a properties panel. */
+export const NodeProperties: Story = {
+  render: function NodePropertiesStory() {
+    const [schema, setSchema] = useState(defaultNodeProperties.find((e) => e.name === 'rect')!.schema);
     return (
       <div className={s.frame}>
         <PrefSchemaEditor schema={schema} onChange={setSchema} />

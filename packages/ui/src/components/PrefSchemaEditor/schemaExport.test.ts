@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { diffSchemas, formatChanges, KEEP, printSchema } from './schemaExport';
 import { moveNodes, renameKey, setAttribute } from './schemaEdit';
 
@@ -31,8 +31,8 @@ describe('printSchema', () => {
     expect(back.children.o.children.s).toEqual({ name: 'S', members: { w: leaf } });
     const bare: PrefGroup = { name: 'R', children: { o: { kind: 'object', name: 'O', description: '', default: {}, children: {} } } };
     expect(diffSchemas(bare, tree)).toEqual([
-      { op: 'add', path: 'o.s', kind: 'section' },
-      { op: 'add', path: 'o.s.w', kind: 'boolean' },
+      { op: 'add', path: 'o/s', kind: 'section' },
+      { op: 'add', path: 'o/s/w', kind: 'boolean' },
     ]);
   });
 
@@ -56,12 +56,12 @@ describe('printSchema', () => {
 
 describe('diffSchemas', () => {
   it('reports an attribute change, a rename as a move, and a reorder', () => {
-    let next = setAttribute(ROOT, 'a.x', 'min', 5);
-    next = renameKey(next, 'a.e', 'mode');
+    let next = setAttribute(ROOT, 'a/x', 'min', 5);
+    next = renameKey(next, 'a/e', 'mode');
     next = moveNodes(next, ['odd-key'], { parentPath: null, index: 0 }).root;
     const changes = diffSchemas(ROOT, next);
-    expect(changes).toContainEqual({ op: 'attr', path: 'a.x', key: 'min', from: 0, to: 5 });
-    expect(changes).toContainEqual({ op: 'move', from: 'a.e', to: 'a.mode' });
+    expect(changes).toContainEqual({ op: 'attr', path: 'a/x', key: 'min', from: 0, to: 5 });
+    expect(changes).toContainEqual({ op: 'move', from: 'a/e', to: 'a/mode' });
     expect(changes).toContainEqual({ op: 'reorder', path: '' });
   });
 
@@ -71,7 +71,7 @@ describe('diffSchemas', () => {
       ['g'], { parentPath: 'h', index: 0 },
     ).root;
     const changes = diffSchemas({ name: 'R', children: { g: { name: 'G', children: { k: { kind: 'string', name: 'K', description: '', default: '' } } }, h: { name: 'H', children: {} } } }, next);
-    expect(changes).toEqual([{ op: 'move', from: 'g', to: 'h.g' }]);
+    expect(changes).toEqual([{ op: 'move', from: 'g', to: 'h/g' }]);
   });
 
   it('does not report a function attribute that kept its identity', () => {
@@ -81,10 +81,29 @@ describe('diffSchemas', () => {
 
   it('formats one line per change', () => {
     expect(formatChanges([
-      { op: 'add', path: 'a.n', kind: 'number' },
-      { op: 'remove', path: 'a.o', kind: 'group' },
-      { op: 'move', from: 'a.e', to: 'a.mode' },
-      { op: 'attr', path: 'a.x', key: 'min', from: 0, to: 5 },
-    ])).toBe(['+ a.n  (number)', '− a.o  (group)', '↕ a.e → a.mode', '~ a.x.min  0 → 5'].join('\n'));
+      { op: 'add', path: 'a/n', kind: 'number' },
+      { op: 'remove', path: 'a/o', kind: 'group' },
+      { op: 'move', from: 'a/e', to: 'a/mode' },
+      { op: 'attr', path: 'a/x', key: 'min', from: 0, to: 5 },
+    ])).toBe(['+ a/n  (number)', '− a/o  (group)', '↕ a/e → a/mode', '~ a/x.min  0 → 5'].join('\n'));
+  });
+});
+
+describe('a section root', () => {
+  const NODE: PrefSection = {
+    name: 'Properties',
+    members: { layout: { name: 'Layout', members: { 'pose.x': { kind: 'number', name: 'X', description: '', default: 0 } } } },
+  };
+
+  it('prints members and quotes a dotted key', () => {
+    const literal = printSchema(NODE);
+    expect(literal).toContain("'pose.x': {");
+    expect(literal).not.toContain('children');
+    expect(new Function(`return ${literal}`)()).toEqual(NODE);
+  });
+
+  it('names a changed leaf by its section and its key', () => {
+    const changes = diffSchemas(NODE, setAttribute(NODE, 'layout/pose.x', 'default', 4));
+    expect(formatChanges(changes)).toBe('~ layout/pose.x.default  0 → 4');
   });
 });

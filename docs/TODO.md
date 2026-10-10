@@ -831,13 +831,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P3) `PrefSchemaEditor` cannot open a node property schema.** It addresses nodes by dotted
-  path and previews through `PrefsForm`, so it takes a `PrefGroup` only; a `PrefSection`'s leaf
-  keys hold dots (`pose.x`), and `nodeAt(root, 'layout.pose.x')` answers `undefined`. WeaselDraw's
-  schema page dropped its `Node: <kind>` sources for that reason. Wants a path scheme that survives
-  dotted keys and a preview that reads a section. Beside it: the editor's button and dialog still
-  say "Add group" when the target is an object leaf, where what it adds is a section.
-
 - **(P2) A record cache drops a write its adapter rejected.** `flush` in
   `packages/storage/src/records.ts` empties `queued` before the writes resolve, and a write that
   throws is warned about ("keeping it in memory") and never queued again. The page keeps showing
