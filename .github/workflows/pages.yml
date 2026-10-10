@@ -11,7 +11,7 @@ on:
       - 'packages/**'
       - 'scripts/**'
       - 'typedoc/**'
-      - 'typedoc.json'
+      - 'typedoc.config.mjs'
       - 'public/**'
       - 'package.json'
       - 'package-lock.json'
