@@ -244,13 +244,18 @@ export class ColorNode extends BaseNode<string> {
   }
 }
 
-/** A fixed-choice leaf, built by `f.enum`; a select unless `.radio()`. */
+/** A fixed-choice leaf, built by `f.enum`; a select unless `.radio()` or `.toggle()`. */
 export class EnumNode<T extends string> extends BaseNode<T> {
   readonly kind = 'enum';
 
-  /** Render as a segmented control rather than a select. */
+  /** Every option at once. A control panel draws segments; a preferences form reading the leaf draws radio buttons. */
   radio(): this {
     return this.ann({ control: 'radio' });
+  }
+
+  /** Every option at once, as segments wherever the leaf is drawn. */
+  toggle(): this {
+    return this.ann({ control: 'toggle' });
   }
 
   /** Relabel the choices. Named `labels` rather than `options` because

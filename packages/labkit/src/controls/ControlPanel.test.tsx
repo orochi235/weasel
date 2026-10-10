@@ -906,6 +906,7 @@ describe('<ControlPanel> auto', () => {
     ['boolean', f.boolean(true)],
     ['enum', f.enum('a', ['a', 'b'])],
     ['radio', f.enum('a', ['a', 'b']).radio()],
+    ['toggle', f.enum('a', ['a', 'b']).toggle()],
     ['string', f.string('hi')],
     ['color', f.color('#3a86ff')],
   ])('marks a %s row auto and gives it a label toggle', (_kind, node) => {
@@ -923,6 +924,14 @@ describe('<ControlPanel> auto', () => {
 });
 
 describe('<ControlPanel> option icons', () => {
+  it('draws an enum asked for as a toggle with every option at once, and says so to the forms that read the leaf', () => {
+    const camera = f.enum('3d', ['2d', '3d']).toggle();
+    const schema = resolveConfigSchema(f.schema({ camera }), []);
+    render(<ControlPanel schema={schema} config={{ camera: '3d' }} setConfig={() => {}} />);
+    expect(screen.getByRole('radio', { name: '3d' })).toBeInTheDocument();
+    expect(schema.group.children.camera).toMatchObject({ control: 'toggle' });
+  });
+
   it("draws an option's icon in its segment and keeps the label as its name", () => {
     const status = f
       .enum('ok', [

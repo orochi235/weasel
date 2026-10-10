@@ -57,10 +57,12 @@ export function labField(
         control: extra<string>(leaf, 'control') === 'switch' ? 'switch' : 'checkbox',
       };
     case 'enum':
-      // `.radio()` asks for every option at once, as segments.
+      // `.radio()` and `.toggle()` both ask for every option at once, which a panel draws as segments.
       return {
         ...field,
-        control: extra<string>(leaf, 'control') === 'radio' ? 'toggle' : 'select',
+        control: ['radio', 'toggle'].includes(extra<string>(leaf, 'control') ?? '')
+          ? 'toggle'
+          : 'select',
       };
     case 'string':
       return {
