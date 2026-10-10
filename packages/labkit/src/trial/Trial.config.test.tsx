@@ -223,7 +223,7 @@ describe('a config written as auto', () => {
     const { container } = await renderSettled(
       <Lab instruments={[instrument]} defaultInstrument="Ghosted" />,
     );
-    expect(screen.getByRole('button', { name: /Gap/ })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Pin Gap' })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: /Width/ })).toHaveAttribute('aria-pressed', 'true');
     // 432 / 24. An auto row holds what the resolver decided rather than
     // the pinned 12 underneath it, and un-pinning writes back what it drew.
