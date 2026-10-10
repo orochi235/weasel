@@ -78,20 +78,49 @@
   text-transform: var(--_s-title-case);
   color: var(--_s-title-color);
   padding: var(--_s-title-inset);
-  margin: 0 0 var(--wzl-prop-panel-title-gap, 12px);
+  margin: 0 0 var(--wzl-prop-panel-title-gap, 8px);
 }
 
 .panelHeader {
   display: flex;
   align-items: center;
   gap: var(--wzl-space-4);
-  margin: 0 0 var(--wzl-prop-panel-title-gap, 12px);
+  margin: 0 0 var(--wzl-prop-panel-title-gap, 8px);
 }
 
 .panelHeader > .panelTitle {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
+}
+
+/* A hidden twisty leaves the flow, and these are what it is placed against. */
+.panelHeader,
+.subpanelTitle,
+.group {
+  position: relative;
+}
+
+/* The twisty's target is taller than a title's line; it overhangs the line
+   rather than growing the header, which would read as space under the title. */
+.foldTwisty {
+  margin-block: -4px;
+}
+
+/* Hidden until the keyboard reaches it: still focusable, so `twisty="folded"`
+   leaves a way to fold that is not the pointer. */
+.foldTwistyQuiet:not(:focus-visible) {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.foldTitle {
+  cursor: pointer;
 }
 
 /* A folded panel is its header alone, so the gap under the title goes too. */

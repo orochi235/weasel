@@ -7,6 +7,7 @@ import {
 } from '@weasel-js/prefs';
 import {
   Button,
+  type CollapseProps,
   DialogRow,
   ListEditor,
   type PropertyAlign,
@@ -125,6 +126,9 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
   collapsible?: boolean;
   /** Start the panel folded. Implies `collapsible`. */
   defaultCollapsed?: boolean;
+  /** When a twisty shows, the panel's and each section's: `'folded'` hides it
+   *  while the contents are open and lets a press on the title fold them. */
+  twisty?: CollapseProps['twisty'];
   className?: string;
 }
 
@@ -191,6 +195,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   onCollapse,
   collapsible,
   defaultCollapsed,
+  twisty,
   auto: given,
   showHidden = false,
   title,
@@ -243,6 +248,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   const fold = (key: string, declared?: boolean, grid: PropertyListPack = gridPack) => ({
     pack: grid,
     collapsible: folds,
+    twisty,
     defaultCollapsed: declared ?? startsFolded,
     collapsed: collapsed ? (collapsed[key] ?? declared ?? startsFolded) : undefined,
     onCollapsedChange: onCollapse ? (next: boolean) => onCollapse(key, next) : undefined,
@@ -466,6 +472,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         {...(panelFolds
           ? {
               collapsible: true,
+              twisty,
               defaultCollapsed,
               collapsed: collapsed ? (collapsed[''] ?? defaultCollapsed ?? false) : undefined,
               onCollapsedChange: onCollapse ? (next: boolean) => onCollapse('', next) : undefined,

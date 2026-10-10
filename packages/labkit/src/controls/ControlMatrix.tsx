@@ -118,6 +118,7 @@ export function ControlMatrix({
   defaultCollapsed,
   collapsed,
   onCollapsedChange,
+  twisty,
 }: ControlMatrixProps): ReactElement {
   const fallback = columns[0];
   const hintFor =
@@ -138,7 +139,7 @@ export function ControlMatrix({
     return { row, leaves, label: row.label ?? named?.name ?? row.key, about: named?.description };
   });
 
-  const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange });
+  const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
   // With a title row to sit in, the headers leave the table for it.
   const lifted = title !== undefined;
   const headClass = (i: number): string =>
@@ -286,7 +287,7 @@ export function ControlMatrix({
         stance={stance}
         tone={tone}
         {...(fold.folds
-          ? { collapsible: true, collapsed: fold.folded, onCollapsedChange: fold.toggle }
+          ? { collapsible: true, collapsed: fold.folded, onCollapsedChange: fold.toggle, twisty }
           : {})}
       >
         {table}

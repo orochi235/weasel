@@ -1,7 +1,7 @@
 import { type ReactNode, useId } from 'react';
 import { Disclosure } from '../Disclosure';
 import { type StanceProps, useStance } from '../stance';
-import { type CollapseProps, useCollapse } from './collapse';
+import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
 import s from './Properties.module.css';
 import { type PropertyMetricProps, propertyMetricClass } from './PropertyPanel';
 
@@ -27,23 +27,26 @@ export function Subpanel({
   defaultCollapsed,
   collapsed,
   onCollapsedChange,
+  twisty,
 }: SubpanelProps) {
   const cls = propertyMetricClass(s.subpanel, { density, align }, className);
   const bodyId = useId();
-  const { folds, folded, toggle } = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange });
+  const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
+  const { folds, folded, toggle } = fold;
   return (
     <div className={cls} {...useStance({ stance, tone })}>
       {/* The twisty is a sibling of the heading, so it stays out of its accessible name. */}
       <div className={s.subpanelTitle}>
         {folds && (
           <Disclosure
+            className={twistyClass(fold)}
             open={!folded}
             onToggle={toggle}
             label={typeof title === 'string' ? title : 'this section'}
             controls={bodyId}
           />
         )}
-        <h4>{title}</h4>
+        <h4>{foldTitle(title, fold)}</h4>
         <hr />
       </div>
       {folds ? (

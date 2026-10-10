@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { Disclosure } from '../Disclosure';
 import { type StanceProps, useStance } from '../stance';
-import { type CollapseProps, useCollapse } from './collapse';
+import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
 import { PropertyHelp } from './PropertyHelp';
 import s from './Properties.module.css';
 
@@ -110,14 +110,17 @@ export function PropertyPanel({
   defaultCollapsed,
   collapsed,
   onCollapsedChange,
+  twisty: twistyShown,
 }: PropertyPanelProps) {
   const nested = useContext(PanelNesting);
   const attrs = useStance({ stance, tone });
   const bodyId = useId();
-  const { folds, folded, toggle } = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange });
-  const heading = title != null && <h2 className={s.panelTitle}>{title}</h2>;
+  const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty: twistyShown });
+  const { folds, folded, toggle } = fold;
+  const heading = title != null && <h2 className={s.panelTitle}>{foldTitle(title, fold)}</h2>;
   const twisty = folds && (
     <Disclosure
+      className={twistyClass(fold)}
       open={!folded}
       onToggle={toggle}
       label={typeof title === 'string' ? title : 'this panel'}

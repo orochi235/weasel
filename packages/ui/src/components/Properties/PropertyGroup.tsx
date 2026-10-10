@@ -2,7 +2,7 @@ import { type ReactNode, useId } from 'react';
 import { Disclosure } from '../Disclosure';
 import { type Motif, MotifFrame } from '../MotifFrame';
 import type { StanceProps } from '../stance';
-import { type CollapseProps, useCollapse } from './collapse';
+import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
 import s from './Properties.module.css';
 import {
   type PropertyListPack,
@@ -59,6 +59,7 @@ export function PropertyGroup({
   defaultCollapsed,
   collapsed,
   onCollapsedChange,
+  twisty,
   children,
   className,
   span,
@@ -69,20 +70,22 @@ export function PropertyGroup({
   tone,
 }: PropertyGroupProps) {
   const bodyId = useId();
-  const { folds, folded, toggle } = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange });
+  const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
+  const { folds, folded, toggle } = fold;
   if (hidden) return null;
 
   const base = `${s.group}${pack === 'pairs' ? ` ${s.groupPairs}` : pack === 'one-up' ? ` ${s.groupOneUp}` : ''}`;
   const cls = propertyMetricClass(span ? `${base} ${s.span}` : base, { density, align }, className);
   return (
     <MotifFrame
-      title={title}
+      title={foldTitle(title, fold)}
       motif={motif}
       leading={leading}
       actions={actions}
       twisty={
         folds ? (
           <Disclosure
+            className={twistyClass(fold)}
             open={!folded}
             onToggle={toggle}
             label={typeof title === 'string' ? title : 'this section'}
