@@ -87,4 +87,11 @@ describe('onSelect', () => {
     fireEvent.pointerDown(screen.getByRole('heading', { name: 'Snapping' }));
     expect(onSelect).toHaveBeenLastCalledWith('canvas.snapping');
   });
+
+  it('reports the group whose rail entry is pressed', () => {
+    const onSelect = vi.fn();
+    render(<PrefsForm layout="rail" schema={SCHEMA} onChange={() => {}} onSelect={onSelect} />);
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Import / Export' }));
+    expect(onSelect).toHaveBeenLastCalledWith('io');
+  });
 });

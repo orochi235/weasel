@@ -6,6 +6,9 @@ import { dropSlot, isDropPath } from './drop';
 /** On the element a form draws for a leaf or a group, its dotted path. */
 export const PATH_ATTR = 'data-pref-path';
 
+/** On a rail entry, the dotted path of the group it opens. */
+export const RAIL_ATTR = 'data-pref-rail';
+
 /** What a form marks while it draws: the selection. */
 export interface PrefMarks {
   selected?: string | null;
@@ -48,7 +51,7 @@ export interface SelectionRoot {
 
 /**
  * Props for a form's root element: they scroll `shown` into view each time `selected` changes, and report the
- * row or group the reader presses or focuses into.
+ * row or group the reader presses or focuses into, a group's rail entry included.
  */
 export function useSelectedRow(
   selected: string | undefined,
@@ -74,8 +77,10 @@ export function useSelectedRow(
   });
   if (onSelect === undefined) return { ref };
   const pick = (e: PointerEvent | FocusEvent): void => {
-    const path = (e.target as Element).closest?.(`[${PATH_ATTR}]`)?.getAttribute(PATH_ATTR);
-    if (path == null || path === selected) return;
+    // A rail entry stands for its group as much as the group's heading in the pane does.
+    const el = (e.target as Element).closest?.(`[${PATH_ATTR}], [${RAIL_ATTR}]`);
+    const path = el?.getAttribute(PATH_ATTR) ?? el?.getAttribute(RAIL_ATTR);
+    if (path == null || path === '' || path === selected) return;
     reported.current = path;
     onSelect(path);
   };

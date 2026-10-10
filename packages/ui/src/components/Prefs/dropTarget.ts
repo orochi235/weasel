@@ -1,7 +1,7 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
 import type { PrefDrop, PrefDropMark } from './drop';
 import { slidesIn } from './dropMotion';
-import { PATH_ATTR } from './selection';
+import { PATH_ATTR, RAIL_ATTR } from './selection';
 
 const FORM_ATTR = 'data-pref-form';
 const DROPPING_ATTR = 'data-dropping';
@@ -65,10 +65,10 @@ function measure(form: Element): Frame {
   };
   const twoAcross = form.getAttribute('data-across') === '2';
   const sections = [...form.querySelectorAll('[data-pref-sticky]')].map((title) => ({ title, el: title.parentElement! }));
-  const els = [...form.querySelectorAll(`[data-pref-rail], [${PATH_ATTR}], [data-pref-into]`)];
+  const els = [...form.querySelectorAll(`[${RAIL_ATTR}], [${PATH_ATTR}], [data-pref-into]`)];
   const index = new Map(els.map((el, i) => [el, i]));
   const boxes = els.map((el): Box => {
-    const rail = el.getAttribute('data-pref-rail');
+    const rail = el.getAttribute(RAIL_ATTR);
     const leaf = el.hasAttribute('data-pref-leaf');
     const owner = leaf ? el.parentElement?.closest(`[${PATH_ATTR}]:not([data-pref-leaf]), [data-pref-into]`) : null;
     return {

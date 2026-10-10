@@ -143,6 +143,15 @@ describe('PrefSchemaEditor', () => {
     expect(within(preview()).getByText('Dock')).toBeInTheDocument();
   });
 
+  it('selects a group in the tree and the attributes pane from a press on its rail entry in the preview', () => {
+    render(<Live />);
+    const entry = within(preview()).getByRole('button', { name: 'Panels' });
+    fireEvent.pointerDown(entry, { button: 0, clientX: 5, clientY: 5 });
+    fireEvent.pointerUp(entry, { clientX: 5, clientY: 5 });
+    expect(within(structure()).getByRole('treeitem', { name: /panels/, selected: true })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' })).toHaveValue('panels');
+  });
+
   it('narrows the tree to the rows a filter matches, under the branches that hold them', () => {
     render(<Live />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'dock' } });

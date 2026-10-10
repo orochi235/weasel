@@ -1,10 +1,10 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react';
 import { prefersReducedMotion } from '../../reducedMotion';
 import type { PrefDrop } from './drop';
-import { PATH_ATTR } from './selection';
+import { PATH_ATTR, RAIL_ATTR } from './selection';
 
 const REFLOW = 'pref-drop-reflow';
-const MOVED = `[${PATH_ATTR}], [data-pref-rail], [data-drop-placeholder]`;
+const MOVED = `[${PATH_ATTR}], [${RAIL_ATTR}], [data-drop-placeholder]`;
 
 interface Offset { x: number; y: number }
 const ZERO: Offset = { x: 0, y: 0 };
@@ -113,7 +113,7 @@ export function useDropMotion(form: RefObject<Element | null>, on: boolean, drop
 /** What follows an element from one render to the next, or null for one that is not followed. */
 function keyOf(el: Element, drop: PrefDrop | null, counts: Map<string, number>): string | null {
   const slot = el.getAttribute('data-drop-placeholder');
-  const rail = el.getAttribute('data-pref-rail');
+  const rail = el.getAttribute(RAIL_ATTR);
   // Inside a placeholder, and carried by it.
   if (slot === '') return null;
   const path = slot !== null ? drop?.from?.[Number(slot)] ?? `\u0000${slot}` : rail ?? el.getAttribute(PATH_ATTR);
