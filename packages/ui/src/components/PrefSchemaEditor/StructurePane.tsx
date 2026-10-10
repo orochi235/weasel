@@ -34,16 +34,16 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
     const p = joinPath(path, key);
     const kids = childrenOf(child);
     const { name } = child;
+    const label = name ? <>{name} <span className={s.treeKey}>({key})</span></> : key;
     return {
       id: p,
-      label: name ? <>{name} <span className={s.treeKey}>({key})</span></> : key,
+      label: changed.has(p) ? <span className={s.changed}>{label}</span> : label,
       textValue: name ? `${name} ${key}` : key,
       // Unset, a group is drawn by its depth: a page under the root, a section below that.
       ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
       trailing: isPrefLeaf(child)
         ? <PrefKindBadge kind={child.kind} />
         : <>{countBadge(leafCount([child]))}<PrefKindBadge kind={child.as ?? (isPrefSection(child) ? 'section' : 'group')} /></>,
-      className: changed.has(p) ? s.changed : undefined,
       ...(kids ? { children: toTreeNodes(child, p, changed) } : {}),
     };
   });
