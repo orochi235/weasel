@@ -1,14 +1,15 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { isInControlWithin, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { swallowNextClick } from '../../useReorderDragList';
-import { nodeAt, pathOf, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { GHOST_WIDTH } from './NodeGhost';
+import { nodeAt, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import type { DropOutside } from './StructurePane';
 
 export interface PreviewGhost {
   left: number;
   top: number;
   width: number;
-  label: string;
+  node: SchemaNode;
 }
 
 /**
@@ -45,7 +46,7 @@ export function usePreviewDrag({ stage, schema, place, onMove }: {
     const update = (ev: PointerEvent) => {
       place.over([node], [path], { x: ev.clientX, y: ev.clientY });
       // Offset from the pointer so what is under it stays visible.
-      setGhost({ left: ev.clientX + 10, top: ev.clientY + 10, width: 160, label: node.name === '' ? path : node.name });
+      setGhost({ left: ev.clientX + 10, top: ev.clientY + 10, width: GHOST_WIDTH.node, node });
     };
     drag.current = startThresholdDrag(e, {
       origin: box,

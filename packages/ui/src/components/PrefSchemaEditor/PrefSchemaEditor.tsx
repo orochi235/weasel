@@ -11,7 +11,7 @@ import { setDefaults, type DefaultEdit } from './defaults';
 import { ExportPanel } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
-import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
 import { previewTarget } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
@@ -25,6 +25,8 @@ const COALESCE_MS = 800;
 
 /** How long a drag rests on a rail entry before the preview opens that page. */
 const RAIL_OPEN_MS = 500;
+/** Where Delete and Backspace belong to the control and not to the selection. */
+const TEXT_ENTRY = 'input, textarea, select, [contenteditable]';
 
 /** An edit as the swap of one whole schema for another: schemas are immutable, so the snapshots cost nothing. */
 function swapOp<S>(before: S, after: S, emit: (s: S) => void, coalesceKey?: string): Op {
@@ -164,6 +166,12 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   // One value dragged through a control is one step back.
   const setDefaultsFrom = (edits: readonly DefaultEdit[]) =>
     commit(setDefaults(latest.current.schema, edits), `default:${edits.map(([path]) => path.join('.')).join(',')}`);
+  const remove = () => {
+    const path = latest.current.selected;
+    if (path === null) return;
+    commit(removeNode(latest.current.schema, path));
+    select(parentPath(path));
+  };
   const rekey = (from: string, to: string) => {
     setExpanded((e) => rebasePaths(e, [[from, to]]));
     setSelected(to);
@@ -175,12 +183,19 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       style={{ '--structure-w': `${structureWidth}px`, '--attributes-w': `${attributesWidth}px` } as CSSProperties}
       onKeyDownCapture={(e) => {
       const step = historyKey(e);
-      if (!step) return;
-      e.preventDefault();
-      history[step]();
+      if (step) {
+        e.preventDefault();
+        history[step]();
+        return;
+      }
+      // In a field the key edits the text; anywhere else it removes what is selected.
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selected !== null && !(e.target as HTMLElement).closest(TEXT_ENTRY)) {
+        e.preventDefault();
+        remove();
+      }
     }}>
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
-        expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} onMove={moveTo} tools={
+        expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} onMove={moveTo} onRemove={remove} tools={
           <>
             <Button size="sm" variant="ghost" disabled={!history.canUndo()} onClick={() => history.undo()}>Undo</Button>
             <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => history.redo()}>Redo</Button>

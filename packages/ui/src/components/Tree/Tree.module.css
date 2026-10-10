@@ -28,7 +28,7 @@
   gap: var(--wzl-space-2);
   padding: 0 var(--wzl-space-2) 0 var(--tree-gutter);
   height: var(--wzl-control-h);
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-tree-font-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg);
   border-radius: var(--wzl-radius-sm);
   cursor: default;
@@ -97,7 +97,7 @@
 
 .empty {
   padding: var(--wzl-space-6) var(--wzl-space-4);
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-tree-font-size, var(--wzl-font-size-sm));
   color: var(--wzl-fg-subtle);
   font-style: italic;
 }
@@ -131,5 +131,5 @@
   display: flex;
   align-items: center;
   padding-inline: var(--wzl-space-2);
-  font-size: var(--wzl-font-size-sm);
+  font-size: var(--wzl-tree-font-size, var(--wzl-font-size-sm));
 }

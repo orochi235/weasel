@@ -7,6 +7,7 @@ import { ResizeHandle } from '../ResizeHandle';
 import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPanel';
 import { Switch } from '../Switch';
 import type { DefaultEdit } from './defaults';
+import { NodeGhost } from './NodeGhost';
 import { PaneHeader } from './PaneHeader';
 import { keysOf, pathOf, type SchemaRoot } from './schemaEdit';
 import type { PreviewGhost } from './usePreviewDrag';
@@ -68,7 +69,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
         onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
       <ResizeHandle value={width} min={360} max={900} onInput={setWidth} ariaLabel="Resize preview" />
       {ghost && stageRef?.current && (
-        <DragGhost at={ghost} from={stageRef.current}><div className={s.paletteGhost}>{ghost.label}</div></DragGhost>
+        <DragGhost at={ghost} from={stageRef.current}><NodeGhost node={ghost.node} renderers={renderers} /></DragGhost>
       )}
       </div>
     </section>

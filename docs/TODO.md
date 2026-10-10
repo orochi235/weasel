@@ -845,6 +845,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   fold both into `as`. `as: 'page'` means nothing where there is no rail (`ControlPanel`, the
   columns and list layouts, any `PrefSection`) and draws as the default there.
 
+- **(P3) `PrefSchemaEditor`: a drag begun in the structure tree shows the tree's rows as its ghost over the live preview.** A
+  palette drag and a drag begun in the preview show the node as the form draws it (`NodeGhost`). `Tree` draws its
+  own ghost and has no way to be handed one, so it needs a prop for what to draw, and for when the drag has left it.
 - **(P3) `PrefSchemaEditor`'s properties-panel preview ignores the selection.** For a group
   schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s
   `selected`/`onSelect`. A section schema previews through `SelectionPanel`, which has neither.

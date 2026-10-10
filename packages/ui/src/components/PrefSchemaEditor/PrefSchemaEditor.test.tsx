@@ -119,7 +119,7 @@ describe('PrefSchemaEditor', () => {
   it('shows a row as its name with its key, and a nameless one as its key alone', () => {
     render(<Live start={{ name: 'Prefs', children: { bare: { name: '', children: {} }, view: START.children.view! } }} />);
     expect(within(structure()).getByRole('treeitem', { name: /^View \(view\)/ })).toBeInTheDocument();
-    expect(within(structure()).getByRole('treeitem', { name: /^bare group/ })).toBeInTheDocument();
+    expect(within(structure()).getByRole('treeitem', { name: /^bare 0 ?group/ })).toBeInTheDocument();
   });
 
   it('undoes and redoes an edit, from its buttons and from the keyboard', () => {
@@ -199,6 +199,35 @@ describe('PrefSchemaEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(snap()).not.toBeChecked();
     expect(screen.getByTestId('schema-literal')).toHaveTextContent(/snap: \{[^}]*default: false/);
+  });
+
+  it('removes the selected node on Delete or Backspace, and leaves a key pressed in a text field to the field', () => {
+    render(<Live />);
+    fireEvent.click(row('snap'));
+    const name = within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Name' });
+    fireEvent.keyDown(name, { key: 'Backspace' });
+    expect(row('snap')).toBeInTheDocument();
+    fireEvent.keyDown(structure(), { key: 'Delete' });
+    expect(within(structure()).queryByText('(snap)')).toBeNull();
+    fireEvent.click(row('dock'));
+    fireEvent.keyDown(preview(), { key: 'Backspace' });
+    expect(within(structure()).queryByText('(dock)')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(row('dock')).toBeInTheDocument();
+  });
+
+  it('counts the leaves under each branch of the tree, at any depth', () => {
+    const start: PrefGroup = { name: 'Prefs', children: {
+      loose: { kind: 'boolean', name: 'Loose', description: '', default: false },
+      view: { name: 'View', children: {
+        grid: { kind: 'boolean', name: 'Grid', description: '', default: true },
+        more: { name: 'More', children: { snap: { kind: 'boolean', name: 'Snap', description: '', default: false } } },
+      } },
+    } };
+    render(<Live start={start} />);
+    const item = (name: RegExp) => within(structure()).getByRole('treeitem', { name });
+    expect(within(item(/View/)).getAllByText('2')[0]).toBeInTheDocument();
+    expect(within(item(/^Prefs/)).getAllByText('1')[0]).toBeInTheDocument();
   });
 
   it('marks in the preview what the tree selects, and selects in the tree what the preview is pressed on', () => {

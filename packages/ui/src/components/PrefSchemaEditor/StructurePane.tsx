@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { Tree, type TreeNode } from '../Tree';
+import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
@@ -13,10 +14,17 @@ import { treeTakesNew } from './previewDrop';
 import { StoredList } from './StoredList';
 import { blankGroup, blankLeaf, blankSection } from './kindSchemas';
 import {
-  addNode, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, keysOf, kindOfValue, nodeAt, parentPath, pathOf, removeNode,
+  addNode, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, keysOf, kindOfValue, nodeAt, parentPath, pathOf,
   undescribedValues, uniqueKey, type SchemaNode, type SchemaRoot, type SchemaTarget, type UndescribedValue,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
+
+/** How many leaves `nodes` come to, counting those under each at any depth. */
+function leafCount(nodes: readonly SchemaNode[]): number {
+  return nodes.reduce((n, node) => n + (isPrefLeaf(node) ? 1 : leafCount(Object.values(childrenOf(node) ?? {}))), 0);
+}
+
+const countBadge = (n: number) => <Badge size="xs" status="muted" variant="subtle" className={s.treeCount}>{n}</Badge>;
 
 function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>): TreeNode[] {
   return Object.entries(childrenOf(node) ?? {}).map(([key, child]) => {
@@ -27,7 +35,9 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
       id: p,
       label: name ? <>{name} <span className={s.treeKey}>({key})</span></> : key,
       textValue: name ? `${name} ${key}` : key,
-      trailing: <PrefKindBadge kind={isPrefLeaf(child) ? child.kind : child.as ?? (isPrefSection(child) ? 'section' : 'group')} />,
+      trailing: isPrefLeaf(child)
+        ? <PrefKindBadge kind={child.kind} />
+        : <>{countBadge(leafCount([child]))}<PrefKindBadge kind={child.as ?? (isPrefSection(child) ? 'section' : 'group')} /></>,
       className: changed.has(p) ? s.changed : undefined,
       ...(kids ? { children: toTreeNodes(child, p, changed) } : {}),
     };
@@ -49,6 +59,8 @@ export interface StructurePaneProps {
   stored?: unknown;
   /** Somewhere else a drag from this pane may end: the live preview. */
   outside?: DropOutside;
+  /** Remove the selected node. */
+  onRemove(): void;
   /** Move the nodes at `paths` to `target`, keeping them open and selected. */
   onMove(paths: readonly string[], target: SchemaTarget): void;
 }
@@ -73,7 +85,7 @@ const nameOfKey = (key: string): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, tools, stored, outside, onMove: move }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, tools, stored, outside, onMove: move, onRemove }: StructurePaneProps) {
   const nodes = useMemo(() => {
     const all = toTreeNodes(schema, null, changed);
     const loose = new Set(generalKeys(schema));
@@ -83,6 +95,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
       id: GENERAL,
       label: looseEntryName(schema.name),
       textValue: looseEntryName(schema.name),
+      trailing: countBadge(leafCount([...loose].map((key) => nodeAt(schema, key)!))),
       children: all.filter((n) => loose.has(n.id)),
     };
     return [general, ...all.filter((n) => !loose.has(n.id))];
@@ -166,11 +179,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
       <div className={s.toolbar}>
         <Button size="sm" onClick={() => setAdding('pref')}>Add pref</Button>
         <Button size="sm" onClick={() => setAdding('branch')}>Add {branch}</Button>
-        <Button size="sm" disabled={selected === null} onClick={() => {
-          if (selected === null) return;
-          onChange(removeNode(schema, selected));
-          onSelect(parentPath(selected));
-        }}>Remove</Button>
+        <Button size="sm" disabled={selected === null} onClick={onRemove}>Remove</Button>
       </div>
       <Palette sections={isPrefSection(schema)} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
       <AddNodeDialog what={adding === 'branch' ? branch : adding} kinds={kinds} onAdd={add}

@@ -142,6 +142,13 @@ export const ICON_PATHS = {
   layoutColumns: `<rect x="3.4" y="3.4" width="3.4" height="13.2" rx="1" fill="currentColor" stroke="none"/><rect x="8.3" y="3.4" width="3.4" height="13.2" rx="1" fill="currentColor" stroke="none"/><rect x="13.2" y="3.4" width="3.4" height="13.2" rx="1" fill="currentColor" stroke="none"/>`,
   layoutGrid: `<rect x="3.4" y="3.4" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="8.3" y="3.4" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="13.2" y="3.4" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="3.4" y="8.3" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="8.3" y="8.3" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="13.2" y="8.3" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="3.4" y="13.2" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="8.3" y="13.2" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/><rect x="13.2" y="13.2" width="3.4" height="3.4" rx="1" fill="currentColor" stroke="none"/>`,
 
+  // Settings form
+  formPage: `<rect x="3.25" y="4.25" width="13.5" height="11.5" rx="1.5"/><path d="M8.1 4.25V15.75"/>`,
+  formTab: `<path d="M4.75 15.75a1.5 1.5 0 0 1 -1.5 -1.5V5.75a1.5 1.5 0 0 1 1.5 -1.5H8a1.5 1.5 0 0 1 1.5 1.5V8.1H15.25a1.5 1.5 0 0 1 1.5 1.5V14.25a1.5 1.5 0 0 1 -1.5 1.5Z"/><path d="M12 5.35h3.5"/>`,
+  formPanel: `<rect x="3.25" y="4.25" width="13.5" height="11.5" rx="1.5"/><path d="M6 8.1h4.5"/>`,
+  formSection: `<path d="M3.75 5.5h6.5" stroke-width="2.25"/><path d="M3.75 10.5h3M9.75 10.5h6.5M3.75 14.5h3M9.75 14.5h6.5"/>`,
+  formLabel: `<path d="M8 5.5H15.25a1.5 1.5 0 0 1 1.5 1.5V13a1.5 1.5 0 0 1 -1.5 1.5H8L3.25 10Z"/><circle cx="8.75" cy="10" r="1.1" fill="currentColor" stroke="none"/>`,
+
   // Arc profiles
   arcStraight: `<path d="M2.6 15H17.4"/>`,
   arcParabola: `<path d="M2.6 15Q10 -5 17.4 15"/>`,
@@ -574,6 +581,16 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'layoutRows',
       'layoutColumns',
       'layoutGrid',
+    ],
+  },
+  {
+    label: 'Settings form',
+    names: [
+      'formPage',
+      'formTab',
+      'formPanel',
+      'formSection',
+      'formLabel',
     ],
   },
   {

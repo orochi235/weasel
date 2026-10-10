@@ -22,7 +22,8 @@
 .middle { display: grid; align-content: start; gap: var(--wzl-space-2); min-height: 0; overflow: auto; }
 .pane { min-height: 0; overflow: auto; }
 .structurePane { display: flex; flex-direction: column; overflow: hidden; }
-.treeArea { flex: 1; min-height: 0; overflow: auto; }
+/* The tree reads at the size of the fields in the pane beside it. */
+.treeArea { flex: 1; min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); }
 .storedArea { flex: 0 0 var(--stored-h); min-height: 0; overflow: auto; }
 .storedList { list-style: none; margin: 0; padding: 0; display: grid; }
 .storedEntry {
@@ -74,7 +75,7 @@
   text-transform: var(--wzl-params-label-case, uppercase);
 }
 .paneTools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); }
-.treeKey { font-family: var(--wzl-font-mono); font-size: var(--wzl-font-size-sm); color: var(--wzl-fg-muted); }
+.treeKey { font-weight: var(--wzl-font-weight-light); color: var(--wzl-fg-muted); }
 .addForm { display: grid; gap: var(--wzl-space-3); min-width: min(360px, 80vw); }
 .idField input { font-family: var(--wzl-font-mono); }
 .addActions { display: flex; justify-content: flex-end; gap: var(--wzl-space-2); }
@@ -105,18 +106,29 @@
 }
 .changeList { overflow: auto; font-family: var(--wzl-font-mono); white-space: pre; }
 .changed { font-weight: var(--wzl-font-weight-bold); }
-/* Chips dragged into the tree or the preview to add a node there. */
-.palette { display: flex; flex-wrap: wrap; gap: var(--wzl-space-1); margin-block-end: var(--wzl-space-2); }
-.paletteChip {
-  padding: var(--wzl-space-1) var(--wzl-space-3);
-  border: 1px dashed var(--wzl-border-strong);
+/* Tool buttons dragged into the tree or the preview to add a node there. */
+.palette {
+  inline-size: fit-content;
+  margin-block-end: var(--wzl-space-2);
+  padding: var(--wzl-space-2);
+  border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
-  background: none;
-  color: var(--wzl-fg-muted);
-  font: inherit;
-  font-size: var(--wzl-font-size-xs);
-  cursor: grab;
-  touch-action: none;
+  background: var(--wzl-surface);
+  user-select: none;
 }
-.paletteChip:hover { color: var(--wzl-fg); border-color: var(--wzl-accent); }
-.paletteGhost { padding: var(--wzl-space-1) var(--wzl-space-3); font-family: var(--wzl-font-ui); font-size: var(--wzl-font-size-xs); color: var(--wzl-fg); }
+.paletteTool { display: flex; touch-action: none; }
+.palette .paletteTool > button { cursor: grab; }
+/* A dragged node drawn as the form would draw it. The form brings its own padding; a page is a rail entry. */
+.ghostNode { padding: var(--wzl-space-2) var(--wzl-space-3); font-family: var(--wzl-font-ui); }
+.ghostPage {
+  padding: var(--wzl-space-2) var(--wzl-space-3);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-sm);
+}
+/* How many leaves a branch holds, before its kind. */
+.treeCount { composes: numeric from '@weasel-js/theme/numeric.module.css'; margin-inline-end: var(--wzl-space-1); }

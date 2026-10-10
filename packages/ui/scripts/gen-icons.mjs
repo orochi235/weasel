@@ -15,6 +15,7 @@ import { ACTIONS } from './icons/actions.mjs';
 import { INSTRUMENT, PLAYBACK, STATUS } from './icons/state.mjs';
 import { PAINT } from './icons/paint.mjs';
 import { LAYOUT } from './icons/layout.mjs';
+import { FORM } from './icons/form.mjs';
 import { ARCS } from './icons/arcs.mjs';
 import { CURVES } from './icons/curves.mjs';
 import { SHAPES } from './icons/shapes.mjs';
@@ -39,6 +40,7 @@ const GROUPS = [
   ['Instrument', INSTRUMENT],
   ['Stroke cap, join, align and dash', PAINT],
   ['Workspace layout', LAYOUT],
+  ['Settings form', FORM],
   ['Arc profiles', ARCS],
   ['Curves', CURVES],
   ['Shapes', SHAPES],
