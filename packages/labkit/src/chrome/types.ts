@@ -11,14 +11,23 @@ export type TrialRegion = 'titlebar' | 'toolbar' | 'palette' | 'sidebar' | 'view
 /** An icon component taking a pixel size, as `@weasel-js/ui` glyphs do. */
 export type IconComponent = ComponentType<{ size?: number }>;
 
-/** A button in a toolbar. `TCtx` is the chrome context its `onActivate` is
- *  handed — a trial's, or the lab's for a lab-level bar. */
-export interface ToolbarItem<TCtx = TrialChromeContext> {
+/** A button that runs once when pressed: it holds no focus and binds no
+ *  input. `TCtx` is the chrome context its `onActivate` is handed — a trial's,
+ *  or the lab's for a lab-level region. */
+export interface CommandItem<TCtx = TrialChromeContext> {
   icon: IconComponent;
   label: string;
   /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
   shortcut?: string;
   disabled?: boolean;
+  /** Handed the chrome context it was declared against, so a contribution can
+   *  reach `ctx.saveSnapshot()` and the rest without the `render` escape. A
+   *  zero-argument handler stays valid. */
+  onActivate: (ctx: TCtx) => void;
+}
+
+/** A command in a toolbar, with the looks a bar can give one. */
+export interface ToolbarItem<TCtx = TrialChromeContext> extends CommandItem<TCtx> {
   /** Reddens on hover. For actions that discard work. */
   danger?: boolean;
   /** A toggle rather than a command: renders `aria-pressed` and reads as held
@@ -26,25 +35,21 @@ export interface ToolbarItem<TCtx = TrialChromeContext> {
   pressed?: boolean;
   /** Render the label beside the glyph rather than only in the tooltip. */
   showLabel?: boolean;
-  /** Handed the chrome context it was declared against, so a contribution can
-   *  reach `ctx.saveSnapshot()` and the rest without the `render` escape. A
-   *  zero-argument handler stays valid. */
-  onActivate: (ctx: TCtx) => void;
 }
 
-/** A tool in the palette region: a mode by default, a command when it carries
- *  an `onActivate`. `TCtx` is the chrome context that handler is handed — a
- *  trial's, or the lab's for a lab-level rail. */
-export interface ToolItem<TCtx = TrialChromeContext> {
+/** A tool on a rail: pressing it writes the tool slot under the
+ *  contribution's id, and it reads as current while the slot names it. */
+export interface ToolItem {
   icon: IconComponent;
   label: string;
   /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
   shortcut?: string;
   disabled?: boolean;
-  /** Runs on press instead of selecting. An item with one is a command: it
-   *  never writes the tool slot, and never reads as the current tool. */
-  onActivate?: (ctx: TCtx) => void;
 }
+
+/** What a rail holds: tools and commands. A command takes a slot, never
+ *  writes the tool slot, and never reads as the current tool. */
+export type RailItem<TCtx = TrialChromeContext> = ToolItem | CommandItem<TCtx>;
 
 /** A titled block in the sidebar. `stance` and `tone` work as on a
  *  `<PropertyPanel>`: what kind of content the section holds, and which of its
@@ -98,7 +103,7 @@ export interface ContributionBase {
 export type TrialContribution =
   | (ContributionBase & { region: 'titlebar'; item: ToolbarItem; render?: never })
   | (ContributionBase & { region: 'toolbar'; item: ToolbarItem; render?: never })
-  | (ContributionBase & { region: 'palette'; item: ToolItem; render?: never })
+  | (ContributionBase & { region: 'palette'; item: RailItem; render?: never })
   | (ContributionBase & { region: 'sidebar'; item: SidebarSection; render?: never })
   | (ContributionBase & { region: 'viewport'; item: ViewportControl; render?: never })
   | (ContributionBase & { region: 'status'; item: StatusReadout; render?: never })

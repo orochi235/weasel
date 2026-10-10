@@ -36,7 +36,7 @@ describe('PaletteRegion', () => {
     expect(setActiveTool).toHaveBeenCalledWith('brush');
   });
 
-  it('runs a command tool instead of selecting it, and never marks it current', () => {
+  it('runs a command instead of writing the tool slot, and never marks it current', () => {
     const onActivate = vi.fn();
     const setActiveTool = vi.fn();
     const ctx = ctxWith('info', setActiveTool);

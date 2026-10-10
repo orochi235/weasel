@@ -1,5 +1,5 @@
 import { ToolButton, ToolGroup, useRovingTabIndex } from '../../passthrough/weasel-ui';
-import type { RegionContribution, ToolItem, ToolSlotContext, TrialChromeContext } from '../types';
+import type { RailItem, RegionContribution, ToolSlotContext, TrialChromeContext } from '../types';
 
 /** Props for `<PaletteRegion>`. */
 export interface PaletteRegionProps<TCtx extends ToolSlotContext = TrialChromeContext> {
@@ -10,9 +10,9 @@ export interface PaletteRegionProps<TCtx extends ToolSlotContext = TrialChromeCo
   region?: string;
 }
 
-/** A tool strip: a trial's, or the lab's. Selection lives in whichever tool
- *  slot the context carries; this region only reflects it. An item carrying
- *  `onActivate` is a command instead — it presses, and never latches. */
+/** A rail of tools and commands: a trial's, or the lab's. Selection lives in
+ *  whichever tool slot the context carries; this region only reflects it. A
+ *  command presses, and never latches. */
 export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>({
   contributions,
   ctx,
@@ -33,16 +33,18 @@ export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>
         {contributions.map((c) => {
           if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
           if (c.region !== region || !c.item) return null;
-          const { icon: Icon, label, shortcut, disabled, onActivate } = c.item as ToolItem<TCtx>;
+          const item = c.item as RailItem<TCtx>;
+          const { icon: Icon, label, shortcut, disabled } = item;
+          const run = 'onActivate' in item ? item.onActivate : null;
           return (
             <ToolButton
               key={c.id}
               icon={<Icon size={16} />}
               label={label}
               shortcut={shortcut}
-              active={onActivate ? false : ctx.activeToolId === c.id}
+              active={run ? false : ctx.activeToolId === c.id}
               disabled={disabled}
-              onClick={onActivate ? () => onActivate(ctx) : () => ctx.setActiveTool(c.id)}
+              onClick={run ? () => run(ctx) : () => ctx.setActiveTool(c.id)}
             />
           );
         })}

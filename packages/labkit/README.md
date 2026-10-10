@@ -256,7 +256,10 @@ The pieces are exported for a host that wants to assemble them itself:
 
 A trial's chrome has six named regions — `titlebar`, `toolbar`, `palette`,
 `sidebar`, `viewport`, `status`. A `TrialContribution` names one and supplies
-data the region lays out, or a `render` function that opts out of that layout:
+data the region lays out, or a `render` function that opts out of that layout.
+The `palette` region is a rail of tools and commands: a `ToolItem` writes the
+tool slot when pressed and reads as current while the slot names it, and a
+`CommandItem` carries an `onActivate`, runs once per press, and never latches:
 
 ```tsx
 <Lab

@@ -29,7 +29,7 @@ const openInfo = async () => {
 };
 
 describe('Get Info', () => {
-  it('opens from the palette and names the focused story', async () => {
+  it('opens from the rail and names the focused story', async () => {
     mount();
     await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
     const dialog = await openInfo();
@@ -40,7 +40,7 @@ describe('Get Info', () => {
     expect(within(dialog).getByText('Library').nextElementSibling?.textContent).toBe('ui');
   });
 
-  it('leaves the palette item unpressed — it is a command, not a mode', async () => {
+  it('leaves the Info command unpressed: it is a command, not a tool', async () => {
     mount();
     await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
     const button = screen.getByRole('button', { name: /^Info/ });

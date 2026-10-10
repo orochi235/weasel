@@ -2,10 +2,10 @@ import type { ReactNode } from 'react';
 import type { LabContextValue } from '../lab/LabContext';
 import type {
   ContributionBase,
+  RailItem,
   SidebarSection,
   StatusReadout,
   ToolbarItem,
-  ToolItem,
   ToolSlotContext,
 } from './types';
 
@@ -40,7 +40,7 @@ export type LabContribution<TCtx = LabChromeContext> =
       item: ToolbarItem<TCtx>;
       render?: never;
     })
-  | (ContributionBase & { region: 'palette'; item: ToolItem<TCtx>; render?: never })
+  | (ContributionBase & { region: 'palette'; item: RailItem<TCtx>; render?: never })
   | (ContributionBase & { region: 'sidebar' | 'aside'; item: SidebarSection; render?: never })
   | (ContributionBase & { region: 'footer'; item: StatusReadout; render?: never })
   | (ContributionBase & {

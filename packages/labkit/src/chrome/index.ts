@@ -25,8 +25,10 @@ export { ToolbarRegion } from './regions/ToolbarRegion';
 export type { ViewportRegionProps } from './regions/ViewportRegion';
 export { ViewportRegion } from './regions/ViewportRegion';
 export type {
+  CommandItem,
   ContributionBase,
   IconComponent,
+  RailItem,
   RegionContribution,
   SidebarSection,
   SidebarSlotContext,

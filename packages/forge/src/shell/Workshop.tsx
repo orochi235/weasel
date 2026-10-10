@@ -1,4 +1,11 @@
-import { Lab, type LabContribution, type StorageAdapter, useLabContext } from '@weasel-js/labkit';
+import {
+  type CommandItem,
+  Lab,
+  type LabChromeContext,
+  type LabContribution,
+  type StorageAdapter,
+  useLabContext,
+} from '@weasel-js/labkit';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShellConfig } from '../config';
 import type { FrameSetup } from '../frame/FrameController';
@@ -82,7 +89,7 @@ function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
 }
 
 /**
- * Opens Get Info on ⌘I / Ctrl+I. `ToolItem.shortcut` is a tooltip hint —
+ * Opens Get Info on ⌘I / Ctrl+I. `CommandItem.shortcut` is a tooltip hint —
  * labkit binds no keys — so the shell binds its own.
  */
 function useInfoShortcut(open: (next: boolean) => void): void {
@@ -140,14 +147,14 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
     (next: Globals) => setLabValues((prev) => (stableStringify(prev) === stableStringify(next) ? prev : next)),
     [],
   );
+  const infoCommand = useMemo<CommandItem<LabChromeContext>>(
+    () => ({ icon: InfoIcon, label: 'Info', shortcut: '⌘I', onActivate: () => setInfoOpen(true) }),
+    [],
+  );
   const labChrome = useMemo<readonly LabContribution[]>(
     () => [
       { id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={index} /> },
-      {
-        id: 'fg-info',
-        region: 'palette',
-        item: { icon: InfoIcon, label: 'Info', shortcut: '⌘I', onActivate: () => setInfoOpen(true) },
-      },
+      { id: 'fg-info', region: 'palette', item: infoCommand },
       ...(config?.cssVars === false ? [] : [CSS_VARS_SECTION]),
       A11Y_SECTION,
       ...(Object.keys(declarations).length > 0
@@ -155,7 +162,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
         : []),
       ...(config?.labChrome ?? []),
     ],
-    [index, declarations, config?.cssVars, config?.labChrome],
+    [index, infoCommand, declarations, config?.cssVars, config?.labChrome],
   );
   const first = index[0];
   if (!first) {

@@ -165,6 +165,11 @@ owned by the selection (`selectionMoveContribution`,
 `tools/builtin/select`), so they are live
 under any tool that leaves the gesture unclaimed.
 
+A rail holds tools and **commands**. A command takes a rail slot and runs once
+when pressed; it holds no focus and binds no input, so it is not a Tool and
+`isTool` never sees it. labkit's `CommandItem` is one beside its `ToolItem`,
+and forge's Info button is a command on the workshop's rail.
+
 Nothing is a base tool. A bare `<SceneCanvas>` registers no tool and has none
 active; the `select` preset (or `pick`, which adds the selection outline)
 registers select and makes it the initial active tool and Escape's return
@@ -508,6 +513,12 @@ for the repo. The mental model (from `docs/TODO.md`): the fix for "the kit is
 turning into a katamari." Distinct from a [Contribution](#contribution) (which
 bundles parts with consumer-facing composition rules) in that features are internal
 to the kit — though a feature often exports one.
+
+The `<SceneCanvas features>` prop is a different thing that shares the word. It
+names behavior presets (`select`, `move`, `draw`), declared in
+`packages/core/src/canvas/SceneCanvas/features.ts`. A preset turns behavior on
+for one canvas, where a feature directory only organizes source, and neither
+list is drawn from the other.
 
 **Bundle-shaped vs protocol-shaped features.** Features fall on a spectrum:
 

@@ -2,6 +2,10 @@
  * The behavior presets `<SceneCanvas features>` composes. A bare canvas renders
  * its scene and keeps a selection nothing sets; every behavior beyond that is
  * turned on by naming a preset here.
+ *
+ * A preset is not one of the `packages/core/src/features/<name>/` source
+ * directories that `docs/taxonomy.md` calls a feature; the two share a word
+ * and nothing else.
  */
 
 /** A preset that names one behavior and abbreviates nothing. */
