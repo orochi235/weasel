@@ -10,12 +10,12 @@ const themed = () => document.querySelector('[data-wzl-theme]')!;
 
 describe('the front page', () => {
   it('links to each section', () => {
-    render(<FrontPage firstDemoId="rect" />);
+    render(<FrontPage />);
     const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'));
     expect(hrefs).toEqual([
       '#__get_started',
       './api/',
-      '#rect',
+      '#__demos',
       './docs/ui/forge/',
       './draw/',
       '#__releases',
@@ -23,19 +23,19 @@ describe('the front page', () => {
   });
 
   it('switches palette from the toggle and remembers the choice', () => {
-    const first = render(<FrontPage firstDemoId="rect" />);
+    const first = render(<FrontPage />);
     expect(themed().getAttribute('data-wzl-mode')).toBe('dark');
 
     fireEvent.click(screen.getByRole('radio', { name: 'Paper' }));
     expect(themed().getAttribute('data-wzl-mode')).toBe('light');
 
     first.unmount();
-    render(<FrontPage firstDemoId="rect" />);
+    render(<FrontPage />);
     expect(themed().getAttribute('data-wzl-mode')).toBe('light');
   });
 
   it('wears a different theme for the project palette', () => {
-    render(<FrontPage firstDemoId="rect" />);
+    render(<FrontPage />);
     const before = themed().getAttribute('data-wzl-theme');
     fireEvent.click(screen.getByRole('radio', { name: 'Project' }));
     expect(themed().getAttribute('data-wzl-theme')).not.toBe(before);

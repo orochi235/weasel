@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { marked } from 'marked';
+import { marked, type Token, type TokensList } from 'marked';
 import type { PluginOption } from 'vite';
 
 /** The README sections the site's "Get started" page is made of, in order. */
@@ -8,11 +8,16 @@ export const GET_STARTED_SECTIONS = ['Install', 'How it fits together'] as const
 
 const README = 'packages/core/README.md';
 
+/** A run of prose as HTML, or one fenced code block left as text for the page to highlight. */
+export type GetStartedBlock =
+  | { readonly kind: 'html'; readonly html: string }
+  | { readonly kind: 'code'; readonly code: string; readonly language: string };
+
 /**
- * Virtual module exposing core's README sections named above as HTML, so the
- * site's "Get started" page and the README on npm are one piece of writing:
+ * Virtual module exposing core's README sections named above, so the site's
+ * "Get started" page and the README on npm are one piece of writing:
  *
- *   import html from 'virtual:get-started';
+ *   import blocks from 'virtual:get-started';
  *
  * Rendered at build time, as `virtual:changelogs` is, so the client bundle
  * carries no markdown parser.
@@ -31,7 +36,7 @@ export function getStarted(opts: { root?: string } = {}): PluginOption {
       if (id !== RESOLVED_ID) return null;
       this.addWatchFile(file);
       const markdown = sliceSections(readFileSync(file, 'utf8'), GET_STARTED_SECTIONS);
-      return `export default ${JSON.stringify(marked.parse(markdown, { async: false }))};`;
+      return `export default ${JSON.stringify(blocksOf(markdown))};`;
     },
   };
 }
@@ -63,4 +68,29 @@ export function sliceSections(markdown: string, headings: readonly string[]): st
       return lines.join('\n').trimEnd();
     })
     .join('\n\n');
+}
+
+/** Markdown as prose and code blocks, in document order. */
+export function blocksOf(markdown: string): GetStartedBlock[] {
+  const tokens = marked.lexer(markdown);
+  const blocks: GetStartedBlock[] = [];
+  let prose: Token[] = [];
+
+  const flush = () => {
+    // The parser reads link definitions off the list it is handed.
+    const html = marked.parser(Object.assign(prose, { links: tokens.links }) as TokensList).trim();
+    if (html) blocks.push({ kind: 'html', html });
+    prose = [];
+  };
+
+  for (const token of tokens) {
+    if (token.type !== 'code') {
+      prose.push(token);
+      continue;
+    }
+    flush();
+    blocks.push({ kind: 'code', code: token.text, language: token.lang ?? '' });
+  }
+  flush();
+  return blocks;
 }

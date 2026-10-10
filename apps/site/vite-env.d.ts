@@ -33,8 +33,8 @@ declare module 'virtual:changelogs' {
 }
 
 /** Provided by the `get-started` vite plugin (`scripts/vite-get-started.ts`).
- *  Core's README sections for the "Get started" page, rendered to HTML. */
+ *  Core's README sections for the "Get started" page: prose as HTML, code as text. */
 declare module 'virtual:get-started' {
-  const html: string;
-  export default html;
+  const blocks: import('../../scripts/vite-get-started').GetStartedBlock[];
+  export default blocks;
 }

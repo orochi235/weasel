@@ -2,9 +2,8 @@ import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'rea
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, PACKAGES, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
 import { sessionStore } from './chunkReload';
 import { PageBoundary } from './PageBoundary';
-import { FrontPage } from './FrontPage/FrontPage';
 import { Wordmark } from './FrontPage/Wordmark';
-import { FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, routeOf } from './routes';
+import { DEMOS_ID, FRONT_ID, GET_STARTED_ID, RELEASES_ID, WHATS_NEW_ID, goFront, routeOf } from './routes';
 
 // All three are lazy so the entry bundle carries only the nav: `Releases`
 // pulls in `virtual:changelogs` (every published changelog entry), and
@@ -34,6 +33,7 @@ import { VERSION } from '@weasel-js/core';
 import { buildTitle } from '../shared/buildInfo';
 
 function readHash(): string {
+  if (window.location.hash === `#${DEMOS_ID}`) return DEMOS[0].id;
   return routeOf(window.location.hash, (id) => DEMOS_BY_ID.has(id));
 }
 
@@ -49,15 +49,16 @@ export function WeaselDemos() {
   }, []);
 
   useEffect(() => {
-    if (window.location.hash.replace(/^#/, '') === activeId) return;
-    // The front page has no hash of its own: a hash that named nothing is dropped.
-    const { pathname, search } = window.location;
-    window.history.replaceState(null, '', activeId === FRONT_ID ? pathname + search : `#${activeId}`);
+    // A hash that named nothing: hand the page back to the front page.
+    if (activeId === FRONT_ID) goFront();
+    else if (window.location.hash.replace(/^#/, '') !== activeId) {
+      window.history.replaceState(null, '', `#${activeId}`);
+    }
   }, [activeId]);
 
   const active = DEMOS_BY_ID.get(activeId) ?? null;
 
-  if (activeId === FRONT_ID) return <FrontPage firstDemoId={DEMOS[0].id} />;
+  if (activeId === FRONT_ID) return null;
 
   return (
     <div className="ckd-app">
@@ -69,7 +70,7 @@ export function WeaselDemos() {
               href="./"
               className="ckd-sidebar-home"
               aria-label="weasel home"
-              onClick={(e) => { e.preventDefault(); setActiveId(FRONT_ID); }}
+              onClick={(e) => { e.preventDefault(); goFront(); }}
             ><Wordmark /></a>
             <span className="ckd-sidebar-version" title={buildTitle()}>v{VERSION}</span>
           </h1>

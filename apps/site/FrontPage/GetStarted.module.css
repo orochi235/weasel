@@ -17,12 +17,17 @@
   font-size: var(--wzl-font-size-lg);
 }
 
-.prose pre {
+.code {
   overflow-x: auto;
+  margin: var(--wzl-space-lg) 0;
   padding: var(--wzl-space-md) var(--wzl-space-lg);
   border: 1px solid var(--ckd-border);
   border-radius: var(--wzl-radius-md);
   background: var(--ckd-surface-2);
+}
+
+.code pre {
+  margin: 0;
   font-size: var(--wzl-font-size-sm);
   line-height: 1.5;
 }

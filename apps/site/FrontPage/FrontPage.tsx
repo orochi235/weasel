@@ -1,25 +1,25 @@
 import { useState } from 'react';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { ToggleBar } from '@weasel-js/ui';
-import { GET_STARTED_ID, RELEASES_ID } from '../routes';
+import { DEMOS_ID, GET_STARTED_ID, RELEASES_ID } from '../routes';
 import { PALETTES, storePalette, storedPalette } from './palettes';
 import { Wordmark } from './Wordmark';
 import s from './FrontPage.module.css';
 
 const PALETTE_ITEMS = PALETTES.map((p) => ({ value: p.id, label: p.label }));
 
-/** The site's root: a pitch and a door to each section, with nothing else on screen. */
-export function FrontPage({ firstDemoId }: { firstDemoId: string }) {
-  const [palette, setPalette] = useState(storedPalette);
+const LINKS = [
+  { href: `#${GET_STARTED_ID}`, title: 'Get started', note: 'Install, first scene' },
+  { href: './api/', title: 'API docs', note: 'Every package' },
+  { href: `#${DEMOS_ID}`, title: 'Demos', note: 'Live, with source' },
+  { href: './docs/ui/forge/', title: 'Components', note: 'The UI workshop' },
+  { href: './draw/', title: 'WeaselDraw', note: 'The app built on it' },
+  { href: `#${RELEASES_ID}`, title: 'Releases', note: 'Every version' },
+];
 
-  const links = [
-    { href: `#${GET_STARTED_ID}`, title: 'Get started', note: 'Install, first scene' },
-    { href: './api/', title: 'API docs', note: 'Every package' },
-    { href: `#${firstDemoId}`, title: 'Demos', note: 'Live, with source' },
-    { href: './docs/ui/forge/', title: 'Components', note: 'The UI workshop' },
-    { href: './draw/', title: 'WeaselDraw', note: 'The app built on it' },
-    { href: `#${RELEASES_ID}`, title: 'Releases', note: 'Every version' },
-  ];
+/** The site's root: a pitch and a door to each section, with nothing else on screen. */
+export function FrontPage() {
+  const [palette, setPalette] = useState(storedPalette);
 
   return (
     <ThemeProvider theme={palette.theme} selection={palette.selection} className={s.page}>
@@ -30,7 +30,7 @@ export function FrontPage({ firstDemoId }: { firstDemoId: string }) {
         <p className={s.tagline}>A 2D scene-graph canvas engine for React.</p>
         <code className={s.install}>npm i @weasel-js/core</code>
         <nav className={s.links} aria-label="Sections">
-          {links.map((link) => (
+          {LINKS.map((link) => (
             <a key={link.title} href={link.href} className={s.link}>
               <span className={s.linkTitle}>{link.title}</span>
               <span className={s.linkNote}>{link.note}</span>
