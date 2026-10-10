@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { createHistory, historyKey, useLatest, type Op } from '@weasel-js/core';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
-import { Switch } from '../Switch';
-import { setAtPath } from '../SelectionPanel/model';
-import { PrefsDialog, type PrefRenderer } from '../Prefs';
+import type { PrefRenderer } from '../Prefs';
+import type { PropertyRenderer } from '../SelectionPanel';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { ExportPanel } from './ExportPanel';
-import { PaneHeader } from './PaneHeader';
+import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
-import { branchPaths, rebasePaths } from './schemaEdit';
+import { branchPaths, rebasePaths, type SchemaRoot } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
 import { StructurePane } from './StructurePane';
 import s from './PrefSchemaEditor.module.css';
@@ -22,7 +21,7 @@ const NO_KINDS: CustomKinds = {};
 const COALESCE_MS = 800;
 
 /** An edit as the swap of one whole schema for another: schemas are immutable, so the snapshots cost nothing. */
-function swapOp(before: PrefGroup, after: PrefGroup, emit: (s: PrefGroup) => void, coalesceKey?: string): Op {
+function swapOp<S>(before: S, after: S, emit: (s: S) => void, coalesceKey?: string): Op {
   const forward: Op = {
     label: 'edit schema',
     ...(coalesceKey !== undefined ? { coalesceKey } : {}),
@@ -33,37 +32,42 @@ function swapOp(before: PrefGroup, after: PrefGroup, emit: (s: PrefGroup) => voi
 }
 
 /** Props for {@link PrefSchemaEditor}. */
-export interface PrefSchemaEditorProps {
-  schema: PrefGroup;
-  onChange(next: PrefGroup): void;
+export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefGroup> {
+  /** A preferences schema, or a node's property schema. */
+  schema: S;
+  onChange(next: NoInfer<S>): void;
   /** Baseline for the change list and the changed-row marks. Default: the first `schema` seen. */
-  original?: PrefGroup;
+  original?: NoInfer<S>;
   /** Attribute schemas for custom kinds, by kind. A leaf of an unlisted custom kind edits its base fields only. */
   kinds?: CustomKinds;
-  /** Renderers for custom kinds, used by the preview and by a custom kind's attributes. */
+  /** Renderers for custom kinds, used by a preferences schema's preview and by a custom kind's attributes. */
   renderers?: Record<string, PrefRenderer>;
-  /** The values the app stores under this schema, nested by group as a prefs form writes them. Given, the
-   *  values no leaf describes are listed under the tree, each a way to add the leaf that would. */
+  /** Renderers for a node property schema's preview, as `SelectionPanel` takes them. */
+  propertyRenderers?: Record<string, PropertyRenderer>;
+  /** The values the app stores under this schema: nested by group as a prefs form writes them, or a node for
+   *  a node's property schema. Given, the values no leaf describes are listed under the tree, each a way to
+   *  add the leaf that would. */
   stored?: unknown;
   className?: string;
 }
 
 /**
- * An editor for a preference schema: its structure as a tree, the selected node's attributes as a form, a live
- * `PrefsForm` of the result, and an export of it as a TypeScript literal and a list of changes. Edits stay in
+ * An editor for a preferences schema or a node's property schema: its structure as a tree, the selected node's
+ * attributes as a form, a live preview of the result (a `PrefsForm` for the first, a `SelectionPanel` over one
+ * scratch node for the second), and an export of it as a TypeScript literal and a list of changes. Edits stay in
  * `schema`; nothing is written back to source. Its own edits undo and redo, from its buttons or Mod+Z, Shift+Mod+Z,
  * and Mod+Y anywhere inside it; a `schema` it did not write itself starts the history over. Swapping `schema` for an
  * unrelated one without remounting keeps the selection, expansion and baseline; give the editor a `key` to start
  * fresh.
  */
-export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS, renderers, stored, className }: PrefSchemaEditorProps) {
+export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, className }: PrefSchemaEditorProps<S>,
+) {
   const [first] = useState(schema);
   const base = original ?? first;
   const [selected, setSelected] = useState<string | null>(null);
-  const [values, setValues] = useState<Record<string, unknown>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(() => new Set(branchPaths(schema)));
-  const [showHidden, setShowHidden] = useState(true);
   const [structureWidth, setStructureWidth] = useState(300);
   const [attributesWidth, setAttributesWidth] = useState(320);
 
@@ -84,12 +88,13 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
     emitted.current = schema;
     history.clear();
   }, [schema, history]);
-  const emit = (next: PrefGroup) => {
+  const emit = (next: S) => {
     emitted.current = next;
     latest.current.onChange(next);
   };
-  const commit = (next: PrefGroup, coalesceKey?: string) =>
-    history.applyOps([swapOp(latest.current.schema, next, emit, coalesceKey)], 'edit schema');
+  // The panes edit either root; each hands back the kind it was given.
+  const commit = (next: SchemaRoot, coalesceKey?: string) =>
+    history.applyOps([swapOp(latest.current.schema, next as S, emit, coalesceKey)], 'edit schema');
 
   const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);
   const changed = useMemo(() => changedPaths(changes), [changes]);
@@ -134,17 +139,7 @@ export function PrefSchemaEditor({ schema, onChange, original, kinds = NO_KINDS,
           kinds={kindList} custom={kinds} renderers={renderers} onNotice={setNotice} />
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
-      <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
-        <PaneHeader title="Live preview">
-          <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch>
-          <Button size="sm" variant="ghost" disabled={Object.keys(values).length === 0} onClick={() => setValues({})}>
-            Reset values
-          </Button>
-        </PaneHeader>
-        <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" dialogClassName={s.previewDialog}
-          schema={schema} values={values} renderers={renderers} showHidden={showHidden}
-          onChange={(path, v) => setValues((cur) => setAtPath(cur, path.split('.'), v) as Record<string, unknown>)} />
-      </section>
+      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} />
       <ExportPanel schema={schema} changes={changes} />
     </div>
   );

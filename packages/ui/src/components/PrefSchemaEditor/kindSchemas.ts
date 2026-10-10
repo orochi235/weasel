@@ -9,7 +9,7 @@ import {
   type PrefNumber,
   type PrefSection,
 } from '@weasel-js/prefs';
-import { replaceNode, nodeAt, type SchemaNode } from './schemaEdit';
+import { replaceNode, nodeAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { containsCode } from './schemaExport';
 
 export type KindAttrs = Record<string, PrefLeaf>;
@@ -147,7 +147,7 @@ function carriesDefault(v: unknown, blank: Record<string, unknown>): boolean {
 }
 
 /** Change a leaf's kind. Base fields carry over, as does a default of the same type; the rest is reported. */
-export function changeKind(root: PrefGroup, path: string, kind: string, custom: CustomKinds = {}): { root: PrefGroup; dropped: string[] } {
+export function changeKind<R extends SchemaRoot>(root: R, path: string, kind: string, custom: CustomKinds = {}): { root: R; dropped: string[] } {
   const old = nodeAt(root, path) as unknown as Record<string, unknown>;
   const blank = blankLeaf(kind) as unknown as Record<string, unknown>;
   const keep = new Set([...SHARED, ...Object.keys(kindAttrs(kind, custom))]);

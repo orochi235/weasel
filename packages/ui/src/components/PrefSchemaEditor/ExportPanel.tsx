@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import type { PrefGroup } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { CodeBlock } from '../CodeBlock';
 import { PaneHeader } from './PaneHeader';
+import type { SchemaRoot } from './schemaEdit';
 import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
 import s from './PrefSchemaEditor.module.css';
 
@@ -11,7 +11,7 @@ function Copy({ text }: { text: string }) {
 }
 
 /** The schema as a TypeScript literal beside the list of changes since the baseline. */
-export function ExportPanel({ schema, changes }: { schema: PrefGroup; changes: readonly SchemaChange[] }) {
+export function ExportPanel({ schema, changes }: { schema: SchemaRoot; changes: readonly SchemaChange[] }) {
   const literal = useMemo(() => printSchema(schema), [schema]);
   const list = useMemo(() => formatChanges(changes) || 'No changes.', [changes]);
   return (

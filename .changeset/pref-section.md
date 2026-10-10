@@ -18,4 +18,4 @@ What to rewrite:
 
 A preferences schema and a tool's `options` are unchanged unless they nest a group inside an `object` leaf.
 
-`PrefSchemaEditor` edits the sections inside an `object` leaf: it adds one where it used to add a group, prints it with `members`, and refuses to move a group under an object leaf or a section out from under one. It takes a `PrefGroup` only. WeaselDraw's schema page no longer lists node property schemas as sources, because the editor addresses a node by dotted path and could not open a leaf keyed `pose.x`.
+`PrefSchemaEditor` edits the sections inside an `object` leaf: it adds one where it used to add a group, prints it with `members`, and refuses to move a group under an object leaf or a section out from under one.
