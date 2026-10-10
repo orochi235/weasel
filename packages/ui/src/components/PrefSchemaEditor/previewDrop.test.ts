@@ -1,7 +1,7 @@
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { GENERAL } from './generalBranch';
-import { drawsNode, previewDrop, previewMark, previewTarget, sameDrop, treeTakesNew } from './previewDrop';
+import { drawsNode, previewDrop, previewMark, previewTarget, railTakesInto, sameDrop, treeTakesNew } from './previewDrop';
 
 const leaf = (name: string): PrefLeaf => ({ kind: 'boolean', name, description: '', default: false });
 const ROOT: PrefGroup = {
@@ -40,6 +40,13 @@ describe('a drag over the preview', () => {
     expect(previewMark(edge, [PAGE])).toBe(edge);
     expect(previewMark({ path: 'canvas.grid', where: 'before' }, [leaf('X')])).toEqual({ path: 'canvas.grid', where: 'before' });
     expect(previewTarget(ROOT, edge, [PAGE], [])).toEqual({ parentPath: null, index: 1 });
+  });
+
+  it('sets a page among the rail\'s entries and never inside one', () => {
+    expect(railTakesInto([PAGE])).toBe(false);
+    expect(railTakesInto([TAB])).toBe(true);
+    expect(railTakesInto([leaf('X')])).toBe(true);
+    expect(railTakesInto([TAB, PAGE])).toBe(false);
   });
 
   it('hands the form the nodes and the value paths they sit at', () => {

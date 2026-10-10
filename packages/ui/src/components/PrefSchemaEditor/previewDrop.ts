@@ -37,6 +37,11 @@ export function previewMark(mark: PrefDropMark | null, nodes: readonly SchemaNod
   return mark?.rail && mark.where !== 'into' && nodes.some(isPrefLeaf) ? { ...mark, where: 'into' } : mark;
 }
 
+/** Whether a drag of `nodes` may drop into a rail entry's group. A page goes among the entries, never inside one. */
+export function railTakesInto(nodes: readonly SchemaNode[]): boolean {
+  return !nodes.some((n) => !isPrefLeaf(n) && !isPrefSection(n) && prefGroupIsPage(n));
+}
+
 /** What the form draws for a drag of `nodes`, sitting at tree `paths`, that would land at `mark`. */
 export function previewDrop(mark: PrefDropMark, nodes: readonly SchemaNode[], paths: readonly string[]): PrefDrop {
   return {

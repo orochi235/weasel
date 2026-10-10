@@ -14,7 +14,7 @@ import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { branchPaths, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
-import { drawsNode, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
+import { drawsNode, previewDrop, previewMark, previewTarget, railTakesInto, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
 import { StructurePane, type DropOutside } from './StructurePane';
 import s from './PrefSchemaEditor.module.css';
@@ -175,7 +175,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     opening.current = null;
   };
   const markAt = (nodes: readonly SchemaNode[], point: { x: number; y: number }) =>
-    previewMark((stage.current && prefDropTargetAt(stage.current, point.x, point.y)) || null, nodes);
+    previewMark((stage.current && prefDropTargetAt(stage.current, point.x, point.y, { railInto: railTakesInto(nodes) })) || null, nodes);
   const outside: DropOutside = {
     over(nodes, paths, point) {
       const mark = markAt(nodes, point);

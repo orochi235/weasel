@@ -78,7 +78,7 @@ const inside = (r: Rect, x: number, y: number): boolean => x >= r.left && x < r.
 const distance = (r: Rect, x: number, y: number): number =>
   Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
 
-function hit(frame: Frame, form: Element, clientX: number, clientY: number): PrefDropMark | null {
+function hit(frame: Frame, form: Element, clientX: number, clientY: number, railInto: boolean): PrefDropMark | null {
   const now = form.getBoundingClientRect();
   const x = clientX - (now.left - frame.left);
   const y = clientY - (now.top - frame.top);
@@ -118,22 +118,31 @@ function hit(frame: Frame, form: Element, clientX: number, clientY: number): Pre
   const { rect } = box;
   if (box.kind === 'rail') {
     const t = (p.y - rect.top) / (rect.bottom - rect.top);
-    const where = box.path === '' || (t >= RAIL_EDGE && t <= 1 - RAIL_EDGE) ? 'into' : t < RAIL_EDGE ? 'before' : 'after';
+    const edge = railInto ? RAIL_EDGE : 0.5;
+    // The root's entry has nothing beside it: what it holds is the root's own.
+    const where = box.path === '' || (t >= edge && t <= 1 - edge && railInto) ? 'into' : t < edge ? 'before' : 'after';
     return { path: box.path, where, rail: true };
   }
   const before = box.across ? p.x < (rect.left + rect.right) / 2 : p.y < (rect.top + rect.bottom) / 2;
   return { path: box.path, where: before ? 'before' : 'after' };
 }
 
+/** How {@link prefDropTargetAt} reads a point. */
+export interface PrefDropTargetOptions {
+  /** Whether a rail entry's middle drops into its group. Off for a drag of what belongs among the entries. Default true. */
+  railInto?: boolean;
+}
+
 /**
  * Where a drop at a client point inside `root` would land in the form there: before or after the leaf under it,
  * by the half of its row the point is in, across for rows set side by side; into the group under it; or, on a
- * rail entry, beside it from either end and into it from the middle. Null over none of those.
+ * rail entry, beside it from either end and into it from the middle, or with `railInto` off, beside it from
+ * either half. Null over none of those.
  *
  * A form drawing a `drop` is read as it lay before it drew one, so the answer never depends on the reflow the
  * last answer caused, and a pointer held still gets the same answer every time.
  */
-export function prefDropTargetAt(root: Element, x: number, y: number): PrefDropMark | null {
+export function prefDropTargetAt(root: Element, x: number, y: number, { railInto = true }: PrefDropTargetOptions = {}): PrefDropMark | null {
   const el = root.ownerDocument.elementFromPoint?.(x, y);
   if (!el || !root.contains(el)) return null;
   const form = el.closest(`[${FORM_ATTR}]`);
@@ -143,7 +152,7 @@ export function prefDropTargetAt(root: Element, x: number, y: number): PrefDropM
     frame = measure(form);
     frames.set(form, frame);
   }
-  return hit(frame, form, x, y);
+  return hit(frame, form, x, y, railInto);
 }
 
 /**
