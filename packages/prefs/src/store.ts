@@ -34,7 +34,8 @@ export interface PrefsStore<S extends PrefGroup> {
   /** False when the store cannot persist: storage was unreadable, or written
    *  by a newer schema. Changes still apply for this session. */
   readonly writable: boolean;
-  flush(): Promise<void>;
+  /** Resolves true when every queued write reached storage. */
+  flush(): Promise<boolean>;
   close(): Promise<void>;
 }
 

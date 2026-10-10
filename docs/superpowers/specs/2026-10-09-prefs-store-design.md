@@ -94,7 +94,8 @@ interface PrefsStore<S extends PrefGroup> {
   /** `changes` is empty when only records no leaf describes changed. */
   subscribe(fn: (changes: PrefChange[]) => void): () => void;
   readonly writable: boolean;
-  flush(): Promise<void>;
+  /** True when every queued write reached storage. */
+  flush(): Promise<boolean>;
   close(): Promise<void>;
 }
 
@@ -169,8 +170,9 @@ const { values, set, unset, reset } = usePrefsValues(store);
   `weaseldraw.prefs.v2`, or the store would load the old blob as a record.
 - After opening, if `weaseldraw.prefs.v2` exists and holds `version: 2`:
   `flattenPrefValues` it and `set` each leaf the store does not already hold,
-  then `flush`, and remove the old key only once the flush resolves, so a
-  reload in between imports it again rather than losing it. A store that cannot
+  then `flush`, and remove the old key only once the flush resolves true, so a
+  reload in between, or a write that failed, imports it again rather than
+  losing it. A store that cannot
   persist, or a blob of another version, leaves the key in place; an
   unparseable one is removed. This is app code because migrations only see
   records under the prefix.

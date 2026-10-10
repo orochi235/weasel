@@ -184,4 +184,17 @@ describe('createPrefsStore', () => {
     expect(backing.get('p.cap')).toBe('Infinity');
     expect(store.get('cap')).toBe(Infinity);
   });
+
+  it('passes through whether the flush landed', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const failing = { ...createMemoryAdapter(), set: () => Promise.reject(new Error('quota')) };
+    const ok = make();
+    ok.store.set('name', 'doc');
+    expect(await ok.store.flush()).toBe(true);
+    const cache = createRecordCache({ storage: failing, prefix: 'p.' });
+    const store = createPrefsStore(SCHEMA, cache);
+    store.set('name', 'doc');
+    expect(await store.flush()).toBe(false);
+    warn.mockRestore();
+  });
 });

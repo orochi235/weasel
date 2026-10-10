@@ -29,8 +29,10 @@ export interface RecordCache {
   set(name: string, value: unknown): void;
   delete(name: string): void;
   subscribe(listener: (changes: RecordChange[]) => void): () => void;
-  /** Send queued writes now. */
-  flush(): Promise<void>;
+  /** Send queued writes now. Resolves true when every queued write landed or
+   *  none was queued; false when a write threw (its value stays in memory) or
+   *  writing is off and writes were queued. */
+  flush(): Promise<boolean>;
   /** Send queued writes and stop hearing other writers. */
   close(): Promise<void>;
 }
@@ -85,24 +87,28 @@ export function createRecordCache(
     }, wait);
   };
 
-  async function flush(): Promise<void> {
+  async function flush(): Promise<boolean> {
     if (timer) clearTimeout(timer);
     timer = null;
     firstQueuedAt = null;
-    if (!writable || queued.size === 0) return;
+    if (queued.size === 0) return true;
+    if (!writable) return false;
     const batch = [...queued];
     queued.clear();
-    await Promise.all(
+    const landed = await Promise.all(
       batch.map(async ([name, value]) => {
         const key = prefix + name;
         try {
           if (value === DELETED) await storage.delete(key);
           else await storage.set(key, value);
+          return true;
         } catch (error) {
           console.warn(`[storage] could not write "${key}"; keeping it in memory`, error);
+          return false;
         }
       }),
     );
+    return landed.every(Boolean);
   }
 
   const applyRemote = (changes: StorageChange[]): void => {

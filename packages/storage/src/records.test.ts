@@ -154,6 +154,37 @@ describe('writing', () => {
     expect(cache.get('meta')).toEqual({ version: 4 });
     expect(backing.size).toBe(0);
   });
+
+  it('resolves flush true when every write lands, or nothing was queued', async () => {
+    const cache = await openRecords({ storage: createMemoryAdapter(), prefix: PREFIX });
+    expect(await cache.flush()).toBe(true);
+    cache.set('layout', { a: 1 });
+    cache.delete('layout');
+    cache.set('other', 1);
+    expect(await cache.flush()).toBe(true);
+  });
+
+  it('resolves flush false when a write throws, keeping the value in memory', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const failing: StorageAdapter = {
+      ...createMemoryAdapter(),
+      set: async () => {
+        throw new Error('quota');
+      },
+    };
+    const cache = await openRecords({ storage: failing, prefix: PREFIX });
+    cache.set('layout', { a: 1 });
+    expect(await cache.flush()).toBe(false);
+    expect(cache.get('layout')).toEqual({ a: 1 });
+    warn.mockRestore();
+  });
+
+  it('resolves flush false when it cannot write and writes were queued', async () => {
+    const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: PREFIX, writable: false });
+    expect(await cache.flush()).toBe(true);
+    cache.set('layout', { a: 1 });
+    expect(await cache.flush()).toBe(false);
+  });
 });
 
 describe('two writers', () => {

@@ -223,8 +223,8 @@ export function importLegacyPrefs(
   for (const [path, value] of flattenPrefValues(PREFS, parsed)) {
     if (!target.isSet(path as DrawPrefPath)) target.set(path as DrawPrefPath, value as never);
   }
-  void target.flush().then(() => {
-    if (!target.writable) return;
+  void target.flush().then((landed) => {
+    if (!landed) return;
     try {
       storage.removeItem(LEGACY_PREFS_KEY);
     } catch {

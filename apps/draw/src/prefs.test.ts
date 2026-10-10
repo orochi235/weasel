@@ -117,6 +117,18 @@ describe('importLegacyPrefs', () => {
     expect(store.isSet('view.gridDensity')).toBe(false);
   });
 
+  it('leaves the blob in place when the new records fail to write', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const blob = JSON.stringify({ version: 2, view: { gridDensity: 40 } });
+    window.localStorage.setItem(LEGACY_PREFS_KEY, blob);
+    const failing = { ...createMemoryAdapter(), set: () => Promise.reject(new Error('quota')) };
+    const store = openDrawPrefs(failing);
+    importLegacyPrefs(store, window.localStorage);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBe(blob);
+    warn.mockRestore();
+  });
+
   it('neither imports nor removes a blob of another version', async () => {
     const blob = JSON.stringify({ version: 1, view: { gridDensity: 40 } });
     window.localStorage.setItem(LEGACY_PREFS_KEY, blob);
