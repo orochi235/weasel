@@ -14,7 +14,7 @@
  * context, which a geometry module has no business owning. `canvasMeasure`
  * adapts the kit's own `measureText` for a caller that has one.
  */
-import { cssFamilyName } from '@weasel-js/core';
+import { cssFamilyName } from '@weasel-js/font';
 import { boxForContent, contentBox, outlinePath, type Bounds, type Outline } from './outline';
 import { COMPASS } from './ports';
 import type { DiagramNode, PortSpec } from './types';

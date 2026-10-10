@@ -103,6 +103,9 @@ jobs:
       # every in-repo test resolves source, so nothing else sees it.
       # See scripts/check-treeshake.mjs.
       - run: npm run check:treeshake
+      # A subpath that promises no React must have none in its built closure.
+      # Only the emitted graph can say so. See scripts/check-react-free.mjs.
+      - run: npm run check:react-free
       # Build the two Vite-built packages a SECOND time and re-check. This is the
       # only step that exercises a WARM build, and a warm build is precisely the
       # blind spot that let @weasel-js/ui@0.5.0 and @weasel-js/hud@0.5.0 ship with

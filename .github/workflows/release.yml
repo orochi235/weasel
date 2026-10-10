@@ -52,6 +52,9 @@ jobs:
       - run: npm run check:manifests
       # And one that ships the whole kit to a consumer importing one symbol.
       - run: npm run check:treeshake
+      # A subpath that promises no React must have none in its built closure.
+      # Only the emitted graph can say so. See scripts/check-react-free.mjs.
+      - run: npm run check:react-free
       # And refuse to *version* on an unapproved bump above patch. CI already
       # checks this on the PR, but the release path accepts
       # `workflow_dispatch`, which bypasses that entirely.
