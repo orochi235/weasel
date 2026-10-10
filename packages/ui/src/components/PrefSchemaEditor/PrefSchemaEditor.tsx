@@ -7,6 +7,7 @@ import { prefDropTargetAt, type PrefDropMark, type PrefRenderer } from '../Prefs
 import type { PropertyRenderer } from '../SelectionPanel';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
+import { setDefaults, type DefaultEdit } from './defaults';
 import { ExportPanel } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
@@ -160,6 +161,9 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     select(moved.paths[0] ?? null);
   };
   const previewDrag = usePreviewDrag({ stage, schema: () => latest.current.schema, place: outside, onMove: moveTo });
+  // One value dragged through a control is one step back.
+  const setDefaultsFrom = (edits: readonly DefaultEdit[]) =>
+    commit(setDefaults(latest.current.schema, edits), `default:${edits.map(([path]) => path.join('.')).join(',')}`);
   const rekey = (from: string, to: string) => {
     setExpanded((e) => rebasePaths(e, [[from, to]]));
     setSelected(to);
@@ -196,7 +200,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           kinds={kindList} custom={custom} renderers={renderers} onNotice={setNotice} />
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
-      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} stageRef={stage} dropMark={dropMark} onStagePointerDown={previewDrag.onPointerDown} ghost={previewDrag.ghost} />
+      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} onDefaults={setDefaultsFrom} stageRef={stage} dropMark={dropMark} onStagePointerDown={previewDrag.onPointerDown} ghost={previewDrag.ghost} />
       <ExportPanel schema={schema} changes={changes} />
     </div>
   );

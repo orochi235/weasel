@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
-import { isPrefSection, prefSectionLeaves, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
-import { Button } from '../Button';
+import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { DragGhost } from '../DragGhost';
 import { PrefsDialog, type PrefDropMark, type PrefRenderer } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPanel';
 import { Switch } from '../Switch';
+import type { DefaultEdit } from './defaults';
 import { PaneHeader } from './PaneHeader';
 import { keysOf, pathOf, type SchemaRoot } from './schemaEdit';
 import type { PreviewGhost } from './usePreviewDrag';
@@ -20,6 +20,8 @@ export interface PreviewPaneProps {
   selected?: string | null;
   /** The reader picked a node in the preview; its tree path. */
   onSelect?: (path: string) => void;
+  /** The reader set values in the preview; each becomes its leaf's default. */
+  onDefaults(edits: readonly DefaultEdit[]): void;
   /** Set to the element the preferences form is drawn in, for a drag to be hit-tested against. */
   stageRef?: RefObject<HTMLDivElement | null>;
   /** Where a drag would drop in the form. */
@@ -31,42 +33,39 @@ export interface PreviewPaneProps {
 }
 
 /** The schema drawn the way its reader draws it: a preferences form for a group, a properties panel for a section. */
-export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, stageRef, dropMark, onStagePointerDown, ghost }: PreviewPaneProps) {
+export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, dropMark, onStagePointerDown, ghost }: PreviewPaneProps) {
   return isPrefSection(schema)
-    ? <SectionPreview schema={schema} renderers={propertyRenderers} />
-    : <GroupPreview schema={schema} renderers={renderers} selected={selected ?? null} onSelect={onSelect} stageRef={stageRef} dropMark={dropMark} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
+    ? <SectionPreview schema={schema} renderers={propertyRenderers} onDefaults={onDefaults} />
+    : <GroupPreview schema={schema} renderers={renderers} selected={selected ?? null} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} dropMark={dropMark} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
 }
 
-function GroupPreview({ schema, renderers, selected, onSelect, stageRef, dropMark, onStagePointerDown, ghost }: {
+function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, dropMark, onStagePointerDown, ghost }: {
   schema: PrefGroup;
   renderers?: Record<string, PrefRenderer>;
   selected: string | null;
   onSelect?: (path: string) => void;
+  onDefaults(edits: readonly DefaultEdit[]): void;
   stageRef?: RefObject<HTMLDivElement | null>;
   dropMark?: PrefDropMark | null;
   onStagePointerDown?(e: PointerEvent): void;
   ghost?: PreviewGhost | null;
 }) {
-  const [values, setValues] = useState<Record<string, unknown>>({});
   const [showHidden, setShowHidden] = useState(true);
   const [width, setWidth] = useState(800);
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview">
         <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch>
-        <Button size="sm" variant="ghost" disabled={Object.keys(values).length === 0} onClick={() => setValues({})}>
-          Reset values
-        </Button>
       </PaneHeader>
       <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown} style={{ '--preview-w': `${width}px` } as CSSProperties}>
       <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
-        schema={schema} values={values} renderers={renderers} showHidden={showHidden}
+        schema={schema} values={NO_VALUES} renderers={renderers} showHidden={showHidden}
         // An empty group is drawn too: it is somewhere to drop into.
         showEmpty dropMark={dropMark}
         // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
         selected={selected === null ? undefined : keysOf(selected).join('.')}
         onSelect={onSelect && ((path) => onSelect(pathOf(path.split('.'))!))}
-        onChange={(path, v) => setValues((cur) => setAtPath(cur, path.split('.'), v) as Record<string, unknown>)} />
+        onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
       <ResizeHandle value={width} min={360} max={900} onInput={setWidth} ariaLabel="Resize preview" />
       {ghost && stageRef?.current && (
         <DragGhost at={ghost} from={stageRef.current}><div className={s.paletteGhost}>{ghost.label}</div></DragGhost>
@@ -75,6 +74,9 @@ function GroupPreview({ schema, renderers, selected, onSelect, stageRef, dropMar
     </section>
   );
 }
+
+/** The form holds no values of its own, so every row shows its default. */
+const NO_VALUES = {};
 
 const KIND = 'preview';
 const NODE = asNodeId('preview');
@@ -94,20 +96,25 @@ function sceneOf(schema: PrefSection): PreviewScene {
   return scene;
 }
 
-function SectionPreview({ schema, renderers }: { schema: PrefSection; renderers?: Record<string, PropertyRenderer> }) {
-  // Untouched, the node follows the schema's defaults; once a value is typed, that node is kept until reset.
-  const [resets, setResets] = useState(0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- a reset wants a new node from the same schema
-  const fresh = useMemo(() => sceneOf(schema), [schema, resets]);
-  const [kept, setKept] = useState<PreviewScene | null>(null);
-  useEffect(() => fresh.subscribe(() => setKept(fresh)), [fresh]);
+function SectionPreview({ schema, renderers, onDefaults }: {
+  schema: PrefSection;
+  renderers?: Record<string, PropertyRenderer>;
+  onDefaults(edits: readonly DefaultEdit[]): void;
+}) {
+  const scene = useMemo(() => sceneOf(schema), [schema]);
+  useEffect(() => scene.subscribe(() => {
+    const node = scene.get(NODE);
+    const edits = prefSectionLeaves(schema.members).flatMap(([key, leaf]): DefaultEdit[] => {
+      const value = prefValueAtPath(node, key);
+      return JSON.stringify(value) === JSON.stringify(leaf.default) ? [] : [[key.split('.'), value]];
+    });
+    if (edits.length > 0) onDefaults(edits);
+  }), [scene, schema, onDefaults]);
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
-      <PaneHeader title="Live preview">
-        <Button size="sm" variant="ghost" disabled={kept === null} onClick={() => { setKept(null); setResets((n) => n + 1); }}>Reset values</Button>
-      </PaneHeader>
+      <PaneHeader title="Live preview" />
       <div className={s.previewPanel}>
-        <SelectionPanel scene={kept ?? fresh} selection={SELECTION} properties={[{ name: KIND, schema }]} routing={ROUTING}
+        <SelectionPanel scene={scene} selection={SELECTION} properties={[{ name: KIND, schema }]} routing={ROUTING}
           renderers={renderers} kindLabel={() => schema.name} />
       </div>
     </section>

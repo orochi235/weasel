@@ -176,7 +176,7 @@ describe('PrefSchemaEditor', () => {
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
 
-  it('labels the preview, and can hide hidden prefs and reset what was set in it', () => {
+  it('labels the preview and can hide hidden prefs', () => {
     const start: PrefGroup = { name: 'Prefs', children: {
       shown: { kind: 'boolean', name: 'Shown', description: '', default: false },
       secret: { kind: 'boolean', name: 'Secret', description: '', default: false, hidden: true },
@@ -186,12 +186,19 @@ describe('PrefSchemaEditor', () => {
     expect(within(preview()).getByText('Secret')).toBeInTheDocument();
     fireEvent.click(within(preview()).getByRole('switch', { name: 'Show hidden' }));
     expect(within(preview()).queryByText('Secret')).toBeNull();
-    const reset = within(preview()).getByRole('button', { name: 'Reset values' });
-    expect(reset).toBeDisabled();
-    fireEvent.click(within(preview()).getByRole('checkbox', { name: 'Shown' }));
-    expect(within(preview()).getByRole('checkbox', { name: 'Shown' })).toBeChecked();
-    fireEvent.click(reset);
-    expect(within(preview()).getByRole('checkbox', { name: 'Shown' })).not.toBeChecked();
+  });
+
+  it('writes a value set in the preview as that pref\'s default, and undoes it', () => {
+    render(<Live />);
+    const snap = () => within(preview()).getByRole('checkbox', { name: 'Snap' });
+    expect(snap()).not.toBeChecked();
+    fireEvent.click(snap());
+    expect(snap()).toBeChecked();
+    expect(screen.getByTestId('schema-literal')).toHaveTextContent(/snap: \{[^}]*default: true/);
+    expect(screen.getByText(/~ view\/snap/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(snap()).not.toBeChecked();
+    expect(screen.getByTestId('schema-literal')).toHaveTextContent(/snap: \{[^}]*default: false/);
   });
 
   it('marks in the preview what the tree selects, and selects in the tree what the preview is pressed on', () => {
@@ -363,17 +370,14 @@ describe('PrefSchemaEditor', () => {
       expect(screen.getByText(/~ layout\/pose\.x\.name/)).toBeInTheDocument();
     });
 
-    it('previews a default until a value is typed over it, and again after a reset', () => {
+    it('writes a value typed in the preview as that property\'s default', () => {
       render(<LiveNode />);
       const text = () => within(preview()).getByRole('textbox', { name: 'Text' });
-      const reset = () => within(preview()).getByRole('button', { name: 'Reset values' });
-      expect(reset()).toBeDisabled();
       fireEvent.change(text(), { target: { value: 'typed' } });
       fireEvent.blur(text());
       expect(text()).toHaveValue('typed');
-      fireEvent.click(reset());
-      expect(text()).toHaveValue('hello');
-      expect(reset()).toBeDisabled();
+      expect(screen.getByTestId('schema-literal')).toHaveTextContent(/default: 'typed'/);
+      expect(screen.getByTestId('schema-literal')).toHaveTextContent(/default: 0/);
     });
 
     it('adds a section where a preferences schema adds a group, and a pref under a dotted id', () => {
