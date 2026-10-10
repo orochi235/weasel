@@ -284,6 +284,30 @@ describe('PrefSchemaEditor', () => {
       expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
     });
 
+    it('carries a draft onto a source that changed since, listing only the reader’s own edits', () => {
+      const first = render(<Kept />);
+      fireEvent.click(row('snap'));
+      fireEvent.keyDown(structure(), { key: 'Delete' });
+      first.unmount();
+      const view = START.children.view as PrefGroup;
+      const grid = view.children.grid!;
+      const moved: PrefGroup = { ...START, children: { ...START.children, view: { ...view, children: { ...view.children, grid: { ...grid, name: 'Grid lines' } } } } };
+      function Later() {
+        const [schema, setSchema] = useState(moved);
+        return <PrefSchemaEditor schema={schema} onChange={setSchema} original={moved} draftKey="test-draft" />;
+      }
+      render(<Later />);
+      expect(within(structure()).queryByText('(snap)')).toBeNull();
+      expect(within(structure()).getByText('Grid lines')).toBeInTheDocument();
+      expect(screen.getByText(/− view\/snap/)).toBeInTheDocument();
+      expect(within(screen.getByRole('region', { name: 'Changes' })).queryByText(/grid/)).toBeNull();
+      expect(screen.getByRole('status')).toHaveTextContent('The source changed since this draft was saved.');
+      // And the step that made the edit still goes back, to the new source.
+      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+      expect(row('snap')).toBeInTheDocument();
+      expect(screen.getByText('No changes.')).toBeInTheDocument();
+    });
+
     it('goes back to the baseline on Discard draft, and keeps nothing for the next editor', () => {
       const first = render(<Kept />);
       fireEvent.click(row('snap'));

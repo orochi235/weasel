@@ -1,4 +1,5 @@
 import { isPlainObject, type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/core';
+import { carry } from './carry';
 import { childrenOf, joinPath, nodeAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { containsCode } from './schemaExport';
 
@@ -6,7 +7,22 @@ import { containsCode } from './schemaExport';
 export interface StoredDraft {
   savedAt: number;
   schema: unknown;
+  /** The source the draft was an edit of, to tell the reader's changes from the source's own since. */
+  source?: unknown;
   steps?: StoredSteps;
+}
+
+/** A draft as an editor opens it. */
+export interface OpenedDraft<R extends SchemaRoot> {
+  savedAt: number;
+  schema: R;
+  /** The steps around it, when they were kept and still read. */
+  stacks: SerializedHistory | null;
+  /**
+   * How the draft met the source it opens on: saved against this `same` one; `carried` onto it from another, the
+   * reader's edits kept; or of a source `unknown`, when nothing can tell their edits from the source's changes.
+   */
+  met: 'same' | 'carried' | 'unknown';
 }
 
 /** The name of the editor's one op: a whole schema swapped for another. */
@@ -153,7 +169,7 @@ export function unpackSteps<R extends SchemaRoot>(stored: StoredSteps, source: R
 }
 
 /** The draft saved under `key`; `null` when there is none, or storage cannot be read. */
-export function readDraft(key: string): StoredDraft | null {
+function readDraft(key: string): StoredDraft | null {
   try {
     const raw = localStorage.getItem(key);
     const draft: unknown = raw === null ? null : JSON.parse(raw);
@@ -164,13 +180,38 @@ export function readDraft(key: string): StoredDraft | null {
 }
 
 /**
+ * The draft saved under `key`, as an edit of `source`: one saved against a different source is carried onto this
+ * one, so only what the reader changed still differs from it. `null` when there is no draft, storage cannot be
+ * read, or carrying it leaves nothing the source does not already say; that last one is removed.
+ */
+export function openDraft<R extends SchemaRoot>(key: string, source: R): OpenedDraft<R> | null {
+  const draft = readDraft(key);
+  if (!draft) return null;
+  const now = JSON.parse(JSON.stringify(packDraft(source, source))) as unknown;
+  const moved = draft.source !== undefined && JSON.stringify(draft.source) !== JSON.stringify(now);
+  const onto = (packed: unknown): unknown => (moved ? carry(packed, draft.source, now) : packed);
+  const schema = onto(draft.schema);
+  if (moved && JSON.stringify(schema) === JSON.stringify(now)) {
+    dropDraft(key);
+    return null;
+  }
+  const steps = draft.steps && unpackSteps({ ...draft.steps, schemas: draft.steps.schemas?.map((packed) => (packed === null ? null : onto(packed))) }, source);
+  return {
+    savedAt: draft.savedAt,
+    schema: steps ? steps.current : unpackDraft(schema, source),
+    stacks: steps ? steps.stacks : null,
+    met: moved ? 'carried' : draft.source === undefined ? 'unknown' : 'same',
+  };
+}
+
+/**
  * Save `schema` under `key` with the steps around it. A browser short of room is asked again for half the steps,
  * down to the schema alone; one that refuses storage keeps nothing.
  */
 export function saveDraft(key: string, schema: SchemaRoot, source: SchemaRoot, stacks: SerializedHistory, savedAt: number): void {
   const packed = packDraft(schema, source);
   for (let keep = STEPS_KEPT; ; keep >>= 1) {
-    const draft: StoredDraft = { savedAt, schema: packed, ...(keep > 0 ? { steps: packSteps(stacks, schema, source, keep) } : {}) };
+    const draft: StoredDraft = { savedAt, schema: packed, source: packDraft(source, source), ...(keep > 0 ? { steps: packSteps(stacks, schema, source, keep) } : {}) };
     try {
       localStorage.setItem(key, JSON.stringify(draft));
       return;

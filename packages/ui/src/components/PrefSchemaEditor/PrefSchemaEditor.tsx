@@ -8,7 +8,7 @@ import type { PropertyRenderer } from '../SelectionPanel';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
-import { dropDraft, readDraft, saveDraft, SWAP, unpackDraft, unpackSteps, type SwapArgs } from './draft';
+import { dropDraft, openDraft, saveDraft, SWAP, type SwapArgs } from './draft';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
@@ -27,6 +27,13 @@ const COALESCE_MS = 800;
 /** How long a drag rests on a rail entry before the preview opens that page. */
 const RAIL_OPEN_MS = 500;
 const DRAFT_TIME = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+
+/** What the editor says of a draft that did not open on the source it was saved against. */
+const DRAFT_NOTICE = {
+  same: null,
+  carried: 'The source changed since this draft was saved. Your edits were kept on top of it.',
+  unknown: 'This draft does not say which source it edited, so changes the source has made since may be listed as yours. Discard draft to start from the source.',
+} as const;
 
 /** Where Delete and Backspace belong to the control and not to the selection. */
 const TEXT_ENTRY = 'input, textarea, select, [contenteditable]';
@@ -88,7 +95,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const [first] = useState(schema);
   const base = original ?? first;
   const [selected, setSelected] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [opened] = useState(() => (draftKey === undefined ? null : openDraft(draftKey, base)));
+  const [notice, setNotice] = useState<string | null>(() => (opened ? DRAFT_NOTICE[opened.met] : null));
   const [expanded, setExpanded] = useState(() => new Set(branchPaths(schema)));
   const [structureWidth, setStructureWidth] = useState(300);
   const [attributesWidth, setAttributesWidth] = useState(320);
@@ -116,7 +124,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     history.clear();
   }, [schema, history]);
   // The draft follows every step, with the steps around it; back at the baseline there is nothing to keep.
-  const [draftSavedAt, setDraftSavedAt] = useState(() => (draftKey === undefined ? null : readDraft(draftKey)?.savedAt ?? null));
+  const [draftSavedAt, setDraftSavedAt] = useState(() => opened?.savedAt ?? null);
   const keep = () => {
     if (draftKey === undefined) return;
     const savedAt = emitted.current === base ? null : Date.now();
@@ -125,11 +133,11 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     setDraftSavedAt(savedAt);
   };
   useEffect(() => {
-    const draft = draftKey === undefined ? null : readDraft(draftKey);
-    if (!draft) return;
-    const steps = draft.steps ? unpackSteps(draft.steps, base) : null;
-    hand(steps ? steps.current : unpackDraft(draft.schema, base));
-    if (steps) history.restore(steps.stacks);
+    if (!opened || draftKey === undefined) return;
+    hand(opened.schema);
+    if (opened.stacks) history.restore(opened.stacks);
+    // Saved again as an edit of this source, so the next editor has nothing to carry.
+    if (opened.met === 'carried') saveDraft(draftKey, opened.schema, base, history.serialize(), opened.savedAt);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a draft is opened once, by the editor that finds it
   }, []);
   // The panes edit either root; each hands back the kind it was given.
