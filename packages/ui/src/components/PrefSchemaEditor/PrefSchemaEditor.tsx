@@ -8,7 +8,7 @@ import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
 import { EditorBar } from './EditorBar';
-import { dropDraft, openDraft, saveDraft, SWAP, type SwapArgs } from './draft';
+import { dropDraft, openDraft, saveDraft, SWAP, type DraftStorage, type SwapArgs } from './draft';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
@@ -73,6 +73,9 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
    *  not on `schema`, with the nearest steps still there to undo and redo. Code the schema holds is not stored: it is taken back from the baseline. Give each schema
    *  the editor opens a name of its own. */
   draftKey?: string;
+  /** Where the draft under `draftKey` is kept, in place of `localStorage`: a file the host writes, say. It is read
+   *  as the editor mounts, so it must already hold what it has. */
+  draftStorage?: DraftStorage;
   /** Somewhere to send the changes: given, the Changes pane draws a Submit button that hands over the changes
    *  since `original` and the schema's literal. A promise it returns sets the button to "Sent" or "Failed". */
   onSubmit?: SubmitChanges;
@@ -95,12 +98,12 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, onSubmit, taken = false, bar, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, draftStorage, onSubmit, taken = false, bar, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
   const [selected, setSelected] = useState<string | null>(null);
-  const [opened] = useState(() => (draftKey === undefined ? null : openDraft(draftKey, base)));
+  const [opened] = useState(() => (draftKey === undefined ? null : openDraft(draftKey, base, draftStorage)));
   const [notice, setNotice] = useState<string | null>(() => (opened ? DRAFT_NOTICE[opened.met] : null));
   const [expanded, setExpanded] = useState(() => new Set(branchPaths(schema)));
   const [structureWidth, setStructureWidth] = useState(300);
@@ -134,8 +137,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const keep = () => {
     if (draftKey === undefined) return;
     const savedAt = emitted.current === base ? null : Date.now();
-    if (savedAt === null) dropDraft(draftKey);
-    else saveDraft(draftKey, emitted.current, base, history.serialize(), savedAt);
+    if (savedAt === null) dropDraft(draftKey, draftStorage);
+    else saveDraft(draftKey, emitted.current, base, history.serialize(), savedAt, draftStorage);
     setDraftSavedAt(savedAt);
   };
   useEffect(() => {
@@ -143,16 +146,16 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     hand(opened.schema);
     if (opened.stacks) history.restore(opened.stacks);
     // Saved again as an edit of this source, so the next editor has nothing to carry.
-    if (opened.met === 'carried') saveDraft(draftKey, opened.schema, base, history.serialize(), opened.savedAt);
+    if (opened.met === 'carried') saveDraft(draftKey, opened.schema, base, history.serialize(), opened.savedAt, draftStorage);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a draft is opened once, by the editor that finds it
   }, []);
   const sent = useRef<unknown>(null);
   useEffect(() => {
-    sent.current ??= draftKey === undefined ? null : openSent(draftKey);
+    sent.current ??= draftKey === undefined ? null : openSent(draftKey, draftStorage);
     if (!taken || sent.current === null) return;
     const next = afterTaken(emitted.current, sent.current, base);
     sent.current = null;
-    if (draftKey !== undefined) dropSent(draftKey);
+    if (draftKey !== undefined) dropSent(draftKey, draftStorage);
     hand(next);
     history.clear();
     keep();
@@ -162,7 +165,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     const packed = packSent(emitted.current, base);
     await onSubmit(changes, literal);
     sent.current = packed;
-    if (draftKey !== undefined) saveSent(draftKey, packed);
+    if (draftKey !== undefined) saveSent(draftKey, packed, draftStorage);
   });
   // The panes edit either root; each hands back the kind it was given.
   const commit = (next: SchemaRoot, coalesceKey?: string) => {

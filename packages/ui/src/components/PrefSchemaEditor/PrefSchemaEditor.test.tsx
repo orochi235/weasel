@@ -305,6 +305,29 @@ describe('PrefSchemaEditor', () => {
       expect(screen.getByText(/− view\/snap/)).toBeInTheDocument();
     });
 
+    it('keeps the draft in the storage it is given, and nothing in localStorage', () => {
+      const held = new Map<string, string>();
+      const storage = {
+        getItem: (key: string) => held.get(key) ?? null,
+        setItem: (key: string, value: string) => void held.set(key, value),
+        removeItem: (key: string) => void held.delete(key),
+      };
+      function Filed() {
+        const [schema, setSchema] = useState(START);
+        return <PrefSchemaEditor schema={schema} onChange={setSchema} original={START} draftKey="test-draft" draftStorage={storage} />;
+      }
+      const first = render(<Filed />);
+      fireEvent.click(row('snap'));
+      fireEvent.keyDown(structure(), { key: 'Delete' });
+      expect(held.has('test-draft')).toBe(true);
+      expect(localStorage.getItem('test-draft')).toBeNull();
+      first.unmount();
+      render(<Filed />);
+      expect(within(structure()).queryByText('(snap)')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+      expect(held.has('test-draft')).toBe(false);
+    });
+
     it('still steps back and forward through a previous editor’s edits', () => {
       const first = render(<Kept />);
       fireEvent.click(row('snap'));
