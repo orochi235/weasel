@@ -22,17 +22,20 @@ could not read. The prefs store is a schema-aware layer over it.
 
 | Package | Contents |
 |---|---|
-| `@weasel-js/storage` (new) | `StorageAdapter`, the web-storage, IndexedDB, URL-hash, memory and none adapters, `defaultStorage`, `RecordCache` / `openRecords`, moved from `packages/labkit/src/state/`. No weasel deps, no React. |
-| `@weasel-js/prefs` (new) | Schema types, renamed `ToolPref*` → `Pref*` with no aliases; `prefUnit`; the pure schema helpers from ui (`isPrefLeaf`, `prefValueAtPath`, `visiblePrefSubtree`, `filterPrefSubtree`, `prefDisplayBounds`); the store; its hooks. Depends on `storage`, `quantity`, React. |
+| `@weasel-js/storage` (new) | `StorageAdapter`, the web-storage, IndexedDB, URL-hash, memory and none adapters, `defaultStorage`, `fallbackStorage`, `createDefaultStorage`, `RecordCache` / `openRecords` / `openRecordsSync`, moved from `packages/labkit/src/state/`. No weasel deps, no React. |
+| `@weasel-js/prefs` (new) | Schema types, renamed `ToolPref*` → `Pref*` with no aliases; `prefUnit`; the pure schema helpers from ui (`isPrefLeaf`, `prefValueAtPath`, `visiblePrefSubtree`, `filterPrefSubtree`, `prefDisplayBounds`) plus `prefLeaves` and `flattenPrefValues`; `openPrefs` / `openPrefsSync`, `PrefsStore`, `repairPrefValue`, `VERSION_RECORD`. Depends on `storage` and `quantity`; the main entry loads no React. The hooks are at `@weasel-js/prefs/react`, with React an optional peer. |
 | `@weasel-js/core` | Depends on `prefs`; tools keep declaring `usePenTool.prefs: PrefGroup`. `src/tools/prefs.ts` goes. |
 | `@weasel-js/ui` | Imports types and helpers from `prefs`. `prefRailItems` stays: it is the form's own model. |
 | `@weasel-js/labkit` | Imports from `storage` and `prefs`. `usePersistedState`, `<Persistence>` and lab records stay. |
 
 Moving the adapters must not strand existing lab data. `storage`'s
 `indexedDbAdapter` and `defaultStorage` use database `'weasel'`; labkit keeps
-its own `indexedDbAdapter` and `defaultStorage`, built with
-`createIndexedDbAdapter({ database: 'labkit' })`, so existing labs open on the
-data they have. The IndexedDB adapter's `BroadcastChannel` is named
+its own `indexedDbAdapter`, built with
+`createIndexedDbAdapter({ database: 'labkit' })`, and its own `defaultStorage`
+from `createDefaultStorage(indexedDbAdapter, 'IndexedDB')`, so existing labs
+open on the data they have. `createDefaultStorage(preferred, label?)` returns
+`{ defaultStorage, resetDefaultStorage }`: `preferred`, or localStorage with a
+warning where it will not open, chosen on the first call. The IndexedDB adapter's `BroadcastChannel` is named
 `weasel-storage:<database>:<store>` (was `labkit:<database>:<store>`): a tab on
 an older labkit and one on a newer one stop hearing each other until both
 reload. Warning prefixes become `[storage]`.
@@ -65,9 +68,10 @@ interface PrefsOptions {
   storage: StorageAdapter;
   prefix: string;
   /** migrations[i] takes the records from version i to i + 1. */
-  migrations?: PrefsMigration[];
-  /** Validators for app-defined kinds, keyed by `kind`. */
-  validators?: Record<string, PrefValidator>;
+  migrations?: readonly PrefsMigration[];
+  /** Validators for app-defined kinds, keyed by `kind`. One given for a
+   *  built-in kind replaces that kind's own rule. */
+  validators?: Readonly<Record<string, PrefValidator>>;
 }
 
 /** Mutates the record map in place: rename, transform, delete. Sync. */
@@ -85,7 +89,7 @@ interface PrefsStore<S extends PrefGroup> {
   /** A record exists: the leaf is pinned. */
   isSet(path: PrefPath<S>): boolean;
   /** Resolved nested tree. The same object until something changes. */
-  values(): unknown;
+  values(): Record<string, unknown>;
   /** Leaves following their default. The same set until something changes. */
   unset(): ReadonlySet<string>;
   /** Every stored record as a nested tree, unrepaired, orphans included,
@@ -105,6 +109,9 @@ interface PrefChange { path: string; value: unknown; origin: 'local' | 'remote' 
 `PrefPath<S>` and `PrefValueAt<S, P>` generalize draw's `WeaselDrawPrefPath` /
 `PrefValueAt` over any schema.
 
+`$version` (`VERSION_RECORD`) is reserved: `prefLeaves` throws on a top-level
+schema key of that name, as it does on a key containing `.`.
+
 `flattenPrefValues(schema, tree): [path, value][]` walks a nested value tree by
 the schema's leaves; draw's legacy import uses it.
 
@@ -116,14 +123,26 @@ the schema's leaves; draw's legacy import uses it.
   This is the one case where opening writes.
 - **Repair on read, never on write, never written back.** `get` and `values()`
   repair what they return; storage keeps the original until someone sets that
-  leaf, so a schema rollback recovers it. Built-in kinds:
-  - `number`: clamp into `min`..`max`; non-number → default.
-  - `enum`: value not among the options → default.
-  - `boolean`, `string`, `color`: wrong JS type → default.
-  - kind changed so the stored value no longer fits → default.
+  leaf, so a schema rollback recovers it. In order:
+  - On a `number` leaf, the strings `'Infinity'` and `'-Infinity'` decode to
+    the infinities, before any validator sees the value.
+  - A validator for the leaf's kind decides, built-in kind or not; `undefined`
+    or a throw → default.
+  - `number`: non-number or `NaN` → default; an infinity at an `endless` end
+    stays; otherwise clamp into `min`..`max`, and anything still not finite
+    → default.
+  - `boolean`: non-boolean → default, unless the leaf has an `encoding`, which
+    passes the stored value through.
+  - `enum`: value not among the options → default, unless the leaf has an
+    `encoding`, which passes it through.
+  - `string`, `color`, `field`: non-string → default.
+  - `object`: anything but a plain object → default, unless the leaf has
+    `fromScalar`.
   - a kind with no built-in rule and no validator passes through unchanged.
 - **`set` does not validate**, and setting a leaf to its default still pins it.
-  Only `reset` returns a leaf to following its default.
+  Only `reset` returns a leaf to following its default. On a `number` leaf it
+  stores an infinity as `'Infinity'` / `'-Infinity'`, which JSON storage can
+  keep.
 - **`set` on a leaf the schema does not have** is a type error; at runtime it
   warns and does nothing.
 - **Remote changes** come from the adapter's `subscribe` through `RecordCache`
@@ -138,11 +157,14 @@ the schema's leaves; draw's legacy import uses it.
 | Stored `$version` > `migrations.length` | Read-only; warning names both versions. |
 | `$version` present but not a non-negative integer | Read-only; warning quotes the stored value. Migrations do not run. |
 | Another writer records a `$version` newer than this build while the store is open | Stops persisting; warning names both versions. |
+| Another writer records a `$version` that is not a non-negative integer while the store is open | Stops persisting; warning quotes the stored value. |
 | A migration throws | Nothing from it is written; read-only on the pre-migration records; warning. |
 | A validator throws | Treated as invalid → default. |
 | A write fails | `RecordCache`'s existing write path. |
 
 ### Hooks
+
+Imported from `@weasel-js/prefs/react`, so the main entry never loads React.
 
 - `usePref(store, path)` → `[value, set]`.
 - `usePrefsValues(store)` → `{ values, set, unset, stored, reset }`.
@@ -159,7 +181,9 @@ const { values, set, unset, reset } = usePrefsValues(store);
   values={values}
   onChange={set}
   auto={unset}
-  onAutoChange={(path, next) => (next ? reset(path) : set(path, store.get(path)))}
+  onAutoChange={(path, next) =>
+    next ? reset(path) : set(path, store.get(path as PrefPath<typeof SCHEMA>))
+  }
 />
 ```
 
@@ -178,9 +202,14 @@ const { values, set, unset, reset } = usePrefsValues(store);
   records under the prefix.
 - `registry-enum` leaves validate as strings; `data` leaves pass through as
   stored, since their shape belongs to the code that owns them.
-- `apps/draw/src/prefs.ts` shrinks to the schema; `usePref` / `readPref` /
-  `writePref` / `usePrefsValues` call sites move to the store and its hooks.
-- `WeaselDrawPref*` aliases follow the rename to `Pref*`.
+- `apps/draw/src/prefs.ts` keeps the schema (`PREFS`), its prefix and the
+  legacy key, `DrawPrefPath` / `DrawPrefValue`, the `registry-enum` validator,
+  `openDrawPrefs(storage)`, the lazily opened `drawPrefs()`,
+  `importLegacyPrefs`, and a `usePref(path)` bound to `drawPrefs()`. `readPref`
+  / `writePref` call sites move to the store.
+- The `WeaselDrawPref*` aliases of the built-in kinds are deleted; code uses
+  `Pref*`. The two app kinds remain: `WeaselDrawPrefRegistryEnum` and
+  `WeaselDrawPrefData`.
 
 ## Tests
 
