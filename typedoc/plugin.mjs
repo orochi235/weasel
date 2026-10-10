@@ -7,28 +7,37 @@ const CATEGORIZED = '@weasel-js/core';
 
 /** @param {import('typedoc').Application} app */
 export function load(app) {
+  app.converter.on(Converter.EVENT_RESOLVE_BEGIN, (context) => {
+    for (const module of modulesOf(context.project)) nameOrFold(context.project, module);
+  });
+
   // TypeDoc's CategoryPlugin reads @category on this same event at priority
   // -200, and higher priority runs first, so the default 0 lands before it.
   app.converter.on(Converter.EVENT_RESOLVE_END, (context) => {
-    const modules = (context.project.children ?? []).filter((c) => c.kind === ReflectionKind.Module);
-    for (const module of modules) nameBySpecifier(module);
-
     if (context.project.name !== CATEGORIZED) return;
-    // A package with one entry has no modules: its exports hang off the project.
-    const owners = modules.length > 0 ? modules : [context.project];
-    categorize(owners.flatMap((owner) => owner.children ?? []));
+    const owners = [context.project, ...modulesOf(context.project)];
+    categorize(owners.flatMap((owner) => owner.children ?? []).filter((c) => c.kind !== ReflectionKind.Module));
   });
+}
+
+/** @param {import('typedoc').ProjectReflection} project */
+function modulesOf(project) {
+  return (project.children ?? []).filter((c) => c.kind === ReflectionKind.Module);
 }
 
 /**
  * TypeDoc names a module for its file path, `import-shims/math`; a reader knows it
- * by what they import, `@weasel-js/core/math`.
+ * by what they import, and under its package that is the subpath, `math`. The root
+ * entry is the package itself, so its exports fold into the package and it is not a
+ * module of its own.
  *
+ * @param {import('typedoc').ProjectReflection} project
  * @param {import('typedoc').DeclarationReflection} module
  */
-function nameBySpecifier(module) {
+function nameOrFold(project, module) {
   const specifier = specifierOf(module.sources?.[0]?.fullFileName ?? '');
-  if (specifier) module.name = specifier;
+  if (specifier === project.name) project.mergeReflections(module, project);
+  else if (specifier?.startsWith(`${project.name}/`)) module.name = specifier.slice(project.name.length + 1);
 }
 
 /** @param {import('typedoc').DeclarationReflection[]} exports */
