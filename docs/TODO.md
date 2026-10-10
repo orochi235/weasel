@@ -833,6 +833,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
+- **(P2) One path rule for pref schemas.** `PrefsForm`, the prefs store and labkit's config
+  resolver treat a group's key as a path segment (`view.gridDensity`); `SelectionPanel`'s model
+  treats it as a heading only, and `PrefObject`'s doc comment states that rule as general. Same
+  schema type, two answers to "what is this leaf's path". Decide which is right for which surface
+  and make the type say so.
+
 - **(P3) A Windows 9x theme.** Gray 3D bevels, a navy-to-blue gradient title strip and the
   system's pixel faces, as a full theme beside Interstellar rather than a one-component skin. Its
   titled groups want a titlebar frame motif (a solid title strip across the top), which was left
