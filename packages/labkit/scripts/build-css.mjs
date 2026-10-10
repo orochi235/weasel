@@ -34,7 +34,8 @@ const packages = join(pkgRoot, '..');
 // either alone cannot leave the sheet behind the CSS it was copied from. In a
 // full build they run before labkit has a dist, and labkit's own build makes
 // the sheet.
-if (process.argv.includes('--if-built') && !existsSync(join(pkgRoot, 'dist/styles.css'))) process.exit(0);
+if (process.argv.includes('--if-built') && !existsSync(join(pkgRoot, 'dist/styles.css')))
+  process.exit(0);
 
 // styles.less imports the theme's faces as a bare CSS @import, which a bundler
 // resolves in a source build. A consumer's page may have no bundler, so the dist
