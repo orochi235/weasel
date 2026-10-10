@@ -872,6 +872,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PrefsForm`'s list control (`ListEditor` edits strings), and the editor's kind table
   (`kindSchemas.ts`).
 
+- **(P2) Two of a labkit schema's common attributes can only be code.** `.showIf` takes a
+  function and a number's `unit` is an object of `toDisplay`/`fromDisplay` functions, so neither
+  can be written to JSON, set in `PrefSchemaEditor`, or kept in a draft (a draft holds code as a
+  pointer into the source schema, which a new leaf has none of). In astv's settings nearly every
+  `showIf` is one comparison against another setting (`c.mode === 'commits'`,
+  `PLATED.has(c.layout)`), and every unit is an identity conversion carrying a suffix. Proposed,
+  not agreed: `showIf` also takes a condition as data, and a unit may be `{ suffix, accepts }`
+  with the conversion implied; the function forms stay for what data cannot say.
+
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides and `.dialog` rows beside the
   `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its
