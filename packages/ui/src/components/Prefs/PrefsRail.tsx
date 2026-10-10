@@ -1,7 +1,7 @@
 import { Fragment, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
-import { isDropPath } from './drop';
+import { dropSlot, isDropPath } from './drop';
 import { prefRailParent, type PrefRailItem } from './schema';
 import s from './Prefs.module.css';
 
@@ -103,7 +103,8 @@ export function PrefsRail(props: PrefsRailProps) {
           aria-current={open ? 'page' : inView ? 'location' : undefined}
           data-rail-fold={foldable && nested ? item.path : undefined}
           data-pref-rail={isDropPath(item.path) ? undefined : item.path}
-          data-drop-placeholder={isDropPath(item.path) ? '' : undefined}
+          data-drop-placeholder={isDropPath(item.path) ? dropSlot(item.path) ?? '' : undefined}
+          data-drop-rail={isDropPath(item.path) ? '' : undefined}
           data-drop={dropInto === item.path ? 'into' : undefined}
           onClick={() => activate(item)}
         >

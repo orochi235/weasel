@@ -1,6 +1,6 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
-import { dropDrawnPath, dropPlacedPath, dropValuePath, isDropPath, isDropTop, withDrop, type PrefDrop } from './drop';
+import { dropDrawnPath, dropPlacedPath, dropSlot, dropValuePath, isDropPath, withDrop, type PrefDrop } from './drop';
 
 const leaf = (name: string): PrefLeaf => ({ kind: 'boolean', name, description: '', default: false });
 const ROOT: PrefGroup = {
@@ -30,6 +30,14 @@ describe('withDrop', () => {
     expect(names(withDrop(ROOT, { path: 'canvas.a', where: 'before', nodes: [a], from: ['canvas.a'] }))[0]).toEqual(['Canvas', ['A', 'B', ['Box', ['C']]]]);
   });
 
+  it('draws each node of a drop with nowhere to land where it sits', () => {
+    const canvas = ROOT.children.canvas as PrefGroup;
+    const held = withDrop(ROOT, { path: '', where: 'home', nodes: [canvas.children.b!, ROOT.children.io!], from: ['canvas.b', 'io'] });
+    expect(names(held)).toEqual(names(ROOT));
+    expect(Object.keys((held.children.canvas as PrefGroup).children).map(isDropPath)).toEqual([false, true, false]);
+    expect(Object.keys(held.children).map(isDropPath)).toEqual([false, true]);
+  });
+
   it('leaves the given tree as it was', () => {
     const before = JSON.stringify(ROOT);
     withDrop(ROOT, { path: 'canvas.b', where: 'before', nodes: [NEW] });
@@ -44,10 +52,12 @@ describe('a placeholder path', () => {
   it('is told from a path of the schema, and its own from one inside it', () => {
     expect(isDropPath('canvas.a')).toBe(false);
     expect(isDropPath(placed)).toBe(true);
-    expect(isDropTop(placed)).toBe(true);
-    expect(isDropTop(`${placed}.a`)).toBe(false);
     expect(dropPlacedPath({ path: 'io', where: 'into' }, 0).startsWith('io.')).toBe(true);
     expect(dropPlacedPath({ path: 'io', where: 'before' }, 0).includes('.')).toBe(false);
+    expect(dropPlacedPath({ path: '', where: 'home', from: ['io', 'canvas.a'] }, 1).startsWith('canvas.')).toBe(true);
+    expect(dropSlot(placed)).toBe('0');
+    expect(dropSlot(`${placed}.a`)).toBeUndefined();
+    expect(dropSlot('canvas.a')).toBeUndefined();
   });
 
   it('maps to the path its node was dragged from, and back', () => {

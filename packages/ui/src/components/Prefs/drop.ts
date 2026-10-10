@@ -12,7 +12,9 @@ export interface PrefDropMark {
  * A drag over a form: where it would drop, and what. The form lays itself out as it would after the drop, with
  * `nodes` drawn at the mark as placeholders and nothing drawn where they sit now.
  */
-export interface PrefDrop extends PrefDropMark {
+export interface PrefDrop extends Omit<PrefDropMark, 'where'> {
+  /** `'home'` is nowhere: each node of `from` is drawn as a placeholder where it sits, and `path` is not read. */
+  where: PrefDropMark['where'] | 'home';
   nodes: ReadonlyArray<PrefLeaf | PrefGroup>;
   /** Dotted path of each node that is already in the form's schema, in the order of `nodes`. None for new nodes. */
   from?: readonly string[];
@@ -28,15 +30,16 @@ export function isDropPath(path: string): boolean {
   return path.includes(DROP_KEY);
 }
 
-/** Whether `path` is a placeholder's own, and not that of something inside one. */
-export function isDropTop(path: string): boolean {
+/** For a placeholder's own path, and not that of something inside one, the index of its node in the drop's `nodes`. */
+export function dropSlot(path: string): string | undefined {
   const at = path.indexOf(DROP_KEY);
-  return at >= 0 && !path.includes('.', at);
+  return at >= 0 && !path.includes('.', at) ? path.slice(at + DROP_KEY.length) : undefined;
 }
 
 /** Where `drop` draws its `index`th node. */
-export function dropPlacedPath(drop: PrefDropMark, index: number): string {
-  const parent = drop.where === 'into' ? drop.path : drop.path.split('.').slice(0, -1).join('.');
+export function dropPlacedPath(drop: Pick<PrefDrop, 'path' | 'where' | 'from'>, index: number): string {
+  const beside = drop.where === 'home' ? drop.from?.[index] ?? '' : drop.path;
+  const parent = drop.where === 'into' ? beside : beside.split('.').slice(0, -1).join('.');
   return join(parent, `${DROP_KEY}${index}`);
 }
 
@@ -61,15 +64,17 @@ export function dropDrawnPath(drop: PrefDrop | null, path: string): string {
 
 /** `root` as it would be after `drop`: its nodes at the mark under placeholder keys, and gone from where they were. */
 export function withDrop(root: PrefGroup, drop: PrefDrop): PrefGroup {
-  const lifted = new Set(drop.from ?? []);
+  const from = drop.from ?? [];
+  const lifted = new Set(from);
   const placed = drop.nodes.map((node, i): [string, PrefLeaf | PrefGroup] => [`${DROP_KEY}${i}`, node]);
   const walk = (group: PrefGroup, path: string): PrefGroup => {
     const out: Array<[string, PrefLeaf | PrefGroup]> = [];
     for (const [key, child] of Object.entries(group.children)) {
       const p = join(path, key);
-      const here = drop.where !== 'into' && drop.path === p;
+      const here = drop.path === p;
       if (here && drop.where === 'before') out.push(...placed);
       if (!lifted.has(p)) out.push([key, isPrefLeaf(child) ? child : walk(child, p)]);
+      else if (drop.where === 'home' && placed[from.indexOf(p)]) out.push(placed[from.indexOf(p)]!);
       if (here && drop.where === 'after') out.push(...placed);
     }
     if (drop.where === 'into' && drop.path === path) out.push(...placed);

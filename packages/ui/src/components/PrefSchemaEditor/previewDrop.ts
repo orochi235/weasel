@@ -43,7 +43,7 @@ export function railTakesInto(nodes: readonly SchemaNode[]): boolean {
 }
 
 /** What the form draws for a drag of `nodes`, sitting at tree `paths`, that would land at `mark`. */
-export function previewDrop(mark: PrefDropMark, nodes: readonly SchemaNode[], paths: readonly string[]): PrefDrop {
+export function previewDrop(mark: Pick<PrefDrop, 'path' | 'where' | 'rail'>, nodes: readonly SchemaNode[], paths: readonly string[]): PrefDrop {
   return {
     ...mark,
     // Only what a group holds reaches here: `previewTarget` took the mark.
@@ -54,11 +54,20 @@ export function previewDrop(mark: PrefDropMark, nodes: readonly SchemaNode[], pa
 }
 
 /**
+ * What the form draws for a drag with nowhere to land: `nodes` as placeholders where they sit, at tree `paths`.
+ * Null for nodes not in the schema yet, and under a section root, whose preview draws no drop.
+ */
+export function heldDrop(schema: SchemaRoot, nodes: readonly SchemaNode[], paths: readonly string[]): PrefDrop | null {
+  if (paths.length === 0 || isPrefSection(schema)) return null;
+  return previewDrop({ path: '', where: 'home' }, nodes, paths);
+}
+
+/**
  * Whether the form shows the dragged node where it would land, so no ghost of it is wanted beside the pointer.
  * A drop into a rail entry lands on a page that may not be the open one.
  */
 export function drawsNode(drop: PrefDrop | null | undefined): boolean {
-  return drop != null && !(drop.rail === true && drop.where === 'into');
+  return drop != null && drop.where !== 'home' && !(drop.rail === true && drop.where === 'into');
 }
 
 /** Whether two drops draw the same form. */

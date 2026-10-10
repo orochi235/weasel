@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
 import type { PrefDrop, PrefDropMark } from './drop';
+import { slidesIn } from './dropMotion';
 import { PATH_ATTR } from './selection';
 
 const FORM_ATTR = 'data-pref-form';
@@ -26,24 +27,32 @@ interface Box {
   owner: number;
   /** Split across: the row shares its line with another. */
   across: boolean;
+  /** Index of the cover whose title can sit over the box, or -1. */
+  cover: number;
 }
 
+/** A section whose title sticks to the top of its scroller, over the section's own rows: its rect, and the title's height. */
+interface Cover { rect: Rect; height: number }
+
 /** A form's layout as measured while it drew no drop. */
-interface Frame { left: number; top: number; scrollers: Scroller[]; boxes: Box[] }
+interface Frame { left: number; top: number; scrollers: Scroller[]; covers: Cover[]; boxes: Box[] }
 
 const frames = new WeakMap<Element, Frame>();
 
 /** The attributes of a form's root element, which `prefDropTargetAt` finds the form by. */
 export function formAttrs(drop: PrefDrop | null): Record<string, string | undefined> {
-  return { [FORM_ATTR]: '', [DROPPING_ATTR]: drop ? '' : undefined };
+  // A drop with nowhere to land moves nothing, so the form is still read as it lies.
+  return { [FORM_ATTR]: '', [DROPPING_ATTR]: drop && drop.where !== 'home' ? '' : undefined };
 }
 
-const rectOf = (el: Element): Rect => {
-  const r = el.getBoundingClientRect();
-  return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
-};
-
 function measure(form: Element): Frame {
+  const slide = slidesIn(form);
+  /** Where `el` lies, whatever slide it is drawn part-way through. */
+  const rectOf = (el: Element): Rect => {
+    const r = el.getBoundingClientRect();
+    const { x, y } = slide(el);
+    return { left: r.left - x, top: r.top - y, right: r.right - x, bottom: r.bottom - y };
+  };
   const origin = form.getBoundingClientRect();
   const scrollers: Scroller[] = [];
   const scrollerOf = (el: Element): number => {
@@ -55,6 +64,7 @@ function measure(form: Element): Frame {
     return scrollers.length - 1;
   };
   const twoAcross = form.getAttribute('data-across') === '2';
+  const sections = [...form.querySelectorAll('[data-pref-sticky]')].map((title) => ({ title, el: title.parentElement! }));
   const els = [...form.querySelectorAll(`[data-pref-rail], [${PATH_ATTR}], [data-pref-into]`)];
   const index = new Map(els.map((el, i) => [el, i]));
   const boxes = els.map((el): Box => {
@@ -68,9 +78,11 @@ function measure(form: Element): Frame {
       scroller: scrollerOf(el),
       owner: owner ? index.get(owner) ?? -1 : -1,
       across: twoAcross && !el.hasAttribute('data-wide'),
+      cover: sections.findIndex((s) => s.el !== el && s.el.contains(el)),
     };
   });
-  return { left: origin.left, top: origin.top, scrollers, boxes };
+  const covers = sections.map((s) => ({ rect: rectOf(s.el), height: s.title.getBoundingClientRect().height }));
+  return { left: origin.left, top: origin.top, scrollers, covers, boxes };
 }
 
 const inside = (r: Rect, x: number, y: number): boolean => x >= r.left && x < r.right && y >= r.top && y < r.bottom;
@@ -82,12 +94,19 @@ function hit(frame: Frame, form: Element, clientX: number, clientY: number, rail
   const now = form.getBoundingClientRect();
   const x = clientX - (now.left - frame.left);
   const y = clientY - (now.top - frame.top);
-  /** The point in the coordinates `box` was measured in, or null where its scroller does not show it. */
+  /** The point in the coordinates `box` was measured in, or null where its scroller, or a title stuck over it, does not show it. */
   const pointIn = (box: Box): { x: number; y: number } | null => {
     const s = frame.scrollers[box.scroller];
     if (!s) return { x, y };
     if (!inside(s.rect, x, y)) return null;
-    return { x: x + s.el.scrollLeft - s.left, y: y + s.el.scrollTop - s.top };
+    const p = { x: x + s.el.scrollLeft - s.left, y: y + s.el.scrollTop - s.top };
+    const c = frame.covers[box.cover];
+    if (c) {
+      // The title holds to the scroller's top edge from when its section reaches it until the section's end.
+      const top = Math.min(s.rect.top + s.el.scrollTop - s.top, c.rect.bottom - c.height);
+      if (top > c.rect.top && p.y >= top && p.y < top + c.height) return null;
+    }
+    return p;
   };
   const nearest = (among: (box: Box) => boolean, within: number): number => {
     let best = -1;

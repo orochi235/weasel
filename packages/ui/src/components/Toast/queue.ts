@@ -1,5 +1,6 @@
 import { UNSTABLE_ToastQueue } from 'react-aria-components';
 import { flushSync } from 'react-dom';
+import { prefersReducedMotion } from '../../reducedMotion';
 
 /** Severity of a toast, driving its accent color and icon. */
 export type ToastTone = 'info' | 'success' | 'warning' | 'error';
@@ -38,9 +39,7 @@ let activeToastTransitions = 0;
  * The jsdom test environment always takes the fallback path.
  */
 function viewTransitionWrapUpdate(fn: () => void): void {
-  const reduceMotion =
-    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (typeof document === 'undefined' || !('startViewTransition' in document) || reduceMotion) {
+  if (typeof document === 'undefined' || !('startViewTransition' in document) || prefersReducedMotion()) {
     fn();
     return;
   }

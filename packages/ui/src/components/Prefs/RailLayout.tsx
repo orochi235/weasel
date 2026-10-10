@@ -3,6 +3,7 @@ import { isPrefLeaf, prefGroupIsPage, type PrefGroup, type PrefLeaf } from '@wea
 import { ResizeHandle } from '../ResizeHandle';
 import { useScrollSpy } from '../../useScrollSpy';
 import { dropDrawnPath, withDrop } from './drop';
+import { useDropMotion } from './dropMotion';
 import { formAttrs, useDropFrame } from './dropTarget';
 import { NoMatches } from './NoMatches';
 import type { PrefsFormProps } from './PrefsForm';
@@ -84,6 +85,7 @@ export function RailLayout(props: PrefsFormProps & {
 
   // The form as the drop would leave it. `open` and `items` above are the form's own, which the drop leaves alone.
   const drop = useDropFrame(selection.ref, props.drop, root, open);
+  useDropMotion(selection.ref, props.drop !== undefined, drop, root, open);
   const drawn = useMemo(() => (root !== null && drop ? withDrop(root, drop) : root), [root, drop]);
   const drawnItems = useMemo(
     () => (drawn === root || drawn === null ? items : prefRailItems(drawn, subPages)),

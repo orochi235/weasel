@@ -840,13 +840,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   test in the repo drives a pointer through the editor itself. Palette, row, rail, and tree drags
   were driven through a headless browser on astv's page and on the editor's story on 2026-10-10.
 
-- **(P3) `PrefsForm`'s drop reflow, rough edges.** Rows jump to their new places; nothing
-  animates them, and the hit test already ignores where they are drawn, so a transform on them
-  would be safe. The line a placeholder adds can be the one that makes the pane scroll, and the
-  scrollbar then moves every row a few pixels. A row dragged off every target is drawn back at
-  home at full strength until it finds one. A sticky section title over a scrolled row does not
-  hide the row from `prefDropTargetAt`.
-
 - **(P3) `PrefSchemaEditor`: undoing a move made through a rail entry leaves the moved node out of
   sight.** Holding a drag over a rail entry opens that page by selecting its group, so the step
   records that group as the selection to go back to. Undo puts the node back on its own page and

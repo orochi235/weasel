@@ -1,6 +1,7 @@
 import { useEffect, useRef, type FocusEvent, type PointerEvent, type RefObject } from 'react';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
-import { isDropPath, isDropTop } from './drop';
+import { prefersReducedMotion } from '../../reducedMotion';
+import { dropSlot, isDropPath } from './drop';
 
 /** On the element a form draws for a leaf or a group, its dotted path. */
 export const PATH_ATTR = 'data-pref-path';
@@ -13,7 +14,7 @@ export interface PrefMarks {
 /** The attributes of the element a form draws for the leaf (`leaf`) or the group at `path`. */
 export function selectionAttrs(path: string, marks: PrefMarks, leaf = false): Record<string, string | undefined> {
   // A placeholder is not in the schema, so there is nothing to select or to drop beside.
-  if (isDropPath(path)) return { 'data-drop-placeholder': isDropTop(path) ? '' : undefined };
+  if (isDropPath(path)) return { 'data-drop-placeholder': dropSlot(path) };
   return {
     [PATH_ATTR]: path === '' ? undefined : path,
     'data-pref-leaf': leaf ? '' : undefined,
@@ -37,10 +38,6 @@ export function shownPath(root: PrefGroup | null, path: string | undefined): str
     cursor = next;
   }
   return path;
-}
-
-function reducedMotion(): boolean {
-  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 export interface SelectionRoot {
@@ -73,7 +70,7 @@ export function useSelectedRow(
     if (el === undefined) return;
     pending.current = false;
     // Optional-called: jsdom's elements have no `scrollIntoView`.
-    el.scrollIntoView?.({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    el.scrollIntoView?.({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   });
   if (onSelect === undefined) return { ref };
   const pick = (e: PointerEvent | FocusEvent): void => {

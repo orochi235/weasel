@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { filterPrefSubtree, visiblePrefSubtree, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
+import { useDropMotion } from './dropMotion';
 import { formAttrs, useDropFrame } from './dropTarget';
 import { NoMatches } from './NoMatches';
 import { prefFieldChoices, type PrefFieldChoice } from './schema';
@@ -187,6 +188,7 @@ function FlatLayout(props: {
 }) {
   const { root, list, selection } = props;
   const drop = useDropFrame(selection.ref, props.drop, root, '');
+  useDropMotion(selection.ref, props.drop !== undefined, drop, root, '');
   const drawn = useMemo(() => (root !== null && drop ? withDrop(root, drop) : root), [root, drop]);
   const ctx: WalkCtx = { ...props.ctx, drop };
   const depth = list ? 1 : 0;

@@ -100,6 +100,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
     // A preferences form files the root's own leaves under one rail entry; the tree shows them the same way.
     const general: TreeNode = {
       id: GENERAL,
+      leading: <Icon size={16} name={GROUP_ICON.page} />,
       label: looseEntryName(schema.name),
       textValue: looseEntryName(schema.name),
       trailing: countBadge(leafCount([...loose].map((key) => nodeAt(schema, key)!))),
@@ -218,6 +219,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
       <div className={s.treeArea} ref={treeArea}>
       <Tree
         aria-label="Schema structure"
+        foldBy="leading"
         nodes={shown}
         empty={sought === '' ? undefined : 'Nothing matches.'}
         // Filtered, every match shows, and what is folded stays as it was for when the filter goes.
