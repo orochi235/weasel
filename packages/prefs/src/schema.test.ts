@@ -12,11 +12,11 @@ import type {
   PrefKind,
   PrefColor,
   PrefCustom,
-  PrefGroup,
   PrefLeaf,
   PrefNumber,
   PrefPair,
 } from './schema';
+import type { PrefSection } from './groups';
 
 describe('BuiltinPref schema additions', () => {
   it('accepts color, custom, pair, and unit fields', () => {
@@ -51,12 +51,12 @@ describe('BuiltinPref schema additions', () => {
       description: 'App-defined leaf.',
       default: null,
     };
-    const group: PrefGroup = {
+    const section: PrefSection = {
       name: 'Layout',
-      children: { 'pose.x': x, 'pose.rotation': rotation, 'data.fill': fill, 'data.special': custom },
+      members: { 'pose.x': x, 'pose.rotation': rotation, 'data.fill': fill, 'data.special': custom },
     };
     const leaves: PrefLeaf[] = [fill, x, rotation, custom];
-    expect(Object.keys(group.children)).toHaveLength(4);
+    expect(Object.keys(section.members)).toHaveLength(4);
     expect(leaves).toHaveLength(4);
   });
 });

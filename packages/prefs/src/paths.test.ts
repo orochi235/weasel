@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import type { PrefAtPath, PrefPath, PrefValueAt } from './paths';
-import type { PrefGroup } from './schema';
+import type { PrefGroup } from './groups';
 
 const _schema = {
   name: 'Test',

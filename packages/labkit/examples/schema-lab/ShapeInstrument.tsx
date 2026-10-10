@@ -1,14 +1,14 @@
 import { createScene, defaultNodeProperties, solid, strokeOf } from '@weasel-js/core';
 import type { FillStyle, RectPose, Scene, Stroke } from '@weasel-js/core';
 import { defineInstrument, hasConfigPath, type RenderContext, valueAtPath, withValueAtPath } from '@weasel-js/labkit';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefSection } from '@weasel-js/prefs';
 import { useEffect, useRef } from 'react';
 import { decodePrefValue, flattenPrefs, prefDefaults, prefsToFields, setAtPath } from './prefsToFields';
 import { SceneFrame } from './SceneHost';
 
 /** weasel's published property schema for a `rect` node — the same one
  *  `<SelectionPanel>` reads. Nothing here is written by hand. */
-const RECT_SCHEMA: PrefGroup = defaultNodeProperties.find((e) => e.name === 'rect')!.schema;
+const RECT_SCHEMA: PrefSection = defaultNodeProperties.find((e) => e.name === 'rect')!.schema;
 
 interface ShapeData {
   shape: 'rect';

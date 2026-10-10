@@ -1,5 +1,14 @@
 import type { UnitTable } from '@weasel-js/quantity';
-import { isPrefLeaf, type PrefGroup, type PrefLeaf, type PrefNumberUnit } from '@weasel-js/prefs';
+import {
+  isPrefLeaf,
+  isPrefSection,
+  type PrefGroup,
+  type PrefLeaf,
+  type PrefNumberUnit,
+  type PrefObject,
+  type PrefSection,
+  prefSectionLeaves,
+} from '@weasel-js/prefs';
 
 /** What a unit leaf's field reads as typed text: its `accepts` table, and its
  *  `suffix` as the display unit itself. */
@@ -16,26 +25,27 @@ export interface PrefFieldChoice {
 }
 
 /**
- * Every leaf under `group` as a choice for a `field` leaf, in schema order —
- * an `object` leaf and each of its fields. `groupKeys` says whether a group's
- * key is part of its leaves' paths, which is the surface's rule: a prefs form
- * nests values by group, a node's property panel does not. Inside an object,
- * groups never contribute.
+ * Every leaf under `schema` as a choice for a `field` leaf, in schema order —
+ * an `object` leaf and each of its fields. The schema's own shape says how a
+ * path is built: a `PrefGroup`'s key is a segment of its leaves' paths, a
+ * `PrefSection`'s is not.
  */
-export function prefFieldChoices(group: PrefGroup, groupKeys = true): PrefFieldChoice[] {
+export function prefFieldChoices(schema: PrefGroup | PrefSection): PrefFieldChoice[] {
   const out: PrefFieldChoice[] = [];
-  const walk = (node: PrefGroup, prefix: string, keysCount: boolean): void => {
-    for (const [key, child] of Object.entries(node.children)) {
-      if (!isPrefLeaf(child)) {
-        walk(child, keysCount && prefix !== '' ? `${prefix}.${key}` : keysCount ? key : prefix, keysCount);
-        continue;
-      }
+  const add = (path: string, leaf: PrefLeaf): void => {
+    out.push({ path, name: leaf.name, kind: leaf.kind });
+    if (leaf.kind !== 'object') return;
+    for (const [key, field] of prefSectionLeaves((leaf as PrefObject).children)) add(`${path}.${key}`, field);
+  };
+  const walk = (group: PrefGroup, prefix: string): void => {
+    for (const [key, child] of Object.entries(group.children)) {
       const path = prefix === '' ? key : `${prefix}.${key}`;
-      out.push({ path, name: child.name, kind: child.kind });
-      if (child.kind === 'object') walk(child as unknown as PrefGroup, path, false);
+      if (isPrefLeaf(child)) add(path, child);
+      else walk(child, path);
     }
   };
-  walk(group, '', groupKeys);
+  if (isPrefSection(schema)) for (const [key, leaf] of prefSectionLeaves(schema.members)) add(key, leaf);
+  else walk(schema, '');
   return out;
 }
 

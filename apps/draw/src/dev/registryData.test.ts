@@ -201,7 +201,7 @@ describe('collectPropertiesTrait', () => {
   it('uses a supplied live registry instead of the defaults', () => {
     const custom: NodePropertiesEntry = {
       name: 'sticky',
-      schema: { name: 'Sticky', children: {} },
+      schema: { name: 'Sticky', members: {} },
     };
     const entries = collectPropertiesTrait([custom]);
     expect(entries.length).toBe(1);

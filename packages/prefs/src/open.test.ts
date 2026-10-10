@@ -1,7 +1,7 @@
 import { createMemoryAdapter, urlHashAdapter } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import { openPrefs, openPrefsSync } from './open';
-import type { PrefGroup } from './schema';
+import type { PrefGroup } from './groups';
 import { VERSION_RECORD } from './helpers';
 
 const SCHEMA = {

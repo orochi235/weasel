@@ -5,10 +5,10 @@ const entry = (name: string): NodePropertiesEntry => ({
   name,
   schema: {
     name: 'Properties',
-    children: {
+    members: {
       layout: {
         name: 'Layout',
-        children: {
+        members: {
           'pose.x': { kind: 'number', name: 'X', description: 'x', default: 0 },
         },
       },

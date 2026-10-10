@@ -1,15 +1,16 @@
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefSection } from '@weasel-js/prefs';
 
 /**
  * NodePropertiesEntry — one kind's entry in the **properties trait's**
  * registry: a declarative schema of the kind's editable properties.
  *
- * Leaf keys inside `schema` are dotted node paths (`pose.x`,
+ * `schema` is a `PrefSection`, not the `PrefGroup` a preferences schema
+ * is: a leaf's own key is its whole dotted node path (`pose.x`,
  * `data.fill`, `data.style.fontSize`) — a path of any depth rooted at
  * `pose` or `data` — so schema consumers (weasel-ui `SelectionPanel`)
- * can read/aggregate/write generically with no per-kind code. Group
- * keys are organizational only; they do not contribute to the node
- * path.
+ * can read/aggregate/write generically with no per-kind code. The
+ * sections it nests are headings only; their keys do not contribute to
+ * the node path.
  *
  * Kind names share the routing trait's vocabulary — an entry registered
  * as `'rect'` describes nodes `NodeRouting.classify` maps to `'rect'`.
@@ -21,7 +22,7 @@ export interface NodePropertiesEntry {
   /** Kind name — same vocabulary as the routing trait. */
   name: string;
   /** Property schema for this kind. */
-  schema: PrefGroup;
+  schema: PrefSection;
 }
 
 /**

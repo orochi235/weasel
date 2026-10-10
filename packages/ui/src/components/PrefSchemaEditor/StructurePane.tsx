@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
+import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Button } from '../Button';
 import { Tree, type TreeNode } from '../Tree';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
@@ -7,9 +7,9 @@ import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
 import { StoredList } from './StoredList';
-import { blankGroup, blankLeaf } from './kindSchemas';
+import { blankGroup, blankLeaf, blankSection } from './kindSchemas';
 import {
-  addNode, childrenOf, joinPath, keyOf, kindOfValue, moveNodes, nodeAt, parentPath, rebasePaths, removeNode, undescribedValues,
+  addNode, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, kindOfValue, moveNodes, nodeAt, parentPath, rebasePaths, removeNode, undescribedValues,
   type SchemaNode, type UndescribedValue,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
@@ -23,7 +23,7 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
       id: p,
       label: name ? <>{name} <span className={s.treeKey}>({key})</span></> : key,
       textValue: name ? `${name} ${key}` : key,
-      trailing: <PrefKindBadge kind={isPrefLeaf(child) ? child.kind : 'group'} />,
+      trailing: <PrefKindBadge kind={isPrefLeaf(child) ? child.kind : isPrefSection(child) ? 'section' : 'group'} />,
       className: changed.has(p) ? s.changed : undefined,
       ...(kids ? { children: toTreeNodes(child, p, changed) } : {}),
     };
@@ -72,7 +72,9 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
     return { parent, index: sibs.indexOf(keyOf(selected)) + 1 };
   };
   const add = ({ key, name, kind }: NewNode) => {
-    const node: SchemaNode = kind !== undefined ? { ...blankLeaf(kind), name } : { ...blankGroup(), name };
+    const host = fromStored ? schema : nodeAt(schema, addTarget().parent) ?? schema;
+    const branch = branchUnder(host) === 'section' ? blankSection() : blankGroup();
+    const node: SchemaNode = kind !== undefined ? { ...blankLeaf(kind), name } : { ...branch, name };
     setAdding(null);
     if (fromStored) {
       // A stored value's leaf goes where the value lives, making any group its path passes through.
@@ -125,7 +127,10 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         selectionMode="single"
         selectedIds={selected === null ? [] : [selected]}
         onSelectionChange={(ids) => onSelect([...ids][0] ?? null)}
-        canDrop={(_ids, t) => t.parentId === null || !!childrenOf(nodeAt(schema, t.parentId)!)}
+        canDrop={(ids, t) => {
+          const parent = nodeAt(schema, t.parentId)!;
+          return !!childrenOf(parent) && [...ids].every((id) => fitsUnder(parent, nodeAt(schema, id)!));
+        }}
         onMove={(ids, t) => {
           const moved = moveNodes(schema, ids, { parentPath: t.parentId, index: t.index });
           onChange(moved.root);

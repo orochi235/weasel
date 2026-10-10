@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { defaultNodeProperties } from '@weasel-js/core';
 import { PrefSchemaEditor, Select, type CustomKinds } from '@weasel-js/ui';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { usePrefsValues } from '@weasel-js/prefs/react';
@@ -8,10 +7,13 @@ import { drawPrefs, PREFS } from '../prefs';
 import { DevShell } from './DevShell';
 import s from './PrefSchemaPage.module.css';
 
-/** `stored`: whether the app's saved preference values sit under this schema. */
+/**
+ * `stored`: whether the app's saved preference values sit under this schema.
+ * A node's property schema is not offered: the editor addresses a node by
+ * dotted path, and a `PrefSection` leaf's key holds dots.
+ */
 const SOURCES: ReadonlyArray<{ id: string; label: string; schema: PrefGroup; stored?: true }> = [
   { id: 'prefs', label: 'WeaselDraw preferences', schema: PREFS, stored: true },
-  ...defaultNodeProperties.map((e) => ({ id: `node:${e.name}`, label: `Node: ${e.name}`, schema: e.schema })),
 ];
 
 const KINDS: CustomKinds = {

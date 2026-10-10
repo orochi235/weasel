@@ -22,6 +22,20 @@ describe('printSchema', () => {
     expect(printSchema(tree)).toContain(`unit: ${KEEP}`);
   });
 
+  it('prints a section inside an object leaf with its members, and names it in a change', () => {
+    const leaf = { kind: 'boolean', name: 'W', description: '', default: true } as const;
+    const tree: PrefGroup = { name: 'R', children: {
+      o: { kind: 'object', name: 'O', description: '', default: {}, children: { s: { name: 'S', members: { w: leaf } } } },
+    } };
+    const back = new Function(`return (${printSchema(tree)});`)();
+    expect(back.children.o.children.s).toEqual({ name: 'S', members: { w: leaf } });
+    const bare: PrefGroup = { name: 'R', children: { o: { kind: 'object', name: 'O', description: '', default: {}, children: {} } } };
+    expect(diffSchemas(bare, tree)).toEqual([
+      { op: 'add', path: 'o.s', kind: 'section' },
+      { op: 'add', path: 'o.s.w', kind: 'boolean' },
+    ]);
+  });
+
   it('prints a literal that evaluates back to the tree, with code as KEEP_FROM_SOURCE', () => {
     const text = printSchema(ROOT);
     const STUB = Symbol('keep');

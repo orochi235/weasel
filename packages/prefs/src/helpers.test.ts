@@ -8,7 +8,8 @@ import {
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
-import { prefUnit, type PrefGroup, type PrefNumber, type PrefNumberUnit } from './schema';
+import type { PrefGroup } from './groups';
+import { prefUnit, type PrefNumber, type PrefNumberUnit } from './schema';
 
 const SCHEMA: PrefGroup = {
   name: 'Preferences',

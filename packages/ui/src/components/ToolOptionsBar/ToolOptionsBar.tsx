@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import {
   renderBuiltin,
   renderCells,
@@ -7,7 +7,7 @@ import {
   type PropertyRenderContext,
   type PropertyRenderer,
 } from '../SelectionPanel/renderLeaf';
-import { isGroup, pairRows, type PanelLeaf, type PanelRow } from '../SelectionPanel/model';
+import { pairRows, type PanelLeaf, type PanelRow } from '../SelectionPanel/model';
 import { FitLabel, FitScope, labelForms, useFitScope } from '../FitLabel/FitLabel';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import s from './ToolOptionsBar.module.css';
@@ -30,9 +30,11 @@ export interface ToolOptionsBarProps {
    */
   label?: string;
   /**
-   * The active tool's options. Leaves draw through the same leaf → control
-   * mapping `SelectionPanel` uses, so a kind gets its control decided in one
-   * place; groups organize without drawing, since the bar is one line.
+   * The active tool's options, as the `PrefGroup` the tool declares: a
+   * group's key is a segment of its leaves' paths. Leaves draw through the
+   * same leaf → control mapping `SelectionPanel` uses, so a kind gets its
+   * control decided in one place; groups draw nothing, since the bar is one
+   * line.
    */
   schema?: PrefGroup;
   /** Each leaf's value, keyed by dotted path. A path with no entry is unset. */
@@ -96,17 +98,16 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
 }
 
 /**
- * The schema's visible leaves as rows, addressed by dotted path. Groups are
- * organizational here — a bar is one line, so a nested group contributes its
- * leaves and no chrome — but its path segment still names them, so a leaf
- * reads back at the path the tool declared it at.
+ * The schema's visible leaves as rows, addressed by dotted path. A bar is one
+ * line, so a nested group contributes its leaves and no chrome, but its key
+ * is still a segment of their paths.
  */
 function barRows(schema: PrefGroup): PanelRow[] {
   const leaves: PanelLeaf[] = [];
   const collect = (group: PrefGroup, prefix: string): void => {
     for (const [key, child] of Object.entries(group.children)) {
       const path = prefix === '' ? key : `${prefix}.${key}`;
-      if (isGroup(child)) collect(child, path);
+      if (!isPrefLeaf(child)) collect(child, path);
       else if (child.hidden !== true) leaves.push({ path, leaf: child });
     }
   };

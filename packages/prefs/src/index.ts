@@ -6,12 +6,15 @@ export {
   filterPrefSubtree,
   flattenPrefValues,
   isPrefLeaf,
+  isPrefSection,
   prefDisplayBounds,
   prefLeaves,
+  prefSectionLeaves,
   prefValueAtPath,
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
+export type { PrefGroup, PrefSection } from './groups';
 export type { PrefAtPath, PrefPath, PrefValueAt, PrefValueOf } from './paths';
 export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
@@ -33,7 +36,6 @@ export {
   type PrefEnumControl,
   type PrefEnumEncoding,
   type PrefField,
-  type PrefGroup,
   type PrefKind,
   type PrefLeaf,
   type PrefNumber,

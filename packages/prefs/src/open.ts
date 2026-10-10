@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/storage';
 import { type PrefsMigration, runPrefsMigrations, watchPrefsVersion } from './migrate';
 import type { PrefValidator } from './repair';
-import type { PrefGroup } from './schema';
+import type { PrefGroup } from './groups';
 import { createPrefsStore, type PrefsStore } from './store';
 
 /** Options for `openPrefs` and `openPrefsSync`. */

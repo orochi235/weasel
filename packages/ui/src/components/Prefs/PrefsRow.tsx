@@ -2,7 +2,6 @@ import { type ReactNode } from 'react';
 import {
   isPrefLeaf,
   prefValueAtPath,
-  type PrefGroup,
   type PrefLeaf,
   type PrefObject,
 } from '@weasel-js/prefs';
@@ -133,11 +132,11 @@ function ObjectLeaf({ ctx }: { ctx: PrefRenderContext }) {
   const held = typeof value === 'object' && value !== null
     ? (value as Record<string, unknown>)
     : undefined;
-  const objectRows = (children: Record<string, PrefLeaf | PrefGroup>): ReactNode[] => {
+  const objectRows = (children: PrefObject['children']): ReactNode[] => {
     const out: ReactNode[] = [];
     for (const [key, child] of Object.entries(children)) {
       if (!isPrefLeaf(child)) {
-        const inner = objectRows(child.children);
+        const inner = objectRows(child.members);
         if (inner.length === 0) continue;
         out.push(<h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>, ...inner);
         continue;

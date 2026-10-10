@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
-import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
+import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { childrenOf, isValidKey, joinPath, type SchemaNode } from './schemaEdit';
 
 /** What an attribute holding code prints as: an undeclared name, so the pasted literal fails typecheck until the
@@ -50,12 +50,13 @@ export function printValue(v: unknown, depth = 0): string {
 
 function printNode(node: SchemaNode, depth: number): string {
   const kids = childrenOf(node);
+  const slot = isPrefSection(node) ? 'members' : 'children';
   const rows = Object.entries(node as unknown as Record<string, unknown>)
-    .filter(([k, x]) => x !== undefined && !(k === 'children' && kids))
+    .filter(([k, x]) => x !== undefined && !(k === slot && kids))
     .map(([k, x]) => `${pad(depth + 1)}${printKey(k)}: ${printValue(x, depth + 1)},`);
   if (kids) {
     const inner = Object.entries(kids).map(([k, c]) => `${pad(depth + 2)}${printKey(k)}: ${printNode(c, depth + 2)},`);
-    rows.push(`${pad(depth + 1)}children: ${inner.length ? `{\n${inner.join('\n')}\n${pad(depth + 1)}}` : '{}'},`);
+    rows.push(`${pad(depth + 1)}${slot}: ${inner.length ? `{\n${inner.join('\n')}\n${pad(depth + 1)}}` : '{}'},`);
   }
   return rows.length ? `{\n${rows.join('\n')}\n${pad(depth)}}` : '{}';
 }
@@ -72,7 +73,7 @@ export type SchemaChange =
   | { op: 'reorder'; path: string }
   | { op: 'attr'; path: string; key: string; from: unknown; to: unknown };
 
-const kindOf = (n: SchemaNode) => (isPrefLeaf(n) ? n.kind : 'group');
+const kindOf = (n: SchemaNode) => (isPrefLeaf(n) ? n.kind : isPrefSection(n) ? 'section' : 'group');
 
 function flatten(root: PrefGroup): Map<string, SchemaNode> {
   const out = new Map<string, SchemaNode>();
@@ -92,6 +93,7 @@ const same = (a: unknown, b: unknown) => a === b || (!containsCode(a) && !contai
 function attrChanges(path: string, a: SchemaNode, b: SchemaNode): SchemaChange[] {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
   keys.delete('children');
+  keys.delete('members');
   const out: SchemaChange[] = [];
   for (const k of keys) {
     const from = (a as unknown as Record<string, unknown>)[k];

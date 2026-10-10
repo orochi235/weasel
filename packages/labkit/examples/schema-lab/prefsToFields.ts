@@ -1,49 +1,23 @@
 import { type ConfigField, withValueAtPath } from '@weasel-js/labkit';
-import { isBuiltinPref, type PrefGroup } from '@weasel-js/prefs';
+import { isBuiltinPref, type PrefLeaf, type PrefObject, type PrefSection, prefSectionLeaves } from '@weasel-js/prefs';
 
-type PrefNode = PrefGroup['children'][string];
-type PrefLeaf = Exclude<PrefNode, PrefGroup>;
-
-/** A leaf of a weasel pref schema, paired with the dotted node path it edits
- *  (`pose.x`, `data.fill`). Group keys are organizational and contribute
- *  nothing to the path. */
+/** A leaf of a node's property schema, paired with the dotted node path it
+ *  edits (`pose.x`, `data.fill`): its own key, whatever sections it sits under. */
 export interface FlatPref {
   path: string;
   leaf: PrefLeaf;
 }
 
-function isGroup(node: PrefNode): node is PrefGroup {
-  return 'children' in node && !('kind' in node);
-}
-
-/** An `object` leaf holds one value with its own fields — a `Stroke`, say.
- *  Its children are ordinary leaves addressed under it, and `setAtPath`
- *  clones each level, so flattening them gives the panel a row per field
- *  without ever writing into a half-built object. */
-function isObjectLeaf(node: PrefNode): node is PrefLeaf & { children: Record<string, PrefNode> } {
-  return 'kind' in node && (node as { kind: string }).kind === 'object';
-}
-
-/** An object leaf's fields, flattened under `prefix`. A group among them is
- *  organisational and contributes nothing to the path, so its own children
- *  are addressed under the object exactly as an ungrouped field is. */
-function objectFields(prefix: string, children: Record<string, PrefNode>): FlatPref[] {
-  const out: FlatPref[] = [];
-  for (const [key, child] of Object.entries(children)) {
-    if (isGroup(child)) out.push(...objectFields(prefix, child.children));
-    else out.push({ path: `${prefix}.${key}`, leaf: child as PrefLeaf });
-  }
-  return out;
-}
-
-export function flattenPrefs(group: PrefGroup): FlatPref[] {
-  const out: FlatPref[] = [];
-  for (const [key, node] of Object.entries(group.children)) {
-    if (isGroup(node)) out.push(...flattenPrefs(node));
-    else if (isObjectLeaf(node)) out.push(...objectFields(key, node.children));
-    else out.push({ path: key, leaf: node as PrefLeaf });
-  }
-  return out;
+/** Every leaf of `schema` by node path. An `object` leaf holds one value with
+ *  its own fields — a `Stroke`, say — and gives a row per field addressed
+ *  under it: `setAtPath` clones each level, so no field is ever written into
+ *  a half-built object. */
+export function flattenPrefs(schema: PrefSection): FlatPref[] {
+  return prefSectionLeaves(schema.members).flatMap(([path, leaf]): FlatPref[] =>
+    isBuiltinPref(leaf) && leaf.kind === 'object'
+      ? prefSectionLeaves((leaf as PrefObject).children).map(([key, field]) => ({ path: `${path}.${key}`, leaf: field }))
+      : [{ path, leaf }],
+  );
 }
 
 /** Translate one weasel pref leaf into the labkit control that edits it.
@@ -124,17 +98,17 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
 }
 
 /** A weasel property schema, as an instrument's `configSchema()`. */
-export function prefsToFields(group: PrefGroup): ConfigField[] {
-  return flattenPrefs(group)
+export function prefsToFields(schema: PrefSection): ConfigField[] {
+  return flattenPrefs(schema)
     .map(({ path, leaf }) => prefToField(path, leaf))
     .filter((f): f is ConfigField => f !== null);
 }
 
 /** Defaults for every field the schema produced, nested at each field's node
  *  path — labkit reads and writes a dotted key as a path, not a flat name. */
-export function prefDefaults(group: PrefGroup): Record<string, unknown> {
+export function prefDefaults(schema: PrefSection): Record<string, unknown> {
   let out: Record<string, unknown> = {};
-  for (const field of prefsToFields(group)) out = withValueAtPath(out, field.key, field.default);
+  for (const field of prefsToFields(schema)) out = withValueAtPath(out, field.key, field.default);
   return out;
 }
 

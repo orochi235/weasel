@@ -1,4 +1,5 @@
-import type { PrefGroup, PrefLeaf, PrefNumber } from './schema';
+import type { PrefGroup, PrefSection } from './groups';
+import type { PrefLeaf, PrefNumber } from './schema';
 
 /**
  * A number leaf's bounds in the unit it is displayed in.
@@ -25,9 +26,24 @@ export function prefDisplayBounds(
   return { min: flipped ? hi : lo, max: flipped ? lo : hi, step };
 }
 
-/** Distinguishes a leaf from a group while walking a schema tree. */
-export function isPrefLeaf(node: PrefLeaf | PrefGroup): node is PrefLeaf {
+/** Distinguishes a leaf from a group or a section while walking a schema tree. */
+export function isPrefLeaf(node: PrefLeaf | PrefGroup | PrefSection): node is PrefLeaf {
   return 'kind' in node;
+}
+
+/** Distinguishes a section, whose key adds nothing to a path, from a group, whose key is a segment. */
+export function isPrefSection(node: PrefLeaf | PrefGroup | PrefSection): node is PrefSection {
+  return !isPrefLeaf(node) && 'members' in node;
+}
+
+/**
+ * Every leaf under a section's `members` or an object leaf's `children`, in
+ * schema order, by its own key: the sections between contribute nothing.
+ */
+export function prefSectionLeaves(members: PrefSection['members']): [key: string, leaf: PrefLeaf][] {
+  return Object.entries(members).flatMap(([key, child]): [string, PrefLeaf][] =>
+    isPrefLeaf(child) ? [[key, child]] : prefSectionLeaves(child.members),
+  );
 }
 
 /** Get the value at a dotted path inside a nested value tree. Returns
@@ -64,7 +80,8 @@ export function visiblePrefSubtree<T extends PrefLeaf | PrefGroup>(
  *  Reserved: no top-level schema key may take its name. */
 export const VERSION_RECORD = '$version';
 
-/** Every leaf under `schema`, by dotted path, in schema order. */
+/** Every leaf under `schema`, by dotted path, in schema order. A group's key
+ *  is a segment; {@link prefSectionLeaves} is the walk for a section. */
 export function prefLeaves(schema: PrefGroup): Map<string, PrefLeaf> {
   const out = new Map<string, PrefLeaf>();
   const walk = (group: PrefGroup, prefix: string): void => {

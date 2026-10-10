@@ -2,7 +2,8 @@ import type { OwnedRecordCache } from '@weasel-js/storage';
 import { assignPrefValueAtPath, prefLeaves, VERSION_RECORD } from './helpers';
 import type { PrefPath, PrefValueAt } from './paths';
 import { type PrefValidator, repairPrefValue } from './repair';
-import type { PrefGroup, PrefLeaf } from './schema';
+import type { PrefGroup } from './groups';
+import type { PrefLeaf } from './schema';
 
 /** One leaf changing, as a store subscriber hears it: the value readers now
  *  see, and whether this store or another writer made the change. */

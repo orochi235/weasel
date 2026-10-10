@@ -7,6 +7,7 @@ import {
   type PrefKind,
   type PrefLeaf,
   type PrefNumber,
+  type PrefSection,
 } from '@weasel-js/prefs';
 import { replaceNode, nodeAt, type SchemaNode } from './schemaEdit';
 import { containsCode } from './schemaExport';
@@ -129,6 +130,10 @@ export function blankLeaf(kind: string): PrefLeaf {
 
 export function blankGroup(): PrefGroup {
   return { name: 'New group', description: '', children: {} };
+}
+
+export function blankSection(): PrefSection {
+  return { name: 'New section', description: '', members: {} };
 }
 
 const SHARED = ['name', 'description', 'hidden', 'block', 'icon', 'pair', 'short'];

@@ -1,13 +1,16 @@
 import { isPlainObject } from '@weasel-js/core';
 import {
   isPrefLeaf,
+  isPrefSection,
   type PrefGroup,
   type PrefLeaf,
   type PrefObject,
+  type PrefSection,
 } from '@weasel-js/prefs';
 import { prefFieldChoices } from '../Prefs/schema';
 
-export type SchemaNode = PrefLeaf | PrefGroup;
+/** A node of a `PrefGroup` schema. A section appears only inside an `object` leaf. */
+export type SchemaNode = PrefLeaf | PrefGroup | PrefSection;
 export type ChildMap = Record<string, SchemaNode>;
 
 /** Where moved nodes land: among `parentPath`'s children (`null` is the root), at `index` counted before the move. */
@@ -33,10 +36,25 @@ export function keyFromName(name: string): string {
   return /^\d/.test(key) ? `_${key}` : key;
 }
 
-/** The children of a group, or of an `object` leaf; `undefined` for anything that cannot hold any. */
+/** The children of a group or an `object` leaf, or a section's members; `undefined` for anything that cannot hold any. */
 export function childrenOf(node: SchemaNode): ChildMap | undefined {
+  if (isPrefSection(node)) return node.members;
   if (!isPrefLeaf(node)) return node.children;
   return node.kind === 'object' ? (node as PrefObject).children : undefined;
+}
+
+/** Which branch `parent` nests: a group holds groups, and an `object` leaf or a section holds sections. */
+export function branchUnder(parent: SchemaNode): 'group' | 'section' {
+  return isPrefLeaf(parent) || isPrefSection(parent) ? 'section' : 'group';
+}
+
+/** Whether `node` may sit directly under `parent`: any leaf, or the branch `parent` nests. */
+export function fitsUnder(parent: SchemaNode, node: SchemaNode): boolean {
+  return isPrefLeaf(node) || (isPrefSection(node) ? 'section' : 'group') === branchUnder(parent);
+}
+
+function checkFits(parent: SchemaNode | undefined, node: SchemaNode): void {
+  if (parent && childrenOf(parent) && !fitsUnder(parent, node)) throw new Error(`schemaEdit: only a ${branchUnder(parent)} nests here`);
 }
 
 export function parentPath(path: string): string | null {
@@ -71,7 +89,7 @@ export function uniqueKey(kids: ChildMap, base: string): string {
 }
 
 function withChildren(node: SchemaNode, kids: ChildMap): SchemaNode {
-  return { ...node, children: kids } as SchemaNode;
+  return (isPrefSection(node) ? { ...node, members: kids } : { ...node, children: kids }) as SchemaNode;
 }
 
 /** `root` with the children of the node at `parent` replaced by `edit` of them. */
@@ -110,6 +128,7 @@ function checkKey(kids: ChildMap, key: string): void {
 }
 
 export function addNode(root: PrefGroup, parent: string | null, key: string, node: SchemaNode, index?: number): PrefGroup {
+  checkFits(nodeAt(root, parent), node);
   return editChildren(root, parent, (kids) => {
     checkKey(kids, key);
     return insertAt(kids, [[key, node]], index ?? Object.keys(kids).length);
@@ -171,8 +190,10 @@ export function moveNodes(
     if (!node) throw new Error(`schemaEdit: no node at ${p}`);
     return { path: p, key: keyOf(p), node };
   });
-  const destKids = childrenOf(nodeAt(root, dest) ?? root);
+  const destNode = nodeAt(root, dest) ?? root;
+  const destKids = childrenOf(destNode);
   if (!destKids) throw new Error(`schemaEdit: ${dest} cannot hold children`);
+  for (const m of moving) checkFits(destNode, m.node);
   const destKeys = Object.keys(destKids);
   const shift = moving.filter((m) => parentPath(m.path) === dest && destKeys.indexOf(m.key) < target.index).length;
 

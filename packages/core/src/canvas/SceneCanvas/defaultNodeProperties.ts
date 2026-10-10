@@ -1,4 +1,4 @@
-import { prefUnit, type PrefBooleanEncoding, type PrefEnumEncoding, type PrefGroup, type PrefNumberUnit } from '@weasel-js/prefs';
+import { prefUnit, type PrefBooleanEncoding, type PrefEnumEncoding, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { listMarkers } from 'core/strokeMarkers';
@@ -87,13 +87,13 @@ const markerOptions = () => [
  *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
  *  builtin-shape data template (`{ path, fill, stroke?, text? }`,
  *  `useBuiltinShapeTools`). */
-function shapeSchema(opts: { text?: boolean } = {}): PrefGroup {
+function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
   return {
     name: 'Properties',
-    children: {
+    members: {
       layout: {
         name: 'Layout',
-        children: {
+        members: {
           'pose.x': { kind: 'number', name: 'X', description: 'Left edge, world units.', default: 0, pair: { with: 'pose.y', label: 'Position' } },
           'pose.y': { kind: 'number', name: 'Y', description: 'Top edge, world units.', default: 0 },
           'pose.width': { kind: 'number', name: 'W', description: 'Width, world units.', default: 0, min: 0, pair: { with: 'pose.height', label: 'Size' } },
@@ -107,7 +107,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefGroup {
         ? {
             content: {
               name: 'Content',
-              children: {
+              members: {
                 // `block`: the content is the section, so a 64px label column
                 // reading "Text" inside a section reading "Text" is one word
                 // twice and a narrower field for the sake of it.
@@ -121,7 +121,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefGroup {
         // `Appearance` rule over them names neither of the two paints a
         // reader is looking at.
         name: '',
-        children: {
+        members: {
           // A `paint` leaf, not a `color` one: `data.fill` is the tagged
           // `FillStyle` union, so a color control pointed at it would read
           // `undefined` off a gradient and write a bare string over it.
@@ -170,7 +170,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefGroup {
               // `Typography` heading over them names nothing a reader can't
               // already see.
               name: '',
-              children: {
+              members: {
                 // One object leaf, not a row of siblings addressing into it:
                 // `data.style` is a `TextStyle`, and its character and
                 // paragraph fields are one value that reads as two lists.
@@ -185,7 +185,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefGroup {
                   children: {
                     character: {
                       name: 'Character',
-                      children: {
+                      members: {
                         fontFamily: { kind: 'font-family', name: 'Font', description: 'Registered font family.', default: 'sans-serif' },
                         fontSize: { kind: 'number', name: 'Size', description: 'Font size, world units.', default: 16, min: 1, step: 1, pair: { with: 'data.style.fontWeight', label: 'Size / weight' } },
                         fontWeight: { kind: 'font-weight', name: 'Weight', description: 'Font weight, from the faces the family has.', default: 400 },
@@ -205,7 +205,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefGroup {
                     },
                     paragraph: {
                       name: 'Paragraph',
-                      children: {
+                      members: {
                         lineHeight: { kind: 'number', name: 'Leading', description: 'Line height as a multiple of font size.', default: 1.2, min: 0.5, step: 0.1 },
                         wrap: { kind: 'boolean', name: 'Wrap', description: 'Break lines between words at the box width.', default: false, control: 'switch' },
                         direction: { kind: 'enum', name: 'Direction', description: 'Reading direction.', default: 'ltr', control: 'toggle', options: [{ value: 'ltr', label: 'Left to right', short: ['LTR'] }, { value: 'rtl', label: 'Right to left', short: ['RTL'] }] },

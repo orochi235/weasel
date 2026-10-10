@@ -86,16 +86,12 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const kinds = nodes.map((n) => classifyKind(n, routing));
   const selectionKey = nodes.map((n) => n.id).join(',');
   const sections = effectiveSections(kinds, properties);
-  // A node path is a leaf's own key, groups contributing nothing.
-  const fields = prefFieldChoices(
-    {
-      name: '',
-      children: Object.fromEntries(
-        sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf]))),
-      ),
-    },
-    false,
-  );
+  const fields = prefFieldChoices({
+    name: '',
+    members: Object.fromEntries(
+      sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf]))),
+    ),
+  });
 
   if (nodes.length === 0) {
     return <div className={[s.root, className].filter(Boolean).join(' ')}>{emptyState}</div>;

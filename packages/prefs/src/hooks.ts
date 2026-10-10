@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import type { PrefPath, PrefValueAt } from './paths';
-import type { PrefGroup } from './schema';
+import type { PrefGroup } from './groups';
 import type { PrefsStore } from './store';
 
 /** One leaf of `store`, as React state. */

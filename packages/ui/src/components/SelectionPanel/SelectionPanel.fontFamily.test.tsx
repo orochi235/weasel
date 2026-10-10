@@ -42,10 +42,10 @@ const properties: NodePropertiesEntry[] = [
     name: 'text',
     schema: {
       name: 'Properties',
-      children: {
+      members: {
         text: {
           name: 'Text',
-          children: {
+          members: {
             'data.style': {
               kind: 'object',
               name: 'Style',

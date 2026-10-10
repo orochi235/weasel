@@ -26,8 +26,18 @@ describe('schemaEdit', () => {
   it('adds at an index, into a group or an object leaf', () => {
     const next = addNode(ROOT, 'a', 'w', { kind: 'boolean', name: 'W', description: '', default: true }, 1);
     expect(keys(next, 'a')).toEqual(['x', 'w', 'y']);
-    expect(keys(addNode(ROOT, 'z', 'k', { name: 'K', children: {} }), 'z')).toEqual(['k']);
+    expect(keys(addNode(ROOT, 'z', 'k', { name: 'K', members: {} }), 'z')).toEqual(['k']);
     expect(ROOT.children.a).not.toHaveProperty('children.w');
+  });
+
+  it('nests a section only under an object leaf or a section, and a group only under a group', () => {
+    const headed = addNode(ROOT, 'z', 'k', { name: 'K', members: {} });
+    const leaf: PrefLeaf = { kind: 'boolean', name: 'W', description: '', default: true };
+    expect(nodeAt(addNode(headed, 'z.k', 'w', leaf), 'z.k')).toEqual({ name: 'K', members: { w: leaf } });
+    expect(() => addNode(ROOT, 'z', 'k', { name: 'K', children: {} })).toThrow(/only a section nests here/);
+    expect(() => addNode(ROOT, 'a', 'k', { name: 'K', members: {} })).toThrow(/only a group nests here/);
+    expect(() => moveNodes(headed, ['b'], { parentPath: 'z.k', index: 0 })).toThrow(/only a section nests here/);
+    expect(() => moveNodes(headed, ['z.k'], { parentPath: null, index: 0 })).toThrow(/only a group nests here/);
   });
 
   it('refuses a taken key, a dotted key, and a leaf parent', () => {

@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 
 /**
  * Reading and writing a config tree by dotted path. A schema's leaves address
@@ -66,13 +66,16 @@ export function fillConfigDefaults<T>(stored: unknown, defaults: T): T {
   return out as T;
 }
 
-/** A node in a resolved schema tree, by dotted path. Structural rather than
- *  `isPrefLeaf` so this stays free of a runtime import. */
+/** A node in a resolved schema tree, by dotted path: a group's key and an
+ *  object leaf's field key are segments, a section's key is not. Structural
+ *  rather than `isPrefLeaf` so this stays free of a runtime import. */
 export function schemaNodeAtPath(group: PrefGroup, path: string): PrefLeaf | PrefGroup | undefined {
   let node: PrefLeaf | PrefGroup | undefined = group;
   for (const segment of path.split('.')) {
     if (node === undefined || !('children' in node)) return undefined;
-    node = node.children[segment];
+    const next: PrefLeaf | PrefGroup | PrefSection | undefined = node.children[segment];
+    if (next !== undefined && 'members' in next) return undefined;
+    node = next;
   }
   return node;
 }

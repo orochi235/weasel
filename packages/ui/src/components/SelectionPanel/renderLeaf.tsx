@@ -9,11 +9,12 @@
  */
 import { Fragment, type ReactNode } from 'react';
 import {
+  isPrefLeaf,
   pairRowsOf,
   type PrefBoolean,
-  type PrefGroup,
   type PrefLeaf,
   type PrefObject,
+  prefSectionLeaves,
 } from '@weasel-js/prefs';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PrefFieldChoice } from '../Prefs/schema';
@@ -397,26 +398,20 @@ function ObjectLeaf({
     typeof v === 'object' && v !== null ? (v as Record<string, unknown>) : undefined,
   );
 
-  // A value whose fields are entirely grouped is titled by those groups — its
+  // A value whose fields all sit under sections is titled by them — its
   // own heading would stack onto the first one and name nothing new.
-  const allGrouped = Object.values(pref.children).every((child) => !('kind' in child));
+  const allGrouped = Object.values(pref.children).every((child) => !isPrefLeaf(child));
 
-  // Every field's full path, groups contributing nothing, so a `pair` resolves
-  // against the paths the fields are written at.
-  const fieldPaths: [string, PrefLeaf][] = [];
-  const gather = (children: Record<string, PrefLeaf | PrefGroup>): void => {
-    for (const [key, child] of Object.entries(children)) {
-      if ('kind' in child) fieldPaths.push([`${ctx.path}.${key}`, child]);
-      else gather(child.children);
-    }
-  };
-  gather(pref.children);
-  const pairs = pairRowsOf(fieldPaths);
+  // Every field's full path, so a `pair` resolves against the paths the
+  // fields are written at.
+  const pairs = pairRowsOf(
+    prefSectionLeaves(pref.children).map(([key, leaf]) => [`${ctx.path}.${key}`, leaf] as const),
+  );
 
   // `indent` is false when nothing visible sits above these rows: depth is
   // drawn only where a label marks it.
   const rowsOf = (
-    children: Record<string, PrefLeaf | PrefGroup>,
+    children: PrefObject['children'],
     indent: boolean,
   ): ReactNode[] => {
     const out: (ReactNode | ObjectRow)[] = [];
@@ -424,7 +419,7 @@ function ObjectLeaf({
       typeof v === 'object' && v !== null && 'controls' in v;
 
     // Cells accumulate unrendered so a run of adjacent same-`pair` flags can
-    // be seen as a run before any of them draws; a group heading between two
+    // be seen as a run before any of them draws; a section heading between two
     // fields ends the run, exactly as it ends a paired row.
     let pending: LeafCell[] = [];
     const flush = (): void => {
@@ -448,12 +443,9 @@ function ObjectLeaf({
     };
 
     for (const [key, child] of Object.entries(children)) {
-      // A group among the children organises the fields under a heading
-      // without contributing to the path — the rule group keys follow at the
-      // top level.
-      if (!('kind' in child)) {
+      if (!isPrefLeaf(child)) {
         const labeled = child.name !== '';
-        const inner = rowsOf(child.children, labeled);
+        const inner = rowsOf(child.members, labeled);
         if (inner.length === 0) continue;
         flush();
         out.push(

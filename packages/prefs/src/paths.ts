@@ -1,7 +1,8 @@
 type Join<A extends string, B extends string> = A extends '' ? B : `${A}.${B}`;
 
-/** Every leaf's dotted path in a schema. A group's key is a segment; an
- *  `object` leaf is one path, its fields are not. */
+/** Every leaf's dotted path in a `PrefGroup` schema, where a group's key is a
+ *  segment; an `object` leaf is one path, its fields are not. A `PrefSection`
+ *  has no such paths: each of its leaves is addressed by its own key. */
 export type PrefPath<G, Prefix extends string = ''> =
   G extends { children: infer C }
     ? string extends keyof C

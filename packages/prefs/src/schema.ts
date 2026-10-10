@@ -1,8 +1,10 @@
-// The preferences schema: groups of typed leaves. Tools declare theirs as a
-// `PrefGroup`; apps compose them into one registry, which `PrefsForm` renders
-// and `openPrefs` stores.
+// The preferences schema's typed leaves. `groups.ts` holds the branch nodes
+// that arrange them: tools declare their options as a `PrefGroup`, and apps
+// compose those into one registry, which `PrefsForm` renders and `openPrefs`
+// stores.
 
 import { formatUnit, unitScale } from '@weasel-js/quantity';
+import type { PrefSection } from './groups';
 import type { Display, InfinityText, Unit, UnitEntry, UnitScale, UnitSystem } from '@weasel-js/quantity';
 
 /** The value types a built-in pref leaf can hold. */
@@ -262,14 +264,13 @@ export interface PrefPaint extends PrefBase<'paint', unknown> {
  *
  * `children` paths are relative to the object. They are ordinary leaves, so a
  * field that is itself a union (a stroke's `paint`) declares the kind that
- * edits that union. A child may also be a {@link PrefGroup}, which
- * organises the fields under a heading without contributing to the path —
- * the same rule group keys follow at the top level. A `TextStyle` needs it:
- * its character and paragraph fields belong to one value but read as two
- * lists.
+ * edits that union. A child may also be a {@link PrefSection}, which
+ * organizes the fields under a heading without contributing to the path. A
+ * `TextStyle` needs it: its character and paragraph fields belong to one
+ * value but read as two lists.
  */
 export interface PrefObject extends PrefBase<'object', unknown> {
-  children: Record<string, PrefLeaf | PrefGroup>;
+  children: Record<string, PrefLeaf | PrefSection>;
   /**
    * Lift a non-object value into the object form, for a consumer field that
    * may also be held as a scalar. Called before a child edit is applied;
@@ -357,15 +358,3 @@ export function isBuiltinPref(leaf: PrefLeaf): leaf is BuiltinPref {
 
 /** Built-in or app-defined leaf. */
 export type PrefLeaf = BuiltinPref | PrefCustom;
-
-/** Nestable group: branch nodes a tool can use to organize its prefs. */
-export interface PrefGroup {
-  /** Heading for the group's rows. **Empty means no heading** — for a group
-   *  that exists to organise, not to name: one whose children are themselves
-   *  groups carrying the labels a reader needs. Give it a name whenever the
-   *  name is the referent (a `Border` group over `Top` / `Right` / `Bottom`
-   *  reads as nothing without it). */
-  name: string;
-  description?: string;
-  children: Record<string, PrefLeaf | PrefGroup>;
-}

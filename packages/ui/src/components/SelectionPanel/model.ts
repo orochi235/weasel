@@ -1,10 +1,11 @@
 // Pure selection→panel derivations for SelectionPanel. Kept free of
 // React so intersection/aggregation semantics are unit-testable.
 //
-// Path convention (see core `NodePropertiesEntry`): a leaf's OWN KEY in
-// the schema is its node path — a dotted path of any depth rooted at
-// `pose` or `data` (`pose.x`, `data.fill`, `data.style.fontSize`). Group
-// keys are organizational only.
+// Path convention (see core `NodePropertiesEntry`): a node's property
+// schema is a `PrefSection`, so a leaf's OWN KEY is its node path — a dotted
+// path of any depth rooted at `pose` or `data` (`pose.x`, `data.fill`,
+// `data.style.fontSize`) — and a section's key is no part of it. A
+// preferences schema (`PrefGroup`) reads the other way and is not accepted.
 
 import {
   MIXED,
@@ -13,7 +14,7 @@ import {
   type NodeRoutingEntry,
   type SceneNode,
 } from '@weasel-js/core';
-import { type PrefGroup, type PrefLeaf, pairRowsOf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefLeaf, type PrefSection, pairRowsOf, prefSectionLeaves } from '@weasel-js/prefs';
 
 // Re-exported under its existing public name here: the kit-wide "these
 // values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
@@ -45,8 +46,8 @@ export interface PanelRow {
 }
 
 /**
- * A titled block of rows, derived from one top-level group of a properties
- * schema. `key` is that group's schema key.
+ * A titled block of rows, derived from one top-level section of a properties
+ * schema. `key` is that section's schema key.
  */
 export interface PanelSection {
   key: string;
@@ -68,30 +69,18 @@ export function classifyKind(
   return 'unknown';
 }
 
-export function isGroup(n: PrefLeaf | PrefGroup): n is PrefGroup {
-  return !('kind' in n);
-}
-
-/** Flatten a schema to sections of leaves. Nested groups fold into their
+/** Flatten a schema to sections of leaves. Nested sections fold into their
  *  top-level section; top-level leaves get an untitled leading section. */
-function flatten(schema: PrefGroup): PanelSection[] {
+function flatten(schema: PrefSection): PanelSection[] {
   const sections: PanelSection[] = [];
   const untitled: PanelLeaf[] = [];
 
-  const collect = (group: PrefGroup, into: PanelLeaf[]): void => {
-    for (const [key, child] of Object.entries(group.children)) {
-      if (isGroup(child)) collect(child, into);
-      else into.push({ path: key, leaf: child });
-    }
-  };
-
-  for (const [key, child] of Object.entries(schema.children)) {
-    if (isGroup(child)) {
-      const leaves: PanelLeaf[] = [];
-      collect(child, leaves);
-      sections.push({ key, name: child.name, rows: pairRows(leaves) });
-    } else {
+  for (const [key, child] of Object.entries(schema.members)) {
+    if (isPrefLeaf(child)) {
       untitled.push({ path: key, leaf: child });
+    } else {
+      const leaves = prefSectionLeaves(child.members).map(([path, leaf]) => ({ path, leaf }));
+      sections.push({ key, name: child.name, rows: pairRows(leaves) });
     }
   }
   if (untitled.length > 0) {
@@ -133,7 +122,7 @@ export function effectiveSections(
   const byName = new Map(entries.map((e) => [e.name, e]));
   const schemas = uniq.map((k) => byName.get(k)?.schema);
   if (schemas.some((s) => s === undefined)) return [];
-  const [first, ...rest] = schemas as PrefGroup[];
+  const [first, ...rest] = schemas as PrefSection[];
 
   const flatFirst = flatten(first);
   if (rest.length === 0) return flatFirst;

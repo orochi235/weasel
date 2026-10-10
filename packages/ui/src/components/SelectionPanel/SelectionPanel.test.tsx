@@ -10,7 +10,7 @@ import {
   type NodeRoutingEntry,
   type SelectionApi,
 } from '@weasel-js/core';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefSection } from '@weasel-js/prefs';
 import { SelectionPanel } from './SelectionPanel';
 
 interface Data { kind: string; fill?: string; label?: string }
@@ -27,10 +27,10 @@ const properties: NodePropertiesEntry[] = [
     name: 'rect',
     schema: {
       name: 'Properties',
-      children: {
+      members: {
         layout: {
           name: 'Layout',
-          children: {
+          members: {
             'pose.x': { kind: 'number', name: 'X', description: 'x', default: 0, pair: { with: 'pose.y', label: 'Position' } },
             'pose.y': { kind: 'number', name: 'Y', description: 'y', default: 0 },
             'pose.rotation': { kind: 'number', name: 'Rotation', description: 'r', default: 0, unit: rotationDegreesUnit },
@@ -38,7 +38,7 @@ const properties: NodePropertiesEntry[] = [
         },
         appearance: {
           name: 'Appearance',
-          children: {
+          members: {
             'data.fill': { kind: 'color', name: 'Fill', description: 'f', default: '#000000ff', alpha: true },
             'data.label': { kind: 'string', name: 'Label', description: 'l', default: '' },
           },
@@ -214,18 +214,18 @@ describe('SelectionPanel', () => {
   // back as 6.283 (2π), the max.
   it('converts a unit leaf\'s bounds into the unit it displays', () => {
     const scene = makeScene();
-    const layout = properties[0]!.schema.children.layout as PrefGroup;
+    const layout = properties[0]!.schema.members.layout as PrefSection;
     const bounded: NodePropertiesEntry[] = [
       {
         ...properties[0]!,
         schema: {
           ...properties[0]!.schema,
-          children: {
-            ...properties[0]!.schema.children,
+          members: {
+            ...properties[0]!.schema.members,
             layout: {
               ...layout,
-              children: {
-                ...layout.children,
+              members: {
+                ...layout.members,
                 'pose.rotation': {
                   kind: 'number',
                   name: 'Rotation',
@@ -318,7 +318,7 @@ describe('SelectionPanel', () => {
         name: 'rect',
         schema: {
           name: 'Properties',
-          children: {
+          members: {
             'data.special': { kind: 'sparkle', name: 'Special', description: 's', default: null },
           },
         },
@@ -344,17 +344,17 @@ describe('SelectionPanel', () => {
         name: 'rect',
         schema: {
           name: 'Properties',
-          children: {
+          members: {
             layout: {
               name: 'Layout',
-              children: {
+              members: {
                 'pose.x': { kind: 'number', name: 'X', description: 'x', default: 0, pair: { with: 'pose.y', label: 'Position' } },
                 'pose.y': { kind: 'number', name: 'Y', description: 'y', default: 0 },
               },
             },
             appearance: {
               name: 'Appearance',
-              children: {
+              members: {
                 'data.fill': { kind: 'color', name: 'Fill', description: 'f', default: '#000000ff', alpha: true },
               },
             },
@@ -398,10 +398,10 @@ describe('SelectionPanel — paint leaf', () => {
       name: 'text',
       schema: {
         name: 'Properties',
-        children: {
+        members: {
           appearance: {
             name: 'Appearance',
-            children: {
+            members: {
               'data.style.fill': {
                 kind: 'paint',
                 name: 'Color',
@@ -555,10 +555,10 @@ describe('SelectionPanel — object leaf', () => {
       name: 'path',
       schema: {
         name: 'Properties',
-        children: {
+        members: {
           appearance: {
             name: 'Appearance',
-            children: {
+            members: {
               'data.stroke': {
                 kind: 'object',
                 name: 'Stroke',
@@ -647,10 +647,10 @@ describe('SelectionPanel — object leaf', () => {
         name: 'path',
         schema: {
           name: 'Properties',
-          children: {
+          members: {
             appearance: {
               name: 'Appearance',
-              children: {
+              members: {
                 'data.stroke': {
                   kind: 'object',
                   name: 'Stroke',
@@ -739,10 +739,10 @@ describe('SelectionPanel — object leaf', () => {
         name: 'path',
         schema: {
           name: 'Properties',
-          children: {
+          members: {
             appearance: {
               name: 'Appearance',
-              children: {
+              members: {
                 'data.stroke': {
                   kind: 'object',
                   name: 'Stroke',
@@ -900,10 +900,10 @@ describe('SelectionPanel — object leaf', () => {
       name: 'path',
       schema: {
         name: 'Properties',
-        children: {
+        members: {
           appearance: {
             name: 'Appearance',
-            children: {
+            members: {
               'data.stroke': {
                 kind: 'object',
                 name: 'Stroke',
@@ -977,10 +977,10 @@ describe('SelectionPanel — object leaf', () => {
         name: 'path',
         schema: {
           name: 'Properties',
-          children: {
+          members: {
             appearance: {
               name: 'Appearance',
-              children: {
+              members: {
                 'data.stroke': {
                   kind: 'object',
                   name: 'Stroke',
@@ -990,7 +990,7 @@ describe('SelectionPanel — object leaf', () => {
                   children: {
                     geometry: {
                       name: 'Geometry',
-                      children: {
+                      members: {
                         width: { kind: 'number', name: 'Width', description: '', default: 1 },
                       },
                     },
@@ -1063,10 +1063,10 @@ describe('SelectionPanel — valueAt', () => {
       name: 'span',
       schema: {
         name: 'Properties',
-        children: {
+        members: {
           group: {
             name: 'Group',
-            children: {
+            members: {
               'data.a': { kind: 'string', name: 'A', description: '', default: '' },
               'data.b': { kind: 'string', name: 'B', description: '', default: '' },
             },
@@ -1180,10 +1180,10 @@ describe('SelectionPanel — boolean controls', () => {
       name: 'text',
       schema: {
         name: 'Properties',
-        children: {
+        members: {
           appearance: {
             name: 'Appearance',
-            children: {
+            members: {
               'data.visible': { kind: 'boolean', name: 'Visible', description: 'v', default: false },
               'data.bold': {
                 kind: 'boolean', name: 'Bold', description: 'b', default: false,
@@ -1317,10 +1317,10 @@ describe('SelectionPanel — flags inside an object leaf', () => {
       name: 'text',
       schema: {
         name: 'Properties',
-        children: {
+        members: {
           typography: {
             name: '',
-            children: {
+            members: {
               'data.style': {
                 kind: 'object', name: 'Style', description: 'st', default: {}, block: true,
                 children: {

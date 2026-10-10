@@ -24,10 +24,10 @@ const entries: NodePropertiesEntry[] = [
     name: 'rect',
     schema: {
       name: 'Properties',
-      children: {
+      members: {
         layout: {
           name: 'Layout',
-          children: {
+          members: {
             'pose.x': num('X', { with: 'pose.y', label: 'Position' }),
             'pose.y': num('Y'),
             'pose.width': num('W', { with: 'pose.height', label: 'Size' }),
@@ -35,7 +35,7 @@ const entries: NodePropertiesEntry[] = [
         },
         appearance: {
           name: 'Appearance',
-          children: {
+          members: {
             'data.fill': { kind: 'color', name: 'Fill', description: 'f', default: '#000' },
             'data.corner': num('Corner radius'),
           },
@@ -47,14 +47,14 @@ const entries: NodePropertiesEntry[] = [
     name: 'text',
     schema: {
       name: 'Properties',
-      children: {
+      members: {
         layout: {
           name: 'Layout',
-          children: { 'pose.x': num('X', { with: 'pose.y', label: 'Position' }), 'pose.y': num('Y') },
+          members: { 'pose.x': num('X', { with: 'pose.y', label: 'Position' }), 'pose.y': num('Y') },
         },
         appearance: {
           name: 'Appearance',
-          children: {
+          members: {
             'data.fill': { kind: 'color', name: 'Fill', description: 'f', default: '#000' },
             // deliberately different leaf kind at a shared path:
             'data.corner': { kind: 'string', name: 'Corner', description: 'c', default: '' },

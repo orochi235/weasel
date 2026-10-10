@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { prefFieldProps } from './prefField';
 import { PrefsForm } from './PrefsForm';
@@ -15,7 +15,7 @@ const SCHEMA: PrefGroup = {
       fov: { kind: 'number', name: 'Field of view', description: '', default: 50 },
     } },
     stroke: { kind: 'object', name: 'Stroke', description: '', default: {}, children: {
-      shape: { name: 'Shape', children: {
+      shape: { name: 'Shape', members: {
         width: { kind: 'number', name: 'Width', description: '', default: 1 },
       } },
     } },
@@ -30,8 +30,13 @@ describe('prefFieldChoices', () => {
     ]);
   });
 
-  it('leaves group keys out of the path for a surface that does', () => {
-    expect(prefFieldChoices(SCHEMA, false).map((f) => f.path)).toEqual([
+  it('reads a section\'s leaves by their own keys, section keys left out', () => {
+    const { camera, stroke, follows } = SCHEMA.children;
+    const section: PrefSection = {
+      name: '',
+      members: { camera: { name: 'Camera', members: (camera as PrefGroup).children as PrefSection['members'] }, stroke: stroke as PrefLeaf, follows: follows as PrefLeaf },
+    };
+    expect(prefFieldChoices(section).map((f) => f.path)).toEqual([
       'type', 'fov', 'stroke', 'stroke.width', 'follows',
     ]);
   });
