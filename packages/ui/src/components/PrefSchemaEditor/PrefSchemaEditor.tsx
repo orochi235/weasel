@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react';
 import { createHistory, historyKey, useLatest, type Op } from '@weasel-js/core';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import { Button } from '../Button';
 import { CloseButton } from '../CloseButton';
 import { prefDropTargetAt, type PrefDrop, type PrefRenderer } from '../Prefs';
 import type { PropertyRenderer } from '../SelectionPanel';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
+import { EditorBar } from './EditorBar';
 import { dropDraft, openDraft, saveDraft, SWAP, type SwapArgs } from './draft';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
@@ -26,7 +26,6 @@ const COALESCE_MS = 800;
 
 /** How long a drag rests on a rail entry before the preview opens that page. */
 const RAIL_OPEN_MS = 500;
-const DRAFT_TIME = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 
 /** What the editor says of a draft that did not open on the source it was saved against. */
 const DRAFT_NOTICE = {
@@ -76,6 +75,8 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
   /** Somewhere to send the changes: given, the Changes pane draws a Submit button that hands over the changes
    *  since `original` and the schema's literal. A promise it returns sets the button to "Sent" or "Failed". */
   onSubmit?: SubmitChanges;
+  /** The host's own controls, set first in the bar across the editor's top. */
+  bar?: ReactNode;
   className?: string;
 }
 
@@ -90,7 +91,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, onSubmit, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, onSubmit, bar, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
@@ -100,6 +101,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const [expanded, setExpanded] = useState(() => new Set(branchPaths(schema)));
   const [structureWidth, setStructureWidth] = useState(300);
   const [attributesWidth, setAttributesWidth] = useState(320);
+  const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
 
   const latest = useLatest({ schema, onChange, selected });
   const emitted = useRef(schema);
@@ -239,20 +241,11 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
         remove();
       }
     }}>
+      <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={history.canUndo()} canRedo={history.canRedo()} onStep={step}
+        draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select(null); }} />
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
-        expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onRemove={remove} tools={
-          <>
-            <Button size="sm" variant="ghost" disabled={!history.canUndo()} onClick={() => step('undo')}>Undo</Button>
-            <Button size="sm" variant="ghost" disabled={!history.canRedo()} onClick={() => step('redo')}>Redo</Button>
-            {draftSavedAt !== null && (
-              <>
-                <Button size="sm" variant="ghost" onClick={() => { commit(base); select(null); }}>Discard draft</Button>
-                {/* Last: the time changes, and nothing sits after it to be pushed about. */}
-                <span className={s.draftNote}>Draft saved {DRAFT_TIME.format(draftSavedAt)}</span>
-              </>
-            )}
-          </>
-        } />
+        expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onRemove={remove}
+        toolSlot={toolSlot} />
       <ResizeHandle value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">

@@ -143,6 +143,22 @@ describe('PrefSchemaEditor', () => {
     expect(within(preview()).getByText('Dock')).toBeInTheDocument();
   });
 
+  it('narrows the tree to the rows a filter matches, under the branches that hold them', () => {
+    render(<Live />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'dock' } });
+    expect(within(structure()).getByRole('treeitem', { name: /\(dock\)/ })).toBeInTheDocument();
+    expect(within(structure()).getByRole('treeitem', { name: /\(panels\)/ })).toBeInTheDocument();
+    expect(within(structure()).queryByRole('treeitem', { name: /\(view\)/ })).toBeNull();
+  });
+
+  it('sets the host\'s controls, the palette, and the add and remove buttons in one bar above the panes', () => {
+    render(<PrefSchemaEditor schema={START} onChange={() => {}} bar={<button type="button">Source</button>} />);
+    const bar = screen.getByRole('group', { name: 'Schema tools' });
+    for (const name of ['Source', 'Page', 'Add pref', 'Add group', 'Remove', 'Undo', 'Redo'])
+      expect(within(bar).getByRole('button', { name })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Structure' })).queryByRole('button', { name: 'Add pref' })).toBeNull();
+  });
+
   it('undoes and redoes an edit, from its buttons and from the keyboard', () => {
     render(<Live />);
     fireEvent.click(row('grid'));
