@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/core';
-import { type ReactNode, useEffect, useMemo, useRef } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { asNodeId, createNode, Store, stripStrategy } from 'windease';
 import { type ChromeMap, Container, Provider, StrategyRegistryProvider } from 'windease/react';
 
@@ -10,8 +10,10 @@ const STRATEGIES = { strip: stripStrategy as never };
 
 /** Props for `<Split>`. */
 export interface SplitProps {
-  /** The sidebar pane's contents. */
-  sidebar: ReactNode;
+  /** The sidebar pane's contents, or `null` for none: the content then fills
+   *  the strip with no pane or seam beside it, and stays mounted when a sidebar
+   *  arrives or leaves. */
+  sidebar: ReactNode | null;
   /** The edge the sidebar sits on. Read once, when the strip mounts. Default `'start'`. */
   side?: 'start' | 'end';
   /** The content pane's contents. */
@@ -46,6 +48,7 @@ export interface SplitProps {
 interface SplitInit {
   side: 'start' | 'end';
   label: string;
+  hasSidebar: boolean;
   sidebarWidth: number;
   minWidth: number;
   maxWidth: number;
@@ -56,6 +59,7 @@ interface SplitInit {
 function createSplitStore({
   side,
   label,
+  hasSidebar,
   sidebarWidth,
   minWidth,
   maxWidth,
@@ -73,6 +77,8 @@ function createSplitStore({
         config: {
           axis: 'x',
           resizable: true,
+          // Without it a content pane on its own sits at its minimum width.
+          fill: true,
           ...(side === 'end' ? { resizeMode: 'neighbor' } : {}),
         },
       },
@@ -98,6 +104,9 @@ function createSplitStore({
     store.registerNode(node);
   }
   store.showNode(SIDEBAR_ID);
+  // Shown then hidden, never left unshown: windease lays out a node that was
+  // never shown, so the strip would keep its room and draw the seam.
+  if (!hasSidebar) store.hideNode(SIDEBAR_ID);
   store.showNode(CONTENT_ID);
   return store;
 }
@@ -128,11 +137,13 @@ export function Split({
 }: SplitProps) {
   // The cross-axis half of every size hint below is inert: a horizontal strip
   // stretches its panes to the container's height and never reads `h`.
+  const hasSidebar = sidebar !== null;
   const storeRef = useRef<Store | null>(null);
   if (storeRef.current === null) {
     storeRef.current = createSplitStore({
       side,
       label,
+      hasSidebar,
       sidebarWidth: width ?? defaultWidth,
       minWidth,
       maxWidth,
@@ -144,6 +155,12 @@ export function Split({
   // What the store last held, so the placement event can tell a drag from the
   // echo of our own write and a controlled `width` does not fight the seam.
   const widthRef = useRef(width ?? defaultWidth);
+
+  useLayoutEffect(() => {
+    const shown = store.getNode(SIDEBAR_ID)?.lifecycle.state === 'visible';
+    if (hasSidebar && !shown) store.showNode(SIDEBAR_ID);
+    else if (!hasSidebar && shown) store.hideNode(SIDEBAR_ID);
+  }, [store, hasSidebar]);
 
   useEffect(() => {
     store.setHints(SIDEBAR_ID, {

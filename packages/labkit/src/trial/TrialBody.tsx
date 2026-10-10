@@ -16,21 +16,15 @@ export interface TrialBodyProps
 
 /** A trial's sidebar and content as a `Split`, wearing the trial's classes. */
 export function TrialBody({ sidebar, children, contentClassName, ...rest }: TrialBodyProps) {
-  const content = contentClassName ? `lk-trial__content ${contentClassName}` : 'lk-trial__content';
-  if (sidebar === null) {
-    return (
-      <div className="lk-trial__panes">
-        <div className={content}>{children}</div>
-      </div>
-    );
-  }
   return (
     <Split
       {...rest}
       sidebar={sidebar}
       className="lk-trial__panes"
       sidebarClassName="lk-trial__sidebar"
-      contentClassName={content}
+      contentClassName={
+        contentClassName ? `lk-trial__content ${contentClassName}` : 'lk-trial__content'
+      }
     >
       {children}
     </Split>

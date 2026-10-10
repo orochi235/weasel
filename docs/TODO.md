@@ -895,12 +895,11 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) Five isolated-frame tests fail on `main`.** `shell/storyInstrument.test.tsx`
-  (no `init` reaches the frame in three cases, and "follows the frame's answers in the
-  settings panel" fails) and `shell/useStoryRegistry.test.tsx` ("keeps its iframe when the
-  ready brings the viewport the index already read" gets a new iframe). They fail as of
-  `7b6978f38` (2026-10-09), so they predate that day's labkit and ui work; a full fleet run
-  on `main` shows them as the only failures outside the files that day changed.
+- **(P3) A forge plugin test times out waiting for a file watcher under load.**
+  `vite/plugin.test.ts`, "titles a native story by its meta when forge's meta reaches it
+  through a helper module, and re-decides when the helper changes", polls 5s for the index
+  to follow a rewritten helper file. It timed out once in a full fleet run on teitou
+  (2026-10-09) and passed in a labkit-and-forge-only run of the same tree minutes earlier.
 
 - **(P3) The served page is titled "weaselforge" until the shell config loads.**
   `ShellConfig.title` sets `document.title` at runtime, but the HTML the plugin
@@ -961,6 +960,14 @@ only story runner in the repo.
   the workspace refusing tiles below the split's floor and reflowing them.
   At the same 140px the forge Globals group's label/value columns overlap
   ("MODE" over "Lab").
+
+- **(P3) windease lays out a node that was registered and never shown.** A
+  strip gives a `mounted` node its room and a seam, while `Container` renders
+  only `visible` ones, so the pane is an empty gap with a live separator
+  (`layout-node-adapter.js` skips `hidden` and `destroyed` only; windease
+  2.0.0). `Split` works around it by showing its sidebar node and hiding it
+  again (`createSplitStore`). The fix belongs in windease; the workaround goes
+  when it lands.
 
 ---
 

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { type ReactNode, useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Split } from './Split';
 
@@ -129,5 +130,35 @@ describe('Split', () => {
       </Split>,
     );
     expect(screen.getByRole('separator')).toHaveAccessibleName(/outline/i);
+  });
+
+  it('renders the content alone, with no sidebar pane or seam, when the sidebar is null', () => {
+    const { container } = renderBody({ sidebar: null, sidebarClassName: 'lk-x__side' });
+    expect(screen.getByText('instrument output')).toBeInTheDocument();
+    expect(container.querySelector('.lk-x__side')).toBeNull();
+    expect(screen.queryByRole('separator')).toBeNull();
+    const pane = container.querySelector('[data-node="lk-split-content"]') as HTMLElement;
+    expect(pane.style.width).toBe(`${VIEWPORT.w}px`);
+  });
+
+  it('keeps the content mounted when a sidebar arrives and when it leaves', async () => {
+    const mounts = vi.fn();
+    function Output() {
+      useEffect(() => mounts(), []);
+      return <p>instrument output</p>;
+    }
+    const body = (sidebar: ReactNode) => (
+      <Split viewport={VIEWPORT} sidebar={sidebar}>
+        <Output />
+      </Split>
+    );
+    const { rerender } = render(body(null));
+    await act(async () => rerender(body(<p>sidebar body</p>)));
+    expect(screen.getByText('sidebar body')).toBeInTheDocument();
+    expect(screen.getByRole('separator')).toBeInTheDocument();
+    await act(async () => rerender(body(null)));
+    expect(screen.queryByText('sidebar body')).toBeNull();
+    expect(screen.queryByRole('separator')).toBeNull();
+    expect(mounts).toHaveBeenCalledTimes(1);
   });
 });
