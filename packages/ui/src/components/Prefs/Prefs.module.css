@@ -298,12 +298,16 @@
   outline-offset: -2px;
 }
 
-.railSub {
-  padding-left: var(--wzl-space-7);
+/* The entries nested under one, a step in from it. */
+.railNest {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: calc(var(--wzl-space-7) - var(--wzl-space-3));
 }
 
-/* A foldable rail: each depth-0 entry follows its fold mark, or a blank as wide where it has
-   nothing to fold, so every name starts at one edge. */
+/* A foldable rail: each entry follows its fold mark, or a blank as wide where it has
+   nothing to fold, so every name at one depth starts at one edge. */
 .railRow {
   display: flex;
   align-items: center;
@@ -316,10 +320,6 @@
 
 .railFold {
   flex: 0 0 var(--wzl-control-h-sm);
-}
-
-.railFoldable .railSub {
-  margin-left: var(--wzl-control-h-sm);
 }
 
 .railSub:not(.railOpen, .railInView) .railName {

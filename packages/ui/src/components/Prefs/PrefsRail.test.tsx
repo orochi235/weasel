@@ -44,6 +44,15 @@ describe('prefRailItems', () => {
     ]);
   });
 
+  it('lists every level when asked, each entry followed by its own', () => {
+    expect(prefRailItems(SCHEMA, true).map((i) => [i.path, i.depth, i.section])).toEqual([
+      ['canvas', 0, 'canvas'],
+      ['canvas.snapping', 1, 'canvas'],
+      ['canvas.snapping.wrap', 2, 'canvas'],
+      ['io', 0, 'io'],
+    ]);
+  });
+
   it('names each entry after its group and counts the leaves beneath it', () => {
     const items = prefRailItems(SCHEMA);
     expect(items[0]).toMatchObject({ name: 'Canvas', matches: 3 });
@@ -156,9 +165,41 @@ describe('PrefsForm rail layout with subPages', () => {
     expect(onSectionChange).toHaveBeenCalledWith('canvas.snapping');
     expect(screen.getByRole('button', { name: /Snapping/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('checkbox', { name: 'Enabled' })).toBeInTheDocument();
-    // Deeper groups still render inside the subentry's page.
-    expect(screen.getByRole('region', { name: 'Wrapping' })).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Show grid' })).not.toBeInTheDocument();
+  });
+
+  it('gives a group nested deeper an entry and a page of its own', async () => {
+    const user = userEvent.setup();
+    const onSectionChange = vi.fn();
+    renderRail({ onSectionChange, defaultSection: 'canvas.snapping' });
+    expect(screen.queryByRole('checkbox', { name: 'Wrap at edge' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Wrapping/ }));
+    expect(onSectionChange).toHaveBeenCalledWith('canvas.snapping.wrap');
+    expect(screen.getByRole('button', { name: /Wrapping/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('checkbox', { name: 'Wrap at edge' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Enabled' })).not.toBeInTheDocument();
+  });
+
+  it('keeps a panel on its group\'s page, with no entry of its own', () => {
+    const boxed: PrefGroup = {
+      name: 'Preferences',
+      children: {
+        view: {
+          name: 'View',
+          children: {
+            zoom: { kind: 'number', name: 'Zoom', description: 'Scale.', default: 1 },
+            grid: {
+              name: 'Grid',
+              as: 'panel',
+              children: { size: { kind: 'number', name: 'Size', description: 'Cell size.', default: 8 } },
+            },
+          },
+        },
+      },
+    };
+    render(<PrefsForm schema={boxed} onChange={() => {}} layout="rail" subPages />);
+    expect(screen.queryByRole('button', { name: /Grid/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'Size' })).toBeInTheDocument();
   });
 
   it('opens the first subentry when a top-level entry has no leaves of its own', () => {
@@ -178,6 +219,31 @@ describe('PrefsForm rail layout with subPages', () => {
     };
     render(<PrefsForm schema={bare} onChange={() => {}} layout="rail" subPages section="view" />);
     expect(screen.getByRole('button', { name: /Cards/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
+  });
+
+  it('keeps opening the first entry down until one has something of its own', () => {
+    const hollow: PrefGroup = {
+      name: 'Preferences',
+      children: {
+        view: {
+          name: 'View',
+          children: {
+            cards: {
+              name: 'Cards',
+              children: {
+                size: {
+                  name: 'Size',
+                  children: { cap: { kind: 'number', name: 'Cap', description: 'Tallest card.', default: 3 } },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    render(<PrefsForm schema={hollow} onChange={() => {}} layout="rail" subPages />);
+    expect(screen.getByRole('button', { name: /Size/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
   });
 });
@@ -203,6 +269,20 @@ describe('PrefsForm rail layout, foldable', () => {
     expect(snapping()).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /^Import/ }));
     expect(snapping()).not.toBeInTheDocument();
+  });
+
+  it('folds a nested entry\'s own entries until a page under it is open', async () => {
+    const user = userEvent.setup();
+    renderRail({ subPages: true });
+    const entry = (path: string) => document.querySelector<HTMLButtonElement>(`[data-pref-rail="${path}"]`);
+    await user.click(canvasEntry());
+    expect(entry('canvas.snapping')).toBeInTheDocument();
+    expect(entry('canvas.snapping.wrap')).not.toBeInTheDocument();
+    await user.click(entry('canvas.snapping')!);
+    await user.click(entry('canvas.snapping.wrap')!);
+    expect(entry('canvas.snapping.wrap')).toHaveAttribute('aria-current', 'page');
+    await user.click(entry('io')!);
+    expect(entry('canvas.snapping')).not.toBeInTheDocument();
   });
 
   it('folds by its mark without opening the group', async () => {

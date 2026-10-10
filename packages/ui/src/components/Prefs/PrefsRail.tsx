@@ -1,20 +1,20 @@
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { Fragment, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
 import { isDropPath } from './drop';
-import type { PrefRailItem } from './schema';
+import { prefRailParent, type PrefRailItem } from './schema';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsRail}. */
 export interface PrefsRailProps {
   items: readonly PrefRailItem[];
-  /** Path of the open group: depth 0, or depth 1 under `subPages`. */
+  /** Path of the open group: depth 0, or any depth under `subPages`. */
   section: string;
   /** Path of the depth-1 group in view, from the pane's scroll spy. */
   current: string | null;
   /** A depth-0 entry was chosen: open its pane. */
   onOpen: (path: string) => void;
-  /** A depth-1 entry was chosen: scroll the open pane to it, or, under
+  /** A nested entry was chosen: scroll the open pane to it, or, under
    *  `subPages`, open it. */
   onScrollTo: (path: string) => void;
   /** Accessible name for the rail's landmark. */
@@ -24,8 +24,8 @@ export interface PrefsRailProps {
   /** Show each entry's match count. Only meaningful while filtering. */
   showCounts?: boolean;
   /**
-   * Each depth-0 entry with nested ones folds them away behind a fold mark,
-   * shut until its group is the one open. Right and Left on the entry unfold
+   * Each entry with nested ones folds them away behind a fold mark, shut
+   * until the open group is it or one under it. Right and Left on the entry unfold
    * and fold it. Everything is unfolded while filtering, so every match shows.
    */
   foldable?: boolean;
@@ -36,7 +36,8 @@ export interface PrefsRailProps {
 
 /**
  * The rail beside a `PrefsForm` pane: depth-0 groups, each followed by the
- * depth-1 groups that scroll within it.
+ * groups nested in it, which scroll within its pane or, under `subPages`,
+ * open panes of their own and nest further.
  *
  * A list of buttons rather than a tablist, because only half of these entries
  * switch anything — the nested ones scroll the pane the selected entry already
@@ -47,24 +48,27 @@ export interface PrefsRailProps {
 export function PrefsRail(props: PrefsRailProps) {
   const { items, section, current, onOpen, onScrollTo, ariaLabel, header, showCounts, dropInto } = props;
   const foldable = props.foldable === true;
-  const selected = items.find((i) => i.path === section)?.section ?? null;
-  // Folds the reader set by hand, by section; any other group is unfolded only while it is selected.
+  const holds = (path: string): boolean => section === path || (path !== '' && section.startsWith(`${path}.`));
+  // Folds the reader set by hand, by entry; any other entry is unfolded only while the open group is it or under it.
   const [folds, setFolds] = useState<ReadonlyMap<string, boolean>>(new Map());
-  const [lastSelected, setLastSelected] = useState(selected);
-  if (selected !== lastSelected) {
-    setLastSelected(selected);
-    if (selected !== null && folds.has(selected)) setFolds(without(folds, selected));
+  const [lastSection, setLastSection] = useState(section);
+  if (section !== lastSection) {
+    setLastSection(section);
+    const kept = new Map([...folds].filter(([path]) => !holds(path)));
+    if (kept.size !== folds.size) setFolds(kept);
   }
   const unfolded = (path: string): boolean =>
-    !foldable || showCounts === true || (folds.get(path) ?? path === selected);
+    !foldable || showCounts === true || (folds.get(path) ?? holds(path));
   const fold = (path: string, open: boolean): void => setFolds(new Map(folds).set(path, open));
 
-  const nests = new Set(items.filter((i) => i.depth === 1).map((i) => i.section));
-  const shown = items.filter((i) => i.depth === 0 || unfolded(i.section));
+  const parentOf = (item: PrefRailItem): string | null => (item.depth === 0 ? null : prefRailParent(item.path));
+  const nests = new Set(items.map(parentOf));
+  const shown = items.filter((item) => {
+    for (let at = parentOf(item); at !== null; at = prefRailParent(at)) if (!unfolded(at)) return false;
+    return true;
+  });
 
-  const activate = (index: number): void => {
-    const item = shown[index];
-    if (!item) return;
+  const activate = (item: PrefRailItem): void => {
     if (item.depth === 0) onOpen(item.path);
     else onScrollTo(item.path);
   };
@@ -83,39 +87,34 @@ export function PrefsRail(props: PrefsRailProps) {
     roving.onKeyDown(e);
   };
 
-  return (
-    <nav className={s.rail} aria-label={ariaLabel} data-pref-scroll="">
-      {header}
-      <div
-        className={foldable ? `${s.railList} ${s.railFoldable}` : s.railList}
-        ref={roving.rootRef}
-        onKeyDown={onKeyDown}
-      >
-        {shown.map((item, index) => {
-          const open = item.path === section;
-          const inView = item.depth === 1 && item.path === current;
-          const nested = foldable && item.depth === 0 && nests.has(item.path);
-          const entry = (
-            <button
-              key={item.path === '' ? '\u0000root' : item.path}
-              type="button"
-              className={[s.railItem, item.depth === 1 && s.railSub, open && s.railOpen, inView && s.railInView]
-                .filter(Boolean)
-                .join(' ')}
-              aria-current={open ? 'page' : inView ? 'location' : undefined}
-              data-rail-fold={nested ? item.path : undefined}
-              data-pref-rail={isDropPath(item.path) ? undefined : item.path}
-              data-drop-placeholder={isDropPath(item.path) ? '' : undefined}
-              data-drop={dropInto === item.path ? 'into' : undefined}
-              onClick={() => activate(index)}
-            >
-              <span className={s.railName}>{item.name}</span>
-              {showCounts ? <span className={s.railCount}>{item.matches}</span> : null}
-            </button>
-          );
-          if (!foldable || item.depth === 1) return entry;
-          return (
-            <div key={`row:${item.path}`} className={s.railRow}>
+  /** The entries under `parent`, each followed by its own. */
+  const entries = (parent: string | null): ReactNode[] =>
+    shown.filter((item) => parentOf(item) === parent).map((item) => {
+      const key = item.path === '' ? '\u0000root' : item.path;
+      const open = item.path === section;
+      const inView = item.depth > 0 && item.path === current;
+      const nested = nests.has(item.path);
+      const entry = (
+        <button
+          type="button"
+          className={[s.railItem, item.depth > 0 && s.railSub, open && s.railOpen, inView && s.railInView]
+            .filter(Boolean)
+            .join(' ')}
+          aria-current={open ? 'page' : inView ? 'location' : undefined}
+          data-rail-fold={foldable && nested ? item.path : undefined}
+          data-pref-rail={isDropPath(item.path) ? undefined : item.path}
+          data-drop-placeholder={isDropPath(item.path) ? '' : undefined}
+          data-drop={dropInto === item.path ? 'into' : undefined}
+          onClick={() => activate(item)}
+        >
+          <span className={s.railName}>{item.name}</span>
+          {showCounts ? <span className={s.railCount}>{item.matches}</span> : null}
+        </button>
+      );
+      return (
+        <Fragment key={key}>
+          {foldable ? (
+            <div className={s.railRow}>
               {nested ? (
                 <Disclosure
                   open={unfolded(item.path)}
@@ -129,15 +128,18 @@ export function PrefsRail(props: PrefsRailProps) {
               )}
               {entry}
             </div>
-          );
-        })}
+          ) : entry}
+          {nested && unfolded(item.path) && <div className={s.railNest}>{entries(item.path)}</div>}
+        </Fragment>
+      );
+    });
+
+  return (
+    <nav className={s.rail} aria-label={ariaLabel} data-pref-scroll="">
+      {header}
+      <div className={s.railList} ref={roving.rootRef} onKeyDown={onKeyDown}>
+        {entries(null)}
       </div>
     </nav>
   );
-}
-
-function without<K, V>(map: ReadonlyMap<K, V>, key: K): Map<K, V> {
-  const next = new Map(map);
-  next.delete(key);
-  return next;
 }

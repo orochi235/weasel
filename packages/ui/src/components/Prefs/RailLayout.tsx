@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { isPrefLeaf, prefGroupIsPage, type PrefGroup } from '@weasel-js/prefs';
+import { isPrefLeaf, prefGroupIsPage, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { useScrollSpy } from '../../useScrollSpy';
 import { dropDrawnPath, withDrop } from './drop';
@@ -9,7 +9,7 @@ import type { PrefsFormProps } from './PrefsForm';
 import { PrefsPane } from './PrefsPane';
 import { PrefsRail } from './PrefsRail';
 import type { WalkCtx } from './PrefsRow';
-import { looseEntryName, prefRailItems } from './schema';
+import { looseEntryName, prefGroupNests, prefRailItems, prefRailParent } from './schema';
 import type { SelectionRoot } from './selection';
 import s from './Prefs.module.css';
 
@@ -28,11 +28,11 @@ export function RailLayout(props: PrefsFormProps & {
   onClearFilter: () => void;
 }) {
   const { schema, root, query, selection, filterField, onClearFilter, className } = props;
-  const items = useMemo(() => (root === null ? [] : prefRailItems(root)), [root]);
+  const subPages = props.subPages === true;
+  const items = useMemo(() => (root === null ? [] : prefRailItems(root, subPages)), [root, subPages]);
   const [uncontrolled, setUncontrolled] = useState(
     () => props.defaultSection ?? '',
   );
-  const subPages = props.subPages === true;
   const [railWidth, setRailWidth] = useState<number | null>(null);
   const requested = props.section ?? uncontrolled;
   // A filter can take the open group out of the rail entirely, and a section
@@ -41,8 +41,12 @@ export function RailLayout(props: PrefsFormProps & {
   let open = items.some((i) => i.path === requested && (i.depth === 0 || subPages))
     ? requested
     : (items.find((i) => i.depth === 0)?.path ?? '');
-  if (subPages && root !== null && !hasLeaves(paneGroup(root, open, schema.name))) {
-    open = items.find((i) => i.depth === 1 && i.section === open)?.path ?? open;
+  // A page with nothing of its own opens the first entry under it.
+  while (subPages && root !== null && open !== '' && !hasOwn(paneGroup(root, open, schema.name))) {
+    const under = open;
+    const first = items.find((i) => i.depth > 0 && prefRailParent(i.path) === under);
+    if (first === undefined) break;
+    open = first.path;
   }
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -81,13 +85,15 @@ export function RailLayout(props: PrefsFormProps & {
   // The form as the drop would leave it. `open` and `items` above are the form's own, which the drop leaves alone.
   const drop = useDropFrame(selection.ref, props.drop, root, open);
   const drawn = useMemo(() => (root !== null && drop ? withDrop(root, drop) : root), [root, drop]);
-  const drawnItems = useMemo(() => (drawn === root || drawn === null ? items : prefRailItems(drawn)), [drawn, root, items]);
+  const drawnItems = useMemo(
+    () => (drawn === root || drawn === null ? items : prefRailItems(drawn, subPages)),
+    [drawn, root, items, subPages],
+  );
   const ctx: WalkCtx = { ...props.ctx, drop };
   // A page being dragged stays the open one, drawn where it would land.
   const page = dropDrawnPath(drop, open);
   const whole = drawn === null ? null : paneGroup(drawn, page, schema.name);
-  const opensTop = items.some((i) => i.path === open && i.depth === 0);
-  const group = subPages && opensTop && whole !== null ? leavesOf(whole) : whole;
+  const group = subPages && page !== '' && whole !== null ? ownOf(whole) : whole;
 
   return (
     <div className={[s.railLayout, className].filter(Boolean).join(' ')} data-across={props.rowsAcross === 2 ? 2 : undefined} {...formAttrs(drop)}
@@ -143,17 +149,14 @@ function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup |
   return node ?? null;
 }
 
-/** Whether a group holds any leaf directly, not counting its subgroups. */
-function hasLeaves(group: PrefGroup | null): boolean {
-  return group !== null && Object.values(group.children).some(isPrefLeaf);
+const isOwn = (child: PrefLeaf | PrefGroup): boolean => isPrefLeaf(child) || !prefGroupNests(child);
+
+/** Whether a group has anything a page of its own would draw: a leaf, or a group the rail gives no entry. */
+function hasOwn(group: PrefGroup | null): boolean {
+  return group !== null && Object.values(group.children).some(isOwn);
 }
 
-/** A group cut down to its direct leaves, for a page its subgroups each get their own of. */
-function leavesOf(group: PrefGroup): PrefGroup {
-  return {
-    ...group,
-    children: Object.fromEntries(
-      Object.entries(group.children).filter(([, child]) => isPrefLeaf(child)),
-    ),
-  };
+/** A group cut down to what its own page draws, the groups nested in it each having a page of their own. */
+function ownOf(group: PrefGroup): PrefGroup {
+  return { ...group, children: Object.fromEntries(Object.entries(group.children).filter(([, child]) => isOwn(child))) };
 }

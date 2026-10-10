@@ -62,16 +62,16 @@ export interface PrefsFormProps {
   defaultSection?: string;
   onSectionChange?: (path: string) => void;
   /**
-   * Rail layout: a nested entry opens a page of its own group instead of
-   * scrolling the open one to it, and a top-level entry's page holds only its
-   * own leaves (or opens its first nested entry when it has none). For a
-   * top-level group whose subgroups are long enough that one page of all of
-   * them reads as a wall. Default false.
+   * Rail layout: every nested group gets an entry, at any depth, and opens a
+   * page of its own instead of scrolling the open one to it. A page holds its
+   * group's own leaves, tabs, and panels, and a group with none of those opens
+   * its first nested entry. For a group whose subgroups are long enough that
+   * one page of all of them reads as a wall. Default false.
    */
   subPages?: boolean;
   /**
-   * Rail layout: each top-level entry folds its nested entries away, shut
-   * until its group is the one open. Default false.
+   * Rail layout: each entry folds its nested entries away, shut until the
+   * open group is it or one under it. Default false.
    */
   foldable?: boolean;
   /** Dotted paths whose leaves currently inherit: each still draws its control,
