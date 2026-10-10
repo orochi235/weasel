@@ -840,11 +840,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P2) One path rule for pref schemas.** `PrefsForm`, the prefs store and labkit's config
-  resolver treat a group's key as a path segment (`view.gridDensity`); `SelectionPanel`'s model
-  treats it as a heading only, and `PrefObject`'s doc comment states that rule as general. Same
-  schema type, two answers to "what is this leaf's path". Decide which is right for which surface
-  and make the type say so.
+- **(P3) `PrefSchemaEditor` cannot open a node property schema.** It addresses nodes by dotted
+  path and previews through `PrefsForm`, so it takes a `PrefGroup` only; a `PrefSection`'s leaf
+  keys hold dots (`pose.x`), and `nodeAt(root, 'layout.pose.x')` answers `undefined`. WeaselDraw's
+  schema page dropped its `Node: <kind>` sources for that reason. Wants a path scheme that survives
+  dotted keys and a preview that reads a section. Beside it: the editor's button and dialog still
+  say "Add group" when the target is an object leaf, where what it adds is a section.
 
 - **(P3) Two callers still treat an unread record cache as final.** A cache whose first read
   failed now reads again and recovers, but labkit's lab store opts out (`retryMs: false` in
