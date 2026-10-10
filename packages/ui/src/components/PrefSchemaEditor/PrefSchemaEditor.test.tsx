@@ -250,6 +250,40 @@ describe('PrefSchemaEditor', () => {
       expect(screen.getByText(/− view\/snap/)).toBeInTheDocument();
     });
 
+    it('still steps back and forward through a previous editor’s edits', () => {
+      const first = render(<Kept />);
+      fireEvent.click(row('snap'));
+      fireEvent.keyDown(structure(), { key: 'Delete' });
+      fireEvent.click(row('grid'));
+      fireEvent.keyDown(structure(), { key: 'Delete' });
+      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+      first.unmount();
+      render(<Kept />);
+      expect(row('grid')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+      expect(within(structure()).queryByText('(grid)')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+      expect(row('snap')).toBeInTheDocument();
+      expect(row('grid')).toBeInTheDocument();
+      // Back on the baseline itself, not a copy of it: nothing is left to keep.
+      expect(screen.getByText('No changes.')).toBeInTheDocument();
+      expect(localStorage.getItem('test-draft')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+    });
+
+    it('opens a draft whose steps do not read, without them', () => {
+      const first = render(<Kept />);
+      fireEvent.click(row('snap'));
+      fireEvent.keyDown(structure(), { key: 'Delete' });
+      first.unmount();
+      const draft = JSON.parse(localStorage.getItem('test-draft')!);
+      localStorage.setItem('test-draft', JSON.stringify({ ...draft, steps: { schemas: [], current: 4, stacks: {} } }));
+      render(<Kept />);
+      expect(within(structure()).queryByText('(snap)')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+    });
+
     it('goes back to the baseline on Discard draft, and keeps nothing for the next editor', () => {
       const first = render(<Kept />);
       fireEvent.click(row('snap'));
