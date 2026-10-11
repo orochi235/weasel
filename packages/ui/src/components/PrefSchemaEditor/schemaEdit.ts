@@ -1,6 +1,7 @@
 import {
   isPrefLeaf,
   isPrefSection,
+  type PrefAlias,
   type PrefGroup,
   type PrefLeaf,
   type PrefSection,
@@ -224,6 +225,11 @@ export function removeNode<R extends SchemaRoot>(root: R, path: string): R {
 }
 
 export function renameKey<R extends SchemaRoot>(root: R, path: string, next: string): R {
+  const renamed = rekeyed(root, path, next);
+  return renamed === root ? root : rebaseAliases(renamed, [[valuePathOf(root, path), valuePathOf(root, joinPath(parentPath(path), next))]]);
+}
+
+function rekeyed<R extends SchemaRoot>(root: R, path: string, next: string): R {
   const key = keyOf(path);
   if (next === key) return root;
   checkLoose(root, path);
@@ -305,7 +311,79 @@ export function moveNodes<R extends SchemaRoot>(
   const from = moving.map((m) => m.path);
   const settled = Object.keys(childrenOf(nodeAt(next, dest) ?? next) ?? {});
   if (out.every((p, i) => p === from[i]) && settled.every((k, i) => k === destKeys[i])) return { root, from, paths: from };
-  return { root: next, from, paths: out };
+  return { root: rebaseAliases(next, from.map((f, i) => [valuePathOf(root, f), valuePathOf(root, out[i]!)])), from, paths: out };
+}
+
+/** The path a leaf's value is read and written at, which is what an alias names: every key under a group root, the leaf's own under a section root. */
+export function valuePathOf(root: SchemaRoot, path: string): string {
+  return isPrefSection(root) ? keyOf(path) : keysOf(path).join('.');
+}
+
+/** `root` with `fn` applied to every leaf, the same object where none changed. */
+function mapLeaves<R extends SchemaRoot>(root: R, fn: (leaf: PrefLeaf) => PrefLeaf): R {
+  const go = (node: SchemaNode): SchemaNode => {
+    const self = isPrefLeaf(node) ? fn(node) : node;
+    const kids = childrenOf(node);
+    if (!kids) return self;
+    let changed = false;
+    const mapped: ChildMap = {};
+    for (const [key, kid] of Object.entries(kids)) {
+      mapped[key] = go(kid);
+      if (mapped[key] !== kid) changed = true;
+    }
+    return changed ? withChildren(self, mapped) : self;
+  };
+  return go(root) as R;
+}
+
+/** `root` with every alias of a value path in `moves`, or of one under it, pointed at where that went. */
+function rebaseAliases<R extends SchemaRoot>(root: R, moves: ReadonlyArray<readonly [from: string, to: string]>): R {
+  const live = moves.filter(([from, to]) => from !== to);
+  if (live.length === 0) return root;
+  return mapLeaves(root, (leaf) => {
+    if (leaf.kind !== 'alias') return leaf;
+    const { of } = leaf as PrefAlias;
+    for (const [from, to] of live) {
+      if (of === from) return { ...leaf, of: to } as PrefLeaf;
+      if (of.startsWith(`${from}.`)) return { ...leaf, of: to + of.slice(from.length) } as PrefLeaf;
+    }
+    return leaf;
+  });
+}
+
+/** An alias of the leaf at `path`: unnamed, so it reads as the leaf it shows. */
+export function aliasOf(root: SchemaRoot, path: string): PrefAlias {
+  return { kind: 'alias', name: '', description: '', default: undefined, of: valuePathOf(root, path) };
+}
+
+/**
+ * `root` with an alias of each leaf at `paths` set at `target`, the leaves left where they are. An alias takes
+ * its leaf's key where the target's children have none like it, and a numbered one where they do.
+ */
+export function aliasNodes<R extends SchemaRoot>(root: R, paths: readonly string[], target: SchemaTarget): { root: R; paths: string[] } {
+  const dest = target.parentPath;
+  const destNode = nodeAt(root, dest) ?? root;
+  if (!childrenOf(destNode)) throw new Error(`schemaEdit: ${dest} cannot hold children`);
+  const made = paths.map((p) => {
+    const node = nodeAt(root, p);
+    if (!node || !isPrefLeaf(node)) throw new Error(`schemaEdit: no leaf at ${p} to alias`);
+    const alias = aliasOf(root, p);
+    checkFits(destNode, alias);
+    return { key: keyOf(p), alias };
+  });
+  const out: string[] = [];
+  const next = editChildren(root, dest, (kids) => {
+    const taken: ChildMap = { ...kids };
+    const entries: Array<[string, SchemaNode]> = made.map((m) => {
+      // Under a section root a key is the value's path, and the alias holds no value to put at the leaf's.
+      const key = uniqueKey(taken, isPrefSection(root) ? `${m.key.replaceAll('.', '_')}Alias` : m.key);
+      taken[key] = m.alias;
+      out.push(joinPath(dest, key));
+      return [key, m.alias];
+    });
+    return insertAt(kids, entries, target.index);
+  });
+  return { root: next, paths: out };
 }
 
 /**

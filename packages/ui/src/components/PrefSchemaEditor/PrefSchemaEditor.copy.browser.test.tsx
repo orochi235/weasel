@@ -25,11 +25,11 @@ function Live() {
 const frame = () => new Promise((r) => requestAnimationFrame(r));
 const row = (key: string) => within(screen.getByRole('tree', { name: 'Schema structure' })).getByText(`(${key})`).closest('[role="treeitem"]')!.firstElementChild as HTMLElement;
 
-async function drag(from: HTMLElement, to: HTMLElement, altKey: boolean) {
+async function drag(from: HTMLElement, to: HTMLElement, altKey: boolean, metaKey = false) {
   const a = from.getBoundingClientRect();
   const b = to.getBoundingClientRect();
   const [x0, y0, x1, y1] = [a.left + 40, a.top + a.height / 2, b.left + 40, b.top + b.height / 2];
-  const at = (x: number, y: number) => ({ bubbles: true, pointerId: 1, button: 0, buttons: 1, clientX: x, clientY: y, isPrimary: true, altKey });
+  const at = (x: number, y: number) => ({ bubbles: true, pointerId: 1, button: 0, buttons: 1, clientX: x, clientY: y, isPrimary: true, altKey, metaKey });
   from.dispatchEvent(new PointerEvent('pointerdown', at(x0, y0)));
   for (let i = 1; i <= 8; i++) {
     document.dispatchEvent(new PointerEvent('pointermove', at(x0 + ((x1 - x0) * i) / 8, y0 + ((y1 - y0) * i) / 8)));
@@ -46,6 +46,20 @@ test('a row dragged onto another group with Alt held is copied there, and stays 
   expect(Object.keys((latest.children.view as PrefGroup).children)).toEqual(['grid']);
   expect(Object.keys((latest.children.panels as PrefGroup).children).sort()).toEqual(['dock', 'grid']);
   expect((latest.children.panels as PrefGroup).children.grid).toBe((START.children.view as PrefGroup).children.grid);
+});
+
+test('with Alt and Cmd held the drag sets an alias there, and the preview draws the one setting twice', async () => {
+  render(<Live />);
+  await drag(row('grid'), row('panels'), true, true);
+  expect(Object.keys((latest.children.view as PrefGroup).children)).toEqual(['grid']);
+  expect((latest.children.panels as PrefGroup).children.grid).toEqual({ kind: 'alias', name: '', description: '', default: undefined, of: 'view.grid' });
+  expect(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('alias')).toBeInTheDocument();
+});
+
+test('a group cannot be aliased: the drag lands nothing', async () => {
+  render(<Live />);
+  await drag(row('view'), row('dock'), true, true);
+  expect(latest).toBe(START);
 });
 
 test('the same drag without Alt moves it', async () => {

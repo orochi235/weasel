@@ -1,8 +1,9 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { isInControlWithin, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
+import { isPrefLeaf, prefHoldsValue } from '@weasel-js/prefs';
 import { swallowNextClick } from '../../useReorderDragList';
 import { GHOST_WIDTH, ghostIsPage } from './NodeGhost';
-import { nodeAt, parentPath, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { aliasOf, nodeAt, parentPath, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import type { DropOutside } from './StructurePane';
 
 export interface PreviewGhost {
@@ -17,14 +18,15 @@ export interface PreviewGhost {
 /**
  * Dragging what the live preview draws: a press on a row's label, on a group's heading, or on a group's entry in the
  * rail picks that node up, and it drops wherever `place` takes it — the preview itself. A press on a row's control is
- * the control's. With Alt held the node stays and a copy of it drops.
+ * the control's. With Alt held the node stays and a copy of it drops; with Alt and Cmd or Ctrl, an alias of a leaf.
  */
-export function usePreviewDrag({ stage, schema, place, onMove, onCopy }: {
+export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias }: {
   stage: RefObject<HTMLDivElement | null>;
   schema(): SchemaRoot;
   place: DropOutside;
   onMove(paths: readonly string[], target: SchemaTarget): void;
   onCopy(paths: readonly string[], target: SchemaTarget): void;
+  onAlias(paths: readonly string[], target: SchemaTarget): void;
 }): { ghost: PreviewGhost | null; onPointerDown(e: ReactPointerEvent): void } {
   const [ghost, setGhost] = useState<PreviewGhost | null>(null);
   const drag = useRef<ThresholdDragHandle | null>(null);
@@ -51,10 +53,14 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy }: {
       place.end();
       setGhost(null);
     };
-    // A copy is new where it lands, so the place is asked about it with no path of its own.
-    const held = (ev: PointerEvent): string[] => (ev.altKey ? [] : [path]);
+    const aliasable = isPrefLeaf(node) && (prefHoldsValue(node) || node.kind === 'alias');
+    const effectOf = (ev: PointerEvent): 'move' | 'copy' | 'link' =>
+      !ev.altKey ? 'move' : (ev.metaKey || ev.ctrlKey) && aliasable ? 'link' : 'copy';
+    // A copy or an alias is new where it lands, so the place is asked about it with no path of its own.
+    const held = (ev: PointerEvent): string[] => (effectOf(ev) === 'move' ? [path] : []);
+    const landing = (ev: PointerEvent): SchemaNode => (effectOf(ev) === 'link' ? aliasOf(schema(), path) : node);
     const update = (ev: PointerEvent) => {
-      place.over([node], held(ev), { x: ev.clientX, y: ev.clientY });
+      place.over([landing(ev)], held(ev), { x: ev.clientX, y: ev.clientY });
       // Offset from the pointer so what is under it stays visible.
       setGhost({ left: ev.clientX + 10, top: ev.clientY + 10, width: GHOST_WIDTH[ghostIsPage(node, topLevel) ? 'page' : 'node'], node, topLevel });
     };
@@ -63,11 +69,11 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy }: {
       onActivate: update,
       onMove: update,
       onCommit: (ev) => {
-        const to = place.target([node], held(ev), { x: ev.clientX, y: ev.clientY });
+        const to = place.target([landing(ev)], held(ev), { x: ev.clientX, y: ev.clientY });
         // The release would otherwise click the label it began on, and toggle its control.
         swallowNextClick(box);
         end();
-        if (to) (ev.altKey ? onCopy : onMove)([path], to);
+        if (to) ({ move: onMove, copy: onCopy, link: onAlias })[effectOf(ev)]([path], to);
       },
       onClick: () => {
         end();

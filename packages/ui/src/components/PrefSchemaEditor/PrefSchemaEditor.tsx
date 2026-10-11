@@ -14,7 +14,7 @@ import { GENERAL } from './generalBranch';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
-import { branchPaths, copyNodes, isFixed, keysOf, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { aliasNodes, branchPaths, copyNodes, isFixed, keysOf, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { baselinePaths, changedPaths, diffSchemas } from './schemaExport';
 import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
 import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
@@ -261,7 +261,12 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     commit(copied.root);
     reveal(copied.paths[0] ?? null);
   };
-  const previewDrag = usePreviewDrag({ stage, schema: () => latest.current.schema, place: outside, onMove: moveTo, onCopy: copyTo });
+  const aliasTo = (paths: readonly string[], target: SchemaTarget) => {
+    const made = aliasNodes(latest.current.schema, paths, target);
+    commit(made.root);
+    reveal(made.paths[0] ?? null);
+  };
+  const previewDrag = usePreviewDrag({ stage, schema: () => latest.current.schema, place: outside, onMove: moveTo, onCopy: copyTo, onAlias: aliasTo });
   // One value dragged through a control is one step back.
   const setDefaultsFrom = (edits: readonly DefaultEdit[]) =>
     commit(setDefaults(latest.current.schema, edits), `default:${edits.map(([path]) => path.join('.')).join(',')}`);
@@ -296,7 +301,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={history.canUndo()} canRedo={history.canRedo()} onStep={step}
         draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select(null); }} />
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
-        expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onRemove={remove}
+        expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
         toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} />
       <ResizeHandle className={s.structureHandle} value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
       <div className={s.middle}>

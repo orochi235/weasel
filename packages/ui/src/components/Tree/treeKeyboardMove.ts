@@ -2,7 +2,7 @@ import type { KeyboardEvent } from 'react';
 import type { TreeDropTarget } from '../../dropTarget';
 import type { TreeNode } from './Tree';
 import { draggedIdsFor, isNoopMove, keyboardTarget, landsInside, parentsOf, type KeyboardMove } from './treeMoves';
-import type { TreeDragHow } from './useTreeDrag';
+import type { TreeDragEffect } from './useTreeDrag';
 
 const MOVE_KEYS: Record<string, KeyboardMove | undefined> = {
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'out', ArrowRight: 'in',
@@ -13,7 +13,7 @@ interface MoveKeyCtx {
   selected: ReadonlySet<string>;
   expanded: ReadonlySet<string>;
   setExpanded(next: Set<string>): void;
-  canDrop?(ids: readonly string[], target: TreeDropTarget, how: TreeDragHow): boolean;
+  canDrop?(ids: readonly string[], target: TreeDropTarget, effect: TreeDragEffect): boolean;
   onMove(ids: string[], target: TreeDropTarget): void;
   /** Called with the moved node's id once a move is issued, so focus can follow it. */
   focusAfterMove(id: string): void;
@@ -30,7 +30,7 @@ export function handleMoveKey(e: KeyboardEvent<HTMLElement>, nodeId: string, ctx
   const carried = draggedIdsFor(nodes, ctx.selected, nodeId);
   const ids = carried.every((x) => parents.get(x) === parents.get(nodeId)) ? carried : [nodeId];
   const target = keyboardTarget(nodes, ids, dir);
-  if (!target || landsInside(nodes, ids, target) || isNoopMove(nodes, ids, target) || (canDrop && !canDrop(ids, target, { copy: false }))) {
+  if (!target || landsInside(nodes, ids, target) || isNoopMove(nodes, ids, target) || (canDrop && !canDrop(ids, target, 'move'))) {
     return true;
   }
   if (dir === 'in' && target.parentId !== null && !ctx.expanded.has(target.parentId)) {

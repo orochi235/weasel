@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { createPortal } from 'react-dom';
-import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
+import { isPrefLeaf, isPrefSection, prefHoldsValue, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
-import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
+import { filterTree, Tree, treeBranchIds, type TreeDragEffect, type TreeNode } from '../Tree';
 import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { ToolButton } from '../ToolButton';
@@ -18,7 +18,7 @@ import { UnplacedTree } from './UnplacedTree';
 import { stillUnplaced } from './unplaced';
 import { blankGroup, blankLeaf, blankSection } from './kindSchemas';
 import {
-  addNode, branchUnder, childrenOf, fitsUnder, holdsFixed, isFixed, joinPath, keyOf, keysOf, nodeAt, parentPath, pathOf,
+  addNode, aliasOf, branchUnder, childrenOf, fitsUnder, holdsFixed, isFixed, joinPath, keyOf, keysOf, nodeAt, parentPath, pathOf,
   uniqueKey, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
@@ -77,6 +77,8 @@ export interface StructurePaneProps {
   onMove(paths: readonly string[], target: SchemaTarget): void;
   /** Set copies of the nodes at `paths` at `target`, leaving the nodes where they are. */
   onCopy(paths: readonly string[], target: SchemaTarget): void;
+  /** Set an alias of each leaf at `paths` at `target`. */
+  onAlias(paths: readonly string[], target: SchemaTarget): void;
 }
 
 /** A place outside the structure pane that takes drops of schema nodes. */
@@ -93,7 +95,7 @@ export interface DropOutside {
 const ancestorsOf = (path: string): string[] =>
   keysOf(path).slice(0, -1).map((_, i, keys) => pathOf(keys.slice(0, i + 1))!);
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, unplaced, outside, outsideDraws = false, onMove: move, onCopy: copy, onRemove, maxDepth, rowMark }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, unplaced, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark }: StructurePaneProps) {
   const nodes = useMemo(() => {
     const all = toTreeNodes(schema, null, changed, rowMark);
     const loose = new Set(generalKeys(schema));
@@ -152,6 +154,12 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
   };
 
   const nodesAt = (ids: readonly string[]): SchemaNode[] => ids.map((id) => nodeAt(schema, id)!);
+  // Only a leaf that holds a value has one to show a second time.
+  const canLand = (ids: readonly string[], effect: TreeDragEffect): boolean =>
+    effect !== 'link' || nodesAt(ids).every((node) => isPrefLeaf(node) && (prefHoldsValue(node) || node.kind === 'alias'));
+  /** What a drag would set down: the nodes themselves, or aliases of them. */
+  const landing = (ids: readonly string[], effect: TreeDragEffect): SchemaNode[] =>
+    effect === 'link' ? ids.map((id) => aliasOf(schema, id)) : nodesAt(ids);
 
   // A drag from the palette: over the tree it lands where the tree marks, and elsewhere wherever `outside` takes it.
   const [paletteDrag, setPaletteDrag] = useState<PaletteDrag | null>(null);
@@ -210,20 +218,21 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         }}
         externalDrag={paletteDrag}
         onExternalTarget={(t) => { treeTarget.current = t; }}
-        // A copy is new where it lands, so the place it is dropped is asked about it with no paths, as for a palette's node.
-        onDragOutside={outside && ((ids, point, how) => {
-          if (point) return outside.over(nodesAt(ids), how.copy ? [] : ids, point);
+        // A copy or an alias is new where it lands, so the place it is dropped is asked about it with no paths, as for a palette's node.
+        onDragOutside={outside && ((ids, point, effect) => {
+          if (point) return canLand(ids, effect) && outside.over(landing(ids, effect), effect === 'move' ? ids : [], point);
           outside.end();
           return false;
         })}
-        onDropOutside={outside && ((ids, point, how) => {
-          const target = outside.target(nodesAt(ids), how.copy ? [] : ids, point);
-          if (target) (how.copy ? copy : move)(ids, target);
+        onDropOutside={outside && ((ids, point, effect) => {
+          const target = outside.target(landing(ids, effect), effect === 'move' ? ids : [], point);
+          if (target) ({ move, copy, link: alias })[effect](ids, target);
         })}
-        canDrop={(ids, t) => {
+        canDrop={(ids, t, effect) => {
           // A place among the rows shown is not that place among all of them.
           if (sought !== '') return false;
           if (ids.length === 0) return paletteDrag !== null && treeTakesNew(schema, paletteDrag.node, t.parentId, maxDepth);
+          if (effect === 'link') return canLand(ids, effect) && landing(ids, effect).every((node) => treeTakesNew(schema, node, t.parentId, maxDepth));
           if ([...ids].some((id) => isFixed(schema, id))) return false;
           if (!withinDepth(t.parentId === GENERAL ? null : t.parentId, nodesAt([...ids]), maxDepth)) return false;
           const general = generalAllows(schema, [...ids], t.parentId);
@@ -233,6 +242,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         }}
         onMove={(ids, t) => move(ids, schemaTarget(schema, t.parentId, t.index))}
         onCopy={(ids, t) => copy(ids, schemaTarget(schema, t.parentId, t.index))}
+        onLink={(ids, t) => alias(ids, schemaTarget(schema, t.parentId, t.index))}
       />
       </div>
       {unplaced !== undefined && (

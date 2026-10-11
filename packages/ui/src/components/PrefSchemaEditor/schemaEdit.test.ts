@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { addNode, branchPaths, copyNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
+import { addNode, aliasNodes, branchPaths, copyNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
 
 const enc = { read: () => true, write: (on: boolean) => on };
 const ROOT: PrefGroup = {
@@ -144,6 +144,48 @@ describe('copyNodes', () => {
     const { root, paths } = copyNodes(ROOT, ['a', 'a/x'], { parentPath: null, index: 0 });
     expect(paths).toEqual(['a2']);
     expect(nodeAt(root, 'a2/x')).toBe(nodeAt(ROOT, 'a/x'));
+  });
+});
+
+describe('aliases', () => {
+  const aliased = aliasNodes(ROOT, ['a/y'], { parentPath: 'b', index: 0 });
+
+  it('sets an unnamed alias of a leaf at the target, by the path its value lives at', () => {
+    expect(aliased.paths).toEqual(['b/y']);
+    expect(nodeAt(aliased.root, 'b/y')).toEqual({ kind: 'alias', name: '', description: '', default: undefined, of: 'a.y' });
+    expect(nodeAt(aliased.root, 'a/y')).toBe(nodeAt(ROOT, 'a/y'));
+  });
+
+  it('refuses to alias a group', () => {
+    expect(() => aliasNodes(ROOT, ['a'], { parentPath: 'b', index: 0 })).toThrow(/no leaf at a to alias/);
+  });
+
+  it('keeps an alias pointed at a leaf that moves', () => {
+    const { root } = moveNodes(aliased.root, ['a/y'], { parentPath: null, index: 0 });
+    expect(nodeAt(root, 'b/y')).toMatchObject({ of: 'y' });
+  });
+
+  it('keeps an alias pointed at a leaf whose group moves or is renamed', () => {
+    const moved = moveNodes(aliased.root, ['a'], { parentPath: 'b', index: 0 }).root;
+    expect(nodeAt(moved, 'b/y')).toMatchObject({ of: 'b.a.y' });
+    expect(nodeAt(renameKey(aliased.root, 'a', 'view'), 'b/y')).toMatchObject({ of: 'view.y' });
+  });
+
+  it('keeps an alias pointed at a leaf that is renamed, and leaves the other aliases alone', () => {
+    const both = aliasNodes(aliased.root, ['a/x'], { parentPath: null, index: 0 }).root;
+    const renamed = renameKey(both, 'a/y', 'why');
+    expect(nodeAt(renamed, 'b/y')).toMatchObject({ of: 'a.why' });
+    expect(nodeAt(renamed, 'x')).toBe(nodeAt(both, 'x'));
+  });
+
+  it('names a section root\'s leaf by its own key', () => {
+    const node: PrefSection = { name: 'Node', members: {
+      layout: { name: 'Layout', members: { 'pose.x': { kind: 'number', name: 'X', description: '', default: 0 } } },
+      other: { name: 'Other', members: {} },
+    } };
+    const { root, paths } = aliasNodes(node, ['layout/pose.x'], { parentPath: 'other', index: 0 });
+    expect(paths).toEqual(['other/pose_xAlias']);
+    expect(nodeAt(root, paths[0]!)).toMatchObject({ kind: 'alias', of: 'pose.x' });
   });
 });
 
