@@ -782,6 +782,14 @@ Core five + Crop shipped. Remaining:
   2026-10-11: draw shows a toast. Draw mounts no toast region today, so this needs one and a look at
   it in a browser.
 
+- **(P3) Duplicate and Alt-drag clone: a copy that derives from nodes outside the copy still follows
+  the originals.** `copySelection` (`interactions/actions/defaults/copySubtree.ts`) re-points a
+  copied node's `dependsOn` id list at the copies only when every node in it was copied too. With
+  one or more left out, the copy keeps the original list, so duplicating an edge alone gives a
+  second edge drawn exactly over the first. A paste drops such a node instead (ruled 2026-10-11);
+  the call for a copy made inside the same scene, where the originals are still there to follow, is
+  whether it does the same, keeps the list, or re-points the ids it can.
+
 - **(P2) Container-pose cascade: a batch that poses a container and its descendants does not undo.**
   Through `sceneToAdapter(scene, { cascadeContainerPose: true })` (what `<SceneCanvas>` uses without
   a composing strategy), `adapter.applyOps([move(A), move(B), move(C)], 'Move')` with B inside A and
