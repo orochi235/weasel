@@ -1,3 +1,6 @@
+import type { AnimationSeed } from './engine/context';
+import type { AnimationHandle } from './types';
+
 /**
  * Supervisor: an internal capability exposed by `useAnimator` to composite
  * primitives (loop / stagger) so they can sit in the animator's id table
@@ -39,6 +42,54 @@ export interface SupervisorOptions {
 }
 
 export type SupervisorFactory = (opts: SupervisorOptions) => Supervisor;
+
+/** What {@link supervisors} needs of the animator. */
+export interface SupervisorHost {
+  nextId(): number;
+  register(seed: AnimationSeed): AnimationHandle;
+  /** Takes an entry off the table as finished. */
+  finish(id: number): void;
+  /** Runs `cb` once this frame's ticks are done. */
+  afterTicks(cb: () => void): void;
+}
+
+/** Makes the animator's supervisor factory: each is a registered animation whose tick never
+ *  finishes, so loop and stagger sit in the id table and answer `cancel`, `cancelKey` and
+ *  `isActive`. */
+export function supervisors(host: SupervisorHost): SupervisorFactory {
+  return ({ kind, cancelKey, label }) => {
+    const id = host.nextId();
+    let onCancelCb: (() => void) | undefined;
+    let onRateCb: ((paused: boolean, timeScale: number) => void) | undefined;
+    let onFrameCb: ((virtualNow: number) => void) | undefined;
+    const base = host.register({
+      id,
+      kind,
+      cancelKey,
+      label,
+      tick: (virtualNow) => {
+        if (onFrameCb) host.afterTicks(() => onFrameCb?.(virtualNow));
+        return false;
+      },
+      onCancel: () => onCancelCb?.(),
+      onRate: (paused, timeScale) => onRateCb?.(paused, timeScale),
+    });
+    return {
+      id: base.id,
+      cancel: base.cancel,
+      pause: base.pause,
+      resume: base.resume,
+      setTimeScale: base.setTimeScale,
+      timeScale: base.timeScale,
+      isPaused: base.isPaused,
+      setOnCancel: (cb) => { onCancelCb = cb; },
+      setOnRate: (cb) => { onRateCb = cb; },
+      setOnFrame: (cb) => { onFrameCb = cb; },
+      finish: () => host.finish(id),
+      cancelKey,
+    };
+  };
+}
 
 /**
  * Subscribe to "this animation id finished or was cancelled and is no longer

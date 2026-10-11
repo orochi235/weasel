@@ -18,6 +18,8 @@ export interface ActiveAnimation {
   /** Its `end` is reported, though the entry stays on the table until the
    *  frame's ticks are done. */
   ended?: boolean;
+  /** It changes nothing from one frame to the next, so the frame loop need not run for it. */
+  idle?: boolean;
   paused: boolean;
   timeScale: number;
   virtualNow: number;
@@ -52,6 +54,11 @@ export interface AnimationContext {
   has(id: number): boolean;
   /** Reports `id` as finished, ahead of its `onDone`. */
   reportEnd(id: number): void;
+  /** Takes `id` off the table as finished, for one that ends outside its own tick. */
+  finish(id: number): void;
+  /** Says a voice on `target` reads something that changed outside the frame's own reading. It
+   *  is read again once the frame's ticks are done; with `now`, or between frames, at once. */
+  touch(target: TargetState, now?: boolean): void;
   /** True once the host has unmounted; logs the first time. */
   tripwire(): boolean;
   /** Retires whoever holds `key` as interrupted by `by`, ahead of `by`'s own registration. */
