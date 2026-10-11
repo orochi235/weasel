@@ -15,6 +15,7 @@ import {
 } from '@weasel-js/core';
 import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { SelectionPanel, type SelectionPanelProps } from './SelectionPanel';
+import s from './SelectionPanel.stories.module.css';
 
 interface Data {
   path?: unknown;
@@ -187,4 +188,33 @@ export const Sections: Story = {
       />
     </div>
   ),
+};
+
+const CONDITIONED: PrefSection = {
+  name: 'Card',
+  members: {
+    'data.locked': { kind: 'boolean', name: 'Locked', description: 'Disables the rows below.', default: false } as PrefLeaf,
+    'data.title': { ...field('Title', 'string'), enableIf: { path: 'data.locked', is: false } },
+    'data.rounded': { kind: 'boolean', name: 'Rounded', description: 'Shows the radius.', default: false, enableIf: { path: 'data.locked', is: false } } as PrefLeaf,
+    'data.radius': { ...field('Radius'), showIf: { path: 'data.rounded' }, enableIf: { path: 'data.locked', is: false } },
+    edge: {
+      name: 'Edge',
+      as: 'panel',
+      enableIf: { path: 'data.locked', is: false },
+      members: { 'data.inset': field('Inset'), 'data.weight': field('Weight') },
+    },
+  },
+};
+const CONDITIONED_PROPERTIES: NodePropertiesEntry[] = [{ name: 'card', schema: CONDITIONED }];
+
+/** `enableIf` and `showIf`: Locked disables every row under it, and Radius is drawn only while Rounded is on. */
+export const Conditions: Story = {
+  render: function ConditionsStory() {
+    const scene = useMemo(() => sceneWith({ text: '', locked: true, title: 'Card', rounded: false } as Data), []);
+    return (
+      <div className={s.narrow}>
+        <SelectionPanel scene={scene} selection={selection} properties={CONDITIONED_PROPERTIES} routing={SECTIONED_ROUTING} />
+      </div>
+    );
+  },
 };

@@ -18,7 +18,6 @@ import {
   absentValue,
   aggregateValue,
   classifyKind,
-  effectiveSections,
   kindBreakdown,
   nodeValueAt,
   panelLeafKey,
@@ -27,6 +26,7 @@ import {
   type PanelLeaf,
   type PanelSection,
 } from './model';
+import { conditionedSections } from './conditions';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { pathWithin, selectionAttrs, useSelectedRow, type PrefSelectHow } from '../Prefs/selection';
@@ -107,7 +107,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
 
   const kinds = nodes.map((n) => classifyKind(n, routing));
   const selectionKey = nodes.map((n) => n.id).join(',');
-  const sections = effectiveSections(kinds, properties, renderers?.alias !== undefined);
+  const { sections, disabled } = conditionedSections(kinds, properties, nodes, renderers?.alias !== undefined);
   const leaves = new Map(
     sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf] as const))),
   );
@@ -170,7 +170,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
           const cells = section.rows.flatMap((row) =>
             renderCells(
               row.leaves.map((panelLeaf) => ({
-                ...leafCell(panelLeaf, panelLeaf.leaf.name, nodes, renderers, commit, selectionKey, fields, absentAt, 'bar'),
+                ...leafCell(panelLeaf, panelLeaf.leaf.name, nodes, renderers, commit, selectionKey, fields, absentAt, disabled, 'bar'),
                 ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
               })),
               renderers,
@@ -207,6 +207,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                   selectionKey,
                   fields,
                   absentAt,
+                  disabled,
                 ),
                 ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
               })),
@@ -236,7 +237,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                 </div>
               ) : (
               // A row several leaves share stands for no one of them.
-              <div key={panelLeafKey(row.leaves[0])} className={s.row}
+              <div key={panelLeafKey(row.leaves[0])} className={s.row} {...(controls.every((cell) => cell.disabled) ? { 'data-disabled': '' } : {})}
                 {...(row.leaves.length === 1 ? selectionAttrs(panelLeafKey(row.leaves[0]), marks, true) : {})}>
                 <span className={s.rowLabel} title={row.leaves[0].leaf.description}>
                   {row.label}
@@ -289,6 +290,7 @@ function leafCell(
   selectionKey: string,
   fields: readonly PrefFieldChoice[],
   absentAt: (path: string) => unknown,
+  disabled: ReadonlySet<string>,
   surface: LeafSurface = 'row',
 ): LeafCell {
   const { path, leaf } = panelLeaf;
@@ -315,6 +317,8 @@ function leafCell(
     },
     selectionKey,
     fields,
+    disabled: disabled.has(panelLeafKey(panelLeaf)),
+    disabledAt: (at) => disabled.has(at),
   };
 
   return {

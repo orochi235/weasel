@@ -103,6 +103,11 @@ export interface PropertyRenderContext {
    * Absent where the values come from no selection, as in a tool options bar.
    */
   selectionKey?: string;
+  /** The leaf takes no input: its `enableIf`, or that of a section above it, does not hold. A renderer draws its
+   *  control disabled. */
+  disabled?: boolean;
+  /** Whether the field at a path under this leaf's is disabled by a condition of its own. */
+  disabledAt?: (path: string) => boolean;
 }
 
 /**
@@ -138,6 +143,8 @@ export interface RenderedCell {
   /** The leaf that names the cell — the run's first, for a flag bar. */
   leaf: PrefLeaf;
   block: boolean;
+  /** Every leaf the cell draws is disabled. */
+  disabled: boolean;
   content: ReactNode;
   pair?: { key: string; label: string };
 }
@@ -172,7 +179,7 @@ export function renderCells(
     if (!isFlagCell(cell, renderers)) {
       const content = cell.render();
       if (content != null) {
-        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true || prefDrawsNoControl(cell.leaf), content, ...(cell.pair ? { pair: cell.pair } : {}) });
+        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true || prefDrawsNoControl(cell.leaf), disabled: cell.ctx.disabled === true, content, ...(cell.pair ? { pair: cell.pair } : {}) });
       }
       i += 1;
       continue;
@@ -190,6 +197,7 @@ export function renderCells(
       key: cell.key,
       leaf: cell.leaf,
       block: run.every((c) => c.leaf.block === true),
+      disabled: run.every((c) => c.ctx.disabled === true),
       content: <FlagBar run={run} ariaLabel={cell.pair?.label ?? cell.leaf.name} />,
       ...(cell.pair ? { pair: cell.pair } : {}),
     });
@@ -212,6 +220,7 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
       unset: c.ctx.unset,
       siblings: c.ctx.siblings,
       setValue: c.ctx.setValue,
+      disabled: c.ctx.disabled,
       ...perNodeState(c.ctx),
     }) as PropertyBooleanFieldProps;
     return { cell: c, field };
@@ -229,6 +238,7 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
         label: field.glyph ?? <FitLabel forms={labelForms(cell.leaf.name, field.short)} />,
         ariaLabel: cell.ariaLabel,
         tooltip: field.glyph === undefined ? undefined : cell.leaf.name,
+        disabled: field.disabled,
       }))}
       value={on}
       // Each flag owns its own path, so only the segment that moved is
@@ -269,6 +279,7 @@ export function renderBuiltin(
       path: ctx.path,
       name: ariaLabel,
       field: leafField(ctx, nested),
+      disabled: ctx.disabled,
       row: () => renderBuiltin(ctx, ariaLabel, renderers, { selectionKey, nested }),
     });
   }
@@ -299,6 +310,7 @@ export function renderBuiltin(
         pref={map}
         value={value}
         onChange={setValue}
+        disabled={ctx.disabled}
         renderValue={(held, set, name, key) => {
           const item: PropertyRenderContext = {
             ...ctx,
@@ -324,7 +336,7 @@ export function renderBuiltin(
     // Nodes of different variants share no fields to draw.
     const split = mixed && new Set(ctx.each.map((v) => prefVariantOf(union, v)?.[0])).size > 1;
     return (
-      <UnionPicker pref={union} value={mixed ? ctx.each[0] : value} mixed={split} onChange={setValue}>
+      <UnionPicker pref={union} value={mixed ? ctx.each[0] : value} mixed={split} disabled={ctx.disabled} onChange={setValue}>
         {(variant, key) => (
           <ObjectLeaf
             ctx={{
@@ -344,7 +356,7 @@ export function renderBuiltin(
       </UnionPicker>
     );
   }
-  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
+  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} />;
   if (prefDrawsNoControl(pref)) return <PrefWords pref={pref} />;
   if (pref.kind === 'alias') {
     // The panel draws a resolved alias as its target, so one that reaches here points at nothing.
@@ -423,6 +435,7 @@ function leafField(ctx: PropertyRenderContext, nested: boolean): PropertyControl
     fields: ctx.fields,
     siblings: ctx.siblings,
     setValue: ctx.setValue,
+    disabled: ctx.disabled,
     ...perNodeState(ctx),
     // The font pickers read the rest of the font from the leaves beside
     // them: the family's substitution probe runs at the weight and style

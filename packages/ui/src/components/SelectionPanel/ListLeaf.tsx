@@ -28,6 +28,7 @@ export function ListLeaf({
     onChange: ctx.setValue,
     minItems: pref.minItems,
     maxItems: pref.maxItems,
+    disabled: ctx.disabled,
   };
   if (prefListIsText(pref, drawsStrings)) return <ListEditor {...shared} value={prefListTexts(ctx.value)} />;
   return (
@@ -50,6 +51,7 @@ export function ListLeaf({
             update: (fn) => set(fn(entry)),
             valueAt: ctx.valueAt,
             selectionKey: ctx.selectionKey,
+            disabled: ctx.disabled,
           },
           name,
         );

@@ -52,6 +52,11 @@
   opacity: 0.55;
 }
 
+/* As `Checkbox` dims the text beside a disabled box: the controls dim themselves. */
+.row[data-disabled] > .rowLabel {
+  opacity: 0.5;
+}
+
 .row {
   display: grid;
   grid-template-columns: 64px 1fr;
