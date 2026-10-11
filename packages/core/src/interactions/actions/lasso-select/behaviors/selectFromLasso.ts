@@ -7,6 +7,7 @@ import type {
 } from 'core/adapters/types';
 import type { LassoSelectBehavior } from '../../../gestures/types';
 import { scratchKey, getScratch } from '@weasel-js/routing';
+import { selectionFromHits } from '../../hitSelection';
 
 /** Typed scratch slot the lasso tool's gesture writes into for this behavior
  *  to consume. Shared identity: tools producing the polygon for a lasso
@@ -48,9 +49,7 @@ export function selectFromLasso(opts?: SelectFromLassoOptions): LassoSelectBehav
       }
 
       const hits = adapter.hitTestLasso(vertices, mode);
-      const to = shiftHeld
-        ? mergeUnique(from, hits)
-        : hits;
+      const to = selectionFromHits(from, hits, shiftHeld);
       const op: Op = createSetSelectionOp({ from: from as NodeId[], to: to as NodeId[] });
       return [op];
     },
@@ -67,10 +66,4 @@ function polygonAabbArea(vertices: ReadonlyArray<{ x: number; y: number }>): num
     if (v.y > maxY) maxY = v.y;
   }
   return (maxX - minX) * (maxY - minY);
-}
-
-function mergeUnique(a: ReadonlyArray<string>, b: ReadonlyArray<string>): string[] {
-  const out = [...a];
-  for (const id of b) if (!out.includes(id)) out.push(id);
-  return out;
 }

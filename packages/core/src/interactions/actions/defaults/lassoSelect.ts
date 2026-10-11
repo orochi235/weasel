@@ -47,6 +47,7 @@ import { applyOpsTo } from 'core/applyOps';
 import type { GestureContext, LassoSelectBehavior, LassoSelectPose } from '../../gestures/types';
 import { LASSO_VERTICES } from '../lasso-select/behaviors/selectFromLasso';
 import { reduceBehaviorEnd, runBehaviorCancel } from '../gestureLifecycle';
+import { selectionFromHits } from '../hitSelection';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -240,17 +241,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
 
           const hits = hitTestPolygon(d, vertices, mode, view);
 
-          if (shiftHeld) {
-            // Extend: merge current + hits (deduplicated).
-            const current = d.getSelection();
-            const merged = [...current];
-            for (const id of hits) {
-              if (!merged.includes(id)) merged.push(id);
-            }
-            d.setSelection(merged);
-          } else {
-            d.setSelection(hits);
-          }
+          d.setSelection(selectionFromHits(d.getSelection(), hits, shiftHeld));
         },
       };
     },

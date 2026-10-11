@@ -31,6 +31,7 @@ import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { AreaSelectDep, ViewApi } from '../depSchema';
+import { selectionFromHits } from '../hitSelection';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -150,17 +151,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
 
           const hits = d.hitTestArea({ x, y, width, height }, view) as NodeId[];
 
-          if (shiftHeld) {
-            const current = d.getSelection();
-            // Extend: merge current + hits (deduplicated).
-            const merged = [...current];
-            for (const id of hits) {
-              if (!merged.includes(id)) merged.push(id);
-            }
-            d.setSelection(merged);
-          } else {
-            d.setSelection(hits);
-          }
+          d.setSelection(selectionFromHits(d.getSelection(), hits, shiftHeld));
         },
       };
     },

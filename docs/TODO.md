@@ -218,10 +218,6 @@ Priority tags:
   gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in
   `cloneAction` the way move, rotate, and insert do, or remove the behavior and the type.
 
-- **(P3) Shift-extend of a hit list into the selection is written three times.**
-  `defaults/areaSelect.ts`, `defaults/lassoSelect.ts`, and `selectFromLasso.ts` each merge hits into
-  the current selection.
-
 - **(P3) `moveAction` applies a second drag threshold.** The dispatcher buffers a press until
   `DRAG_THRESHOLD_PX` before `start` runs, and `moveAction.onMove` checks `dragThresholdPx` again;
   resize, rotate, and clone have only the first. With `dragThresholdPx` raised, a drag that never
@@ -1358,14 +1354,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   context a `Palette` (or an `ExternalColors` resolver onto its ramps; `ThemeProvider` hands out tones
   only as a `ColorList` today) and resolving every one of those props through it.
 
-- **(P2) labkit stored lab: one trial whose state fails to hydrate takes the whole lab down.**
-  `deserializeTrials` (`packages/labkit/src/state/helpers.ts`) calls each instrument's `deserialize`
-  with no guard, and `hydrateTrials` runs `migrateConfig` the same way, so one stored trial that
-  either throws on rejects the whole `openLabStore`; the lab now shows that error through its error
-  boundary on every load, and the trials that were fine are unreachable. The document-level path
-  beside it quarantines and stops writing; the per-trial path does neither. Wanted: hydrate each
-  trial in its own try/catch, keep the raw record so it is not overwritten, and decide what the tile
-  shows (a failed tile with a way to discard it, or the lab minus that trial plus a warning).
+- **(P3) labkit stored lab: a trial that fails to hydrate is left out with only a console warning.**
+  `hydrateTrials` and `hydrateSnapshots` (`packages/labkit/src/state/store.ts`) now skip a trial or
+  a snapshot whose `deserialize` or `migrateConfig` throws, and its record stays in storage,
+  unwritten and undeleted. Nothing in the lab says a trial is missing, and nothing can discard its
+  record, which stays for good. The call to make is whether the lab draws a failed tile with a way
+  to discard it. `setInstruments` still runs `migrateConfig` over the trials already held with no
+  guard, so an instrument registered after open whose migration throws rejects the whole call.
 
 - **(P2) labkit trial: the settings panel and the instrument write config through two `setConfig`s
   that disagree.** The chrome's (`packages/labkit/src/trial/TrialChrome.tsx`, used by the settings
