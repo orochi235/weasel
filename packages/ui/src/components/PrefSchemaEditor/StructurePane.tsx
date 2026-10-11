@@ -66,7 +66,7 @@ export interface StructurePaneProps {
   outside?: DropOutside;
   /** `outside` is drawing what is dragged where it would land, so the palette draws no ghost of it. */
   outsideDraws?: boolean;
-  /** The most levels of groups the schema may nest; none when undefined. */
+  /** The most levels of groups the schema may nest. */
   maxDepth?: number;
   /** Remove the selected node. */
   onRemove(): void;
@@ -204,7 +204,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
       {toolSlot && createPortal(
         <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
           <ToolButton icon={<Icon name="tune" mark="markAdd" />} label="Add pref" onClick={() => setAdding('pref')} />
-          <ToolButton icon={<Icon name={GROUP_ICON.section} mark="markAdd" />} label={`Add ${branch}`} disabled={variants || !withinDepth(addTarget().parent, [blankGroup()], maxDepth)} onClick={() => setAdding('branch')} />
+          <ToolButton icon={<Icon name={GROUP_ICON.section} mark="markAdd" />} label={`Add ${branch}`} disabled={variants || (branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth))} onClick={() => setAdding('branch')} />
           <ToolButton icon={<Icon name="delete" />} label="Remove" disabled={selected === null || isFixed(schema, selected)} onClick={onRemove} />
         </Palette>,
         toolSlot,
