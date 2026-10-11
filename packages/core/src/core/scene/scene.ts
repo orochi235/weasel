@@ -1379,14 +1379,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     batchDirty = false;
     try {
       atomically(() => {
-        if (journal) {
-          journal.applyBatch(ops, label);
-        } else {
-          // Native path: record the external ops themselves as one engine
-          // entry — coalescible across applyBatch calls via their own
-          // coalesceKeys — rebound to this call's adapter.
-          history.applyOps(ops.map((op) => bindOpToAdapter(op, adapter)), label);
-        }
+        // Either engine stores the ops and replays them later, so they are
+        // rebound to this call's adapter: the scene's own engine, and any
+        // journal opened on it, was built without one.
+        const bound = ops.map((op) => bindOpToAdapter(op, adapter));
+        if (journal) journal.applyBatch(bound, label);
+        // Native path: one engine entry, coalescible across applyBatch
+        // calls via the ops' own coalesceKeys.
+        else history.applyOps(bound, label);
       }, () => true);
     } finally {
       batchDepth--;
