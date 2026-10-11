@@ -157,6 +157,18 @@ export function diffSchemas(before: SchemaRoot, after: SchemaRoot): SchemaChange
 }
 
 /** Every path a change touches, for marking rows. */
+/**
+ * Where the node now at a path sat in the baseline `changes` were measured from: a moved node's old path, and
+ * under a moved branch the same path beneath where the branch was. A path nothing moved is its own.
+ */
+export function baselinePaths(changes: readonly SchemaChange[]): (path: string) => string {
+  const moves = changes.filter((c) => c.op === 'move').sort((a, b) => b.to.length - a.to.length);
+  return (path) => {
+    const move = moves.find((m) => path === m.to || path.startsWith(`${m.to}/`));
+    return move ? move.from + path.slice(move.to.length) : path;
+  };
+}
+
 export function changedPaths(changes: readonly SchemaChange[]): Set<string> {
   const out = new Set<string>();
   for (const c of changes) {

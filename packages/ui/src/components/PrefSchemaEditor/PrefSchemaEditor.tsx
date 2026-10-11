@@ -9,11 +9,13 @@ import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
 import { EditorBar } from './EditorBar';
 import { dropDraft, openDraft, saveDraft, SWAP, type DraftStorage, type SwapArgs } from './draft';
+import { openFolds, saveFolds } from './folds';
+import { GENERAL } from './generalBranch';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
-import { branchPaths, isFixed, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
-import { changedPaths, diffSchemas } from './schemaExport';
+import { branchPaths, isFixed, keysOf, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { baselinePaths, changedPaths, diffSchemas } from './schemaExport';
 import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
 import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
@@ -82,6 +84,10 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
   /** Nothing submitted is still waiting: what `onSubmit` last handed over is in `original` now. Once true, the
    *  editor drops those changes from its draft and keeps the edits made since. */
   taken?: boolean;
+  /** What to draw on a node's row in the structure tree, before its kind: a mark the host keeps for some of
+   *  the schema's nodes. It is asked by the node's path in `original`, keys joined with dots, so the mark follows
+   *  a node the reader moves; a node the reader added has a path `original` does not hold. */
+  rowMark?: (original: string) => ReactNode;
   /** The most levels of groups the schema may nest: 1 keeps every group at the top. A drag, a palette drop, or
    *  Add group that would nest deeper is refused. A schema already deeper is shown as it is. Default 2. */
   maxDepth?: number;
@@ -101,14 +107,21 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, draftStorage, onSubmit, taken = false, bar, maxDepth = 2, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, draftStorage, onSubmit, taken = false, bar, maxDepth = 2, rowMark, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
   const [selected, setSelected] = useState<string | null>(null);
   const [opened] = useState(() => (draftKey === undefined ? null : openDraft(draftKey, base, draftStorage)));
   const [notice, setNotice] = useState<string | null>(() => (opened ? DRAFT_NOTICE[opened.met] : null));
-  const [expanded, setExpanded] = useState(() => new Set(branchPaths(schema)));
+  // Every row starts open but the ones the reader folded last time.
+  const [expanded, setExpanded] = useState(() => {
+    const folded = new Set(draftKey === undefined ? [] : openFolds(draftKey));
+    return new Set([GENERAL, ...branchPaths(opened?.schema ?? schema)].filter((id) => !folded.has(id)));
+  });
+  useEffect(() => {
+    if (draftKey !== undefined) saveFolds(draftKey, [GENERAL, ...branchPaths(schema)].filter((id) => !expanded.has(id)));
+  }, [draftKey, schema, expanded]);
   const [structureWidth, setStructureWidth] = useState(300);
   const [attributesWidth, setAttributesWidth] = useState(320);
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
@@ -182,6 +195,11 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
 
   const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);
   const changed = useMemo(() => changedPaths(changes), [changes]);
+  const treeMark = useMemo(() => {
+    if (!rowMark) return undefined;
+    const baseline = baselinePaths(changes);
+    return (path: string) => rowMark(keysOf(baseline(path)).join('.'));
+  }, [rowMark, changes]);
   // `label` is a kind the form draws itself: text among the rows, with no attributes of its own.
   const custom = useMemo(() => ({ label: {}, ...kinds }), [kinds]);
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);
@@ -274,7 +292,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
         draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select(null); }} />
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
         expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onRemove={remove}
-        toolSlot={toolSlot} maxDepth={maxDepth} />
+        toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} />
       <ResizeHandle className={s.structureHandle} value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">

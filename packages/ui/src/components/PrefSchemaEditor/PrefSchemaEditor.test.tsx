@@ -212,6 +212,31 @@ describe('PrefSchemaEditor', () => {
     expect(add).toBeDisabled();
   });
 
+  it('draws the host\'s mark on a row by where its node sits in the original, wherever it has been moved', () => {
+    const mark = (original: string) => (original === 'view.grid' ? <b data-testid="mark">m</b> : null);
+    const moved: PrefGroup = { ...START, children: {
+      view: { ...(START.children.view as PrefGroup), children: { snap: (START.children.view as PrefGroup).children.snap! } },
+      panels: { ...(START.children.panels as PrefGroup), children: { ...(START.children.panels as PrefGroup).children, grid: (START.children.view as PrefGroup).children.grid! } },
+    } };
+    const { rerender } = render(<PrefSchemaEditor schema={START} original={START} onChange={() => {}} rowMark={mark} />);
+    expect(screen.getByTestId('mark').closest('[role="treeitem"]')).toHaveAccessibleName(/\(grid\)/);
+    rerender(<PrefSchemaEditor schema={moved} original={START} onChange={() => {}} rowMark={mark} />);
+    expect(screen.getAllByTestId('mark')).toHaveLength(1);
+    expect(screen.getByTestId('mark').closest('[role="group"]')!.closest('[role="treeitem"]')).toHaveAccessibleName(/\(panels\)/);
+  });
+
+  it('opens with the rows folded that were folded under its draft key last time', () => {
+    localStorage.clear();
+    const first = render(<PrefSchemaEditor schema={START} onChange={() => {}} draftKey="folds-test" />);
+    fireEvent.click(row('view').closest('[role="treeitem"]')!.querySelector('[data-tree-twisty]')!);
+    expect(within(structure()).getByRole('treeitem', { name: /\(view\)/ })).toHaveAttribute('aria-expanded', 'false');
+    first.unmount();
+    render(<PrefSchemaEditor schema={START} onChange={() => {}} draftKey="folds-test" />);
+    expect(within(structure()).getByRole('treeitem', { name: /\(view\)/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(within(structure()).getByRole('treeitem', { name: /\(panels\)/ })).toHaveAttribute('aria-expanded', 'true');
+    localStorage.clear();
+  });
+
   it('undoes and redoes an edit, from its buttons and from the keyboard', () => {
     render(<Live />);
     fireEvent.click(row('grid'));

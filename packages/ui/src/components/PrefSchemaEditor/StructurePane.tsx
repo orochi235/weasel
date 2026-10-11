@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { createPortal } from 'react-dom';
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
 import { Input } from '../Input';
@@ -29,7 +29,7 @@ function leafCount(nodes: readonly SchemaNode[]): number {
 
 const countBadge = (n: number) => <Badge size="xs" status="muted" variant="subtle" className={s.treeCount}>{n}</Badge>;
 
-function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>): TreeNode[] {
+function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>, mark?: (path: string) => ReactNode): TreeNode[] {
   return Object.entries(childrenOf(node) ?? {}).map(([key, child]) => {
     const p = joinPath(path, key);
     const kids = childrenOf(child);
@@ -42,9 +42,9 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
       // Unset, a group is drawn by its depth: a page under the root, a section below that.
       ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
       trailing: isPrefLeaf(child)
-        ? <PrefKindBadge kind={child.kind} />
-        : <>{countBadge(leafCount([child]))}<PrefKindBadge kind={child.as ?? (isPrefSection(child) ? 'section' : 'group')} /></>,
-      ...(kids ? { children: toTreeNodes(child, p, changed) } : {}),
+        ? <>{mark?.(p)}<PrefKindBadge kind={child.kind} /></>
+        : <>{mark?.(p)}{countBadge(leafCount([child]))}<PrefKindBadge kind={child.as ?? (isPrefSection(child) ? 'section' : 'group')} /></>,
+      ...(kids ? { children: toTreeNodes(child, p, changed, mark) } : {}),
     };
   });
 }
@@ -68,6 +68,8 @@ export interface StructurePaneProps {
   outsideDraws?: boolean;
   /** The most levels of groups the schema may nest. */
   maxDepth?: number;
+  /** What a host draws on a node's row before its kind, by the node's path in this tree. */
+  rowMark?: (path: string) => ReactNode;
   /** Remove the selected node. */
   onRemove(): void;
   /** Move the nodes at `paths` to `target`, keeping them open and selected. */
@@ -94,9 +96,9 @@ const nameOfKey = (key: string): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, stored, outside, outsideDraws = false, onMove: move, onRemove, maxDepth }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, stored, outside, outsideDraws = false, onMove: move, onRemove, maxDepth, rowMark }: StructurePaneProps) {
   const nodes = useMemo(() => {
-    const all = toTreeNodes(schema, null, changed);
+    const all = toTreeNodes(schema, null, changed, rowMark);
     const loose = new Set(generalKeys(schema));
     if (loose.size === 0) return all;
     // A preferences form files the root's own leaves under one rail entry; the tree shows them the same way.
@@ -109,7 +111,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
       children: all.filter((n) => loose.has(n.id)),
     };
     return [general, ...all.filter((n) => !loose.has(n.id))];
-  }, [schema, changed]);
+  }, [schema, changed, rowMark]);
   const [query, setQuery] = useState('');
   const sought = query.trim().toLowerCase();
   const shown = useMemo(
@@ -117,7 +119,6 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
     [nodes, sought],
   );
   const hasGeneral = nodes[0]?.id === GENERAL;
-  const [generalOpen, setGeneralOpen] = useState(true);
   const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);
   const [fromStored, setFromStored] = useState<UndescribedValue | null>(null);
   const [storedHeight, setStoredHeight] = useState(180);
@@ -224,11 +225,9 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         nodes={shown}
         empty={sought === '' ? undefined : 'Nothing matches.'}
         // Filtered, every match shows, and what is folded stays as it was for when the filter goes.
-        expandedIds={sought !== '' ? treeBranchIds(shown) : generalOpen ? new Set([...expanded, GENERAL]) : expanded}
+        expandedIds={sought !== '' ? treeBranchIds(shown) : expanded}
         onExpandedChange={(next) => {
-          if (sought !== '') return;
-          setGeneralOpen(next.has(GENERAL));
-          onExpandedChange(new Set([...next].filter((id) => id !== GENERAL)));
+          if (sought === '') onExpandedChange(next);
         }}
         selectionMode="single"
         // General is the root's row: with nothing selected the attributes pane shows the root's.
