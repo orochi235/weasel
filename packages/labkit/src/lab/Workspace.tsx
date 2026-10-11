@@ -300,19 +300,13 @@ export function Workspace({
   return (
     <Provider store={store}>
       <StrategyRegistryProvider strategies={STRATEGIES}>
-        {floatingLayer ? (
-          // The floating layer insets against the workspace, so it needs a
-          // positioned box around both. Without one it insets against the page
-          // and lands over the lab header.
-          <div className="lk-workspace-host">
-            {reorderable ? <DragProvider>{grid}</DragProvider> : grid}
-            {floatingLayer}
-          </div>
-        ) : reorderable ? (
-          <DragProvider>{grid}</DragProvider>
-        ) : (
-          grid
-        )}
+        {/* Always present, so a floating panel arriving or leaving cannot
+            remount the grid. The floating layer insets against this box; without
+            one it insets against the page and lands over the lab header. */}
+        <div className="lk-workspace-host">
+          {reorderable ? <DragProvider>{grid}</DragProvider> : grid}
+          {floatingLayer}
+        </div>
       </StrategyRegistryProvider>
     </Provider>
   );

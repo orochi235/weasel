@@ -150,9 +150,8 @@ function fitProblems(fixture: Fixture, viewport: keyof typeof VIEWPORTS): string
 
   if (fixture === 'sidebar') {
     const side = document.querySelector('.lk-lab__sidebar')?.getBoundingClientRect();
-    // The host wraps the grid only once a panel is undocked.
     const work = document
-      .querySelector('.lk-lab__main > .lk-workspace-host, .lk-lab__main > .lk-workspace')
+      .querySelector('.lk-lab__main > .lk-workspace-host')
       ?.getBoundingClientRect();
     if (!side) return [...problems, 'no .lk-lab__sidebar'];
     if (!work) return [...problems, 'no workspace in .lk-lab__main'];

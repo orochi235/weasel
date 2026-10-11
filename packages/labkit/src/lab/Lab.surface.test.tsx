@@ -4,7 +4,7 @@
  * null and a tile registered from inside a trial reached nothing.
  *
  * The surface's layers sit in `.lk-lab__body` beside the workspace rather than
- * wrapped around it: `.lk-lab__body > .lk-workspace { min-width: 0 }` is a
+ * wrapped around it: `.lk-lab__body > .lk-workspace-host { min-width: 0 }` is a
  * direct-child selector, so an extra element between them silently drops that
  * rule.
  */
@@ -148,16 +148,16 @@ describe('<Lab> surface provider', () => {
     expect(container.querySelectorAll('canvas.lk-lab__surface')).toHaveLength(0);
   });
 
-  it('keeps the workspace a direct child of the lab body', async () => {
+  it('keeps the workspace host a direct child of the lab body', async () => {
     // The min-width:0 rule that keeps the flex row from overflowing is
-    // `.lk-lab__body > .lk-workspace`. An element inserted between them drops
-    // it, and jsdom cannot see the overflow that follows.
+    // `.lk-lab__body > .lk-workspace-host`. An element inserted between them
+    // drops it, and jsdom cannot see the overflow that follows.
     const { container } = await renderSettled(
       <Lab instruments={[probeInstrument]} defaultInstrument="Probe" />,
     );
     const body = container.querySelector('.lk-lab__body');
     expect(body).not.toBeNull();
-    expect(body?.querySelector(':scope > .lk-workspace')).not.toBeNull();
+    expect(body?.querySelector(':scope > .lk-workspace-host > .lk-workspace')).not.toBeNull();
   });
 });
 

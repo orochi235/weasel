@@ -1,6 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
@@ -80,6 +81,24 @@ describe('undocking a sidebar section', () => {
     const floating = container.querySelector('.lk-workspace__floating');
     expect(floating).toContainElement(screen.getByTestId('floater-body'));
     expect(container.querySelector('.lk-panel-tile--floating')).not.toBeNull();
+  });
+
+  it('keeps every trial mounted when the first floating panel appears', async () => {
+    let mounts = 0;
+    function Counted() {
+      useEffect(() => {
+        mounts += 1;
+      }, []);
+      return null;
+    }
+    const counted: Instrument = { ...bare, render: () => <Counted /> };
+    await renderSettled(
+      <Lab title="T" instruments={[counted]} defaultInstrument="Bare" chrome={[floater]} />,
+    );
+    expect(mounts).toBe(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Undock Floater' }));
+    expect(screen.getByTestId('floater-body')).toBeInTheDocument();
+    expect(mounts).toBe(1);
   });
 
   it('offers no tear-out control on a section that opts out', async () => {
