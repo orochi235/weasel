@@ -36,11 +36,16 @@
   flex-direction: column;
   gap: var(--wzl-space-3);
   margin-top: var(--wzl-space-3);
-  padding: var(--wzl-space-4) var(--wzl-space-4) var(--wzl-space-4) var(--wzl-space-5);
+  padding: var(--wzl-space-4) var(--subpanel-inset-end) var(--wzl-space-4) var(--subpanel-inset-start);
   background: var(--wzl-surface-sunken);
-  border-left: 2px solid var(--wzl-border);
+  border-left: var(--subpanel-rule) solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   --wzl-input-surface: var(--wzl-surface);
+}
+
+/* The list layout's loose rows take the inset of the subpanels they sit over, so every label and control shares an edge. */
+.columnsLayout > .rows:has(> .subpanel) > .rowSlot {
+  padding-inline: calc(var(--subpanel-rule) + var(--subpanel-inset-start)) var(--subpanel-inset-end);
 }
 
 .groupHeader {
@@ -199,6 +204,9 @@
  * ------------------------------------------------------------------------ */
 
 .columnsLayout {
+  --subpanel-rule: 2px;
+  --subpanel-inset-start: var(--wzl-space-5);
+  --subpanel-inset-end: var(--wzl-space-4);
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-4);
