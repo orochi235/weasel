@@ -120,3 +120,42 @@ describe('L4 — mirroring', () => {
     expect(out.lines[0].cells[1].cp).toBe(0x28);
   });
 });
+
+describe('paragraphs', () => {
+  /** Cell indices of `line`, sorted by where they were painted. */
+  const visualOf = (text: string, line: number, opts: LayoutRunsOpts = OPTS) => {
+    const cells = layoutRuns([RUN(text)], opts).lines[line].cells;
+    return { cells, order: cells.map((_, i) => i).sort((a, b) => cells[a].x - cells[b].x) };
+  };
+
+  it('resolves a neutral opening a line against its own paragraph, not the one above', () => {
+    // Line 2 is `! אבג` in a left-to-right paragraph: `!` sits between the
+    // paragraph start and Hebrew, so it takes the paragraph direction and
+    // stays at the left; the Hebrew after it reads right to left.
+    const { cells, order } = visualOf('אבג\n! אבג', 1, { ...OPTS, direction: 'ltr' });
+    expect(cells.map((c) => c.level)).toEqual([0, 0, 1, 1, 1]);
+    expect(order).toEqual([0, 1, 4, 3, 2]);
+  });
+
+  it('ends an unclosed override at the paragraph break', () => {
+    const { cells, order } = visualOf('‮abc\nxyz', 1);
+    expect(cells.map((c) => c.level)).toEqual([0, 0, 0]);
+    expect(order).toEqual([0, 1, 2]);
+  });
+
+  it('picks each paragraph\'s direction from its own first strong character', () => {
+    // Arabic `سلام` then Latin: the first paragraph is right-to-left, the
+    // second left-to-right.
+    const first = visualOf('سلام\nabc', 0);
+    expect(first.order).toEqual([3, 2, 1, 0]);
+    const second = visualOf('سلام\nabc.', 1);
+    // In a right-to-left paragraph the full stop would move to the left of
+    // `abc`; in its own left-to-right one it stays last.
+    expect(second.order).toEqual([0, 1, 2, 3]);
+  });
+
+  it('still reorders the first paragraph across CRLF', () => {
+    expect(visualOf('אבג\r\nדה', 0).order).toEqual([2, 1, 0]);
+    expect(visualOf('אבג\r\nדה', 1).order).toEqual([1, 0]);
+  });
+});

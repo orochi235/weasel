@@ -63,6 +63,7 @@ import {
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
+import { analyzeParagraphs } from './bidiLines';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
 import { graphemeEnds } from '../measure/graphemes';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
@@ -825,10 +826,10 @@ export function layoutRuns(
 
   for (let i = 0; i < entries.length; i++) entries[i].flat = i;
 
-  // The engine analyses the paragraph once; each line then asks for its own
-  // range, because L1 resets trailing whitespace against a line's end.
-  const analysis = opts.bidi
-    ? opts.bidi.analyze(entries.map((e) => e.cp), opts.direction ?? 'auto')
+  // Each paragraph is analyzed once; each line then asks for its own range,
+  // because L1 resets trailing whitespace against a line's end.
+  const reorderLine = opts.bidi
+    ? analyzeParagraphs(opts.bidi, entries.map((e) => e.cp), (i) => entries[i].isNewline, opts.direction ?? 'auto')
     : null;
   if (!opts.bidi
       && entries.some((e) => RTL_BLOCKS.some(([lo, hi]) => e.cp >= lo && e.cp <= hi))) {
@@ -1020,10 +1021,10 @@ export function layoutRuns(
     flatOf.forEach((f, pos) => posOfFlat.set(f, pos));
     let visual: number[] = line.entries.map((_, k) => k);
     let levelOf: (pos: number) => number = () => 0;
-    if (opts.bidi && analysis !== null && line.entries.length > 0) {
+    if (reorderLine !== null && line.entries.length > 0) {
       const from = flatOf[0];
       const to = flatOf[flatOf.length - 1] + 1;
-      const r = opts.bidi.reorder(analysis, from, to);
+      const r = reorderLine(from, to);
       const seen = new Set<number>();
       const ordered: number[] = [];
       for (const f of r.order) {
