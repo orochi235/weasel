@@ -439,19 +439,32 @@ export class WeaselRenderer {
 
   /** Viewport and scissor for this frame. Re-applied inside `render()` because
    *  a co-tenant on the same context moves both between our frames. */
+  /** This renderer's rect in device pixels, top-left origin. A tile rounds its
+   *  edges rather than its size, so two that share a CSS edge share a device one. */
+  private deviceRect(): { x: number; y: number; width: number; height: number } {
+    const ox = this.target?.origin.x ?? 0;
+    const oy = this.target?.origin.y ?? 0;
+    const x = Math.round(ox * this.dpr);
+    const y = Math.round(oy * this.dpr);
+    return {
+      x,
+      y,
+      width: Math.round((ox + this.widthCss) * this.dpr) - x,
+      height: Math.round((oy + this.heightCss) * this.dpr) - y,
+    };
+  }
+
   private applyTarget(): void {
     const gl = this.gl;
-    const w = Math.round(this.widthCss * this.dpr);
-    const h = Math.round(this.heightCss * this.dpr);
+    const { x, y, width, height } = this.deviceRect();
     if (!this.target) {
       gl.disable(gl.SCISSOR_TEST);
-      gl.viewport(0, 0, w, h);
+      gl.viewport(0, 0, width, height);
       return;
     }
-    const x = Math.round(this.target.origin.x * this.dpr);
-    const y = gl.drawingBufferHeight - Math.round(this.target.origin.y * this.dpr) - h;
-    gl.viewport(x, y, w, h);
-    gl.scissor(x, y, w, h);
+    const glY = gl.drawingBufferHeight - y - height;
+    gl.viewport(x, glY, width, height);
+    gl.scissor(x, glY, width, height);
     gl.enable(gl.SCISSOR_TEST);
   }
 
@@ -616,6 +629,7 @@ export class WeaselRenderer {
       gl.stencilMask(0xFF);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
     }
+    const device = this.deviceRect();
     const ctx: DrawContext = {
       gl,
       pathFill: this.pathFill,
@@ -646,8 +660,8 @@ export class WeaselRenderer {
       effectTargets: this.effectTargets,
       paintScratch: this.paintScratch,
       renderTarget: null,
-      deviceWidth: Math.round(this.widthCss * this.dpr),
-      deviceHeight: Math.round(this.heightCss * this.dpr),
+      deviceWidth: device.width,
+      deviceHeight: device.height,
       restoreTargetRect: () => this.applyTarget(),
       paintResources: this.paintResources,
       stats: counters,

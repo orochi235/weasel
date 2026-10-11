@@ -103,6 +103,27 @@ describe('WeaselRenderer.setTarget', () => {
     expect(viewport.args).toEqual([840, 40, 760, 720]);
   });
 
+  it('rounds a tile by its edges, so two that share one meet at a fractional dpr', () => {
+    // At dpr 1.25 the shared edge at CSS 2 is device 2.5. Rounding the first
+    // tile's origin and size separately ends it at 1 + 1 = 2 while the second
+    // starts at 3.
+    const rectAt = (x: number, y: number): number[] => {
+      const recorder = makeGLRecorder({ drawingBufferWidth: 100, drawingBufferHeight: 100 });
+      const r = new WeaselRenderer({ gl: recorder.gl, width: 1, height: 1, dpr: 1.25 });
+      r.setTarget({ origin: { x, y } });
+      recorder.reset();
+      r.render([]);
+      const viewport = recorder.calls.filter((c) => c.name === 'viewport').at(-1)!.args as number[];
+      expect(recorder.calls.filter((c) => c.name === 'scissor').at(-1)!.args).toEqual(viewport);
+      return viewport;
+    };
+    const [ax, ay, aw] = rectAt(1, 1);
+    const [bx] = rectAt(2, 1);
+    expect(ax + aw).toBe(bx);
+    const [, by, , bh] = rectAt(1, 2);
+    expect(by + bh).toBe(ay);
+  });
+
   it('re-applies the target on every frame, not just when it is set', () => {
     const recorder = makeGLRecorder({ drawingBufferWidth: 820, drawingBufferHeight: 400 });
     const r = new WeaselRenderer({ gl: recorder.gl, width: 380, height: 360, dpr: 1 });

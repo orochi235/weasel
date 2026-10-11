@@ -543,11 +543,6 @@ have shipped. What remains:
   `CanvasAdapter` gains a layer-list version or subscription, key the layer memo on that and drop
   the poll.
 
-- **(P3) `WeaselRenderer.applyTarget`: adjacent tiles at a fractional DPR may overlap or gap by a
-  device pixel.** Unverified, from reading: it rounds a tile's origin and its size separately, so
-  two `<Canvas paintInto>` panes sharing an edge at DPR 1.25 or 1.5 can round to rects that do not
-  meet. Check with two tiles at a fractional DPR and a pixel probe on the seam.
-
 - **(P3) `useHostAnchor`: a host that moves without resizing is not followed.** Unverified, from
   reading `packages/core/src/canvas/useHostAnchor.ts`: it recomputes on scroll, window resize, and a
   size change of the host or panel, so a sibling collapsing beside the host shifts it with none of
