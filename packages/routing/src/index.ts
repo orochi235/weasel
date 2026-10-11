@@ -166,4 +166,4 @@ export {
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
 export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';
-export { dlog } from './dlog';
+export { dlog, dwarn, isDebugEnabled } from './dlog';

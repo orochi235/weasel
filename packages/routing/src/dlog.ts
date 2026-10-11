@@ -10,10 +10,8 @@
  * Each call site picks a stable namespace string. Off by default; the flag
  * is read once and cached per page session — reload to pick up a change.
  *
- * Mirrors `packages/ui/src/dlog.ts` and `@weasel-js/core`'s `debug/flag.ts`.
- * The impls live in separate packages because none of them depends on the
- * others, but all read the same localStorage keys so behavior is uniform from
- * a debugger's POV.
+ * The one definition: `@weasel-js/core` and `@weasel-js/ui` pass these on, so
+ * every package reads the flag from one cache.
  *
  * Known kit namespaces:
  *   - tools           — active-tool + hotkey transitions (useTools)

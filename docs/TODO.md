@@ -2104,12 +2104,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   in the props docs) or add a prop naming what the control is pointed at and clear the memory when
   it changes.
 
-- **(P3) ui/core: the debug flag is parsed in two places.** `packages/ui/src/dlog.ts` and
-  `packages/core/src/debug/flag.ts` each read and cache `weasel.debug` / `weaseldraw.debug` from
-  `localStorage` with the same code. ui already depends on core, but core's barrel does not export
-  `isDebugEnabled` or `dlog`. Export them from core and have ui's `dlog` call through; the comment
-  in core's `flag.ts` ("weasel-ui doesn't depend on the kit") is also out of date.
-
 - **(P3) Tree: focus drops to the page when the focused node is removed.** A consumer's own Delete
   handler removes the focused row: the tab stop recomputes to the first selected or first row, but
   DOM focus falls to `<body>` and the next arrow key goes nowhere (`stopId` in

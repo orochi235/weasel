@@ -16,54 +16,8 @@
  * pick up changes. Cheap hot-path checks (one nullish-coalesce + Set
  * lookup) so leaving calls in place is fine.
  *
- * A copy of `packages/core/src/debug/flag.ts`, which `@weasel-js/core` does
- * not export. Both read the same localStorage keys.
- *
  * Known weasel-ui namespaces:
  *   - plot2d        — Plot2D mount / unmount
  *   - curve-editor  — CurveEditor pointer flow
  */
-
-const KEYS = ['weasel.debug', 'weaseldraw.debug'] as const;
-
-interface Cached {
-  all: boolean;
-  set: Set<string>;
-}
-
-let cached: Cached | null = null;
-
-function read(): Cached {
-  const empty: Cached = { all: false, set: new Set() };
-  if (typeof localStorage === 'undefined') return empty;
-  try {
-    for (const k of KEYS) {
-      const v = localStorage.getItem(k);
-      if (v == null || v === '') continue;
-      if (v === '1' || v === 'true' || v === '*') return { all: true, set: new Set() };
-      return { all: false, set: new Set(v.split(/[\s,]+/).filter(Boolean)) };
-    }
-    return empty;
-  } catch {
-    return empty;
-  }
-}
-
-function get(): Cached {
-  if (cached === null) cached = read();
-  return cached;
-}
-
-/** True when `namespace` (or `*`) is enabled. */
-export function isDebugEnabled(namespace: string): boolean {
-  const c = get();
-  return c.all || c.set.has(namespace);
-}
-
-/** Conditional `console.debug` — no-op unless `namespace` (or `*`) is enabled.
- *  Each call is prefixed with `[namespace]` so the source is searchable. */
-export function dlog(namespace: string, ...args: unknown[]): void {
-  if (!isDebugEnabled(namespace)) return;
-  // eslint-disable-next-line no-console
-  console.debug(`[${namespace}]`, ...args);
-}
+export { dlog, isDebugEnabled } from '@weasel-js/core';
