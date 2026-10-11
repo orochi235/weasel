@@ -1,17 +1,20 @@
 import { useMemo } from 'react';
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { Icon } from '../../icons';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { Tree, treeBranchIds, type TreeNode } from '../Tree';
 import { GROUP_ICON, type PaletteDrag } from './Palette';
+import { keyOf, type SchemaNode } from './schemaEdit';
 import { unplacedAt } from './unplaced';
 import s from './PrefSchemaEditor.module.css';
 
 const SEP = '/';
+/** What leads the id of a row the schema does not hold. No key holds a `/`, so no schema path starts with one. */
+const NEW = SEP;
 
-function toRows(group: PrefGroup, path: string | null): TreeNode[] {
+function toRows(group: PrefGroup, path: string): TreeNode[] {
   return Object.entries(group.children).map(([key, child]) => {
-    const id = path === null ? key : `${path}${SEP}${key}`;
+    const id = `${path}${path === NEW ? '' : SEP}${key}`;
     const label = <span title={child.description || undefined}>{child.name || key} <span className={s.treeKey}>({key})</span></span>;
     return isPrefLeaf(child)
       ? { id, label, textValue: `${child.name} ${key}`, trailing: <PrefKindBadge kind={child.kind} /> }
@@ -20,25 +23,33 @@ function toRows(group: PrefGroup, path: string | null): TreeNode[] {
 }
 
 /**
- * Nodes waiting for a place in the schema, as a tree to drag them out of: each is whole already, with its key, its
- * name and its description, and lands as it is wherever the structure tree or the live preview takes it. A group
- * dragged brings what it holds.
+ * Nodes waiting for a place in the schema, as a tree to drag them out of: what the schema holds on no page, then
+ * what its host says it does not hold yet. Each is whole already, with its key, its name and its description, and
+ * lands as it is wherever the structure tree or the live preview takes it. A group dragged brings what it holds.
  */
-export function UnplacedTree({ unplaced, onDrag, onDrop }: {
-  /** What is left to place; `null` when nothing is. */
-  unplaced: PrefGroup | null;
+export function UnplacedTree({ loose, looseAt, waiting, selected, onSelect, onDrag, onDrop }: {
+  /** The rows of what the schema holds on no page, each by its tree path. */
+  loose: readonly TreeNode[];
+  /** The schema's node at a tree path. */
+  looseAt(path: string): SchemaNode | undefined;
+  /** What the schema does not hold yet; `null` when nothing is left. */
+  waiting: PrefGroup | null;
+  /** The tree path selected in the editor, marked here when it is one of these rows. */
+  selected: string | null;
+  /** A row the schema holds was picked. */
+  onSelect(path: string): void;
   /** The drag left this tree and moved, or came back or ended (`null`). */
   onDrag(drag: PaletteDrag | null): void;
   onDrop(drag: PaletteDrag): void;
 }) {
-  const rows = useMemo(() => (unplaced ? toRows(unplaced, null) : []), [unplaced]);
+  const rows = useMemo(() => [...loose, ...(waiting ? toRows(waiting, NEW) : [])], [loose, waiting]);
   const open = useMemo(() => treeBranchIds(rows), [rows]);
   const dragOf = (id: string, point: { x: number; y: number }): PaletteDrag | null => {
-    const keys = id.split(SEP);
-    const node: PrefLeaf | PrefGroup | undefined = unplaced ? unplacedAt(unplaced, keys) : undefined;
+    const held = !id.startsWith(NEW);
+    const node = held ? looseAt(id) : waiting ? unplacedAt(waiting, id.slice(NEW.length).split(SEP)) : undefined;
     if (!node) return null;
-    const key = keys.at(-1)!;
-    return { item: { id, label: node.name, icon: 'formLabel', key, make: () => node }, node, ...point };
+    const key = held ? keyOf(id) : id.split(SEP).at(-1)!;
+    return { item: { id, label: node.name, icon: 'formLabel', key, make: () => node }, node, ...(held ? { from: id } : {}), ...point };
   };
   return (
     <Tree
@@ -47,6 +58,13 @@ export function UnplacedTree({ unplaced, onDrag, onDrop }: {
       empty={<p className={s.storedEmpty}>Nothing is waiting for a place.</p>}
       foldBy="leading"
       defaultExpandedIds={open}
+      selectionMode="single"
+      selectedIds={selected === null ? [] : [selected]}
+      // Only a row the schema holds has attributes to show.
+      onSelectionChange={(ids) => {
+        const id = [...ids][0];
+        if (id !== undefined && !id.startsWith(NEW)) onSelect(id);
+      }}
       // Rows leave this tree and never move within it.
       onMove={() => {}}
       canDrop={() => false}

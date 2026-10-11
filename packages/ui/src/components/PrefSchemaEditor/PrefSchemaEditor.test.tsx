@@ -152,24 +152,6 @@ describe('PrefSchemaEditor', () => {
     expect(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' })).toHaveValue('panels');
   });
 
-  it('selects the root, the tree\'s General row, from a press on the rail entry for the root\'s own leaves', () => {
-    const start: PrefGroup = {
-      name: 'Prefs',
-      children: { ...START.children, loose: { kind: 'boolean', name: 'Loose', description: '', default: false } },
-    };
-    render(<Live start={start} />);
-    fireEvent.click(row('grid'));
-    const attributes = () => screen.getByRole('region', { name: 'Attributes' });
-    expect(within(attributes()).getByRole('textbox', { name: 'Key' })).toHaveValue('grid');
-    const entry = within(preview()).getByRole('button', { name: 'Prefs' });
-    fireEvent.pointerDown(entry, { button: 0, clientX: 5, clientY: 5 });
-    fireEvent.pointerUp(entry, { clientX: 5, clientY: 5 });
-    expect(within(structure()).getByRole('treeitem', { name: /^Prefs/, selected: true })).toBeInTheDocument();
-    // The root has a name and no key.
-    expect(within(attributes()).queryByRole('textbox', { name: 'Key' })).toBeNull();
-    expect(within(attributes()).getByRole('textbox', { name: 'Name' })).toHaveValue('Prefs');
-  });
-
   it('narrows the tree to the rows a filter matches, under the branches that hold them', () => {
     render(<Live />);
     fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'dock' } });
@@ -292,10 +274,10 @@ describe('PrefSchemaEditor', () => {
   });
 
   it('labels the preview and can hide hidden prefs', () => {
-    const start: PrefGroup = { name: 'Prefs', children: {
+    const start: PrefGroup = { name: 'Prefs', children: { page: { name: 'Page', children: {
       shown: { kind: 'boolean', name: 'Shown', description: '', default: false },
       secret: { kind: 'boolean', name: 'Secret', description: '', default: false, hidden: true },
-    } };
+    } } } };
     render(<Live start={start} />);
     expect(within(preview()).getByRole('heading', { name: 'Live preview' })).toBeInTheDocument();
     expect(within(preview()).getByText('Secret')).toBeInTheDocument();
@@ -333,7 +315,6 @@ describe('PrefSchemaEditor', () => {
 
   it('counts the leaves under each branch of the tree, at any depth', () => {
     const start: PrefGroup = { name: 'Prefs', children: {
-      loose: { kind: 'boolean', name: 'Loose', description: '', default: false },
       view: { name: 'View', children: {
         grid: { kind: 'boolean', name: 'Grid', description: '', default: true },
         more: { name: 'More', children: { snap: { kind: 'boolean', name: 'Snap', description: '', default: false } } },
@@ -342,7 +323,7 @@ describe('PrefSchemaEditor', () => {
     render(<Live start={start} />);
     const item = (name: RegExp) => within(structure()).getByRole('treeitem', { name });
     expect(within(item(/View/)).getAllByText('2')[0]).toBeInTheDocument();
-    expect(within(item(/^Prefs/)).getAllByText('1')[0]).toBeInTheDocument();
+    expect(within(item(/More/)).getAllByText('1')[0]).toBeInTheDocument();
   });
 
   describe('with a draft key', () => {
@@ -470,16 +451,16 @@ describe('PrefSchemaEditor', () => {
     expect(within(structure()).getByRole('treeitem', { name: /snap/ })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('lists the root\'s own leaves under a General branch, as the preview does, and selects the root from it', () => {
+  it('lists what the root holds on no page as unplaced, out of the tree and the preview, and selects one from there', () => {
     const start: PrefGroup = { name: '', children: { ...START.children, author: { kind: 'string', name: 'Author', description: '', default: '' } } };
     render(<Live start={start} />);
-    const general = within(structure()).getByRole('treeitem', { name: /General/ });
-    expect(within(general).getByText('(author)')).toBeInTheDocument();
-    expect(general).toHaveAttribute('aria-selected', 'true');
-    fireEvent.click(row('dock'));
-    expect(general).toHaveAttribute('aria-selected', 'false');
-    fireEvent.click(within(general).getByText('General'));
-    expect(general).toHaveAttribute('aria-selected', 'true');
+    expect(within(structure()).queryByText('(author)')).toBeNull();
+    expect(within(structure()).queryByRole('treeitem', { name: /General/ })).toBeNull();
+    expect(within(preview()).queryByText('Author')).toBeNull();
+    const waiting = screen.getByRole('tree', { name: 'Unplaced' });
+    fireEvent.click(within(waiting).getByText('(author)'));
+    expect(within(waiting).getByRole('treeitem', { name: /author/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(screen.getByRole('region', { name: 'Attributes' })).getByRole('textbox', { name: 'Key' })).toHaveValue('author');
   });
 
   it('shows the literal and the change list side by side', () => {

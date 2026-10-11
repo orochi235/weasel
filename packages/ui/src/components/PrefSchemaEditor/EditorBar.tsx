@@ -8,7 +8,7 @@ const DRAFT_TIME = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute:
  * The strip across the top of the editor: the host's own controls, the tools that add to and remove from the
  * schema, and the steps back and forward through the edits.
  */
-export function EditorBar({ lead, toolSlot, canUndo, canRedo, onStep, draftSavedAt, onDiscard }: {
+export function EditorBar({ lead, toolSlot, canUndo, canRedo, onStep, draftSavedAt, onDiscard, prefs }: {
   /** The host's controls, set first. */
   lead?: ReactNode;
   /** Takes the element the structure pane draws its tools into. */
@@ -19,6 +19,8 @@ export function EditorBar({ lead, toolSlot, canUndo, canRedo, onStep, draftSaved
   /** When the draft was last kept, or `null` with none. */
   draftSavedAt: number | null;
   onDiscard(): void;
+  /** The way into the editor's own settings. */
+  prefs: ReactNode;
 }) {
   return (
     <div className={s.bar} role="group" aria-label="Schema tools">
@@ -27,6 +29,7 @@ export function EditorBar({ lead, toolSlot, canUndo, canRedo, onStep, draftSaved
       <div className={s.barEnd}>
         <Button size="sm" variant="ghost" disabled={!canUndo} onClick={() => onStep('undo')}>Undo</Button>
         <Button size="sm" variant="ghost" disabled={!canRedo} onClick={() => onStep('redo')}>Redo</Button>
+        {prefs}
         {draftSavedAt !== null && (
           <>
             <Button size="sm" variant="ghost" onClick={onDiscard}>Discard draft</Button>
