@@ -182,3 +182,23 @@ describe('custom run grammars', () => {
     expect(runsToMarkdown([{ text: 'a*b' }], shouty)).toBe('a*b');
   });
 });
+
+describe('a delimiter run no marker fits', () => {
+  const STRIKE = { markers: [{ delimiter: '~', repeat: 2, flags: ['strikethrough' as const] }] };
+
+  it('reads a lone delimiter as text when the shortest marker is longer', () => {
+    expect(markdownToRuns('5~10', STRIKE)).toEqual([{ text: '5~10' }]);
+  });
+
+  it('still reads the marker when the run is long enough', () => {
+    expect(markdownToRuns('a~~b~~', STRIKE)).toEqual([{ text: 'a' }, { text: 'b', strikethrough: true }]);
+  });
+});
+
+describe('runsToMarkdown with an empty styled run', () => {
+  it('writes nothing for it, so it cannot turn its flags on for what follows', () => {
+    const md = runsToMarkdown([{ text: '', bold: true }, { text: 'x' }]);
+    expect(md).toBe('x');
+    expect(markdownToRuns(md)).toEqual([{ text: 'x' }]);
+  });
+});

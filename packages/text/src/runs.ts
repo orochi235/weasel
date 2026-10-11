@@ -182,6 +182,8 @@ export function runsToMarkdown(
   const chars = escapees(grammar);
   let out = '';
   for (const r of runs) {
+    // An empty run would write its markers back to back, which read as a toggle.
+    if (r.text.length === 0) continue;
     const escaped = escapeFor(r.text, chars);
     const on = flagsOf(r, grammar);
     if (on.size === 0) { out += escaped; continue; }
@@ -248,10 +250,14 @@ export function markdownToRuns(
     if (markers) {
       let count = 0;
       while (i + count < input.length && input[i + count] === ch) count++;
-      // The longest marker the delimiter run can pay for. A run shorter than
-      // every marker still matches the shortest, which is how a lone `*`
-      // toggles italic where `***` toggles both.
-      const marker = markers.find((m) => m.repeat <= count) ?? markers[markers.length - 1];
+      // The longest marker the delimiter run can pay for; a run shorter than
+      // every marker is text.
+      const marker = markers.find((m) => m.repeat <= count);
+      if (!marker) {
+        buf += ch.repeat(count);
+        i += count;
+        continue;
+      }
       flush();
       for (const f of marker.flags) {
         if (active.has(f)) active.delete(f);

@@ -175,6 +175,7 @@ export function layoutMarkdown(
     commitLine(piecesOf(line.start, end));
   }
 
+  if (lines.length === 0) return { lines: [], width: 0, height: 0 };
   const width = Math.max(...lines.map((l) => l.width));
   const height = lines.reduce((sum, l) => sum + l.height, 0);
   return { lines, width, height };

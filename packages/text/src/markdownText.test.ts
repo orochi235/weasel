@@ -136,6 +136,13 @@ describe('layoutMarkdown', () => {
   });
 });
 
+describe('layoutMarkdown with no characters', () => {
+  it('reports a zero-size layout for runs whose text is empty', () => {
+    const result = layoutMarkdown([{ text: '' }, { text: '', bold: true }], Infinity, 13, mockMeasure);
+    expect(result).toEqual({ lines: [], width: 0, height: 0 });
+  });
+});
+
 describe('createMarkdownRenderer', () => {
   it('uses sans-serif by default', () => {
     const { ctx, fillCalls } = makeMockCtx();
