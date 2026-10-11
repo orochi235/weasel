@@ -13,7 +13,7 @@
  * identity. `features/groups/frameFixture.ts` is the scene where they differ.
  */
 import { definesFrame, effectivePose, type PoseSource } from 'core/scene/effectivePose';
-import type { NodeId, Scene } from 'core/scene/types';
+import { asNodeId, type NodeId, type Scene } from 'core/scene/types';
 import {
   composeWorldPose,
   frameAtOrAbove,
@@ -29,6 +29,8 @@ export interface PoseFrame<TPose> {
   readonly pc: PoseComposition<TPose>;
   /** `id`'s pose in world coordinates, honoring an in-flight gesture override. */
   world(id: NodeId): TPose;
+  /** The node whose frame `id` is stored in, or `null` for the root frame. */
+  frame(id: NodeId): NodeId | null;
   /** World pose of the frame `id` is stored in, or `null` for the root frame. */
   parentWorld(id: NodeId): TPose | null;
   /** `worldPose` expressed in `id`'s own parent frame — what `setPose` stores. */
@@ -46,6 +48,10 @@ export function poseFrame<TPose>(
   return {
     pc,
     world: (id) => composeWorldPose(adapter, id as string, pc.compose),
+    frame: (id) => {
+      const frame = frameAtOrAbove(adapter, adapter.getParent(id as string));
+      return frame === null ? null : asNodeId(frame);
+    },
     parentWorld: (id) => {
       const frame = frameAtOrAbove(adapter, adapter.getParent(id as string));
       return frame === null ? null : composeWorldPose(adapter, frame, pc.compose);

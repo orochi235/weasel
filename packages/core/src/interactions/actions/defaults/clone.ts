@@ -1,47 +1,22 @@
 /**
  * `cloneAction` — ongoing Action descriptor for alt-drag clone.
  *
- * ## Status: REAL (scene-direct, no overlay)
+ * `start` captures the world pose of every node the copy will hold, `onMove`
+ * tracks the drag delta and previews the copies, and `onEnd('commit')` inserts
+ * them as one batch — through the consumer `applyOps` hook when present, else
+ * `scene.applyBatch`. Nothing is written before the commit, so a cancel only
+ * clears the preview.
  *
- * Implements the core clone-by-drag logic via insert ops committed through
- * `scene.applyBatch`:
- *   - `start`: validates selection + scene; captures origin poses for all
- *     selected nodes. The alt-modifier check that activates cloning in
- *     `useClone` (via `CloneBehavior.activates`) is intentionally NOT applied
- *     here — the descriptor fires when the dispatcher routes to it; modifier
- *     discrimination is a dispatcher concern (Phase 12 TODO for alt-gating).
- *   - `onMove`: tracks current drag delta in scratch (no scene writes).
- *   - `onEnd('commit')`: emits one insert op per selected node (translated
- *     pose) and commits them as a single batch — via the consumer `applyOps`
- *     hook when present, else `scene.applyBatch(ops, 'Clone', ...)`. One
- *     undo entry for the whole batch.
- *   - `onEnd('cancel')`: no-op (scene never mutated during drag).
- *
- * ## What this does NOT wire (vs `useClone`)
- *
- * - Modifier gate: `useClone` only activates when `CloneBehavior.activates(mods)`
- *   returns true (typically alt-held). The descriptor lacks that gate — it runs
- *   whenever the dispatcher routes `clone`. Proper alt-gating requires a modifier-
- *   discriminant in the dispatcher (Phase 12 TODO).
- * - Overlay: `useClone` renders a ghost via `setOverlay / clearOverlay`. The
- *   descriptor has no overlay surface (deferred to Phase 7 overlay system).
- * - `expandIds`: group expansion is omitted; only leaf poses are cloned.
- * - Custom `CloneBehavior.onEnd` ops (e.g. `cloneByAltDrag`): the descriptor
- *   uses a simpler `scene.add` path that does not delegate to behavior `onEnd`.
- *   Behavior-pipeline cloning waits for a later phase.
- *
- * ## Pose generics
- *
- * Poses are translated through the `poseDescriptor` dep, as `moveAction` does.
+ * The action does not gate on a modifier: it runs whenever the dispatcher
+ * routes to it, and the binding that names it carries the `alt` requirement.
  */
 
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { Node, Scene, NodeId } from 'core/scene/types';
+import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
-import { createInsertOp } from 'core/ops/create';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import { freshNodeId } from './freshNodeId';
+import { copyRoots, copySelection, subtreeIds } from './copySubtree';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
@@ -52,6 +27,7 @@ import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../pla
 // ---------------------------------------------------------------------------
 
 interface CloneScratch {
+  /** The selected ids a copy starts from; each brings its subtree. */
   ids: NodeId[];
   scene: Scene<unknown, string, unknown>;
   descriptor: PoseDescriptor<unknown>;
@@ -60,16 +36,15 @@ interface CloneScratch {
   /** Origin poses captured at drag start, in world — the frame the drag
    *  delta is expressed in, and the plane the edit is measured in. The copy
    *  keeps its source's parent and layer, so each translated result is
-   *  carried back to that layer's plane and stored in that same frame. */
+   *  carried back to that layer's plane and stored in that same frame.
+   *  Holds every node the copy moves itself: a node stored in a copied frame
+   *  is absent, because the copy of that frame carries it. */
   originPoses: Map<NodeId, unknown>;
   /** The view the invocation started with, read for `planeOf`. */
   view: unknown;
   /** Running drag delta — updated each onMove, applied once at commit. */
   currentDelta: { dx: number; dy: number };
-  /** Preview poses keyed by ORIGINAL node id (the clone targets don't have
-   *  scene ids yet; the preview-ghost layer paints the originals' silhouette
-   *  at the translated pose — original stays visible at its committed home,
-   *  ghost appears at the drag target). */
+  /** Preview poses keyed by the original's id: the copies have no ids yet. */
   previews: Map<NodeId, unknown>;
   /** Optional consumer commit hook captured at gesture start. When present,
    *  the insert ops route through it (consumer history) instead of
@@ -87,11 +62,8 @@ interface CloneScratch {
  *
  * Requires dep-schema entries: `selection`, `scene`.
  *
- * Clones selected nodes into new scene nodes translated by the drag delta.
- * Commits insert ops via `scene.applyBatch(ops, 'Clone', ...)` (or the
- * consumer `applyOps` hook) for a single undo entry.
- *
- * @see useClone — the React hook this descriptor partially mirrors.
+ * Copies each selected node, with its subtree, to where the drag left it.
+ * One undo entry.
  */
 export const cloneAction: Action & { requires: string[] } = inPlane({
   id: 'clone',
@@ -118,13 +90,19 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       const ids = selection.get() as NodeId[];
       if (ids.length === 0) return {};
 
+      const rootIds = copyRoots(scene, ids);
+      const copied = new Set<NodeId>();
+      for (const root of rootIds) for (const id of subtreeIds(scene, root)) copied.add(id);
+
       // Capture origin poses once at drag start.
       const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
       const originPoses = new Map<NodeId, unknown>();
       const descriptor = poseDescriptorOf(ctx.deps.poseDescriptor);
-      for (const id of ids) {
+      for (const id of copied) {
         const node = scene.get(id);
         if (node === undefined) continue;
+        const storedIn = frame.pc.closure === 'identity' ? null : frame.frame(id);
+        if (storedIn !== null && copied.has(storedIn)) continue;
         const toEdited = invertPlane(planeOf(ctx.deps.view, node.layer));
         originPoses.set(id, carryPose(descriptor, frame.world(id), toEdited));
       }
@@ -132,7 +110,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       if (originPoses.size === 0) return {};
 
       const scratch: CloneScratch = {
-        ids,
+        ids: rootIds,
         scene,
         descriptor,
         frame,
@@ -185,31 +163,12 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
             return;
           }
 
-          // Build one insert op per clone target — same nodes/values the old
-          // direct `scene.add` loop produced (kind/layer/data/parent preserved,
-          // pose translated by the drag delta), then route the batch through the
-          // consumer `applyOps` hook when present (so an app with its own history
-          // captures the clone as a single undo entry); otherwise commit straight
-          // to the scene's own history. One applyOps / applyBatch call =
-          // one undo entry, matching the prior single `scene.batch('Clone', …)`.
-          const ops: Op[] = [];
-          for (const id of scratch.ids) {
-            const originNode = scratch.scene.get(id);
-            const newPose = landed(id, dx, dy);
-            if (newPose === undefined || !originNode) continue;
-            // The old `scene.add` (no explicit id) minted a random id; we
-            // pre-generate one so the insert op carries a full node. Id value
-            // was never observable, so behavior is preserved.
-            const node = {
-              id: freshNodeId(),
-              kind: originNode.kind,
-              layer: originNode.layer,
-              pose: newPose,
-              data: originNode.data,
-              parent: originNode.parent ?? null,
-            } as Node<unknown, string, unknown>;
-            ops.push(createInsertOp<Node<unknown, string, unknown>>({ node, label: 'Clone' }));
-          }
+          const { ops } = copySelection(
+            scratch.scene,
+            scratch.ids,
+            (id, node) => (scratch.originPoses.has(id) ? landed(id, dx, dy) : node.pose),
+            'Clone',
+          );
           if (ops.length > 0) {
             if (scratch.applyOps) scratch.applyOps(ops, 'Clone');
             else scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selection.adapterMethods));

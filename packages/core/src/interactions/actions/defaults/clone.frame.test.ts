@@ -9,6 +9,7 @@ import {
   makeFrameFixture,
   expectSamePose,
   FRAME_FIXTURE_IDS,
+  FRAME_FIXTURE_LOCAL,
 } from 'features/groups/frameFixture';
 import type { NodeId, RectPose, Scene } from 'core/scene/types';
 import type { InvocationCtx } from '@weasel-js/routing';
@@ -19,13 +20,18 @@ function makeScene() {
   return makeFrameFixture();
 }
 
-function ctxAt(scene: Scene<unknown, string, unknown>, dx: number, dy: number): InvocationCtx {
+function ctxAt(
+  scene: Scene<unknown, string, unknown>,
+  dx: number,
+  dy: number,
+  selected: NodeId[] = [upright],
+): InvocationCtx {
   return {
     world: { x: dx, y: dy },
     screen: { x: 0, y: 0 },
     modifiers: { alt: true, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => [upright] as NodeId[] },
+      selection: { get: () => selected },
       scene,
       poseComposition: RIGID_POSE_COMPOSITION,
     },
@@ -64,5 +70,22 @@ describe('cloneAction under a container frame', () => {
       { x: 30, y: 20, width: 20, height: 10, rotation: 0 },
     );
     handle.onEnd!(ctxAt(scene, 0, 20), 'cancel');
+  });
+
+  it('leaves a copied group\'s children at their own poses in its frame', () => {
+    const scene = makeScene();
+    const invoker = cloneAction.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(ctxAt(scene, 0, 0, [group]), undefined);
+    handle.onMove!(ctxAt(scene, 0, 20, [group]));
+    handle.onEnd!(ctxAt(scene, 0, 20, [group]), 'commit');
+
+    const copy = scene.roots.filter((id) => id !== group);
+    expect(copy).toHaveLength(1);
+    expectSamePose(scene.get(copy[0])!.pose as RectPose, { x: 0, y: 20, width: 100, height: 100, rotation: Math.PI / 2 });
+    const kids = scene.childrenOf(copy[0]).map((id) => scene.get(id)!.pose as RectPose);
+    expect(kids).toHaveLength(2);
+    expectSamePose(kids[0], FRAME_FIXTURE_LOCAL.a);
+    expectSamePose(kids[1], FRAME_FIXTURE_LOCAL.b);
   });
 });
