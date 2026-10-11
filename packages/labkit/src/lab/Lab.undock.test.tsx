@@ -1,10 +1,11 @@
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { describe, expect, it } from 'vitest';
 import type { TrialContribution } from '../chrome/types';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
+import { LabContext, type LabContextValue } from './LabContext';
 
 const bare: Instrument = {
   name: 'Bare',
@@ -86,5 +87,44 @@ describe('undocking a sidebar section', () => {
       <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[pinned]} />,
     );
     expect(screen.queryByRole('button', { name: 'Undock Pinned' })).toBeNull();
+  });
+
+  describe('when its trial leaves', () => {
+    let lab: LabContextValue | null = null;
+    const capture = (
+      <LabContext.Consumer>
+        {(value) => {
+          if (value) lab = value;
+          return null;
+        }}
+      </LabContext.Consumer>
+    );
+
+    async function undockInFirstOfTwo() {
+      const view = await renderSettled(
+        <Lab title="T" instruments={[bare]} defaultInstrument="Bare" chrome={[notes]}>
+          {capture}
+        </Lab>,
+      );
+      await act(async () => lab?.addTrial('Bare'));
+      const [undock] = screen.getAllByRole('button', { name: 'Undock Notes' });
+      await userEvent.click(undock as HTMLElement);
+      expect(view.container.querySelector('.lk-panel-tile')).not.toBeNull();
+      return view;
+    }
+
+    it('takes the panel with it on close', async () => {
+      const { container } = await undockInFirstOfTwo();
+      const first = lab?.trials[0]?.id ?? '';
+      await act(async () => lab?.closeTrial(first));
+      expect(container.querySelector('.lk-panel-tile')).toBeNull();
+    });
+
+    it('takes the panel with it on a swap', async () => {
+      const { container } = await undockInFirstOfTwo();
+      const first = lab?.trials[0]?.id ?? '';
+      await act(async () => lab?.swapTrial(first, 'Bare'));
+      expect(container.querySelector('.lk-panel-tile')).toBeNull();
+    });
   });
 });

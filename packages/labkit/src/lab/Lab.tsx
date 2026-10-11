@@ -454,8 +454,9 @@ function LabRuntime({
         replaceAndFocusAdded(cloneTrialOp(store.getState().trials, id));
       },
       closeTrial: (id) => {
-        const next = closeTrialOp(store.getState().trials, id);
-        replaceTrials(next);
+        const current = store.getState();
+        // A lab keeps its last trial; `closeTrialOp` is what says whether this is it.
+        if (closeTrialOp(current.trials, id) !== current.trials) current.removeTrial(id);
       },
       reorderTrials: (ids) => {
         replaceTrials(reorderTrialsOp(store.getState().trials, ids));

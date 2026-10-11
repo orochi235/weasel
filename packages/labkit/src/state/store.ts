@@ -1,5 +1,5 @@
 import type { History } from '@weasel-js/core';
-import { createStore, type StoreApi } from 'zustand/vanilla';
+import { createStore, type StateCreator, type StoreApi } from 'zustand/vanilla';
 import type { ClockPosition } from '../clock/trialClock';
 import { applyConfigWrite } from '../config/autoConfig';
 import { fillConfigDefaults } from '../config/path';
@@ -23,6 +23,7 @@ import type {
   TrialRecord,
 } from './types';
 import {
+  dockingDepartedTrials,
   dockPanel as dockPanelIn,
   type UndockedPanel,
   undockPanel as undockPanelIn,
@@ -87,7 +88,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
       };
   const initial = options.initial ?? emptyDocument(options.initialMode ?? 'auto');
 
-  const store = createStore<LabStoreState & LabStoreActions>()((set, get) => ({
+  const init: StateCreator<LabStoreState & LabStoreActions> = (set, get) => ({
     trials: hydrateTrials(initial.trials, hooks.serializers, hooks),
     savedSnapshots: hydrateSnapshots(initial.saves, hooks),
     mode: initial.mode,
@@ -103,10 +104,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
     },
 
     removeTrial: (id) => {
-      set((s) => ({
-        trials: s.trials.filter((w) => w.id !== id),
-        undockedPanels: dockPanelIn(s.undockedPanels, id),
-      }));
+      set((s) => ({ trials: s.trials.filter((w) => w.id !== id) }));
     },
 
     updateTrialState: (id, next) => {
@@ -315,7 +313,8 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
     },
 
     instrumentHooks: () => hooks,
-  }));
+  });
+  const store = createStore<LabStoreState & LabStoreActions>()(dockingDepartedTrials(init));
 
   return store;
 }
