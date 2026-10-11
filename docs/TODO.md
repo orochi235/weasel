@@ -673,14 +673,6 @@ Core five + Crop shipped. Remaining:
   have the shader unpremultiply before the color matrix, which fixes every source and filters better
   at edges.
 
-- **(P3) Pixel loupe: each refresh waits on the garbage collector to free its texture.**
-  `packages/hud/src/loupe/createLoupe.ts` mints a new `ImageBitmap` per refresh and closes the old
-  one without telling the renderer. `GLImageCache` now deletes a collected bitmap's texture on a
-  later frame, but collection is not prompt. The loupe should call `releaseImageSource(old)` where
-  it calls `pixels?.close()`, and `releaseImageSource` should be exported from
-  `packages/core/src/renderer/index.ts` so a consumer drawing video frames or canvas snapshots can
-  do the same.
-
 - **(P3) Renderer: the transform stack is single precision.** `mat3.create` returns a `Float32Array`
   and `GroupState` composes in it, so at world x = 262,144 and 64x zoom the view translation is near
   1.68e7, where a float32 step is 1 to 2 pixels. Batched geometry (corners computed in JS) would pan

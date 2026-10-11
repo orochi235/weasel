@@ -2,7 +2,7 @@ import {
   createViewportLayer, screenToWorld, viewToTransform,
   type CanvasViewHandle, type RenderLayer, type SceneCanvasApi, type View,
 } from '@weasel-js/core';
-import type { DrawCommand } from '@weasel-js/core/renderer';
+import { releaseImageSource, type DrawCommand } from '@weasel-js/core/renderer';
 import {
   createLoupeModel, loupeInnerView,
   type LoupeMode, type LoupeModel, type LoupeSurface,
@@ -129,6 +129,12 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   // follows the aim, so re-aiming mid-drag would move the world under it.
   let holding = false;
   let pixels: ImageBitmap | null = null;
+  const dropPixels = () => {
+    if (!pixels) return;
+    releaseImageSource(pixels);
+    pixels.close();
+    pixels = null;
+  };
   let pixelsPending = false;
   let refreshWanted = false;
   let disposed = false;
@@ -233,7 +239,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     createImageBitmap(data)
       .then((bmp) => {
         if (disposed) { bmp.close(); return; }
-        pixels?.close();
+        dropPixels();
         pixels = bmp;
         pixelsPending = false;
         requestRedraw();
@@ -329,8 +335,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     for (const type of pointerEnds) input.removeEventListener(type, onPointerEnd);
     lens?.remove();
     lens = null;
-    pixels?.close();
-    pixels = null;
+    dropPixels();
   };
 
   input.addEventListener('pointermove', onPointerMove);

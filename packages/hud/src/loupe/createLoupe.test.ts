@@ -3,6 +3,12 @@ import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createHud, type Hud } from '../hud';
 import { createLoupe } from './createLoupe';
 import type { RenderLayer, View } from '@weasel-js/core';
+import { releaseImageSource } from '@weasel-js/core/renderer';
+
+vi.mock('@weasel-js/core/renderer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/core/renderer')>()),
+  releaseImageSource: vi.fn(),
+}));
 
 const tokens = resolveTheme(weaselTheme, { mode: 'dark' });
 const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -392,6 +398,38 @@ describe('createLoupe', () => {
     expect(createImageBitmap).toHaveBeenCalledTimes(2);
 
     loupe.dispose();
+    vi.unstubAllGlobals();
+  });
+
+  it('pixel mode releases a replaced bitmap from the renderer, and the last one on dispose', async () => {
+    const hud = createHud();
+    const frame = bindHost(hud);
+    const el = makeElement();
+    vi.spyOn(el, 'getContext').mockReturnValue({
+      RGBA: 0x1908, UNSIGNED_BYTE: 0x1401, readPixels: () => {},
+    } as unknown as WebGL2RenderingContext);
+    const bitmaps = [{ close: vi.fn() }, { close: vi.fn() }] as unknown as ImageBitmap[];
+    let made = 0;
+    vi.stubGlobal('createImageBitmap', vi.fn(() => Promise.resolve(bitmaps[made++])));
+    const release = vi.mocked(releaseImageSource);
+    release.mockClear();
+
+    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {}, mode: 'pixel' });
+    loupe.aimAt({ x: 400, y: 100 });
+    frame();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(release).not.toHaveBeenCalled();
+
+    loupe.aimAt({ x: 400, y: 200 });
+    frame();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(made).toBe(2);
+    expect(release.mock.calls).toEqual([[bitmaps[0]]]);
+
+    loupe.dispose();
+    expect(release.mock.calls).toEqual([[bitmaps[0]], [bitmaps[1]]]);
     vi.unstubAllGlobals();
   });
 
