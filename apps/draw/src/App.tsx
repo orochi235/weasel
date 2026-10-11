@@ -54,7 +54,6 @@ import {
   type NodeId,
   type Path,
   PATH_M,
-  pathInWorld,
   type PoseComposition,
   type RangeStyle,
   rectPath,
@@ -65,7 +64,6 @@ import {
   type SceneCanvasApi,
   type SerializedScene,
   solid,
-  splitSubpaths,
   type Stroke,
   UNION_OF_CHILDREN,
   unionOfChildren,
@@ -150,6 +148,7 @@ import { drawBooleansAdapter, textSourceOf, type DrawScene } from './booleansAda
 import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
+import { releaseCompoundPaths } from './releaseCompound';
 import { DEFAULT_FILENAME, PAPER_PRESETS, loadDoc, saveDoc } from './docPersistence';
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
@@ -623,55 +622,7 @@ function Toolbar({
   })();
 
   const onReleaseCompound = useCallback(() => {
-    const newIds: NodeId[] = [];
-    scene.batch('Release compound path', () => {
-      for (const id of selection.current) {
-        const nid = asNodeId(id);
-        const node = scene.get(nid);
-        if (!node || node.kind !== 'leaf') continue;
-        const data = node.data as WeaselDrawData;
-        const path = data.path;
-        if (path?.kind !== 'polygon') {
-          newIds.push(nid);
-          continue;
-        }
-        const pose = node.pose as WeaselDrawPose;
-        // Bake pose into the parent path so each subpath inherits world
-        // coords (including any rotation); otherwise the renderer's
-        // "translate path AABB origin to pose.x/y" step would teleport
-        // every subpath to the parent's origin and lose the inter-subpath
-        // offsets. The resulting subpaths render at rotation=0 since the
-        // rotation is now baked into their coords.
-        const worldPath = pathInWorld(path, pose);
-        if (worldPath.kind !== 'polygon') {
-          newIds.push(nid);
-          continue;
-        }
-        const worldParts = splitSubpaths(worldPath);
-        if (worldParts.length < 2) {
-          newIds.push(nid);
-          continue;
-        }
-        scene.remove(nid);
-        for (const sub of worldParts) {
-          const b = boundsOfPath(sub);
-          const subPose: WeaselDrawPose = {
-            x: b.x,
-            y: b.y,
-            width: b.width,
-            height: b.height,
-          };
-          const subData: WeaselDrawData = { ...data, path: sub };
-          newIds.push(scene.add({
-            kind: 'leaf',
-            layer: 'default',
-            pose: subPose,
-            data: subData,
-          }));
-        }
-      }
-    });
-    selection.set(newIds);
+    selection.set(releaseCompoundPaths(scene, selection.current));
   }, [scene, selection]);
 
   return (
