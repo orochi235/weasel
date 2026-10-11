@@ -35,8 +35,9 @@ import type {
  * AABB center, when present) once per region for both paint and hit-test.
  *
  * FillStyle order matches array order (first → last = bottom → top). Hit-test
- * walks regions in reverse (top → bottom) and returns the first non-null
- * binding.
+ * walks affordances in reverse (top → bottom) and stops at the first that
+ * claims the point; within it the nearest region wins (see
+ * `hitAffordanceRegions`).
  *
  * `decorate(state, view)` runs *after* a given affordance's regions for
  * paint only — useful for leader lines and other purely-visual chrome that

@@ -40,10 +40,9 @@ const DEFAULT_STROKE = '#1a130d';
  * member in single-mode; the union AABB in multi-mode).
  *
  * Declares four point regions in the target's local frame; the framework
- * applies the target's bounds rotation for both paint and hit-test. The
- * drag channel returned here is a no-op stub that claims — consuming
- * tools (`useResizeTool`) wrap each region's `bind()` to substitute a
- * drag channel that drives `useResize`.
+ * applies the target's bounds rotation for both paint and hit-test. A
+ * region's `bind()` carries only the scratch a hit hands to the resize
+ * action: the anchor, the target, and the world-space fixed point.
  */
 export function createCornerResizeAffordance(
   opts: CornerResizeAffordanceOptions = {},

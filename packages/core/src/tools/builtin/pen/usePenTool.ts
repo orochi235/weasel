@@ -112,8 +112,9 @@ export interface UsePenToolOptions<TPose> {
   /** When true (default), clicking the first anchor to close a subpath
    *  commits immediately — the closed region renders with its fill right
    *  away. When false, the closed subpath stays in scratch so the user can
-   *  start another subpath; commit then fires on Enter / tool-switch /
-   *  ⌘-click / double-click, producing a compound path. */
+   *  start another subpath; commit then fires on Enter / ⌘-click /
+   *  double-click, producing a compound path. Switching tools first discards
+   *  it, as Escape does. */
   autoCommitOnClose?: boolean;
   /** Screen-px hit radius for "click first anchor to close". Default `8`.
    *  Measured as a screen-space circle, so it stays round under non-uniform
@@ -183,8 +184,7 @@ function buildPath(
  * State machine: Idle / Drawing / BetweenSubpaths (see design doc).
  * Click places a corner anchor; click-drag places an anchor with an
  * outgoing bezier handle; click-the-first-anchor closes the subpath; Enter
- * open-finishes; Esc discards; tool-switch commits if ≥2 anchors else
- * discards. Shift constrains the placement-drag handle to 0/45/90/135°;
+ * open-finishes; Esc discards, and so does a tool switch. Shift constrains the placement-drag handle to 0/45/90/135°;
  * Alt during drag breaks the handle mirror for the next segment.
  *
  * Reshaping an existing path is not this tool's job — see {@link PenScratch}.
@@ -452,7 +452,7 @@ export function usePenTool<TPose>(
             // on (default) this commits right away so the closed region
             // renders with its fill — Illustrator-style. With it off the
             // closed subpath stays in scratch for compound-path builds and
-            // commits on Enter / tool switch.
+            // commits on Enter.
             if (scratch.current && scratch.current.anchors.length >= 3) {
               const first = scratch.current.anchors[0];
               if (withinCloseRadius(deps, first.x, first.y, wx, wy)) {

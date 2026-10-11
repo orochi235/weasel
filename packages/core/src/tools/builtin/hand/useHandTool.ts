@@ -37,14 +37,9 @@ interface HandScratch {
  * Pan-on-drag tool. Registered in both the active slot (sticky, `H` key)
  * and the hotkey slot (momentary, hold `space`).
  *
- * Drag handlers compute pan deltas inline. View is read from ctx.view at
- * gesture start and written via ctx.setView on every move — so the tool
- * works with both controlled and uncontrolled Canvas viewport modes
- * without any extra wiring.
- *
- * Sign convention: dragging the mouse right moves the canvas content right
- * relative to the viewport — i.e. the camera moves *left*. So the new view
- * is `{ x: startView.x - dx, y: startView.y - dy }`.
+ * A declarative shell: its one binding routes a drag to the
+ * `viewport.dragPan` action, which owns the gesture, the view writes, and
+ * the grabbing cursor. The tool only passes `axis` and `inertia` along.
  */
 export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | null> {
   // Read through a ref from a params thunk rather than closing over the

@@ -58,10 +58,10 @@ const DEFAULT_PAINT: AnnulusPaintForm = {
 /**
  * @experimental
  * Rotation affordance for the active selection. Replaces the legacy
- * "small dot above the AABB" handle with an invisible elliptical ring
- * that wraps the selection: the smallest ellipse containing the AABB,
- * minus the AABB itself. Hovering the ring sets the cursor (default
- * `'grab'`) and drag-from-ring triggers `rotateAction` via the same
+ * "small dot above the AABB" handle with an elliptical ring that wraps
+ * the selection: the smallest ellipse containing the AABB, minus the AABB
+ * itself. Hovering the ring sets the cursor (default the `rotate` glyph)
+ * and drag-from-ring triggers `rotateAction` via the same
  * binding path the old point-handle used (id stays
  * `'selection.rotation-handle'`).
  *
@@ -69,8 +69,8 @@ const DEFAULT_PAINT: AnnulusPaintForm = {
  * with the AABB so the hoverable band always wraps the rendered shape.
  *
  * Visibility: gated by chrome-caps' `'selection.rotation-handle'` rule.
- * The `paint` option drives optional dev-time ring stroke; production
- * defaults to invisible (the cursor change is the only on-hover cue).
+ * The ring paints as a faint band by default; `paint: null` leaves the
+ * cursor change as the only cue.
  */
 export function createRotationAffordance(
   opts: RotationAffordanceOptions = {},
