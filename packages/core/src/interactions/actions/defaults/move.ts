@@ -49,6 +49,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { asNodeId } from 'core/scene/types';
+import { moveSources } from '../selectionSubtree';
 import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
@@ -894,7 +895,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       const params = resolveParams(opts?.params);
       const expandIds = params?.['expandIds'] as ((ids: string[]) => string[]) | undefined;
       const selected = [...selection.get()] as string[];
-      const ids = (expandIds ? expandIds(selected) : selected) as NodeId[];
+      const ids = moveSources(scene, expandIds ? expandIds(selected) : selected) as NodeId[];
       if (ids.length === 0) return {};
 
       // Capture origin poses once at drag start. Walk descendants so

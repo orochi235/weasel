@@ -23,6 +23,28 @@ export function selectedRoots(scene: AnyScene, ids: readonly string[]): NodeId[]
     .filter((id) => scene.get(id) !== undefined && !hasSelectedAncestor(scene, id, set));
 }
 
+/**
+ * The nodes a translation of `ids` has to act on. A node whose pose is derived
+ * from an id list cannot be moved itself, since a pose written to it is
+ * overwritten on the next read, so the nodes it derives from stand in for it,
+ * through however many derived nodes that takes. Each id appears once, in the
+ * order it was first reached.
+ */
+export function moveSources(scene: AnyScene, ids: readonly string[]): string[] {
+  const out = new Set<string>();
+  const walked = new Set<string>();
+  const visit = (id: string): void => {
+    if (walked.has(id)) return;
+    walked.add(id);
+    const node = scene.get(asNodeId(id));
+    const deps = node?.derivePose !== undefined && Array.isArray(node.dependsOn) ? node.dependsOn : [];
+    if (deps.length === 0) out.add(id);
+    else for (const dep of deps) visit(dep);
+  };
+  for (const id of ids) visit(id);
+  return [...out];
+}
+
 /** `id` and everything under it, a parent ahead of its children. */
 export function subtreeIds(scene: AnyScene, id: NodeId): NodeId[] {
   const out: NodeId[] = [];

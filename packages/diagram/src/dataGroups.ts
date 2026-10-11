@@ -59,7 +59,6 @@ export function groupSpecs(
       id: g.group.id as never,
       kind: 'leaf',
       layer: 'main',
-      pickable: false,
       pose: {
         x,
         y,

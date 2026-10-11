@@ -11,7 +11,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { scenePoseFrame } from '../poseFrame';
-import { translateTargets } from '../selectionSubtree';
+import { moveSources, translateTargets } from '../selectionSubtree';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 
 /**
@@ -38,7 +38,9 @@ function nudgeSelection(
   d: PoseDescriptor<unknown>,
   poseComposition: unknown,
 ): void {
-  const ids = translateTargets(scene, scenePoseFrame(scene, poseComposition), selection.get());
+  const ids = translateTargets(
+    scene, scenePoseFrame(scene, poseComposition), moveSources(scene, selection.get()),
+  );
   if (ids.length === 0) return;
   // Pure translation by the nudge step. Pushed alongside each transform op so
   // a wired geometryProjection mirrors the node's data-held geometry too.

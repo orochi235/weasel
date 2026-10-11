@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, derivedDepOf, effectivePose, pointAlongPath, type RectPose } from '@weasel-js/core';
+import {
+  createScene, derivedDepOf, effectivePose, moveAction, pointAlongPath,
+  type OngoingHandle, type OngoingInvoker, type RectPose,
+} from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { diagramScene, edgeIdOf, type DiagramData } from './fromData';
 import { fitDiagram } from './DiagramView';
@@ -48,6 +51,32 @@ describe('a group in a scene', () => {
     expect(pose('G').width).toBeGreaterThan(box.width);
     expect(pose('G/label').x - pose('G').x).toBeCloseTo(label.x - box.x);
     expect(pose('G/label').y - pose('G').y).toBeCloseTo(label.y - box.y);
+  });
+
+  it('can be picked, so a press on the box or its title grabs the group', () => {
+    const { specs } = load();
+    expect(specs.find((s) => s.id === 'G')!.pickable).toBeUndefined();
+    expect(specs.find((s) => s.id === 'G/label')!.pickable).toBe(false);
+  });
+
+  it('moves its members when it is dragged', () => {
+    const { scene, pose } = load();
+    const before = { a: pose('a'), b: pose('b'), x: pose('x'), box: pose('G') };
+    const drag = { start: { x: 0, y: 0 }, current: { x: 40, y: 30 }, delta: { x: 40, y: 30 } };
+    const ctx = (d?: typeof drag) => ({
+      world: d ? d.current : { x: 0, y: 0 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { selection: { get: () => ['G'] }, scene },
+      drag: d,
+    }) as never;
+    const handle = (moveAction.invoker as OngoingInvoker).start(ctx(), {}) as OngoingHandle;
+    handle.onMove!(ctx(drag));
+    handle.onEnd!(ctx(drag), 'commit');
+    expect(pose('a')).toEqual({ ...before.a, x: before.a.x + 40, y: before.a.y + 30 });
+    expect(pose('b')).toEqual({ ...before.b, x: before.b.x + 40, y: before.b.y + 30 });
+    expect(pose('G')).toEqual({ ...before.box, x: before.box.x + 40, y: before.box.y + 30 });
+    expect(pose('x')).toEqual(before.x);
   });
 
   it('puts its label inside the box, above every member', () => {
