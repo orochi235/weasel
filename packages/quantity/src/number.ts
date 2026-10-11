@@ -158,6 +158,21 @@ export function latinDigits(text: string, locale: string): string {
 
 const BIDI_MARKS = /[\u061c\u200e\u200f]/g;
 
+/**
+ * The number inside text that wraps one in symbols, such as a currency sign
+ * or code on either side: its sign, its digits in `locale`'s form or
+ * `en-US`'s, and a magnitude suffix typed against them, ready for
+ * {@link parseNumber}. Empty when the text holds no number.
+ */
+export function numberWithin(text: string, locale: string): string {
+  const t = latinDigits(text, locale);
+  const m = new RegExp(shapeOf(locale).run.source).exec(t);
+  if (!m) return '';
+  const around = t.slice(0, m.index) + t.slice(m.index + m[0].length);
+  const suffix = /^[kmbt](?!\p{L})/iu.exec(t.slice(m.index + m[0].length))?.[0] ?? '';
+  return `${/[-\u2212]/.test(around) ? '-' : ''}${m[0]}${suffix}`;
+}
+
 /** The mark `locale` writes before a fraction: `.` in `en-US`, `,` in `de-DE`. */
 export const decimalOf = (locale: string): string => shapeOf(locale).decimal;
 

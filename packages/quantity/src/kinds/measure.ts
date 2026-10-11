@@ -1,5 +1,5 @@
 import { intlParts, numberPart, plural, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
-import { decimalOf, escapeClass, latinDigits, parseNumber, type UnitTable } from '../number';
+import { decimalOf, escapeClass, latinDigits, numberWithin, parseNumber, type UnitTable } from '../number';
 
 /**
  * Units `Intl` can name aloud, by the symbol a field shows. A unit outside it
@@ -121,7 +121,7 @@ export const currencyKind: DisplayKind<CurrencyDisplay> = {
   format: (value, d, ctx) => intlParts(value, ctx.locale, currencyOptions(d)),
   speak: (value, d, ctx) =>
     spokenSign(textOf(intlParts(value, ctx.locale, { ...currencyOptions(d), currencyDisplay: 'name' }))),
-  parse: (text, _d, ctx) => parseNumber(text.replace(/[^\d.,'’+\-−]/g, ''), undefined, ctx.locale),
+  parse: (text, _d, ctx) => parseNumber(numberWithin(text, ctx.locale), undefined, ctx.locale),
 };
 
 /**

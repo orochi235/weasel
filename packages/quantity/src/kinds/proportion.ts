@@ -1,5 +1,5 @@
 import { intlParts, numberPart, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
-import { MINUS_SIGN, parseNumber } from '../number';
+import { latinDigits, MINUS_SIGN, parseNumber } from '../number';
 
 /** A share of one as a percentage: 0.25 shows `25%`. Typed text reads as
  *  percent with or without the sign. */
@@ -30,8 +30,18 @@ export const percentKind: DisplayKind<PercentDisplay> = {
         }),
       ),
     ),
-  parse: (text, _d, ctx) => parseNumber(text.replace(/^\s*%|%\s*$/, ''), undefined, ctx.locale) / 100,
+  parse: (text, _d, ctx) => parseNumber(withoutPercentSign(text, ctx.locale), undefined, ctx.locale) / 100,
 };
+
+/**
+ * Percent text without its sign, which a locale writes after the number
+ * (`25%`), before it (`%25` in `tr-TR`, inside the minus), as `٪`, or wrapped
+ * in bidi marks.
+ */
+function withoutPercentSign(text: string, locale: string): string {
+  const m = /^\s*([-+\u2212]?)\s*[%٪]?\s*(.*?)\s*[%٪]?\s*$/su.exec(latinDigits(text, locale));
+  return m ? m[1] + m[2] : text;
+}
 
 /**
  * The nearest fraction whose denominator is at most `maxDenominator`, as
@@ -279,7 +289,12 @@ export const multiplierKind: DisplayKind<MultiplierDisplay> = {
   ],
   speak: (value, d, ctx) =>
     spokenSign(`${numberPart(value, ctx.locale, { maximumFractionDigits: d.places ?? 2 }).value} times`),
-  parse: (text, _d, ctx) => parseNumber(text.replace(/\s*[x×X]\s*$/, ''), undefined, ctx.locale),
+  parse: (text, d, ctx) => {
+    const own = d.symbol !== undefined && text.trimEnd().endsWith(d.symbol)
+      ? text.trimEnd().slice(0, -d.symbol.length)
+      : text.replace(/\s*[x×X]\s*$/, '');
+    return parseNumber(own, undefined, ctx.locale);
+  },
 };
 
 /**
