@@ -15,6 +15,17 @@ describe('kindSchemas', () => {
     expect(readOnly.map(([k]) => k)).toEqual(['unit']);
   });
 
+  it('describes what a leaf with a value does when auto, and nothing for a group or an action', () => {
+    const { auto, readOnly } = attributeSchema({ ...num, manual: true, autoValue: 4 } as PrefLeaf);
+    expect(Object.keys(auto)).toEqual(['manual', 'unpinned', 'autoValue']);
+    expect(auto.autoValue).toMatchObject({ kind: 'number', name: 'Auto value', min: 0, max: 10 });
+    expect(readOnly.map(([k]) => k)).toEqual(['unit']);
+    expect(attributeSchema({ name: 'G', children: {} }).auto).toEqual({});
+    expect(attributeSchema(blankLeaf('action')).auto).toEqual({});
+    expect(normalizeAttr('autoValue', false)).toBe(false);
+    expect(normalizeAttr('manual', false)).toBeUndefined();
+  });
+
   it('describes a group and a section each with a name, a description and how it is drawn, a section with no page', () => {
     const { shared, own } = attributeSchema({ name: 'G', children: {} });
     expect(Object.keys(shared)).toEqual(['name', 'description', 'as']);

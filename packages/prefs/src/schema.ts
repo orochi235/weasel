@@ -57,6 +57,15 @@ export interface PrefBase<K extends string, Value> {
    *  shows the longest of them that fits. `name` stays the accessible name, so
    *  these abbreviate without costing anything. */
   short?: readonly string[];
+  /** Never auto. A surface that lets a leaf be left for its owner to decide
+   *  (weasel-ui `PrefsForm`'s `onAutoChange`, labkit's `ControlPanel`) gives
+   *  this one no way to. */
+  manual?: boolean;
+  /** Starts auto, where it would start pinned at `default`. */
+  unpinned?: boolean;
+  /** What the leaf reads while it is auto, where its owner computes nothing
+   *  for it. Unset, an auto leaf has no value. */
+  autoValue?: Value;
 }
 
 /** How a schema-driven UI should present a number pref. */

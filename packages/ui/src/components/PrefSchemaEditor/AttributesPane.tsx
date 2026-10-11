@@ -17,6 +17,11 @@ import s from './PrefSchemaEditor.module.css';
 const KEY = '$key';
 const KIND = '$kind';
 const OWN = '$own';
+const AUTO = '$auto';
+const AUTO_VALUE = `${AUTO}.autoValue`;
+/** The attribute panels, each drawing the node's own fields under its path. */
+const PANELS = [OWN, AUTO];
+const UNSET_AUTO_VALUE: ReadonlySet<string> = new Set([AUTO_VALUE]);
 /** Kinds drawn by this pane's own renderers. */
 const KEY_KIND = 'schema-key';
 const KIND_KIND = 'schema-kind';
@@ -52,7 +57,13 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
   // A list's item is held under a key that is not its to change, and a union's variant is an object and nothing else.
   const keyed = path !== null && !(above && holdsFixed(above));
   const anyKind = leaf && !(above && isPrefLeaf(above) && above.kind === 'union');
-  const { shared, own, readOnly } = attributeSchema(node, custom);
+  const { shared, own, auto, readOnly } = attributeSchema(node, custom);
+  const held = node as unknown as Record<string, unknown>;
+  const noAutoValue = held.autoValue === undefined;
+  const attrOf = (p: string): string => {
+    const panel = PANELS.find((k) => p.startsWith(`${k}.`));
+    return panel === undefined ? p : p.slice(panel.length + 1);
+  };
   const commitKey = () => {
     if (path === null || key === keyOf(path)) return;
     const parent = parentPath(path);
@@ -83,6 +94,7 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
     ...(anyKind ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of its value, which picks the control that draws it.', default: '' } as PrefLeaf } : {}),
     ...shared,
     ...(Object.keys(own).length > 0 ? { [OWN]: { name: leaf ? node.kind : 'group', children: own } } : {}),
+    ...(Object.keys(auto).length > 0 ? { [AUTO]: { name: 'Auto', children: auto } } : {}),
   };
 
   return (
@@ -92,10 +104,15 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
         schema={{ name: 'Attributes', children }}
         layout="list"
         fields={fields}
-        values={{ ...node, [OWN]: node }}
+        // An unset auto value shows the default it would start from.
+        values={{ ...node, [OWN]: node, [AUTO]: noAutoValue ? { ...node, autoValue: held.default } : node }}
+        auto={noAutoValue ? UNSET_AUTO_VALUE : undefined}
+        canInherit={(p) => p === AUTO_VALUE}
+        inheritHint={() => 'not set'}
+        onAutoChange={(p, next) => onChange(setAttribute(schema, path, attrOf(p), next ? undefined : held.default))}
         renderers={{ ...renderers, ...ATTR_RENDERERS, ...identity }}
         onChange={(p, value) => {
-          const attr = p.startsWith(`${OWN}.`) ? p.slice(OWN.length + 1) : p;
+          const attr = attrOf(p);
           onChange(setAttribute(schema, path, attr, normalizeAttr(attr, value)));
         }}
       />

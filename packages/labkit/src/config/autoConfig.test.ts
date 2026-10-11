@@ -37,6 +37,16 @@ describe('resolveAutoConfig', () => {
     expect(out.width).toBe(432);
   });
 
+  it('gives an auto path its declared auto value where no resolver computes it, and the resolver where one does', () => {
+    const withValue = (key: string) => {
+      const group = { ...resolved.group, children: { ...resolved.group.children } };
+      group.children[key] = { ...group.children[key], autoValue: 5 } as never;
+      return { ...resolved, group };
+    };
+    expect(resolveAutoConfig(withValue('cols'), raw, new Set(['cols'])).cols).toBe(5);
+    expect(resolveAutoConfig(withValue('gap'), raw, new Set(['gap'])).gap).toBe(18);
+  });
+
   it('deletes an auto path that has no resolver', () => {
     const out = resolveAutoConfig(resolved, raw, new Set(['cols'])) as Record<string, unknown>;
     expect('cols' in out).toBe(false);

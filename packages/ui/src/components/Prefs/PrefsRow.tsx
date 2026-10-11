@@ -64,7 +64,7 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   const stored = prefValueAtPath(ctx.values, from);
   const inherited = ctx.auto?.has(from) ?? false;
   const { onAutoChange } = ctx;
-  const toggles = onAutoChange !== undefined && (ctx.canInherit?.(path) ?? true);
+  const toggles = onAutoChange !== undefined && pref.manual !== true && (ctx.canInherit?.(path) ?? true);
   const setAuto = (next: boolean): void => {
     if (toggles) onAutoChange(path, next);
   };

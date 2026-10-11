@@ -31,7 +31,7 @@ import {
 } from '@weasel-js/ui';
 import { Fragment, type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
-import { resolveAutoConfig } from '../config/autoConfig';
+import { autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
 import { fromConfigFields } from '../config/fromConfigField';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
@@ -599,7 +599,7 @@ export function ControlRow<TC extends Record<string, unknown>>({
   const autoReadout = isAutoRow ? 'auto' : undefined;
   // What the row would read as auto, pinned or not: the config resolved with
   // this path unpinned beside the ones that already are.
-  const resolves = canAuto && extra<unknown>(leaf, 'autoResolve') !== undefined;
+  const resolves = canAuto && autoResolverOf(leaf) !== undefined;
   const wouldBe = useMemo(() => {
     if (!resolves) return undefined;
     if (isAutoRow) return valueAtPath(shown, path);

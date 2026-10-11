@@ -85,14 +85,24 @@ const SECTION_ATTRS: KindAttrs = {
   as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, or a fragment: its rows among its neighbors\' with nothing drawn around them. Unset: a heading.', ['tab', 'panel', 'section', 'fragment']),
 };
 
+const AUTO_FLAGS: KindAttrs = {
+  manual: flag('Never auto', 'Cannot be left for its owner to decide: its row gets no way to unpin it.'),
+  unpinned: flag('Starts auto', 'Begins unpinned, where it would begin at its default.'),
+};
+
+/** Kinds that hold no value, so have nothing to be auto. */
+const VALUELESS = new Set(['action', 'label']);
+
+/** Stored as given, falsy or not: `false` and `0` are values a leaf can read while auto. */
+const AS_GIVEN = new Set(['autoValue']);
+
 /** Written even when empty: a leaf without them is not a leaf. */
 const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag']);
 
 /** Where a node keeps the nodes under it, which the tree edits and the attributes pane leaves alone. */
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
-function defaultAttr(leaf: PrefLeaf): PrefLeaf | null {
-  const base = { name: 'Default', description: 'The value before anything is stored.' };
+function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
     case 'number': {
       const n = leaf as PrefNumber;
@@ -111,6 +121,14 @@ function defaultAttr(leaf: PrefLeaf): PrefLeaf | null {
   }
 }
 
+const defaultAttr = (leaf: PrefLeaf) => valueAttr(leaf, { name: 'Default', description: 'The value before anything is stored.' });
+
+function autoAttrs(leaf: PrefLeaf): KindAttrs {
+  if (VALUELESS.has(leaf.kind)) return {};
+  const value = valueAttr(leaf, { name: 'Auto value', description: 'What it reads while auto, where nothing computes it. It need not be the default.' });
+  return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
+}
+
 function kindAttrs(kind: string, custom: CustomKinds): KindAttrs {
   if (Object.hasOwn(KIND_ATTRS, kind)) return KIND_ATTRS[kind as PrefKind];
   return Object.hasOwn(custom, kind) ? custom[kind]! : {};
@@ -121,25 +139,28 @@ export interface AttributeSchema {
   shared: KindAttrs;
   /** The default and the attributes only this kind has; empty for a group. */
   own: KindAttrs;
+  /** Whether it can be auto, whether it starts so, and what it reads while it is; empty for a group and for a kind with no value. */
+  auto: KindAttrs;
   /** Attributes shown but not edited: code, and anything the kind's schema does not describe. */
   readOnly: Array<[string, unknown]>;
 }
 
 /** Editable attributes, rendered with `PrefsForm` over the node itself as values. */
 export function attributeSchema(node: SchemaNode, custom: CustomKinds = {}): AttributeSchema {
-  if (!isPrefLeaf(node)) return { shared: { ...(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS) }, own: {}, readOnly: [] };
+  if (!isPrefLeaf(node)) return { shared: { ...(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS) }, own: {}, auto: {}, readOnly: [] };
   const def = defaultAttr(node);
   const shared: KindAttrs = { ...LEAF_BASE };
   const own: KindAttrs = { ...(def ? { default: def } : {}), ...kindAttrs(node.kind, custom) };
+  const auto = autoAttrs(node);
   const fields = node as unknown as Record<string, unknown>;
-  for (const attrs of [shared, own]) for (const k of Object.keys(attrs)) if (containsCode(fields[k])) delete attrs[k];
-  const readOnly = Object.entries(fields).filter(([k]) => k !== 'kind' && !SLOTS.has(k) && !(k in shared) && !(k in own));
-  return { shared, own, readOnly };
+  for (const attrs of [shared, own, auto]) for (const k of Object.keys(attrs)) if (containsCode(fields[k])) delete attrs[k];
+  const readOnly = Object.entries(fields).filter(([k]) => k !== 'kind' && !SLOTS.has(k) && !(k in shared) && !(k in own) && !(k in auto));
+  return { shared, own, auto, readOnly };
 }
 
 /** The value to store for an edited attribute: an optional one left empty is removed rather than written. */
 export function normalizeAttr(key: string, value: unknown): unknown {
-  if (REQUIRED.has(key)) return value;
+  if (REQUIRED.has(key) || AS_GIVEN.has(key)) return value;
   if (value === undefined || value === '' || value === false) return undefined;
   if (Array.isArray(value) && value.length === 0) return undefined;
   return value;
@@ -175,7 +196,7 @@ export function blankSection(): PrefSection {
   return { name: 'New section', description: '', members: {} };
 }
 
-const SHARED = ['name', 'description', 'hidden', 'block', 'icon', 'pair', 'short'];
+const SHARED = ['name', 'description', 'hidden', 'block', 'icon', 'pair', 'short', 'manual', 'unpinned'];
 
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 

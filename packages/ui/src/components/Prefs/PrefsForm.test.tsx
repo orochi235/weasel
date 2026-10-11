@@ -595,6 +595,15 @@ describe('PrefsForm — inherited leaves', () => {
     expect(onAutoChange).toHaveBeenCalledWith('window.glow', false);
   });
 
+  it('gives a manual leaf no toggle', () => {
+    const schema: PrefGroup = {
+      name: 'Looks',
+      children: { glow: { kind: 'number', name: 'Glow', description: '', default: 2, manual: true } },
+    };
+    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} onAutoChange={() => {}} />);
+    expect(screen.queryByRole('button', { name: 'Pin Glow' })).toBeNull();
+  });
+
   it('unpins a pinned leaf from its label', () => {
     const onAutoChange = vi.fn();
     render(

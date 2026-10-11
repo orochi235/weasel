@@ -11,6 +11,14 @@ function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
+/** What computes a leaf while it is auto: its `.auto()` resolver, or failing
+ *  that the `autoValue` it declares as data. */
+export function autoResolverOf(leaf: PrefLeaf): Resolver | undefined {
+  const resolve = extra<Resolver>(leaf, 'autoResolve');
+  if (resolve !== undefined) return resolve;
+  return leaf.autoValue === undefined ? undefined : () => leaf.autoValue;
+}
+
 /** Every leaf in a resolved schema, in schema order, with its dotted path.
  *  Not `prefLeaves`, which rejects the `$version` key a prefs store reserves. */
 function* leaves(group: PrefGroup, at = ''): Generator<[string, PrefLeaf]> {
@@ -26,7 +34,7 @@ function* leaves(group: PrefGroup, at = ''): Generator<[string, PrefLeaf]> {
 export function autoPathsOf(resolved: ResolvedConfig): string[] {
   const out: string[] = [];
   for (const [path, leaf] of leaves(resolved.group)) {
-    if (extra<boolean>(leaf, 'unpinned')) out.push(path);
+    if (leaf.unpinned) out.push(path);
   }
   return out;
 }
@@ -48,7 +56,7 @@ export function resolveAutoConfig<TC>(
 
   const resolvers = new Map<string, Resolver | undefined>();
   for (const [path, leaf] of leaves(resolved.group)) {
-    if (autoPaths.has(path)) resolvers.set(path, extra<Resolver>(leaf, 'autoResolve'));
+    if (autoPaths.has(path)) resolvers.set(path, autoResolverOf(leaf));
   }
   if (resolvers.size === 0) return config;
 
