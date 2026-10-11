@@ -318,7 +318,9 @@ export const Tree = forwardRef(function Tree(
           typeAhead(e, i);
           return;
         }
-      // falls through
+        e.preventDefault();
+        activate(node, modsOf(e));
+        return;
       case 'Enter':
         e.preventDefault();
         activate(node, modsOf(e));
