@@ -27,6 +27,7 @@ import { boundsOfPath, layoutRuns, resolveRuns, resolveScreenLength, resolveText
 import { IDENTITY_MATRIX } from './types';
 import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
+import { readLength } from './lengths';
 import { isNonUniform, paintThroughMatrix, strokeThroughMatrix, fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { collectGradients, WEASEL_NS, WEASEL_NS_PREFIX, type GradientTable } from './gradients';
@@ -472,24 +473,15 @@ function lowerLeaf(
   m: Matrix,
   onWarn: (msg: string) => void,
 ): Path | null {
-  const num = (name: string, fallback = 0): number => {
-    const v = el.getAttribute(name);
-    if (v == null) return fallback;
-    const n = parseFloat(v);
-    return Number.isFinite(n) ? n : fallback;
-  };
+  const x = (name: string): number => readLength(el, name, 'x', 0, onWarn);
+  const y = (name: string): number => readLength(el, name, 'y', 0, onWarn);
+  const r = (name: string): number => readLength(el, name, 'other', 0, onWarn);
   if (tag === 'rect') {
-    const x = num('x', 0);
-    const y = num('y', 0);
-    const w = num('width', 0);
-    const h = num('height', 0);
-    const rx = num('rx', 0);
-    const ry = num('ry', 0);
-    return rectElementToPath(x, y, w, h, rx, ry, m);
+    return rectElementToPath(x('x'), y('y'), x('width'), y('height'), x('rx'), y('ry'), m);
   }
-  if (tag === 'circle') return circleToPath(num('cx'), num('cy'), num('r'), m);
-  if (tag === 'ellipse') return ellipseToPath(num('cx'), num('cy'), num('rx'), num('ry'), m);
-  if (tag === 'line') return lineToPath(num('x1'), num('y1'), num('x2'), num('y2'), m);
+  if (tag === 'circle') return circleToPath(x('cx'), y('cy'), r('r'), m);
+  if (tag === 'ellipse') return ellipseToPath(x('cx'), y('cy'), x('rx'), y('ry'), m);
+  if (tag === 'line') return lineToPath(x('x1'), y('y1'), x('x2'), y('y2'), m);
   if (tag === 'polyline') return polylineToPath(parsePoints(el.getAttribute('points') ?? ''), m);
   if (tag === 'polygon') return polygonToPath(parsePoints(el.getAttribute('points') ?? ''), m);
   if (tag === 'path') {
@@ -742,15 +734,10 @@ function imageNodeAt(
   ctm: Matrix,
   onWarn: (m: string) => void,
 ): SvgImageNode {
-  const num = (raw: string | null, fallback: number): number => {
-    if (raw == null) return fallback;
-    const n = parseFloat(raw);
-    return Number.isFinite(n) ? n : fallback;
-  };
-  const rawX = num(boxEl.getAttribute('x'), 0);
-  const rawY = num(boxEl.getAttribute('y'), 0);
-  const rawW = num(boxEl.getAttribute('width'), 0);
-  const rawH = num(boxEl.getAttribute('height'), 0);
+  const rawX = readLength(boxEl, 'x', 'x', 0, onWarn);
+  const rawY = readLength(boxEl, 'y', 'y', 0, onWarn);
+  const rawW = readLength(boxEl, 'width', 'x', 0, onWarn);
+  const rawH = readLength(boxEl, 'height', 'y', 0, onWarn);
   const node: SvgImageNode = { kind: 'image', href, x: rawX, y: rawY, width: rawW, height: rawH };
   const opacity = ownValue(ownerEl, 'opacity');
   if (opacity != null) node.opacity = opacity;
@@ -903,8 +890,8 @@ function parseTextElement(
   const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
   // The box is built in the element's own coordinates and then taken through
   // the whole transform at once, by `placeNode`.
-  const ax = num(el.getAttribute('x'), 0);
-  const ay = num(el.getAttribute('y'), 0);
+  const ax = readLength(el, 'x', 'x', 0, onWarn);
+  const ay = readLength(el, 'y', 'y', 0, onWarn);
 
   const leafStyle = deriveStyle(style, el);
   const textStyle = readTextStyle(leafStyle, onWarn);
