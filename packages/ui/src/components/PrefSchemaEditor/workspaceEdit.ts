@@ -7,7 +7,9 @@ import { assetOf, type Workspace } from './workspace';
 export function valueMoves(before: SchemaRoot, after: SchemaRoot): ValueMove[] {
   return diffSchemas(before, after)
     .flatMap((c) => (c.op === 'move' ? [[valuePathOf(before, c.from), valuePathOf(after, c.to)] as const] : []))
-    .filter(([from, to]) => from !== to);
+    .filter(([from, to]) => from !== to)
+    // A setting renamed inside a group that moved is listed after its group, and the first move to match is the one followed.
+    .sort((a, b) => b[0].length - a[0].length);
 }
 
 /** `layout` after its dialog went from `before` to `after`: its pointers follow what moved, and one whose setting went goes too. */

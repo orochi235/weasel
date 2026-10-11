@@ -20,6 +20,12 @@ describe('editAsset', () => {
     expect(ofAt(editAsset(WORKSPACE, 'settings', moved.root), 'grid')).toBe('grid');
   });
 
+  it('has a pointer follow a setting renamed inside a group renamed in the same edit', () => {
+    const next = editAsset(WORKSPACE, 'settings', renameKey(renameKey(SETTINGS, 'view', 'vista'), 'vista/grid', 'lines'));
+    expect(ofAt(next, 'grid')).toBe('vista.lines');
+    expect(ofAt(next, 'snap')).toBe('vista.snap');
+  });
+
   it('drops the pointers to a removed setting and keeps the rest', () => {
     const next = editAsset(WORKSPACE, 'settings', removeNodes(SETTINGS, ['view/snap']));
     expect(Object.keys(codeOf(next))).toEqual(['grid']);
