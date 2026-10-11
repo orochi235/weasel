@@ -530,15 +530,6 @@ Core five + Crop shipped. Remaining:
   `GroupState` transforms in doubles and convert at the uniform upload, and fold the translation
   into a camera-relative offset on the CPU for own-draw meshes.
 
-- **(P3) Renderer: `draw.ts` is about 2,700 lines with several owners.** It holds the per-frame
-  uniform cache, custom-shader uniform upload, group effects and the fullscreen quad, the clip stack
-  and its stencil helpers, batch staging and `flushBatch`, gradient coordinate math, the path fill
-  and stroke painters, text, the scratch-paint pass, and image and sprite staging. Two state leaks
-  fixed this month (the stencil test left on for effect passes, a texture unit clobbered by a
-  uniform upload) were contracts between sections of this one file. Split along those owners,
-  leaving `dispatch` in `draw.ts`; the fill and stroke sections move together, since the
-  bind-half/draw-half rule in CLAUDE.md spans them.
-
 - **(P3) Layers: `LayerGroup.alpha` without `effects` fades each member, not the group.** Its doc
   (`packages/core/src/core/layers/render.ts`) says the opacity applies "to the group's composited
   result, not to each member", but `wrapGroup` emits a plain group command, whose alpha multiplies
