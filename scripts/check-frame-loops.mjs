@@ -12,10 +12,7 @@
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const PACKAGES = join(ROOT, 'packages');
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /** Paths that may name `requestAnimationFrame`, and why. */
 const ALLOWED = new Map([
@@ -44,35 +41,54 @@ function* walk(dir) {
   }
 }
 
-const offenders = [];
-for (const pkg of readdirSync(PACKAGES)) {
-  const src = join(PACKAGES, pkg, 'src');
-  try {
-    if (!statSync(src).isDirectory()) continue;
-  } catch {
-    continue;
+/** `source` with its comments blanked, line breaks kept. A `//` after a `:` is taken for a URL. */
+const withoutComments = (source) =>
+  source
+    .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '))
+    .replace(/(?<!:)\/\/.*$/gm, '');
+
+/**
+ * The 1-based lines of `source` that name `requestAnimationFrame` outside a comment. Any use counts, not only a
+ * call: an alias or a `.bind` is a loop one step removed, and a call can put its `(` on the next line.
+ */
+export function frameLoopLines(source) {
+  const lines = new Set();
+  const clean = withoutComments(source);
+  for (const match of clean.matchAll(/\brequestAnimationFrame\b/g)) {
+    lines.add(clean.slice(0, match.index).split('\n').length);
   }
-  for (const file of walk(src)) {
-    const rel = relative(ROOT, file);
-    if (ALLOWED.has(rel)) continue;
-    const lines = readFileSync(file, 'utf8').split('\n');
-    lines.forEach((line, i) => {
-      // Comments and doc prose name the API constantly; only calls matter.
-      if (/^\s*(\*|\/\/)/.test(line)) return;
-      if (/\brequestAnimationFrame\s*\(/.test(line)) offenders.push(`${rel}:${i + 1}`);
-    });
-  }
+  return [...lines];
 }
 
-if (offenders.length > 0) {
-  console.error(
-    `check:frame-loops — ${offenders.length} bare requestAnimationFrame call(s) in kit source:\n` +
-      offenders.map((o) => `  ${o}`).join('\n') +
-      "\n\nRoute the loop through `useVisibleRaf` from @weasel-js/core. A loop that\n" +
-      'measures elapsed time also needs `onResume` to rebase its clock.\n' +
-      'See docs/proposals/2026-08-26-loops-stop-when-unseen.md.',
-  );
-  process.exit(1);
-}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const ROOT = fileURLToPath(new URL('..', import.meta.url));
+  const PACKAGES = join(ROOT, 'packages');
 
-console.log('frame loops: every kit loop runs behind the visibility gate.');
+  const offenders = [];
+  for (const pkg of readdirSync(PACKAGES)) {
+    const src = join(PACKAGES, pkg, 'src');
+    try {
+      if (!statSync(src).isDirectory()) continue;
+    } catch {
+      continue;
+    }
+    for (const file of walk(src)) {
+      const rel = relative(ROOT, file);
+      if (ALLOWED.has(rel)) continue;
+      for (const line of frameLoopLines(readFileSync(file, 'utf8'))) offenders.push(`${rel}:${line}`);
+    }
+  }
+
+  if (offenders.length > 0) {
+    console.error(
+      `check:frame-loops — ${offenders.length} bare requestAnimationFrame use(s) in kit source:\n` +
+        offenders.map((o) => `  ${o}`).join('\n') +
+        "\n\nRoute the loop through `useVisibleRaf` from @weasel-js/core. A loop that\n" +
+        'measures elapsed time also needs `onResume` to rebase its clock.\n' +
+        'See docs/proposals/2026-08-26-loops-stop-when-unseen.md.',
+    );
+    process.exit(1);
+  }
+
+  console.log('frame loops: every kit loop runs behind the visibility gate.');
+}
