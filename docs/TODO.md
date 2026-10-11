@@ -2262,14 +2262,6 @@ only story runner in the repo.
   `frameCss` option on the plugin, or `@weasel-js/forge/frame.css` reading the two tokens), or the
   workshop is meant to share it and the file is misnamed.
 
-- **(P3) forge: a tree row clicked before its restored story has loaded still resets that trial's
-  knobs.** Picking a story the focused trial already shows starts the route with the trial's knobs,
-  read against the story's schema (`packages/forge/src/shell/tree/StoryTree.tsx`, `activate`). Until
-  the story's module has loaded the schema is empty, so a click in that window writes a route with
-  no knobs and `KnobSync` (`shell/RouteKnobs.tsx`) then sets the restored config back to defaults.
-  Closing it means `KnobSync` knowing a route was written for a trial that already had a config,
-  rather than the tree computing params.
-
 - **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
   three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any
   non-CSS file even when `fullReload` is off. The page's own stamp in `~/src/wake/src/client.ts` is

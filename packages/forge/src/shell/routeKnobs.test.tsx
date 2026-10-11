@@ -112,6 +112,40 @@ describe('knobs in the URL', () => {
     }
   });
 
+  it('keeps a restored trial’s knobs when its story is picked in the tree before its module has loaded', async () => {
+    const storage = createMemoryAdapter();
+    history.replaceState(null, '', '/#/x--a');
+    const first = render(<Workshop index={[a, b]} frameUrl="/frame.html" importers={importers()} storage={storage} />);
+    await shows('hi/4/false');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Label' }), { target: { value: 'Save' } });
+    await waitFor(() => expect(JSON.stringify(storage.listSync?.(''))).toContain('Save'), { timeout: 5000 });
+    first.unmount();
+
+    history.replaceState(null, '', '/');
+    let load = (): void => {};
+    const pending = new Promise<Record<string, unknown>>((resolve) => {
+      load = () => resolve(xModule as unknown as Record<string, unknown>);
+    });
+    render(<Workshop index={[a, b]} frameUrl="/frame.html" importers={{ '/x.stories.tsx': () => pending }} storage={storage} />);
+    fireEvent.click(await screen.findByRole('radio', { name: 'Tree' }, { timeout: 5000 }));
+    const folder = screen.getByRole('treeitem', { name: 'X' });
+    if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(folder.querySelector('.fg-tree__fold')!);
+    const proto = Element.prototype as { scrollIntoView?: () => void };
+    proto.scrollIntoView = () => {};
+    try {
+      fireEvent.click(screen.getByRole('treeitem', { name: 'A' }));
+      expect(screen.queryByTestId('story')).toBeNull();
+      await act(async () => {
+        load();
+        await pending;
+      });
+      await waitFor(() => expect(location.hash).toBe('#/x--a?label=Save'), { timeout: 5000 });
+      await shows('Save/4/false');
+    } finally {
+      delete proto.scrollIntoView;
+    }
+  });
+
   it('applies knobs typed into the URL of the story already open', async () => {
     mount('#/x--a');
     await shows('hi/4/false');

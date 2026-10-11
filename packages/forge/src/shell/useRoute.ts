@@ -5,6 +5,8 @@ import { formatRoute, parseRoute } from '../route/url';
 export interface RouteEntry {
   step: number;
   inPlace: boolean;
+  /** Set until the knobs first sync: the entry was written for a trial already showing the story, whose config stands. */
+  fromTrial?: boolean;
 }
 
 /** The story id `#/<id>` names, or null. */
@@ -48,19 +50,28 @@ function stamp(entry: RouteEntry, hash: string): void {
 
 /**
  * Names story `id` in the URL; `inPlace` says it replaced the previous story in its trial. A different story starts
- * with `params`, the knobs of a trial already showing it, and with none otherwise, so one story's knobs never reach
- * the next; naming the current story again keeps the params it has.
+ * with no params, so one story's knobs never reach the next; `fromTrial` says a trial already shows it, and that
+ * trial's knobs are written to the URL where they would otherwise be read from it. Naming the current story again
+ * keeps the params it has.
  */
-export function setRoute(id: string, options: { inPlace?: boolean; params?: Record<string, string> } = {}): void {
+export function setRoute(id: string, options: { inPlace?: boolean; fromTrial?: boolean } = {}): void {
   if (readRoute() === id) {
     history.replaceState(history.state, '', formatRoute({ story: id, params: readRouteParams() }));
     return;
   }
-  const hash = formatRoute({ story: id, params: options.params ?? {} });
+  const hash = formatRoute({ story: id, params: {} });
   const from = readRouteEntry() ?? { step: 0, inPlace: false };
   stamp(from, location.hash);
   location.hash = hash;
-  stamp({ step: from.step + 1, inPlace: options.inPlace ?? false }, hash);
+  stamp({ step: from.step + 1, inPlace: options.inPlace ?? false, ...(options.fromTrial ? { fromTrial: true } : {}) }, hash);
+}
+
+/** Whether the current entry was written for a trial already showing its story; asking clears it, so it answers yes once. */
+export function takeRouteFromTrial(): boolean {
+  const entry = readRouteEntry();
+  if (!entry?.fromTrial) return false;
+  stamp({ step: entry.step, inPlace: entry.inPlace }, location.hash);
+  return true;
 }
 
 /** The story the URL names, and `setRoute` to name another. */

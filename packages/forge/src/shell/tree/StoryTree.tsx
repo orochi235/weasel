@@ -4,7 +4,6 @@ import { type FocusEvent, type KeyboardEvent, type ReactNode, useEffect, useId, 
 import { indexEntries } from '../../story/indexPages';
 import { isGallery } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
-import { knobsToParams } from '../../route/url';
 import { revealTrial } from '../revealTrial';
 import { onRevealInTree } from '../treeReveal';
 import { useRoute } from '../useRoute';
@@ -130,10 +129,9 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     const focused = ctx.trials.find((trial) => trial.id === ctx.focusedTrialId);
     if (another || !focused) ctx.addTrial(entry.id);
     else if (focused.instrumentName === entry.id) {
-      // The URL may name another story, or none; the trial's knobs go with it, or the route would read as "no knobs set".
-      const schema = ctx.instruments.find((instrument) => instrument.name === entry.id)?.config;
+      // The URL may name another story, or none; the trial's knobs stand, or the route would read as "no knobs set".
       revealTrial(focused.id);
-      setRoute(entry.id, { params: schema ? knobsToParams(schema, focused.config) : {} });
+      setRoute(entry.id, { fromTrial: true });
       return;
     } else {
       ctx.swapTrial(focused.id, entry.id);

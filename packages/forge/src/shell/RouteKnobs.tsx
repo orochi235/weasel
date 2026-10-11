@@ -3,7 +3,7 @@ import { type ConfigSchema, valueAtPath } from '@weasel-js/labkit/config';
 import { useEffect, useRef, useState } from 'react';
 import { knobPaths, knobsToParams, paramsToKnobs, reservedParams, sameKnob } from '../route/url';
 import { routedTrial } from './routedTrial';
-import { readRouteParams, replaceRouteParams, useRoute } from './useRoute';
+import { readRouteParams, replaceRouteParams, takeRouteFromTrial, useRoute } from './useRoute';
 
 interface KnobSyncProps {
   schema: ConfigSchema<unknown>;
@@ -13,7 +13,8 @@ interface KnobSyncProps {
 /**
  * Keeps one trial's knobs and the URL in step. On mount, and whenever the hash changes under it, the URL's knobs are
  * written over the trial's config, with every leaf the URL could name and does not set returned to its default; after
- * that each change to the config is written back to the URL in place.
+ * that each change to the config is written back to the URL in place. A route written for this trial as it stood
+ * skips that first read.
  */
 function KnobSync({ schema, config }: KnobSyncProps) {
   const { setConfig } = useTrialState();
@@ -30,6 +31,7 @@ function KnobSync({ schema, config }: KnobSyncProps) {
   }, []);
 
   useEffect(() => {
+    if (reading.current && takeRouteFromTrial()) reading.current = false;
     if (reading.current) {
       reading.current = false;
       const knobs = paramsToKnobs(schema, readRouteParams());
