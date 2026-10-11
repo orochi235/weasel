@@ -46,7 +46,7 @@ export interface BarProps {
 export function Bar(props: BarProps) {
   const { schema, values, onChange, mixed, renderers, orientation, label, framed, className } = props;
   const fields = prefFieldChoices(schema);
-  const { shown, disabled } = applyPrefConditions(schema, prefJudge((path) => valueAt(values, path)));
+  const { shown, disabled } = applyPrefConditions(schema, prefJudge(schema, (path) => valueAt(values, path)));
   const draw: Draw = { values, mixed, renderers, onChange, fields, disabled };
   return (
     <BarLayout

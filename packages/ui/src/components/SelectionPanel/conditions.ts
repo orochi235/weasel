@@ -1,5 +1,5 @@
 import type { NodePropertiesEntry } from '@weasel-js/core';
-import { applyPrefConditions, prefConditionHolds, prefLeafAt, type PrefCondition, type PrefConditionJudge, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, prefJudge, prefLeafAt, type PrefConditionJudge, type PrefSection } from '@weasel-js/prefs';
 import { absentValue, effectiveSections, nodeValueAt, type AnyNode, type PanelSection } from './model';
 
 /**
@@ -8,15 +8,16 @@ import { absentValue, effectiveSections, nodeValueAt, type AnyNode, type PanelSe
  * while it does for all of them. Provisional for more than one node.
  */
 export function selectionJudge(schema: PrefSection, nodes: readonly AnyNode[]): PrefConditionJudge {
-  const holdsFor = (node: AnyNode, condition: PrefCondition): boolean =>
-    prefConditionHolds(condition, (path) => {
+  const judges = nodes.map((node) =>
+    prefJudge(schema, (path) => {
       const held = nodeValueAt(node, path);
       if (held !== undefined) return held;
       const leaf = prefLeafAt(schema, path);
       return leaf && absentValue(leaf);
-    });
+    }),
+  );
   return (condition, field) =>
-    field === 'showIf' ? nodes.some((node) => holdsFor(node, condition)) : nodes.every((node) => holdsFor(node, condition));
+    field === 'showIf' ? judges.some((holds) => holds(condition, field)) : judges.every((holds) => holds(condition, field));
 }
 
 /**

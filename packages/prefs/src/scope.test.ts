@@ -11,7 +11,7 @@ const bool = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
 const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, ...extra }) as PrefLeaf;
 
-const over = (values: unknown) => prefJudge((path) => prefValueAtPath(values, path));
+const over = (values: unknown) => prefJudge({ name: '', children: {} }, (path) => prefValueAtPath(values, path));
 
 const on: PrefCondition = { path: 'snap.on' };
 

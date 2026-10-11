@@ -1,6 +1,8 @@
 import {
   PREF_SCOPE,
+  type PrefConditionJudge,
   type PrefScope,
+  prefConditionHolds,
   prefJudge,
   prefScopeAt,
   prefScopeUnder,
@@ -22,7 +24,7 @@ function scopeAt(
   const data = prefScopeAt(
     resolved.group,
     path,
-    prefJudge((at) => valueAtPath(config, at)),
+    prefJudge(resolved.group, (at) => valueAtPath(config, at)),
   );
   let { shown, enabled } = data;
   const steps = path.split('.');
@@ -66,10 +68,12 @@ export function isLeafEnabled(
 /**
  * Whether a node of a schema not yet resolved is drawn by its own `showIf`,
  * as a condition or a function. It answers for the node alone: a walk that
- * skips what is under a node not shown counts the nesting.
+ * skips what is under a node not shown counts the nesting. With no resolved
+ * schema to read a leaf's `encoding` from, a condition compares stored values.
  */
 export function isEntryShown(entry: ConfigEntry, config: Record<string, unknown>): boolean {
-  const judge = prefJudge((at) => valueAtPath(config, at));
+  const judge: PrefConditionJudge = (condition) =>
+    prefConditionHolds(condition, (at) => valueAtPath(config, at));
   if (!prefScopeUnder(PREF_SCOPE, entry.annotations, judge).shown) return false;
   return entry.options.showIf?.(config) ?? true;
 }
