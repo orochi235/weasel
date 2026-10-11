@@ -89,6 +89,18 @@ describe('select', () => {
     expect(select(before, 'c', 'range', { order, eligible: (id) => id === 'a' })).toBe(before);
   });
 
+  it('returns the same selection when a press changes nothing', () => {
+    const one = { ids: ['a'], anchor: 'a' };
+    expect(select(one, 'a', 'replace')).toBe(one);
+    const span = { ids: ['a', 'b', 'c'], anchor: 'a' };
+    expect(select(span, 'c', 'range', { order })).toBe(span);
+  });
+
+  it('returns a new selection when only the anchor moves', () => {
+    const before = { ids: ['a'], anchor: null };
+    expect(select(before, 'a', 'replace')).toEqual({ ids: ['a'], anchor: 'a' });
+  });
+
   it('range replaces when there is no anchor, no order, or an end outside the order', () => {
     expect(select(state(['a']), 'c', 'range', { order })).toEqual({ ids: ['c'], anchor: 'c' });
     expect(select(state(['a'], 'a'), 'c', 'range')).toEqual({ ids: ['c'], anchor: 'c' });

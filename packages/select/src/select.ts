@@ -61,10 +61,17 @@ export function select<K>(state: Selection<K>, id: K, intent: SelectIntent, cont
     const { order } = context;
     if (order.includes(state.anchor) && order.includes(id)) {
       const ids = rangeOf(order, state.anchor, id, eligible);
-      return ids.length > 0 ? { ids, anchor: state.anchor } : state;
+      return ids.length > 0 ? settle(state, { ids, anchor: state.anchor }) : state;
     }
   }
-  return { ids: [id], anchor: id };
+  return settle(state, { ids: [id], anchor: id });
+}
+
+function settle<K>(state: Selection<K>, next: Selection<K>): Selection<K> {
+  const same = next.anchor === state.anchor
+    && next.ids.length === state.ids.length
+    && next.ids.every((id, i) => id === state.ids[i]);
+  return same ? state : next;
 }
 
 function always(): boolean {
