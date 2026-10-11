@@ -931,7 +931,8 @@ Core five + Crop shipped. Remaining:
   re-adding its id, and filtering there would deselect a node the user sees as unchanged. The call
   is whether selection is a set of ids (stale ids are the reader's problem) or a set of live nodes
   (then a replace has to carry the selection across). `loadState` already drops ids the snapshot
-  does not hold.
+  does not hold, but `setSelection` keeps an id no node has (`reachable` filters on locks only, and
+  `scene.selection.test.ts` selects ids it never added), so today it is a set of ids.
 
 - **(P3) Ops: three inverses have no name.** The inverses of `reorder` and `moveToIndex`
   (`packages/core/src/core/ops/reorder/index.ts`) and of a cascading `delete`
