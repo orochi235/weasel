@@ -8,6 +8,37 @@ const runs: StyledRun[] = [
   { text: ' world' },
 ];
 
+describe('an unfilled range', () => {
+  const red = { fill: 'solid' as const, color: '#f00' };
+  const mixedRuns: StyledRun[] = [{ text: 'ab', fill: null }, { text: 'cd', fill: red }, { text: 'ef' }];
+
+  it('reads as null, apart from a color and from inheriting', () => {
+    expect(styleAtRange(mixedRuns, 0, 2).fill).toBeNull();
+    expect(styleAtRange(mixedRuns, 0, 4).fill).toBe(MIXED);
+    expect(styleAtRange(mixedRuns, 0, 2)).not.toEqual(styleAtRange(mixedRuns, 4, 6));
+    expect(styleAtRange(mixedRuns, 1, 6).fill).toBe(MIXED);
+  });
+
+  it('is written by a null patch, over the range alone', () => {
+    const out = applyStyleToRange([{ text: 'abcd', fill: red }], 1, 3, { fill: null });
+    expect(out).toEqual([{ text: 'a', fill: red }, { text: 'bc', fill: null }, { text: 'd', fill: red }]);
+  });
+
+  it('is refilled by a color and cleared back to inheriting by undefined', () => {
+    expect(applyStyleToRange([{ text: 'ab', fill: null }], 0, 2, { fill: red })).toEqual([{ text: 'ab', fill: red }]);
+    expect(applyStyleToRange([{ text: 'ab', fill: null }], 0, 2, { fill: undefined })).toEqual([{ text: 'ab' }]);
+  });
+
+  it('keeps apart from its inheriting neighbor, and counts as styling', () => {
+    expect(applyStyleToRange([{ text: 'a', fill: null }, { text: 'b' }], 0, 0, {})).toHaveLength(2);
+    expect(runsCarryStyling([{ text: 'a', fill: null }])).toBe(true);
+  });
+
+  it('survives an armed patch laid over a range style', () => {
+    expect(patchRangeStyle({ fill: red }, { fill: null }).fill).toBeNull();
+  });
+});
+
 describe('styleAtRange', () => {
   it('reports a concrete value when the whole range agrees', () => {
     expect(styleAtRange(runs, 6, 11).bold).toBe(true);

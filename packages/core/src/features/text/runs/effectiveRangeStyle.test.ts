@@ -93,6 +93,10 @@ describe('effectiveRangeStyle', () => {
     expect('fill' in effectiveRangeStyle(null, {}, { fill: null })).toBe(false);
   });
 
+  it("reads an unfilled range as null over a filled node", () => {
+    expect(effectiveRangeStyle({ fill: null }, {}, { fill: { color: '#ff0000ff' } }).fill).toBeNull();
+  });
+
   it("lets a run's fill override the node's", () => {
     const fill = { color: '#00ff00ff' };
     expect(effectiveRangeStyle({ fill }, {}, { fill: { color: '#ff0000ff' } }).fill).toBe(fill);

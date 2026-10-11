@@ -786,6 +786,20 @@ describe('letter-spacing / text-decoration', () => {
     expect(svg).toContain('text-decoration="underline"');
   });
 
+  it('writes an unfilled run as fill="none" and reads it back', () => {
+    const node = {
+      id: 't1', kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'ab',
+      runs: [{ text: 'a', fill: null }, { text: 'b' }],
+      fill: { fill: 'solid', color: '#ff0000' },
+    } as unknown as SvgNode;
+    const out = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 100 } });
+    expect(out).toContain('<tspan fill="none">a</tspan>');
+    const back = parseSvg(out).nodes[0];
+    if (back.kind !== 'text') throw new Error('expected text');
+    expect(back.runs?.[0]).toEqual({ text: 'a', fill: null });
+    expect(back.runs?.[1]).toEqual({ text: 'b' });
+  });
+
   it('parses a <tspan> letter-spacing + text-decoration="underline" back to run keys', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
       <text x="0" y="0"><tspan letter-spacing="2" text-decoration="underline">hi</tspan></text>

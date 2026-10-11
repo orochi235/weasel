@@ -28,7 +28,9 @@ export interface StyledRun {
   /** World units, or `{ px }` for screen pixels — resolved against the view
    *  scale `resolveRuns` is given, like `TextStyle.fontSize`. */
   fontSize?: ScreenLength;
-  fill?: FillStyle;
+  /** This run's ink. `null` is no fill at all, leaving the glyphs to `stroke`
+   *  alone; absent inherits the node's. */
+  fill?: FillStyle | null;
   /** Outline over this run's glyphs. Overrides the node's own `data.stroke`;
    *  absent inherits it. Only painted on the outline tier. */
   stroke?: Stroke;

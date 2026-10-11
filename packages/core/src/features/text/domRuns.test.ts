@@ -53,6 +53,20 @@ describe('runsToDom', () => {
     expect(span.style.color).toBe('rgb(255, 0, 0)');
   });
 
+  it('carries an unfilled run through the overlay and back', () => {
+    const runs = [{ text: 'a', fill: null }, { text: 'b' }, { text: 'c', fill: { fill: 'solid' as const, color: '#ff0000' } }];
+    runsToDom(runs, parent);
+    const [a, b] = [...parent.querySelectorAll('span[data-run]')] as HTMLSpanElement[];
+    expect(a.hasAttribute('data-no-fill')).toBe(true);
+    // Drawn in black, as an unfilled node is: no CSS color leaves it legible.
+    expect(a.style.color).toBe('rgb(0, 0, 0)');
+    expect(b.hasAttribute('data-no-fill')).toBe(false);
+    const back = domToRuns(parent);
+    expect(back[0]).toEqual({ text: 'a', fill: null });
+    expect(back[1]).toEqual({ text: 'b' });
+    expect(back[2].fill).not.toBeNull();
+  });
+
   it('preserves embedded newlines as literal \\n inside textContent', () => {
     runsToDom([{ text: 'a\nb' }], parent);
     const span = parent.querySelector('span[data-run]') as HTMLSpanElement;

@@ -218,7 +218,7 @@ export function resolveRuns(
       ...(sizeMap ? { sizeMap } : {}),
       fontWeight,
       fontStyle,
-      fill: run.fill ?? style.fill,
+      fill: run.fill !== undefined ? run.fill : style.fill,
       // Unlike the decorations below, a run's stroke *replaces* the node's
       // rather than adding to it — there is only one outline to paint.
       ...((run.stroke ?? style.stroke) !== undefined

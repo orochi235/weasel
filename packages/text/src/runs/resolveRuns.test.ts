@@ -53,6 +53,13 @@ describe('resolveRuns', () => {
     expect(resolveRuns([{ text: 'a' }], style)[0].fill).toBeNull();
   });
 
+  it('leaves a run unfilled when it says `fill: null`, over a filled node', () => {
+    const style = resolveTextStyle({}, { fill: { fill: 'solid', color: '#f00' } });
+    const [a, b] = resolveRuns([{ text: 'a', fill: null }, { text: 'b' }], style);
+    expect(a.fill).toBeNull();
+    expect(b.fill).toEqual({ fill: 'solid', color: '#f00' });
+  });
+
   it('bold flag wins over numeric fontWeight inheritance when both could apply (run.bold === true sets 700)', () => {
     const style = resolveTextStyle({ fontWeight: 300 });
     const runs: StyledRun[] = [{ text: 'a', bold: true }];

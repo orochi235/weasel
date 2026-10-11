@@ -23,11 +23,14 @@ import {
 } from '@weasel-js/text';
 import { cssFontFamily } from '@weasel-js/font';
 
-function solidColor(p: FillStyle | undefined): string | null {
+function solidColor(p: FillStyle | null | undefined): string | null {
   if (!p) return null;
   if ('color' in p) return p.color;
   return null;
 }
+
+/** Marks a run span whose run is unfilled, which its CSS color cannot say. */
+const NO_FILL_ATTR = 'data-no-fill';
 
 interface StyleState {
   bold: boolean;
@@ -38,7 +41,7 @@ interface StyleState {
   fontWeight?: number;
   fontSize?: number;
   fontFamily?: string;
-  color?: string;
+  color?: string | null;
   letterSpacing?: number;
   script?: 'super' | 'sub';
   baselineShift?: number;
@@ -163,7 +166,8 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
     // The attribute holds the run's family; the CSS holds the face it maps to.
     const family = el.getAttribute('data-font-family') ?? el.style.fontFamily;
     if (family) next.fontFamily = family;
-    if (el.style.color) next.color = el.style.color;
+    if (el.hasAttribute(NO_FILL_ATTR)) next.color = null;
+    else if (el.style.color) next.color = el.style.color;
     const ls = el.style.letterSpacing;
     if (ls === 'normal') {
       next.letterSpacing = undefined;
@@ -202,7 +206,8 @@ function toRun(text: string, style: StyleState): StyledRun {
   if (style.fontWeight != null) run.fontWeight = style.fontWeight;
   if (style.fontSize != null) run.fontSize = style.fontSize;
   if (style.fontFamily != null) run.fontFamily = style.fontFamily;
-  if (style.color != null) run.fill = { fill: 'solid', color: style.color };
+  if (style.color === null) run.fill = null;
+  else if (style.color !== undefined) run.fill = { fill: 'solid', color: style.color };
   // `letterSpacing: 0` is a meaningful override (it cancels node-level
   // tracking for this run), so test for presence, not truthiness.
   if (style.letterSpacing != null) run.letterSpacing = style.letterSpacing;
@@ -389,6 +394,11 @@ export function runsToDom(
     }
     const color = solidColor(run.fill);
     if (color != null) span.style.color = color;
+    if (run.fill === null) {
+      // Black, as an unfilled node edits in: no CSS color leaves it legible.
+      span.setAttribute(NO_FILL_ATTR, '');
+      span.style.color = '#000';
+    }
     // Decoration goes on the span as an inline style rather than `<u>`/`<s>`
     // wrappers: one representation for `domToRuns` to unwrap, and one element
     // per run so the caret-offset walkers stay flat.

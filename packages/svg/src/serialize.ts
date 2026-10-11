@@ -622,7 +622,8 @@ function runXml(
   }
   const runDecoration = textDecorationValue(run.underline, run.strikethrough, run.overline);
   if (runDecoration) attrs.push(`text-decoration="${runDecoration}"`);
-  if (run.fill) {
+  if (run.fill === null) attrs.push('fill="none"');
+  else if (run.fill) {
     if ('color' in run.fill) {
       attrs.push(`fill="${escapeAttr(run.fill.color)}"`);
     } else {
