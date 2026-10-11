@@ -31,7 +31,7 @@ import {
   type PoseDescriptor,
 } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
-import { alignedStrokeRect, type FillStyle, type Stroke } from '@weasel-js/paint';
+import { alignedStrokeRect, type CommandFill, type CommandStroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import {
   rotationHandle,
@@ -241,7 +241,7 @@ export interface SelectionOverlayLayerOpts<TPose>
    * walks expanded leaf ids via `getChildren`, which is generic over strings.
    */
   getPose?: (id: string) => TPose | null;
-  outline?: Stroke & { pad?: number };
+  outline?: CommandStroke & { pad?: number };
   /** Pass `false` to render outlines only. */
   handles?: SelectionHandleStyle | false;
   handlesOf?: (bounds: Bounds) => { x: number; y: number }[];
@@ -266,13 +266,13 @@ export interface SelectionOverlayLayerOpts<TPose>
   getSuppressedIds?: () => ReadonlySet<string>;
 }
 
-const DEFAULT_OUTLINE: Required<Pick<Stroke, 'paint' | 'width'>> & { pad: number } = {
+const DEFAULT_OUTLINE: Required<Pick<CommandStroke, 'paint' | 'width'>> & { pad: number } = {
   paint: { fill: 'solid', color: '#f0e0a8' },
   width: 2,
   pad: 1,
 };
-const DEFAULT_HANDLE_FILL: FillStyle = { fill: 'solid', color: '#d4c4a8' };
-const DEFAULT_HANDLE_OUTLINE: Stroke = {
+const DEFAULT_HANDLE_FILL: CommandFill = { fill: 'solid', color: '#d4c4a8' };
+const DEFAULT_HANDLE_OUTLINE: CommandStroke = {
   paint: { fill: 'solid', color: '#1a130d' },
   width: 1,
 };
@@ -287,8 +287,8 @@ function defaultHandlesOf(b: Bounds): { x: number; y: number }[] {
   ];
 }
 
-function resolveOutlineStroke(opts?: Stroke & { pad?: number }): {
-  stroke: Stroke;
+function resolveOutlineStroke(opts?: CommandStroke & { pad?: number }): {
+  stroke: CommandStroke;
   pad: number;
 } {
   if (!opts) {
@@ -313,14 +313,14 @@ function resolveOutlineStroke(opts?: Stroke & { pad?: number }): {
 /** Handle visuals, as a consumer supplies them. */
 export interface SelectionHandleStyle {
   size?: number;
-  fill?: FillStyle;
-  outline?: Stroke;
+  fill?: CommandFill;
+  outline?: CommandStroke;
 }
 
 interface ResolvedHandles {
   size: number;
-  fill: FillStyle;
-  outline: Stroke;
+  fill: CommandFill;
+  outline: CommandStroke;
 }
 
 function resolveHandles(opts?: SelectionHandleStyle): ResolvedHandles {
@@ -358,7 +358,7 @@ function rectPathFor(x: number, y: number, width: number, height: number): { kin
 function outlineCommandsFor(
   ids: readonly string[],
   resolveBounds: (id: string) => Bounds | null,
-  stroke: Stroke,
+  stroke: CommandStroke,
   pad: number,
   view: View,
 ): DrawCommand[] {
@@ -514,7 +514,7 @@ function rotationHandleCommands(
   const ARC_HALF_ANGLE = (Math.PI * 240) / 360 / 2; // 120°
   const N_SEGS = 18;
   const arcWidth = resolveStrokeWidth(handles.outline.width ?? 1, 1) * 1.5;
-  const stroke: Stroke = {
+  const stroke: CommandStroke = {
     paint: handles.fill,
     width: arcWidth,
     cap: 'round',
@@ -589,7 +589,7 @@ function rotationHandleCommands(
   const tangentBY = -Math.sin(angleB);
   const headA = arrowHead(endAX, endAY, tangentAX, tangentAY);
   const headB = arrowHead(endBX, endBY, tangentBX, tangentBY);
-  const headFill: FillStyle = handles.fill;
+  const headFill: CommandFill = handles.fill;
   // Build transform: translate(scx, scy) [* rotate(rotation)].
   let transform = mat3.translated(mat3.identity(), scx, scy);
   if (rotation !== 0) {

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createPathLayer } from './pathLayer';
 import { polygonFromPoints, rectPath, type Path } from '@weasel-js/geom';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { CommandFill, CommandStroke } from '@weasel-js/paint';
 import { ColorOverrideRegistry } from '../../animation/colorRegistry';
 
 // createPathLayer emits raw world-space PathDrawCommands. The viewToMat3
@@ -11,7 +11,7 @@ import { ColorOverrideRegistry } from '../../animation/colorRegistry';
 describe('createPathLayer', () => {
   it('emits one path command per visible node', () => {
     const path: Path = rectPath(0, 0, 10, 10);
-    const fill: FillStyle = { fill: 'solid', color: '#fff' };
+    const fill: CommandFill = { fill: 'solid', color: '#fff' };
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }, { id: 'b' }],
       getPath: () => path,
@@ -48,7 +48,7 @@ describe('createPathLayer', () => {
 
   it('passes stroke through when getStroke returns a stroke', () => {
     const path: Path = rectPath(0, 0, 10, 10);
-    const stroke: Stroke = { paint: { fill: 'solid', color: '#000' }, width: 2 };
+    const stroke: CommandStroke = { paint: { fill: 'solid', color: '#000' }, width: 2 };
     const layer = createPathLayer({
       getNodes: () => [{ id: 'a' }],
       getPath: () => path,
@@ -138,7 +138,7 @@ describe('createPathLayer — getStrokeVertexColors', () => {
     expect(cmd.stroke.width).toBe(1);
   });
 
-  it('threads stroke vertex colors onto an existing Stroke (overriding any pre-set vertexColors)', () => {
+  it('threads stroke vertex colors onto an existing CommandStroke (overriding any pre-set vertexColors)', () => {
     const path = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
     const colors = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];
     const layer = createPathLayer({

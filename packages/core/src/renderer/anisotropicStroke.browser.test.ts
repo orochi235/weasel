@@ -12,7 +12,7 @@
  * and a `{ px }` outline on text.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import type { Path, Stroke } from '@weasel-js/core';
+import type { CommandStroke, Path } from '@weasel-js/core';
 import { ellipsePath, linePath } from '@weasel-js/geom';
 import { registerFont, registerFontOutlines, outlineStatus } from '@weasel-js/font';
 import { createScene } from 'core/scene/scene';
@@ -122,7 +122,7 @@ const WHITE = { color: '#ffffff' };
 const ACROSS = linePath({ x: 5, y: 20 }, { x: 45, y: 20 }); // y 20, x 20–180
 const DOWN = linePath({ x: 30, y: 40 }, { x: 30, y: 90 }); // x 120, y 40–90
 
-const strokeOf = (path: Path, stroke: Stroke): DrawCommand => ({ kind: 'path', path, stroke });
+const strokeOf = (path: Path, stroke: CommandStroke): DrawCommand => ({ kind: 'path', path, stroke });
 
 /** The widest crossing of a head and where along the line it falls: an
  *  arrow is widest at its base, one head length back from the tip. */
@@ -146,7 +146,7 @@ describe('a head sized in other units than its line, at a 4:1 view', () => {
   // either direction; through the mean scale of 2 it was 2 world units, 24px
   // long and 6 tall running across.
   it('builds a { px } head on a world-width line to its screen size, running across and down', () => {
-    const head: Stroke = { width: 0.5, paint: WHITE, markerEnd: { key: 'arrow', size: { px: 4 } } };
+    const head: CommandStroke = { width: 0.5, paint: WHITE, markerEnd: { key: 'arrow', size: { px: 4 } } };
     const img = renderCommands([strokeOf(ACROSS, head), strokeOf(DOWN, head)]);
     const across = widest(crossings(img, 'column', [140, 190], [0, 40]), 140);
     expectHead(across, 12, 12, 168);
@@ -158,7 +158,7 @@ describe('a head sized in other units than its line, at a 4:1 view', () => {
   // stretches it: 24px long and 6 tall running across, 6px long and 24 wide
   // running down. Built in the stretch, it came out 12 by 12 both ways.
   it('builds a world-sized head on a { px } line in world, running across and down', () => {
-    const head: Stroke = { width: { px: 1 }, paint: WHITE, markerEnd: { key: 'arrow', size: 2 } };
+    const head: CommandStroke = { width: { px: 1 }, paint: WHITE, markerEnd: { key: 'arrow', size: 2 } };
     const img = renderCommands([strokeOf(ACROSS, head), strokeOf(DOWN, head)]);
     const across = widest(crossings(img, 'column', [140, 190], [0, 40]), 140);
     expectHead(across, 6, 24, 156);
@@ -169,7 +169,7 @@ describe('a head sized in other units than its line, at a 4:1 view', () => {
   // World widths of 2 are 2px running across and 8px running down; read in
   // the stretch they were 4px both ways.
   it('keeps vertexWidths world widths on a { px } line', () => {
-    const tapered: Stroke = { width: { px: 1 }, paint: WHITE, cap: 'butt', vertexWidths: [2, 2] };
+    const tapered: CommandStroke = { width: { px: 1 }, paint: WHITE, cap: 'butt', vertexWidths: [2, 2] };
     const img = renderCommands([strokeOf(ACROSS, tapered), strokeOf(DOWN, tapered)]);
     expect(inkedMedian(crossings(img, 'column', [30, 170], [10, 30])).median).toBeCloseTo(2, 1);
     expect(inkedMedian(crossings(img, 'row', [105, 135], [45, 85])).median).toBeCloseTo(8, 1);

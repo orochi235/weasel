@@ -716,7 +716,12 @@ export {
 export { resolveStrokeWidth } from './features/paths/tessellate/stroke';
 export type {
   ColorSpace,
+  CommandFill,
+  CommandPaintUnits,
+  CommandStroke,
   FillStyle,
+  PosedFill,
+  SolidFill,
   GradStop,
   GradientFill,
   GradientKind,

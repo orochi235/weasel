@@ -3,7 +3,7 @@
 // barrel import here forms a DrawCommand.ts → index.ts → renderer/index.ts → DrawCommand.ts
 // cycle that makes the dts bundler split them into mutually-dependent chunks and warn.
 import type { Path } from '@weasel-js/geom';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { CommandFill, CommandStroke } from '@weasel-js/paint';
 import type { TextAlign, TextDirection, TextStyle } from '@weasel-js/text';
 import type { ResolvedRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
@@ -38,10 +38,11 @@ export type DrawCommand =
 export interface PathDrawCommand {
   kind: 'path';
   path: Path;
-  /** Any `FillStyle` variant: solid, pattern, or gradient (linear/radial/conic). */
-  fill?: FillStyle;
-  /** Stroke spec. Its `paint` takes any `FillStyle` variant, as `fill` does. */
-  stroke?: Stroke;
+  /** Solid, pattern, or gradient (linear/radial/conic), resolved for the
+   *  renderer: `commandFill` makes one from a node's `FillStyle`. */
+  fill?: CommandFill;
+  /** Stroke spec. Its `paint` takes what `fill` does. */
+  stroke?: CommandStroke;
   /**
    * Optional flat RGBA-per-path-anchor color array (length =
    * `4 × countPathAnchors(path)`, floats in 0..1). The renderer

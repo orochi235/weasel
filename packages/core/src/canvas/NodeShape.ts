@@ -73,8 +73,7 @@ import { hasSlop, slopForStrokeHit, widenSlop, type PickSlop } from 'core/viewpo
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseRotationOf, rotatePathAround } from 'core/geometry/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
-import { fillInPoseFrame, type FillPoseBox } from '../core/fillInPoseFrame';
-import { resolveFillPattern } from '../features/patterns/resolveSpec';
+import { commandFill, commandStroke } from '../features/patterns/commandPaint';
 import {
   getImageBitmap, imageStatus, type ImageNodeData, type ImageRasterSize,
 } from 'features/images/imageCache';
@@ -642,16 +641,6 @@ function resolveNodeStroke(stroke: Stroke | null | undefined): PaintedStroke | n
  *  works with. */
 type PaintedStroke = Stroke & { paint: FillStyle };
 
-/** Bake a bounds-relative stroke paint onto the given box, the way a fill is
- *  baked. The box is the frame the path was projected into, so a paint left in
- *  `'bounds'` units would reach the renderer describing a frame that never
- *  exists. `null` when a pattern spec fails to resolve. */
-function strokeInPoseFrame(stroke: PaintedStroke, box: FillPoseBox): Stroke | null {
-  const paint = resolveFillPattern(fillInPoseFrame(stroke.paint, box));
-  if (paint === null) return null;
-  return paint === stroke.paint ? stroke : { ...stroke, paint };
-}
-
 /** Per-side grab reach for a resolved stroke: world units for what the
  *  renderer builds in world, screen pixels for what it builds on screen — a
  *  `{ px }` width, and each head by its own size's units. */
@@ -727,8 +716,8 @@ const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     // The pose is baked into `projected` rather than emitted as a transform,
     // so a box-relative gradient has to be baked onto the same box here or
     // it would arrive in the renderer referring to a frame that never exists.
-    const fill = declared && resolveFillPattern(fillInPoseFrame(declared, pose));
-    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, pose);
+    const fill = declared && commandFill(declared, pose);
+    const stroke = strokeSpec && commandStroke(strokeSpec, pose);
     const cmd: DrawCommand = {
       kind: 'path',
       path: projected,
@@ -781,9 +770,9 @@ const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const d = node.data as { shape: string; fill?: FillStyle | null; stroke?: Stroke | null; sides?: number; points?: number };
     const path = pathForShape(d, pose);
     const declaredFill = resolveNodeFill(d.fill, DEFAULT_SHAPE_FILL);
-    const shapeFill = declaredFill && resolveFillPattern(fillInPoseFrame(declaredFill, pose));
+    const shapeFill = declaredFill && commandFill(declaredFill, pose);
     const strokeSpec = resolveNodeStroke(d.stroke);
-    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, pose);
+    const stroke = strokeSpec && commandStroke(strokeSpec, pose);
     return [{
       kind: 'path',
       path,
@@ -950,8 +939,8 @@ const DERIVED_PAINTER: NodeShapeEntry = {
     const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null; vertexColors?: number[] } | null;
     const strokeSpec = resolveNodeStroke(d?.stroke);
     const declared = resolveNodeFill(d?.fill, strokeSpec === null ? DEFAULT_SHAPE_FILL : null);
-    const fill = declared && resolveFillPattern(fillInPoseFrame(declared, box));
-    const stroke = strokeSpec && strokeInPoseFrame(strokeSpec, box);
+    const fill = declared && commandFill(declared, box);
+    const stroke = strokeSpec && commandStroke(strokeSpec, box);
     const cmd: DrawCommand = {
       kind: 'path',
       path,
@@ -986,7 +975,8 @@ const RECT_FALLBACK_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   paint: (node, pose) => {
     const d = node.data as { fill?: FillStyle | null } | null;
     const p = pose;
-    const fill = resolveNodeFill(d?.fill, DEFAULT_SHAPE_FILL);
+    const declared = resolveNodeFill(d?.fill, DEFAULT_SHAPE_FILL);
+    const fill = declared && commandFill(declared, p);
     return [{
       kind: 'path',
       path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },

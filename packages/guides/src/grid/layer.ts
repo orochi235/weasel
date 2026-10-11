@@ -11,7 +11,7 @@
 import {
   type DrawCommand,
   type RenderLayer,
-  type Stroke,
+  type CommandStroke,
   resolveStrokeWidth,
   resolveUnit,
   type UnitSystem,
@@ -38,9 +38,9 @@ export interface GridLayerOpts {
   subdivisions?: number;
   /** Per-band stroke styles. Each is a FillStyle+width (etc.) — see `Stroke`. */
   style?: {
-    line?: Stroke;
-    accent?: Stroke;
-    sub?: Stroke;
+    line?: CommandStroke;
+    accent?: CommandStroke;
+    sub?: CommandStroke;
   };
 }
 
@@ -48,15 +48,15 @@ export interface GridLayerOpts {
 // grid reads correctly against any background fill (kit demos use a neutral
 // gray; consumer apps may use cream / dark / themed surfaces). Override
 // per-canvas via `style.{line,accent,sub}.paint` if a hard color is needed.
-const DEFAULT_LINE: Stroke = {
+const DEFAULT_LINE: CommandStroke = {
   paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.08)' },
   width: 1,
 };
-const DEFAULT_ACCENT: Stroke = {
+const DEFAULT_ACCENT: CommandStroke = {
   paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.16)' },
   width: 1,
 };
-const DEFAULT_SUB: Stroke = {
+const DEFAULT_SUB: CommandStroke = {
   paint: { fill: 'solid', color: 'rgba(255, 255, 255, 0.04)' },
   width: 1,
 };
@@ -86,7 +86,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
 
       const children: DrawCommand[] = [];
 
-      const pushSegment = (sx: number, sy: number, ex: number, ey: number, s: Stroke): void => {
+      const pushSegment = (sx: number, sy: number, ex: number, ey: number, s: CommandStroke): void => {
         const path: PolygonPath = {
           kind: 'polygon',
           commands: new Uint8Array([PATH_M, PATH_L]),

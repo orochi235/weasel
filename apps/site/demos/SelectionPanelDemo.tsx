@@ -9,6 +9,8 @@ import {
   PATH_Z,
   solid,
   strokeOf,
+  commandFill,
+  commandStroke,
 } from '@weasel-js/core';
 import type { FillStyle, PolygonPath, Stroke } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
@@ -61,14 +63,18 @@ export function SelectionPanelDemo() {
             // The renderer's Path union has no ellipse variant, so an
             // 'ellipse'-kind node paints as a 32-gon polygon approximation
             // (see `ellipse` above) inscribed in its pose box.
-            drawOne: (n, p): DrawCommand[] => [{
-              kind: 'path',
-              path: n.data.kind === 'ellipse'
-                ? ellipse(p.x + p.width / 2, p.y + p.height / 2, p.width / 2, p.height / 2)
-                : { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: n.data.fill,
-              ...(n.data.stroke ? { stroke: n.data.stroke } : {}),
-            }],
+            drawOne: (n, p): DrawCommand[] => {
+              const fill = commandFill(n.data.fill, p);
+              const stroke = n.data.stroke && commandStroke(n.data.stroke, p);
+              return [{
+                kind: 'path',
+                path: n.data.kind === 'ellipse'
+                  ? ellipse(p.x + p.width / 2, p.y + p.height / 2, p.width / 2, p.height / 2)
+                  : { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                ...(fill ? { fill } : {}),
+                ...(stroke ? { stroke } : {}),
+              }];
+            },
           },
         }}
       />

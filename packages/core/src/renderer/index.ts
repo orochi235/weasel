@@ -21,6 +21,7 @@ export type {
   ShaderDrawCommand,
   SolidPaint,
 } from './DrawCommand';
+export type { CommandFill, CommandStroke, CommandPaintUnits, PosedFill, SolidFill } from '@weasel-js/paint';
 export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';
 export { mat3, type GlMat3 } from './math/mat3';

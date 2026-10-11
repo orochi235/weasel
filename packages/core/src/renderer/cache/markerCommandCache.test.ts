@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { Stroke } from '@weasel-js/paint';
+import type { CommandStroke } from '@weasel-js/paint';
 import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { registerMarker, getMarker, type MarkerEntry } from '../../core/strokeMarkers';
 import { cachedMarkerCommands, _resetMarkerCommandCacheForTests } from './markerCommandCache';
@@ -10,7 +10,7 @@ const LINE: PolygonPath = {
   coords: new Float32Array([0, 0, 100, 0]),
   fillRule: 'nonzero',
 };
-const STROKE: Stroke = { paint: { color: '#000' }, width: 2, markerEnd: 'arrow' };
+const STROKE: CommandStroke = { paint: { color: '#000' }, width: 2, markerEnd: 'arrow' };
 
 describe('cachedMarkerCommands', () => {
   beforeEach(() => _resetMarkerCommandCacheForTests());
@@ -23,7 +23,7 @@ describe('cachedMarkerCommands', () => {
   });
 
   it('rebuilds when a resolved size changes', () => {
-    const source: Stroke = { ...STROKE, markerEnd: { key: 'arrow', size: { px: 8 } } };
+    const source: CommandStroke = { ...STROKE, markerEnd: { key: 'arrow', size: { px: 8 } } };
     const at1 = cachedMarkerCommands(LINE, source, { ...source, markerEnd: { key: 'arrow', size: 8 } }, 2, undefined);
     const at4 = cachedMarkerCommands(LINE, source, { ...source, markerEnd: { key: 'arrow', size: 2 } }, 2, undefined);
     expect(at4).not.toBe(at1);
@@ -49,7 +49,7 @@ describe('cachedMarkerCommands', () => {
 
   it('repaints a head in a new paint without rebuilding its geometry', () => {
     const [a] = cachedMarkerCommands(LINE, STROKE, STROKE, 2, undefined);
-    const blue: Stroke = { ...STROKE, paint: { color: '#00f' } };
+    const blue: CommandStroke = { ...STROKE, paint: { color: '#00f' } };
     const [b] = cachedMarkerCommands(LINE, blue, blue, 2, undefined);
     expect(b.fill).toEqual({ color: '#00f' });
     expect(b.path).toBe(a.path);
@@ -74,7 +74,7 @@ describe('cachedMarkerCommands', () => {
   it('rebuilds when a field a head declares it reads changes', () => {
     const dispose = registerMarker(lengthHead(['miterLimit']));
     try {
-      const s1: Stroke = { ...STROKE, markerEnd: 'app-grow', miterLimit: 1 };
+      const s1: CommandStroke = { ...STROKE, markerEnd: 'app-grow', miterLimit: 1 };
       const a = cachedMarkerCommands(LINE, s1, s1, 2, undefined);
       expect(cachedMarkerCommands(LINE, { ...s1 }, { ...s1 }, 2, undefined)).toBe(a);
       const s2 = { ...s1, miterLimit: 4 };
@@ -88,7 +88,7 @@ describe('cachedMarkerCommands', () => {
   it('rebuilds for a new stroke object when a head does not say what it reads', () => {
     const dispose = registerMarker(lengthHead());
     try {
-      const s1: Stroke = { ...STROKE, markerEnd: 'app-grow', miterLimit: 1 };
+      const s1: CommandStroke = { ...STROKE, markerEnd: 'app-grow', miterLimit: 1 };
       const a = cachedMarkerCommands(LINE, s1, s1, 2, undefined);
       expect(cachedMarkerCommands(LINE, s1, s1, 2, undefined)).toBe(a);
       const s2 = { ...s1, miterLimit: 4 };

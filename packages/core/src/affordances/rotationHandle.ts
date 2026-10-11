@@ -1,6 +1,6 @@
 import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { CommandFill, CommandStroke } from '@weasel-js/paint';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 import { angleOf, transformOf } from './hitAffordanceRegions';
 import type { CursorSpec } from '@weasel-js/cursor';
@@ -19,8 +19,8 @@ export interface RotationAffordanceOptions {
    *  hoverable zone with a clear margin. Pass a `Stroke` (or
    *  `{ fill, stroke, insetPx }`) to override. */
   paint?:
-    | Stroke
-    | { fill?: FillStyle; stroke?: Stroke; insetPx?: number }
+    | CommandStroke
+    | { fill?: CommandFill; stroke?: CommandStroke; insetPx?: number }
     | null
     | false;
   /** Cursor while hovering the ring. Defaults to the `rotate` glyph turned
@@ -45,9 +45,9 @@ export interface RotationScratch extends CommonAffordanceScratch {
   fixedPoint: { x: number; y: number };
 }
 
-type AnnulusPaintForm = { fill?: FillStyle; stroke?: Stroke; insetPx?: number };
+type AnnulusPaintForm = { fill?: CommandFill; stroke?: CommandStroke; insetPx?: number };
 
-const isAnnulusForm = (paint: Stroke | AnnulusPaintForm): paint is AnnulusPaintForm =>
+const isAnnulusForm = (paint: CommandStroke | AnnulusPaintForm): paint is AnnulusPaintForm =>
   'fill' in paint || 'stroke' in paint || 'insetPx' in paint;
 
 const DEFAULT_PAINT: AnnulusPaintForm = {
@@ -84,7 +84,7 @@ export function createRotationAffordance(
   // carries these three keys; `Stroke` carries none of them, and cannot be
   // told apart by its own `paint` since that is optional.
   const annulusPaint:
-    | { kind: 'annulus'; fill?: FillStyle; stroke?: Stroke; insetPx?: number }
+    | { kind: 'annulus'; fill?: CommandFill; stroke?: CommandStroke; insetPx?: number }
     | null = (() => {
       if (!paint) return null;
       if (!isAnnulusForm(paint)) {

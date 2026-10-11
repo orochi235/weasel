@@ -7,7 +7,7 @@
  * session, matching `registerTexture`'s own lifetime.
  */
 
-import type { FillStyle, TilePatternSpec } from '@weasel-js/paint';
+import type { CommandFill, FillStyle, PosedFill, TilePatternSpec } from '@weasel-js/paint';
 import type { TextureHandle } from '../../renderer/textures/registerTexture';
 import { hatch, crosshatch, dots, chunks } from './patterns-builtin';
 
@@ -74,6 +74,8 @@ export function isPatternSpec(
  *
  * A spec that can't rasterize drops the fill rather than painting garbage.
  */
+export function resolveFillPattern(fill: PosedFill): CommandFill | null;
+export function resolveFillPattern(fill: FillStyle): FillStyle | null;
 export function resolveFillPattern(fill: FillStyle): FillStyle | null {
   if (fill.fill !== 'pattern') return fill;
   if (!isPatternSpec(fill.pattern)) return fill;

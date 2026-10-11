@@ -7,13 +7,14 @@
  * them in would drag the whole marker vocabulary into the ribbon cache key.
  */
 
-import type { MarkerRef, Stroke } from '@weasel-js/paint';
+import type { CommandFill, CommandStroke, MarkerRef, Stroke } from '@weasel-js/paint';
 import { type Path, type PolygonPath, boundsOfPath } from '@weasel-js/geom';
 import type { PathDrawCommand } from '../../renderer/DrawCommand';
 import { getMarker, type MarkerEntry, type MarkerPaint } from '../../core/strokeMarkers';
 import { markerKeyOf, resolveMarkerSize } from '../../core/markerInset';
 import { extractPolylines } from '@weasel-js/geom/tessellate';
 import { markerSites, type MarkerSite } from './markerSites';
+import { commandFill } from '../patterns/commandPaint';
 import {
   coordsOutOfMetric, polylineIntoMetric, type ScreenSpace, type StrokeSpaces,
 } from './tessellate/metric';
@@ -32,10 +33,15 @@ function placed(path: Path, site: MarkerSite): PolygonPath {
   return { kind: 'polygon', commands: src.commands, coords, fillRule: src.fillRule };
 }
 
-function resolvePaint(p: MarkerPaint | undefined, stroke: Stroke, fallback: MarkerPaint) {
+/** A marker's own paint is resolved against its head's box, as a node's is
+ *  against the node's. */
+function resolvePaint(
+  p: MarkerPaint | undefined, stroke: CommandStroke, fallback: MarkerPaint, head: PolygonPath,
+): CommandFill | undefined {
   const v = p ?? fallback;
   if (v === 'none') return undefined;
-  return v === 'line' ? stroke.paint : v;
+  if (v === 'line') return stroke.paint;
+  return commandFill(v, boundsOfPath(head)) ?? undefined;
 }
 
 /** One head's placed geometry, before any paint is applied. */
@@ -97,16 +103,16 @@ export function markerHeads(
 
 /** `heads` as draw commands in `stroke`'s paint. A head whose fill and outline
  *  both resolve to no paint is dropped. */
-export function headCommands(heads: readonly MarkerHead[], stroke: Stroke): PathDrawCommand[] {
+export function headCommands(heads: readonly MarkerHead[], stroke: CommandStroke): PathDrawCommand[] {
   const out: PathDrawCommand[] = [];
   for (const { entry, path, size, space } of heads) {
-    const fill = resolvePaint(entry.fill, stroke, 'line');
+    const fill = resolvePaint(entry.fill, stroke, 'line', path);
     // A head built in a screen space is in world once placed, but its outline
     // width is still in that space's units — so it goes out as the screen
     // width it stands for, and is stroked as exactly as the line.
     const width = entry.outline ? entry.outline.width * size : 0;
     const outline = entry.outline
-      ? { paint: resolvePaint(entry.outline.paint, stroke, 'line'), width: space ? { px: width * space.pxPerUnit } : width }
+      ? { paint: resolvePaint(entry.outline.paint, stroke, 'line', path), width: space ? { px: width * space.pxPerUnit } : width }
       : null;
     if (fill === undefined && (outline === null || outline.paint === undefined)) continue;
     out.push({
@@ -124,7 +130,7 @@ export function headCommands(heads: readonly MarkerHead[], stroke: Stroke): Path
 /** Every marker command for `path` under `stroke`; see {@link markerHeads}. */
 export function markerDrawCommands(
   path: Path,
-  stroke: Stroke,
+  stroke: CommandStroke,
   strokeWidth: number,
   flattenTolerance: number | undefined,
 ): PathDrawCommand[] {

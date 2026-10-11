@@ -1,4 +1,4 @@
-import type { FillStyle, MarkerRef, Stroke } from '@weasel-js/paint';
+import type { CommandFill, MarkerRef, CommandStroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from './DrawCommand';
 import type { GlMat3 } from './math/mat3';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
@@ -9,7 +9,7 @@ import { quantizeStrokeScale } from './cache/strokeMeshCache';
 import { resolveMarkerSize } from '../core/markerInset';
 
 /** A path command whose stroke paints. */
-export type StrokedPathCommand = PathDrawCommand & { stroke: Stroke & { paint: FillStyle } };
+export type StrokedPathCommand = PathDrawCommand & { stroke: CommandStroke & { paint: CommandFill } };
 
 /** A stroke command ready to tessellate, and the spaces to tessellate it in. */
 export interface ResolvedStrokeCommand {
@@ -39,7 +39,7 @@ export function resolveStrokeLengths(transform: GlMat3, cmd: StrokedPathCommand)
     && !isPxMarker(markerMid) && !isPxMarker(markerEnd)) {
     return { cmd, spaces: WORLD };
   }
-  const resolved: Stroke & { paint: FillStyle } = { ...stroke };
+  const resolved: CommandStroke & { paint: CommandFill } = { ...stroke };
   const { scale, metric } = strokeSpaceOf(transform[0], transform[1], transform[3], transform[4]);
   const screen = (pxPerUnit: number): ScreenSpace | undefined =>
     metric === null ? undefined : { metric, pxPerUnit };

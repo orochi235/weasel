@@ -692,16 +692,6 @@ Core five + Crop shipped. Remaining:
   `<text>` with no `direction` reads as auto where SVG means `ltr`, so its neutrals can land on the
   other side of right-to-left text.
 
-- **(P2) Text editing: caret stops fall inside grapheme clusters.** `layoutRuns` emits one
-  `LaidOutCell` per code point and the cell contract says a caret stop is a cell's `x`, so
-  `caretIndexAt` (`packages/core/src/features/text/hitTest.ts`) can return an offset between a base
-  letter and its combining mark (`"éx"` written as `e` + U+0301: a click in the right half of `e`
-  returns offset 1), between the code points of `👨‍👩‍👧`, or before a variation selector or skin-tone
-  modifier. `sourceClusters` there merges only cells sharing a source span. The fix spans both
-  packages: mark cluster-closing cells in layout (`graphemeEnds` is already computed when tracking
-  is on; it would need computing always) and have every caret consumer stop only there. It adds a
-  field to the public `LaidOutCell`.
-
 - **(P2) Canvas font tier: a web font that loads after first use never replaces the fallback face it
   was measured with.** `getDynamicFace` and `requestGlyph`
   (`packages/font/src/dynamic/dynamicAtlas.ts`) cache face metrics and each glyph's bitmap and
@@ -728,7 +718,7 @@ Core five + Crop shipped. Remaining:
   `layoutRuns` looks glyphs up one code point at a time, so `👍🏽` is a thumb plus a swatch, `🇨🇦` is
   two letters, and `👨‍👩‍👧` is three people, all in the run's fill color. Needs grapheme segmentation
   before glyph lookup and a color (RGBA) atlas page drawn untinted for clusters with emoji
-  presentation. Shares the cluster work with the caret entry above.
+  presentation. `LaidOutCell.clusterEnd` already marks where each cluster closes.
 
 - **(P3) Outline fonts: a `.ttc` member that does not match by PostScript name is used silently.**
   `sfntFromCollection` (`packages/font/src/outline/sfnt.ts`) falls back to the collection's first
@@ -1860,21 +1850,13 @@ only story runner in the repo.
   again (`createSplitStore`). The fix belongs in windease; the workaround goes
   when it lands.
 
-- **(P2) forge: the static index and the runtime loaders disagree about what a story is and what it
-  is titled.** Three cases, all in `packages/forge/src/vite/indexFile.ts` against `story/native.ts`
-  and `csf/loadCsfModule.tsx`. A native story file with `export const rows = makeRows()` beside its
-  stories lists a story "Rows" in the tree, because the index takes every exported call, and
-  opening it faults with `has no story export "rows"`, because the loader skips exports that are not
-  stories (an export written out as a value, such as an array or a function, is already left out). A
-  CSF meta whose `title` is an identifier or a template literal with an expression
-  indexes under the auto title while `loadCsfModule` uses the real one, so the loaded story's id
-  differs from its entry's and the index page's Open button does nothing. And `forgeTest`
-  (`vite/forgeTest.ts`) and `packages/forge/scripts/check-isolate.ts` call `indexFile` without the
-  resolved wrappers, so a file whose `meta`/`story` come through a project helper is indexed
-  differently there, and `check:forge-isolate` does not count an `isolate` inside it. The fix is one
-  "index this file" function every caller shares, a native index that takes only exports whose
-  callee is a `story` wrapper, and a CSF loader that is handed the index's title the way the native
-  loader already is.
+- **(P3) forge: a native story file's index still guesses at an export it cannot read.**
+  `mayBeStory` (`packages/forge/src/vite/nativeExports.ts`) keeps an export that is an import, a
+  re-export, a conditional, or a spread copy, since any of them may carry a story, so one that turns
+  out not to be a story is listed and faults with `has no story export` when opened. It drops an
+  export that calls a function imported from another module, so a story built by an imported
+  factory is not listed at all. Telling either apart means following the import, the way
+  `createWrapperResolver` (`vite/wrappers.ts`) already follows `meta` and `story`.
 
 - **(P3) forge: the index page mounts a cell only once it is on screen, not a viewport ahead.**
   `packages/forge/src/frame/index/IndexPage.tsx` keeps a private `useNearViewport` that reads

@@ -71,6 +71,18 @@ describe('<DrawCanvas>', () => {
     expect(Array.from((group as GroupDrawCommand).transform!)).toEqual([2, 0, 0, 0, 2, 0, -10, 0, 1]);
   });
 
+  it('resolves a bounds-relative background against the surface', () => {
+    const background = {
+      fill: 'linear-gradient' as const,
+      from: { x: 0, y: 0 }, to: { x: 1, y: 1 },
+      stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+      units: 'bounds' as const,
+    };
+    render(<DrawCanvas width={40} height={20} background={background} draw={[]} />);
+    const [bg] = lastFrame();
+    expect((bg as { fill: unknown }).fill).toMatchObject({ units: 'local', to: { x: 40, y: 20 } });
+  });
+
   it('repaints on the next frame when its commands change', async () => {
     const { rerender } = render(<DrawCanvas width={40} height={20} draw={[rect('#f00')]} />);
     rerender(<DrawCanvas width={40} height={20} draw={[rect('#00f')]} />);

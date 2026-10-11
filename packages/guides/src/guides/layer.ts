@@ -10,7 +10,7 @@
  * the visual guide and the snap target in lockstep.
  */
 
-import { textCommandFromRuns, type DrawCommand, type RenderLayer, type Stroke } from '@weasel-js/core';
+import { textCommandFromRuns, type DrawCommand, type RenderLayer, type CommandStroke } from '@weasel-js/core';
 import { PATH_L, PATH_M, rectPath, type PolygonPath } from '@weasel-js/geom';
 import type { Guide, SpacingGap } from './types';
 
@@ -83,8 +83,8 @@ export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
   const format = opts.gapLabels === false ? null
     : typeof opts.gapLabels === 'function' ? opts.gapLabels
     : (n: number) => String(Math.round(n));
-  const stroke: Stroke = { paint: { fill: 'solid', color }, width: lineWidth };
-  const gapStroke: Stroke = { paint: { fill: 'solid', color: gapColor }, width: lineWidth };
+  const stroke: CommandStroke = { paint: { fill: 'solid', color }, width: lineWidth };
+  const gapStroke: CommandStroke = { paint: { fill: 'solid', color: gapColor }, width: lineWidth };
 
   return {
     id: opts.id ?? 'guides',

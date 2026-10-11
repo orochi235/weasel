@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FillStyle } from '@weasel-js/paint';
+import type { CommandFill } from '@weasel-js/paint';
 import type { ResolvedRun } from '@weasel-js/text';
 import { FIXTURE_FONT, registerFont } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
@@ -21,14 +21,14 @@ afterEach(() => {
   _resetFontRegistryForTests();
 });
 
-function run(fontFamily: string, fontWeight = 400, fontStyle: 'normal' | 'italic' = 'normal', fill?: FillStyle): ResolvedRun {
+function run(fontFamily: string, fontWeight = 400, fontStyle: 'normal' | 'italic' = 'normal', fill?: CommandFill): ResolvedRun {
   return {
     text: 'Hi', fontFamily, fontSize: 12, fontWeight, fontStyle,
     fill: fill ?? { fill: 'solid', color: '#000' },
   } as ResolvedRun;
 }
 
-const mesh = { fill: 'mesh-gradient', patches: [] } as unknown as FillStyle;
+const mesh = { fill: 'mesh-gradient', patches: [] } as unknown as CommandFill;
 
 /** Text in two families, and a mesh fill two groups down. */
 const COMMANDS: DrawCommand[] = [

@@ -459,6 +459,24 @@ describe('data.stroke is a whole Stroke', () => {
   });
 });
 
+describe('kit:rect-fallback resolves its fill for the renderer', () => {
+  it('bakes a bounds-relative gradient onto the pose box, as kit:shape does', () => {
+    const pose = { x: 10, y: 0, width: 100, height: 100 };
+    const fill = {
+      fill: 'linear-gradient' as const,
+      from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+      units: 'bounds' as const,
+    };
+    const n = { ...node({ fill }), pose };
+    const shape = findNodeShape(n)!;
+    expect(shape.id).toBe('kit:rect-fallback');
+    const [cmd] = shape.paint(n, pose) as { fill: { units: string; to: { x: number } } }[];
+    expect(cmd.fill.units).toBe('local');
+    expect(cmd.fill.to.x).toBe(110);
+  });
+});
+
 describe('built-in painters need a rect pose', () => {
   const circleNode = <TData>(data: TData) =>
     ({ id: 'c', kind: 'leaf', layer: 'default', pose: { cx: 0, cy: 0, r: 5 }, data, parent: null }) as never;

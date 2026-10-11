@@ -23,7 +23,7 @@
 import { useEffect, useMemo, useReducer } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { DrawCommand, PathDrawCommand } from '../../renderer';
-import type { Stroke } from '@weasel-js/paint';
+import type { CommandStroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
@@ -53,7 +53,7 @@ export interface DispatcherOverlayStyle {
   /** Stroke per `polyline` overlay role, merged over the kit's. A role with
    *  no entry here and none of the kit's paints as plain chrome — the
    *  `stroke` / `lineWidth` / `dash` above. */
-  roles?: Readonly<Record<string, Stroke>>;
+  roles?: Readonly<Record<string, CommandStroke>>;
 }
 
 const DEFAULT_STYLE: Required<Omit<DispatcherOverlayStyle, 'roles'>> = {

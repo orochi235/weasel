@@ -12,6 +12,8 @@
  * editing, selection and styling work on them without a special case.
  */
 import {
+  commandFill,
+  commandStroke,
   RECT_POSE_DESCRIPTOR,
   registerNodeShape,
   type FillStyle,
@@ -51,11 +53,14 @@ export function diagramShape<TPose>(
       const outline = outlineOf(node);
       if (outline === undefined) return [];
       const d = node.data as { fill?: FillStyle | null; stroke?: Stroke | null };
-      const fill = d.fill === undefined ? opts.defaultFill : d.fill;
-      const stroke = d.stroke === undefined ? opts.defaultStroke : d.stroke;
+      const box = geometry.getBounds(pose);
+      const declaredFill = d.fill === undefined ? opts.defaultFill : d.fill;
+      const declaredStroke = d.stroke === undefined ? opts.defaultStroke : d.stroke;
+      const fill = declaredFill && commandFill(declaredFill, box);
+      const stroke = declaredStroke && commandStroke(declaredStroke, box);
       return [{
         kind: 'path',
-        path: outlinePath(outline, geometry.getBounds(pose)),
+        path: outlinePath(outline, box),
         ...(fill ? { fill } : {}),
         ...(stroke ? { stroke } : {}),
       }];

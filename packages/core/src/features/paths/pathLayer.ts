@@ -1,20 +1,20 @@
 /**
  * `RenderLayer` that fills/strokes `Path` instances. Mirrors the shape of
  * `createTextLayer`: caller hands over a `getNodes()` enumerator and a
- * `getPath(node)` lookup; the layer iterates and renders. FillStyle and
+ * `getPath(node)` lookup; the layer iterates and renders. CommandFill and
  * stroke are looked up per node so consumers can keep the path geometry
  * separate from the visual style record (the typical scene-graph layout).
  */
 
 import { type DrawCommand } from '../../renderer';
-import { type FillStyle, type Stroke } from '@weasel-js/paint';
+import { type CommandFill, type CommandStroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import type { Path } from '@weasel-js/geom';
 import { countPathAnchors } from './anchors';
 import type { ColorOverrideRegistry } from '../../animation/colorRegistry';
 
-const PLACEHOLDER_FILL: FillStyle = { color: '#ffffff' };
-const PLACEHOLDER_STROKE: Stroke = { paint: { color: '#ffffff' }, width: 1 };
+const PLACEHOLDER_FILL: CommandFill = { color: '#ffffff' };
+const PLACEHOLDER_STROKE: CommandStroke = { paint: { color: '#ffffff' }, width: 1 };
 
 
 /** Options for `createPathLayer`. */
@@ -24,9 +24,9 @@ export interface CreatePathLayerOpts<T> {
   getNodes: () => readonly T[];
   getPath: (node: T) => Path;
   /** Per-node fill paint. Return `null`/`undefined` to skip filling. */
-  getFill?: (node: T) => FillStyle | null | undefined;
+  getFill?: (node: T) => CommandFill | null | undefined;
   /** Per-node stroke. Return `null`/`undefined` to skip stroking. */
-  getStroke?: (node: T) => Stroke | null | undefined;
+  getStroke?: (node: T) => CommandStroke | null | undefined;
   /** Optional per-node hide hook (e.g., suppress while editing). */
   isHidden?: (node: T) => boolean;
   /**
@@ -142,7 +142,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
         // Synthesize placeholder only when colors validate (useVColors != null),
         // not on any raw hook return. Mismatched-length arrays drop both the
         // colors and placeholder so the dev signal (console warning) isn't duplicated.
-        const fill: FillStyle | undefined =
+        const fill: CommandFill | undefined =
           fillFromHook != null ? fillFromHook
           : (useVColors != null ? PLACEHOLDER_FILL : undefined);
 
@@ -161,11 +161,11 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           }
         }
 
-        const baseStroke: Stroke | undefined =
+        const baseStroke: CommandStroke | undefined =
           strokeFromHook != null ? strokeFromHook
           : (useStrokeVColors != null || useStrokeVWidths != null ? PLACEHOLDER_STROKE : undefined);
 
-        const stroke: Stroke | undefined =
+        const stroke: CommandStroke | undefined =
           baseStroke != null
             ? {
                 ...baseStroke,

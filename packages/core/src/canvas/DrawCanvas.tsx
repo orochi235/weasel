@@ -9,6 +9,7 @@
  * inline style, so `className` positions the element and cannot resize it.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { commandFill } from '../features/patterns/commandPaint';
 import type { Ref } from 'react';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { FillStyle } from '@weasel-js/paint';
@@ -78,9 +79,8 @@ export function DrawCanvas(props: DrawCanvasProps) {
     if (!el) return false;
     const content = typeof draw === 'function' ? draw({ width, height }) : draw;
     const commands: DrawCommand[] = [];
-    if (background) {
-      commands.push({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width, height }, fill: background });
-    }
+    const fill = background && commandFill(background, { x: 0, y: 0, width, height });
+    if (fill) commands.push({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width, height }, fill });
     commands.push({ kind: 'group', transform: viewToMat3(view), children: [...content] });
     return lease.paint(el, commands, view, { width, height, dpr });
   };

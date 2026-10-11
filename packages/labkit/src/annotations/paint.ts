@@ -1,4 +1,4 @@
-import type { DrawCommand, NodeShapeEntry, Path, Stroke, View } from '@weasel-js/core';
+import type { CommandStroke, DrawCommand, NodeShapeEntry, Path, View } from '@weasel-js/core';
 import {
   ellipsePath,
   HANDLE_BASE_PX,
@@ -78,7 +78,7 @@ export function markCommands(
   scale: View['scale'] = UNIT_SCALE,
 ): DrawCommand[] {
   const color = style.color ?? MARK_COLOR;
-  const stroke: Stroke = {
+  const stroke: CommandStroke = {
     paint: { color },
     width: MARK_WIDTH,
     cap: 'round',

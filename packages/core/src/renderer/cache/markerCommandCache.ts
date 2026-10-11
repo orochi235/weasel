@@ -13,7 +13,7 @@
  */
 
 import type { Path } from '@weasel-js/geom';
-import type { FillStyle, MarkerRef, Stroke } from '@weasel-js/paint';
+import type { CommandFill, MarkerRef, CommandStroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
 import {
   headCommands, markerHeads, markerReadsKey, type MarkerHead,
@@ -25,18 +25,18 @@ import { screenSpaceKey, type StrokeSpaces } from 'features/paths/tessellate/met
 
 interface Entry {
   readonly heads: MarkerHead[];
-  paint: FillStyle | undefined;
+  paint: CommandFill | undefined;
   cmds: PathDrawCommand[];
 }
 
 let byValue = new WeakMap<Path, Map<string, Entry>>();
-let byStroke = new WeakMap<Path, WeakMap<Stroke, Map<string, Entry>>>();
+let byStroke = new WeakMap<Path, WeakMap<CommandStroke, Map<string, Entry>>>();
 
 const refKey = (ref: MarkerRef | undefined): string =>
   ref === undefined ? '' : typeof ref === 'string' ? ref : `${ref.key}@${String(ref.size ?? '')}`;
 
 /** What every head of `stroke` reads, or `null` if any head does not say. */
-function readsKey(stroke: Stroke): string | null {
+function readsKey(stroke: CommandStroke): string | null {
   let key = '';
   for (const ref of [stroke.markerStart, stroke.markerMid, stroke.markerEnd]) {
     const entry = ref === undefined ? undefined : getMarker(markerKeyOf(ref));
@@ -51,7 +51,7 @@ function readsKey(stroke: Stroke): string | null {
   return key;
 }
 
-function mapFor(path: Path, source: Stroke, reads: string | null): Map<string, Entry> {
+function mapFor(path: Path, source: CommandStroke, reads: string | null): Map<string, Entry> {
   if (reads !== null) {
     let map = byValue.get(path);
     if (map === undefined) byValue.set(path, (map = new Map()));
@@ -71,8 +71,8 @@ function mapFor(path: Path, source: Stroke, reads: string | null): Map<string, E
  */
 export function cachedMarkerCommands(
   path: Path,
-  source: Stroke,
-  stroke: Stroke,
+  source: CommandStroke,
+  stroke: CommandStroke,
   strokeWidth: number,
   flattenTolerance: number | undefined,
   spaces: StrokeSpaces = {},

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { markerDrawCommands, markerReach } from './markerCommands';
 import { registerMarker, type MarkerEntry } from '../../core/strokeMarkers';
 import { PATH_Z, PATH_M, PATH_L, type PolygonPath } from '@weasel-js/geom';
-import type { Stroke } from '@weasel-js/paint';
+import type { CommandStroke } from '@weasel-js/paint';
 
 const LINE: PolygonPath = {
   kind: 'polygon',
@@ -11,7 +11,7 @@ const LINE: PolygonPath = {
   fillRule: 'nonzero',
 };
 const PAINT = { fill: 'solid', color: '#f00' } as const;
-const BASE: Stroke = { paint: PAINT, width: 2 };
+const BASE: CommandStroke = { paint: PAINT, width: 2 };
 
 describe('markerDrawCommands', () => {
   it('emits nothing for a stroke with no markers', () => {
@@ -64,6 +64,32 @@ describe('markerDrawCommands', () => {
       // The outline declares no paint of its own, so it falls back to the line's.
       expect(cmds[0].stroke?.paint).toEqual(PAINT);
       expect(cmds[0].stroke?.width).toBeCloseTo(1, 6);
+    } finally {
+      dispose();
+    }
+  });
+
+  it("resolves a head's own bounds-relative fill against the head's box", () => {
+    const dispose = registerMarker({
+      id: 'app:shaded',
+      inset: 2,
+      fill: {
+        fill: 'linear-gradient',
+        from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+        stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+        units: 'bounds',
+      },
+      path: ({ size }) => ({
+        kind: 'polygon',
+        commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+        coords: new Float32Array([0, 0, -2 * size, -size, -2 * size, size]),
+        fillRule: 'nonzero',
+      }),
+    });
+    try {
+      const [cmd] = markerDrawCommands(LINE, { ...BASE, markerEnd: 'app:shaded' }, 2, undefined);
+      // The head spans x 96..100 at the end of a width-2 line.
+      expect(cmd.fill).toMatchObject({ units: 'local', from: { x: 96 }, to: { x: 100 } });
     } finally {
       dispose();
     }
@@ -144,7 +170,7 @@ function growingHead(reads?: MarkerEntry['reads']): MarkerEntry {
 }
 
 describe('markerReach', () => {
-  const at = (miterLimit: number, width = 2): Stroke => ({ ...BASE, width, miterLimit, markerEnd: 'app-grow' });
+  const at = (miterLimit: number, width = 2): CommandStroke => ({ ...BASE, width, miterLimit, markerEnd: 'app-grow' });
 
   it.each([
     ['a head that does not say what it reads', undefined],

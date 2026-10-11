@@ -86,6 +86,7 @@ import type { ResolvedCursor } from '@weasel-js/cursor';
 import { createPaintedCursorState } from '@weasel-js/cursor';
 import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from '../features/cursor/paintedCursorLayer';
+import { commandFill } from '../features/patterns/commandPaint';
 
 /**
  * The scene-tree reading methods Canvas feature-detects at draw time, as an
@@ -1197,11 +1198,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       id: 'scene-background-fill',
       label: 'Background fill',
       space: 'screen',
-      draw: (_data, _view, dims) => [{
-        kind: 'path',
-        path: { kind: 'rect', x: 0, y: 0, width: dims.width, height: dims.height },
-        fill: backgroundFill,
-      }],
+      draw: (_data, _view, dims) => {
+        const rect = { x: 0, y: 0, width: dims.width, height: dims.height };
+        const fill = commandFill(backgroundFill, rect);
+        return fill ? [{ kind: 'path', path: { kind: 'rect', ...rect }, fill }] : [];
+      },
     };
   }, [backgroundFill]);
 
