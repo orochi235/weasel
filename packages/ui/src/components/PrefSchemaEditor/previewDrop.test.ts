@@ -13,6 +13,20 @@ const ROOT: PrefGroup = {
 const TAB: PrefGroup = { name: 'New tab', as: 'tab', children: {} };
 const PAGE: PrefGroup = { name: 'New page', as: 'page', children: {} };
 
+describe('a drag of several nodes', () => {
+  const nodes = [ROOT.children.author!, (ROOT.children.canvas as PrefGroup).children.snap!];
+  const paths = ['author', 'canvas/snap'];
+
+  it('lands them together, from wherever each sat', () => {
+    expect(previewTarget(ROOT, { path: 'canvas.grid', where: 'after' }, nodes, paths)).toEqual({ parentPath: 'canvas', index: 1 });
+    expect(previewDrop({ path: 'canvas.grid', where: 'after' }, nodes, paths).from).toEqual(['author', 'canvas.snap']);
+  });
+
+  it('is refused whole when one of them would land inside itself', () => {
+    expect(previewTarget(ROOT, { path: 'canvas.box', where: 'into' }, [nodes[0]!, ROOT.children.canvas!], ['author', 'canvas'])).toBeNull();
+  });
+});
+
 describe('previewTarget', () => {
   it('lands beside the leaf under the pointer, among its siblings', () => {
     expect(previewTarget(ROOT, { path: 'canvas.grid', where: 'before' }, [leaf('X')], [])).toEqual({ parentPath: 'canvas', index: 0 });
