@@ -158,6 +158,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       for (const cb of ls) cb();
     };
     const watchCompletion: WatchCompletion = (id, cb) => {
+      if (!animations.current.has(id)) {
+        cb();
+        return () => {};
+      }
       const ls = completionListeners.get(id) ?? [];
       ls.push(cb);
       completionListeners.set(id, ls);

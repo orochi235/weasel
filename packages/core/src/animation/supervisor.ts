@@ -36,7 +36,8 @@ export type SupervisorFactory = (opts: SupervisorOptions) => Supervisor;
 
 /**
  * Subscribe to "this animation id finished or was cancelled and is no longer
- * in the registry." Returns an unsubscribe. Fires at most once. Used by
+ * in the registry." Returns an unsubscribe. Fires at most once, and at once
+ * for an id that has already left. Used by
  * stagger to detect natural completion of children so the supervising
  * composite can retire itself when the last child finishes.
  *

@@ -200,4 +200,17 @@ describe('animator.stagger', () => {
     // onDone shouldn't fire on cancelled tween.
     expect(cancelledChildren).toEqual([]);
   });
+
+  it('completes when a factory returns a composite that already finished', () => {
+    const { animator, advance } = mountAnimator();
+    const groups: number[][] = [[], [1]];
+    const handle = animator.stagger(groups, 0, (group) =>
+      animator.stagger(group, 0, () =>
+        animator.tween({ from: 0, to: 1, ms: 50, onTick: () => {} }),
+      ),
+    );
+    advance(200);
+    expect(animator.isActive()).toBe(false);
+    handle.cancel();
+  });
 });
