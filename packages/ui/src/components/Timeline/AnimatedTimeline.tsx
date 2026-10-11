@@ -10,6 +10,13 @@ export interface AnimatedTimelineProps
   transport?: false;
 }
 
+/** Whether the playhead will move on its own. A timeline that ran to its end
+ *  without looping still reports itself unpaused. */
+function isAdvancing(handle: TimelineHandle): boolean {
+  if (handle.isPaused()) return false;
+  return handle.loop() !== false || handle.time() < handle.duration();
+}
+
 /** Binds `<Timeline>` to a live handle.
  *
  *  `handle.tracks()` returns the timeline's own array, not a copy, so an edit
@@ -33,13 +40,15 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
   // reads the playhead the animator already advanced.
   const raf = useVisibleRaf(() => {
     bump();
-    if (!handle.isPaused()) rafRef.current.request();
+    if (isAdvancing(handle)) rafRef.current.request();
   });
   const rafRef = useLatest(raf);
+  // Every render, not only mount: an edit can lengthen a finished timeline and
+  // set it running again, and `request` does nothing while a frame is pending.
   useEffect(() => {
-    if (!handle.isPaused()) raf.request();
-    return () => raf.cancel();
-  }, [handle, raf]);
+    if (isAdvancing(handle)) raf.request();
+  });
+  useEffect(() => () => raf.cancel(), [handle, raf]);
 
   const onChange = useCallback((next: Track[]) => {
     handle.edit(() => {
@@ -60,7 +69,7 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
       onChange={onChange}
       onScrub={handle.seek}
       transport={props.transport === false ? false : {
-        paused: handle.isPaused(),
+        paused: !isAdvancing(handle),
         loop: handle.loop(),
         rate: handle.timeScale(),
         onPlay: () => {

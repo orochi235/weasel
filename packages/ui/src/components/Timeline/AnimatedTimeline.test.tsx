@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { act, render, fireEvent, screen } from '@testing-library/react';
 import type { SampledTrack, TimelineHandle, Track } from '@weasel-js/core';
 import { AnimatedTimeline } from './AnimatedTimeline';
 
@@ -137,5 +137,44 @@ describe('AnimatedTimeline', () => {
     rerender(<AnimatedTimeline handle={h} />);
     expect(screen.getByRole('switch', { name: /loop/i })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('slider', { name: /rate/i })).toHaveAttribute('aria-valuetext', '2 times');
+  });
+
+  describe('frame loop', () => {
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    /** A frame clock the test turns by hand. */
+    function manualFrames(): { queued: () => number; turn: () => void } {
+      let queue: FrameRequestCallback[] = [];
+      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => queue.push(cb));
+      vi.stubGlobal('cancelAnimationFrame', () => { queue = []; });
+      return {
+        queued: () => queue.length,
+        turn: () => act(() => { const run = queue; queue = []; for (const cb of run) cb(0); }),
+      };
+    }
+
+    it('keeps running while the timeline plays', () => {
+      const frames = manualFrames();
+      render(<AnimatedTimeline handle={fakeHandle({ isPaused: () => false, time: () => 400 })} />);
+      frames.turn();
+      frames.turn();
+      expect(frames.queued()).toBe(1);
+    });
+
+    it('stops once a timeline that does not loop reaches its end', () => {
+      const frames = manualFrames();
+      render(<AnimatedTimeline handle={fakeHandle({ isPaused: () => false, time: () => 1000 })} />);
+      frames.turn();
+      frames.turn();
+      expect(frames.queued()).toBe(0);
+      expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
+    });
+
+    it('keeps running at the end of a timeline that loops', () => {
+      const frames = manualFrames();
+      render(<AnimatedTimeline handle={fakeHandle({ isPaused: () => false, time: () => 1000, loop: () => true })} />);
+      frames.turn();
+      expect(frames.queued()).toBe(1);
+    });
   });
 });
