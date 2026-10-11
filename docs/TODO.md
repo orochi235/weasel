@@ -1729,7 +1729,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `decodePrefValue` there applies an enum `encoding` and not a boolean one, and a `field` leaf
   becomes free text. Not hit today, since the lab's schema is the rect's. The example exists to show
   the API, and `ControlPanel`'s `fields` prop is marked deprecated in favor of `schema`: pass the
-  schema, which goes through `prefFieldProps`, and delete the file.
+  schema, which goes through `prefFieldProps`, and delete the file. Not a drop-in today: an
+  instrument's `config` takes labkit's own `ConfigSchema` (`packages/labkit/src/config/types.ts`),
+  and nothing turns a `PrefSection` with dotted keys into one or into a `ResolvedConfig`, so the
+  example first needs a way for an instrument to declare its config as a pref schema.
 
 - **(P3) Three params files hold several owners each.**
   `packages/labkit/src/controls/ControlPanel.tsx` (about 810 lines: panel, auto state, reset, row
@@ -1773,6 +1776,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   node has. No row says so, and `setDefaults`' `leafHolding` takes the first match, so a preview
   edit of the second writes the first's default. To decide: refuse a key any leaf under the root
   already holds (an `alias` is the way to show one value twice), or allow it and mark both rows.
+  Refusing also has to say what a copy does under a section root: a copied leaf, and every leaf
+  inside a copied section, has no other key to take (`copyNodes`), so the copy is refused outright
+  or becomes an alias.
 
 - **(P2) `PrefSchemaEditor`: Add alias and an alias drag make an alias of a field inside an `object`
   pref.** Extends the `alias` entry above, which covers the `Of` picker offering the same fields.
@@ -1970,7 +1976,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   reads the `contenteditable` attribute. `BandEditor` and `Timeline` use the first, the gesture
   dispatcher and `keyState` the second. Make one definition (deciding whether a `<select>` counts)
   and have ui import it; `isTextEntry` also sits in a `BandEditor` module that `Timeline` now
-  reaches into.
+  reaches into. What turns on `<select>`: counting it stops a tool hotkey from firing under its
+  type-ahead, and also stops Delete and Cmd+Z in the dispatcher for as long as focus rests on a
+  select after a choice is made, which is every bound key, modifier chords included
+  (`useGestureDispatcher.tsx`).
 
 - **(P3) Timeline: Delete and Backspace remove the selected key from any non-text focus inside the
   root.** With a key selected, pressing Delete while focus is on a transport button, the Loop

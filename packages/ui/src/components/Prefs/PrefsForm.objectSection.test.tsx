@@ -5,7 +5,8 @@ import { PrefsForm } from './PrefsForm';
 
 afterEach(cleanup);
 
-const schema = (as?: PrefSectionAs): PrefGroup => ({
+/** An object leaf holding one field and a section, which takes `section`'s extras. */
+const schema = (section: { as?: PrefSectionAs; description?: string }): PrefGroup => ({
   name: 'Prefs',
   children: {
     stroke: {
@@ -17,8 +18,7 @@ const schema = (as?: PrefSectionAs): PrefGroup => ({
         width: { kind: 'number', name: 'Width', description: '', default: 1 },
         more: {
           name: 'More',
-          description: 'Rarely needed.',
-          ...(as ? { as } : {}),
+          ...section,
           members: { dash: { kind: 'number', name: 'Dash', description: '', default: 0 } },
         },
       },
@@ -27,14 +27,12 @@ const schema = (as?: PrefSectionAs): PrefGroup => ({
 });
 
 it.each([undefined, 'panel', 'tab'] as const)('draws the description of a section inside an object leaf (as: %s)', (as) => {
-  render(<PrefsForm layout="list" schema={schema(as)} values={{}} onChange={() => {}} />);
+  render(<PrefsForm layout="list" schema={schema({ description: 'Rarely needed.', ...(as ? { as } : {}) })} values={{}} onChange={() => {}} />);
   expect(screen.getByText('Rarely needed.')).toBeInTheDocument();
 });
 
 it('draws no paragraph for a section with no description', () => {
-  const plain = schema();
-  delete (plain.children.stroke as { children: { more: { description?: string } } }).children.more.description;
-  const { container } = render(<PrefsForm layout="list" schema={plain} values={{}} onChange={() => {}} />);
+  const { container } = render(<PrefsForm layout="list" schema={schema({})} values={{}} onChange={() => {}} />);
   expect(screen.getByText('More')).toBeInTheDocument();
   expect(container.querySelector('p')).toBeNull();
 });
