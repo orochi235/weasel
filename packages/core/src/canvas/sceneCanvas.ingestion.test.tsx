@@ -5,7 +5,8 @@
  * `<SceneCanvas>` mount.
  */
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { render, act } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';

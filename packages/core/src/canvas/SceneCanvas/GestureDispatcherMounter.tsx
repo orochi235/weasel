@@ -24,6 +24,7 @@ export function GestureDispatcherMounter({
   contributions,
   enabled,
   keyboard,
+  claimKeys,
   selectionRef,
   boundsOf,
   planeOfNode,
@@ -55,6 +56,8 @@ export function GestureDispatcherMounter({
   /** When false, the dispatcher leaves keyboard listeners unattached so
    *  keyboard-bound actions never fire. Wired to `enableKeybindings`. */
   keyboard: boolean;
+  /** Take the keyboard on mount. Wired to `claimKeys`. */
+  claimKeys: boolean;
   selectionRef?: React.RefObject<import('core/selection/useSelection').SelectionApi>;
   boundsOf?: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
   /** The parallax plane a node is drawn through, under the surface's camera —
@@ -274,6 +277,7 @@ export function GestureDispatcherMounter({
     entriesById,
     enabled,
     keyboard,
+    claimKeys,
     affordanceAt: affordanceWithLayers,
     classifyTarget,
     dispatcher,

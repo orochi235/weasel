@@ -3,7 +3,8 @@
  * swaps focus, and / toggles the focused paint to none.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
-import { render, act, cleanup } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, createScene } from '@weasel-js/core';
 import { colorContribution } from './contribution';
 import type { ColorContextValue } from './ColorContextProvider';

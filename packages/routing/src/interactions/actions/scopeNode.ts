@@ -3,8 +3,6 @@
  * mounts a scope under the registry in scope; a yoke sits between the two. A
  * registration lives in the node it was made in, and a lookup starts at a leaf
  * and walks up, so one canvas never answers for another.
- *
- * Design: docs/proposals/2026-09-27-input-scopes.md.
  */
 
 /** What every node of one tree shares: a version and the listeners to it. */

@@ -74,8 +74,8 @@ export function ingestInput(core: DispatchCore): {
     // Text-editing surfaces (inputs, the text-edit overlay) own their own
     // paste — never steal it for scene ingestion.
     if (e.defaultPrevented || isEditableTarget(e.target)) return;
-    // Every dispatcher hears paste on window; only the active scope's acts.
-    if (!core.isActive()) return;
+    // Every dispatcher hears paste on window; only the one holding the keys acts.
+    if (!core.holdsKeys()) return;
     const cd = e.clipboardData;
     if (!cd) return;
     const items = itemsFromClipboardData(cd);

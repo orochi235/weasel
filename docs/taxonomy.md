@@ -359,7 +359,12 @@ lookup made through a scope answers from that scope first, then its yoke, then
 the root; another scope's entries are never visible. A lookup made through a
 root or a yoke — chrome's `trigger`, `begin`, `list`, `useActiveToolContext` —
 answers from the **active scope**: the one that last took a pointerdown or wheel,
-or the newest where none has. Keystrokes dispatch only in the active scope.
+or the newest where none has. Keys are stricter. A key that reaches the page
+goes to the canvas last pressed or scrolled in, across every root on the page,
+and to no canvas before the first such interaction, so a canvas in a side panel
+takes no keys from a page that wants them. `<SceneCanvas claimKeys>` takes them
+on mount, for an app whose canvas is the page. A dispatcher with no canvas
+element, an app's own shortcuts, still follows the active scope.
 
 A canvas with no yoke keeps its own tool; a new scope starts on the tool in
 effect around it. Shared *state* — a selection two canvases should agree on —

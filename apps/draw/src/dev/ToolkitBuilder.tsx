@@ -479,6 +479,8 @@ function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
     setDispatcher: () => () => {},
     activate: () => {},
     isActive: () => true,
+    holdsKeys: () => true,
+    dropKeys: () => {},
   };
 }
 

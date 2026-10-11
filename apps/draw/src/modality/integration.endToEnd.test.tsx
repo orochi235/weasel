@@ -19,7 +19,8 @@
  * enter-mode → chrome-update → exit-mode flow except the canvas hit resolver.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { screen, act, fireEvent } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useState, useEffect, type ReactElement } from 'react';
 
 import { createModeMachine } from './machine';

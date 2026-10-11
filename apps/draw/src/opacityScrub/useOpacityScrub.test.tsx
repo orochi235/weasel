@@ -3,7 +3,8 @@
  * wheel reaches its nudge action and not the viewport's pan/zoom bindings.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
-import { render, act, cleanup } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
   ActionsProvider, SceneCanvas, asNodeId, inferredNodeProperties,
   paintAlpha, solid, useScene, useSelection,

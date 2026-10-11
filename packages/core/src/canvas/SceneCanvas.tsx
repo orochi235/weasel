@@ -179,6 +179,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     tools: toolsProp,
     features,
     enableKeybindings = true,
+    claimKeys = false,
     enableGestureDispatcher = true,
     onToolsCreated,
     defaultTools,
@@ -1465,6 +1466,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 contributions={featureContributions}
                 enabled={enableGestureDispatcher}
                 keyboard={enableKeybindings}
+                claimKeys={claimKeys}
                 selectionRef={selectionRef}
                 boundsOf={internalBoundsOf}
                 planeOfNode={internalPlaneOfNode}

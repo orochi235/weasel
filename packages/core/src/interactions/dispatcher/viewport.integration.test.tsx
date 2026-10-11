@@ -16,7 +16,8 @@
  */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-import { render, act } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef } from 'react';
 import { ActionsProvider, useActionsRegistry } from '@weasel-js/routing/react';
 import { DepRegistryProvider, useDepRegistry } from '@weasel-js/routing/react';

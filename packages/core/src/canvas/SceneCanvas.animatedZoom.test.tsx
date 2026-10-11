@@ -20,7 +20,8 @@ vi.hoisted(() => {
   });
 });
 
-import { render, act, cleanup } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { Profiler, useState } from 'react';
 import { useAnimator } from '../animation/useAnimator';
 import type { Animator } from '../animation/types';

@@ -1,7 +1,6 @@
 /**
  * @experimental
  * Input scopes and yokes: the tiers between a root registry and a canvas.
- * Design: docs/proposals/2026-09-27-input-scopes.md.
  */
 import { useContext, useEffect, useMemo, type ReactElement, type ReactNode } from 'react';
 import { ActionsContext, ActionsNode, actionsNodeOf, useActionsRegistry } from './ActionsProvider';
@@ -82,7 +81,9 @@ export interface InputScopeProps {
  *
  * Chrome above calls `trigger` / `begin` / `useActiveToolContext` on its own
  * registries, and those reach the active scope: the one last activated — by a
- * pointerdown or wheel — or the newest where none has been.
+ * pointerdown or wheel — or the newest where none has been. Keys are stricter:
+ * one that reaches the page goes to the canvas last pressed or scrolled in,
+ * across every root on the page, and to none before the first.
  */
 export function InputScope({ yoke, children }: InputScopeProps): ReactElement {
   const nodes = useNodes(false, yoke === undefined, yoke);

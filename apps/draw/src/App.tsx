@@ -635,6 +635,7 @@ function EditorWithSharedScene({
           />
           {hostDims.width > 0 && hostDims.height > 0 && (
           <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose> features={['draw']}
+            claimKeys
             ref={attachCanvas}
             ambient={ambient}
             width={hostDims.width}

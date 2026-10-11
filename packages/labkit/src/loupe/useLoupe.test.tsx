@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, screen, render } from '@testing-library/react';
+import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { WeaselProvider } from '@weasel-js/core';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { type RefObject, StrictMode, useRef } from 'react';
@@ -95,6 +96,7 @@ describe('useLoupe', () => {
   it('peeks while the peek key is held, and stops on release', () => {
     render(<Harness enabled={false} />);
     move(40, 25);
+    giveKeys(screen.getByTestId('host'));
     act(() => {
       fireEvent.keyDown(window, { key: 'Alt' });
     });
@@ -110,6 +112,7 @@ describe('useLoupe', () => {
     // that has not moved since must aim from what the listener saw.
     render(<Harness enabled={false} />);
     move(40, 25);
+    giveKeys(screen.getByTestId('host'));
     act(() => {
       fireEvent.keyDown(window, { key: 'Alt' });
     });
@@ -127,6 +130,7 @@ describe('useLoupe', () => {
   it('does not peek when its options turned the key off', () => {
     render(<Harness enabled={false} peekKey={null} />);
     move(40, 25);
+    giveKeys(screen.getByTestId('host'));
     act(() => {
       fireEvent.keyDown(window, { key: 'Alt' });
     });
@@ -136,6 +140,7 @@ describe('useLoupe', () => {
   it('drops the peek when the window loses focus, so a held key cannot stick', () => {
     render(<Harness enabled={false} />);
     move(40, 25);
+    giveKeys(screen.getByTestId('host'));
     act(() => {
       fireEvent.keyDown(window, { key: 'Alt' });
     });

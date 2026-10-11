@@ -4,7 +4,8 @@
  * browser sends them, never by seeding the hotkey stack.
  */
 import { describe, expect, it } from 'vitest';
-import { act, render } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef, type ReactNode } from 'react';
 import { useContributions } from './useContributions';
 import type { Contribution, HotkeyTrigger } from './types';

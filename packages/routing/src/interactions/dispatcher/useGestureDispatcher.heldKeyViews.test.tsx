@@ -4,7 +4,8 @@
  * the time the key comes up.
  */
 import { describe, expect, it } from 'vitest';
-import { act, render } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef, type ReactNode } from 'react';
 import { useGestureDispatcher, type DispatcherViewTarget } from './useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from './dispatcher';

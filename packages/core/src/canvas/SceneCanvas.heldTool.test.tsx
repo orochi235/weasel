@@ -4,7 +4,8 @@
  * callbacks bracket the hold.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
-import { render, act, cleanup } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { defineTool, type useTools } from '../tools/overlayBinding';

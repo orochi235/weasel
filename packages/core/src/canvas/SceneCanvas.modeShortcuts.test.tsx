@@ -3,7 +3,8 @@
  * on the active mode, installed by the `modeShortcuts` contribution.
  */
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
-import { render, act, cleanup } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, DEFAULT_MODES, type ModeRegistry } from '@weasel-js/modes';
 import { modeShortcuts, type ModeShortcutHandlers } from '@weasel-js/routing';
 import { SceneCanvas } from './SceneCanvas';

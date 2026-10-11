@@ -139,7 +139,7 @@ function computeMultiTouchGeometry(
  * providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onClick, onDoubleClick, views, channels, longPress } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, paintedCursor, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
@@ -244,6 +244,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   }, [fireLifecycle]);
 
   useEffect(() => {
+    if (enabled && claimKeys) registryRef.current.activate();
+  }, [enabled, claimKeys, registryRef]);
+
+  useEffect(() => {
     if (!enabled) return;
 
     let disposed = false;
@@ -327,7 +331,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       ctxNow,
       toWorld,
       dispatch,
-      isActive: () => registryRef.current.isActive(),
+      holdsKeys: () => (canvas ? registryRef.current.holdsKeys() : registryRef.current.isActive()),
       activate: () => registryRef.current.activate(),
       disposed: () => disposed,
     };
@@ -484,8 +488,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     const onPointerDown = (e: PointerEvent) => {
       claimedDoubleClick = false;
-      // Any button makes this the scope chrome and keys reach.
-      registryRef.current.activate();
       // Only the primary button drives gesture dispatch. `pointerdown` reports
       // `button === 0` for the left mouse button and for touch / pen contact;
       // secondary (right, `2`) and middle (`1`) mouse buttons are left for the
@@ -1093,12 +1095,17 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Attach
     // -----------------------------------------------------------------------
 
+    const onPressActivate = (): void => { registryRef.current.activate(); };
     const keyCapture = keyboard === 'first';
     if (keyboard) {
       window.addEventListener('keydown', onKeyDown, keyCapture);
       window.addEventListener('keyup', onKeyUp, keyCapture);
     }
     window.addEventListener('blur', onWindowBlur);
+    // Ahead of the pointer channel's own listener, and whether or not that
+    // channel is on: a press with any button makes this the scope chrome and
+    // keys reach.
+    canvas?.addEventListener('pointerdown', onPressActivate);
     // Hover-cursor refresh on modifier/hotkey changes — separate listeners
     // (not folded into onKeyDown/onKeyUp) so the pump also tracks modifiers
     // when `keyboard: false` disables gesture key dispatch.
@@ -1135,6 +1142,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         window.removeEventListener('keyup', onKeyUp, keyCapture);
       }
       window.removeEventListener('blur', onWindowBlur);
+      canvas?.removeEventListener('pointerdown', onPressActivate);
       window.removeEventListener('keydown', scheduleHoverCursorRefresh);
       window.removeEventListener('keyup', scheduleHoverCursorRefresh);
       canvas?.removeEventListener('pointerleave', onHoverPointerLeave);
@@ -1154,6 +1162,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // Detach is unconditional: a channel turned off mid-life must still
       // have whatever it attached while it was on taken back off.
       canvas?.classList.remove(DROPOVER_CLASS);
+      registryRef.current.dropKeys();
       clearHoverCursor();
       cancelAllLongPress();
       disposed = true;

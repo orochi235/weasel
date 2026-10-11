@@ -29,8 +29,10 @@ export interface DispatchCore {
   /** Dispatch on the routed view's dispatcher, or on `on` for an event that
    *  belongs to the one an earlier event ran on. */
   dispatch(ev: InputEvent, on?: Dispatcher): 'handled' | 'unhandled';
-  /** Whether this canvas's input scope is the active one. */
-  isActive(): boolean;
+  /** Whether a key or a paste that reached the page is this dispatcher's to
+   *  handle: its canvas was the last one pressed or scrolled in, or it has no
+   *  canvas and its input scope is the active one. */
+  holdsKeys(): boolean;
   /** Make this canvas's input scope the active one. */
   activate(): void;
   /** Whether the hook's effect has been torn down. */

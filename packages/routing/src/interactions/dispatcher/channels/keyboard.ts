@@ -21,8 +21,8 @@ export function keyboardInput(core: DispatchCore): {
 
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.defaultPrevented || isEditableTarget(e.target) || activatesFocusedControl(e)) return;
-    // Every dispatcher hears keys on window; only the active scope's act.
-    if (!core.isActive()) return;
+    // Every dispatcher hears keys on window; only the one holding them acts.
+    if (!core.holdsKeys()) return;
 
     // Autorepeat for a key that's already engaged a key-held binding is
     // suppressed entirely — no dispatch (no trace flood) and the

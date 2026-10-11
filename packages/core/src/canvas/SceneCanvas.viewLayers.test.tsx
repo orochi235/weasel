@@ -7,7 +7,8 @@
  * is replaced by a recorder so `<Canvas>` gets past its WebGL bail-out.
  */
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { act, render } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { giveKeys, renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useEffect, type ReactNode } from 'react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type Scene } from 'core/scene/types';
@@ -160,13 +161,20 @@ describe('<SceneCanvas layerVisibility> hides a layer in that view only', () => 
   });
 
   it('select-all leaves the hidden layer out in the view that hides it', () => {
-    mount();
+    const { hidden, shown } = mount();
+    const selectAll = (): void => {
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
+      });
+    };
 
-    act(() => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
-    });
-
+    // A key goes to the canvas last pressed in, so each is asked in turn.
+    giveKeys(hidden);
+    selectAll();
     expect(selections.hidden!.current).toEqual(['a']);
+
+    giveKeys(shown);
+    selectAll();
     expect(selections.shown!.current).toEqual(['a', 'b']);
   });
 

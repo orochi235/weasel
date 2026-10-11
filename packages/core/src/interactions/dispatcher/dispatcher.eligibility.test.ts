@@ -28,6 +28,8 @@ function makeRegistry(actions: Action[]): ActionsRegistry {
     setDispatcher: vi.fn(),
     activate: vi.fn(),
     isActive: () => true,
+    holdsKeys: () => true,
+    dropKeys: () => {},
   };
 }
 

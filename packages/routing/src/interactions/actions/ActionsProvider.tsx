@@ -108,6 +108,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   }
 
   override activate(): void {
+    keyHolder = this;
     super.activate();
     for (const f of this.onActivate) f();
   }
@@ -187,8 +188,14 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     },
     activate: () => this.activate(),
     isActive: () => this.isActive(),
+    holdsKeys: () => keyHolder === this,
+    dropKeys: () => { if (keyHolder === this) keyHolder = null; },
   };
 }
+
+/** The node last activated on the page, across every tree: where a key that
+ *  reaches the page goes. Null until something is pressed or scrolled in. */
+let keyHolder: ActionsNode | null = null;
 
 const NODES = new WeakMap<ActionsRegistry, ActionsNode>();
 

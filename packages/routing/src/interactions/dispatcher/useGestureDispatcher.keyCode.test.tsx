@@ -1,6 +1,7 @@
 /** Keys by physical position: a `code` binding, and two keys that share a `key`. */
 import { describe, expect, it, vi } from 'vitest';
-import { act, render } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef } from 'react';
 import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';

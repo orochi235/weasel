@@ -19,17 +19,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P2) A canvas's keyboard shortcuts claim keys page-wide.** The gesture dispatcher listens on
-  `window`, and a page with one canvas has it as the active scope, so held Space pans that canvas
-  from anywhere on the page — a read-only canvas in a side panel takes Space from a page that wants
-  it (the blits playground's space-to-play listens in the capture phase to get there first). Keys
-  aimed at an editable field, or Space/Enter on a focused button or link
-  (`activatesFocusedControl`), are already left alone, and `enableKeybindings={false}` turns a
-  canvas's keys off. Ruled 2026-10-11: a key that reaches the body goes to the last canvas the user
-  clicked or scrolled, and to no canvas before the first such interaction. That leaves a lone canvas
-  becoming the active scope only on pointer interaction, the rule that already settles two canvases,
-  and WeaselDraw, whose shortcuts work from the body today before anything in it has been clicked.
-
 - **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
   (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
   bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too. The

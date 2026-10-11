@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { renderHook, render, act } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useSliceTool } from './useSliceTool';
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from 'core/layers/render';

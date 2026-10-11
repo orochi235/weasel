@@ -502,6 +502,16 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     enableKeybindings?: boolean;
 
     /**
+     * Take the keyboard on mount, as a press in the canvas would. A key that
+     * reaches the page goes to the canvas the user last pressed or scrolled
+     * in, and to no canvas before the first such interaction, so a canvas in a
+     * side panel does not take Space from a page that wants it. An app whose
+     * canvas is the page sets this so its shortcuts work before the first
+     * click. Default `false`.
+     */
+    claimKeys?: boolean;
+
+    /**
      * Auto-mount the gesture dispatcher (`useGestureDispatcher`) inside
      * `<SceneCanvas>`. Default `true`. When `false`, the dispatcher is not
      * wired — useful in tests or demos that drive actions through alternative

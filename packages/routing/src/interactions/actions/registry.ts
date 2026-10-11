@@ -81,15 +81,25 @@ export interface ActionsRegistry {
    *  nothing. */
   setDispatcher(d: Dispatcher | null): () => void;
 
-  /** Make this registry's scope the one chrome above it reaches: `trigger`,
-   *  `begin` and `list` on any ancestor then answer from here. A dispatcher
-   *  calls it on the pointerdown and wheel that land in its scope; moving DOM
-   *  focus alone does not. */
+  /** Make this registry's scope the one chrome above it reaches, and the one
+   *  keys go to: `trigger`, `begin` and `list` on any ancestor then answer from
+   *  here. A dispatcher calls it on the pointerdown and wheel that land in its
+   *  scope; moving DOM focus alone does not. */
   activate(): void;
 
-  /** Whether a lookup made from the root of this registry's tree starts here —
-   *  the question a dispatcher asks before handling a keystroke. */
+  /** Whether a lookup made from the root of this registry's tree starts here.
+   *  A dispatcher with no canvas to press in asks this before handling a
+   *  keystroke. */
   isActive(): boolean;
+
+  /** Whether this registry's scope is the one last activated on the page, in
+   *  any tree: the question a canvas's dispatcher asks before handling a key
+   *  or a paste that reached the page. No scope holds the keys before the
+   *  first activation. */
+  holdsKeys(): boolean;
+
+  /** Let go of the keys if this scope holds them, as its canvas unmounts. */
+  dropKeys(): void;
 }
 
 // ─── Registration-time validation ─────────────────────────────────────────

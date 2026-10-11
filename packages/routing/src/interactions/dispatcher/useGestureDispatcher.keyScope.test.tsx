@@ -1,0 +1,137 @@
+/**
+ * Which canvas a key that reaches the page goes to: the one the user last
+ * pressed or scrolled in, and none before the first such interaction.
+ */
+import { describe, expect, it, vi } from 'vitest';
+import { act, render } from '@testing-library/react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { giveKeys } from '@weasel-js/react/testing/giveKeys';
+import { useGestureDispatcher } from './useGestureDispatcher';
+import { ActiveToolContextProvider } from '../actions/activeToolContext';
+import { DepRegistryProvider } from '../actions/depRegistry';
+import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
+import { InputScope } from '../actions/inputScope';
+import type { Action } from '../actions/action';
+
+const NO_ENTRIES = new Map();
+const NO_POINTER = { pointer: false } as const;
+
+function Canvas({ name, run, claimKeys, noCanvas, noPointer }: {
+  name: string; run: () => void; claimKeys?: boolean; noCanvas?: boolean; noPointer?: boolean;
+}): ReactNode {
+  const registry = useActionsRegistry()!;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => registry.register({
+    id: 'test.q',
+    label: 'Q',
+    defaultBinding: { kind: 'key', key: 'q' },
+    invoker: { timing: 'immediate', run: () => run() },
+  } satisfies Action), [registry, run]);
+  useGestureDispatcher({
+    canvasRef, actions: registry, entriesById: NO_ENTRIES,
+    ...(claimKeys !== undefined ? { claimKeys } : {}),
+    ...(noPointer ? { channels: NO_POINTER } : {}),
+  });
+  return noCanvas ? null : <canvas ref={canvasRef} data-name={name} />;
+}
+
+function Root({ children }: { children: ReactNode }): ReactNode {
+  return (
+    <DepRegistryProvider>
+      <ActionsProvider>
+        <ActiveToolContextProvider>{children}</ActiveToolContextProvider>
+      </ActionsProvider>
+    </DepRegistryProvider>
+  );
+}
+
+const press = (): void => {
+  act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'q', cancelable: true })); });
+};
+const canvas = (name: string): Element => document.querySelector(`canvas[data-name="${name}"]`)!;
+
+describe('a key that reaches the page', () => {
+  it('goes to no canvas before one has been pressed in, and then to that one', () => {
+    const run = vi.fn();
+    render(<Root><InputScope><Canvas name="a" run={run} /></InputScope></Root>);
+    press();
+    expect(run).not.toHaveBeenCalled();
+    giveKeys(canvas('a'));
+    press();
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes to the canvas last pressed in', () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    render(
+      <Root>
+        <InputScope><Canvas name="a" run={a} /></InputScope>
+        <InputScope><Canvas name="b" run={b} /></InputScope>
+      </Root>,
+    );
+    giveKeys(canvas('a'));
+    press();
+    giveKeys(canvas('b'));
+    press();
+    press();
+    expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 2]);
+  });
+
+  it('goes to a canvas scrolled in', () => {
+    const run = vi.fn();
+    render(<Root><InputScope><Canvas name="a" run={run} /></InputScope></Root>);
+    act(() => { canvas('a').dispatchEvent(new WheelEvent('wheel', { deltaY: 1, bubbles: true })); });
+    press();
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes to a canvas that claims the keys on mount', () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    render(
+      <Root>
+        <InputScope><Canvas name="a" run={a} claimKeys /></InputScope>
+        <InputScope><Canvas name="b" run={b} /></InputScope>
+      </Root>,
+    );
+    press();
+    expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 0]);
+  });
+
+  it('holds across separate roots: of two canvases with a provider each, the one last pressed in', () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    render(<><Root><Canvas name="a" run={a} /></Root><Root><Canvas name="b" run={b} /></Root></>);
+    press();
+    giveKeys(canvas('b'));
+    press();
+    giveKeys(canvas('a'));
+    press();
+    expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 1]);
+  });
+
+  it('goes to a dispatcher with no canvas to press in, as an app\'s own shortcuts have', () => {
+    const run = vi.fn();
+    render(<Root><Canvas name="none" run={run} noCanvas /></Root>);
+    press();
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes to a canvas pressed in though its pointer channel is off', () => {
+    const run = vi.fn();
+    render(<Root><InputScope><Canvas name="a" run={run} noPointer /></InputScope></Root>);
+    giveKeys(canvas('a'));
+    press();
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets go when the canvas holding the keys unmounts', () => {
+    const run = vi.fn();
+    const { rerender } = render(<Root><InputScope><Canvas name="a" run={run} /></InputScope></Root>);
+    giveKeys(canvas('a'));
+    rerender(<Root><InputScope key="next"><Canvas name="b" run={run} /></InputScope></Root>);
+    press();
+    expect(run).not.toHaveBeenCalled();
+  });
+});

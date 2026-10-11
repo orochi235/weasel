@@ -4,7 +4,8 @@
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useEffect } from 'react';
-import { render, act } from '@testing-library/react';
+import { act } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas, type Feature } from './SceneCanvas';
 import type { CanvasHelpers } from './useViewHelpers';
 import { createScene } from 'core/scene/scene';

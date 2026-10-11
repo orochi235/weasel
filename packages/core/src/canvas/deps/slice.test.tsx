@@ -3,7 +3,8 @@
  * kit slice tool cuts with nothing else wired.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, act, cleanup } from '@testing-library/react';
+import { act, cleanup } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { boundsOfPath, rectPath, type Path } from '@weasel-js/geom';
 import { SceneCanvas } from 'canvas/SceneCanvas';

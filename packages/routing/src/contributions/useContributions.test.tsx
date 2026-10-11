@@ -4,7 +4,8 @@
  * consumer passed it in.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { act, render, renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { useContributions } from './useContributions';
 import type { Contribution } from './types';
