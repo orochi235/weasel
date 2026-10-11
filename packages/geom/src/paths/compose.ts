@@ -9,6 +9,7 @@
  * a richer compose; that's out of scope here.
  */
 
+import { boundsOfPath } from './bounds';
 import { translatePath } from './transform';
 import type { Path } from '../path';
 
@@ -25,17 +26,6 @@ export function decomposePath(parent: Path, world: Path): Path {
 }
 
 function pathOrigin(path: Path): { x: number; y: number } {
-  if (path.kind === 'rect') return { x: path.x, y: path.y };
-  // Polygon origin is its AABB top-left, so children compose under the
-  // same anchor convention as rects. Cheap walk; if this becomes a hot
-  // path we cache bounds on the polygon at build time.
-  let minX = Infinity;
-  let minY = Infinity;
-  const { coords } = path;
-  for (let i = 0; i < coords.length; i += 2) {
-    if (coords[i] < minX) minX = coords[i];
-    if (coords[i + 1] < minY) minY = coords[i + 1];
-  }
-  if (minX === Infinity) return { x: 0, y: 0 };
-  return { x: minX, y: minY };
+  const { x, y } = boundsOfPath(path);
+  return { x, y };
 }
