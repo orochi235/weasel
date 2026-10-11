@@ -45,3 +45,15 @@ describe('setDefaults', () => {
     expect(setDefaults(GROUP, [[['view', 'nope'], 1]])).toBe(GROUP);
   });
 });
+
+describe('setDefaults over a schema that holds one value path twice', () => {
+  it('writes every leaf that holds the path, since none of them is the wrong one', () => {
+    const twice: PrefSection = { name: 'Rect', members: {
+      layout: { name: 'Layout', members: { 'pose.x': { kind: 'number', name: 'X', description: '', default: 0 } } },
+      look: { name: 'Look', members: { 'pose.x': { kind: 'number', name: 'X again', description: '', default: 0 } } },
+    } };
+    const next = setDefaults(twice, [[['pose', 'x'], 7]]);
+    expect(nodeAt(next, 'layout/pose.x')).toMatchObject({ default: 7 });
+    expect(nodeAt(next, 'look/pose.x')).toMatchObject({ default: 7 });
+  });
+});

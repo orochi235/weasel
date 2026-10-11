@@ -1,5 +1,5 @@
 import { isPrefLeaf, isPrefSection, type PrefAlias } from '@weasel-js/prefs';
-import { checkKey, takesDottedKey, uniqueKey } from './schemaKeys';
+import { checkKey, keysTakenAt, takesDottedKey, uniqueKey } from './schemaKeys';
 import {
   checkFits, childrenOf, editChildren, insertAt, isUnder, joinPath, keyOf, nodeAt, outermost, parentPath,
   type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
@@ -10,7 +10,7 @@ export {
   branchUnder, childrenOf, fitsUnder, isUnder, joinPath, keyOf, keysOf, levelsOf, nodeAt, outermost, parentPath, pathOf,
   slotOf, withinDepth, type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaTree';
-export { isValidKey, keyFromName, keyProblem, takesDottedKey, undigit, uniqueKey } from './schemaKeys';
+export { isValidKey, keyClashes, keyFromName, keyProblem, keysTakenAt, takesDottedKey, undigit, uniqueKey } from './schemaKeys';
 export { rebaseValuePaths, valueMove, valuePathOf, type ValueMove } from './valuePaths';
 export { aliasNodes, aliasOf, canAlias, copyNodes } from './schemaCopy';
 
@@ -18,7 +18,7 @@ export function addNode<R extends SchemaRoot>(root: R, parent: string | null, ke
   const host = nodeAt(root, parent);
   checkFits(host, node);
   return editChildren(root, parent, (kids) => {
-    checkKey(kids, key, !!host && takesDottedKey(host, node));
+    checkKey(keysTakenAt(root, parent, isPrefLeaf(node)), key, !!host && takesDottedKey(host, node));
     return insertAt(kids, [[key, node]], index ?? Object.keys(kids).length);
   });
 }
@@ -80,7 +80,7 @@ export function rekeyed<R extends SchemaRoot>(root: R, path: string, next: strin
   const host = nodeAt(root, parentPath(path));
   const node = nodeAt(root, path);
   return editChildren(root, parentPath(path), (kids) => {
-    checkKey(kids, next, !!host && !!node && takesDottedKey(host, node));
+    checkKey(keysTakenAt(root, parentPath(path), !!node && isPrefLeaf(node)), next, !!host && !!node && takesDottedKey(host, node));
     return Object.fromEntries(Object.entries(kids).map(([k, v]) => [k === key ? next : k, v]));
   });
 }
@@ -111,7 +111,7 @@ export function setAttribute<R extends SchemaRoot>(root: R, path: string | null,
 
 /**
  * Move the nodes at `paths` to `target`, in the order given. A path beneath another moved path travels with it. A
- * moved key that collides with one already in the target parent is renamed with {@link uniqueKey}. Returns the
+ * moved key that collides with one {@link keysTakenAt} gives for the target parent is renamed with {@link uniqueKey}. Returns the
  * tree, `root` itself when nothing ends up anywhere new, and each moved node's old path in `from` beside its new
  * one in `paths`.
  */
@@ -147,11 +147,14 @@ export function shiftNodes<R extends SchemaRoot>(
   let next = root;
   for (const m of moving) next = removeNode(next, m.path);
   const out: string[] = [];
+  const lifted = next;
   next = editChildren(next, dest, (kids) => {
     const taken: ChildMap = { ...kids };
+    const leafKeys: ChildMap = { ...keysTakenAt(lifted, dest, true) };
     const entries: Array<[string, SchemaNode]> = moving.map((m) => {
-      const key = uniqueKey(taken, m.key);
+      const key = uniqueKey(isPrefLeaf(m.node) ? leafKeys : taken, m.key);
       taken[key] = m.node;
+      leafKeys[key] = m.node;
       out.push(joinPath(dest, key));
       return [key, m.node];
     });

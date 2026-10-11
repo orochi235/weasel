@@ -1,5 +1,5 @@
 import { isPrefLeaf, isPrefSection, prefHoldsValue, type PrefAlias } from '@weasel-js/prefs';
-import { uniqueKey } from './schemaKeys';
+import { keysTakenAt, uniqueKey } from './schemaKeys';
 import {
   checkFits, childrenOf, editChildren, insertAt, joinPath, keyOf, keysOf, nodeAt, outermost, pathOf,
   type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
@@ -19,9 +19,14 @@ export function aliasOf(root: SchemaRoot, path: string): PrefAlias {
   return { kind: 'alias', name: '', description: '', default: undefined, of: valuePathOf(root, path) };
 }
 
+/** The key an alias of the leaf keyed `key` starts from. Under a section root a key is a value's path, and an alias holds no value to put at its leaf's. */
+function aliasKey(root: SchemaRoot, key: string): string {
+  return isPrefSection(root) ? `${key.replaceAll('.', '_')}Alias` : key;
+}
+
 /**
  * `root` with an alias of each leaf at `paths` set at `target`, the leaves left where they are. An alias takes
- * its leaf's key where the target's children have none like it, and a numbered one where they do.
+ * its leaf's key where {@link keysTakenAt} has none like it for the target, and a numbered one where it does.
  */
 export function aliasNodes<R extends SchemaRoot>(root: R, paths: readonly string[], target: SchemaTarget): { root: R; paths: string[] } {
   const dest = target.parentPath;
@@ -37,10 +42,9 @@ export function aliasNodes<R extends SchemaRoot>(root: R, paths: readonly string
   });
   const out: string[] = [];
   const next = editChildren(root, dest, (kids) => {
-    const taken: ChildMap = { ...kids };
+    const taken: ChildMap = { ...keysTakenAt(root, dest, true) };
     const entries: Array<[string, SchemaNode]> = made.map((m) => {
-      // Under a section root a key is the value's path, and the alias holds no value to put at the leaf's.
-      const key = uniqueKey(taken, isPrefSection(root) ? `${m.key.replaceAll('.', '_')}Alias` : m.key);
+      const key = uniqueKey(taken, aliasKey(root, m.key));
       taken[key] = m.alias;
       out.push(joinPath(dest, key));
       return [key, m.alias];
@@ -52,8 +56,11 @@ export function aliasNodes<R extends SchemaRoot>(root: R, paths: readonly string
 
 /**
  * `root` with a copy of each node at `paths` set at `target`, the originals left where they are. A copy keeps its
- * key where the target's children have none like it, and takes a numbered one where they do. `paths` are the
- * copies' paths, in the order given, less any node already under another one copied.
+ * key where {@link keysTakenAt} has none like it for the target, and takes a numbered one where it does. `paths`
+ * are the copies' paths, in the order given, less any node already under another one copied.
+ *
+ * Under a section root a leaf's key is the path its value lives at, which no second leaf can have, so the copy of
+ * a leaf that holds a value is an alias of it, and a copied section holds an alias of each such leaf inside it.
  */
 export function copyNodes<R extends SchemaRoot>(root: R, paths: readonly string[], target: SchemaTarget): { root: R; paths: string[] } {
   const tops = outermost(paths);
@@ -64,16 +71,35 @@ export function copyNodes<R extends SchemaRoot>(root: R, paths: readonly string[
     const node = nodeAt(root, p);
     if (!node) throw new Error(`schemaEdit: no node at ${p}`);
     checkFits(destNode, node);
-    return { key: keyOf(p), node };
+    return { path: p, node };
   });
+  const aliasing = isPrefSection(root);
   const out: string[] = [];
   const next = editChildren(root, dest, (kids) => {
     const taken: ChildMap = { ...kids };
+    const leafKeys: ChildMap = { ...keysTakenAt(root, dest, true) };
+    const leafKey = (key: string, node: SchemaNode): string => {
+      const free = uniqueKey(leafKeys, key);
+      leafKeys[free] = node;
+      return free;
+    };
+    /** The copy of the node at `path`, and the key it takes; a section inside a copied one keeps its own. */
+    const copyOf = (path: string, node: SchemaNode, top: boolean): [string, SchemaNode] => {
+      if (isPrefLeaf(node)) {
+        const shown = aliasing && prefHoldsValue(node) && canAlias(root, path) ? aliasOf(root, path) : node;
+        return [leafKey(shown === node ? keyOf(path) : aliasKey(root, keyOf(path)), shown), shown];
+      }
+      const key = top ? uniqueKey(taken, keyOf(path)) : keyOf(path);
+      if (!aliasing || !isPrefSection(node)) return [key, node];
+      const members = Object.fromEntries(Object.entries(node.members).map(([k, kid]) => copyOf(joinPath(path, k), kid, false)));
+      return [key, { ...node, members } as SchemaNode];
+    };
     const entries: Array<[string, SchemaNode]> = copying.map((c) => {
-      const key = uniqueKey(taken, c.key);
-      taken[key] = c.node;
-      out.push(joinPath(dest, key));
-      return [key, c.node];
+      const entry = copyOf(c.path, c.node, true);
+      taken[entry[0]] = entry[1];
+      leafKeys[entry[0]] = entry[1];
+      out.push(joinPath(dest, entry[0]));
+      return entry;
     });
     return insertAt(kids, entries, target.index);
   });

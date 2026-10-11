@@ -14,7 +14,7 @@ import { aggregateAttributes, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { childrenOf, keyFromName, keyOf, keyProblem, keysOf, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
@@ -119,7 +119,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     if (path === null || key === keyOf(path)) return;
     const parent = parentPath(path);
     const host = nodeAt(schema, parent)!;
-    const problem = keyProblem(childrenOf(host) ?? {}, key, takesDottedKey(host, node));
+    const problem = keyProblem(keysTakenAt(schema, parent, isPrefLeaf(node)), key, takesDottedKey(host, node));
     if (problem) { setKeyError(problem); return; }
     onRename(path, key);
   };
@@ -133,7 +133,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     const next = keyFromName(node.name);
     if (takesDottedKey(host, node) || next === '' || next === current) return;
     if (!added && current !== keyFromName(nameAtFocus.current)) return;
-    const unique = uniqueKey(childrenOf(host) ?? {}, next);
+    const unique = uniqueKey(keysTakenAt(schema, parent, isPrefLeaf(node)), next);
     onRename(path, unique);
   };
 

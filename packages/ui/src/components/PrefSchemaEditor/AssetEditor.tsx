@@ -18,7 +18,7 @@ import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import type { PrefSchemaEditorProps } from './PrefSchemaEditor';
 import { NO_TYPES } from './types';
-import { aliasNodes, branchPaths, copyNodes, joinPath, keysOf, outermost, parentPath, pathOf, rebasePaths, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { aliasNodes, branchPaths, copyNodes, joinPath, keyClashes, keysOf, outermost, parentPath, pathOf, rebasePaths, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { baselinePaths, changedAttributes, changedPaths, diffSchemas } from './schemaExport';
 import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
@@ -124,19 +124,21 @@ export function AssetEditor(
     [actionList, schema],
   );
   const unsound = useMemo(() => conditionProblems(schema), [schema]);
+  const clashing = useMemo(() => keyClashes(schema), [schema]);
   const treeMark = useMemo(() => {
-    if (!rowMark && dead.size === 0 && unsound.size === 0) return undefined;
+    if (!rowMark && dead.size === 0 && unsound.size === 0 && clashing.size === 0) return undefined;
     const baseline = baselinePaths(changes);
     return (path: string) => (
       <>
         {dead.has(path) && <Badge size="xs" status="danger" variant="subtle">no action</Badge>}
+        {clashing.has(path) && <Badge size="xs" status="danger" variant="subtle" tooltip={clashing.get(path)}>key taken</Badge>}
         {unsound.has(path) && (
           <Badge size="xs" status="danger" variant="subtle" tooltip={unsound.get(path)!.map((p) => p.problem).join('; ')}>bad condition</Badge>
         )}
         {rowMark?.(keysOf(baseline(path)).join('.'))}
       </>
     );
-  }, [rowMark, changes, dead, unsound]);
+  }, [rowMark, changes, dead, unsound, clashing]);
   // `label` is a kind the form draws itself: text among the rows, with no attributes of its own.
   const custom = kinds;
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);
