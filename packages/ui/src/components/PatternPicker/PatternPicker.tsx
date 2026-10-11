@@ -1,14 +1,15 @@
-import type { ReactElement } from 'react';
-import type { CSSProperties } from 'react';
+import { useId, type CSSProperties, type ReactElement } from 'react';
 import {
   composePatternTransform,
   decomposePatternTransform,
   type FillStyle,
   type TilePatternSpec,
 } from '@weasel-js/core';
+import { unit } from '@weasel-js/quantity';
 import { tilePreviewCssUrl } from '@weasel-js/svg';
-import { NumberField } from '../NumberField';
+import { UnitField } from '../NumberField';
 import { ToggleBar } from '../ToggleBar';
+import f from '../field.module.css';
 import s from './PatternPicker.module.css';
 
 /** The `pattern` member of the paint union. */
@@ -30,7 +31,7 @@ const DEFAULT_TILE_SIZE = 8;
 /** Every swatch previews at one size so the grid compares tiles, not scales. */
 const PREVIEW_SIZE = 16;
 
-const DEGREES: Intl.NumberFormatOptions = { style: 'unit', unit: 'degree', unitDisplay: 'narrow', maximumFractionDigits: 1 };
+const DEGREES = unit('°', { places: 1 });
 
 /** Rotation in degrees, folded into (-180, 180]. */
 function toDegrees(rad: number): number {
@@ -96,6 +97,7 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
   const { value, color, onChange, className } = props;
   const spec = specOf(value);
   const size = spec?.size ?? DEFAULT_TILE_SIZE;
+  const rotationId = useId();
 
   const pick = (tile: TilePatternSpec['tile']): void => {
     const seeded = seedPattern(tile, color, size);
@@ -135,15 +137,18 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
         ariaLabel="Tile size"
         onChange={(v) => v != null && resize(v)}
       />
-      <NumberField
-        label="Rotation"
-        orientation="row"
-        width="fit"
-        value={toDegrees(decomposePatternTransform(value.transform).rotation)}
-        step={15}
-        formatOptions={DEGREES}
-        onChange={(deg) => Number.isFinite(deg) && onChange(withRotation(value, deg))}
-      />
+      <div className={`${f.field} ${f.control} ${f.fit} ${f.row}`}>
+        <label className={f.label} htmlFor={rotationId}>Rotation</label>
+        <UnitField
+          id={rotationId}
+          width="fit"
+          steppers
+          value={toDegrees(decomposePatternTransform(value.transform).rotation)}
+          step={15}
+          display={DEGREES}
+          onChange={(deg) => onChange(withRotation(value, deg))}
+        />
+      </div>
     </div>
   );
 }
