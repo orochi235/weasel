@@ -1540,6 +1540,17 @@ only story runner in the repo.
   again (`createSplitStore`). The fix belongs in windease; the workaround goes
   when it lands.
 
+- **(P2) A forge dev server started with `WAKE_EXTRA` served the modules it started with, whatever
+  was edited after.** Seen 2026-10-11 on `WAKE_EXTRA=33461 npm run dev:forge`, four times in one
+  session: after an edit to `packages/labkit/src/chrome/regions/SidebarRegion.less`,
+  `/packages/labkit/src/styles.less` (which imports it) kept answering with the old rules while
+  `/@fs/…/SidebarRegion.less` asked for directly had the new ones, and a `touch` changed nothing;
+  after an edit to `packages/forge/src/shell/cssVars/CssVarsPanel.tsx` the page ran the old
+  component across reloads. No `hmr update` line reached the log, so the watcher looks dead rather
+  than one import edge untracked. A restart served the new code every time. Not checked: whether
+  the server wake owns does the same, or whether how the file was written matters (these edits
+  replaced the file whole).
+
 - **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
   three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any
   non-CSS file even when `fullReload` is off. The page's own stamp in `~/src/wake/src/client.ts` is
