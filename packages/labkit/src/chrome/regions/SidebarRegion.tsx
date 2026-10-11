@@ -15,7 +15,8 @@ export interface SidebarRegionProps<TCtx extends SidebarSlotContext = TrialChrom
   region?: string;
 }
 
-function Section({
+/** One titled, folding section: its bar, and its body while it is open. */
+export function Section({
   title,
   collapsed,
   onCollapsedChange,
@@ -35,7 +36,11 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="lk-sidebar-section" data-fill={fill && !collapsed ? '' : undefined} {...useStance({ stance, tone })}>
+    <section
+      className="lk-sidebar-section"
+      data-fill={fill && !collapsed ? '' : undefined}
+      {...useStance({ stance, tone })}
+    >
       <div className="lk-sidebar-section__bar">
         <button
           type="button"

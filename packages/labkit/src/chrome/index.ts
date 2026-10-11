@@ -14,6 +14,8 @@ export type { LabChromeContext, LabContribution, LabRegion } from './labTypes';
 export { mergeContributions, suppressContributions } from './merge';
 export type { PaletteRegionProps } from './regions/PaletteRegion';
 export { PaletteRegion } from './regions/PaletteRegion';
+export type { SidebarPanesProps } from './regions/SidebarPanes';
+export { SidebarPanes } from './regions/SidebarPanes';
 export type { SidebarRegionProps } from './regions/SidebarRegion';
 export { SidebarRegion } from './regions/SidebarRegion';
 export type { StatusRegionProps } from './regions/StatusRegion';

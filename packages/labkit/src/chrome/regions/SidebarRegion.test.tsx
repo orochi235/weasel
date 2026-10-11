@@ -55,7 +55,9 @@ describe('<SidebarRegion> fill', () => {
   ];
   const fills = (c: TrialChromeContext) => {
     const { container } = render(<SidebarRegion contributions={contributions} ctx={c} />);
-    return [...container.querySelectorAll('.lk-sidebar-section')].map((el) => el.hasAttribute('data-fill'));
+    return [...container.querySelectorAll('.lk-sidebar-section')].map((el) =>
+      el.hasAttribute('data-fill'),
+    );
   };
 
   it('marks an open filling section, and no other', () => {

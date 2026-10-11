@@ -7,7 +7,7 @@ import { resolveLabTool } from '../tools/labTool';
 import type { TrialTool } from '../tools/types';
 import type { LabChromeContext, LabContribution, LabRegion } from './labTypes';
 import { mergeContributions } from './merge';
-import { SidebarRegion } from './regions/SidebarRegion';
+import { SidebarPanes } from './regions/SidebarPanes';
 import { StatusRegion } from './regions/StatusRegion';
 import { ToolbarRegion } from './regions/ToolbarRegion';
 
@@ -96,11 +96,18 @@ function LabSections({ contributions, region }: LabRegionProps & { region: 'side
     }),
     [lab, collapsedSections, setFolds],
   );
+  const [heights, setHeights] = usePersistedState<Record<string, number>>(
+    `lk-lab-${region}-heights`,
+    {},
+    { scope: 'lab' },
+  );
   return (
-    <SidebarRegion
+    <SidebarPanes
       contributions={contributionsIn(contributions, region)}
       ctx={ctx}
       region={region}
+      heights={heights}
+      onHeightsChange={setHeights}
     />
   );
 }

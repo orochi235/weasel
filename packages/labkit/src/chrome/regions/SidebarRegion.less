@@ -242,3 +242,67 @@
     flex-grow: 0;
   }
 }
+
+// A region laid out as panes: each section is held to its pane, its bar stays
+// put, and its body is what scrolls.
+.lk-sidebar-panes {
+  flex: 1 1 0;
+  min-height: 0;
+
+  > .lk-sidebar-panes__zone {
+    width: 100%;
+    height: 100%;
+  }
+
+  // windease's Panel preset arrives skinned as a card; a pane here is only a box.
+  .windease-panel {
+    background: none;
+    border: 0;
+    border-radius: 0;
+    font: inherit;
+  }
+
+  // A contribution that draws itself has no bar to hold still, so all of it scrolls.
+  .lk-sidebar-panes__free {
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .lk-sidebar-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    border-bottom: 0;
+  }
+
+  // A flex item takes a z-index without being positioned, and the bar's would lift it over the seam above it.
+  .lk-sidebar-section__bar {
+    position: static;
+    z-index: auto;
+    flex: none;
+  }
+
+  .lk-sidebar-section__body {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .lk-sidebar-section[data-fill] > .lk-sidebar-section__body {
+    overflow: hidden;
+  }
+
+  [data-affordance-kind='resize-y'] {
+    background: var(--wzl-line-subtle);
+  }
+
+  .windease-affordance-hit:hover [data-affordance-kind='resize-y'],
+  .windease-affordance-hit:focus-visible [data-affordance-kind='resize-y'] {
+    background: var(--wzl-accent);
+  }
+
+  .windease-affordance-hit:focus-visible {
+    outline: none;
+  }
+}
