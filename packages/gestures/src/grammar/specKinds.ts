@@ -3,9 +3,8 @@ import type { GestureName } from './gestures';
 
 type SpecKind = GestureSpec['kind'];
 
-/** `GestureSpec.kind` → route-grammar gesture name. `multiTouch` has no
- *  route gesture (only its tap synthesis does), and `keyUp` has no spec kind,
- *  so neither direction is total. */
+/** `GestureSpec.kind` → route-grammar gesture name. `keyUp` has no spec
+ *  kind, so the reverse direction is not total. */
 const SPEC_KIND_TO_GESTURE: Record<SpecKind, GestureName | undefined> = {
   key: 'keyDown',
   'key-held': 'keyHeld',
@@ -17,7 +16,7 @@ const SPEC_KIND_TO_GESTURE: Record<SpecKind, GestureName | undefined> = {
   longPress: 'longPress',
   drag: 'drag',
   pointerDown: 'pointerDown',
-  multiTouch: undefined,
+  multiTouch: 'multiTouch',
   multiTouchTap: 'multiTouchTap',
   drop: 'drop',
   paste: 'paste',

@@ -43,6 +43,39 @@ describe('findConflicts', () => {
     expect(findConflicts([a, b])).toEqual([]);
   });
 
+  it('flags an optional modifier against a spec that forbids it, where both take the bare press', () => {
+    const key = (mods?: object) => ({ spec: { kind: 'key', key: 'ArrowLeft', ...(mods ? { mods } : {}) }, actionId: 'x' });
+    const c = findConflicts([tool('a', [key({ shift: 'optional' })]), tool('b', [key()])]);
+    expect(c).toHaveLength(1);
+    expect(c[0].ownerIds).toEqual(['a', 'b']);
+  });
+
+  it('does NOT flag an optional modifier against a spec that requires it', () => {
+    // On the shifted press both match, and the required one is more specific.
+    const key = (mods: object) => ({ spec: { kind: 'key', key: 'ArrowLeft', mods }, actionId: 'x' });
+    expect(findConflicts([tool('a', [key({ shift: 'optional' })]), tool('b', [key({ shift: true })])])).toEqual([]);
+  });
+
+  it('reports one conflict for two specs that tie in several modifier states', () => {
+    const key = () => ({ spec: { kind: 'key', key: 'a', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'x' });
+    expect(findConflicts([tool('a', [key()]), tool('b', [key()])])).toHaveLength(1);
+  });
+
+  it('reports a tie between ambient entries once, however many passes see it', () => {
+    const key = () => ({ spec: { kind: 'key', key: 'a', mods: { shift: 'optional' } }, actionId: 'x' });
+    const ambient = [tool('a', [key(), key()]), tool('b', [key()])];
+    const owners = findScopedConflicts({ registry: [], ambient }).map((c) => c.ownerIds.join(','));
+    expect(owners).toEqual(['a,a', 'a,a,b']);
+  });
+
+  it('flags two multiTouch bindings on the same finger count', () => {
+    const touch = (fingers: number) => ({ spec: { kind: 'multiTouch', fingers }, actionId: 'x' });
+    const c = findConflicts([tool('a', [touch(2)]), tool('b', [touch(2)]), tool('c', [touch(3)])]);
+    expect(c).toHaveLength(1);
+    expect(c[0]).toMatchObject({ gesture: 'multiTouch', arg: '2', ownerIds: ['a', 'b'] });
+    expect(formatConflict(c[0])).toContain('multiTouch(2)');
+  });
+
   it('does NOT flag a broad binding alongside a narrow one', () => {
     // Specificity ordering resolves this cleanly, and the untargeted one is
     // usually the intended fallback.

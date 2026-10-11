@@ -20,6 +20,7 @@ export type GestureName =
   | 'keyHeld'
   | 'contextMenu'
   | 'longPress'
+  | 'multiTouch'
   | 'multiTouchTap'
   | 'drop'
   | 'paste';
@@ -56,7 +57,7 @@ export interface GestureArgSpec {
 export interface GestureDescriptor {
   name: GestureName;
   /** Does the route's `.target` slot apply? Targetless gestures (`wheel`,
-   *  `keyDown/Up`, `multiTouchTap`) elide it entirely in the v2 grammar. */
+   *  `keyDown/Up`, `multiTouch`, `multiTouchTap`) elide it entirely in the v2 grammar. */
   hasTarget: boolean;
   /** Optional argument spec. Encoded as `gesture(value)` in the route string. */
   arg?: GestureArgSpec;
@@ -77,6 +78,7 @@ export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
   { name: 'keyHeld',       hasTarget: false, arg: { name: 'key',       values: 'free' } },
   { name: 'contextMenu',   hasTarget: true  },
   { name: 'longPress',     hasTarget: true  },
+  { name: 'multiTouch',    hasTarget: false, arg: { name: 'fingers',   values: ['2', '3', '4'] } },
   { name: 'multiTouchTap', hasTarget: false, arg: { name: 'fingers',   values: ['2', '3', '4'] } },
   // The arg is the MIME-glob filter. No default: a spec with no `types`
   // matches any payload, which is what an omitted arg slot means for a

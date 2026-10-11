@@ -8,7 +8,7 @@ describe('spec kind ↔ route gesture', () => {
     expect(routeGestureForSpecKind('key-held')).toBe('keyHeld');
     expect(routeGestureForSpecKind('doubleClick')).toBe('dblTap');
     expect(routeGestureForSpecKind('drop')).toBe('drop');
-    expect(routeGestureForSpecKind('multiTouch')).toBeUndefined();
+    expect(routeGestureForSpecKind('multiTouch')).toBe('multiTouch');
   });
 
   it('names the spec kind for each route gesture, and none for keyUp', () => {

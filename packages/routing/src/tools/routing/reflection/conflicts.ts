@@ -2,7 +2,7 @@ import type { Contribution } from '../../../contributions/types';
 import type { Action } from '../../../interactions/actions/action';
 import { actionBindings } from '../../../interactions/actions/binding';
 import type { ParsedModifiers } from '../routeGrammar';
-import { canonicalModifiers, formatRoute } from '../routeGrammar';
+import { canonicalModifiers, formatRoute, VALID_MOD_NAMES } from '../routeGrammar';
 import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
 import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, PREDICATE_TARGET, type RegistryEntry, type GestureName } from './registry';
@@ -28,8 +28,10 @@ export interface Conflict {
  *  - Broad vs. narrow targets (e.g. an untargeted `click` alongside
  *    `click` on `empty`) — the dispatcher's specificity ordering resolves
  *    those cleanly, and the broad one is usually the intended fallback.
- *  - Different modifier requirements on the same target — they fire on
- *    different inputs.
+ *  - Modifier requirements no one press satisfies at equal rank: Shift
+ *    required against Alt required fire on different inputs, and Shift
+ *    required outranks Shift optional. An optional modifier against a
+ *    forbidden one is flagged, since both take the bare press.
  *  - A binding whose action declines via `enabled()` so a lower-priority
  *    one can take the gesture. Detecting that intent would mean evaluating
  *    the action; consumers can suppress known-intentional compositions in
@@ -77,43 +79,65 @@ function findConflictsKeyed(
   modes: readonly ActiveMode[] = KIT_MODES,
 ): { key: string; conflict: Conflict }[] {
   const rows = buildRouteRegistry(entries);
-  const groups = new Map<string, RegistryEntry[]>();
+  const groups = new Map<string, { base: string; members: RegistryEntry[] }>();
   for (const entry of rows) {
     // One bucket per arg the binding answers to, not one per display token.
     // `key: ['h','H']` and `key: 'H'` really do collide — `matchKey` takes any
     // member, case-insensitively — and joining the alternatives into `'h|H'`
     // put them in different buckets. Same for two `drop` specs whose MIME sets
-    // overlap without being equal.
+    // overlap without being equal. Modifiers bucket the same way: one per
+    // state the spec accepts, so an optional Shift meets a forbidden one.
     for (const arg of argKeysOf(entry)) {
-      const key = `${entry.phase}|${entry.gesture}|${arg}|${targetKey(entry)}|${canonicalModifiers(entry.modifiers)}`;
-      const bucket = groups.get(key);
-      if (bucket) { if (!bucket.includes(entry)) bucket.push(entry); }
-      else groups.set(key, [entry]);
+      const base = `${entry.phase}|${entry.gesture}|${arg}|${targetKey(entry)}`;
+      for (const state of modifierTieKeys(entry)) {
+        const key = `${base}|${state}`;
+        const bucket = groups.get(key);
+        if (bucket) { if (!bucket.members.includes(entry)) bucket.members.push(entry); }
+        else groups.set(key, { base, members: [entry] });
+      }
     }
   }
   // Only actions carry a rule, so a tool's or contribution's bindings count as eligible always.
   const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.ownerId) ?? ALWAYS;
   const tie = (e: RegistryEntry, f: RegistryEntry): boolean =>
     viewsTie(e.views, f.views) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
-  const conflicts: { key: string; conflict: Conflict }[] = [];
-  for (const [key, all] of groups) {
+  const conflicts = new Map<string, Conflict>();
+  for (const { base, members } of groups.values()) {
     // Keep only members that could tie with another member.
-    const bucket = all.filter((e) => all.some((f) => f !== e && tie(e, f)));
+    const bucket = members.filter((e) => members.some((f) => f !== e && tie(e, f)));
     if (bucket.length < 2) continue;
     const first = bucket[0];
-    conflicts.push({
-      key,
-      conflict: {
-        phase: first.phase,
-        gesture: first.gesture,
-        arg: first.arg,
-        target: first.target,
-        modifiers: first.modifiers,
-        ownerIds: bucket.map((e) => e.ownerId),
-      },
+    // Two specs that tie in one modifier state usually tie in several: one
+    // conflict per set of specs, each named by identity so the key is the same
+    // in every pass `findScopedConflicts` makes over them.
+    const key = `${base}|${bucket.map((e) => `${objectId(e.spec)}:${canonicalModifiers(e.modifiers)}`).join(';')}`;
+    if (conflicts.has(key)) continue;
+    conflicts.set(key, {
+      phase: first.phase,
+      gesture: first.gesture,
+      arg: first.arg,
+      target: first.target,
+      modifiers: first.modifiers,
+      ownerIds: bucket.map((e) => e.ownerId),
     });
   }
-  return conflicts;
+  return [...conflicts].map(([key, conflict]) => ({ key, conflict }));
+}
+
+/** One key per way an entry can win a press: each modifier state its spec
+ *  accepts, with how many modifiers it requires. Two specs tie only where
+ *  they share a state and that count, since the matcher ranks a required
+ *  modifier above an optional one. `mod` is a key of its own here, as in the
+ *  route grammar, so it never meets the `ctrl` or `meta` it resolves to. */
+function modifierTieKeys(entry: RegistryEntry): string[] {
+  const optional = VALID_MOD_NAMES.filter((k) => entry.modifiers[k] === 'optional');
+  const required = VALID_MOD_NAMES.filter((k) => entry.modifiers[k] === 'required');
+  const keys: string[] = [];
+  for (let bits = 0; bits < 1 << optional.length; bits++) {
+    const held = [...required, ...optional.filter((_, i) => (bits & (1 << i)) !== 0)].sort();
+    keys.push(`${held.join('+')}:${required.length}`);
+  }
+  return keys;
 }
 
 /** Whether two bindings' `views` let them tie in some view. A binding is live
@@ -144,17 +168,18 @@ function targetKey(entry: RegistryEntry): string {
   const spec = entry.spec as { target?: unknown };
   const pred = spec.target;
   if (typeof pred !== 'object' || pred === null) return PREDICATE_TARGET;
-  return `${PREDICATE_TARGET}#${predicateId(pred)}`;
+  return `${PREDICATE_TARGET}#${objectId(pred)}`;
 }
 
-const PREDICATE_IDS = new WeakMap<object, number>();
-let nextPredicateId = 0;
+const OBJECT_IDS = new WeakMap<object, number>();
+let nextObjectId = 0;
 
-function predicateId(pred: object): number {
-  let id = PREDICATE_IDS.get(pred);
+/** A stable number for an object, so a bucket key can name it by identity. */
+function objectId(obj: object): number {
+  let id = OBJECT_IDS.get(obj);
   if (id === undefined) {
-    id = nextPredicateId++;
-    PREDICATE_IDS.set(pred, id);
+    id = nextObjectId++;
+    OBJECT_IDS.set(obj, id);
   }
   return id;
 }

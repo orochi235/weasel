@@ -45,12 +45,11 @@ describe('buildRouteRegistry', () => {
     expect(r.map((e) => e.gesture)).toEqual(['keyDown', 'keyHeld', 'dblTap', 'pointerDown']);
   });
 
-  it('skips kinds the route grammar has no name for', () => {
+  it('names multiTouch, carrying the finger count as the arg', () => {
     const r = buildRouteRegistry([tool('t', [
       { spec: { kind: 'multiTouch', fingers: 2 }, actionId: 'pinch' },
-      { spec: { kind: 'click' }, actionId: 'keep' },
     ])]);
-    expect(r.map((e) => e.actionId)).toEqual(['keep']);
+    expect(r.map((e) => [e.gesture, e.arg, e.target])).toEqual([['multiTouch', '2', undefined]]);
   });
 
   it('names drop and paste, carrying the MIME filter as the arg', () => {
@@ -223,8 +222,8 @@ describe('routesForSpec', () => {
     expect(route).toContain(PREDICATE_TARGET);
   });
 
-  it('skips kinds the grammar has no name for', () => {
-    expect(routesForSpec({ kind: 'multiTouch' } as GestureSpec)).toEqual([]);
+  it('prints multiTouch with its finger count', () => {
+    expect(routesForSpec({ kind: 'multiTouch', fingers: 2 })).toEqual(['[*:*] multiTouch(2)']);
   });
 
   it('prints a route that parses back to a spec of the same specificity', () => {
