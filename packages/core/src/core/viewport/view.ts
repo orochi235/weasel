@@ -1,5 +1,6 @@
 import type { ViewTransform } from './viewTransform';
 import type { View } from '@weasel-js/routing';
+import { meanScale } from './meanScale';
 import { normalizeZoom, warnInvalidView } from './zoomBounds';
 
 /**
@@ -58,8 +59,7 @@ export function viewToTransform(view: View): ViewTransform {
  * viewport asks for a threshold rather than a camera.
  */
 export function viewZoom(view: View): number {
-  const { x, y } = view.scale;
-  return x === y ? x : Math.sqrt(x * y);
+  return meanScale(view.scale);
 }
 
 /**

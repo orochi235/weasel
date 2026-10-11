@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { View } from './view';
-import { viewToTransform } from './view';
+import { viewToTransform, viewZoom } from './view';
 import { worldToScreen, screenToWorld } from './viewTransform';
 
 describe('viewToTransform', () => {
@@ -48,5 +48,17 @@ describe('viewToTransform', () => {
     const view: View = { x: 10, y: 20, scale: { x: 2, y: 3 } };
     const t = viewToTransform(view);
     expect(t).toEqual({ panX: -20, panY: -60, zoom: { x: 2, y: 3 } });
+  });
+});
+
+describe('viewZoom', () => {
+  it('reports a uniform view\'s own scale', () => {
+    expect(viewZoom({ x: 0, y: 0, scale: { x: 2.5, y: 2.5 } })).toBe(2.5);
+  });
+
+  it('reports a y-up view by the magnitude of its axes', () => {
+    expect(viewZoom({ x: 0, y: 0, scale: { x: 2, y: -2 } })).toBe(2);
+    expect(viewZoom({ x: 0, y: 0, scale: { x: -3, y: -3 } })).toBe(3);
+    expect(viewZoom({ x: 0, y: 0, scale: { x: 1, y: -4 } })).toBe(2);
   });
 });

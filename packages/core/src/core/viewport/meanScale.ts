@@ -1,6 +1,7 @@
 /**
- * Geometric mean of a per-axis scale. Degenerates to `s.x` (or `s.y`) when the
- * two axes are equal; otherwise sits between them.
+ * Geometric mean of a per-axis scale's magnitudes, so a flipped (negative)
+ * axis counts by its size. Degenerates to that size when the two axes are
+ * equal; otherwise sits between them.
  *
  * **Not for hit-testing.** A screen-pixel length is not one world distance
  * under non-uniform zoom, and collapsing it to a scalar makes a pickable
@@ -19,5 +20,5 @@
  * axis, as the grid layer does.
  */
 export function meanScale(s: { x: number; y: number }): number {
-  return Math.sqrt(s.x * s.y);
+  return Math.sqrt(Math.abs(s.x * s.y));
 }

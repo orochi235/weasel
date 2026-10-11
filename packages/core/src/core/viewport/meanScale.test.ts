@@ -12,6 +12,12 @@ describe('meanScale', () => {
     expect(meanScale({ x: 9, y: 4 })).toBe(6);
   });
 
+  it('reads a flipped axis by its magnitude', () => {
+    expect(meanScale({ x: 2, y: -2 })).toBe(2);
+    expect(meanScale({ x: -2, y: -2 })).toBe(2);
+    expect(meanScale({ x: 1, y: -4 })).toBe(2);
+  });
+
   it('lies between the two axes', () => {
     const m = meanScale({ x: 2, y: 8 });
     expect(m).toBeGreaterThan(2);
