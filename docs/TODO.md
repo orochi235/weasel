@@ -205,12 +205,6 @@ Priority tags:
   `insert` with a path request and drop `adapter.addNode` / `makeNode`; this changes
   `UsePenToolOptions`.
 
-- **(P3) `useHandTool` and `useLassoTool` carry dead surface.** `useHandTool` returns
-  `Tool<HandScratch | null>` where `HandScratch`
-  (`packages/core/src/tools/builtin/hand/useHandTool.ts`) is never populated; the tool is one
-  binding to `viewport.dragPan` and should be `Tool<null>`. `useLassoTool(adapter, …)` never reads
-  its required first argument. Both are signature changes.
-
 - **(P2) `resizeAction` / `rotateAction`: a selected group's children are not transformed.** With
   the default absolute poses, Cmd+G two rects and drag a resize or rotation handle on the group: one
   transform op is written for the container and the children stay put, and since the group's shown
@@ -1229,12 +1223,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   anchor. The order could be z-order, tree order, or a layer panel's row order handed across;
   which one is the open question, not the plumbing.
 
-- **(P3) `LayerList` toggles on shift where `Tree` ranges.** `LayerList` follows the canvas
-  convention (shift-press toggles a row), where `Tree`, Finder, and most layer panels range on shift
-  and toggle on Cmd/Ctrl. Ruled 2026-10-11: shift-click selects every row between the last click and
-  this one, and Cmd/Ctrl-click toggles one row, as in `Tree`. That leaves changing `PRESS_POLICY` in
-  `packages/ui/src/components/LayerList/LayerList.tsx`.
-
 - **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
   0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
   subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
@@ -1909,13 +1897,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   row that held focus is gone". That needs focus-within tracking that survives the removal, and
   browsers differ on whether removing the focused element fires `blur`, so settle it in a
   `*.browser.test.tsx`.
-
-- **(P3) ComboBox: Enter on text that exactly matches an option is reported as a text commit.** With
-  `allowsCustomValue`, typing an option's own label and pressing Enter with nothing highlighted
-  calls `onCommit({ source: 'text' })` (`packages/ui/src/components/ComboBox/ComboBox.tsx`,
-  `onKeyDownCapture`), though the prop's doc says a text commit is "text matching none of them".
-  Ruled 2026-10-11: it stays a text commit, and the doc changes to say a text commit is any Enter
-  with no option highlighted. That leaves rewording the prop's doc.
 
 - **(P3) BandEditor: splitting a band has no keyboard path.** A band is split only by clicking the
   ruler (`onTrackPointerDown` in `packages/ui/src/components/BandEditor/BandEditor.tsx`); every

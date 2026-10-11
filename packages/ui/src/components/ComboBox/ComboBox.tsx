@@ -87,8 +87,9 @@ export type ComboBoxProps<T extends Key = string> = Omit<RACComboBoxProps<object
   /** A failed load, shown as `errorLabel` rather than as an empty corpus. */
   loadError?: unknown | null;
   /**
-   * Fires when the user commits — Enter on the active option, a click on one,
-   * or Enter on text matching none of them when `allowsCustomValue` is set.
+   * Fires when the user commits — Enter on the highlighted option, a click on
+   * one, or, when `allowsCustomValue` is set, Enter with no option highlighted.
+   * That last one is a text commit even when the text is an option's own label.
    * Empty text commits nothing.
    */
   onCommit?: (commit: ComboBoxCommit<T>) => void;
