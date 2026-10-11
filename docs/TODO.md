@@ -622,9 +622,14 @@ Core five + Crop shipped. Remaining:
   - *Under core.* `animation/`'s engine, timeline, and behaviors know nothing of the scene; only
     `reflow.ts` and `rig/bindRig.ts` do. `features/simulation` needs only `useVisibleRaf`, which
     has to leave `core/scheduling` first.
-  - *Over core.* Nothing in core imports `features/parallax`, `tiling`, `minimap`, `chrome-caps`,
-    `poseRun`, `viewports`, or `meshPaint` (bar an import shim), so each can sit on core the way
-    `@weasel-js/kernel3d` does.
+  - *Over core.* Nothing in core imports `features/parallax`, `tiling`, or `poseRun`, so each can
+    sit on core the way `@weasel-js/kernel3d` does. `parallax` re-exports `core/viewport/parallax`,
+    which the barrel has to export directly first; `poseRun` needs a public way to publish preview
+    poses (`interactions/actions/previewOverrides.ts` is in no barrel). `minimap` can follow once
+    `canvas/MinimapCanvas.tsx` moves with it.
+  - *Not over core.* `canvas/CanvasView.tsx` is built on `features/viewports` and
+    `canvas/SceneCanvas.tsx` on `features/chrome-caps`, so both stay. `core/paintKinds.ts` loads
+    `features/meshPaint` lazily, so it goes under core with the renderer.
   - *Held in place by an importer.* `cursor`, `longPress`, and `patterns` are imported by the
     canvas components, `pointer` and `selection` by `WeaselProvider`, `text` by `tools/builtin`,
     and `ingestion` by `canvas/deps` (see the drop-handler entry under Tools & gestures). Each
