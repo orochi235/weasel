@@ -214,6 +214,36 @@ export interface TargetPhysicsOptions<T> extends Omit<TargetSpringOptions<T>, 't
   to?: T | null;
 }
 
+/** What `animator.hold` takes. */
+export interface HoldOptions<T> {
+  /** The value to hold. */
+  target: Target<T>;
+  /** What to show in place of the committed value: a value, or a function read each frame. */
+  value: T | (() => T);
+  /** Its share among the target's holds, 0 to 1: a number, or a function read each frame.
+   *  Default 1. Holds on one target show their weighted average, and whatever their weights
+   *  leave short of 1 is the committed value's. */
+  weight?: number | (() => number);
+  /** Any new animation passed the same cancelKey cancels this one. */
+  cancelKey?: string;
+  /** Names this hold in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
+  /** With `false`, it takes its `cancelKey` without canceling whoever holds it. Default true. */
+  interrupt?: boolean;
+}
+
+/** What `animator.hold` returns. `cancel` commits what the hold was showing, as `release()`
+ *  does; pausing it or scaling its time changes nothing, since it has no clock. */
+export interface HoldHandle extends AnimationHandle {
+  /** Says a function-form `value` or `weight` changed outside a frame, so the target shows it
+   *  now rather than at the next frame the animator happens to run. */
+  touch(): void;
+  /** Ends the hold. By default it commits the value it was showing, so the target stays where
+   *  it is; with `commit: false` the committed value is left alone and the target falls back
+   *  to it. */
+  release(opts?: { commit?: boolean }): void;
+}
+
 /** A coast on a {@link Target}: it commits where it stops. */
 export interface TargetDecayOptions<T> extends OnTarget<T> {
   /** As {@link TargetTweenOptions.from}. */
@@ -253,6 +283,9 @@ export interface Animator {
    *  with `to: null`, behaves as a velocity-driven decay. Supports
    *  mid-flight retargeting via the returned handle's `setTarget`. */
   physics<T>(opts: PhysicsOptions<T> | TargetPhysicsOptions<T>): PhysicsHandle<T>;
+  /** Shows a value on a {@link Target} in place of its committed one until canceled or released:
+   *  a drag preview, a pose driven from outside. Animations on the target add on top of it. */
+  hold<T>(opts: HoldOptions<T>): HoldHandle;
   /** Cancel a specific animation by handle. Pose stays at current value (no jump). */
   cancel(handle: AnimationHandle): void;
   /** Cancel every animation currently active under `key`. */
@@ -379,7 +412,7 @@ export interface Animator {
  *  frame loop open and animates nothing. */
 export type AnimationKind =
   | 'tween' | 'spring' | 'decay' | 'physics' | 'timeline'
-  | 'loop' | 'tweenLoop' | 'stagger' | 'keepAlive';
+  | 'loop' | 'tweenLoop' | 'stagger' | 'keepAlive' | 'hold';
 
 /** Who an {@link AnimatorEvent} is about. One object per registration, so the
  *  same animation's events share it by identity. */

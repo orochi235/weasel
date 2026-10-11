@@ -45,6 +45,8 @@ export interface TargetBook {
   detach(s: TargetState): void;
   /** Called once the frame's voices are read: what `adjust` held is in that reading now. */
   settle(): void;
+  /** Called once `s`'s voices are read again mid-frame: all that reading left out is `queued`. */
+  reread(s: TargetState, queued: readonly number[]): void;
   /** Hands each moving target, and each that came to rest since the last call, to its `show`. */
   show(): void;
 }
@@ -74,6 +76,9 @@ export function createTargetBook(): TargetBook {
     },
     settle() {
       for (const s of live) s.adjust.fill(0);
+    },
+    reread(s, queued) {
+      for (let i = 0; i < queued.length; i++) s.adjust[i] = queued[i]!;
     },
     show() {
       for (const s of live) s.show?.(readTarget(s));

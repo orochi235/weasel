@@ -49,11 +49,16 @@ export interface Lanes {
   leave(slot: Slot): void;
   /** Syncs every lane to `time` and reads its subjects. */
   frame(time: number): void;
+  /** Says what a voice on `key` reads from outside has changed since the last `frame`. */
+  touch(key: unknown): void;
+  /** Reads each touched subject again where the clock stands, then hands it to `each`. */
+  refresh(each: (slot: Slot) => void): void;
 }
 
 export function createLanes(): Lanes {
   const lanes = new Map<number, Lane>();
   const slots = new Map<unknown, Slot>();
+  const touched = new Set<Slot>();
   let now = 0;
 
   const laneOf = (axes: number): Lane => {
@@ -138,6 +143,22 @@ export function createLanes(): Lanes {
         if (l.keys.length === 0) continue;
         l.idle = 0;
         l.mix.pull(l.keys, l.cols);
+      }
+      touched.clear();
+    },
+    touch(key) {
+      const s = slots.get(key);
+      if (!s) return;
+      s.lane.mix.touch(key);
+      touched.add(s);
+    },
+    refresh(each) {
+      for (const s of touched) {
+        touched.delete(s);
+        if (slots.get(s.key) !== s) continue;
+        const out = s.lane.mix.probe(s.key, { v: new Array<number>(s.lane.axes).fill(0) });
+        s.cols.set(out.v, s.at);
+        each(s);
       }
     },
   };

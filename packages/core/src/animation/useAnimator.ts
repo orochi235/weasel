@@ -4,6 +4,10 @@ import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import { createLoop, createTweenLoop } from './loop';
 import { createCodec } from './engine/codec';
 import type { ActiveAnimation, AnimationContext, AnimationSeed } from './engine/context';
+import type { TargetState } from './target';
+import { decayAsPhysics } from './engine/decay';
+import { startHold } from './engine/holdAnimation';
+import { openHold } from './engine/holds';
 import { createTargetBook } from './engine/offsets';
 import { startOffsetPhysics } from './engine/offsetPhysics';
 import { startOffsetTween } from './engine/offsetTween';
@@ -11,9 +15,10 @@ import { startPhysics } from './engine/physicsAnimation';
 import { startTween } from './engine/tweenAnimation';
 import { createStagger } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
+import { stateOf } from './target';
 import { ColorOverrideRegistry } from './colorRegistry';
 import { AnimatorEventHub } from './observe';
-import type { Supervisor, SupervisorOptions, WatchCompletion } from './supervisor';
+import { supervisors, type WatchCompletion } from './supervisor';
 import type {
   AnimationHandle,
   AnimationInfo,
@@ -31,6 +36,7 @@ import type {
   UseAnimatorOptions,
   LiveAnimation,
 } from './types';
+import type { OpenTrackHold } from './timeline/trackHolds';
 import type { TimelineOptions } from './timeline/types';
 
 /** Create the animator for a canvas. One rAF loop drives every animation it
@@ -177,11 +183,20 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         : { type: 'cancel', animation: infoOf(a) });
     };
 
+    /** Whether a frame is between reading the codec and showing its targets. */
+    let framing = false;
+    const reread = (): void => codec.refresh((on, queued) => targets.reread(on as TargetState, queued));
+    const awake = (): boolean => {
+      for (const a of animations.current.values()) if (!a.idle) return true;
+      return false;
+    };
+
     const tickAll = (t: number): void => {
       const finished: ActiveAnimation[] = [];
       const threw: [ActiveAnimation, unknown][] = [];
       const frameDt = codecFrameT.current == null ? 0 : Math.max(0, t - codecFrameT.current);
       codecFrameT.current = t;
+      framing = true;
       codec.frame(frameDt * (globalPaused.current ? 0 : globalTimeScale.current));
       targets.settle();
       // A snapshot: an animation registered by this frame's ticks first ticks on the
@@ -189,7 +204,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       for (const anim of [...animations.current.values()]) {
         if (animations.current.get(anim.id) !== anim) continue;
         // `t` comes from the frame clock; `lastRealNow` is seeded at register()
-        // from `now()`. The two share a time origin in a browser, where the rAF
+        // from `now()` while the animator is idle. The two share a time origin in a browser, where the rAF
         // timestamp and `performance.now()` are both page-relative — but not
         // everywhere: jsdom starts them ~600ms apart, which made the first
         // frame's delta hugely negative and left `virtualNow` climbing back
@@ -237,6 +252,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       for (const cb of afterTicks.splice(0)) {
         try { cb(); } catch (err) { console.error('useAnimator: a staggered start threw', err); }
       }
+      reread();
+      framing = false;
       targets.show();
       // Notify every onTick subscriber AFTER the tick batch so they
       // see the latest `colorOverrides` / pose values. Errors in one
@@ -244,8 +261,13 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       for (const sub of tickSubscribers.current) {
         try { sub(); } catch (err) { console.error('useAnimator: onTick subscriber threw', err); }
       }
-      if (animations.current.size > 0) frameLoopRef.current.request();
-      else codecFrameT.current = null;
+      if (awake()) {
+        frameLoopRef.current.request();
+        return;
+      }
+      // As when the page was hidden: the time asleep is charged to nothing.
+      codecFrameT.current = null;
+      for (const anim of animations.current.values()) anim.lastRealNow = null;
     };
 
     const ensureLoop = (): void => {
@@ -273,10 +295,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       anim.paused = false;
       anim.timeScale = 1;
       anim.virtualNow = 0;
-      // Seed lastRealNow at registration so the first frame's realDt reflects
-      // the gap between register() and the first RAF callback: it places a
-      // tween's end, and gives spring/decay a non-zero first dt sample.
-      anim.lastRealNow = now();
+      // Seeded from the frame clock where it is running, as a voice cued now is: both then
+      // advance by the whole of their first frame. Idle, the first frame's realDt is the gap
+      // between register() and the first RAF callback.
+      anim.lastRealNow = codecFrameT.current ?? now();
       animations.current.set(anim.id, anim);
       if (hub.watched) hub.emit({ type: 'start', animation: infoOf(anim) });
       ensureLoop();
@@ -291,50 +313,19 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       };
     };
 
-    // Supervisor: a registered animation whose tick is a no-op (never
-    // finishes naturally) so loop/stagger can sit in the animator's id table
-    // and benefit from `cancel`/`cancelKey`/`isActive`. The owning composite
-    // (loop/stagger) installs an onCancel to actually tear down its children.
-    const createSupervisor = ({ kind, cancelKey, label }: SupervisorOptions): Supervisor => {
-      const id = nextId.current++;
-      let onCancelCb: (() => void) | undefined;
-      let onRateCb: ((paused: boolean, timeScale: number) => void) | undefined;
-      let onFrameCb: ((virtualNow: number) => void) | undefined;
-      const base = register({
-        id,
-        kind,
-        cancelKey,
-        label,
-        // tick is a no-op: the supervisor only ends when the owner calls
-        // `cancel()` (either via animator.cancel, animator.cancelKey, or the
-        // composite's natural-completion path which forwards to `cancel`).
-        tick: (virtualNow) => {
-          if (onFrameCb) afterTicks.push(() => onFrameCb?.(virtualNow));
-          return false;
-        },
-        onCancel: () => onCancelCb?.(),
-        onRate: (paused, timeScale) => onRateCb?.(paused, timeScale),
-      });
-      return {
-        id: base.id,
-        cancel: base.cancel,
-        pause: base.pause,
-        resume: base.resume,
-        setTimeScale: base.setTimeScale,
-        timeScale: base.timeScale,
-        isPaused: base.isPaused,
-        setOnCancel: (cb) => { onCancelCb = cb; },
-        setOnRate: (cb) => { onRateCb = cb; },
-        setOnFrame: (cb) => { onFrameCb = cb; },
-        finish: () => {
-          if (!animations.current.has(id)) return;
-          reportEnd(id);
-          animations.current.delete(id);
-          fireCompletion(id);
-        },
-        cancelKey,
-      };
+    const finish = (id: number): void => {
+      if (!animations.current.has(id)) return;
+      reportEnd(id);
+      animations.current.delete(id);
+      fireCompletion(id);
     };
+
+    const createSupervisor = supervisors({
+      nextId: () => nextId.current++,
+      register,
+      finish,
+      afterTicks: (cb) => { afterTicks.push(cb); },
+    });
 
     const ctx: AnimationContext = {
       codec,
@@ -344,6 +335,13 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       register,
       has: (id) => animations.current.has(id),
       reportEnd,
+      finish,
+      touch: (target, at) => {
+        codec.touch(target);
+        if (framing && !at) return;
+        reread();
+        frameLoopRef.current.request();
+      },
       tripwire,
       interrupt: (key, by) => cancelByKey(key, by as ActiveAnimation),
       holder: (key, target) => {
@@ -364,37 +362,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const spring = <T,>(o: SpringOptions<T> | TargetSpringOptions<T>): AnimationHandle => physics<T>(o, 'spring');
 
-    const decay = <T,>(o: DecayOptions<T> | TargetDecayOptions<T>): AnimationHandle => {
-      const friction = o.friction ?? 0.95;
-      // Per-second friction v(t) = v0 * friction^t corresponds to
-      // m*dv/dt = -c*v with c = -ln(friction), m = 1, k = 0.
-      const damping = -Math.log(friction);
-      if (o.target) {
-        return physics<T>({
-          target: o.target, from: o.from, to: null, velocity: o.velocity,
-          stiffness: 0, damping, mass: 1, restThreshold: o.threshold ?? 0.5,
-          onTick: o.onTick, onDone: o.onDone, cancelKey: o.cancelKey, interrupt: o.interrupt, label: o.label,
-        }, 'decay');
-      }
-      return physics<T>({
-        from: o.from,
-        to: null,
-        velocity: o.velocity,
-        stiffness: 0,
-        damping,
-        mass: 1,
-        restThreshold: o.threshold ?? 0.5,
-        add: o.add,
-        // DecayOptions doesn't carry subtract; derive from add+scale.
-        subtract: (a, b) => o.add(a, o.scale(b, -1)),
-        scale: o.scale,
-        magnitude: o.magnitude,
-        onTick: o.onTick,
-        onDone: o.onDone,
-        cancelKey: o.cancelKey,
-        label: o.label,
-      }, 'decay');
-    };
+    const decay = <T,>(o: DecayOptions<T> | TargetDecayOptions<T>): AnimationHandle =>
+      physics<T>(decayAsPhysics(o), 'decay');
 
     const cancelAll = (): void => {
       const retired: ActiveAnimation[] = [];
@@ -414,6 +383,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       spring,
       decay,
       physics,
+      hold: (o) => startHold(ctx, o),
       cancel: (handle) => retire(handle.id),
       cancelKey: (key) => cancelByKey(key),
       cancelAll,
@@ -458,6 +428,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           const a = animations.current.get(id);
           return a && infoOf(a);
         };
+        const hold: OpenTrackHold = (target, value, weight) =>
+          openHold(ctx, { target: stateOf(target), value, weight });
         return createTimeline(register, id, o, {
           get watched() { return hub.watched; },
           fire: (track, path, event, lateBy) => {
@@ -468,7 +440,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             const animation = info();
             if (animation) hub.emit({ type: 'lap', animation, lap });
           },
-        });
+        }, hold);
       },
       colorOverrides: colorOverrides.current,
       onTick: (cb) => {

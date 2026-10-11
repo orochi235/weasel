@@ -27,6 +27,15 @@ export interface PathStart {
   /** As {@link TweenStart.on}. */
   on?: unknown;
 }
+export interface HoldStart {
+  id: number; axes: number;
+  /** The subject it stands in for. Every hold on one subject is an alternative to the others. */
+  on: unknown;
+  /** The voice's axes now. Asked every frame, and again after a `touch`. */
+  at(): number[];
+  /** Its share among the subject's holds, 0 to 1. Asked as `at` is. */
+  weight(): number;
+}
 /** A voice's own value and velocity, apart from any other voice on its subject. */
 export interface Own { value: number[]; velocity: number[] }
 export interface SpringReader extends Reader {
@@ -39,6 +48,13 @@ export interface Codec {
   tween(s: TweenStart): Reader;
   spring(s: SpringStart): SpringReader;
   path(s: PathStart): Reader;
+  /** A voice with no clock: it reads `at` for as long as it is cued. */
+  hold(s: HoldStart): Reader;
+  /** Says what a voice on subject `on` reads from outside has changed since the last `frame`. */
+  touch(on: unknown): void;
+  /** Reads each touched subject again without moving the clock. `reread` is told the subject
+   *  and the sum of its voices that reading left out: tweens waiting for the next `frame`. */
+  refresh(reread: (on: unknown, queued: number[]) => void): void;
   retarget(id: number, to: number[] | null): void;
   /** Starts spring `id` over from `from` at `velocity`, toward `to` or coasting. */
   recue(id: number, from: number[], velocity: number[], to: number[] | null): void;
@@ -54,6 +70,9 @@ export interface Codec {
   voiceCount(): number;
 }
 
+/** The one locus every hold is cued into, so holds on a subject fold through the channel's lerp. */
+const HOLD = 'hold';
+
 /** What the codec calls on a motion patch: a tween has no `push`, a glide no `to`. */
 interface Moves {
   to?(key: unknown, target: number[], at?: number): void;
@@ -62,7 +81,7 @@ interface Moves {
 }
 
 interface Voice {
-  kind: 'tween' | 'spring' | 'path';
+  kind: 'tween' | 'spring' | 'path' | 'hold';
   slot: Slot;
   /** `handle` and `patch` are absent while a tween is `queued`, and a path has no `patch`. */
   handle: Handle<unknown>;
@@ -85,6 +104,7 @@ export function createCodec(): Codec {
   // Tweens are cued together at the next frame, not one by one as they start: a burst of starts then
   // keeps the caller's objects together rather than each a voice apart, which the frame loop reads.
   const queue: Voice[] = [];
+  const holds = new Set<Voice>();
   let time = 0;
 
   // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
@@ -127,6 +147,7 @@ export function createCodec(): Codec {
     if (!v) return;
     if (v.queued) v.queued = undefined;
     else v.handle.fade({ over: 0 });
+    holds.delete(v);
     lanes.leave(v.slot);
     voices.delete(id);
   }
@@ -145,6 +166,8 @@ export function createCodec(): Codec {
         if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
       }
       queue.length = 0;
+      // blits keeps a patch's answer while its clock stands still, and a hold's can change anyway.
+      for (const v of holds) v.slot.lane.mix.touch(v.slot.key);
       time += dtMs;
       lanes.frame(time);
     },
@@ -188,6 +211,33 @@ export function createCodec(): Codec {
       voices.set(s.id, v);
       return slot;
     },
+    hold(s) {
+      const zeros = new Array<number>(s.axes).fill(0);
+      const slot = lanes.join(s.axes, s.on, zeros);
+      const v = { kind: 'hold', slot, from: zeros } as Voice;
+      const patch = fnPatch<unknown, Out>(
+        1,
+        () => {
+          v.last = s.at();
+          return { v: v.last };
+        },
+        { writes: ['v'] },
+      );
+      v.handle = slot.lane.mix.cue({ patch, subjects: [slot.key], loop: true, locus: HOLD, weight: () => s.weight() });
+      voices.set(s.id, v);
+      holds.add(v);
+      return slot;
+    },
+    touch: (on) => lanes.touch(on),
+    refresh(reread) {
+      lanes.refresh((slot) => {
+        const queued = new Array<number>(slot.lane.axes).fill(0);
+        for (const v of queue) {
+          if (v.queued && v.slot === slot) v.queued.from.forEach((x, i) => { queued[i] += x; });
+        }
+        reread(slot.key, queued);
+      });
+    },
     retarget(id, to) {
       const v = get(id);
       if (v.kind !== 'spring') throw new Error(`codec: subject ${id} is a ${v.kind}; ${v.kind}s are not retargeted`);
@@ -214,6 +264,7 @@ export function createCodec(): Codec {
     },
     rate(id, rate) {
       const v = get(id);
+      if (v.kind === 'hold') return;
       if (v.queued) v.queuedRate = rate;
       else v.handle.rate = rate;
     },
@@ -223,7 +274,7 @@ export function createCodec(): Codec {
       const v = voices.get(id);
       if (!v) return undefined;
       if (v.kind === 'spring') return current(v);
-      if (v.kind === 'path') return { value: v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
+      if (v.kind === 'path' || v.kind === 'hold') return { value: v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
       return (!v.queued && v.patch.read(v.slot.key))
         || { value: v.from, velocity: new Array<number>(v.from.length).fill(0) };
     },
