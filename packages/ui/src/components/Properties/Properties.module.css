@@ -95,13 +95,6 @@
   align-self: var(--wzl-prop-panel-actions-align, center);
 }
 
-/* A hidden twisty leaves the flow, and these are what it is placed against. */
-.panelHeader,
-.subpanelTitle,
-.group {
-  position: relative;
-}
-
 /* The twisty's target is taller than a title's line; it overhangs the line
    rather than growing the header, which would read as space under the title. */
 .foldTwisty {
@@ -109,15 +102,10 @@
 }
 
 /* Hidden until the keyboard reaches it: still focusable, so `twisty="folded"`
-   leaves a way to fold that is not the pointer. */
+   leaves a way to fold that is not the pointer. It keeps its room while hidden,
+   so the title is where it will be once the twisty shows. */
 .foldTwistyQuiet:not(:focus-visible) {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  min-inline-size: 0;
-  min-block-size: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
+  opacity: 0;
 }
 
 .foldTitle {
