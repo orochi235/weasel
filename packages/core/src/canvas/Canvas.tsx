@@ -57,6 +57,7 @@ import {
 } from 'core/layers/render';
 import { viewToMat3, cullDrawCommands, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import { useCanvasRenderer, useRedrawOnRestore } from './useCanvasRenderer';
+import { useSceneLayerList } from './useSceneLayerList';
 import { getProgramSource, programSourceRegistry } from '../renderer/shaders/registerProgram';
 import {
   type SelectionApi,
@@ -1220,6 +1221,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     };
   }, [backgroundFill]);
 
+  const { key: sceneLayersKey, sync: syncSceneLayers } = useSceneLayerList(adapter);
   const layers = useMemo<RenderLayer<unknown>[]>(() => {
     const standardLayers: Partial<
       Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>
@@ -1283,8 +1285,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       placeToolOverlays(out, standardLayers.selectionOverlay, tools.getActiveOverlays);
     }
     return out;
+    // `sceneLayersKey` stands for `adapter.getLayers()`, which `buildSceneLayers` reads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layersMap, adapter, effectiveBoundsOf, debugSink, tools, backgroundLayer,
-      decorationLayer, geometry, previewExtraRef]);
+      decorationLayer, geometry, previewExtraRef, sceneLayersKey]);
 
   const viewRegistryVersion = useSyncExternalStore(
     useCallback((cb: () => void) => viewRegistry?.subscribe(cb) ?? (() => {}), [viewRegistry]),
@@ -1372,7 +1376,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   const paint = useCallback((): boolean => {
     const c = paintTargetRef.current ?? ownCanvasRef.current;
-    if (!c) return false;
+    if (!c || syncSceneLayers()) return false;
     const rect = paintRectRef.current;
     const {
       layers: paintLayers, width: w, height: h, debugSink: sink, frameStats,
@@ -1418,7 +1422,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (sink && spans) sink.recordFrame(frameStatsOf(spans, renderer.lastFrameStats(), performance.now() - paintT0));
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
-  }, [contentVersionRef, lease, paintInputsRef, paintRectRef, paintTargetRef]);
+  }, [contentVersionRef, lease, paintInputsRef, paintRectRef, paintTargetRef, syncSceneLayers]);
   useInsertionEffect(() => {
     paintRef.current = paint;
   });
