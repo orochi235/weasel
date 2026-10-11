@@ -538,7 +538,9 @@ export interface Dispatcher {
    * Subscribe to in-flight state changes. The callback fires after every
    * mutation that affects what the preview-ghost / dispatcher-overlay
    * layers read — handle start, every `onMove` pump, end, cancel,
-   * cancel-all. Consumers re-read `getInFlightHandles()` and re-render.
+   * cancel-all — and after any other input handled while a gesture is in
+   * flight. Input that arrives with nothing in flight and starts nothing
+   * does not fire it. Consumers re-read `getInFlightHandles()` and re-render.
    *
    * Returns an unsubscribe function.
    */
@@ -551,9 +553,9 @@ export interface Dispatcher {
    * a `useReducer` force-rerender.
    *
    * Starts at 0 and only ever increases. Two reads returning the same number
-   * mean nothing pumped in between; it does **not** guarantee that a bump
-   * changed anything observable (a pump that matched no binding still
-   * counts — see `subscribe`).
+   * mean no gesture was in flight in between; it does **not** guarantee that
+   * a bump changed anything observable (input that matched no binding still
+   * counts while a gesture is in flight — see `subscribe`).
    */
   getVersion(): number;
 
@@ -1560,21 +1562,25 @@ export function createDispatcher(opts?: {
     return { kind: lastHandle.kind ?? null, id: lastId };
   }
 
-  // Wrap handleInput + cancelAll to notify after every invocation. Done at
-  // the boundary (not inside the match loop) so any mutation — start, pump,
-  // end, no-op — fires exactly one notify per pump tick.
+  // Wrap handleInput + cancelAll to notify once per invocation that found or
+  // left a gesture in flight. Done at the boundary (not inside the match
+  // loop) so a start, a pump, and an end each fire exactly one notify. An
+  // event with nothing in flight on either side changed nothing a subscriber
+  // reads, and hover sends one per mouse move.
   const handleInputWithNotify: typeof handleInput = (event, ctx) => {
+    const before = inFlightHandles.size;
     try {
       return handleInput(event, ctx);
     } finally {
-      notify();
+      if (before > 0 || inFlightHandles.size > 0) notify();
     }
   };
   const cancelAllWithNotify: typeof cancelAll = (reason) => {
+    const before = inFlightHandles.size;
     try {
       cancelAll(reason);
     } finally {
-      notify();
+      if (before > 0) notify();
     }
   };
 

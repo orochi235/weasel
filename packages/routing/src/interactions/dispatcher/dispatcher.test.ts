@@ -451,12 +451,13 @@ describe('createDispatcher', () => {
         expect(dispatcher.getVersion()).toBe(2);
       });
 
-      it('bumps once per pump even when the event matches nothing', () => {
+      it('bumps once per pump mid-gesture even when the event matches nothing', () => {
         // Documented contract: it fires on the pump, not on a diff.
-        const dispatcher = createDispatcher();
-        const ctx = makeCtx({ actions: makeRegistry([]) });
+        const { dispatcher, ctx } = dragSetup();
+        dispatcher.handleInput(pointer('pointerdown'), ctx);
+        const before = dispatcher.getVersion();
         expect(dispatcher.handleInput(keyAEvent, ctx)).toBe('unhandled');
-        expect(dispatcher.getVersion()).toBe(1);
+        expect(dispatcher.getVersion()).toBe(before + 1);
       });
     });
 
