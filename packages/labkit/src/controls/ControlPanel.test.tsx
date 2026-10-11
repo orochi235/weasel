@@ -215,7 +215,7 @@ describe('<ControlPanel> schema', () => {
     expect(screen.getByLabelText('Tint')).toHaveValue('#123456');
   });
 
-  it('hangs a described leaf\u2019s description off a help affordance, and leaves an undescribed leaf bare', () => {
+  it('gives a described leaf\u2019s description to its control beside a help affordance, and leaves an undescribed leaf bare', () => {
     const schema = resolveConfigSchema(
       f.schema({
         showGrid: f.boolean(true).describe('Draw the alignment grid.'),
@@ -226,8 +226,11 @@ describe('<ControlPanel> schema', () => {
     render(
       <ControlPanel schema={schema} config={{ showGrid: true, snap: true }} setConfig={vi.fn()} />,
     );
-    expect(screen.getByRole('button', { name: 'About Show grid' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /^About / })).toHaveLength(1);
+    expect(screen.getAllByText('ⓘ')).toHaveLength(1);
+    expect(screen.getByRole('checkbox', { name: 'Show grid' })).toHaveAccessibleDescription(
+      'Draw the alignment grid.',
+    );
+    expect(screen.getByRole('checkbox', { name: 'Snap' })).not.toHaveAttribute('aria-describedby');
   });
 });
 
@@ -773,10 +776,14 @@ describe('<ControlPanel> auto', () => {
         setConfig={() => {}}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'About Size' })).toBeNull();
+    const help = screen.getAllByText('ⓘ');
+    expect(help).toHaveLength(1);
     fireEvent.keyDown(document.body, { key: 'Tab' });
-    act(() => screen.getByRole('button', { name: 'About Gap' }).focus());
+    act(() => help[0]?.focus());
     expect(screen.getByRole('tooltip')).toHaveTextContent(/^auto 13\.3333$/);
+    const described = document.querySelectorAll('[aria-describedby]:not([aria-hidden])');
+    expect(described).toHaveLength(1);
+    expect(described[0]).toHaveAccessibleDescription('auto 13.3333');
   });
 
   it('writes the sentinel when the dot turns a row auto', async () => {

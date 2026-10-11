@@ -85,7 +85,7 @@ describe('PropertyRow', () => {
         <input type="text" defaultValue="x" />
       </PropertyRow>,
     );
-    expect(screen.getByRole('button', { name: 'About Opacity' })).toBeInTheDocument();
+    expect(screen.getByText('ⓘ')).toBeInTheDocument();
   });
 
   it('ends the help tooltip with what the row reads when auto, and shows it alone with no description', () => {
@@ -95,7 +95,7 @@ describe('PropertyRow', () => {
       </PropertyRow>,
     );
     fireEvent.keyDown(document.body, { key: 'Tab' });
-    act(() => screen.getByRole('button', { name: 'About Opacity' }).focus());
+    act(() => screen.getByText('ⓘ').focus());
     const tip = screen.getByRole('tooltip');
     expect(tip).toHaveTextContent('How see-through it is.auto 0.5');
     expect(tip.lastElementChild).toHaveTextContent(/^auto 0\.5$/);
@@ -104,7 +104,8 @@ describe('PropertyRow', () => {
         <input type="text" defaultValue="x" />
       </PropertyRow>,
     );
-    expect(screen.getByRole('button', { name: 'About Opacity' })).toBeInTheDocument();
+    expect(screen.getByText('ⓘ')).toBeInTheDocument();
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription('auto 0.5');
   });
 
   it('renders no help affordance for an empty or absent description', () => {
@@ -122,18 +123,68 @@ describe('PropertyRow', () => {
     expect(screen.queryByRole('button', { name: 'About Opacity' })).toBeNull();
   });
 
-  it('shows the description in a tooltip on keyboard focus', () => {
+  it('gives the description to the row\'s control, and takes the ⓘ out of the tab order', () => {
     render(
       <PropertyRow label="Opacity" description="How see-through the shape is.">
         <input type="text" defaultValue="x" />
       </PropertyRow>,
     );
+    const control = screen.getByRole('textbox', { name: 'Opacity' });
+    expect(control).toHaveAccessibleDescription('How see-through the shape is.');
+    expect(screen.queryByRole('button', { name: 'About Opacity' })).toBeNull();
+    const help = screen.getByText('ⓘ');
+    expect(help).not.toHaveAttribute('tabindex', '0');
+    expect(help.tagName).toBe('SPAN');
+    expect(help).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('describes only the first control of a row that holds several', () => {
+    render(
+      <PropertyRow group label="Ends" description="Where it starts and stops.">
+        <input type="text" aria-label="From" defaultValue="0" />
+        <input type="text" aria-label="To" defaultValue="1" />
+      </PropertyRow>,
+    );
+    expect(screen.getByRole('textbox', { name: 'From' })).toHaveAccessibleDescription('Where it starts and stops.');
+    expect(screen.getByRole('textbox', { name: 'To' })).not.toHaveAttribute('aria-describedby');
+  });
+
+  it('keeps the ⓘ a tab stop in a row with no control to carry the description', () => {
+    render(
+      <PropertyRow label="Opacity" description="How see-through the shape is.">
+        <span>0.5</span>
+      </PropertyRow>,
+    );
     const help = screen.getByRole('button', { name: 'About Opacity' });
-    expect(screen.queryByRole('tooltip')).toBeNull();
-    // RAC only opens a tooltip under keyboard modality.
-    fireEvent.keyDown(document.body, { key: 'Tab' });
-    act(() => help.focus());
-    expect(screen.getByRole('tooltip')).toHaveTextContent('How see-through the shape is.');
+    expect(help).not.toHaveAttribute('aria-hidden');
+    expect(help).not.toHaveAttribute('tabindex', '-1');
+  });
+
+  it('opens the tooltip once focus has rested on the row\'s control, and closes it when focus leaves the row', () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <>
+          <PropertyRow label="Opacity" description="How see-through the shape is.">
+            <input type="text" defaultValue="x" />
+          </PropertyRow>
+          <button type="button">Elsewhere</button>
+        </>,
+      );
+      act(() => screen.getByRole('textbox', { name: 'Opacity' }).focus());
+      expect(screen.queryByRole('tooltip')).toBeNull();
+      act(() => { vi.advanceTimersByTime(600); });
+      expect(screen.getByRole('tooltip')).toHaveTextContent('How see-through the shape is.');
+      act(() => screen.getByRole('button', { name: 'Elsewhere' }).focus());
+      expect(screen.queryByRole('tooltip')).toBeNull();
+      // A press in the row brought this focus, so it opens nothing.
+      fireEvent.pointerDown(screen.getByRole('textbox', { name: 'Opacity' }));
+      act(() => screen.getByRole('textbox', { name: 'Opacity' }).focus());
+      act(() => { vi.advanceTimersByTime(600); });
+      expect(screen.queryByRole('tooltip')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('does not actuate the row control when the help affordance is clicked', () => {
@@ -141,7 +192,7 @@ describe('PropertyRow', () => {
     render(
       <PropertyField kind="boolean" label="Visible" value={false} onChange={onChange} description="Show it." />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'About Visible' }));
+    fireEvent.click(screen.getByText('ⓘ'));
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.getByRole('checkbox')).not.toBeChecked();
   });

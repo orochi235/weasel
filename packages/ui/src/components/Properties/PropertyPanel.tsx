@@ -10,10 +10,12 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Disclosure } from '../Disclosure';
 import { type StanceProps, useStance } from '../stance';
 import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
 import { PropertyHelp } from './PropertyHelp';
+import { useRowHelp } from './rowHelp';
 import s from './Properties.module.css';
 
 /**
@@ -327,6 +329,8 @@ export function PropertyRow({
   const rowRef = useRef<HTMLElement | null>(null);
   const labelRef = useRef<HTMLSpanElement | null>(null);
   const multiline = useMultiline(rowRef, labelRef, resolved === 'inline');
+  const hasHelp = Boolean(description) || autoValue != null;
+  const help = useRowHelp(rowRef, labelRef, hasHelp);
   const head = (
     <span className={s.rowLabel} ref={labelRef}>
       {onAutoChange ? (
@@ -335,14 +339,37 @@ export function PropertyRow({
         label
       )}
       {hint != null && <span className={s.rowHint}>{hint}</span>}
-      {description || autoValue != null ? (
-        <PropertyHelp label={label} description={description} autoValue={autoValue} />
+      {hasHelp ? (
+        <>
+          <PropertyHelp
+            label={label}
+            description={description}
+            autoValue={autoValue}
+            open={help.open}
+            onOpenChange={help.setOpen}
+            carried={help.carried}
+          />
+          {/* In the page's body: inside the row it would be part of the <label>'s text, and so of the control's name. */}
+          {typeof document !== 'undefined' &&
+            createPortal(
+              <span id={help.id} hidden>
+                {description}
+                {autoValue != null && <> auto {autoValue}</>}
+              </span>,
+              document.body,
+            )}
+        </>
       ) : null}
       {readout != null && !trailing && <em className={s.readout}>{readout}</em>}
     </span>
   );
   const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
-  const multi = multiline ? { 'data-multiline': '' } : {};
+  const multi = {
+    ...(multiline ? { 'data-multiline': '' } : {}),
+    ...(hasHelp
+      ? { onFocus: help.onFocus, onBlur: help.onBlur, onPointerDown: help.onPointerDown, onPointerUp: help.onPointerUp }
+      : {}),
+  };
   return group ? (
     <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
       {head}

@@ -98,7 +98,7 @@ describe('PrefsForm', () => {
     expect(screen.getByRole('slider', { name: 'Opacity' })).toBeTruthy();
     // Select trigger's accessible name = "<selected label> <aria-label>".
     expect(screen.getByRole('button', { name: 'Dark Theme' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'About Theme' })).toBeTruthy(); // description affordance
+    expect(screen.getByRole('button', { name: /Theme/ })).toHaveAccessibleDescription(/\S/); // the description, on the control
     expect(screen.getByRole('textbox', { name: 'Author' })).toBeTruthy();
   });
 
