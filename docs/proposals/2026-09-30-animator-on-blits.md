@@ -152,8 +152,10 @@ are built: blits' stepping and springs, pose overrides as a mix, and values comp
      recorded once every node has stopped.
    - An adapter with no `poseTarget`, a pose with no axes, and a container under
      `cascadeContainerPose` keep the write-a-frame path.
-   - Something else writing the node's pose mid-flight (an undo) moves the committed pose under
-     the running offsets, which then decay onto it. Nothing detects the write.
+   - Something else writing the node's pose mid-flight (an undo) wins: at the next frame the
+     scene's target stops its animations without committing (`target.stop({ commit: false })`),
+     so the node shows what was written. Only `scenePoseTarget` watches for it; a target made
+     with `createPoseTarget` or `createTarget` calls `stop` itself.
 3. **Color and camera.** Built 2026-10-11.
    - **Camera.** `useViewAnimationOn` makes one target for its view and exposes it as
      `viewTarget`. The committed view lives in the hook while anything is in flight, and the

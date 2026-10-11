@@ -87,6 +87,10 @@ describe('tweenPose on a scene', () => {
     frame(50);
     act(() => { scene.undo(); });
     expect(scene.get(a)!.pose.x).toBe(0);
+    // The writer wins: the next frame shows what it wrote, with nothing left to travel.
+    frame(60);
+    expect(shown().x).toBe(0);
+    expect(animator().isActive(`pose:${a}`)).toBe(false);
     frame(100);
     frame(116);
     expect(shown().x).toBe(0);

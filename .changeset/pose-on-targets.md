@@ -9,7 +9,8 @@ Two moves on one node now combine. `tweenPose`, `springPose`, `animateOnSetPose`
 - `tweenPose` and `springPose` write the destination to the scene as the move starts. The scene's pose is the destination for the whole move, and the node on screen travels there through `scene.overrides`. `setPose` is no longer called each frame, so the scene's version and history do not change per frame. Read the pose on screen with `effectivePose(scene, node)`.
 - A second `tweenPose` on a node no longer cancels the first. Both run under `pose:<id>` and add. `springPose` interrupts every move on its node and starts at their combined velocity.
 - Canceling a move leaves the scene at the pose the node was shown at, not at the destination.
-- A move undone mid-flight comes to rest on the undone pose. Until it rests, what is left of the move is added to that pose.
+- A move undone mid-flight ends there: at the next frame the node shows the undone pose and nothing is left running. The same goes for anything else that writes a node's pose while it is moving.
+- `target.stop({ commit? })` stops every animation on a target. By default each commits where it was; `commit: false` leaves the committed value as it stands.
 - `animateOnSetPose`: the scene takes each written pose at once. A second write to a node mid-glide bends the glide (or, with `spring`, carries its velocity) where it used to end the glide and snap.
 - `animateLifecycle`: the enter pose is shown and never written, and a node shrunk out is removed at the pose it had, so undoing the removal restores it whole.
 - Reflow glides: a timed retarget adds to the glide still running, and no longer restarts from the pose on screen. A `spring` retarget keeps the node's velocity.

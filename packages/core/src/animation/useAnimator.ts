@@ -146,7 +146,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const hub = new AnimatorEventHub();
     const codec = createCodec();
-    const targets = createTargetBook();
+    const targets = createTargetBook((s) => {
+      for (const a of [...animations.current.values()]) if (a.target === s) retire(a.id);
+    });
     const infoOf = (a: ActiveAnimation): AnimationInfo => {
       if (!a.info) {
         const info: { -readonly [K in keyof AnimationInfo]: AnimationInfo[K] } = { id: a.id, kind: a.kind };

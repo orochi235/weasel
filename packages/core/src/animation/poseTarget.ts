@@ -72,7 +72,12 @@ export function liveAxes<TPose>(
   return { count, angles, to: (p) => current().to(p), from: (a) => current().from(a) };
 }
 
-function build<TPose>(opts: PoseTargetOptions<TPose>, onRest?: () => void): Target<TPose> | null {
+function build<TPose>(
+  opts: PoseTargetOptions<TPose>,
+  onRest?: () => void,
+  /** Whether something else has written the committed pose since an animation last did. */
+  overwritten?: () => boolean,
+): Target<TPose> | null {
   const { overrides } = opts;
   const id = opts.id as NodeId;
   const axes = liveAxes(opts.descriptor, opts.get);
@@ -84,6 +89,8 @@ function build<TPose>(opts: PoseTargetOptions<TPose>, onRest?: () => void): Targ
     set: opts.set,
     axes,
     show(pose) {
+      // The writer wins: what was left to travel belonged to a pose that is no longer committed.
+      if (target.active && overwritten?.()) target.stop({ commit: false });
       if (target.active) {
         entry.pose = pose;
         // Installed once per run: an override laid over it since, a drag's, is not taken back.
@@ -151,23 +158,31 @@ export function scenePoseTarget<TPose>(
   if (!node) return undefined;
   // A node removed mid-flight keeps answering with the last pose it had.
   let last = documentPose(scene, node);
+  /** The node's pose as an animation last left it, or as it was when the first one started. */
+  let mine: TPose | undefined;
   const cache = made;
-  const target = build<TPose>({
+  let target: Target<TPose> | null = null;
+  target = build<TPose>({
     id,
     descriptor: descriptor ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>),
     overrides: scene.overrides,
     get() {
       const n = scene.get(nid);
       if (n) last = documentPose(scene, n);
+      if (n && !target?.active) mine = n.pose;
       return last;
     },
     set(pose) {
       const n = scene.get(nid);
-      if (!n || samePose(n.pose, pose)) return;
-      scene.untracked(() => scene.setPose(nid, pose));
+      if (!n) return;
+      if (!samePose(n.pose, pose)) scene.untracked(() => scene.setPose(nid, pose));
+      mine = scene.get(nid)?.pose;
     },
   }, () => {
     if (!scene.get(nid)) cache.delete(id);
+  }, () => {
+    const n = scene.get(nid);
+    return !!n && mine !== undefined && !samePose(n.pose, mine);
   });
   if (!target) return undefined;
   made.set(id, target as Target<unknown>);

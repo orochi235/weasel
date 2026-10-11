@@ -34,6 +34,7 @@ export function bump(s: TargetState, delta: readonly number[], sign: 1 | -1): vo
 
 /** Adds `delta` into the committed value. */
 export function absorb<T>(s: TargetState<T>, delta: readonly number[]): void {
+  if (s.discard) return;
   s.set(s.axes.from(plus(s.axes.to(s.get()), delta)));
 }
 
@@ -55,8 +56,8 @@ export interface TargetBook {
   readonly resting: boolean;
 }
 
-export function createTargetBook(): TargetBook {
-  const token = {};
+export function createTargetBook(stop: (s: TargetState) => void): TargetBook {
+  const token = { stop };
   const live = new Set<TargetState>();
   const rested = new Set<TargetState>();
   const publishes = new Set<() => void>();

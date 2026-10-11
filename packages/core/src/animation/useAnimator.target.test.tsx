@@ -476,3 +476,42 @@ describe('a cancelKey that does not interrupt', () => {
     expect(b.target.read()).toBeCloseTo(60, 6);
   });
 });
+
+describe('stopping a target', () => {
+  it('cancels everything moving it and commits where it was shown', () => {
+    const { animator, step } = setup();
+    const b = box(0);
+    act(() => {
+      animator.tween({ target: b.target, to: 100, ms: 1000, easing: linear });
+      animator.tween({ target: b.target, to: 40, ms: 1000, easing: linear });
+    });
+    step(0);
+    step(500);
+    const shown = b.target.read();
+    act(() => { b.target.stop(); });
+    expect(animator.live()).toHaveLength(0);
+    expect(b.target.active).toBe(false);
+    expect(b.committed).toBeCloseTo(shown, 6);
+  });
+
+  it('leaves the committed value as it stands when told not to commit', () => {
+    const { animator, step } = setup();
+    const b = box(0);
+    act(() => { animator.tween({ target: b.target, to: 100, ms: 1000, easing: linear }); });
+    step(0);
+    step(500);
+    b.committed = 7;
+    act(() => { b.target.stop({ commit: false }); });
+    expect(animator.live()).toHaveLength(0);
+    expect(b.committed).toBe(7);
+    expect(b.target.read()).toBe(7);
+    step(16);
+    expect(b.shown.at(-1)).toBe(7);
+  });
+
+  it('does nothing to a target at rest', () => {
+    const b = box(3);
+    b.target.stop();
+    expect(b.committed).toBe(3);
+  });
+});
