@@ -337,13 +337,6 @@ Priority tags:
   function from routing (order, capability gate, view filter) for the dispatcher and `overlays()`
   both, delete `scopedBindings()` or make it that function, and correct the taxonomy paragraph.
 
-- **(P3) Multitouch tap: two fingers resting for any length of time still end as a tap.**
-  `useGestureDispatcher` (`packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx`)
-  synthesizes `multitouchtap` when no finger moved more than 8 px; it has no upper bound on how long
-  the fingers were down, so a ten-second two-finger hold fires a two-finger-tap binding on release.
-  Needs a maximum duration; the value is the decision (single-finger long-press fires at 500 ms,
-  which is the natural ceiling).
-
 - **(P3) `useOngoingAction`: a control ended by the dispatcher keeps swallowing input.**
   `packages/routing/src/interactions/actions/useOngoingAction.ts` begins a UI-driven handle on the
   first `input()` and holds its control until `commit()` or `cancel()`. If the dispatcher ends that
@@ -2141,12 +2134,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `.focus()` after a render). When `focusId` leaves the tree while focus was inside it, focus should
   move to a row; which one (the next sibling, the previous row, the parent) is the decision.
 
-- **(P3) Timeline: omitted `transport` and `onModeChange` leave controls that do nothing.** With
-  neither prop given, the bar still draws Play, Loop, Rate, and a Graph switch wired to no-ops
-  (`packages/ui/src/components/Timeline/Timeline.tsx`), and `mode` has no state of its own, unlike
-  `selection` and `window`, which are "held internally otherwise". Options: hold `mode` internally
-  when `onModeChange` is absent, and draw the transport only when one is given (today `false` hides
-  it and `undefined` draws a dead one).
+- **(P3) Timeline: an omitted `transport` draws play controls that do nothing.** With no `transport`
+  prop the bar draws Play, Loop, and Rate wired to no-ops
+  (`packages/ui/src/components/Timeline/Timeline.tsx`); `false` hides the whole row. The row also
+  holds the time readout and the Graph switch, which both work without a transport, so the open
+  call is what an omitted `transport` draws: the readout and the switch alone, or nothing.
 
 - **(P3) Timeline: nothing dismisses the easing picker.** Clicking a segment opens the
   `EasingPicker` under the lanes and it stays until an edit renumbers the track's keys; selecting a

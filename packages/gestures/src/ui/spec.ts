@@ -211,8 +211,9 @@ export interface MultiTouchSpec {
 }
 
 /** Multi-touch tap gesture — fires when N fingers touch down then release
- *  together without movement past the tap threshold. Synthesized by the
- *  dispatcher from the underlying multitouch tracking. */
+ *  together without movement past the tap threshold, sooner than a long-press
+ *  would fire. Synthesized by the dispatcher from the underlying multitouch
+ *  tracking. */
 export interface MultiTouchTapSpec {
   kind: 'multiTouchTap';
   fingers: number;

@@ -663,6 +663,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
        *  a pinch about a still center moves every finger and no centroid. */
       at: Map<number, { x: number; y: number }>;
       moved: boolean;
+      /** `performance.now()` when the second finger landed. */
+      startedAt: number;
     } | null = null;
     const TAP_THRESHOLD_PX = 8;
 
@@ -1124,7 +1126,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         // we record the centroid; subsequent pointerdowns at higher finger
         // counts only bump the recorded peak fingers count.
         if (!multiTouchStart) {
-          multiTouchStart = { fingers: held.size, centroid: { ...centroid }, at: new Map(), moved: false };
+          multiTouchStart = {
+            fingers: held.size, centroid: { ...centroid }, at: new Map(), moved: false,
+            startedAt: performance.now(),
+          };
         } else {
           multiTouchStart.fingers = held.size;
         }
@@ -1424,7 +1429,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           );
           const dx = centroid.x - start.centroid.x;
           const dy = centroid.y - start.centroid.y;
-          if (!start.moved && Math.hypot(dx, dy) <= TAP_THRESHOLD_PX) {
+          // A hold as long as a long-press is not a tap, for two fingers as for one.
+          const brief = performance.now() - start.startedAt
+            < (longPressRef.current?.duration ?? LONG_PRESS_MS);
+          if (brief && !start.moved && Math.hypot(dx, dy) <= TAP_THRESHOLD_PX) {
             const tap: InputEvent = {
               kind: 'multitouchtap',
               fingers: start.fingers,

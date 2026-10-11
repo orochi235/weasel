@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
 import { useGestureDispatcher } from './useGestureDispatcher';
+import { LONG_PRESS_MS } from './longPressState';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActionsProvider, useAction, useActionsRegistry } from '../actions/ActionsProvider';
@@ -140,6 +141,36 @@ describe('a two-finger tap', () => {
     fire('pointerup', 2, 200);
     fire('pointerup', 1, 100);
     expect(log.filter((l) => l === 'tap')).toEqual(['tap']);
+  });
+
+  it('does not fire when the fingers rested as long as a long-press', () => {
+    vi.useFakeTimers();
+    try {
+      const { log, fire } = mount();
+      fire('pointerdown', 1, 100);
+      fire('pointerdown', 2, 200);
+      vi.advanceTimersByTime(LONG_PRESS_MS);
+      fire('pointerup', 2, 200);
+      fire('pointerup', 1, 100);
+      expect(log).not.toContain('tap');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('fires when the fingers lift just short of a long-press', () => {
+    vi.useFakeTimers();
+    try {
+      const { log, fire } = mount();
+      fire('pointerdown', 1, 100);
+      fire('pointerdown', 2, 200);
+      vi.advanceTimersByTime(LONG_PRESS_MS - 1);
+      fire('pointerup', 2, 200);
+      fire('pointerup', 1, 100);
+      expect(log.filter((l) => l === 'tap')).toEqual(['tap']);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('does not fire after a pinch that kept its center still', () => {
