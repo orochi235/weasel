@@ -21,12 +21,21 @@ export function createIndexedDbAdapter({
   store = 'records',
 }: IndexedDbAdapterOptions = {}): StorageAdapter {
   let opened: Promise<IDBDatabase> | null = null;
+  let connection: IDBDatabase | null = null;
+  const forget = (db: IDBDatabase): void => {
+    if (connection !== db) return;
+    connection = null;
+    opened = null;
+  };
   const open = (): Promise<IDBDatabase> => {
-    opened ??= new Promise((resolve, reject) => {
+    if (opened) return opened;
+    const mine = new Promise<IDBDatabase>((resolve, reject) => {
       if (typeof indexedDB === 'undefined') {
         reject(new Error('[storage] IndexedDB is not available here'));
         return;
       }
+      // No `onblocked`: a blocked open is still pending, and lands once the
+      // connections in its way close.
       const request = indexedDB.open(database, 1);
       request.onupgradeneeded = () => {
         if (!request.result.objectStoreNames.contains(store)) {
@@ -36,28 +45,52 @@ export function createIndexedDbAdapter({
       request.onsuccess = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(store)) {
+          db.close();
           reject(new Error(`[storage] IndexedDB database "${database}" has no store "${store}"`));
           return;
         }
+        connection = db;
+        // The browser closing the connection: site data cleared, or evicted.
+        db.onclose = () => forget(db);
+        // Another connection wants to delete or upgrade the database, and
+        // waits for as long as this one stays open.
+        db.onversionchange = () => {
+          db.close();
+          forget(db);
+        };
         resolve(db);
       };
       request.onerror = () => reject(request.error);
-      request.onblocked = () => reject(new Error(`[storage] IndexedDB "${database}" is blocked`));
     });
-    return opened;
+    opened = mine;
+    // A failed open is not kept, so the next call tries again.
+    mine.catch(() => {
+      if (opened === mine) opened = null;
+    });
+    return mine;
   };
 
-  const run = <T>(mode: IDBTransactionMode, body: (s: IDBObjectStore) => () => T): Promise<T> =>
-    open().then(
-      (db) =>
-        new Promise<T>((resolve, reject) => {
-          const tx = db.transaction(store, mode);
-          const result = body(tx.objectStore(store));
-          tx.oncomplete = () => resolve(result());
-          tx.onerror = () => reject(tx.error);
-          tx.onabort = () => reject(tx.error);
-        }),
-    );
+  const run = async <T>(
+    mode: IDBTransactionMode,
+    body: (s: IDBObjectStore) => () => T,
+  ): Promise<T> => {
+    let db = await open();
+    let tx: IDBTransaction;
+    try {
+      tx = db.transaction(store, mode);
+    } catch {
+      // A connection that closed without saying so. One more, on a new one.
+      forget(db);
+      db = await open();
+      tx = db.transaction(store, mode);
+    }
+    return new Promise<T>((resolve, reject) => {
+      const result = body(tx.objectStore(store));
+      tx.oncomplete = () => resolve(result());
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  };
 
   let channel: NodeChannel | null = null;
   const getChannel = (): NodeChannel | null => {
