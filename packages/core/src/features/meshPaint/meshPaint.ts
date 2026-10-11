@@ -22,7 +22,7 @@ import { resolveColor, rgbaToHex } from '../../renderer/math/color';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, FillStyle, GradientUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../../core/fillInPoseFrame';
-import { bakeMesh, meshBounds, type BakedMesh, type MeshBox } from './bake';
+import { bakeMesh, meshBounds, type MeshBox } from './bake';
 import { MeshBakeCache, meshBakeSize } from './bakeCache';
 import { isValidPatch, type MeshPatch, type MeshPoint } from './surface';
 import { MESH_FRAG_SRC, MESH_PROGRAM_ID, MESH_VERT_SRC } from './meshShader';
@@ -189,16 +189,22 @@ function mapPatches(mesh: MeshGradientFill, move: (p: MeshPoint) => MeshPoint): 
 
 interface CachedBake {
   texture: WebGLTexture;
-  baked: BakedMesh;
+  /** Where the mesh being bound sits in paint space. The texels are shared by
+   *  every pose-frame copy of one paint; the box is each copy's own. */
+  box: MeshBox;
 }
 
-const CACHES = new WeakMap<PaintResources, MeshBakeCache<CachedBake>>();
+/** The paint a pose-frame copy was made from. A copy is rebuilt whenever its
+ *  node's pose changes, and bakes the same texels as its source. */
+const BAKE_SOURCE = new WeakMap<object, object>();
 
-function cacheFor(ctx: PaintBindContext): MeshBakeCache<CachedBake> {
+const CACHES = new WeakMap<PaintResources, MeshBakeCache<WebGLTexture>>();
+
+function cacheFor(ctx: PaintBindContext): MeshBakeCache<WebGLTexture> {
   let cache = CACHES.get(ctx.resources);
   if (!cache) {
     const gl = ctx.gl;
-    const made = new MeshBakeCache<CachedBake>((entry) => gl.deleteTexture(entry.texture));
+    const made = new MeshBakeCache<WebGLTexture>((texture) => gl.deleteTexture(texture));
     ctx.resources.onRelease(() => {
       made.clear();
       CACHES.delete(ctx.resources);
@@ -222,8 +228,9 @@ function bakeFor(ctx: PaintBindContext, mesh: MeshGradientFill): CachedBake | nu
   const size = meshBakeSize(devicePixelsOf(ctx, mesh, box), ctx.maxTextureSize);
 
   const cache = cacheFor(ctx);
-  const hit = cache.get(mesh, size);
-  if (hit) return hit;
+  const key = BAKE_SOURCE.get(mesh) ?? mesh;
+  const hit = cache.get(key, size);
+  if (hit) return { texture: hit, box };
 
   const baked = bakeMesh(mesh.patches, mesh.interpolate ?? 'rgb', size);
   if (!baked) return null;
@@ -243,9 +250,8 @@ function bakeFor(ctx: PaintBindContext, mesh: MeshGradientFill): CachedBake | nu
   );
   gl.bindTexture(gl.TEXTURE_2D, null);
 
-  const entry = { texture, baked };
-  cache.set(mesh, size, entry);
-  return entry;
+  cache.set(key, size, texture);
+  return { texture, box };
 }
 
 function bindMesh(ctx: PaintBindContext, fill: FillStyle): PaintProgram | null {
@@ -270,7 +276,7 @@ function bindMesh(ctx: PaintBindContext, fill: FillStyle): PaintProgram | null {
   gl.bindTexture(gl.TEXTURE_2D, entry.texture);
   gl.uniform1i(program.uniform('u_sampler')!, 0);
 
-  const { box } = entry.baked;
+  const { box } = entry;
   gl.uniform2f(program.uniform('u_meshOrigin')!, box.x, box.y);
   gl.uniform2f(program.uniform('u_meshSize')!, box.width, box.height);
   gl.uniform1f(program.uniform('u_opacity')!, mesh.opacity ?? 1);
@@ -295,7 +301,7 @@ export const meshGradientKind: PaintKindEntry = {
   inPoseFrame: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);
     if (mesh.units !== 'bounds') return fill;
-    return asFill({
+    const posed = asFill({
       ...mesh,
       patches: mapPatches(mesh, (p) => ({
         x: box.x + p.x * box.width,
@@ -303,6 +309,8 @@ export const meshGradientKind: PaintKindEntry = {
       })),
       units: 'local' as const,
     });
+    BAKE_SOURCE.set(posed, fill);
+    return posed;
   },
   toBoundsFrame: (fill, box: FillPoseBox) => {
     const mesh = asMesh(fill);
