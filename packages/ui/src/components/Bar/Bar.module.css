@@ -1,3 +1,57 @@
+/* A bar's line. It has no frame: the strip it sits on is the host's. */
+.bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  min-inline-size: 0;
+}
+
+.bar[data-orientation='vertical'] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.cell {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+.bar[data-orientation='vertical'] > .cell {
+  justify-content: center;
+}
+
+/* Sets a run apart from its neighbors. */
+.divider {
+  flex: none;
+  align-self: stretch;
+  inline-size: 1px;
+  margin-block: var(--wzl-space-2);
+  background: var(--wzl-border);
+}
+
+.bar[data-orientation='vertical'] > .divider {
+  inline-size: auto;
+  block-size: 1px;
+  margin-block: 0;
+  margin-inline: var(--wzl-space-2);
+}
+
+/* A nested group inside a group a bar opened. */
+.opened {
+  grid-column: 1 / -1;
+}
+
+.openedTitle {
+  margin: var(--wzl-space-3) 0 var(--wzl-space-2);
+  font-size: var(--wzl-font-size-xs);
+  font-weight: var(--wzl-font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--wzl-fg-muted);
+}
+
 /* One field on a bar's line. `flex: none` keeps the bar from squeezing it:
    a bar too long for its room scrolls. */
 .field {

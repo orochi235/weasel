@@ -1,16 +1,8 @@
 import { useRef, type ReactNode } from 'react';
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
-import {
-  renderBuiltin,
-  renderCells,
-  type LeafCell,
-  type PropertyRenderContext,
-  type PropertyRenderer,
-} from '../SelectionPanel/renderLeaf';
-import { pairRows, type PanelLeaf, type PanelRow } from '../SelectionPanel/model';
+import type { PrefGroup } from '@weasel-js/prefs';
+import type { PropertyRenderer } from '../SelectionPanel/renderLeaf';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
-import { withBarLabel } from '../Bar/renderBarLeaf';
-import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
+import { Bar } from '../Bar/Bar';
 import s from './ToolOptionsBar.module.css';
 
 /** Props for {@link ToolOptionsBar}. */
@@ -32,10 +24,8 @@ export interface ToolOptionsBarProps {
   label?: string;
   /**
    * The active tool's options, as the `PrefGroup` the tool declares: a
-   * group's key is a segment of its leaves' paths. Leaves draw through the
-   * same leaf → control mapping `SelectionPanel` uses, so a kind gets its
-   * control decided in one place; groups draw nothing, since the bar is one
-   * line.
+   * group's key is a segment of its leaves' paths. A `Bar` draws them, each
+   * leaf in its bar form.
    */
   schema?: PrefGroup;
   /** Each leaf's value, keyed by dotted path. A path with no entry is unset. */
@@ -73,116 +63,17 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
   // Every label on the line shortens together before the strip scrolls.
   const controls = useRef<HTMLDivElement>(null);
   const fit = useFitScope(controls);
-  const fields = schema !== undefined ? prefFieldChoices(schema) : [];
   return (
     <div className={cls} role="toolbar" aria-label={label}>
       {label !== undefined && <span className={s.label}>{label}</span>}
       <div className={s.controls} ref={controls}>
         <FitScope value={fit}>
-          {schema !== undefined &&
-            barRows(schema).map((row) => (
-              <BarRow
-                fields={fields}
-                key={row.leaves[0]!.path}
-                row={row}
-                values={values}
-                mixed={mixed}
-                renderers={renderers}
-                onChange={onChange}
-              />
-            ))}
+          {schema !== undefined && (
+            <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} onChange={onChange} />
+          )}
           {children}
         </FitScope>
       </div>
     </div>
   );
-}
-
-/**
- * The schema's visible leaves as rows, addressed by dotted path. A bar is one
- * line, so a nested group contributes its leaves and no chrome, but its key
- * is still a segment of their paths.
- */
-function barRows(schema: PrefGroup): PanelRow[] {
-  const leaves: PanelLeaf[] = [];
-  const collect = (group: PrefGroup, prefix: string): void => {
-    for (const [key, child] of Object.entries(group.children)) {
-      const path = prefix === '' ? key : `${prefix}.${key}`;
-      if (!isPrefLeaf(child)) collect(child, path);
-      else if (child.hidden !== true) leaves.push({ path, leaf: child });
-    }
-  };
-  collect(schema, '');
-  return pairRows(leaves);
-}
-
-/** One row of the bar: a single control, or a run of flags as one bar. */
-function BarRow({
-  fields,
-  row,
-  values,
-  mixed,
-  renderers,
-  onChange,
-}: {
-  fields: readonly PrefFieldChoice[];
-  row: PanelRow;
-  values: Readonly<Record<string, unknown>> | undefined;
-  mixed: ReadonlySet<string> | undefined;
-  renderers: Record<string, PropertyRenderer> | undefined;
-  onChange: ((path: string, value: unknown) => void) | undefined;
-}) {
-  // The bar draws no row label, so a control carries its own name rather than
-  // the panel's qualified "<pair> <leaf>" — the run's bar carries the pair.
-  const cells = row.leaves.map((panelLeaf) => ({
-    ...barCell(panelLeaf, panelLeaf.leaf.name, values, mixed, renderers, onChange, fields),
-    ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
-  }));
-  return (
-    <>
-      {renderCells(cells, renderers).map((cell) => (
-        <span key={cell.key} className={s.cell}>
-          {cell.content}
-        </span>
-      ))}
-    </>
-  );
-}
-
-function barCell(
-  panelLeaf: PanelLeaf,
-  ariaLabel: string,
-  values: Readonly<Record<string, unknown>> | undefined,
-  mixed: ReadonlySet<string> | undefined,
-  renderers: Record<string, PropertyRenderer> | undefined,
-  onChange: ((path: string, value: unknown) => void) | undefined,
-  fields: readonly PrefFieldChoice[],
-): LeafCell {
-  const { path, leaf } = panelLeaf;
-  const isMixed = mixed?.has(path) === true;
-  const ctx: PropertyRenderContext = {
-    path,
-    pref: leaf,
-    value: isMixed ? undefined : values?.[path],
-    mixed: isMixed,
-    unset: !isMixed && values?.[path] === undefined,
-    each: isMixed ? [] : [values?.[path]],
-    setValue: (v) => onChange?.(path, v),
-    // One set of values, so there is one prior value to derive from.
-    update: (fn) => onChange?.(path, fn(isMixed ? undefined : values?.[path])),
-    valueAt: (p) => ({ value: values?.[p], mixed: mixed?.has(p) === true }),
-    fields,
-  };
-  return {
-    key: path,
-    leaf: leaf as PrefLeaf,
-    ctx,
-    ariaLabel,
-    render: () => {
-      const custom = renderers?.[path] ?? renderers?.[leaf.kind];
-      return custom
-        ? withBarLabel(leaf, custom(ctx))
-        : renderBuiltin(ctx, ariaLabel, renderers, { selectionKey: path, surface: 'bar' });
-    },
-  };
 }

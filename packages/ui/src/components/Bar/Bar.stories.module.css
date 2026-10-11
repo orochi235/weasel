@@ -32,3 +32,12 @@
   text-transform: uppercase;
   letter-spacing: var(--wzl-tracking-wider);
 }
+
+/* A stand-in for a strip down the side of a workspace. */
+.rail {
+  display: inline-flex;
+  padding: var(--wzl-space-3);
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  color: var(--wzl-fg);
+}
