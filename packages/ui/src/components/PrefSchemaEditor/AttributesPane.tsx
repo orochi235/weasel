@@ -14,7 +14,7 @@ import { aggregateAttributes, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, valuePathsAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
@@ -80,6 +80,8 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
     () => new Set([...(agg?.mixed ?? [])].flatMap((k) => [k, `${OWN}.${k}`, `${AUTO}.${k}`])),
     [agg],
   );
+  // What the selected nodes hold themselves, which none of them is shown or enabled by.
+  const ownPaths = useMemo(() => targets.flatMap((p, i) => (nodes[i] ? valuePathsAt(schema, p, nodes[i]) : [])), [schema, targets, nodes]);
   const nameAtFocus = useRef('');
   // The edited schema's fields, by its own path rule: what a reference in it names.
   const fields = useMemo(() => {
@@ -150,7 +152,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
       </span>
     ), { group: true }),
     [CONDITION_KIND]: Object.assign<PrefRenderer, { group: boolean }>(({ pref, value, setValue }) => (
-      <PrefConditionEditor aria-label={pref.name} schema={schema} value={value as PrefCondition | undefined} onChange={setValue} />
+      <PrefConditionEditor aria-label={pref.name} schema={schema} exclude={ownPaths} value={value as PrefCondition | undefined} onChange={setValue} />
     ), { group: true }),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
       <Input aria-label="Name" value={String(value ?? '')} placeholder={mixed ? MIXED_HINT : undefined} onChange={setValue}

@@ -144,3 +144,29 @@ describe('PrefConditionEditor', () => {
     expect(seen.value).toBeUndefined();
   });
 });
+
+describe('PrefConditionEditor exclude', () => {
+  const names = (list: string[]) => list.map((text) => text.replace(/ ?view\..*$/, ''));
+
+  it('offers no pref at or beneath an excluded path, for a new row or an old one', () => {
+    render(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view.units', 'view.step']}
+      value={{ path: 'view.grid', is: true }} onChange={() => {}} />);
+    expect(names(offered(screen.getByRole('group', { name: 'Shown if' }), /Add a condition/))).toEqual(['Show grid', 'Author']);
+    expect(names(offered(row(1), /pref/))).toEqual(['Show grid', 'Author']);
+  });
+
+  it('leaves out everything under an excluded group, and a pref that only starts like the path stays', () => {
+    render(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view']} value={undefined} onChange={() => {}} />);
+    expect(within(screen.getByRole('group', { name: 'Shown if' })).getByRole('button', { name: /Add a condition/ })).toBeDisabled();
+    cleanup();
+    render(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view.gri']} value={undefined} onChange={() => {}} />);
+    expect(offered(screen.getByRole('group', { name: 'Shown if' }), /Add a condition/)).toHaveLength(4);
+  });
+
+  it('keeps a row that already reads an excluded path as its controls, with that pref still named', () => {
+    render(<PrefConditionEditor aria-label="Shown if" schema={SCHEMA} exclude={['view.units']}
+      value={{ path: 'view.units', is: 'mm' }} onChange={() => {}} />);
+    expect(within(row(1)).getByRole('button', { name: /pref/ })).toHaveTextContent('Units');
+    expect(within(row(1)).getByRole('button', { name: /comparison/ })).toHaveTextContent('is');
+  });
+});

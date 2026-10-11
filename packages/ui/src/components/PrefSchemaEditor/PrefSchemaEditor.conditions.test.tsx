@@ -57,10 +57,13 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
   });
 
   it('sets a group\'s, and removes the attribute with the last row', () => {
-    render(<Live start={BASE} />);
+    const two: PrefGroup = { ...BASE, children: { ...BASE.children, panels: { name: 'Panels', children: {
+      dock: { kind: 'boolean', name: 'Dock', description: '', default: true },
+    } } } };
+    render(<Live start={two} />);
     select('view');
-    pick(attr('Enabled if'), /Add a condition/, /Units/);
-    expect(held('view').enableIf).toEqual({ path: 'view.units', is: 'px' });
+    pick(attr('Enabled if'), /Add a condition/, /Dock/);
+    expect(held('view').enableIf).toEqual({ path: 'panels.dock', is: true });
     fireEvent.click(within(attr('Enabled if')).getByRole('button', { name: 'Remove condition 1' }));
     expect(held('view')).not.toHaveProperty('enableIf');
   });
@@ -107,5 +110,21 @@ describe('PrefSchemaEditor: the conditions a node is shown and enabled by', () =
     fireEvent.click(within(structure()).getByText('(size)'), { metaKey: true });
     expect(attributes().queryByRole('group', { name: 'Shown if' })).toBeNull();
     expect(held('view/size').showIf).toEqual({ path: 'view.grid', is: true });
+  });
+
+  it('offers a pref every pref but itself to be conditioned on, and a group none of its own', () => {
+    render(<Live start={BASE} />);
+    const offered = (): string[] => {
+      fireEvent.click(within(attr('Shown if')).getByRole('button', { name: /Add a condition/ }));
+      const names = screen.getAllByRole('option').map((o) => (o.textContent ?? '').replace(/ ?view\..*$/, ''));
+      fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
+      return names;
+    };
+    select('size');
+    expect(offered()).toEqual(['Show grid', 'Units']);
+    fireEvent.click(within(structure()).getByText('(units)'), { metaKey: true });
+    expect(offered()).toEqual(['Show grid']);
+    select('view');
+    expect(within(attr('Shown if')).getByRole('button', { name: /Add a condition/ })).toBeDisabled();
   });
 });

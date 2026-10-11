@@ -15,7 +15,9 @@ export interface ConditionRowProps {
   n: number;
   part: PrefCondition;
   schema: PrefGroup | PrefSection;
+  /** Every pref a row may read, which is how the row finds its own. */
   leaves: readonly ConditionLeaf[];
+  /** The prefs the row may be pointed at. */
   prefOptions: readonly SelectOption[];
   onChange(next: PrefCondition): void;
   onRemove(): void;
@@ -65,7 +67,7 @@ export function ConditionRow({ n, part, schema, leaves, prefOptions, onChange, o
       {isTest(part) ? (
         <div className={s.controls}>
           <Select className={s.pref} aria-label={`Condition ${n} pref`} selectedKey={part.path}
-            options={found ? prefOptions : [{ value: part.path, label: part.path }, ...prefOptions]}
+            options={prefOptions.some((o) => o.value === part.path) ? prefOptions : [{ value: part.path, label: found?.leaf.name || part.path }, ...prefOptions]}
             onSelectionChange={(path) => {
               const next = leaves.find((l) => l.path === path);
               if (next) onChange(testOf(next.path, next.leaf, part));
