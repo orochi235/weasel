@@ -1,0 +1,116 @@
+name: Performance (pull request)
+
+# Runs every benchmark under tests/perf/ on the pull request's base and on its
+# head, back to back on one machine, and posts the `npm run perf:compare` table
+# as a comment. It reports and never gates: every step that measures or posts
+# may fail without failing the job, and the job may fail without failing the
+# checks (tests/perf/README.md, "Nothing here gates CI").
+on:
+  pull_request:
+    paths:
+      - 'packages/**'
+      - 'apps/site/**'
+      - 'tests/perf/**'
+      - 'package-lock.json'
+      - '.github/workflows/perf-pr.yml'
+
+concurrency:
+  group: perf-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  compare:
+    # A fork's pull request would run its code on the self-hosted machine, and
+    # its token cannot comment anyway.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    # The same machine perf.yml uses, for the same reason: a real Metal GPU.
+    runs-on: [self-hosted, macOS, ARM64, gpu]
+    continue-on-error: true
+    # Two full runs of what perf.yml allows 45 minutes for once.
+    timeout-minutes: 100
+    env:
+      NPM_CONFIG_LOGLEVEL: error
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      # The runner keeps its temp directory between jobs, so a canceled run
+      # leaves a worktree and result files behind.
+      - name: Check out the base beside the head
+        run: |
+          BASE_DIR="$RUNNER_TEMP/perf-base"
+          BASE_OUT="$RUNNER_TEMP/perf-results/base"
+          HEAD_OUT="$RUNNER_TEMP/perf-results/head"
+          printf '%s\n' "BASE_DIR=$BASE_DIR" "BASE_OUT=$BASE_OUT" "HEAD_OUT=$HEAD_OUT" >> "$GITHUB_ENV"
+          git worktree remove --force "$BASE_DIR" 2>/dev/null || true
+          rm -rf "$BASE_DIR" "$BASE_OUT" "$HEAD_OUT"
+          git worktree prune
+          git worktree add --detach "$BASE_DIR" "$BASE_SHA"
+
+      # --ignore-scripts and no --with-deps for the reasons perf.yml gives.
+      - run: npm ci --ignore-scripts
+      - run: npm ci --ignore-scripts
+        working-directory: ${{ env.BASE_DIR }}
+      - run: npx playwright install chromium
+
+      # Each revision runs its own copy of the harness, so a benchmark the pull
+      # request adds or retires shows as one-sided rather than failing.
+      - name: Benchmark the base
+        continue-on-error: true
+        working-directory: ${{ env.BASE_DIR }}
+        env:
+          WEASEL_PERF_OUT: ${{ env.BASE_OUT }}
+        run: |
+          npm run perf:bench || echo "::warning::the microbenchmarks failed on the base"
+          caffeinate -d -i npm run test:perf || echo "::warning::a perf spec failed on the base"
+
+      - name: Benchmark the head
+        continue-on-error: true
+        env:
+          WEASEL_PERF_OUT: ${{ env.HEAD_OUT }}
+        run: |
+          npm run perf:bench || echo "::warning::the microbenchmarks failed on the head"
+          caffeinate -d -i npm run test:perf || echo "::warning::a perf spec failed on the head"
+
+      - name: Compare
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p "$BASE_OUT" "$HEAD_OUT"
+          node tests/perf/compare.mjs "$BASE_OUT" "$HEAD_OUT" | tee "$RUNNER_TEMP/perf-compare.txt"
+
+      - name: Comment on the pull request
+        if: always()
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >
+          node tests/perf/pr-comment.mjs "$RUNNER_TEMP/perf-compare.txt"
+          --pr ${{ github.event.pull_request.number }} --base "$BASE_SHA" --head "$HEAD_SHA"
+
+      - name: Upload result files
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: perf-pr-result-files
+          path: ${{ runner.temp }}/perf-results/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Remove the base worktree
+        if: always()
+        run: git worktree remove --force "$BASE_DIR" || true

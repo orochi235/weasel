@@ -14,7 +14,10 @@ one.
 
 **Nothing here gates CI.** `.github/workflows/perf.yml` runs `test:perf`
 nightly on a self-hosted machine with a real GPU and keeps the result files as
-an artifact; read those as a trend, never as pass/fail on a change. Shared
+an artifact; read those as a trend, never as pass/fail on a change.
+`.github/workflows/perf-pr.yml` runs everything on a pull request's base and on
+its head, on that same machine, and posts the comparison below as a comment; it
+cannot fail the checks. Shared
 runners are noisy enough that an honest threshold would have to be loose enough
 to miss real regressions, and a benchmark that fails at random gets disabled
 within a month. The Playwright specs do assert, but only that a measurement
@@ -295,6 +298,10 @@ naming both values, because the deltas then compare machines rather than code.
 It also calls out a software GL backend, a changed unit, changed parameters, a
 dirty tree, and a start-up load above half the cores. It exits 0 whatever the
 numbers say.
+
+Given two directories instead, it matches their result files by benchmark and
+prints one report each, taking the latest file where a directory holds a
+benchmark more than once, then names any benchmark only one side ran.
 
 ## Adding a benchmark
 

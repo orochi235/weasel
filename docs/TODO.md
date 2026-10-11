@@ -1913,15 +1913,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   render share `packages/ui/src/components/Slider/Slider.tsx`. Move the pure math beside
   `crossEnd.ts` and the drags into a hook; the render-context fix above then has somewhere to go.
 
-- **(P3) PaintInput: its per-kind memory follows the mount, not the selection.** A `PaintInput` left
-  mounted while the selection changes offers the new selection the last one's paints: select shape A
-  with a linear gradient, then shape B with a solid, click "linear" on B, and B receives A's stops
-  (`remembered` in `packages/ui/src/components/PaintInput/PaintInput.tsx`). `apps/draw` avoids it
-  with `key={ctx.selectionKey}`; `PaintField` mounts it inside a popover, so its memory lasts only
-  while the popover is open. Ruled 2026-10-11: a new prop names what the control is pointed at, and
-  the memory clears when that changes. That leaves the prop, the reset of `remembered`, and
-  `apps/draw` passing the prop in place of the `key`.
-
 - **(P3) Tree: focus drops to the page when the focused node is removed.** A consumer's own Delete
   handler removes the focused row: the tab stop recomputes to the first selected or first row, but
   DOM focus falls to `<body>` and the next arrow key goes nowhere (`stopId` in
@@ -2578,12 +2569,12 @@ one dead `const` and four stale disable directives.
   `tests/perf/recorded/layer-dispatch-2026-10-07/` and
   `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`. One GPU and backend
   only.
-- **(P3) No pull request runs the benchmarks.** Every benchmark lives in `tests/perf/` and writes a
-  result file per run; nothing gates anything. The vitest microbenchmarks keep a committed baseline
-  in `tests/perf/bench/`. `tests/perf/README.md` argues a hard threshold on shared runners would
-  have to be loose enough to miss real regressions. Ruled 2026-10-11: a pull request job runs the
-  benchmarks on both revisions and posts the `npm run perf:compare` table as a comment, and it never
-  fails the build. That leaves writing the job.
+- **(P3) The pull request benchmark job has never run.** `.github/workflows/perf-pr.yml` runs
+  `perf:bench` and `test:perf` on a pull request's base and head and posts the `perf:compare` table
+  as a comment, without gating. It was written on 2026-10-11 with no pull request open to try it on:
+  the comment and directory-compare scripts are tested, the workflow steps are not. Unmeasured: how
+  long two full runs take on the one self-hosted machine (the job allows 100 minutes), and whether
+  the base, measured first, reads differently from the head for that reason alone.
 
 - **(P2) A scene's `generateId` is honored by `scene.add` only.** `createScene({ generateId })`
   mints ids for `scene.add` (`core/scene/scene.ts`), and five other minters ignore it, each with its
