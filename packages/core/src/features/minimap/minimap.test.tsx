@@ -143,7 +143,7 @@ describe('minimap chrome', () => {
     const layer = createIndicatorLayer({ viewId: 'minimap', root: () => root, style: { width: 2 } });
     const mirrored = { x: 0, y: 0, scale: { x: -0.08, y: 0.08 } };
     const [cmd] = layer.draw({ viewId: 'minimap' }, mirrored, { width: 100, height: 80 });
-    expect(cmd).toEqual(computeIndicatorCommand(root.get(), root.hostSize!(), { width: 2 }, mirrored));
+    expect(cmd).toEqual(computeIndicatorCommand(root.get(), { width: 400, height: 300 }, { width: 2 }, mirrored));
     expect((cmd as { stroke: { width: number } }).stroke.width).toBeCloseTo(25);
   });
 
