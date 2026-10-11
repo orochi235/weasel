@@ -136,8 +136,8 @@
 }
 /* How many leaves a branch holds, before its kind. */
 .treeCount { composes: numeric from '@weasel-js/theme/numeric.module.css'; margin-inline-end: var(--wzl-space-1); }
-/* A count reads at the size of the row it counts for. Two classes, to outrank the size Badge sets on itself. */
-:is(.treeArea, .storedArea) .treeCount { font-size: var(--wzl-tree-font-size); }
+/* A count is sized from the row it counts for. Two classes, to outrank the size Badge sets on itself. */
+:is(.treeArea, .storedArea) .treeCount { font-size: calc(var(--wzl-tree-font-size) - 2px); font-weight: var(--wzl-font-weight-bold); }
 .draftNote { composes: numeric from '@weasel-js/theme/numeric.module.css'; color: var(--wzl-fg-muted); font-size: var(--wzl-font-size-xs); }
 
 /* How many nodes a drag carries, on the corner of the one it draws. */
