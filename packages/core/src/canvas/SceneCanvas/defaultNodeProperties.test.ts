@@ -66,7 +66,7 @@ describe('leaves that read an absent value as their default', () => {
     // `fontStyle` and `script` read absence themselves.
     expect(flagged(fields)).toEqual([
       'align', 'direction', 'fontFamily', 'fontSize', 'fontVariantCaps', 'fontWeight', 'letterSpacing', 'lineHeight',
-      'overline', 'strikethrough', 'textTransform', 'underline', 'wrap',
+      'overline', 'strikethrough', 'tabSize', 'textTransform', 'underline', 'wrap',
     ]);
     for (const key of flagged(fields)) {
       expect([key, fields[key]!.default]).toEqual([key, DEFAULT_TEXT_STYLE[key as keyof typeof DEFAULT_TEXT_STYLE]]);
@@ -198,7 +198,7 @@ describe('inferredNodeProperties', () => {
       // the same leaf every other node kind paints from.
     ]);
     const paragraph = style.children.paragraph as PrefSection;
-    expect(Object.keys(paragraph.members)).toEqual(['lineHeight', 'wrap', 'direction', 'align']);
+    expect(Object.keys(paragraph.members)).toEqual(['lineHeight', 'wrap', 'tabSize', 'direction', 'align']);
   });
 
   it('exposes every authored TextStyle field', () => {
@@ -206,7 +206,7 @@ describe('inferredNodeProperties', () => {
     // until it is either offered or named as deliberately left out.
     const offered: Record<Exclude<keyof TextStyle, EditOverlayChrome>, true> = {
       fontSize: true, fontFamily: true, fontWeight: true, fontStyle: true, align: true,
-      direction: true, lineHeight: true, wrap: true, letterSpacing: true, underline: true,
+      direction: true, lineHeight: true, tabSize: true, wrap: true, letterSpacing: true, underline: true,
       strikethrough: true, overline: true, textTransform: true, fontVariantCaps: true, script: true,
     };
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;

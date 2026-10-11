@@ -132,9 +132,9 @@ describe('a font-relative length', () => {
       expect(warnings).toEqual([]);
       return nodes[0] as SvgTextNode;
     };
-    expect(text('<text font-size="x-large">a</text>').style.fontSize).toBe(24);
+    expect(text('<text font-size="x-large">a</text>').style!.fontSize).toBe(24);
     const nested = text('<g font-size="10"><text font-size="larger">a</text></g>') as unknown as { children: SvgTextNode[] };
-    expect(nested.children[0].style.fontSize).toBeCloseTo(12, 6);
+    expect(nested.children[0]!.style.fontSize).toBeCloseTo(12, 6);
   });
 
   it('takes an ex as half an em', () => {

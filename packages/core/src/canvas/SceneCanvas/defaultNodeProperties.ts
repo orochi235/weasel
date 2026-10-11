@@ -230,6 +230,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
                       members: {
                         lineHeight: { kind: 'number', name: 'Leading', description: 'Line height as a multiple of font size.', absentIsDefault: true, default: 1.2, min: 0.5, step: 0.1 },
                         wrap: { kind: 'boolean', name: 'Wrap', description: 'Break lines between words at the box width.', absentIsDefault: true, default: false, control: 'switch' },
+                        tabSize: { kind: 'number', name: 'Tab size', description: 'Distance between tab stops, in spaces.', absentIsDefault: true, default: 8, min: 1, step: 1 },
                         direction: { kind: 'enum', name: 'Direction', description: 'Reading direction. Auto takes each paragraph\'s from its first strong character.', absentIsDefault: true, default: 'auto', control: 'toggle', options: [{ value: 'auto', label: 'Auto', short: ['Auto'] }, { value: 'ltr', label: 'Left to right', short: ['LTR'] }, { value: 'rtl', label: 'Right to left', short: ['RTL'] }] },
                         // Last, so the box's vertical alignment — a field of
                         // the node rather than of its style — follows it.
