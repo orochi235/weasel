@@ -771,7 +771,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
       // Dispatch both key and key-held forms unconditionally. The dispatcher
       // de-dupes naturally because each form uses a different gestureId and
-      // different GestureSpec kind. `matchBest` returns 'unhandled' when no
+      // different GestureSpec kind. The dispatcher returns 'unhandled' when no
       // binding matches the alternate form, so there's no double-fire risk.
 
       const keyEv: InputEvent = {
@@ -1442,10 +1442,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // Check whether a drag handle is in-flight BEFORE sending pointerup.
       // If THIS pointer's handle is in-flight AND the pointer moved between
       // down and up, this is the end of a real drag — pump it and don't
-      // synthesize a click. If no handle is in-flight, or the handle was
-      // opened but the pointer never moved (sub-threshold "tap" that an
-      // over-broad ambient drag binding accepted), we still synthesize a
-      // click so click-specific bindings (e.g. clearSelection on empty) fire.
+      // synthesize a click.
       const movedDuringDrag = rec
         ? (rec.down.clientX !== e.clientX || rec.down.clientY !== e.clientY)
         : true;

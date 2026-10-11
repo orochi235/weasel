@@ -81,7 +81,8 @@ export interface ActionsRegistry {
 
   /** Make this registry's scope the one chrome above it reaches: `trigger`,
    *  `begin` and `list` on any ancestor then answer from here. A dispatcher
-   *  calls it on the pointerdown and focus that land in its scope. */
+   *  calls it on the pointerdown and wheel that land in its scope; moving DOM
+   *  focus alone does not. */
   activate(): void;
 
   /** Whether a lookup made from the root of this registry's tree starts here —

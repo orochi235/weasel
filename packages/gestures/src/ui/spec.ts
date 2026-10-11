@@ -21,11 +21,10 @@
  *  `mod` is a platform-aware shorthand: matches `metaKey` on mac, `ctrlKey`
  *  elsewhere (mirrors `KeyBinding.mod`).
  *
- *  `shift` additionally accepts `'optional'` meaning "shifted or unshifted
+ *  Every modifier additionally accepts `'optional'`, meaning "held or not,
  *  both acceptable" — the explicit opt-in for loose matching, used by
  *  actions like nudge whose step size depends on shift but whose firing
- *  does not. To widen other modifiers similarly, extend their type when
- *  a real consumer needs it.
+ *  does not.
  */
 export type ModSpec = Partial<{
   alt: boolean | 'optional';
@@ -35,8 +34,8 @@ export type ModSpec = Partial<{
   shift: boolean | 'optional';
 }>;
 
-/** The predicate form of {@link TargetSpec}. `hit` is the raw target
- *  (affordance for drag, `e.target` otherwise); `bodyTarget` is the optional
+/** The predicate form of {@link TargetSpec}. `hit` is the affordance hit
+ *  under the pointer, for every gesture kind; `bodyTarget` is the optional
  *  body-class string ('empty' | 'selected-body' | 'unselected-body') when
  *  `classifyTarget` is wired. Predicates that only need one of the two can
  *  ignore the other. */
@@ -134,7 +133,7 @@ export interface ClickSpec {
   phase?: PhaseSpec;
 }
 
-/** Double-click: two `click` events within ~500ms and ~5px of each other.
+/** Double-click: two `click` events within 600ms and 8px of each other.
  *  Synthesized by `useGestureDispatcher`; emitted AFTER the second
  *  `click`. Bindings that want to handle a double-click should declare
  *  this kind rather than chasing two `click` events. */

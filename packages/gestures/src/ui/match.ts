@@ -225,8 +225,7 @@ export function matchTarget(
   if (form === null) return false;
 
   switch (form.form) {
-    // Receives the raw target (affordance hit for drag, e.target otherwise)
-    // plus the bodyTarget classification.
+    // Receives the affordance hit plus the bodyTarget classification.
     case 'predicate':
       return form.kindOf(target, bodyTarget);
 
@@ -343,8 +342,6 @@ export function matchIngestTypes(
  *
  * For `key-held`, only `phase: 'down'` returns true. The dispatcher tracks the
  * held state independently and handles `phase: 'up'` itself.
- *
- * For TargetSpec string forms, returns false (kind registry not yet available).
  */
 export function matchSpec(
   e: InputEvent,
@@ -353,9 +350,9 @@ export function matchSpec(
   phaseCtx?: PhaseContext,
 ): boolean {
   // Phase gate runs first — cheaper than the per-kind logic, and a failed
-  // phase rules the spec out regardless of event shape. When no phase ctx
-  // is supplied (legacy callers), treat as wildcard-engagement so existing
-  // bindings continue to behave as if phase weren't a constraint.
+  // phase rules the spec out regardless of event shape. With no phase ctx
+  // nothing is engaged and the spec has no owner: an any-channel `initial`
+  // matches, and an own-channel (`&`) atom cannot.
   if (spec.phase !== undefined) {
     const ctx: PhaseContext = phaseCtx ?? { selfChannel: null, engagedChannels: EMPTY_ENGAGED };
     if (!matchPhase(spec.phase, ctx)) return false;
@@ -419,9 +416,8 @@ export function matchSpec(
     case 'longPress': {
       if (e.kind !== 'longpress') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      // Match on the affordance like `drag` does, not the DOM target like
-      // `contextMenu` does: a long-press begins as a press, so the useful
-      // target is what was under the finger in scene terms.
+      // A long-press begins as a press, so its target is what was under the
+      // finger in scene terms: the affordance the press classified.
       return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 

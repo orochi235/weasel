@@ -38,7 +38,7 @@
  * - Fallback for any other kind that triggers an ongoing invoker: `ongoing-<kind>`.
  *
  * ## Action-lookup miss behavior
- * When `matchBest` resolves a binding whose `actionId` has no entry in
+ * When the walk reaches a binding whose `actionId` has no entry in
  * `ctx.actions.list()`, the dispatcher emits `console.warn` and returns
  * `'unhandled'`. The user's input gesture falls through as if unmatched.
  * This preserves input flow (nothing is swallowed silently) while flagging
