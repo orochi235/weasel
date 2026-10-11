@@ -7,6 +7,7 @@
  */
 import type { PoseDescriptor } from '../resize/geometry';
 import type { SpatialReference } from '../spatialReference';
+import { poseLinearOf } from 'core/geometry/poseFrame';
 
 /** Axis for flip. `'x'` mirrors horizontally (left↔right); `'y'` mirrors vertically (top↔bottom). */
 export type FlipAxis = 'x' | 'y';
@@ -26,7 +27,8 @@ export type FlipPivot = 'each' | 'union' | SpatialReference;
  *  compute the reflected destination rect; coords inside the pose are then
  *  remapped through the affine that takes its own bounds → reflected dst.
  *  A rotation the pose carries is negated: a mirror reverses the sense of the
- *  turn, and `remapBounds` carries the original angle through untouched. */
+ *  turn, and `remapBounds` carries the original angle through untouched. A
+ *  `transform` it carries is mirrored the same way, on either axis. */
 export function flipPoseAboutBounds<TPose>(
   pose: TPose,
   axis: FlipAxis,
@@ -41,7 +43,7 @@ export function flipPoseAboutBounds<TPose>(
     : { x: src.x, y: 2 * cyPivot - src.y, width: src.width, height: -src.height };
   const next = geometry.remapBounds(pose, src, dst);
   const rotation = geometry.getRotation?.(pose) ?? (src as { rotation?: number }).rotation ?? 0;
-  return negateRotation(normalizeNegativeExtent(next), rotation, geometry);
+  return mirrorLinear(negateRotation(normalizeNegativeExtent(next), rotation, geometry));
 }
 
 /** Reflect `pose` across the centerline of its own AABB along `axis`. */
@@ -77,4 +79,11 @@ function normalizeNegativeExtent<TPose>(pose: TPose): TPose {
   }
   if (!mutated) return pose;
   return { ...(pose as object), x: nx, y: ny, width: nw, height: nh } as TPose;
+}
+
+/** `M · L · M` for a mirror `M` on either axis: the off-diagonal terms change sign. */
+function mirrorLinear<TPose>(pose: TPose): TPose {
+  const l = poseLinearOf(pose);
+  if (!l || (l[1] === 0 && l[2] === 0)) return pose;
+  return { ...(pose as object), transform: [l[0], -l[1], -l[2], l[3]] } as TPose;
 }

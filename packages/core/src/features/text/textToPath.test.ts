@@ -118,6 +118,15 @@ describe('textToPath', () => {
     expect(turned.height).toBeCloseTo(upright.width, 2);
   });
 
+  it('stretches with the pose transform about its box center', () => {
+    const upright = boundsOfPath(textToPath(text('H'), POSE));
+    const wide = boundsOfPath(textToPath(text('H'), { ...POSE, transform: [4, 0, 0, 1] }));
+    expect(wide.width).toBeCloseTo(upright.width * 4, 2);
+    expect(wide.height).toBeCloseTo(upright.height, 2);
+    const cx = POSE.x + POSE.width / 2;
+    expect(wide.x - cx).toBeCloseTo((upright.x - cx) * 4, 2);
+  });
+
   it('shears a synthetic italic by the renderer\'s oblique angle', async () => {
     // Synthetic italic is an atlas-tier fallback: an upright atlas standing in
     // for an italic request, with upright outlines behind it.

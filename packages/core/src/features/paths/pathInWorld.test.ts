@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PathBuilder, polygonFromPoints, rectPath, boundsOfPath } from '@weasel-js/geom';
-import { pathInWorld } from './pathInWorld';
+import { pathInWorld, worldEditToStorage } from './pathInWorld';
 
 describe('pathInWorld', () => {
   it('translates a rect to the pose origin when rotation is absent', () => {
@@ -98,3 +98,30 @@ describe('pathInWorld', () => {
     expect(Array.from(out.coords).map((n) => Math.round(n) + 0)).toEqual([30, 10, 20, 10, 10, 0, 0, 0]);
   });
 });
+
+describe('a pose with a transform', () => {
+  // A 10 x 10 box at (100, 100), skewed x' = x + (y - 105) about its center and turned a quarter.
+  const pose = { x: 100, y: 100, width: 10, height: 10, rotation: Math.PI / 2, transform: [1, 0, 1, 1] as const };
+  const square = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]);
+
+  it('places the path through the transform, then the rotation', () => {
+    const b = boundsOfPath(pathInWorld(square, { ...pose, rotation: 0 }));
+    expect(b).toMatchObject({ x: 95, y: 100, width: 20, height: 10 });
+    const turned = boundsOfPath(pathInWorld(square, pose));
+    expect(turned.x).toBeCloseTo(100, 4);
+    expect(turned.y).toBeCloseTo(95, 4);
+    expect(turned.width).toBeCloseTo(10, 4);
+    expect(turned.height).toBeCloseTo(20, 4);
+  });
+
+  it('stores a world edit so that it draws back where it was edited', () => {
+    const world = polygonFromPoints([{ x: 90, y: 90 }, { x: 130, y: 95 }, { x: 120, y: 140 }]);
+    const stored = worldEditToStorage(pose, world);
+    expect(stored.pose.transform).toEqual(pose.transform);
+    expect(stored.pose.rotation).toBe(pose.rotation);
+    const back = pathInWorld(stored.path, stored.pose);
+    if (back.kind !== 'polygon') throw new Error('expected a polygon');
+    Array.from(world.coords).forEach((v, i) => expect(back.coords[i]).toBeCloseTo(v, 3));
+  });
+});
+

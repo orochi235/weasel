@@ -179,6 +179,19 @@ describe('the default slice dep', () => {
       }
     });
 
+    it('cuts a leaf with a pose transform where it is drawn, and its pieces keep the transform', () => {
+      // Drawn twice as wide about its center: x from -50 to 150.
+      const scene = single({ x: 0, y: 0, width: 100, height: 100, transform: [2, 0, 0, 1] });
+      const { commit } = mount(scene);
+      commit([{ x: 100, y: -10 }, { x: 100, y: 110 }]);
+      const pieces = leaves(scene);
+      for (const n of pieces) expect(n.pose.transform).toEqual([2, 0, 0, 1]);
+      expectBoxes(pieces.map((n) => drawn(n.pose, n.data.path!)), [
+        { x: -50, y: 0, width: 150, height: 100 },
+        { x: 100, y: 0, width: 50, height: 100 },
+      ]);
+    });
+
     it('cuts a leaf whose pose stretches its path, and stores each piece at the size it is drawn', () => {
       const scene = single({ x: 0, y: 0, width: 200, height: 100 });
       const { commit } = mount(scene);

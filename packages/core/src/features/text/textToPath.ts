@@ -20,10 +20,10 @@ import {
   type ResolvedRun, type StyledRun, type TextPose, type TextStyle, type TextVerticalAlign,
 } from '@weasel-js/text';
 import {
-  PATH_L, PATH_M, PATH_Z, pathFromD, pathSignedArea, reversePath, rotateAboutPoint,
+  PATH_L, PATH_M, PATH_Z, pathFromD, pathSignedArea, reversePath,
   transformPath, type Mat3, type PolygonPath,
 } from '@weasel-js/geom';
-import { poseRotationOf } from 'core/geometry/poseRotation';
+import { poseFrameOf } from 'core/geometry/poseFrame';
 import type { PathInWorldPose } from 'features/paths/pathInWorld';
 import { SYNTHETIC_ITALIC_RADIANS } from 'renderer/syntheticItalic';
 
@@ -261,11 +261,11 @@ function walkOutlines(
     parts[groupOf(r.fill)]!.push(ruleContour(r.x0 + dx, r.y0 + dy, r.x1 + dx, r.y1 + dy));
   }
 
-  const rot = poseRotationOf(pose);
+  const frame = poseFrameOf(pose);
   const paths = parts.map((p) => {
     const path = concat(p);
-    if (!rot || path.commands.length === 0) return path;
-    return transformPath(path, rotateAboutPoint(rot.cx, rot.cy, rot.rotation)) as PolygonPath;
+    if (!frame || path.commands.length === 0) return path;
+    return transformPath(path, frame) as PolygonPath;
   });
   return { paints, paths };
 }
@@ -277,7 +277,7 @@ function walkOutlines(
  * curves; overlapping contours are not merged — run the result through
  * `pathUnion` for that, at the cost of flattening the curves.
  *
- * `pose` is the node's box and rotation. Synthetic italic is sheared exactly
+ * `pose` is the node's box, rotation, and `transform`. Synthetic italic is sheared exactly
  * as the renderer shears it. Throws {@link TextOutlinesError} when any run's
  * face cannot supply outlines — never returns a partial or empty path for
  * that. Text with no ink (empty, or only spaces) returns an empty path.

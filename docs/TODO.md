@@ -338,32 +338,34 @@ have shipped. What remains:
 
 - **(P3) `@container` in `@weasel-js/svg` stylesheets.** `packages/svg/src/cascade.ts` evaluates `@media`, `@supports` and `@layer`, but skips a `@container` block whole, so its rules never apply. That is deliberate for now: a static parse lays nothing out, so no element is a size container and no query can hold. Applying them needs container sizes from somewhere — the root's viewport as the one container, or boxes supplied by the caller.
 
-- **(P3) a pose's `transform` is drawn and picked, and the selection chrome and the editing actions
-  do not read it.** A box pose may carry a `transform` (`PoseLinear`,
+- **(P3) a pose's `transform` is drawn, picked, and edited as a path, and the selection chrome and
+  the resize and rotate handles do not read it.** A box pose may carry a `transform` (`PoseLinear`,
   `packages/core/src/core/geometry/poseFrame.ts`): the skew or per-axis scale its box and rotation
   cannot hold, which is how svg import keeps `<text transform="scale(4 1)">` as editable text four
   times as wide. `poseFrameOf` composes it with the rotation, and the render wrap, culling,
-  silhouettes, `axisAlignedBounds` / `unionAABB` / `visualBoundsViaDescriptor`, point picking, and
-  region picking all go through it. Ruled 2026-10-11: text and image nodes carry a full transform,
-  and such text stays editable text. These readers still see only the box and its rotation, so for
-  such a node each acts on the unstretched, unskewed box:
-  - `textToPath` (`features/text/textToPath.ts`) outlines the text without the transform.
-  - `pathInWorld` / `worldEditToStorage` (`features/paths/pathInWorld.ts`), and the anchor editing
-    and slicing built on them, place a path node's geometry without it.
+  silhouettes, `axisAlignedBounds` / `unionAABB` / `visualBoundsViaDescriptor`, point and region
+  picking, `pathInWorld` / `worldEditToStorage`, `textToPath`, slicing, and flipping all go through
+  it. Ruled 2026-10-11: text and image nodes carry a full transform, and such text stays editable
+  text. These readers still see only the box and its rotation, so for such a node each acts on the
+  unstretched, unskewed box:
   - The selection outline and handles (`features/selection/overlay.ts`,
     `affordances/hitAffordanceRegions.ts`, `wiredBoundsOfPose` in
-    `canvas/SceneCanvas/useSceneSelectTool.ts`) sit on the unstretched box.
-  - Resize, rotate, and flip (`interactions/actions/defaults/resize.ts`, `rotate/geometry.ts`,
-    `rotate/handle.ts`, `flip/helpers.ts`) work the box and leave the transform as it was; a flip
-    does not mirror a skew, and `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the
-    shear a non-uniform group resize adds rather than writing it here.
-  - `useNodeOverlayFrame` (`features/overlays/`), which places DOM chrome such as the text edit
-    overlay, applies the rotation alone. Needs a browser to verify.
-  - `composeRectPose` / `decomposeRectPose` (`features/groups/composePose.ts`) compose a
-    container's rotation into its children and not its transform.
+    `canvas/SceneCanvas/useSceneSelectTool.ts`) sit on the unstretched box, and the resize and
+    rotate actions (`interactions/actions/defaults/resize.ts`, `rotate/geometry.ts`,
+    `rotate/handle.ts`) take their drags in that box's frame. A resize changes the box and keeps
+    the transform, so the result is drawn stretched; these have to change together.
+  - `remapRotatedLeaf` (`core/geometry/poseDescriptor.ts`) drops the shear a non-uniform group
+    resize gives a turned leaf rather than writing it to the leaf's `transform`.
+  - `useNodeOverlayFrame` (`features/overlays/`), which places DOM chrome over a node, the text
+    edit overlay and its carets included, applies the rotation alone. Needs a browser to verify.
+  - `composeRectPose` / `composeRigidPose` (`features/groups/composePose.ts`) keep a child's own
+    transform and do not compose a container's into its children.
   - The debug overlay (`debug/createDebugOverlayLayer.ts`) outlines the rotated box.
   - `svgLeafFromKit` (`packages/svg/src/fromKit.ts`) writes it for text and image leaves and not
     for a path leaf.
+  - `defaultNodeProperties` has no row for it, so `SelectionPanel` can neither show nor clear it.
+  - A world-unit pick tolerance is measured in the node's own frame (`poseContainsRotated`), so
+    the transform stretches it with the node.
 
 - **(P2) geom: whether an open subpath fills is answered three ways.** For `<polyline points="0,0
   100,0 100,100" fill="red"/>` (no `Z`), `tessellate` (`packages/geom/src/tessellate/tessellate.ts`)

@@ -66,6 +66,11 @@ export function poseFrameOf(pose: unknown): Mat3 | null {
  * the `transform` is singular and nothing maps back.
  */
 export function poseFrameInverseOf(pose: unknown): Mat3 | null {
+  if (!poseLinearOf(pose)) {
+    // The same pivot turned back: exact, where inverting the matrix is not.
+    const r = poseRotationOf(pose);
+    return r && rotateAboutPoint(r.cx, r.cy, -r.rotation);
+  }
   const frame = poseFrameOf(pose);
   return frame && invert(frame);
 }

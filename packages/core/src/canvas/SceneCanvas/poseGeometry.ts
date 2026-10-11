@@ -7,10 +7,10 @@
  * extraction, so a consumer-supplied descriptor reaches all three.
  */
 import type { Bounds } from 'tools/builtin/select';
-import { applyToPoint, invert, pointInPath, strokeHitTest } from '@weasel-js/geom';
+import { applyToPoint, pointInPath, strokeHitTest } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'interactions/actions/resize/autoPoseDescriptor';
-import { poseFrameOf, poseLinearOf } from 'core/geometry/poseFrame';
+import { poseFrameInverseOf, poseFrameOf, poseLinearOf } from 'core/geometry/poseFrame';
 import { hasSlop, slopForStrokeHit, type ScreenSlop } from 'core/viewport/screenSlop';
 
 export { isPathLike };
@@ -73,9 +73,8 @@ export function poseContainsRotated<TPose>(
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
 ): boolean {
   const framed = descriptor === AUTO_POSE_DESCRIPTOR ? pose : framedBounds(pose, descriptor);
-  const frame = poseFrameOf(framed);
-  if (!frame) return containsInFrame(pose, wx, wy, tolerance, descriptor, 0);
-  const back = invert(frame);
+  if (!poseFrameOf(framed)) return containsInFrame(pose, wx, wy, tolerance, descriptor, 0);
+  const back = poseFrameInverseOf(framed);
   if (!back) return false;
   const [lx, ly] = applyToPoint(back, wx, wy);
   const rotation = (framed as { rotation?: number }).rotation ?? 0;

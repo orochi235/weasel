@@ -16,6 +16,7 @@ import type { Path } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { pathInWorld, worldEditToStorage, type PathInWorldPose } from 'features/paths/pathInWorld';
+import { poseLinearOf } from 'core/geometry/poseFrame';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';
 import type { PoseComposition } from 'features/groups/composePose';
@@ -93,7 +94,7 @@ export function useSliceDepSource(
   }));
 }
 
-/** A leaf's world pose, and the box and rotation its path is drawn through. */
+/** A leaf's world pose, and the box, rotation, and transform its path is drawn through. */
 interface DrawnPose {
   world: unknown;
   g: PoseDescriptor<unknown>;
@@ -104,7 +105,8 @@ function drawnPose(g: PoseDescriptor<unknown>, world: unknown): DrawnPose | null
   const b = g.getBounds(world);
   if (!b || ![b.x, b.y, b.width, b.height].every(Number.isFinite)) return null;
   const rotation = g.getRotation?.(world) ?? 0;
-  return { world, g, box: { x: b.x, y: b.y, width: b.width, height: b.height, rotation } };
+  const transform = poseLinearOf(world) ?? undefined;
+  return { world, g, box: { x: b.x, y: b.y, width: b.width, height: b.height, rotation, transform } };
 }
 
 /** A world-space piece as a world pose of the source's kind plus the path it draws. */
