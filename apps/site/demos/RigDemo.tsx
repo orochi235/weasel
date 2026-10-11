@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   asNodeId,
-  blendPoses,
   easeInOutSine,
   effectivePose,
   mat3,
   RECT_POSE_DESCRIPTOR,
   resolveSkeleton,
   rigidRigApply,
+  sampleTrack,
   SceneCanvas,
   solid,
   solveIk,
@@ -17,6 +17,7 @@ import {
 } from '@weasel-js/core';
 import type {
   FillStyle,
+  HoldHandle,
   NodeId,
   Pose,
   RectPose,
@@ -143,8 +144,8 @@ const INITIAL: NodeSpec[] = [
   },
   ...BY_SLIDER.nodes,
   ...BY_TRACK.nodes,
-  caption('caption:slider', 60, 'blendPoses by hand', '#7fb069'),
-  caption('caption:track', 330, 'SampledTrack<Pose>.interpolate', '#d4a574'),
+  caption('caption:slider', 60, 'holds on rig.target, by weight', '#7fb069'),
+  caption('caption:track', 330, 'SampledTrack<Pose> on rig.target', '#d4a574'),
 ];
 
 // Bones and joint markers ride their joints rigidly; labels follow the joint
@@ -165,41 +166,56 @@ export function RigDemo() {
   });
   const animator = useAnimator();
   const [blend, setBlend] = useState(0);
+  const [reach, setReach] = useState(1);
   const [labels, setLabels] = useState(true);
   const [playing, setPlaying] = useState(false);
-  // The `u` the track's interpolate was last handed, expressed against A→B so
-  // the return leg reads as a blend factor rather than as its own segment.
+  // How far the track's pose is from A toward B, read off the torso.
   const trackBlend = useRef(0);
   const [shownTrackBlend, setShownTrackBlend] = useState(0);
 
   const sliderRig = useRig({ scene, skeleton: BY_SLIDER.skeleton, bindings: BY_SLIDER.bindings, apply: APPLY });
   const trackRig = useRig({ scene, skeleton: BY_TRACK.skeleton, bindings: BY_TRACK.bindings, apply: APPLY });
 
-  // The arm reaches for the target wherever the move action has it — its drag
-  // preview lives in the overrides, its drop in the document. Posing the rig
-  // commits overrides too, so only a moved target triggers a solve.
+  // Three holds on one rig share it by weight: the two body poses, and the arm's reach for the
+  // target wherever the move action has it — its drag preview lives in the overrides, its drop
+  // in the document. Posing the rig commits overrides too, so only a moved target is solved.
   useEffect(() => {
+    const target = sliderRig.target;
+    const held: (HoldHandle | undefined)[] = [
+      animator.hold({ target, value: POSE_A, weight: (1 - blend) * (1 - reach) }),
+      animator.hold({ target, value: POSE_B, weight: blend * (1 - reach) }),
+    ];
+    // The solver starts from the body as one pose: the same mix, sampled instead of held.
+    const body = sampleTrack<Pose>(
+      { kind: 'sampled', keys: [{ t: 0, value: POSE_A }, { t: 1, value: POSE_B }], target }, blend,
+    )!;
     let last = '';
-    const reach = () => {
+    const aim = () => {
       const p = effectivePose(scene, scene.get(TARGET)!);
-      const target = { x: p.x + p.width / 2, y: p.y + p.height / 2 };
-      const key = `${target.x},${target.y}`;
+      const at = { x: p.x + p.width / 2, y: p.y + p.height / 2 };
+      const key = `${at.x},${at.y}`;
       if (key === last) return;
       last = key;
-      const body = blendPoses([POSE_A, POSE_B], [1 - blend, blend]);
-      sliderRig.pose(solveIk(BY_SLIDER.skeleton, body, { joints: ARM, tip: HAND, target }).pose);
+      held[2]?.release({ commit: false });
+      const solved = solveIk(BY_SLIDER.skeleton, body, { joints: ARM, tip: HAND, target: at }).pose;
+      held[2] = animator.hold({ target, value: solved, weight: reach });
     };
-    reach();
-    const offScene = scene.subscribe(reach);
-    const offOverrides = scene.overrides.subscribe(reach);
-    return () => { offScene(); offOverrides(); };
-  }, [scene, sliderRig, blend]);
+    aim();
+    const offScene = scene.subscribe(aim);
+    const offOverrides = scene.overrides.subscribe(aim);
+    return () => {
+      offScene();
+      offOverrides();
+      for (const h of held) h?.release({ commit: false });
+    };
+  }, [animator, scene, sliderRig, blend, reach]);
 
   useEffect(() => {
     if (!playing) {
       trackRig.pose(POSE_A);
       return;
     }
+    const a = POSE_A.torso!.rotation!;
     const track: SampledTrack<Pose> = {
       kind: 'sampled', label: 'pose',
       keys: [
@@ -207,11 +223,8 @@ export function RigDemo() {
         { t: 1400, value: POSE_B, easing: easeInOutSine },
         { t: 2800, value: POSE_A, easing: easeInOutSine },
       ],
-      interpolate: (a, b, u) => {
-        trackBlend.current = a === POSE_A ? u : 1 - u;
-        return blendPoses([a, b], [1 - u, u]);
-      },
-      onTick: (p) => trackRig.pose(p),
+      target: trackRig.target,
+      onTick: (p) => { trackBlend.current = (p.torso!.rotation! - a) / (POSE_B.torso!.rotation! - a); },
     };
     const tl = animator.timeline({ tracks: [track], loop: true });
     return () => tl.cancel();
@@ -231,6 +244,14 @@ export function RigDemo() {
             value={blend} onChange={(e) => setBlend(Number(e.target.value))}
           />
           <span className={`ckd-readout ${num.numeric}`}>{blend.toFixed(2)}</span>
+        </label>
+        <label className="ckd-field">
+          reach
+          <input
+            className="ckd-range" type="range" min={0} max={1} step={0.01}
+            value={reach} onChange={(e) => setReach(Number(e.target.value))}
+          />
+          <span className={`ckd-readout ${num.numeric}`}>{reach.toFixed(2)}</span>
         </label>
         <button className="ckd-btn" onClick={() => setPlaying((p) => !p)}>
           {playing ? 'stop track' : 'play track'}
@@ -253,16 +274,15 @@ export function RigDemo() {
       <div className="ckd-hint">
         Both figures are the same six-joint skeleton, bound to scene nodes by
         <code> useRig</code>: each bone, joint marker and label is a node that rides its
-        joint through the scene&apos;s pose overrides, so a frame costs no undo entry. The
-        green one is posed by
-        <code> blendPoses([A, B], [1 - t, t])</code> called directly from the slider; the
-        orange one is posed by a <code>SampledTrack&lt;Pose&gt;</code> whose
-        <code> interpolate</code> is that same call. Set the slider to the track&apos;s
-        reported <code>u</code> while it plays and the two silhouettes coincide — pose
-        interpolation and pose blending are one operation, which is why the rig needs no
-        timeline integration of its own. Drag the red target: the green figure&apos;s arm
-        follows it through <code>solveIk</code>, which rewrites the arm&apos;s rotations in
-        the blended pose, so body and arm stay one pose.
+        joint through the scene&apos;s pose overrides, so a frame costs no undo entry. A rig
+        is an animation target, <code>rig.target</code>, and everything here moves one. The
+        green figure is two <code>animator.hold</code>s on it, poses A and B at weights
+        <code> 1 - t</code> and <code>t</code>. The orange one is a
+        <code> SampledTrack&lt;Pose&gt;</code> naming it as its <code>target</code>, with no
+        <code> interpolate</code>: set the slider to the track&apos;s reported <code>u</code>
+        while it plays and the two bodies coincide. Drag the red target: <code>solveIk</code>
+        {' '}answers with one more pose, held beside the other two at the reach weight, which
+        takes its share from theirs.
       </div>
     </div>
   );
