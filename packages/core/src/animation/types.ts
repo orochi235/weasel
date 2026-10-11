@@ -521,7 +521,7 @@ export interface StaggerBuilder<TItem> {
    *  would collide on `"[object Object]"` and successive tweens would
    *  cancel each other. Throws on items that satisfy neither. */
   springPose<TPose>(
-    adapter: import('core/adapters/types').SceneAdapter<{ id: string }, TPose>,
+    adapter: import('./poseHelpers').PoseAnimationAdapter<TPose>,
     poseFn: (item: TItem, index: number) => TPose,
     opts?: StaggerSpringPoseOptions<TPose>,
   ): AnimationHandle;

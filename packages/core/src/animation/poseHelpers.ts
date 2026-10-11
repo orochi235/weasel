@@ -1,8 +1,18 @@
 import { createTransformOp } from 'core/ops/transform';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { SceneAdapter } from 'core/adapters/types';
+import type { Op } from 'core/ops/types';
 import type { AnimationHandle, Animator, EasingSpec, SpringPresetName } from './types';
-import { stateOf } from './target';
+import { stateOf, type Target } from './target';
+
+/** The part of an adapter `tweenPose` and `springPose` use. Any `SceneAdapter` is one, and so is
+ *  the adapter `sceneToAdapter` and `useSceneAdapter` build. */
+export interface PoseAnimationAdapter<TPose> {
+  getPose(id: string): TPose;
+  setPose(id: string, pose: TPose): void;
+  applyOps?(ops: Op[], label: string): void;
+  /** See `SceneAdapter.poseTarget`. */
+  poseTarget?(id: string, descriptor?: PoseDescriptor<TPose>): Target<TPose> | undefined;
+}
 
 /** Options for `tweenPose`. */
 export interface TweenPoseOptions<TPose> {
@@ -40,7 +50,7 @@ export interface SpringPoseOptions<TPose> {
 const cancelKeyFor = (id: string): string => `pose:${id}`;
 
 function recordTransformOp<TPose>(
-  adapter: SceneAdapter<{ id: string }, TPose>,
+  adapter: PoseAnimationAdapter<TPose>,
   id: string,
   from: TPose,
   to: TPose,
@@ -67,9 +77,9 @@ function recordTransformOp<TPose>(
  * An adapter without `poseTarget`, and a pose with no axes (a path), keep the older behavior:
  * `setPose` is written each frame, and a new move on the node cancels the one running.
  */
-export function tweenPose<TNode extends { id: string }, TPose>(
+export function tweenPose<TPose>(
   animator: Animator,
-  adapter: SceneAdapter<TNode, TPose>,
+  adapter: PoseAnimationAdapter<TPose>,
   opts: TweenPoseOptions<TPose>,
 ): AnimationHandle {
   const recordOp = opts.recordOp ?? true;
@@ -78,7 +88,7 @@ export function tweenPose<TNode extends { id: string }, TPose>(
   const target = adapter.poseTarget?.(opts.id, opts.geometry);
   if (target) {
     const committed = stateOf(target).get();
-    if (recordOp) recordTransformOp(adapter as never, opts.id, committed, opts.to, label);
+    if (recordOp) recordTransformOp(adapter, opts.id, committed, opts.to, label);
     const lerp = opts.geometry?.lerp;
     return animator.tween<TPose>({
       target,
@@ -98,7 +108,7 @@ export function tweenPose<TNode extends { id: string }, TPose>(
   }
   const lerp = geometry.lerp;
   const from = adapter.getPose(opts.id);
-  if (recordOp) recordTransformOp(adapter as never, opts.id, from, opts.to, label);
+  if (recordOp) recordTransformOp(adapter, opts.id, from, opts.to, label);
   return animator.tween<TPose>({
     from: opts.from ?? from,
     to: opts.to,
@@ -117,9 +127,9 @@ export function tweenPose<TNode extends { id: string }, TPose>(
  * On an adapter with `poseTarget` it interrupts every move under `pose:<id>` and starts at
  * their velocity, from the pose on screen. Otherwise it falls back as `tweenPose` does.
  */
-export function springPose<TNode extends { id: string }, TPose>(
+export function springPose<TPose>(
   animator: Animator,
-  adapter: SceneAdapter<TNode, TPose>,
+  adapter: PoseAnimationAdapter<TPose>,
   opts: SpringPoseOptions<TPose>,
 ): AnimationHandle {
   const recordOp = opts.recordOp ?? true;
@@ -130,7 +140,7 @@ export function springPose<TNode extends { id: string }, TPose>(
     // Read ahead of the op: the spring starts from the pose on screen, wherever that commit
     // and the interrupted moves leave the committed one.
     const shown = target.read();
-    if (recordOp) recordTransformOp(adapter as never, opts.id, stateOf(target).get(), opts.to, label);
+    if (recordOp) recordTransformOp(adapter, opts.id, stateOf(target).get(), opts.to, label);
     return animator.spring<TPose>({
       target,
       from: shown,
@@ -149,7 +159,7 @@ export function springPose<TNode extends { id: string }, TPose>(
   }
   const lerp = geometry.lerp;
   const from = adapter.getPose(opts.id);
-  if (recordOp) recordTransformOp(adapter as never, opts.id, from, opts.to, label);
+  if (recordOp) recordTransformOp(adapter, opts.id, from, opts.to, label);
   // The spring integrates progress from 0 to 1, and lerp makes the pose from it.
   return animator.spring<number>({
     from: 0,

@@ -29,7 +29,7 @@ export {
 } from './poseTarget';
 export {
   tweenPose, springPose,
-  type TweenPoseOptions, type SpringPoseOptions,
+  type TweenPoseOptions, type SpringPoseOptions, type PoseAnimationAdapter,
 } from './poseHelpers';
 export * from './wrappers';
 export {
