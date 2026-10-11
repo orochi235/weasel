@@ -1080,16 +1080,13 @@ Core five + Crop shipped. Remaining:
   id-addressed ops and wrong for relative ones, and say so in the doc. In `apps/draw` the nameless
   ops are the inverses listed in the next entry.
 
-- **(P3) Ops: the inverse of a reorder cannot be inverted, and three inverses have no name.**
-  `createReorderOp(...).invert().invert()` in `packages/core/src/core/ops/reorder/index.ts` is `{
-  apply() {}, invert() { return this; } }`, a silent no-op, where `Op.invert` is documented as
-  producing the op that undoes it. The history engine stores forward ops, so it only double-inverts
-  when it unwinds a step that threw partway (`applyAllOrNothing` in
-  `packages/history/src/history.ts`), and there the no-op leaves that reorder inverted. The inverses
-  of `reorder`, `moveToIndex`, and a cascading `delete` (`packages/core/src/core/ops/delete.ts`)
-  also carry no `name`, so an entry built from one is dropped by `serialize()`. Have each inverse
-  return the original factory with its captured state, as `createDeleteOp`'s compound inverse
-  already does for its own `invert`.
+- **(P3) Ops: three inverses have no name.** The inverses of `reorder` and `moveToIndex`
+  (`packages/core/src/core/ops/reorder/index.ts`) and of a cascading `delete`
+  (`packages/core/src/core/ops/delete.ts`) carry no `name`, so an entry built from one is dropped
+  by `serialize()`. None is expressible through a factory that is registered today: the first two
+  write a whole sibling order back, which `moveToIndex` cannot state because it keeps the moved
+  ids in their current relative order, and the third re-inserts several nodes. Naming them means
+  registering new op kinds, which adds to the persisted history format.
 
 - **(P3) `packages/core/src/core/scene/scene.ts` is one 2,100-line closure holding seven jobs.**
   `createScene` contains the node store and kit op table, the layer stack, the arrival window and

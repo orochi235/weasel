@@ -109,12 +109,10 @@ function createPartitionedReorderOp(args: {
             a.setChildOrder(entry.parentId, entry.before.slice());
           }
         },
-        invert() {
-          // Inverting twice should reapply the original; we don't support
-          // this round-trip beyond two levels — the kit's history layer
-          // doesn't need it. Return a no-op for safety.
-          return { apply() {}, invert() { return this; } };
-        },
+        invert: () =>
+          createPartitionedReorderOp({
+            ids, direction, fn, label, prevOrders: captured ?? undefined,
+          }),
       };
     },
   };
@@ -207,7 +205,10 @@ export function createMoveToIndexOp(args: MoveToIndexArgs): Op {
           const a = adapter as ReorderAdapter;
           a.setChildOrder?.(parentId, captured.slice());
         },
-        invert() { return { apply() {}, invert() { return this; } }; },
+        invert: () =>
+          createMoveToIndexOp({
+            ids, parentId, index, label, prevPositions: captured ?? undefined,
+          }),
       };
     },
   };

@@ -155,3 +155,37 @@ describe('createMoveToIndexOp', () => {
     expect(a.children.ROOT).toEqual(['a', 'b', 'c']);
   });
 });
+
+describe('inverting an inverse', () => {
+  it('reapplies a reorder, and can be undone again', () => {
+    const a = makeAdapter({
+      parents: { a: null, b: null, c: null },
+      children: { ROOT: ['a', 'b', 'c'] },
+    });
+    const op = createReorderOp({ ids: ['a'], direction: 'front' });
+    op.apply(a);
+    const inverse = op.invert();
+    inverse.apply(a);
+    const again = inverse.invert();
+    again.apply(a);
+    expect(a.children.ROOT).toEqual(['b', 'c', 'a']);
+    again.invert().apply(a);
+    expect(a.children.ROOT).toEqual(['a', 'b', 'c']);
+  });
+
+  it('reapplies a move to an index, and can be undone again', () => {
+    const a = makeAdapter({
+      parents: { a: null, b: null, c: null },
+      children: { ROOT: ['a', 'b', 'c'] },
+    });
+    const op = createMoveToIndexOp({ ids: ['c'], parentId: null, index: 0 });
+    op.apply(a);
+    const inverse = op.invert();
+    inverse.apply(a);
+    const again = inverse.invert();
+    again.apply(a);
+    expect(a.children.ROOT).toEqual(['c', 'a', 'b']);
+    again.invert().apply(a);
+    expect(a.children.ROOT).toEqual(['a', 'b', 'c']);
+  });
+});
