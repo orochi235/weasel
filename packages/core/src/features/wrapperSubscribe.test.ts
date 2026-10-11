@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { RenderLayer } from 'core/layers/render';
-import { gateLayer } from 'features/focus/gateLayer';
+import { gateLayer } from 'core/layers/gateLayer';
 import { createTiledLayer } from 'features/tiling/createTiledLayer';
 import { createViewportLayer } from 'features/viewports/viewportLayer';
 import { createParallaxLayer } from 'features/parallax/createParallaxLayer';

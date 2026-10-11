@@ -4,8 +4,8 @@
  * stable `getFocused()` getter for use inside per-frame closures (notably
  * `RenderLayer.draw`, which is constructed once but called every frame).
  *
- * Pure feature module — no Canvas/SceneCanvas integration. Consumers compose
- * the hook + `gateLayer` (or their own gate) to hide affordances when blurred.
+ * No Canvas/SceneCanvas integration. Consumers compose the hook with core's
+ * `gateLayer` (or their own gate) to hide affordances when blurred.
  */
 import { useCallback, useMemo, useRef, useState } from 'react';
 

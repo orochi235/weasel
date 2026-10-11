@@ -7,8 +7,11 @@
  * RenderLayers are constructed once but their `draw` runs every frame —
  * a static value would lock in whatever the predicate returned at
  * construction time.
+ *
+ * A rule that chrome-caps can express belongs there, since it gates the
+ * hit-test as well as the paint. This is for layers outside its vocabulary.
  */
-import { subscribeToSources, type RenderLayer } from 'core/layers/render';
+import { subscribeToSources, type RenderLayer } from './render';
 
 /** Options for `gateLayer`. */
 export interface GateLayerOptions<TData> {

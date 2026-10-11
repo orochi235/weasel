@@ -97,12 +97,7 @@ export {
 export type { MinimapContributionOptions, LinkedCursorOptions, CrosshairRect } from '../features/minimap';
 
 // ─── Canvas focus & visibility gating ───────────────────────────────────────
-export {
-  useCanvasFocus,
-  gateLayer,
-} from '../features/focus';
-export type {
-  UseCanvasFocusOptions,
-  CanvasFocusReturn,
-  GateLayerOptions,
-} from '../features/focus';
+export { gateLayer } from '../core/layers/gateLayer';
+export type { GateLayerOptions } from '../core/layers/gateLayer';
+export { useCanvasFocus } from '@weasel-js/react';
+export type { UseCanvasFocusOptions, CanvasFocusReturn } from '@weasel-js/react';
