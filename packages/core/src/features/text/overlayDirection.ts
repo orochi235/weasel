@@ -1,6 +1,6 @@
 /**
- * The edit overlay's reading direction and alignment, set so the browser
- * resolves both the way `layoutRuns` does for the canvas.
+ * The edit overlay's reading direction, alignment, and tab stops, set so the
+ * browser resolves them the way `layoutRuns` does for the canvas.
  */
 import { paragraphDirection, resolveAlign, type ResolvedTextStyle } from '@weasel-js/text';
 
@@ -14,6 +14,7 @@ export function applyOverlayDirection(el: HTMLElement, style: ResolvedTextStyle)
   const auto = style.direction === 'auto';
   el.style.direction = auto ? '' : style.direction;
   el.style.setProperty('unicode-bidi', auto ? 'plaintext' : '');
+  el.style.setProperty('tab-size', String(style.tabSize));
   const justify = style.align === 'justify';
   const edge = style.direction === 'auto'
     ? (justify ? 'start' : style.align)

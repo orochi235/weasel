@@ -142,6 +142,20 @@ describe('drawText and the alignment box', () => {
     expect(laid.lines[0].x0).toBeCloseTo(356, 5);
   });
 
+  it('runs a tab to the stops the command\'s style states', () => {
+    const base = bottomAlignedText() as Extract<DrawCommand, { kind: 'text' }>;
+    const cmd = (tabSize?: number): DrawCommand => ({
+      ...base,
+      verticalAlign: undefined,
+      style: { ...base.style, ...(tabSize !== undefined ? { tabSize } : {}) },
+      runs: [{ ...base.runs[0], text: '\tB', underline: false }],
+    });
+    r.render([cmd()]);
+    const eight = captured[captured.length - 1].result.lines[0].cells[1].x;
+    r.render([cmd(2)]);
+    expect(captured[captured.length - 1].result.lines[0].cells[1].x).toBeCloseTo(eight / 4, 5);
+  });
+
   it('resolves a reading-order alignment against the command\'s direction', () => {
     const base = bottomAlignedText() as Extract<DrawCommand, { kind: 'text' }>;
     const cmd: DrawCommand = {

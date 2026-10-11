@@ -15,6 +15,7 @@ import { resolveScreenLength } from '@weasel-js/paint';
 import { cssFamilyName } from '@weasel-js/font';
 import type { TextTransform } from './runs/textTransform';
 import type { FontVariantCaps } from './runs/smallCaps';
+import { DEFAULT_TAB_SIZE } from './layout/tabStops';
 
 /**
  * Horizontal alignment. `start` / `end` resolve against the reading direction;
@@ -69,6 +70,8 @@ export interface TextStyle {
   direction?: TextDirection | 'auto';
   /** Multiplier applied to `fontSize`. Default 1.2. */
   lineHeight?: number;
+  /** Distance between tab stops, in spaces, as CSS `tab-size`. Default 8. */
+  tabSize?: number;
   /**
    * Break lines where they would pass the box width, at the break
    * opportunities of Unicode's line breaking algorithm (UAX #14) — between
@@ -124,6 +127,7 @@ export interface ResolvedTextStyle {
   align: TextAlign;
   direction: TextDirection | 'auto';
   lineHeight: number;
+  tabSize: number;
   wrap: boolean;
   /** `null` is an explicit no-fill, the way it is on every other node kind:
    *  outline-only text, painted by its stroke alone. */
@@ -167,6 +171,7 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   align: 'left',
   direction: 'auto',
   lineHeight: 1.2,
+  tabSize: DEFAULT_TAB_SIZE,
   wrap: false,
   fill: DEFAULT_FILL,
   caretColor: paintColor(DEFAULT_FILL),
@@ -250,6 +255,7 @@ export function resolveTextStyle(
     align: style.align ?? DEFAULT_TEXT_STYLE.align,
     direction: style.direction ?? DEFAULT_TEXT_STYLE.direction,
     lineHeight: style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight,
+    tabSize: style.tabSize ?? DEFAULT_TEXT_STYLE.tabSize,
     wrap: style.wrap ?? DEFAULT_TEXT_STYLE.wrap,
     fill,
     caretColor,

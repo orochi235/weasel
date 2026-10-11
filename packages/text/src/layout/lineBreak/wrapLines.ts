@@ -16,8 +16,9 @@ export interface WrappedLine {
   wrapped: boolean;
 }
 
-/** White space that hangs at a line's end and never opens a wrapped line. */
-const hangs = (cp: number): boolean => cp === 32 || cp === 9;
+/** White space that hangs at a line's end and never opens a wrapped line: a
+ *  space or a tab. */
+export const hangs = (cp: number): boolean => cp === 32 || cp === 9;
 
 /**
  * Greedy wrap of `cps` at its UAX #14 break opportunities. A line ends at

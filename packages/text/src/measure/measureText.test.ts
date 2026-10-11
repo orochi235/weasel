@@ -23,6 +23,13 @@ describe('measureText', () => {
     expect(r.lines).toEqual(['the quick', 'brown']);
   });
 
+  it('hangs a trailing tab off a wrapped line as it does a space', () => {
+    const ctx = makeCtx();
+    // "the quick" is 90 wide; the tab after it hangs, so both still fit in 100.
+    const r = measureText(ctx, 'the quick\tbrown', 100, DEFAULT_TEXT_STYLE);
+    expect(r.lines).toEqual(['the quick', 'brown']);
+  });
+
   it('preserves explicit newlines as line breaks', () => {
     const ctx = makeCtx();
     const r = measureText(ctx, 'a\nb\nc', 1000, DEFAULT_TEXT_STYLE);

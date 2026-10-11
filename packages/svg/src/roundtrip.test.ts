@@ -786,6 +786,17 @@ describe('letter-spacing / text-decoration', () => {
     expect(svg).toContain('text-decoration="underline"');
   });
 
+  it('keeps a text\'s tab size through a round trip', () => {
+    const node = {
+      id: 't1', kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'a\tb', style: { tabSize: 4 },
+    } as unknown as SvgNode;
+    const out = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 100 } });
+    const back = parseSvg(out).nodes[0];
+    if (back.kind !== 'text') throw new Error('expected text');
+    expect(back.style?.tabSize).toBe(4);
+    expect(back.text).toBe('a\tb');
+  });
+
   it('writes an unfilled run as fill="none" and reads it back', () => {
     const node = {
       id: 't1', kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'ab',
@@ -1310,6 +1321,15 @@ describe('text with no stated direction', () => {
     const back = parseSvg(out).nodes[0] as { style?: Record<string, unknown> };
     expect(back.style?.direction).toBe('ltr');
     expect(parseSvg(ser({ align: 'left' })).nodes[0]).not.toHaveProperty('style.direction');
+  });
+
+  it('reads another writer\'s text with no direction as ltr, which is what SVG means by it', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="10">hi</text>
+    </svg>`;
+    const t = parseSvg(svg).nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.style?.direction).toBe('ltr');
   });
 
   it('reads left to right with no engine registered', () => {

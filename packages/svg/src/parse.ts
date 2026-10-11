@@ -839,6 +839,7 @@ function laidOutWidth(runs: readonly StyledRun[], style: TextStyle, plain: strin
     lineHeight: resolved.lineHeight,
     align: resolved.align,
     direction: resolved.direction,
+    tabSize: resolved.tabSize,
   });
   if (bounds.width > 0) return bounds.width;
   const longest = plain.split('\n').reduce((max, line) => Math.max(max, line.length), 0);
@@ -968,8 +969,15 @@ function parseTextElement(
     (r) => Object.entries(r).some(([k, v]) => k !== 'text' && v !== undefined),
   );
   if (hasStyling) node.runs = runs;
+  // An absent `direction` is `ltr` in SVG and the text's own in this model, so
+  // only text weasel wrote, which says `ltr` when it means it, keeps it absent.
+  if (textStyle.direction === undefined && !el.hasAttribute('data-weasel-width')) {
+    textStyle.direction = 'ltr';
+  }
   if (el.getAttribute('data-weasel-wrap') === 'true') textStyle.wrap = true;
   if (el.getAttribute('data-weasel-align') === 'justify') textStyle.align = 'justify';
+  const tabSize = Number(el.getAttribute('data-weasel-tab-size') ?? NaN);
+  if (Number.isFinite(tabSize)) textStyle.tabSize = tabSize;
   const va = el.getAttribute('data-weasel-vertical-align');
   if (va === 'center' || va === 'bottom') node.verticalAlign = va;
   if (Object.keys(textStyle).length > 0) node.style = textStyle;

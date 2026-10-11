@@ -47,6 +47,7 @@ export function textPoseLayoutInput(pose: TextPose, scale = 1): TextPoseLayoutIn
       lineHeight: style.lineHeight,
       align: style.align,
       direction: style.direction,
+      tabSize: style.tabSize,
       justify: style.align === 'justify',
     },
   };

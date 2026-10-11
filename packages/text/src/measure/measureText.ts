@@ -9,7 +9,7 @@
  * (`lines.length * fontSize * lineHeight`), and per-line `lineStarts` —
  * the UTF-16 offset of each line's first character in `text`, which
  * `caretIndexAt` uses to map a clicked (x, y) back to a source offset.
- * Trailing spaces hang and are not included in `lines[i]`; neither is the
+ * Trailing spaces and tabs hang and are not included in `lines[i]`; neither is the
  * hard break that closed it.
  *
  * The caller owns the `ctx.font` setup — pass a context whose `font`
@@ -18,7 +18,7 @@
 
 import type { ResolvedTextStyle } from '../textStyle';
 import { graphemeCount } from './graphemes';
-import { wrapLines } from '../layout/lineBreak/wrapLines';
+import { hangs, wrapLines } from '../layout/lineBreak/wrapLines';
 
 /**
  * Advance width of `text` in world units, tracking included.
@@ -68,7 +68,11 @@ export function measureText(
   at.push(u);
 
   const wrapped = wrapLines(cps, maxWidth, (start, end) => measuredWidth(ctx, text.slice(at[start], at[end]), style));
-  const lines = wrapped.map((l) => text.slice(at[l.start], at[l.end]).replace(/ +$/, ''));
+  const lines = wrapped.map((l) => {
+    let end = l.end;
+    while (end > l.start && hangs(cps[end - 1])) end--;
+    return text.slice(at[l.start], at[end]);
+  });
   const lineStarts = wrapped.map((l) => at[l.start]);
   const height = lines.length * style.fontSize * style.lineHeight;
   return { lines, lineStarts, height };

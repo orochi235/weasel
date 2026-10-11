@@ -1140,6 +1140,13 @@ describe('useTextEdit — alignment on the overlay', () => {
 
   // Proxies, all three: what a browser does with these properties is layout,
   // which jsdom does not have.
+  it('states the tab size the canvas lays out with', () => {
+    const h = makeTrackingHarness([{ text: 'a\tb' }], { fontSize: 16, tabSize: 4 });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.getPropertyValue('tab-size')).toBe('4');
+  });
+
   it('states the direction the canvas analyzes with', () => {
     const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, direction: 'rtl' });
     const { result } = renderHook(() => useTextEdit(h.opts));

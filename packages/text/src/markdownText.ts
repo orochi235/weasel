@@ -5,7 +5,7 @@ import { numericWeight, scriptMetrics } from './runs/resolveRuns';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './layout/decorationMetrics';
 import { transformRunTexts } from './runs/textTransform';
 import { smallCapsScale, smallCapsText } from './runs/smallCaps';
-import { wrapLines } from './layout/lineBreak/wrapLines';
+import { hangs, wrapLines } from './layout/lineBreak/wrapLines';
 
 export type { StyledRun };
 
@@ -171,7 +171,7 @@ export function layoutMarkdown(
   for (const line of wrapLines(cps, maxWidth, widthOf)) {
     let end = line.end;
     // A wrapped line's trailing spaces hang past the edge, as they do in `layoutRuns`.
-    if (line.wrapped) while (end > line.start && cps[end - 1] === 32) end--;
+    if (line.wrapped) while (end > line.start && hangs(cps[end - 1])) end--;
     commitLine(piecesOf(line.start, end));
   }
 

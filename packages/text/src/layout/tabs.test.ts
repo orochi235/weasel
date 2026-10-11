@@ -5,6 +5,8 @@ import { layoutRuns, type LayoutRunsOpts } from './layoutRuns';
 import { cachedLayoutRuns } from './layoutCache';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { tabAdvance } from './tabStops';
+import { layoutTextPose } from './textPoseLayout';
+import { measureTextBounds } from '../measure/measureTextBounds';
 
 beforeEach(async () => {
   _resetFontRegistryForTests();
@@ -101,6 +103,16 @@ describe('layoutRuns — tabs', () => {
     const bare = layoutRuns([RUN('AB')], opts);
     const trailed = layoutRuns([RUN('AB\t')], opts);
     expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);
+  });
+
+  it('takes the tab size a text style states, for a pose and for a measurement', () => {
+    const space = spaceAdvance();
+    const style = { fontFamily: 'inter', fontSize: 32, tabSize: 2 };
+    const { laid } = layoutTextPose({ x: 0, y: 0, width: 400, height: 40, text: '\tB', style });
+    expect(laid.lines[0].cells[1].x).toBeCloseTo(space * 2, 10);
+    const b = measureTextBounds('B', style).width;
+    expect(measureTextBounds('\tB', style).width).toBeCloseTo(space * 2 + b, 10);
+    expect(measureTextBounds('\tB', { ...style, tabSize: undefined }).width).toBeCloseTo(space * 8 + b, 10);
   });
 
   it('keys the cached layout on the tab size', () => {

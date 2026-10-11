@@ -41,6 +41,8 @@ export function measureTextBounds(
     maxWidth: opts?.maxWidth ?? Infinity,
     lineHeight: opts?.lineHeight ?? resolved.lineHeight,
     align: resolved.align,
+    direction: resolved.direction,
+    tabSize: resolved.tabSize,
   });
   // Copied: the layout behind it is shared, and handing a caller a mutable
   // reference into a cache entry is how one measurement corrupts the next.

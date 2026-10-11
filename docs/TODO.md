@@ -446,12 +446,12 @@ have shipped. What remains:
 
 Core five + Crop shipped. Remaining:
 
-- **(P3) Outline.** Stroke-to-fill silhouette — needs proper offsetting with joins/caps/self-intersection cleanup. No lightweight JS lib without major deps. The same offsetting would let `textToPath` embolden synthetic-bold text, which it refuses today with `reason: 'synthetic-bold'`.
+- **(P3) Outline.** `strokeToPath` (`packages/core/src/features/paths/strokeToPath.ts`) now gives a stroke's silhouette as a fillable path, with joins, caps, dashes, alignment, and marker heads. What is left is the action that applies it to a selection: it has to read a node's stroke and decide the result's paint, and `BooleansAdapter` sees paths only, the same style-awareness gap Trim and Merge wait on. `textToPath` still refuses synthetic-bold text (`reason: 'synthetic-bold'`): emboldening it is now a union with the glyphs' own outline stroke, but the width has to match what the renderer's distance-field shift (`SYNTH_BOLD_AMOUNT`) draws, and that mapping to em units is not worked out.
 - **(P3) Trim and Merge.** Remove hidden portions / Trim + same-color reunion — need per-path style awareness, which the kit deliberately doesn't have since `data` is opaque. Wait on a compound-path-with-styles model.
 - **(P3) Non-destructive boolean groups.** Figma-style "boolean group" container node that recomputes geometry from children at render time. Requires a new layer/scene-node type plus renderer support.
 - **(P3) True curve booleans.** v1 flattens beziers before clipping; the result is straight-line. Skia/PathKit-style curve-preserving booleans are next-level — substantially harder.
 - **(P3) Live preview during the gesture.** Holding the op key while hovering a path to see the result before committing.
-- **(P3) Boolean ops on stroked paths.** Treat a stroke as a filled region, then clip. Blocked on stroke-to-fill (round/bevel/miter joins, end caps — its own design problem).
+- **(P3) Boolean ops on stroked paths.** Treat a stroke as a filled region, then clip. `strokeToPath` supplies the region; what is left is the same adapter gap as Outline above (`applyBooleanOp` cannot read an operand's stroke) and whether a stroked operand contributes its fill, its stroke, or both.
 
 ---
 
@@ -651,15 +651,14 @@ Core five + Crop shipped. Remaining:
   handler; inserting `text/plain`, or sanitizing to run spans, would keep the overlay to what
   `runsToDom` writes. Which elements each browser inserts on paste has not been observed.
 
-- **(P3) Text direction: three readers of an omitted `direction` are not the layout's.** An omitted
-  `TextStyle.direction` is `'auto'`, each paragraph's first strong character, once a bidi engine is
-  registered (`registerBidi`). Still short of that: the Align bar's encoding
-  (`alignEncoding` in `packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts`) lights
-  `start` / `end` as if auto were `ltr`, because it is handed the style and not the text; the edit
-  overlay states auto as `unicode-bidi: plaintext` (`overlayDirection.ts`), which is CSS's spelling
-  of the same rule but has not been checked against the canvas in a browser; and an imported SVG
-  `<text>` with no `direction` reads as auto where SVG means `ltr`, so its neutrals can land on the
-  other side of right-to-left text.
+- **(P3) Text direction: the Align bar lights `start` / `end` as if an omitted `direction` were
+  `ltr`.** An omitted `TextStyle.direction` is `'auto'`, each paragraph's first strong character, so
+  right-to-left text aligned `start` paints from the right while the bar lights Left. The bar's
+  encoding (`alignEncoding` in `packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts`) is
+  handed the leaf's siblings, which are the style's fields and not the node's text, and
+  `paragraphDirection(text, direction)` needs the text. Undecided: whether `PrefEnumEncoding.read`
+  and `write` should be handed the whole node, or the bar should show `start` / `end` as their own
+  state instead of resolving them to an edge.
 
 - **(P2) Canvas font tier: a web font that loads after first use never replaces the fallback face it
   was measured with.** `getDynamicFace` and `requestGlyph`
@@ -698,11 +697,11 @@ Core five + Crop shipped. Remaining:
   Options: reject on a mismatch so the registry leaves the run on the SDF tier with its usual
   warning, or keep the fallback and warn once naming both spellings.
 
-- **(P3) Text layout: only `layoutRuns` knows a tab, and nothing above it can set the tab size.**
-  `layoutRuns` runs a tab to the next stop (`LayoutRunsOpts.tabSize`, default 8 spaces, which is
-  also the edit overlay's CSS default). `TextStyle` has no `tabSize`, so every kit caller lays out
-  at 8, and the two other layouts that share `wrapLines`, `measureText` and `layoutMarkdown`, hang a
-  trailing tab but still measure one as a glyph.
+- **(P3) Text layout: the canvas-2D label paths read a tab as one space.** `layoutRuns` runs a tab
+  to the next stop (`TextStyle.tabSize`, default 8 spaces). `measureText` and `layoutMarkdown`
+  measure with `ctx.measureText` and paint with `fillText`, which draws a tab as a single space, so
+  they agree with their own painter and not with the GL tier. Undecided: whether those paths should
+  split a line at its tabs and paint the pieces at tab stops, or keep the canvas's reading.
 
 ---
 

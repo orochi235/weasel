@@ -530,6 +530,7 @@ function textXml(
     warn('text that wraps at its box width is written unwrapped: SVG text does not wrap, so other'
       + ' readers draw one line per hard break (weasel reads the wrap back)');
   }
+  if (style?.tabSize != null) attrs.push(`data-weasel-tab-size="${trimNumber(style.tabSize)}"`);
   if (node.verticalAlign && node.verticalAlign !== 'top') {
     attrs.push(`data-weasel-vertical-align="${node.verticalAlign}"`);
     warn(`text aligned to the ${node.verticalAlign} of its box is written top-aligned: SVG text has`
