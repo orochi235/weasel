@@ -191,12 +191,12 @@ function StopsBody(props: {
       {spaceBar}
 
       <div className={s.swatches}>
-        {ordered.map(({ stop, index }) => (
+        {ordered.map(({ stop, index }, place) => (
           <ColorField
             key={index}
             value={stop.color}
             alpha
-            aria-label={`Stop ${index + 1} at ${Math.round(stop.offset * 100)}%`}
+            aria-label={`Stop ${place + 1} at ${Math.round(stop.offset * 100)}%`}
             className={s.swatch}
             onInput={(hex) => onInput?.(withStops(setStopColor(index, hex)))}
             onChange={(hex) => onChange(withStops(setStopColor(index, hex)))}

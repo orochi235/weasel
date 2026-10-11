@@ -79,7 +79,7 @@ describe('GradientEditor', () => {
     expect(screen.queryByRole('radio', { name: 'Radial' })).not.toBeInTheDocument();
   });
 
-  it('addresses stops by array position, so an out-of-order list recolors the right one', () => {
+  it('numbers swatches along the gradient and recolors the stop each one stands for', () => {
     const onChange = vi.fn();
     const unordered: GradientFill = {
       ...LINEAR,
@@ -89,8 +89,9 @@ describe('GradientEditor', () => {
       ],
     };
     render(<GradientEditor value={unordered} onChange={onChange} />);
-    // The row is sorted for display, so the leftmost swatch is stops[1].
-    const swatch = screen.getByLabelText('Stop 2 at 0%');
+    expect(screen.getByLabelText('Stop 2 at 100%')).toBeInTheDocument();
+    // The leftmost swatch is stops[1]: numbered by where it sits, written by index.
+    const swatch = screen.getByLabelText('Stop 1 at 0%');
     fireEvent.input(swatch, { target: { value: '#00ff00' } });
     fireEvent.blur(swatch);
 
