@@ -8,7 +8,9 @@
  * signal. Everything below pins a way that could go wrong.
  */
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { nodeMemo, bumpNodeMemoGeneration, dropPoseKeyedMemoSlots } from './nodeMemo';
+import {
+  nodeMemo, bumpNodeMemoGeneration, dropPoseKeyedMemoSlots, createNodeMemoScope, nodeMemoSlotCount,
+} from './nodeMemo';
 
 afterEach(() => {
   // Leave no cached entry visible to the next test.
@@ -152,5 +154,60 @@ describe('dropPoseKeyedMemoSlots', () => {
 
   it('is a no-op for a node that was never memoized', () => {
     expect(() => dropPoseKeyedMemoSlots({ data: {} })).not.toThrow();
+  });
+});
+
+describe('nodeMemo in a scope', () => {
+  it('derives once for an unchanged node, pose and data', () => {
+    const node = makeNode({ a: 1 });
+    const scope = createNodeMemoScope();
+    const derive = vi.fn(() => ({}));
+    expect(nodeMemo(node, scope, POSE, derive)).toBe(nodeMemo(node, scope, POSE, derive));
+    expect(derive).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps nothing on the node, and nothing another scope can see', () => {
+    const node = makeNode({ a: 1 });
+    const derive = vi.fn(() => ({}));
+    nodeMemo(node, createNodeMemoScope(), POSE, derive);
+    nodeMemo(node, createNodeMemoScope(), POSE, derive);
+    expect(derive).toHaveBeenCalledTimes(2);
+    expect(nodeMemoSlotCount(node)).toBe(0);
+  });
+
+  it('re-derives when the pose or data reference changes', () => {
+    const node = makeNode({ a: 1 });
+    const scope = createNodeMemoScope();
+    const derive = vi.fn(() => ({}));
+    nodeMemo(node, scope, POSE, derive);
+    nodeMemo(node, scope, { ...POSE }, derive);
+    node.data = { a: 2 };
+    nodeMemo(node, scope, POSE, derive);
+    expect(derive).toHaveBeenCalledTimes(3);
+  });
+
+  it('re-derives a pose-keyed entry after dropPoseKeyedMemoSlots, and keeps a pose-free one', () => {
+    const node = makeNode({ a: 1 });
+    const posed = createNodeMemoScope();
+    const poseFree = createNodeMemoScope();
+    const derive = vi.fn(() => ({}));
+    const match = vi.fn(() => ({}));
+    nodeMemo(node, posed, POSE, derive);
+    nodeMemo(node, poseFree, undefined, match);
+    dropPoseKeyedMemoSlots(node);
+    nodeMemo(node, posed, POSE, derive);
+    nodeMemo(node, poseFree, undefined, match);
+    expect(derive).toHaveBeenCalledTimes(2);
+    expect(match).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-derives after a generation bump', () => {
+    const node = makeNode({ a: 1 });
+    const scope = createNodeMemoScope();
+    const derive = vi.fn(() => ({}));
+    nodeMemo(node, scope, POSE, derive);
+    bumpNodeMemoGeneration();
+    nodeMemo(node, scope, POSE, derive);
+    expect(derive).toHaveBeenCalledTimes(2);
   });
 });

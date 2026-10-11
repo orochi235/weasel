@@ -42,6 +42,31 @@ interface NodeMemoRecord {
   /** `generation` at the time the slots were filled. */
   generation: number;
   slots: Map<string, MemoSlot>;
+  /** How many times {@link dropPoseKeyedMemoSlots} has run for this node,
+   *  which is how a drop reaches the scopes it cannot enumerate. */
+  drops: number;
+}
+
+/** A scoped entry also carries what a named slot's record holds for it. */
+interface ScopedSlot extends MemoSlot {
+  generation: number;
+  drops: number;
+}
+
+declare const scopeBrand: unique symbol;
+
+/**
+ * A private place to memoize one derivation, in place of a slot name.
+ *
+ * A named slot lives on the node, so it lasts as long as the node does. That
+ * is wrong for a derivation that belongs to some shorter-lived reader — one
+ * `toPose` function among many over the life of a scene. A scope is held by
+ * that reader, and its entries go when the reader does.
+ */
+export type NodeMemoScope = { readonly [scopeBrand]: true };
+
+export function createNodeMemoScope(): NodeMemoScope {
+  return new WeakMap<object, ScopedSlot>() as unknown as NodeMemoScope;
 }
 
 const MEMO = new WeakMap<object, NodeMemoRecord>();
@@ -77,13 +102,14 @@ type MemoizableNode = { data?: unknown };
  */
 export function nodeMemo<T>(
   node: MemoizableNode,
-  slot: string,
+  slot: string | NodeMemoScope,
   pose: unknown,
   derive: () => T,
 ): T {
+  if (typeof slot !== 'string') return scopedNodeMemo(node, slot, pose, derive);
   let record = MEMO.get(node);
   if (record === undefined) {
-    record = { generation, slots: new Map() };
+    record = { generation, slots: new Map(), drops: 0 };
     MEMO.set(node, record);
   } else if (record.generation !== generation) {
     record.generation = generation;
@@ -107,6 +133,43 @@ export function nodeMemo<T>(
     record.slots.set(slot, { pose, data, value });
   }
   return value;
+}
+
+function scopedNodeMemo<T>(
+  node: MemoizableNode,
+  scope: NodeMemoScope,
+  pose: unknown,
+  derive: () => T,
+): T {
+  const entries = scope as unknown as WeakMap<object, ScopedSlot>;
+  const data = node.data;
+  const drops = MEMO.get(node)?.drops ?? 0;
+  const hit = entries.get(node);
+  if (
+    hit !== undefined && hit.generation === generation && hit.pose === pose && hit.data === data
+    && (pose === undefined || hit.drops === drops)
+  ) {
+    return hit.value as T;
+  }
+  const value = derive();
+  // Read again: a derivation that hit a cycle drops this node's slots itself.
+  const dropsNow = MEMO.get(node)?.drops ?? 0;
+  if (hit !== undefined) {
+    hit.pose = pose;
+    hit.data = data;
+    hit.value = value;
+    hit.generation = generation;
+    hit.drops = dropsNow;
+  } else {
+    entries.set(node, { pose, data, value, generation, drops: dropsNow });
+  }
+  return value;
+}
+
+/** How many named slots `node` holds. For tests of what is kept on a node. */
+export function nodeMemoSlotCount(node: MemoizableNode): number {
+  const record = MEMO.get(node);
+  return record === undefined || record.generation !== generation ? 0 : record.slots.size;
 }
 
 /**
@@ -137,7 +200,11 @@ export function bumpNodeMemoGeneration(): void {
  */
 export function dropPoseKeyedMemoSlots(node: MemoizableNode): void {
   const record = MEMO.get(node);
-  if (record === undefined) return;
+  if (record === undefined) {
+    MEMO.set(node, { generation, slots: new Map(), drops: 1 });
+    return;
+  }
+  record.drops++;
   for (const [slot, entry] of record.slots) {
     if (entry.pose !== undefined) record.slots.delete(slot);
   }

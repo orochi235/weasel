@@ -20,7 +20,7 @@
  */
 import type { Path } from '@weasel-js/geom';
 import { dependencyIdsOf } from './dependents';
-import { dropPoseKeyedMemoSlots, nodeMemo } from './nodeMemo';
+import { dropPoseKeyedMemoSlots, nodeMemo, type NodeMemoScope } from './nodeMemo';
 import { recordDeps, sameDeps, type DepRecord } from './depMemo';
 import type { DerivedDep, DerivePathFn, NodeId } from './types';
 
@@ -67,7 +67,7 @@ export function resolveDerivedPath<TPose>(
   node: PathDerivingNode<TPose>,
   depOf: (id: NodeId) => DerivedDep<TPose> | undefined,
   childrenOf: (id: NodeId) => readonly NodeId[],
-  memoSlot: string = SLOT,
+  memoSlot: string | NodeMemoScope = SLOT,
 ): Path | null {
   const derivePath = node.derivePath;
   if (derivePath === undefined) return null;

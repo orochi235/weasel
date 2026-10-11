@@ -872,13 +872,6 @@ Core five + Crop shipped. Remaining:
   `interactions → canvas → interactions` import cycle; moving the mutators into `core/scene`, below
   both, removes the reason.
 
-- **(P3) Derived paths: one memo slot per `toPose` identity is never released.**
-  `sceneDerivedPathOf(scene, toPose)` in `canvas/derivedPath.ts` mints `kit:derivedPath:toPose:<n>`
-  per function identity, and every derived node keeps a `PathMemo` under each name until a
-  pose-keyed drop or a memo generation bump. A scene slot whose `toPose` is an inline arrow gets a
-  new slot name each time the slot config changes identity. Not traced: how often that happens in
-  `<SceneCanvas>`.
-
 ### Derived geometry follow-ups
 
 Left open by the derived-path and derived-pose arcs (`dependsOn` / `derivePath` /

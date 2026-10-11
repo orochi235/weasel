@@ -12,6 +12,7 @@ import { asNodeId } from 'core/scene/types';
 import { definesFrame, derivedDepOf, effectivePose } from 'core/scene/effectivePose';
 import { composeWorldPose, type PoseAdapter, type PoseComposition } from 'core/scene/composeFrame';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
+import { createNodeMemoScope, type NodeMemoScope } from 'core/scene/nodeMemo';
 import type { SceneViewDrawOne } from './NodeShape';
 
 export { resolveDerivedPath } from 'core/scene/derivedPath';
@@ -75,7 +76,7 @@ export function sceneDepLookup<TData, TLayer extends string, TPose>(
 
 interface SlotLookup<TPose> {
   at: (node: unknown) => TPose;
-  slot: string;
+  slot: string | NodeMemoScope;
   childrenOf: (id: NodeId) => readonly NodeId[];
   lookup: (id: NodeId) => DerivedDep<TPose> | undefined;
 }
@@ -110,24 +111,24 @@ export function sceneDerivedPathOf<TData, TLayer extends string, TPose>(
   return (node) => resolveDerivedPath(node, depOf, childrenOf, slot);
 }
 
-const toPoseSlots = new WeakMap<object, string>();
-let nextToPoseSlot = 0;
+const toPoseScopes = new WeakMap<object, { local?: NodeMemoScope; world?: NodeMemoScope }>();
 
-/** The memo slot for one way of reading poses, or `undefined` for the scene's
- *  own: two readers painting one scene at different poses must not serve each
- *  other's paths. Every reader composing stored poses shares one slot. */
+/** Where one way of reading poses memoizes its paths, or `undefined` for the
+ *  scene's own slot: two readers painting one scene at different poses must
+ *  not serve each other's paths. Every reader composing stored poses shares a
+ *  slot; a `toPose` gets a scope that is collected with the function. */
 function memoSlotFor<TPose>(
   toPose: object | undefined,
   poseComposition: PoseComposition<TPose> | undefined,
-): string | undefined {
-  const world = composes(poseComposition) ? ':world' : '';
-  if (toPose === undefined) return world === '' ? undefined : `kit:derivedPath${world}`;
-  let slot = toPoseSlots.get(toPose);
-  if (slot === undefined) {
-    slot = `kit:derivedPath:toPose:${nextToPoseSlot++}`;
-    toPoseSlots.set(toPose, slot);
+): string | NodeMemoScope | undefined {
+  const frame = composes(poseComposition) ? 'world' : 'local';
+  if (toPose === undefined) return frame === 'world' ? 'kit:derivedPath:world' : undefined;
+  let scopes = toPoseScopes.get(toPose);
+  if (scopes === undefined) {
+    scopes = {};
+    toPoseScopes.set(toPose, scopes);
   }
-  return slot + world;
+  return (scopes[frame] ??= createNodeMemoScope());
 }
 
 /**
