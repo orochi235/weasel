@@ -1,8 +1,8 @@
 /**
- * SVG transform attribute helpers. Parses the four primitive transform
- * functions weasel-svg supports (`matrix`, `translate`, `scale`, `rotate`)
- * into a single 2x3 affine matrix, and exposes the point/path mappers we
- * need to collapse `transform=` onto leaf geometry at parse time.
+ * SVG transform attribute helpers. Parses a `transform` list (`matrix`,
+ * `translate`, `scale`, `rotate`, `skewX`, `skewY`) into a single 2x3 affine
+ * matrix, and exposes the point/path mappers we need to collapse `transform=`
+ * onto leaf geometry at parse time.
  */
 
 import { invert, multiply } from '@weasel-js/geom';
