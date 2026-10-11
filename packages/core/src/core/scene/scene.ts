@@ -286,12 +286,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
     ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
-    onEvict: (entry) => {
-      // forwardOps and baseOps are the same array until a coalesce splits
-      // them, so the double scan is cheap today and correct later.
-      pruneCacheForDroppedOps(entry.forwardOps);
-      pruneCacheForDroppedOps(entry.baseOps);
-    },
     // Restore-time rebuild: scene-registered kinds (kit:* + consumer
     // registerOp) rebuild via makeOp; external ops rebuild via the global
     // op-factory registry, wrapped in the lazy history-adapter binding.
@@ -568,25 +562,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     for (const listener of listeners) listener();
   }
 
-  /**
-   * Prune the function-field caches of nodes referenced only by ops in entries
-   * that just became permanently unreachable (redo entries dropped by a branch
-   * edit, or undo entries evicted by `historyLimit`) — wired to the engine's
-   * `onEvict`. An entry is safe to drop when the node is absent from
-   * `state.nodes`: its only path back into the scene was through these
-   * now-unreachable ops.
-   */
-  function pruneCacheForDroppedOps(ops: readonly Op[]): void {
-    if (fnFields.every((f) => f.pending.size === 0)) return;
-    for (const op of ops) {
-      if (op.name !== 'kit:add') continue;
-      const id = (op.args as { id?: NodeId } | null)?.id;
-      if (id && !state.nodes.has(id)) {
-        for (const field of fnFields) field.pending.delete(id);
-      }
-    }
-  }
-
   function requireNode(id: NodeId): Node<TData, TLayer, TPose> {
     const n = state.nodes.get(id);
     if (!n) throw new Error(`Scene: unknown node id "${id}"`);
@@ -705,26 +680,33 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     return { ids, removing };
   }
 
+  /** The functions a live `scene.add` attached, by the `kit:add` payload it
+   *  recorded: redo replays that payload without the spec. Keyed on the
+   *  payload rather than the node id because an id is reusable, and each
+   *  add of it owns its own functions. */
+  const addedFns = new WeakMap<object, Map<NodeFnField, NodeFn>>();
+
   /** Post-patch the registry-keyed function fields onto a node after its
    *  `kit:add` op runs. A function cannot travel through the serializable op
-   *  payload, so it is attached to the live node here. `cacheForRedo` also
-   *  keeps the reference in the field's pending map, which is where the
-   *  `kit:add` redo path reads it from — redo replays the op without a spec.
-   *  `dependsOn` is plain data and rides the payload instead. */
+   *  payload, so it is attached to the live node here, and kept against
+   *  `payload` for redo when there is one. `dependsOn` is plain data and
+   *  rides the payload instead. */
   function patchNodeFunctions(
     spec: AddNodeSpec<TData, TLayer, TPose>,
     id: NodeId,
-    { cacheForRedo }: { cacheForRedo: boolean },
+    payload: object | null,
   ): void {
     const node = state.nodes.get(id) as FnBearingNode | undefined;
     if (node === undefined) return;
+    const attached = new Map<NodeFnField, NodeFn>();
     for (const field of fnFields) {
       const fn = (spec as unknown as Record<string, unknown>)[field.spec.field] as NodeFn | undefined;
       if (fn === undefined) continue;
       if (field.spec.containersOnly && spec.kind !== 'container') continue;
       field.write(node, fn);
-      if (cacheForRedo) field.pending.set(id, fn);
+      attached.set(field, fn);
     }
+    if (payload && attached.size > 0) addedFns.set(payload, attached);
   }
 
   /** Re-attach those fields to a node restored from a `kit:remove` snapshot.
@@ -770,16 +752,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       if (p.pickable !== undefined) node.pickable = p.pickable;
       dependents.add(p.id, p.dependsOn === 'children' ? [] : p.dependsOn ?? []);
       trackChildDerived(p.id, p.dependsOn);
-      // Two ways a function field comes back. The redo path reads the
-      // side-channel cache the original `scene.add` filled, because redo
-      // replays the op without a spec. The restore path — a fresh session,
-      // empty cache — resolves the registry key the payload carries, and
-      // seeds the cache so later undo/redo cycles behave like the live one.
+      // Two ways a function field comes back. Redo of a live add reads
+      // what `scene.add` attached, since it replays the op without a spec.
+      // A restored history has only the registry key the payload carries.
       const target = node as unknown as FnBearingNode;
+      const attached = addedFns.get(p);
       for (const field of fnFields) {
-        const cached = field.pending.get(p.id);
-        if (cached !== undefined) {
-          field.write(target, cached);
+        const fn = attached?.get(field);
+        if (fn !== undefined) {
+          field.write(target, fn);
           continue;
         }
         const key = p[field.spec.opKey] as string | undefined;
@@ -794,8 +775,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       childDerived.delete(p.id);
       invalidateChildDerivedFrom(p.parent);
       invalidateDependents(p.id);
-      // Note: we intentionally do NOT delete the pending function-field
-      // entries — redo re-applies the node and re-attaches from them.
     },
   });
 
@@ -1499,16 +1478,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const sibs = siblingsOf(parent);
       const index = spec.index ?? sibs.length;
       noteArrival(id, parent, null);
-      executeAndLog('kit:add', {
+      const payload = {
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
         ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
         ...(spec.pickable !== undefined ? { pickable: spec.pickable } : {}),
         ...fnKeysOf(fnFields, { ...spec, id, kind: spec.kind } as unknown as FnBearingNode, 'opKey'),
-      }, `add ${spec.kind}`);
-      // A function cannot travel through the serializable op payload. Patch it
-      // directly onto the live node after the op applies.
-      patchNodeFunctions(spec, id, { cacheForRedo: true });
+      };
+      executeAndLog('kit:add', payload, `add ${spec.kind}`);
+      patchNodeFunctions(spec, id, payload);
       return id;
     },
 
@@ -2043,7 +2021,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       }
       // Clear history + the transient batch and function-field caches.
       history.clear();
-      for (const field of fnFields) field.pending.clear();
       currentBatch = null;
       batchDepth = 0;
       batchDirty = false;
@@ -2088,11 +2065,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         ...(spec.dependsOn !== undefined ? { dependsOn: spec.dependsOn } : {}),
         ...(spec.pickable !== undefined ? { pickable: spec.pickable } : {}),
       });
-      // No `kit:add` reaches history here, so nothing ever replays these and
-      // `pruneCacheForDroppedOps` — which only scans `kit:add` — could never
-      // drop the entries. A restore after `remove` comes from `kit:remove`'s
-      // revert, which clones the whole node and carries every field along.
-      patchNodeFunctions(spec, id, { cacheForRedo: false });
+      // No `kit:add` reaches history here, so nothing replays one. A restore
+      // after `remove` comes from `kit:remove`'s revert, which clones the
+      // whole node and carries every field along.
+      patchNodeFunctions(spec, id, null);
     }
   }
 
@@ -2101,18 +2077,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     applyConstructionSpecs(options.initial);
     notify();
   }
-
-  // ── Internal / test-only access ───────────────────────────────────────
-  // Attach private state accessors directly on the returned object, hidden
-  // behind `as unknown` because Scene<> is the public interface.
-  // __clipCacheSize / __derivePathCacheSize: used only by test files to assert
-  // prune behaviour.
-  (scene as unknown as { __clipCacheSize: () => number }).__clipCacheSize =
-    () => fnField('clipFromPose').pending.size;
-  (scene as unknown as { __derivePathCacheSize: () => number }).__derivePathCacheSize =
-    () => fnField('derivePath').pending.size;
-  (scene as unknown as { __derivePoseCacheSize: () => number }).__derivePoseCacheSize =
-    () => fnField('derivePose').pending.size;
 
   return scene;
 }

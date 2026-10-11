@@ -170,32 +170,8 @@ describe('derived geometry — serialization', () => {
   });
 });
 
-/** The test-only cache-size hook, mirroring `__clipCacheSize`. */
-function derivePathCacheSize(scene: unknown): number {
-  return (scene as { __derivePathCacheSize: () => number }).__derivePathCacheSize();
-}
-
-describe('derived geometry — redo-cache pruning', () => {
-  it('prunes the cache entry when undo-stack overflow evicts a kit:add for a removed node', () => {
-    const scene = createScene<object, 'main', RectPose>({
-      systemLayers: LAYERS, registry, historyLimit: 2,
-    });
-    const dep = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
-    const edge = scene.add({
-      kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: {},
-      dependsOn: [dep], derivePath: connectCenters,
-    });
-    scene.remove(edge);
-    expect(derivePathCacheSize(scene)).toBe(1);
-
-    // Two more ops push kit:add(edge) off the undo stack (limit=2). The node is
-    // absent from state.nodes, so the entry is unreachable and must be pruned.
-    scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
-    scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 1, height: 1 }, data: {} });
-    expect(derivePathCacheSize(scene)).toBe(0);
-  });
-
-  it('never caches a construction-path node, whose kit:add is unloggable and so unprunable', () => {
+describe('derived geometry — construction-path nodes', () => {
+  it('restores derivePath on undo of a remove, with no kit:add to replay', () => {
     const scene = createScene<object, 'main', RectPose>({
       systemLayers: LAYERS,
       registry,
@@ -209,13 +185,10 @@ describe('derived geometry — redo-cache pruning', () => {
       ],
     });
     expect(scene.get(asNodeId('edge'))!.derivePath).toBe(connectCenters);
-    expect(derivePathCacheSize(scene)).toBe(0);
 
-    // kit:remove's revert clones the node, so undo restores derivePath without the cache.
     scene.remove(asNodeId('edge'));
     scene.undo();
     expect(scene.get(asNodeId('edge'))!.derivePath).toBe(connectCenters);
-    expect(derivePathCacheSize(scene)).toBe(0);
   });
 });
 

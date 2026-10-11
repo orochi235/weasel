@@ -3,10 +3,10 @@
  *
  * `clipFromPose`, `derivePath` and `derivePose` are live functions on a node,
  * and a function travels through neither a serializable op payload nor a JSON
- * snapshot. Each one therefore needs the same six things: a function→key
- * reverse map, a side-channel cache the `kit:add` redo path re-attaches from,
- * a name in the op payload, a name in the snapshot, a registry lookup on
- * restore, and a prune when history evicts the entry that could reach it.
+ * snapshot. Each one therefore needs the same five things: a function→key
+ * reverse map, a side channel the `kit:add` redo path re-attaches from, a
+ * name in the op payload, a name in the snapshot, and a registry lookup on
+ * restore.
  *
  * The first two fields were written out twice, and `types.ts` said in a
  * comment that a third should be the point it stopped being copied per field.
@@ -87,9 +87,6 @@ export interface NodeFnField {
   read(node: FnBearingNode): NodeFn | undefined;
   /** Attach `fn` to `node`, ignoring a container-only field on a leaf. */
   write(node: FnBearingNode, fn: NodeFn): void;
-  /** The redo side-channel: `kit:add` replays without the original spec, so
-   *  the function it should re-attach is cached here by node id. */
-  readonly pending: Map<NodeId, NodeFn>;
 }
 
 export function createNodeFnFields<TPose>(registry: SceneRegistry<TPose>): readonly NodeFnField[] {
@@ -97,7 +94,6 @@ export function createNodeFnFields<TPose>(registry: SceneRegistry<TPose>): reado
     const table = registry[spec.field] as Readonly<Record<string, NodeFn>> | undefined;
     const reverse = new Map<NodeFn, string>();
     if (table) for (const [key, fn] of Object.entries(table)) reverse.set(fn, key);
-    const pending = new Map<NodeId, NodeFn>();
     const applies = (node: FnBearingNode): boolean =>
       !spec.containersOnly || node.kind === 'container';
     return {
@@ -108,14 +104,12 @@ export function createNodeFnFields<TPose>(registry: SceneRegistry<TPose>): reado
       write: (node, fn) => {
         if (applies(node)) node[spec.field] = fn;
       },
-      pending,
     };
   });
 }
 
 /**
- * Attach the function `key` names to `node`, seeding the redo cache so later
- * undo/redo cycles behave like the live path. Warns and leaves the field
+ * Attach the function `key` names to `node`. Warns and leaves the field
  * unset when the key is not in this scene's registry — a snapshot outliving
  * the code that registered its functions must still load.
  */
@@ -137,7 +131,6 @@ export function restoreFn(
     return;
   }
   field.write(node, fn);
-  field.pending.set(node.id, fn);
 }
 
 /** The `{ clipKey?, derivePathKey?, … }` an op payload or a snapshot carries
