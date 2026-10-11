@@ -610,6 +610,26 @@ Core five + Crop shipped. Remaining:
 
 ## Scene, adapters & layout
 
+- **(P2) Pull the standalone parts of core into their own packages.** Ruled 2026-10-11: whatever
+  makes sense as a package gets extracted, whatever its size. Read from each directory's imports,
+  not from a trial build:
+  - *Under core.* `renderer/` imports only `core/gradient`, `core/strokeMarkers`, and
+    `core/markerInset` from the rest of core, while `core/paintKinds.ts` and `core/gradient.ts`
+    import back into it. `renderer/math/` goes first: `mat3` and `viewToMat3` to
+    `@weasel-js/geom`, `color` to `@weasel-js/paint`, since animation, `core/`, and the features
+    all reach into the renderer for them. `features/images` and `features/patterns` touch only
+    renderer caches and textures and go with it.
+  - *Under core.* `animation/`'s engine, timeline, and behaviors know nothing of the scene; only
+    `reflow.ts` and `rig/bindRig.ts` do. `features/simulation` needs only `useVisibleRaf`, which
+    has to leave `core/scheduling` first.
+  - *Over core.* Nothing in core imports `features/parallax`, `tiling`, `minimap`, `chrome-caps`,
+    `poseRun`, `viewports`, or `meshPaint` (bar an import shim), so each can sit on core the way
+    `@weasel-js/kernel3d` does.
+  - *Held in place by an importer.* `cursor`, `longPress`, and `patterns` are imported by the
+    canvas components, `pointer` and `selection` by `WeaselProvider`, `text` by `tools/builtin`,
+    and `ingestion` by `canvas/deps` (see the drop-handler entry under Tools & gestures). Each
+    needs a seam before it can move.
+
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
 - **(P2) Scene history: an entry that names a node removed by an untracked edit can never be
@@ -908,6 +928,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
+
+- **(P2) `defaults/move.ts` is 1,426 lines doing four jobs.** In
+  `packages/core/src/interactions/actions/defaults/`, most files hold one action and are under
+  250 lines. `move.ts` also holds the layout pass a drag runs through its containers
+  (`runLayoutPass`, `resolveLayoutExits`), reparent-on-drop (`resolveDropTarget`, `applyReparent`),
+  the landing of released nodes (`releasedPoses`, `landReleased`), and a `moveAction` literal that
+  is itself about 570 lines. Each wants its own module. `resize.ts` (698) carries its point-snap
+  helpers the same way, and `insert.ts` (621) holds two actions.
+
+- **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
+  sibling `actions/<name>/` (move, resize, rotate, flip, align, distribute, clone, clipboard,
+  booleans, outlines, edit-anchors, lasso-select) holds its options, geometry, and gesture
+  adapter. One directory per action would hold both, and would give `move.ts`'s pieces somewhere
+  to land.
 
 - **(P3) Range selection on the canvas.** `@weasel-js/select` ranges over an `order` the caller
   supplies, and a canvas has none of its own, so core's `useSelection` never ranges and keeps no
