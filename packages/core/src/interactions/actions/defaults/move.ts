@@ -1291,6 +1291,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           let dx = moveCtx.drag.delta.x;
           let dy = moveCtx.drag.delta.y;
 
+          const posed = new Map<NodeId, unknown>();
           if (scratch.behaviors.length > 0) {
             const gctx = scratch.gestureCtx;
             gctx.modifiers = { ...moveCtx.modifiers };
@@ -1312,6 +1313,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             for (const b of scratch.behaviors) {
               const r: BehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
               if (!r) continue;
+              if (r.poses) for (const [id, pose] of r.poses) posed.set(id as NodeId, pose);
               if (r.transform && r.transform.kind === 'translate') {
                 transform = r.transform;
               } else if (r.pose !== undefined && primary !== undefined) {
@@ -1338,7 +1340,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               continue;
             }
             const l = localDelta(scratch, id, dx, dy);
-            scratch.previews.set(id, translatePoseViaDescriptor(ori, l.dx, l.dy, scratch.projection));
+            scratch.previews.set(id, posed.get(id) ?? translatePoseViaDescriptor(ori, l.dx, l.dy, scratch.projection));
           }
 
           // Layout reflow pass — no-op without a layout dep.

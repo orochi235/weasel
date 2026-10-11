@@ -64,6 +64,34 @@ describe('moveAction behavior pipeline', () => {
     expect(scene.get(asNodeId(leaf))?.pose).toEqual({ x: 210, y: 10, width: 20, height: 20 });
   });
 
+  it('snapToContainer previews every dragged node in its own slot, and commits it there', () => {
+    const { scene, box, leaf } = fixture();
+    const second = scene.add({ kind: 'leaf', layer: 'main', data: { color: '#00f' }, pose: { x: 0, y: 60, width: 20, height: 20 } }) as string;
+    const slots: Record<string, P> = {
+      [leaf]: { x: 210, y: 10, width: 20, height: 20 },
+      [second]: { x: 240, y: 10, width: 20, height: 20 },
+    };
+    const opts: BindingOpts = {
+      behaviors: [
+        snapToContainer<P>({
+          dwellMs: 0,
+          isInstant: () => true,
+          findTarget: (id, wx) => (wx > 200 ? { parentId: box, slotPose: slots[id] } : null),
+        }) as never,
+      ],
+    };
+    const drag = { start: { x: 10, y: 10 }, current: { x: 260, y: 10 }, delta: { x: 250, y: 0 } };
+    const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leaf, second]), opts) as OngoingHandle;
+    handle.onMove!(ctx(scene, [leaf, second], drag));
+    expect(handle.previewPose!(leaf)).toEqual(slots[leaf]);
+    expect(handle.previewPose!(second)).toEqual(slots[second]);
+    handle.onEnd!(ctx(scene, [leaf, second], drag), 'commit');
+    for (const id of [leaf, second]) {
+      expect(scene.get(asNodeId(id))?.parent).toBe(box);
+      expect(scene.get(asNodeId(id))?.pose).toEqual(slots[id]);
+    }
+  });
+
   it('snapBackOrDelete aborts (no pose change) within radius', () => {
     const { scene, leaf } = fixture();
     const before = scene.get(asNodeId(leaf))!.pose;

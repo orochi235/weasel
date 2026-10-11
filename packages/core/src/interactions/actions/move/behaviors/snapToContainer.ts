@@ -2,7 +2,7 @@ import { createTransformOp } from 'core/ops/transform';
 import { createReparentOp } from 'core/ops/reparent';
 import type { Op } from 'core/ops/types';
 import type { SnapTarget } from 'core/adapters/types';
-import type { MoveBehavior, GestureContext } from '../../../gestures/types';
+import type { BehaviorResult, MoveBehavior, GestureContext } from '../../../gestures/types';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 
 interface SnapState<TPose> {
@@ -37,9 +37,8 @@ function clearTimer<TPose>(s: SnapState<TPose>) {
 /**
  * Move behavior that drops the dragged nodes into a container the pointer
  * hovers over for `dwellMs`, reparenting each and giving it the slot
- * `findTarget` answers for its id. The first dragged node's slot is what the
- * drag previews; a node `findTarget` has no slot for in that container lands
- * where the preview drew it.
+ * `findTarget` answers for its id. A node `findTarget` has no slot for in
+ * that container rides along with the first, at its offset from it.
  *
  * The dwell is what keeps a drag that merely passes over a container from
  * being captured by it.
@@ -57,6 +56,20 @@ export function snapToContainer<TPose>(args: {
 }): MoveBehavior<TPose> {
   const { dwellMs, findTarget, isInstant, moveLabel = 'Move', reparentLabel = 'Move and reparent' } = args;
 
+  /** Each dragged node's slot in the snapped container: the snapped slot for
+   *  the first, and for each other node the one `findTarget` answers for it. */
+  const slotsFor = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>): Map<string, TPose> => {
+    const [primary, ...rest] = ctx.draggedIds;
+    const slots = new Map<string, TPose>([[primary, snap.slotPose]]);
+    for (const id of rest) {
+      const own = findTarget(id, ctx.pointer.worldX, ctx.pointer.worldY);
+      if (own?.parentId === snap.parentId) slots.set(id, own.slotPose);
+    }
+    return slots;
+  };
+  const snapped = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>): BehaviorResult<TPose> =>
+    ({ pose: snap.slotPose, poses: slotsFor(ctx, snap), snap });
+
   return {
     onMove(ctx, _proposed) {
       const s = getState<TPose>(ctx);
@@ -64,7 +77,7 @@ export function snapToContainer<TPose>(args: {
 
       if (s.committedSnap) {
         if (target && target.parentId === s.committedSnap.parentId) {
-          return { pose: s.committedSnap.slotPose, snap: s.committedSnap };
+          return snapped(ctx, s.committedSnap);
         }
         s.committedSnap = null;
       }
@@ -77,7 +90,7 @@ export function snapToContainer<TPose>(args: {
       if (isInstant?.(target)) {
         clearTimer(s);
         s.committedSnap = target;
-        return { pose: target.slotPose, snap: target };
+        return snapped(ctx, target);
       }
 
       if (s.pendingTargetId === target.parentId) {
@@ -100,14 +113,9 @@ export function snapToContainer<TPose>(args: {
       const snap = s.committedSnap ?? ctx.snap;
       if (!snap) return;
       const ops: Op[] = [];
-      const [primary, ...rest] = ctx.draggedIds;
-      // The primary takes the snapped slot. Each other node asks for its own
-      // in the same container, and lands where the preview drew it if it has none.
-      const slots = new Map<string, TPose>([[primary, snap.slotPose]]);
-      for (const id of rest) {
-        const own = findTarget(id, ctx.pointer.worldX, ctx.pointer.worldY);
-        slots.set(id, own?.parentId === snap.parentId ? own.slotPose : ctx.current.get(id)!);
-      }
+      const slots = slotsFor(ctx, snap);
+      // A node with no slot of its own lands where the preview drew it.
+      for (const id of ctx.draggedIds) if (!slots.has(id)) slots.set(id, ctx.current.get(id)!);
       for (const [id, to] of slots) {
         ops.push(createTransformOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
         const oldParent = ctx.adapter.getParent?.(id) ?? null;

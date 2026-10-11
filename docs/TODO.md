@@ -206,13 +206,6 @@ Priority tags:
   the dragged node's landed pose minus its start pose, not the drag delta, so the fix is a pass over
   the committed ops rather than a call to `translateCommitOps`.
 
-- **(P3) `snapToContainer`: with several nodes dragged, the preview shows one slot.** The commit
-  gives each dragged node the slot `findTarget` answers for its id
-  (`packages/core/src/interactions/actions/move/behaviors/snapToContainer.ts`), but a move
-  behavior's `onMove` can return one pose, which `moveAction` turns into a translation of the whole
-  group. So the first node previews in its slot, and the others ride along at their offsets and
-  jump to their own slots on release. Needs `BehaviorResult` to carry a pose per dragged id.
-
 - **(P3) `cloneByAltDrag` and the `CloneBehavior` contract are unreachable.** `cloneAction.start`
   ignores `opts`, so no clone behavior ever runs, and the hook that consumed `CloneBehavior` is
   gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in

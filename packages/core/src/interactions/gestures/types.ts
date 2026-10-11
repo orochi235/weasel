@@ -123,6 +123,10 @@ export interface BehaviorResult<TPose> {
   transform?: GroupTransform;
   /** @deprecated Return `transform` instead. Legacy primary-only pose override; supported via internal shim. */
   pose?: TPose;
+  /** Preview poses for individual dragged ids, each replacing the group
+   *  transform for that id this frame. For a behavior that will commit its
+   *  nodes where one translation cannot put them, such as a slot each. */
+  poses?: ReadonlyMap<string, TPose>;
   snap?: SnapTarget<TPose> | null;
 }
 
