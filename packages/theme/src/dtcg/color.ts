@@ -1,3 +1,5 @@
+import { parseHexBytes } from '@weasel-js/paint';
+
 /**
  * A resolved color at `alpha`, multiplied into any alpha it already carries. The
  * JS side of the alpha extension; the CSS side emits `color-mix()` instead so DOM
@@ -39,12 +41,8 @@ function parseRgba(s: string): Rgba | null {
 }
 
 function parseHex(s: string): Rgba | null {
-  const m = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(s);
-  if (!m) return null;
-  const body = m[1];
-  const full = body.length <= 4 ? body.replace(/./g, (c) => c + c) : body;
-  const byte = (i: number) => Number.parseInt(full.slice(i, i + 2), 16);
-  return [byte(0), byte(2), byte(4), full.length === 8 ? byte(6) / 255 : 1];
+  const bytes = parseHexBytes(s);
+  return bytes && [bytes[0], bytes[1], bytes[2], bytes[3] / 255];
 }
 
 function parseRgbFn(s: string): Rgba | null {

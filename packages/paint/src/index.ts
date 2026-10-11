@@ -55,6 +55,7 @@ export {
   type OklchDeg,
 } from './colorSpaces';
 export { contrastLineColor } from './contrast';
+export { parseHexBytes, hexToRgbBytes } from './hex';
 export {
   resolvePaletteColor,
   resolvePaletteColors,

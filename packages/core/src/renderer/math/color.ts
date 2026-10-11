@@ -1,4 +1,4 @@
-import { hslToSrgb } from '@weasel-js/paint';
+import { hslToSrgb, parseHexBytes } from '@weasel-js/paint';
 
 /**
  * Parse a CSS color string into [r, g, b, a] with 0..1 components.
@@ -102,20 +102,12 @@ export function parseColorToRgba255(input: string): [number, number, number, num
  */
 export function normalizeHex(input: string): string {
   const trimmed = input.trim();
-  const body = (trimmed.startsWith('#') ? trimmed.slice(1) : trimmed).toLowerCase();
-  if (!/^[0-9a-f]+$/.test(body)) {
-    throw new Error(`normalizeHex: invalid hex "${input}"`);
-  }
-  if (body.length === 3) {
-    return `#${body[0]}${body[0]}${body[1]}${body[1]}${body[2]}${body[2]}`;
-  }
-  if (body.length === 4) {
-    return `#${body[0]}${body[0]}${body[1]}${body[1]}${body[2]}${body[2]}${body[3]}${body[3]}`;
-  }
-  if (body.length === 6 || body.length === 8) {
-    return `#${body}`;
-  }
-  throw new Error(`normalizeHex: invalid hex "${input}"`);
+  const hashed = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+  const bytes = parseHexBytes(hashed);
+  if (!bytes) throw new Error(`normalizeHex: invalid hex "${input}"`);
+  const digits = bytes.map((n) => n.toString(16).padStart(2, '0')).join('');
+  const namesAlpha = hashed.length === 5 || hashed.length === 9;
+  return `#${namesAlpha ? digits : digits.slice(0, 6)}`;
 }
 
 /**
@@ -139,40 +131,9 @@ export function rgbaToHex(rgba: readonly [number, number, number, number] | read
 }
 
 function parseHex(s: string): [number, number, number, number] {
-  const hex = s.slice(1);
-  if (hex.length === 3) {
-    return [
-      parseInt(hex[0] + hex[0], 16) / 255,
-      parseInt(hex[1] + hex[1], 16) / 255,
-      parseInt(hex[2] + hex[2], 16) / 255,
-      1,
-    ];
-  }
-  if (hex.length === 4) {
-    return [
-      parseInt(hex[0] + hex[0], 16) / 255,
-      parseInt(hex[1] + hex[1], 16) / 255,
-      parseInt(hex[2] + hex[2], 16) / 255,
-      parseInt(hex[3] + hex[3], 16) / 255,
-    ];
-  }
-  if (hex.length === 6) {
-    return [
-      parseInt(hex.slice(0, 2), 16) / 255,
-      parseInt(hex.slice(2, 4), 16) / 255,
-      parseInt(hex.slice(4, 6), 16) / 255,
-      1,
-    ];
-  }
-  if (hex.length === 8) {
-    return [
-      parseInt(hex.slice(0, 2), 16) / 255,
-      parseInt(hex.slice(2, 4), 16) / 255,
-      parseInt(hex.slice(4, 6), 16) / 255,
-      parseInt(hex.slice(6, 8), 16) / 255,
-    ];
-  }
-  throw new Error(`parseColor: invalid hex "${s}"`);
+  const bytes = parseHexBytes(s);
+  if (!bytes) throw new Error(`parseColor: invalid hex "${s}"`);
+  return [bytes[0] / 255, bytes[1] / 255, bytes[2] / 255, bytes[3] / 255];
 }
 
 /** Match `name( body )` and return the trimmed body, or null. */

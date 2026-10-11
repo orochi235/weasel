@@ -1,4 +1,5 @@
-const HEX = /^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i;
+import { parseHexBytes } from '@weasel-js/core';
+
 const RGB = /^rgba?\(\s*(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})\b/i;
 const COLOR_FUNCTION = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\(.+\)$/i;
 const KEYWORDS = new Set([
@@ -40,14 +41,12 @@ export function parsesAsColor(value: string, supports: Supports = browserSupport
   // `CSS.supports` accepts any `var()`, and any CSS-wide keyword, for any property.
   if (!v || v.includes('var(') || CSS_WIDE.has(v.toLowerCase())) return false;
   if (supports) return supports(v);
-  return HEX.test(v) || COLOR_FUNCTION.test(v) || KEYWORDS.has(v.toLowerCase());
+  return parseHexBytes(v) !== null || COLOR_FUNCTION.test(v) || KEYWORDS.has(v.toLowerCase());
 }
 
 function hexOf(v: string): string | null {
-  if (HEX.test(v)) {
-    const digits = v.slice(1).toLowerCase();
-    return `#${digits.length <= 4 ? [...digits.slice(0, 3)].map((d) => d + d).join('') : digits.slice(0, 6)}`;
-  }
+  const bytes = parseHexBytes(v);
+  if (bytes) return `#${bytes.slice(0, 3).map((n) => n.toString(16).padStart(2, '0')).join('')}`;
   const rgb = RGB.exec(v);
   return rgb
     ? `#${rgb

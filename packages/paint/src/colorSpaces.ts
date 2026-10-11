@@ -1,5 +1,7 @@
 // sRGB ↔ OKLab conversion. Reference: https://bottosson.github.io/posts/oklab/
 
+import { hexToRgbBytes } from './hex';
+
 const SRGB_TO_LINEAR: Float64Array = (() => {
   const lut = new Float64Array(256);
   for (let i = 0; i < 256; i++) {
@@ -272,12 +274,9 @@ export function oklchDegToHex(L: number, C: number, hueDeg: number): string {
 }
 
 /** A hex color (`#rgb`, `#rgba`, `#rrggbb`, or `#rrggbbaa`, alpha ignored) to
- *  OKLCh with the hue wrapped into 0..360. */
+ *  OKLCh with the hue wrapped into 0..360. Throws on anything else. */
 export function hexToOklchDeg(hex: string): OklchDeg {
-  const digits = hex.slice(1);
-  const long = digits.length <= 4 ? digits.replace(/./g, '$&$&') : digits;
-  const n = Number.parseInt(long.slice(0, 6), 16);
-  const [L, A, B] = srgbU8ToOklab((n >> 16) & 255, (n >> 8) & 255, n & 255);
+  const [L, A, B] = srgbU8ToOklab(...hexToRgbBytes(hex));
   const [l, c, h] = oklabToOklch(L, A, B);
   return { L: l, C: c, H: ((((h * 180) / Math.PI) % 360) + 360) % 360 };
 }

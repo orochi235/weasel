@@ -45,4 +45,8 @@ describe('contrastLineColor', () => {
   it('falls back to translucent black for a color it cannot read', () => {
     expect(contrastLineColor('papayawhip', 0.1)).toBe('rgba(0, 0, 0, 0.1)');
   });
+
+  it('reads a four-digit hex background, ignoring its alpha', () => {
+    expect(contrastLineColor('#fff8', 0.1)).toBe(contrastLineColor('#ffffff', 0.1));
+  });
 });

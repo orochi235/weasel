@@ -394,13 +394,6 @@ have shipped. What remains:
   and such text stays editable text. That leaves a `transform` on the two node types and on the kit
   text and image poses they become, honored wherever those poses are read.
 
-- **(P3) svg import: `em` and `ex` on a length are read as bare user units.** `<circle r="2em">`
-  imports with r = 2, and the same holds for `stroke-width` and the root `width`. Each warns
-  (`packages/svg/src/lengths.ts`, `properties.ts`'s `length`, `parse.ts`'s `parseRootLength`);
-  converting needs the element's computed font size at the point the length is read, and nothing
-  computes one today: a percentage `font-size` is resolved against the 16px default (`parse.ts`),
-  and the readers in `properties.ts` see only the value string.
-
 - **(P2) geom: whether an open subpath fills is answered three ways.** For `<polyline points="0,0
   100,0 100,100" fill="red"/>` (no `Z`), `tessellate` (`packages/geom/src/tessellate/tessellate.ts`)
   triangulates the closed triangle and `pathSignedArea` (`paths/winding.ts`) counts it as closed
@@ -2288,15 +2281,6 @@ one dead `const` and four stale disable directives.
   called in the same pass on the second kind and not on the first. None isolates a throwing
   listener. One `createEmitter()` with stated semantics in a leaf package every tier can reach
   (`@weasel-js/registry`).
-
-- **(P3) Hex and CSS color parsing is implemented in six places that accept different inputs.**
-  core's `renderer/math/color.ts` `parseHex` takes 3, 4, 6, and 8 digits and throws otherwise.
-  `paint/src/colorSpaces.ts` `hexToOklchDeg` and `theme/src/engine/color/oklch.ts` `hexToRgb` run
-  `parseInt` on whatever follows the `#` with no length check, so `#abc` reads as `#000abc` and an
-  8-digit hex shifts its alpha byte into blue; `ui/src/color/ramp.ts` and
-  `theme/src/engine/semantics.ts` call those. `paint/src/palette.ts`, `theme/src/dtcg/color.ts`, and
-  `ui`'s `TokenPanel/color.ts` each have another. The complete parser lives in core, which paint and
-  theme sit below; move it to `@weasel-js/paint` and have the rest import it.
 
 - **(P3) `isPlainObject`, `shallowEqual`, and `clamp` have no home below core.** core's
   `isPlainObject` is realm-safe; `prefs/src/repair.ts`, three files in `theme/src`,

@@ -1,4 +1,5 @@
 import { oklabToSrgbU8, oklchToOklab } from './colorSpaces';
+import { parseHexBytes } from './hex';
 
 /**
  * A color given directly. `coords` are in the order CSS Color 4 uses for
@@ -149,8 +150,9 @@ export function colorLiteralToHex(color: ColorLiteral): string | null {
 
 /** `#rrggbb` or `#rrggbbaa` as an `srgb` literal; `null` for anything else. */
 export function hexToColorLiteral(hex: string): ColorLiteral | null {
-  if (!/^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i.test(hex)) return null;
-  const byte = (i: number): number => Number.parseInt(hex.slice(i, i + 2), 16) / 255;
-  const coords = [byte(1), byte(3), byte(5)];
-  return hex.length === 9 ? { space: 'srgb', coords, alpha: byte(7) } : { space: 'srgb', coords };
+  const bytes = hex.length === 7 || hex.length === 9 ? parseHexBytes(hex) : null;
+  if (!bytes) return null;
+  const [r, g, b, a] = bytes.map((v) => v / 255);
+  const coords = [r, g, b];
+  return hex.length === 9 ? { space: 'srgb', coords, alpha: a } : { space: 'srgb', coords };
 }

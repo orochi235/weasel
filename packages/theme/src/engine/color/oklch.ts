@@ -1,14 +1,11 @@
-import { hexToOklchDeg, oklchDegToHex, srgbU8ToOklab, type OklchDeg } from '@weasel-js/paint';
+import { hexToOklchDeg, hexToRgbBytes, oklchDegToHex, srgbU8ToOklab, type OklchDeg } from '@weasel-js/paint';
 
 /** A color in OKLCH: lightness 0–1, chroma, hue in degrees. paint's own type,
  *  under the name this engine has always called it. */
 export type Lch = OklchDeg;
 
-/** `#rrggbb` to 0–255 channels. */
-export function hexToRgb(hex: string): [number, number, number] {
-  const n = Number.parseInt(hex.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
+/** A hex color to 0–255 channels, its alpha dropped. Throws on anything else. */
+export const hexToRgb: (hex: string) => [number, number, number] = hexToRgbBytes;
 
 /** OKLCH (lightness 0–1, chroma, hue in degrees) to `#rrggbb`. Chroma past the gamut is clipped at constant lightness. */
 export const toHex = oklchDegToHex;
