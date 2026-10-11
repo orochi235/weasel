@@ -1577,8 +1577,14 @@ function drawPathFillVColor(
     gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
   }
 
-  applyClipTest(ctx);
-  drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
+  if (handle.requiresStencil) {
+    beginParityMask(ctx, handle.indexCount);
+    drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
+    endParityMask(ctx);
+  } else {
+    applyClipTest(ctx);
+    drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
+  }
   gl.bindVertexArray(null);
   // The per-vertex color VBO is freshly allocated per draw; free it now
   // (after unbinding the VAO) so we don't leak one buffer per vColor draw.
@@ -1903,11 +1909,28 @@ export function pushClip(
 
   gl.enable(gl.STENCIL_TEST);
   gl.colorMask(false, false, false, false);
-  gl.stencilMask(newBit);
-  gl.stencilFunc(gl.EQUAL, ref, ancestors);
-  gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
-
-  rasterizePathToStencil(ctx, path, model);
+  if (fillMeshHandle(ctx, path).requiresStencil) {
+    // Fans, one per contour: their union is not the path. Parity goes on
+    // bit 0, the clip bit is written where parity is odd, and drawing the
+    // fans a third time returns bit 0 to zero.
+    gl.stencilMask(0x01);
+    gl.stencilFunc(gl.ALWAYS, 0, 0x01);
+    gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
+    rasterizePathToStencil(ctx, path, model);
+    gl.stencilMask(newBit);
+    gl.stencilFunc(gl.EQUAL, ref | 0x01, ancestors | 0x01);
+    gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+    rasterizePathToStencil(ctx, path, model);
+    gl.stencilMask(0x01);
+    gl.stencilFunc(gl.ALWAYS, 0, 0x01);
+    gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
+    rasterizePathToStencil(ctx, path, model);
+  } else {
+    gl.stencilMask(newBit);
+    gl.stencilFunc(gl.EQUAL, ref, ancestors);
+    gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+    rasterizePathToStencil(ctx, path, model);
+  }
 
   gl.colorMask(true, true, true, true);
   // Restore full mask so subsequent draw functions don't inherit a narrowed mask.
@@ -1954,23 +1977,42 @@ export function popClip(
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Write the bound even-odd mesh's parity to stencil bit 0, then leave the
+ * test passing where that parity is odd and every enclosing clip holds. The
+ * program, VAO, and model are the caller's, already bound.
+ */
+function beginParityMask(ctx: DrawContext, indexCount: number): void {
+  const gl = ctx.gl;
+  gl.enable(gl.STENCIL_TEST);
+  gl.colorMask(false, false, false, false);
+  gl.stencilMask(0x01);
+  gl.stencilFunc(gl.ALWAYS, 0, 0x01);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
+  drawTriangles(ctx, indexCount, ctx.gl.UNSIGNED_INT);
+
+  const clipMask = ancestorMask(ctx.clipDepth);
+  gl.colorMask(true, true, true, true);
+  gl.stencilFunc(gl.EQUAL, clipMask | 0x01, clipMask | 0x01);
+  gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+}
+
+function endParityMask(ctx: DrawContext): void {
+  const gl = ctx.gl;
+  // Narrow to bit 0 first: clear only zeroes bits the mask enables, and
+  // pushClip owns bits 1-7.
+  gl.stencilMask(0x01);
+  gl.clear(gl.STENCIL_BUFFER_BIT);
+  gl.disable(gl.STENCIL_TEST);
+}
+
 function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
   const gl = ctx.gl;
   gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.pathFill);
 
-  gl.enable(gl.STENCIL_TEST);
-  gl.colorMask(false, false, false, false);
-  gl.stencilMask(0x01);
-  gl.stencilFunc(gl.ALWAYS, 0, 0x01);
-  gl.stencilOp(gl.KEEP, gl.KEEP, gl.INVERT);
-  drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
-
-  const clipMask = ancestorMask(ctx.clipDepth);
-  gl.colorMask(true, true, true, true);
-  gl.stencilFunc(gl.EQUAL, clipMask | 0x01, clipMask | 0x01);
-  gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+  beginParityMask(ctx, handle.indexCount);
   // The paint binds here, not above: pass 1 runs under a false colorMask, so a
   // uniform missed here renders black while the GL-recorder tests still pass.
   // Not `drawPathFillByKind` — its `applyClipTest` would disable this stencil.
@@ -1978,11 +2020,7 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
     drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
   }
 
-  // Narrow to bit 0 first: clear only zeroes bits the mask enables, and
-  // pushClip owns bits 1-7.
-  gl.stencilMask(0x01);
-  gl.clear(gl.STENCIL_BUFFER_BIT);
-  gl.disable(gl.STENCIL_TEST);
+  endParityMask(ctx);
   gl.bindVertexArray(null);
 }
 
@@ -2120,7 +2158,8 @@ function drawPathStrokeStenciled(
   gl.colorMask(false, false, false, false);
   gl.stencilMask(0x01);
   gl.stencilFunc(gl.ALWAYS, 1, 0x01);
-  gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+  // An even-odd fill is one fan per contour, and only parity cuts its holes.
+  gl.stencilOp(gl.KEEP, gl.KEEP, fillHandle.requiresStencil ? gl.INVERT : gl.REPLACE);
   gl.bindVertexArray(fillHandle.vao);
   drawTriangles(ctx, fillHandle.indexCount, ctx.gl.UNSIGNED_INT);
 
