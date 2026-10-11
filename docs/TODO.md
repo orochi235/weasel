@@ -1776,9 +1776,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   boundary on every load, and the trials that were fine are unreachable. The document-level path
   beside it quarantines and stops writing; the per-trial path does neither. Wanted: hydrate each
   trial in its own try/catch, keep the raw record so it is not overwritten, and decide what the tile
-  shows (a failed tile with a way to discard it, or the lab minus that trial plus a warning). The
-  docstring's "returns an empty list rather than throwing on malformed input" is true only for a
-  non-array.
+  shows (a failed tile with a way to discard it, or the lab minus that trial plus a warning).
 
 - **(P2) labkit trial: the settings panel and the instrument write config through two `setConfig`s
   that disagree.** The chrome's (`packages/labkit/src/trial/TrialChrome.tsx`, used by the settings

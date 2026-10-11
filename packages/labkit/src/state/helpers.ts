@@ -39,8 +39,8 @@ export function serializeTrials(
 }
 
 /** Rebuild trials from storage, running each instrument's deserializer
- *  over its state and starting each with an empty undo history. Returns an
- *  empty list rather than throwing on malformed input. */
+ *  over its state and starting each with an empty undo history. Input that
+ *  is not an array yields an empty list. */
 export function deserializeTrials(
   records: SerializedTrial[],
   deserializers: InstrumentSerializers,
