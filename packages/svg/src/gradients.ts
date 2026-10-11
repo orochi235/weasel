@@ -14,6 +14,7 @@ import { ownProp, ownValue } from './cascade';
 import { readProperty } from './properties';
 import { trimNumber } from './transform';
 import { escapeAttr } from './xmlEscape';
+import { resolveLength, type LengthAxis } from './lengths';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
 import { serializePathD } from './path-serializer';
@@ -193,7 +194,7 @@ function readStops(el: Element, onWarn?: (m: string) => void): GradStop[] {
     const colorAttr = ownProp(c, 'stop-color') ?? '#000000';
     const parsed = readProperty('stop-color', colorAttr, onWarn);
     if (parsed) {
-      const alpha = ownValue(c, 'stop-opacity') ?? parsed.alpha;
+      const alpha = (ownValue(c, 'stop-opacity') ?? 1) * parsed.alpha;
       stops.push({ offset, color: alpha < 1 ? applyAlpha(parsed.color, alpha) : parsed.color });
     } else {
       onWarn?.(`gradient stop has unrecognized stop-color: ${colorAttr}`);
@@ -235,22 +236,55 @@ function num(raw: string | null, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+/** What SVG paints with and this model does not hold: a radial gradient's
+ *  focal point, and any spread but the default `pad`. */
+function warnUnmodeled(el: Element, elements: ElementTable, onWarn?: (m: string) => void): void {
+  for (const name of ['fx', 'fy', 'fr']) {
+    if (inheritedAttr(el, elements, name) != null) {
+      onWarn?.(`gradient ${name} is not modeled; the gradient is centered on its cx, cy`);
+      break;
+    }
+  }
+  const spread = inheritedAttr(el, elements, 'spreadMethod');
+  if (spread === 'reflect' || spread === 'repeat') {
+    onWarn?.(`spreadMethod="${spread}" is not modeled; the gradient pads`);
+  }
+}
+
+/**
+ * One gradient coordinate. In `objectBoundingBox` units a percentage is a
+ * fraction of the box and `fraction` is the default; in `userSpaceOnUse` it
+ * is a length like any other, of the viewport, and SVG's default is the
+ * percentage `fraction` spells.
+ */
+function coord(
+  el: Element, elements: ElementTable, name: string, axis: LengthAxis, fraction: number,
+  units: 'bounds' | 'world', onWarn?: (m: string) => void,
+): number {
+  const raw = inheritedAttr(el, elements, name);
+  if (units === 'bounds') return num(raw, fraction);
+  if (raw != null) return resolveLength(raw, el, name, axis, fraction, onWarn ?? (() => {}));
+  // A default with no viewport to be a percentage of stays the bare fraction,
+  // unreported: the author wrote nothing wrong.
+  let unresolved = false;
+  const v = resolveLength(`${fraction * 100}%`, el, name, axis, fraction, () => { unresolved = true; });
+  return unresolved ? fraction : v;
+}
+
 function readLinearGradient(
   el: Element, elements: ElementTable, onWarn?: (m: string) => void,
 ): FillStyle | null {
   warnGradientTransform(el, elements, onWarn);
+  warnUnmodeled(el, elements, onWarn);
+  const units = readGradientUnits(el, elements);
+  const at = (name: string, axis: LengthAxis, fraction: number): number =>
+    coord(el, elements, name, axis, fraction, units, onWarn);
   return {
     fill: 'linear-gradient',
-    from: {
-      x: num(inheritedAttr(el, elements, 'x1'), 0),
-      y: num(inheritedAttr(el, elements, 'y1'), 0),
-    },
-    to: {
-      x: num(inheritedAttr(el, elements, 'x2'), 1),
-      y: num(inheritedAttr(el, elements, 'y2'), 0),
-    },
+    from: { x: at('x1', 'x', 0), y: at('y1', 'y', 0) },
+    to: { x: at('x2', 'x', 1), y: at('y2', 'y', 0) },
     stops: inheritedStops(el, elements, onWarn),
-    units: readGradientUnits(el, elements),
+    units,
     interpolate: readInterpolate(el, elements),
   };
 }
@@ -259,15 +293,16 @@ function readRadialGradient(
   el: Element, elements: ElementTable, onWarn?: (m: string) => void,
 ): FillStyle | null {
   warnGradientTransform(el, elements, onWarn);
+  warnUnmodeled(el, elements, onWarn);
+  const units = readGradientUnits(el, elements);
+  const at = (name: string, axis: LengthAxis, fraction: number): number =>
+    coord(el, elements, name, axis, fraction, units, onWarn);
   return {
     fill: 'radial-gradient',
-    center: {
-      x: num(inheritedAttr(el, elements, 'cx'), 0.5),
-      y: num(inheritedAttr(el, elements, 'cy'), 0.5),
-    },
-    radius: num(inheritedAttr(el, elements, 'r'), 0.5),
+    center: { x: at('cx', 'x', 0.5), y: at('cy', 'y', 0.5) },
+    radius: at('r', 'other', 0.5),
     stops: inheritedStops(el, elements, onWarn),
-    units: readGradientUnits(el, elements),
+    units,
     interpolate: readInterpolate(el, elements),
   };
 }

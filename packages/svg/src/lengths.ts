@@ -32,7 +32,19 @@ export function readLength(
   fallback: number,
   onWarn: (m: string) => void,
 ): number {
-  const raw = el.getAttribute(name);
+  return resolveLength(el.getAttribute(name), el, name, axis, fallback, onWarn);
+}
+
+/** {@link readLength} for a value already in hand: one inherited from another
+ *  element, or a default. `el` is where a percentage is resolved from. */
+export function resolveLength(
+  raw: string | null,
+  el: Element,
+  name: string,
+  axis: LengthAxis,
+  fallback: number,
+  onWarn: (m: string) => void,
+): number {
   if (raw == null) return fallback;
   const m = LENGTH.exec(raw);
   if (!m) {

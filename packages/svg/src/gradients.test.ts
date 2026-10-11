@@ -191,3 +191,60 @@ describe('fill-opacity on a gradient', () => {
     expect(gradientOf(out).opacity).toBe(0.5);
   });
 });
+
+describe('gradient attributes read to the letter', () => {
+  const stops = '<stop offset="0" stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/>';
+  const doc = (defs: string) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">${defs}${RECT}</svg>`;
+
+  it('resolves a percentage on a userSpaceOnUse gradient against the viewport', () => {
+    const paint = gradientOf(doc(
+      `<linearGradient id="g" gradientUnits="userSpaceOnUse" x1="10%" x2="100%" y2="50%">${stops}</linearGradient>`,
+    ));
+    expect(paint).toMatchObject({ from: { x: 20, y: 0 }, to: { x: 200, y: 50 }, units: 'world' });
+  });
+
+  it('gives a userSpaceOnUse gradient its percentage defaults', () => {
+    // x2 defaults to 100%; cx, cy, and r to 50%, r of sqrt((200² + 100²) / 2) = 158.114.
+    const linear = gradientOf(doc(`<linearGradient id="g" gradientUnits="userSpaceOnUse">${stops}</linearGradient>`));
+    expect(linear).toMatchObject({ from: { x: 0, y: 0 }, to: { x: 200, y: 0 } });
+    const radial = gradientOf(doc(`<radialGradient id="g" gradientUnits="userSpaceOnUse">${stops}</radialGradient>`));
+    expect(radial).toMatchObject({ center: { x: 100, y: 50 } });
+    expect(radial.radius).toBeCloseTo(79.057, 3);
+  });
+
+  it('leaves the defaults alone when there is no viewport', () => {
+    const r = parseSvg(
+      `<svg xmlns="http://www.w3.org/2000/svg"><linearGradient id="g" gradientUnits="userSpaceOnUse">${stops}</linearGradient>${RECT}</svg>`,
+    );
+    expect(r.warnings).toEqual([]);
+    expect((r.nodes[0] as { fill: { paint: unknown } }).fill.paint).toMatchObject({ to: { x: 1, y: 0 } });
+  });
+
+  it('still reads a percentage on a bounding-box gradient as a fraction', () => {
+    const paint = gradientOf(doc(`<linearGradient id="g" x2="50%">${stops}</linearGradient>`));
+    expect(paint).toMatchObject({ to: { x: 0.5, y: 0 }, units: 'bounds' });
+  });
+
+  it('multiplies a stop color\'s own alpha by stop-opacity', () => {
+    // 0.5 * 0.5 = 0.25, and round(0.25 * 255) = 64 = 0x40.
+    const paint = gradientOf(doc(
+      '<linearGradient id="g"><stop offset="0" stop-color="rgba(0,0,0,.5)" stop-opacity=".5"/></linearGradient>',
+    ));
+    expect(paint.stops).toEqual([{ offset: 0, color: '#00000040' }]);
+  });
+
+  it('reports a focal point and a spread method it does not model', () => {
+    const { warnings } = parseSvg(doc(
+      `<radialGradient id="g" fx="0.2" fy="0.2" spreadMethod="reflect">${stops}</radialGradient>`,
+    ));
+    expect(warnings).toEqual([
+      expect.stringMatching(/fx/),
+      expect.stringMatching(/spreadMethod="reflect"/),
+    ]);
+  });
+
+  it('says nothing about spreadMethod="pad"', () => {
+    expect(parseSvg(doc(`<linearGradient id="g" spreadMethod="pad">${stops}</linearGradient>`)).warnings).toEqual([]);
+  });
+});
