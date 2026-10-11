@@ -71,8 +71,7 @@ function measureError(
   let worstError = 0;
   const a = samples[0];
   for (let i = 1; i < samples.length - 1; i++) {
-    const t = i / (samples.length - 1);
-    const q = cubicPointAt(a, fit.cp1, fit.cp2, fit.end, t);
+    const q = cubicPointAt(a, fit.cp1, fit.cp2, fit.end, fit.ts[i]);
     const dx = samples[i].x - q.x;
     const dy = samples[i].y - q.y;
     const sq = dx * dx + dy * dy;
@@ -88,6 +87,8 @@ interface CubicFit {
   cp1: Point;
   cp2: Point;
   end: Point;
+  /** The curve parameter each sample was fitted at: where its error is measured. */
+  ts: ReadonlyArray<number>;
 }
 
 function fitOneCubic(samples: ReadonlyArray<Point>): CubicFit {
@@ -98,7 +99,7 @@ function fitOneCubic(samples: ReadonlyArray<Point>): CubicFit {
   const tEnd = unit(sub(samples[n - 2], e));
 
   const ts = chordLengthParam(samples);
-  if (ts === null) return { cp1: { ...a }, cp2: { ...e }, end: e };
+  if (ts === null) return { cp1: { ...a }, cp2: { ...e }, end: e, ts: samples.map(() => 0) };
 
   let fit = solveLS(samples, ts, a, e, tStart, tEnd);
   for (let pass = 0; pass < 4; pass++) {
@@ -169,6 +170,7 @@ function solveLS(
     cp1: { x: a.x + tStart.x * alpha1, y: a.y + tStart.y * alpha1 },
     cp2: { x: e.x + tEnd.x * alpha2, y: e.y + tEnd.y * alpha2 },
     end: e,
+    ts,
   };
 }
 

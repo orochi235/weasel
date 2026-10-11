@@ -175,3 +175,23 @@ describe('schneiderFit — recursive split', () => {
     expect(maxErrorAgainstCubic(samples, out)).toBeLessThanOrEqual(2.0);
   });
 });
+
+describe('schneiderFit with unevenly spaced samples', () => {
+  // Collinear samples are fit exactly by one cubic however they are spaced:
+  // chord-length parameters put them at t = 0, 0.01, 0.02, 1 on x = 100t.
+  it('fits a straight run with one cubic', () => {
+    const path = schneiderFit([{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 100, y: 0 }], 0.5);
+    expect(Array.from(path.commands)).toEqual([PATH_M, PATH_C]);
+    expect(Array.from(path.coords.slice(6))).toEqual([100, 0]);
+    expect(path.coords[3]).toBe(0);
+    expect(path.coords[5]).toBe(0);
+  });
+
+  it('fits a slanted straight run with one cubic on the line', () => {
+    const path = schneiderFit([{ x: 0, y: 0 }, { x: 3, y: 4 }, { x: 6, y: 8 }, { x: 300, y: 400 }], 0.5);
+    expect(Array.from(path.commands)).toEqual([PATH_M, PATH_C]);
+    // Both control points on 4x = 3y.
+    expect(4 * path.coords[2] - 3 * path.coords[3]).toBeCloseTo(0, 3);
+    expect(4 * path.coords[4] - 3 * path.coords[5]).toBeCloseTo(0, 3);
+  });
+});
