@@ -130,7 +130,9 @@ interface ParseState {
 /**
  * Build a weasel `PolygonPath` from an SVG path-data (`d`) string. Unknown
  * command letters are skipped (and reported via `onWarn` when provided); the
- * builder still returns whatever valid commands preceded them.
+ * builder still returns whatever valid commands preceded them. Data that does
+ * not begin with a moveto builds an empty path, and a command with the wrong
+ * number of arguments ends the path before it, as SVG renders both.
  */
 export function pathFromD(
   d: string,
@@ -143,6 +145,7 @@ export function pathFromD(
     lastCubicCtrl: null, lastQuadCtrl: null,
   };
 
+  let started = false;
   for (const { cmd, args } of tokens) {
     const upper = cmd.toUpperCase();
     const relative = cmd !== upper;
@@ -150,6 +153,10 @@ export function pathFromD(
     if (argCount === undefined) {
       onWarn?.(`unknown path command: ${cmd}`);
       continue;
+    }
+    if (!started && upper !== 'M') {
+      onWarn?.(`path data does not begin with a moveto ("${cmd}" comes first); nothing is drawn`);
+      break;
     }
     if (upper === 'Z') {
       b.close();
@@ -160,12 +167,19 @@ export function pathFromD(
       continue;
     }
     // M with multiple coord pairs implies subsequent pairs are L (per SVG spec).
-    const groups = argCount === 0 ? 1 : Math.floor(args.length / argCount);
+    const groups = Math.floor(args.length / argCount);
     for (let g = 0; g < groups; g++) {
       const a = args.slice(g * argCount, (g + 1) * argCount);
       // For repeated 'M'/'m' coord pairs after the first, downgrade to L/l.
       const effectiveUpper = upper === 'M' && g > 0 ? 'L' : upper;
       runCommand(effectiveUpper, relative, a, st, b);
+      started = true;
+    }
+    // SVG draws a path up to the command in error and no further: carrying on
+    // would start every later relative command from the wrong point.
+    if (groups === 0 || args.length % argCount !== 0) {
+      onWarn?.(`path command "${cmd}" takes ${argCount} arguments at a time and has ${args.length}; the path ends before it`);
+      break;
     }
   }
 
