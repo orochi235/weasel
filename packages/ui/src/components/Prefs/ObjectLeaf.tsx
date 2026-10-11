@@ -71,8 +71,9 @@ export function ObjectLeaf({
         }
         const inner = objectRows(child.members);
         if (inner.length === 0) continue;
+        const note = child.description ? [<p key={`desc:${key}`} className={s.paneDesc}>{child.description}</p>] : [];
         if (child.as === 'tab') {
-          tabs.push({ id: key, name: child.name, content: inner });
+          tabs.push({ id: key, name: child.name, content: [...note, ...inner] });
           continue;
         }
         flushTabs();
@@ -81,8 +82,8 @@ export function ObjectLeaf({
           continue;
         }
         const heading = <h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>;
-        if (child.as === 'panel') out.push(<div key={`panel:${key}`} className={s.panePanel}>{heading}{inner}</div>);
-        else out.push(heading, ...inner);
+        if (child.as === 'panel') out.push(<div key={`panel:${key}`} className={s.panePanel}>{heading}{note}{inner}</div>);
+        else out.push(heading, ...note, ...inner);
         continue;
       }
       flushTabs();
