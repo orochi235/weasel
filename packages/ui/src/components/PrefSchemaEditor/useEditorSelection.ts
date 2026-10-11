@@ -1,5 +1,4 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { GENERAL } from './generalBranch';
 import { nodeAt, parentPath, rebasePaths, type SchemaRoot } from './schemaEdit';
 
 const NONE: readonly string[] = [];
@@ -7,8 +6,6 @@ const NONE: readonly string[] = [];
 /** The selection after the tree reports `ids`: what stayed keeps its order, and what is new goes last. */
 export function nextSelection(prev: readonly string[], ids: Iterable<string>): string[] {
   const now = new Set(ids);
-  // General is the root's row, which an empty selection already means.
-  now.delete(GENERAL);
   const kept = prev.filter((p) => now.has(p));
   return [...kept, ...[...now].filter((p) => !kept.includes(p))];
 }

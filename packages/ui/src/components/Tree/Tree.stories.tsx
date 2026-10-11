@@ -171,3 +171,15 @@ export const Copyable: Story = {
     );
   },
 };
+
+/** A row with a `tooltip` shows it beside the row once the pointer, or keyboard focus, has rested there. */
+export const Tooltips: Story = {
+  args: {
+    'aria-label': 'Preferences',
+    nodes: [
+      { id: 'grid', label: 'Show grid', tooltip: 'Draw the grid behind the page.' },
+      { id: 'snap', label: 'Snap', tooltip: 'Snap what is dragged to the grid.' },
+      { id: 'dock', label: 'Dock' },
+    ],
+  },
+};

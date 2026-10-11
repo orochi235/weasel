@@ -9,8 +9,7 @@ import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
-import { looseEntryName } from '../Prefs/schema';
-import { GENERAL, generalAllows, generalKeys, schemaTarget } from './generalBranch';
+import { isLoose, looseKeys, looseTarget, schemaTarget, topLevelAllows } from './loose';
 import { Icon } from '../../icons';
 import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
@@ -40,6 +39,7 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
       id: p,
       label: changed.has(p) ? <span className={s.changed}>{label}</span> : label,
       textValue: name ? `${name} ${key}` : key,
+      ...(child.description ? { tooltip: child.description } : {}),
       // Unset, a group is drawn by its depth: a page under the root, a section below that.
       ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
       trailing: isPrefLeaf(child)
@@ -57,9 +57,9 @@ export interface StructurePaneProps {
   selected: readonly string[];
   /** The path that stands for the selection: where an add lands and which row is brought into view. */
   lead: string | null;
-  /** The tree's rows now selected, General among them when it is. */
+  /** The tree's rows now selected. */
   onPick(ids: Iterable<string>): void;
-  /** Select exactly these, after an add. */
+  /** Select exactly these: after an add, or a pick among the unplaced. */
   onSelect(paths: readonly string[]): void;
   changed: ReadonlySet<string>;
   kinds: readonly string[];
@@ -67,7 +67,7 @@ export interface StructurePaneProps {
   onExpandedChange: Dispatch<SetStateAction<Set<string>>>;
   /** Where in the editor's bar the pane draws the tools that add and remove nodes; `null` until the bar is up. */
   toolSlot: HTMLElement | null;
-  /** Nodes with no place in the schema yet, listed under the tree to be dragged into it. */
+  /** Nodes the schema does not hold yet, listed under the tree with what it holds on no page, to be dragged into it. */
   unplaced?: PrefGroup;
   /** Somewhere else a drag from this pane may end: the live preview. */
   outside?: DropOutside;
@@ -100,20 +100,11 @@ const ancestorsOf = (path: string): string[] =>
   keysOf(path).slice(0, -1).map((_, i, keys) => pathOf(keys.slice(0, i + 1))!);
 
 export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, unplaced, outside, outsideDraws = false, onMove: move, onCopy: copy, onRemove, maxDepth, rowMark }: StructurePaneProps) {
-  const nodes = useMemo(() => {
+  // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
+  const [nodes, looseNodes] = useMemo(() => {
     const all = toTreeNodes(schema, null, changed, rowMark);
-    const loose = new Set(generalKeys(schema));
-    if (loose.size === 0) return all;
-    // A preferences form files the root's own leaves under one rail entry; the tree shows them the same way.
-    const general: TreeNode = {
-      id: GENERAL,
-      leading: <Icon size={16} name={GROUP_ICON.page} />,
-      label: looseEntryName(schema.name),
-      textValue: looseEntryName(schema.name),
-      trailing: countBadge(leafCount([...loose].map((key) => nodeAt(schema, key)!))),
-      children: all.filter((n) => loose.has(n.id)),
-    };
-    return [general, ...all.filter((n) => !loose.has(n.id))];
+    const loose = new Set(looseKeys(schema));
+    return [all.filter((n) => !loose.has(n.id)), all.filter((n) => loose.has(n.id))];
   }, [schema, changed, rowMark]);
   const [query, setQuery] = useState('');
   const sought = query.trim().toLowerCase();
@@ -121,16 +112,23 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
     () => (sought === '' ? nodes : filterTree(nodes, (n) => (n.textValue ?? '').toLowerCase().includes(sought))),
     [nodes, sought],
   );
-  const hasGeneral = nodes[0]?.id === GENERAL;
   const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);
   const [storedHeight, setStoredHeight] = useState(180);
   const treeArea = useRef<HTMLDivElement | null>(null);
+  const unplacedArea = useRef<HTMLDivElement | null>(null);
+  const [unplacing, setUnplacing] = useState(false);
   // A selection made in the preview may sit outside the tree's scrolled view. Optional-called for jsdom.
   useEffect(() => {
     if (lead === null) return;
     const rows = treeArea.current?.querySelectorAll('[data-tree-id]') ?? [];
     [...rows].find((r) => r.getAttribute('data-tree-id') === lead)?.scrollIntoView?.({ block: 'nearest' });
   }, [lead]);
+  /** Whether a drag of the nodes at `ids`, held at `point`, is over the unplaced list and may be let go there. */
+  const overUnplaced = (ids: readonly string[], point: { x: number; y: number }): boolean => {
+    const box = unplacedArea.current?.getBoundingClientRect();
+    if (!box || point.x < box.left || point.x > box.right || point.y < box.top || point.y > box.bottom) return false;
+    return ids.every((id) => !isFixed(schema, id) && isLoose(nodeAt(schema, id)!));
+  };
   const waiting = useMemo(() => (unplaced ? stillUnplaced(unplaced, schema) : null), [unplaced, schema]);
 
   /** Where an add lands: inside the lead if it holds children, else after it. */
@@ -173,12 +171,26 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
     const at = treeTarget.current;
     const target = at ? schemaTarget(schema, at.parentId, at.index) : outside?.target([drag.node], [], drag) ?? null;
     if (!target) return;
+    if (drag.from !== undefined) {
+      move([drag.from], target);
+      return;
+    }
     const kids = childrenOf(nodeAt(schema, target.parentPath)!) ?? {};
     const key = uniqueKey(kids, drag.item.key);
     onChange(addNode(schema, target.parentPath, key, drag.node, target.index));
     const path = joinPath(target.parentPath, key);
     onExpandedChange((e) => new Set([...e, ...ancestorsOf(path), path]));
     onSelect([path]);
+  };
+
+  /** Whether the nodes at `ids`, which the schema holds, may be dropped under tree row `parentId`. */
+  const takes = (ids: readonly string[], parentId: string | null): boolean => {
+    if (ids.some((id) => isFixed(schema, id))) return false;
+    if (!withinDepth(parentId, nodesAt(ids), maxDepth)) return false;
+    const top = topLevelAllows(schema, ids, parentId);
+    if (top !== undefined) return top;
+    const parent = nodeAt(schema, parentId)!;
+    return !!childrenOf(parent) && ids.every((id) => fitsUnder(parent, nodeAt(schema, id)!));
   };
 
   return (
@@ -210,43 +222,46 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
           if (sought === '') onExpandedChange(next);
         }}
         selectionMode="multiple"
-        // General is the root's row: with nothing selected the attributes pane shows the root's.
-        selectedIds={selected.length === 0 ? (hasGeneral ? [GENERAL] : []) : selected}
+        selectedIds={selected}
         onSelectionChange={onPick}
         externalDrag={paletteDrag}
         onExternalTarget={(t) => { treeTarget.current = t; }}
         // A copy is new where it lands, so the place it is dropped is asked about it with no paths, as for a palette's node.
-        onDragOutside={outside && ((ids, point, how) => {
+        onDragOutside={(ids, point, how) => {
+          // Let go over the unplaced list, a node comes off its page.
+          const off = point !== null && overUnplaced(ids, point);
+          setUnplacing(off);
+          if (off || !outside) return off;
           if (point) return outside.over(nodesAt(ids), how.copy ? [] : ids, point);
           outside.end();
           return false;
-        })}
-        onDropOutside={outside && ((ids, point, how) => {
-          const target = outside.target(nodesAt(ids), how.copy ? [] : ids, point);
+        }}
+        onDropOutside={(ids, point, how) => {
+          setUnplacing(false);
+          const target = overUnplaced(ids, point) ? looseTarget(schema) : outside?.target(nodesAt(ids), how.copy ? [] : ids, point);
           if (target) (how.copy ? copy : move)(ids, target);
-        })}
+        }}
         canDrop={(ids, t) => {
           // A place among the rows shown is not that place among all of them.
           if (sought !== '') return false;
-          if (ids.length === 0) return paletteDrag !== null && treeTakesNew(schema, paletteDrag.node, t.parentId, maxDepth);
-          if ([...ids].some((id) => isFixed(schema, id))) return false;
-          if (!withinDepth(t.parentId === GENERAL ? null : t.parentId, nodesAt([...ids]), maxDepth)) return false;
-          const general = generalAllows(schema, [...ids], t.parentId);
-          if (general !== undefined) return general;
-          const parent = nodeAt(schema, t.parentId)!;
-          return !!childrenOf(parent) && [...ids].every((id) => fitsUnder(parent, nodeAt(schema, id)!));
+          if (ids.length === 0) {
+            if (paletteDrag === null) return false;
+            return paletteDrag.from === undefined ? treeTakesNew(schema, paletteDrag.node, t.parentId, maxDepth) : takes([paletteDrag.from], t.parentId);
+          }
+          return takes(ids, t.parentId);
         }}
         onMove={(ids, t) => move(ids, schemaTarget(schema, t.parentId, t.index))}
         onCopy={(ids, t) => copy(ids, schemaTarget(schema, t.parentId, t.index))}
       />
       </div>
-      {unplaced !== undefined && (
+      {(unplaced !== undefined || !isPrefSection(schema)) && (
         <>
           <ResizeHandle orientation="horizontal" invert value={storedHeight} min={60} max={600}
             onInput={setStoredHeight} ariaLabel="Resize unplaced" />
-          <div className={s.storedArea} style={{ '--stored-h': `${storedHeight}px` } as CSSProperties}>
+          <div className={s.storedArea} ref={unplacedArea} data-drop={unplacing || undefined} style={{ '--stored-h': `${storedHeight}px` } as CSSProperties}>
             <PaneHeader title="Unplaced" />
-            <UnplacedTree unplaced={waiting} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+            <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting} sought={sought}
+              selected={selected} onSelect={(path) => onSelect([path])} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
           </div>
         </>
       )}

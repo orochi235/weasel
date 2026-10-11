@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { GENERAL } from './generalBranch';
 import { livePaths, nextSelection, toggled } from './useEditorSelection';
 
 const ROOT: PrefGroup = {
@@ -19,11 +18,6 @@ describe('the editor selection', () => {
 
   it('keeps the order it had when a path leaves', () => {
     expect(nextSelection(['b', 'a', 'a/x'], new Set(['a/x', 'b']))).toEqual(['b', 'a/x']);
-  });
-
-  it('reads the General row alone as the root, and drops it beside real paths', () => {
-    expect(nextSelection(['a'], new Set([GENERAL]))).toEqual([]);
-    expect(nextSelection(['a'], new Set(['a', GENERAL]))).toEqual(['a']);
   });
 
   it('toggles one path in and out', () => {

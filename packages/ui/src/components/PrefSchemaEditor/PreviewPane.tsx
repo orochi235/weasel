@@ -8,6 +8,7 @@ import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPa
 import { Switch } from '../Switch';
 import type { DefaultEdit } from './defaults';
 import { NodeGhost } from './NodeGhost';
+import { placedOnly } from './loose';
 import { drawsNode } from './previewDrop';
 import { PaneHeader } from './PaneHeader';
 import { keysOf, pathOf, type SchemaRoot } from './schemaEdit';
@@ -54,6 +55,8 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
 }) {
   const [showHidden, setShowHidden] = useState(true);
   const [width, setWidth] = useState(800);
+  // What sits on no page is listed as unplaced, and the form would file it under a page of its own.
+  const placed = useMemo(() => placedOnly(schema), [schema]);
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview">
@@ -61,7 +64,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
       </PaneHeader>
       <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown} style={{ '--preview-w': `${width}px` } as CSSProperties}>
       <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" subPages rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
-        schema={schema} values={NO_VALUES} renderers={renderers} showHidden={showHidden}
+        schema={placed} values={NO_VALUES} renderers={renderers} showHidden={showHidden}
         // An empty group is drawn too: it is somewhere to drop into.
         showEmpty drop={drop}
         // Under a group root every key is one step of the value path, so the two paths differ only in their separator.

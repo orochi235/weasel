@@ -832,8 +832,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   grid gap above the attributes pane, and the Key/Kind rows are wider than the attribute form
   under them. Seen on `#/dev/prefs` at 1440×900.
 
-- **(P2) `PrefSchemaEditor` layout by dragging, what is left.** A stored value in the Unplaced
-  list cannot be dragged; it is still added by a click. A `label` is a kind only `PrefsForm`'s rail
+- **(P2) `PrefSchemaEditor` layout by dragging, what is left.** A `label` is a kind only `PrefsForm`'s rail
   and columns rows draw: `SelectionPanel` and labkit's `ControlPanel` show it as an unknown kind,
   `prefFieldChoices` offers it as a field, and `@weasel-js/prefs` does not know the kind.
   `PrefsForm.drop.browser.test.tsx` checks the form's drop target and reflow in a real browser; no
