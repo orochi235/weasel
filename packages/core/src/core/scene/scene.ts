@@ -244,7 +244,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       name: op.name,
       args: op.args,
       label: op.label,
-      coalesceKey: op.coalesceKey,
+      get coalesceKey() { return op.coalesceKey; },
       elideNoop: op.elideNoop,
       apply: () => {
         const get = historyAdapterAccessor;
@@ -1022,7 +1022,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       name: op.name,
       args: op.args,
       label: op.label,
-      coalesceKey: op.coalesceKey,
+      // Read when asked: an arrange op has no key until it has applied.
+      get coalesceKey() { return op.coalesceKey; },
       elideNoop: op.elideNoop,
       apply: () => op.apply(adapter),
       invert: () => bindOpToAdapter(op.invert(), adapter),

@@ -264,6 +264,31 @@ describe('scene container layout', () => {
     expect(scene.get(asNodeId('b'))!.pose.width).toBe(50);
   });
 
+  it('coalesces a live resize that re-arranges the same children each frame', () => {
+    const scene = createScene<null, 'l', RectPose>({
+      systemLayers: [{ id: 'l' }],
+      initial: [{ id: C, kind: 'container', layer: 'l', pose: CONTAINER, data: null, layout: stack() }],
+      coalesceWindowMs: 500,
+    });
+    add(scene, 'a');
+    add(scene, 'b');
+    const depth = scene.historyIndex();
+    const adapter = { setPose: (id: string, pose: RectPose) => scene.setPose(asNodeId(id), pose) };
+    const resize = (from: number, to: number) => scene.applyBatch(
+      [createTransformOp<RectPose>({ id: C as string, from: { ...CONTAINER, width: from }, to: { ...CONTAINER, width: to } })],
+      'resize',
+      adapter,
+    );
+    resize(50, 60);
+    resize(60, 70);
+    expect(scene.historyIndex()).toBe(depth + 1);
+    expect(scene.get(asNodeId('b'))!.pose.width).toBe(70);
+
+    scene.undo();
+    expect(scene.get(C)!.pose.width).toBe(50);
+    expect(scene.get(asNodeId('b'))!.pose.width).toBe(50);
+  });
+
   it('reports each forward reflow with where the child was, and never an undo', () => {
     const scene = makeScene();
     const seen: { id: string; from: RectPose; to: RectPose }[][] = [];
