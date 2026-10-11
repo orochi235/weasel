@@ -19,9 +19,11 @@
  * Run: node scripts/check-changeset-bumps.mjs
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const DIR = resolve(process.cwd(), '.changeset');
+// From the script's own place, so a run from another directory still looks.
+const DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.changeset');
 
 /** Everything above `patch` needs sign-off. */
 const GATED = ['minor', 'major'];
@@ -55,12 +57,19 @@ for (const { file, path, label } of files) {
   const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
   if (!fm) continue;
 
-  for (const level of GATED) {
-    const pkgs = [...fm[1].matchAll(
-      new RegExp(`^\\s*["']?([^"':]+)["']?\\s*:\\s*${level}\\s*$`, 'gm'),
-    )].map((m) => m[1].trim());
-    if (pkgs.length === 0) continue;
-    if (approvalFor(text, level)) {
+  // Changesets reads the frontmatter as YAML, so `"minor"`, `'minor'`, and
+  // `minor # why` all bump. Read each value the way YAML would, and refuse a
+  // level this guard does not know rather than let it through.
+  const byLevel = new Map();
+  for (const line of fm[1].split(/\r?\n/)) {
+    const m = /^\s*(["']?)(.+?)\1\s*:\s*(.*?)\s*$/.exec(line);
+    if (!m) continue;
+    const level = m[3].replace(/\s+#.*$/, '').replace(/^(["'])(.*)\1$/, '$2').trim().toLowerCase();
+    if (level === 'patch' || level === 'none') continue;
+    byLevel.set(level, [...(byLevel.get(level) ?? []), m[2].trim()]);
+  }
+  for (const [level, pkgs] of byLevel) {
+    if (GATED.includes(level) && approvalFor(text, level)) {
       console.log(`[changeset-bumps] ${label}: ${level} approved — ${pkgs.join(', ')}`);
       continue;
     }

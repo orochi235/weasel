@@ -15,9 +15,10 @@
  * Run: node scripts/check-lockstep.mjs
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = resolve(process.cwd());
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CONFIG = join(ROOT, '.changeset/config.json');
 
 if (!existsSync(CONFIG)) {
