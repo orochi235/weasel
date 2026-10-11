@@ -22,6 +22,8 @@ export interface ColorFieldProps {
   alpha?: boolean;
   /** Draw the opacity slider inert, for a consumer that drops alpha. */
   alphaDisabled?: boolean;
+  /** The swatch and the opacity slider take no input. */
+  disabled?: boolean;
   /** Live value during interaction (picker drag, slider drag). Optional —
    *  wire it for live preview; omit it for commit-only consumers. */
   onInput?: (hex: string) => void;
@@ -41,7 +43,7 @@ export interface ColorFieldProps {
  * commit-on-change would emit one undo entry per tick.
  */
 export function ColorField(props: ColorFieldProps) {
-  const { value, mixed = false, alpha = false, alphaDisabled = false, onInput, onChange, id, className } = props;
+  const { value, mixed = false, alpha = false, alphaDisabled = false, disabled = false, onInput, onChange, id, className } = props;
   const hex8 = toHex8(value ?? '#000000');
   const rgb6 = hex8.slice(0, 7);
   const alpha01 = getAlpha01(hex8);
@@ -88,6 +90,7 @@ export function ColorField(props: ColorFieldProps) {
           className={s.color}
           type="color"
           value={visibleRgb}
+          disabled={disabled}
           aria-label={props['aria-label'] ?? 'Color'}
           onInput={(e) => {
             const rgb = (e.target as HTMLInputElement).value;
@@ -100,7 +103,7 @@ export function ColorField(props: ColorFieldProps) {
       {alpha && (
         <OpacityRange
           value={visibleAlphaPct / 100}
-          disabled={alphaLocked || alphaDisabled}
+          disabled={alphaLocked || alphaDisabled || disabled}
           aria-label={props['aria-label']}
           onInput={(a01) => {
             setAlphaDraft(Math.round(a01 * 100));

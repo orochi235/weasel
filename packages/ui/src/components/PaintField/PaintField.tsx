@@ -27,6 +27,8 @@ export interface PaintFieldProps extends OverlayPortalProps {
   kinds?: readonly PaintKind[];
   /** Offer "None" in the editor. Default `true`. */
   allowNone?: boolean;
+  /** The trigger shows the paint and opens nothing. */
+  disabled?: boolean;
   onInput?: (next: FillStyle | null) => void;
   onChange: (next: FillStyle | null) => void;
   /** Names the paint this field edits — `Fill`, `Color`. */
@@ -54,7 +56,7 @@ function kindLabel(paint: FillStyle | null | undefined, mixed: boolean, label: s
  */
 export function PaintField(props: PaintFieldProps): ReactElement {
   const {
-    value, mixed = false, unset = false, kinds, allowNone = true,
+    value, mixed = false, unset = false, kinds, allowNone = true, disabled = false,
     onInput, onChange, className, portalContainer,
   } = props;
   const ariaLabel = props['aria-label'];
@@ -68,6 +70,7 @@ export function PaintField(props: PaintFieldProps): ReactElement {
       <RACButton
         className={[s.trigger, className].filter(Boolean).join(' ')}
         aria-label={ariaLabel}
+        isDisabled={disabled}
         {...(unset ? { 'data-unset': '' } : {})}
         {...(mixed ? { 'data-mixed': '' } : {})}
       >

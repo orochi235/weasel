@@ -13,7 +13,7 @@ import { endlessTrack } from '../../endless';
 import { UnitField } from '../NumberField';
 import { spinKey } from '../spin';
 import shared from '../range.module.css';
-import type { PropertyNumberFieldProps } from './PropertyField';
+import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyPanel';
 import s from './Properties.module.css';
 
@@ -116,6 +116,7 @@ export function NumberInput(p: PropertyNumberFieldProps) {
       accepts={p.accepts}
       display={p.display}
       steppers={p.steppers}
+      disabled={p.disabled}
       aria-label={p.name}
       // With one callback it is the live one: every keystroke and step reaches
       // it, and the commit on blur would only repeat the last of them.
@@ -186,7 +187,7 @@ function SliderTrack(p: PropertyNumberFieldProps) {
       max={max}
       step={step}
       value={value}
-      disabled={p.mixed}
+      disabled={p.mixed || p.disabled}
       onChange={(e) => {
         const v = settle(Number(e.target.value));
         dlog('property-panel', 'slider', { name: p.name, value: v });
@@ -211,6 +212,7 @@ function SliderReadout(p: PropertyNumberFieldProps) {
       display={p.display ?? stepDisplay(step)}
       format={p.format}
       unit={p.unit}
+      disabled={p.disabled}
       onCommit={(next) => {
         p.onInput?.(next);
         p.onChange(next);
@@ -252,6 +254,7 @@ interface EditableReadoutProps {
   display: Display;
   format?: (value: number) => ReactNode;
   unit?: ReactNode;
+  disabled?: boolean;
   onCommit: (next: number) => void;
 }
 
@@ -260,7 +263,7 @@ interface EditableReadoutProps {
  * cancels on Escape, and steps like the track beside it. Clicks are stopped so
  * a wrapping <label> doesn't forward focus to the slider thumb.
  */
-function EditableReadout({ name, value, min, max, step, settle, onTrack, display, format, unit, onCommit }: EditableReadoutProps) {
+function EditableReadout({ name, value, min, max, step, settle, onTrack, display, format, unit, disabled, onCommit }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
@@ -297,6 +300,7 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, display
         className={s.readoutInput}
         style={fit as CSSProperties}
         value={displayValue}
+        disabled={disabled}
         onFocus={(e) => {
           canceled.current = false;
           setDraft(text(value));

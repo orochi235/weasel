@@ -21,6 +21,11 @@
   cursor: pointer;
 }
 
+.color:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .color:focus-visible {
   outline: none;
   border-color: var(--wzl-focus-ring);

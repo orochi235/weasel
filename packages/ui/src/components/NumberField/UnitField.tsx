@@ -35,6 +35,8 @@ export interface UnitFieldProps {
   placeholder?: string;
   /** Up and down buttons beside the value, which repeat while held. */
   steppers?: boolean;
+  /** The field and its steppers take no input. */
+  disabled?: boolean;
   /** Which end of the field the steppers sit at. Defaults to `'start'`. */
   stepperSide?: StepperSide;
   /** Render with no box until focused, as {@link NumberField}'s `ghost` does. */
@@ -75,6 +77,7 @@ export function UnitField({
   display = FULL_PRECISION,
   placeholder,
   steppers,
+  disabled = false,
   stepperSide = 'start',
   ghost,
   width = 'fill',
@@ -165,7 +168,7 @@ export function UnitField({
       className={s.stepper}
       aria-label={label}
       tabIndex={-1}
-      disabled={atBound}
+      disabled={atBound || disabled}
       // Keeps focus in the input, where a press on the button would take it.
       onPointerDown={(e) => {
         e.preventDefault();
@@ -192,6 +195,7 @@ export function UnitField({
       <div
         className={[f.frame, s.frame, ghost && s.ghost].filter(Boolean).join(' ')}
         data-stepper-side={stepperSide}
+        {...(disabled ? { 'data-disabled': '' } : {})}
       >
         <input
           ref={input}
@@ -206,6 +210,7 @@ export function UnitField({
           aria-valuemin={minValue}
           aria-valuemax={maxValue}
           placeholder={placeholder}
+          disabled={disabled}
           value={draft ?? text}
           onChange={(e) => {
             const typed = e.target.value;

@@ -12,6 +12,8 @@ export interface FontFamilySelectProps {
    *  probe reports the variant that paints rather than a nominal 400/normal. */
   weight?: number;
   fontStyle?: 'normal' | 'italic';
+  /** The picker shows its value and opens nothing. */
+  isDisabled?: boolean;
   'aria-label'?: string;
   className?: string;
 }
@@ -63,6 +65,7 @@ export function FontFamilySelect(props: FontFamilySelectProps) {
       options={options}
       selectedKey={mixed ? null : (value ?? null)}
       placeholder={mixed ? 'Mixed' : undefined}
+      isDisabled={props.isDisabled}
       onSelectionChange={onChange}
       aria-label={props['aria-label'] ?? 'Font'}
     />

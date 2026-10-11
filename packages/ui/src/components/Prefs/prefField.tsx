@@ -36,6 +36,8 @@ export interface PrefFieldState {
   fontFamily?: unknown;
   /** The fields a `field` leaf may name, by the surface's own paths. */
   fields?: readonly PrefFieldChoice[];
+  /** The leaf takes no input: its `enableIf`, or that of something above it, does not hold. */
+  disabled?: boolean;
 }
 
 /**
@@ -53,6 +55,11 @@ export interface PrefFieldState {
  * class, a different default `control`.
  */
 export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyControlProps | null {
+  const field = enabledFieldProps(leaf, state);
+  return field !== null && state.disabled ? { ...field, disabled: true } : field;
+}
+
+function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyControlProps | null {
   const { value, mixed = false, unset = false, siblings, setValue } = state;
   if (leaf.kind === 'font-weight') {
     const family = 'fontFamily' in state ? state.fontFamily : siblings?.fontFamily;

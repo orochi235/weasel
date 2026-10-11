@@ -69,3 +69,42 @@ export const Mixed: Story = {
     );
   },
 };
+
+/** Every kind taking no input, each element of it disabled and still showing its value. */
+export const Disabled: Story = {
+  render: () => {
+    const ignore = () => {};
+    const options = [
+      { value: 'a', label: 'Alpha' },
+      { value: 'b', label: 'Beta' },
+    ];
+    return (
+      <div className={s.column}>
+        <div className={s.cell}>
+          <PropertyControl kind="number" name="X" value={24} steppers disabled onChange={ignore} />
+          <PropertyControl kind="string" name="Title" value="Untitled" disabled onChange={ignore} />
+        </div>
+        <div className={s.cell}>
+          <PropertyControl kind="number" control="slider" name="Size" value={40} min={0} max={100} disabled onChange={ignore} />
+        </div>
+        <div className={s.cell}>
+          <PropertyControl kind="boolean" name="Visible" value disabled onChange={ignore} />
+          <PropertyControl kind="boolean" control="switch" name="Snap" value disabled onChange={ignore} />
+          <PropertyControl kind="boolean" control="toggle" name="Bold" glyph="B" value disabled onChange={ignore} />
+        </div>
+        <div className={s.cell}>
+          <PropertyControl kind="enum" name="Mode" value="a" options={options} disabled onChange={ignore} />
+          <PropertyControl kind="enum" control="menu" name="Menu" value="a" options={options} disabled onChange={ignore} />
+        </div>
+        <div className={s.cell}>
+          <PropertyControl kind="enum" control="toggle" name="Segments" value="a" options={options} disabled onChange={ignore} />
+          <PropertyControl kind="enum" control="radio" name="Radios" value="a" options={options} disabled onChange={ignore} />
+        </div>
+        <div className={s.cell}>
+          <PropertyControl kind="color" name="Fill" value="#7ec8e3" alpha disabled onChange={ignore} />
+          <PropertyControl kind="paint" name="Paint" value={{ color: '#7ec8e3' }} disabled onChange={ignore} />
+        </div>
+      </div>
+    );
+  },
+};

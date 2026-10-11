@@ -10,6 +10,8 @@ export interface FontWeightSelectProps {
   /** The family whose weights to offer. Absent offers the CSS weights. */
   family?: string;
   onChange: (weight: number) => void;
+  /** The picker shows its value and opens nothing. */
+  isDisabled?: boolean;
   'aria-label'?: string;
   className?: string;
 }
@@ -58,6 +60,7 @@ export function FontWeightSelect(props: FontWeightSelectProps) {
       options={options}
       selectedKey={mixed || value === undefined ? null : String(value)}
       placeholder={mixed ? 'Mixed' : undefined}
+      isDisabled={props.isDisabled}
       onSelectionChange={(key) => onChange(Number(key))}
       aria-label={props['aria-label'] ?? 'Weight'}
     />
