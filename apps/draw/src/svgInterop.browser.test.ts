@@ -29,6 +29,9 @@ function slowPaintScene(id: string, ms: number) {
   return { roots: ['a'], get: (n: string) => (n === 'a' ? rect : undefined), childrenOf: () => [] } as never;
 }
 
+/** How long past the load a download may take to arrive. */
+const SLACK_MS = 30_000;
+
 const disposers: (() => void)[] = [];
 let button: HTMLButtonElement | null = null;
 afterEach(() => {
@@ -56,14 +59,15 @@ describe('Save SVG after a paint kind loads', () => {
         downloadSvg(svg, 'page.svg');
       });
     });
-    await commands.armDownload(ms + 5000);
+    // Far longer than the load: a download that lands late in a busy run is still this test's, not the next one's.
+    await commands.armDownload(ms + SLACK_MS);
     await userEvent.click(save);
     const download = await commands.takeDownload();
     expect(download?.filename).toBe('page.svg');
     expect(download?.text).toContain(`data-kind="${kind}"`);
     // The longest wait outlives the click's activation, so it is what proves the point.
     expect(activeAtDownload).toBe(ms < 5000);
-  });
+  }, 6500 + SLACK_MS + 5000);
 
   it('reports no download for a click that starts none', async () => {
     const save = saveButton(() => {});
