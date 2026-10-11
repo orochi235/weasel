@@ -11,6 +11,9 @@ export interface FramePool {
   dispose(): void;
 }
 
+/** How long a frame document has to say hello. Longer than a cold dev server takes to serve one its first time. */
+export const HELLO_TIMEOUT_MS = 30_000;
+
 type Movable = Element & { moveBefore(node: Node, child: Node | null): void };
 
 /** Whether `moveBefore` exists here, the one way to move an iframe without reloading its document. */
@@ -42,22 +45,32 @@ export function createFramePool(frameUrl: string, size = 2): FramePool {
   shelf.setAttribute('aria-hidden', 'true');
   document.body.append(shelf);
   const warm: HTMLIFrameElement[] = [];
-  let loading = 0;
+  /** Per frame still loading, what stops waiting for it. */
+  const waits = new Set<() => void>();
   let cancelRefill: (() => void) | null = null;
   let disposed = false;
 
   const load = () => {
-    loading += 1;
     const frame = document.createElement('iframe');
     frame.tabIndex = -1;
     frame.src = frameUrl;
+    const stop = () => {
+      window.removeEventListener('message', onMessage);
+      clearTimeout(timer);
+      waits.delete(stop);
+    };
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frame.contentWindow || event.origin !== location.origin) return;
       if ((event.data as { type?: unknown } | null)?.type !== FRAME_HELLO) return;
-      window.removeEventListener('message', onMessage);
-      loading -= 1;
+      stop();
       warm.push(frame);
     };
+    const timer = setTimeout(() => {
+      stop();
+      frame.remove();
+      refill();
+    }, HELLO_TIMEOUT_MS);
+    waits.add(stop);
     window.addEventListener('message', onMessage);
     shelf.append(frame);
   };
@@ -66,7 +79,7 @@ export function createFramePool(frameUrl: string, size = 2): FramePool {
     if (disposed || cancelRefill) return;
     cancelRefill = whenIdle(() => {
       cancelRefill = null;
-      while (!disposed && warm.length + loading < size) load();
+      while (!disposed && warm.length + waits.size < size) load();
     });
   };
   if (canMoveFrames()) refill();
@@ -81,6 +94,7 @@ export function createFramePool(frameUrl: string, size = 2): FramePool {
     dispose() {
       disposed = true;
       cancelRefill?.();
+      for (const stop of [...waits]) stop();
       shelf.remove();
     },
   };

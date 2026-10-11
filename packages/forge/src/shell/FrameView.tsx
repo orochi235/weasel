@@ -20,7 +20,7 @@ import {
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
 import { useCssOverrides } from './cssVars/overrides';
-import { FramePoolContext, moveFrame } from './framePool';
+import { FramePoolContext, HELLO_TIMEOUT_MS, moveFrame } from './framePool';
 
 import { effectiveGlobals, GLOBALS_KEY, isGlobalsPath, storyConfig } from './globals';
 import { type Ready, readyKey } from './readyKey';
@@ -39,8 +39,6 @@ export interface FrameViewProps {
 }
 
 const START_TIMEOUT_MS = 10_000;
-/** Longer than a cold dev server takes to serve a frame document its first time. */
-const HELLO_TIMEOUT_MS = 30_000;
 /** Distinguishes one frame request from the next; only ever compared, never read. */
 let requests = 0;
 
