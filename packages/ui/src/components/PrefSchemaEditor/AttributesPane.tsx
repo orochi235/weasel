@@ -8,6 +8,7 @@ import { prefFieldChoices } from '../Prefs/schema';
 import { Select } from '../Select';
 import { aggregateAttributes, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
+import type { EditorAction } from './editorActions';
 import { changeKind, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { childrenOf, joinPath, keyFromName, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, uniqueKey, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
@@ -51,12 +52,14 @@ export interface AttributesPaneProps {
   custom: CustomKinds;
   /** The types a leaf, or a list's or a map's entry, may be made from. */
   types: PrefTypes;
+  /** The actions an action pref may fire, offered as its `action` attribute's choices. */
+  actions?: readonly EditorAction[];
   /** Renderers the consumer passes for its own kinds — a custom kind's `default` may need one. */
   renderers?: Record<string, PrefRenderer>;
   onNotice(text: string | null): void;
 }
 
-export function AttributesPane({ schema, onChange, paths, onRekey, added = false, changed = NONE, kinds, custom, types, renderers, onNotice }: AttributesPaneProps) {
+export function AttributesPane({ schema, onChange, paths, onRekey, added = false, changed = NONE, kinds, custom, types, actions, renderers, onNotice }: AttributesPaneProps) {
   const targets: ReadonlyArray<string | null> = useMemo(() => (paths.length === 0 ? [null] : paths), [paths]);
   const several = targets.length > 1;
   // The key, a key that follows the name, and a list's entry belong to one node.
@@ -65,7 +68,7 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
     () => targets.map((p) => nodeAt(schema, p)).filter((n): n is SchemaNode => n !== undefined),
     [schema, targets],
   );
-  const agg = useMemo(() => (nodes.length === 0 ? null : aggregateAttributes(nodes, custom, drawsMixed)), [nodes, custom]);
+  const agg = useMemo(() => (nodes.length === 0 ? null : aggregateAttributes(nodes, custom, drawsMixed, actions)), [nodes, custom, actions]);
   const mixedPaths = useMemo(
     () => new Set([...(agg?.mixed ?? [])].flatMap((k) => [k, `${OWN}.${k}`, `${AUTO}.${k}`])),
     [agg],

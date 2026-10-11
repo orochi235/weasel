@@ -9,7 +9,9 @@ import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
-import { isLoose, looseKeys, looseTarget, schemaTarget, topLevelAllows } from './loose';
+import { ActionList } from './ActionList';
+import type { EditorAction } from './editorActions';
+import { holdsPages, isLoose, looseKeys, looseTarget, schemaTarget, topLevelAllows } from './loose';
 import { Icon } from '../../icons';
 import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
@@ -73,6 +75,8 @@ export interface StructurePaneProps {
   toolSlot: HTMLElement | null;
   /** Nodes the schema does not hold yet, listed under the tree with what it holds on no page, to be dragged into it. */
   unplaced?: PrefGroup;
+  /** The actions the host has, listed under the tree to be dragged into it as prefs that fire them. */
+  actions?: readonly EditorAction[];
   /** Somewhere else a drag from this pane may end: the live preview. */
   outside?: DropOutside;
   /** `outside` is drawing what is dragged where it would land, so the palette draws no ghost of it. */
@@ -105,7 +109,7 @@ export interface DropOutside {
 const ancestorsOf = (path: string): string[] =>
   keysOf(path).slice(0, -1).map((_, i, keys) => pathOf(keys.slice(0, i + 1))!);
 
-export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, types, expanded, onExpandedChange, toolSlot, unplaced, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark }: StructurePaneProps) {
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
   const [nodes, looseNodes] = useMemo(() => {
     const all = toTreeNodes(schema, null, changed, rowMark);
@@ -120,6 +124,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   );
   const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);
   const [storedHeight, setStoredHeight] = useState(180);
+  const [actionsHeight, setActionsHeight] = useState(160);
   const treeArea = useRef<HTMLDivElement | null>(null);
   const unplacedArea = useRef<HTMLDivElement | null>(null);
   const [unplacing, setUnplacing] = useState(false);
@@ -277,7 +282,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
         onLink={(ids, t) => alias(ids, schemaTarget(schema, t.parentId, t.index))}
       />
       </div>
-      {(unplaced !== undefined || !isPrefSection(schema)) && (
+      {(unplaced !== undefined || holdsPages(schema)) && (
         <>
           <ResizeHandle orientation="horizontal" invert value={storedHeight} min={60} max={600}
             onInput={setStoredHeight} ariaLabel="Resize unplaced" />
@@ -285,6 +290,16 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
             <PaneHeader title="Unplaced" />
             <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting} sought={sought}
               selected={selected} onSelect={(path) => onSelect([path])} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+          </div>
+        </>
+      )}
+      {actions !== undefined && actions.length > 0 && (
+        <>
+          <ResizeHandle orientation="horizontal" invert value={actionsHeight} min={60} max={600}
+            onInput={setActionsHeight} ariaLabel="Resize actions" />
+          <div className={s.storedArea} style={{ '--stored-h': `${actionsHeight}px` } as CSSProperties}>
+            <PaneHeader title="Actions" />
+            <ActionList actions={actions} sought={sought} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
           </div>
         </>
       )}

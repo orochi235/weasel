@@ -160,6 +160,13 @@ function autoAttrs(leaf: PrefLeaf): KindAttrs {
   return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
 }
 
+/** The `action` attribute as a choice among the keys a host has, with the key the pref holds now if it is none of them. */
+function actionChoice(attr: PrefLeaf, actions: ReadonlyArray<{ key: string; label: string }>, held: string | undefined): PrefLeaf {
+  const options = actions.map((a) => ({ value: a.key, label: `${a.label} (${a.key})` }));
+  if (held !== undefined && held !== '' && !actions.some((a) => a.key === held)) options.unshift({ value: held, label: `${held} (not registered)` });
+  return { kind: 'enum', name: attr.name, description: attr.description, default: undefined, clearable: true, options } as PrefLeaf;
+}
+
 function kindAttrs(kind: string, custom: CustomKinds): KindAttrs {
   if (Object.hasOwn(KIND_ATTRS, kind)) return KIND_ATTRS[kind as PrefKind];
   return Object.hasOwn(custom, kind) ? custom[kind]! : {};
@@ -179,13 +186,16 @@ export interface AttributeSchema {
 }
 
 /** Editable attributes, rendered with `PrefsForm` over the node itself as values. */
-export function attributeSchema(node: SchemaNode, custom: CustomKinds = {}): AttributeSchema {
+export function attributeSchema(
+  node: SchemaNode, custom: CustomKinds = {}, actions?: ReadonlyArray<{ key: string; label: string }>,
+): AttributeSchema {
   if (!isPrefLeaf(node)) return { shared: { ...(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS) }, own: {}, auto: {}, entry: {}, readOnly: [] };
   const typed = node.type !== undefined;
   const def = defaultAttr(node);
   const item = entryOf(node);
   const shared: KindAttrs = { ...LEAF_BASE };
   const own: KindAttrs = { ...(def ? { default: def } : {}), ...(typed ? {} : kindAttrs(node.kind, custom)) };
+  if (own.action && node.kind === 'action' && actions && actions.length > 0) own.action = actionChoice(own.action, actions, (node as { action?: string }).action);
   const auto = autoAttrs(node);
   const entry = item && !typed ? entryAttrs(item, custom) : {};
   const fields = node as unknown as Record<string, unknown>;
