@@ -1,6 +1,6 @@
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { mat3, type GlMat3 } from '../math/mat3';
-import { resolveColor } from '../math/color';
+import { resolveColor } from '@weasel-js/paint';
 import type { DrawContext } from './drawContext';
 
 /**

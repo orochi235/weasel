@@ -1,4 +1,5 @@
-import { hslToSrgb, parseHexBytes } from '@weasel-js/paint';
+import { hslToSrgb } from './colorSpaces';
+import { parseHexBytes } from './hex';
 
 /**
  * Parse a CSS color string into [r, g, b, a] with 0..1 components.
@@ -210,7 +211,7 @@ function parseHslFunction(s: string): [number, number, number, number] | null {
   const sat = parsePercentOrNumber(channels.rgb[1]);
   const lit = parsePercentOrNumber(channels.rgb[2]);
   if (h === null || sat === null || lit === null) return null;
-  const [r, g, b] = hslToRgb(h, sat, lit);
+  const [r, g, b] = hslToSrgb(h, sat, lit);
   return [r, g, b, parseAlpha(channels.alpha)];
 }
 
@@ -235,14 +236,6 @@ function parsePercentOrNumber(tok: string): number | null {
   const n = Number(tok);
   return Number.isFinite(n) ? clamp01(n) : null;
 }
-
-/**
- * HSL → RGB, all components 0..1 except hue in degrees (0..360). paint's
- * `hslToSrgb` under the name this file's callers use.
- *
- * @internal Not part of the public API; not re-exported from the barrel.
- */
-export const hslToRgb = hslToSrgb;
 
 function clamp01(n: number): number {
   return n < 0 ? 0 : n > 1 ? 1 : n;

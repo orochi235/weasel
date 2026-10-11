@@ -10,7 +10,7 @@ import type { TextDrawCommand } from '../DrawCommand';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GlMat3 } from '../math/mat3';
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { resolveColor } from '../math/color';
+import { resolveColor } from '@weasel-js/paint';
 import {
   ensureFontTexture,
   textureCacheKey,

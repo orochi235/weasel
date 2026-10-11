@@ -7,9 +7,9 @@
  * `withGradientKind` exists to translate.
  */
 
-import { resolveColor, rgbaToHex } from '../renderer/math/color';
-import { lerpColorArray } from '@weasel-js/paint';
-import type { ColorSpace, FillStyle, GradStop, GradientFill, GradientKind } from '@weasel-js/paint';
+import { resolveColor, rgbaToHex } from './color';
+import { lerpColorArray, type ColorSpace } from './colorSpaces';
+import type { FillStyle, GradStop, GradientFill, GradientKind } from './paint';
 
 /** A stop with its color already parsed to 0..1 RGBA. */
 export interface ResolvedGradientStop {

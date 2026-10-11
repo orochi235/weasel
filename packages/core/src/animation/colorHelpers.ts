@@ -7,7 +7,7 @@ import type {
 } from './types';
 import type { VertexColorChannel } from './colorRegistry';
 import { lerpColorArray, type ColorSpace } from '@weasel-js/paint';
-import { hslToRgb } from '../renderer/math/color';
+import { hslToSrgb } from '@weasel-js/paint';
 
 /**
  * Color interpolator: receives two flat RGBA float arrays (values in
@@ -354,5 +354,5 @@ export function solidVertexColors(
  *  formula in the package. Kept local so consumers building hue-cycled
  *  color arrays via `huesweepVertexColors` don't have to roll their own. */
 function hslToRgbUnit(h: number, s: number, l: number): [number, number, number] {
-  return hslToRgb(h, s, l);
+  return hslToSrgb(h, s, l);
 }

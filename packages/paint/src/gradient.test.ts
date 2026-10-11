@@ -6,9 +6,9 @@ import {
   gradientGeometry,
   gradientForBounds,
 } from './gradient';
-import { srgbU8ToOklab, oklabToOklch } from '@weasel-js/paint';
-import { resolveColor } from '../renderer/math/color';
-import type { GradStop, GradientFill } from '@weasel-js/paint';
+import { srgbU8ToOklab, oklabToOklch } from './colorSpaces';
+import { resolveColor } from './color';
+import type { GradStop, GradientFill } from './paint';
 
 const BW: GradStop[] = [
   { offset: 0, color: '#000000' },

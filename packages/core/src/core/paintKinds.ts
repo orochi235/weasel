@@ -16,7 +16,7 @@
 import type {
   ColorSpace, FillStyle, GradientFill, GradientKind, GradientUnits, GradStop, TilePatternSpec,
 } from '@weasel-js/paint';
-import { gradientForBounds, isGradientFill, withGradientKind } from './gradient';
+import { gradientForBounds, isGradientFill, withGradientKind } from '@weasel-js/paint';
 import { bumpNodeMemoGeneration } from './scene/nodeMemo';
 import type { ComponentType } from 'react';
 import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
