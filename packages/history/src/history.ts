@@ -297,6 +297,22 @@ export interface HistoryLogger {
   warn(message: string): void;
 }
 
+/** What a journal needs from a history beyond its public surface: both halves
+ *  of every applied entry, and a way to record both on its parent. */
+interface JournalAccess {
+  appliedOps(): { forwardOps: Op[]; baseOps: Op[] };
+  record(forwardOps: Op[], baseOps: Op[], label: string, options?: RecordEntryOptions): void;
+}
+
+const JOURNAL_ACCESS = new WeakMap<History, JournalAccess>();
+
+/** Called by `Journal.commit`. Not part of the public API. */
+export function _journalAccessInternal(history: History): JournalAccess {
+  const access = JOURNAL_ACCESS.get(history);
+  if (!access) throw new Error('Not a history built by createHistory');
+  return access;
+}
+
 /** Silent default — keeps every call site unconditional. */
 const SILENT: HistoryLogger = { log: () => {}, warn: () => {} };
 
@@ -501,7 +517,20 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     coalesceAnchorVersion = version;
   }
 
-  return {
+  function record(forwardOps: Op[], baseOps: Op[], label: string, options: RecordEntryOptions = {}): void {
+    if (forwardOps.length === 0) return;
+    const at = forkPoint();
+    undoStack.push({
+      id: nextEntryId++, forwardOps, baseOps, label, timestamp: now(), pushes: 1,
+      touchedIds: touchedIdsFromOps(forwardOps),
+      ...(options.selectionBefore ? { selectionBefore: [...options.selectionBefore] } : {}),
+    });
+    retireRedo(at);
+    enforceLimit();
+    bump();
+  }
+
+  const history: History = {
     apply(op, label) {
       pushOrCoalesce([op], label ?? op.label ?? '');
     },
@@ -637,17 +666,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         droppedEntries: dropped,
       };
     },
-    recordEntry(ops: Op[], label: string, options: RecordEntryOptions = {}): void {
-      if (ops.length === 0) return;
-      const at = forkPoint();
-      undoStack.push({
-        id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), pushes: 1,
-        touchedIds: touchedIdsFromOps(ops),
-        ...(options.selectionBefore ? { selectionBefore: [...options.selectionBefore] } : {}),
-      });
-      retireRedo(at);
-      enforceLimit();
-      bump();
+    recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
+      record(ops, ops, label, options);
     },
     allForwardOps(): Op[] {
       const out: Op[] = [];
@@ -666,7 +686,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // `adapter` is the closure-captured adapter passed to createHistory.
       // The returned History object's `this` doesn't carry it, so we pass
       // it through to the factory directly.
-      const j = createJournalInternal(this, adapter, opts, () => { activeJournal = null; }, {
+      const j = createJournalInternal(history, adapter, opts, () => { activeJournal = null; }, {
         coalesceWindowMs, now, debug: logger,
         ...(selection ? { selection } : {}),
       });
@@ -706,6 +726,14 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       bump();
     },
   };
+  JOURNAL_ACCESS.set(history, {
+    appliedOps: () => ({
+      forwardOps: undoStack.flatMap((e) => e.forwardOps),
+      baseOps: undoStack.flatMap((e) => e.baseOps),
+    }),
+    record,
+  });
+  return history;
 }
 
 /** Extract node ids from an op's `args`. Handles the common patterns:
