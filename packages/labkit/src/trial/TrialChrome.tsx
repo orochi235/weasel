@@ -18,7 +18,7 @@ import { TitleBarRegion } from '../chrome/regions/TitleBarRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
 import { ViewportRegion } from '../chrome/regions/ViewportRegion';
 import type { TrialChromeContext, TrialContribution, TrialRegion } from '../chrome/types';
-import { applyConfigWrite, resolveAutoConfig } from '../config/autoConfig';
+import { resolveAutoConfig } from '../config/autoConfig';
 import { hasConfigPath, schemaNodeAtPath } from '../config/path';
 import { useConfigSchema } from '../config/useConfigSchema';
 import { useResolvedConfig } from '../config/useResolvedConfig';
@@ -126,13 +126,7 @@ export function TrialChrome({
   const view2d = as2DView(record.view);
 
   const configSchema = useConfigSchema(instrument);
-  // What the instrument is looking at right now. The panel reads `record.config`
-  // — the pinned values — but anything instrument-facing gets the resolved one.
-  const { config: resolvedConfig, auto } = useResolvedConfig(
-    configSchema,
-    record.config,
-    record.auto,
-  );
+  const { auto } = useResolvedConfig(configSchema, record.config, record.auto);
 
   const title = record.title ?? instrument.title ?? instrument.name;
   const collapsedSections = record.collapsedSections ?? NO_SECTIONS;
@@ -176,10 +170,15 @@ export function TrialChrome({
       config: record.config,
       auto,
       setConfig: (path, value) => {
-        const prevConfig = record.config as Record<string, unknown>;
+        // Read from the store, not the render: a caller may write several paths
+        // before the next render, and each has to build on the one before.
+        const stored = (): TrialRecord | undefined =>
+          storeCtx.store.getState().trials.find((t) => t.id === trialId);
+        const before = stored();
+        if (!before) return;
         if (
           process.env.NODE_ENV !== 'production' &&
-          !hasConfigPath(prevConfig, path) &&
+          !hasConfigPath(before.config as Record<string, unknown>, path) &&
           schemaNodeAtPath(configSchema.group, path) === undefined
         ) {
           console.warn(
@@ -187,12 +186,12 @@ export function TrialChrome({
           );
         }
         updateTrialConfig(trialId, path, value);
-        if (instrument.onConfigChange) {
-          const next = applyConfigWrite(prevConfig, record.auto ?? [], path, value);
-          const nextConfig = resolveAutoConfig(configSchema, next.config, new Set(next.autoPaths));
-          const nextState = instrument.onConfigChange(nextConfig, resolvedConfig, record.state);
-          updateTrialState(trialId, nextState as never);
-        }
+        const after = stored();
+        if (!instrument.onConfigChange || !after) return;
+        const resolved = (r: TrialRecord): unknown =>
+          resolveAutoConfig(configSchema, r.config, new Set(r.auto ?? []));
+        const nextState = instrument.onConfigChange(resolved(after), resolved(before), after.state);
+        updateTrialState(trialId, nextState as never);
       },
       collapsedSections,
       setSectionCollapsed: (key, collapsed) => setTrialSectionCollapsed(trialId, key, collapsed),
@@ -215,6 +214,7 @@ export function TrialChrome({
     lab,
     title,
     isLastTrial,
+    storeCtx,
     updateTrialView,
     updateTrialConfig,
     updateTrialState,
@@ -225,7 +225,6 @@ export function TrialChrome({
     activeToolId,
     setActiveTool,
     configSchema,
-    resolvedConfig,
     auto,
     undockedIds,
     undockPanelAction,

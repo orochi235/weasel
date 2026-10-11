@@ -161,6 +161,41 @@ describe('a nested config value, end to end', () => {
   });
 });
 
+describe('several config writes in one tick', () => {
+  it('derives state from all of them, not from the last alone', async () => {
+    const instrument = defineInstrument({
+      name: 'Summed',
+      config: f.schema({ a: f.number(1), b: f.number(1) }),
+      initialState: () => ({ sum: 2 }),
+      onConfigChange: (config) => {
+        const c = config as { a: number; b: number };
+        return { sum: c.a + c.b };
+      },
+      chrome: [
+        {
+          id: 'zero',
+          region: 'toolbar' as const,
+          render: (ctx) => (
+            <button
+              type="button"
+              onClick={() => {
+                ctx.setConfig('a', 0);
+                ctx.setConfig('b', 0);
+              }}
+            >
+              zero both
+            </button>
+          ),
+        },
+      ],
+      render: (ctx) => <output>{`sum ${(ctx.state as { sum: number }).sum}`}</output>,
+    });
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Summed" />);
+    fireEvent.click(screen.getByText('zero both'));
+    expect(screen.getByText('sum 0')).toBeInTheDocument();
+  });
+});
+
 describe('a config written as auto', () => {
   const unpinnable = () => {
     const seen: { config: unknown; prev: unknown }[] = [];
