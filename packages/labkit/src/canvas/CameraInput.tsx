@@ -118,24 +118,27 @@ export function useCameraView({
 }: CameraViewOptions): CameraView {
   // Written by each commit and by `set`, ahead of the render it asks for —
   // two writers, so not `useLatest`.
+  // Written by each commit and by `set`, ahead of the render it asks for —
+  // two writers, so not `useLatest`.
   const live = useRef({ view: normalize2DView(view), onViewChange, frame });
+  // A view `set` wrote is already in `live`; any other was placed from outside.
+  const placedRef = useRef<ZoomRange | null>(null);
+  const before = placedRef.current;
+  const fromOutside =
+    isPositiveFinite(view.zoom) && (before === null || view.zoom !== live.current.view.zoom);
+  const placed = fromOutside
+    ? {
+        min: Math.min(before?.min ?? view.zoom, view.zoom),
+        max: Math.max(before?.max ?? view.zoom, view.zoom),
+      }
+    : before;
   useInsertionEffect(() => {
+    placedRef.current = placed;
     live.current = { view: normalize2DView(view), onViewChange, frame };
   });
-  // A view `set` wrote is already in `live`; any other was placed from outside.
-  const placed = useRef<ZoomRange | null>(null);
-  if (
-    isPositiveFinite(view.zoom) &&
-    (placed.current === null || view.zoom !== live.current.view.zoom)
-  ) {
-    placed.current = {
-      min: Math.min(placed.current?.min ?? view.zoom, view.zoom),
-      max: Math.max(placed.current?.max ?? view.zoom, view.zoom),
-    };
-  }
   const bounds = useLatest({
-    min: Math.min(minZoom, placed.current?.min ?? minZoom),
-    max: Math.max(maxZoom, placed.current?.max ?? maxZoom),
+    min: Math.min(minZoom, placed?.min ?? minZoom),
+    max: Math.max(maxZoom, placed?.max ?? maxZoom),
   });
 
   return useMemo<CameraView>(() => {
