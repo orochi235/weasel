@@ -160,6 +160,14 @@ describe('<ControlMatrix>', () => {
     expect(setConfig).toHaveBeenCalledWith('looks.window.glow', 0.75);
   });
 
+  it('names a popover row with a plain label, not an auto toggle that does nothing', () => {
+    setup();
+    fireEvent.click(cell('Window Glow'));
+    const dialog = screen.getByRole('dialog', { name: 'Window Glow' });
+    expect(within(dialog).getByText('Glow')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: 'Pin Glow' })).toBeNull();
+  });
+
   it('lists an enum cell’s options in its popover, with no dropdown inside, and closes on a choice', () => {
     const { setConfig } = setup();
     fireEvent.click(cell('Window Shading'));

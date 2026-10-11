@@ -561,7 +561,9 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   pack: ControlPack;
   layout?: PropertyRowLayout;
   auto?: ReadonlySet<string>;
-  setRowAuto: (path: string, next: boolean, value: unknown) => void;
+  /** Hands a row to its resolver or takes it back. Without it no row can go
+   *  auto, and its label is only a label. */
+  setRowAuto?: (path: string, next: boolean, value: unknown) => void;
 }
 
 /** An auto value as tooltip text. A computed number is cut to 6 significant
@@ -607,7 +609,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   const pinned = valueAtPath(config, path) ?? fallback;
 
   const isAutoRow = auto?.has(path) ?? false;
-  const canAuto = !extra<boolean>(leaf, 'manual');
+  const canAuto = setRowAuto !== undefined && !extra<boolean>(leaf, 'manual');
   // Read out of the resolved config rather than re-running this leaf's own
   // resolver, so the row reports the value the instrument actually got — the
   // two diverge as soon as a resolver reads another auto path.
@@ -616,7 +618,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   // a handle sitting at the pinned number while the readout says something else
   // reads as a rendering bug. Pinning then keeps what you were looking at.
   const value = resolvedValue ?? pinned;
-  const setAuto = (next: boolean): void => setRowAuto(path, next, value);
+  const setAuto = (next: boolean): void => setRowAuto?.(path, next, value);
   // An auto row hides its control, so the word is all the row has to say.
   const autoReadout = isAutoRow ? 'auto' : undefined;
   // What the row would read as auto, pinned or not: the config resolved with

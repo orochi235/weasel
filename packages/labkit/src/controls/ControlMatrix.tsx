@@ -79,9 +79,6 @@ export interface ControlMatrixProps extends StanceProps, CollapseProps {
   className?: string;
 }
 
-const NO_AUTO: ReadonlySet<string> = new Set();
-const noop = (): void => {};
-
 const nameOf = (column: ControlMatrixColumn): string => column.title ?? column.label;
 
 /** The open popover: which cell, and the element it hangs off. */
@@ -345,8 +342,6 @@ function Editor({
       shown={config}
       setConfig={setConfig}
       pack="one-up"
-      auto={NO_AUTO}
-      setRowAuto={noop}
     />
   );
 }
