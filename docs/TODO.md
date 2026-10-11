@@ -1174,7 +1174,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) `subPages` and `foldable` overlap a group's `as`.** `PrefsForm`'s form-wide `subPages`
   and `foldable` props decide what `as: 'page'` on a nested group and a folding panel should;
   fold both into `as`. `as: 'page'` means nothing where there is no rail (`ControlPanel`, the
-  columns and list layouts, any `PrefSection`) and draws as the default there.
+  columns and list layouts, any `PrefSection`) and draws as the default there. To decide first:
+  what `foldable` becomes, since it folds a rail entry's nested entries away and no `as` value
+  means that; whether a nested group with `as` unset is always a section, which stops
+  `PrefSchemaEditor`'s live preview (the one caller of `subPages` outside tests) giving nested
+  groups pages of their own; and how the rail marks its current entry once one rail holds both
+  scroll-to entries and page entries, where `RailLayout` runs in one mode for the whole form
+  today.
 
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
@@ -1365,20 +1371,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   inside a copied section, has no other key to take (`copyNodes`), so the copy is refused outright
   or becomes an alias.
 
-- **(P2) `PrefsForm`: a mixed object, list, map, or union leaf draws as unset, and one edit
-  overwrites every node's whole value.** `mixed={new Set(['appearance.stroke'])}` on an object leaf
-  draws each field at its default, not mixed, because `ObjectLeaf`'s `fieldCtx`
-  (`packages/ui/src/components/Prefs/ObjectLeaf.tsx`) passes no `mixed` down; changing `width` then
-  calls `onChange('appearance.stroke', { width: 3 })`, which an owner writing to every node uses to
-  drop each node's other fields. `renderBuiltin` in `PrefsRow.tsx` likewise never passes `mixed` to
-  `UnionPicker`, and a mixed list or map reads as `None`, where `Add` writes a one-entry list over
-  all of them, and a mixed union shows "Choose option…". Passing `mixed` down to the fields is the
-  small half. The other half is the write: `PrefsForm` knows only that a path is mixed, not the
-  values behind it, so a field edit cannot build a whole object. Ruled 2026-10-11: `mixed` names
-  field paths (`appearance.stroke.width`), and a field edit calls `onChange` at the field's own
-  path, which leaves each node's other fields in the owner's hands. That leaves both halves, and a
-  drawn state for a mixed list or map; `SelectionPanel` draws the word `Mixed` in place of the
-  editor.
+- **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed object or union attribute read-only.**
+  `aggregateAttributes` drops an object, list, map, or union attribute from the form when the
+  selected nodes disagree on it. `PrefsForm` now draws a mixed field and writes it at its own path,
+  so the pane could show such an attribute field by field; its `onChange` would then have to take
+  a field path, where `attrOf` reads `default.width` as an attribute name.
 
 - **(P3) `PrefsForm` rail layout: the pane draws a group's leaves before its groups, where columns
   and list keep schema order.** `PrefsPane` (`packages/ui/src/components/Prefs/PrefsPane.tsx`)
