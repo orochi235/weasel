@@ -218,6 +218,52 @@ describe('<Canvas>', () => {
   });
 });
 
+describe('hover on a layer nobody can see', () => {
+  const tracker = (onUncapturedMove: () => void): RenderLayer<unknown> => ({
+    id: 'tracker', label: 'tracker', space: 'screen', draw: () => [], onUncapturedMove,
+  });
+
+  it('is not delivered to a layer hidden by layerVisibility', () => {
+    const moveSpy = vi.fn();
+    const layers = { tracker: { layer: tracker(moveSpy) } };
+    const { container, rerender } = render(
+      <Canvas width={100} height={100} layers={layers} layerVisibility={{ tracker: false }} />,
+    );
+    fireEvent.pointerMove(container.querySelector('canvas')!, { clientX: 10, clientY: 20 });
+    expect(moveSpy).not.toHaveBeenCalled();
+
+    rerender(<Canvas width={100} height={100} layers={layers} layerVisibility={{ tracker: true }} />);
+    fireEvent.pointerMove(container.querySelector('canvas')!, { clientX: 10, clientY: 20 });
+    expect(moveSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('is not delivered to a layer left out of layerOrder', () => {
+    const moveSpy = vi.fn();
+    const { container } = render(
+      <Canvas width={100} height={100} layers={{ tracker: { layer: tracker(moveSpy) } }} layerOrder={[]} />,
+    );
+    fireEvent.pointerMove(container.querySelector('canvas')!, { clientX: 10, clientY: 20 });
+    expect(moveSpy).not.toHaveBeenCalled();
+  });
+
+  it('is not delivered through a detached input element either', () => {
+    const moveSpy = vi.fn();
+    const input = document.createElement('div');
+    const surface = document.createElement('canvas');
+    document.body.append(input);
+    render(
+      <Canvas
+        width={100} height={100} layers={{ tracker: { layer: tracker(moveSpy) } }}
+        layerVisibility={{ tracker: false }}
+        paintInto={{ canvas: surface, x: 0, y: 0 }} inputElement={input}
+      />,
+    );
+    input.dispatchEvent(new PointerEvent('pointermove', { clientX: 10, clientY: 20, bubbles: true }));
+    expect(moveSpy).not.toHaveBeenCalled();
+    input.remove();
+  });
+});
+
 import { defineTool } from '../tools/overlayBinding';
 import { ROTATED_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
 

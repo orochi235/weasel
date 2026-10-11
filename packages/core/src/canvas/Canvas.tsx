@@ -1180,30 +1180,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // attaches its own listeners to this same element.
   const pointerDownRef = useRef(false);
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (autoFocusOnPointerDown) e.currentTarget.focus();
-    pointerDownRef.current = true;
-  };
-  const handlePointerMove =
-    ((e: React.PointerEvent<HTMLCanvasElement>) => {
-      // Dispatch onUncapturedMove to layers when no button is held.
-      if (pointerDownRef.current) return;
-      const c = e.currentTarget;
-      const view = viewRef.current;
-      const [worldX, worldY] = toWorld(c, e.clientX, e.clientY, view, clientToWorldRef.current);
-      for (const layer of layersWithDebug) {
-        layer.onUncapturedMove?.(worldX, worldY, e.nativeEvent, view, { width, height });
-      }
-    });
-  const handlePointerLeave = (_e: React.PointerEvent<HTMLCanvasElement>) => {
-    pointerDownRef.current = false;
-    for (const layer of layersWithDebug) layer.onUncapturedLeave?.();
-  };
-  const handlePointerUp = (_e: React.PointerEvent<HTMLCanvasElement>) => {
-    pointerDownRef.current = false;
-  };
-  const handlePointerCancel = undefined;
-
   // Background-fill layer: screen-space, emits a single full-canvas rect with
   // the configured FillStyle. Drawn beneath every other layer.
   // Independent of pan / zoom — backgrounds are canvas chrome, not world content.
@@ -1503,34 +1479,37 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paintedCursor, toolsPaintedKey]);
 
-  // Detached: the four handlers below are declared as JSX props on an element
-  // this component no longer renders, so attach them to the caller's instead.
-  // Everything else about pointer input already attaches to `canvasRef`, which
-  // is that same element.
+  // The four pointer handlers, for whichever element takes input: JSX props on
+  // the `<canvas>` this component renders, listeners on the caller's when
+  // detached.
   const layersForMoveRef = useLatest(layersWithDebug);
+  const press = useCallback((el: HTMLElement): void => {
+    if (autoFocusOnPointerDown) el.focus();
+    pointerDownRef.current = true;
+  }, [autoFocusOnPointerDown]);
+  const release = useCallback((): void => { pointerDownRef.current = false; }, []);
+  const hover = useCallback((el: HTMLElement, e: PointerEvent): void => {
+    if (pointerDownRef.current) return;
+    const view = viewRef.current;
+    const [worldX, worldY] = toWorld(el, e.clientX, e.clientY, view, clientToWorldRef.current);
+    const visibility = layerVisibilityRef.current ?? NO_LAYER_VISIBILITY;
+    // Same gate as `hitTestExtrasIn`: a layer nobody can see takes no input.
+    for (const layer of layersForMoveRef.current) {
+      if (!layer.onUncapturedMove || !isLayerPainted(layer, visibility, layerOrderRef.current)) continue;
+      layer.onUncapturedMove(worldX, worldY, e, view, dimsRef.current);
+    }
+  }, [clientToWorldRef, dimsRef, layerOrderRef, layerVisibilityRef, layersForMoveRef]);
+  const leave = useCallback((): void => {
+    pointerDownRef.current = false;
+    for (const layer of layersForMoveRef.current) layer.onUncapturedLeave?.();
+  }, [layersForMoveRef]);
   useEffect(() => {
     if (!detached || !inputElement) return;
     const el = inputElement;
-    const onDown = (): void => {
-      if (autoFocusOnPointerDown) el.focus();
-      pointerDownRef.current = true;
-    };
-    const onMove = (e: PointerEvent): void => {
-      if (pointerDownRef.current) return;
-      const view = viewRef.current;
-      const [worldX, worldY] = toWorld(
-        el, e.clientX, e.clientY, view, clientToWorldRef.current,
-      );
-      const dims = dimsRef.current;
-      for (const layer of layersForMoveRef.current) {
-        layer.onUncapturedMove?.(worldX, worldY, e, view, dims);
-      }
-    };
-    const onUp = (): void => { pointerDownRef.current = false; };
-    const onLeave = (): void => {
-      pointerDownRef.current = false;
-      for (const layer of layersForMoveRef.current) layer.onUncapturedLeave?.();
-    };
+    const onDown = (): void => press(el);
+    const onMove = (e: PointerEvent): void => hover(el, e);
+    const onUp = release;
+    const onLeave = leave;
     const onMenu = (e: Event): void => e.preventDefault();
     el.addEventListener('pointerdown', onDown);
     el.addEventListener('pointermove', onMove);
@@ -1544,7 +1523,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       el.removeEventListener('pointerleave', onLeave);
       el.removeEventListener('contextmenu', onMenu);
     };
-  }, [detached, inputElement, autoFocusOnPointerDown, clientToWorldRef, dimsRef, layersForMoveRef]);
+  }, [detached, inputElement, press, hover, release, leave]);
 
   // The cursor is a tool's, but under `paintInto` it has no element of ours to
   // sit on. Written imperatively rather than by the caller, so a tool's cursor
@@ -1599,11 +1578,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         style={effectiveStyle}
         onFocus={onFocus}
         onBlur={onBlur}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
-        onPointerLeave={handlePointerLeave}
+        onPointerDown={(e) => press(e.currentTarget)}
+        onPointerMove={(e) => hover(e.currentTarget, e.nativeEvent)}
+        onPointerUp={release}
+        onPointerLeave={leave}
         // Suppress the browser's default right-click menu over the canvas.
         // Canvases are interaction surfaces; the browser's context menu
         // (Save Image / Inspect Element / etc.) is almost never what the
