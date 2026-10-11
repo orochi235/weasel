@@ -1122,6 +1122,22 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       }
     };
 
+    const endMultiTouch = (
+      end: 'commit' | 'cancel',
+      fingers: number,
+      mods: { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean },
+    ): void => {
+      dispatch({
+        kind: 'multitouch',
+        fingers,
+        end,
+        altKey: mods.altKey,
+        ctrlKey: mods.ctrlKey,
+        metaKey: mods.metaKey,
+        shiftKey: mods.shiftKey,
+      });
+    };
+
     const onPointerMove = (e: PointerEvent) => {
       routeAt(e.pointerId, e.clientX, e.clientY);
       const rec = held.get(e.pointerId);
@@ -1358,22 +1374,15 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // "did the pointer move?" signal for click synthesis.
       const staysUnderThreshold = rec?.buffered != null;
 
-      // When pointer count drops below 2, commit any in-flight multitouch handle
-      // and (if the centroid never moved past the tap threshold) synthesize a
-      // `multitouchtap` event carrying the peak fingers count.
-      // The gestureId is keyed by the PREVIOUS size (before this pointer was removed)
-      // because that was the handle's finger count when it was opened.
+      // Any finger lifting ends the multitouch gesture the hand was making,
+      // and only that: a drag another pointer opened before the second finger
+      // landed stays in flight (see the multi-pointer policy in onPointerDown).
+      if (prevSize >= 2) endMultiTouch('commit', prevSize, e);
+
+      // When pointer count drops below 2 and the centroid never moved past the
+      // tap threshold, synthesize a `multitouchtap` event carrying the peak
+      // fingers count.
       if (prevSize >= 2 && held.size < 2) {
-        const mtGestureId = `multitouch-${prevSize}`;
-        if (dispatcherNow().inFlight().has(mtGestureId)) {
-          // Synthesize a pointerup for the multitouch gesture — dispatcher needs
-          // a pointerup to route to onEnd, but multitouch handles are keyed by
-          // finger count, not by pointer. We use cancelAll to safely commit all
-          // in-flight handles of this gesture; only the multitouch handle
-          // should be active (see the multi-pointer policy in onPointerDown).
-          // Use 'commit' because this is a natural lift (not a cancel).
-          dispatcherNow().cancelAll('commit');
-        }
         // Synthesize a tap if the centroid hasn't moved past threshold.
         const start = multiTouchStart;
         if (start) {
@@ -1528,9 +1537,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       if (disposed) return;
       const rec = held.get(pointerId);
       if (!rec) return;
+      const prevSize = held.size;
       held.delete(pointerId);
       routeAt(pointerId, rec.pos.x, rec.pos.y);
       cancelLongPress(pointerId);
+      if (prevSize >= 2) endMultiTouch('cancel', prevSize, rec.down);
       // Drop any pending multitouch-tap start state — a cancel means we should
       // not synthesize a tap on the subsequent up.
       multiTouchStart = null;

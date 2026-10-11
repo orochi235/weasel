@@ -305,6 +305,12 @@ export interface MultiTouchEvent extends EventModifiers {
    * event.
    */
   spread?: number;
+  /**
+   * Set on the event that ends the running multitouch gesture, whatever its
+   * finger count: `'commit'` when a finger lifts, `'cancel'` when one of its
+   * pointers is canceled. Such an event starts nothing.
+   */
+  end?: 'commit' | 'cancel';
 }
 
 /** A multi-finger tap (no drag). */

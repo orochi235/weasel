@@ -1021,6 +1021,16 @@ export function createDispatcher(opts?: {
       return endGesture(gestureId, event, 'cancel') ? 'handled' : 'unhandled';
     }
 
+    // --- Pump: multitouch end. The id carries the finger count the gesture
+    //     opened with, which the hand has just left, so end by prefix. ---
+    if (event.kind === 'multitouch' && event.end !== undefined) {
+      let ended = false;
+      for (const id of [...inFlightHandles.keys()]) {
+        if (id.startsWith('multitouch-')) ended = endGesture(id, event, event.end) || ended;
+      }
+      return ended ? 'handled' : 'unhandled';
+    }
+
     // --- Pump: multitouch move → onMove on the in-flight multitouch handle ---
     // When a multitouch event arrives with centroid/spread data AND a handle is
     // already in flight, route it to the handle's onMove. When no handle is in
@@ -1034,11 +1044,9 @@ export function createDispatcher(opts?: {
         return 'handled';
       }
       // A hand is doing one multitouch gesture at a time, but the gesture id
-      // carries the finger count — so a finger landing or lifting mid-gesture
-      // names a different one. Nothing else ends the handle the hand has left:
-      // the seam only ends multitouch when the count drops below two, so a
-      // three-to-two transition left the three-finger handle in flight,
-      // unpumped, until the final lift committed it alongside the real one.
+      // carries the finger count — so a finger landing mid-gesture names a
+      // different one, and the handle the hand has left is canceled here. (A
+      // finger lifting arrives as an `end` event, above.)
       for (const id of [...inFlightHandles.keys()]) {
         if (id.startsWith('multitouch-') && id !== gestureId) endGesture(id, event, 'cancel');
       }
