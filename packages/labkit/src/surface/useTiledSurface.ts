@@ -88,6 +88,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const painters = useRef(new Map<string, TilePainter>());
   const clears = useRef(new Map<string, SurfaceClear>());
   const needsMeasure = useRef(true);
+  const tileLeft = useRef(false);
   const observer = useRef<ResizeObserver | null>(null);
   const lastDpr = useRef(0);
   const scopeEl = useRef<HTMLElement | null>(null);
@@ -122,9 +123,13 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
         return;
       }
       let retiled = false;
+      let left = false;
       if (needsMeasure.current) {
         needsMeasure.current = false;
-        if (measure()) {
+        const moved = measure();
+        left = tileLeft.current;
+        tileLeft.current = false;
+        if (moved || left) {
           retiled = true;
           for (const id of rects.current.keys()) dirty.current.add(id);
           // Geometry that changed may still be moving: a panel whose size has
@@ -142,7 +147,8 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
         retiled = true;
         for (const id of rects.current.keys()) dirty.current.add(id);
       }
-      if (dirty.current.size === 0) return;
+      // The last tile leaving dirties nothing, and still has pixels to clear.
+      if (dirty.current.size === 0 && !left) return;
       const box = el.getBoundingClientRect();
       const frame: SurfaceFrame = {
         dirty: new Set(dirty.current),
@@ -227,7 +233,8 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
         observer.current?.observe(el);
       } else {
         tiles.current.delete(id);
-        rects.current.delete(id);
+        // Its rect goes now, so the next measurement cannot see that it left.
+        if (rects.current.delete(id)) tileLeft.current = true;
         dirty.current.delete(id);
       }
       needsMeasure.current = true;

@@ -295,6 +295,40 @@ describe('useTiledSurface', () => {
     expect(frames[0]?.rects.has('b')).toBe(false);
   });
 
+  it('retiles when a tile unregisters and no other tile moved, so its pixels are cleared', () => {
+    const frames: SurfaceFrame[] = [];
+    let handle: SurfaceHandle | null = null;
+    render(
+      <Harness
+        frames={frames}
+        onHandle={(h) => {
+          handle = h;
+        }}
+      />,
+    );
+    const clear = vi.fn();
+    act(() => {
+      handle?.registerClear('over', clear);
+    });
+    flushFrames();
+    frames.length = 0;
+    clear.mockClear();
+
+    act(() => handle?.registerTile('b', null));
+    flushFrames();
+
+    expect(frames[0]?.retiled).toBe(true);
+    expect([...(frames[0]?.dirty ?? [])]).toEqual(['a']);
+    expect(clear).toHaveBeenCalled();
+
+    frames.length = 0;
+    clear.mockClear();
+    act(() => handle?.registerTile('a', null));
+    flushFrames();
+    expect(frames[0]?.rects.size).toBe(0);
+    expect(clear).toHaveBeenCalled();
+  });
+
   it("calls a dirty tile's painter with that tile's rect", () => {
     const frames: SurfaceFrame[] = [];
     let handle: SurfaceHandle | null = null;
