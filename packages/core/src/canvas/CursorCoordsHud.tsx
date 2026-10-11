@@ -1,7 +1,7 @@
 /**
  * Fixed-position dev HUD that shows the cursor's current viewport
- * (client) coords next to the equivalent canvas (world) coords. Mounts
- * top-left of the viewport; listens to `document` pointermove so it
+ * (client) coords next to the equivalent canvas (world) coords. Pins to the
+ * top-right corner of the canvas's host; listens to `document` pointermove so it
  * reads the cursor even when it leaves the canvas.
  *
  * Mount inside a `<SceneCanvas>` subtree (or anywhere with access to a

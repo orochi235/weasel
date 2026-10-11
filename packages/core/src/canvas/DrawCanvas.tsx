@@ -5,7 +5,8 @@
  * It paints through the same per-canvas renderer as `<SceneViewCanvas>`
  * (`useCanvasRenderer`), on a `useFrameLoop` that stops while the canvas is off
  * screen or the tab is hidden. Like `<SceneViewCanvas>` it attaches no event
- * listeners and emits no inline styles: size the element with `className`.
+ * listeners. Its size is `width` × `height`, which the renderer writes as
+ * inline style, so `className` positions the element and cannot resize it.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import type { Ref } from 'react';

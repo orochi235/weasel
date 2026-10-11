@@ -8,6 +8,7 @@
  */
 import { useEffect, useState } from 'react';
 import type { View } from 'core/viewport/view';
+import { clientToWorld } from 'core/viewport/clientToWorld';
 import { useHostAnchor } from './useHostAnchor';
 import s from './hud.module.css';
 
@@ -65,8 +66,7 @@ export function PickHud({ canvasRef, anchorRef, viewRef, pickEvery, pickBest, of
         setState({ ids: [], best: null, inCanvas: false });
         return;
       }
-      const worldX = (e.clientX - rect.left) / view.scale.x + view.x;
-      const worldY = (e.clientY - rect.top)  / view.scale.y + view.y;
+      const [worldX, worldY] = clientToWorld(e.clientX, e.clientY, rect, view);
       let ids: readonly string[] = [];
       try {
         ids = pickEvery(worldX, worldY);
