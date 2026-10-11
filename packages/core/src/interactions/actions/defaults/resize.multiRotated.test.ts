@@ -3,7 +3,7 @@
  * the union of what is drawn, and a turned member's own axes are not the axes
  * the drag scales.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import { expectSamePose } from 'features/groups/frameFixture';
