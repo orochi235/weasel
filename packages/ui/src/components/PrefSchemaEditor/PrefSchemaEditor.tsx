@@ -83,7 +83,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
    *  editor drops those changes from its draft and keeps the edits made since. */
   taken?: boolean;
   /** The most levels of groups the schema may nest: 1 keeps every group at the top. A drag, a palette drop, or
-   *  Add group that would nest deeper is refused. A schema already deeper is shown as it is. Default: no limit. */
+   *  Add group that would nest deeper is refused. A schema already deeper is shown as it is. Default 2. */
   maxDepth?: number;
   /** The host's own controls, set first in the bar across the editor's top. */
   bar?: ReactNode;
@@ -101,7 +101,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, draftStorage, onSubmit, taken = false, bar, maxDepth, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, draftStorage, onSubmit, taken = false, bar, maxDepth = 2, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;

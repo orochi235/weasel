@@ -97,15 +97,15 @@ export function fitsUnder(parent: SchemaNode, node: SchemaNode): boolean {
   return isPrefLeaf(node) || (isPrefSection(node) ? 'section' : 'group') === branchUnder(parent);
 }
 
-/** How many levels of branches `node` adds where it sits: none for a leaf, one for a group or section and one more for each level inside it. */
+/** How many levels of groups `node` adds where it sits: none for a leaf or a section, one for a group and one more for each level inside it. */
 export function levelsOf(node: SchemaNode): number {
-  if (isPrefLeaf(node)) return 0;
-  return 1 + Math.max(0, ...Object.values(childrenOf(node) ?? {}).map(levelsOf));
+  if (isPrefLeaf(node) || isPrefSection(node)) return 0;
+  return 1 + Math.max(0, ...Object.values(node.children).map(levelsOf));
 }
 
-/** Whether `nodes` set under the node at `parent` keep the schema within `maxDepth` levels of branches. No limit when it is undefined. */
+/** Whether `nodes` set under the group at `parent` keep the schema within `maxDepth` levels of groups. */
 export function withinDepth(parent: string | null, nodes: readonly SchemaNode[], maxDepth: number | undefined): boolean {
-  return maxDepth === undefined || nodes.every((n) => keysOf(parent).length + levelsOf(n) <= maxDepth);
+  return maxDepth === undefined || nodes.every((n) => levelsOf(n) === 0 || keysOf(parent).length + levelsOf(n) <= maxDepth);
 }
 
 function checkFits(parent: SchemaNode | undefined, node: SchemaNode): void {
