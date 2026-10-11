@@ -6,8 +6,10 @@ import type { TestHookRefs, WeaselTestHook } from './types';
  *    - `process.env.NODE_ENV !== 'production'` (never in production consumer
  *      builds — paired with a call-site gate in SceneCanvas so the entire
  *      module DCEs out), AND
- *    - the URL contains `?test=1`.
- *  Otherwise returns null and does not touch `window`. */
+ *    - the URL contains `?test=1`, AND
+ *    - no other canvas holds the global.
+ *  Otherwise returns null and does not touch `window`. The caller that gets a
+ *  hook owns it, and hands it to `releaseTestHook` when it unmounts. */
 export function installTestHookIfRequested(refs: TestHookRefs): WeaselTestHook | null {
   if (typeof window === 'undefined') return null;
   // Defense in depth: even if the call-site gate is bypassed, never expose
@@ -15,9 +17,13 @@ export function installTestHookIfRequested(refs: TestHookRefs): WeaselTestHook |
   if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') return null;
   const params = new URLSearchParams(window.location.search);
   if (params.get('test') !== '1') return null;
-  // If a hook is already installed (HMR), keep it.
-  if (window.__weaselTest) return window.__weaselTest;
+  if (window.__weaselTest) return null;
   const hook = createTestHook(refs);
   window.__weaselTest = hook;
   return hook;
+}
+
+/** Remove `window.__weaselTest` if it is still `hook`. */
+export function releaseTestHook(hook: WeaselTestHook): void {
+  if (typeof window !== 'undefined' && window.__weaselTest === hook) delete window.__weaselTest;
 }

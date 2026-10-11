@@ -26,7 +26,7 @@ afterEach(() => {
   delete window.__weaselTest;
 });
 
-function setup() {
+function setup(initialActiveTool = 'alpha') {
   const alpha = defineTool<null>({ id: 'alpha', bindings: [] });
   const beta = defineTool<null>({ id: 'beta', bindings: [] });
   let tools: ReturnType<typeof useTools> | null = null;
@@ -40,13 +40,13 @@ function setup() {
         height={200}
         layers={{}}
         tools={{ alpha, beta }}
-        initialActiveTool="alpha"
+        initialActiveTool={initialActiveTool}
         onToolsCreated={(t) => { tools = t; }}
       />
     );
   }
-  render(<Harness />);
-  return { tools: () => tools! };
+  const { unmount } = render(<Harness />);
+  return { tools: () => tools!, unmount };
 }
 
 describe('SceneCanvas test hook', () => {
@@ -62,5 +62,26 @@ describe('SceneCanvas test hook', () => {
 
     act(() => { tools().setActive(null); });
     expect(hook.getActiveToolId()).toBeNull();
+  });
+
+  it('answers for the canvas that replaced an unmounted one', async () => {
+    const first = setup('alpha');
+    await window.__weaselTest!.ready;
+    first.unmount();
+    expect(window.__weaselTest).toBeUndefined();
+
+    setup('beta');
+    await window.__weaselTest!.ready;
+    expect(window.__weaselTest!.getActiveToolId()).toBe('beta');
+  });
+
+  it('stays with the first canvas while a second one mounts and unmounts beside it', async () => {
+    setup('alpha');
+    const hook = window.__weaselTest!;
+    const second = setup('beta');
+    expect(window.__weaselTest).toBe(hook);
+    second.unmount();
+    expect(window.__weaselTest).toBe(hook);
+    expect(hook.getActiveToolId()).toBe('alpha');
   });
 });

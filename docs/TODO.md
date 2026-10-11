@@ -202,13 +202,10 @@ Priority tags:
   `insert` with a path request and drop `adapter.addNode` / `makeNode`; this changes
   `UsePenToolOptions`.
 
-- **(P3) Test hook: `window.__weaselTest` keeps the first canvas's refs after a remount.**
-  `installTestHook` (`packages/core/src/test-hook/install.ts`) returns the existing global if one is
-  set, and the effect that installs it in `packages/core/src/canvas/SceneCanvas.tsx` has no cleanup.
-  Under `?test=1`, swapping one demo for another without a page load leaves `getScene()` and
-  `getActiveToolId()` answering for the unmounted canvas, with `ready` already resolved. The effect
-  should return a cleanup that deletes the global when it still points at this hook, and install
-  should rebind.
+- **(P3) Test hook: with two canvases on a page, the hook does not pass to the survivor.** The first
+  canvas to mount owns `window.__weaselTest` (`packages/core/src/test-hook/install.ts`) and removes
+  it when it unmounts; a second canvas still mounted then has no hook until something remounts it.
+  Left: deciding which canvas the hook answers for when several are live.
 
 - **(P3) Tool activation keys are decided in two places.** `BUILTIN_SELECT_KEYS` in
   `packages/core/src/tools/useKeybindings.ts` hard-codes the key for nine tool ids and the registry
