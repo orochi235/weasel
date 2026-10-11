@@ -14,17 +14,11 @@ const PANEL = '.fg-css-vars';
 const HOST = '.lk-sidebar-section, .lk-panel-tile';
 const MANUAL = ['wheel', 'touchmove', 'keydown'] as const;
 
-function scrollerOf(el: Element): HTMLElement | null {
-  for (let at = el.parentElement; at; at = at.parentElement) {
-    const { overflowY } = getComputedStyle(at);
-    if ((overflowY === 'auto' || overflowY === 'scroll') && at.scrollHeight > at.clientHeight) return at;
-  }
-  return null;
-}
+const LIST = '.fg-css-vars__list';
 
-/** Where the list's sticky controls end, which is the line a section counts as reached at. */
+/** The top of the list's own scroller, which is the line a section counts as reached at. */
 function readLine(panel: Element): number {
-  return panel.querySelector('.fg-css-vars__controls')?.getBoundingClientRect().bottom ?? panel.getBoundingClientRect().top;
+  return (panel.querySelector(LIST) ?? panel).getBoundingClientRect().top;
 }
 
 function sectionsOf(panel: Element): HTMLElement[] {
@@ -79,7 +73,7 @@ export function SectionJump() {
   const jump = (next: TokenCategory | null) => {
     const panel = ref.current?.closest(HOST)?.querySelector(PANEL);
     const target = next && panel?.querySelector(`[data-token-category="${next}"]`);
-    const scroller = panel && scrollerOf(panel);
+    const scroller = panel?.querySelector(LIST);
     if (!panel || !target || !scroller) return;
     held.current = true;
     setCurrent(next);

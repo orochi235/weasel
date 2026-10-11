@@ -47,3 +47,22 @@ describe('<SidebarRegion> actions', () => {
     expect(screen.queryByRole('button', { name: 'Jump' })).toBeNull();
   });
 });
+
+describe('<SidebarRegion> fill', () => {
+  const contributions: RegionContribution<TrialChromeContext>[] = [
+    { id: 'a', region: 'sidebar', item: { title: 'Vars', body: 'x', fill: true } },
+    { id: 'b', region: 'sidebar', item: { title: 'Plain', body: 'y' } },
+  ];
+  const fills = (c: TrialChromeContext) => {
+    const { container } = render(<SidebarRegion contributions={contributions} ctx={c} />);
+    return [...container.querySelectorAll('.lk-sidebar-section')].map((el) => el.hasAttribute('data-fill'));
+  };
+
+  it('marks an open filling section, and no other', () => {
+    expect(fills(ctx)).toEqual([true, false]);
+  });
+
+  it('leaves a folded one at its bar', () => {
+    expect(fills({ ...ctx, collapsedSections: { a: true } })).toEqual([false, false]);
+  });
+});

@@ -221,3 +221,24 @@
 .lk-sidebar-section__body {
   padding: 0 var(--wzl-space-sm) var(--wzl-space-sm);
 }
+
+// A filling section is as tall as the pane has left, and no shorter than a few
+// rows: under that the pane scrolls it, as it does every other section.
+.lk-sidebar-section[data-fill] {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: calc(var(--lk-section-bar-h) * 8);
+
+  > .lk-sidebar-section__body {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  // The spare height is this one's: the last section stops at its content.
+  ~ .lk-sidebar-section:last-child {
+    flex-grow: 0;
+  }
+}

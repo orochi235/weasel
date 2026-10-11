@@ -304,15 +304,17 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
           {tokens.length === 0 ? 'The story’s frame has reported no variables.' : 'No variables match.'}
         </p>
       ) : (
-        <TokenPanel
-          tokens={shown}
-          namePrefix="--wzl-"
-          onChange={write}
-          scales={scales}
-          onScaleChange={onScaleChange}
-          collapsed={folds}
-          onCollapsedChange={onCollapsedChange}
-        />
+        <div className="fg-css-vars__list">
+          <TokenPanel
+            tokens={shown}
+            namePrefix="--wzl-"
+            onChange={write}
+            scales={scales}
+            onScaleChange={onScaleChange}
+            collapsed={folds}
+            onCollapsedChange={onCollapsedChange}
+          />
+        </div>
       )}
     </div>
   );
@@ -339,5 +341,5 @@ function FocusedCssVars() {
 export const CSS_VARS_SECTION: LabContribution = {
   id: 'fg-css-vars',
   region: 'aside',
-  item: { title: 'CSS Vars', actions: <SectionJump />, body: <FocusedCssVars /> },
+  item: { title: 'CSS Vars', actions: <SectionJump />, fill: true, body: <FocusedCssVars /> },
 };

@@ -1,9 +1,16 @@
 .fg-css-vars,
 .fg-css-vars-focus {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   gap: var(--wzl-space-xs);
   min-width: 0;
+  min-height: 0;
+}
+
+/* In a torn-out tile nothing flexes it, so it takes the tile's height itself. */
+.fg-css-vars-focus {
+  height: 100%;
 }
 
 .fg-css-vars__trial {
@@ -15,17 +22,19 @@
   white-space: nowrap;
 }
 
-/* Held under the section's own sticky title bar while the list scrolls the aside under it. */
 .fg-css-vars__controls {
-  position: sticky;
-  top: var(--lk-section-bar-h, 0);
-  z-index: 1;
   display: flex;
+  flex: none;
   flex-direction: column;
   gap: var(--wzl-space-xs);
   padding-block-end: var(--wzl-space-xs);
-  background: var(--wzl-surface);
   border-bottom: var(--wzl-border-w) solid var(--wzl-line-subtle);
+}
+
+.fg-css-vars__list {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .fg-css-vars__bar {

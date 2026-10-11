@@ -21,19 +21,21 @@ function Section({
   onCollapsedChange,
   onUndock,
   actions,
+  fill,
   children,
   stance,
   tone,
 }: StanceProps & {
   title: string;
   actions?: ReactNode;
+  fill?: boolean;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
   onUndock?: () => void;
   children: ReactNode;
 }) {
   return (
-    <section className="lk-sidebar-section" {...useStance({ stance, tone })}>
+    <section className="lk-sidebar-section" data-fill={fill && !collapsed ? '' : undefined} {...useStance({ stance, tone })}>
       <div className="lk-sidebar-section__bar">
         <button
           type="button"
@@ -87,6 +89,7 @@ export function SidebarRegion<TCtx extends SidebarSlotContext = TrialChromeConte
             stance={item.stance}
             tone={item.tone}
             actions={item.actions}
+            fill={item.fill}
             collapsed={ctx.collapsedSections[c.id] ?? item.defaultCollapsed ?? false}
             onCollapsedChange={(next) => ctx.setSectionCollapsed(c.id, next)}
             onUndock={
