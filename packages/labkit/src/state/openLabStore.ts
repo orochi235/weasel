@@ -347,7 +347,11 @@ function bindLabStore(store: LabStore, records: RecordCache, options: BindOption
           // state that no longer exists.
           const hooks = store.getState().instrumentHooks();
           const [replacement] = hydrateTrials([{ ...rest, id }], hooks.serializers, hooks);
-          if (!replacement) break;
+          if (!replacement) {
+            // Kept, the stale trial's next edit would write over a record this tab cannot read.
+            trials = trials.filter((t) => t.id !== id);
+            break;
+          }
           trials = trials.some((t) => t.id === id)
             ? trials.map((t) => (t.id === id ? replacement : t))
             : [...trials, replacement];

@@ -477,6 +477,75 @@ describe('openLabStore — records it cannot use', () => {
     expect(backing).toEqual(before);
   });
 
+  describe('one trial that fails to hydrate', () => {
+    // An instrument whose stored state for one trial it can no longer read.
+    const serializers = {
+      T: {
+        deserialize: (data: unknown) => {
+          if ((data as { bad?: boolean }).bad) throw new Error('unreadable state');
+          return data;
+        },
+      },
+    };
+
+    it('opens the rest of the lab, and never writes over or deletes the failed record', async () => {
+      const backing = new Map<string, unknown>();
+      storeLab(backing, { trials: [trial('w1'), trial('w2', { state: { bad: true } }), trial('w3')] });
+      const stored = structuredClone(backing.get(`${P}trial:w2`));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const opened = await open(backing, { serializers });
+      expect(opened.store.getState().trials.map((t) => t.id)).toEqual(['w1', 'w3']);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0]?.[0])).toContain('w2');
+
+      opened.store.getState().updateTrialState('w1', { n: 1 });
+      const [w1, w3] = opened.store.getState().trials as [TrialRecord, TrialRecord];
+      opened.store.setState({ trials: [w3, w1] });
+      opened.store.getState().removeTrial('w3');
+      await opened.close();
+      expect(backing.get(`${P}trial:w2`)).toEqual(stored);
+      expect(backing.has(`${P}trial:w3`)).toBe(false);
+    });
+
+    it('opens past a trial whose config fails to migrate, and a snapshot whose does', async () => {
+      const backing = new Map<string, unknown>();
+      storeLab(backing, {
+        trials: [trial('w1'), trial('w2', { config: { old: true } })],
+        saves: [SNAPSHOT, { ...SNAPSHOT, id: 's2', config: { old: true } }],
+      });
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const migrate = (config: unknown) => {
+        if ((config as { old?: boolean }).old) throw new Error('no path from this shape');
+        return config;
+      };
+
+      const opened = await open(backing, { configMigrations: { T: migrate } });
+      expect(opened.store.getState().trials.map((t) => t.id)).toEqual(['w1']);
+      expect(opened.store.getState().savedSnapshots.map((s) => s.id)).toEqual(['s1']);
+      await opened.close();
+      expect(backing.has(`${P}trial:w2`)).toBe(true);
+      expect(backing.has(`${P}save:s2`)).toBe(true);
+    });
+
+    it("drops a trial another tab stored in a state this one cannot read, and leaves that tab's record", async () => {
+      const backing = new Map<string, unknown>();
+      storeLab(backing, { trials: [trial('w1'), trial('w2')] });
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const mine = await open(backing, { serializers });
+      const theirs = await open(backing);
+
+      theirs.store.getState().updateTrialState('w2', { bad: true });
+      await theirs.records.flush();
+      await tick();
+
+      expect(mine.store.getState().trials.map((t) => t.id)).toEqual(['w1']);
+      mine.store.getState().updateTrialState('w1', { n: 1 });
+      await mine.close();
+      expect(backing.get(`${P}trial:w2`)).toMatchObject({ state: { bad: true } });
+    });
+  });
+
   it('ignores a record whose name no lab writes', async () => {
     const backing = new Map<string, unknown>();
     storeLab(backing, { trials: [trial('w1')] });

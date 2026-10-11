@@ -359,15 +359,20 @@ function hydratedConfig(
 }
 
 /** Rebuild stored trials: migrate each config, fill its gaps from its
- *  instrument's defaults, then run the deserializer against the result. */
+ *  instrument's defaults, then run the deserializer against the result. A
+ *  trial either step throws on is left out, with a warning. */
 export function hydrateTrials(
   trials: SerializedTrial[],
   serializers: InstrumentSerializers,
   hydration: ConfigHydration = {},
 ): TrialRecord[] {
-  return deserializeTrials(
-    trials.map((t) => ({ ...t, config: hydratedConfig(hydration, t.instrumentName, t.config) })),
-    serializers,
+  return trials.flatMap((t) =>
+    hydrated('trial', t, () =>
+      deserializeTrials(
+        [{ ...t, config: hydratedConfig(hydration, t.instrumentName, t.config) }],
+        serializers,
+      ),
+    ),
   );
 }
 
@@ -376,8 +381,25 @@ export function hydrateSnapshots(
   saves: SavedSnapshot[],
   hydration: ConfigHydration = {},
 ): SavedSnapshot[] {
-  return saves.map((sn) => ({
-    ...sn,
-    config: hydratedConfig(hydration, sn.instrumentName, sn.config),
-  }));
+  return saves.flatMap((sn) =>
+    hydrated('snapshot', sn, () => [
+      { ...sn, config: hydratedConfig(hydration, sn.instrumentName, sn.config) },
+    ]),
+  );
+}
+
+function hydrated<T>(
+  what: string,
+  stored: { id: string; instrumentName: string },
+  build: () => T[],
+): T[] {
+  try {
+    return build();
+  } catch (error) {
+    console.warn(
+      `[labkit] ${what} "${stored.id}" (${stored.instrumentName}) failed to load; opening without it and leaving its record alone`,
+      error,
+    );
+    return [];
+  }
 }
