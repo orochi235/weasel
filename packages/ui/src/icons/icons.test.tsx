@@ -94,9 +94,9 @@ describe('a marked glyph', () => {
     const [glyph, mark] = [...container.querySelectorAll('svg > g')];
     expect(glyph?.querySelector('rect')).not.toBeNull();
     expect(mark?.querySelector('path')?.getAttribute('d')).toBe(ICON_PATHS.markAdd.match(/d="([^"]+)"/)?.[1]);
-    expect(mark?.getAttribute('transform')).toBe('translate(11.5 11.5) scale(0.4)');
+    expect(mark?.getAttribute('transform')).toBe('translate(10.5 10.5) scale(0.5)');
     // 1.5 on the frame, once the group's scale has been applied to it.
-    expect(Number(mark?.getAttribute('stroke-width')) * 0.4).toBeCloseTo(1.5);
+    expect(Number(mark?.getAttribute('stroke-width')) * 0.5).toBeCloseTo(1.5);
   });
 
   it('clears the glyph from around the mark with a mask of its own', () => {

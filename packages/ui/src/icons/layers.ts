@@ -7,7 +7,7 @@ export interface IconBox {
 
 /** Where each named slot of `<Icon>` sits. The center lands on a pixel center at 20px, and within a tenth of one at 16px. */
 export const ICON_SLOTS = {
-  mark: { x: 11.5, y: 11.5, size: 8 },
+  mark: { x: 10.5, y: 10.5, size: 10 },
 } as const satisfies Record<string, IconBox>;
 
 const FRAME = 20;

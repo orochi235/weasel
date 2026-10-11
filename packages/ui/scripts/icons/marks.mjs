@@ -2,7 +2,7 @@ import { onCircle } from './base.mjs';
 
 // Marks: what `<Icon mark>` sets in a corner of another glyph, to say what a
 // press does with it. Each is a glyph like any other and draws alone at full
-// size, but is drawn to be read at two fifths of it: one gesture, filling the
+// size, but is drawn to be read at half of it: one gesture, filling the
 // frame, with no detail a slot's few pixels could not hold.
 //
 // A mark carries no stroke-width of its own. The slot scales the mark down
