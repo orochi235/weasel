@@ -66,6 +66,18 @@ describe('CommandPalette', () => {
     expect(palette()).not.toBeNull();
   });
 
+  it('tells assistive tech which action Enter will run, as the highlight moves', () => {
+    openPalette();
+    const input = screen.getByRole('combobox', { name: 'Search actions' });
+    const list = screen.getByRole('listbox');
+    expect(input.getAttribute('aria-controls')).toBe(list.id);
+    expect(input.getAttribute('aria-activedescendant')).toBe(selected()!.id);
+    const first = selected()!.id;
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(selected()!.id).not.toBe(first);
+    expect(input.getAttribute('aria-activedescendant')).toBe(selected()!.id);
+  });
+
   it('is a titled dialog', () => {
     openPalette();
     expect(screen.getByRole('dialog', { name: 'Commands' })).toBeTruthy();

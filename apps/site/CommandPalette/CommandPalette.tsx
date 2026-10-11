@@ -13,6 +13,7 @@
  */
 import {
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -169,6 +170,7 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
   };
 
   const headerText = describeSelection(selectionCtx);
+  const listId = useId();
 
   return (
     <Dialog
@@ -196,6 +198,10 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
         type="text"
         placeholder="Search actions…"
         aria-label="Search actions"
+        role="combobox"
+        aria-expanded={filtered.length > 0}
+        aria-controls={listId}
+        aria-activedescendant={filtered.length > 0 ? `${listId}-${highlight}` : undefined}
         value={query}
         onChange={(e) => { setQuery(e.target.value); setHighlight(0); }}
         onKeyDown={onInputKeyDown}
@@ -208,7 +214,7 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
       ) : filtered.length === 0 ? (
         <div className={styles.empty}>No matching actions.</div>
       ) : (
-        <ul ref={listRef} className={styles.list} role="listbox" aria-label="Actions">
+        <ul ref={listRef} id={listId} className={styles.list} role="listbox" aria-label="Actions">
           {filtered.map((item, idx) => {
             const enabled = isEnabled(item);
             const reason = reasonFor(item);
@@ -220,6 +226,7 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
             return (
               <li
                 key={item.key}
+                id={`${listId}-${idx}`}
                 data-idx={idx}
                 role="option"
                 aria-selected={idx === highlight}
