@@ -1894,11 +1894,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as arguments (how a field's value and mixed state are read, how a row is framed), with the
   write-back rule as a pure function in `@weasel-js/prefs`.
 
-- **(P3) A list leaf is drawn in three places, and the plain-text shortcut has drifted.**
+- **(P3) A list leaf is drawn in three places, and the plain-text shortcut is written twice.**
   `Prefs/ListLeaf.tsx` keeps `ListEditor`'s own text fields when the item is a string with no
   `string` renderer and is not a `textarea`; labkit's `ControlPanel.tsx` (`LeafRow`, the `COMPOUND`
-  branch) repeats the test without the `textarea` clause, so a list of textarea strings draws
-  one-line inputs there; `SelectionPanel/ListLeaf.tsx` has no shortcut, so Enter-to-add and
+  branch) repeats the test; `SelectionPanel/ListLeaf.tsx` has no shortcut, so Enter-to-add and
   Backspace-to-remove are absent. The form substitutes `item.default` for an `undefined` entry and
   the panel marks it unset. Item renderers are looked up by kind only in all three, though
   `SelectionPanel` looks up by path first everywhere else. Home: `Prefs/ListLeaf`, with the shortcut

@@ -81,3 +81,15 @@ describe('a control panel row for a leaf made of other leaves', () => {
     expect(run).toHaveBeenCalledWith({ path: 'wipe' });
   });
 });
+
+describe('a control panel row for a list of strings', () => {
+  it('draws each entry as a textarea when the item asks for one', () => {
+    const schema = f.schema({ notes: f.list(['a'], f.string('')) });
+    const resolved = resolveConfigSchema(schema);
+    const list = resolved.group.children.notes as unknown as { item: { control?: string } };
+    list.item.control = 'textarea';
+    render(<ControlPanel schema={resolved} config={{ notes: ['a'] }} setConfig={() => {}} />);
+    open('Notes');
+    expect(document.querySelector('textarea')).not.toBeNull();
+  });
+});

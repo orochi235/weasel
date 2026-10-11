@@ -5,6 +5,7 @@ import {
   type PrefGroup,
   type PrefLeaf,
   type PrefList,
+  type PrefString,
   pairRowsOf,
   prefAliasedLeaf,
   prefAliasTarget,
@@ -675,7 +676,8 @@ function LeafRow<TC extends Record<string, unknown>>({
   if (COMPOUND.has(leaf.kind)) {
     const item = leaf.kind === 'list' ? (leaf as PrefList).item : undefined;
     // Plain text entries keep the list's own fields, and the placeholder only they have.
-    const texts = item?.kind === 'string' && !renderers?.string;
+    const texts =
+      item?.kind === 'string' && !renderers?.string && (item as PrefString).control !== 'textarea';
     return (
       <DialogRow
         label={label}
