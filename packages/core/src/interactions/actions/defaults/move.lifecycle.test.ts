@@ -172,6 +172,23 @@ describe('moveAction — onGestureStart / onGestureEnd', () => {
   });
 });
 
+describe('moveAction — a drag that never reaches its threshold', () => {
+  it('cancels its behaviors and never asks them to end the gesture', () => {
+    const { scene, a, base } = setup();
+    const behavior = { onStart: vi.fn(), onEnd: vi.fn(() => []), onCancel: vi.fn() };
+    const handle = invoker().start(base as InvocationCtx, {
+      behaviors: [behavior],
+      params: { dragThresholdPx: 50 },
+    });
+    handle.onMove!(frame(base, 5));
+    handle.onEnd!(frame(base, 5), 'commit');
+    expect(behavior.onStart).toHaveBeenCalledTimes(1);
+    expect(behavior.onEnd).not.toHaveBeenCalled();
+    expect(behavior.onCancel).toHaveBeenCalledTimes(1);
+    expect(scene.get(a)!.pose.x).toBe(0);
+  });
+});
+
 describe('moveAction — expandIds', () => {
   it('moves the ids expandIds returns in place of the selection', () => {
     const { scene, a, b, base, recorded } = setup();

@@ -201,11 +201,6 @@ Priority tags:
   gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in
   `cloneAction` the way move, rotate, and insert do, or remove the behavior and the type.
 
-- **(P3) `moveAction` applies a second drag threshold.** The dispatcher buffers a press until
-  `DRAG_THRESHOLD_PX` before `start` runs, and `moveAction.onMove` checks `dragThresholdPx` again;
-  resize, rotate, and clone have only the first. With `dragThresholdPx` raised, a drag that never
-  engaged still runs its behaviors' `onEnd`, with `onGestureStart` and `onGestureEnd` never fired.
-
 - **(P3) `PoseDescriptor.forNode` is honored by some actions and not others.** `rotateAction`
   measures with the per-node descriptor and writes with the unspecialized one; `moveAction`
   specializes in its layout pass only; `resize`, `clone`, `nudge`, and `duplicate` never call

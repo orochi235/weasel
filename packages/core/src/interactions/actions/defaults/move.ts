@@ -1376,7 +1376,9 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           try {
             // On cancel the document was never mutated — dropping the
             // ephemeral overrides below restores the committed poses.
-            if (reason === 'commit') committed = commitMove(endCtx);
+            // A press that never traveled `dragThresholdPx` was never a move:
+            // its behaviors started, so they are canceled, not asked to commit.
+            if (reason === 'commit' && engaged) committed = commitMove(endCtx);
             else runBehaviorCancel(scratch.behaviors, scratch.gestureCtx);
           } finally {
             // After the commit, so no frame can paint the pre-drag pose between
