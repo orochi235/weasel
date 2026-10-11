@@ -123,8 +123,8 @@ export function clipboardJsonReviver(key: string, value: unknown): unknown {
 /** Rebuild the full node list from a persisted scene snapshot, shaped for
  *  `useScene`'s `initial` option. Preserves every node's `kind`, `layer`, and
  *  `parent`, so containers (Cmd+G groups) and nesting survive a reload — the
- *  old leaf-only path dropped both. `toJSON()` emits nodes in layer-major
- *  DFS-preorder (parents before children), so a sequential `add` finds each
+ *  old leaf-only path dropped both. `toJSON()` emits nodes in tree preorder
+ *  (parents before children), so a sequential `add` finds each
  *  node's parent already present.
  *
  *  Note: container clip-paths (`clipFromPoseKey`) are not restored — WeaselDraw

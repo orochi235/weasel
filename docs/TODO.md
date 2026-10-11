@@ -859,19 +859,6 @@ Core five + Crop shipped. Remaining:
   run). Nor does it cover the reverse case, an id that an untracked edit re-added: undoing an older
   `kit:remove` of that id overwrites the live node and attaches it a second time.
 
-- **(P2) Scene: `toJSON` then `loadState` reorders siblings that sit on different layers.** `toJSON`
-  in `packages/core/src/core/scene/scene.ts` writes nodes in layer-major order with no sibling
-  index, and the loader appends in that order, so roots `[r1 (layer a), r2 (layer b), r3 (layer a)]`
-  come back as `[r1, r3, r2]`. Paint order is unchanged, but `scene.roots` and `children` are not
-  what was saved: a layout strategy's `children`, `reorder`'s indices, and every sibling index in a
-  persisted history (`kit:remove`'s `detached[].index`, `kit:move`'s `fromIndex`) now refer to a
-  different order. A single-layer document is unaffected. The order is a documented part of the
-  format (`docs/scene-serialization.md`: "All nodes in render order"; pinned by "preserves
-  layer-major DFS preorder in nodes array" in `scene.test.ts`). Ruled 2026-10-11: `toJSON` writes
-  nodes in tree preorder, and the loader keeps appending as it does now. That leaves the walk in
-  `toJSON`, the pinned test, and the format doc, which has to say that parents still come before
-  children and that a reader painting straight from `nodes` now derives paint order from layers.
-
 - **(P3) Scene: the selection keeps ids of nodes a removal took.** After `scene.setSelection([z])`
   and `scene.remove(z)`, `scene.getSelection()` still returns `['z']`, so every reader guards
   `scene.get(id)`. `kit:remove`'s apply in `packages/core/src/core/scene/scene.ts` could filter the
@@ -1070,19 +1057,13 @@ intercepting the press that drags the body.
 
 ## Animation
 
-- **(P2) `animateOnSetPose`: a second `setPose` during its own tween is overwritten by the first
-  target.** With the default 200 ms tween, `setPose('a', A)` then `setPose('a', B)` 100 ms later
-  ends at A: the second call writes B straight through
-  (`packages/core/src/animation/wrappers/animateOnSetPose.ts`, the `animator.isActive('pose:' + id)`
-  branch) and the running tween's next tick writes over it. The write-through is deliberate and
-  pinned by the test "writes through directly when a tween is already in flight", which guards
-  against a tween being restarted on every frame by a caller outside the animator's tick. Ruled
-  2026-10-11: a second `setPose` cancels the running tween and writes the new pose at once, with no
-  console warning. That leaves the cancel in that branch, a test that B stands, and the wrapper's
-  doc saying a second write ends the glide. Related, read but not run: in the order the site demo
-  uses, `animateLifecycle(animateOnSetPose(base))`, an insert's `adapter.setPose(id, start)` goes
-  through the animating wrapper, which records an `'animate'` transform op (final to start) before
-  the entry tween interrupts it, so every animated insert may leave a stray history entry.
+- **(P2) An animated insert records a stray `'animate'` op.** In the order the site demo uses,
+  `animateLifecycle(animateOnSetPose(base))`, an insert's `adapter.setPose(id, start)`
+  (`packages/core/src/animation/wrappers/animateLifecycle.ts`) goes through the animating wrapper,
+  which records a transform op from the final pose to the start pose before the entry tween
+  interrupts it. Run 2026-10-11: one insert calls the base adapter's `applyOps` once. The lifecycle
+  wrapper has no way to write a pose the wrapper beneath it will pass straight through; it needs
+  one, or an entry tween that takes its start pose and writes it on registration.
 
 - **(P2) `stagger`: delays run on wall-clock timers, so a hidden tab or a global pause collapses the
   cascade.** `CompositeHandle.schedule` (`packages/core/src/animation/stagger.ts`) uses `setTimeout`

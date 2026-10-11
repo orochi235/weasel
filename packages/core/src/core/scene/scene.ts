@@ -18,6 +18,7 @@ import {
   type NodeFnField,
 } from './nodeFnFields';
 import { createPoseOverrides } from './poseOverrides';
+import { treePreorder } from './treeOrder';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
 import type { LayoutStrategy } from '../../layout/types';
 import {
@@ -586,7 +587,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   /**
    * A child may sit on its parent's layer **or any layer above it** (higher
-   * render index) — never below. `renderOrder()` / `toJSON()` are layer-major
+   * render index) — never below. `renderOrder()` is layer-major
    * (each node yielded in its OWN layer's pass) and `buildSceneTree` buckets by
    * each node's own layer, so a child on a higher layer than its parent renders
    * correctly on top while staying a tree child for hit-testing / move /
@@ -1965,7 +1966,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     toJSON(): SerializedScene<TData, TLayer, TPose> {
       const nodes: SerializedNode<TData, TLayer, TPose>[] = [];
-      for (const n of renderOrderNodesInternal()) {
+      for (const n of treePreorder(state.roots, state.nodes)) {
         const id = n.id;
         const out: SerializedNode<TData, TLayer, TPose> = {
           id,

@@ -701,7 +701,7 @@ describe('scene.toJSON', () => {
     expect(p.locked).toBe(true);
   });
 
-  it('preserves layer-major DFS preorder in nodes array', () => {
+  it('writes nodes in tree preorder, across layers', () => {
     const scene = createScene<Data, 'structures' | 'plantings'>({
       systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
     });
@@ -709,7 +709,26 @@ describe('scene.toJSON', () => {
     const b = scene.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'b' } });
     const c = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'c' } });
     const json = scene.toJSON();
-    expect(json.nodes.map((n) => n.id)).toEqual([a, c, b]);
+    expect(json.nodes.map((n) => n.id)).toEqual([a, b, c]);
+  });
+
+  it('keeps sibling order through toJSON and loadState when siblings sit on different layers', () => {
+    const scene = createScene<Data, 'structures' | 'plantings'>({
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+    });
+    const bed = scene.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
+    const p1 = scene.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'p1' }, parent: bed });
+    const s1 = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 's1' }, parent: bed });
+    const top = scene.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'top' } });
+    const last = scene.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'last' } });
+    const order = scene.renderOrder();
+
+    scene.loadState(scene.toJSON());
+
+    expect(scene.roots).toEqual([bed, top, last]);
+    const bedNode = scene.get(bed)!;
+    expect(bedNode.kind === 'container' && bedNode.children).toEqual([p1, s1]);
+    expect(scene.renderOrder()).toEqual(order);
   });
 
   it('writes clipFromPoseKey when the factory is in the registry', () => {

@@ -53,8 +53,9 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
     { id: 'annotations', visible: false },  // hidden layer
   ],
 
-  // Nodes in layer-major DFS preorder (parents always appear before their
-  // children). This is identical to the order scene.renderOrder() returns.
+  // Nodes in tree preorder: a parent always appears before its children, and
+  // siblings appear in sibling order. This is NOT paint order when siblings sit
+  // on different layers; see the note on `nodes` below.
   nodes: [
     {
       id: 'box-1',
@@ -90,7 +91,7 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
 |---|---|---|
 | `version` | `1` | Always `1` for now. `sceneFromJSON` throws on any other value. |
 | `systemLayers` | `SystemLayerSpec[]` | Layer ids and optional visibility/locked overrides. |
-| `nodes` | `SerializedNode[]` | All nodes in render order. |
+| `nodes` | `SerializedNode[]` | All nodes in tree preorder: parents before children, siblings in sibling order. A reader painting straight from `nodes` derives paint order from layers: paint each `systemLayers` entry in turn, taking that layer's nodes in the order they appear here. |
 | `nodes[i].id` | `string` | Node id. Stable across save/load. |
 | `nodes[i].kind` | `'leaf' \| 'container'` | Leaf or container. |
 | `nodes[i].layer` | `TLayer` | Layer id (must match a `systemLayers` entry). |
