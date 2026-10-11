@@ -44,6 +44,8 @@ export function parseSignedNumber(text: string): number {
 /** One unsigned number in the text `readNumber` sees: digits, with an optional `.` fraction. */
 const TERM_NUMBER = String.raw`\d+(?:\.\d+)?|\.\d+`;
 
+const DECIMAL_NUMBER = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?$/i;
+
 /** Powers of ten a typed magnitude suffix stands for. */
 const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
 
@@ -55,8 +57,9 @@ const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
  */
 export function formatCompact(value: number, decimals = 0): string {
   if (!Number.isFinite(value)) return formatNumber(value);
+  // Asked of the value as it will be shown: 999.6 reads `1000`, which is a thousand.
   const options: Intl.NumberFormatOptions =
-    Math.abs(value) < 1000
+    Number(Math.abs(value).toFixed(decimals)) < 1000
       ? { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals }
       : { notation: 'compact', minimumSignificantDigits: 3, maximumSignificantDigits: 3 };
   return unsignedZero(value, (n) => n.toLocaleString('en-US', options)).replace(/^-/, MINUS_SIGN);
@@ -98,9 +101,11 @@ function readNumber(text: string, units?: Readonly<UnitTable>): number {
   let t = text.trim().replace(MINUS_SIGN, '-');
   const exponent = EXPONENTS[t.slice(-1).toLowerCase()];
   if (exponent !== undefined) t = t.slice(0, -1).trimEnd();
-  if (!/\d/.test(t)) return Number.NaN;
+  // `Number` alone also reads `0x10`, `0b11`, and `1e400`, none of which is a typed amount.
+  if (!DECIMAL_NUMBER.test(t)) return Number.NaN;
   // Scaled through the exponent rather than by multiplying: 1.1 * 1000 is 1100.0000000000002.
-  return Number(exponent === undefined ? t : `${t}e${exponent}`);
+  const n = Number(exponent === undefined ? t : `${t}e${exponent}`);
+  return Number.isFinite(n) ? n : Number.NaN;
 }
 
 interface NumberShape {

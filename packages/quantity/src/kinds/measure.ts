@@ -223,14 +223,22 @@ export function bytes(options: Omit<BytesDisplay, 'kind'> = {}): BytesDisplay {
   return { kind: 'bytes', ...options };
 }
 
-function byteScale(value: number, base: number): { scaled: number; step: number } {
+function byteScale(d: BytesDisplay, value: number): { scaled: number; step: number; places: number } {
+  const base = d.base ?? 1000;
+  const last = DECIMAL_BYTES.length - 1;
+  const placesAt = (step: number): number => (step === 0 ? 0 : (d.places ?? 1));
   let step = 0;
   let scaled = value;
-  while (Math.abs(scaled) >= base && step < DECIMAL_BYTES.length - 1) {
+  while (Math.abs(scaled) >= base && step < last) {
     scaled /= base;
     step++;
   }
-  return { scaled, step };
+  // 999,999 B is 999.999 kB, which shows as 1,000 kB: a megabyte.
+  if (step < last && Number(Math.abs(scaled).toFixed(placesAt(step))) >= base) {
+    scaled /= base;
+    step++;
+  }
+  return { scaled, step, places: placesAt(step) };
 }
 
 const BYTE_UNITS: UnitTable = Object.fromEntries([
@@ -243,20 +251,18 @@ const BYTE_UNITS: UnitTable = Object.fromEntries([
 export const bytesKind: DisplayKind<BytesDisplay> = {
   kind: 'bytes',
   format: (value, d, ctx) => {
-    const base = d.base ?? 1000;
-    const { scaled, step } = byteScale(value, base);
-    const units = base === 1024 ? BINARY_BYTES : DECIMAL_BYTES;
+    const { scaled, step, places } = byteScale(d, value);
+    const units = d.base === 1024 ? BINARY_BYTES : DECIMAL_BYTES;
     return [
-      numberPart(scaled, ctx.locale, { maximumFractionDigits: step === 0 ? 0 : (d.places ?? 1) }),
+      numberPart(scaled, ctx.locale, { maximumFractionDigits: places }),
       { type: 'literal', value: ' ' },
       { type: 'unit', value: units[step]! },
     ];
   },
   speak: (value, d, ctx) => {
-    const base = d.base ?? 1000;
-    const { scaled, step } = byteScale(value, base);
-    const name = (base === 1024 ? BINARY_NAMES : DECIMAL_NAMES)[step]!;
-    const number = numberPart(scaled, ctx.locale, { maximumFractionDigits: step === 0 ? 0 : (d.places ?? 1) }).value;
+    const { scaled, step, places } = byteScale(d, value);
+    const name = (d.base === 1024 ? BINARY_NAMES : DECIMAL_NAMES)[step]!;
+    const number = numberPart(scaled, ctx.locale, { maximumFractionDigits: places }).value;
     return spokenSign(`${number} ${plural(Math.abs(parseNumber(number, undefined, ctx.locale)), ctx.locale, name, `${name}s`)}`);
   },
   parse: (text, _d, ctx) => parseNumber(text, BYTE_UNITS, ctx.locale),
