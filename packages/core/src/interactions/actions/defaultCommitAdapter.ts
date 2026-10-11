@@ -17,6 +17,7 @@
  * widened to all op-apply methods.
  */
 import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
+import { pickability } from 'core/scene/pickability';
 import { documentPose } from 'core/scene/effectivePose';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -88,6 +89,7 @@ export function defaultCommitAdapter<TPose>(
         // of appending at the end.
         ...(index !== undefined ? { index } : {}),
         ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
+        ...pickability(node),
         ...fnFieldsOfNode(node),
       }),
   };

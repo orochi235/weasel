@@ -30,6 +30,7 @@ import type { Op } from 'core/ops/types';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
+import { pickability } from 'core/scene/pickability';
 import { asNodeId } from 'core/scene/types';
 import { applyOpsTo } from 'core/applyOps';
 import { hitTestArea, hitTestLassoPolygon, regionPickOptions } from 'canvas/deps/hitTestArea';
@@ -149,9 +150,6 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
    *  translate them, so it cannot be combined with `cascadeContainerPose`. */
   poseComposition?: PoseComposition<TPose>;
 }
-
-const pickability = (n: { pickable?: boolean }): { pickable?: boolean } =>
-  n.pickable !== undefined ? { pickable: n.pickable } : {};
 
 // Fallback id generator for `commitInsert` when the consumer factory omits
 // `created.id`. Mirrors `scene.ts`'s `defaultGenerateId` shape; module-scoped

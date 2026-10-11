@@ -45,6 +45,22 @@ describe('moveGestureAdapter', () => {
     expect(scene.get(asNodeId(leaf as string))?.id).toBe(leaf);
   });
 
+  it('insertNode keeps a node unpickable', () => {
+    const { scene } = fixture();
+    const label = scene.add({
+      kind: 'leaf',
+      layer: 'main',
+      data: { color: '#00f' },
+      pose: { x: 0, y: 0, width: 5, height: 5 },
+      pickable: false,
+    });
+    const a = moveGestureAdapter<P>(scene);
+    const node = a.getNode(label as string)!;
+    a.removeNode(label as string);
+    a.insertNode(node);
+    expect(scene.get(asNodeId(label as string))?.pickable).toBe(false);
+  });
+
   // The move commit's no-`applyOps` fallback is `scene.applyBatch(ops, label,
   // moveGestureAdapter(scene))`. With a geometryProjection wired, that batch
   // includes a `setData` op per moved node — the adapter must apply it, or

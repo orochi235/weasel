@@ -85,4 +85,20 @@ describe('defaultCommitAdapter', () => {
     a.insertNode(node);
     expect(scene.get(asNodeId(leaf as string))?.id).toBe(leaf);
   });
+
+  it('insertNode keeps a node unpickable', () => {
+    const { scene } = fixture();
+    const label = scene.add({
+      kind: 'leaf',
+      layer: 'main',
+      data: { color: '#00f' },
+      pose: { x: 0, y: 0, width: 5, height: 5 },
+      pickable: false,
+    });
+    const a = defaultCommitAdapter<P>(scene);
+    const node = a.getNode(label as string)!;
+    a.removeNode(label as string);
+    a.insertNode(node);
+    expect(scene.get(asNodeId(label as string))?.pickable).toBe(false);
+  });
 });

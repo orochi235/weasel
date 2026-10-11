@@ -1099,15 +1099,6 @@ Core five + Crop shipped. Remaining:
   keyed by id while incarnations are keyed by object. Split along those owners, each closing over a
   small shared state record; the kit op table and the history facade are the cleanest first cuts.
 
-- **(P2) Commit adapters: `insertNode` drops `pickable`.**
-  `interactions/actions/defaultCommitAdapter.ts` and `interactions/actions/move/gestureAdapter.ts`
-  rebuild a node for `scene.add` from `kind`, `layer`, `pose`, `data`, `id`, `index`, `parent`,
-  `dependsOn`, and `fnFieldsOfNode(node)`, with no `pickable`. A label added with `pickable: false`
-  that is deleted and restored through either adapter comes back taking clicks.
-  `canvas/sceneAdapter.ts` had the same omission and now carries the flag; these two need the same
-  line, or better, one shared node-to-spec helper in `core/scene` so a new node field is added in
-  one place (see the three-adapters entry below).
-
 - **(P2) Derived paths: drawn from local poses under a composing pose strategy, picked from world
   poses.** With `poseComposition` set, a container at (100, 100) holding two children and an edge
   with `dependsOn: [a, b]` paints the children at their composed world poses, but `withDerivedPaths`

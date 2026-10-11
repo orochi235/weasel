@@ -12,6 +12,7 @@
  */
 import { documentPose } from 'core/scene/effectivePose';
 import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
+import { pickability } from 'core/scene/pickability';
 import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
@@ -52,6 +53,7 @@ export function moveGestureAdapter<TPose>(
         ...(index !== undefined ? { index } : {}),
         ...(node.parent !== null ? { parent: node.parent } : {}),
         ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
+        ...pickability(node),
         ...fnFieldsOfNode(node),
       }),
     getChildren: (parentId) =>
