@@ -54,6 +54,7 @@
     "check:bumps": "node scripts/check-changeset-bumps.mjs",
     "check:lockstep": "node scripts/check-lockstep.mjs",
     "check:frame-loops": "node scripts/check-frame-loops.mjs",
+    "check:size": "node scripts/check-size.mjs",
     "check:token-reads": "tsx scripts/check-token-reads.ts",
     "check:spacing": "tsx scripts/check-spacing.ts",
     "check:numeric": "tsx scripts/check-numeric.ts",
