@@ -9,6 +9,7 @@ import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
+import { absentValue, MIXED, sharedValue } from './model';
 import { renderBuiltin, renderCells, type LeafCell, type PropertyRenderContext, type PropertyRenderer } from './renderLeaf';
 import s from './SelectionPanel.module.css';
 
@@ -64,7 +65,13 @@ export function ObjectLeaf({
     // Nodes whose objects differ still agree or disagree field by field: two
     // styles at different sizes are both upright, and saying "mixed" for
     // every field of them hides that.
-    const field = ctx.mixed ? ctx.valueAt(childPath) : { value: held?.[key], mixed: false };
+    // A field the object omits reads as the child says absence does. One of an object the node does not hold
+    // has nothing behind it, whatever the child says.
+    const absent = absentValue(child);
+    const fieldOf = (o: Record<string, unknown> | undefined): unknown => (o === undefined || o[key] !== undefined ? o?.[key] : absent);
+    const each = eachObject.map(fieldOf);
+    const shared = ctx.mixed ? sharedValue(each) : fieldOf(held);
+    const field = shared === MIXED ? { value: undefined, mixed: true } : { value: shared, mixed: false };
     // Each node's own object, with this one field changed. Deriving it per
     // node is what keeps a multi-selection edit from writing one node's
     // object over all the others.
@@ -83,7 +90,7 @@ export function ObjectLeaf({
               ?? (typeof pref.default === 'object' && pref.default !== null
                 ? { ...(pref.default as Record<string, unknown>) }
                 : {}));
-        const v = fn(base[key], base);
+        const v = fn(fieldOf(base), base);
         if (v === undefined) {
           // A field written as absent is absent — leaving the key holding
           // `undefined` says the object has a dash of nothing.
@@ -98,12 +105,9 @@ export function ObjectLeaf({
       pref: child,
       value: field.mixed ? undefined : field.value,
       mixed: field.mixed,
-      // A field of an object the node does not hold is unset, and so is one
-      // the object omits — `data.stroke` absent leaves every stroke field
-      // with nothing behind it, not with the schema's defaults.
       unset: !field.mixed && field.value === undefined,
       siblings: held,
-      each: eachObject.map((o) => o?.[key]),
+      each,
       eachSiblings: eachObject,
       valueAt: ctx.valueAt,
       selectionKey: ctx.selectionKey,

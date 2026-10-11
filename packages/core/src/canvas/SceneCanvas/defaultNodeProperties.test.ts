@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import type { PrefBoolean, PrefEnum, PrefSection, PrefObject } from '@weasel-js/prefs';
+import { prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefSection, type PrefObject } from '@weasel-js/prefs';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import { getMarker, registerMarker } from 'core/strokeMarkers';
 import { inferredNodeRouting } from './defaultNodeRouting';
-import type { TextStyle } from '@weasel-js/text';
+import { DEFAULT_TEXT_STYLE, type TextStyle } from '@weasel-js/text';
 
 /** Colors the edit overlay reads, which are chrome rather than document. */
 type EditOverlayChrome = 'caretColor' | 'selectionBackground' | 'selectionColor';
@@ -42,6 +42,41 @@ describe('defaultNodeProperties', () => {
     expect(content && 'members' in content && 'data.text' in content.members).toBe(true);
     const typography = text?.schema.members.text;
     expect(typography && 'members' in typography && 'data.style' in typography.members).toBe(true);
+  });
+});
+
+describe('leaves that read an absent value as their default', () => {
+  const members = (name: string, section: string): PrefSection['members'] =>
+    (defaultNodeProperties.find((e) => e.name === name)!.schema.members[section] as PrefSection).members;
+  const flagged = (leaves: Record<string, unknown>): string[] =>
+    Object.entries(leaves).filter(([, l]) => (l as PrefLeaf).absentIsDefault === true).map(([k]) => k).sort();
+
+  it('flags the stroke fields the tessellator defaults, at its defaults, and not the stroke itself', () => {
+    const appearance = members('rect', 'appearance');
+    const stroke = appearance['data.stroke'] as PrefObject;
+    expect(flagged(appearance)).toEqual([]);
+    expect(flagged(stroke.children)).toEqual(['align', 'cap', 'join', 'width']);
+    expect(Object.fromEntries(flagged(stroke.children).map((k) => [k, (stroke.children[k] as PrefLeaf).default])))
+      .toEqual({ align: 'center', cap: 'butt', join: 'miter', width: 1 });
+  });
+
+  it('flags the text style fields `resolveTextStyle` defaults, each at `DEFAULT_TEXT_STYLE`\'s value', () => {
+    const style = members('text', 'text')['data.style'] as PrefObject;
+    const fields = Object.fromEntries(prefSectionLeaves(style.children));
+    // `direction` defaults to `auto`, which the leaf does not offer; `fontStyle` and `script` read absence themselves.
+    expect(flagged(fields)).toEqual([
+      'align', 'fontFamily', 'fontSize', 'fontVariantCaps', 'fontWeight', 'letterSpacing', 'lineHeight',
+      'overline', 'strikethrough', 'textTransform', 'underline', 'wrap',
+    ]);
+    for (const key of flagged(fields)) {
+      expect([key, fields[key]!.default]).toEqual([key, DEFAULT_TEXT_STYLE[key as keyof typeof DEFAULT_TEXT_STYLE]]);
+    }
+  });
+
+  it('flags a text node\'s text, style, and vertical alignment, which draw without being held', () => {
+    expect(flagged(members('text', 'content'))).toEqual(['data.text']);
+    expect(flagged(members('text', 'text'))).toEqual(['data.style', 'data.verticalAlign']);
+    expect(flagged(members('text', 'layout'))).toEqual(['pose.rotation']);
   });
 });
 

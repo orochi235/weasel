@@ -55,3 +55,54 @@ describe('a leaf whose absent value is its default', () => {
     expect(pose('a')).toEqual({ turn: 5 });
   });
 });
+
+describe('a field of an object leaf whose absent value is its default', () => {
+  const box: PrefLeaf = {
+    kind: 'object', name: 'Box', description: '', default: { weight: 1 },
+    children: {
+      weight: { kind: 'number', name: 'Weight', description: '', default: 1, absentIsDefault: true },
+      gap: { kind: 'number', name: 'Gap', description: '', default: 4 },
+    },
+  } as PrefLeaf;
+
+  function setupBox(nodes: Record<string, Record<string, unknown>>) {
+    const scene = createScene<Data, Layer, Record<string, number>>({ systemLayers: [{ id: 'default' }] });
+    for (const [id, data] of Object.entries(nodes)) {
+      scene.add({ id: asNodeId(id), kind: 'leaf', layer: 'default', pose: {}, data: { kind: 'thing', ...data } });
+    }
+    const properties: NodePropertiesEntry[] = [{ name: 'thing', schema: { name: 'Properties', members: { 'data.box': box } } }];
+    render(<SelectionPanel scene={scene} selection={selectionOf(Object.keys(nodes))} properties={properties} routing={routing} />);
+    return (id: string) => scene.get(asNodeId(id))?.data.box;
+  }
+
+  it('shows the default for a field the held object omits, and leaves a plain field blank', () => {
+    setupBox({ a: { box: {} } });
+    expect(screen.getByLabelText('Weight')).toHaveValue('1');
+    expect(screen.getByLabelText('Gap')).toHaveValue('');
+  });
+
+  it('leaves the field unset where the node holds no object at all', () => {
+    setupBox({ a: {} });
+    expect(screen.getByLabelText('Weight')).toHaveValue('');
+  });
+
+  it('does not read an object omitting the field and one holding its default as mixed', () => {
+    setupBox({ a: { box: { gap: 2 } }, b: { box: { gap: 3, weight: 1 } } });
+    expect(screen.getByLabelText('Weight')).toHaveValue('1');
+    expect(screen.getByLabelText('Weight')).not.toHaveAttribute('placeholder', 'Mixed');
+  });
+
+  it('reads an object omitting the field beside one holding another value as mixed', () => {
+    setupBox({ a: { box: { gap: 2 } }, b: { box: { gap: 3, weight: 5 } } });
+    expect(screen.getByLabelText('Weight')).toHaveValue('');
+  });
+
+  it('writes nothing until an edit, and then only the value typed', () => {
+    const held = setupBox({ a: { box: {} } });
+    expect(held('a')).toEqual({});
+    const field = screen.getByLabelText('Weight');
+    fireEvent.change(field, { target: { value: '5' } });
+    fireEvent.blur(field);
+    expect(held('a')).toEqual({ weight: 5 });
+  });
+});

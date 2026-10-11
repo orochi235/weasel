@@ -233,19 +233,18 @@ export function aggregateValue(
   path: string,
   absent?: unknown,
 ): unknown | Mixed {
-  let value: unknown;
-  let first = true;
-  for (const node of nodes) {
-    const held = nodeValueAt(node, path);
-    const v = held === undefined ? absent : held;
-    if (first) {
-      value = v;
-      first = false;
-    } else if (!sameValue(v, value)) {
-      return MIXED;
-    }
-  }
-  return value;
+  return sharedValue(
+    nodes.map((node) => {
+      const held = nodeValueAt(node, path);
+      return held === undefined ? absent : held;
+    }),
+  );
+}
+
+/** The one value `values` all are, or `MIXED`. */
+export function sharedValue(values: readonly unknown[]): unknown | Mixed {
+  const [first, ...rest] = values;
+  return rest.every((v) => sameValue(v, first)) ? first : MIXED;
 }
 
 /** Whether two stored values are one value: identical, or arrays and plain
