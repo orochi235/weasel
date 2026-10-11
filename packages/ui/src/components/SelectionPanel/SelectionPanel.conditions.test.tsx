@@ -33,7 +33,13 @@ function setup(members: PrefSection['members'], nodes: Extra[], renderers?: Para
   render(<SelectionPanel scene={scene} selection={selectionOf(ids)} properties={properties} routing={routing} renderers={renderers} />);
 }
 
-const disabledRow = (el: HTMLElement): Element | null => el.closest('[data-disabled]');
+/** The row marked disabled around a control: the marked ancestor that leads with `label`, which a field's own frame does not. */
+function disabledRow(el: HTMLElement, label: string): Element | null {
+  for (let at = el.closest('[data-disabled]'); at !== null; at = at.parentElement?.closest('[data-disabled]') ?? null) {
+    if (at.firstElementChild?.textContent === label) return at;
+  }
+  return null;
+}
 
 describe('SelectionPanel showIf', () => {
   const members: PrefSection['members'] = {
@@ -93,18 +99,18 @@ describe('SelectionPanel enableIf', () => {
     setup(members, [{ locked: true, radius: 2 }]);
     const radius = screen.getByRole('spinbutton', { name: 'Radius' });
     expect(radius).toBeDisabled();
-    expect(disabledRow(radius)).not.toBeNull();
+    expect(disabledRow(radius, 'Radius')).not.toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Smooth' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Go' })).toBeDisabled();
     const lock = screen.getByRole('checkbox', { name: 'Locked' });
     expect(lock).toBeEnabled();
-    expect(disabledRow(lock)).toBeNull();
+    expect(disabledRow(lock, 'Locked')).toBeNull();
   });
 
   it('leaves them enabled while it holds', () => {
     setup(members, [{ locked: false, radius: 2 }]);
     expect(screen.getByRole('spinbutton', { name: 'Radius' })).toBeEnabled();
-    expect(disabledRow(screen.getByRole('spinbutton', { name: 'Radius' }))).toBeNull();
+    expect(disabledRow(screen.getByRole('spinbutton', { name: 'Radius' }), 'Radius')).toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Smooth' })).toBeEnabled();
   });
 

@@ -41,7 +41,7 @@ describe('<ControlPanel> enableIf', () => {
     );
     const size = screen.getByRole('spinbutton', { name: 'Size' });
     expect(size).toBeDisabled();
-    expect(size.closest('[data-disabled]')).not.toBeNull();
+    expect(size.closest('[data-property-row][data-disabled]')).not.toBeNull();
     expect(screen.getByRole('slider', { name: 'Blur' })).toBeDisabled();
     expect(screen.getByRole('textbox', { name: 'Name' })).toBeDisabled();
     const select = screen
@@ -50,7 +50,7 @@ describe('<ControlPanel> enableIf', () => {
     expect(select).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Go' })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: 'On' })).toBeEnabled();
-    expect(screen.getByRole('checkbox', { name: 'On' }).closest('[data-disabled]')).toBeNull();
+    expect(screen.getByRole('checkbox', { name: 'On' }).closest('[data-property-row][data-disabled]')).toBeNull();
   });
 
   it('leaves the row enabled while the condition holds', () => {

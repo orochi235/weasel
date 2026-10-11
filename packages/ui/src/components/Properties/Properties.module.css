@@ -702,6 +702,11 @@
   cursor: not-allowed;
 }
 
+/* A slider's readout sits in the label, which has dimmed it once already. */
+.row[data-disabled] > .rowLabel .readoutInput:disabled {
+  opacity: 1;
+}
+
 .rowInline > .rowLabel,
 .rowColor:not(.rowBlock) > .rowLabel,
 .rowCheckbox:not(.rowBlock) > .rowLabel {

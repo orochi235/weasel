@@ -61,7 +61,7 @@ describe('Bar conditions', () => {
     fireEvent.click(opener);
     const leading = screen.getByRole('spinbutton', { name: 'Leading' });
     expect(leading).toBeDisabled();
-    expect(leading.closest('[data-disabled]')).not.toBeNull();
+    expect(leading.closest('[data-property-row][data-disabled]')).not.toBeNull();
   });
 
   it('disables the row a vertical bar opens for a leaf', () => {
