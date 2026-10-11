@@ -22,14 +22,18 @@
 /* Across the top of every pane: what acts on the schema as a whole. */
 .bar {
   grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  /* Equal sides, so the tools sit at the bar's middle whatever either side holds. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: var(--wzl-space-2);
   padding-block-end: var(--wzl-space-2);
   border-block-end: 1px solid var(--wzl-border);
 }
-.barTools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); margin-inline-end: auto; }
+.barLead,
+.barTools,
+.barEnd { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); }
+.barEnd { justify-content: flex-end; }
 .treeFilter { margin-block-end: var(--wzl-space-2); }
 .middle { display: grid; align-content: start; gap: var(--wzl-space-2); min-height: 0; overflow: auto; }
 .pane { min-height: 0; overflow: auto; }
@@ -121,6 +125,8 @@
 .changed { color: var(--wzl-accent-fg); }
 /* Tool buttons dragged into the tree or the preview to add a node there. */
 .palette {
+  display: flex;
+  gap: var(--wzl-space-2);
   inline-size: fit-content;
   padding: var(--wzl-space-1) var(--wzl-space-2);
   border: 1px solid var(--wzl-border);
@@ -128,6 +134,7 @@
   background: var(--wzl-surface);
   user-select: none;
 }
+.paletteRule { align-self: stretch; border-inline-start: 1px solid var(--wzl-border); }
 .paletteTool { display: flex; touch-action: none; }
 .palette .paletteTool > button { cursor: grab; }
 /* A dragged node drawn as the form would draw it. The form brings its own padding; a page is a rail entry. */

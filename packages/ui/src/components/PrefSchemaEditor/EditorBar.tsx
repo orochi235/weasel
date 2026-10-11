@@ -22,17 +22,19 @@ export function EditorBar({ lead, toolSlot, canUndo, canRedo, onStep, draftSaved
 }) {
   return (
     <div className={s.bar} role="group" aria-label="Schema tools">
-      {lead}
+      <div className={s.barLead}>{lead}</div>
       <div className={s.barTools} ref={toolSlot} />
-      <Button size="sm" variant="ghost" disabled={!canUndo} onClick={() => onStep('undo')}>Undo</Button>
-      <Button size="sm" variant="ghost" disabled={!canRedo} onClick={() => onStep('redo')}>Redo</Button>
-      {draftSavedAt !== null && (
-        <>
-          <Button size="sm" variant="ghost" onClick={onDiscard}>Discard draft</Button>
-          {/* Last: the time changes, and nothing sits after it to be pushed about. */}
-          <span className={s.draftNote}>Draft saved {DRAFT_TIME.format(draftSavedAt)}</span>
-        </>
-      )}
+      <div className={s.barEnd}>
+        <Button size="sm" variant="ghost" disabled={!canUndo} onClick={() => onStep('undo')}>Undo</Button>
+        <Button size="sm" variant="ghost" disabled={!canRedo} onClick={() => onStep('redo')}>Redo</Button>
+        {draftSavedAt !== null && (
+          <>
+            <Button size="sm" variant="ghost" onClick={onDiscard}>Discard draft</Button>
+            {/* Last: the time changes, and nothing sits after it to be pushed about. */}
+            <span className={s.draftNote}>Draft saved {DRAFT_TIME.format(draftSavedAt)}</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }

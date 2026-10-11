@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react';
 import { createPortal } from 'react-dom';
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
-import { Button } from '../Button';
 import { Input } from '../Input';
 import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
 import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
+import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
@@ -194,12 +194,11 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         <Input value={query} onChange={setQuery} aria-label="Filter structure" placeholder="Filter" />
       </div>
       {toolSlot && createPortal(
-        <>
-          <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
-          <Button size="sm" onClick={() => setAdding('pref')}>Add pref</Button>
-          <Button size="sm" onClick={() => setAdding('branch')}>Add {branch}</Button>
-          <Button size="sm" disabled={selected === null} onClick={onRemove}>Remove</Button>
-        </>,
+        <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
+          <ToolButton icon={<Icon name="add" />} label="Add pref" onClick={() => setAdding('pref')} />
+          <ToolButton icon={<Icon name="add" />} label={`Add ${branch}`} onClick={() => setAdding('branch')} />
+          <ToolButton icon={<Icon name="remove" />} label="Remove" disabled={selected === null} onClick={onRemove} />
+        </Palette>,
         toolSlot,
       )}
       <AddNodeDialog what={adding === 'branch' ? branch : adding} kinds={kinds} onAdd={add}

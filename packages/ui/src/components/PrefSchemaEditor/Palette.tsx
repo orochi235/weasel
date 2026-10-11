@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { Icon, type IconName } from '../../icons';
@@ -59,7 +59,7 @@ export interface PaletteDrag {
  * Tool buttons to drag into the tree or the live preview, each making one new node where it is dropped. The drag is
  * the palette's own, and what it is over is the owner's to work out.
  */
-export function Palette({ sections = false, ghost = true, onDrag, onDrop }: {
+export function Palette({ sections = false, ghost = true, onDrag, onDrop, children }: {
   /** The schema's root is a section, so what it makes are sections. */
   sections?: boolean;
   /** Draw the dragged node beside the pointer. Off while something else draws it where it would land. */
@@ -67,6 +67,8 @@ export function Palette({ sections = false, ghost = true, onDrag, onDrop }: {
   /** The drag moved, or ended (`null`) without a drop. */
   onDrag(drag: PaletteDrag | null): void;
   onDrop(drag: PaletteDrag): void;
+  /** Tools that act on a press, set after a rule at the palette's end. */
+  children?: ReactNode;
 }) {
   const [drag, setDrag] = useState<PaletteDrag | null>(null);
   const root = useRef<HTMLDivElement | null>(null);
@@ -108,6 +110,12 @@ export function Palette({ sections = false, ghost = true, onDrag, onDrop }: {
           </span>
         ))}
       </ToolGroup>
+      {children != null && (
+        <>
+          <span className={s.paletteRule} role="separator" aria-orientation="vertical" />
+          <ToolGroup orientation="horizontal" ariaLabel="Add or remove">{children}</ToolGroup>
+        </>
+      )}
       {drag && ghost && root.current && (
         // Offset from the pointer so what is under it stays visible.
         <DragGhost at={{ left: drag.x + 10, top: drag.y + 10, width: GHOST_WIDTH[ghostIsPage(drag.node, true) ? 'page' : 'node'] }} from={root.current}>
