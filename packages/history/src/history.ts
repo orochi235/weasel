@@ -55,8 +55,10 @@ export interface SerializedHistoryEntry {
 }
 
 /** Snapshot of an entire `History` instance. Designed to live alongside the
- *  scene snapshot in IDB so a reload restores the undo / redo stacks to
- *  exactly where they were. */
+ *  scene snapshot so a reload restores the undo / redo stacks to exactly
+ *  where they were. Op `args` are carried by reference, so the snapshot is
+ *  as serializable as they are: JSON drops a function an op's args hold,
+ *  where a structured clone (IndexedDB, `postMessage`) throws on it. */
 export interface SerializedHistory {
   version: 1;
   undoStack: SerializedHistoryEntry[];
@@ -179,8 +181,8 @@ export interface History {
   /** Subscribe to history changes. Fires after every push/undo/redo/
    *  clear/coalesce. Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
-  /** Snapshot the undo + redo stacks in a structured-clone-safe form.
-   *  Entries whose ops aren't all kit-registered (i.e. any op missing a
+  /** Snapshot the undo + redo stacks as `(name, args)` pairs — see
+   *  `SerializedHistory` for what that takes to store. Entries whose ops aren't all kit-registered (i.e. any op missing a
    *  `name`) are dropped from the snapshot with a debug-level log — they
    *  can't round-trip, so we omit them rather than emit a half-restorable
    *  entry. The in-memory stacks aren't modified. */
