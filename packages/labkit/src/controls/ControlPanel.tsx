@@ -1,14 +1,14 @@
 import {
   isPrefLeaf,
-  prefAliasedLeaf,
-  prefAliasTarget,
-  prefLeafAt,
   type PrefAction,
   type PrefAlias,
   type PrefGroup,
   type PrefLeaf,
   type PrefList,
   pairRowsOf,
+  prefAliasedLeaf,
+  prefAliasTarget,
+  prefLeafAt,
 } from '@weasel-js/prefs';
 import {
   type CollapseProps,
@@ -287,7 +287,10 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           value={(p, leaf) => valueAtPath(shown, p) ?? extra<unknown>(leaf, 'default')}
           write={setConfig}
           custom={(p, leaf) =>
-            (renderers?.[p] ?? resolved.renderers[p] ?? resolved.dialogs[p] ?? renderers?.[leaf.kind]) !== undefined
+            (renderers?.[p] ??
+              resolved.renderers[p] ??
+              resolved.dialogs[p] ??
+              renderers?.[leaf.kind]) !== undefined
           }
           row={(p) => (
             <PropertyList pack={rows.grid} density={density} align={align}>
@@ -560,13 +563,19 @@ function summarizeAuto(value: unknown): string {
  *  renders it are all the target's. */
 export function ControlRow<TC extends Record<string, unknown>>(props: ControlRowProps<TC>) {
   const { leaf, resolved, renderers } = props;
-  if (leaf.kind !== 'alias' || renderers?.[props.path] || resolved.renderers[props.path]) return <LeafRow {...props} />;
+  if (leaf.kind !== 'alias' || renderers?.[props.path] || resolved.renderers[props.path])
+    return <LeafRow {...props} />;
   const alias = leaf as PrefAlias;
   const target = prefAliasTarget(alias, (path) => prefLeafAt(resolved.group, path));
-  if (target) return <LeafRow {...props} path={target.path} leaf={prefAliasedLeaf(alias, target.leaf)} />;
+  if (target)
+    return <LeafRow {...props} path={target.path} leaf={prefAliasedLeaf(alias, target.leaf)} />;
   // An alias of nothing is a wiring fault, shown where it sits and not dropped from the panel.
   return (
-    <PropertyRow label={alias.name === '' ? 'Alias' : alias.name} description={alias.description} layout={props.layout}>
+    <PropertyRow
+      label={alias.name === '' ? 'Alias' : alias.name}
+      description={alias.description}
+      layout={props.layout}
+    >
       <span>(alias: no control at {alias.of === '' ? 'an empty path' : alias.of})</span>
     </PropertyRow>
   );
@@ -636,7 +645,16 @@ function LeafRow<TC extends Record<string, unknown>>({
     renderers?.[leaf.kind];
   // A custom row places itself like any other; one that needs the full width
   // says so with `<PropertyRow span>`, which is the same opt-out a built-in has.
-  if (custom) return custom({ path, pref: leaf, value, setValue: write, auto: isAutoRow, setAuto, fields: choices });
+  if (custom)
+    return custom({
+      path,
+      pref: leaf,
+      value,
+      setValue: write,
+      auto: isAutoRow,
+      setAuto,
+      fields: choices,
+    });
 
   const label = leaf.name;
   const description = leaf.description;

@@ -23,7 +23,7 @@ describe('<ControlPanel> alias', () => {
     });
   });
 
-  it('draws the target\'s control again, under the target\'s label or its own', () => {
+  it("draws the target's control again, under the target's label or its own", () => {
     render(<ControlPanel schema={schema} config={{ view: { grid: true } }} setConfig={vi.fn()} />);
     const boxes = screen.getAllByRole('checkbox', { name: 'Show grid' });
     expect(boxes).toHaveLength(2);
@@ -31,9 +31,11 @@ describe('<ControlPanel> alias', () => {
     expect(screen.getByRole('checkbox', { name: 'Grid while playing' })).toBeChecked();
   });
 
-  it('writes the target\'s value from the alias\'s row', () => {
+  it("writes the target's value from the alias's row", () => {
     const setConfig = vi.fn();
-    render(<ControlPanel schema={schema} config={{ view: { grid: false } }} setConfig={setConfig} />);
+    render(
+      <ControlPanel schema={schema} config={{ view: { grid: false } }} setConfig={setConfig} />,
+    );
     fireEvent.click(screen.getByRole('checkbox', { name: 'Grid while playing' }));
     expect(setConfig).toHaveBeenCalledWith('view.grid', true);
   });

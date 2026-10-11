@@ -1,7 +1,15 @@
 import type { PrefLeaf, PrefNumberUnit } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import { BaseNode } from './baseNode';
-import { ActionNode, AliasNode, compound, ListNode, MapNode, ObjectNode, UnionNode } from './compound';
+import {
+  ActionNode,
+  AliasNode,
+  compound,
+  ListNode,
+  MapNode,
+  ObjectNode,
+  UnionNode,
+} from './compound';
 import type {
   Annotations,
   BranchAnnotations,
