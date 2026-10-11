@@ -41,12 +41,12 @@ export function buildToolOffhandBindings(
 
 /** The `key-held` spec for holding `key` (a `KeyboardEvent.key`, or several).
  *  A modifier key gets every modifier optional, since its own keydown reports
- *  its flag set; any other key keeps the bare spec, which forbids modifiers.
+ *  its flag set. Any other key engages with Shift or Alt already down and not
+ *  with Cmd or Ctrl, so a letter trigger leaves its browser chord alone.
  *  Every hold-a-key binding builds its spec here, so that rule has one home. */
 export function heldKeySpec(key: string | string[]): KeyHeldSpec {
-  const spec: KeyHeldSpec = { kind: 'key-held', key };
-  if ([key].flat().some((k) => MODIFIER_KEYS.has(k))) spec.mods = { ...ANY_MODS };
-  return spec;
+  const isModifier = [key].flat().some((k) => MODIFIER_KEYS.has(k));
+  return { kind: 'key-held', key, mods: { ...(isModifier ? ANY_MODS : SHIFT_OR_ALT) } };
 }
 
 const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Alt', 'Control', 'Meta', 'Shift']);
@@ -54,6 +54,8 @@ const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Alt', 'Control', 'Meta', 'S
 // A modifier's own keydown reports its flag set, and which other modifiers are
 // already down when it lands is an accident of the order they were pressed in.
 const ANY_MODS: ModSpec = { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' };
+
+const SHIFT_OR_ALT: ModSpec = { alt: 'optional', shift: 'optional' };
 
 /** Build the consolidated `tool.offhand` action — "hold a key to engage a
  *  secondary tool" (e.g. Space-for-hand). `bindings` enumerates one

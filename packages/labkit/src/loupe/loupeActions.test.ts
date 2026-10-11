@@ -19,7 +19,7 @@ describe('the loupe peek binding', () => {
   });
 
   it('holds any other peek key to the rule every held key follows', () => {
-    expect(peekSpec('z')).toEqual({ kind: 'key-held', key: 'z' });
+    expect(peekSpec('z')).toEqual({ kind: 'key-held', key: 'z', mods: { alt: 'optional', shift: 'optional' } });
     expect(peekSpec('z')).toEqual(heldKeySpec('z'));
   });
 

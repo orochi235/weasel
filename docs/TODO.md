@@ -283,14 +283,6 @@ Priority tags:
   later click; telling "canceled, release still to come" from "canceled, pointer already gone" needs
   the pointer session to say which.
 
-- **(P3) Offhand tools: a non-modifier trigger does not engage while a modifier is down.** Hold
-  Shift, then press Space: the hand tool is not pushed, because the `key-held` spec for `' '`
-  forbids Shift (`packages/routing/src/interactions/actions/toolOffhand.ts`, matched by
-  `matchModifiers` in `packages/gestures/src/ui/match.ts`). Shift-constrain-then-pan is a plausible
-  sequence mid-draw. Ruled 2026-10-11: a non-modifier trigger engages with Shift or Alt held and
-  still not with Cmd or Ctrl, so a letter trigger such as `'o'` leaves Cmd+O to the browser. That
-  leaves `heldKeySpec` in that file marking Shift and Alt optional for a non-modifier key.
-
 - **(P3) Long-press: a browser that sends its own `contextmenu` on a touch hold may fire the menu
   twice.** `useGestureDispatcher`
   (`packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx`) synthesizes `longpress`
