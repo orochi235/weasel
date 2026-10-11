@@ -137,6 +137,11 @@ are built: blits' stepping and springs, pose overrides as a mix, and values comp
    on the target as its blits subject, so the codec's `pull` reads their sum. A coast has no
    destination, so it commits where it stops, not a landing point up front. Offsets live in the
    animator that cued them, and a second animator cueing onto a moving target throws.
+   Cost, one pass of `tests/perf/bench/animator-on-blits.bench.ts` on teitou (Node 24.21.0,
+   blits 0.8.1, 14 of 18 cores free), mean ms per frame for 10k tweens: 0.53 through `onTick`
+   storing each value, 1.50 on 10k targets with `target.read()` called per node after the
+   frame. Where the difference goes was not profiled; `read` builds an axes array and a value
+   object per call.
 2. **Pose.** Built 2026-10-11. `createPoseTarget` (`packages/core/src/animation/poseTarget.ts`)
    is a target whose `show` publishes the folded pose as the node's override entry while it
    moves and clears it at rest; `scenePoseTarget` keeps one per scene node, and an adapter hands
