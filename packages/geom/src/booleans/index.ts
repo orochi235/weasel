@@ -4,6 +4,7 @@
  * which geom takes as an optional peer so the root barrel stays `deps: {}`.
  */
 export { pathUnion, pathIntersect, pathSubtract, pathExclude, pathDivide, pathCrop } from './ops';
+export { trianglesToPath } from './trianglesToPath';
 export { pathToMultiPolygon, multiPolygonToPath } from './adapter';
 export type { Pair, Ring, Polygon, MultiPolygon, PathToMultiPolygonOptions } from './adapter';
 export { splitPathBySegment, splitPathByPolyline, snipPathByPolyline, type SplitBySegmentOptions } from './splitBySegment';

@@ -7,5 +7,5 @@
  * takes it as an optional peer, and core is what supplies it.
  */
 export {
-  pathUnion, pathIntersect, pathSubtract, pathExclude, pathDivide, pathCrop,
+  pathUnion, pathIntersect, pathSubtract, pathExclude, pathDivide, pathCrop, trianglesToPath,
 } from '@weasel-js/geom/booleans';

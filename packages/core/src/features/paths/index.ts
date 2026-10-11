@@ -117,4 +117,6 @@ export {
   pathSubtract,
   pathExclude,
   pathDivide,
+  trianglesToPath,
 } from './booleans';
+export { strokeToPath, type StrokeToPathOptions } from './strokeToPath';
