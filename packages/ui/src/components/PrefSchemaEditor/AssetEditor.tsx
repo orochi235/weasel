@@ -25,7 +25,7 @@ import { StructurePane } from './StructurePane';
 import { useDocument } from './useDocument';
 import { useAssetChanges, type SubmitAssets } from './useAssetChanges';
 import { useAssetView } from './useAssetView';
-import { assetOf, overOf, sameRoots, type Workspace } from './workspace';
+import { assetOf, overOf, sameRoots, withRoots, type Workspace } from './workspace';
 import { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './workspaceEdit';
 import s from './PrefSchemaEditor.module.css';
 
@@ -88,7 +88,7 @@ export function AssetEditor(
     schema: () => latest.current.schema, selected: () => latest.current.paths, maxDepth, pageless, locked: readOnly, onOpen: (paths) => select(paths),
   });
   const doc = useDocument<Workspace>({
-    value: workspace, onChange, base, same, codec, opened, draftKey, draftStorage, taken,
+    value: workspace, onChange: (next) => onChange(withRoots(latest.current.workspace, next)), base, same, codec, opened, draftKey, draftStorage, taken,
     selection: { get: () => view.recorded(beforeOpening.current ?? latest.current.paths), set: view.restore },
   });
   // A key names its asset, so the same path edited in two of them close together is two steps.
