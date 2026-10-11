@@ -1,6 +1,5 @@
 import { createHistory, type HistorySelection, type Journal, type SerializedHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
-import type { ParallaxOpts } from 'core/viewport/parallax';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { createArrangeOp, type ArrangeArgs } from 'core/ops/arrange';
 import { dwarn } from 'debug/flag';
@@ -9,7 +8,6 @@ import { withKitRegistry } from './kitRegistry';
 import {
   createNodeFnFields,
   fnKeysOf,
-  restoreFn,
   type FnBearingNode,
   type NodeFnField,
 } from './nodeFnFields';
@@ -19,15 +17,14 @@ import { createLockGuard } from './lockGuard';
 import { createArrivalWindow } from './arrivalWindow';
 import { createSceneHistory } from './historyFacade';
 import { createNodeStore } from './nodeStore';
+import { registerKitOps, type RemoveSnapshot, type SetLayoutPayload } from './kitOps';
 import { layerFromSerialized, serializeScene, specsFromSerialized } from './serialization';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
 import type { LayoutStrategy } from '../../layout/types';
 import {
   asNodeId,
   type AddNodeSpec,
-  type ContainerNode,
   type LayerRecord,
-  type LeafNode,
   type Node,
   type NodeId,
   type RegisteredOp,
@@ -49,11 +46,6 @@ interface SceneState<TData, TLayer extends string, TPose> {
 let defaultIdCounter = 0;
 const defaultGenerateId = (): NodeId =>
   asNodeId(`n${(defaultIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
-
-function setParallax(record: { parallax?: ParallaxOpts }, to: ParallaxOpts | undefined): void {
-  if (to === undefined) delete record.parallax;
-  else record.parallax = to;
-}
 
 /** Build a scene outside React. `useScene` is the usual entry point; reach for
  *  this in tests, in headless rendering, or wherever a scene must outlive a
@@ -124,11 +116,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     return node?.kind === 'container' ? (node.layout ?? null) : null;
   }
 
+  const store = createNodeStore(state, invalidateOrder, fnFields);
   const {
-    dependents, childDerived, invalidateDependents, invalidateChildDerivedFrom, trackChildDerived, retarget,
-    requireNode, siblingsOf, detach, attach, descendants, removalClosure, addedFns, patchNodeFunctions,
-    restoreNodeFunctions,
-  } = createNodeStore(state, invalidateOrder, fnFields);
+    dependents, childDerived, invalidateDependents, requireNode, siblingsOf, descendants, removalClosure,
+    patchNodeFunctions,
+  } = store;
 
   for (let i = 0; i < options.systemLayers.length; i++) {
     const spec = options.systemLayers[i];
@@ -367,258 +359,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
   }
 
-  // ── Internal kit op kinds ──────────────────────────────────────────────
-  // These are registered like any other op; the kit's mutation methods build
-  // serializable payloads and route through the same log/replay machinery.
-  function registerKitOp<P>(kind: string, handler: RegisteredOp<P>): void {
-    registered.set(kind, handler as RegisteredOp<unknown>);
-  }
-
-  registerKitOp<{
-    id: NodeId; kind: 'leaf' | 'container'; layer: TLayer; pose: TPose; data: TData;
-    parent: NodeId | null; index: number;
-    dependsOn?: readonly NodeId[] | 'children';
-    pickable?: boolean;
-  } & Record<string, unknown>>('kit:add', {
-    apply: (p) => {
-      if (state.nodes.has(p.id)) {
-        throw new Error(`Scene: id collision on "${p.id}"`);
-      }
-      const node: Node<TData, TLayer, TPose> = p.kind === 'container'
-        ? ({ kind: 'container', id: p.id, layer: p.layer, pose: p.pose, data: p.data, parent: p.parent, children: [] } as ContainerNode<TData, TLayer, TPose>)
-        : ({ kind: 'leaf', id: p.id, layer: p.layer, pose: p.pose, data: p.data, parent: p.parent } as LeafNode<TData, TLayer, TPose>);
-      state.nodes.set(p.id, node);
-      attach(p.id, p.parent, p.index);
-      if (p.dependsOn !== undefined) node.dependsOn = p.dependsOn;
-      if (p.pickable !== undefined) node.pickable = p.pickable;
-      dependents.add(p.id, p.dependsOn === 'children' ? [] : p.dependsOn ?? []);
-      trackChildDerived(p.id, p.dependsOn);
-      // Two ways a function field comes back. Redo of a live add reads
-      // what `scene.add` attached, since it replays the op without a spec.
-      // A restored history has only the registry key the payload carries.
-      const target = node as unknown as FnBearingNode;
-      const attached = addedFns.get(p);
-      for (const field of fnFields) {
-        const fn = attached?.get(field);
-        if (fn !== undefined) {
-          field.write(target, fn);
-          continue;
-        }
-        const key = p[field.spec.opKey] as string | undefined;
-        if (key !== undefined) restoreFn(field, target, key, 'kit:add', dwarn);
-      }
-      invalidateDependents(p.id);
-    },
-    revert: (p) => {
-      detach(p.id);
-      state.nodes.delete(p.id);
-      dependents.remove(p.id);
-      childDerived.delete(p.id);
-      invalidateChildDerivedFrom(p.parent);
-      invalidateDependents(p.id);
-    },
-  });
-
-  /**
-   * Snapshot of every node a removal deletes, so revert restores it exactly.
-   *
-   * A cascade unlinks several disjoint subtrees, not one, so `detached` names
-   * each node the tree has to re-link; everything else in `nodes` has a parent
-   * that is also going and rides back in that parent's cloned `children`.
-   * Entries are sorted by ascending sibling index — globally rather than
-   * per-parent, because only same-parent order constrains re-insertion and
-   * entries under different parents never interact.
-   */
-  interface RemoveSnapshot {
-    nodes: Node<TData, TLayer, TPose>[];
-    detached: { id: NodeId; parent: NodeId | null; index: number }[];
-    /** Registry keys for the function-valued fields on `nodes`. The functions
-     *  themselves do not survive a persisted history, so revert re-resolves
-     *  them the way `kit:add` does. */
-    fnKeys?: ({ id: NodeId } & Record<string, string | undefined>)[];
-  }
-  // Neither half invalidates dependents: removal's closure takes every live one.
-  registerKitOp<RemoveSnapshot>('kit:remove', {
-    apply: (p) => {
-      for (const d of p.detached) detach(d.id);
-      for (const n of p.nodes) {
-        state.nodes.delete(n.id);
-        dependents.remove(n.id);
-        childDerived.delete(n.id);
-      }
-      // A `dependsOn: 'children'` container the removal did not take is now
-      // hugging a smaller set.
-      for (const d of p.detached) invalidateChildDerivedFrom(d.parent);
-    },
-    revert: (p) => {
-      const keys = new Map((p.fnKeys ?? []).map((k) => [k.id, k]));
-      // Order-independent: every clone carries its own parent and children.
-      for (const n of p.nodes) {
-        const clone: Node<TData, TLayer, TPose> = n.kind === 'container'
-          ? { ...n, children: [...n.children] }
-          : { ...n };
-        restoreNodeFunctions(clone, keys.get(n.id));
-        state.nodes.set(n.id, clone);
-        dependents.add(n.id, clone.dependsOn === 'children' ? [] : clone.dependsOn ?? []);
-        trackChildDerived(n.id, clone.dependsOn);
-      }
-      for (const d of p.detached) attach(d.id, d.parent, d.index);
-      for (const d of p.detached) invalidateChildDerivedFrom(d.parent);
-    },
-  });
-
-  registerKitOp<{ id: NodeId; from: TPose; to: TPose }>('kit:setPose', {
-    apply: (p) => {
-      (requireNode(p.id) as { pose: TPose }).pose = p.to;
-      invalidateDependents(p.id);
-    },
-    revert: (p) => {
-      (requireNode(p.id) as { pose: TPose }).pose = p.from;
-      invalidateDependents(p.id);
-    },
-  });
-
-  // A derivation is handed its dependencies' nodes, not only their poses, so a
-  // connector reading `data` or `layer` goes stale on these two exactly as it
-  // does on a move.
-  registerKitOp<{ id: NodeId; from: TData; to: TData }>('kit:setData', {
-    apply: (p) => {
-      (requireNode(p.id) as { data: TData }).data = p.to;
-      invalidateDependents(p.id);
-    },
-    revert: (p) => {
-      (requireNode(p.id) as { data: TData }).data = p.from;
-      invalidateDependents(p.id);
-    },
-  });
-
-  registerKitOp<{ id: NodeId; from: TLayer; to: TLayer }>('kit:setLayer', {
-    apply: (p) => {
-      requireLayerIndex(p.to);
-      (requireNode(p.id) as { layer: TLayer }).layer = p.to;
-      invalidateOrder();
-      invalidateDependents(p.id);
-    },
-    revert: (p) => {
-      (requireNode(p.id) as { layer: TLayer }).layer = p.from;
-      invalidateOrder();
-      invalidateDependents(p.id);
-    },
-  });
-
-  registerKitOp<{
-    id: NodeId;
-    from: Node<TData, TLayer, TPose>['dependsOn'];
-    to: Node<TData, TLayer, TPose>['dependsOn'];
-  }>('kit:setDependsOn', {
-    apply: (p) => { retarget(p.id, p.to); },
-    revert: (p) => { retarget(p.id, p.from); },
-  });
-
-  /** The strategies each live `kit:setLayout` payload swaps between. A payload
-   *  replayed from a persisted history has none, and resolves its keys. */
-  const layoutRefs = new WeakMap<object, { from: LayoutStrategy<TPose> | null; to: LayoutStrategy<TPose> | null }>();
-  interface SetLayoutPayload { id: NodeId; fromKey?: string; toKey?: string }
-  function placeLayout(p: SetLayoutPayload, side: 'from' | 'to'): void {
-    const node = requireNode(p.id) as unknown as FnBearingNode;
-    const field = fnField('layout');
-    const live = layoutRefs.get(p);
-    const key = side === 'from' ? p.fromKey : p.toKey;
-    if (live === undefined && key !== undefined) {
-      delete node.layout;
-      restoreFn(field, node, key, 'kit:setLayout', dwarn);
-      return;
-    }
-    const layout = live?.[side] ?? null;
-    if (layout === null) delete node.layout;
-    else field.write(node, layout);
-  }
-  registerKitOp<SetLayoutPayload>('kit:setLayout', {
-    apply: (p) => { placeLayout(p, 'to'); },
-    revert: (p) => { placeLayout(p, 'from'); },
-  });
-
-  registerKitOp<{
-    id: NodeId; fromParent: NodeId | null; fromIndex: number;
-    toParent: NodeId | null; toIndex: number;
-  }>('kit:move', {
-    apply: (p) => {
-      detach(p.id);
-      attach(p.id, p.toParent, p.toIndex);
-      // Both ends: the container it left no longer hugs it, and the one it
-      // joined now does.
-      invalidateChildDerivedFrom(p.fromParent);
-      invalidateDependents(p.id);
-    },
-    revert: (p) => {
-      detach(p.id);
-      attach(p.id, p.fromParent, p.fromIndex);
-      invalidateChildDerivedFrom(p.toParent);
-      invalidateDependents(p.id);
-    },
-  });
-
-  registerKitOp<{ layer: TLayer; from: boolean; to: boolean }>('kit:setLayerVisible', {
-    apply: (p) => { state.layers[requireLayerIndex(p.layer)].visible = p.to; },
-    revert: (p) => { state.layers[requireLayerIndex(p.layer)].visible = p.from; },
-  });
-
-  registerKitOp<{ layer: TLayer; from: boolean; to: boolean }>('kit:setLayerLocked', {
-    apply: (p) => {
-      state.layers[requireLayerIndex(p.layer)].locked = p.to;
-      if (p.to) selection = reachable(selection);
-    },
-    revert: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.from; },
-  });
-
-  registerKitOp<{ layer: TLayer; from?: ParallaxOpts; to?: ParallaxOpts }>('kit:setLayerParallax', {
-    apply: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.to); },
-    revert: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.from); },
-  });
-
-  registerKitOp<{ record: UserLayerRecord<TLayer>; index: number }>('kit:addLayer', {
-    apply: (p) => {
-      state.layers.splice(p.index, 0, { ...p.record });
-      rebuildLayerIndex();
-    },
-    revert: (p) => {
-      state.layers.splice(p.index, 1);
-      rebuildLayerIndex();
-    },
-  });
-
-  registerKitOp<{ record: LayerRecord<TLayer>; index: number }>('kit:removeLayer', {
-    apply: (p) => {
-      state.layers.splice(p.index, 1);
-      rebuildLayerIndex();
-    },
-    revert: (p) => {
-      state.layers.splice(p.index, 0, { ...p.record } as LayerRecord<TLayer>);
-      rebuildLayerIndex();
-    },
-  });
-
-  registerKitOp<{ layer: TLayer; from: string; to: string }>('kit:renameLayer', {
-    apply: (p) => {
-      (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.to;
-    },
-    revert: (p) => {
-      (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.from;
-    },
-  });
-
-  /** Finds the layer by id, not by where the payload last left it: moves of
-   *  one layer coalesce, and the entry then reverts the first payload from
-   *  wherever the last one put the layer. */
-  function placeLayer(layer: TLayer, index: number): void {
-    const [rec] = state.layers.splice(requireLayerIndex(layer), 1);
-    state.layers.splice(index, 0, rec);
-    rebuildLayerIndex();
-  }
-
-  registerKitOp<{ layer: TLayer; from: number; to: number }>('kit:moveLayer', {
-    apply: (p) => placeLayer(p.layer, p.to),
-    revert: (p) => placeLayer(p.layer, p.from),
+  const { layoutRefs } = registerKitOps<TData, TLayer, TPose>({
+    state,
+    register: (kind, handler) => { registered.set(kind, handler); },
+    store,
+    requireLayerIndex,
+    rebuildLayerIndex,
+    invalidateOrder,
+    fnFields,
+    narrowSelection: () => { selection = reachable(selection); },
   });
 
   // ── Op execution (used by both kit mutations and consumer recordOp) ────
@@ -910,7 +659,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         const keys = fnKeysOf(fnFields, n as unknown as FnBearingNode, 'opKey');
         return Object.keys(keys).length === 0 ? [] : [{ id: n.id, ...keys }];
       });
-      const payload: RemoveSnapshot = {
+      const payload: RemoveSnapshot<TData, TLayer, TPose> = {
         nodes: snapshot, detached,
         ...(fnKeys.length > 0 ? { fnKeys } : {}),
       };
