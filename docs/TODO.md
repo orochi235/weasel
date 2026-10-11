@@ -841,14 +841,6 @@ Core five + Crop shipped. Remaining:
   routing `applyOps` to the canvas adapter hits it. Belongs with "Container-pose cascade as a
   scene-primitive semantic": a cascade inside `setPose` cannot know what else the batch poses.
 
-- **(P3) Default node properties: the marker pickers never list a consumer's registered marker.**
-  `canvas/SceneCanvas/defaultNodeProperties.ts` builds `options: markerOptions()` inside
-  `shapeSchema`, which runs once when `defaultNodeProperties` and `inferredNodeProperties` are built
-  at module load, before any consumer code can call `registerMarker`. The comment above
-  `markerOptions` says the opposite. An enum's `options` in `packages/prefs/src/schema.ts` is a
-  static array, so this needs either options the schema resolves lazily or a schema rebuilt when the
-  marker registry changes.
-
 - **(P3) Scene adapters: three implementations of the same scene-backed mutators.**
   `canvas/sceneAdapter.ts`, `interactions/actions/defaultCommitAdapter.ts`, and
   `interactions/actions/move/gestureAdapter.ts` each restate `insertNode`, `setParent`,

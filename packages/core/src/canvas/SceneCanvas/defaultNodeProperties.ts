@@ -1,7 +1,7 @@
-import { prefUnit, type PrefBooleanEncoding, type PrefEnumEncoding, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs';
+import { prefUnit, type PrefBooleanEncoding, type PrefEnum, type PrefEnumEncoding, type PrefNumberUnit, type PrefSection } from '@weasel-js/prefs';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
-import { listMarkers } from 'core/strokeMarkers';
+import { listMarkers, markerGeneration } from 'core/strokeMarkers';
 import { dashForStrokeStyle, strokeDashStyleOf } from '@weasel-js/paint';
 import { resolveAlign, type TextAlign } from '@weasel-js/text';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
@@ -75,13 +75,34 @@ const alignEncoding: PrefEnumEncoding = {
   write: (edge) => edge,
 };
 
-/** Options come from the registry, so a consumer's registered entry appears in
- *  the picker with no kit edit. A `select` rather than a `toggle`: nine options
- *  will not fit a segmented strip. */
-const markerOptions = () => [
-  { value: '', label: 'None' },
-  ...listMarkers().map((m) => ({ value: m.id, label: m.id })),
-];
+type MarkerOptions = PrefEnum['options'];
+let markerOptionsCache: { generation: number; options: MarkerOptions } | undefined;
+
+/** A `select` rather than a `toggle`: nine options will not fit a segmented
+ *  strip. One array per state of the registry, so a reader comparing
+ *  references sees a change only when the set changed. */
+function markerOptions(): MarkerOptions {
+  const generation = markerGeneration();
+  if (markerOptionsCache?.generation !== generation) {
+    markerOptionsCache = {
+      generation,
+      options: [
+        { value: '', label: 'None' },
+        ...listMarkers().map((m) => ({ value: m.id, label: m.id })),
+      ],
+    };
+  }
+  return markerOptionsCache.options;
+}
+
+// An accessor: these schemas are built at module load, before a consumer can
+// have registered a marker, so the list is read from the registry when asked.
+function markerLeaf(leaf: Omit<PrefEnum, 'kind' | 'options' | 'default' | 'control' | 'encoding'>): PrefEnum {
+  return {
+    kind: 'enum', default: '', control: 'select', encoding: markerEncoding, ...leaf,
+    get options() { return markerOptions(); },
+  };
+}
 
 /** Build the standard shape schema — Layout (pose box + rotation) +
  *  Appearance (fill / stroke), optionally a Text group. Matches the kit's
@@ -156,9 +177,9 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
               // dash pattern is a property of the line rather than of how the
               // ribbon meets the geometry.
               dash: { kind: 'enum', name: 'Style', description: 'Solid, dashed or dotted. Dash lengths are multiples of the stroke width, so a style holds as the width changes.', default: 'solid', control: 'toggle', block: true, encoding: strokeDashEncoding, options: [{ value: 'solid', label: 'Solid', icon: 'dashSolid' }, { value: 'dashed', label: 'Dashed', icon: 'dashDashed' }, { value: 'dotted', label: 'Dotted', icon: 'dashDotted' }, { value: 'custom', label: 'Custom', icon: 'dashCustom', disabled: true }] },
-              markerStart: { kind: 'enum', name: 'Start', description: 'Marker at the first vertex of each open subpath.', default: '', control: 'select', block: true, pair: { with: ['data.stroke.markerMid', 'data.stroke.markerEnd'], label: 'Markers' }, encoding: markerEncoding, options: markerOptions() },
-              markerMid: { kind: 'enum', name: 'Mid', description: 'Marker at every interior authored vertex.', default: '', control: 'select', block: true, encoding: markerEncoding, options: markerOptions() },
-              markerEnd: { kind: 'enum', name: 'End', description: 'Marker at the last vertex of each open subpath.', default: '', control: 'select', block: true, encoding: markerEncoding, options: markerOptions() },
+              markerStart: markerLeaf({ name: 'Start', description: 'Marker at the first vertex of each open subpath.', block: true, pair: { with: ['data.stroke.markerMid', 'data.stroke.markerEnd'], label: 'Markers' } }),
+              markerMid: markerLeaf({ name: 'Mid', description: 'Marker at every interior authored vertex.', block: true }),
+              markerEnd: markerLeaf({ name: 'End', description: 'Marker at the last vertex of each open subpath.', block: true }),
             },
           },
         },

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { PrefBoolean, PrefEnum, PrefSection, PrefObject } from '@weasel-js/prefs';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
+import { getMarker, registerMarker } from 'core/strokeMarkers';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import type { TextStyle } from '@weasel-js/text';
 
@@ -90,6 +91,21 @@ describe('the stroke leaf\'s markers', () => {
         expect.arrayContaining(['', 'arrow', 'circle', 'diamond']),
       );
     }
+  });
+
+  it('lists a marker registered after the schemas were built', () => {
+    const dispose = registerMarker({ ...getMarker('arrow')!, id: 'test-late-marker' });
+    try {
+      for (const key of ['markerStart', 'markerMid', 'markerEnd']) {
+        const leaf = strokeLeaf().children[key] as PrefEnum;
+        expect(leaf.options.map((o) => o.value)).toContain('test-late-marker');
+        expect(leaf.options).toBe(leaf.options);
+      }
+    } finally {
+      dispose();
+    }
+    expect((strokeLeaf().children.markerEnd as PrefEnum).options.map((o) => o.value))
+      .not.toContain('test-late-marker');
   });
 
   it('reads a bare key or a sized MarkerRef the same way', () => {
