@@ -168,7 +168,12 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       if (!set) { set = new Set(); TENANTS.set(canvas, set); }
       set.add(renderer);
     } else {
-      if (held.width !== width || held.height !== height || held.dpr !== dpr) {
+      // React writes the element's `width` and `height` attributes in CSS
+      // pixels on every size change, so a size that went away and came back
+      // matches the record while the buffer does not.
+      const stale = !shared
+        && (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr));
+      if (stale || held.width !== width || held.height !== height || held.dpr !== dpr) {
         held.renderer.resize({ width, height, dpr });
         held.width = width;
         held.height = height;

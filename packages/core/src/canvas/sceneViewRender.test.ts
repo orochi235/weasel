@@ -30,15 +30,24 @@ const ctorSpy = vi.fn<(opts: unknown) => void>();
 
 vi.mock('../renderer/WeaselRenderer', () => {
   return {
+    // Sizes the buffer as the real one does: the lease reads it back.
     WeaselRenderer: class {
-      constructor(opts: unknown) {
+      private canvas: HTMLCanvasElement;
+      constructor(opts: { canvas: HTMLCanvasElement; width: number; height: number; dpr: number }) {
         ctorSpy(opts);
+        this.canvas = opts.canvas;
+        this.size(opts);
       }
       render(commands: DrawCommand[]): void {
         renderMock(commands);
       }
       resize(dims: { width: number; height: number; dpr: number }): void {
         resizeMock(dims);
+        this.size(dims);
+      }
+      private size(dims: { width: number; height: number; dpr: number }): void {
+        this.canvas.width = Math.round(dims.width * dims.dpr);
+        this.canvas.height = Math.round(dims.height * dims.dpr);
       }
     },
   };

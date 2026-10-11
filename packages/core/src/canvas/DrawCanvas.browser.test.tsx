@@ -80,4 +80,18 @@ describe('<DrawCanvas> in a real browser', () => {
     await frame();
     expect(pixel(canvas, 2, 5)).toEqual([255, 0, 0, 255]);
   });
+
+  it('keeps the device-pixel buffer when the size changes and changes back before a paint', async () => {
+    const props: DrawCanvasProps = {
+      width: 20, height: 10, dpr: 2, draw: [red], background: { fill: 'solid', color: '#ffffff' },
+    };
+    const canvas = mount(props);
+    await frame();
+    flushSync(() => root!.render(createElement(DrawCanvas, { ...props, width: 30 })));
+    flushSync(() => root!.render(createElement(DrawCanvas, props)));
+    await frame();
+    await frame();
+    expect([canvas.width, canvas.height]).toEqual([40, 20]);
+    expect(pixel(canvas, 4, 10)).toEqual([255, 0, 0, 255]);
+  });
 });
