@@ -115,12 +115,13 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {
         enabled: pending,
         invoker: {
           timing: 'ongoing',
-          start: () => ({
+          // The dispatcher hands `onEnd` a context with empty deps.
+          start: ({ deps }: InvocationCtx) => ({
             onMove: () => {},
             onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
               if (reason === 'cancel' || points().length === 0) return;
               const at = endCtx.drag?.current ?? endCtx.world;
-              place(endCtx.deps, at.x, at.y);
+              place(deps, at.x, at.y);
             },
           }),
         },

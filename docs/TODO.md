@@ -260,13 +260,6 @@ Priority tags:
   `snapToContainer.ts`). Either loop every dragged id, or return `undefined` for a multi-drag so the
   default translate runs; which one is a call about what these behaviors mean for a multi-selection.
 
-- **(P2) `useSliceTool`: `slice.dragPoint` places its point through the deps of the end context,
-  which the dispatcher hands over empty.** `onEnd` calls `place(endCtx.deps, …)`
-  (`packages/core/src/tools/builtin/slice/useSliceTool.ts`), and the dispatcher builds every `onEnd`
-  context with `deps: {}` (`endGesture` in
-  `packages/routing/src/interactions/dispatcher/dispatcher.ts`). `moveAction` had the same mistake
-  for `nodeAtPoint` and now captures the dep at `start`. Not run in a browser; read from both sides.
-
 - **(P3) `cloneAction`: the copies are not selected after an Alt-drag.** `duplicateAction` selects
   what it made; clone leaves the originals selected, so a second Alt-drag clones the originals again
   rather than the copy. The action declares `creates-selection`. Selecting the copies is the

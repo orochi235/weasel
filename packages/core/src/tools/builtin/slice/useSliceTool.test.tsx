@@ -145,6 +145,26 @@ describe('useSliceTool — click-by-click cut', () => {
     expect(s.commit).toHaveBeenCalledWith([{ x: 10, y: 10 }, { x: 70, y: 30 }]);
   });
 
+  it('closes the loop on a drag released at the first point, with the end context carrying no deps', () => {
+    const s = setup();
+    s.click(10, 10);
+    s.click(50, 10);
+    s.click(50, 60);
+    const invoker = s.actionOf('slice.dragPoint').invoker;
+    if (invoker?.timing !== 'ongoing') throw new Error('slice.dragPoint is not ongoing');
+    const ctx = (world: Pt, deps: ActionDeps): InvocationCtx => ({
+      world, screen: world, deps,
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      drag: { start: { x: 50, y: 60 }, current: world, delta: { x: 0, y: 0 } },
+    } as InvocationCtx);
+    const handle = invoker.start(ctx({ x: 50, y: 60 }, s.deps));
+    // The dispatcher builds every end context with empty deps.
+    handle.onEnd?.(ctx({ x: 11, y: 11 }, {} as ActionDeps), 'commit');
+    expect(s.commit).toHaveBeenCalledWith([
+      { x: 10, y: 10 }, { x: 50, y: 10 }, { x: 50, y: 60 }, { x: 10, y: 10 },
+    ]);
+  });
+
   it('owns the drag cut too, so a consumer need not register sliceAction', () => {
     const s = setup();
     expect(s.actionOf('slice').invoker?.timing).toBe('ongoing');
