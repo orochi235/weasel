@@ -17,8 +17,8 @@ export const BLOCK_TAGS: ReadonlySet<string> = new Set(['DIV', 'P']);
 /**
  * `parent`'s text as pieces. A block (`<div>`, `<p>`) reads as a newline
  * before its contents unless it opens the text, which is how a browser renders
- * the boundary. `domToRuns` and both offset walkers below read through here,
- * so a caret offset and the committed text cannot count a break differently.
+ * the boundary. Both offset walkers below read through here, and `domToRuns`
+ * applies the same rule from `BLOCK_TAGS` in its own styled walk.
  */
 export function overlayPieces(parent: Element): OverlayPiece[] {
   const out: OverlayPiece[] = [];
