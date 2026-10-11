@@ -375,6 +375,16 @@ describe('PrefsForm — encoded enum leaves', () => {
     expect(onChange).toHaveBeenCalledWith('appearance.stroke', { width: 4, dash: [0, 8] });
   });
 
+  it('removes the field when the encoding writes undefined', () => {
+    const onChange = renderDash({ appearance: { stroke: { width: 4, dash: [8, 8] } } });
+    fireEvent.click(screen.getByRole('radio', { name: /Solid/ }));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const [path, written] = onChange.mock.calls[0]!;
+    expect(path).toBe('appearance.stroke');
+    // Not `toEqual`, which reads a key holding `undefined` as absent.
+    expect(Object.keys(written as object)).toEqual(['width']);
+  });
+
   it('disables an option the control reports but cannot author', () => {
     renderDash({ appearance: { stroke: { width: 4, dash: [3, 1, 5] } } });
     expect(screen.getByRole('radio', { name: 'Custom' })).toBeDisabled();

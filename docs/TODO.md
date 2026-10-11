@@ -1885,10 +1885,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `packages/ui/src/components/SelectionPanel/renderLeaf.tsx` each walk rows, sections, and tabs and
   each own a write-back rule. They differ on the base for a field write when no object is held
   (`fromScalar ?? {}` against `fromScalar`, then a copy of `pref.default`, then `{}`; the panel's
-  comment says `{}` once crashed the painter), on a field written as `undefined` (the form keeps the
-  key holding `undefined`, the panel removes it, and an `encoding`'s contract in
-  `packages/prefs/src/schema.ts` says `undefined` removes the field), on `as: 'bar'`, on `pair`
-  rows, and on heading levels. Home: one object-leaf walker in `Prefs/` taking the per-surface parts
+  comment says `{}` once crashed the painter), on `as: 'bar'`, on `pair` rows, and on heading
+  levels. Home: one object-leaf walker in `Prefs/` taking the per-surface parts
   as arguments (how a field's value and mixed state are read, how a row is framed), with the
   write-back rule as a pure function in `@weasel-js/prefs`.
 

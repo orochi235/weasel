@@ -28,8 +28,9 @@ export function ObjectLeaf({
     pref: child,
     value: held?.[key],
     setValue: (v) => {
-      const base = held ?? pref.fromScalar?.(value) ?? {};
-      setValue({ ...base, [key]: v });
+      const next: Record<string, unknown> = { ...(held ?? pref.fromScalar?.(value) ?? {}), [key]: v };
+      if (v === undefined) delete next[key];
+      setValue(next);
     },
     // A field is not pinned on its own — it shares the state of
     // the object leaf it hangs off.
