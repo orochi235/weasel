@@ -76,6 +76,7 @@ function makeScene(): Scene<unknown, string, unknown> {
     layers: [{ id: 'default' }],
     renderOrder: () => [],
     get: () => undefined as never,
+    mintId: () => 'inserted',
   } as unknown as Scene<unknown, string, unknown>;
 }
 

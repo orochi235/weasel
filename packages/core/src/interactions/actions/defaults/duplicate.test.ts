@@ -19,11 +19,13 @@ function makeScene(spec: Array<[string, { parent?: string | null; kind?: 'leaf' 
       parent: v.parent != null ? asNodeId(v.parent) : null,
     });
   }
+  let minted = 0;
   return {
     get: (id: NodeId) => nodes.get(id),
     childrenOf: (id: NodeId) => [...nodes.values()].filter((n) => n.parent === id).map((n) => n.id),
     get roots() { return [...nodes.values()].filter((n) => n.parent == null).map((n) => n.id); },
     applyBatch: vi.fn(),
+    mintId: () => asNodeId(`copy-${++minted}`),
   };
 }
 

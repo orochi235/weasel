@@ -18,7 +18,7 @@ describe('PLAYER_SKELETON', () => {
   it('resolves without throwing and gives every joint a matrix', () => {
     const joints = resolveSkeleton(PLAYER_SKELETON, {});
     expect(joints.size).toBe(11);
-    for (const name of JOINT_ORDER) expect(joints.get(name)).toBeInstanceOf(Float32Array);
+    for (const name of JOINT_ORDER) expect(joints.get(name)).toHaveLength(9);
   });
 
   it('gives every drawable bone a length', () => {
