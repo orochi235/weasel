@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { isPrefLeaf, prefObjectWithField, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { BarLayout } from '../Bar/BarLayout';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyRow } from '../Properties/PropertyPanel';
@@ -30,11 +30,7 @@ export function ObjectLeaf({
     path: `${ctx.path}.${key}`,
     pref: child,
     value: held?.[key],
-    setValue: (v) => {
-      const next: Record<string, unknown> = { ...(held ?? pref.fromScalar?.(value) ?? {}), [key]: v };
-      if (v === undefined) delete next[key];
-      setValue(next);
-    },
+    setValue: (v) => setValue(prefObjectWithField(pref, value, key, v)),
     // A field is not pinned on its own — it shares the state of
     // the object leaf it hangs off.
     auto: ctx.auto,

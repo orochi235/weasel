@@ -34,3 +34,10 @@ it('offers an object leaf\'s field its description, as a row of its own has', ()
   expect(cue('Width')).toHaveTextContent('ⓘ');
   expect(cue('Visible')).toBeNull();
 });
+
+it('writes a field over the leaf\'s default where what is stored is no object, so the value is whole', () => {
+  const onChange = vi.fn();
+  render(<PrefsForm layout="list" schema={SCHEMA} values={{ stroke: 'thin' }} onChange={onChange} />);
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Visible' }));
+  expect(onChange).toHaveBeenLastCalledWith('stroke', { on: true, width: 1 });
+});

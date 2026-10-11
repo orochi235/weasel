@@ -307,8 +307,8 @@ export interface PrefObject extends PrefBase<'object', unknown> {
   /**
    * Lift a non-object value into the object form, for a consumer field that
    * may also be held as a scalar. Called before a child edit is applied;
-   * without it a scalar-valued leaf shows its children empty and refuses the
-   * edit.
+   * without it a scalar-valued leaf shows its children empty, and an edit
+   * starts from the leaf's `default`.
    */
   fromScalar?: (value: unknown) => Record<string, unknown>;
 }

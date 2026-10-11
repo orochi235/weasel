@@ -3,7 +3,7 @@
  * each section of them as its `as` says.
  */
 import { Fragment, type ReactNode } from 'react';
-import { isPrefLeaf, pairRowsOf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { isPrefLeaf, pairRowsOf, prefObjectBase, prefObjectWithField, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { BarLayout, type BarNode } from '../Bar/BarLayout';
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
@@ -77,27 +77,8 @@ export function ObjectLeaf({
     // object over all the others.
     const update = (fn: (prev: unknown, siblings?: Record<string, unknown>) => unknown): void =>
       ctx.update((prev) => {
-        // The node holds no object yet, so writing one field has to
-        // materialize the rest: the leaf's `default` is what a complete
-        // value looks like. Starting from `{}` instead committed the one
-        // field on its own — a `data.stroke` of `{ width: 2 }` with no
-        // `paint`, which the type forbids and the painter threw on, taking
-        // the whole frame and the visible document with it.
-        const base: Record<string, unknown> =
-          typeof prev === 'object' && prev !== null
-            ? (prev as Record<string, unknown>)
-            : (pref.fromScalar?.(prev)
-              ?? (typeof pref.default === 'object' && pref.default !== null
-                ? { ...(pref.default as Record<string, unknown>) }
-                : {}));
-        const v = fn(fieldOf(base), base);
-        if (v === undefined) {
-          // A field written as absent is absent — leaving the key holding
-          // `undefined` says the object has a dash of nothing.
-          const { [key]: _dropped, ...rest } = base;
-          return rest;
-        }
-        return { ...base, [key]: v };
+        const base = prefObjectBase(pref, prev);
+        return prefObjectWithField(pref, base, key, fn(fieldOf(base), base));
       });
     const childCtx: PropertyRenderContext = {
       path: childPath,

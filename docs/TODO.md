@@ -1259,13 +1259,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) An object leaf is drawn by two implementations that disagree.**
   `packages/ui/src/components/Prefs/ObjectLeaf.tsx` and `ObjectLeaf` in
-  `packages/ui/src/components/SelectionPanel/renderLeaf.tsx` each walk rows, sections, and tabs and
-  each own a write-back rule. They differ on the base for a field write when no object is held
-  (`fromScalar ?? {}` against `fromScalar`, then a copy of `pref.default`, then `{}`; the panel's
-  comment says `{}` once crashed the painter), on `as: 'bar'`, on `pair` rows, and on heading
-  levels. Home: one object-leaf walker in `Prefs/` taking the per-surface parts
-  as arguments (how a field's value and mixed state are read, how a row is framed), with the
-  write-back rule as a pure function in `@weasel-js/prefs`.
+  `packages/ui/src/components/SelectionPanel/ObjectLeaf.tsx` each walk rows, sections, and tabs.
+  They write a field back by one rule now (`prefObjectWithField` in `@weasel-js/prefs`), and still
+  differ on `as: 'bar'`, on `pair` rows, and on heading levels. Home: one object-leaf walker in
+  `Prefs/` taking the per-surface parts as arguments (how a field's value and mixed state are
+  read, how a row is framed).
 
 - **(P3) A list leaf's entries are drawn two ways.** `Prefs/ListLeaf.tsx` substitutes `item.default`
   for an `undefined` entry, and `SelectionPanel/ListLeaf.tsx` marks it unset; which one a list
