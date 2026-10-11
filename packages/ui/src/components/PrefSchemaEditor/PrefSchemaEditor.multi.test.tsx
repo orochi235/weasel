@@ -62,4 +62,52 @@ describe('PrefSchemaEditor with several nodes selected', () => {
     expect(item('grid')).toHaveAttribute('aria-selected', 'true');
     expect(item('dock')).toHaveAttribute('aria-selected', 'true');
   });
+
+  const pickTwo = () => {
+    fireEvent.click(row('grid'));
+    fireEvent.click(row('snap'), { metaKey: true });
+  };
+  const field = (name: string) => within(attributes()).getByRole('textbox', { name });
+
+  it('shows no value where the nodes differ, and no key', () => {
+    render(<Live />);
+    pickTwo();
+    expect(field('Name')).toHaveValue('');
+    expect(field('Name')).toHaveAttribute('placeholder', 'Mixed');
+    expect(within(attributes()).queryByRole('textbox', { name: 'Key' })).toBeNull();
+  });
+
+  it('writes an edit to every selected node, as one step back', () => {
+    render(<Live />);
+    pickTwo();
+    fireEvent.change(field('Description'), { target: { value: 'Both.' } });
+    fireEvent.click(row('grid'));
+    expect(field('Description')).toHaveValue('Both.');
+    fireEvent.click(row('snap'));
+    expect(field('Description')).toHaveValue('Both.');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    fireEvent.click(row('grid'));
+    expect(field('Description')).toHaveValue('Draw the grid.');
+  });
+
+  it('leaves the keys alone when several nodes are named at once', () => {
+    render(<Live />);
+    pickTwo();
+    fireEvent.focus(field('Name'));
+    fireEvent.change(field('Name'), { target: { value: 'Same' } });
+    fireEvent.blur(field('Name'));
+    expect(row('grid')).toBeInTheDocument();
+    expect(row('snap')).toBeInTheDocument();
+    fireEvent.click(row('snap'));
+    expect(field('Name')).toHaveValue('Same');
+  });
+
+  it('offers only what every kind has when the kinds differ', () => {
+    render(<Live />);
+    fireEvent.click(row('zoom'));
+    expect(field('Min')).toBeInTheDocument();
+    fireEvent.click(row('grid'), { metaKey: true });
+    expect(field('Name')).toBeInTheDocument();
+    expect(within(attributes()).queryByRole('textbox', { name: 'Min' })).toBeNull();
+  });
 });

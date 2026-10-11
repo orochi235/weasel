@@ -12,7 +12,6 @@ import { EditorPrefsButton, useEditorPrefs, type PrefSchemaEditorPrefs } from '.
 import { dropDraft, openDraft, saveDraft, SWAP, type DraftStorage, type SwapArgs } from './draft';
 import { openFolds, saveFolds } from './folds';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
-import { PaneHeader } from './PaneHeader';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { branchPaths, copyNodes, isFixed, keysOf, moveNodes, outermost, parentPath, pathOf, rebasePaths, removeNodes, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
@@ -343,11 +342,10 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
             </>
           )}
         </div>
-        {selection.paths.length > 1
-          ? <section className={s.pane} aria-label="Attributes"><PaneHeader title={`${selection.paths.length} selected`} /></section>
-          : <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selection.lead ?? ''}`)} path={selection.lead} onRekey={rekey}
-              added={changes.some((c) => c.op === 'add' && c.path === selection.lead)}
-              kinds={kindList} custom={custom} renderers={renderers} onNotice={setNotice} />}
+        <AttributesPane schema={schema} paths={selection.paths} onRekey={rekey}
+          onChange={(next) => commit(next, `attr:${[...selection.paths].sort().join(',')}`)}
+          added={selection.paths.length === 1 && changes.some((c) => c.op === 'add' && c.path === selection.lead)}
+          kinds={kindList} custom={custom} renderers={renderers} onNotice={setNotice} />
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.lead} onSelect={(path) => reveal(path === null ? [] : [path])} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} />

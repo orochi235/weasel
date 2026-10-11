@@ -9,7 +9,7 @@ import s from './PrefSchemaEditor.module.css';
 
 /** A number that may be unset: empty text clears it, and text that is not a number is left uncommitted. */
 function OptionalNumber({ ctx }: { ctx: PrefRenderContext }) {
-  const shown = ctx.value === undefined ? '' : String(ctx.value);
+  const shown = ctx.mixed || ctx.value === undefined ? '' : String(ctx.value);
   const [draft, setDraft] = useState(shown);
   const [seen, setSeen] = useState(shown);
   if (seen !== shown) {
@@ -22,8 +22,11 @@ function OptionalNumber({ ctx }: { ctx: PrefRenderContext }) {
     else if (Number.isFinite(Number(t))) ctx.setValue(Number(t));
     else setDraft(shown);
   };
-  return <Input className={s.number} aria-label={ctx.pref.name} value={draft} onChange={setDraft} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} />;
+  return <Input className={s.number} aria-label={ctx.pref.name} placeholder={ctx.mixed ? MIXED_HINT : undefined} value={draft} onChange={setDraft} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') commit(); }} />;
 }
+
+/** What a text control shows in place of several values that disagree. */
+export const MIXED_HINT = 'Mixed';
 
 interface Option { value: string; label: string }
 
@@ -90,6 +93,10 @@ export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' 
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,
   'enum-options': (ctx) => <EnumOptions ctx={ctx} />,
   symbol: (ctx) => (
-    <Input className={s.symbol} aria-label={ctx.pref.name} value={typeof ctx.value === 'string' ? ctx.value : ''} onChange={ctx.setValue} />
+    <Input className={s.symbol} aria-label={ctx.pref.name} placeholder={ctx.mixed ? MIXED_HINT : undefined}
+      value={typeof ctx.value === 'string' ? ctx.value : ''} onChange={ctx.setValue} />
   ),
 };
+
+/** Kinds drawn here whose control has a mixed state. The rest are listed, not edited, when values disagree. */
+export const MIXED_ATTR_KINDS: ReadonlySet<string> = new Set(['optional-number', 'symbol']);
