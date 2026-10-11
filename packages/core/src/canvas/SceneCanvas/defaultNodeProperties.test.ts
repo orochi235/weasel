@@ -63,9 +63,9 @@ describe('leaves that read an absent value as their default', () => {
   it('flags the text style fields `resolveTextStyle` defaults, each at `DEFAULT_TEXT_STYLE`\'s value', () => {
     const style = members('text', 'text')['data.style'] as PrefObject;
     const fields = Object.fromEntries(prefSectionLeaves(style.children));
-    // `direction` defaults to `auto`, which the leaf does not offer; `fontStyle` and `script` read absence themselves.
+    // `fontStyle` and `script` read absence themselves.
     expect(flagged(fields)).toEqual([
-      'align', 'fontFamily', 'fontSize', 'fontVariantCaps', 'fontWeight', 'letterSpacing', 'lineHeight',
+      'align', 'direction', 'fontFamily', 'fontSize', 'fontVariantCaps', 'fontWeight', 'letterSpacing', 'lineHeight',
       'overline', 'strikethrough', 'textTransform', 'underline', 'wrap',
     ]);
     for (const key of flagged(fields)) {

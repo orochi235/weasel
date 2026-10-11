@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { cleanup, render, screen, fireEvent, within } from '@testing-library/react';
 import {
   createScene,
   asNodeId,
@@ -115,6 +115,17 @@ describe('SelectionPanel — the text style', () => {
     expect(styleOf(0)).toEqual({ wrap: true });
     fireEvent.click(within(barWith('Right to left')).getByRole('radio', { name: 'Right to left' }));
     expect(styleOf(0)).toEqual({ wrap: true, direction: 'rtl' });
+  });
+
+  it('reads a style with no direction, or one set to auto, as Auto, the engine\'s own default', () => {
+    renderText({});
+    const auto = () => within(barWith('Right to left')).getByRole('radio', { name: 'Auto' });
+    expect(auto()).toHaveAttribute('aria-checked', 'true');
+    cleanup();
+    const { styleOf } = renderText({ direction: 'auto' });
+    expect(auto()).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(within(barWith('Right to left')).getByRole('radio', { name: 'Left to right' }));
+    expect(styleOf(0)).toEqual({ direction: 'ltr' });
   });
 
   describe('across a multi-selection', () => {
