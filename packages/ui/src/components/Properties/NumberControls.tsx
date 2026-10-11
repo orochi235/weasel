@@ -121,6 +121,7 @@ export function NumberInput(p: PropertyNumberFieldProps) {
       // it, and the commit on blur would only repeat the last of them.
       onInput={p.onInput ?? p.onChange}
       onChange={p.onInput ? p.onChange : ignore}
+      onCancel={p.onCancel}
     />
   );
   if (p.unit == null || (known && !Number.isFinite(p.value))) return input;

@@ -100,6 +100,10 @@ export interface PropertyNumberFieldProps extends FieldBase {
   /** The live value, fired continuously. Pass it alongside `onChange` when the
    *  write is expensive — cheap state here, the costly work there. */
   onInput?: (next: number) => void;
+  /** A typed field's live edit was abandoned, by Escape or by text it cannot
+   *  read. A field showing a value has already sent that value back through
+   *  the live callback; a mixed one has none to send, so this is all it says. */
+  onCancel?: () => void;
   /** A slider's track runs 0..100 where these are omitted. */
   min?: number;
   max?: number;

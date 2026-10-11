@@ -36,6 +36,18 @@ describe('PropertyField mixed and unset', () => {
     expect(field).toHaveAttribute('placeholder', 'Mixed');
   });
 
+  it('says a mixed number\'s typing was abandoned, having no value to give back', () => {
+    const onInput = vi.fn();
+    const onCancel = vi.fn();
+    render(<PropertyField kind="number" label="Radius" value={4} mixed onInput={onInput} onChange={() => {}} onCancel={onCancel} />);
+    const field = screen.getByRole('spinbutton', { name: 'Radius' });
+    field.focus();
+    fireEvent.change(field, { target: { value: '9' } });
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(onInput.mock.calls).toEqual([[9]]);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
   it('parks a mixed slider and reads out no value', () => {
     render(
       <PropertyField

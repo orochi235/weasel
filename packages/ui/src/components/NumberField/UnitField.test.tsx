@@ -79,6 +79,47 @@ describe('UnitField', () => {
     expect(field).toHaveValue('5');
   });
 
+  describe('onCancel', () => {
+    it('follows the value given back when typing ends in Escape', () => {
+      const calls: string[] = [];
+      const { field } = setup({ onInput: (v) => calls.push(`input ${v}`), onCancel: () => calls.push('cancel') });
+      field.focus();
+      fireEvent.change(field, { target: { value: '9' } });
+      fireEvent.keyDown(field, { key: 'Escape' });
+      expect(calls).toEqual(['input 9', 'input 5', 'cancel']);
+    });
+
+    it('is all a field that began with no value has to say, on Escape or on unreadable text', () => {
+      const onInput = vi.fn();
+      const onCancel = vi.fn();
+      const { onChange, field } = setup({ value: NaN, onInput, onCancel });
+      field.focus();
+      fireEvent.change(field, { target: { value: '9' } });
+      fireEvent.keyDown(field, { key: 'Escape' });
+      expect(onInput.mock.calls).toEqual([[9]]);
+      expect(onCancel).toHaveBeenCalledTimes(1);
+
+      field.focus();
+      fireEvent.change(field, { target: { value: '7' } });
+      fireEvent.change(field, { target: { value: '7x' } });
+      fireEvent.blur(field);
+      expect(onCancel).toHaveBeenCalledTimes(2);
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('stays quiet for a commit, and for typing that sent nothing', () => {
+      const onCancel = vi.fn();
+      const { field } = setup({ onInput: () => {}, onCancel });
+      field.focus();
+      fireEvent.change(field, { target: { value: '9' } });
+      fireEvent.blur(field);
+      field.focus();
+      fireEvent.change(field, { target: { value: 'x' } });
+      fireEvent.keyDown(field, { key: 'Escape' });
+      expect(onCancel).not.toHaveBeenCalled();
+    });
+  });
+
   it('sends nothing on an unreadable blur when nothing was sent', () => {
     const onInput = vi.fn();
     const { field } = setup({ onInput });

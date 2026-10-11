@@ -15,6 +15,11 @@ export interface UnitFieldProps {
    *  Typing that ends in Escape, or in text the field cannot read, sends the
    *  value it began from, so a caller holding the live value gets it back. */
   onInput?: (value: number) => void;
+  /** Typing that reached `onInput` was abandoned: it ended in Escape, or in
+   *  text the field cannot read. Comes after the `onInput` that gives the
+   *  starting value back, and alone when the field began at NaN, which is no
+   *  value to send. */
+  onCancel?: () => void;
   minValue?: number;
   maxValue?: number;
   /** What an arrow key, a stepper or a wheel notch adds or takes away; Page Up
@@ -62,6 +67,7 @@ export function UnitField({
   value,
   onChange,
   onInput,
+  onCancel,
   minValue,
   maxValue,
   step = 1,
@@ -221,7 +227,10 @@ export function UnitField({
               if (next !== value) onChange(next);
             } else {
               const typed = typing.current;
-              if (typed?.sent && !Number.isNaN(typed.from)) onInput?.(typed.from);
+              if (typed?.sent) {
+                if (!Number.isNaN(typed.from)) onInput?.(typed.from);
+                onCancel?.();
+              }
             }
             typing.current = null;
             setDraft(null);
