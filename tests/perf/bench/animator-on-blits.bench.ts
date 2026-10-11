@@ -31,7 +31,7 @@ import { renderHook } from '@testing-library/react';
 import { easeOut } from '@weasel-js/geom';
 import * as blits from '@msb235/blits';
 import { keys, kit, mix, patch, spring, sum, vec, type Mix } from '@msb235/blits';
-import { useAnimator, type Animator } from '@weasel-js/core';
+import { createTarget, useAnimator, type Animator } from '@weasel-js/core';
 import { group } from './group';
 
 type Pt = { x: number; y: number };
@@ -336,6 +336,22 @@ for (const n of [1000, 10000]) {
         startTodayTweens(bare.animator, nodes(n), false);
         for (let f = 0; f < 30; f++) bare.frame();
         bench('today, no sink', () => bare.frame());
+
+        // Each node a target the tween moves, read the way a painter would after the frame.
+        const onTargets = mountAnimator();
+        const oc = nodes(n);
+        const targets = oc.ids.map((_, i) => {
+          let committed = oc.from[i]!;
+          return createTarget<Pt>({ get: () => committed, set: (v) => { committed = v; } });
+        });
+        targets.forEach((target, i) => {
+          onTargets.animator.tween<Pt>({ target, to: oc.to[i]!, ms: LONG, easing: EASE });
+        });
+        for (let f = 0; f < 30; f++) onTargets.frame();
+        bench('on targets', () => {
+          onTargets.frame();
+          for (let i = 0; i < n; i++) oc.sink[i] = targets[i]!.read();
+        });
       }
 
       for (const how of ['target', 'subjects'] as const) {

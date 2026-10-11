@@ -858,9 +858,9 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   sampling compute in blits (step 3), at about 3× today's tween frame for 10k nodes, which Mike
   accepted on 2026-10-04, and 2.5–3.5× today's keyframe sampling, which Mike accepted on 2026-10-08
   (the rest of that gap is blits' read path).
-  Nothing combines yet: each animation still hands its value to `onTick`. Left: the five arcs in
-  the proposal's "The arcs", starting with animation targets
-  (`docs/superpowers/specs/2026-10-11-animation-targets-design.md`).
+  Animation targets are built (`createTarget`), so animations given one add. Nothing in the tree
+  is on a target yet. Left: the pose, color and camera, timeline, and rig arcs in the proposal's
+  "The arcs".
 
 ### Earlier deferrals
 

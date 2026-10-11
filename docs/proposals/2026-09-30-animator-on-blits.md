@@ -1,9 +1,10 @@
 # The animator on blits
 
-**Status: the values are computed in blits; nothing combines yet.** Built and merged: pose overrides
+**Status: the values are computed in blits, and targets exist; nothing in the tree uses one yet.** Built and merged: pose overrides
 fold through a mix, tweens, springs, physics, decay, and keyframe sampling compute in blits ("What
-step 3 built"), on `@msb235/blits` 0.8.1, and a global pause holds the mix clock. Not built: the
-five arcs under "The arcs", which are what make two animations on one value combine. Delete this
+step 3 built"), on `@msb235/blits` 0.8.1, and a global pause holds the mix clock. Animation targets
+are built, so animations given one combine; nothing in the tree is on a target yet. Not built: the
+last four arcs under "The arcs", which are what make two animations on one value combine. Delete this
 once they are all built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
@@ -131,9 +132,11 @@ and hands its value to the caller's `onTick`, so the later writer still wins. Wh
 Each is its own spec, plan, and merge, in this order. The first three steps of the original order
 are built: blits' stepping and springs, pose overrides as a mix, and values computed on blits.
 
-1. **Targets.** The public target type; `target` on `tween`, `spring`, `physics`, and `decay`; the
-   codec cueing offset voices onto a target; same-key interrupts carrying velocity. Spec:
-   `docs/superpowers/specs/2026-10-11-animation-targets-design.md`.
+1. **Targets.** Built 2026-10-11: `createTarget` (`packages/core/src/animation/target.ts`), and
+   `target` on `tween`, `spring`, `physics`, and `decay`. Each animation on a target is a voice
+   on the target as its blits subject, so the codec's `pull` reads their sum. A coast has no
+   destination, so it commits where it stops, not a landing point up front. Offsets live in the
+   animator that cued them, and a second animator cueing onto a moving target throws.
 2. **Pose.** Pose overrides fold offsets over entries; `tweenPose`, `springPose`, reflow, and
    momentum move onto targets, closing reflow's "velocity does not carry over".
 3. **Color and camera.** `ColorOverrideRegistry` and `useViewAnimation` rebuilt on targets.

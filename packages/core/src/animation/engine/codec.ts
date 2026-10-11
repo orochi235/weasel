@@ -1,272 +1,234 @@
 import {
-  glide, kit, mix, spring as springPatch, sum, tween as tweenPatch, vec,
-  type Handle, type Mix, type Motion, type Patch,
+  glide, patch as fnPatch, spring as springPatch, tween as tweenPatch,
+  type Handle, type Motion, type Patch,
 } from '@msb235/blits';
+import { createLanes, type Out, type Reader, type Slot } from './lanes';
+
+export type { Reader } from './lanes';
 
 export interface TweenStart {
   id: number; ms: number; ease: (u: number) => number;
   /** Endpoints as axes. A tween whose caller blends its own values passes [0] and [1]. */
   from: number[]; to: number[];
+  /** The subject the voice reaches, where several voices share one. Default: its own, `id`. */
+  on?: unknown;
 }
 export interface SpringStart {
   id: number; axes: number;
   from: number[]; to: number[] | null; velocity: number[];
   stiffness: number; damping: number; mass: number;
+  /** As {@link TweenStart.on}. */
+  on?: unknown;
 }
-/** One subject's value, kept current in place by the codec. Valid until the subject stops. */
-export interface Reader {
-  /** The array holding the subject's axes as the last `frame` read them, from `at` on. It is the
-   *  codec's own, shared with other subjects and valid until the next `frame`. */
-  readonly cols: Float64Array;
-  /** Where the subject's axes start in `cols`. */
-  readonly at: number;
+export interface PathStart {
+  id: number; ms: number; axes: number;
+  /** The voice's axes at linear progress `u`, 0 to 1. */
+  at(u: number): number[];
+  /** As {@link TweenStart.on}. */
+  on?: unknown;
 }
+/** A voice's own value and velocity, apart from any other voice on its subject. */
+export interface Own { value: number[]; velocity: number[] }
 export interface SpringReader extends Reader {
-  /** Position and velocity at the last `frame`. */
-  motion(): { value: number[]; velocity: number[] };
+  /** Position and velocity at the last `frame`, for a voice alone on its subject. */
+  motion(): Own;
 }
 export interface Codec {
   /** Advances the codec's clock by `dtMs` of animator time, then reads every subject. */
   frame(dtMs: number): void;
   tween(s: TweenStart): Reader;
   spring(s: SpringStart): SpringReader;
+  path(s: PathStart): Reader;
   retarget(id: number, to: number[] | null): void;
+  /** Starts spring `id` over from `from` at `velocity`, toward `to` or coasting. */
+  recue(id: number, from: number[], velocity: number[], to: number[] | null): void;
   push(id: number, velocity: number[]): void;
   /** Plays `id` at rate `rate` from where it is, without a jump. */
   rate(id: number, rate: number): void;
   stop(id: number): void;
-  /** Whether `id` is one of the codec's subjects. */
+  /** Whether `id` is one of the codec's voices. */
   has(id: number): boolean;
-  /** How many voices the codec is running, one per subject; for tests and diagnostics. */
+  /** Voice `id`'s own value and velocity as of the last `frame`. */
+  own(id: number): Own | undefined;
+  /** How many voices the codec is running; for tests and diagnostics. */
   voiceCount(): number;
 }
 
-type Out = { v: number[] };
-
 /** What the codec calls on a motion patch: a tween has no `push`, a glide no `to`. */
 interface Moves {
-  to?(id: number, target: number[], at?: number): void;
-  read(id: number, at?: number): Motion<number[]> | undefined;
-  push?(id: number, velocity: number[], at?: number): void;
+  to?(key: unknown, target: number[], at?: number): void;
+  read(key: unknown, at?: number): Motion<number[]> | undefined;
+  push?(key: unknown, velocity: number[], at?: number): void;
 }
 
-/** One mix per axis count, since a kit's channel width is fixed. */
-interface Lane {
-  axes: number;
-  mix: Mix<number, Out>;
-  /** The subjects `pull` reads, by slot. Joins wait in `pending` until the next `frame`. */
-  ids: number[];
-  /** Each slot's subject, beside `ids`. */
-  subs: Subject[];
-  pending: Set<number>;
-  dirty: boolean;
-  /** Frames in a row it has had no subjects at; it retires at the second. */
-  idle: number;
-  cols: { v: Float64Array };
-}
-
-interface Subject extends Reader {
-  cols: Float64Array;
-  at: number;
-  kind: 'tween' | 'spring';
-  lane: Lane;
-  handle: Handle<number>;
+interface Voice {
+  kind: 'tween' | 'spring' | 'path';
+  slot: Slot;
+  /** `handle` and `patch` are absent while a tween is `queued`, and a path has no `patch`. */
+  handle: Handle<unknown>;
   patch: Moves;
-  /** The codec's own copy, kept at the subject's motion as of its last re-cue. */
+  /** Where it started: what `own` answers until a frame has read it. */
+  from: number[];
+  /** The codec's own copy, kept at the voice's motion as of its last re-cue. */
   spring?: SpringStart;
-  /** Index into the lane's `ids`; -1 while no frame has read it. */
-  slot: number;
-  /** What `cols` points at while `slot` is -1. */
-  held: Float64Array;
-  /** A tween's start, until the next `frame` cues its voice; `handle` and `patch` exist only after. */
+  /** A tween's start, until the next `frame` cues its voice. */
   queued?: TweenStart;
   /** A rate asked for while queued. */
   queuedRate?: number;
-  motion?(): { value: number[]; velocity: number[] };
+  /** A path's axes as its patch last answered. */
+  last?: number[];
 }
 
 export function createCodec(): Codec {
-  const lanes = new Map<number, Lane>();
-  const subjects = new Map<number, Subject>();
+  const lanes = createLanes();
+  const voices = new Map<number, Voice>();
   // Tweens are cued together at the next frame, not one by one as they start: a burst of starts then
   // keeps the caller's objects together rather than each a voice apart, which the frame loop reads.
-  const queue: Subject[] = [];
+  const queue: Voice[] = [];
   let time = 0;
-
-  const laneOf = (axes: number): Lane => {
-    let l = lanes.get(axes);
-    if (!l) {
-      const m = mix<number, Out>(kit<Out>({ v: vec(axes, sum()) }));
-      m.sync(time);
-      l = { axes, mix: m, ids: [], subs: [], pending: new Set(), dirty: false, idle: 0, cols: { v: new Float64Array(0) } };
-      lanes.set(axes, l);
-    }
-    return l;
-  };
-  const join = (s: Subject, id: number): void => {
-    s.slot = -1;
-    s.cols = s.held;
-    s.at = 0;
-    s.lane.pending.add(id);
-    s.lane.dirty = true;
-  };
-  const depart = (s: Subject, id: number): void => {
-    const l = s.lane;
-    l.dirty = true;
-    if (s.slot < 0) { l.pending.delete(id); return; }
-    const last = l.ids.pop()!;
-    const moved = l.subs.pop()!;
-    if (last === id) return;
-    const n = l.axes;
-    const from = l.ids.length * n;
-    l.cols.v.copyWithin(s.slot * n, from, from + n);
-    l.ids[s.slot] = last;
-    l.subs[s.slot] = moved;
-    moved.slot = s.slot;
-    moved.at = s.slot * n;
-  };
-  const rebuild = (l: Lane): void => {
-    const ids = l.ids.slice();
-    const subs = l.subs;
-    for (const id of l.pending) {
-      const s = subjects.get(id)!;
-      s.slot = ids.length;
-      s.at = s.slot * l.axes;
-      s.cols = l.cols.v;
-      ids.push(id);
-      subs.push(s);
-    }
-    l.pending.clear();
-    l.ids = ids;
-    if (l.cols.v.length !== ids.length * l.axes) {
-      l.cols = { v: new Float64Array(ids.length * l.axes) };
-      for (const s of subs) s.cols = l.cols.v;
-    }
-    l.dirty = false;
-  };
 
   // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
   // at `from`, and the codec releases it with a `to` or `push` timed at 0.
-  const springVoice = (l: Lane, id: number, sp: SpringStart): { handle: Handle<number>; patch: Moves } => {
+  const springVoice = (slot: Slot, sp: SpringStart): { handle: Handle<unknown>; patch: Moves } => {
     // With no target the spring force is zero whatever the stiffness, leaving damping alone:
     // velocity falls as exp(-t * damping / mass), a glide whose time constant is mass / damping.
-    const patch: Moves & Patch<number, Out, void> = sp.to == null
-      ? glide<number, Out, number[]>('v', { from: sp.from, ms: (1000 * sp.mass) / sp.damping })
-      : springPatch<number, Out, number[]>('v', {
+    const patch: Moves & Patch<unknown, Out, void> = sp.to == null
+      ? glide<unknown, Out, number[]>('v', { from: sp.from, ms: (1000 * sp.mass) / sp.damping })
+      : springPatch<unknown, Out, number[]>('v', {
         from: sp.from, to: sp.from, stiffness: sp.stiffness, damping: sp.damping, mass: sp.mass,
       });
-    const handle = l.mix.cue({ patch, subjects: [id] });
-    if (sp.to) patch.to!(id, sp.to, 0);
-    patch.push!(id, sp.velocity, 0);
+    const handle = slot.lane.mix.cue({ patch, subjects: [slot.key] });
+    if (sp.to) patch.to!(slot.key, sp.to, 0);
+    patch.push!(slot.key, sp.velocity, 0);
     return { handle, patch };
   };
 
-  const get = (id: number): Subject => {
-    const s = subjects.get(id);
-    if (!s) throw new Error(`codec: no subject ${id}`);
-    return s;
+  const get = (id: number): Voice => {
+    const v = voices.get(id);
+    if (!v) throw new Error(`codec: no subject ${id}`);
+    return v;
   };
-  /** A spring subject's motion now: as its voice last read it, else where it was last placed. */
-  const current = (s: Subject, id: number): { value: number[]; velocity: number[] } =>
-    s.patch.read(id) ?? { value: s.spring!.from.slice(), velocity: s.spring!.velocity.slice() };
+  /** A spring voice's motion now: as its voice last read it, else where it was last placed. */
+  const current = (v: Voice): Own =>
+    v.patch.read(v.slot.key) ?? { value: v.spring!.from.slice(), velocity: v.spring!.velocity.slice() };
+
+  const respring = (v: Voice, next: SpringStart): void => {
+    const rate = v.handle.rate;
+    v.handle.fade({ over: 0 });
+    const { handle, patch } = springVoice(v.slot, next);
+    handle.rate = rate;
+    v.handle = handle;
+    v.patch = patch;
+    v.spring = next;
+  };
 
   function stop(id: number): void {
-    const s = subjects.get(id);
-    if (!s) return;
-    if (s.queued) s.queued = undefined;
-    else {
-      s.handle.fade({ over: 0 });
-      s.lane.mix.drop(id);
-    }
-    depart(s, id);
-    subjects.delete(id);
+    const v = voices.get(id);
+    if (!v) return;
+    if (v.queued) v.queued = undefined;
+    else v.handle.fade({ over: 0 });
+    lanes.leave(v.slot);
+    voices.delete(id);
   }
 
   return {
     frame(dtMs) {
-      for (const sub of queue) {
-        const q = sub.queued;
+      for (const v of queue) {
+        const q = v.queued;
         if (!q) continue;
-        sub.queued = undefined;
-        const patch = tweenPatch<number, Out, number[]>('v', { from: q.from.slice(), to: q.from.slice(), ms: q.ms, ease: q.ease });
-        sub.handle = sub.lane.mix.cue({ patch, subjects: [q.id] });
-        sub.patch = patch;
-        patch.to(q.id, q.to.slice(), 0);
-        if (sub.queuedRate !== undefined) sub.handle.rate = sub.queuedRate;
+        v.queued = undefined;
+        const key = v.slot.key;
+        const patch = tweenPatch<unknown, Out, number[]>('v', { from: q.from.slice(), to: q.from.slice(), ms: q.ms, ease: q.ease });
+        v.handle = v.slot.lane.mix.cue({ patch, subjects: [key] });
+        v.patch = patch;
+        patch.to(key, q.to.slice(), 0);
+        if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
       }
       queue.length = 0;
       time += dtMs;
-      for (const l of lanes.values()) {
-        if (l.dirty) rebuild(l);
-        if (l.ids.length === 0 && ++l.idle >= 2) {
-          lanes.delete(l.axes);
-          continue;
-        }
-        l.mix.sync(time);
-        if (l.ids.length === 0) continue;
-        l.idle = 0;
-        l.mix.pull(l.ids, l.cols);
-      }
+      lanes.frame(time);
     },
     tween(s) {
       if (s.to.length !== s.from.length) {
         throw new Error(`codec: tween ${s.id} goes from ${s.from.length} axes to ${s.to.length}`);
       }
-      const l = laneOf(s.from.length);
-      const held = Float64Array.from(s.from);
-      const sub = { kind: 'tween', lane: l, slot: -1, held, cols: held, at: 0, queued: s } as Subject;
-      subjects.set(s.id, sub);
-      join(sub, s.id);
-      queue.push(sub);
-      return sub;
+      const shared = s.on !== undefined;
+      const slot = lanes.join(s.from.length, shared ? s.on : s.id, shared ? new Array<number>(s.from.length).fill(0) : s.from);
+      const v = { kind: 'tween', slot, from: s.from, queued: s } as Voice;
+      voices.set(s.id, v);
+      queue.push(v);
+      return slot;
     },
     spring(s) {
       const sp = { ...s, from: s.from.slice(), to: s.to && s.to.slice(), velocity: s.velocity.slice() };
-      const l = laneOf(sp.axes);
-      const { handle, patch } = springVoice(l, s.id, sp);
-      const held = Float64Array.from(sp.from);
-      const sub: Subject = { kind: 'spring', lane: l, handle, patch, spring: sp, slot: -1, held, cols: held, at: 0 };
-      subjects.set(s.id, sub);
-      join(sub, s.id);
-      const id = s.id;
-      sub.motion = () => current(sub, id);
-      return sub as Subject & SpringReader;
+      const shared = s.on !== undefined;
+      const slot = lanes.join(sp.axes, shared ? s.on : s.id, shared ? new Array<number>(sp.axes).fill(0) : sp.from);
+      const { handle, patch } = springVoice(slot, sp);
+      const v: Voice = { kind: 'spring', slot, handle, patch, from: sp.from, spring: sp };
+      voices.set(s.id, v);
+      const reader = slot as Slot & SpringReader;
+      if (!shared) reader.motion = () => current(v);
+      return reader;
+    },
+    path(s) {
+      const shared = s.on !== undefined;
+      const from = s.at(0);
+      const slot = lanes.join(s.axes, shared ? s.on : s.id, shared ? new Array<number>(s.axes).fill(0) : from);
+      const v = { kind: 'path', slot, from } as Voice;
+      const patch = fnPatch<unknown, Out>(
+        s.ms,
+        (phase) => {
+          v.last = s.at(phase);
+          return { v: v.last };
+        },
+        { writes: ['v'] },
+      );
+      // Held at its end until the animator stops it, so a frame between the two reads the end.
+      v.handle = slot.lane.mix.cue({ patch, subjects: [slot.key], loop: false, freeze: 'after' });
+      voices.set(s.id, v);
+      return slot;
     },
     retarget(id, to) {
-      const s = get(id);
-      if (s.kind === 'tween') throw new Error(`codec: subject ${id} is a tween; tweens are not retargeted`);
-      const sp = s.spring!;
+      const v = get(id);
+      if (v.kind !== 'spring') throw new Error(`codec: subject ${id} is a ${v.kind}; ${v.kind}s are not retargeted`);
+      const sp = v.spring!;
       if ((to == null) === (sp.to == null)) {
         if (!to) return;
         sp.to = to.slice();
-        s.patch.to!(id, sp.to);
+        v.patch.to!(v.slot.key, sp.to);
         return;
       }
-      // Held and free run different patches, so the subject is re-cued from where it is.
-      const now = current(s, id);
-      const rate = s.handle.rate;
-      const next = { ...sp, to: to && to.slice(), from: now.value, velocity: now.velocity };
-      s.handle.fade({ over: 0 });
-      const { handle, patch } = springVoice(s.lane, id, next);
-      handle.rate = rate;
-      s.handle = handle;
-      s.patch = patch;
-      s.spring = next;
+      // Held and free run different patches, so the voice is re-cued from where it is.
+      const now = current(v);
+      respring(v, { ...sp, to: to && to.slice(), from: now.value, velocity: now.velocity });
+    },
+    recue(id, from, velocity, to) {
+      const v = get(id);
+      if (v.kind !== 'spring') throw new Error(`codec: subject ${id} is a ${v.kind}; only springs are re-cued`);
+      respring(v, { ...v.spring!, from: from.slice(), velocity: velocity.slice(), to: to && to.slice() });
     },
     push(id, velocity) {
-      const s = get(id);
-      if (s.spring && !s.patch.read(id)) s.spring.velocity = velocity.slice();
-      s.patch.push?.(id, velocity);
+      const v = get(id);
+      if (v.spring && !v.patch.read(v.slot.key)) v.spring.velocity = velocity.slice();
+      v.patch.push?.(v.slot.key, velocity);
     },
     rate(id, rate) {
-      const s = get(id);
-      if (s.queued) s.queuedRate = rate;
-      else s.handle.rate = rate;
+      const v = get(id);
+      if (v.queued) v.queuedRate = rate;
+      else v.handle.rate = rate;
     },
     stop,
-    has: (id) => subjects.has(id),
+    has: (id) => voices.has(id),
+    own(id) {
+      const v = voices.get(id);
+      if (!v) return undefined;
+      if (v.kind === 'spring') return current(v);
+      if (v.kind === 'path') return { value: v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
+      return (!v.queued && v.patch.read(v.slot.key))
+        || { value: v.from, velocity: new Array<number>(v.from.length).fill(0) };
+    },
     voiceCount() {
-      return subjects.size;
+      return voices.size;
     },
   };
 }
