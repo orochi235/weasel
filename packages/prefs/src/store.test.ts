@@ -243,4 +243,40 @@ describe('createPrefsStore', () => {
     expect(backing.get('p.caps')).toEqual({ a: 1, b: 'Infinity' });
     expect(store.get('caps')).toEqual({ a: 1, b: Infinity });
   });
+
+  it('writes an infinity inside an object, a union, and a list of objects as a string', async () => {
+    const cap = { kind: 'number', name: 'Cap', description: '', default: 0, endless: 'max' } as const;
+    const limits = { kind: 'object', name: 'Limits', description: '', default: {}, children: { cap } } as const;
+    const schema = {
+      name: 'T',
+      children: {
+        limits,
+        shape: {
+          kind: 'union',
+          name: 'Shape',
+          description: '',
+          default: { type: 'open' },
+          tag: 'type',
+          variants: {
+            open: { kind: 'object', name: 'Open', description: '', default: {}, children: {} },
+            capped: { kind: 'object', name: 'Capped', description: '', default: { cap: 1 }, children: { cap } },
+          },
+        },
+        rows: { kind: 'list', name: 'Rows', description: '', default: [], item: limits },
+      },
+    } satisfies PrefGroup;
+    const backing = new Map<string, unknown>();
+    const cache = createRecordCache({ storage: createMemoryAdapter(backing), prefix: 'p.' });
+    const store = createPrefsStore(schema, cache);
+    store.set('limits', { cap: Infinity, other: 1 });
+    store.set('shape', { type: 'capped', cap: Infinity });
+    store.set('rows', [{ cap: Infinity }]);
+    await cache.flush();
+    expect(backing.get('p.limits')).toEqual({ cap: 'Infinity', other: 1 });
+    expect(backing.get('p.shape')).toEqual({ type: 'capped', cap: 'Infinity' });
+    expect(backing.get('p.rows')).toEqual([{ cap: 'Infinity' }]);
+    expect(store.get('limits')).toEqual({ cap: Infinity, other: 1 });
+    expect(store.get('shape')).toEqual({ type: 'capped', cap: Infinity });
+    expect(store.get('rows')).toEqual([{ cap: Infinity }]);
+  });
 });

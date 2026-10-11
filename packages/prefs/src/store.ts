@@ -1,11 +1,12 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, VERSION_RECORD } from './helpers';
+import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, prefSectionLeaves, VERSION_RECORD } from './helpers';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefPath, PrefValueAt } from './paths';
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefGroup } from './groups';
-import type { PrefLeaf } from './schema';
+import type { PrefLeaf, PrefObject } from './schema';
+import { prefVariantOf, type PrefUnion } from './union';
 
 /** One leaf changing, as a store subscriber hears it: the value readers now
  *  see, and whether this store or another writer made the change. */
@@ -57,15 +58,26 @@ interface Snapshot {
 
 /** JSON storage cannot keep an infinity; `repairPrefValue` reads these back. */
 const encodeInfinity = (leaf: PrefLeaf, value: unknown): unknown => {
+  if (leaf.kind === 'number') return value === Infinity || value === -Infinity ? String(value) : value;
   if (leaf.kind === 'list' && Array.isArray(value)) {
     const { item } = leaf as PrefList;
     return value.map((entry) => encodeInfinity(item, entry));
   }
-  if (leaf.kind === 'map' && value !== null && typeof value === 'object') {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return value;
+  const held = value as Record<string, unknown>;
+  if (leaf.kind === 'map') {
     const { item } = leaf as PrefMap;
-    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, encodeInfinity(item, entry)]));
+    return Object.fromEntries(Object.entries(held).map(([key, entry]) => [key, encodeInfinity(item, entry)]));
   }
-  return leaf.kind === 'number' && (value === Infinity || value === -Infinity) ? String(value) : value;
+  const fields = leaf.kind === 'union' ? prefVariantOf(leaf as PrefUnion, held)?.[1] : leaf;
+  if (fields?.kind !== 'object') return value;
+  let out: Record<string, unknown> | undefined;
+  for (const [key, field] of prefSectionLeaves((fields as PrefObject).children)) {
+    if (!Object.hasOwn(held, key)) continue;
+    const encoded = encodeInfinity(field, held[key]);
+    if (encoded !== held[key]) (out ??= { ...held })[key] = encoded;
+  }
+  return out ?? value;
 };
 
 /** A store over an open cache. `openPrefs` / `openPrefsSync` are the usual
