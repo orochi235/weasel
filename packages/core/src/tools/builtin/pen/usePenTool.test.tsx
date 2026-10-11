@@ -496,6 +496,31 @@ describe('usePenTool', () => {
       expect(p.adapter.added[0].path.commands).toHaveLength(4); // M L L Z
     });
 
+    it('a double-click from idle commits nothing and leaves the pen idle', () => {
+      const p = setup();
+      p.doubleClick(10, 10);
+      expect(p.adapter.addNode).not.toHaveBeenCalled();
+      expect(p.scratch.current).toBeNull();
+    });
+
+    it('Enter on a single anchor commits nothing and leaves the pen idle', () => {
+      const p = setup();
+      p.click(0, 0);
+      p.enter();
+      expect(p.adapter.addNode).not.toHaveBeenCalled();
+      expect(p.scratch.current).toBeNull();
+    });
+
+    it('Enter drops a lone trailing anchor from a compound path', () => {
+      const p = setup({ autoCommitOnClose: false });
+      p.click(0, 0); p.click(100, 0); p.click(100, 100); p.click(1, 1);
+      p.click(300, 300);
+      p.enter();
+      expect(p.adapter.addNode).toHaveBeenCalledTimes(1);
+      expect(p.adapter.added[0].closed).toBe(true);
+      expect(p.adapter.added[0].path.commands).toHaveLength(4);
+    });
+
     it('declines with <2 anchors', () => {
       const p = setup();
       const action = p.actionOf('pen.finishOpen');

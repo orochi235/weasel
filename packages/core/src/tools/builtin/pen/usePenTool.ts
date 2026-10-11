@@ -248,11 +248,16 @@ export function usePenTool<TPose>(
       resetScratch(s);
       return;
     }
-    if (s.finishedSubpaths.length === 0 && !trailing) return;
+    // One anchor draws nothing; committing it would leave an invisible node.
+    const open = trailing && trailing.anchors.length >= 2 ? trailing : null;
+    if (s.finishedSubpaths.length === 0 && !open) {
+      resetScratch(s);
+      return;
+    }
     const allClosed =
       s.finishedSubpaths.every((sp) => sp.closed) &&
-      (trailing === null || trailing.closed);
-    const path = buildPath(s.finishedSubpaths, trailing);
+      (open === null || open.closed);
+    const path = buildPath(s.finishedSubpaths, open);
     const pose = optsRef.current.wrapPath(path, { closed: allClosed });
     const id = optsRef.current.adapter.addNode(pose);
     if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([id]);
