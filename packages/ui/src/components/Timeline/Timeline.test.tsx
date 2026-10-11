@@ -53,6 +53,25 @@ describe('Timeline', () => {
     expect(screen.getByTestId('timeline-time')).toBeInTheDocument();
   });
 
+  it('holds the mode itself when given no mode', () => {
+    const onModeChange = vi.fn();
+    render(<Timeline {...base} tracks={tracks()} onModeChange={onModeChange} />);
+    const graph = screen.getByRole('switch', { name: 'Graph mode' });
+    expect(graph).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(graph);
+    expect(graph).toHaveAttribute('aria-checked', 'true');
+    expect(onModeChange).toHaveBeenLastCalledWith('graph');
+    fireEvent.click(graph);
+    expect(graph).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('follows a mode it is given', () => {
+    render(<Timeline {...base} tracks={tracks()} mode="dope" />);
+    const graph = screen.getByRole('switch', { name: 'Graph mode' });
+    fireEvent.click(graph);
+    expect(graph).toHaveAttribute('aria-checked', 'false');
+  });
+
   it('hides the transport when told to', () => {
     render(<Timeline {...base} tracks={tracks()} transport={false} />);
     expect(screen.queryByTestId('timeline-time')).not.toBeInTheDocument();

@@ -25,8 +25,8 @@ export interface KeyEditorCtx<T = unknown> {
   setEasing: (easing: EasingSpec | undefined) => void;
 }
 
-/** Props for {@link Timeline}. Times are in ms. `selection` and `window` are
- *  controlled when given and held internally otherwise. */
+/** Props for {@link Timeline}. Times are in ms. `mode`, `selection`, and
+ *  `window` are controlled when given and held internally otherwise. */
 export interface TimelineProps {
   tracks: readonly Track[];
   duration: number;
@@ -70,6 +70,7 @@ export function Timeline(props: TimelineProps): ReactElement {
   // Null until the user zooms in, so the window follows a duration that changes.
   const [ownWindow, setOwnWindow] = useState<TimeWindow | null>(null);
   const [ownSelection, setOwnSelection] = useState<KeySelection | null>(null);
+  const [ownMode, setOwnMode] = useState<'dope' | 'graph'>('dope');
   // By key index, so an edit that renumbers a track's keys drops it.
   const [segmentSelection, setSegmentSelection] = useState<KeySelection | null>(null);
 
@@ -79,6 +80,7 @@ export function Timeline(props: TimelineProps): ReactElement {
     ?? ((w: TimeWindow): void => setOwnWindow(w.from <= 0 && w.to >= duration ? null : w));
   const selection = props.selection !== undefined ? props.selection : ownSelection;
   const setSelection = props.onSelect ?? setOwnSelection;
+  const mode = props.mode ?? ownMode;
 
   const rows = useMemo(() => buildLanes(tracks, expanded), [tracks, expanded]);
 
@@ -144,10 +146,14 @@ export function Timeline(props: TimelineProps): ReactElement {
           <button
             type="button"
             role="switch"
-            aria-checked={(props.mode ?? 'dope') === 'graph'}
+            aria-checked={mode === 'graph'}
             aria-label="Graph mode"
             className={s.transportButton}
-            onClick={() => props.onModeChange?.((props.mode ?? 'dope') === 'graph' ? 'dope' : 'graph')}
+            onClick={() => {
+              const next = mode === 'graph' ? 'dope' : 'graph';
+              setOwnMode(next);
+              props.onModeChange?.(next);
+            }}
           >
             Graph
           </button>
@@ -175,7 +181,7 @@ export function Timeline(props: TimelineProps): ReactElement {
               key={row.key}
               row={row}
               window={win}
-              mode={props.mode ?? 'dope'}
+              mode={mode}
               selection={selection && samePath(selection.trackPath, trackPath) ? selection.keyIndex : null}
               expanded={expanded.has(row.key)}
               snapTimes={snapTimes}
