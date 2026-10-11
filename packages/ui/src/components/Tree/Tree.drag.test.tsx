@@ -206,7 +206,7 @@ describe('Tree — drag to reorder', () => {
     // collapsed: rows are Group (0–24), Zed (24–48)
     press(row('Zed'), 40);
     move(12);
-    vi.advanceTimersByTime(600);
+    act(() => { vi.advanceTimersByTime(600); });
     expect([...onExpandedChange.mock.calls.at(-1)![0]]).toEqual(['g']);
   });
 
@@ -251,8 +251,10 @@ describe('Tree — drag to reorder', () => {
 });
 
 describe('Tree — keyboard moves', () => {
-  const focusOn = (name: string) => screen.getByRole('treeitem', { name }).focus();
+  const focusOn = (name: string) => act(() => screen.getByRole('treeitem', { name }).focus());
   const key = (k: string) => fireEvent.keyDown(document.activeElement!, { key: k, altKey: true });
+  /** Past the frame a move has to land in before the tree stops waiting to refocus its node. */
+  const frame = () => act(async () => { await new Promise<void>((done) => { requestAnimationFrame(() => done()); }); });
 
   it('moves among siblings with Alt+Up/Down', () => {
     const { onMove } = setup();
@@ -261,11 +263,12 @@ describe('Tree — keyboard moves', () => {
     expect(onMove).toHaveBeenLastCalledWith(['y'], { parentId: 'g', index: 0 });
   });
 
-  it('outdents with Alt+Left and indents with Alt+Right', () => {
+  it('outdents with Alt+Left and indents with Alt+Right', async () => {
     const { onMove } = setup();
     focusOn('Ex');
     key('ArrowLeft');
     expect(onMove).toHaveBeenLastCalledWith(['x'], { parentId: null, index: 1 });
+    await frame();
     focusOn('Zed');
     key('ArrowRight');
     expect(onMove).toHaveBeenLastCalledWith(['z'], { parentId: 'g', index: 2 });
@@ -287,10 +290,10 @@ describe('Tree — keyboard moves', () => {
 
   it('leaves focus alone on a later render when the move never changed the nodes', async () => {
     const { rerender } = render(<Tree aria-label="T" nodes={NODES} defaultExpandedIds={['g']} onMove={() => {}} />);
-    act(() => focusOn('Why'));
+    focusOn('Why');
     key('ArrowUp');
-    await act(async () => { await new Promise<void>((done) => { requestAnimationFrame(() => done()); }); });
-    act(() => focusOn('Zed'));
+    await frame();
+    focusOn('Zed');
     rerender(<Tree aria-label="T again" nodes={NODES} defaultExpandedIds={['g']} onMove={() => {}} />);
     expect(document.activeElement).toBe(screen.getByRole('treeitem', { name: 'Zed' }));
   });
