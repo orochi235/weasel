@@ -306,7 +306,9 @@ Priority tags:
   `mods: { ctrl: true }` land in different buckets though both match Ctrl off a Mac at equal
   specificity. Bucketing per platform finds it, and then reports `viewport.zoom` against itself:
   its `mod` wheel binding and its `ctrl` one (the trackpad pinch) are a deliberate duplicate with
-  the same params. Needs a rule for when a same-action tie is not a conflict.
+  the same params. Undecided: either a tie between two bindings of one action with equal params
+  stops counting as a conflict, which `conflicts.test.ts` ("checks a lone action against itself")
+  asserts the opposite of today, or `viewport.zoom` drops the duplicate some other way.
 
 - **(P3) The two dispatcher files are about 1,700 lines each and mix owners.**
   `packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx` holds keyboard, wheel,
