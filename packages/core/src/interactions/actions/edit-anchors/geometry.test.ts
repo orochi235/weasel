@@ -5,7 +5,7 @@
  * what the user sees as draggable handles.
  */
 import { describe, it, expect } from 'vitest';
-import { enumerateAnchors, withCoord } from './geometry';
+import { enumerateAnchors, translateAnchor, withCoord } from './geometry';
 import {
   PATH_M,
   PATH_L,
@@ -131,5 +131,34 @@ describe('enumerateAnchors unknown commands', () => {
   it('throws rather than misreading the coord stream', () => {
     const p = path([PATH_M, 99, PATH_L], [0, 0, 10, 0, 10, 10]);
     expect(() => enumerateAnchors(p)).toThrow(/enumerateAnchors: unknown command 99/);
+  });
+});
+
+describe('a closed subpath whose last curve returns to its start', () => {
+  // M 0,0  C 4,-6 16,-6 20,0  C 24,6 -4,6 0,0  Z  M 50,50  L 60,50
+  const loop = path(
+    [PATH_M, PATH_C, PATH_C, PATH_Z, PATH_M, PATH_L],
+    [0, 0, 4, -6, 16, -6, 20, 0, 24, 6, -4, 6, 0, 0, 50, 50, 60, 50],
+  );
+
+  it('is one anchor at the seam, holding both controls', () => {
+    const anchors = enumerateAnchors(loop);
+    expect(anchors.map((a) => [a.x, a.y])).toEqual([[0, 0], [20, 0], [50, 50], [60, 50]]);
+    expect(anchors.map((a) => a.anchorIndex)).toEqual([0, 1, 2, 3]);
+    expect(anchors[0].controlOut).toEqual({ x: 4, y: -6, coordIndex: 2 });
+    expect(anchors[0].controlIn).toEqual({ x: -4, y: 6, coordIndex: 10 });
+    expect(anchors[0].closeCoordIndex).toBe(12);
+  });
+
+  it('moves both copies of the seam point with the anchor', () => {
+    const moved = translateAnchor(loop, 0, 3, 5);
+    expect(Array.from(moved.coords)).toEqual(
+      [3, 5, 7, -1, 16, -6, 20, 0, 24, 6, -1, 11, 3, 5, 50, 50, 60, 50],
+    );
+  });
+
+  it('keeps a closing curve that stops short of the start as its own anchor', () => {
+    const short = path([PATH_M, PATH_L, PATH_C, PATH_Z], [0, 0, 10, 0, 10, 5, 1, 5, 1, 0]);
+    expect(enumerateAnchors(short)).toHaveLength(3);
   });
 });

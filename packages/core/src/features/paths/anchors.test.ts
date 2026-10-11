@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countPathAnchors, pathToAnchors } from './anchors';
+import { anchorsToPath, countPathAnchors, pathToAnchors, type PenAnchor } from './anchors';
 import { PathBuilder, polygonFromPoints, rectPath } from '@weasel-js/geom';
 
 describe('pathToAnchors', () => {
@@ -53,7 +53,6 @@ describe('pathToAnchors', () => {
   });
 });
 
-import { anchorsToPath } from './anchors';
 
 describe('anchorsToPath', () => {
   it('serializes a single open subpath of corner anchors to M+L', () => {
@@ -99,6 +98,53 @@ describe('anchorsToPath', () => {
     const rebuilt = anchorsToPath(anchors, closed);
     expect(Array.from(rebuilt.commands)).toEqual(Array.from(original.commands));
     expect(Array.from(rebuilt.coords)).toEqual(Array.from(original.coords));
+  });
+});
+
+describe('a closed subpath whose last curve returns to its start', () => {
+  const loop: PenAnchor[] = [
+    { x: 0, y: 0, inHandle: { x: -4, y: 6 }, outHandle: { x: 4, y: -6 } },
+    { x: 20, y: 0, inHandle: { x: 16, y: -6 }, outHandle: { x: 24, y: 6 } },
+    { x: 10, y: 20, inHandle: { x: 18, y: 20 }, outHandle: { x: 2, y: 20 } },
+  ];
+
+  it('decodes to the anchors it was built from', () => {
+    expect(pathToAnchors(anchorsToPath([loop], [true]))).toEqual({ anchors: [loop], closed: [true] });
+  });
+
+  it('gives the first anchor both handles, so it reads as smooth', () => {
+    const [first] = pathToAnchors(anchorsToPath([loop], [true])).anchors[0];
+    expect(first.inHandle).toEqual({ x: -4, y: 6 });
+    expect(first.outHandle).toEqual({ x: 4, y: -6 });
+  });
+
+  it('decodes a one-anchor loop to one anchor', () => {
+    const drop: PenAnchor[] = [{ x: 0, y: 0, inHandle: { x: -5, y: 10 }, outHandle: { x: 5, y: 10 } }];
+    expect(pathToAnchors(anchorsToPath([drop], [true]))).toEqual({ anchors: [drop], closed: [true] });
+  });
+
+  it('writes back the same path when only the last anchor curves into the close', () => {
+    const half: PenAnchor[] = [
+      { x: 0, y: 0 },
+      { x: 20, y: 0 },
+      { x: 10, y: 20, outHandle: { x: 2, y: 20 } },
+    ];
+    const path = anchorsToPath([half], [true]);
+    const decoded = pathToAnchors(path);
+    expect(decoded.anchors[0]).toHaveLength(3);
+    const again = anchorsToPath(decoded.anchors, decoded.closed);
+    expect(Array.from(again.commands)).toEqual(Array.from(path.commands));
+    expect(Array.from(again.coords)).toEqual(Array.from(path.coords));
+  });
+
+  it('leaves an open path that ends where it began as it is', () => {
+    const open = new PathBuilder().moveTo(0, 0).curveTo(5, 5, 5, -5, 0, 0).build();
+    expect(pathToAnchors(open).anchors[0]).toHaveLength(2);
+  });
+
+  it('leaves a closing curve that stops short of the start as its own anchor', () => {
+    const short = new PathBuilder().moveTo(0, 0).lineTo(10, 0).curveTo(10, 5, 1, 5, 1, 0).close().build();
+    expect(pathToAnchors(short).anchors[0]).toHaveLength(3);
   });
 });
 

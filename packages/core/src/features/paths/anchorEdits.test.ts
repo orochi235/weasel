@@ -52,6 +52,29 @@ function compound() {
 
 const decode = (p: ReturnType<typeof triangle>): AnchorSet => pathToAnchors(p) as AnchorSet;
 
+/** Closed three-anchor curve: its last curve ends on the first anchor. */
+function closedCurve() {
+  const b = new PathBuilder();
+  b.moveTo(0, 0);
+  b.curveTo(4, -6, 16, -6, 20, 0);
+  b.curveTo(24, 6, 18, 20, 10, 20);
+  b.curveTo(2, 20, -4, 6, 0, 0);
+  b.close();
+  return b.build();
+}
+
+/** A closed curve followed by an open pair, so indices after the seam are checked. */
+function closedCurveThenOpen() {
+  const b = new PathBuilder();
+  b.moveTo(0, 0);
+  b.curveTo(4, -6, 16, -6, 20, 0);
+  b.curveTo(24, 6, -4, 6, 0, 0);
+  b.close();
+  b.moveTo(50, 50);
+  b.lineTo(60, 50);
+  return b.build();
+}
+
 describe('flat-index invariant', () => {
   // The whole addressing scheme rests on this: the dispatcher hands out
   // `anchor:N` from enumerateAnchors, and anchorEdits resolves N against
@@ -61,6 +84,8 @@ describe('flat-index invariant', () => {
     ['triangle', triangle],
     ['curve', curve],
     ['compound', compound],
+    ['closed curve', closedCurve],
+    ['closed curve then open', closedCurveThenOpen],
   ] as const) {
     it(`enumerateAnchors order matches pathToAnchors concatenation (${name})`, () => {
       const path = make();

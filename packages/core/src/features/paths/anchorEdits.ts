@@ -18,8 +18,11 @@
  * {@link locateAnchor} and {@link flatAnchorIndex} convert.
  *
  * The two orders agree because `pathToAnchors` and `enumerateAnchors`
- * walk the same command stream and emit one anchor per M/L/C/Q — see the
- * invariant test in `anchorEdits.test.ts`. If you change either walker,
+ * walk the same command stream and emit one anchor per M/L/C/Q, less the
+ * end of a closing curve that lands on its subpath's first point — see the
+ * invariant test in `anchorEdits.test.ts`. `countPathAnchors`, which sizes
+ * the renderer's per-anchor arrays, counts that end too and so can be one
+ * higher per closed subpath. If you change either walker,
  * that test is the tripwire.
  */
 

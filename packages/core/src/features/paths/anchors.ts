@@ -38,7 +38,9 @@ export interface PenAnchor {
  * every `M` command; a subpath is closed iff it ends with `Z`.
  *
  * Cubic-segment control points become the outHandle of the previous anchor
- * and the inHandle of the next anchor. Quadratic segments are upgraded to
+ * and the inHandle of the next anchor. A closed subpath whose last curve ends
+ * exactly on its first point holds that point twice; the two are one anchor,
+ * and the curve's second control is that anchor's inHandle. Quadratic segments are upgraded to
  * cubics (each control reused for both adjacent handles) — this loses no
  * geometry. Linear segments produce anchors with no handles.
  */
@@ -82,7 +84,12 @@ export function pathToAnchors(
         break;
       }
       case PATH_Z: {
-        if (current) { anchors.push(current); closed.push(true); current = null; }
+        if (current) {
+          foldClosingCurve(current);
+          anchors.push(current);
+          closed.push(true);
+          current = null;
+        }
         break;
       }
       default:
@@ -91,6 +98,17 @@ export function pathToAnchors(
   });
   if (current) { anchors.push(current); closed.push(false); }
   return { anchors, closed };
+}
+
+/** Merge a closing curve's end anchor into the subpath's first anchor when
+ *  the two coincide. */
+function foldClosingCurve(sub: PenAnchor[]): void {
+  if (sub.length < 2) return;
+  const first = sub[0];
+  const last = sub[sub.length - 1];
+  if (!last.inHandle || last.x !== first.x || last.y !== first.y) return;
+  sub.pop();
+  first.inHandle = last.inHandle;
 }
 
 /**

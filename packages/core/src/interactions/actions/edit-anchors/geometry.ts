@@ -16,16 +16,23 @@ export interface PathAnchor {
   controlOut?: { x: number; y: number; coordIndex: number };
   /** Index of the anchor's on-curve x in `coords`. */
   coordIndex: number;
+  /** Set on the first anchor of a closed subpath whose last curve ends
+   *  exactly on it: the index of that curve's end x, the same point again. */
+  closeCoordIndex?: number;
 }
 
 /** Walk a PolygonPath's command stream and yield one `PathAnchor` per
  *  on-curve point. Adjacent C/Q control points are attached as
  *  `controlIn`/`controlOut`. Subpath boundaries (M after a previous M or Z)
- *  start fresh — the new M's anchor has no `controlIn` from a Z. */
+ *  start fresh — the new M's anchor has no `controlIn` from a Z. A closing
+ *  curve that ends exactly on the subpath's first point is not a second
+ *  anchor: its control becomes the first anchor's `controlIn`, the way
+ *  `pathToAnchors` reads it, so the two walkers count alike. */
 export function enumerateAnchors(path: PolygonPath): PathAnchor[] {
   const { commands, coords } = path;
   const anchors: PathAnchor[] = [];
   let lastAnchor: PathAnchor | null = null;
+  let firstInSubpath: PathAnchor | null = null;
 
   const push = (coordIndex: number, controlIn?: PathAnchor['controlIn']): void => {
     const a: PathAnchor = {
@@ -42,6 +49,9 @@ export function enumerateAnchors(path: PolygonPath): PathAnchor[] {
   forEachSegment(commands, coords, (cmd, ci) => {
     switch (cmd) {
       case PATH_M:
+        push(ci);
+        firstInSubpath = lastAnchor;
+        break;
       case PATH_L:
         push(ci);
         break;
@@ -58,13 +68,23 @@ export function enumerateAnchors(path: PolygonPath): PathAnchor[] {
         push(ci + 2, { x: coords[ci], y: coords[ci + 1], coordIndex: ci });
         break;
       case PATH_Z:
+        foldClosingCurve(anchors, firstInSubpath, lastAnchor);
         lastAnchor = null;
+        firstInSubpath = null;
         break;
       default:
         throw new Error(`enumerateAnchors: unknown command ${cmd}`);
     }
   });
   return anchors;
+}
+
+function foldClosingCurve(anchors: PathAnchor[], first: PathAnchor | null, last: PathAnchor | null): void {
+  if (!first || !last || first === last) return;
+  if (!last.controlIn || last.x !== first.x || last.y !== first.y) return;
+  anchors.pop();
+  first.closeCoordIndex = last.coordIndex;
+  first.controlIn = last.controlIn;
 }
 
 /** Mutate `coords` in-place: write `(x, y)` at `coordIndex`, return a new
@@ -93,6 +113,10 @@ export function translateAnchor(
   // Anchor itself.
   next[a.coordIndex] += dx;
   next[a.coordIndex + 1] += dy;
+  if (a.closeCoordIndex !== undefined) {
+    next[a.closeCoordIndex] += dx;
+    next[a.closeCoordIndex + 1] += dy;
+  }
   // In-handle of THIS anchor — the trailing pair of the incoming C/Q.
   if (a.controlIn) {
     next[a.controlIn.coordIndex] += dx;
