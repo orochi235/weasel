@@ -1,0 +1,58 @@
+import { describe, expect, it } from 'vitest';
+import { parseSvg } from './parse';
+import { serializeSvg } from './serialize';
+import type { SvgTextNode } from './types';
+
+const text = (body: string): { node: SvgTextNode; warnings: string[] } => {
+  const { nodes, warnings } = parseSvg(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`);
+  return { node: nodes[0] as SvgTextNode, warnings };
+};
+
+describe('lines of text written as positioned tspans', () => {
+  it('breaks at a tspan that returns to x and steps down by dy', () => {
+    const { node, warnings } = text(
+      '<text x="10" y="20"><tspan x="10" dy="0">Line one</tspan><tspan x="10" dy="1.2em">Line two</tspan></text>',
+    );
+    expect(warnings).toEqual([]);
+    expect(node.text).toBe('Line one\nLine two');
+    // Two lines of the default 16px at the default 1.2 line height.
+    expect(node.height).toBeCloseTo(38.4, 6);
+  });
+
+  it('breaks at a tspan with its own x and y', () => {
+    expect(text('<text><tspan x="10" y="20">A</tspan><tspan x="10" y="40">B</tspan></text>').node.text).toBe('A\nB');
+  });
+
+  it('keeps the source file\'s indentation out of the lines', () => {
+    const { node } = text(`<text x="10" y="20">
+      <tspan x="10" dy="0">Line one</tspan>
+      <tspan x="10" dy="19">Line  two</tspan>
+    </text>`);
+    expect(node.text).toBe('Line one\nLine two');
+  });
+
+  it('keeps one line for a tspan that only restyles or only moves sideways', () => {
+    expect(text('<text>a<tspan font-weight="bold">b</tspan>c</text>').node.text).toBe('abc');
+    expect(text('<text><tspan x="0">a</tspan><tspan x="30">b</tspan></text>').node.text).toBe('ab');
+    expect(text('<text><tspan x="0" y="5">a</tspan><tspan x="30" y="5">b</tspan></text>').node.text).toBe('ab');
+  });
+
+  it('keeps the runs in step with the text', () => {
+    const { node } = text(
+      '<text><tspan x="0" dy="0" font-weight="bold">A</tspan><tspan x="0" dy="20">B</tspan></text>',
+    );
+    expect(node.runs?.map((r) => r.text)).toEqual(['A', '\nB']);
+    expect(node.runs?.map((r) => r.text).join('')).toBe(node.text);
+  });
+
+  it('survives export and import', () => {
+    const { node } = text('<text x="10" y="20"><tspan x="10" dy="0">One</tspan><tspan x="10" dy="20">Two</tspan></text>');
+    expect((parseSvg(serializeSvg([node])).nodes[0] as SvgTextNode).text).toBe('One\nTwo');
+  });
+
+  it('reports per-glyph positions it reads only the first of', () => {
+    const { node, warnings } = text('<text x="10 20 30" y="5">abc</text>');
+    expect(node.text).toBe('abc');
+    expect(warnings).toEqual([expect.stringMatching(/x="10 20 30"/)]);
+  });
+});

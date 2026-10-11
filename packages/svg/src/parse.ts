@@ -28,6 +28,7 @@ import { IDENTITY_MATRIX } from './types';
 import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { readLength } from './lengths';
+import { joinLines, LineTracker } from './tspanLines';
 import { isNonUniform, paintThroughMatrix, strokeThroughMatrix, fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { collectGradients, WEASEL_NS, WEASEL_NS_PREFIX, type GradientTable } from './gradients';
@@ -890,6 +891,10 @@ function parseTextElement(
   const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
   // The box is built in the element's own coordinates and then taken through
   // the whole transform at once, by `placeNode`.
+  for (const name of ['x', 'y']) {
+    const raw = el.getAttribute(name)?.trim() ?? '';
+    if (/[\s,]/.test(raw)) onWarn(`<text ${name}="${raw}"> positions each glyph; only the first value is read`);
+  }
   const ax = readLength(el, 'x', 'x', 0, onWarn);
   const ay = readLength(el, 'y', 'y', 0, onWarn);
 
@@ -915,26 +920,29 @@ function parseTextElement(
 
   // Walk children: text nodes become plain run text; <tspan> elements
   // become StyledRuns with their attribute overrides applied.
-  const runs: StyledRun[] = [];
+  const runLines: StyledRun[][] = [[]];
+  const tracker = new LineTracker(el);
+  const push = (run: StyledRun): void => { runLines[runLines.length - 1].push(run); };
   for (let i = 0; i < el.childNodes.length; i++) {
     const child = el.childNodes[i];
     if (child.nodeType === 3 /* TEXT_NODE */) {
       const t = child.textContent ?? '';
       if (!t) continue;
-      runs.push({ text: t, ...inheritedShift });
+      push({ text: t, ...inheritedShift });
     } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
       const sp = child as Element;
       if (sp.tagName.toLowerCase() !== 'tspan') {
         onWarn(`<text> child <${sp.tagName}> not supported; flattening text content`);
         const t = sp.textContent ?? '';
-        if (t) runs.push({ text: t, ...inheritedShift });
+        if (t) push({ text: t, ...inheritedShift });
         continue;
       }
-      const run = readTspanRun(sp, gradients, leafStyle, onWarn);
-      runs.push(run);
+      if (tracker.startsLine(sp)) runLines.push([]);
+      push(readTspanRun(sp, gradients, leafStyle, onWarn));
     }
   }
-  if (!preservesSpace(el)) collapseRunWhitespace(runs);
+  if (!preservesSpace(el)) for (const line of runLines) collapseRunWhitespace(line);
+  const runs = joinLines(runLines);
   const plain = runs.map((r) => r.text).join('');
 
   // data-weasel-* attrs win; otherwise the box is what the text lays out to.
