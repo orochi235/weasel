@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react';
-import { createHistory, historyKey, useLatest, type Op } from '@weasel-js/core';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { historyKey, useLatest } from '@weasel-js/core';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
 import { CloseButton } from '../CloseButton';
@@ -11,7 +11,7 @@ import { setDefaults, type DefaultEdit } from './defaults';
 import { deadActionPaths, useEditorActions, type EditorAction } from './editorActions';
 import { EditorBar } from './EditorBar';
 import { EditorPrefsButton, EditorPrefsProvider, useEditorPrefs, useEditorSize, type PrefSchemaEditorPrefs } from './editorPrefs';
-import { dropDraft, openDraft, saveDraft, SWAP, type DraftStorage, type SwapArgs } from './draft';
+import type { DraftStorage } from './draft';
 import { openAfterStep, openFolds, saveFolds } from './folds';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
@@ -19,19 +19,17 @@ import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { NO_TYPES, type PrefTypes } from './types';
 import { aliasNodes, branchPaths, copyNodes, joinPath, keysOf, moveNodes, outermost, parentPath, pathOf, rebasePaths, removeNodes, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { baselinePaths, changedAttributes, changedPaths, diffSchemas } from './schemaExport';
-import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
+import { schemaCodec } from './schemaCodec';
 import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
 import { StructurePane, type DropOutside } from './StructurePane';
+import { useDocument } from './useDocument';
 import { useEditorSelection } from './useEditorSelection';
 import s from './PrefSchemaEditor.module.css';
 
 const NO_PATHS: ReadonlySet<string> = new Set();
 
 const NO_KINDS: CustomKinds = {};
-
-/** Edits to one node's attributes this close together undo as one, so typing a name is one step. */
-const COALESCE_MS = 800;
 
 /** How long a drag rests on a rail entry before the preview opens that page. */
 const RAIL_OPEN_MS = 500;
@@ -45,20 +43,6 @@ const DRAFT_NOTICE = {
 
 /** Where Delete and Backspace belong to the control and not to the selection. */
 const TEXT_ENTRY = 'input, textarea, select, [contenteditable]';
-
-/** An edit as the swap of one whole schema for another: schemas are immutable, so the snapshots cost nothing. */
-function swapOp<S extends SchemaRoot>(before: S, after: S, emit: (s: S) => void, coalesceKey?: string): Op {
-  const forward: Op = {
-    label: 'edit schema',
-    // Named, with what it swaps, so a draft can keep the step.
-    name: SWAP,
-    args: { before, after } satisfies SwapArgs<S>,
-    ...(coalesceKey !== undefined ? { coalesceKey } : {}),
-    apply: () => emit(after),
-    invert: () => ({ label: 'edit schema', apply: () => emit(before), invert: () => forward }),
-  };
-  return forward;
-}
 
 /** Props for {@link PrefSchemaEditor}. */
 export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefGroup> {
@@ -130,12 +114,13 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
-  const [opened] = useState(() => (draftKey === undefined ? null : openDraft(draftKey, base, draftStorage, types)));
+  const codec = useMemo(() => schemaCodec<S>(types), [types]);
+  const [opened] = useState(() => (draftKey === undefined ? null : codec.openDraft(draftKey, base, draftStorage)));
   const [notice, setNotice] = useState<string | null>(() => (opened ? DRAFT_NOTICE[opened.met] : null));
   // Every row starts open but the ones the reader folded last time.
   const [expanded, setExpanded] = useState(() => {
     const folded = new Set(draftKey === undefined ? [] : openFolds(draftKey));
-    return new Set(branchPaths(opened?.schema ?? schema).filter((id) => !folded.has(id)));
+    return new Set(branchPaths(opened?.value ?? schema).filter((id) => !folded.has(id)));
   });
   useEffect(() => {
     if (draftKey !== undefined) saveFolds(draftKey, branchPaths(schema).filter((id) => !expanded.has(id)));
@@ -147,75 +132,23 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
 
   const latest = useLatest({ schema, onChange, paths: selection.paths });
-  const emitted = useRef(schema);
-  const hand = (next: S) => {
-    emitted.current = next;
-    latest.current.onChange(next);
-  };
   // What was selected when a drag opened a rail page, which selects that page's group: a step back from the drop
   // returns to this and not to the group.
   const beforeOpening = useRef<readonly string[] | null>(null);
-  const [history] = useState(() =>
-    createHistory(null, {
-      coalesceWindowMs: COALESCE_MS,
-      selection: {
-        get: () => [...(beforeOpening.current ?? latest.current.paths)],
-        set: (ids) => selection.set(ids),
-      },
-      rebuildOp: (name, args) => (name === SWAP ? swapOp((args as SwapArgs<S>).before, (args as SwapArgs<S>).after, hand) : null),
-    }),
-  );
-  useSyncExternalStore(history.subscribe, history.getVersion);
-  useEffect(() => {
-    if (schema === emitted.current) return;
-    emitted.current = schema;
-    history.clear();
-  }, [schema, history]);
-  // The draft follows every step, with the steps around it; back at the baseline there is nothing to keep.
-  const [draftSavedAt, setDraftSavedAt] = useState(() => opened?.savedAt ?? null);
-  const keep = () => {
-    if (draftKey === undefined) return;
-    const savedAt = emitted.current === base ? null : Date.now();
-    if (savedAt === null) dropDraft(draftKey, draftStorage);
-    else saveDraft(draftKey, emitted.current, base, history.serialize(), savedAt, draftStorage, types);
-    setDraftSavedAt(savedAt);
-  };
-  useEffect(() => {
-    if (!opened || draftKey === undefined) return;
-    hand(opened.schema);
-    if (opened.stacks) history.restore(opened.stacks);
-    // Saved again as an edit of this source, so the next editor has nothing to carry.
-    if (opened.met === 'carried') saveDraft(draftKey, opened.schema, base, history.serialize(), opened.savedAt, draftStorage, types);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- a draft is opened once, by the editor that finds it
-  }, []);
-  const sent = useRef<unknown>(null);
-  useEffect(() => {
-    sent.current ??= draftKey === undefined ? null : openSent(draftKey, draftStorage);
-    if (!taken || sent.current === null) return;
-    const next = afterTaken(emitted.current, sent.current, base, types);
-    sent.current = null;
-    if (draftKey !== undefined) dropSent(draftKey, draftStorage);
-    hand(next);
-    history.clear();
-    keep();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the host's word is the only thing that sets this off
-  }, [taken]);
-  const submit: SubmitChanges | undefined = onSubmit && (async (changes, literal) => {
-    const packed = packSent(emitted.current, base, types);
-    await onSubmit(changes, literal);
-    sent.current = packed;
-    if (draftKey !== undefined) saveSent(draftKey, packed, draftStorage);
+  const doc = useDocument<S>({
+    value: schema, onChange, base, codec, opened, draftKey, draftStorage, taken,
+    selection: {
+      get: () => [...(beforeOpening.current ?? latest.current.paths)],
+      set: (ids) => selection.set(ids),
+    },
   });
+  const submit: SubmitChanges | undefined = onSubmit && ((changes, literal) => doc.send(() => onSubmit(changes, literal)));
   // The panes edit either root; each hands back the kind it was given.
-  const commit = (next: SchemaRoot, coalesceKey?: string) => {
-    history.applyOps([swapOp(latest.current.schema, next as S, hand, coalesceKey)], 'edit schema');
-    keep();
-  };
+  const commit = (next: SchemaRoot, coalesceKey?: string) => doc.commit(next as S, coalesceKey);
   const step = (to: 'undo' | 'redo') => {
     const before = latest.current.schema;
-    history[to]();
-    setExpanded((open) => openAfterStep(open, before, openAt.current.get(emitted.current)));
-    keep();
+    doc.step(to);
+    setExpanded((open) => openAfterStep(open, before, openAt.current.get(doc.current())));
   };
 
   const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);
@@ -382,8 +315,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
         remove();
       }
     }}>
-      <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={history.canUndo()} canRedo={history.canRedo()} onStep={step}
-        draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select([]); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
+      <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={doc.canUndo} canRedo={doc.canRedo} onStep={step}
+        draftSavedAt={doc.draftSavedAt} onDiscard={() => { commit(base); select([]); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
       <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={custom} renderers={renderers} types={types}
         expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} actions={actionList ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
         toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} />
