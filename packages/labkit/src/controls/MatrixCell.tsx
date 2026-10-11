@@ -46,6 +46,7 @@ export function MatrixCell({
   name,
   hint,
   canUnpin,
+  disabled = false,
   setConfig,
   onOpen,
 }: {
@@ -57,6 +58,8 @@ export function MatrixCell({
   /** Present while the cell inherits: where from. */
   hint?: string;
   canUnpin: boolean;
+  /** The cell takes no input: its `enableIf`, or that of a group above it, does not hold. */
+  disabled?: boolean;
   setConfig: (path: string, value: unknown) => void;
   onOpen: (el: HTMLElement) => void;
 }) {
@@ -64,7 +67,7 @@ export function MatrixCell({
   const write = (next: unknown): void => setConfig(path, next);
   const choices = useFieldChoices();
   const field = isBuiltinPref(leaf)
-    ? prefFieldProps(leaf, { value: shown, setValue: write, fields: choices })
+    ? prefFieldProps(leaf, { value: shown, setValue: write, fields: choices, disabled })
     : null;
   const label = hint ? `${name}, ${hint}` : name;
 
@@ -88,6 +91,7 @@ export function MatrixCell({
         aria-checked={on}
         aria-label={label}
         className="lk-control-matrix__switch"
+        disabled={disabled}
         onClick={(e) => {
           if (!unpinned(e)) field.onChange(!on);
         }}
@@ -105,6 +109,7 @@ export function MatrixCell({
         type="color"
         aria-label={label}
         className="lk-control-matrix__swatch"
+        disabled={disabled}
         value={stored.slice(0, 7)}
         onClick={(e) => {
           unpinned(e);
@@ -124,6 +129,7 @@ export function MatrixCell({
         aria-label={set ? label : `${label}, unset`}
         aria-haspopup="dialog"
         className="lk-control-matrix__value"
+        disabled={disabled}
         onClick={(e) => {
           if (!unpinned(e)) onOpen(e.currentTarget);
         }}
@@ -144,6 +150,7 @@ export function MatrixCell({
         aria-label={label}
         aria-haspopup="dialog"
         className={valueClass}
+        disabled={disabled}
         onClick={(e) => {
           if (!unpinned(e)) onOpen(e.currentTarget);
         }}

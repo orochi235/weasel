@@ -51,6 +51,9 @@ jobs:
       # Every kit frame loop runs behind `useVisibleRaf`; a bare
       # requestAnimationFrame is how that stops being true.
       - run: npm run check:frame-loops
+      # No source file or function grows past its cap; the allowlist's entries
+      # only come down.
+      - run: npm run check:size
       # Every `var(--wzl-*)` names a theme token or a declared override hook;
       # a read of a name nothing declares drops its declaration silently.
       - run: npm run check:token-reads

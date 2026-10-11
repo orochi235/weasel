@@ -1,0 +1,516 @@
+{
+  "packages/audio/src/createAudioEngine.ts": {
+    "lines": 765,
+    "longestFunction": 611
+  },
+  "packages/audio/src/inserts.ts": {
+    "longestFunction": 232
+  },
+  "packages/audio/src/testing/fakeAudioContext.ts": {
+    "lines": 419,
+    "longestFunction": 169
+  },
+  "packages/core/src/animation/engine/codec.ts": {
+    "longestFunction": 185
+  },
+  "packages/core/src/animation/reflow.ts": {
+    "longestFunction": 165
+  },
+  "packages/core/src/animation/timeline/booking.ts": {
+    "longestFunction": 135
+  },
+  "packages/core/src/animation/timeline/createTimeline.ts": {
+    "longestFunction": 216
+  },
+  "packages/core/src/animation/types.ts": {
+    "lines": 582
+  },
+  "packages/core/src/animation/useAnimator.ts": {
+    "lines": 502,
+    "longestFunction": 460
+  },
+  "packages/core/src/canvas/Canvas.tsx": {
+    "lines": 1347,
+    "longestFunction": 781
+  },
+  "packages/core/src/canvas/CanvasView.tsx": {
+    "lines": 424,
+    "longestFunction": 286
+  },
+  "packages/core/src/canvas/MinimapCanvas.tsx": {
+    "longestFunction": 155
+  },
+  "packages/core/src/canvas/NodeShape.ts": {
+    "lines": 471
+  },
+  "packages/core/src/canvas/SceneCanvas.tsx": {
+    "lines": 1556,
+    "longestFunction": 1354
+  },
+  "packages/core/src/canvas/SceneCanvas/GestureDispatcherMounter.tsx": {
+    "longestFunction": 276
+  },
+  "packages/core/src/canvas/SceneCanvas/StandardActionsRegistrar.tsx": {
+    "longestFunction": 229
+  },
+  "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts": {
+    "longestFunction": 139
+  },
+  "packages/core/src/canvas/SceneCanvas/props.ts": {
+    "lines": 843
+  },
+  "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts": {
+    "longestFunction": 208
+  },
+  "packages/core/src/canvas/SceneCanvas/useSceneSelectTool.ts": {
+    "longestFunction": 158
+  },
+  "packages/core/src/canvas/deps/insert.ts": {
+    "longestFunction": 143
+  },
+  "packages/core/src/canvas/pickWalk.ts": {
+    "lines": 478
+  },
+  "packages/core/src/canvas/renderSceneToPixels.ts": {
+    "lines": 422
+  },
+  "packages/core/src/canvas/sceneAdapter.ts": {
+    "lines": 457,
+    "longestFunction": 279
+  },
+  "packages/core/src/canvas/useViewHelpers.ts": {
+    "longestFunction": 154
+  },
+  "packages/core/src/core/adapters/arrayAdapter.ts": {
+    "longestFunction": 151
+  },
+  "packages/core/src/core/layers/render.ts": {
+    "lines": 541
+  },
+  "packages/core/src/core/paintKinds.ts": {
+    "lines": 456
+  },
+  "packages/core/src/core/scene/arrivalWindow.ts": {
+    "longestFunction": 123
+  },
+  "packages/core/src/core/scene/kitOps.ts": {
+    "longestFunction": 245
+  },
+  "packages/core/src/core/scene/nodeStore.ts": {
+    "longestFunction": 207
+  },
+  "packages/core/src/core/scene/renderOrder.ts": {
+    "longestFunction": 166
+  },
+  "packages/core/src/core/scene/scene.ts": {
+    "lines": 1133,
+    "longestFunction": 1033
+  },
+  "packages/core/src/core/scene/types.ts": {
+    "lines": 831
+  },
+  "packages/core/src/debug/createDebugOverlayLayer.ts": {
+    "lines": 440
+  },
+  "packages/core/src/features/paths/pathLayer.ts": {
+    "longestFunction": 123
+  },
+  "packages/core/src/features/paths/penPreviewLayer.ts": {
+    "longestFunction": 140
+  },
+  "packages/core/src/features/paths/tessellate/dash.ts": {
+    "longestFunction": 125
+  },
+  "packages/core/src/features/paths/tessellate/stroke.ts": {
+    "lines": 526
+  },
+  "packages/core/src/features/poseRun/usePoseRun.ts": {
+    "longestFunction": 129
+  },
+  "packages/core/src/features/selection/overlay.ts": {
+    "lines": 796
+  },
+  "packages/core/src/features/text/domRuns.ts": {
+    "lines": 498
+  },
+  "packages/core/src/features/text/useSceneTextEdit.ts": {
+    "longestFunction": 167
+  },
+  "packages/core/src/features/text/useTextEdit.ts": {
+    "lines": 1332,
+    "longestFunction": 482
+  },
+  "packages/core/src/interactions/actions/defaults/anchorEditing.ts": {
+    "lines": 401
+  },
+  "packages/core/src/interactions/actions/defaults/editAnchors.ts": {
+    "longestFunction": 134
+  },
+  "packages/core/src/interactions/actions/defaults/insert.ts": {
+    "lines": 621,
+    "longestFunction": 194
+  },
+  "packages/core/src/interactions/actions/defaults/resize.ts": {
+    "lines": 697,
+    "longestFunction": 355
+  },
+  "packages/core/src/interactions/actions/defaults/rotate.ts": {
+    "longestFunction": 212
+  },
+  "packages/core/src/interactions/actions/defaults/viewportZoom.ts": {
+    "longestFunction": 129
+  },
+  "packages/core/src/interactions/actions/depSchema.ts": {
+    "lines": 716
+  },
+  "packages/core/src/renderer/WeaselRenderer.ts": {
+    "lines": 745
+  },
+  "packages/core/src/renderer/drawBatch.ts": {
+    "lines": 663
+  },
+  "packages/core/src/renderer/shaders/extractUniformNames.ts": {
+    "longestFunction": 144
+  },
+  "packages/core/src/tools/builtin/pen/usePenTool.ts": {
+    "lines": 749,
+    "longestFunction": 499
+  },
+  "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
+    "longestFunction": 124
+  },
+  "packages/core/src/tools/builtin/select/useSelectTool.ts": {
+    "lines": 426,
+    "longestFunction": 276
+  },
+  "packages/core/src/tools/builtin/slice/useSliceTool.ts": {
+    "longestFunction": 192
+  },
+  "packages/d3/src/bind.ts": {
+    "longestFunction": 140
+  },
+  "packages/d3/src/transition.ts": {
+    "lines": 476,
+    "longestFunction": 337
+  },
+  "packages/diagram/src/cluster.ts": {
+    "longestFunction": 124
+  },
+  "packages/diagram/src/fromData.ts": {
+    "longestFunction": 166
+  },
+  "packages/font/src/outline/outlineRegistry.ts": {
+    "lines": 444
+  },
+  "packages/font/src/registerFont.ts": {
+    "lines": 906,
+    "longestFunction": 130
+  },
+  "packages/forge/src/frame/FrameController.tsx": {
+    "longestFunction": 181
+  },
+  "packages/forge/src/shell/FrameView.tsx": {
+    "longestFunction": 229
+  },
+  "packages/forge/src/shell/TrialHost.tsx": {
+    "longestFunction": 138
+  },
+  "packages/forge/src/shell/Workshop.tsx": {
+    "longestFunction": 123
+  },
+  "packages/forge/src/shell/cssVars/CssVarsPanel.tsx": {
+    "longestFunction": 222
+  },
+  "packages/forge/src/shell/tree/StoryTree.tsx": {
+    "longestFunction": 315
+  },
+  "packages/forge/src/shell/useStoryRegistry.ts": {
+    "longestFunction": 207
+  },
+  "packages/forge/src/vite/depGraph.ts": {
+    "longestFunction": 183
+  },
+  "packages/forge/src/vite/plugin.ts": {
+    "longestFunction": 326
+  },
+  "packages/geom/src/pathHitTest.ts": {
+    "lines": 438
+  },
+  "packages/geom/src/paths/pathFromD.ts": {
+    "lines": 406
+  },
+  "packages/geom/src/tessellate/polyline.ts": {
+    "longestFunction": 145
+  },
+  "packages/geom/src/tessellate/tessellate.ts": {
+    "longestFunction": 128
+  },
+  "packages/gestures/src/ui/match.ts": {
+    "lines": 489,
+    "longestFunction": 132
+  },
+  "packages/guides/src/layout/strategies/tileGrid.ts": {
+    "longestFunction": 285
+  },
+  "packages/history/src/history.ts": {
+    "lines": 947,
+    "longestFunction": 508
+  },
+  "packages/hud/src/attach.ts": {
+    "longestFunction": 170
+  },
+  "packages/hud/src/hud.ts": {
+    "longestFunction": 193
+  },
+  "packages/hud/src/loupe/createLoupe.ts": {
+    "longestFunction": 239
+  },
+  "packages/hud/src/widgets/window/window.ts": {
+    "longestFunction": 235
+  },
+  "packages/kernel3d/src/deps.ts": {
+    "lines": 502,
+    "longestFunction": 165
+  },
+  "packages/labkit/src/annotations/AnnotationOverlay.tsx": {
+    "longestFunction": 182
+  },
+  "packages/labkit/src/annotations/ExportMenu.tsx": {
+    "longestFunction": 126
+  },
+  "packages/labkit/src/annotations/store.ts": {
+    "lines": 470,
+    "longestFunction": 328
+  },
+  "packages/labkit/src/canvas/CanvasStack.tsx": {
+    "longestFunction": 138
+  },
+  "packages/labkit/src/chrome/builtins.tsx": {
+    "longestFunction": 223
+  },
+  "packages/labkit/src/clock/trialClock.ts": {
+    "longestFunction": 223
+  },
+  "packages/labkit/src/controls/ControlMatrix.tsx": {
+    "longestFunction": 207
+  },
+  "packages/labkit/src/controls/ControlPanel.tsx": {
+    "longestFunction": 127
+  },
+  "packages/labkit/src/controls/ControlRow.tsx": {
+    "longestFunction": 157
+  },
+  "packages/labkit/src/controls/MatrixCell.tsx": {
+    "longestFunction": 129
+  },
+  "packages/labkit/src/controls/panelRows.tsx": {
+    "longestFunction": 283
+  },
+  "packages/labkit/src/lab/Lab.tsx": {
+    "lines": 637,
+    "longestFunction": 310
+  },
+  "packages/labkit/src/lab/Workspace.tsx": {
+    "longestFunction": 160
+  },
+  "packages/labkit/src/lightbox/Lightbox.tsx": {
+    "longestFunction": 140
+  },
+  "packages/labkit/src/loupe/TrialLoupe.tsx": {
+    "longestFunction": 214
+  },
+  "packages/labkit/src/loupe/useLoupe.ts": {
+    "longestFunction": 198
+  },
+  "packages/labkit/src/primitives/FloatingPanel.tsx": {
+    "longestFunction": 149
+  },
+  "packages/labkit/src/specimen/Specimen.tsx": {
+    "lines": 883,
+    "longestFunction": 132
+  },
+  "packages/labkit/src/state/bindLabStore.ts": {
+    "longestFunction": 216
+  },
+  "packages/labkit/src/state/store.ts": {
+    "longestFunction": 237
+  },
+  "packages/labkit/src/surface/useTiledSurface.ts": {
+    "longestFunction": 263
+  },
+  "packages/labkit/src/trial/Trial.tsx": {
+    "lines": 669,
+    "longestFunction": 542
+  },
+  "packages/labkit/src/trial/TrialChrome.tsx": {
+    "longestFunction": 246
+  },
+  "packages/paint/src/colorSpaces.ts": {
+    "lines": 439
+  },
+  "packages/prefs/src/schema.ts": {
+    "lines": 413
+  },
+  "packages/prefs/src/store.ts": {
+    "longestFunction": 125
+  },
+  "packages/routing/src/interactions/actions/invoker.ts": {
+    "lines": 452
+  },
+  "packages/routing/src/interactions/dispatcher/dispatcher.ts": {
+    "lines": 1024,
+    "longestFunction": 923
+  },
+  "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx": {
+    "lines": 1178,
+    "longestFunction": 1038
+  },
+  "packages/simulation/src/useSimulation.ts": {
+    "longestFunction": 130
+  },
+  "packages/storage/src/indexedDb.ts": {
+    "longestFunction": 133
+  },
+  "packages/storage/src/records.ts": {
+    "lines": 403,
+    "longestFunction": 281
+  },
+  "packages/svg/src/cascade.ts": {
+    "lines": 428
+  },
+  "packages/svg/src/gradients.ts": {
+    "lines": 624
+  },
+  "packages/svg/src/parse.ts": {
+    "longestFunction": 133
+  },
+  "packages/svg/src/serialize.ts": {
+    "lines": 657
+  },
+  "packages/svg/src/unpack.ts": {
+    "lines": 410
+  },
+  "packages/text/src/layout/layoutRuns.ts": {
+    "lines": 1284,
+    "longestFunction": 665
+  },
+  "packages/text/src/layout/lineBreak/lineBreaks.ts": {
+    "longestFunction": 174
+  },
+  "packages/theme/src/engine/color/generate.ts": {
+    "lines": 541,
+    "longestFunction": 208
+  },
+  "packages/theme/src/engine/derive.ts": {
+    "lines": 478,
+    "longestFunction": 172
+  },
+  "packages/ui/src/components/Badge/Badge.tsx": {
+    "longestFunction": 281
+  },
+  "packages/ui/src/components/Badge/bases/RoundedRect.tsx": {
+    "longestFunction": 150
+  },
+  "packages/ui/src/components/Badge/effects/Aqua.tsx": {
+    "longestFunction": 122
+  },
+  "packages/ui/src/components/Badge/effects/Metal.tsx": {
+    "longestFunction": 131
+  },
+  "packages/ui/src/components/BandEditor/BandEditor.tsx": {
+    "longestFunction": 265
+  },
+  "packages/ui/src/components/Callout/Callout.tsx": {
+    "longestFunction": 179
+  },
+  "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx": {
+    "lines": 474,
+    "longestFunction": 356
+  },
+  "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
+    "lines": 509,
+    "longestFunction": 320
+  },
+  "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {
+    "lines": 438,
+    "longestFunction": 296
+  },
+  "packages/ui/src/components/DataGrid/DataGrid.tsx": {
+    "longestFunction": 168
+  },
+  "packages/ui/src/components/ItemList/ItemList.tsx": {
+    "longestFunction": 229
+  },
+  "packages/ui/src/components/LayerList/LayerList.tsx": {
+    "lines": 650,
+    "longestFunction": 204
+  },
+  "packages/ui/src/components/NumberField/UnitField.tsx": {
+    "longestFunction": 196
+  },
+  "packages/ui/src/components/PaintInput/PaintInput.tsx": {
+    "longestFunction": 149
+  },
+  "packages/ui/src/components/Plot2D/Plot2D.tsx": {
+    "longestFunction": 221
+  },
+  "packages/ui/src/components/PrefSchemaEditor/AssetEditor.tsx": {
+    "longestFunction": 269
+  },
+  "packages/ui/src/components/PrefSchemaEditor/AttributesPane.tsx": {
+    "longestFunction": 195
+  },
+  "packages/ui/src/components/PrefSchemaEditor/StructurePane.tsx": {
+    "longestFunction": 216
+  },
+  "packages/ui/src/components/Prefs/RailLayout.tsx": {
+    "longestFunction": 134
+  },
+  "packages/ui/src/components/Prefs/prefField.tsx": {
+    "longestFunction": 171
+  },
+  "packages/ui/src/components/Properties/CurveField.tsx": {
+    "longestFunction": 150
+  },
+  "packages/ui/src/components/Properties/fieldControls.tsx": {
+    "lines": 414
+  },
+  "packages/ui/src/components/Select/Select.tsx": {
+    "lines": 496,
+    "longestFunction": 127
+  },
+  "packages/ui/src/components/SelectionPanel/ObjectLeaf.tsx": {
+    "longestFunction": 172
+  },
+  "packages/ui/src/components/SelectionPanel/SelectionPanel.tsx": {
+    "longestFunction": 175
+  },
+  "packages/ui/src/components/SelectionPanel/renderLeaf.tsx": {
+    "longestFunction": 156
+  },
+  "packages/ui/src/components/Slider/SliderBody.tsx": {
+    "longestFunction": 269
+  },
+  "packages/ui/src/components/Slider/useThumbDrags.ts": {
+    "longestFunction": 145
+  },
+  "packages/ui/src/components/Timeline/Lane.tsx": {
+    "longestFunction": 201
+  },
+  "packages/ui/src/components/Timeline/Timeline.tsx": {
+    "longestFunction": 187
+  },
+  "packages/ui/src/components/TokenPanel/TokenPanel.tsx": {
+    "lines": 425
+  },
+  "packages/ui/src/components/Tree/Tree.tsx": {
+    "lines": 502,
+    "longestFunction": 297
+  },
+  "packages/ui/src/components/Tree/useTreeDrag.ts": {
+    "longestFunction": 157
+  },
+  "packages/ui/src/icons/paths.ts": {
+    "lines": 866
+  }
+}

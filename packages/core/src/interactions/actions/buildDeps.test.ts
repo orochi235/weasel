@@ -13,7 +13,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
-import { moveAction } from './defaults/move';
+import { moveAction } from './move/action';
 import { resizeAction } from './defaults/resize';
 import { flipAction } from './defaults/flip';
 import { rotateAction } from './defaults/rotate';

@@ -15,7 +15,7 @@ export { evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-
 export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionShortcuts, keySpecShortcut } from '../interactions/actions/actionShortcuts';
 export type { ActionShortcut } from '../interactions/actions/actionShortcuts';
-export { moveAction } from '../interactions/actions/defaults/move';
+export { moveAction } from '../interactions/actions/move/action';
 export { resizeAction } from '../interactions/actions/defaults/resize';
 export { rotateAction } from '../interactions/actions/defaults/rotate';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';

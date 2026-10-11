@@ -223,7 +223,9 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
               // headless section nothing else names it, so it heads itself;
               // an object leaf already renders its own heading.
               row.leaves.length === 1 && controls[0].block ? (
-                <div key={panelLeafKey(row.leaves[0])} {...selectionAttrs(panelLeafKey(row.leaves[0]), marks, true)}>
+                // An object leaf ends in rows of its own, each with the gap a row leaves under it.
+                <div key={panelLeafKey(row.leaves[0])} className={row.leaves[0].leaf.kind === 'object' ? undefined : s.blockRow}
+                  {...selectionAttrs(panelLeafKey(row.leaves[0]), marks, true)}>
                   {section.name === '' && row.leaves[0].leaf.kind !== 'object' && !prefDrawsNoControl(row.leaves[0].leaf) && (
                     <h4 className={s.sectionTitle} title={row.leaves[0].leaf.description}>
                       {row.leaves[0].leaf.name}

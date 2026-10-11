@@ -21,9 +21,13 @@ export interface TargetOptions<T> {
    *  fields are all numbers, read from `get()` when the target is made. */
   axes?: TargetAxes<T>;
   /** Called once a frame, after the frame's animations, with the value to show: on every frame
-   *  the target is moving, and once more as it comes to rest. Omit for a target whose reader
+   *  the target is moving, as an animation starts on it or is redirected, and once more as it
+   *  comes to rest. Omit for a target whose reader
    *  calls `read()` itself. */
   show?(value: T): void;
+  /** Called once a frame, after every target that was shown that frame: for a table that
+   *  publishes many targets at once. Targets passing the same function share one call. */
+  publish?(): void;
 }
 
 /**
@@ -38,6 +42,18 @@ export interface Target<T> {
   read(): T;
   /** Whether any animation is moving it. */
   readonly active: boolean;
+  /**
+   * Stops every animation moving it. Each commits where it was, so the value on screen stays,
+   * unless `commit` is false: then the committed value is left as it stands and the target
+   * shows it. Pass false after something else has written the committed value mid-flight.
+   */
+  stop(opts?: { commit?: boolean }): void;
+}
+
+/** The animator moving a target, as the target reaches it. */
+export interface TargetOwner {
+  /** Cancels every animation on `s`. */
+  stop(s: TargetState): void;
 }
 
 /** What an animator keeps on a target it is moving. */
@@ -45,9 +61,12 @@ export interface TargetState<T = unknown> {
   readonly get: () => T;
   readonly set: (value: T) => void;
   readonly show: ((value: T) => void) | undefined;
+  readonly publish: (() => void) | undefined;
   readonly axes: TargetAxes<T>;
   /** The animator moving it, by its own token; null while none is. */
-  owner: object | null;
+  owner: TargetOwner | null;
+  /** True while its animations are being stopped without committing where they were. */
+  discard: boolean;
   /** How many animations are moving it. */
   live: number;
   /** The sum of their offsets as the last frame read it. */
@@ -85,8 +104,10 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     get: opts.get,
     set: opts.set,
     show: opts.show,
+    publish: opts.publish,
     axes,
     owner: null,
+    discard: false,
     live: 0,
     slot: null,
     adjust: new Array<number>(axes.count).fill(0),
@@ -94,6 +115,12 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
   const target: Target<T> = {
     read: () => readTarget(s),
     get active() { return s.live > 0; },
+    stop(o) {
+      const owner = s.owner;
+      if (!owner) return;
+      s.discard = o?.commit === false;
+      try { owner.stop(s as unknown as TargetState); } finally { s.discard = false; }
+    },
   };
   states.set(target, s as unknown as TargetState);
   return target;

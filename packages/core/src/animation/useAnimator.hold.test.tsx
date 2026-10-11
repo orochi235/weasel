@@ -127,12 +127,12 @@ describe('a hold on a target', () => {
     act(() => { h = animator.hold({ target: b.target, value: 40 }); });
     expect(clock.pending()).toBe(1);
     step(16);
-    expect(b.shown).toEqual([40]);
+    expect(b.shown).toEqual([40, 40]);
     expect(clock.pending()).toBe(0);
     expect(animator.isActive()).toBe(true);
     act(() => { h.cancel(); });
     step(16);
-    expect(b.shown).toEqual([40, 40]);
+    expect(b.shown).toEqual([40, 40, 40]);
     expect(clock.pending()).toBe(0);
 
     const c = box(0);

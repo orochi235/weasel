@@ -116,6 +116,19 @@ When building new tools, read these first:
 
 Do **not** write a tool that runs its own gesture (`useDragRect`) and commits with `ctx.applyBatch([createInsertOp(...)])`. That was the previous guidance here, and the code it pointed at had been dead for some time — see the 2026-07-27 layer-audit handoff.
 
+## Module shape
+
+**A helper takes what it reads and returns what it produces. No module takes
+another's scratch whole.** A function handed a 28-field bag can be moved to
+another file and is no more separate for it. Split an action's state by when it
+changes — captured at press and readonly, replaced each frame, or private to one
+behavior — and pass each function the part it uses.
+
+`npm run check:size` fails on a source file over 400 lines or a function over
+120. Files already over are recorded in `scripts/check-size.allow.json`, and an
+entry only comes down: `npm run check:size -- --update` lowers it after a split
+and never raises it.
+
 ## Frame loops
 
 Every frame loop runs behind `useVisibleRaf` (`@weasel-js/react`), never a bare

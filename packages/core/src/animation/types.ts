@@ -169,8 +169,8 @@ interface OnTarget<T> {
   /** Any new animation passed the same cancelKey cancels the prior one in flight. Leave it off
    *  to let animations on one target add. */
   cancelKey?: string;
-  /** False joins whatever holds `cancelKey` without canceling it, so the key groups animations
-   *  that add. Default true. */
+  /** False to take `cancelKey` without canceling the animations holding it, so it adds to them
+   *  and `cancelKey`, `pauseKey`, and `isActive` reach them all. Default true. */
   interrupt?: boolean;
   /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
   label?: string;
@@ -555,7 +555,7 @@ export interface StaggerBuilder<TItem> {
    *  would collide on `"[object Object]"` and successive tweens would
    *  cancel each other. Throws on items that satisfy neither. */
   springPose<TPose>(
-    adapter: import('core/adapters/types').SceneAdapter<{ id: string }, TPose>,
+    adapter: import('./poseHelpers').PoseAnimationAdapter<TPose>,
     poseFn: (item: TItem, index: number) => TPose,
     opts?: StaggerSpringPoseOptions<TPose>,
   ): AnimationHandle;

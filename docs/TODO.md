@@ -865,9 +865,11 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   sampling compute in blits (step 3), at about 3× today's tween frame for 10k nodes, which Mike
   accepted on 2026-10-04, and 2.5–3.5× today's keyframe sampling, which Mike accepted on 2026-10-08
   (the rest of that gap is blits' read path).
-  Animation targets are built (`createTarget`), so animations given one add. Nothing in the tree
-  is on a target yet. Left: the pose, color and camera, timeline, and rig arcs in the proposal's
-  "The arcs".
+  Animation targets are built (`createTarget`), and pose animation is on them: `tweenPose`,
+  `springPose`, reflow, and momentum move a node's pose target, so two moves on one node add.
+  Left: the color and camera, timeline, and rig arcs in the proposal's "The arcs". Also left
+  from the pose arc: `arrayAdapter` has no `poseTarget`, so moves over it still write each
+  frame and replace each other.
 
 ### Earlier deferrals
 
@@ -957,15 +959,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) `defaults/move.ts` is 1,426 lines doing four jobs.** Designed, not built:
-  `docs/superpowers/specs/2026-10-11-move-action-decomposition-design.md` splits it by phase into
-  `actions/move/`, adds what the behavior contract lacks, and makes a layout drop and
-  reparent-on-drop move behaviors. It also adds `check:size`.
+- **(P2) A layout drop is not a move behavior.** `actions/move/` is split by phase, with the layout
+  pass and reparent-on-drop as commit paths inside it.
+  `docs/superpowers/specs/2026-10-11-move-action-decomposition-design.md` is unbuilt: three
+  additions to the behavior contract, then both paths lifted out as `MoveBehavior`s.
 
 - **(P2) `resize.ts` (698) and `rotate.ts` (353) are built like `move.ts` was.** Each is a scratch
   interface every helper takes whole and a `commitX` closure inside `start()`. They take the split
-  the move spec describes: a readonly session captured at press, a frame replaced each move, and
-  commit paths that return ops. `resize.ts` also carries its point-snap helpers, and `insert.ts`
+  `actions/move/` now has: a readonly session captured at press (`session.ts`), a frame replaced
+  each move (`frame.ts`), and commit paths that return ops (`commit/`). `resize.ts` also carries its point-snap helpers, and `insert.ts`
   (621) holds two actions.
 
 - **(P3) Reparent-on-drop may misplace a node grabbed mid-glide.** Read, not reproduced. The
@@ -983,8 +985,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
   sibling `actions/<name>/` (move, resize, rotate, flip, align, distribute, clone, clipboard,
   booleans, outlines, edit-anchors, lasso-select) holds its options, geometry, and gesture
-  adapter. One directory per action would hold both, and would give `move.ts`'s pieces somewhere
-  to land.
+  adapter. One directory per action would hold both. `move` is done; the rest follow it.
 
 - **(P3) Range selection on the canvas.** `@weasel-js/select` ranges over an `order` the caller
   supplies, and a canvas has none of its own, so core's `useSelection` never ranges and keeps no
@@ -1188,25 +1189,23 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
-- **(P3) `PrefSchemaEditor` rough edges seen in headless Chromium, 2026-10-11.** While a drag is
-  over the Unplaced list, its 2px inset outline covers the first letter of the heading, which
-  reads "JNPLACED". A row dragged onto a tree branch has its ghost drawn over the branch's name. A
-  label's attributes pane shows a read-only row `DEFAULT undefined`. A selected label row's
-  outline touches the label of the row under it in the preview.
+- **(P3) `Tree`'s row ghost takes the host page's font.** The ghost portals out of the tree, so
+  inside `PrefSchemaEditor`, whose `.editor` sets its own face, a dragged row draws in whatever the
+  page uses; in the browser tests, with no themed ancestor, that is the default serif.
 
-- **(P3) `PropertyGroup` title rough edges, same pass.** With `twisty="folded"` the title moves
-  32px right when the hidden twisty takes focus. In light mode the rules either side of a title do
-  not show, where in dark they do.
-
-- **(P3) A field in a labkit `ControlPanel` panel box has not been checked against its box.** In
-  light mode a text field inside an `as: 'panel'` box was the box's own color and invisible in
-  `SelectionPanel` and in `PrefsForm`'s rail panel; both are fixed (`cb7fa4996`). Nobody has
-  looked at `ControlPanel`.
+- **(P3) Disabled and panel-box rough edges seen in headless Chromium, 2026-10-11.** A disabled
+  `Bar` action button draws at 0.4 where every other disabled cell draws at 0.5. A disabled text
+  area in a `Bar` keeps a full-strength, working "Notes" button that opens to a disabled text
+  area. labkit's "Pin" button on a disabled `ControlPanel` row still works. In light mode a panel
+  box's own 1px `--wzl-border` is invisible on its sunken fill in `PrefsForm` and `SelectionPanel`,
+  because light mode sets `--wzl-border` and `--wzl-surface-sunken` to the same gray; `MotifFrame`
+  got around the same collision by mixing its edge from its own surface (`25b22ee40`).
 
 - **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
   drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
-  drag. Not covered: a palette tool dropped on the tree, a drag held on a rail entry until its page
-  opens (the 500 ms `RAIL_OPEN_MS` timer), and a drag onto the Unplaced list.
+  drag, and a tree row onto the Unplaced list as far as the hold. Not covered: that drop, a
+  palette tool dropped on the tree, and a drag held on a rail entry until its page opens (the
+  500 ms `RAIL_OPEN_MS` timer).
 
 - **(P3) `Tree` reports an outside drag's target only from an effect.** `useTreeDrag.ts` writes the
   target in a passive effect, a render behind the pointer, so a release in the same task as the
@@ -1237,9 +1236,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   per control needs a wrapper that breaks the `.rowControls > *` sizing), and how a section is
   named in `selected`, since its key is no part of any value path and can collide with a leaf's.
 
-- **(P3) Loose ends beside the selection mark, none checked further.** `valuePathOf` under a
-  section root returns only the last key, so an object-leaf field reads as `width` and not
-  `data.stroke.width`; no caller was checked for passing a field path. The fragment mark in
+- **(P3) Loose ends beside the selection mark, none checked further.** The fragment mark in
   `Prefs.module.css` repeats the three declarations `Prefs/selection.css` now owns.
   `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
   react-aria tab also carries.
@@ -1410,19 +1407,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `ControlRow`, `LeafRow`, and `PairedRow` into their own file, which `ControlMatrix` already
   imports from the panel; one file per control kind under `Properties/`, each with its CSS;
   `ObjectLeaf` out of `renderLeaf`.
-
-- **(P3) `PrefSchemaEditor`: under a node property schema, two prefs can be given one value path.**
-  A key is checked only against its siblings (`keyProblem`, `uniqueKey` in
-  `packages/ui/src/components/PrefSchemaEditor/schemaEdit.ts`), but under a section root a leaf's
-  key is the path its value lives at, whichever section holds it. Alt-drag `pose.x` from Layout into
-  Appearance and both sections hold a full leaf keyed `pose.x`; Add pref with Id `pose.x` in another
-  section is accepted the same way; a copy into the same section is numbered `pose.x2`, a path no
-  node has. No row says so, and `setDefaults`' `leafHolding` takes the first match, so a preview
-  edit of the second writes the first's default. To decide: refuse a key any leaf under the root
-  already holds (an `alias` is the way to show one value twice), or allow it and mark both rows.
-  Refusing also has to say what a copy does under a section root: a copied leaf, and every leaf
-  inside a copied section, has no other key to take (`copyNodes`), so the copy is refused outright
-  or becomes an alias.
 
 - **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed object or union attribute read-only.**
   `aggregateAttributes` drops an object, list, map, or union attribute from the form when the

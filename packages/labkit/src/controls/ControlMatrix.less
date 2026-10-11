@@ -131,6 +131,14 @@
   .inherited();
 }
 
+// A cell an `enableIf` disables, dimmed as a disabled field's row label is.
+.lk-control-matrix__value:disabled,
+.lk-control-matrix__switch:disabled,
+.lk-control-matrix__swatch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 // Every cell control fills its cell, so the cell is the click target.
 .lk-control-matrix__value,
 .lk-control-matrix__switch {
@@ -167,8 +175,8 @@
   text-overflow: clip;
 }
 
-.lk-control-matrix__value:hover,
-.lk-control-matrix__switch:hover {
+.lk-control-matrix__value:hover:not(:disabled),
+.lk-control-matrix__switch:hover:not(:disabled) {
   border-color: var(--wzl-border);
   background: var(--wzl-surface-hover);
 }

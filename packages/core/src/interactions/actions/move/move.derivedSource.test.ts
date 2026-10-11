@@ -4,8 +4,8 @@
  * derives from.
  */
 import { describe, it, expect } from 'vitest';
-import { moveAction } from './move';
-import { nudgeRightAction } from './nudge';
+import { moveAction } from './action';
+import { nudgeRightAction } from '../defaults/nudge';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';

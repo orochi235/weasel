@@ -34,6 +34,7 @@ export function bump(s: TargetState, delta: readonly number[], sign: 1 | -1): vo
 
 /** Adds `delta` into the committed value. */
 export function absorb<T>(s: TargetState<T>, delta: readonly number[]): void {
+  if (s.discard) return;
   s.set(s.axes.from(plus(s.axes.to(s.get()), delta)));
 }
 
@@ -49,12 +50,25 @@ export interface TargetBook {
   reread(s: TargetState, queued: readonly number[]): void;
   /** Hands each moving target, and each that came to rest since the last call, to its `show`. */
   show(): void;
+  /** Shows `s` now, where an animation just started on it or was redirected. */
+  showNow(s: TargetState): void;
+  /** Whether a target came to rest since the last `show`. */
+  readonly resting: boolean;
 }
 
-export function createTargetBook(): TargetBook {
-  const token = {};
+export function createTargetBook(stop: (s: TargetState) => void): TargetBook {
+  const token = { stop };
   const live = new Set<TargetState>();
   const rested = new Set<TargetState>();
+  const publishes = new Set<() => void>();
+  const shown = (s: TargetState, value: unknown): void => {
+    s.show!(value);
+    if (s.publish) publishes.add(s.publish);
+  };
+  const publish = (): void => {
+    for (const p of publishes) p();
+    publishes.clear();
+  };
   return {
     attach(s) {
       if (s.owner && s.owner !== token) {
@@ -81,9 +95,16 @@ export function createTargetBook(): TargetBook {
       for (let i = 0; i < queued.length; i++) s.adjust[i] = queued[i]!;
     },
     show() {
-      for (const s of live) s.show?.(readTarget(s));
-      for (const s of rested) s.show!(s.get());
+      for (const s of live) if (s.show) shown(s, readTarget(s));
+      for (const s of rested) shown(s, s.get());
       rested.clear();
+      publish();
     },
+    showNow(s) {
+      if (!s.show) return;
+      shown(s, readTarget(s));
+      publish();
+    },
+    get resting() { return rested.size > 0; },
   };
 }

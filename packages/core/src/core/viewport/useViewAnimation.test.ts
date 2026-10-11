@@ -60,7 +60,7 @@ describe('useViewAnimation', () => {
     expect(current().scale.x).toBeCloseTo(4, 10);
     expect(current().x).toBeCloseTo(target.x, 10);
     expect(result.current.isAnimating()).toBe(false);
-    expect(writes).toHaveLength(2);
+    expect(writes).toHaveLength(3);
   });
 
   it('fires onDone once, at the target', () => {

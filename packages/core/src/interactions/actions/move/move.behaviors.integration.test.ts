@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { moveAction } from './move';
-import { snapToContainer } from '../move/behaviors/snapToContainer';
-import { snapBackOrDelete } from '../move/behaviors/snapBackOrDelete';
+import { moveAction } from './action';
+import { snapToContainer } from './behaviors/snapToContainer';
+import { snapBackOrDelete } from './behaviors/snapBackOrDelete';
 import { snap } from '../../gestures/shared/snap';
 import type { InvocationCtx, BindingOpts, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';

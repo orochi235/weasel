@@ -33,7 +33,7 @@ export {
   type ToolActivateKeyOpts,
   type ToolActivateBindingSpec,
 } from './toolActivate';
-export { moveAction } from './move';
+export { moveAction } from '../move/action';
 export { resizeAction } from './resize';
 export { rotateAction } from './rotate';
 export { areaSelectAction } from './areaSelect';

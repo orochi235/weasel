@@ -4,23 +4,26 @@ import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../core/geometry/pose
 import { documentPose, effectivePose, type PosedNode, type PoseSource } from '../core/scene/effectivePose';
 import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
 import type { ReflowTransition } from '../layout/types';
-import type { AnimationHandle, Animator, EasingSpec, SpringPresetName } from './types';
+import { liveAxes } from './poseTarget';
+import { createTarget, type Target } from './target';
+import type { Animator, EasingSpec, SpringPresetName } from './types';
 
 /** How a reflowed sibling travels: a duration and easing, or a spring. */
 export interface ReflowTransitionOptions<TPose> {
   /** Default 200. Ignored under `spring`. */
   ms?: number;
   easing?: EasingSpec;
-  /** Travel on a spring instead of a duration. A retarget restarts it from
-   *  the pose on screen, so position stays continuous and velocity does not
-   *  carry over. */
+  /** Travel on a spring instead of a duration. A retarget starts a new spring
+   *  from the pose on screen at the speed the node was moving. */
   spring?: {
     preset?: SpringPresetName;
     stiffness?: number;
     damping?: number;
     mass?: number;
   };
-  /** Supplies the `lerp` between two poses. Default `RECT_POSE_DESCRIPTOR`. */
+  /** Supplies the pose's axes, and its `lerp` is the path a timed glide
+   *  follows. Default `RECT_POSE_DESCRIPTOR`, each axis in a straight line.
+   *  A pose with no axes glides by `lerp` alone, and a retarget restarts it. */
   geometry?: PoseDescriptor<TPose>;
   /** Names each glide in `animator.watch` and `live()`. Default `'reflow'`. */
   label?: string;
@@ -39,9 +42,11 @@ export interface ReflowScene<TPose> extends PoseSource<TPose> {
 
 interface Glide<TPose> {
   entry: PoseOverride<TPose>;
-  target: TPose;
+  /** Where the layout wants the node shown: what its target commits. */
+  slot: TPose;
   settling: boolean;
-  handle: AnimationHandle | null;
+  /** Null for a pose with no axes, which glides by `lerp`. */
+  target: Target<TPose> | null;
 }
 
 /** The animator's cancel-key for one node's glide. */
@@ -93,56 +98,86 @@ function makeReflow<TPose>(
 
   const run = (id: string, g: Glide<TPose>, to: TPose, settling: boolean): void => {
     const from = g.entry.pose as TPose;
-    g.target = to;
     g.settling = settling;
     if (samePose(from, to)) {
-      g.handle?.cancel();
-      g.handle = null;
+      animator.cancelKey(keyFor(id));
+      g.slot = to;
       g.entry.pose = to;
       if (settling) release(id, g);
       scene.overrides.commit();
       unsubscribeIfIdle();
       return;
     }
+    // Already on its way there: whatever is moving it finishes the job.
+    if (g.target?.active && samePose(g.slot, to)) return;
     const o = read();
-    const lerp = (o.geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>)).lerp;
-    if (!lerp) throw new Error('useAnimatedReflow: geometry has no lerp; supply geometry: { ..., lerp }');
-    const onTick = (p: number): void => {
-      g.entry.pose = lerp(from, to, p);
-      dirty = true;
-    };
+    const lerp = o.geometry?.lerp;
     const onDone = (): void => {
-      g.handle = null;
-      if (!g.settling) return;
+      if (g.target?.active || !g.settling) return;
       release(id, g);
       unsubscribeIfIdle();
     };
     const cancelKey = keyFor(id);
     const label = o.label ?? 'reflow';
     subscribe();
-    // The shared key is what retargets: the new animation interrupts the old.
-    g.handle = o.spring
-      ? animator.spring<number>({ from: 0, to: 1, ...o.spring, cancelKey, label, onTick, onDone })
-      : animator.tween<number>({ from: 0, to: 1, ms: o.ms ?? 200, easing: o.easing, cancelKey, label, onTick, onDone });
+    if (g.target) {
+      // A spring interrupts what is moving the node and takes its velocity; a timed glide adds to it.
+      if (o.spring) animator.spring<TPose>({ target: g.target, to, ...o.spring, cancelKey, label, onDone });
+      else {
+        animator.tween<TPose>({
+          target: g.target, to, ms: o.ms ?? 200, easing: o.easing, cancelKey, interrupt: false, label, onDone,
+          interpolate: lerp && ((a, b, t) => lerp(a, b, t)),
+        });
+      }
+    } else {
+      if (!lerp) throw new Error('useAnimatedReflow: this pose has no axes; supply geometry: { ..., lerp }');
+      g.slot = to;
+      const onTick = (p: number): void => {
+        g.entry.pose = lerp(from, to, p);
+        dirty = true;
+      };
+      // The shared key is what retargets: the new animation interrupts the old.
+      if (o.spring) animator.spring<number>({ from: 0, to: 1, ...o.spring, cancelKey, label, onTick, onDone });
+      else animator.tween<number>({ from: 0, to: 1, ms: o.ms ?? 200, easing: o.easing, cancelKey, label, onTick, onDone });
+    }
     scene.overrides.commit();
   };
 
   // False for a glide canceled through the animator: it stopped short of its
-  // target and nothing is carrying it there.
+  // slot and nothing is carrying it there.
   const onCourse = (id: string, g: Glide<TPose>): boolean =>
-    animator.isActive(keyFor(id)) || samePose(g.entry.pose, g.target);
+    animator.isActive(keyFor(id)) || samePose(g.entry.pose, g.slot);
 
   const stop = (id: string): void => {
     const g = glides.get(id);
     if (!g) return;
     glides.delete(id);
-    g.handle?.cancel();
+    animator.cancelKey(keyFor(id));
     const nid = id as NodeId;
     if (scene.overrides.get(nid) === g.entry) {
       scene.overrides.clear(nid);
       scene.overrides.commit();
     }
     unsubscribeIfIdle();
+  };
+
+  const start = (id: string, pose: TPose): Glide<TPose> => {
+    const g: Glide<TPose> = { entry: { pose }, slot: pose, settling: false, target: null };
+    const descriptor = read().geometry ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
+    const axes = liveAxes(descriptor, () => g.slot);
+    if (axes) {
+      g.target = createTarget<TPose>({
+        axes,
+        get: () => g.slot,
+        set: (slot) => { g.slot = slot; },
+        show: (shown) => {
+          g.entry.pose = shown;
+          dirty = true;
+        },
+      });
+    }
+    glides.set(id, g);
+    return g;
   };
 
   // The glide for `id`, created if absent, starting from `from` when given,
@@ -154,10 +189,10 @@ function makeReflow<TPose>(
     from: TPose | undefined,
   ): Glide<TPose> => {
     if (!g) {
-      const start = from ?? effectivePose(scene, node);
-      g = { entry: { pose: start }, target: start, settling: false, handle: null };
-      glides.set(id, g);
+      g = start(id, from ?? effectivePose(scene, node));
     } else if (from !== undefined) {
+      animator.cancelKey(keyFor(id));
+      g.slot = from;
       g.entry.pose = from;
     }
     if (scene.overrides.get(id as NodeId) !== g.entry) scene.overrides.set(id as NodeId, g.entry);
@@ -170,7 +205,7 @@ function makeReflow<TPose>(
       if (!node) return;
       const from = opts?.from;
       const g = glides.get(id);
-      if (g && from === undefined && !g.settling && samePose(g.target, pose) && onCourse(id, g)) return;
+      if (g && from === undefined && !g.settling && samePose(g.slot, pose) && onCourse(id, g)) return;
       run(id, claim(id, node, g, from), pose, false);
     },
     settle(id, opts) {
@@ -181,7 +216,7 @@ function makeReflow<TPose>(
       if (!node) { stop(id); return; }
       const home = documentPose(scene, node);
       if (g && from === undefined) {
-        if (g.settling && samePose(g.target, home) && onCourse(id, g)) return;
+        if (g.settling && samePose(g.slot, home) && onCourse(id, g)) return;
         run(id, g, home, true);
         return;
       }
@@ -196,9 +231,11 @@ function makeReflow<TPose>(
 }
 
 /**
- * A reflow transition over `animator`: each glide is a tween (or spring) of
- * its own, keyed `reflow:<id>`, so a new target for a node interrupts the
- * glide it is on and `animator.cancelKey` reaches one node's. See
+ * A reflow transition over `animator`. Each node it moves has an animation
+ * target whose committed value is the slot the layout wants it shown at, and
+ * a new slot is a new animation on that target under the key `reflow:<id>`:
+ * a timed glide adds to the ones still running, a spring interrupts them at
+ * their velocity, and `animator.cancelKey` reaches one node's. See
  * {@link useAnimatedReflow} for the hook form.
  */
 export function createReflowTransition<TPose>(

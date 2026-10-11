@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
-import { moveAction } from './move';
+import { moveAction } from './action';
 import { createScene } from 'core/scene/scene';
 import { documentPose, effectivePose } from 'core/scene/effectivePose';
 import type { Op } from 'core/ops/types';

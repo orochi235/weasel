@@ -1,0 +1,73 @@
+import type { NodeId } from 'core/scene/types';
+import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
+import { toPlane } from 'core/viewport/parallax';
+import { composeWorldPose, type PoseAdapter } from 'features/groups/composePose';
+import { planeOf } from '../planeInput';
+import type { MoveSession } from './session';
+
+/**
+ * The world drag `(dx, dy)` as a translation of `id`'s stored pose. A pose is
+ * stored in its frame, so under a turned frame the two point different ways.
+ */
+export function localDelta(
+  session: MoveSession,
+  id: NodeId,
+  dx0: number,
+  dy0: number,
+): { dx: number; dy: number } {
+  const { dx, dy } = planeDelta(session, id, dx0, dy0);
+  const f = session.frames.get(id);
+  if (f === undefined) return { dx, dy };
+  const { pc } = session;
+  const d = session.descriptorOf(id);
+  const from = d.getBounds(pc.decompose(f.frameWorld, f.world));
+  const to = d.getBounds(
+    pc.decompose(f.frameWorld, translatePoseViaDescriptor(f.world, dx, dy, d)),
+  );
+  return { dx: to.x - from.x, dy: to.y - from.y };
+}
+
+/** The drag `(dx, dy)`, measured in the edited plane, as the drag of `id` in
+ *  the world its own layer stores it in. */
+export function planeDelta(
+  session: MoveSession,
+  id: NodeId,
+  dx: number,
+  dy: number,
+): { dx: number; dy: number } {
+  const layer = session.scene.get(id)?.layer;
+  const ref = layer === undefined ? undefined : session.planeRefs.get(layer);
+  if (!ref) return { dx, dy };
+  const out = planeOf(session.view, layer!);
+  const at = { x: ref.edited.x + dx, y: ref.edited.y + dy };
+  const p = out ? toPlane(out, at) : at;
+  return { dx: p.x - ref.own.x, dy: p.y - ref.own.y };
+}
+
+/** `adapter`, except that an id caught mid-glide answers with the pose it was
+ *  grabbed at — where the drag measures it from. */
+export function grabbedPoseAdapter(
+  session: MoveSession,
+  adapter: PoseAdapter<unknown>,
+): PoseAdapter<unknown> {
+  if (session.caught.size === 0) return adapter;
+  return {
+    ...adapter,
+    getPose: (id) => (session.caught.has(id as NodeId)
+      ? session.startPoses.get(id as NodeId)
+      : adapter.getPose(id)),
+  };
+}
+
+/** The world pose `id` was dragged to: its pose at press composed up through
+ *  `adapter`, moved by the drag as its own layer's plane measures it. */
+export function draggedWorldPose(
+  session: MoveSession,
+  adapter: PoseAdapter<unknown>,
+  id: NodeId,
+  delta: { dx: number; dy: number },
+): unknown {
+  const start = composeWorldPose(adapter, id as string, session.pc.compose);
+  const own = planeDelta(session, id, delta.dx, delta.dy);
+  return translatePoseViaDescriptor(start, own.dx, own.dy, session.descriptorOf(id));
+}

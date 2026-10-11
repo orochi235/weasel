@@ -45,7 +45,7 @@ import type { Path } from '@weasel-js/geom';
 import { splitPathBySegment } from '@weasel-js/geom/booleans';
 
 import { resizeAction } from '../defaults/resize';
-import { moveAction } from '../defaults/move';
+import { moveAction } from '../move/action';
 import { rotateAction } from '../defaults/rotate';
 import { nudgeRightAction } from '../defaults/nudge';
 import { flipAction } from '../defaults/flip';

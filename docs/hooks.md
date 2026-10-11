@@ -143,7 +143,7 @@ standard set; `<SceneCanvas>` registers them under the `view` preset, from its
 
 | Removed hook | Replacement |
 |---|---|
-| `useMove` | `move` action (`defaults/move.ts`); `UseMoveOptions` type survives |
+| `useMove` | `move` action (`actions/move/action.ts`); `UseMoveOptions` type survives |
 | `useResize` | `resize` action; `UseResizeOptions`, `PoseDescriptor`, `RECT_POSE_DESCRIPTOR`, `cornerResizeHandles`, `hitCornerHandle` survive |
 | `useRotate` | `rotate` action; `rotationHandle`, `hitRotationHandle`, `pointInRotatedRect`, `DEFAULT_ROTATION_HANDLE_DISTANCE` survive |
 | `useInsert` | `insert` action, configured by binding params and the `insert` dep |

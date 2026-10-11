@@ -1,4 +1,4 @@
-import { springPose } from './poseHelpers';
+import { springPose, type PoseAnimationAdapter } from './poseHelpers';
 import type { Supervisor, SupervisorFactory, WatchCompletion } from './supervisor';
 import type {
   AnimationHandle,
@@ -11,7 +11,6 @@ import type {
   StaggerSpringPoseOptions,
   StaggerTweenOptions,
 } from './types';
-import type { SceneAdapter } from 'core/adapters/types';
 
 /** An item still waiting: `fire` starts it once the stagger's own virtual
  *  time reaches `at`. */
@@ -264,7 +263,7 @@ function makeBuilder<TItem>(
         opts,
       ),
     springPose: <TPose,>(
-      adapter: SceneAdapter<{ id: string }, TPose>,
+      adapter: PoseAnimationAdapter<TPose>,
       poseFn: (item: TItem, index: number) => TPose,
       opts: StaggerSpringPoseOptions<TPose> = {},
     ) =>
