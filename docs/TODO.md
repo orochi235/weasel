@@ -1119,6 +1119,13 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P3) draw's save-after-load browser test fails in a full fleet run.**
+  `apps/draw/src/svgInterop.browser.test.ts`: "downloads when the load takes 6500ms" and
+  "reports no download for a click that starts none" failed together on teitou on 2026-10-11
+  (the first took 11.5s), and two tests failed in a run on studio the same night whose names were
+  not kept. The file passes alone here and passed in a full run on msb-uai. The tests wait on
+  real seconds, so load is the likely cause; not checked.
+
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
   React overlay, and a DOM layer moved as one element, on an idle node
