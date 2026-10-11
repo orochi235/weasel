@@ -16,10 +16,8 @@
  * pick up changes. Cheap hot-path checks (one nullish-coalesce + Set
  * lookup) so leaving calls in place is fine.
  *
- * Mirrors `src/debug/flag.ts` in the kit. Two impls live here because
- * weasel-ui doesn't depend on the kit, but both read the same
- * localStorage keys so behavior is uniform. See the kit copy for the
- * canonical list of kit-level namespaces.
+ * A copy of `packages/core/src/debug/flag.ts`, which `@weasel-js/core` does
+ * not export. Both read the same localStorage keys.
  *
  * Known weasel-ui namespaces:
  *   - plot2d        — Plot2D mount / unmount

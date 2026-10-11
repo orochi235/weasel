@@ -104,8 +104,8 @@ export function PaintInput(props: PaintInputProps): ReactElement {
   const ariaLabel = props['aria-label'];
 
   // Per-kind memory, so linear → solid → linear comes back with its stops.
-  // A ref, not state: it must not survive the control being pointed at a
-  // different selection, and nothing renders off it directly.
+  // It lasts as long as the mount: a caller that points one control at a new
+  // selection gives it a `key`, or that selection is offered the last one's paints.
   const remembered = useRef(new Map<PaintKind, FillStyle>());
 
   const active = mixed ? null : kindOf(value);

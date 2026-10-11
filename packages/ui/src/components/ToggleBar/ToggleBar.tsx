@@ -71,8 +71,9 @@ export type ToggleBarProps<V extends string | number = string> =
  * (`mode: 'single'`, the default) or any number (`mode: 'multiple'`).
  *
  * Single mode ignores a click on the already-selected segment unless
- * `allowDeselect` is set. Arrow keys move focus without changing the value;
- * Space and Enter commit.
+ * `allowDeselect` is set, and its arrow keys move the selection with the
+ * focus, as a radio group's do. In multiple mode the arrow keys only move
+ * focus; Space and Enter flip the focused segment.
  */
 export function ToggleBar<V extends string | number = string>(props: ToggleBarProps<V>): ReactElement {
   const { items, ariaLabel, className, height, size, variant } = props;
