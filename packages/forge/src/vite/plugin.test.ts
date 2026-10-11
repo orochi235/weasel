@@ -14,6 +14,10 @@ vi.mock('node:fs', async (importOriginal) => {
   return { ...actual, globSync: vi.fn(actual.globSync) };
 });
 
+/** How long a poll waits for the index to follow a file written to disk.
+ *  Under a loaded machine 5s has run out; the project's test timeout is 20s. */
+const FOLLOWS = { timeout: 15_000, interval: 50 };
+
 const story = (title: string, ...names: string[]) =>
   `export default { title: '${title}' };\n${names.map((n) => `export const ${n} = {};`).join('\n')}\n`;
 
@@ -101,7 +105,7 @@ describe('forge vite plugin', () => {
 
   it('re-indexes when a story file is added', async () => {
     writeFileSync(join(root, 'c.stories.tsx'), story('ui/C', 'Third'));
-    await expect.poll(async () => (await loadIndex()).length, { timeout: 5000, interval: 50 }).toBe(4);
+    await expect.poll(async () => (await loadIndex()).length, FOLLOWS).toBe(4);
     expect((await loadIndex()).at(-1)?.id).toBe('ui-c--third');
   });
 
@@ -128,7 +132,7 @@ describe('forge vite plugin', () => {
     vi.mocked(globSync).mockClear();
     writeFileSync(join(root, 'd.other.tsx'), story('ui/E', 'Unmatched'));
     writeFileSync(join(root, 'd.stories.tsx'), story('ui/D', 'Fourth'));
-    await expect.poll(async () => (await loadIndex()).map((e) => e.id), { timeout: 5000, interval: 50 }).toContain('ui-d--fourth');
+    await expect.poll(async () => (await loadIndex()).map((e) => e.id), FOLLOWS).toContain('ui-d--fourth');
     expect((await loadIndex()).map((e) => e.id)).not.toContain('ui-e--unmatched');
     expect(globSync).not.toHaveBeenCalled();
   });
@@ -180,7 +184,7 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     expect(await indexOf(s)).toEqual(['ui-a--first']);
     expect(errors.join('\n')).toContain(join(dir, 'bad.stories.tsx'));
     writeFileSync(join(dir, 'bad.stories.tsx'), story('ui/Bad', 'Fixed'));
-    await expect.poll(async () => indexOf(s), { timeout: 5000, interval: 50 }).toContain('ui-bad--fixed');
+    await expect.poll(async () => indexOf(s), FOLLOWS).toContain('ui-bad--fixed');
   });
 
   it("titles a native story by its meta when forge's meta reaches it through a helper module, and re-decides when the helper changes", async () => {
@@ -198,7 +202,7 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     );
     expect(await indexOf(s)).toEqual(['other--basic', 'ui-thing--basic']);
     writeFileSync(join(dir, 'forge-helpers.ts'), `export const meta = (spec: object) => spec;\nexport const story = meta;\n`);
-    await expect.poll(async () => indexOf(s), { timeout: 5000, interval: 50 }).toEqual(['other--basic', 'thing--basic']);
+    await expect.poll(async () => indexOf(s), FOLLOWS).toEqual(['other--basic', 'thing--basic']);
   });
 
   it('re-decides a story whose helper module did not exist until after it was indexed', async () => {
@@ -211,7 +215,7 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     );
     expect(await indexOf(s)).toEqual(['thing--basic']);
     writeFileSync(join(dir, 'forge-helpers.ts'), `export { meta, story } from '@weasel-js/forge';\n`);
-    await expect.poll(async () => indexOf(s), { timeout: 5000, interval: 50 }).toEqual(['ui-thing--basic']);
+    await expect.poll(async () => indexOf(s), FOLLOWS).toEqual(['ui-thing--basic']);
   });
 
   it('serves the component graph from source, and pushes it again when a component file changes', async () => {
@@ -229,7 +233,7 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
       'ui/B': { source: 'B.tsx', uses: [], usedBy: ['ui/A'] },
     });
     writeFileSync(join(dir, 'A.tsx'), `export const A = () => null;\n`);
-    await expect.poll(async () => (await graph())['ui/A']?.uses, { timeout: 5000, interval: 50 }).toEqual([]);
+    await expect.poll(async () => (await graph())['ui/A']?.uses, FOLLOWS).toEqual([]);
     expect(sent).toHaveBeenCalledWith(expect.objectContaining({ event: 'forge:deps' }));
   });
 
