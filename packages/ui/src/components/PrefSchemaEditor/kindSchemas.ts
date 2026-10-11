@@ -43,6 +43,7 @@ const LEAF_BASE: KindAttrs = {
   icon: symbol('Icon', 'Glyph name in the host\'s icon set.'),
   pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
   short: strings('Short names', 'Shorter forms of the name, longest first.'),
+  absentIsDefault: flag('Absent is default', 'Where nothing is held, it reads as its default: for a node property whose reader does the same.'),
 };
 
 const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
@@ -109,7 +110,7 @@ const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'o
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
 /** The fields a leaf made from a type sets where it is used; the rest are its type's. */
-const USE_SITE = new Set(['name', 'description', 'default', 'hidden', 'block', 'icon', 'pair', 'short', 'manual', 'unpinned', 'autoValue']);
+const USE_SITE = new Set(['name', 'description', 'default', 'hidden', 'block', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned', 'autoValue']);
 
 function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
@@ -246,7 +247,7 @@ export function blankSection(): PrefSection {
   return { name: 'New section', description: '', members: {} };
 }
 
-const SHARED = ['name', 'description', 'hidden', 'block', 'icon', 'pair', 'short', 'manual', 'unpinned'];
+const SHARED = ['name', 'description', 'hidden', 'block', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned'];
 
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 

@@ -98,7 +98,7 @@ function shapeSchema(opts: { text?: boolean } = {}): PrefSection {
           'pose.y': { kind: 'number', name: 'Y', description: 'Top edge, world units.', default: 0 },
           'pose.width': { kind: 'number', name: 'W', description: 'Width, world units.', default: 0, min: 0, pair: { with: 'pose.height', label: 'Size' } },
           'pose.height': { kind: 'number', name: 'H', description: 'Height, world units.', default: 0, min: 0 },
-          'pose.rotation': { kind: 'number', name: 'Rotation', description: 'Rotation about the box center.', default: 0, step: 1, unit: rotationDegreesUnit },
+          'pose.rotation': { kind: 'number', name: 'Rotation', description: 'Rotation about the box center.', default: 0, step: 1, unit: rotationDegreesUnit, absentIsDefault: true },
         },
       },
       // What the node *is* outranks how it is painted: a text node's copy is

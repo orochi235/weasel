@@ -15,6 +15,7 @@ import {
 } from './renderLeaf';
 import {
   MIXED,
+  absentValue,
   aggregateValue,
   classifyKind,
   effectiveSections,
@@ -91,12 +92,15 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const kinds = nodes.map((n) => classifyKind(n, routing));
   const selectionKey = nodes.map((n) => n.id).join(',');
   const sections = effectiveSections(kinds, properties, renderers?.alias !== undefined);
-  const fields = prefFieldChoices({
-    name: '',
-    members: Object.fromEntries(
-      sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf]))),
-    ),
-  });
+  const leaves = new Map(
+    sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map(({ path, leaf }) => [path, leaf] as const))),
+  );
+  const fields = prefFieldChoices({ name: '', members: Object.fromEntries(leaves) });
+  /** What a node holding nothing at `path` reads as there. */
+  const absentAt = (path: string): unknown => {
+    const leaf = leaves.get(path);
+    return leaf && absentValue(leaf);
+  };
 
   if (nodes.length === 0) {
     return <div className={[s.root, className].filter(Boolean).join(' ')}>{emptyState}</div>;
@@ -112,7 +116,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
       for (const id of ids) {
         const node = scene.get(id);
         if (!node) continue;
-        const value = next(nodeValueAt(node as AnyNode, leaf.path));
+        const held = nodeValueAt(node as AnyNode, leaf.path);
+        const value = next(held === undefined ? absentValue(leaf.leaf) : held);
         // `setAtPath` spreads plain objects/arrays down the schema path;
         // consumer `pose`/`data` are assumed plain-object-shaped along
         // that path (a class instance's prototype would be dropped by
@@ -144,7 +149,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
           const cells = section.rows.flatMap((row) =>
             renderCells(
               row.leaves.map((panelLeaf) => ({
-                ...leafCell(panelLeaf, panelLeaf.leaf.name, nodes, renderers, commit, selectionKey, fields, 'bar'),
+                ...leafCell(panelLeaf, panelLeaf.leaf.name, nodes, renderers, commit, selectionKey, fields, absentAt, 'bar'),
                 ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
               })),
               renderers,
@@ -179,6 +184,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                   commit,
                   selectionKey,
                   fields,
+                  absentAt,
                 ),
                 ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
               })),
@@ -255,10 +261,12 @@ function leafCell(
   commit: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void,
   selectionKey: string,
   fields: readonly PrefFieldChoice[],
+  absentAt: (path: string) => unknown,
   surface: LeafSurface = 'row',
 ): LeafCell {
   const { path, leaf } = panelLeaf;
-  const aggregated = aggregateValue(nodes, path);
+  const absent = absentValue(leaf);
+  const aggregated = aggregateValue(nodes, path, absent);
   const mixed = aggregated === MIXED;
   const value = mixed ? undefined : aggregated;
 
@@ -268,11 +276,14 @@ function leafCell(
     value,
     mixed,
     unset: !mixed && aggregated === undefined,
-    each: nodes.map((n) => nodeValueAt(n, path)),
+    each: nodes.map((n) => {
+      const held = nodeValueAt(n, path);
+      return held === undefined ? absent : held;
+    }),
     setValue: (v) => commit(panelLeaf, () => v),
     update: (fn) => commit(panelLeaf, fn),
     valueAt: (p) => {
-      const at = aggregateValue(nodes, p);
+      const at = aggregateValue(nodes, p, absentAt(p));
       return at === MIXED ? { value: undefined, mixed: true } : { value: at, mixed: false };
     },
     selectionKey,

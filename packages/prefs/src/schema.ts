@@ -41,6 +41,13 @@ export interface PrefBase<K extends string, Value> {
   default: Value;
   /** Hide from a host app's settings UI by default. */
   hidden?: boolean;
+  /** Nothing held where this leaf's value is read means `default`, because
+   *  whoever reads the value takes it that way (`pose.rotation ?? 0`). A
+   *  surface over sparse settings reads every leaf so already. One over a
+   *  scene node, where a missing key otherwise means the node has no such
+   *  property, shows the default only for a leaf that says this, and still
+   *  writes nothing until an edit. */
+  absentIsDefault?: boolean;
   /** Render full-width with no label row in schema-driven settings UIs
    *  (weasel-ui `PrefsForm` honors this for leaves whose control brings
    *  its own chrome). */

@@ -1648,20 +1648,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   make it the one pathway (snapshotting subscribes, and it is exposed to instruments), and correct
   the doc to match.
 
-- **(P2) `SelectionPanel`: a path a node does not hold draws blank even where absence means the
-  leaf's default.** A node whose pose has no `rotation` key shows an empty Rotation field, though
-  the leaf declares `default: 0` and the engine reads `pose.rotation ?? 0`; one such node selected
-  beside one holding `rotation: 0` reads as Mixed (`aggregateValue` in
-  `packages/ui/src/components/SelectionPanel/model.ts` compares the raw values). Substituting the
-  default everywhere is the behavior commit `cd9b75632` removed on purpose: a text node with no
-  `data.stroke` lit Cap, Join, and Align, and the next edit wrote that invention back. `PrefsForm`
-  does substitute (`stored !== undefined ? stored : default`), because a sparse prefs blob means
-  "use the default" and a scene node does not. So the two cases need telling apart in the schema.
-  Options: a per-leaf flag saying an absent value *is* the default (`pose.rotation`, and any field
-  the engine reads with `??`), which `aggregateValue` and `leafCell` apply before comparing and
-  before setting `unset`; or have the properties entry normalize the node on read. With the flag
-  nothing is written until the user edits, and an edit writes only the value typed, so no default is
-  invented in the node.
+- **(P3) `SelectionPanel`: which node properties read an absent value as their default.** A leaf
+  with `absentIsDefault` draws its default where a node holds nothing, and is not Mixed beside a
+  node that holds that default. Only `pose.rotation` in `defaultNodeProperties` carries the flag.
+  Left: going through the other leaves of `defaultNodeProperties` and `inferredNodeProperties` for
+  fields the engine reads with `??`, and flagging those; a leaf whose absence means the node has no
+  such property (`data.stroke` on a text node) must stay unflagged.
 
 - **(P3) An object leaf is drawn by two implementations that disagree.**
   `packages/ui/src/components/Prefs/ObjectLeaf.tsx` and `ObjectLeaf` in

@@ -222,15 +222,22 @@ export function setAtPath(root: object, segments: readonly string[], value: unkn
     : { ...root, [head]: nested };
 }
 
-/** Aggregate a path across nodes: the shared value, or `MIXED`. */
+/** What a node holding nothing at a leaf's path reads as there: the leaf's default where it says absence means
+ *  that, else `undefined`, which a panel draws as unset. */
+export const absentValue = (leaf: PrefLeaf): unknown => (leaf.absentIsDefault === true ? leaf.default : undefined);
+
+/** Aggregate a path across nodes: the shared value, or `MIXED`. A node
+ *  holding nothing there reads as `absent`. */
 export function aggregateValue(
   nodes: readonly AnyNode[],
   path: string,
+  absent?: unknown,
 ): unknown | Mixed {
   let value: unknown;
   let first = true;
   for (const node of nodes) {
-    const v = nodeValueAt(node, path);
+    const held = nodeValueAt(node, path);
+    const v = held === undefined ? absent : held;
     if (first) {
       value = v;
       first = false;
