@@ -2,10 +2,11 @@ import type { ReactNode } from 'react';
 import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
-import { translatePoseViaDescriptor, visualBoundsViaDescriptor } from '../align/align';
+import { visualBoundsViaDescriptor } from '../align/align';
 import type { DistributeAxis, DistributeMode } from '../distribute/distribute';
 import { planDistribute } from '../distribute/plan';
 import { scenePoseFrame } from '../poseFrame';
+import { translateEach } from '../selectionSubtree';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -50,17 +51,11 @@ function distributeSelection(
   });
   const targets = planDistribute(items.map((it) => it.b), axis, mode);
 
-  scene.batch('Distribute', () => {
-    for (let i = 0; i < items.length; i++) {
-      const it = items[i];
-      const delta = targets[i] - (axis === 'x' ? it.b.x : it.b.y);
-      if (delta === 0) continue;
-      const dx = axis === 'x' ? delta : 0;
-      const dy = axis === 'y' ? delta : 0;
-      const to = translatePoseViaDescriptor(it.pose, dx, dy, geom);
-      scene.setPose(it.id, frame.local(it.id, to));
-    }
+  const moves = items.map((it, i) => {
+    const delta = targets[i] - (axis === 'x' ? it.b.x : it.b.y);
+    return { id: it.id, dx: axis === 'x' ? delta : 0, dy: axis === 'y' ? delta : 0 };
   });
+  scene.batch('Distribute', () => translateEach(scene, frame, geom, moves));
 }
 
 // ---------------------------------------------------------------------------

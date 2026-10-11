@@ -1,4 +1,6 @@
-import type { Scene } from 'core/scene/types';
+import type { NodeId, Scene } from 'core/scene/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { shapeSources } from '../selectionSubtree';
 import { createElement } from 'react';
 import { FlipXIcon, FlipYIcon } from './icons/editIcons';
 import type { Op } from 'core/ops/types';
@@ -85,9 +87,24 @@ function flipSelection(
   params: Record<string, unknown> | undefined,
   pointer: PointerContextValue | undefined,
 ): void {
-  const ids = selection.get();
-  if (ids.length === 0) return;
+  const selected = selection.get();
+  if (selected.length === 0) return;
   const frame = scenePoseFrame(scene, poseComposition);
+
+  // A group whose pose derives from its children mirrors by mirroring them,
+  // about the group's own box where each selected node flips in place.
+  const ids: NodeId[] = [];
+  const ownPivot = new Map<string, Bounds>();
+  for (const id of selected) {
+    const members = shapeSources(scene, [id]) as NodeId[];
+    const stoodIn = members.length !== 1 || members[0] !== id;
+    const box = stoodIn ? visualBoundsViaDescriptor(frame.world(id), geom) : null;
+    for (const member of members) {
+      if (ids.includes(member)) continue;
+      ids.push(member);
+      if (box) ownPivot.set(member, box);
+    }
+  }
 
   const worlds = new Map<string, unknown>();
   for (const id of ids) {
@@ -108,8 +125,9 @@ function flipSelection(
     const node = scene.get(id);
     if (!node) continue;
     const world = worlds.get(id as string)!;
-    const flipped = sharedPivot
-      ? flipPoseAboutBounds(world, axis, geom, sharedPivot)
+    const about = sharedPivot ?? ownPivot.get(id as string) ?? null;
+    const flipped = about
+      ? flipPoseAboutBounds(world, axis, geom, about)
       : flipPoseViaDescriptor(world, axis, geom);
     ops.push(createTransformOp<unknown>({
       id: id as string,
@@ -121,7 +139,7 @@ function flipSelection(
     // so a wired geometryProjection reflects the contents in lock-step with
     // the frame. A pose-only flip of a bare-AABB pose is identity, so this
     // data op is the only way an asymmetric shape actually mirrors.
-    const g = sharedPivot ?? geom.getBounds(world);
+    const g = about ?? geom.getBounds(world);
     const dataOp = geometryDataOp(
       geometryProjection,
       { id: id as string, data: node.data, pose: node.pose },

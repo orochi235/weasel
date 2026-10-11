@@ -48,6 +48,7 @@ import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorC
 import { moveGestureAdapter } from '../move/gestureAdapter';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
+import { shapeSources } from '../selectionSubtree';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -144,7 +145,8 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
 
       if (!selection || !scene) return {};
 
-      const ids = selection.get() as NodeId[];
+      // A group whose pose derives from its children turns by turning them.
+      const ids = shapeSources(scene, selection.get()) as NodeId[];
       if (ids.length === 0) return {};
 
       const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(ctx.deps.poseDescriptor));

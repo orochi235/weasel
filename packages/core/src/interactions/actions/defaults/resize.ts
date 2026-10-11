@@ -71,6 +71,7 @@ import { unionAABB, unionBounds } from 'core/geometry/unionBounds';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
+import { shapeSources } from '../selectionSubtree';
 import { fromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 // ---------------------------------------------------------------------------
@@ -348,12 +349,14 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
       // every leaf is written, and origin bounds is the union AABB.
       // When `expandIds` returns the same list (identity default or no-op),
       // we write the selected ids directly.
-      const expanded = expandIds(ids as unknown as string[]);
+      // A group whose pose derives from its children is resized by resizing
+      // them, whatever the policy expanded to.
+      const expanded = shapeSources(scene, expandIds(ids as unknown as string[]));
       if (expanded.length === 0) return {};
 
       const isGroupPath =
         ids.length === 1 && (expanded.length !== 1 || expanded[0] !== (ids[0] as string));
-      const writeIds = (isGroupPath ? expanded : (ids as unknown as string[])) as NodeId[];
+      const writeIds = (isGroupPath || ids.length > 1 ? expanded : (ids as unknown as string[])) as NodeId[];
 
       // Capture start poses + per-leaf bounds. The drag delta is world, so
       // the anchor math runs on world poses — carried into the plane the edit

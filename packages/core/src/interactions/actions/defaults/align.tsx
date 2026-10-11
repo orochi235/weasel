@@ -5,7 +5,6 @@ import { poseDescriptorOf } from '../poseDescriptorDep';
 import {
   alignDeltaFor,
   alignTargetBounds,
-  translatePoseViaDescriptor,
   visualBoundsViaDescriptor,
   type AlignEdge,
   type AlignReference,
@@ -13,6 +12,7 @@ import {
 import { actionReferenceSources } from '../spatialReference';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import { scenePoseFrame } from '../poseFrame';
+import { translateEach } from '../selectionSubtree';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -82,14 +82,8 @@ function alignSelection(
     actionReferenceSources(params, pointer, scene, frame, geom),
   );
   if (target === null) return;
-  scene.batch('Align', () => {
-    for (let i = 0; i < ids.length; i++) {
-      const { dx, dy } = alignDeltaFor(bounds[i], target, edge);
-      if (dx === 0 && dy === 0) continue;
-      const to = translatePoseViaDescriptor(poses[i], dx, dy, geom);
-      scene.setPose(ids[i], frame.local(ids[i], to));
-    }
-  });
+  const moves = ids.map((id, i) => ({ id, ...alignDeltaFor(bounds[i], target, edge) }));
+  scene.batch('Align', () => translateEach(scene, frame, geom, moves));
 }
 
 // ---------------------------------------------------------------------------

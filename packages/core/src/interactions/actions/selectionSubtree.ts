@@ -1,6 +1,7 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { PoseFrame } from './poseFrame';
+import { poseDescriptorForNode, translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 
 type AnyScene = Scene<unknown, string, unknown>;
 
@@ -45,6 +46,26 @@ export function moveSources(scene: AnyScene, ids: readonly string[]): string[] {
   return [...out];
 }
 
+/**
+ * The nodes a resize, rotation, flip, or alignment of `ids` has to write. A
+ * container whose pose is derived from its children cannot be written itself,
+ * so its children stand in for it, through however many such containers
+ * nest. Each id appears once, in the order it was first reached.
+ */
+export function shapeSources(scene: AnyScene, ids: readonly string[]): string[] {
+  const out = new Set<string>();
+  const visit = (id: string): void => {
+    const node = scene.get(asNodeId(id));
+    if (node !== undefined && node.dependsOn === 'children' && node.derivePose !== undefined) {
+      for (const child of scene.childrenOf(asNodeId(id))) visit(child);
+    } else {
+      out.add(id);
+    }
+  };
+  for (const id of ids) visit(id);
+  return [...out];
+}
+
 /** `id` and everything under it, a parent ahead of its children. */
 export function subtreeIds(scene: AnyScene, id: NodeId): NodeId[] {
   const out: NodeId[] = [];
@@ -76,4 +97,32 @@ export function translateTargets(
     const storedIn = frame.frame(id);
     return storedIn === null || !moving.has(storedIn);
   });
+}
+
+/**
+ * Move each of `moves` by its own delta, taking along whatever has to be
+ * written for that node to move as a unit ({@link translateTargets}). Every
+ * world pose is read before the first write, so one move cannot shift what a
+ * later one reads. Call inside a `scene.batch`.
+ */
+export function translateEach(
+  scene: AnyScene,
+  frame: PoseFrame<unknown>,
+  descriptor: PoseDescriptor<unknown>,
+  moves: readonly { id: string; dx: number; dy: number }[],
+): void {
+  const writes: { id: NodeId; to: unknown }[] = [];
+  const seen = new Set<NodeId>();
+  for (const { id, dx, dy } of moves) {
+    if (dx === 0 && dy === 0) continue;
+    for (const target of translateTargets(scene, frame, [id])) {
+      if (seen.has(target)) continue;
+      seen.add(target);
+      const node = scene.get(target);
+      if (!node) continue;
+      const d = poseDescriptorForNode(descriptor, node);
+      writes.push({ id: target, to: frame.local(target, translatePoseViaDescriptor(frame.world(target), dx, dy, d)) });
+    }
+  }
+  for (const { id, to } of writes) scene.setPose(id, to);
 }

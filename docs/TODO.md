@@ -174,18 +174,6 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
-- **(P2) `resizeAction` / `rotateAction`: a selected group's children are not transformed.** With
-  the default absolute poses, Cmd+G two rects and drag a resize or rotation handle on the group: one
-  transform op is written for the container and the children stay put, and since the group's shown
-  pose is derived from its children nothing changes on screen. `nudge`, `clone`, and `move` now take
-  their write set from `translateTargets`
-  (`packages/core/src/interactions/actions/selectionSubtree.ts`), but a resize has to remap each
-  leaf inside the group's box and a rotate has to orbit each leaf about the group's center, which a
-  translation helper cannot express. Resize already has that path behind `resizePolicy.expandIds`;
-  the options are to make the default `expandIds` (`packages/core/src/canvas/deps/resizePolicy.ts`)
-  expand a container to its leaves, or to have both actions expand containers themselves. `flip`,
-  `align`, and `distribute` have no descendant handling either and need the same read.
-
 - **(P3) `cloneByAltDrag` and the `CloneBehavior` contract are unreachable.** `cloneAction.start`
   ignores `opts`, so no clone behavior ever runs, and the hook that consumed `CloneBehavior` is
   gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in
