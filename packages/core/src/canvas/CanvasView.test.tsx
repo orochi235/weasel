@@ -214,7 +214,7 @@ describe('<CanvasView> draw contribution', () => {
         <CanvasView id="panel" bounds={PANEL} onViewChange={onViewChange} />
       </ViewRegistryProvider>,
     );
-    const view = (registry.list()[0]!.target.deps() as { view: ViewApi }).view;
+    const view: ViewApi = registry.list()[0]!.target.deps!().view!;
     const pan = (dx: number): void => { const v = view.get(); view.set({ ...v, x: v.x + dx }); };
 
     act(() => { pan(10); pan(5); });
