@@ -10,6 +10,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { CanvasView } from './CanvasView';
 import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
+import type { ViewApi } from 'interactions/actions/depSchema';
 import type { RenderLayer } from 'core/layers/render';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
@@ -202,6 +203,24 @@ describe('<CanvasView> draw contribution', () => {
       kind: 'group',
       clip: { kind: 'rect', x: 0, y: 0, width: PANEL.w, height: PANEL.h },
     });
+  });
+
+  it('builds a second camera write on the first when both land before a render', () => {
+    let registry!: ViewRegistry;
+    const onViewChange = vi.fn();
+    render(
+      <ViewRegistryProvider>
+        <Harness layers={[]} onReady={(r) => { registry = r; }} />
+        <CanvasView id="panel" bounds={PANEL} onViewChange={onViewChange} />
+      </ViewRegistryProvider>,
+    );
+    const view = (registry.list()[0]!.target.deps() as { view: ViewApi }).view;
+    const pan = (dx: number): void => { const v = view.get(); view.set({ ...v, x: v.x + dx }); };
+
+    act(() => { pan(10); pan(5); });
+
+    expect(view.get().x).toBe(15);
+    expect(onViewChange).toHaveBeenLastCalledWith(expect.objectContaining({ x: 15 }));
   });
 
   it('narrows the stack when `layers` is given', () => {

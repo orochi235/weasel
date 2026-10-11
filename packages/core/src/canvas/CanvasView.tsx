@@ -152,8 +152,10 @@ export function CanvasView(props: CanvasViewProps): null {
   const ownSelection = useSelection(selectionOptions);
   const viewSelection = selectionProp ?? (selectionOptions ? ownSelection : undefined);
 
-  const [internalView, setInternalView] = useState<View>(() => normalizeView(defaultView ?? IDENTITY_VIEW));
-  const effectiveView = viewProp ?? internalView;
+  // The uncontrolled camera lives in a ref, as `<Canvas>`'s does: a write is
+  // readable at once, so a second one before React commits builds on the first.
+  const [initialView] = useState<View>(() => normalizeView(defaultView ?? IDENTITY_VIEW));
+  const internalViewRef = useRef(initialView);
 
   const inputs = useOptionalViewInputs();
   // The selection this view acts on: its own when it has one, the surface's
@@ -164,7 +166,7 @@ export function CanvasView(props: CanvasViewProps): null {
   // is registered once and must not churn, but what it answers with has to be
   // the last committed render's.
   const live = useLatest({
-    view: effectiveView, bounds, layers, layerVisibility, layerOrder, onViewChange, viewBounds, viewProp,
+    bounds, layers, layerVisibility, layerOrder, onViewChange, viewBounds, viewProp,
     viewSelection, selection,
   });
 
@@ -181,7 +183,7 @@ export function CanvasView(props: CanvasViewProps): null {
   }, [registry, rectAt]);
 
   const cameraAt = useCallback((outer: View, dims: Dims): View => {
-    const v = live.current.view;
+    const v = live.current.viewProp ?? internalViewRef.current;
     return normalizeView(typeof v === 'function' ? v(outer, dims) : v);
   }, [live]);
 
@@ -207,7 +209,7 @@ export function CanvasView(props: CanvasViewProps): null {
     const rect = rectNow();
     const valid = normalizeView(next);
     const clamped = vb ? clampView(valid, vb, { width: rect.w, height: rect.h }) : valid;
-    if (controlled === undefined) setInternalView(clamped);
+    if (controlled === undefined) internalViewRef.current = clamped;
     cb?.(clamped);
     registry?.surface()?.requestRedraw();
   }, [registry, rectNow, live]);
@@ -408,11 +410,11 @@ export function CanvasView(props: CanvasViewProps): null {
     return registry.register(registration);
   }, [registry, registration]);
 
-  // A camera change is invisible until the surface repaints, and nothing else
-  // observes this component's state.
+  // A controlled camera change is invisible until the surface repaints; an
+  // uncontrolled one asks for its repaint in `setView`.
   useEffect(() => {
     registry?.surface()?.requestRedraw();
-  }, [registry, effectiveView]);
+  }, [registry, viewProp]);
 
   return null;
 }
