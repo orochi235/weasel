@@ -2022,12 +2022,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   resolve a path into an object. `valuePathOf` is also wrong for anything under a section inside an
   `object` leaf of a group root, where it counts the section's key as a step.
 
-- **(P3) `PrefSchemaEditor`: a drag out of the Actions list makes a new node on every pointer
-  move.** `dragOf` in `ActionList.tsx` calls `actionLeaf(action)` each time, so `sameDrop`
-  (`previewDrop.ts`) never finds the same node twice and `setDrop` re-renders the whole preview form
-  per pointer event; the palette and the Unplaced tree hold one node per drag. Keep one leaf per
-  action key for as long as `actions` is the same list. The cost has not been measured.
-
 - **(P3) `PrefSchemaEditor`: a rail-open timer started by a tree drag is not cleared when the editor
   unmounts.** Holding a drag over a rail entry starts a 500 ms timer (`opening` in
   `PrefSchemaEditor.tsx`) that selects that page. A drag begun in the preview now ends on unmount

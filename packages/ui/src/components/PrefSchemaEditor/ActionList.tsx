@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import type { PrefLeaf } from '@weasel-js/prefs';
 import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
 import { actionLeaf, actionLeafKey, type EditorAction } from './editorActions';
 import type { PaletteDrag } from './Palette';
@@ -48,10 +49,13 @@ export function ActionList({ actions, sought, ghost, onDrag, onDrop }: {
     [all, sought],
   );
   const open = useMemo(() => treeBranchIds(all), [all]);
+  // One node per drag, so it is seen as holding the same thing from one pointer move to the next.
+  const held = useRef<{ id: string; node: PrefLeaf } | null>(null);
   const dragOf = (id: string, point: { x: number; y: number }): PaletteDrag | null => {
     const action = actions.find((a) => a.key === id);
     if (!action) return null;
-    const node = actionLeaf(action);
+    if (held.current?.id !== id) held.current = { id, node: actionLeaf(action) };
+    const node = held.current.node;
     return { item: { id, label: action.label, icon: 'formLabel', key: actionLeafKey(action.key), make: () => node }, node, ...point };
   };
   return (
@@ -67,11 +71,13 @@ export function ActionList({ actions, sought, ghost, onDrag, onDrop }: {
       canDrop={() => false}
       onDragOutside={(ids, point) => {
         const drag = point && ids[0] !== undefined ? dragOf(ids[0], point) : null;
+        if (!drag) held.current = null;
         onDrag(drag);
         return drag !== null;
       }}
       onDropOutside={(ids, point) => {
         const drag = ids[0] !== undefined ? dragOf(ids[0], point) : null;
+        held.current = null;
         if (drag) onDrop(drag);
         onDrag(null);
       }}
