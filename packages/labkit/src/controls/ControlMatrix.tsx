@@ -29,7 +29,7 @@ import { Dialog as RACDialog, Popover as RACPopover } from 'react-aria-component
 import { auto as autoValue } from '../config/auto';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
-import { ControlRow } from './ControlPanel';
+import { ControlRow } from './ControlRow';
 import { FieldChoicesContext, useFieldChoices, useFieldChoicesOf } from './fieldChoices';
 import { summarizeValue } from './inDialog';
 
