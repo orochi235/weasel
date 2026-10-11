@@ -33,10 +33,24 @@ const head = (dir) => {
 };
 
 const pt = ([x, y]) => `${round2(x)} ${round2(y)}`;
+// A solid head: two stroked legs close up into a blob under a slot's stroke. Its base is the radius through the
+// arc's end, and its tip lies ahead of that end along the tangent, so the arc runs into the middle of the base.
 const RESET_R = 6;
-const RESET_FROM = onCircle(C, C, RESET_R, 125);
-const RESET_TO = onCircle(C, C, RESET_R, 55);
-const resetLeg = (dx, dy) => [RESET_TO[0] + dx, RESET_TO[1] + dy];
+const RESET_CY = C + 0.5;
+const RESET_END = 45;
+const RESET_FROM = onCircle(C, RESET_CY, RESET_R, 130);
+const RESET_TO = onCircle(C, RESET_CY, RESET_R, RESET_END);
+const HEAD_HALF = 3.2;
+const HEAD_LONG = 5;
+const rad = (RESET_END * Math.PI) / 180;
+// Screen y runs down: outward along the radius, and onward along the counterclockwise tangent.
+const out = [Math.cos(rad), -Math.sin(rad)];
+const on = [-Math.sin(rad), -Math.cos(rad)];
+const resetHead = [
+  [RESET_TO[0] + out[0] * HEAD_HALF, RESET_TO[1] + out[1] * HEAD_HALF],
+  [RESET_TO[0] + on[0] * HEAD_LONG, RESET_TO[1] + on[1] * HEAD_LONG],
+  [RESET_TO[0] - out[0] * HEAD_HALF, RESET_TO[1] - out[1] * HEAD_HALF],
+];
 
 const star = `M${Array.from({ length: 10 }, (_, i) => pt(onCircle(C, C + 0.5, i % 2 ? 2.9 : 6.5, 90 + i * 36))).join(' ')}Z`;
 
@@ -56,8 +70,7 @@ export const MARKS = {
   'mark-up': `<path d="M${C} ${C + REACH}V${C - REACH}"/><path d="${head(-1)}"/>`,
   'mark-down': `<path d="M${C} ${C - REACH}V${C + REACH}"/><path d="${head(1)}"/>`,
 
-  // `reset`'s arc and arrowhead, the head grown to hold its shape under a slot's stroke.
-  'mark-reset': `<path d="M${pt(RESET_FROM)}A${RESET_R} ${RESET_R} 0 1 0 ${pt(RESET_TO)}"/><path d="M${pt(resetLeg(1.5, 3.71))} ${pt(RESET_TO)} ${pt(resetLeg(3.92, -0.83))}"/>`,
+  'mark-reset': `<path d="M${pt(RESET_FROM)}A${RESET_R} ${RESET_R} 0 1 0 ${pt(RESET_TO)}" stroke-linecap="butt"/><path d="M${resetHead.map(pt).join(' ')}Z" fill="currentColor" stroke="none"/>`,
 
   'mark-search': `<circle cx="8.5" cy="8.5" r="4.5"/><path d="M12 12 16.5 16.5"/>`,
 
