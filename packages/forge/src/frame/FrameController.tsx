@@ -12,7 +12,6 @@ import {
 import { answerSchema, describeSchema } from '../protocol/schema';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 import { runAxe } from './a11y';
-import { captureElement } from './capture';
 import { createOverrides, resolveCssVar, scanCssVars } from './cssVars';
 import { createGlobalsTarget, type GlobalsTarget } from './globalsTarget';
 import { StoryHost } from './StoryHost';
@@ -133,8 +132,8 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     }
   };
 
-  // Input from the trial commits synchronously, so a `play` that follows sees the rendered story. A throw while
-  // applying it faults like a render would; otherwise the trial would wait on a frame that never answers.
+  // Input from the trial commits synchronously, so `rendered` and the vars report describe the story it produced. A
+  // throw while applying it faults like a render would; otherwise the trial would wait on a frame that never answers.
   const input = (apply: () => void) => {
     seq += 1;
     try {
@@ -176,29 +175,11 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
     void fonts.ready.then(afterPaint, afterPaint);
   };
 
-  const play = async () => {
-    try {
-      await story.play?.({ canvasElement: wrapper, config, globals });
-      send({ type: 'played', ok: true });
-    } catch (error) {
-      send({ type: 'played', ok: false, message: error instanceof Error ? error.message : String(error) });
-      send(fault('play', error));
-    }
-  };
-
   const audit = async (id: string) => {
     try {
       send({ type: 'a11y', id, ok: true, report: await runAxe(wrapper) });
     } catch (error) {
       send({ type: 'a11y', id, ok: false, message: error instanceof Error ? error.message : String(error) });
-    }
-  };
-
-  const picture = (id: string) => {
-    try {
-      send({ type: 'capture', id, ok: true, picture: captureElement(wrapper) });
-    } catch (error) {
-      send({ type: 'capture', id, ok: false, message: error instanceof Error ? error.message : String(error) });
     }
   };
 
@@ -242,30 +223,14 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
         publishVars(vars);
         break;
       }
-      case 'play':
-        void play();
-        break;
       case 'a11y.run':
         void audit(msg.id);
-        break;
-      case 'capture.run':
-        picture(msg.id);
         break;
     }
   });
 
-  const observer =
-    typeof ResizeObserver === 'undefined'
-      ? null
-      : new ResizeObserver(() => {
-          const { width, height } = wrapper.getBoundingClientRect();
-          send({ type: 'size', width: Math.ceil(width), height: Math.ceil(height) });
-        });
-  observer?.observe(wrapper);
-
   return () => {
     off();
-    observer?.disconnect();
     mutations?.disconnect();
     clearTimeout(settleTimer);
     overrides.dispose();

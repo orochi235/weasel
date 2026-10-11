@@ -8,7 +8,7 @@ export interface Viewport {
   width: number;
   height: number;
 }
-export type FaultPhase = 'import' | 'render' | 'play' | 'protocol';
+export type FaultPhase = 'import' | 'render' | 'protocol';
 
 /** One custom property as the frame found it. */
 export interface CssVarReport {
@@ -53,21 +53,14 @@ export interface A11yReport {
   inapplicable: number;
 }
 
-/** A picture of the story the frame can put in a message: labkit's `CaptureSource` without the canvas,
- *  which no structured clone carries. */
-export type CapturedPicture = { kind: 'svg'; markup: string } | { kind: 'image'; src: string };
-
 export type ToFrame =
   | { type: 'init'; config: unknown; state: unknown; globals: Globals }
   | { type: 'config'; config: unknown }
   | { type: 'state'; state: unknown }
   | { type: 'globals'; globals: Globals }
   | { type: 'vars.set'; name: string; value: string | null }
-  | { type: 'play' }
   /** Run axe over the story's own subtree. Answered by `a11y` carrying the same `id`. */
-  | { type: 'a11y.run'; id: string }
-  /** Serialize the story's own subtree as a picture. Answered by `capture` carrying the same `id`. */
-  | { type: 'capture.run'; id: string };
+  | { type: 'a11y.run'; id: string };
 
 export type FromFrame =
   | { type: 'ready'; schema: SchemaDescription; layout: Layout; viewport: Viewport | null }
@@ -76,15 +69,11 @@ export type FromFrame =
   | { type: 'answers'; answers: ConfigAnswers }
   | { type: 'setConfig'; path: string; value: unknown }
   | { type: 'setState'; state: unknown }
-  | { type: 'size'; width: number; height: number }
   | { type: 'vars'; vars: CssVarReport[] }
   /** Asks the shell to show story `id` in this frame's trial in place of what it shows now. */
   | { type: 'open'; id: string }
-  | { type: 'played'; ok: boolean; message?: string }
   | { type: 'a11y'; id: string; ok: true; report: A11yReport }
   | { type: 'a11y'; id: string; ok: false; message: string }
-  | { type: 'capture'; id: string; ok: true; picture: CapturedPicture }
-  | { type: 'capture'; id: string; ok: false; message: string }
   /** `seq`, on a render fault only: how many `init`/`config`/`state`/`globals` messages the frame had received. */
   | { type: 'fault'; phase: FaultPhase; message: string; stack?: string; seq?: number };
 

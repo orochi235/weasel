@@ -27,7 +27,7 @@ describe('openChannel', () => {
     const onMismatch = vi.fn();
     const received = vi.fn();
     openChannel(port1, { onMismatch }).on(received);
-    port2.postMessage({ v: 999, msg: { type: 'play' } });
+    port2.postMessage({ v: 999, msg: { type: 'a11y.run', id: 'a' } });
     port2.start();
     await vi.waitFor(() => expect(onMismatch).toHaveBeenCalledWith({ reason: 'version', version: 999 }));
     expect(received).not.toHaveBeenCalled();
@@ -54,7 +54,7 @@ describe('openChannel', () => {
     const off = frame.on(fn);
     frame.on(still);
     off();
-    shell.send({ type: 'play' });
+    shell.send({ type: 'a11y.run', id: 'a' });
     // A port delivers in order, so once a listener still subscribed has the message, so would fn.
     await vi.waitFor(() => expect(still).toHaveBeenCalled());
     expect(fn).not.toHaveBeenCalled();

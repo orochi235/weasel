@@ -1293,14 +1293,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
-- **(P3) `PrefSchemaEditor` clears required custom attributes.** Emptying an attribute removes
-  it, which is right for optional built-in attributes but deletes a custom kind's required one —
-  `registry-enum`'s `source` on WeaselDraw's `#/dev/prefs`. `CustomKinds` has no way to mark an
-  attribute required; it needs one, and `blankLeaf` should seed those attributes for a custom kind.
-  The same gap leaves a leaf switched to a custom kind with `default: undefined` and no Default row
-  unless the kind's entry declares one. A type made with `prefType` has no such gap, carrying its
-  own default.
-
 - **(P3) `PrefSchemaEditor` layout rough edges.** The always-mounted notice row adds one grid gap
   above the attributes pane, and the Key/Kind rows are wider than the attribute form under them.
   Seen on `#/dev/prefs` at 1440×900.
@@ -1886,14 +1878,6 @@ only story runner in the repo.
   also refuses a param that differs by `mode` while the trial's mode is Auto,
   since the panel does not know which scheme the frame resolved.
 
-- **(P3) A captured forge story loses what `:root`, `html` and `body` style.**
-  The frame serializes its story into a `<foreignObject>` whose root is a
-  `<div>` (`packages/forge/src/frame/capture.ts`), so a rule hanging off those
-  three selectors does not reach the clone. Custom properties are restated on
-  the capture root, which covers theme tokens; a page background or a body
-  font is still lost, and so is any font or image the document did not inline.
-
-
 - **(P3, isolated stories only) A forge story whose `viewport` the index cannot
   read reloads its frame once when first opened.** The index reads a native
   story's `viewport` when both sides are number literals, and the first
@@ -1927,19 +1911,6 @@ only story runner in the repo.
   2.0.0). `Split` works around it by showing its sidebar node and hiding it
   again (`createSplitStore`). The fix belongs in windease; the workaround goes
   when it lands.
-
-- **(P2) forge: a story's `play` never runs in the workshop, and the frame protocol still carries
-  the plumbing for it and three other things nothing reads.** `play` runs only under `forgeTest`: no
-  shell code sends `{ type: 'play' }`, and `FrameView` has no case for the frame's `played` answer
-  (`packages/forge/src/protocol/messages.ts`, `frame/FrameController.tsx`). The comment in
-  `packages/forge/src/test/play.ts` says a play is driven "by `forgeTest` under vitest or by the
-  workshop", which is false. Beside it, written and never read: `capture.run` / `TrialFrame.capture`
-  (`frame/capture.ts`, `shell/FrameView.tsx`, `shell/TrialHost.tsx`), the `size` report and the
-  `ResizeObserver` each open story keeps alive to send it, `TrialFrames.hostRef` (whose map in
-  `shell/trialFrames.ts` is never pruned), and a `vars` array `TrialHost` builds and drops. These
-  are what taking marks out of forge left behind. Ruled 2026-10-11: the workshop does not run a
-  story's play. That leaves deleting all of it, with the protocol messages and the `:root`-capture
-  entry below, and correcting the `play.ts` comment.
 
 - **(P2) forge: the static index and the runtime loaders disagree about what a story is and what it
   is titled.** Three cases, all in `packages/forge/src/vite/indexFile.ts` against `story/native.ts`

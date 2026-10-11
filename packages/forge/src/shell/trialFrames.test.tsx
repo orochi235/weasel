@@ -42,11 +42,7 @@ const report: A11yReport = {
   inapplicable: 7,
 };
 
-const picture = { kind: 'svg', markup: '<svg xmlns="http://www.w3.org/2000/svg"/>' } as const;
-
 installResizeObserver();
-
-const noCapture = async () => picture;
 
 const cleanups: (() => void)[] = [];
 afterEach(() => {
@@ -56,14 +52,14 @@ afterEach(() => {
 describe('createTrialFrames', () => {
   it('reports nothing for a trial with no frame', () => {
     const frames = createTrialFrames();
-    expect(frames.get('t1')).toEqual({ send: null, vars: [], audit: null, a11y: null, capture: null, size: null });
+    expect(frames.get('t1')).toEqual({ send: null, vars: [], audit: null, a11y: null });
   });
 
   it('keeps the last audit outcome beside the frame, and drops it on disconnect', () => {
     const frames = createTrialFrames();
     const send = vi.fn();
     const audit = vi.fn(async () => ({ ok: true as const, report }));
-    const off = frames.connect('t1', { send, audit, capture: noCapture });
+    const off = frames.connect('t1', { send, audit });
     frames.reportA11y('t1', { ok: true, report });
     expect(frames.get('t1').a11y).toEqual({ ok: true, report });
     expect(frames.get('t1').audit).toBe(audit);
@@ -134,62 +130,6 @@ describe('FrameView audits its frame', () => {
     await expect(pending).resolves.toEqual({ ok: true, report });
     expect(frames.get(trialId).a11y).toEqual({ ok: true, report });
 
-    const pendingPicture = frames.get(trialId).capture?.();
-    await flush();
-    const asked2 = received.find((m) => m.type === 'capture.run');
-    if (asked2?.type !== 'capture.run') throw new Error('no capture request');
-    frame.send({ type: 'capture', id: asked2.id, ok: true, picture });
-    await flush();
-    await expect(pendingPicture).resolves.toEqual(picture);
-  });
-
-  it('rejects a capture the frame could not draw, carrying its message', async () => {
-    const frames = createTrialFrames();
-    let lab: LabContextValue | null = null;
-    const instrument = storyInstrument({
-      entry,
-      ready,
-      answers: createAnswerBook(),
-      frameUrl: '/frame.html',
-      onReady: () => {},
-    });
-    const view = render(
-      <TrialFramesContext.Provider value={frames}>
-        <Lab instruments={[instrument]} defaultInstrument={entry.id}>
-          <LabContext.Consumer>
-            {(value) => {
-              lab = value;
-              return null;
-            }}
-          </LabContext.Consumer>
-        </Lab>
-      </TrialFramesContext.Provider>,
-    );
-    cleanups.push(() => view.unmount());
-    const iframe = view.container.querySelector('iframe.fg-frame-view') as HTMLIFrameElement;
-    const post = vi.spyOn(iframe.contentWindow as Window, 'postMessage').mockImplementation(() => {});
-    sayHello(iframe);
-    const port = ((post.mock.calls.at(-1) as unknown[])[2] as MessagePort[])[0] as MessagePort;
-    const frame: Channel<ToFrame, FromFrame> = openChannel(port);
-    cleanups.push(() => frame.close());
-    const received: ToFrame[] = [];
-    frame.on((msg) => received.push(msg));
-    const trialId = (lab as LabContextValue | null)?.trials[0]?.id as string;
-    await flush();
-    frame.send({ type: 'rendered' });
-    await flush();
-
-    // Caught at once: the rejection lands before a trailing `rejects` assertion could attach.
-    const caught = frames.get(trialId).capture?.().then(
-      () => null,
-      (error: Error) => error,
-    );
-    await flush();
-    const asked = received.find((m) => m.type === 'capture.run');
-    if (asked?.type !== 'capture.run') throw new Error('no capture request');
-    frame.send({ type: 'capture', id: asked.id, ok: false, message: 'no DOM' });
-    await flush();
-    expect((await caught)?.message).toBe('no DOM');
   });
 
   it('takes no marks until annotations are a feature', () => {
@@ -226,11 +166,11 @@ describe('A11yPanel', () => {
     const frames = createTrialFrames();
     const answers: (() => void)[] = [];
     const audit = () => () => new Promise<{ ok: true; report: A11yReport }>((resolve) => answers.push(() => resolve({ ok: true, report })));
-    frames.connect('t1', { send: vi.fn(), audit: audit(), capture: noCapture });
+    frames.connect('t1', { send: vi.fn(), audit: audit() });
     panel(frames);
     await flush();
     act(() => {
-      frames.connect('t1', { send: vi.fn(), audit: audit(), capture: noCapture });
+      frames.connect('t1', { send: vi.fn(), audit: audit() });
     });
     await flush();
     expect(answers).toHaveLength(2);
@@ -249,7 +189,7 @@ describe('A11yPanel', () => {
       frames.reportA11y('t1', { ok: true, report });
       return { ok: true as const, report };
     });
-    frames.connect('t1', { send: vi.fn(), audit, capture: noCapture });
+    frames.connect('t1', { send: vi.fn(), audit });
     panel(frames);
     await flush();
 
@@ -262,7 +202,7 @@ describe('A11yPanel', () => {
   it('re-checks on demand', async () => {
     const frames = createTrialFrames();
     const audit = vi.fn(async () => ({ ok: true as const, report }));
-    frames.connect('t1', { send: vi.fn(), audit, capture: noCapture });
+    frames.connect('t1', { send: vi.fn(), audit });
     panel(frames);
     await flush();
     await act(async () => {
@@ -273,7 +213,7 @@ describe('A11yPanel', () => {
 
   it('shows the message when axe could not run', async () => {
     const frames = createTrialFrames();
-    frames.connect('t1', { send: vi.fn(), audit: vi.fn(async () => ({ ok: false as const, message: 'boom' })), capture: noCapture });
+    frames.connect('t1', { send: vi.fn(), audit: vi.fn(async () => ({ ok: false as const, message: 'boom' })) });
     frames.reportA11y('t1', { ok: false, message: 'boom' });
     panel(frames);
     await flush();

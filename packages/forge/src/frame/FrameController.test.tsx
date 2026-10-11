@@ -299,19 +299,6 @@ describe('startFrame', () => {
     vi.restoreAllMocks();
   });
 
-  it('runs play and reports success', async () => {
-    const play = vi.fn();
-    const withPlay: LoadedStory = { ...counter, play };
-    const { shell, of } = start(withPlay);
-    shell.send(init);
-    await flush();
-    shell.send({ type: 'play' });
-    await flush();
-    expect(play).toHaveBeenCalledWith(expect.objectContaining({ config: init.config, globals: {} }));
-    expect(play.mock.calls[0]![0].canvasElement.textContent).toContain('clicks:0');
-    expect(of('played')).toEqual([{ type: 'played', ok: true }]);
-  });
-
   describe('CSS variables', () => {
     const [styled] = loadNativeModule(
       {
@@ -441,21 +428,5 @@ describe('startFrame', () => {
       for (const fn of cleanups.splice(0)) act(() => fn());
       expect(document.head.querySelector('style[data-fg-overrides]')).toBeNull();
     });
-  });
-
-  it('reports a throwing play', async () => {
-    const withPlay: LoadedStory = {
-      ...counter,
-      play: async () => {
-        throw new Error('assertion failed');
-      },
-    };
-    const { shell, of } = start(withPlay);
-    shell.send(init);
-    await flush();
-    shell.send({ type: 'play' });
-    await flush();
-    expect(of('played')).toEqual([{ type: 'played', ok: false, message: 'assertion failed' }]);
-    expect(of('fault')).toEqual([expect.objectContaining({ phase: 'play', message: 'assertion failed' })]);
   });
 });

@@ -13,7 +13,6 @@ import {
   useState,
 } from 'react';
 import { runAxe } from '../frame/a11y';
-import { captureElement } from '../frame/capture';
 import { createOverrides, type Overrides, scanCssVars } from '../frame/cssVars';
 import type { FrameSetup } from '../frame/FrameController';
 import { IN_VIEW_MARGIN, useNearViewport } from '../frame/useNearViewport';
@@ -46,7 +45,7 @@ const scopeOf = (id: string) => `[data-fg-host="${id}"]`;
 /**
  * One story's box in the workshop document: what a frame document was, as an element. It applies the globals to
  * itself, keeps its CSS variable overrides on itself, contains fixed-position descendants and portals, reports its
- * vars, size and audits to the trial's frame registry, and unmounts its content while out of view.
+ * vars and audits to the trial's frame registry, and unmounts its content while out of view.
  */
 export function TrialHost({ layout, setup, config, children, hostRef, onRendered }: TrialHostProps) {
   const trialId = useContext(TrialIdContext);
@@ -101,11 +100,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
     const send = (msg: ToFrame) => {
       if (msg.type !== 'vars.set') return;
       overrides.set(msg.name, msg.value);
-      const at = lastVars?.findIndex((v) => v.name === msg.name) ?? -1;
-      if (!lastVars || at < 0) return;
-      const vars = lastVars.slice();
-      vars[at] = { ...vars[at]!, overridden: overrides.has(msg.name) };
-      scan();
+      if (lastVars?.some((v) => v.name === msg.name)) scan();
     };
     const audit = async (): Promise<A11yOutcome> => {
       let outcome: A11yOutcome;
@@ -117,27 +112,14 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
       if (trialId) frames?.reportA11y(trialId, outcome);
       return outcome;
     };
-    const capture = async () => captureElement(host);
-    const disconnect = frames && trialId ? frames.connect(trialId, { send, audit, capture }) : () => {};
-    if (frames && trialId) frames.hostRef(trialId).current = host;
-
-    const sizes =
-      typeof ResizeObserver === 'undefined'
-        ? null
-        : new ResizeObserver(() => {
-            const { width, height } = host.getBoundingClientRect();
-            if (trialId) frames?.reportSize(trialId, { width: Math.ceil(width), height: Math.ceil(height) });
-          });
-    sizes?.observe(host);
+    const disconnect = frames && trialId ? frames.connect(trialId, { send, audit }) : () => {};
 
     return () => {
       disconnect();
-      sizes?.disconnect();
       mutations?.disconnect();
       clearTimeout(settleTimer);
       overrides.dispose();
       overridesRef.current = null;
-      if (frames && trialId && frames.hostRef(trialId).current === host) frames.hostRef(trialId).current = null;
     };
   }, [host, hostId, trialId, frames, latest]);
 

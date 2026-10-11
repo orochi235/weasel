@@ -7,7 +7,6 @@ import type { FromFrame, Globals, ToFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
 import type { IndexRender, LoadedStory } from '../../story/types';
 import { runAxe } from '../a11y';
-import { captureElement } from '../capture';
 import type { FrameSetup } from '../FrameController';
 import { createGlobalsTarget } from '../globalsTarget';
 import { type IndexEnv, IndexPage } from './IndexPage';
@@ -116,13 +115,6 @@ export function startIndex(options: StartIndexOptions): () => void {
           (report) => send({ type: 'a11y', id: msg.id, ok: true, report }),
           (error: unknown) => send({ type: 'a11y', id: msg.id, ok: false, message: message(error) }),
         );
-        break;
-      case 'capture.run':
-        try {
-          send({ type: 'capture', id: msg.id, ok: true, picture: captureElement(wrapper) });
-        } catch (error) {
-          send({ type: 'capture', id: msg.id, ok: false, message: message(error) });
-        }
         break;
       default:
         break;

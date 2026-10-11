@@ -72,9 +72,9 @@ describe('TrialHost', () => {
     expect(document.head.querySelector('style[data-fg-globals]')).toBeNull();
   });
 
-  it('connects itself to the trial registry: audits and captures answer directly, vars.set overrides on the host', async () => {
+  it('connects itself to the trial registry: audits answer directly, vars.set overrides on the host', async () => {
     const frames = createTrialFrames();
-    const { container } = render(
+    render(
       <TrialFramesContext.Provider value={frames}>
         <TrialIdContext.Provider value="t1">
           <TrialHost layout="padded" setup={{ cssVarsScope: ':root' }} config={{}}>
@@ -83,14 +83,9 @@ describe('TrialHost', () => {
         </TrialIdContext.Provider>
       </TrialFramesContext.Provider>,
     );
-    const host = container.querySelector<HTMLElement>('.fg-story')!;
     const frame = frames.get('t1');
-    expect(frames.hostRef('t1').current).toBe(host);
     expect(frame.send).not.toBeNull();
     expect(frame.audit).not.toBeNull();
-    const picture = await frame.capture!();
-    expect(picture.kind).toBe('svg');
-    expect((picture as { markup: string }).markup).toContain('Hi');
 
     act(() => frame.send!({ type: 'vars.set', name: '--fg-t-host', value: 'blue' }));
     const rule = document.head.querySelector('style[data-fg-overrides]')?.textContent ?? '';

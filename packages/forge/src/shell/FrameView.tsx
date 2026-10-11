@@ -14,7 +14,6 @@ import {
   type PortHandoff,
   PROTOCOL_VERSION,
   stableStringify,
-  type CapturedPicture,
   type ToFrame,
 } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
@@ -42,13 +41,6 @@ const START_TIMEOUT_MS = 10_000;
 /** Distinguishes one frame request from the next; only ever compared, never read. */
 let requests = 0;
 
-interface Settle {
-  resolve: (value: never) => void;
-  fail: (error: Error) => void;
-  /** How this request ends when the frame goes away before answering. */
-  gone: () => void;
-}
-
 interface Fault {
   phase: FaultPhase | null;
   message: string;
@@ -66,27 +58,22 @@ interface Link {
   inputs: number;
   /** Takes this link's channel out of the trial's frame registry. */
   disconnect: () => void;
-  /** Requests waiting on an answer carrying the same id. */
-  pending: Map<string, Settle>;
-  /** Whether the frame has said it rendered; before that there is no story to ask anything about. */
+  /** Audits waiting on an answer carrying the same id. */
+  pending: Map<string, (outcome: A11yOutcome) => void>;
+  /** Whether the frame has said it rendered; before that there is no story to audit. */
   hasRendered: boolean;
-  /** Requests held until it has. */
+  /** Audits held until it has. */
   queued: (() => void)[];
 }
 
 function closeLink(link: RefObject<Link | null>): void {
   if (!link.current) return;
   clearTimeout(link.current.timer);
-  for (const settle of link.current.pending.values()) settle.gone();
+  for (const settle of link.current.pending.values()) settle({ ok: false, message: 'The frame went away' });
   link.current.pending.clear();
   link.current.disconnect();
   link.current.channel.close();
   link.current = null;
-}
-
-function settle(link: Link, id: string, value: unknown): void {
-  (link.pending.get(id)?.resolve as ((v: unknown) => void) | undefined)?.(value);
-  link.pending.delete(id);
 }
 
 function mismatchMessage(mismatch: Mismatch): string {
@@ -159,20 +146,13 @@ export function FrameView(props: FrameViewProps) {
       case 'vars':
         if (trialId) frames?.report(trialId, msg.vars);
         break;
-      case 'size':
-        if (trialId) frames?.reportSize(trialId, { width: msg.width, height: msg.height });
-        break;
       case 'a11y': {
         const outcome: A11yOutcome = msg.ok ? { ok: true, report: msg.report } : { ok: false, message: msg.message };
         if (trialId) frames?.reportA11y(trialId, outcome);
-        settle(current, msg.id, outcome);
-        break;
-      }
-      case 'capture':
-        if (msg.ok) settle(current, msg.id, msg.picture);
-        else current.pending.get(msg.id)?.fail(new Error(msg.message));
+        current.pending.get(msg.id)?.(outcome);
         current.pending.delete(msg.id);
         break;
+      }
       case 'open': {
         const { lab: liveLab } = latest.current;
         if (!trialId || !liveLab.instruments.some((instrument) => instrument.name === msg.id)) break;
@@ -202,35 +182,17 @@ export function FrameView(props: FrameViewProps) {
         setFault({ phase: 'protocol', message: mismatchMessage(mismatch) });
       },
     });
-    const waiting = new Map<string, Settle>();
-    // Held until the frame says it rendered: before that there is no story to judge or to draw.
-    const request = <T,>(id: string, msg: ToFrame, gone: (settle: Settle['resolve'], fail: (e: Error) => void) => void) =>
-      new Promise<T>((resolve, reject) => {
-        waiting.set(id, {
-          resolve: resolve as Settle['resolve'],
-          fail: reject,
-          gone: () => gone(resolve as Settle['resolve'], reject),
-        });
-        const ask = () => channel.send(msg);
+    const waiting = new Map<string, (outcome: A11yOutcome) => void>();
+    // Held until the frame says it rendered: before that there is no story to judge.
+    const audit = (): Promise<A11yOutcome> =>
+      new Promise((resolve) => {
+        const id = `a11y-${(requests += 1)}`;
+        waiting.set(id, resolve);
+        const ask = () => channel.send({ type: 'a11y.run', id });
         if (current.hasRendered) ask();
         else current.queued.push(ask);
       });
-    // An audit's failure is an outcome the panel shows; a capture's is a rejection, because labkit's
-    // `base()` has nowhere to put one.
-    const audit = (): Promise<A11yOutcome> => {
-      const id = `a11y-${(requests += 1)}`;
-      return request<A11yOutcome>(id, { type: 'a11y.run', id }, (resolve) =>
-        resolve({ ok: false, message: 'The frame went away' } as never),
-      );
-    };
-    const capture = (): Promise<CapturedPicture> => {
-      const id = `capture-${(requests += 1)}`;
-      return request<CapturedPicture>(id, { type: 'capture.run', id }, (_resolve, fail) =>
-        fail(new Error('The frame could not draw itself')),
-      );
-    };
-    const disconnect =
-      frames && trialId ? frames.connect(trialId, { send: channel.send, audit, capture }) : () => {};
+    const disconnect = frames && trialId ? frames.connect(trialId, { send: channel.send, audit }) : () => {};
     const current: Link = {
       channel,
       timer,
@@ -337,13 +299,7 @@ export function FrameView(props: FrameViewProps) {
   }, [ctx.config, ctx.state, globals, descriptionKey, init]);
 
   return (
-    <div
-      ref={(el) => {
-        hostRef.current = el;
-        if (trialId && frames) frames.hostRef(trialId).current = el;
-      }}
-      className="fg-frame-host"
-    >
+    <div ref={hostRef} className="fg-frame-host">
       {/* The frame is placed here by hand: a pooled one arrives already loaded, and React would reload it. */}
       <div ref={slotRef} className="fg-frame-slot" />
       {fault ? (
