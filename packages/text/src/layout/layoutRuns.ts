@@ -63,7 +63,7 @@ import {
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
-import { analyzeParagraphs } from './bidiLines';
+import { analyzeParagraphs, restoreRemoved } from './bidiLines';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
 import { graphemeEnds } from '../measure/graphemes';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
@@ -1031,14 +1031,12 @@ export function layoutRuns(
         const pos = posOfFlat.get(f);
         if (pos !== undefined && !seen.has(pos)) { ordered.push(pos); seen.add(pos); }
       }
-      // A position the engine dropped is a formatting control it removed; it
-      // still holds a cell here, placed where it sits logically.
-      for (let k = 0; k < line.entries.length; k++) if (!seen.has(k)) ordered.push(k);
-      visual = ordered;
       levelOf = (pos) => {
         const l = r.levels[flatOf[pos] - from];
         return typeof l === 'number' && l >= 0 ? l : 0;
       };
+      // A position the engine dropped still holds a cell here.
+      visual = restoreRemoved(ordered, line.entries.length, (pos) => levelOf(pos) % 2 === 1);
     }
 
     // L4 — a bracket in a right-to-left run paints as its mirror. Done here
@@ -1061,7 +1059,11 @@ export function layoutRuns(
       }
     }
 
-    let penX = lineX0;
+    // L1 gives a line's trailing spaces the paragraph's level, so in a
+    // right-to-left paragraph they reorder to the left and hang off that side.
+    const hangsLeft = hung > 0 && levelOf(line.entries.length - 1) % 2 === 1;
+    const lineLeft = hangsLeft ? lineX0 - hung : lineX0;
+    let penX = lineLeft;
     let prevPos = -1;
     for (const pos of visual) {
       const e = line.entries[pos];
@@ -1203,9 +1205,9 @@ export function layoutRuns(
     const lastCell = line.entries[line.entries.length - 1];
     const srcEnd = lastCell ? lastCell.srcEnd : (line.blank?.srcIndex ?? 0);
     lineBoxes.push({
-      x0: lineX0,
+      x0: lineLeft,
       y0: penY,
-      x1: lineX0 + line.width + spread,
+      x1: lineLeft + line.width + spread,
       y1: penY + line.height,
       baselineY: lineBaselineY,
       cells,

@@ -54,3 +54,46 @@ export function analyzeParagraphs(
     return { order: r.order.map((i) => i + p.start), levels: r.levels };
   };
 }
+
+/**
+ * A line's visual order with the positions the engine removed (X9: bidi
+ * controls, joiners, soft hyphens) put back beside the character each one
+ * follows in the text, on the side that character's direction reads toward.
+ * One opening the line sits before the first character that was kept.
+ *
+ * `order` holds positions `0..count-1` within the line; `rtl` answers for a
+ * kept position.
+ */
+export function restoreRemoved(
+  order: readonly number[],
+  count: number,
+  rtl: (pos: number) => boolean,
+): number[] {
+  if (order.length === count) return [...order];
+  const kept = new Set(order);
+  const leading: number[] = [];
+  const following = new Map<number, number[]>();
+  let anchor = -1;
+  let firstKept = -1;
+  for (let k = 0; k < count; k++) {
+    if (kept.has(k)) {
+      anchor = k;
+      if (firstKept < 0) firstKept = k;
+    } else if (anchor < 0) {
+      leading.push(k);
+    } else {
+      const list = following.get(anchor);
+      if (list) list.push(k);
+      else following.set(anchor, [k]);
+    }
+  }
+  if (firstKept < 0) return leading;
+  const out: number[] = [];
+  for (const p of order) {
+    const after = following.get(p) ?? [];
+    const before = p === firstKept ? leading : [];
+    if (rtl(p)) out.push(...[...after].reverse(), p, ...[...before].reverse());
+    else out.push(...before, p, ...after);
+  }
+  return out;
+}

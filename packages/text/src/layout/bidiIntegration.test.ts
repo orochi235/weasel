@@ -159,3 +159,59 @@ describe('paragraphs', () => {
     expect(visualOf('אבג\r\nדה', 1).order).toEqual([1, 0]);
   });
 });
+
+describe('characters the engine removes', () => {
+  it('keeps a zero-width joiner between its neighbors in a left-to-right line', () => {
+    const cells = layoutRuns([RUN('AB‍C')], OPTS).lines[0].cells;
+    expect(cells[2].x).toBeGreaterThanOrEqual(cells[1].x + cells[1].advance);
+    expect(cells[2].x).toBeLessThanOrEqual(cells[3].x);
+  });
+
+  it('keeps one between its neighbors in a right-to-left line', () => {
+    // Logical א ZWJ ב ג paints, left to right, as ג ב ZWJ א.
+    const cells = layoutRuns([RUN('א‍בג')], OPTS).lines[0].cells;
+    expect(cells[1].x).toBeGreaterThanOrEqual(cells[2].x + cells[2].advance);
+    expect(cells[1].x).toBeLessThanOrEqual(cells[0].x);
+  });
+
+  it('places one opening the line at the line\'s start', () => {
+    const cells = layoutRuns([RUN('‍AB')], OPTS).lines[0].cells;
+    expect(cells[0].x).toBeLessThanOrEqual(cells[1].x);
+  });
+});
+
+describe('a wrapped right-to-left line', () => {
+  const RTL: LayoutRunsOpts = { ...OPTS, direction: 'rtl', align: 'right' };
+  /** A box that fits `אבג ` and part of the next word, so the text wraps once. */
+  const boxFor = (text: string): number => {
+    const cells = layoutRuns([RUN(text)], { ...RTL, maxWidth: Infinity }).lines[0].cells;
+    return cells.slice(0, 4).reduce((w, c) => w + c.advance, 0) + cells[4].advance / 2;
+  };
+
+  it('hangs the space that ends it off the left, with its ink flush right', () => {
+    const text = 'אבג דהו';
+    const maxWidth = boxFor(text);
+    const out = layoutRuns([RUN(text)], { ...RTL, maxWidth });
+    expect(out.lines).toHaveLength(2);
+    const [word, space] = [out.lines[0].cells.slice(0, 3), out.lines[0].cells[3]];
+    expect(space.cp).toBe(32);
+    expect(Math.max(...word.map((c) => c.x + c.advance))).toBeCloseTo(maxWidth, 6);
+    expect(space.x + space.advance).toBeCloseTo(Math.min(...word.map((c) => c.x)), 6);
+    // The last line has no space to hang and ends at the same edge.
+    const last = out.lines[1].cells;
+    expect(Math.max(...last.map((c) => c.x + c.advance))).toBeCloseTo(maxWidth, 6);
+  });
+
+  it('starts its ink at the left edge when aligned left', () => {
+    const text = 'אבג דהו';
+    const out = layoutRuns([RUN(text)], { ...RTL, align: 'left', maxWidth: boxFor(text) });
+    const word = out.lines[0].cells.slice(0, 3);
+    expect(Math.min(...word.map((c) => c.x))).toBeCloseTo(0, 6);
+  });
+
+  it('still hangs a trailing space off the right in a left-to-right paragraph', () => {
+    const out = layoutRuns([RUN('AB CD')], { ...OPTS, align: 'right', maxWidth: 400 });
+    const cells = out.lines[0].cells;
+    expect(cells[4].x + cells[4].advance).toBeCloseTo(400, 6);
+  });
+});
