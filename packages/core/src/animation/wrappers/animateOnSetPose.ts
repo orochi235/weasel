@@ -41,6 +41,9 @@ export interface AnimateOnSetPoseOptions<TPose> {
  * Poses written from inside another animation's tick, and (optionally) poses
  * written for a node currently under a gesture, are passed straight through:
  * animating those would fight whatever is already driving the node.
+ *
+ * Writing a node again while its glide is still running ends the glide: the
+ * new pose is written at once and stands.
  */
 export function animateOnSetPose<TNode extends { id: string }, TPose>(
   adapter: SceneAdapter<TNode, TPose>,
@@ -74,12 +77,8 @@ export function animateOnSetPose<TNode extends { id: string }, TPose>(
         adapter.setPose(id, pose);
         return;
       }
-      // Re-entrant short-circuit (b): a prior wrap-tween for this id is
-      // still in flight. Let it finish rather than registering a competing
-      // tween. (Earlier guard from 3af4ed8; kept alongside (a) for the case
-      // where setPose is called from outside the animator's own tick loop
-      // but a pose:<id> tween is still mid-transition.)
       if (animator.isActive('pose:' + id)) {
+        animator.cancelKey('pose:' + id);
         adapter.setPose(id, pose);
         return;
       }

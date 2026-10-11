@@ -73,36 +73,32 @@ describe('animateOnSetPose', () => {
     expect(applyOps).toHaveBeenCalledTimes(1);
   });
 
-  it('writes through directly when a tween is already in flight for the same id', () => {
-    // Regression: under momentum decay, the wrapper used to spawn a fresh
-    // 250ms tween every rAF tick (~60/sec), each immediately cancelled by the
-    // next frame's call. That stackup caused the AnimationDemo GL backend to
-    // crash after a single high-velocity drag (the wrap-tween's t=0 sample
-    // fights the decay's onTick, and the cycle of register/cancel overwhelms
-    // the renderer process). The fix: when a tween for this id is already
-    // active, the second setPose writes through to the base adapter, leaving
-    // the in-flight tween to finish naturally.
+  it('ends the glide when the same node is written again mid-tween, and the second pose stands', () => {
     const clock = makeClock();
     const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
     const { base, setPose, applyOps } = makeAdapter(initial);
     const { result } = renderHook(() => useAnimator(clock));
     const wrapped = animateOnSetPose(base as never, result.current, { ms: 100 });
-    // First call: starts a tween. applyOps records exactly one op for it.
     act(() => {
       wrapped.setPose('a', { x: 100, y: 0, width: 10, height: 10 });
     });
-    expect(applyOps).toHaveBeenCalledTimes(1);
+    act(() => clock.advance(0));
+    act(() => clock.advance(50));
     expect(result.current.isActive('pose:a')).toBe(true);
     setPose.mockClear();
     applyOps.mockClear();
 
-    // Second call (mid-tween): writes through. No new tween, no new op.
+    const second = { x: 110, y: 0, width: 10, height: 10 };
     act(() => {
-      wrapped.setPose('a', { x: 110, y: 0, width: 10, height: 10 });
+      wrapped.setPose('a', second);
     });
     expect(setPose).toHaveBeenCalledTimes(1);
-    expect(setPose).toHaveBeenCalledWith('a', { x: 110, y: 0, width: 10, height: 10 });
+    expect(setPose).toHaveBeenCalledWith('a', second);
     expect(applyOps).not.toHaveBeenCalled();
+    expect(result.current.isActive('pose:a')).toBe(false);
+
+    act(() => clock.advance(100));
+    expect(initial.get('a')).toEqual(second);
   });
 
   it('writes through when called from inside another animation tick (no wrap-tween storm)', () => {
