@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { useState } from 'react';
-import type { DocumentCodec } from './document';
-import type { DraftStorage } from './draft';
+import type { DocumentCodec, DraftStorage } from './document';
 import { useDocument } from './useDocument';
 
 afterEach(cleanup);
@@ -20,6 +19,10 @@ function memory(): DraftStorage & { keys(): string[] } {
   };
 }
 
+/** What the stub codec was last asked to keep as sent, by key. */
+const sentUnder = new Map<string, unknown>();
+afterEach(() => sentUnder.clear());
+
 const codec: DocumentCodec<Doc> = {
   openDraft: () => null,
   saveDraft: (key, value, _base, _stacks, savedAt, storage) => storage!.setItem(key, JSON.stringify({ value, savedAt })),
@@ -27,6 +30,9 @@ const codec: DocumentCodec<Doc> = {
   packSent: (value) => ({ ...value }),
   // What was sent is the baseline's now; anything else is still the reader's.
   afterTaken: (value, sent, base) => (value.n === (sent as Doc).n ? base : value),
+  saveSent: (key, sent) => void sentUnder.set(key, sent),
+  openSent: (key) => sentUnder.get(key) ?? null,
+  dropSent: (key) => void sentUnder.delete(key),
 };
 
 function setup(storage = memory()) {
@@ -75,10 +81,11 @@ describe('useDocument', () => {
     const { result, rerender, storage } = setup();
     act(() => result.current.doc.commit({ n: 1 }));
     await act(() => result.current.doc.send(async () => {}));
-    expect(storage.keys()).toContain('k:sent');
+    expect(sentUnder.get('k')).toEqual({ n: 1 });
     rerender({ taken: true });
     expect(result.current.value).toBe(BASE);
     expect(result.current.doc.canUndo).toBe(false);
     expect(storage.keys()).toEqual([]);
+    expect(sentUnder.size).toBe(0);
   });
 });

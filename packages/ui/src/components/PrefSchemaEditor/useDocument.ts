@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createHistory, useLatest } from '@weasel-js/core';
-import { swapOp, type DocumentCodec, type OpenedDocument } from './document';
-import { SWAP, type DraftStorage } from './draft';
-import { dropSent, openSent, saveSent } from './sent';
+import { SWAP, swapOp, type DocumentCodec, type DraftStorage, type OpenedDocument } from './document';
 
 /** Edits this close together under one coalesce key undo as one, so typing a name is one step. */
 const COALESCE_MS = 800;
@@ -85,11 +83,11 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
 
   const sent = useRef<unknown>(null);
   useEffect(() => {
-    sent.current ??= draftKey === undefined ? null : openSent(draftKey, draftStorage);
+    sent.current ??= draftKey === undefined ? null : codec.openSent(draftKey, draftStorage);
     if (!taken || sent.current === null) return;
     const next = codec.afterTaken(emitted.current, sent.current, base);
     sent.current = null;
-    if (draftKey !== undefined) dropSent(draftKey, draftStorage);
+    if (draftKey !== undefined) codec.dropSent(draftKey, draftStorage);
     hand(next);
     history.clear();
     keep();
@@ -113,7 +111,7 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
       const packed = codec.packSent(emitted.current, base);
       await run();
       sent.current = packed;
-      if (draftKey !== undefined) saveSent(draftKey, packed, draftStorage);
+      if (draftKey !== undefined) codec.saveSent(draftKey, packed, draftStorage);
     },
   };
 }
