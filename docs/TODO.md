@@ -902,14 +902,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `retryMs: false` also turns off the timer that resends a write storage rejected, which then
   waits for the next flush.
 
-- **(P3) Prefs migrate only at open, so an older version arriving later is never migrated.**
-  `watchPrefsVersion` reacts to another writer's `$version` only when it is above this build's.
-  Read from the code, not reproduced: two tabs on different builds opening the same unmigrated
-  `localStorage` at once each migrate and flush, and when the older build's writes land second the
-  newer tab takes its older-shape records through `applyRemote` and runs on them for the session,
-  then writes newer-shape records into a store marked with the older version, which the next open
-  migrates a second time. Any adapter that delivers a server's records after open has the same
-  gap. Rerun the migrations over a remote batch that leaves `$version` below target.
+- **(P3) Three ways prefs still end up at the wrong version.** `watchPrefsVersion` now migrates
+  an older writer's records when its `$version` arrives, and a late first read's. Left, each read
+  from the code and not reproduced: a late first read that finds nothing reports no change, so
+  values set while the cache was unread persist with no `$version` and the next open migrates
+  them from 0; another writer deleting `$version` (a cleared store) leaves this tab writing
+  records with none, to the same end; and an older writer's record that arrives after its
+  `$version` is taken unmigrated, since migrating runs when the version lands.
 
 - **(P3) A Windows 9x theme.** Gray 3D bevels, a navy-to-blue gradient title strip and the
   system's pixel faces, as a full theme beside Interstellar rather than a one-component skin. Its

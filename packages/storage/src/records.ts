@@ -46,6 +46,10 @@ export interface RecordCache {
 export interface OwnedRecordCache extends RecordCache {
   /** Hold these records without writing them back. */
   seed(entries: Iterable<[string, unknown]>): void;
+  /** Hear another writer's changes this cache did not take, because its own
+   *  write to the record was queued or on its way: each a name and the value
+   *  the other writer set, `undefined` for a delete. */
+  onOverruled(listener: (changes: [string, unknown][]) => void): () => void;
   stopWriting(): void;
 }
 
@@ -93,6 +97,7 @@ function buildCache(
   // How many writes to each name are on their way to storage.
   const inFlight = new Map<string, number>();
   const listeners = new Set<(changes: RecordChange[]) => void>();
+  const overruledListeners = new Set<(changes: [string, unknown][]) => void>();
   // Two reasons writing is off. A read landing clears `unread`; nothing
   // clears `stopped`, which is the opener's choice.
   let unread = startUnread;
@@ -184,10 +189,14 @@ function buildCache(
 
   const applyRemote = (changes: StorageChange[]): void => {
     const applied: RecordChange[] = [];
+    const overruled: [string, unknown][] = [];
     for (const [key, value] of changes) {
       if (!key.startsWith(prefix)) continue;
       const name = key.slice(prefix.length);
-      if (queued.has(name) || inFlight.has(name)) continue;
+      if (queued.has(name) || inFlight.has(name)) {
+        overruled.push([name, value]);
+        continue;
+      }
       if (value === undefined) {
         if (!values.has(name)) continue;
         values.delete(name);
@@ -196,6 +205,7 @@ function buildCache(
       }
       applied.push({ name, value, origin: 'remote' });
     }
+    if (overruled.length > 0) for (const listener of [...overruledListeners]) listener(overruled);
     if (applied.length > 0) emit(applied);
   };
 
@@ -308,6 +318,12 @@ function buildCache(
         window.removeEventListener('pagehide', onPageHide);
         document.removeEventListener('visibilitychange', onVisibility);
       }
+    },
+    onOverruled: (listener) => {
+      overruledListeners.add(listener);
+      return () => {
+        overruledListeners.delete(listener);
+      };
     },
     seed: (entries) => {
       for (const [name, value] of entries) values.set(name, value);

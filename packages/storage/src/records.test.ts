@@ -362,12 +362,15 @@ describe('two writers', () => {
     };
     const a = await openRecords({ storage: slow, prefix: PREFIX });
     const b = await openRecords({ storage: createMemoryAdapter(backing), prefix: PREFIX });
+    const overruled: [string, unknown][] = [];
+    a.onOverruled((changes) => overruled.push(...changes));
     a.set('mode', 'light');
     const sending = a.flush();
     b.set('mode', 'auto');
     await b.flush();
     await tick();
     expect(a.get('mode')).toBe('light');
+    expect(overruled).toEqual([['mode', 'auto']]);
     release();
     await sending;
     await tick();

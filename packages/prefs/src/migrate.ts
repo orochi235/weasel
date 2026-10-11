@@ -61,25 +61,50 @@ export function runPrefsMigrations(
 }
 
 /**
- * Stop persisting when another writer, a newer build in another tab, records a
- * version past `target`: this build would otherwise keep writing the old shape.
- * Returns the unsubscribe.
+ * Keep `cache` at this build's version while other writers change it. A
+ * version past `migrations.length`, from a newer build in another tab, stops
+ * persisting: this build would otherwise keep writing the old shape. A version
+ * below it, from an older build or from records read after the open, runs the
+ * migrations again over what the cache now holds. Returns the unsubscribe.
  */
-export function watchPrefsVersion(cache: OwnedRecordCache, target: number): () => void {
-  return cache.subscribe((changes) => {
-    for (const change of changes) {
-      if (change.origin !== 'remote' || change.name !== VERSION_RECORD || change.value === undefined) continue;
-      if (!isVersion(change.value)) {
-        console.warn(
-          `[prefs] "${cache.prefix}" has an unreadable ${VERSION_RECORD} (${JSON.stringify(change.value)}) from another writer; no longer persisting`,
-        );
-        cache.stopWriting();
-      } else if (change.value > target) {
-        console.warn(
-          `[prefs] "${cache.prefix}" was migrated to version ${change.value} by another writer; this build knows ${target}; no longer persisting`,
-        );
-        cache.stopWriting();
-      }
+export function watchPrefsVersion(
+  cache: OwnedRecordCache,
+  migrations: readonly PrefsMigration[],
+): () => void {
+  const target = migrations.length;
+  // A version record another writer deleted is a cleared store, whose
+  // remaining records are this build's shape, not version 0.
+  let versioned = cache.has(VERSION_RECORD);
+  const heard = (version: unknown): void => {
+    if (!isVersion(version)) {
+      console.warn(
+        `[prefs] "${cache.prefix}" has an unreadable ${VERSION_RECORD} (${JSON.stringify(version)}) from another writer; no longer persisting`,
+      );
+      cache.stopWriting();
+    } else if (version > target) {
+      console.warn(
+        `[prefs] "${cache.prefix}" was migrated to version ${version} by another writer; this build knows ${target}; no longer persisting`,
+      );
+      cache.stopWriting();
+    }
+  };
+  // A newer version counts even where this cache kept its own write over it.
+  const stopOverruled = cache.onOverruled((changes) => {
+    for (const [name, value] of changes) if (name === VERSION_RECORD && value !== undefined) heard(value);
+  });
+  const stopChanges = cache.subscribe((changes) => {
+    const remote = changes.filter((change) => change.origin === 'remote');
+    for (const change of remote) {
+      if (change.name === VERSION_RECORD && change.value !== undefined) heard(change.value);
+    }
+    const cleared = versioned && !cache.has(VERSION_RECORD);
+    versioned ||= cache.has(VERSION_RECORD);
+    if (remote.length > 0 && !cleared && cache.writable && runPrefsMigrations(cache, migrations)) {
+      void cache.flush();
     }
   });
+  return () => {
+    stopOverruled();
+    stopChanges();
+  };
 }

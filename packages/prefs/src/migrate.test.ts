@@ -110,17 +110,54 @@ describe('watchPrefsVersion', () => {
       prefix: 'p.',
       initial: [[VERSION_RECORD, 1]],
     });
-    watchPrefsVersion(cache, 1);
+    watchPrefsVersion(cache, [renameGrid]);
     await createMemoryAdapter(backing).set('p.$version', 2);
     await vi.waitFor(() => expect(cache.writable).toBe(false));
     expect(warn.mock.calls[0]![0]).toContain('migrated to version 2');
     warn.mockRestore();
   });
 
+  const migrated = (backing: Map<string, unknown>) => {
+    const cache = createRecordCache({
+      storage: createMemoryAdapter(backing),
+      prefix: 'p.',
+      initial: [
+        [VERSION_RECORD, 2],
+        ['view.density', 20],
+      ],
+    });
+    watchPrefsVersion(cache, [renameGrid, doubleDensity]);
+    return cache;
+  };
+
+  it('migrates the records an older writer leaves, from the version it wrote', async () => {
+    const backing = new Map<string, unknown>();
+    const cache = migrated(backing);
+    const older = createMemoryAdapter(backing);
+    await older.set('p.view.density', 7);
+    await older.set('p.$version', 1);
+    await vi.waitFor(() => expect(cache.get('view.density')).toBe(14));
+    expect(cache.get(VERSION_RECORD)).toBe(2);
+    expect(await cache.flush()).toBe(true);
+    expect(backing.get('p.view.density')).toBe(14);
+    expect(backing.get('p.$version')).toBe(2);
+  });
+
+  it('does not migrate again when another writer clears the store', async () => {
+    const backing = new Map<string, unknown>();
+    const cache = migrated(backing);
+    const other = createMemoryAdapter(backing);
+    await other.delete('p.$version');
+    await other.set('p.view.gridOn', true);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(cache.get('view.density')).toBe(20);
+    expect(cache.get('view.gridOn')).toBe(true);
+  });
+
   it('stops listening once unsubscribed', async () => {
     const backing = new Map<string, unknown>();
     const cache = createRecordCache({ storage: createMemoryAdapter(backing), prefix: 'p.' });
-    watchPrefsVersion(cache, 1)();
+    watchPrefsVersion(cache, [renameGrid])();
     await createMemoryAdapter(backing).set('p.$version', 2);
     await new Promise((r) => setTimeout(r, 10));
     expect(cache.writable).toBe(true);
