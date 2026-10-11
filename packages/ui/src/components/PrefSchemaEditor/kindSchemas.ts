@@ -72,6 +72,7 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   map: {},
   union: { tag: symbol('Tag', 'The field of the value that names its variant.') },
   action: { label: text('Button', 'The button\'s text. Unset: the name.') },
+  alias: { of: { kind: 'field', name: 'Of', description: 'The pref this one shows: its control is drawn here too, over the one stored value.', default: '' } as PrefLeaf },
 };
 
 const GROUP_ATTRS: KindAttrs = {
@@ -91,13 +92,13 @@ const AUTO_FLAGS: KindAttrs = {
 };
 
 /** Kinds that hold no value, so have nothing to be auto. */
-const VALUELESS = new Set(['action', 'label']);
+const VALUELESS = new Set(['action', 'label', 'alias']);
 
 /** Stored as given, falsy or not: `false` and `0` are values a leaf can read while auto. */
 const AS_GIVEN = new Set(['autoValue']);
 
 /** Written even when empty: a leaf without them is not a leaf. */
-const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag']);
+const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'of']);
 
 /** Where a node keeps the nodes under it, which the tree edits and the attributes pane leaves alone. */
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
@@ -184,6 +185,8 @@ export function blankLeaf(kind: string): PrefLeaf {
       variants: { a: { kind: 'object', name: 'A', description: '', default: {}, children: {} } },
     } as PrefLeaf;
     case 'action': return { ...base, default: undefined, run: STUB } as PrefLeaf;
+    // Named for what it shows until it is given a name of its own.
+    case 'alias': return { kind, name: '', description: '', default: undefined, of: '' } as PrefLeaf;
     default: return { ...base, default: undefined } as PrefLeaf;
   }
 }

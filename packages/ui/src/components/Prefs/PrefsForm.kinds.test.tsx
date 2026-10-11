@@ -233,3 +233,52 @@ describe('PrefsForm union leaf', () => {
     expect(screen.queryByRole('checkbox')).toBeNull();
   });
 });
+
+describe('PrefsForm alias leaf', () => {
+  const schema: PrefGroup = {
+    name: 'Root',
+    children: {
+      view: { name: 'View', children: { grid: { kind: 'boolean', name: 'Show grid', description: '', default: false } } },
+      play: {
+        name: 'Play',
+        children: {
+          grid: { kind: 'alias', name: '', description: '', default: undefined, of: 'view.grid' },
+          named: { kind: 'alias', name: 'Grid while playing', description: '', default: undefined, of: 'view.grid' },
+          lost: { kind: 'alias', name: 'Lost', description: '', default: undefined, of: 'view.gone' },
+        },
+      },
+    },
+  };
+
+  it('draws the target\'s control a second time, under the target\'s name or its own', () => {
+    render(<PrefsForm schema={schema} values={{ view: { grid: true } }} onChange={() => {}} />);
+    const boxes = screen.getAllByRole('checkbox', { name: 'Show grid' });
+    expect(boxes).toHaveLength(2);
+    for (const box of boxes) expect(box).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Grid while playing' })).toBeChecked();
+  });
+
+  it('writes the target\'s value from the alias\'s row', () => {
+    const onChange = vi.fn();
+    render(<PrefsForm schema={schema} values={{}} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Grid while playing' }));
+    expect(onChange).toHaveBeenCalledWith('view.grid', true);
+  });
+
+  it('marks the row with its own place in the schema, which is what a selection names', () => {
+    const { container } = render(<PrefsForm schema={schema} values={{}} onChange={() => {}} selected="play.named" onSelect={() => {}} />);
+    expect(container.querySelector('[data-pref-path="play.named"]')).toContainElement(screen.getByRole('checkbox', { name: 'Grid while playing' }));
+  });
+
+  it('says so in place where an alias names no pref', () => {
+    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} />);
+    expect(screen.getByText('(alias: no pref at view.gone)')).toBeInTheDocument();
+  });
+
+  it('toggles auto at the target from the alias\'s row', () => {
+    const asked: string[] = [];
+    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} auto={new Set()} onAutoChange={(path) => asked.push(path)} canInherit={(path) => { asked.push(`can:${path}`); return true; }} />);
+    expect(asked.filter((a) => a === 'can:view.grid')).toHaveLength(3);
+    expect(asked).not.toContain('can:play.named');
+  });
+});
