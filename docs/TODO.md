@@ -3145,9 +3145,8 @@ one dead `const` and four stale disable directives.
 
 - **(P3) `isPlainObject`, `shallowEqual`, and `clamp` have no home below core.** core's
   `isPlainObject` is realm-safe; `prefs/src/repair.ts`, three files in `theme/src`,
-  `labkit/src/state/labRecords.ts`, `forge/src/shell/globals.ts`, and core's own
-  `features/text/runs/rangeStyle.ts` use `typeof v === 'object' && v !== null && !Array.isArray(v)`,
-  which accepts a `Date` or a `Map` (so `rangeStyle`'s `deepEqual` calls two different dates equal).
+  `labkit/src/state/labRecords.ts`, and `forge/src/shell/globals.ts` use
+  `typeof v === 'object' && v !== null && !Array.isArray(v)`, which accepts a `Date` or a `Map`.
   Scalar `clamp` is defined locally in ten places and `@weasel-js/geom` exports none. Put
   `isPlainObject` in a leaf, re-export it from core, and add `clamp` to geom's scalars.
 

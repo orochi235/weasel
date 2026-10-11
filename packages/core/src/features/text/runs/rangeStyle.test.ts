@@ -91,6 +91,15 @@ describe('styleAtRange', () => {
     expect(styleAtRange(differing, 0, 4).fill).toBe(MIXED);
   });
 
+  it('does not call two different class instances equal', () => {
+    const at = (ms: number) => new Date(ms) as unknown as StyledRun['fill'];
+    const differing: StyledRun[] = [
+      { text: 'ab', fill: at(0) },
+      { text: 'cd', fill: at(1) },
+    ];
+    expect(styleAtRange(differing, 0, 4).fill).toBe(MIXED);
+  });
+
   it('reports the newer flags alongside bold/italic', () => {
     const decorated: StyledRun[] = [
       { text: 'ab', underline: true, letterSpacing: 2 },

@@ -30,6 +30,7 @@
  * `styleAtRange` reports. Treat `fill` values as immutable.
  */
 
+import { isPlainObject } from 'core/isPlainObject';
 import { MIXED } from 'core/mixed';
 import type { Mixed } from 'core/mixed';
 import type { StyledRun } from '@weasel-js/text';
@@ -91,15 +92,11 @@ const FLAG_KEYS: ReadonlySet<StyleKey> = new Set<StyleKey>([
   'overline',
 ]);
 
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
-}
-
 /**
  * Structural equality over the JSON-ish values a run can hold. This assumes
  * `FillStyle` stays acyclic and plain — every member of the union is data
  * (`TextureHandle` is `{ id }`, so patterns compare by id, which is right).
- * A fill that grew a cyclic or class-valued field would recurse forever.
+ * A fill that grew a cyclic field would recurse forever.
  */
 function deepEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
