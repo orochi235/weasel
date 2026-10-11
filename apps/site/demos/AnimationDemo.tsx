@@ -338,7 +338,10 @@ function flickToGrid(args: {
         },
       });
       flight.current = handle;
-      setTimeout(() => handle.setTarget(nearestGridCell(live)), FLICK_COAST_MS);
+      // A newer flick, or the demo unmounting, has already canceled this one.
+      setTimeout(() => {
+        if (flight.current === handle) handle.setTarget(nearestGridCell(live));
+      }, FLICK_COAST_MS);
       return null;
     },
   };
@@ -358,7 +361,10 @@ function FlickSnapPanel({ animator }: { animator: Animator }) {
   const selection = useSelection();
   const tracker = useVelocityTracker();
   const flight = useRef<PhysicsHandle<Vec2> | null>(null);
-  useEffect(() => () => { flight.current?.cancel(); }, []);
+  useEffect(() => () => {
+    flight.current?.cancel();
+    flight.current = null;
+  }, []);
 
   const behaviors = useMemo(
     () => [flickToGrid({ animator, tracker, flight })],
