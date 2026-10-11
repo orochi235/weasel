@@ -94,6 +94,15 @@ describe('writing', () => {
     ]);
   });
 
+  it('takes a write of undefined as a delete', async () => {
+    const backing = new Map<string, unknown>([['lk:t:script', 'latin']]);
+    const cache = await openRecords({ storage: createMemoryAdapter(backing), prefix: PREFIX });
+    cache.set('script', undefined);
+    expect(cache.has('script')).toBe(false);
+    expect(await cache.flush()).toBe(true);
+    expect(backing.has('lk:t:script')).toBe(false);
+  });
+
   it('deletes from storage', async () => {
     const backing = new Map<string, unknown>([['lk:t:save:s', { id: 's' }]]);
     const cache = await openRecords({ storage: createMemoryAdapter(backing), prefix: PREFIX });

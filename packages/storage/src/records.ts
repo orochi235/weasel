@@ -28,6 +28,7 @@ export interface RecordCache {
   get(name: string): unknown;
   /** Every record whose name starts with `namePrefix`. */
   entries(namePrefix?: string): [string, unknown][];
+  /** `undefined` is no value a record can hold: setting it deletes. */
   set(name: string, value: unknown): void;
   delete(name: string): void;
   subscribe(listener: (changes: RecordChange[]) => void): () => void;
@@ -301,6 +302,15 @@ function buildCache(
     document.addEventListener('visibilitychange', onVisibility);
   }
 
+  const remove = (name: string): void => {
+    // An unread cache cannot tell what storage holds, so it queues the delete.
+    if (!unread && !values.has(name) && !queued.has(name)) return;
+    values.delete(name);
+    queued.set(name, DELETED);
+    emit([{ name, value: undefined, origin: 'local' }]);
+    schedule();
+  };
+
   const cache: OwnedRecordCache = {
     prefix,
     get writable() {
@@ -310,19 +320,13 @@ function buildCache(
     get: (name) => values.get(name),
     entries: (namePrefix = '') => [...values].filter(([name]) => name.startsWith(namePrefix)),
     set: (name, value) => {
+      if (value === undefined) return remove(name);
       values.set(name, value);
       queued.set(name, value);
       emit([{ name, value, origin: 'local' }]);
       schedule();
     },
-    delete: (name) => {
-      // An unread cache cannot tell what storage holds, so it queues the delete.
-      if (!unread && !values.has(name) && !queued.has(name)) return;
-      values.delete(name);
-      queued.set(name, DELETED);
-      emit([{ name, value: undefined, origin: 'local' }]);
-      schedule();
-    },
+    delete: remove,
     subscribe: (listener) => {
       listeners.add(listener);
       return () => {

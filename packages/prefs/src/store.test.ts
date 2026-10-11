@@ -1,4 +1,4 @@
-import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
+import { createMemoryAdapter, createRecordCache, localStorageAdapter } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from './groups';
 import { VERSION_RECORD } from './helpers';
@@ -278,5 +278,31 @@ describe('createPrefsStore', () => {
     expect(store.get('limits')).toEqual({ cap: Infinity, other: 1 });
     expect(store.get('shape')).toEqual({ type: 'capped', cap: Infinity });
     expect(store.get('rows')).toEqual([{ cap: Infinity }]);
+  });
+
+  it('unsets a leaf set to undefined, and stores nothing for it', async () => {
+    const schema = {
+      name: 'T',
+      children: {
+        script: {
+          kind: 'enum',
+          name: 'Script',
+          description: '',
+          default: undefined as string | undefined,
+          clearable: true,
+          options: [{ value: 'latin', label: 'Latin' }],
+        },
+      },
+    } satisfies PrefGroup;
+    localStorage.clear();
+    const cache = createRecordCache({ storage: localStorageAdapter, prefix: 'u.' });
+    const store = createPrefsStore(schema, cache);
+    store.set('script', 'latin');
+    store.set('script', undefined);
+    expect(store.isSet('script')).toBe(false);
+    expect(store.unset().has('script')).toBe(true);
+    await cache.flush();
+    expect(localStorage.getItem('u.script')).toBeNull();
+    await store.close();
   });
 });
