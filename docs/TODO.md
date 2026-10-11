@@ -425,10 +425,6 @@ have shipped. What remains:
   therefore lost on import. Keeping them needs a `hidden` flag on `SvgNode` that `unpack` maps to
   the scene's own hidden state.
 
-- **(P3) geom: `splitBySegment.ts` holds several owners.**
-  `packages/geom/src/booleans/splitBySegment.ts` is 878 lines of crossing detection, loop tracing,
-  and region assembly.
-
 ### Pathfinder follow-ups (post-v1)
 
 Core five + Crop shipped. Remaining:
