@@ -275,6 +275,15 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
     if (isLost(gl)) {
       throw new Error('raster session: the WebGL2 context is lost — dispose this session and open another');
     }
+    // A context clamps a drawing buffer it cannot allocate, and reading past
+    // the real one returns transparent pixels rather than failing.
+    const { drawingBufferWidth: bufferW, drawingBufferHeight: bufferH } = gl;
+    if (bufferW < width || bufferH < height) {
+      throw new Error(
+        `raster session: a ${width} × ${height} render does not fit the context's `
+        + `${bufferW} × ${bufferH} drawing buffer — lower \`scale\` or render the source rect in tiles`,
+      );
+    }
     return gl;
   }
 

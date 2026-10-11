@@ -168,3 +168,18 @@ describe('createRasterSession', () => {
       .toThrow(/lost/);
   });
 });
+
+describe('a raster the context cannot hold', () => {
+  const args = { scene: SCENE_A, drawOne: drawOne as never, scale: { x: 1, y: 1 } };
+
+  it('throws rather than return an image cropped to the drawing buffer', () => {
+    const rec = makeGLRecorder({ drawingBufferWidth: 100, drawingBufferHeight: 50 });
+    const session = createRasterSession({ gl: rec.gl });
+    expect(() => session.render({ ...args, sourceRect: { x: 0, y: 0, width: 101, height: 50 } }))
+      .toThrow(/101 × 50.*100 × 50/);
+    expect(() => session.render({ ...args, sourceRect: { x: 0, y: 0, width: 100, height: 51 } }))
+      .toThrow(/100 × 51.*100 × 50/);
+    expect(names(rec, 'readPixels')).toBe(0);
+    expect(session.render({ ...args, sourceRect: { x: 0, y: 0, width: 100, height: 50 } }).width).toBe(100);
+  });
+});
