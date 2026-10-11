@@ -240,11 +240,21 @@ const PAINTERS: { high: NodeShapeEntry[]; normal: NodeShapeEntry[] } = {
   normal: [],
 };
 
+// The built-ins go in on first use, not at module load: a bundler may drop an
+// import kept only for its side effect, and the registry would come up empty.
+let builtInsRegistered = false;
+function ensureBuiltIns(): void {
+  if (builtInsRegistered) return;
+  builtInsRegistered = true;
+  registerBuiltInShapePainters();
+}
+
 /** Register a shape painter. Returns a disposer that removes it. */
 export function registerNodeShape<TData, TPose>(
   painter: NodeShapeEntry<TData, TPose>,
   opts: RegisterNodeShapeOptions = {},
 ): () => void {
+  ensureBuiltIns();
   const list = opts.priority === 'high' ? PAINTERS.high : PAINTERS.normal;
   list.push(painter as NodeShapeEntry);
   // The painter set is exactly the ambient state `findNodeShape` reads, and a
@@ -324,6 +334,7 @@ export function findNodeShape<TData, TPose>(
 function matchNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
 ): NodeShapeEntry<TData, TPose> | undefined {
+  ensureBuiltIns();
   for (const p of PAINTERS.high) {
     if (p.matches(node as Node<unknown, string, unknown>)) {
       return p as NodeShapeEntry<TData, TPose>;
@@ -490,6 +501,7 @@ export function shapeCoversPoint<TData, TPose>(
  *  first, then `'normal'`. Useful for debugging which painter handles a
  *  given node. */
 export function getNodeShapes(): readonly NodeShapeEntry[] {
+  ensureBuiltIns();
   return [...PAINTERS.high, ...PAINTERS.normal];
 }
 
@@ -497,7 +509,8 @@ export function getNodeShapes(): readonly NodeShapeEntry[] {
 export function _resetShapePaintersForTests(): void {
   PAINTERS.high.length = 0;
   PAINTERS.normal.length = 0;
-  registerBuiltInShapePainters();
+  builtInsRegistered = false;
+  ensureBuiltIns();
   // Swapping the painter set out from under a node invalidates anything
   // memoized against the old one. (`registerNodeShape` already bumps, but the
   // clearing above happens without one.)
@@ -1001,5 +1014,3 @@ function registerBuiltInShapePainters(): void {
   registerNodeShape(IMAGE_PAINTER);
   registerNodeShape(RECT_FALLBACK_PAINTER);
 }
-
-registerBuiltInShapePainters();

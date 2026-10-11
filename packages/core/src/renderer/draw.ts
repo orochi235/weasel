@@ -2,7 +2,7 @@ import type { DrawCommand, GroupDrawCommand } from './DrawCommand';
 import { mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
 import type { EffectTargets } from './effects/EffectTargets';
-import { COMPOSITE_PROGRAM_ID } from './effects/composite';
+import { compositeProgramId } from './effects/composite';
 import type { DrawContext } from './draw/drawContext';
 import { warnOnceUniform, drawShader } from './draw/customShader';
 import { returnToRenderTarget, drawFullscreenQuad } from './draw/effects';
@@ -110,7 +110,7 @@ function drawGroupWithEffects(
   ctx.renderTarget = parentTarget;
   returnToRenderTarget(ctx, width, height, scissorWasOn);
 
-  const composite = ctx.ensureProgram?.(COMPOSITE_PROGRAM_ID) ?? null;
+  const composite = ctx.ensureProgram?.(compositeProgramId()) ?? null;
   if (composite) {
     applyClipTest(ctx);
     drawFullscreenQuad(ctx, composite, front.texture, width, height, undefined, {
