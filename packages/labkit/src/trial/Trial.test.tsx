@@ -279,6 +279,23 @@ describe('<TrialChrome>', () => {
     ).toBe(true);
     expect(undo).toHaveBeenCalledTimes(1);
   });
+
+  it('leaves Cmd+Z to a text field, and still answers it from a slider', async () => {
+    const undo = vi.fn();
+    const bindings = { canUndo: true, canRedo: false, undo, redo: vi.fn() };
+    await renderSettled(
+      <ChromeHarness instrument={{ ...stubInstrument, undo: {} }} undoBindings={bindings}>
+        <input data-testid="field" type="text" />
+        <input data-testid="slider" type="range" />
+      </ChromeHarness>,
+    );
+    expect(fireEvent.keyDown(screen.getByTestId('field'), { key: 'z', metaKey: true })).toBe(true);
+    expect(undo).not.toHaveBeenCalled();
+    expect(fireEvent.keyDown(screen.getByTestId('slider'), { key: 'z', metaKey: true })).toBe(
+      false,
+    );
+    expect(undo).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('chrome regions in a mounted lab', () => {

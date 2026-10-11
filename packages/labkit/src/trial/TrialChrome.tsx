@@ -31,6 +31,7 @@ import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { as2DView, withZoom } from '../state/view';
+import { editsText } from './editsText';
 import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';
 import { UndockedSections } from './UndockedSections';
@@ -256,12 +257,13 @@ export function TrialChrome({
   const handleKeyDown = (e: KeyboardEvent<HTMLElement>): void => {
     const mod = e.metaKey || e.ctrlKey;
     // A presented trial has no chrome, so nothing the chrome's keys act on.
-    if (!mod || presented) return;
+    if (!mod || presented || e.defaultPrevented) return;
     // A chord is its button's: suppress the button and the chord goes with it.
     const offered = (id: string) => contributions.some((c) => c.id === id);
     const step = historyKey(e);
     if (step) {
-      if (!offered(step)) return;
+      // Typing has its own undo, and it is what the user is asking for there.
+      if (!offered(step) || editsText(e.target)) return;
       e.preventDefault();
       if (step === 'redo') ctx.redo();
       else ctx.undo();
