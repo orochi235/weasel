@@ -2,7 +2,6 @@ import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
 import { StrictMode, Suspense, lazy, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { registerFont, registerFontOutlines } from '@weasel-js/core/renderer';
 import {
   ActionsProvider,
   DepRegistryProvider,
@@ -13,6 +12,7 @@ import { App } from './App';
 import { drawTheme } from './theme';
 import { ColorModeProvider } from './colorMode';
 import { registerAvailableFonts } from './fonts';
+import { registerDefaultFont } from '../../shared/defaultFont';
 import { migrateLegacyPanelFlags } from './panels';
 import { drawPrefs, importLegacyPrefs } from './prefs';
 
@@ -31,38 +31,7 @@ const PrefSchemaPage = lazy(() =>
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
 
-// Register the bundled Inter MSDF atlas as the default `sans-serif` family so
-// text DrawCommands render. The GL backend silently drops glyphs when no atlas
-// is registered for the requested family/variant. Atlas files are served from
-// `assets/fonts/` via vite's `publicDir` (see vite.config.ts).
-// `import.meta.env.BASE_URL` injects the vite `base` setting so atlas
-// URLs survive the base prefix (e.g. `/weasel/draw/`).
-// Lazy: the 212 kB atlas is fetched the first time text lays out, so a
-// document with none never pays for it. `<SceneCanvas>` subscribes to
-// `subscribeGlyphReady`, which `registerFont` fires, so text repaints once the
-// atlas lands.
-void registerFont(
-  'sans-serif',
-  { weight: 400, style: 'normal' },
-  `${import.meta.env.BASE_URL}inter/inter.json`,
-  `${import.meta.env.BASE_URL}inter/inter.png`,
-  { lazy: true },
-).catch((err) => {
-  console.warn('WeaselDraw: failed to register default font', err);
-});
-
-// The same face again, as outlines. Above ~48 on-screen pixels the kit
-// renders glyphs as tessellated geometry instead of sampling the atlas, which
-// is exact at any zoom and takes the same fills paths do. The TTF is a subset
-// of Inter cut to the atlas's own charset (U+0020–00FF) so the two tiers
-// cover exactly the same characters and neither can serve one the other
-// can't — 27 kB, fetched lazily the first time large text is drawn. It is
-// also the face the text edit overlay sets its glyphs in.
-registerFontOutlines(
-  'sans-serif',
-  { weight: 400, style: 'normal' },
-  `${import.meta.env.BASE_URL}inter/inter.ttf`,
-);
+registerDefaultFont('WeaselDraw');
 
 // Everything past the baked default comes from the machine: each candidate
 // family that's actually installed is enrolled with the kit's dynamic
