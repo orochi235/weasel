@@ -142,4 +142,14 @@ export function usePublishSelection(
     if (!publish) return;
     publish(idsRef.current, kindsRef.current);
   }, [publish, serialized, idsRef, kindsRef]);
+  // A publisher that goes away takes its selection with it, unless another
+  // has written the slot since.
+  const ctxRef = useLatest(ctx);
+  const serializedRef = useLatest(serialized);
+  useEffect(() => () => {
+    const slot = ctxRef.current;
+    if (slot && JSON.stringify([slot.selection, slot.kinds]) === serializedRef.current) {
+      slot.publishSelection([]);
+    }
+  }, [ctxRef, serializedRef]);
 }

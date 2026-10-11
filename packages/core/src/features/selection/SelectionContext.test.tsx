@@ -216,3 +216,43 @@ describe('usePublishSelection effect stability', () => {
     expect(ctx!.selection).toEqual(['b']);
   });
 });
+
+describe('usePublishSelection — unmount', () => {
+  function Publisher({ ids }: { ids: readonly NodeId[] }): ReactNode {
+    usePublishSelection(ids);
+    return null;
+  }
+  function Reader({ onRead }: { onRead: (ids: readonly NodeId[]) => void }): ReactNode {
+    onRead(useSelectionContext()!.selection);
+    return null;
+  }
+
+  it('clears the selection a canvas published when that canvas goes away', () => {
+    let seen: readonly NodeId[] = [];
+    const tree = (mounted: boolean) => (
+      <SelectionContextProvider>
+        {mounted ? <Publisher ids={[asNodeId('a'), asNodeId('b')]} /> : null}
+        <Reader onRead={(ids) => { seen = ids; }} />
+      </SelectionContextProvider>
+    );
+    const { rerender } = render(tree(true));
+    expect(seen).toEqual(['a', 'b']);
+    rerender(tree(false));
+    expect(seen).toEqual([]);
+  });
+
+  it('leaves the slot alone when another canvas has published since', () => {
+    let seen: readonly NodeId[] = [];
+    const tree = (first: boolean) => (
+      <SelectionContextProvider>
+        {first ? <Publisher ids={[asNodeId('a')]} /> : null}
+        <Publisher ids={[asNodeId('z')]} />
+        <Reader onRead={(ids) => { seen = ids; }} />
+      </SelectionContextProvider>
+    );
+    const { rerender } = render(tree(true));
+    expect(seen).toEqual(['z']);
+    rerender(tree(false));
+    expect(seen).toEqual(['z']);
+  });
+});
