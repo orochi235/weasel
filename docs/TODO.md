@@ -484,7 +484,9 @@ have shipped. What remains:
 - **(P3) svg import: `em` and `ex` on a length are read as bare user units.** `<circle r="2em">`
   imports with r = 2, and the same holds for `stroke-width` and the root `width`. Each warns
   (`packages/svg/src/lengths.ts`, `properties.ts`'s `length`, `parse.ts`'s `parseRootLength`);
-  converting needs the element's computed font size at the point the length is read.
+  converting needs the element's computed font size at the point the length is read, and nothing
+  computes one today: a percentage `font-size` is resolved against the 16px default (`parse.ts`),
+  and the readers in `properties.ts` see only the value string.
 
 - **(P2) geom: whether an open subpath fills is answered three ways.** For `<polyline points="0,0
   100,0 100,100" fill="red"/>` (no `Z`), `tessellate` (`packages/geom/src/tessellate/tessellate.ts`)
@@ -495,13 +497,18 @@ have shipped. What remains:
   every subpath implicitly), which means `flatSubpaths` treats an open run of three or more points
   as closed for the fill test and `path.ts` says so; or the kit rule (open never fills), which means
   `tessellate` skips open contours and `pathSignedArea` returns 0 for them, and SVG import has to
-  close filled open shapes itself.
+  close filled open shapes itself. SVG's rule cannot land in `pointInPath` alone: `containsInFrame`
+  (`packages/core/src/canvas/SceneCanvas/poseGeometry.ts`) calls it without knowing whether the
+  node has a fill, so every unfilled open stroke would become pickable across the area its ends
+  enclose.
 
 - **(P3) svg unpack: a clipped group arrives unclipped.** `parseSvg` puts a `<g clip-path>` on
   `SvgGroupNode.clip`, but `svgNodesToKitDrafts` (`packages/svg/src/unpack.ts`) builds the container
   draft without it and has no warning channel to say so, so a dropped file shows the whole group.
   Either the container draft carries the clip into whatever the scene's containers use for clipping,
-  or `svgNodesToKitDrafts` gains a way to report what it dropped.
+  or `svgNodesToKitDrafts` gains a way to report what it dropped. A container's clip is
+  `clipFromPose`, a function stored by registry key, so a fixed clip path has no serializable form
+  to be carried in yet.
 
 - **(P3) svg import: `<tspan>` positioning beyond line breaks is not read.** A `<tspan>` with its
   own `x` and a `dy` or new `y` now starts a line (`packages/svg/src/tspanLines.ts`), but the line
@@ -600,7 +607,10 @@ Core five + Crop shipped. Remaining:
   one.** `packages/core/src/features/patterns/resolveSpec.ts` documents session lifetime, but a
   color control scrubbing a hatch fill's `color` makes each intermediate color a new spec and a new
   texture. Bounding the map (least recently used out, unregistering the evicted handle) is the
-  option; whether draw's pattern controls commit live or on release has not been checked.
+  option; whether draw's pattern controls commit live or on release has not been checked. A bound
+  has to spare every handle a live draw command still holds: `registerTexture` has no unregister,
+  each renderer's `GLTextureCache` keeps its own copy by id, and a scene with more distinct specs
+  than the bound would draw the evicted ones blank ("pattern TextureHandle not registered").
 
 - **(P3) Chrome caps: `useHoverTracking` never attaches if its canvas ref is empty on the first
   effect run.** The effect in `packages/core/src/features/chrome-caps/useHoverTracking.ts` reads
