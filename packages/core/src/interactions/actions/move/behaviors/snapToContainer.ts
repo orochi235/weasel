@@ -35,9 +35,11 @@ function clearTimer<TPose>(s: SnapState<TPose>) {
 }
 
 /**
- * Move behavior that drops the dragged node into a container it hovers over
- * for `dwellMs`, reparenting it and taking the pose the container's layout
- * assigns.
+ * Move behavior that drops the dragged nodes into a container the pointer
+ * hovers over for `dwellMs`, reparenting each and giving it the slot
+ * `findTarget` answers for its id. The first dragged node's slot is what the
+ * drag previews; a node `findTarget` has no slot for in that container lands
+ * where the preview drew it.
  *
  * The dwell is what keeps a drag that merely passes over a container from
  * being captured by it.
@@ -97,24 +99,26 @@ export function snapToContainer<TPose>(args: {
       clearTimer(s);
       const snap = s.committedSnap ?? ctx.snap;
       if (!snap) return;
-      const draggedId = ctx.draggedIds[0];
-      const oldParent = ctx.adapter.getParent?.(draggedId) ?? null;
-      const fromPose = ctx.origin.get(draggedId)!;
-      const ops: Op[] = [
-        createTransformOp<TPose>({
-          id: draggedId,
-          from: fromPose,
-          to: snap.slotPose,
-          label: moveLabel,
-        }),
-      ];
-      if (oldParent !== snap.parentId) {
-        ops.push(createReparentOp({
-          id: draggedId,
-          fromParentId: oldParent,
-          toParentId: snap.parentId,
-          label: reparentLabel,
-        }));
+      const ops: Op[] = [];
+      const [primary, ...rest] = ctx.draggedIds;
+      // The primary takes the snapped slot. Each other node asks for its own
+      // in the same container, and lands where the preview drew it if it has none.
+      const slots = new Map<string, TPose>([[primary, snap.slotPose]]);
+      for (const id of rest) {
+        const own = findTarget(id, ctx.pointer.worldX, ctx.pointer.worldY);
+        slots.set(id, own?.parentId === snap.parentId ? own.slotPose : ctx.current.get(id)!);
+      }
+      for (const [id, to] of slots) {
+        ops.push(createTransformOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
+        const oldParent = ctx.adapter.getParent?.(id) ?? null;
+        if (oldParent !== snap.parentId) {
+          ops.push(createReparentOp({
+            id,
+            fromParentId: oldParent,
+            toParentId: snap.parentId,
+            label: reparentLabel,
+          }));
+        }
       }
       return ops;
     },

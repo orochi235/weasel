@@ -92,6 +92,25 @@ describe('snapToContainer', () => {
     expect(ops!.length).toBe(1);
   });
 
+  it('onEnd gives every dragged node its own slot in the snapped container', () => {
+    const slots: Record<string, Pose> = { p1: { x: 2, y: 3 }, p2: { x: 12, y: 3 } };
+    const findTarget = (id: string): SnapTarget<Pose> | null =>
+      slots[id] ? { parentId: 'box', slotPose: slots[id] } : null;
+    const b = snapToContainer<Pose>({ dwellMs: 0, findTarget, isInstant: () => true });
+    const ctx = makeCtx();
+    ctx.draggedIds = ['p1', 'p2', 'p3'];
+    ctx.origin.set('p2', { x: 20, y: 0 }).set('p3', { x: 40, y: 0 });
+    ctx.current.set('p2', { x: 21, y: 1 }).set('p3', { x: 41, y: 1 });
+    ctx.adapter = { getParent: (id: string) => (id === 'p2' ? 'box' : 'oldParent') } as any;
+    b.onMove!(ctx, tt(1, 1));
+    const ops = b.onEnd!(ctx, { answered: false }) as any[];
+    const moves = ops.filter((op) => op.name === 'transform').map((op) => [op.args.id, op.args.to]);
+    // p3 has no slot of its own, so it lands where the preview showed it.
+    expect(moves).toEqual([['p1', { x: 2, y: 3 }], ['p2', { x: 12, y: 3 }], ['p3', { x: 41, y: 1 }]]);
+    const reparents = ops.filter((op) => op.name === 'reparent').map((op) => [op.args.id, op.args.toParentId]);
+    expect(reparents).toEqual([['p1', 'box'], ['p3', 'box']]);
+  });
+
   it('onEnd defers (returns undefined) when no snap is active', () => {
     const b = snapToContainer<Pose>({ dwellMs: 0, findTarget: () => null });
     const ctx = makeCtx();

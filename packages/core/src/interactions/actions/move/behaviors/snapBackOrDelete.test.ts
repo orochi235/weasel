@@ -42,6 +42,21 @@ describe('snapBackOrDelete', () => {
     expect((ops as any[])[0].label).toMatch(/delete/i);
   });
 
+  it('deletes every dragged node, topmost first so an undo restores paint order', () => {
+    const b = snapBackOrDelete<Pose>({ radius: 1, onFreeRelease: 'delete' });
+    const nodes = [{ id: 'a' }, { id: 'x' }, { id: 'b' }, { id: 'c' }];
+    const c = ctx({ x: 5, y: 5 }, { x: 50, y: 50 });
+    c.draggedIds = ['a', 'c', 'b'];
+    for (const id of ['b', 'c']) {
+      c.origin.set(id, { x: 5, y: 5 });
+      c.current.set(id, { x: 50, y: 50 });
+    }
+    c.adapter = { getNode: (id: string) => nodes.find((n) => n.id === id), getNodes: () => nodes } as any;
+    b.onStart!(c);
+    const ops = b.onEnd!(c, { answered: false }) as any[];
+    expect(ops.map((op) => op.args.node.id)).toEqual(['c', 'b', 'a']);
+  });
+
   it('aborts when outside radius and policy is snap-back', () => {
     const b = snapBackOrDelete<Pose>({ radius: 1, onFreeRelease: 'snap-back' });
     const c = ctx({ x: 5, y: 5 }, { x: 50, y: 50 });

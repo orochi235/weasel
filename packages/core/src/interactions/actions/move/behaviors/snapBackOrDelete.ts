@@ -12,10 +12,10 @@ const INDEXES = scratchKey<Map<string, number>>('snapBackOrDelete.indexes');
 
 /**
  * Move behavior for a drag that is only meaningful near where it started:
- * release inside `radius` and the node returns to its original pose; release
- * outside it and the node either springs back anyway or is deleted, per
- * `onFreeRelease`. A deletion is recorded as an undoable op with paint order
- * preserved.
+ * release inside `radius` and every dragged node returns to its original
+ * pose; release outside it and they all either spring back anyway or are
+ * deleted, per `onFreeRelease`. The distance is the first dragged node's. A
+ * deletion is recorded as undoable ops with paint order preserved.
  */
 export function snapBackOrDelete<TPose extends { x: number; y: number }>(args: {
   radius: number;
@@ -73,10 +73,15 @@ export function snapBackOrDelete<TPose>(args: {
       if (onFreeRelease === 'delete') {
         const snapshots = getScratch(ctx.scratch, SNAPSHOTS);
         const indexes = getScratch(ctx.scratch, INDEXES);
-        const obj = snapshots?.get(id) ?? { id };
-        const index = indexes?.get(id) ?? -1;
-        const ops: Op[] = [createDeleteOp({ node: obj, label: deleteLabel, index })];
-        return ops;
+        const indexOf = (dragged: string): number => indexes?.get(dragged) ?? -1;
+        // Topmost first, so an undo, which replays in reverse, restores each index in turn.
+        return [...ctx.draggedIds]
+          .sort((p, q) => indexOf(q) - indexOf(p))
+          .map((dragged): Op => createDeleteOp({
+            node: snapshots?.get(dragged) ?? { id: dragged },
+            label: deleteLabel,
+            index: indexOf(dragged),
+          }));
       }
       // `'snap-back'` — abort, same as a release inside the radius. Returning
       // `undefined` would defer to the default translate and leave the node
