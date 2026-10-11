@@ -15,10 +15,11 @@ export const PATTERN_VERT_SRC = /* glsl */ `#version 300 es
 in vec2 a_position;
 uniform mat3 u_proj;
 uniform mat3 u_model;
+uniform vec2 u_origin;
 uniform mat3 u_worldInv;
 out vec2 v_world;
 void main() {
-  vec3 screen = u_model * vec3(a_position, 1.0);
+  vec3 screen = u_model * vec3(a_position - u_origin, 1.0);
   vec3 clip   = u_proj  * vec3(screen.xy, 1.0);
   gl_Position = vec4(clip.xy, 0.0, 1.0);
   vec3 world = u_worldInv * vec3(screen.xy, 1.0);
@@ -58,7 +59,7 @@ void main() {
 `;
 
 export const PATTERN_FILL_UNIFORMS = [
-  'u_proj', 'u_model', 'u_worldInv', 'u_sampler',
+  'u_proj', 'u_model', 'u_origin', 'u_worldInv', 'u_sampler',
   'u_tileSize', 'u_opacity', 'u_alpha',
   'u_colorMatrix', 'u_colorBias',
 ] as const;

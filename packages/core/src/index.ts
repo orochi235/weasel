@@ -1398,9 +1398,10 @@ export { viewToMat3 } from './renderer';
 // slot's `cull` option runs, for a custom layer to run over its own output.
 export { cullDrawCommands, type CullRect } from './renderer';
 
-// The renderer's 3x3 matrix namespace, operating on `GlMat3` — the 9-element
-// column-major `Float32Array` a GL uniform upload wants. `mat3.toAffine` and
-// `mat3.fromAffine` convert to and from `@weasel-js/geom`'s 6-element `Mat3`,
+// The renderer's 3x3 matrix namespace, operating on `GlMat3` — 9 elements,
+// column-major, in doubles; `mat3.toUniform` is the float32 copy a GL uniform
+// upload wants. `mat3.toAffine` and `mat3.fromAffine` convert to and from
+// `@weasel-js/geom`'s 6-element `Mat3`,
 // which is what an `SvgGroupNode.transform` already is.
 export { mat3 } from './renderer';
 

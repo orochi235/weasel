@@ -18,6 +18,14 @@ describe('GroupState', () => {
     expect(s.alpha).toBe(0.5);
   });
 
+  it('composes in doubles, keeping a quarter pixel of a translation past 2^24', () => {
+    const s = new GroupState();
+    s.push({ transform: mat3.translated(mat3.scaled(mat3.identity(), 64, 64), -262144 + 0.25 / 64, 0) });
+    expect(s.transform[6]).toBe(-16777215.75);
+    s.push({ transform: mat3.translated(mat3.identity(), 262144, 0) });
+    expect(s.transform[6]).toBe(0.25);
+  });
+
   it('nested push composes both levels', () => {
     const s = new GroupState();
     s.push({ transform: mat3.translated(mat3.identity(), 10, 0), alpha: 0.5 });

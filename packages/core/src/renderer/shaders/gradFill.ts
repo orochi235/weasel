@@ -15,10 +15,11 @@ export const GRAD_VERT_SRC = /* glsl */ `#version 300 es
 in vec2 a_position;
 uniform mat3 u_proj;
 uniform mat3 u_model;
+uniform vec2 u_origin;
 uniform mat3 u_worldInv;
 out vec2 v_world;
 void main() {
-  vec3 screen = u_model * vec3(a_position, 1.0);
+  vec3 screen = u_model * vec3(a_position - u_origin, 1.0);
   vec3 clip   = u_proj  * vec3(screen.xy, 1.0);
   gl_Position = vec4(clip.xy, 0.0, 1.0);
   vec3 world = u_worldInv * vec3(screen.xy, 1.0);
@@ -81,7 +82,7 @@ void main() {
 `;
 
 export const GRAD_FILL_UNIFORMS = [
-  'u_proj', 'u_model', 'u_worldInv', 'u_ramp', 'u_rampV',
+  'u_proj', 'u_model', 'u_origin', 'u_worldInv', 'u_ramp', 'u_rampV',
   'u_alpha', 'u_opacity', 'u_colorMatrix', 'u_colorBias',
   'u_gradKind', 'u_gradP0', 'u_gradDir', 'u_gradLen', 'u_gradRadius', 'u_gradAngle',
 ] as const;

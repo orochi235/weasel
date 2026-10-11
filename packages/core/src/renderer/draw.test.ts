@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
-import { mat3 } from './math/mat3';
+import { mat3, type GlMat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
 import {
   pushClip, popClip, drawGroup, dispatch, tryStageFill, flushBatch, meshBatching, type DrawContext,
@@ -2178,7 +2178,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
       return Array.from(upload!.args[2] as Float32Array);
     }
 
-    const evenOdd = (fill: unknown, view?: Float32Array): void => {
+    const evenOdd = (fill: unknown, view?: GlMat3): void => {
       r.render([{ kind: 'path', path: EVEN_ODD, fill }] as DrawCommand[], view);
     };
 
@@ -2256,7 +2256,7 @@ describe('gradient units — which space a gradient measures its geometry in', (
       from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS, units: 'local' as const,
     };
 
-    const drawsUnder = (transform: Float32Array): number => {
+    const drawsUnder = (transform: GlMat3): number => {
       r.render([{
         kind: 'group', transform, children: [{ kind: 'path', path: PATH, fill: LOCAL_LINEAR }],
       }] as DrawCommand[]);

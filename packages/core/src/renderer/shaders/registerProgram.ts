@@ -32,6 +32,7 @@ export interface ShaderProgramHandle {
  * | [n, n, n]               | uniform3fv                           |
  * | [n, n, n, n]            | uniform4fv                           |
  * | Float32Array length 9   | uniformMatrix3fv (column-major)      |
+ * | Float64Array            | as the Float32Array of its values    |
  * | Float32Array length 16  | uniformMatrix4fv (column-major)      |
  * | TextureHandle           | bind to next tex unit + uniform1i    |
  *
@@ -51,6 +52,7 @@ export type ShaderUniform =
   | [number, number, number, number]
   | readonly number[]
   | Float32Array
+  | Float64Array
   | Int32Array
   | Uint32Array
   | TextureHandle;

@@ -60,7 +60,7 @@ export const OUTLINE_MIN_SCREEN_PX = 48;
  * one glyph-size late or early only changes which of two correct renderings
  * is used.
  */
-function modelScale(m: Float32Array): number {
+function modelScale(m: GlMat3): number {
   const sx = Math.hypot(m[0], m[1]);
   const sy = Math.hypot(m[3], m[4]);
   return Math.sqrt(sx * sy) || 1;

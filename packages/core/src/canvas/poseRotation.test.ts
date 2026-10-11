@@ -72,7 +72,7 @@ describe('wrapWithPoseRotation', () => {
     const group = out[0] as GroupDrawCommand;
     expect(group.kind).toBe('group');
     expect(group.children).toBe(customCmds);
-    expect(group.transform).toBeInstanceOf(Float32Array);
+    expect(group.transform).toBeInstanceOf(Float64Array);
     const expected = rotateAroundAABBCenter(10, 20, 80, 40, Math.PI / 4);
     expect(Array.from(group.transform!)).toEqual(Array.from(expected));
   });

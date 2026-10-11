@@ -3,7 +3,7 @@ import type { PaintBindContext, PaintResources } from 'core/paintKinds';
 import { createPaintResources } from '../paintResources';
 import { getTexture, type TextureHandle } from '../textures/registerTexture';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
-import type { GlMat3 } from '../math/mat3';
+import { mat3, type GlMat3 } from '../math/mat3';
 import { patternTileSpace } from '../math/patternSpace';
 import type { DrawContext } from './drawContext';
 import { setAlphaUniform, setColorMatrixUniforms, setProjAndModel } from './uniforms';
@@ -75,7 +75,7 @@ export function bindPattern(
   gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog, model);
   setColorMatrixUniforms(ctx, prog);
-  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, tileSpace);
+  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, mat3.toUniform(tileSpace));
   const [tw, th] = textureSize(entry.source);
   gl.uniform2f(prog.uniform('u_tileSize')!, tw, th);
   ctx.textureCache.bind(tex.id, 0);
@@ -108,7 +108,7 @@ export function bindGradient(
   gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog, model);
 
-  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, inverse);
+  gl.uniformMatrix3fv(prog.uniform('u_worldInv')!, false, mat3.toUniform(inverse));
   setColorMatrixUniforms(ctx, prog);
 
   ctx.gradRamps.bind(0);

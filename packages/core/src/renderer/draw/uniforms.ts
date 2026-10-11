@@ -27,6 +27,8 @@ interface UploadedUniforms {
   model?: Float32Array;
   colorMatrix?: Float32Array;
   colorBias?: Float32Array;
+  originX?: number;
+  originY?: number;
   /** Held as plain numbers, not a `Float32Array`: the caller's values are
    *  doubles, and round-tripping them through float32 would compare unequal
    *  every time and never skip an upload. */
@@ -98,7 +100,7 @@ export function setAlphaUniform(ctx: DrawContext, prog: ShaderProgram, alpha: nu
 function projFor(ctx: DrawContext): GlMat3 {
   let proj = FRAME_PROJ.get(ctx);
   if (!proj) {
-    proj = mat3.screenToClip(ctx.widthCss, ctx.heightCss);
+    proj = mat3.toUniform(mat3.screenToClip(ctx.widthCss, ctx.heightCss));
     FRAME_PROJ.set(ctx, proj);
   }
   return proj;
@@ -137,6 +139,25 @@ export function setColorMatrixUniforms(
   }
 }
 
+/** A model translation at or past this many pixels is rebased before upload:
+ *  a float32 there is coarser than 1/128 px, and at 2^24 than a whole one. */
+export const REBASE_TRANSLATION_PX = 65536;
+
+const MODEL_SCRATCH = new Float32Array(9);
+const PROJ_SCRATCH = new Float32Array(9);
+
+/**
+ * `u_proj` and `u_model`, each skipped when the program already holds it.
+ *
+ * `model` is in doubles and the uniform is not. Far from the origin at high
+ * zoom its translation is millions of pixels, which a float32 holds to a
+ * whole pixel at best, and the shader then adds that to vertex coordinates
+ * just as large. A program that declares `u_origin` computes
+ * `u_model * (a_position - u_origin)`, so for a large translation this sends
+ * the local point that lands on the screen's corner as `u_origin` and a model
+ * whose translation is what is left over, a few pixels. Any origin draws the
+ * same place; this one keeps every number the GPU touches screen-sized.
+ */
 export function setProjAndModel(
   ctx: DrawContext, prog: ShaderProgram,
   model: GlMat3 = ctx.state.transform,
@@ -145,14 +166,41 @@ export function setProjAndModel(
   const gl = ctx.gl;
   const uploaded = uploadedFor(ctx, prog);
 
-  if (!sameValues(uploaded.proj, proj)) {
-    gl.uniformMatrix3fv(prog.uniform('u_proj')!, false, proj);
-    uploaded.proj = Float32Array.from(proj);
+  PROJ_SCRATCH.set(proj);
+  if (!sameValues(uploaded.proj, PROJ_SCRATCH)) {
+    gl.uniformMatrix3fv(prog.uniform('u_proj')!, false, PROJ_SCRATCH);
+    uploaded.proj = Float32Array.from(PROJ_SCRATCH);
   }
 
-  if (!sameValues(uploaded.model, model)) {
-    gl.uniformMatrix3fv(prog.uniform('u_model')!, false, model);
-    uploaded.model = Float32Array.from(model);
+  MODEL_SCRATCH.set(model);
+  const originLoc = prog.uniform('u_origin');
+  if (originLoc !== undefined) {
+    let ox = 0;
+    let oy = 0;
+    const tx = model[6], ty = model[7];
+    if (Math.abs(tx) >= REBASE_TRANSLATION_PX || Math.abs(ty) >= REBASE_TRANSLATION_PX) {
+      const a = model[0], b = model[1], c = model[3], d = model[4];
+      const det = a * d - b * c;
+      // Rounded first: the shader subtracts the float32 it was sent.
+      const lx = Math.fround((c * ty - d * tx) / det);
+      const ly = Math.fround((b * tx - a * ty) / det);
+      if (Number.isFinite(lx) && Number.isFinite(ly)) {
+        ox = lx;
+        oy = ly;
+        MODEL_SCRATCH[6] = a * ox + c * oy + tx;
+        MODEL_SCRATCH[7] = b * ox + d * oy + ty;
+      }
+    }
+    if (uploaded.originX !== ox || uploaded.originY !== oy) {
+      gl.uniform2f(originLoc, ox, oy);
+      uploaded.originX = ox;
+      uploaded.originY = oy;
+    }
+  }
+
+  if (!sameValues(uploaded.model, MODEL_SCRATCH)) {
+    gl.uniformMatrix3fv(prog.uniform('u_model')!, false, MODEL_SCRATCH);
+    uploaded.model = Float32Array.from(MODEL_SCRATCH);
   }
 }
 

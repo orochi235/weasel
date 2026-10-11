@@ -28,9 +28,9 @@ export function viewToMat3(view: View): GlMat3 {
   // Add 0 to coerce -0 → 0, matching `mat3.identity()` for the {0,0,1} case.
   const tx = -view.x * sx + 0;
   const ty = -view.y * sy + 0;
-  return new Float32Array([
+  return new Float64Array([
     sx, 0, 0,
     0, sy, 0,
     tx, ty, 1,
-  ]) as GlMat3;
+  ]);
 }

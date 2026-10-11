@@ -56,6 +56,9 @@ export function setUniform(
     return;
   }
 
+  // A kit matrix is in doubles; GL wants float32.
+  if (value instanceof Float64Array) value = Float32Array.from(value);
+
   if (value instanceof Float32Array) {
     if (value.length === 9) {
       gl.uniformMatrix3fv(loc, false, value);
@@ -209,7 +212,7 @@ export function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
 
   const proj = mat3.screenToClip(ctx.widthCss, ctx.heightCss);
   const uProj = program.uniform('u_proj');
-  if (uProj !== undefined) gl.uniformMatrix3fv(uProj, false, proj);
+  if (uProj !== undefined) gl.uniformMatrix3fv(uProj, false, mat3.toUniform(proj));
 
   const uBounds = program.uniform('u_bounds');
   if (uBounds !== undefined) {
@@ -217,7 +220,7 @@ export function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
   }
 
   const uView = program.uniform('u_view');
-  if (uView !== undefined) gl.uniformMatrix3fv(uView, false, ctx.state.transform);
+  if (uView !== undefined) gl.uniformMatrix3fv(uView, false, mat3.toUniform(ctx.state.transform));
 
   setUniforms(gl, program, cmd.program.id, cmd.uniforms, textureCache, { value: 1 });
 

@@ -1,7 +1,7 @@
 /**
- * 2D affine matrix utilities. Column-major 9-element Float32Array, matching
- * `WebGL2RenderingContext.uniformMatrix3fv` byte order so we can pass the
- * array directly without a transpose flag.
+ * 2D affine matrix utilities. Column-major 9 elements, matching
+ * `WebGL2RenderingContext.uniformMatrix3fv` element order so an upload needs
+ * no transpose flag.
  *
  * Layout (column-major):
  *   [m00, m10, 0,
@@ -14,15 +14,22 @@
 
 import { invert as invertAffine, type Mat3 as Affine } from '@weasel-js/geom';
 
-/** A 2D affine transform as a column-major 9-element `Float32Array`, laid out as above. */
-export type GlMat3 = Float32Array;
+/**
+ * A 2D affine transform as a column-major 9-element array, laid out as above.
+ *
+ * Every matrix the kit builds is a `Float64Array`: a view translation far
+ * from the origin at high zoom needs more than a float32's 24 bits to hold a
+ * fraction of a pixel. A `Float32Array` is accepted wherever one is read.
+ * `mat3.toUniform` makes the float32 copy a GL uniform upload wants.
+ */
+export type GlMat3 = Float32Array | Float64Array;
 
 function create(a: number, b: number, c: number, d: number, tx: number, ty: number): GlMat3 {
   // Column-major:
   //   col 0: (a, b, 0)
   //   col 1: (c, d, 0)
   //   col 2: (tx, ty, 1)
-  return new Float32Array([a, b, 0, c, d, 0, tx, ty, 1]);
+  return new Float64Array([a, b, 0, c, d, 0, tx, ty, 1]);
 }
 
 function identity(): GlMat3 {
@@ -82,6 +89,11 @@ function invert(m: GlMat3): GlMat3 | null {
   return inv && fromAffine(inv);
 }
 
+/** A float32 copy of `m`, for `uniformMatrix3fv` or a shader uniform value. */
+function toUniform(m: GlMat3): Float32Array {
+  return Float32Array.from(m);
+}
+
 function apply(m: GlMat3, x: number, y: number): [number, number] {
   const a = m[0], b = m[1];
   const c = m[3], d = m[4];
@@ -124,7 +136,7 @@ function minScaleOf(m: GlMat3): number {
 }
 
 /** The renderer's 3x3 matrix operations, as one namespace. These work on the
- *  9-element `Float32Array` form the GL uniform upload wants — distinct from
+ *  9-element form the GL uniform upload wants — distinct from
  *  `@weasel-js/geom`'s 6-element affine `GlMat3`, though the logical element
  *  order is the same. */
 export const mat3 = {
@@ -135,6 +147,7 @@ export const mat3 = {
   translated,
   scaled,
   invert,
+  toUniform,
   apply,
   screenToClip,
   meanScaleOf,

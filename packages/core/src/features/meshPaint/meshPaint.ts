@@ -19,6 +19,7 @@
 import type { GradStop } from '@weasel-js/paint';
 import type { PaintBindContext, PaintKindEntry, PaintProgram, PaintResources } from '../../core/paintKinds';
 import { resolveColor, rgbaToHex } from '../../renderer/math/color';
+import { mat3 } from '../../renderer/math/mat3';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, FillStyle, GradientUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../../core/fillInPoseFrame';
@@ -270,7 +271,7 @@ function bindMesh(ctx: PaintBindContext, fill: FillStyle): PaintProgram | null {
   const gl = ctx.gl;
   gl.useProgram(program.handle);
   ctx.setProjAndModel(program);
-  gl.uniformMatrix3fv(program.uniform('u_worldInv')!, false, inverse);
+  gl.uniformMatrix3fv(program.uniform('u_worldInv')!, false, mat3.toUniform(inverse));
 
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, entry.texture);

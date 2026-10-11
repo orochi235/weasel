@@ -6,12 +6,12 @@
  *
  * Convention alignment: the renderer already has a `Mat3` in
  * `src/renderer/math/mat3.ts`. That one is a 9-element column-major
- * `Float32Array` (a full 3×3) shaped for `uniformMatrix3fv` — a deliberately
+ * array (a full 3×3) laid out for `uniformMatrix3fv` — a deliberately
  * different *representation* for the WebGL upload path. Its *logical element
  * order* is identical to ours: `create(a, b, c, d, tx, ty)` maps
  * `x' = a·x + c·y + tx`, `y' = b·x + d·y + ty` (canvas/DOMMatrix a,b,c,d,e,f).
- * We keep the pure 6-tuple f64 form here (the kernel form); the 9-element f32
- * form stays a render-layer concern. No second logical convention is created.
+ * We keep the pure 6-tuple form here (the kernel form); the 9-element form
+ * stays a render-layer concern. No second logical convention is created.
  */
 import { SINGULAR_RATIO } from './scalar';
 

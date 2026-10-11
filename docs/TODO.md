@@ -477,13 +477,17 @@ Core five + Crop shipped. Remaining:
   have the shader unpremultiply before the color matrix, which fixes every source and filters better
   at edges.
 
-- **(P3) Renderer: the transform stack is single precision.** `mat3.create` returns a `Float32Array`
-  and `GroupState` composes in it, so at world x = 262,144 and 64x zoom the view translation is near
-  1.68e7, where a float32 step is 1 to 2 pixels. Batched geometry (corners computed in JS) would pan
-  in whole-pixel steps, and own-draw meshes (`u_model * a_position` in the shader) would round per
-  vertex, so a path's batched stroke could separate from its own-drawn fill. Not measured. Fix: keep
-  `GroupState` transforms in doubles and convert at the uniform upload, and fold the translation
-  into a camera-relative offset on the CPU for own-draw meshes.
+- **(P3) Renderer: geometry and paint space far from the origin are still single precision.** The
+  transform stack is in doubles now and a large model translation is rebased before upload
+  (`setProjAndModel`, `u_origin`), so panning at world x = 262,144 and 64x zoom steps by fractions of
+  a pixel; that is proven by float32 arithmetic in `draw.precision.test.ts`, not in a browser. Not
+  measured, and still float32: a path's own coordinates (`PolygonPath.coords`, `Mesh.vertices`),
+  which at that distance sit on a 1/32 world unit grid, 2 px at 64x, so a tessellated shape is
+  quantized where a batched rect (doubles) is not; `u_worldInv`, which places a `units: 'world'`
+  gradient or pattern per fragment from a world-sized translation; and the model a consumer's own
+  vertex stage receives (`u_view` on a shader command, `u_model` in a registered paint kind), which
+  has no `u_origin` to rebase against. The first needs a per-path origin in `@weasel-js/geom`'s
+  tessellation, the second the same rebase applied to the paint matrix.
 
 - **(P3) Layers: `LayerGroup.alpha` without `effects` fades each member, not the group.** Its doc
   (`packages/core/src/core/layers/render.ts`) says the opacity applies "to the group's composited

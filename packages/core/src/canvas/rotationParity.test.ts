@@ -25,7 +25,7 @@ const cy = pose.y + pose.height / 2; // 30
 const tl = rotatePoint(pose.x, pose.y, cx, cy, pose.rotation);
 
 /** Apply a column-major [a,b,0,c,d,0,tx,ty,1] affine to a point. */
-function applyMat(m: Float32Array, px: number, py: number): { x: number; y: number } {
+function applyMat(m: ArrayLike<number>, px: number, py: number): { x: number; y: number } {
   return { x: m[0] * px + m[3] * py + m[6], y: m[1] * px + m[4] * py + m[7] };
 }
 

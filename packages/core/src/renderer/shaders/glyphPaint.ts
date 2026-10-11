@@ -86,8 +86,14 @@ export const GLYPH_GRAD_FRAG_SRC = fragSrc(GRAD_PAINT_GLSL);
 export const GLYPH_TEXTURE_FRAG_SRC = fragSrc(TEXTURE_PAINT_GLSL);
 
 const GLYPH_UNIFORMS = ['u_atlas', 'u_synthBold', 'u_fieldScale'] as const;
-export const GLYPH_PATTERN_UNIFORMS = [...PATTERN_FILL_UNIFORMS, ...GLYPH_UNIFORMS] as const;
-export const GLYPH_GRAD_UNIFORMS = [...GRAD_FILL_UNIFORMS, ...GLYPH_UNIFORMS] as const;
+// `u_origin` belongs to the path vertex stage, which these programs replace.
+const notOrigin = (name: string): boolean => name !== 'u_origin';
+export const GLYPH_PATTERN_UNIFORMS: readonly string[] = [
+  ...PATTERN_FILL_UNIFORMS.filter(notOrigin), ...GLYPH_UNIFORMS,
+];
+export const GLYPH_GRAD_UNIFORMS: readonly string[] = [
+  ...GRAD_FILL_UNIFORMS.filter(notOrigin), ...GLYPH_UNIFORMS,
+];
 export const GLYPH_TEXTURE_UNIFORMS = [
   'u_proj', 'u_model', 'u_worldInv', 'u_sampler', ...GLYPH_UNIFORMS,
 ] as const;
