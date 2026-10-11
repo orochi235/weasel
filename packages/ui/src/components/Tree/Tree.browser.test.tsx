@@ -71,7 +71,20 @@ test('folded by its leading glyphs, a branch and a leaf at one level start their
   expect(left('Why') - left('Inner')).toBe(step);
 });
 
-test('with guides, an open branch draws a bracket from under its mark down the side of its rows', () => {
+test('with guides, an open branch draws a bracket from under the start of its label down the side of its rows', () => {
+  const nodes: TreeNode[] = [{ id: 'g', label: 'Group', children: [{ id: 'h', label: 'Inner', children: [{ id: 'y', label: 'Why' }] }] }];
+  render(<Tree aria-label="T" nodes={nodes} defaultExpandedIds={['g', 'h']} guides />);
+  const item = (name: string) => screen.getByRole('treeitem', { name });
+  const labelLeft = (name: string) => item(name).querySelector('[id]')!.getBoundingClientRect().left;
+  const bracketLeft = (name: string) => {
+    const group = item(name).querySelector('[role="group"]')!;
+    return group.getBoundingClientRect().left + parseFloat(getComputedStyle(group, '::before').left);
+  };
+  expect(bracketLeft('Group')).toBe(labelLeft('Group'));
+  expect(bracketLeft('Inner')).toBe(labelLeft('Inner'));
+  // Every level stands in from the one above by the same step, clear of that level's bracket.
+  expect(bracketLeft('Inner') - bracketLeft('Group')).toBe(labelLeft('Group') - item('Group').getBoundingClientRect().left + 4);
+  cleanup();
   render(<Tree aria-label="T" nodes={START} defaultExpandedIds={['g']} guides />);
   const group = screen.getByRole('treeitem', { name: 'Group' }).querySelector('[role="group"]')!;
   const bracket = getComputedStyle(group, '::before');
