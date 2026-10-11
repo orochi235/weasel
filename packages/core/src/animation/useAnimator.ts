@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
-import { easeOut, SPRING_PRESETS, resolveEasing } from '@weasel-js/geom';
 import { createLoop, createTweenLoop } from './loop';
-import { stepSpring } from './engine/integrator';
-import { createCodec, type SpringReader } from './engine/codec';
-import { axesOf } from './engine/axes';
+import { createCodec } from './engine/codec';
+import type { ActiveAnimation, AnimationContext, AnimationSeed } from './engine/context';
+import { createTargetBook } from './engine/offsets';
+import { startOffsetPhysics } from './engine/offsetPhysics';
+import { startOffsetTween } from './engine/offsetTween';
+import { startPhysics } from './engine/physicsAnimation';
+import { startTween } from './engine/tweenAnimation';
 import { createStagger } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
 import { ColorOverrideRegistry } from './colorRegistry';
@@ -21,44 +24,14 @@ import type {
   DecayOptions,
   PhysicsOptions,
   PhysicsHandle,
+  TargetDecayOptions,
+  TargetPhysicsOptions,
+  TargetSpringOptions,
+  TargetTweenOptions,
   UseAnimatorOptions,
   LiveAnimation,
 } from './types';
 import type { TimelineOptions } from './timeline/types';
-
-interface ActiveAnimation {
-  id: number;
-  kind: AnimationKind;
-  cancelKey?: string;
-  label?: string;
-  /** Built the first time something reports on this entry, then shared. */
-  info?: AnimationInfo;
-  /** 0–1 where the animation has an end to measure against. */
-  progress?(virtualNow: number): number;
-  /** Its `end` is reported, though the entry stays on the table until the
-   *  frame's ticks are done. */
-  ended?: boolean;
-  paused: boolean;
-  timeScale: number;
-  virtualNow: number;
-  lastRealNow: number | null;
-  /** Returns true when finished. Called once per frame with the current
-   *  virtual-ms timestamp and the effective scale it advanced at this frame. */
-  tick(virtualNow: number, scale: number): boolean;
-  /** Called when the animation is cancelled. Skips onDone. */
-  onCancel?(): void;
-  /** Called when its pause state or time scale is set, by handle or by key. */
-  onRate?(paused: boolean, timeScale: number): void;
-}
-
-function resolveSpringConstants(o: { preset?: string; stiffness?: number; damping?: number; mass?: number }) {
-  const preset = o.preset ? SPRING_PRESETS[o.preset as keyof typeof SPRING_PRESETS] : null;
-  return {
-    stiffness: o.stiffness ?? preset?.stiffness ?? 170,
-    damping: o.damping ?? preset?.damping ?? 26,
-    mass: o.mass ?? preset?.mass ?? 1,
-  };
-}
 
 /** Create the animator for a canvas. One rAF loop drives every animation it
  *  owns, and everything still running is cancelled on unmount. */
@@ -168,6 +141,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const hub = new AnimatorEventHub();
     const codec = createCodec();
+    const targets = createTargetBook();
     const infoOf = (a: ActiveAnimation): AnimationInfo => {
       if (!a.info) {
         const info: { -readonly [K in keyof AnimationInfo]: AnimationInfo[K] } = { id: a.id, kind: a.kind };
@@ -209,6 +183,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       const frameDt = codecFrameT.current == null ? 0 : Math.max(0, t - codecFrameT.current);
       codecFrameT.current = t;
       codec.frame(frameDt * (globalPaused.current ? 0 : globalTimeScale.current));
+      targets.settle();
       // A snapshot: an animation registered by this frame's ticks first ticks on the
       // next, or a zero-duration loop would chain inside one frame and never leave it.
       for (const anim of [...animations.current.values()]) {
@@ -262,6 +237,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       for (const cb of afterTicks.splice(0)) {
         try { cb(); } catch (err) { console.error('useAnimator: a staggered start threw', err); }
       }
+      targets.show();
       // Notify every onTick subscriber AFTER the tick batch so they
       // see the latest `colorOverrides` / pose values. Errors in one
       // subscriber don't suppress the others.
@@ -285,14 +261,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       for (const id of ids) retire(id, by);
     };
 
-    type AnimationSeed =
-      Omit<ActiveAnimation, 'paused' | 'timeScale' | 'virtualNow' | 'lastRealNow'>
-      & {
-        /** Registers under an existing `cancelKey` without cancelling whoever
-         *  holds it. For an animation re-registering itself — a revived
-         *  timeline — which is not a new claim on the key. */
-        keepExisting?: boolean;
-      };
     /** Gives a codec subject the rate its own pause and time scale now ask for. */
     const rateOf = (a: ActiveAnimation): void => {
       if (codec.has(a.id)) codec.rate(a.id, a.paused ? 0 : a.timeScale);
@@ -368,184 +336,46 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       };
     };
 
-    const tween = <T,>(o: TweenOptions<T>): AnimationHandle => {
-      // blits blends in a straight line, which a caller's own function may not do.
-      const fromAxes = o.interpolate || o.interpolator ? null : axesOf(o.from);
-      const toAxes = fromAxes && axesOf(o.to);
-      const axes = fromAxes && toAxes && toAxes.shape === fromAxes.shape ? fromAxes : null;
-      // Refused here rather than on a tick, where a throw would stop every other animation.
-      if (!axes && !o.interpolate && !o.interpolator) {
-        throw new Error('tween: interpolate or interpolator is required for non-numeric T');
-      }
-      const id = nextId.current++;
-      const easing = resolveEasing(o.easing ?? easeOut);
-      // Precedence: factory > per-tick. Factory is built once at tween start so
-      // expensive setup (color space conversion etc.) doesn't repeat per frame.
-      const factoryFn = o.interpolator ? o.interpolator(o.from, o.to) : null;
-      let lastValueEmitted = false;
-      // Seeds the codec's clock where `register` seeds the call's, so both charge the same wait.
-      if (codecFrameT.current == null) codecFrameT.current = now();
-      // Started ahead of `register`, whose `start` listeners may already cancel it.
-      const reader = codec.tween({
-        id, ms: Math.max(o.ms, 1), ease: easing,
-        from: axes ? axes.to(o.from) : [0],
-        to: axes ? axes.to(o.to) : [1],
-      });
-      return register({
-        id,
-        kind: 'tween',
-        cancelKey: o.cancelKey,
-        label: o.label,
-        progress: (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, virtualNow / o.ms)),
-        // `nowMs` is the call's own virtual time, so it still decides when the tween ends; the codec
-        // supplies only the value in between.
-        tick(nowMs) {
-          if (tripwire()) { codec.stop(id); return true; }
-          const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
-          let value: T;
-          if (axes) {
-            value = t >= 1 ? o.to : axes.from(reader.cols, reader.at);
-          } else {
-            const eased = t >= 1 ? easing(1) : reader.cols[reader.at]!;
-            value = factoryFn ? factoryFn(eased) : o.interpolate!(o.from, o.to, eased);
-          }
-          o.onTick(value);
-          if (t >= 1 && !lastValueEmitted) {
-            lastValueEmitted = true;
-            codec.stop(id);
-            // That last onTick may have cancelled us — deregistering the id.
-            // A cancelled tween never completes, whenever the cancel landed.
-            if (animations.current.has(id)) {
-              reportEnd(id);
-              o.onDone?.();
-            }
-            return true;
-          }
-          return false;
-        },
-      });
+    const ctx: AnimationContext = {
+      codec,
+      targets,
+      nextId: () => nextId.current++,
+      seedClock: () => { if (codecFrameT.current == null) codecFrameT.current = now(); },
+      register,
+      has: (id) => animations.current.has(id),
+      reportEnd,
+      tripwire,
+      interrupt: (key, by) => cancelByKey(key, by as ActiveAnimation),
+      holder: (key, target) => {
+        for (const a of animations.current.values()) {
+          if (a.cancelKey === key && a.target === target) return codec.own(a.id);
+        }
+        return undefined;
+      },
     };
 
-    const physics = <T,>(o: PhysicsOptions<T>, kind: AnimationKind = 'physics'): PhysicsHandle<T> => {
-      const id = nextId.current++;
-      const isNumeric = typeof o.from === 'number';
-      if (!isNumeric && (!o.add || !o.subtract || !o.scale || !o.magnitude)) {
-        throw new Error('physics: add/subtract/scale/magnitude are required for non-numeric T');
-      }
-      const add = o.add ?? ((a: T, b: T) => ((a as unknown as number) + (b as unknown as number)) as unknown as T);
-      const subtract = o.subtract ?? ((a: T, b: T) => ((a as unknown as number) - (b as unknown as number)) as unknown as T);
-      const scale = o.scale ?? ((v: T, k: number) => ((v as unknown as number) * k) as unknown as T);
-      const magnitude = o.magnitude ?? ((v: T) => Math.abs(v as unknown as number));
-      const { stiffness: kBase, damping, mass } = resolveSpringConstants(o);
-      const restThreshold = o.restThreshold ?? 0.01;
+    const tween = <T,>(o: TweenOptions<T> | TargetTweenOptions<T>): AnimationHandle =>
+      (o.target ? startOffsetTween(ctx, o) : startTween(ctx, o));
 
-      let target: T | null = o.to ?? null;
-      let value = o.from;
-      // Default to zero velocity: assumes scale(_, 0) returns the zero vector of T. Pass an explicit velocity for unusual T where this isn't true.
-      let velocity: T = o.velocity ?? scale(o.from, 0);
-      let lastTime: number | null = null;
+    const physics = <T,>(
+      o: PhysicsOptions<T> | TargetPhysicsOptions<T>,
+      kind: AnimationKind = 'physics',
+    ): PhysicsHandle<T> => (o.target ? startOffsetPhysics(ctx, o, kind) : startPhysics(ctx, o, kind));
 
-      // blits' closed forms need positive damping and mass, and a spring with a target needs
-      // stiffness; decay's handle never takes a target.
-      const solvable = damping > 0 && mass > 0 && (kBase > 0 || kind === 'decay');
-      const fromAxes = solvable ? axesOf(o.from) : null;
-      const sameShape = (v: T | null | undefined): boolean => v == null || axesOf(v)?.shape === fromAxes!.shape;
-      const axes = fromAxes && sameShape(o.to) && sameShape(o.velocity) ? fromAxes : null;
-      let reader: SpringReader | null = null;
-      if (axes) {
-        // Seeds the codec's clock where `register` seeds the call's, so both charge the same wait.
-        if (codecFrameT.current == null) codecFrameT.current = now();
-        // Started ahead of `register`, whose `start` listeners may already cancel it.
-        reader = codec.spring({
-          id, axes: axes.count,
-          from: axes.to(o.from),
-          to: o.to == null ? null : axes.to(o.to),
-          velocity: o.velocity == null ? new Array<number>(axes.count).fill(0) : axes.to(o.velocity),
-          stiffness: kBase, damping, mass,
-        });
-      }
+    const spring = <T,>(o: SpringOptions<T> | TargetSpringOptions<T>): AnimationHandle => physics<T>(o, 'spring');
 
-      const baseHandle = register({
-        id,
-        kind,
-        cancelKey: o.cancelKey,
-        label: o.label,
-        tick(nowMs) {
-          if (tripwire()) { codec.stop(id); return true; }
-          if (lastTime == null) {
-            lastTime = nowMs;
-            // Already-at-rest short-circuit: decay-mode (target == null)
-            // with starting velocity below threshold should complete
-            // immediately rather than emit a tick and wait a frame.
-            if (target == null && magnitude(velocity) < restThreshold) {
-              codec.stop(id);
-              reportEnd(id);
-              o.onDone?.();
-              return true;
-            }
-            // The codec's voice has run since registration, so only Euler starts its clock here.
-            if (!axes) {
-              o.onTick(value);
-              return false;
-            }
-          }
-          if (axes) {
-            const m = reader!.motion();
-            value = axes.from(m.value);
-            velocity = axes.from(m.velocity);
-          } else {
-            // Semi-implicit Euler, for a T blits cannot move as axes, or constants its closed forms can't solve.
-            const dt = Math.min(0.064, (nowMs - lastTime) / 1000);
-            const next = stepSpring({ add, subtract, scale }, value, velocity, target, kBase, damping, mass, dt);
-            value = next.value;
-            velocity = next.velocity;
-          }
-          lastTime = nowMs;
-          o.onTick(value);
-          const velRested = magnitude(velocity) < restThreshold;
-          const posRested = target == null
-            ? true
-            : magnitude(subtract(value, target)) < restThreshold;
-          if (velRested && posRested) {
-            if (target != null) o.onTick(target);
-            codec.stop(id);
-            // As for a tween: canceled from its own onTick, it never completes.
-            if (animations.current.has(id)) {
-              reportEnd(id);
-              o.onDone?.();
-            }
-            return true;
-          }
-          return false;
-        },
-      });
-
-      const checkShape = (v: T, what: string): void => {
-        if (!sameShape(v)) throw new Error(`physics: ${what} is not the same shape as \`from\``);
-      };
-      const handle: PhysicsHandle<T> = {
-        ...baseHandle,
-        setTarget: (newTo: T | null) => {
-          if (axes && newTo != null) checkShape(newTo, 'setTarget');
-          target = newTo;
-          if (axes && codec.has(id)) codec.retarget(id, newTo == null ? null : axes.to(newTo));
-        },
-        setVelocity: (v: T) => {
-          if (axes) checkShape(v, 'setVelocity');
-          velocity = v;
-          if (axes && codec.has(id)) codec.push(id, axes.to(v));
-        },
-      };
-      return handle;
-    };
-
-    const spring = <T,>(o: SpringOptions<T>): AnimationHandle => physics<T>(o, 'spring');
-
-    const decay = <T,>(o: DecayOptions<T>): AnimationHandle => {
+    const decay = <T,>(o: DecayOptions<T> | TargetDecayOptions<T>): AnimationHandle => {
       const friction = o.friction ?? 0.95;
       // Per-second friction v(t) = v0 * friction^t corresponds to
       // m*dv/dt = -c*v with c = -ln(friction), m = 1, k = 0.
       const damping = -Math.log(friction);
+      if (o.target) {
+        return physics<T>({
+          target: o.target, from: o.from, to: null, velocity: o.velocity,
+          stiffness: 0, damping, mass: 1, restThreshold: o.threshold ?? 0.5,
+          onTick: o.onTick, onDone: o.onDone, cancelKey: o.cancelKey, label: o.label,
+        }, 'decay');
+      }
       return physics<T>({
         from: o.from,
         to: null,
