@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
-import { createTimeScale, panWindow, TICK_SPACING_PX, tickTimes, toPercent, zoomWindow, type TimeWindow } from './timeScale';
+import { stepDecimals } from '../Plot2D/ticks';
+import { createTimeScale, panWindow, TICK_SPACING_PX, tickStep, tickTimes, toPercent, zoomWindow, type TimeWindow } from './timeScale';
 
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;
@@ -15,9 +16,13 @@ export interface RulerProps {
   onWindowChange: (w: TimeWindow) => void;
 }
 
-function formatMs(ms: number): string {
-  if (ms >= 1000) return `${(ms / 1000).toFixed(ms % 1000 === 0 ? 0 : 2)}s`;
-  return `${Math.round(ms)}ms`;
+/** A tick's label, with the decimals ticks `step` ms apart need to differ. */
+function formatMs(ms: number, step: number): string {
+  if (ms >= 1000) {
+    const whole = Math.abs(ms / 1000 - Math.round(ms / 1000)) < 1e-9;
+    return `${(ms / 1000).toFixed(whole ? 0 : Math.max(2, stepDecimals(step / 1000)))}s`;
+  }
+  return `${ms.toFixed(stepDecimals(step))}ms`;
 }
 
 export function Ruler(props: RulerProps): ReactElement {
@@ -91,6 +96,7 @@ export function Ruler(props: RulerProps): ReactElement {
   }, [onWheel]);
 
   const ticks = tickTimes(win, width, TICK_SPACING_PX);
+  const step = tickStep(win, width, TICK_SPACING_PX);
   const pct = (ms: number): string => toPercent(win, ms);
 
   return (
@@ -107,7 +113,7 @@ export function Ruler(props: RulerProps): ReactElement {
           data-testid="timeline-tick"
           style={{ left: pct(t) }}
         >
-          {formatMs(t)}
+          {formatMs(t, step)}
         </span>
       ))}
       <div

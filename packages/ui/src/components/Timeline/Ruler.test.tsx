@@ -29,6 +29,25 @@ describe('Ruler', () => {
     expect(screen.getAllByTestId('timeline-tick').length).toBeGreaterThan(1);
   });
 
+  it('labels every tick differently at the narrowest zoom', () => {
+    for (const window of [{ from: 0, to: 1 }, { from: 1000, to: 1001 }]) {
+      const { unmount } = render(<Ruler {...props} window={window} />);
+      const labels = screen.getAllByTestId('timeline-tick').map((el) => el.textContent);
+      expect(labels.length).toBeGreaterThan(2);
+      expect(new Set(labels).size).toBe(labels.length);
+      unmount();
+    }
+  });
+
+  it('labels whole milliseconds and seconds without decimals', () => {
+    render(<Ruler {...props} window={{ from: 0, to: 2000 }} bounds={{ from: 0, to: 2000 }} />);
+    const labels = screen.getAllByTestId('timeline-tick').map((el) => el.textContent);
+    expect(labels).toContain('0ms');
+    expect(labels).toContain('500ms');
+    expect(labels).toContain('1s');
+    expect(labels).toContain('1.50s');
+  });
+
   it('positions the playhead at its fraction of the window', () => {
     render(<Ruler {...props} />);
     expect(screen.getByTestId('timeline-playhead')).toHaveStyle({ left: '25%' });

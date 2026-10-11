@@ -82,11 +82,17 @@ export function panWindow(w: TimeWindow, byMs: number, bounds: TimeWindow): Time
 /** Minimum gap between time ticks, in px — the ruler's and the graph grid's. */
 export const TICK_SPACING_PX = 64;
 
+/** The gap between ruler ticks, in ms, or 0 where there is nothing to tick. */
+export function tickStep(w: TimeWindow, widthPx: number, minSpacingPx: number): number {
+  const span = w.to - w.from;
+  if (widthPx <= 0 || span <= 0) return 0;
+  return niceStep((minSpacingPx / widthPx) * span);
+}
+
 /** Ruler tick times inside `w`, spaced at least `minSpacingPx` apart. */
 export function tickTimes(w: TimeWindow, widthPx: number, minSpacingPx: number): number[] {
-  const span = w.to - w.from;
-  if (widthPx <= 0 || span <= 0) return [];
-  const step = niceStep((minSpacingPx / widthPx) * span);
+  const step = tickStep(w, widthPx, minSpacingPx);
+  if (step === 0) return [];
   const out: number[] = [];
   for (let t = Math.ceil(w.from / step) * step; t <= w.to + 1e-9; t += step) {
     out.push(Math.round(t / step) * step);
