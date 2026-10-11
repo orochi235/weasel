@@ -18,9 +18,13 @@ import type { Options } from 'tsup';
 export interface PackagePresetOptions {
   /** tsup entry map, relative to the package root. */
   readonly entry: Options['entry'];
-  /** Extra externals beyond deps/peerDeps (e.g. 'react' for React packages). */
+  /** Extra externals beyond deps/peerDeps and React. */
   readonly external?: readonly (string | RegExp)[];
 }
+
+// Never inlined, declared or not: a package that bundles its own React calls
+// hooks on a copy the consumer's renderer never drives.
+const ALWAYS_EXTERNAL = ['react', 'react-dom'];
 
 export function packagePreset({ entry, external = [] }: PackagePresetOptions): Options {
   return {
@@ -36,6 +40,6 @@ export function packagePreset({ entry, external = [] }: PackagePresetOptions): O
     // module-level registry reachable from two entries becomes two distinct
     // instances. Same hazard applies to any multi-entry package here.
     splitting: true,
-    external: [...external],
+    external: [...ALWAYS_EXTERNAL, ...external],
   };
 }
