@@ -1,0 +1,19 @@
+import { render } from '@testing-library/react';
+import { Profiler } from 'react';
+import { expect, it } from 'vitest';
+import { LayerList, type LayerListItem } from './LayerList';
+
+const ITEMS: LayerListItem[] = [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }];
+
+it('renders once per update, not a second time to re-attach its container ref', () => {
+  let commits = 0;
+  const tree = (title: string) => (
+    <Profiler id="list" onRender={() => { commits++; }}>
+      <LayerList items={ITEMS} title={title} />
+    </Profiler>
+  );
+  const { rerender } = render(tree('one'));
+  commits = 0;
+  rerender(tree('two'));
+  expect(commits).toBe(1);
+});

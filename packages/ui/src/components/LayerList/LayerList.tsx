@@ -2,6 +2,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
   type RefCallback,
+  useCallback,
   useId,
   useLayoutEffect,
   useRef,
@@ -417,10 +418,15 @@ function Level({ items, parentId, shared, path, level }: LevelProps) {
     drag.nudge(id, items.findIndex((it) => it.id === id), delta),
   );
   const [el, setEl] = useState<HTMLDivElement | null>(null);
-  const bind = (node: HTMLDivElement | null) => {
-    setEl(node);
-    (drag.containerProps.ref as RefCallback<HTMLDivElement>)(node);
-  };
+  // Stable, or every commit detaches and re-attaches it and re-renders the level.
+  const dragRef = drag.containerProps.ref as RefCallback<HTMLDivElement>;
+  const bind = useCallback(
+    (node: HTMLDivElement | null) => {
+      setEl(node);
+      dragRef(node);
+    },
+    [dragRef],
+  );
 
   const bodies = items.map((it) => shared.bodies.get(it.id));
   const cards = bodies.some(hasBody);
