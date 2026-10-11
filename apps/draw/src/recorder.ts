@@ -15,7 +15,7 @@
  */
 
 import type { SerializedHistory } from '@weasel-js/history';
-import type { Obj } from './poseUpdate';
+import type { Obj } from './svgObj';
 
 /** Per-document metadata bundled into a recording's baseline snapshot. */
 export interface Document {

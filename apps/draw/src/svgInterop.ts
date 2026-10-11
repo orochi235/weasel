@@ -32,7 +32,7 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
-import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './poseUpdate';
+import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 
 /**
  * The `wd:` XML namespace, used to ride WeaselDraw-specific metadata

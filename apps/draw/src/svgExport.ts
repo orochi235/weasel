@@ -44,7 +44,7 @@ import {
   type WeaselDrawPaperSize,
 } from './svgInterop';
 import type { WeaselDrawData, WeaselDrawPose } from './App';
-import type { ImageObj, Obj, PathObj, TextObj } from './poseUpdate';
+import type { ImageObj, Obj, PathObj, TextObj } from './svgObj';
 
 const WHITE = /^#?fff(fff)?(ff)?$/i;
 

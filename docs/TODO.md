@@ -2551,10 +2551,11 @@ only story runner in the repo.
   separable.
 
 - **(P3) draw: dead surface left in the tree.** `modality/backgroundClickPolicy.ts` has no caller
-  outside its test (a TODO in `App.tsx` names it); `PreferencesModal`'s `registryEnumSources` prop
-  is never passed, so every `registry-enum` pref renders as free text through `RegistrySelect`'s
-  fallback; `poseUpdate.ts` holds the `Obj` union and no pose update, and wants a name that says so
-  (`svgObj.ts`).
+  outside its test, and a TODO in `App.tsx` says it waits on a hook into the dispatcher for
+  background clicks outside normal mode. `PreferencesModal`'s `registryEnumSources` prop is never
+  passed, so the one `registry-enum` pref (`LAST_TOOL` in `prefs.ts`, source `tools`) renders as
+  free text through `RegistrySelect`'s fallback; a `tools` resolver needs the tool list, which the
+  canvas holds and `App.tsx` does not.
 
 - **(P3) draw: paper sizes and "no paint" are each defined more than once.** Paper sizes:
   `PaperSizeKey` (`CommandBar.tsx`), `WeaselDrawPaperSize` (`svgInterop.ts`), `PAPER_PRESETS`
