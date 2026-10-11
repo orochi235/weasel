@@ -170,8 +170,8 @@
     "lines": 716
   },
   "packages/core/src/interactions/actions/move/action.ts": {
-    "lines": 1195,
-    "longestFunction": 512
+    "lines": 794,
+    "longestFunction": 502
   },
   "packages/core/src/renderer/WeaselRenderer.ts": {
     "lines": 745

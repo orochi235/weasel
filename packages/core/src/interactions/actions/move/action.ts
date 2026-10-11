@@ -44,7 +44,7 @@ import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/scr
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 import { resolveParams, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/routing';
-import { documentPose, effectivePose } from 'core/scene/effectivePose';
+import { effectivePose } from 'core/scene/effectivePose';
 import { scenePoseAdapter } from 'features/groups/scenePoseAdapter';
 import type { NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
@@ -55,17 +55,11 @@ import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
 import { createReparentOp } from 'core/ops/reparent';
-import type { LayoutDep } from '../depSchema';
 import type {
-  LayoutStrategy,
   LayoutContainer,
   LayoutChild,
-  LayoutDragged,
-  DropRegion,
 } from '../../../layout/types';
-import { pointInPath } from '@weasel-js/geom';
 import {
-  poseDescriptorForNode,
   translatePoseViaDescriptor,
 } from '../resize/geometry';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
@@ -81,399 +75,14 @@ import {
   type PoseComposition,
 } from 'features/groups/composePose';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
-import { planeToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
+import { planeToPlane, toPlane } from 'core/viewport/parallax';
 import type { MoveLive, MoveSession, ReparentOnDrop } from './session';
-import type { LayoutPlacement } from './layout/types';
+import { groupBySourceContainer, runDropPass } from './layout/dropPass';
+import { resolveLayoutExits } from './layout/exits';
+import { catchGliding, landReleased, releasedPoses, stepGlide } from './layout/glide';
 import { draggedWorldPose, grabbedPoseAdapter, localDelta, planeDelta } from './delta';
 import { translateOps, unreleasedIds } from './translate';
 export type { ReparentOnDrop };
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-/** Drag-time layout pass. Picks the layout container under the *selection's*
- *  center (by `LayoutDep.dropTarget`), then places each dragged child in
- *  turn — every child sees the container state the previous one produced — and
- *  folds destination + source reflow poses into `scratch.previews` (so they
- *  render as ghosts), or into `scratch.reflowTargets` when a reflow transition
- *  carries them there. Sets `scratch.layoutPass` when one container accepts
- *  every member of the selection. */
-function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
-  const layoutDep = scratch.layout;
-  if (!layoutDep || !moveCtx.drag) return;
-  const scene = scratch.scene;
-  const pc = scratch.pc;
-  const poseAdapter = scenePoseAdapter(scene);
-  const { dx, dy } = scratch.currentDelta;
-  const showReflow = (id: NodeId, localPose: unknown): void => {
-    if (layoutDep.reflow) scratch.reflowTargets.set(id, localPose);
-    else scratch.previews.set(id, localPose);
-  };
-
-  type AABB = { x: number; y: number; width: number; height: number };
-  interface DraggedChild {
-    id: NodeId;
-    arg: LayoutDragged<unknown>;
-    center: { x: number; y: number };
-  }
-  // Each dragged preview in WORLD: compose the committed start pose up the
-  // parent chain, then add the world drag delta (same math as `applyReparent`).
-  // The LayoutStrategy contract is world-framed, so every pose handed to it
-  // below is composed to world; reflow results are rebased back to local.
-  // A selection spanning planes is gathered in the edited plane, and handed
-  // to each container carried into the plane that container is stored in.
-  const d = scratch.projection;
-  const grabAdapter = grabbedPoseAdapter(scratch, poseAdapter);
-  const dragged: DraggedChild[] = [];
-  for (const id of scratch.ids) {
-    const node = scene.get(id);
-    if (!node) continue;
-    const startWorld = composeWorldPose(grabAdapter, id as string, pc.compose);
-    const g = poseDescriptorForNode(d, node);
-    const own = planeDelta(scratch, id, dx, dy);
-    const toEdited = invertPlane(planeOf(scratch.view, node.layer));
-    const world = carryPose(g, translatePoseViaDescriptor(startWorld, own.dx, own.dy, g), toEdited);
-    const b = g.getBounds(world);
-    dragged.push({
-      id,
-      arg: {
-        id: id as string,
-        originPose: carryPose(g, startWorld, toEdited),
-        pose: world,
-        sourceContainerId: (node.parent ?? null) as string | null,
-      },
-      center: { x: b.x + b.width / 2, y: b.y + b.height / 2 },
-    });
-  }
-  const carryDragged = (c: DraggedChild, m: PlaneMap | null): DraggedChild => {
-    if (m === null) return c;
-    const g = poseDescriptorForNode(d, scene.get(c.id)!);
-    return {
-      id: c.id,
-      arg: { ...c.arg, originPose: carryPose(g, c.arg.originPose, m), pose: carryPose(g, c.arg.pose, m) },
-      center: toPlane(m, c.center),
-    };
-  };
-  if (dragged.length === 0) return;
-  const draggedIds = new Set<NodeId>(dragged.map((c) => c.id));
-
-  // The selection lands as a unit, so one point decides the container: the
-  // center of the whole dragged group. Hit-testing each child on its own
-  // would scatter a selection straddling two containers.
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const c of dragged) {
-    const b = d.getBounds(c.arg.pose);
-    minX = Math.min(minX, b.x);
-    minY = Math.min(minY, b.y);
-    maxX = Math.max(maxX, b.x + b.width);
-    maxY = Math.max(maxY, b.y + b.height);
-  }
-  const selectionCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
-  scratch.dropCenter = selectionCenter;
-  // Each child is snapped at its own position, displaced by however far the
-  // pointer sits from that center — the group keeps its shape, and a lone
-  // child is still probed at the pointer itself.
-  const probeOffset = {
-    x: moveCtx.drag.current.x - selectionCenter.x,
-    y: moveCtx.drag.current.y - selectionCenter.y,
-  };
-
-  type Layout = LayoutStrategy<unknown>;
-  interface Candidate {
-    id: NodeId;
-    bounds: AABB;
-    layout: Layout;
-    zPath: number[];
-    depth: number;
-    /** The edited plane into this container's. */
-    plane: PlaneMap | null;
-  }
-  const candidates: Candidate[] = [];
-  const mode = layoutDep.dropTarget ?? 'innermost';
-  const testInside = (
-    id: NodeId, cPose: unknown, aabb: AABB, layout: Layout, at: { x: number; y: number },
-  ): boolean => {
-    const region = layout.dropRegion?.({ id: id as string, bounds: aabb }) ?? null;
-    if (region) return regionContains(region, aabb, at);
-    if (mode === 'region') return false;
-    if (layout.contains) return layout.contains(cPose, at);
-    return at.x >= aabb.x && at.x < aabb.x + aabb.width
-      && at.y >= aabb.y && at.y < aabb.y + aabb.height;
-  };
-  const consider = (id: NodeId, zPath: number[]): void => {
-    if (draggedIds.has(id)) return;
-    const layout = layoutDep.getLayout(id as string);
-    if (!layout) return;
-    const node = scene.get(id);
-    if (!node) return;
-    const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
-    const worldAABB = poseDescriptorForNode(d, node).getBounds(worldPose);
-    const plane = planeOf(scratch.view, node.layer);
-    const at = plane ? toPlane(plane, selectionCenter) : selectionCenter;
-    if (!testInside(id, worldPose, worldAABB, layout, at)) return;
-    if (layout.acceptsDrop) {
-      const arg: LayoutContainer = { id: id as string, bounds: worldAABB };
-      for (const c of dragged) if (!layout.acceptsDrop(arg, carryDragged(c, plane).arg)) return;
-    }
-    candidates.push({
-      id,
-      bounds: worldAABB,
-      layout,
-      zPath,
-      depth: zPath.length,
-      plane,
-    });
-  };
-  const walk = (parentId: NodeId | null, parentPath: number[]): void => {
-    const childIds = parentId === null ? scene.roots : scene.childrenOf(parentId);
-    for (let i = 0; i < childIds.length; i++) {
-      const childPath = [...parentPath, i];
-      consider(childIds[i], childPath);
-      walk(childIds[i], childPath);
-    }
-  };
-  walk(null, []);
-
-  let dest: Candidate | null = null;
-  if (mode === 'topmost') {
-    // Painted last wins, in the scene's own render order — which crosses
-    // subtrees and layers, where a sibling-index path cannot.
-    const byId = new Map<NodeId, Candidate>(candidates.map((c) => [c.id, c]));
-    for (const id of scene.renderOrder()) dest = byId.get(id) ?? dest;
-  } else {
-    // Deepest wins; sibling-index path breaks ties (higher z = later index).
-    for (const c of candidates) {
-      if (dest === null) { dest = c; continue; }
-      if (c.depth > dest.depth) { dest = c; continue; }
-      if (c.depth < dest.depth) continue;
-      let cAfter = false;
-      for (let i = 0; i < c.zPath.length; i++) {
-        if (c.zPath[i] > dest.zPath[i]) { cAfter = true; break; }
-        if (c.zPath[i] < dest.zPath[i]) { cAfter = false; break; }
-      }
-      if (cAfter) dest = c;
-    }
-  }
-  if (!dest) return;
-
-  const layout = dest.layout;
-  const container: LayoutContainer = { id: dest.id as string, bounds: dest.bounds };
-  // The container state the placements run against, advanced by each one.
-  const working: LayoutChild<unknown>[] = scene.childrenOf(dest.id).map((cid) => ({
-    id: cid as string,
-    pose: composeWorldPose(poseAdapter, cid as string, pc.compose),
-  }));
-  const setWorking = (id: string, pose: unknown): void => {
-    const at = working.findIndex((c) => c.id === id);
-    if (at >= 0) working[at] = { id, pose };
-    else working.push({ id, pose });
-  };
-
-  const placements: LayoutPlacement[] = [];
-  const destReflow = new Map<NodeId, unknown>();
-  const destPlane = dest.plane;
-  for (const edited of dragged) {
-    const dc = carryDragged(edited, destPlane);
-    const children = working.map((c) => ({ ...c }));
-    const targets = layout.getDropTargets(container, children, dc.arg);
-    const probe = { x: edited.center.x + probeOffset.x, y: edited.center.y + probeOffset.y };
-    const target = layout.snap.pickTarget(targets, destPlane ? toPlane(destPlane, probe) : probe);
-    // All-or-nothing: a container that cannot take every member takes none
-    // rather than splitting the selection between two homes.
-    if (!target) return;
-    placements.push({ dragged: dc.arg, children, target });
-    const poses = layout.reflowPoses(container, children, dc.arg, target);
-    for (const [cid, pose] of poses) {
-      setWorking(cid, pose);
-      if (!draggedIds.has(asNodeId(cid))) destReflow.set(asNodeId(cid), pose);
-    }
-    setWorking(dc.arg.id, poses.get(dc.arg.id) ?? target.pose);
-  }
-
-  // Destination reflow → fold into previews (the dragged children keep their
-  // pointer-following ghosts). `reflowPoses` returns world; previews are
-  // local, so rebase to the child's current parent frame first.
-  const reflowIds = new Set<NodeId>();
-  for (const [cid, pose] of destReflow) {
-    const parent = scene.get(cid)?.parent ?? null;
-    showReflow(cid, rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
-    reflowIds.add(cid);
-  }
-
-  // Source reflow (cross-container) → fold changed leftovers into previews.
-  // One pass per container the selection left behind, with everything that
-  // left it withdrawn at once.
-  const sourceReflow = new Map<string, unknown>();
-  for (const [srcId, leaving] of groupBySourceContainer(dragged.map((c) => ({
-    id: c.id,
-    sourceContainerId: c.arg.sourceContainerId,
-  })), container.id)) {
-    const srcLayout = layoutDep.getLayout(srcId);
-    const srcNode = scene.get(asNodeId(srcId));
-    if (!srcLayout || !srcNode) continue;
-    const srcContainer: LayoutContainer = {
-      id: srcId,
-      bounds: d.getBounds(composeWorldPose(poseAdapter, srcId, pc.compose)),
-    };
-    const srcChildren: LayoutChild<unknown>[] = scene.childrenOf(asNodeId(srcId))
-      .filter((cid) => !leaving.has(cid))
-      .map((cid) => ({
-        id: cid as string,
-        pose: composeWorldPose(poseAdapter, cid as string, pc.compose),
-      }));
-    for (const [cid, pose] of srcLayout.childPoses(srcContainer, srcChildren)) {
-      const cur = d.getBounds(composeWorldPose(poseAdapter, cid, pc.compose));
-      const next = d.getBounds(pose);
-      const same = cur.x === next.x && cur.y === next.y
-        && cur.width === next.width && cur.height === next.height;
-      if (same) continue;
-      sourceReflow.set(cid, pose); // WORLD — rebased at each consumption point
-      const parent = scene.get(asNodeId(cid))?.parent ?? null;
-      showReflow(asNodeId(cid), rebaseLocalPose(poseAdapter, pose, parent, pc.compose, pc.decompose));
-      reflowIds.add(asNodeId(cid));
-    }
-  }
-
-  scratch.layoutPass = { layout, container, placements, sourceReflow, reflowIds };
-}
-
-/** Whether a world point falls in a drop region, which is authored relative to
- *  the top-left of the container's world bounds. */
-function regionContains(
-  region: DropRegion,
-  bounds: { x: number; y: number },
-  point: { x: number; y: number },
-): boolean {
-  const local = { x: point.x - bounds.x, y: point.y - bounds.y };
-  return typeof region === 'function'
-    ? region(local)
-    : pointInPath(region, local.x, local.y);
-}
-
-/** Dragged ids grouped by the container they are leaving, skipping any that
- *  stay put (`exclude` is the destination) or that had no container. */
-function groupBySourceContainer(
-  dragged: ReadonlyArray<{ id: NodeId; sourceContainerId: string | null }>,
-  exclude: string | null,
-): Map<string, Set<NodeId>> {
-  const out = new Map<string, Set<NodeId>>();
-  for (const d of dragged) {
-    const src = d.sourceContainerId;
-    if (!src || src === exclude) continue;
-    let set = out.get(src);
-    if (!set) { set = new Set<NodeId>(); out.set(src, set); }
-    set.add(d.id);
-  }
-  return out;
-}
-
-/** Where each dragged root that leaves its layout container on release lands.
- *  A root leaves when the drop center falls outside the body of the layout
- *  container holding it, and lands under the innermost plain container beneath
- *  the drop — a layout container there has already declined it — or at the top
- *  level of its layer. A root whose parent has no layout is not this pass's to
- *  move; `reparentOnDrop` decides for those. */
-function resolveLayoutExits(scratch: MoveScratch, ids: Iterable<NodeId>): Map<NodeId, NodeId | null> {
-  const out = new Map<NodeId, NodeId | null>();
-  const layoutDep = scratch.layout;
-  const center = scratch.dropCenter;
-  if (!layoutDep || !center) return out;
-  const { scene, pc, projection: d } = scratch;
-  const poseAdapter = scenePoseAdapter(scene);
-  const excluded = new Set<NodeId>([...scratch.ids, ...scratch.cascadeIds]);
-  const holds = (id: NodeId, layout: LayoutStrategy<unknown> | null): boolean => {
-    const node = scene.get(id)!;
-    const plane = planeOf(scratch.view, node.layer);
-    const at = plane ? toPlane(plane, center) : center;
-    const pose = composeWorldPose(poseAdapter, id as string, pc.compose);
-    if (layout?.contains) return layout.contains(pose, at);
-    const b = poseDescriptorForNode(d, node).getBounds(pose);
-    return at.x >= b.x && at.x < b.x + b.width && at.y >= b.y && at.y < b.y + b.height;
-  };
-  const landings = new Map<string, NodeId | null>();
-  const landingOn = (layer: string): NodeId | null => {
-    if (landings.has(layer)) return landings.get(layer)!;
-    // Deepest wins; among equals, the later sibling (painted over the other).
-    let best: NodeId | null = null;
-    let bestDepth = -1;
-    const walk = (parentId: NodeId | null, depth: number): void => {
-      for (const id of parentId === null ? scene.roots : scene.childrenOf(parentId)) {
-        if (excluded.has(id)) continue;
-        const node = scene.get(id);
-        if (!node || node.kind !== 'container') continue;
-        if (node.layer === layer && depth >= bestDepth
-          && layoutDep.getLayout(id as string) === null && holds(id, null)) {
-          best = id;
-          bestDepth = depth;
-        }
-        walk(id, depth + 1);
-      }
-    };
-    walk(null, 0);
-    landings.set(layer, best);
-    return best;
-  };
-  for (const id of ids) {
-    const node = scene.get(id);
-    const parent = node?.parent ?? null;
-    if (!node || parent === null) continue;
-    const layout = layoutDep.getLayout(parent as string);
-    if (!layout || holds(parent, layout)) continue;
-    out.set(id, landingOn(node.layer));
-  }
-  return out;
-}
-
-/** Where a dragged id was shown when the gesture ended: its stored pose then,
- *  the parent that pose was stored under, and the same pose in world. */
-interface Released {
-  local: unknown;
-  parent: NodeId | null;
-  world: unknown;
-}
-
-function releasedPoses(scratch: MoveScratch): Map<NodeId, Released> {
-  const out = new Map<NodeId, Released>();
-  const { scene, pc } = scratch;
-  const adapter = scenePoseAdapter(scene);
-  for (const id of scratch.startPoses.keys()) {
-    const local = scratch.previews.get(id);
-    if (local === undefined) continue;
-    const parent = scene.get(id)?.parent ?? null;
-    const frame = frameAtOrAbove(adapter, parent);
-    const world = frame === null ? local : pc.compose(composeWorldPose(adapter, frame, pc.compose), local);
-    out.set(id, { local, parent, world });
-  }
-  return out;
-}
-
-/** Hand every dragged id to the reflow transition to glide from where it was
- *  let go onto the pose the document now holds. An id caught mid-glide that
- *  never moved resumes settling from where it was held. */
-function landReleased(
-  scratch: MoveScratch,
-  reflow: NonNullable<LayoutDep['reflow']>,
-  released: Map<NodeId, Released>,
-): void {
-  const { scene, pc } = scratch;
-  const adapter = scenePoseAdapter(scene);
-  for (const id of scratch.startPoses.keys()) {
-    const r = released.get(id);
-    if (!r) {
-      if (scratch.caught.has(id)) reflow.settle(id as string);
-      continue;
-    }
-    const parent = scene.get(id)?.parent ?? null;
-    const from = parent === r.parent
-      ? r.local
-      : rebaseLocalPose(adapter, r.world, parent, pc.compose, pc.decompose);
-    reflow.settle(id as string, { from });
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -699,18 +308,14 @@ export const moveAction: Action & { requires: string[] } = inPlane({
       // shown, and the drag starts from there.
       const reflow = layout?.reflow ?? null;
       const caught = new Map<NodeId, { dx: number; dy: number }>();
-      const hold = (id: NodeId, node: NonNullable<ReturnType<typeof scene.get>>): void => {
-        const shown = reflow?.poseOf(id as string);
-        if (!reflow || shown === undefined) return;
-        reflow.glide(id as string, shown, { from: shown });
-        const at = projection.getBounds(shown);
-        const home = projection.getBounds(documentPose(scene, node));
-        caught.set(id, { dx: at.x - home.x, dy: at.y - home.y });
+      const hold = (id: NodeId): void => {
+        const held = catchGliding(scene, reflow, projection, id);
+        if (held) caught.set(id, held);
       };
       for (const id of ids) {
         const node = scene.get(id);
         if (!node) continue;
-        hold(id, node);
+        hold(id);
         startPoses.set(id, effectivePose(scene, node));
         seen.add(id);
         queue.push(id);
@@ -722,7 +327,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           seen.add(childId);
           const childNode = scene.get(childId);
           if (!childNode) continue;
-          hold(childId, childNode);
+          hold(childId);
           startPoses.set(childId, effectivePose(scene, childNode));
           cascadeIds.push(childId);
           queue.push(childId);
@@ -983,7 +588,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           }
           // A child its container let go of outside that container leaves it,
           // keeping the world pose it was dropped at.
-          exits = resolveLayoutExits(scratch, scratch.ids.filter((id) => !released.has(id)));
+          exits = resolveLayoutExits(scratch, scratch.dropCenter, scratch.ids.filter((id) => !released.has(id)));
           for (const [id, toParent] of exits) {
             const node = scratch.scene.get(id)!;
             const world = draggedWorldPose(scratch, grabbedPoseAdapter(scratch, commitAdapter), id, { dx, dy });
@@ -1122,22 +727,16 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           }
 
           // Layout reflow pass — no-op without a layout dep.
-          scratch.layoutPass = null;
-          scratch.dropCenter = null;
+          const drop = runDropPass(scratch, scratch.currentDelta, moveCtx.drag.current);
+          scratch.dropCenter = drop?.dropCenter ?? null;
+          scratch.layoutPass = drop?.pass ?? null;
           scratch.reflowTargets.clear();
-          runLayoutPass(scratch, moveCtx);
           const reflow = scratch.layout?.reflow;
-          if (reflow) {
-            for (const [id, pose] of scratch.reflowTargets) {
-              reflow.glide(id as string, pose);
-              scratch.gliding.add(id);
-            }
-            for (const id of scratch.gliding) {
-              if (scratch.reflowTargets.has(id)) continue;
-              reflow.settle(id as string);
-              scratch.gliding.delete(id);
-            }
+          for (const [id, pose] of drop?.reflow ?? []) {
+            if (reflow) scratch.reflowTargets.set(id, pose);
+            else scratch.previews.set(id, pose);
           }
+          if (reflow) stepGlide(reflow, scratch.gliding, scratch.reflowTargets);
 
           // After the layout pass, so a reflowed sibling publishes too.
           syncPreviewOverrides(scratch);
@@ -1145,7 +744,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;
           const reflow = scratch.layout?.reflow ?? null;
-          const released = reflow ? releasedPoses(scratch) : null;
+          const released = reflow ? releasedPoses(scratch, scratch.previews) : null;
           try {
             // On cancel the document was never mutated — dropping the
             // ephemeral overrides below restores the committed poses.
