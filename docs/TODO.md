@@ -615,12 +615,13 @@ Core five + Crop shipped. Remaining:
   the caret, and typing would not be on the native undo stack. The alternative is to intercept only
   while a pending style is armed and normalize in `onInput` otherwise.
 
-- **(P3) Text edit: pasted rich text reads back with the wrong line breaks, and offsets drift after
-  it.** `domToRuns` (`packages/core/src/features/text/domRuns.ts`) adds a newline per `<br>` and per
-  non-first `<div>` and none for `<p>`, while the character-offset walkers count text nodes only, so
-  after such an element every caret offset is short by one per break. `useTextEdit` has no `paste`
-  handler; inserting `text/plain`, or sanitizing to run spans, would keep the overlay to what
-  `runsToDom` writes. Which elements each browser inserts on paste has not been observed.
+- **(P3) Text edit: a paste lands in the overlay as whatever markup the browser inserts.**
+  `useTextEdit` has no `paste` handler. `domToRuns` and the caret-offset walkers
+  (`packages/core/src/features/text/domOffsets.ts`) now agree on `<br>`, `<div>`, and `<p>`, so a
+  pasted break reads as one newline and offsets hold after it, but other pasted structure (lists,
+  tables, nested blocks) is still read ad hoc. Undecided: insert `text/plain` only, or sanitize the
+  pasted markup to run spans and keep its styling. Which elements each browser inserts on paste has
+  not been observed.
 
 - **(P3) Text direction: the Align bar lights `start` / `end` as if an omitted `direction` were
   `ltr`.** An omitted `TextStyle.direction` is `'auto'`, each paragraph's first strong character, so

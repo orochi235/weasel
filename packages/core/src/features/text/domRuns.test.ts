@@ -598,6 +598,50 @@ describe('domPositionToCharOffset', () => {
   });
 });
 
+describe('caret offsets across the breaks a browser or a paste inserts', () => {
+  const plain = (el: HTMLElement): string => domToRuns(el).map((r) => r.text).join('');
+
+  function overlayOf(html: string): HTMLDivElement {
+    const el = document.createElement('div');
+    el.innerHTML = html;
+    document.body.appendChild(el);
+    return el;
+  }
+
+  it('reads a <p> boundary as a newline, as it does a <div>', () => {
+    expect(plain(overlayOf('<p>one</p><p>two</p>'))).toBe('one\ntwo');
+  });
+
+  it.each([
+    ['a <br>', 'ab<br>cd'],
+    ['a <div>', 'ab<div>cd</div>'],
+    ['a <p>', '<p>ab</p><p>cd</p>'],
+  ])('counts %s as the character domToRuns reads it as', (_name, html) => {
+    const el = overlayOf(html);
+    const text = plain(el);
+    expect(text).toBe('ab\ncd');
+    // Every offset lands on a position that reads back as itself, and the
+    // character after it is the one the text holds there.
+    for (let at = 0; at <= text.length; at++) {
+      const pos = charOffsetToDomPosition(el, at)!;
+      expect(domPositionToCharOffset(el, pos.node, pos.offset)).toBe(at);
+    }
+    const c = [...el.querySelectorAll('*'), el].flatMap((n) => [...n.childNodes])
+      .find((n) => n.nodeType === Node.TEXT_NODE && (n as Text).data === 'cd')!;
+    expect(domPositionToCharOffset(el, c, 0)).toBe(3);
+    expect(charOffsetToDomPosition(el, 4)).toEqual({ node: c, offset: 1 });
+  });
+
+  it('places an offset after a trailing <br>, and reads it back', () => {
+    const el = overlayOf('ab<br>');
+    expect(plain(el)).toBe('ab\n');
+    const pos = charOffsetToDomPosition(el, 3)!;
+    expect(pos).toEqual({ node: el, offset: 2 });
+    expect(domPositionToCharOffset(el, pos.node, pos.offset)).toBe(3);
+    expect(domPositionToCharOffset(el, el, 1)).toBe(2);
+  });
+});
+
 describe('hard line breaks in the overlay', () => {
   const TEXT = 'a\u2028b\u2029c\rd\r\ne\u000bf\u000cg\u0085h\ni';
   let parent: HTMLDivElement;
