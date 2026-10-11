@@ -5,7 +5,7 @@
  * directly.
  */
 import {
-  useCallback, useEffect, useMemo, useState,
+  useCallback, useMemo, useState,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -97,31 +97,19 @@ export function CurveEditor(props: CurveEditorProps) {
     minPoints, maxPoints, curve, fill, hideNonInteractive, renderAnchor,
   ]);
 
-  // Hybrid controlled-state: the wrapper holds the full FunctionLayerState
-  // locally so that consumers using the original CurveEditor API don't
-  // have to wire their `value` prop back through on every drag tick to
-  // keep the in-flight gesture advancing. We adopt the consumer's
-  // `value` prop when it changes externally (and no gesture is active).
-  const [layerState, setLayerState] = useState<FunctionLayerState>(
-    () => ({ points: value, activeIndex: null }),
-  );
-  // Ref mirror so the layerChange callback can compare against the
-  // freshest state without re-binding on every render.
+  // The points are local only while an anchor is held, so a drag advances
+  // without the consumer writing `value` back on every move. Outside one,
+  // `value` is what is drawn, including when the consumer declined or
+  // normalized what `onInput` offered.
+  const [held, setHeld] = useState<FunctionLayerState | null>(null);
+  const idle = useMemo<FunctionLayerState>(() => ({ points: value, activeIndex: null }), [value]);
+  const layerState = held ?? idle;
   const layerStateRef = useLatest(layerState);
-
-  // Sync from controlled `value` when the consumer updates it externally
-  // and we're idle. Skip the update during a gesture so drag-in-flight
-  // points aren't clobbered by a stale `value`.
-  useEffect(() => {
-    if (layerStateRef.current.activeIndex !== null) return;
-    if (layerStateRef.current.points === value) return;
-    setLayerState({ points: value, activeIndex: null });
-  }, [value, layerStateRef]);
 
   const handleLayerChange = useCallback((_id: string, nextUnknown: unknown) => {
     const next = nextUnknown as FunctionLayerState;
     const prevPoints = layerStateRef.current.points;
-    setLayerState(next);
+    setHeld(next.activeIndex === null ? null : next);
     if (next.points !== prevPoints) {
       onInput(next.points as ControlPoint[]);
     }
@@ -155,7 +143,7 @@ export function CurveEditor(props: CurveEditorProps) {
     if (endpoints !== undefined && endpoints !== 'free' && (idx === 0 || idx === points.length - 1)) return;
     if (minPoints !== undefined && points.length <= minPoints) return;
     const next = points.filter((_, i) => i !== idx);
-    setLayerState({ points: next, activeIndex: null });
+    setHeld(null);
     onInput(next as ControlPoint[]);
     onChange?.(next as ControlPoint[], points);
   }, [endpoints, minPoints, onInput, onChange, layerStateRef]);

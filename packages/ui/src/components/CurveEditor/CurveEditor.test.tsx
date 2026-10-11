@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { useState } from 'react';
 import { fireEvent, render } from '@testing-library/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { CurveEditor, type ControlPoint } from './CurveEditor';
@@ -791,9 +792,11 @@ describe('CurveEditor — keyboard and accessibility', () => {
 
   it('undoes a keyboard nudge', () => {
     const onInput = vi.fn();
-    const { container } = render(
-      <CurveEditor value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]} onInput={onInput} width={200} height={100} />,
-    );
+    function Controlled() {
+      const [value, setValue] = useState<ControlPoint[]>([{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]);
+      return <CurveEditor value={value} onInput={(next) => { onInput(next); setValue(next); }} width={200} height={100} />;
+    }
+    const { container } = render(<Controlled />);
     fireEvent.keyDown(container.querySelectorAll('[data-anchor-index]')[1], { key: 'ArrowUp' });
     fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', metaKey: true });
     expect(onInput.mock.calls.at(-1)![0][1].y).toBe(0.5);
