@@ -5,6 +5,7 @@ import { Input } from '../Input';
 import { filterTree, Tree, treeBranchIds, type TreeDragEffect, type TreeNode } from '../Tree';
 import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
+import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
@@ -218,7 +219,13 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
 
   return (
     <section className={`${s.pane} ${s.structurePane}`} aria-label="Structure">
-      <PaneHeader title="Structure" />
+      <PaneHeader title="Structure">
+        {/* A filter opens every branch it shows, so there is nothing to fold while one is set. */}
+        <Button iconOnly variant="ghost" size="sm" ariaLabel="Expand all" tooltip="Expand all" disabled={sought !== ''}
+          onClick={() => onExpandedChange(new Set(treeBranchIds(nodes)))}><Icon name="expand" size={16} /></Button>
+        <Button iconOnly variant="ghost" size="sm" ariaLabel="Collapse all" tooltip="Collapse all" disabled={sought !== ''}
+          onClick={() => onExpandedChange(new Set())}><Icon name="collapse" size={16} /></Button>
+      </PaneHeader>
       <div className={s.treeFilter}>
         <Input value={query} onChange={setQuery} aria-label="Filter structure" placeholder="Filter" />
       </div>
