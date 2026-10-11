@@ -127,6 +127,11 @@ function makeReflow<TPose>(
     scene.overrides.commit();
   };
 
+  // False for a glide canceled through the animator: it stopped short of its
+  // target and nothing is carrying it there.
+  const onCourse = (id: string, g: Glide<TPose>): boolean =>
+    animator.isActive(keyFor(id)) || samePose(g.entry.pose, g.target);
+
   const stop = (id: string): void => {
     const g = glides.get(id);
     if (!g) return;
@@ -165,7 +170,7 @@ function makeReflow<TPose>(
       if (!node) return;
       const from = opts?.from;
       const g = glides.get(id);
-      if (g && from === undefined && !g.settling && samePose(g.target, pose)) return;
+      if (g && from === undefined && !g.settling && samePose(g.target, pose) && onCourse(id, g)) return;
       run(id, claim(id, node, g, from), pose, false);
     },
     settle(id, opts) {
@@ -176,7 +181,7 @@ function makeReflow<TPose>(
       if (!node) { stop(id); return; }
       const home = documentPose(scene, node);
       if (g && from === undefined) {
-        if (g.settling && samePose(g.target, home)) return;
+        if (g.settling && samePose(g.target, home) && onCourse(id, g)) return;
         run(id, g, home, true);
         return;
       }

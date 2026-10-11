@@ -78,6 +78,29 @@ describe('createReflowTransition', () => {
     expect(where(a).x).toBe(100);
   });
 
+  it('restarts a glide the animator canceled when asked for the same target again', () => {
+    const { animator, frame, scene, a, where } = setup();
+    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    act(() => { reflow.glide(a, at(100)); });
+    frame(0);
+    frame(50);
+    act(() => { animator().cancelAll(); });
+    act(() => { reflow.glide(a, at(100)); });
+    frame(50);
+    frame(150);
+    expect(where(a).x).toBe(100);
+
+    act(() => { reflow.settle(a); });
+    frame(150);
+    frame(200);
+    act(() => { animator().cancelKey(`reflow:${a}`); });
+    act(() => { reflow.settle(a); });
+    frame(200);
+    frame(300);
+    expect(scene.overrides.get(a)).toBeUndefined();
+    expect(where(a).x).toBe(0);
+  });
+
   it('claims one cancelKey per node, so a new target steals the running glide', () => {
     const { animator, frame, scene, a } = setup();
     const events: AnimatorEvent[] = [];
