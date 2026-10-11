@@ -63,8 +63,9 @@ export interface StructurePaneProps {
   maxDepth?: number;
   /** The schema takes no edit: no tool adds or removes, and nothing is dropped here. Its rows can still be dragged out. */
   readOnly?: boolean;
-  /** The root files nothing onto pages, as a layout's does not: what sits directly under it is a row, not unplaced. */
-  pageless?: boolean;
+  /** The dialog a layout's pointers name settings in. Given, the schema is a layout: what sits directly under its
+   *  root is a row of it and not unplaced, a pointer's row is named as its setting, and nothing adds a pref or a page. */
+  over?: SchemaRoot;
   /** What a host draws on a node's row before its kind, by the node's path in this tree. */
   rowMark?: (path: string) => ReactNode;
   /** Remove the selected nodes. */
@@ -91,13 +92,14 @@ export interface DropOutside {
 const ancestorsOf = (path: string): string[] =>
   keysOf(path).slice(0, -1).map((_, i, keys) => pathOf(keys.slice(0, i + 1))!);
 
-export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, pageless = false }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark, readOnly = false, over }: StructurePaneProps) {
+  const pageless = over !== undefined;
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
   const [nodes, looseNodes] = useMemo(() => {
-    const all = toTreeNodes(schema, null, changed, rowMark);
+    const all = toTreeNodes(schema, null, changed, rowMark, over);
     const loose = new Set(looseKeys(schema, pageless));
     return [all.filter((n) => !loose.has(n.id)), all.filter((n) => loose.has(n.id))];
-  }, [schema, changed, rowMark, pageless]);
+  }, [schema, changed, rowMark, over, pageless]);
   const [query, setQuery] = useState('');
   const sought = query.trim().toLowerCase();
   const shown = useMemo(
@@ -137,8 +139,10 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   const host = nodeAt(schema, addTarget().parent) ?? schema;
   const branch = branchUnder(host ?? schema);
   const choices = useMemo(() => kindChoices(kinds, types), [kinds, types]);
+  // Unset, a group under the root is drawn as a page, which a layout has none of.
+  const heading = pageless && addTarget().parent === null;
   const add = ({ key, name, kind }: NewNode) => {
-    const node: SchemaNode = kind !== undefined ? { ...leafOf(kind, types, custom), name } : { ...(branch === 'section' ? blankSection() : blankGroup()), name };
+    const node: SchemaNode = kind !== undefined ? { ...leafOf(kind, types, custom), name } : { ...(branch === 'section' ? blankSection() : blankGroup()), ...(heading ? { as: 'section' as const } : {}), name };
     setAdding(null);
     const { parent, index } = addTarget();
     onChange(addNode(schema, parent, key, node, index));
@@ -212,8 +216,8 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
         <Input value={query} onChange={setQuery} aria-label="Filter structure" placeholder="Filter" />
       </div>
       {toolSlot && createPortal(
-        <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} disabled={readOnly} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
-          <ToolButton icon={<Icon name="tune" mark="markAdd" />} label="Add pref" disabled={readOnly} onClick={() => setAdding('pref')} />
+        <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} disabled={readOnly} pages={!pageless} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
+          <ToolButton icon={<Icon name="tune" mark="markAdd" />} label="Add pref" disabled={readOnly || pageless} onClick={() => setAdding('pref')} />
           <ToolButton icon={<Icon name={GROUP_ICON.section} mark="markAdd" />} label={`Add ${branch}`} disabled={readOnly || (branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth))} onClick={() => setAdding('branch')} />
           <ToolButton icon={<Icon name="link" mark="markAdd" />} label="Add alias" title="Show each selected pref in a second place"
             disabled={aliasAt === null} onClick={() => { if (aliasAt) alias(selected, aliasAt); }} />

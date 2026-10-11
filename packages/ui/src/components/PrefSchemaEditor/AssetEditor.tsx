@@ -224,7 +224,7 @@ export function AssetEditor(
         draftSavedAt={doc.draftSavedAt} onDiscard={() => { doc.commit(base); select([]); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
       <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={custom} renderers={renderers} types={types}
         expanded={expanded} onExpandedChange={setExpanded} unplaced={over ? undefined : unplaced} actions={actionList ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
-        toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} readOnly={readOnly} pageless={pageless} />
+        toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} readOnly={readOnly} over={over} />
       <ResizeHandle className={s.structureHandle} {...structureSize} min={180} max={640} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">

@@ -1,4 +1,5 @@
-import { outermost, rekeyed, removeNode, shiftNodes, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { isPrefLeaf, prefHoldsValue } from '@weasel-js/prefs';
+import { childrenOf, joinPath, nodeAt, outermost, rekeyed, removeNode, shiftNodes, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 
 // A layout's pointers name value paths in its dialog, which no path in the layout's own tree is. `renameKey`,
 // `moveNodes`, and `removeNodes` take one for the other, and rewrite or remove pointers that named something else.
@@ -17,4 +18,18 @@ export function moveLayoutNodes<R extends SchemaRoot>(
 /** `layout` without the nodes at `paths`; one beneath another goes with it. */
 export function removeLayoutNodes<R extends SchemaRoot>(layout: R, paths: readonly string[]): R {
   return outermost(paths).reduce((root, path) => removeNode(root, path), layout);
+}
+
+const holdsValue = (node: SchemaNode | undefined): boolean => node !== undefined && isPrefLeaf(node) && prefHoldsValue(node);
+
+/**
+ * Whether `next` holds a setting where `layout` held none. A layout points at settings and a dialog holds them, so
+ * one is not added here; one a draft edited by hand already holds stays, and is edited where it sits.
+ */
+export function gainsSetting(layout: SchemaRoot, next: SchemaRoot): boolean {
+  const gains = (node: SchemaNode, path: string | null): boolean => Object.entries(childrenOf(node) ?? {}).some(([key, child]) => {
+    const at = joinPath(path, key);
+    return isPrefLeaf(child) ? holdsValue(child) && !holdsValue(nodeAt(layout, at)) : gains(child, at);
+  });
+  return gains(next, null);
 }

@@ -69,7 +69,8 @@ export interface AttributesPaneProps {
   actions?: readonly EditorAction[];
   /** Renderers the consumer passes for its own kinds — a custom kind's `default` may need one. */
   renderers?: Record<string, PrefRenderer>;
-  /** The dialog a layout's pointers name settings in. Given, an alias is a pointer: its form offers only where it points, among that dialog's settings. */
+  /** The dialog a layout's pointers name settings in. Given, an alias is a pointer: its form offers only where it points, among that
+   *  dialog's settings. No leaf of a layout is offered another kind, which could make a setting of it. */
   over?: SchemaRoot;
   /** The schema takes no edit: the form shows what the nodes hold, with every control disabled. */
   readOnly?: boolean;
@@ -115,8 +116,8 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   if (agg === null || nodes.length !== targets.length) return <section className={s.pane} aria-label="Attributes"><PaneHeader title="Attributes" /></section>;
 
   const node = nodes[0]!;
-  // A pointer is what it points at: it has no kind to pick, and its key stores nothing.
-  const leaf = agg.kind !== undefined && !pointers;
+  // A pointer is what it points at: its key stores nothing.
+  const leaf = agg.kind !== undefined && over === undefined;
   const keyed = !several && path !== null && !pointers;
   const { shared, own, auto, entry, readOnly } = agg.schema;
   const item = !several && isPrefLeaf(node) ? entryOf(node) : undefined;

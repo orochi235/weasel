@@ -1,5 +1,5 @@
 import { prefLeafAt } from '@weasel-js/prefs';
-import { moveLayoutNodes, removeLayoutNodes, renameLayoutKey } from './layoutEdit';
+import { gainsSetting, moveLayoutNodes, removeLayoutNodes, renameLayoutKey } from './layoutEdit';
 import { pointersIn } from './pointers';
 import {
   joinPath, moveNodes, outermost, parentPath, rebaseValuePaths, removeNode, removeNodes, renameKey, valueMove,
@@ -25,8 +25,8 @@ function following(layout: SchemaRoot, before: SchemaRoot, after: SchemaRoot, mo
 }
 
 /**
- * `workspace` with the asset `id` holding `next`; `workspace` itself when that asset is read-only. Every layout over
- * an edited dialog follows, read-only ones included.
+ * `workspace` with the asset `id` holding `next`; `workspace` itself when that asset is read-only, or is a layout and
+ * `next` would give it a setting of its own. Every layout over an edited dialog follows, read-only ones included.
  *
  * A `next` in which a setting was renamed or moved must come with `moves`, each from the value path it had to the
  * one it has, a `null` for a node that has none. Nothing is worked out from the two roots, so a pointer to a setting
@@ -36,6 +36,7 @@ function following(layout: SchemaRoot, before: SchemaRoot, after: SchemaRoot, mo
 export function editAsset(workspace: Workspace, id: string, next: SchemaRoot, moves: ReadonlyArray<ValueMove | null>): Workspace {
   const asset = assetOf(workspace, id);
   if (!asset || asset.readOnly || asset.root === next) return workspace;
+  if (asset.kind === 'layout' && gainsSetting(asset.root, next)) return workspace;
   // The first move to match a path is the one it follows, and a setting's own outranks that of a group above it.
   const ordered = moves.filter((m) => m !== null).sort((a, b) => b[0].length - a[0].length);
   return {
