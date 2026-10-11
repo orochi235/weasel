@@ -43,6 +43,17 @@ describe('SelectionPanel compound leaves', () => {
     expect(screen.getByText('Mixed')).toBeInTheDocument();
   });
 
+  it('edits equal lists held by two nodes as one list', () => {
+    const data = setup(
+      { 'data.flags': { kind: 'list', name: 'Flags', description: '', default: [], item: flag } },
+      { a: { flags: [false, false] }, b: { flags: [false, false] } },
+    );
+    expect(screen.queryByText('Mixed')).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Flag 2' }));
+    expect(data('a')?.flags).toEqual([false, true]);
+    expect(data('b')?.flags).toEqual([false, true]);
+  });
+
   it('edits one value of a map under its key', () => {
     const data = setup(
       { 'data.on': { kind: 'map', name: 'On', description: '', default: {}, item: flag } },

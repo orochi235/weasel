@@ -9,6 +9,7 @@
 
 import {
   MIXED,
+  isPlainObject,
   type Mixed,
   type NodePropertiesEntry,
   type NodeRoutingEntry,
@@ -206,11 +207,29 @@ export function aggregateValue(
     if (first) {
       value = v;
       first = false;
-    } else if (!Object.is(v, value)) {
+    } else if (!sameValue(v, value)) {
       return MIXED;
     }
   }
   return value;
+}
+
+/** Whether two stored values are one value: identical, or arrays and plain
+ *  objects alike all the way down. Two nodes loaded from a file hold equal
+ *  paints as separate objects. */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return (
+      Array.isArray(a) &&
+      Array.isArray(b) &&
+      a.length === b.length &&
+      a.every((entry, i) => sameValue(entry, b[i]))
+    );
+  }
+  if (!isPlainObject(a) || !isPlainObject(b)) return false;
+  // A key holding `undefined` reads the same as one that is absent.
+  return [...new Set([...Object.keys(a), ...Object.keys(b)])].every((key) => sameValue(a[key], b[key]));
 }
 
 /** `'rect ×2 · text'` — kinds in first-seen order with counts. */

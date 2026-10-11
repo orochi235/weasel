@@ -119,6 +119,24 @@ describe('aggregateValue', () => {
     expect(aggregateValue([b], 'data.fill')).toBeUndefined();
   });
 
+  it('reads equal objects and arrays held separately as one value', () => {
+    const a = leaf('a', { kind: 'rect', fill: { fill: 'solid', color: '#f00' }, dash: [4, 2] });
+    const b = leaf('b', { kind: 'rect', fill: { fill: 'solid', color: '#f00' }, dash: [4, 2] });
+    expect(aggregateValue([a, b], 'data.fill')).toEqual({ fill: 'solid', color: '#f00' });
+    expect(aggregateValue([a, b], 'data.dash')).toEqual([4, 2]);
+  });
+
+  it('still reports objects and arrays that differ anywhere as MIXED', () => {
+    const a = leaf('a', { kind: 'rect', fill: { fill: 'solid', color: '#f00' }, dash: [4, 2], stops: [{ at: 0 }] });
+    const b = leaf('b', { kind: 'rect', fill: { fill: 'solid', color: '#0f0' }, dash: [4, 2, 1], stops: [{ at: 1 }] });
+    expect(aggregateValue([a, b], 'data.fill')).toBe(MIXED);
+    expect(aggregateValue([a, b], 'data.dash')).toBe(MIXED);
+    expect(aggregateValue([a, b], 'data.stops')).toBe(MIXED);
+    const list = leaf('c', { kind: 'rect', fill: ['solid'] });
+    const record = leaf('d', { kind: 'rect', fill: { 0: 'solid' } });
+    expect(aggregateValue([list, record], 'data.fill')).toBe(MIXED);
+  });
+
   it('is the same sentinel a core RangeStyle reports for a mixed range — one MIXED, not two', () => {
     const mixedRange = styleAtRange([{ text: 'ab', bold: true }, { text: 'cd' }], 0, 4);
     expect(mixedRange.bold).toBe(MIXED);
