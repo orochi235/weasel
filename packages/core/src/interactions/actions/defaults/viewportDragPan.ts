@@ -45,6 +45,12 @@ import { createVelocityTracker, type VelocityTracker } from 'core/viewport/creat
 
 interface DragPanScratch {
   startView: View;
+  /** The view the pan is measured from, and the cumulative screen delta it
+   *  was taken at. The press, until something else moves the camera. */
+  base: View;
+  baseScreen: { x: number; y: number };
+  /** The view as this pan last left it. */
+  seen: View;
   view: ViewApi;
   axis: 'both' | 'x' | 'y';
   inertia: InertiaConfig | undefined;
@@ -72,6 +78,11 @@ function screenDeltaFromWorld(
     x: (drag.current.x - now.x - (drag.start.x - v0.x)) * v0.scale.x,
     y: (drag.current.y - now.y - (drag.start.y - v0.y)) * v0.scale.y,
   };
+}
+
+function sameCamera(a: View, b: View): boolean {
+  return a === b
+    || (a.x === b.x && a.y === b.y && a.scale.x === b.scale.x && a.scale.y === b.scale.y);
 }
 
 /** Binding params `viewport.dragPan` understands. `useHandTool` supplies both;
@@ -124,6 +135,9 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
       const inertia = params.inertia === false ? undefined : params.inertia;
       const scratch: DragPanScratch = {
         startView,
+        base: startView,
+        baseScreen: { x: 0, y: 0 },
+        seen: startView,
         view,
         axis: params.axis ?? 'both',
         inertia,
@@ -150,23 +164,29 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
           // so the locked axis never moves however the pointer wanders.
           const screenDx = scratch.axis === 'y' ? 0 : screen.x;
           const screenDy = scratch.axis === 'x' ? 0 : screen.y;
-          if (scratch.tracker) {
-            scratch.tracker.record(
-              screenDx - scratch.lastScreen.x,
-              screenDy - scratch.lastScreen.y,
-              performance.now(),
-            );
-            scratch.lastScreen = { x: screenDx, y: screenDy };
+          scratch.tracker?.record(
+            screenDx - scratch.lastScreen.x,
+            screenDy - scratch.lastScreen.y,
+            performance.now(),
+          );
+          // A zoom or pan from elsewhere while the drag is held (a wheel, a
+          // key) is kept: the pan carries on from where it left the camera.
+          const now = scratch.view.get();
+          if (!sameCamera(now, scratch.seen)) {
+            scratch.base = now;
+            scratch.baseScreen = scratch.lastScreen;
           }
-          const sv = scratch.startView;
+          scratch.lastScreen = { x: screenDx, y: screenDy };
+          const sv = scratch.base;
           // 1 screen px maps to 1/scale world units (at 2x zoom, 100 px →
           // 50 world units of pan).
           const next = {
             ...sv,
-            x: sv.x - screenDx / sv.scale.x,
-            y: sv.y - screenDy / sv.scale.y,
+            x: sv.x - (screenDx - scratch.baseScreen.x) / sv.scale.x,
+            y: sv.y - (screenDy - scratch.baseScreen.y) / sv.scale.y,
           };
           scratch.view.set(next);
+          scratch.seen = scratch.view.get();
           debug?.recordViewport('pan', sv, next, grab && { x: grab.x, y: grab.y });
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -175,7 +195,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
           const { tracker, inertia, view: v } = scratch;
           if (reason === 'cancel' || !tracker || !inertia || !v.decay) return;
           const { vx, vy } = tracker.getVelocity();
-          const scale = scratch.startView.scale;
+          const scale = scratch.base.scale;
           v.decay({
             // Screen px/ms → world units/ms, matching the onMove conversion.
             velocity: { vx: -vx / scale.x, vy: -vy / scale.y },

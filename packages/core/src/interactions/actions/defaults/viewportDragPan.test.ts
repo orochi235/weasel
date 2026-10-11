@@ -384,3 +384,19 @@ describe('viewportDragPanAction inertia', () => {
     expect(calls[0].velocity.vy).toBeCloseTo(0);
   });
 });
+
+describe('viewportDragPanAction — the camera changed by something else mid-drag', () => {
+  it('keeps a zoom applied while the drag is held, and pans on from it', () => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    const handle = getOngoingInvoker(viewportDragPanAction).start(makeCtx(view), undefined);
+    handle.onMove!(makeCtx(view, { delta: { x: 10, y: 0 } }));
+    expect(view._value).toEqual({ x: -10, y: 0, scale: { x: 1, y: 1 } });
+
+    // A wheel zoom lands between two pointer moves.
+    view.set({ x: -4, y: 6, scale: { x: 2, y: 2 } });
+    handle.onMove!(makeCtx(view, { delta: { x: 30, y: 0 } }));
+
+    // 20 more screen px at 2x is 10 world units, from where the zoom left it.
+    expect(view._value).toEqual({ x: -14, y: 6, scale: { x: 2, y: 2 } });
+  });
+});
