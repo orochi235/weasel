@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { boundsOfCoords, PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { arrayAdapter, type ArrayAdapterConfig } from './arrayAdapter';
+import { createDeleteOp } from 'core/ops/delete';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import {
   circle,
@@ -163,6 +164,58 @@ describe('arrayAdapter — getChildren answers the ordered contract', () => {
     // is the root. An adapter that answers [] there silently loses the slot
     // an op captured, and undo appends.
     expect(makeFixture().getChildren!(null)).toEqual(['root-a', 'root-b']);
+  });
+});
+
+describe('arrayAdapter — insertNode places by sibling ordinal', () => {
+  type Obj = { id: string; x: number; y: number; width: number; height: number; parent?: string };
+  const box = { x: 0, y: 0, width: 10, height: 10 };
+
+  // The child comes first in the array, so a root's ordinal among the roots
+  // is not its array index.
+  function makeFixture() {
+    const items: Obj[] = [
+      { id: 'kid', ...box, parent: 'p' },
+      { id: 'p', ...box },
+      { id: 'a', ...box },
+      { id: 'b', ...box },
+    ];
+    const ref = { current: items };
+    const adapter = arrayAdapter<Obj, Obj>({
+      ref,
+      setItems: (u) => { ref.current = u(ref.current); },
+      toPose: (o) => o,
+      getParent: (id) => ref.current.find((o) => o.id === id)?.parent ?? null,
+      getChildren: (id) => ref.current.filter((o) => o.parent === id).map((o) => o.id),
+    });
+    return { adapter, ref };
+  }
+
+  it.each(['p', 'a', 'b'])('undoing the delete of root %s restores the root order', (id) => {
+    const { adapter, ref } = makeFixture();
+    const before = ref.current.map((o) => o.id);
+    const op = createDeleteOp({ node: ref.current.find((o) => o.id === id)! });
+
+    op.apply(adapter);
+    expect(adapter.getChildren!(null)).not.toContain(id);
+    op.invert().apply(adapter);
+    expect(adapter.getChildren!(null)).toEqual(['p', 'a', 'b']);
+    if (id !== 'p') expect(ref.current.map((o) => o.id)).toEqual(before);
+
+    op.invert().invert().apply(adapter);
+    expect(adapter.getChildren!(null)).not.toContain(id);
+  });
+
+  it('places a child before the sibling its ordinal names', () => {
+    const { adapter } = makeFixture();
+    adapter.insertNode({ id: 'kid-0', ...box, parent: 'p' }, 0);
+    expect(adapter.getChildren!('p')).toEqual(['kid-0', 'kid']);
+  });
+
+  it('appends when the ordinal is past the last sibling', () => {
+    const { adapter } = makeFixture();
+    adapter.insertNode({ id: 'c', ...box }, 3);
+    expect(adapter.getChildren!(null)).toEqual(['p', 'a', 'b', 'c']);
   });
 });
 

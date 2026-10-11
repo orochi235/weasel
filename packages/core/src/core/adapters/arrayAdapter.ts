@@ -9,6 +9,7 @@ import type {
 } from './types';
 import type { Op } from '../ops/types';
 import { applyOpsTo } from '../applyOps';
+import { parentOf } from '../ops/slot';
 import type { Bounds } from '../viewport/fitViewToBounds';
 import type { ClipboardSnapshot } from './types';
 import {
@@ -157,6 +158,25 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
     return out;
   };
 
+  // Root order is the item array's order, which this adapter owns — asking
+  // the consumer would get a callback written for node ids, and its `[]`
+  // is indistinguishable from "the root has no children".
+  const childrenIn = (items: readonly TNode[], parentId: string | null): string[] =>
+    parentId === null
+      ? items.filter((o) => getParent(o.id) === null).map((o) => o.id)
+      : getChildren?.(parentId) ?? [];
+
+  /** Where in `items` an insert at `index` lands, `undefined` to append. With
+   *  `getChildren` configured the ops hand over an ordinal among the node's
+   *  siblings, which is an array index only when nothing else sits between. */
+  const arrayIndexFor = (items: readonly TNode[], obj: TNode, index: number | undefined): number | undefined => {
+    if (index === undefined || index < 0) return undefined;
+    if (!getChildren) return index < items.length ? index : undefined;
+    const before = childrenIn(items, parentOf(obj)).filter((id) => id !== obj.id)[index];
+    const at = before === undefined ? -1 : items.findIndex((o) => o.id === before);
+    return at < 0 ? undefined : at;
+  };
+
   const adapter: ArrayAdapter<TNode, TPose> = {
     getNode: (id) => ref.current.find((o) => o.id === id),
     getNodes: () => ref.current,
@@ -172,8 +192,9 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
     setParent,
 
     insertNode: (obj, index) => setItems((items) => {
-      if (index === undefined || index < 0 || index >= items.length) return [...items, obj];
-      return [...items.slice(0, index), obj, ...items.slice(index)];
+      const at = arrayIndexFor(items, obj, index);
+      if (at === undefined) return [...items, obj];
+      return [...items.slice(0, at), obj, ...items.slice(at)];
     }),
     removeNode: (id) => setItems((items) => items.filter((o) => o.id !== id)),
 
@@ -250,15 +271,7 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
   if (getChildren) {
     (adapter as ArrayAdapter<TNode, TPose> & {
       getChildren: (parentId: string | null) => string[];
-    }).getChildren = (parentId) => {
-      // Root order is the item array's order, which this adapter owns — asking
-      // the consumer would get a callback written for node ids, and its `[]`
-      // is indistinguishable from "the root has no children".
-      if (parentId === null) {
-        return ref.current.filter((o) => getParent(o.id) === null).map((o) => o.id);
-      }
-      return getChildren(parentId) ?? [];
-    };
+    }).getChildren = (parentId) => childrenIn(ref.current, parentId);
   }
 
   return adapter;
