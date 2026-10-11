@@ -71,6 +71,7 @@ export function cubicBezierEasing(
 
 /** Memoized so two equal specs resolve to one function, not a fresh solver per call. */
 const bezierCache = new Map<string, EasingFn>();
+const BEZIER_CACHE_LIMIT = 256;
 
 function isBezier(spec: EasingSpec): spec is BezierEasing {
   return typeof spec === 'object' && spec !== null && 'bezier' in spec;
@@ -91,6 +92,8 @@ export function resolveEasing(spec?: EasingSpec): EasingFn {
     let fn = bezierCache.get(key);
     if (!fn) {
       fn = cubicBezierEasing(x1, y1, x2, y2);
+      // A handle being dragged resolves a new curve every pointer move.
+      if (bezierCache.size >= BEZIER_CACHE_LIMIT) bezierCache.delete(bezierCache.keys().next().value!);
       bezierCache.set(key, fn);
     }
     return fn;
