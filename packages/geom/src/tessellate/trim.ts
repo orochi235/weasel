@@ -24,10 +24,13 @@ function sampleAt(
   pl: Polyline, cum: Float64Array,
   A: Uint32Array, B: Uint32Array, T: Float32Array, W: Float32Array | undefined,
   dist: number,
+  /** For a cut landing exactly on a vertex: whether the vertex belongs to the
+   *  run after the sample (a head) or before it (a tail), so it is kept once. */
+  vertexFollows: boolean,
 ): Sample {
   const n = cum.length;
   let i = 1;
-  while (i < n - 1 && cum[i] < dist) i++;
+  while (i < n - 1 && (vertexFollows ? cum[i] <= dist : cum[i] < dist)) i++;
   const segStart = cum[i - 1];
   const segLen = cum[i] - segStart;
   const f = segLen > EPS ? (dist - segStart) / segLen : 0;
@@ -86,8 +89,8 @@ export function trimPolyline(
   const cutB = total - to;
   if (cutB - cutA <= EPS) return null;
 
-  const head = sampleAt(pl, cum, A, B, T, W, cutA);
-  const tail = sampleAt(pl, cum, A, B, T, W, cutB);
+  const head = sampleAt(pl, cum, A, B, T, W, cutA, true);
+  const tail = sampleAt(pl, cum, A, B, T, W, cutB, false);
 
   const points: number[] = [head.x, head.y];
   const aOut: number[] = [head.a];
