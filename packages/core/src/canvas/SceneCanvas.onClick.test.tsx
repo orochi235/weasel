@@ -30,11 +30,12 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-function setup() {
+function setup(seed?: (scene: Scene<D, L, P>) => void) {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   let id = '' as NodeId;
   scene.batch('seed', () => {
     id = scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 100, y: 100, width: 80, height: 60 } });
+    seed?.(scene);
   });
   const onClick = vi.fn();
   function Harness({ scene }: { scene: Scene<D, L, P> }) {
@@ -74,5 +75,24 @@ describe('SceneCanvas onClick', () => {
     const { onClick, click } = setup();
     click(350, 350);
     expect(onClick.mock.calls[0][0]).toBeNull();
+  });
+
+  it('reports the node painted on top where two overlap', () => {
+    let top = '' as NodeId;
+    const { onClick, click } = setup((scene) => {
+      top = scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', pose: { x: 120, y: 110, width: 80, height: 60 } });
+    });
+    click(140, 130);
+    expect(onClick.mock.calls[0]).toEqual([{ id: top, kind: expect.any(String) }, [top]]);
+  });
+
+  it('reports a child rather than the container around it', () => {
+    let child = '' as NodeId;
+    const { onClick, click } = setup((scene) => {
+      const box = scene.add({ kind: 'container', data: { kind: 'group' }, layer: 'main', pose: { x: 200, y: 200, width: 100, height: 100 } });
+      child = scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main', parent: box, pose: { x: 220, y: 220, width: 40, height: 40 } });
+    });
+    click(240, 240);
+    expect(onClick.mock.calls[0][0]).toEqual({ id: child, kind: expect.any(String) });
   });
 });

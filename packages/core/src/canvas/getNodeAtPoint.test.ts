@@ -2,23 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
 
 describe('makeGetNodeAtPoint', () => {
-  it('returns null when pickEvery returns null', () => {
+  it('returns null when the picker returns null', () => {
     const fn = makeGetNodeAtPoint(() => null);
     expect(fn(0, 0)).toBeNull();
   });
 
-  it('returns null when pickEvery returns an empty array', () => {
-    const fn = makeGetNodeAtPoint(() => []);
-    expect(fn(0, 0)).toBeNull();
-  });
-
-  it('returns the topmost id (first element) from an array', () => {
-    const fn = makeGetNodeAtPoint(() => ['a', 'b', 'c']);
-    const hit = fn(0, 0);
-    expect(hit?.id).toBe('a');
-  });
-
-  it('handles a single string return from pickEvery', () => {
+  it('reports the id the picker returns', () => {
     const fn = makeGetNodeAtPoint(() => 'node-1');
     const hit = fn(0, 0);
     expect(hit?.id).toBe('node-1');
@@ -59,19 +48,11 @@ describe('makeGetNodeAtPoint', () => {
     expect(hit?.data).toBe(data);
   });
 
-  it('passes world coords and the resolving camera through to pickEvery', () => {
+  it('passes world coords and the resolving camera through to the picker', () => {
     const pickEvery = vi.fn(() => null as string | null);
     const fn = makeGetNodeAtPoint(pickEvery);
     const camera = { scale: { x: 2, y: 2 } };
     fn(42, 99, camera);
     expect(pickEvery).toHaveBeenCalledWith(42, 99, camera);
-  });
-
-  it('passes the topmost id to nodeResolver, not all ids', () => {
-    const resolver = vi.fn(() => ({ kind: 'rect', pose: {}, data: {} }));
-    const fn = makeGetNodeAtPoint(() => ['top', 'bottom'], resolver);
-    fn(0, 0);
-    expect(resolver).toHaveBeenCalledWith('top');
-    expect(resolver).toHaveBeenCalledTimes(1);
   });
 });

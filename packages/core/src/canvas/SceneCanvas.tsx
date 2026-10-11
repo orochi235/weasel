@@ -1448,17 +1448,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Read through a ref by the chrome layers, which are built once.
   const planeOfNodeRef = useLatest(internalPlaneOfNode);
 
-  // Build getNodeAtPoint from the adapter + internalPickEvery. Canvas no longer
-  // synthesizes this itself — it accepts it as a prop (seam refactor).
-  // The node resolver classifies each hit's `data` directly via kindClassifier
-  // (the registry-backed kind function), plus getPose and getNode, matching the
-  // old Canvas synthesizer algorithm (see src/canvas/getNodeAtPoint.ts).
+  // Resolved through the select tool's own single-hit picker, so `onClick`,
+  // `onDoubleClick`, hover, and tool routing all name the node a click selects.
   //
   // When isPointerInteractive is supplied, the result is filtered: ids for
   // which the predicate returns false cause getNodeAtPoint to return null,
   // suppressing pointer events for non-interactive nodes (e.g. scoping-dim).
   const getNodeAtPoint = useMemo(() => {
-    if (!internalPickEvery) return undefined;
+    if (!internalPickBest) return undefined;
     const nodeResolver = (id: string) => {
       const node = adapter.getNode(id);
       const kind = node && kindClassifier ? kindClassifier(node.data) : 'unknown';
@@ -1466,7 +1463,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       const data = node ?? { id };
       return { kind, pose, data };
     };
-    const base = makeGetNodeAtPoint(internalPickEvery, nodeResolver);
+    const base = makeGetNodeAtPoint(internalPickBest, nodeResolver);
     if (!isPointerInteractive) return base;
     return (wx: number, wy: number, view?: PickView | null) => {
       const hit = base(wx, wy, view);
@@ -1474,7 +1471,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       if (isPointerInteractive(hit.id) === false) return null;
       return hit;
     };
-  }, [adapter, internalPickEvery, isPointerInteractive, kindClassifier]);
+  }, [adapter, internalPickBest, isPointerInteractive, kindClassifier]);
 
   // The presets this canvas runs with. Keyed on the ids, not the array, so an
   // inline `features={['draw']}` does not re-derive every render.
@@ -2551,9 +2548,7 @@ function GestureDispatcherMounter({
       () => selectionRef.current?.current ?? [],
       // Use the select tool's own topmost-hit resolution (`pickTopMostHit`,
       // which collapses parent/child) so a child body is classified by ITS
-      // OWN selection — not its parent's. The naive `pickEvery`-last fallback
-      // assumes a bottom-first hit order, which is wrong for adapters whose
-      // `pickEvery` returns topmost-first (it would resolve the parent).
+      // OWN selection — not its parent's.
       (wx: number, wy: number) => {
         if (pickBestRef.current) return pickBestRef.current(wx, wy);
         const ids = pickEveryRef.current?.(wx, wy) ?? [];

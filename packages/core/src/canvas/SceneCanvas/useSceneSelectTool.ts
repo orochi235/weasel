@@ -106,16 +106,13 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
 
 export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
   selectTool: ReturnType<typeof useSelectTool<Node<TData, TLayer, TPose>, TPose>>;
-  /** Hit-test resolved with the caller's `geometry.pickEvery` (or the
-   *  pose-walk default). Forward this to `<Canvas pickEvery={...}>` so the
-   *  dispatcher's `getNodeAtPoint` returns the same node the select tool
-   *  picked — drag routes keyed on `target.kind` then resolve to `'*'`
-   *  (move) instead of `'empty'` (marquee). */
+  /** Every id under the world point, back-to-front (topmost last), from the
+   *  caller's `geometry.pickEvery` or the pose-walk default. */
   pickEvery: (worldX: number, worldY: number, view?: PickView | null) => string[];
   /** Single-best hit under the world point, or null. Runs `pickEvery` then
    *  collapses parent/child overlap via `pickTopMostHit` — matches the id
    *  the select tool's pointerdown classifier would settle on for a bare
-   *  click. Exposed so debug HUDs can highlight the would-be selection. */
+   *  click. The canvas's `getNodeAtPoint` resolves through it. */
   pickBest: (worldX: number, worldY: number, view?: PickView | null) => string | null;
   /** World-space AABB of `id`, or null. Same as what the selection overlay +
    *  affordance hit-test need. Exposed so SceneCanvas can pass it to the
