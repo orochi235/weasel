@@ -183,16 +183,24 @@ Every package is published under `@weasel-js` and released together at one versi
 | `geom` | pure 2D geometry — affine, box, curve, polyline; polygon booleans under `./booleans` |
 | `gestures` | the gesture taxonomy, route grammars and matchers; no React, no DOM |
 | `history` | undo/redo with scoped sub-histories; no React, no DOM |
-| `react` | generic React hooks the other packages share: `useLatest`, `useStableByContent` |
+| `routing` | binding-to-action routing: the gesture dispatcher, the action registry, tool and contribution declaration |
+| `select` | selection as a value: which ids a press selects, with toggle, range and anchor rules; no React, no DOM |
+| `registry` | keyed registries you can enumerate and subscribe to; no React, no DOM |
+| `react` | generic React hooks the other packages share: `useLatest`, `useStableByContent`, `useVisibleRaf` |
 | `paint` | fills, strokes, gradients and dashes as plain data |
 | `text` | styled runs, kerned layout, wrapping and measurement |
 | `bidi` | the Unicode Bidirectional Algorithm (UAX #9) |
 | `font` | MSDF atlases, glyph metrics and runtime glyph rasterization |
+| `quantity` | numbers with units and a display, as text, spoken text, HTML and MathML; no React, no DOM |
+| `simulation` | an N-body integrator that takes d3-force's forces, and a hook that runs it on a frame loop |
 | `svg` | SVG import and export |
 | `modes` | app-level modality: capability tags, mode definitions, a mode registry |
+| `storage` | keyed async storage behind one adapter interface: IndexedDB, localStorage, the URL hash, memory |
+| `prefs` | a preferences schema, a store that validates, migrates and persists against it, and React hooks over the store |
 | `diagram` | node-link diagrams: ports on any node's perimeter, flowchart-style bodies |
 | `guides` | placement aids: grids, guide lines, alignment and snapping to them, container layout strategies |
 | `hud` | WebGL-rendered widgets composited into a canvas |
+| `kernel3d` | poses, an orbit camera, ray picking and screen-projected chrome over core's scene graph; hosts a renderer |
 | `cursor` | tool cursors as authored glyphs, baked to CSS or painted when too large |
 | `loupe` | a magnifier model: where it's aimed, how far it magnifies, what's under it |
 | `audio` | a Web Audio engine: voices, buses, lookahead scheduling, spatialization; no weasel dependencies |
@@ -200,6 +208,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `theme` | design tokens as CSS variables and a parallel TypeScript export |
 | `ui` | React chrome components for weasel apps |
 | `labkit` | React widgets for self-contained interactive lab pages |
+| `forge` | a component workshop on labkit: stories in isolated frames, controls and state in lab trials |
 
 ## Documentation
 

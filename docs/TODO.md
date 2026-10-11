@@ -614,21 +614,23 @@ Core five + Crop shipped. Remaining:
   makes sense as a package gets extracted, whatever its size. Read from the source, not from a
   trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
   for relative imports undercounts who uses what. In dependency order:
-  1. *Leaf math down.* `renderer/math/color.ts` and `core/gradient.ts` to `@weasel-js/paint`;
-     `mat3` and `viewToMat3` to `@weasel-js/geom`; `useVisibleRaf` to `@weasel-js/react`;
-     `poseFrame`, `pxExtent`, `mixed`, and `isPlainObject` down. Animation, text, paths, and the
-     renderer all reach into each other for these.
-  2. *Dissolve and rehome.* `features/groups`, `overlays`, `focus`, and `cursor` fold into the
-     core directories that use them. The pointer store and `SelectionContext` go to
-     `@weasel-js/routing/react`. The scene-free files in `features/text` (hit-testing, fitting,
-     range styles, `textToPath`) go to `@weasel-js/text`; path anchors and the paint-free
-     tessellate files go to geom.
+  1. *Leaf math down.* Done for the color parser, `gradient`, `mat3`, `viewToMat3`, and
+     `useVisibleRaf`. Left: `poseFrame`, `pxExtent`, `mixed`, and `isPlainObject`, which
+     `features/text/runs/rangeStyle.ts`, `textToPath.ts`, and the anchor-edit files wait on.
+     `poseFrame` should go before or after the move action's phase split, not during it.
+  2. *Dissolve and rehome.* Done for `focus`, `cursor`, the pointer store, `SelectionContext`,
+     text hit-testing and fitting, and path anchors. Left: `features/groups` folds into
+     `core/scene` and `features/overlays` into `core/viewport` after it (`core/` may not import
+     `features/`, and `overlays` needs `composeRectPose` from `groups`); `move.ts` imports
+     `groups`, so this waits on the phase split. `runs/effectiveRangeStyle.ts` and `flagRange.ts`
+     follow `rangeStyle.ts` into `@weasel-js/text`. The paint-free tessellate files (`dash`,
+     `vertexWidths`, `metric`, `insets`) go to geom or to the stroke package of step 3,
+     whichever that step settles.
   3. *A stroke package over geom and paint.* `features/paths/tessellate/stroke.ts`,
      `strokeToPath`, `markerSites`, and `core/strokeMarkers`, `strokeMarkerShapes`, `markerInset`.
      The renderer, `features/paths`, and core all import these today, which is the cycle.
-  4. *Simulation and DOM text editing, under core.* `features/simulation` (root entry free of
-     React: `packages/diagram` takes `createSimulation` from `@weasel-js/core/math`), and
-     `useTextEdit` with `domRuns` and `domOffsets`, which need React and no scene.
+  4. *DOM text editing, under core.* `useTextEdit` with `domRuns` and `domOffsets`, which need
+     React and no scene. (`@weasel-js/simulation` is out.)
   5. *The renderer, under core.* It imports `core/paintKinds` and the stroke code as well as
      `core/gradient`. Gather `paintKinds`, `fillInPoseFrame`, `features/patterns`, `images`,
      `meshPaint`, and `text/textCommand.ts` under `renderer/` first. `paintKinds.ts` subscribes a
@@ -648,6 +650,11 @@ Core five + Crop shipped. Remaining:
   Staying in core: `features/viewports` (`CanvasView` is built on it), `chrome-caps`
   (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 5,
   `selection/overlay.ts`, and the scene-bound text and path layers.
+
+- **(P3) geom's `Mat3` and `mat3` are different matrices.** `Mat3` and the free functions beside
+  it (`identity`, `multiply`, `invert`) are the six-number affine; `mat3` and `GlMat3`, which
+  moved in from core's renderer, are the nine-element column-major matrix a GL uniform takes.
+  Both are exported from `@weasel-js/geom`'s root, a capital letter apart.
 
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
