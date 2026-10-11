@@ -7,20 +7,45 @@
 
 .tree {
   /* The fold mark's width (DisclosureMark's 13px) plus the row gap: the gutter a mark hangs in. */
-  --tree-gutter: calc(13px + var(--wzl-space-2));
+  --tree-mark: 13px;
+  --tree-gutter: calc(var(--tree-mark) + var(--wzl-space-2));
   user-select: none;
   -webkit-user-select: none;
   width: 100%;
 }
 
-/* Folded by its branches' leading glyphs, the gutter is as wide as one, and the glyph hangs in it as the mark would. */
+/* Folded by its branches' leading glyphs, the gutter holds one and a sliver after it, and the glyph hangs in it as the mark would. */
 .tree[data-fold='leading'] {
-  --tree-gutter: var(--wzl-tree-fold-size, 16px);
+  --tree-mark: var(--wzl-tree-fold-size, 16px);
+  --tree-gutter: calc(var(--tree-mark) + var(--wzl-space-1));
 }
 
 /* One gutter, so a child's mark sits under its parent's label. */
 .group {
   padding-inline-start: var(--wzl-tree-indent, var(--tree-gutter));
+}
+
+/* A bracket down the side of an open branch's rows: straight from under the branch's mark, and curving in at its
+   foot. The foot's edge is there, unseen, so the curve keeps its weight to the turn's middle and stops. */
+.tree[data-guides] .group {
+  position: relative;
+}
+
+/* The bracket says what a branch holds, so a row with no mark of its own need not stand a whole gutter in to say it. */
+.tree[data-guides] .item:not([aria-expanded]) > .row {
+  padding-inline-start: calc(var(--tree-gutter) / 2);
+}
+
+.tree[data-guides] .group::before {
+  content: '';
+  position: absolute;
+  inset-block: 0 var(--wzl-space-1);
+  inset-inline-start: calc(var(--tree-mark) / 2 - 0.5px);
+  inline-size: 10px;
+  border-inline-start: 1px solid var(--wzl-tree-guide, var(--wzl-fg-subtle));
+  border-block-end: 1px solid transparent;
+  border-end-start-radius: 10px;
+  pointer-events: none;
 }
 
 .item {
@@ -90,8 +115,8 @@
   cursor: pointer;
   width: var(--wzl-tree-fold-size, 16px);
   justify-content: center;
-  /* The glyph fills the gutter, so the row's gap after it is taken back: the label starts where the gutter ends. */
-  margin-inline: calc(-1 * var(--tree-gutter)) calc(-1 * var(--wzl-space-2));
+  /* The row's gap is wider than the gutter leaves after the glyph: the label starts where the gutter ends. */
+  margin-inline: calc(-1 * var(--tree-gutter)) calc(var(--wzl-space-1) - var(--wzl-space-2));
 }
 
 .label {

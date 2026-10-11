@@ -85,7 +85,7 @@ test('a consumer height on the modal still decides the pane', () => {
   }
 });
 
-test('a nested rail entry steps down from the color of the entry it sits in', () => {
+test('a nested rail entry keeps its entry\'s color and is set in a lighter weight than a top-level one', () => {
   const schema: PrefGroup = {
     name: 'Preferences',
     children: { ...SCHEMA.children, text: { name: 'Text', children: rows('text', 2) } },
@@ -94,14 +94,10 @@ test('a nested rail entry steps down from the color of the entry it sits in', ()
     <PrefsDialog isOpen onOpenChange={() => {}} schema={schema} values={{}} onChange={() => {}} layout="rail" />,
   );
   const entry = (name: string) => screen.getByRole('button', { name });
-  const nameColor = (name: string) => getComputedStyle(entry(name).querySelector('span')!).color;
+  const nameStyle = (name: string) => getComputedStyle(entry(name).querySelector('span')!);
   expect(entry('Snapping')).not.toHaveAttribute('aria-current');
   expect(entry('Text')).not.toHaveAttribute('aria-current');
-  expect(nameColor('Text')).toBe(getComputedStyle(entry('Text')).color);
-  const channels = (css: string) => css.match(/[\d.]+/g)!.map(Number);
-  // The entry's color serializes as rgb(0–255); the stepped-down name as color(srgb 0–1 / alpha).
-  const [r, g, b, alpha] = channels(nameColor('Snapping').replace('srgb', ''));
-  const parent = channels(getComputedStyle(entry('Snapping')).color);
-  [r, g, b].forEach((c, i) => expect(c * 255).toBeCloseTo(parent[i], 0));
-  expect(alpha).toBeLessThan(1);
+  expect(nameStyle('Snapping').color).toBe(getComputedStyle(entry('Snapping')).color);
+  expect(nameStyle('Snapping').color).toBe(nameStyle('Text').color);
+  expect(Number(nameStyle('Snapping').fontWeight)).toBeLessThan(Number(nameStyle('Text').fontWeight));
 });

@@ -135,6 +135,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const selection = useEditorSelection(schema, setExpanded);
   const [structureWidth, setStructureWidth] = useState(300);
   const [attributesWidth, setAttributesWidth] = useState(320);
+  const [asideWidth, setAsideWidth] = useState(240);
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
 
   const latest = useLatest({ schema, onChange, paths: selection.paths });
@@ -329,7 +330,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   return (
     // Capture: React Aria's fields and tree stop a keydown from bubbling past them.
     <div className={[s.editor, className].filter(Boolean).join(' ')}
-      style={{ '--structure-w': `${structureWidth}px`, '--attributes-w': `${attributesWidth}px` } as CSSProperties}
+      style={{ '--structure-w': `${structureWidth}px`, '--attributes-w': `${attributesWidth}px`, '--aside-w': `${asideWidth}px` } as CSSProperties}
       onKeyDownCapture={(e) => {
       const to = historyKey(e);
       if (to) {
@@ -372,6 +373,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           else reveal(path === null ? [] : [path]);
         }} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} />
       <ExportPanel schema={schema} types={types} changes={changes} onSubmit={submit} />
+      <ResizeHandle className={s.asideHandle} invert value={asideWidth} min={120} max={640} onInput={setAsideWidth} ariaLabel="Resize sidebar" />
+      <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar" />
     </div>
   );
 }

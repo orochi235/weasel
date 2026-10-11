@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from 'react';
 import { prefValueAtPath, type PrefGroup, type PrefPath, type PrefsStore } from '@weasel-js/prefs';
-import { Button } from '../Button';
+import { Icon } from '../../icons';
+import { ToolButton } from '../ToolButton';
 import { PrefsDialog } from '../Prefs';
 import { setAtPath } from '../SelectionPanel';
 
@@ -51,12 +52,12 @@ export function useEditorPrefs(store: PrefSchemaEditorPrefs | undefined): Editor
   };
 }
 
-/** The bar's button for the editor's own settings, and the dialog it opens. */
+/** The bar's tool for the editor's own settings, and the dialog it opens. */
 export function EditorPrefsButton({ prefs }: { prefs: EditorPrefs }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>Preferences</Button>
+      <ToolButton icon={<Icon name="tune" />} label="Preferences" onClick={() => setOpen(true)} />
       <PrefsDialog isOpen={open} onOpenChange={setOpen} layout="list" schema={PREF_SCHEMA_EDITOR_PREFS} values={prefs.values} onChange={prefs.set} />
     </>
   );

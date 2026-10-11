@@ -329,8 +329,9 @@
   flex: 0 0 var(--wzl-control-h-sm);
 }
 
-.railSub:not(.railOpen, .railInView) .railName {
-  color: var(--wzl-fg-muted);
+/* An entry under another is set lighter, and keeps the text's own color. */
+.railSub .railName {
+  font-weight: var(--wzl-font-weight-light);
 }
 
 .railOpen,
@@ -347,7 +348,7 @@
 
 /* Choosing it opens the first entry under it: it has no page of its own to show. */
 .railPasses .railName {
-  font-style: italic;
+  color: var(--wzl-fg-muted);
 }
 
 .railName {
