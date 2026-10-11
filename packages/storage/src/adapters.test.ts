@@ -137,6 +137,33 @@ describe('localStorageAdapter — another tab clearing the store', () => {
   });
 });
 
+describe('urlHashAdapter', () => {
+  const setHash = (json: string): void => {
+    window.history.replaceState(null, '', `#${encodeUrlHash(json)}`);
+  };
+
+  it('reads a fragment that is JSON but not a record map as empty', async () => {
+    for (const json of ['null', '7', '"text"', '[1]']) {
+      setHash(json);
+      expect(await urlHashAdapter.list('')).toEqual([]);
+      expect(await urlHashAdapter.get('k')).toBeUndefined();
+      await urlHashAdapter.set('k', 1);
+      expect(await urlHashAdapter.get('k')).toBe(1);
+    }
+  });
+
+  it('skips an entry that is not a stored string', async () => {
+    setHash('{"a":"1","b":{"nested":true}}');
+    expect(await urlHashAdapter.list('')).toEqual([['a', 1]]);
+  });
+
+  it('keeps the history state a router left', async () => {
+    window.history.replaceState({ route: 'lab' }, '', '#');
+    await urlHashAdapter.set('k', 1);
+    expect(window.history.state).toEqual({ route: 'lab' });
+  });
+});
+
 describe('noneAdapter', () => {
   it('stores nothing', async () => {
     await noneAdapter.set('k', 'v');

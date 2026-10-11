@@ -4,15 +4,25 @@ import { decodeUrlHash, encodeUrlHash } from './urlHash';
 
 const URL_HASH_GUARD = typeof window !== 'undefined';
 
+/** The fragment's records, each still the JSON text it is stored as. Anyone
+ *  can write a fragment, so whatever is not a map of strings reads as absent.
+ *  No prototype, so a record may be named for anything an object inherits. */
 function readHashMap(): Record<string, string> {
-  if (!URL_HASH_GUARD) return {};
+  const map = Object.create(null) as Record<string, string>;
+  if (!URL_HASH_GUARD) return map;
   const raw = decodeUrlHash(window.location.hash.replace(/^#/, ''));
-  if (!raw) return {};
+  if (!raw) return map;
+  let parsed: unknown;
   try {
-    return JSON.parse(raw) as Record<string, string>;
+    parsed = JSON.parse(raw);
   } catch {
-    return {};
+    return map;
   }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return map;
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value === 'string') map[key] = value;
+  }
+  return map;
 }
 
 /** What each live subscription last saw, refreshed on this page's own writes
@@ -22,8 +32,8 @@ const hashSubscribers = new Set<{ last: Record<string, string> }>();
 function writeHashMap(map: Record<string, string>): void {
   if (!URL_HASH_GUARD) return;
   const encoded = encodeUrlHash(JSON.stringify(map));
-  window.history.replaceState(null, '', `#${encoded}`);
-  for (const sub of hashSubscribers) sub.last = { ...map };
+  window.history.replaceState(window.history.state, '', `#${encoded}`);
+  for (const sub of hashSubscribers) sub.last = Object.assign(Object.create(null), map);
 }
 
 /** Persist into the URL fragment, so the page's link carries its state and can
