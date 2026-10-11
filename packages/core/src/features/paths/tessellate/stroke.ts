@@ -1,4 +1,4 @@
-import type { Path } from '@weasel-js/core';
+import type { Path } from '@weasel-js/geom';
 import type { ScreenLength, Stroke } from '@weasel-js/paint';
 import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';

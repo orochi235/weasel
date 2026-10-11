@@ -2839,8 +2839,7 @@ one dead `const` and four stale disable directives.
 
 - **(P3) Manifest and check-script loose ends.** `@weasel-js/labkit` lists `@weasel-js/kernel3d` in
   `dependencies` and only `packages/labkit/examples/3d-lab/`, which is not published, imports it.
-  `@weasel-js/d3` declares a `react` peer and no source file imports React. Seven core source files
-  import core's own barrel by package name for a type that lives in `@weasel-js/geom`.
+  `@weasel-js/d3` declares a `react` peer and no source file imports React.
   `check:frame-loops` reads only `requestAnimationFrame`: a `setInterval` loop passes, and its
   allowlist is per file, so a new loop in an allowlisted file passes too. `check:spacing` and `check:controls` walk `packages/ui/src` `*.css`
   only, not labkit's `.less` or the apps.

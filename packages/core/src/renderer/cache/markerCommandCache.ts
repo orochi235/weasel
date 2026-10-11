@@ -12,7 +12,7 @@
  * paint reuses the heads.
  */
 
-import type { Path } from '@weasel-js/core';
+import type { Path } from '@weasel-js/geom';
 import type { FillStyle, MarkerRef, Stroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from '../DrawCommand';
 import {

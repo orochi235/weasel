@@ -1,5 +1,5 @@
 import type { ColorSpace, Stroke, FillStyle, GradientUnits, GradStop } from '@weasel-js/paint';
-import type { Path } from '@weasel-js/core';
+import type { Path } from '@weasel-js/geom';
 import { getPaintKind } from 'core/paintKinds';
 import type { PaintBindContext, PaintResources } from 'core/paintKinds';
 import { createPaintResources } from './paintResources';

@@ -9,8 +9,8 @@
  * registers the ones requested via `defaultTools`.
  */
 import { useRef } from 'react';
-import { asNodeId } from 'core/scene/types';
-import { boundsOfPath } from '@weasel-js/geom';
+import { asNodeId, type Node as SceneNode, type NodeId, type Scene } from 'core/scene/types';
+import { boundsOfPath, type Path, type PolygonPath } from '@weasel-js/geom';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 import { useEllipseTool } from 'tools/builtin/ellipse/useEllipseTool';
 import { useLassoTool } from 'tools/builtin/lasso/useLassoTool';
@@ -21,7 +21,10 @@ import { usePolygonTool } from 'tools/builtin/polygon/usePolygonTool';
 import { useRectTool } from 'tools/builtin/rect/useRectTool';
 import { useStarTool } from 'tools/builtin/star/useStarTool';
 import { useTextTool } from 'tools/builtin/text/useTextTool';
-import type { AnyTool, FillStyle, InsertToolOptions, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode, Stroke } from '@weasel-js/core';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
+import type { AnyTool } from 'tools/overlayBinding';
+import type { InsertToolOptions } from 'tools/builtin/shared/insertToolOptions';
+import type { LassoHitMode } from 'core/adapters/types';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
 

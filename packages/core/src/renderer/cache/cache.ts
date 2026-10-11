@@ -1,4 +1,4 @@
-import type { Path } from '@weasel-js/core';
+import type { Path } from '@weasel-js/geom';
 import { type Mesh, tessellate } from '@weasel-js/geom/tessellate';
 
 let cache = new WeakMap<Path, Mesh>();
