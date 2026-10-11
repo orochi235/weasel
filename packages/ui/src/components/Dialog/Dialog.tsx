@@ -51,8 +51,8 @@ export type DialogProps = Omit<
  * for controlled visibility, or omit both and use a `<DialogTrigger>` from
  * `react-aria-components` upstream of this component.
  *
- * Escape, click-outside, focus trap, and scroll lock all come from the
- * underlying primitives. `stance` and `tone` work as on `<PropertyPanel>` —
+ * Escape, focus trap, and scroll lock all come from the underlying
+ * primitives. A click outside closes it only with `isDismissable`. `stance` and `tone` work as on `<PropertyPanel>` —
  * a destructive confirm is `stance="danger"`.
  */
 export function Dialog(props: DialogProps) {
