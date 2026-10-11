@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useState } from 'react';
+import { Fragment, type ReactNode, type RefObject, useState } from 'react';
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, type BarOrientation } from '../Bar/BarLayout';
@@ -15,6 +15,10 @@ export interface PrefsPaneProps {
   path: string;
   /** The pane's scroll container, for the rail's scroll spy. */
   scrollRef: RefObject<HTMLDivElement | null>;
+  /** Which page this is. Rows start fresh when it changes, so one page's row state (a half-typed entry) never
+   *  shows on another whose row has the same key. Default `path`; an owner whose `path` moves while the page
+   *  stays the same one, as under a drag, names the page itself. */
+  pageKey?: string;
   className?: string;
 }
 
@@ -34,7 +38,7 @@ const within = (path: string, selected: string | null | undefined): boolean =>
  * alternative to.
  */
 export function PrefsPane(props: PrefsPaneProps) {
-  const { ctx, group, path, scrollRef, className } = props;
+  const { ctx, group, path, scrollRef, pageKey = path, className } = props;
   const entries = Object.entries(group.children);
   // A fragment's rows are rows among the leaves', not a block after them.
   const inRows = ([, child]: Entry): boolean => isPrefLeaf(child) || child.as === 'fragment';
@@ -49,8 +53,10 @@ export function PrefsPane(props: PrefsPaneProps) {
           <p className={s.paneDesc}>{group.description}</p>
         )}
       </div>
-      {leaves.length > 0 && <div className={s.rows}>{paneChildren(ctx, leaves, path, 0)}</div>}
-      {paneChildren(ctx, groups, path, 0)}
+      <Fragment key={pageKey}>
+        {leaves.length > 0 && <div className={s.rows}>{paneChildren(ctx, leaves, path, 0)}</div>}
+        {paneChildren(ctx, groups, path, 0)}
+      </Fragment>
     </div>
   );
 }

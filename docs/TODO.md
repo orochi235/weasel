@@ -1559,13 +1559,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   drawn state for a mixed list or map; `SelectionPanel` draws the word `Mixed` in place of the
   editor.
 
-- **(P3) `PrefsForm` rail layout: a page that opens without a rail click keeps the last page's row
-  state.** `RailLayout` renders `PrefsPane` unkeyed and `paneChildren` keys rows by child key, not
-  path, so a row with the same key on two pages (`general.name`, `export.name`) keeps its component
-  state across the change: a tab strip's picked tab, a `MapEditor`'s half-typed entry. Keying the
-  pane's contents by the open page fixes it; check that a drag which changes the open page
-  (`useDropMotion`, `useDropFrame`) survives the remount.
-
 - **(P3) `PrefsForm` rail layout: the pane draws a group's leaves before its groups, where columns
   and list keep schema order.** `PrefsPane` (`packages/ui/src/components/Prefs/PrefsPane.tsx`)
   filters leaves and fragments out ahead of the groups, so children `{ light: tab, note: leaf, dark:

@@ -112,6 +112,24 @@ describe('PrefsForm rail layout', () => {
     expect(screen.queryByRole('checkbox', { name: 'Show grid' })).not.toBeInTheDocument();
   });
 
+  it('starts a page\'s rows fresh, whatever state a row with the same key held on the last page', async () => {
+    const names = (): PrefGroup['children'] => ({
+      names: { kind: 'map', name: 'Names', description: '', default: {}, item: { kind: 'string', name: 'Name', description: '', default: '' } },
+    });
+    const schema: PrefGroup = { name: 'Prefs', children: {
+      general: { name: 'General', children: names() },
+      export: { name: 'Export', children: names() },
+    } };
+    const user = userEvent.setup();
+    render(<PrefsForm schema={schema} onChange={() => {}} layout="rail" />);
+    const halfTyped = () => screen.queryAllByRole('textbox', { name: /key$/ });
+    await user.click(screen.getByRole('button', { name: /^Add/ }));
+    expect(halfTyped()).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: /Export/ }));
+    expect(halfTyped()).toHaveLength(0);
+  });
+
   it('reports the chosen section to a controlled owner without moving on its own', async () => {
     const user = userEvent.setup();
     const onSectionChange = vi.fn();

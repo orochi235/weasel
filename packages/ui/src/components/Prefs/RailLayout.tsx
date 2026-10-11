@@ -147,7 +147,8 @@ export function RailLayout(props: PrefsFormProps & {
           <NoMatches query={query} onClear={onClearFilter} />
         </div>
       ) : (
-        <PrefsPane ctx={ctx} group={group} path={page} scrollRef={scrollRef} />
+        // Keyed by the form's own open page: `page` moves while that page is dragged, which must not remount it.
+        <PrefsPane ctx={ctx} group={group} path={page} pageKey={open} scrollRef={scrollRef} />
       )}
     </div>
   );
