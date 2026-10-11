@@ -520,6 +520,12 @@
   max-inline-size: 100%;
 }
 
+/* A checkbox needs only its own width beside the label, not a field's. */
+.railLayout[data-across='2'] .rowControl:has(> input[type='checkbox']:only-child) {
+  flex-basis: auto;
+  min-inline-size: 0;
+}
+
 /* Anything in the grid that is not one leaf's row is a group, and runs the full width. */
 .railLayout[data-across='2'] .rows > :is(:not(.rowSlot), [data-wide]) {
   grid-column: 1 / -1;

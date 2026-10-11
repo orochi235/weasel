@@ -812,13 +812,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   grid gap above the attributes pane, and the Key/Kind rows are wider than the attribute form
   under them. Seen on `#/dev/prefs` at 1440×900.
 
-- **(P3) `PrefsForm` two across: a checkbox drops under its label, and a spanning leaf's rows line up
-  with neither column.** Seen 2026-10-11 in headless Chromium, rail layout, `rowsAcross={2}`, pane
-  443px wide. A row's control asks for 80px (`--wzl-prefs-control-min`) beside its label, so
-  "Show rulers ⓘ" with a 14px checkbox wraps the checkbox onto a second line while "Show grid"
-  beside it does not; a checkbox wants a basis of its own size. An object or list leaf spans
-  both columns, and its inner rows start at about 60% of the pane, under neither column's labels
-  nor its controls.
+- **(P3) `PrefsForm` two across: a spanning leaf's rows line up with neither column.** Seen
+  2026-10-11 in headless Chromium, rail layout, `rowsAcross={2}`, pane 443px wide. An object or
+  list leaf spans both columns, and its inner rows start at about 60% of the pane, under neither
+  column's labels nor its controls.
 
 - **(P2) `PrefSchemaEditor` layout by dragging, what is left.** A `label` is a kind only `PrefsForm`'s rail
   and columns rows draw: `SelectionPanel` and labkit's `ControlPanel` show it as an unknown kind,
