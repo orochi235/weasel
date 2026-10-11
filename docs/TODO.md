@@ -1380,16 +1380,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   version from `CanvasExtensionApi.getPaintedVersion`, compared before and after the loupe's own
   request, is one candidate), or a public `refresh()` on the handle that the consumer calls.
 
-- **(P3) theme-editor: discarding a draft that does not derive throws away every other unsaved
-  edit.** When a stored draft fails to derive, `ThemeWorkbench`
-  (`apps/theme-editor/src/ThemeWorkbench.tsx`) offers "Discard the draft and reload from disk" for a
-  saved theme, and "Discard this unsaved theme" for one with no file. The editor no longer stores a
-  draft that does not derive, so this screen is now reached only through a draft stored by an older
-  build or one that stopped deriving because the theme it extends changed. In that second case one
-  inherited reference is the whole problem and the user loses everything; the screen could open the
-  Pins layer on the last stored draft with the failing reference named, instead of offering only a
-  discard.
-
 - **(P2) LayerList: rows under a card are `role="row"` with no `treegrid` ancestor.** When a level
   holds any item with a body, `Level` in `packages/ui/src/components/LayerList/LayerList.tsx`
   renders it as a `PropertyList` with no role, and a nested level's container is `role="none"`, so

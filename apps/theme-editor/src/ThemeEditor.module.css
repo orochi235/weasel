@@ -401,3 +401,34 @@
   list-style: none;
   font-size: calc(var(--wzl-font-size-sm) + 1px);
 }
+
+.repair {
+  margin-top: 10px;
+}
+
+.repairRows {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.repairRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.repairRow[data-suspect] .repairToken {
+  color: var(--wzl-danger);
+}
+
+.repairToken {
+  min-width: 16ch;
+  font-family: var(--wzl-font-mono);
+}
+
+.repairNote {
+  color: var(--wzl-fg-muted);
+}

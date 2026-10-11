@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -47,6 +47,33 @@ describe('<ThemeWorkbench>', () => {
     renderBench({ start: { definition: { ...weasel, pins: { ...weasel.pins, fg: '{nope}' } }, baseHash: 'h1' } });
     expect(screen.getByText(/weasel does not derive/)).toBeInTheDocument();
     expect([...items.keys()]).toEqual([]);
+  });
+
+  describe('a draft that does not derive', () => {
+    const broken = () => renderBench({ start: { definition: { ...weasel, pins: { ...weasel.pins, fg: '{nope}' } }, baseHash: 'h1' } });
+
+    it('lists its pins for repair, the one the error names first', () => {
+      broken();
+      const rows = within(screen.getByRole('region', { name: 'Pins' })).getAllByRole('listitem');
+      expect(rows[0]).toHaveTextContent('fg');
+      expect(rows[0]).toHaveTextContent('named in the error');
+      expect(within(rows[0]!).getByRole('textbox', { name: 'fg' })).toHaveValue('{nope}');
+      expect(rows[1]).not.toHaveTextContent('named in the error');
+    });
+
+    it('opens the editor on the same draft once the pin at fault is removed', () => {
+      broken();
+      fireEvent.click(screen.getByRole('button', { name: 'Remove pin fg' }));
+      expect(screen.queryByText(/does not derive/)).not.toBeInTheDocument();
+      // One pin fewer than the 23 the theme ships: every other edit is still here.
+      expect(screen.getByRole('button', { name: /^Ramps/ })).toBeInTheDocument();
+    });
+
+    it('opens the editor once the pin at fault is given a value that derives', () => {
+      broken();
+      fireEvent.change(screen.getByRole('textbox', { name: 'fg' }), { target: { value: '#101010' } });
+      expect(screen.queryByText(/does not derive/)).not.toBeInTheDocument();
+    });
   });
 
   it('reports how many own tokens a pin overrides, and each layer in the rail', () => {

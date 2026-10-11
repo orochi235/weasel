@@ -11,6 +11,7 @@ import styles from './ThemeEditor.module.css';
 import { ThemePreview, type PreviewVariant } from './ThemePreview';
 import { TokenLayer } from './TokenLayer';
 import type { ThemeApi } from './theme/api';
+import { PinRepair } from './PinRepair';
 import { deriveDraft, type DerivedDraft } from './theme/draft';
 import { clearDraft, persistDraft, type StoredDraft } from './theme/draftStorage';
 import { EXPORTS, download, exportFile } from './theme/exportFiles';
@@ -192,6 +193,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
           </div>
         </div>
         {reloadError && <p role="status" className={styles.status}>{reloadError}</p>}
+        <PinRepair draft={draft} error={error ?? ''} onChange={history.update} />
       </LabShell>
     );
   }
