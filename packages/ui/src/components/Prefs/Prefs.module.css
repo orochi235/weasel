@@ -486,13 +486,19 @@
     minmax(180px, 260px);
 }
 
-/* `rowsAcross={2}`: two rows side by side. */
-.railLayout[data-across='2'] .rows {
+/* `rowsAcross={2}`: two rows side by side. A leaf that spans both keeps to them, its label in the first column
+   and its control in the second; a stacked one has the whole line under its label already. */
+.railLayout[data-across='2'] :is(.rows, [data-wide] > .row:not(.rowStacked)) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   /* Wide between the columns: a row's control ends where the next row's label begins. */
   gap: var(--wzl-space-3) var(--wzl-prefs-across-gap, 28px);
   align-items: start;
+}
+
+/* The spanning leaf's label reads on the line of its control's first row. */
+.railLayout[data-across='2'] [data-wide] > .row:not(.rowStacked) {
+  align-items: baseline;
 }
 
 /* The label sits beside its control while both fit, and the control drops
