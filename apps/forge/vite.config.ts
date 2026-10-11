@@ -7,7 +7,7 @@ import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { repoThemeStoreOptions } from '../../scripts/theme-store.ts';
 import { themeStorePlugin } from '../../scripts/vite-theme-store.ts';
 import { localWake } from '../../scripts/vite-wake.ts';
-import { forgeAliases, frameConfig, shellConfig, stories } from './viteShared.ts';
+import { forgeAliases, frameConfig, frameStyles, shellConfig, stories } from './viteShared.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 
 const repoRoot = resolve(import.meta.dirname, '../..');
@@ -22,7 +22,7 @@ export default defineConfig(({ command, isPreview }) => ({
     react(),
     traitSchemasPlugin({ repoRoot }),
     themeStorePlugin(repoThemeStoreOptions(repoRoot)),
-    forge({ stories, frameConfig, shellConfig }),
+    forge({ stories, frameConfig, shellConfig, frameStyles }),
     localWake(),
   ],
   server: { port: ports.forge, strictPort: true, host: '::' },

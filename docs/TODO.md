@@ -2135,13 +2135,6 @@ only story runner in the repo.
   and the index page header both read it. The table is data about this repo and belongs in
   `ShellConfig`, supplied by `apps/forge`, with the title-segment rule as the default.
 
-- **(P3) forge: a frame config has nowhere to put CSS meant for frame documents only.** The workshop
-  page imports the frame config too, so `apps/forge/forge.frame.tsx`'s `./frame.css`, whose one rule
-  is `html, body { background: var(--wzl-surface); color: var(--wzl-fg) }`, styles the workshop
-  document as well as every frame. Ruled 2026-10-11: the workshop page does not take that rule, and
-  CSS meant for frames loads through the frame entry alone. That leaves moving the rule to something
-  only `frame-entry.js` loads; it already imports `@weasel-js/forge/frame.css`.
-
 - **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
   three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any
   non-CSS file even when `fullReload` is off. The page's own stamp in `~/src/wake/src/client.ts` is

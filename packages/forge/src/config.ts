@@ -24,7 +24,7 @@ export interface ShellConfig {
   path?: string;
 }
 
-/** A frame config module's default export. The workshop page imports it as well as every frame document, so CSS it imports reaches both. */
+/** A frame config module's default export. The workshop page imports it as well as every frame document, so CSS it imports reaches both; the plugin's `frameStyles` is for CSS meant for frames alone. */
 export function defineFrameConfig(config: FrameSetup): FrameSetup {
   return config;
 }

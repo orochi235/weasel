@@ -1,6 +1,5 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/labkit/styles.css';
-import './frame.css';
 import { type Decorator, defineFrameConfig } from '@weasel-js/forge';
 import type { LabMode } from '@weasel-js/labkit';
 import { fontRule, loadWebFonts } from './fonts';

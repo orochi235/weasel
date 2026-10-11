@@ -20,6 +20,8 @@ export interface ForgeOptions {
   frameConfig?: string;
   /** Path to the shell config module, relative to the vite root. Only the workshop page imports it. Optional. */
   shellConfig?: string;
+  /** Stylesheets for frame documents alone, relative to the vite root: a page background, a body font. The workshop page never loads them. */
+  frameStyles?: string[];
   /** Alias Storybook's runtime modules to forge shims. Default true. */
   storybookShims?: boolean;
 }
@@ -155,7 +157,7 @@ import.meta.hot?.accept('virtual:forge/importers.js', (next) => {
 `,
     'frame-entry.js': () => `import { mountFrame } from '@weasel-js/forge/frame';
 import '@weasel-js/forge/frame.css';
-import index from 'virtual:forge/index.js';
+${(options.frameStyles ?? []).map((path) => `import ${JSON.stringify(resolve(root, path))};\n`).join('')}import index from 'virtual:forge/index.js';
 import importers from 'virtual:forge/importers.js';
 import setup from 'virtual:forge/frame-config.js';
 

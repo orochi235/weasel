@@ -57,6 +57,11 @@ The vite plugin takes two optional config modules:
 forge({ stories: ['src/**/*.stories.tsx'], frameConfig: 'forge.frame.tsx', shellConfig: 'forge.shell.tsx' });
 ```
 
+The workshop page imports the frame config too, so a stylesheet it imports
+styles the workshop as well. CSS meant for frame documents alone, such as a
+page background on `html, body`, goes in `frameStyles`, a list of stylesheet
+paths that only the frame document loads.
+
 Editing a story file reloads that story in every trial showing it, with the
 trial's config and state kept; the page itself stays.
 

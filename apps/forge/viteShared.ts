@@ -11,6 +11,7 @@ export const stories = [
 
 export const frameConfig = 'apps/forge/forge.frame.tsx';
 export const shellConfig = 'apps/forge/forge.shell.tsx';
+export const frameStyles = ['apps/forge/frame.css'];
 
 /** The repo's package aliases, plus the stylesheet entries that only a built package has. */
 export function forgeAliases(repoRoot: string): ViteAlias[] {

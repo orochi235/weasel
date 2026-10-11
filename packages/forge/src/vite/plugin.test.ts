@@ -364,7 +364,9 @@ describe('forge vite plugin, with a config module per realm', () => {
     server = await createServer({
       root,
       configFile: false,
-      plugins: [forge({ stories: ['*.stories.tsx'], frameConfig: 'forge.frame.ts', shellConfig: 'forge.shell.ts' })],
+      plugins: [
+        forge({ stories: ['*.stories.tsx'], frameConfig: 'forge.frame.ts', shellConfig: 'forge.shell.ts', frameStyles: ['frame.css'] }),
+      ],
       server: { middlewareMode: true },
       appType: 'custom',
       optimizeDeps: { noDiscovery: true },
@@ -393,6 +395,12 @@ describe('forge vite plugin, with a config module per realm', () => {
     expect(shell).toContain('virtual:forge/importers.js');
     expect(frame).toContain('virtual:forge/frame-config.js');
     expect(frame).not.toContain('shell-config');
+  });
+
+  it('imports a frame stylesheet from the frame entry alone', async () => {
+    const sheet = `import ${JSON.stringify(join(root, 'frame.css'))};`;
+    expect(await entry('frame-entry.js')).toContain(sheet);
+    expect(await entry('shell-entry.js')).not.toContain('frame.css');
   });
 
   it('accepts a story edit in both entries: the workshop reloads the story, a frame reloads itself', async () => {
