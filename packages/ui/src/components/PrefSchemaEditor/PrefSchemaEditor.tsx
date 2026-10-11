@@ -313,7 +313,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       if (restore !== undefined) selection.set(restore);
       selection.rebase(moves);
     }
-    else select(moved.paths);
+    else reveal(moved.paths);
   };
   const copyTo = (paths: readonly string[], target: SchemaTarget, restore?: readonly string[]) => {
     const copied = copyNodes(latest.current.schema, paths, target);
