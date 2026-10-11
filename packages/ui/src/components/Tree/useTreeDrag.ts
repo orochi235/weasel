@@ -7,6 +7,8 @@ import type { TreeNode } from './Tree';
 import { modsOf } from './treeUtils';
 
 const HOVER_EXPAND_MS = 600;
+/** How far the ghost's corner sits from the pointer, so what is under the pointer stays visible. */
+const GHOST_OFFSET = 10;
 
 /**
  * What a drag would do with its rows where it lands. `copy`, with Alt held in a tree that takes copies, and
@@ -145,7 +147,6 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     if (isInControlWithin(e.target, e.currentTarget)) return;
     const mods = modsOf(e);
     const rect = e.currentTarget.getBoundingClientRect();
-    const grab = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     let ids: string[] = [];
 
     let last = { clientX: e.clientX, clientY: e.clientY };
@@ -176,7 +177,8 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
         dragging: ids,
         effect: how,
         mark: hit?.mark ?? null,
-        ghost: { ids, left: ev.clientX - grab.x, top: ev.clientY - grab.y, width: rect.width },
+        // A row's height down, so the row the pointer is on, in this tree or one like it, is clear of the ghost.
+        ghost: { ids, left: ev.clientX + GHOST_OFFSET, top: ev.clientY + Math.max(GHOST_OFFSET, rect.height), width: rect.width },
         pointer: { x: ev.clientX, y: ev.clientY, outside: out },
       });
     };
