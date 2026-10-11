@@ -17,6 +17,11 @@
   --_edge-ink: oklch(from var(--_edge) clamp(0, (0.564 - l) * 1000, 1) 0 0);
 }
 
+/* The motifs that paint the frame's fill, which is sunken by default, as a field's frame is. */
+.frame:where([data-motif='rule'], [data-motif='stereo'], [data-motif='tab']) {
+  --wzl-input-surface: var(--wzl-surface);
+}
+
 /* BEGIN GENERATED stance rules: frame — `npm run gen:stances`, do not edit. */
 
 .frame {
