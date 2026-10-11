@@ -89,4 +89,31 @@ describe('<ThemeEditor>', () => {
     expect(screen.getByRole('button', { name: 'Save, with unsaved changes' })).toBeInTheDocument();
     expect(loadDraft('weasel')?.definition).toEqual(edited);
   });
+
+  it('lets a never-saved theme whose draft does not derive be discarded, with no file to reload', async () => {
+    stubStorage();
+    const broken = { ...starterDefinition('harbor'), pins: { fg: '{nope}' } };
+    persistDraft({ definition: broken, baseHash: null });
+    persistLastTheme('harbor');
+    const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
+    const get = vi.fn(() => Promise.reject(new Error('404 Not Found')));
+    render(<ThemeEditor api={{ list: async () => [stored], get, put: vi.fn() }} />);
+    expect(await screen.findByText(/harbor does not derive/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Discard this unsaved theme' }));
+    expect(await screen.findByText('23 of 176 overridden')).toBeInTheDocument();
+    expect(get).not.toHaveBeenCalled();
+    expect(loadDraft('harbor')).toBeNull();
+  });
+
+  it('offers the other themes beside a draft that does not derive', async () => {
+    stubStorage();
+    persistDraft({ definition: { ...weasel, pins: { ...weasel.pins, fg: '{nope}' } }, baseHash: 'h1' });
+    const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
+    const other: StoredTheme = { name: 'harbor', hash: 'h2', emits: true, definition: starterDefinition('harbor') };
+    render(<ThemeEditor api={{ list: async () => [stored, other], get: vi.fn(), put: vi.fn() }} />);
+    expect(await screen.findByText(/weasel does not derive/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Theme/ }));
+    await userEvent.click(await screen.findByRole('option', { name: 'harbor' }));
+    expect(await screen.findByText('0 of 13 overridden')).toBeInTheDocument();
+  });
 });

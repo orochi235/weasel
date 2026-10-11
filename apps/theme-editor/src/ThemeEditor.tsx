@@ -78,6 +78,10 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
     return null;
   };
   const onDisk = current.hash !== '' || loaded.listed.has(current.name);
+  const discard = () => {
+    clearDraft(current.name);
+    setLoaded((l) => l && { ...l, themes: l.themes.filter((t) => t.name !== current.name) });
+  };
 
   return (
     <ThemeWorkbench
@@ -92,6 +96,7 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
       }}
       onSaved={replace}
       onReload={reload}
+      onDiscard={discard}
       onNew={create}
     />
   );

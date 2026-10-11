@@ -28,6 +28,8 @@ export interface WorkbenchProps {
   readonly onPick: (name: string) => void;
   readonly onSaved: (stored: StoredTheme) => void;
   readonly onReload: () => Promise<void>;
+  /** Drops a theme that has no file, draft and all. */
+  readonly onDiscard: () => void;
   /** Starts a new theme by that name; answers what is wrong with the name, or null. */
   readonly onNew: (name: string) => string | null;
 }
@@ -76,7 +78,7 @@ function SaveReport({ report, onReload, onDismiss }: { report: PutResult; onRelo
   );
 }
 
-export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, onReload, onNew }: WorkbenchProps) {
+export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, onReload, onDiscard, onNew }: WorkbenchProps) {
   const history = useLabHistory<ThemeDefinition>(start.definition);
   const { state: draft, canUndo, canRedo } = history;
   const [saved, setSaved] = useState<ThemeDefinition>(() => (sameJson(start.definition, stored.definition) ? start.definition : stored.definition));
@@ -113,11 +115,6 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     }
   };
 
-  useEffect(() => {
-    if (dirty) persistDraft({ definition: draft, baseHash });
-    else clearDraft(draft.name);
-  }, [dirty, draft, baseHash]);
-
   const lookup = useMemo<Lookup>(() => {
     const byName = new Map(themes.map((t) => [t.name, t.definition]));
     byName.set(draft.name, draft);
@@ -138,6 +135,12 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   useEffect(() => {
     if (error === null) lastGood.current = derived;
   }, [derived, error]);
+
+  // Only a draft that derives is stored: the stored one is what a reload opens, with no last good one to show.
+  useEffect(() => {
+    if (!dirty) clearDraft(draft.name);
+    else if (error === null) persistDraft({ definition: draft, baseHash });
+  }, [dirty, draft, baseHash, error]);
 
   const contributions = useMemo<readonly LabContribution<LabHistory<ThemeDefinition>>[]>(
     () => [
@@ -168,13 +171,24 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
 
   if (!derived) {
     return (
-      <LabShell title="Theme editor">
+      <LabShell
+        title="Theme editor"
+        header={
+          <div className={styles.header}>
+            <Select aria-label="Theme" width="fit" options={themes.map((t) => ({ value: t.name, label: t.name }))} selectedKey={stored.name} onSelectionChange={onPick} />
+          </div>
+        }
+      >
         <div role="alert" className={styles.status}>
           <p>
             {stored.name} does not derive: {error}
           </p>
           <div className={styles.statusActions}>
-            <Button size="sm" onClick={reload}>Discard the draft and reload from disk</Button>
+            {baseHash === null ? (
+              <Button size="sm" onClick={onDiscard}>Discard this unsaved theme</Button>
+            ) : (
+              <Button size="sm" onClick={reload}>Discard the draft and reload from disk</Button>
+            )}
           </div>
         </div>
         {reloadError && <p role="status" className={styles.status}>{reloadError}</p>}

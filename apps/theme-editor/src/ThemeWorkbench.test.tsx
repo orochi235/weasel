@@ -23,6 +23,7 @@ function renderBench(overrides: Partial<WorkbenchProps> = {}): WorkbenchProps {
     onPick: vi.fn(),
     onSaved: vi.fn(),
     onReload: vi.fn(async () => {}),
+    onDiscard: vi.fn(),
     onNew: vi.fn(() => null),
     ...overrides,
   };
@@ -31,7 +32,22 @@ function renderBench(overrides: Partial<WorkbenchProps> = {}): WorkbenchProps {
 }
 
 describe('<ThemeWorkbench>', () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it('does not store a draft that does not derive', () => {
+    const items = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => items.get(k) ?? null,
+      setItem: (k: string, v: string) => void items.set(k, v),
+      removeItem: (k: string) => void items.delete(k),
+    });
+    renderBench({ start: { definition: { ...weasel, pins: { ...weasel.pins, fg: '{nope}' } }, baseHash: 'h1' } });
+    expect(screen.getByText(/weasel does not derive/)).toBeInTheDocument();
+    expect([...items.keys()]).toEqual([]);
+  });
 
   it('reports how many own tokens a pin overrides, and each layer in the rail', () => {
     renderBench();
