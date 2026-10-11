@@ -728,9 +728,10 @@ export function useTextEdit(
       setStyle(id, r.style);
       // The root's own decoration and slant reach every run by inheritance,
       // the range just cleared included.
-      baseRef.current = resolveTextStyle(r.style, optsRef.current.getPaint?.(id));
-      applyOverlayStyle(overlay, baseRef.current);
-      writeRunsPreservingSelection(overlay, r.runs, range.start, range.end, baseRef.current);
+      const resolved = resolveTextStyle(r.style, optsRef.current.getPaint?.(id));
+      baseRef.current = resolved;
+      applyOverlayStyle(overlay, resolved);
+      writeRunsPreservingSelection(overlay, r.runs, range.start, range.end, resolved);
       publishRange(overlay, range);
       // The rewrite raised the flag on every existing run, so a caret sitting
       // at the end of one is now *inside* a flagged span and the next
