@@ -155,6 +155,14 @@ export const ICON_PATHS = {
   markCheck: `<path d="M3.57 10.66 7.74 14.83 16.43 5.17"/>`,
   markClose: `<path d="M5.4 5.4 14.6 14.6M14.6 5.4 5.4 14.6"/>`,
   markDot: `<circle cx="10" cy="10" r="5" fill="currentColor" stroke="none"/>`,
+  markClone: `<rect x="3.5" y="8.5" width="8" height="8" rx="1"/><path d="M8.5 3.5H15.5a1 1 0 0 1 1 1V11.5"/>`,
+  markLock: `<rect x="4.5" y="10" width="11" height="6.5" rx="1" fill="currentColor"/><path d="M6.5 10V7a3.5 3.5 0 0 1 7 0V10"/>`,
+  markUp: `<path d="M10 16.5V3.5"/><path d="M4.5 9 10 3.5 15.5 9"/>`,
+  markDown: `<path d="M10 3.5V16.5"/><path d="M4.5 11 10 16.5 15.5 11"/>`,
+  markReset: `<path d="M6.56 5.09A6 6 0 1 0 13.44 5.09"/><path d="M14.94 8.8 13.44 5.09 17.36 4.26"/>`,
+  markSearch: `<circle cx="8.5" cy="8.5" r="4.5"/><path d="M12 12 16.5 16.5"/>`,
+  markAlert: `<path d="M10 3.5v7.5"/><path d="M10 16.2v.01"/>`,
+  markStar: `<path d="M10 4 8.3 8.15 3.82 8.49 7.24 11.4 6.18 15.76 10 13.4 13.82 15.76 12.76 11.4 16.18 8.49 11.7 8.15Z" fill="currentColor"/>`,
 
   // Arc profiles
   arcStraight: `<path d="M2.6 15H17.4"/>`,
@@ -608,6 +616,14 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'markCheck',
       'markClose',
       'markDot',
+      'markClone',
+      'markLock',
+      'markUp',
+      'markDown',
+      'markReset',
+      'markSearch',
+      'markAlert',
+      'markStar',
     ],
   },
   {
@@ -763,6 +779,14 @@ export const MARK_ICONS = [
   'markCheck',
   'markClose',
   'markDot',
+  'markClone',
+  'markLock',
+  'markUp',
+  'markDown',
+  'markReset',
+  'markSearch',
+  'markAlert',
+  'markStar',
 ] as const satisfies readonly IconName[];
 
 /** A glyph `<Icon mark>` takes. */
