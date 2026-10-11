@@ -3,10 +3,11 @@
  * the active paint and, through `setFill`/`setStroke`, the selection — live
  * while the picker is open, one undo entry when it closes.
  *
- * Keybindings (registered in `tools/colorContext/actions.ts`):
- *   D     reset to default — black stroke, white fill
- *   X     swap fill/stroke colors
- *   /     set the last-focused swatch to none
+ * Keybindings (`colorContribution` in `tools/colorContext`):
+ *   D        reset to default — black stroke, white fill
+ *   X        swap fill/stroke colors
+ *   Shift+X  swap which swatch has focus
+ *   /        set the last-focused swatch to none
  */
 import type { ReactElement } from 'react';
 import {

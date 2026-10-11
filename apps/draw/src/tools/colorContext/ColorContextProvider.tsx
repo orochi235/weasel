@@ -1,19 +1,7 @@
 /**
- * State-holding provider for active-paint context (fill / stroke / focus).
- *
- * Extracted from `useColorContextTool` as part of Phase 9 of the registry
- * unification refactor. The "tool" concern (keybinding registration via the
- * old `defineTool` wrapper) is replaced by three immediate-action descriptors
- * in `actions.ts`; the state cluster lives here.
- *
- * Mount once near the root:
- *   <ColorContextProvider>
- *     <ColorDepBridge />
- *     <App />
- *   </ColorContextProvider>
- *
- * Consume anywhere below:
- *   const color = useColorContext();
+ * State-holding provider for the active paints (fill / stroke / focus).
+ * Mount once near the root and read it below with `useColorContext()`; its
+ * keys are `colorContribution`, in `contribution.ts`.
  */
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { ActivePaint } from '../../ActiveSwatches';

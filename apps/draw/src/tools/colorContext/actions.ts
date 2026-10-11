@@ -1,14 +1,7 @@
 /**
- * Color-context action descriptors — Phase 9 of registry unification.
- *
- * Three immediate-action descriptors that replace the D / X / Shift-X / /
- * keybindings that used to live in `useColorContextTool`'s `defineTool`
- * wrapper. Keybindings now flow through the gesture dispatcher.
- *
- * Each descriptor declares `requires: ['color']`; at dispatch time the
- * dispatcher reads the live `color` dep from the `DepRegistry` (registered
- * by `<ColorDepBridge>` in App.tsx via `useDepSource('color', ...)`) and
- * passes it to `invoker.run`.
+ * The color keys — D, X, Shift+X, and / — as actions the gesture dispatcher
+ * routes. Each reads the live `color` dep, which `colorContribution`
+ * publishes beside them.
  */
 
 // Side-effect import: augments DepSchema with `color: ColorContextValue`.

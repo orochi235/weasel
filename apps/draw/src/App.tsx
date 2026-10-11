@@ -139,7 +139,7 @@ const RIGHT_SIDEBAR_MIN = PREFS.children.ui.children.rightSidebarWidth.min;
 const RIGHT_SIDEBAR_MAX = PREFS.children.ui.children.rightSidebarWidth.max;
 import { CharacterOptions, TextEditDepPublisher } from './ui/CharacterOptions';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
-import { useColorContext } from './tools/colorContext';
+import { colorContribution, useColorContext } from './tools/colorContext';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useSceneAdapter, effectiveRangeStyle, patchRangeStyle } from '@weasel-js/core';
@@ -1212,7 +1212,9 @@ function EditorWithSharedScene({
   ], [paperLayer, scene]);
 
   const hudTool = useHudContribution();
-  const ambient = useMemo(() => [hudTool, modalityKeys], [hudTool, modalityKeys]);
+  const colorsRef = useLatest(colors);
+  const colorKeys = useMemo(() => colorContribution(() => colorsRef.current), [colorsRef]);
+  const ambient = useMemo(() => [hudTool, modalityKeys, colorKeys], [hudTool, modalityKeys, colorKeys]);
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect
   // and neither retries, so the loupe chrome can only mount once the handle

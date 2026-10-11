@@ -11,3 +11,4 @@ export {
   colorToggleFocusedNoneAction,
   colorActions,
 } from './actions';
+export { colorContribution } from './contribution';
