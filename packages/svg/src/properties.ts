@@ -11,6 +11,7 @@
  */
 
 import type { FontVariantCaps, TextTransform } from '@weasel-js/core';
+import { ABSOLUTE_PX } from './absoluteUnits';
 import { parsePaintAttr, type ParsedColor } from './color';
 
 export type Warn = (message: string) => void;
@@ -34,11 +35,16 @@ function dimension(v: string): { n: number; unit: string } | undefined {
 
 const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n);
 
-/** A bare number, or a length in one of `native` units; any other unit is read as its number and flagged. */
+/**
+ * A bare number, or a length in one of `native` units. Where `px` is native,
+ * an absolute CSS unit converts to it; any other unit is read as its number
+ * and flagged.
+ */
 const length = (native: readonly string[], coercedAs: string) =>
   (v: string, warn: Warn, prop: string): number | undefined => {
     const d = dimension(v);
     if (!d) return undefined;
+    if (native.includes('px') && ABSOLUTE_PX[d.unit] != null) return d.n * ABSOLUTE_PX[d.unit];
     if (d.unit && !native.includes(d.unit)) {
       warn(`${prop} "${v}" uses unit "${d.unit}", which is not converted; treated as ${d.n} ${coercedAs}`);
     }
@@ -104,11 +110,12 @@ function readDashArray(v: string, warn: Warn): number[] | null | undefined {
   const nums: number[] = [];
   for (const t of v.split(/[\s,]+/).filter(Boolean)) {
     const d = dimension(t);
-    if (!d || (d.unit !== '' && d.unit !== 'px') || d.n < 0) {
+    const scale = d && (d.unit === '' ? 1 : ABSOLUTE_PX[d.unit]);
+    if (!d || scale == null || d.n < 0) {
       warn(`unrecognized stroke-dasharray: ${v}`);
       return undefined;
     }
-    nums.push(d.n);
+    nums.push(d.n * scale);
   }
   return nums.length % 2 === 1 ? [...nums, ...nums] : nums;
 }

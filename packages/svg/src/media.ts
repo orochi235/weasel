@@ -6,6 +6,7 @@
  * as live conditions.
  */
 
+import { ABSOLUTE_PX } from './absoluteUnits';
 import { ConditionSyntaxError, evaluateCondition, triAnd, triNot, type Tri } from './condition';
 import { splitTopLevel } from './cssScan';
 
@@ -46,10 +47,6 @@ export const DEFAULT_MEDIA_ENVIRONMENT: SvgMediaEnvironment = {
   update: 'none',
   color: 8,
   monochrome: 0,
-};
-
-const ABSOLUTE_PX: Readonly<Record<string, number>> = {
-  px: 1, in: 96, cm: 96 / 2.54, mm: 96 / 25.4, q: 96 / 101.6, pt: 96 / 72, pc: 16,
 };
 
 /** An absolute SVG length in px, or undefined for a percentage, a relative unit, or garbage. */

@@ -285,9 +285,9 @@ export interface ParseResult {
   documentMeta?: NamespaceMeta;
   /** Root `viewBox` attribute, parsed from `"x y width height"`. */
   viewBox?: { x: number; y: number; width: number; height: number };
-  /** Root `width` attribute, parsed as a unitless number when present. */
+  /** Root `width` attribute in user units when present, an absolute CSS unit converted at 96 per inch. */
   width?: number;
-  /** Root `height` attribute, parsed as a unitless number when present. */
+  /** Root `height` attribute in user units when present, converted as `width` is. */
   height?: number;
   /** Text content of the first `<title>` child of `<svg>`, when present. */
   title?: string;

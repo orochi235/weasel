@@ -577,12 +577,10 @@ have shipped. What remains:
   node types (and on the kit text and image poses they become) or lowering such text to outlines at
   import; a mirrored rotation on an image could be a flip plus a rotation with no model change.
 
-- **(P2) svg import: absolute CSS units are read as bare user units everywhere.** `<circle r="5mm">`
-  imports with r = 5 instead of 18.9, and the same holds for `stroke-width="1mm"`,
-  `font-size="12pt"`, and the root `width="210mm"`. Each now warns (`packages/svg/src/lengths.ts`,
-  `properties.ts`'s `length`, `parse.ts`'s `parseRootLength`), but none converts. Converting
-  `mm`/`cm`/`in`/`pt`/`pc` at 96 per inch is one rule to apply in all three readers at once;
-  `em`/`ex` on geometry need the element's font size and can keep warning.
+- **(P3) svg import: `em` and `ex` on a length are read as bare user units.** `<circle r="2em">`
+  imports with r = 2, and the same holds for `stroke-width` and the root `width`. Each warns
+  (`packages/svg/src/lengths.ts`, `properties.ts`'s `length`, `parse.ts`'s `parseRootLength`);
+  converting needs the element's computed font size at the point the length is read.
 
 - **(P2) geom: whether an open subpath fills is answered three ways.** For `<polyline points="0,0
   100,0 100,100" fill="red"/>` (no `Z`), `tessellate` (`packages/geom/src/tessellate/tessellate.ts`)

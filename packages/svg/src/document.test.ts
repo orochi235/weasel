@@ -62,10 +62,10 @@ describe('nested <svg>', () => {
 });
 
 describe('root attributes', () => {
-  it('warns when width carries a unit it cannot convert', () => {
+  it('converts an absolute unit on width, and warns on one it cannot convert', () => {
     const r = parseSvg(`<svg xmlns="${SVG}" width="100mm" height="50%" viewBox="0 0 10 10"/>`);
-    expect(r.width).toBe(100);
-    expect(r.warnings.join('\n')).toMatch(/width="100mm"/);
+    expect(r.width).toBeCloseTo((100 * 96) / 25.4, 6);
+    expect(r.warnings.join('\n')).not.toMatch(/width="100mm"/);
     expect(r.warnings.join('\n')).toMatch(/height="50%"/);
   });
 

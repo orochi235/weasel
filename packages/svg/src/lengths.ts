@@ -2,9 +2,11 @@
  * The one reader for a geometry attribute's length (`x`, `width`, `r`, …).
  *
  * A percentage resolves against the nearest `<svg>` ancestor's viewport, as
- * SVG has it. Any other unit is read as its bare number and reported: this
- * package converts no CSS units, on geometry or on `stroke-width`.
+ * SVG has it, and an absolute CSS unit (`mm`, `pt`, …) converts at 96 per
+ * inch. A font-relative unit is read as its bare number and reported.
  */
+
+import { ABSOLUTE_PX } from './absoluteUnits';
 
 const LENGTH = /^\s*([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*([a-z%]*)\s*$/i;
 
@@ -19,10 +21,14 @@ function viewportOf(el: Element): { width: number; height: number } | undefined 
     if (box.length === 4 && box.every(Number.isFinite)) return { width: box[2], height: box[3] };
     const w = LENGTH.exec(e.getAttribute('width') ?? '');
     const h = LENGTH.exec(e.getAttribute('height') ?? '');
-    if (w && h && w[2] !== '%' && h[2] !== '%') return { width: Number(w[1]), height: Number(h[1]) };
+    if (w && h && w[2] !== '%' && h[2] !== '%') return { width: userUnits(w), height: userUnits(h) };
     return undefined;
   }
   return undefined;
+}
+
+function userUnits(m: RegExpExecArray): number {
+  return Number(m[1]) * (ABSOLUTE_PX[m[2].toLowerCase()] ?? 1);
 }
 
 export function readLength(
@@ -53,7 +59,9 @@ export function resolveLength(
   }
   const n = Number(m[1]);
   const unit = m[2].toLowerCase();
-  if (unit === '' || unit === 'px') return n;
+  if (unit === '') return n;
+  const scale = ABSOLUTE_PX[unit];
+  if (scale != null) return n * scale;
   const tag = el.tagName.toLowerCase();
   if (unit !== '%') {
     onWarn(`<${tag} ${name}="${raw}"> unit "${unit}" is not converted; read as ${n}`);

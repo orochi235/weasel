@@ -27,6 +27,7 @@ import { boundsOfPath, layoutRuns, resolveRuns, resolveScreenLength, resolveText
 import { IDENTITY_MATRIX } from './types';
 import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
+import { ABSOLUTE_PX } from './absoluteUnits';
 import { readLength } from './lengths';
 import { joinLines, LineTracker } from './tspanLines';
 import { isNonUniform, paintThroughMatrix, strokeThroughMatrix, fillThroughMatrix } from './paintThroughMatrix';
@@ -134,9 +135,10 @@ function parseViewBoxAttr(
 }
 
 /**
- * Root `width` / `height` as a bare user-unit number. A CSS unit or a
- * percentage is not converted — there is no viewport to resolve it against —
- * so the number is taken as-is and the discarded unit is reported.
+ * Root `width` / `height` in user units, an absolute CSS unit converted at 96
+ * per inch. A percentage or a font-relative unit is not converted — there is
+ * no viewport to resolve it against — so the number is taken as-is and the
+ * discarded unit is reported.
  */
 function parseRootLength(
   raw: string | null, name: string, onWarn: (m: string) => void,
@@ -145,6 +147,8 @@ function parseRootLength(
   const n = parseFloat(raw);
   if (!Number.isFinite(n)) return undefined;
   const unit = /^\s*[-+]?[\d.eE+-]+\s*([a-z%]+)\s*$/i.exec(raw)?.[1];
+  const scale = unit && ABSOLUTE_PX[unit.toLowerCase()];
+  if (scale) return n * scale;
   if (unit) onWarn(`<svg ${name}="${raw}"> unit "${unit}" is not converted; read as ${n}`);
   return n;
 }

@@ -56,10 +56,38 @@ describe('a percentage length on a shape, image, or text', () => {
 });
 
 describe('a CSS unit on a geometry attribute', () => {
-  it('is read as its number and reported', () => {
-    const { nodes, warnings } = parseSvg(`<svg ${NS}><circle r="5mm"/></svg>`);
+  it('converts an absolute unit at 96 per inch', () => {
+    const { nodes, warnings } = parseSvg(
+      `<svg ${NS}><circle r="5mm"/><rect width="1in" height="2cm"/><rect width="72pt" height="6pc"/></svg>`,
+    );
+    expect(boundsOfPath((nodes[0] as SvgPathNode).path).width).toBeCloseTo((10 * 96) / 25.4, 4);
+    expect((nodes[1] as SvgPathNode).path).toMatchObject({ width: 96, height: (2 * 96) / 2.54 });
+    expect((nodes[2] as SvgPathNode).path).toMatchObject({ width: 96, height: 96 });
+    expect(warnings).toEqual([]);
+  });
+
+  it('reads a font-relative unit as its number and reports it', () => {
+    const { nodes, warnings } = parseSvg(`<svg ${NS}><circle r="5em"/></svg>`);
     expect(boundsOfPath((nodes[0] as SvgPathNode).path).width).toBeCloseTo(10, 6);
-    expect(warnings).toEqual(['<circle r="5mm"> unit "mm" is not converted; read as 5']);
+    expect(warnings).toEqual(['<circle r="5em"> unit "em" is not converted; read as 5']);
+  });
+
+  it('converts an absolute unit on stroke-width, stroke-dasharray, and font-size', () => {
+    const { nodes, warnings } = parseSvg(
+      `<svg ${NS}><path d="M0 0h10" stroke="#000" stroke-width="1in" stroke-dasharray="1in 3pt"/>`
+      + `<text x="0" y="20" font-size="12pt">Hi</text></svg>`,
+    );
+    expect((nodes[0] as SvgPathNode).stroke).toMatchObject({ width: 96, dash: [96, 4] });
+    expect((nodes[1] as SvgTextNode).style?.fontSize).toBe(16);
+    expect(warnings).toEqual([]);
+  });
+
+  it('resolves a percentage against a root sized in an absolute unit', () => {
+    const { nodes, warnings } = parseSvg(
+      `<svg ${NS} width="2in" height="1in"><rect width="50%" height="100%"/></svg>`,
+    );
+    expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 96, height: 96 });
+    expect(warnings).toEqual([]);
   });
 
   it('takes px as user units, silently', () => {
