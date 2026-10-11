@@ -282,6 +282,7 @@ export function renderBuiltin(
     return (
       <ListLeaf
         ctx={ctx}
+        drawsStrings={renderers?.string !== undefined}
         renderItem={(item, name) => {
           const custom = renderers?.[item.pref.kind];
           return custom ? custom(item) : renderBuiltin(item, name, renderers, within);

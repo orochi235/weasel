@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { PrefList } from '@weasel-js/prefs';
 import { ListEditor } from '../ListEditor';
+import { prefListIsText, prefListTexts } from '../Prefs/ListLeaf';
 import type { PropertyRenderContext } from './renderLeaf';
 import s from './SelectionPanel.module.css';
 
@@ -11,21 +12,28 @@ import s from './SelectionPanel.module.css';
  */
 export function ListLeaf({
   ctx,
+  drawsStrings,
   renderItem,
 }: {
   ctx: PropertyRenderContext;
+  /** The panel has a renderer of its own for strings, which then draws each entry. */
+  drawsStrings: boolean;
   renderItem: (ctx: PropertyRenderContext, name: string) => ReactNode;
 }) {
   const pref = ctx.pref as PrefList;
   const { item } = pref;
   if (ctx.mixed) return <span className={s.unrenderable}>Mixed</span>;
+  const shared = {
+    'aria-label': item.name || pref.name,
+    onChange: ctx.setValue,
+    minItems: pref.minItems,
+    maxItems: pref.maxItems,
+  };
+  if (prefListIsText(pref, drawsStrings)) return <ListEditor {...shared} value={prefListTexts(ctx.value)} />;
   return (
     <ListEditor<unknown>
-      aria-label={item.name || pref.name}
+      {...shared}
       value={Array.isArray(ctx.value) ? (ctx.value as unknown[]) : []}
-      onChange={ctx.setValue}
-      minItems={pref.minItems}
-      maxItems={pref.maxItems}
       newEntry={() => item.default}
       renderEntry={(entry, set, name, i) =>
         renderItem(

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { asNodeId, createScene, type NodePropertiesEntry, type NodeRoutingEntry, type SelectionApi } from '@weasel-js/core';
-import type { PrefLeaf } from '@weasel-js/prefs';
+import type { PrefLeaf, PrefList } from '@weasel-js/prefs';
+import { prefListIsText } from '../Prefs';
 import { SelectionPanel } from './SelectionPanel';
 
 interface Data { kind: string; [field: string]: unknown }
@@ -32,6 +33,26 @@ describe('SelectionPanel compound leaves', () => {
     );
     fireEvent.click(screen.getByRole('checkbox', { name: 'Flag 2' }));
     expect(data('a')?.flags).toEqual([false, true]);
+  });
+
+  describe('a list of plain text', () => {
+    const tags: PrefLeaf = { kind: 'list', name: 'Tags', description: '', default: [], item: { kind: 'string', name: 'Tag', description: '', default: '' } } as PrefLeaf;
+
+    it('adds an entry on Enter and removes an empty one on Backspace, as a form\'s list does', () => {
+      const data = setup({ 'data.tags': tags }, { a: { tags: ['one'] } });
+      fireEvent.keyDown(screen.getByRole('textbox', { name: 'Tag 1' }), { key: 'Enter' });
+      expect(data('a')?.tags).toEqual(['one', '']);
+      fireEvent.keyDown(screen.getByRole('textbox', { name: 'Tag 2' }), { key: 'Backspace' });
+      expect(data('a')?.tags).toEqual(['one']);
+    });
+
+    it('says which lists those are with one test, by item and by whether strings have a renderer', () => {
+      const list = tags as PrefList;
+      expect(prefListIsText(list, false)).toBe(true);
+      expect(prefListIsText(list, true)).toBe(false);
+      expect(prefListIsText({ ...list, item: { ...list.item, control: 'textarea' } } as PrefList, false)).toBe(false);
+      expect(prefListIsText({ ...list, item: flag } as unknown as PrefList, false)).toBe(false);
+    });
   });
 
   it('offers nothing to edit for lists that differ', () => {

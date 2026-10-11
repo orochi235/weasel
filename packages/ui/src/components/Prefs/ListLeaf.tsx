@@ -3,6 +3,19 @@ import type { PrefList, PrefString } from '@weasel-js/prefs';
 import { ListEditor } from '../ListEditor';
 import type { PrefRenderContext, PrefRenderer } from './PrefsRow';
 
+/**
+ * Whether a list's entries are plain text, drawn by `ListEditor`'s own fields: with them come Enter to add an
+ * entry and Backspace to remove an empty one. `drawn` says the surface has its own renderer for strings.
+ */
+export function prefListIsText(pref: PrefList, drawn: boolean): boolean {
+  return pref.item.kind === 'string' && !drawn && (pref.item as PrefString).control !== 'textarea';
+}
+
+/** The entries of a text list as `ListEditor` takes them: anything that is not a string reads as empty. */
+export function prefListTexts(value: unknown): string[] {
+  return (Array.isArray(value) ? value : []).map((e) => (typeof e === 'string' ? e : ''));
+}
+
 /** A `list` leaf: one control per entry, each drawn as the list's `item` leaf, and every edit commits the whole array. */
 export function ListLeaf({
   ctx,
@@ -22,9 +35,7 @@ export function ListLeaf({
     maxItems: pref.maxItems,
   };
   const entries = Array.isArray(ctx.value) ? (ctx.value as unknown[]) : [];
-  // Plain text entries keep the editor's own fields, and with them Enter to add and Backspace to remove.
-  if (item.kind === 'string' && !renderers?.string && (item as PrefString).control !== 'textarea')
-    return <ListEditor {...shared} value={entries.map((e) => (typeof e === 'string' ? e : ''))} />;
+  if (prefListIsText(pref, renderers?.string !== undefined)) return <ListEditor {...shared} value={prefListTexts(ctx.value)} />;
   return (
     <ListEditor<unknown>
       {...shared}

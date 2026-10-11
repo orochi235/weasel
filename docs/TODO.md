@@ -1274,14 +1274,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as arguments (how a field's value and mixed state are read, how a row is framed), with the
   write-back rule as a pure function in `@weasel-js/prefs`.
 
-- **(P3) A list leaf is drawn in three places, and the plain-text shortcut is written twice.**
-  `Prefs/ListLeaf.tsx` keeps `ListEditor`'s own text fields when the item is a string with no
-  `string` renderer and is not a `textarea`; labkit's `ControlPanel.tsx` (`LeafRow`, the `COMPOUND`
-  branch) repeats the test; `SelectionPanel/ListLeaf.tsx` has no shortcut, so Enter-to-add and
-  Backspace-to-remove are absent. The form substitutes `item.default` for an `undefined` entry and
-  the panel marks it unset. Item renderers are looked up by kind only in all three, though
-  `SelectionPanel` looks up by path first everywhere else. Home: `Prefs/ListLeaf`, with the shortcut
-  test exported as one predicate.
+- **(P3) A list leaf's entries are drawn two ways.** `Prefs/ListLeaf.tsx` substitutes `item.default`
+  for an `undefined` entry, and `SelectionPanel/ListLeaf.tsx` marks it unset; which one a list
+  wants is not decided. Item renderers are looked up by kind only in both, and in labkit's
+  `ControlPanel`, though `SelectionPanel` looks up by path first everywhere else, and an entry has
+  no path of its own for a renderer to be keyed by. The plain-text shortcut is one predicate now
+  (`prefListIsText`), which all three ask.
 
 - **(P3) Which control a leaf gets is decided again in each params surface.** `prefFieldProps` is
   the shared half; each caller then overrides it: `Prefs/PrefsRow.tsx`,

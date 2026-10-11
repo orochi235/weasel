@@ -5,7 +5,6 @@ import {
   type PrefGroup,
   type PrefLeaf,
   type PrefList,
-  type PrefString,
   pairRowsOf,
   prefAliasedLeaf,
   prefAliasTarget,
@@ -20,6 +19,8 @@ import {
   PrefActionButton,
   PrefControl,
   prefDrawsNoControl,
+  prefListIsText,
+  prefListTexts,
   type PrefFieldChoice,
   PrefWords,
   type PropertyAlign,
@@ -685,7 +686,7 @@ function LeafRow<TC extends Record<string, unknown>>({
     const item = leaf.kind === 'list' ? (leaf as PrefList).item : undefined;
     // Plain text entries keep the list's own fields, and the placeholder only they have.
     const texts =
-      item?.kind === 'string' && !renderers?.string && (item as PrefString).control !== 'textarea';
+      leaf.kind === 'list' && prefListIsText(leaf as PrefList, renderers?.string !== undefined);
     return (
       <DialogRow
         label={label}
@@ -699,9 +700,7 @@ function LeafRow<TC extends Record<string, unknown>>({
           texts ? (
             <ListEditor
               aria-label={item?.name || label}
-              value={(Array.isArray(value) ? value : []).map((e) =>
-                typeof e === 'string' ? e : '',
-              )}
+              value={prefListTexts(value)}
               onChange={write}
               minItems={(leaf as PrefList).minItems}
               maxItems={(leaf as PrefList).maxItems}
