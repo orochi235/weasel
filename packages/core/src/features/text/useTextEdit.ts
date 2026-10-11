@@ -26,9 +26,8 @@ import {
 } from './domRuns';
 import {
   applyStyleToRange, nodeHasFlag, patchRangeStyle, rangeWeight, runsCarryStyling, setFlagOverRange,
-  styleAtRange, supersededKey, unboldPatch,
+  styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
-import type { FlagKey, RangeStyle, RunStylePatch } from '@weasel-js/text';
 import { applyOverlayDirection, overlayAlignEdge } from './overlayDirection';
 
 /**

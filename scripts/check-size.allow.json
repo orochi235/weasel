@@ -118,12 +118,6 @@
   "packages/core/src/features/paths/penPreviewLayer.ts": {
     "longestFunction": 140
   },
-  "packages/core/src/features/paths/tessellate/dash.ts": {
-    "longestFunction": 125
-  },
-  "packages/core/src/features/paths/tessellate/stroke.ts": {
-    "lines": 526
-  },
   "packages/core/src/features/poseRun/usePoseRun.ts": {
     "longestFunction": 129
   },
@@ -374,6 +368,12 @@
   "packages/storage/src/records.ts": {
     "lines": 403,
     "longestFunction": 281
+  },
+  "packages/stroke/src/tessellate/dash.ts": {
+    "longestFunction": 125
+  },
+  "packages/stroke/src/tessellate/stroke.ts": {
+    "lines": 526
   },
   "packages/svg/src/cascade.ts": {
     "lines": 428
