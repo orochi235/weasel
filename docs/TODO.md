@@ -1423,16 +1423,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
-- **(P3) `.lk-shell` falls back to the viewport's height.** It is `height:
-  100dvh; max-height: 100%` (`packages/labkit/src/lab/LabShell.less`), so a
-  container of definite height caps it. Under an ancestor with no definite
-  height, a shell mounted below other page content still takes the whole
-  viewport and overflows by its offset. Plain `height: 100%` fixes that case
-  and breaks another: `LabFit.browser.test.tsx`'s `wrapped` cases, a host that
-  never set `html, body, #root { height: 100% }`, then size the lab to its
-  content. So this is a choice between the two mounts, not a CSS fix; that
-  test (`npm run test:browser`) is what checks either one.
-
 - **(P3) Two CurveEditor handles are still literals.** The `--wzl-handle-size`
   family covers the 45°-rotated squares; the round ranks did not fold into it,
   because a radius is not a diamond edge. The plain anchor circle (`r={4}` in
@@ -1993,13 +1983,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   type-ahead, and also stops Delete and Cmd+Z in the dispatcher for as long as focus rests on a
   select after a choice is made, which is every bound key, modifier chords included
   (`useGestureDispatcher.tsx`).
-
-- **(P3) Timeline: Delete and Backspace remove the selected key from any non-text focus inside the
-  root.** With a key selected, pressing Delete while focus is on a transport button, the Loop
-  switch, or the rate slider deletes the key (`onRootKeyDown` in
-  `packages/ui/src/components/Timeline/Timeline.tsx`). Text fields and selects are now skipped. The
-  options are to keep the root-wide shortcut, or to scope it to focus on a key mark or the lanes;
-  scoping needs the keys to be selectable from the keyboard first.
 
 - **(P3) UnitField: a field that began at NaN cannot give back what it sent while typing.** Typing
   that ends in Escape or in unreadable text sends the value it began from through `onInput`
