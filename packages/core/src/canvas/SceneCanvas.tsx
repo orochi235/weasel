@@ -1549,7 +1549,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Synthesize the shape/lasso/text/clone tools — always called per React
   // rules-of-hooks; only registered below when requested. Per-tool options
   // (lasso mode, clone-selection) thread through `toolOptions`.
-  const shapeTools = useBuiltinShapeTools({ scene, adapter, options: toolOptions });
+  const shapeTools = useBuiltinShapeTools({ options: toolOptions });
 
   const defaultLongPressFeedback = useMemo(() => createLongPressFeedbackContribution(), []);
   const feedbackOpt = longPress?.feedback ?? true;

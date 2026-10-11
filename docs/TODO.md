@@ -174,16 +174,6 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
-- **(P2) Pen tool: nodes are minted and committed beside the `insert` dep.** `usePenTool`
-  (`packages/core/src/tools/builtin/pen/usePenTool.ts`) creates a path through
-  `options.adapter.addNode(pose)` plus `wrapPath`, needs a third hook, `makeNode`, for the join
-  case, and there builds `createInsertOp` / `createDeleteOp` and applies them itself. A consumer who
-  overrides the `insert` dep to stamp its own node shape, the documented route for every other shape
-  tool, gets pen paths that ignore it, and a new path is committed and then selected by two separate
-  consumer calls, so whether that is one undo step is up to the consumer. Route the commit through
-  `insert` with a path request and drop `adapter.addNode` / `makeNode`; this changes
-  `UsePenToolOptions`.
-
 - **(P2) `resizeAction` / `rotateAction`: a selected group's children are not transformed.** With
   the default absolute poses, Cmd+G two rects and drag a resize or rotation handle on the group: one
   transform op is written for the container and the children stay put, and since the group's shown

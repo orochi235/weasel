@@ -1,17 +1,12 @@
 /**
  * Shape-tool synthesis for `<SceneCanvas>` — calls the kit's per-shape tool
- * hooks with default `create` callbacks that produce leaf nodes shaped for
- * the kit's PATH_PAINTER (`data: { path, fill }`). Lets consumers opt into
+ * hooks; the `insert` dep mints each tool's node. Lets consumers opt into
  * a complete drawing toolset via `<SceneCanvas defaultTools={['rect', 'ellipse']}>`
  * without writing per-tool factory code.
  *
  * All hooks are always called (React rules of hooks) — `<SceneCanvas>` only
  * registers the ones requested via `defaultTools`.
  */
-import { useRef } from 'react';
-import type { Node as SceneNode, NodeId, Scene } from 'core/scene/types';
-import { boundsOfPath, type Path, type PolygonPath } from '@weasel-js/geom';
-import { cycleFill, solid, strokeOf } from '../../util/paint';
 import { useEllipseTool } from 'tools/builtin/ellipse/useEllipseTool';
 import { useLassoTool } from 'tools/builtin/lasso/useLassoTool';
 import { useLineTool } from 'tools/builtin/line/useLineTool';
@@ -21,11 +16,9 @@ import { usePolygonTool } from 'tools/builtin/polygon/usePolygonTool';
 import { useRectTool } from 'tools/builtin/rect/useRectTool';
 import { useStarTool } from 'tools/builtin/star/useStarTool';
 import { useTextTool } from 'tools/builtin/text/useTextTool';
-import type { FillStyle, Stroke } from '@weasel-js/paint';
 import type { AnyTool } from 'tools/overlayBinding';
 import type { InsertToolOptions } from 'tools/builtin/shared/insertToolOptions';
 import type { LassoHitMode } from 'core/adapters/types';
-import type { SceneCanvasAdapter } from '../sceneAdapter';
 import type { BuiltinShapeToolId } from 'core/shapeKinds';
 
 /** Per-tool option overrides for the built-in shape/lasso tools.
@@ -56,9 +49,7 @@ export interface BuiltinToolOptions {
 export { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 export type { BuiltinShapeToolId } from 'core/shapeKinds';
 
-export interface UseBuiltinShapeToolsArgs<TData, TLayer extends string, TPose> {
-  scene: Scene<TData, TLayer, TPose>;
-  adapter: SceneCanvasAdapter<TData, TLayer, TPose>;
+export interface UseBuiltinShapeToolsArgs {
   /** Per-tool option overrides (lasso mode, etc.). */
   options?: BuiltinToolOptions;
 }
@@ -67,47 +58,13 @@ export type BuiltinShapeTools = Record<BuiltinShapeToolId, AnyTool>;
 
 /** Synthesize the full shape-tool registry. Hooks always run; consumers
  *  decide via `wants(...)` which to register with `useTools`. */
-export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
-  args: UseBuiltinShapeToolsArgs<TData, TLayer, TPose>,
-): BuiltinShapeTools {
-  const { scene, adapter, options } = args;
-
-  // Per-canvas counter + fill cycler. Refs survive renders and stay
-  // private to the SceneCanvas instance.
-  const seqRef = useRef(0);
-  const nextFill = () => cycleFill(seqRef.current);
-
-  // First system-or-trivial layer is the default insertion layer. Falls back
-  // to 'default' when the scene has none yet (rare — useScene synthesizes
-  // a 'default' layer when systemLayers is omitted).
-  const layerOf = (): TLayer => (scene.layers[0]?.id ?? ('default' as TLayer));
-
-  // Helper to build the kit's leaf-node template — `data: { path, fill }`
-  // matches PATH_PAINTER's `matches`/`paint` contract. The cast through
-  // `unknown` reflects the kit's intentional looseness around TData when
-  // synthesized defaults are in play.
-  type Pose = { x: number; y: number; width: number; height: number };
-  const makeLeaf = (
-    id: NodeId,
-    pose: Pose,
-    data: { path: Path; fill: FillStyle | null; stroke?: Stroke; text?: string },
-  ): SceneNode<TData, TLayer, TPose> => ({
-    id,
-    kind: 'leaf',
-    layer: layerOf(),
-    pose: pose as unknown as TPose,
-    data: data as unknown as TData,
-    parent: null,
-  });
-
-  type LeafNode = SceneNode<TData, TLayer, TPose> & { id: NodeId };
+export function useBuiltinShapeTools(args: UseBuiltinShapeToolsArgs = {}): BuiltinShapeTools {
+  const { options } = args;
 
   const snapPoint = options?.snapPoint;
-  // Every drag-to-insert tool is a declarative shell: the drag is owned by
-  // the dispatcher's `insertAction` and the node is minted by the `insert`
-  // dep (`useInsertDepSource`). Tool-side `create` factories were removed
-  // when the dispatcher took over — consumers wanting custom node
-  // factories override the dep, not the tool.
+  // Every tool here is a declarative shell: the `insert` dep
+  // (`useInsertDepSource`) mints the node, so a consumer wanting its own node
+  // shape overrides the dep, not the tool.
   const insert = options?.insert ?? {};
   const rect = useRectTool(insert);
   const ellipse = useEllipseTool(insert);
@@ -115,41 +72,7 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   const polygon = usePolygonTool(insert);
   const star = useStarTool(insert);
   const pencil = usePencilTool(insert);
-  // Pen: takes an opaque "pose" carrier (here, the committed PolygonPath +
-  // closed flag + AABB) and an addNode/setSelection adapter. We construct
-  // the carrier in `wrapPath` and unpack it in `addNode` into a
-  // PATH_PAINTER-shaped leaf. (Pen is the one built-in still commiting
-  // through its own adapter rather than the `insert` dep — see §4b of the
-  // 2026-07-27 inspector handoff.)
-  // Editing a committed path is not the pen's job — double-click it to
-  // enter anchor-edit mode (see `usePenTool`'s PenScratch docs).
-  type PenCarrier = { path: PolygonPath; closed: boolean; bounds: { x: number; y: number; width: number; height: number } };
-  const makePenLeaf = (carrier: PenCarrier): LeafNode => {
-    seqRef.current += 1;
-    const id = scene.mintId();
-    const color = nextFill();
-    return makeLeaf(id, carrier.bounds, {
-      path: carrier.path,
-      fill: carrier.closed ? solid(nextFill()) : null,
-      stroke: strokeOf(color, 2),
-    }) as LeafNode;
-  };
-  const pen = usePenTool<PenCarrier>({
-    snapPoint,
-    wrapPath: (path, { closed }): PenCarrier => {
-      const b = boundsOfPath(path);
-      return { path, closed, bounds: { x: b.x, y: b.y, width: b.width, height: b.height } };
-    },
-    adapter: {
-      addNode: (carrier) => {
-        const node = makePenLeaf(carrier);
-        adapter.insertNode(node);
-        return String(node.id);
-      },
-      makeNode: (carrier) => makePenLeaf(carrier),
-      setSelection: (ids) => adapter.setSelection(ids),
-    },
-  });
+  const pen = usePenTool({ snapPoint });
   const lasso = useLassoTool(options?.lasso ?? {});
   const text = useTextTool(insert);
   return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text };

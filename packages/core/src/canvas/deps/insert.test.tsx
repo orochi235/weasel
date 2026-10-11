@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import { useInsertDepSource } from './insert';
 import type { Scene } from 'core/scene/types';
+import { pathFromD } from '@weasel-js/geom';
 
 function makeScene(): Scene<unknown, string, unknown> {
   let minted = 0;
@@ -133,6 +134,52 @@ describe('useInsertDepSource', () => {
     expect(keys(1)).toEqual(['fill', 'path', 'stroke']);
     expect(keys(2)).toEqual(['path', 'stroke']);
     expect(applyOps.mock.calls[1][0][0].args.node.data.stroke.width).toBe(2);
+  });
+
+  it('inserts a pen path as kind=path: filled and stroked when closed, stroke alone when open', () => {
+    const applyOps = vi.fn();
+    let reg!: DepRegistry;
+    function Wire() {
+      useInsertDepSource(makeScene(), { applyOps });
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    const dep = (reg.get as any)('insert');
+    const path = pathFromD('M 10 20 L 40 20 L 40 60');
+    const bounds = { x: 10, y: 20, width: 30, height: 40 };
+    dep.commit(bounds, { kind: 'path', path, closed: true });
+    dep.commit(bounds, { kind: 'path', path, closed: false });
+    const nodes = applyOps.mock.calls.map(([ops]) => ops[0].args.node);
+    expect(nodes[0]).toMatchObject({ pose: bounds, data: { path } });
+    expect(nodes[0].data.fill).toBeTruthy();
+    expect(nodes[0].data.stroke).toBeTruthy();
+    expect(nodes[1].data.fill).toBeNull();
+    expect(nodes[1].data.stroke).toBeTruthy();
+  });
+
+  it('builds the insert without applying it, for a caller with more to batch', () => {
+    const applyOps = vi.fn();
+    let reg!: DepRegistry;
+    function Wire() {
+      useInsertDepSource(makeScene(), { applyOps });
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    const built = (reg.get as any)('insert').build({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' });
+    expect(applyOps).not.toHaveBeenCalled();
+    expect(built.id).toBe('srv-0');
+    expect(built.ops.map((op: { name: string }) => op.name)).toEqual(['insert']);
+    expect(built.ops[0].args.node.id).toBe('srv-0');
   });
 
   it('returns null and warns when the kind has no factory', () => {

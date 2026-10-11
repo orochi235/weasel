@@ -22,11 +22,15 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ModifierState } from 'core/modifierState';
 import type { Op } from 'core/ops/types';
-import { DepRegistryProvider, useDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
+import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
+import { buildDepsFromRequires } from '@weasel-js/routing';
+import { useInsertDepSource } from 'canvas/deps/insert';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
+import { createInsertOp } from 'core/ops/create';
+import type { InsertExtras } from 'interactions/actions/depSchema';
 
 interface Pose { kind: 'path'; path: PolygonPath; closed: boolean }
 
@@ -45,6 +49,27 @@ function makeAdapter() {
   });
   const makeNode = vi.fn((p: Pose) => ({ id: `o${++n}`, pose: p }));
   return { added, ids, addNode, makeNode, setSelection };
+}
+
+/** The `insert` and `selection` deps the pen commits through, recording on
+ *  `a`. `noBuild` leaves `insert.build` off, as a consumer's own dep may. */
+function penDeps(a: ReturnType<typeof makeAdapter>, noBuild = false) {
+  const poseOf = (extras: InsertExtras): Pose => {
+    const e = extras as { path: PolygonPath; closed: boolean };
+    return { kind: 'path', path: e.path, closed: e.closed };
+  };
+  return {
+    insert: {
+      commit: vi.fn((_bounds: unknown, extras: InsertExtras) => a.addNode(poseOf(extras))),
+      ...(noBuild ? {} : {
+        build: (_bounds: unknown, extras: InsertExtras) => {
+          const node = a.makeNode(poseOf(extras));
+          return { id: node.id, ops: [createInsertOp({ node })] };
+        },
+      }),
+    },
+    selection: { set: a.setSelection },
+  };
 }
 
 /**
@@ -67,16 +92,12 @@ function setup(over: {
   paths?: Record<string, PolygonPath>;
   /** Replace the stand-in deps with real ones. */
   deps?: Record<string, unknown>;
-  /** Leave `makeNode` off the adapter. */
+  /** Leave `build` off the insert dep. */
   noMakeNode?: boolean;
 } = {}) {
   const { scale = 1, paths = {}, deps: depsOver, noMakeNode, ...toolOpts } = over;
-  const full = makeAdapter();
-  const adapter = noMakeNode ? { ...full, makeNode: undefined } : full;
-  const wrapPath = vi.fn((path: PolygonPath, opts: { closed: boolean }): Pose => ({
-    kind: 'path', path, closed: opts.closed,
-  }));
-  const { result } = renderHook(() => usePenTool<Pose>({ wrapPath, adapter, ...toolOpts }));
+  const adapter = makeAdapter();
+  const { result } = renderHook(() => usePenTool(toolOpts));
   const tool = result.current;
   // Pen state is persistent — initScratch returns the same ref, which is also
   // how `penPreviewLayer` reads the in-progress path.
@@ -113,6 +134,7 @@ function setup(over: {
     editAnchors: { getEditablePath: (id: string) => scene[id] ?? null, applyEdit, editOps },
     scene: { get: (id: string) => (scene[id] ? { id, kind: 'leaf', parent: null, data: { path: scene[id] } } : undefined) },
     applyOps,
+    ...penDeps(adapter, noMakeNode),
     ...depsOver,
   } as unknown as ActionDeps;
 
@@ -142,7 +164,7 @@ function setup(over: {
   });
 
   return {
-    tool, adapter, wrapPath, scratch, actionOf, scene, applyEdit, editOps, applyOps, inserted,
+    tool, adapter, scratch, actionOf, deps, scene, applyEdit, editOps, applyOps, inserted,
 
     /** A plain click — the `pen.placeAnchor` binding. */
     click(x: number, y: number) { fire('pen.placeAnchor', { pressX: x, pressY: y }); },
@@ -286,8 +308,7 @@ describe('usePenTool', () => {
     const p = setup({ closeHitRadius: 8 });
     p.click(0, 0); p.click(100, 0); p.click(100, 100);
     p.click(1, 1); // within the close-hit radius of the first anchor
-    expect(p.wrapPath).toHaveBeenCalledTimes(1);
-    expect(p.wrapPath.mock.calls[0][1]).toEqual({ closed: true });
+    expect(p.adapter.added.map((a) => a.closed)).toEqual([true]);
     expect(p.adapter.addNode).toHaveBeenCalledTimes(1);
     expect(p.scratch.current).toBeNull();
     expect(p.scratch.finishedSubpaths).toEqual([]);
@@ -328,8 +349,7 @@ describe('usePenTool', () => {
     const p = setup();
     p.click(0, 0); p.click(100, 0); p.click(100, 100);
     expect(p.enter()).toBe(true);
-    expect(p.wrapPath).toHaveBeenCalledTimes(1);
-    expect(p.wrapPath.mock.calls[0][1]).toEqual({ closed: false });
+    expect(p.adapter.added.map((a) => a.closed)).toEqual([false]);
     expect(p.adapter.addNode).toHaveBeenCalledTimes(1);
     expect(p.adapter.setSelection).toHaveBeenCalledWith([p.adapter.ids[0]]);
     expect(p.scratch.current).toBeNull();
@@ -343,8 +363,7 @@ describe('usePenTool', () => {
     expect(p.scratch.current).toBeNull();
     expect(p.scratch.finishedSubpaths.length).toBe(1);
     p.enter();
-    expect(p.wrapPath).toHaveBeenCalledTimes(1);
-    expect(p.wrapPath.mock.calls[0][1]).toEqual({ closed: true });
+    expect(p.adapter.added.map((a) => a.closed)).toEqual([true]);
     expect(p.adapter.addNode).toHaveBeenCalledTimes(1);
   });
 
@@ -1112,17 +1131,50 @@ describe('usePenTool', () => {
   });
 });
 
+describe('usePenTool — through the kit insert dep', () => {
+  it('inserts a finished path into the scene as one undo step, reading only deps it declares', () => {
+    const scene = createScene<unknown, 'default', RectPose>({ systemLayers: [{ id: 'default' }] }) as unknown as Scene<unknown, string, unknown>;
+    const selected: string[][] = [];
+    let reg!: DepRegistry;
+    let tool!: Tool<PenScratch>;
+    function Wire() {
+      useInsertDepSource(scene, { applyOps: (ops, label) => scene.applyBatch(ops, label ?? '', defaultCommitAdapter(scene)) });
+      useDepSource('selection', () => ({ set: (ids: string[]) => { selected.push(ids); } }) as unknown as SelectionApi);
+      reg = useDepRegistry();
+      tool = usePenTool();
+      return null;
+    }
+    render(<DepRegistryProvider><Wire /></DepRegistryProvider>);
+    const run = (id: string, params?: Record<string, unknown>) => {
+      const action = tool.actions!.find((a) => a.id === id)!;
+      if (action.invoker?.timing !== 'immediate') throw new Error(`${id} is not immediate`);
+      const invoker = action.invoker;
+      act(() => { invoker.run(buildDepsFromRequires(action, reg), params); });
+    };
+    const before = scene.historyEntries().length;
+    run('pen.placeAnchor', { pressX: 10, pressY: 20 });
+    run('pen.placeAnchor', { pressX: 60, pressY: 20 });
+    run('pen.finish');
+    const [id] = scene.renderOrder();
+    const node = scene.get(id)!;
+    expect(node.pose).toEqual({ x: 10, y: 20, width: 50, height: 0 });
+    expect((node.data as { fill: unknown; stroke: unknown }).fill).toBeNull();
+    expect((node.data as { stroke: unknown }).stroke).toBeTruthy();
+    expect(selected).toEqual([[id]]);
+    expect(scene.historyEntries().length).toBe(before + 1);
+  });
+});
+
 describe('usePenTool — abandoned renders', () => {
   it('commits through the committed options, not an abandoned render\'s', () => {
     const adapter = makeAdapter();
-    const wrapPath = (path: PolygonPath, o: { closed: boolean }): Pose => ({ kind: 'path', path, closed: o.closed });
     let tool = null as Tool<PenScratch> | null;
     function Probe({ autoSelect }: { autoSelect: boolean }) {
-      tool = usePenTool<Pose>({ wrapPath, adapter, autoSelect });
+      tool = usePenTool({ autoSelect });
       return null;
     }
     renderThenAbandon(true, false, (autoSelect) => <Probe autoSelect={autoSelect} />);
-    const deps = {} as ActionDeps;
+    const deps = penDeps(adapter) as unknown as ActionDeps;
     const run = (id: string, params?: Record<string, unknown>) => {
       const invoker = tool!.actions!.find((a) => a.id === id)!.invoker;
       if (invoker?.timing !== 'immediate') throw new Error(`${id} is not immediate`);

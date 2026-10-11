@@ -6,14 +6,13 @@ import type { Tool } from '../../overlayBinding';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
-import type { EditAnchorsDep } from 'interactions/actions/depSchema';
+import { asNodeId } from 'core/scene/types';
 import { pxExtent, withinPxRadius } from 'core/viewport/pxExtent';
 import { PenIcon } from '../../../icons';
-import type { PolygonPath } from '@weasel-js/geom';
+import { boundsOfPath, type PolygonPath } from '@weasel-js/geom';
 import { anchorsToPath, pathToAnchors } from 'features/paths/anchors';
 import { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from 'features/paths/nearestAnchor';
 import type { Op } from 'core/ops/types';
-import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { constrainTo45 } from '../../../util/constrainTo45';
@@ -92,21 +91,11 @@ export interface PenContinuation {
   original: PolygonPath;
 }
 
-/** Options for `usePenTool`: how a finished path becomes a pose, where it is
- *  inserted, and when a closed subpath commits. */
-export interface UsePenToolOptions<TPose> {
-  /** Wrap a finished PolygonPath in the consumer's pose type. */
-  wrapPath: (path: PolygonPath, opts: { closed: boolean }) => TPose;
-  /** Insert + select adapter. */
-  adapter: {
-    addNode: (pose: TPose) => string;
-    setSelection: (ids: string[]) => void;
-    /** Build, without inserting, the node `addNode` would insert for `pose`,
-     *  so the pen can put it in a larger op batch — a new path finished on
-     *  another open path's endpoint is inserted and the other path deleted
-     *  in one undo step. Without it, that click only places an anchor. */
-    makeNode?: (pose: TPose) => { id: string };
-  };
+/** Options for `usePenTool`: when a closed subpath commits, and how anchors
+ *  snap. A finished path is inserted through the `insert` dep as kind
+ *  `'path'`, the route every shape tool takes, so a consumer shapes the node
+ *  by overriding that dep. */
+export interface UsePenToolOptions {
   /** Auto-select the new object after commit. Default `true`. */
   autoSelect?: boolean;
   /** When true (default), clicking the first anchor to close a subpath
@@ -189,10 +178,10 @@ function buildPath(
  *
  * Reshaping an existing path is not this tool's job — see {@link PenScratch}.
  */
-export function usePenTool<TPose>(
-  options: UsePenToolOptions<TPose>,
+export function usePenTool(
+  options: UsePenToolOptions = {},
 ): Tool<PenScratch> {
-  const { wrapPath, adapter, autoSelect = true, autoCommitOnClose = true, closeHitRadius = 8, anchorSnapRadius = 8, snapPoint } = options;
+  const { autoSelect = true, autoCommitOnClose = true, closeHitRadius = 8, anchorSnapRadius = 8, snapPoint } = options;
 
   // Persistent scratch: single ref reused across gestures so multi-click
   // state survives the dispatcher's per-gesture initScratch contract.
@@ -201,7 +190,7 @@ export function usePenTool<TPose>(
 
   // Latest options stashed so handlers see fresh values without rebuilding
   // the Tool record (which would lose scratch identity in the dispatcher).
-  const optsRef = useLatest({ wrapPath, adapter, autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint });
+  const optsRef = useLatest({ autoSelect, autoCommitOnClose, closeHitRadius, anchorSnapRadius, snapPoint });
 
   // Scratch is a mutable ref (so click-by-click state survives the
   // dispatcher's per-gesture initScratch contract). Mutations alone don't
@@ -223,7 +212,8 @@ export function usePenTool<TPose>(
    *  the write when nothing changed, so an empty pick-up leaves no undo
    *  entry. */
   const commitContinuation = useCallback(
-    (s: PenScratch, trailing: PenSubpath | null, edit: EditAnchorsDep | undefined): void => {
+    (s: PenScratch, trailing: PenSubpath | null, deps: ActionDeps): void => {
+      const edit = deps.editAnchors;
       const cont = s.continuing!;
       const drawn = [...s.finishedSubpaths, ...(trailing ? [trailing] : [])];
       if (!edit || drawn.length === 0) return;
@@ -237,7 +227,7 @@ export function usePenTool<TPose>(
       const next: PolygonPath = { ...anchorsToPath(set.anchors, set.closed), fillRule: cont.original.fillRule };
       if (samePath(next, cont.original)) return;
       edit.applyEdit(cont.id, next, 'Continue path');
-      if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([cont.id]);
+      if (optsRef.current.autoSelect) deps.selection?.set([asNodeId(cont.id)]);
     },
     [optsRef],
   );
@@ -245,7 +235,7 @@ export function usePenTool<TPose>(
   const commit = useCallback((s: PenScratch, deps: ActionDeps): void => {
     const trailing = s.current && s.current.anchors.length > 0 ? s.current : null;
     if (s.continuing) {
-      commitContinuation(s, trailing, deps.editAnchors);
+      commitContinuation(s, trailing, deps);
       resetScratch(s);
       return;
     }
@@ -259,9 +249,8 @@ export function usePenTool<TPose>(
       s.finishedSubpaths.every((sp) => sp.closed) &&
       (open === null || open.closed);
     const path = buildPath(s.finishedSubpaths, open);
-    const pose = optsRef.current.wrapPath(path, { closed: allClosed });
-    const id = optsRef.current.adapter.addNode(pose);
-    if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([id]);
+    const id = deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed: allClosed }) ?? null;
+    if (id !== null && optsRef.current.autoSelect) deps.selection?.set([id]);
     resetScratch(s);
   }, [commitContinuation, optsRef]);
 
@@ -275,7 +264,7 @@ export function usePenTool<TPose>(
     if (cont && hit.id === cont.id && hit.sub === cont.sub) return false;
     const scene = deps.scene;
     if (!scene && !deps.applyOps) return false;
-    if (!(cont ? deps.editAnchors?.editOps : optsRef.current.adapter.makeNode)) return false;
+    if (!(cont ? deps.editAnchors?.editOps : deps.insert?.build)) return false;
     return cont?.id === hit.id || scene?.get(hit.id as never) !== undefined;
   }, [optsRef]);
 
@@ -324,16 +313,17 @@ export function usePenTool<TPose>(
       keptId = cont.id;
     } else {
       const path = anchorsToPath([...added, ...rest.anchors], [...addedClosed, ...rest.closed]);
-      const node = optsRef.current.adapter.makeNode!(optsRef.current.wrapPath(path, { closed: false }));
-      ops.push(createInsertOp({ node }));
-      keptId = node.id;
+      const built = deps.insert!.build!(boundsOfPath(path), { kind: 'path', path, closed: false });
+      if (built === null) return;
+      ops.push(...built.ops);
+      keptId = built.id;
     }
     if (!sameNode) ops.push(createDeleteOp({ node: scene!.get(hit.id as never) as { id: string } }));
 
     const applyOps = deps.applyOps;
     if (applyOps) applyOps(ops, label);
     else scene!.applyBatch(ops, label, defaultCommitAdapter(scene!));
-    if (optsRef.current.autoSelect) optsRef.current.adapter.setSelection([keptId]);
+    if (optsRef.current.autoSelect) deps.selection?.set([asNodeId(keptId)]);
     resetScratch(s);
   }, [optsRef]);
 
@@ -431,7 +421,7 @@ export function usePenTool<TPose>(
         id: 'pen.placeAnchor',
         label: 'Pen — place anchor',
         eligible: { capability: 'creates-paths' },
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps'],
+        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection'],
         invoker: {
           timing: 'immediate' as const,
           run: (deps, params) => {
@@ -480,7 +470,7 @@ export function usePenTool<TPose>(
         id: 'pen.finishOpen',
         label: 'Pen — finish open path',
         eligible: { capability: 'creates-paths' },
-        requires: ['editAnchors'],
+        requires: ['editAnchors', 'insert', 'selection'],
         // Needs an actual path to commit. Declining also lets the gesture
         // fall through: a ⌘-click with fewer than two anchors reaches the
         // plain-click binding and places an anchor instead.
@@ -517,7 +507,7 @@ export function usePenTool<TPose>(
         id: 'pen.dragHandle',
         label: 'Pen — drag out a bezier handle',
         eligible: { capability: 'creates-paths' },
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps'],
+        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection'],
         invoker: {
           timing: 'ongoing' as const,
           start: (ctx: InvocationCtx) => {
@@ -595,7 +585,7 @@ export function usePenTool<TPose>(
         id: 'pen.finish',
         label: 'Pen — finish path',
         eligible: { capability: 'creates-paths' },
-        requires: ['editAnchors'],
+        requires: ['editAnchors', 'insert', 'selection'],
         enabled: () => (anchorCount(s()) > 0 ? true : ActionDisabledReason.NotApplicable),
         invoker: {
           timing: 'immediate' as const,

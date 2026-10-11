@@ -27,6 +27,7 @@ import {
   linePath,
   polygonFromPoints,
   schneiderFit,
+  type PolygonPath,
 } from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
@@ -65,12 +66,12 @@ export type InsertNodeFactory = (
 export type InsertPaint = (kind: string, seq: number) => { fill?: FillStyle | null; stroke?: Stroke | null };
 
 /** The default {@link InsertPaint}: the next color of the kit palette, as a
- *  fill on a closed shape, a fill and a stroke on a line, and a stroke alone
- *  on a pencil trail. */
+ *  fill on a closed shape, a fill and a stroke on a line or a pen path, and a
+ *  stroke alone on a pencil trail. */
 export const paletteInsertPaint: InsertPaint = (kind, seq) => {
   const color = cycleFill(seq);
   if (kind === 'pencil') return { stroke: strokeOf(color, 2) };
-  if (kind === 'line') return { fill: solid(color), stroke: strokeOf(color, 2) };
+  if (kind === 'line' || kind === 'path') return { fill: solid(color), stroke: strokeOf(color, 2) };
   return { fill: solid(color) };
 };
 
@@ -93,9 +94,10 @@ export function useInsertDepSource(
     const ad = adapterRef.current;
 
     const layer = (sc.layers[0]?.id ?? 'default') as string;
-    return {
-      layer: () => layer,
-      commit(bounds, extras): NodeId | null {
+    const build = (
+      bounds: { x: number; y: number; width: number; height: number },
+      extras: InsertExtras,
+    ): { id: NodeId; ops: Op[] } | null => {
         const kind = extras.kind;
         const seq = ++insertSeqRef.current;
         const id = sc.mintId();
@@ -116,11 +118,10 @@ export function useInsertDepSource(
         if (factory) {
           const built = factory(bounds, extras);
           if (built === null) return null;
-          ad.applyOps(
-            [createInsertOp({ node: { id, kind: 'leaf', layer, pose: built.pose ?? pose, data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
-            `Insert ${kind}`,
-          );
-          return id;
+          return {
+            id,
+            ops: [createInsertOp({ node: { id, kind: 'leaf', layer, pose: built.pose ?? pose, data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
+          };
         }
 
         const geom = extent.geometry;
@@ -166,6 +167,11 @@ export function useInsertDepSource(
               case 'ellipse':
                 data = { path: ellipsePath(extent.bounds), ...painted() };
                 break;
+              case 'path': {
+                const e = extras as { path: PolygonPath; closed: boolean };
+                data = { path: e.path, ...painted(), ...(e.closed ? {} : { fill: null }) };
+                break;
+              }
               case 'text': {
                 // The built-in `useTextTool` drags an empty text box you then type
                 // into (edit is entered via `enterTextEdit`), so `extras` carries
@@ -195,11 +201,19 @@ export function useInsertDepSource(
             break;
         }
 
-        ad.applyOps(
-          [createInsertOp({ node: { id, kind: 'leaf', layer, pose, data } as unknown as { id: string }, label: `Insert ${kind}` })],
-          `Insert ${kind}`,
-        );
-        return id;
+        return {
+          id,
+          ops: [createInsertOp({ node: { id, kind: 'leaf', layer, pose, data } as unknown as { id: string }, label: `Insert ${kind}` })],
+        };
+    };
+    return {
+      layer: () => layer,
+      build,
+      commit(bounds, extras): NodeId | null {
+        const built = build(bounds, extras);
+        if (built === null) return null;
+        ad.applyOps(built.ops, `Insert ${extras.kind}`);
+        return built.id;
       },
     };
   });

@@ -328,6 +328,9 @@ export type InsertExtras =
   | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
   | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
   | { kind: 'text'; text?: string }
+  /** A finished path in world coords, as the pen tool commits one. `bounds`
+   *  is its AABB. An open path takes no fill. */
+  | { kind: 'path'; path: import('@weasel-js/geom').PolygonPath; closed: boolean }
   | {
       kind: 'image';
       src?: string;
@@ -369,6 +372,15 @@ export interface InsertDep {
     bounds: { x: number; y: number; width: number; height: number },
     extras: InsertExtras,
   ): NodeId | null;
+  /**
+   * What `commit` would apply, unapplied: the new node's id and the ops that
+   * insert it, for a caller that has more to put in the same undo step. The
+   * pen joins two paths this way. Without it such a caller declines.
+   */
+  build?(
+    bounds: { x: number; y: number; width: number; height: number },
+    extras: InsertExtras,
+  ): { id: NodeId; ops: Op[] } | null;
   /** The scene layer `commit` puts the node on. An insert on a layer carrying
    *  `parallax` is dragged out in that plane's world, so `bounds` arrive
    *  there too. Omitted: the camera's world. */

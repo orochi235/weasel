@@ -22,15 +22,7 @@ describe('built-in tool capabilities', () => {
     ['star', () => builtins.useStarTool({} as never), ['creates-shapes']],
     ['polygon', () => builtins.usePolygonTool({} as never), ['creates-shapes']],
     ['pen', () => {
-      // usePenTool requires adapter.applyOps at hook-call time (not just in
-      // gesture handlers). Provide a minimal stub. Returns { tool, isEditing }
-      // — extracted below via the 'tool' in guard.
-      const minOpts = {
-        wrapPath: () => ({}),
-        adapter: { applyOps: () => {}, addNode: () => 'id', getNodes: () => [], getPose: () => ({}), getChildren: () => [], getParent: () => null },
-        getPathObj: () => null,
-      };
-      return builtins.usePenTool(minOpts as never) as unknown as { eligibility?: { capabilities?: readonly string[] } };
+      return builtins.usePenTool() as unknown as { eligibility?: { capabilities?: readonly string[] } };
     }, ['creates-paths']],
     ['pencil', () => builtins.usePencilTool(), ['creates-paths']],
     ['slice', () => builtins.useSliceTool(), ['edits-page']],

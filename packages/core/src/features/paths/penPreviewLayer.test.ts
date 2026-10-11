@@ -1,19 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createPenPreviewLayer } from './penPreviewLayer';
 import { usePenTool, type PenScratch } from 'tools/builtin/pen';
 import { renderHook } from '@testing-library/react';
 import type { PolygonPath } from '@weasel-js/geom';
 import { anchorsToPath } from './anchors';
 
-interface Pose { kind: 'path'; path: PolygonPath; closed: boolean }
-
 const DIMS = { width: 400, height: 400 };
 
 function setup() {
-  const adapter = { addNode: vi.fn(() => 'id'), setSelection: vi.fn() };
-  const wrapPath = (path: PolygonPath, opts: { closed: boolean }): Pose =>
-    ({ kind: 'path', path, closed: opts.closed });
-  const { result } = renderHook(() => usePenTool<Pose>({ wrapPath, adapter }));
+  const { result } = renderHook(() => usePenTool());
   const tool = result.current;
   const scratch = tool.initScratch!() as PenScratch;
   const layer = createPenPreviewLayer({ penTool: tool });
