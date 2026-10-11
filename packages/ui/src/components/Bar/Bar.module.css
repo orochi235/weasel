@@ -108,6 +108,11 @@
   white-space: nowrap;
 }
 
+/* A disabled control dims itself; the name beside it is the bar's to dim. */
+.field:has(:disabled) > :is(.label, .after) {
+  opacity: 0.5;
+}
+
 /* A bar's budget is one line rather than a column, so a number carries only
    the digits it needs and a track stops short of pushing its neighbors off
    the end. */
