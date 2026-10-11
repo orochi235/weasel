@@ -25,6 +25,7 @@ export function animateLifecycle<TNode extends { id: string; pose?: TPose }, TPo
   opts: LifecycleAnimation<TPose>,
 ): SceneAdapter<TNode, TPose> {
   const ms = opts.ms ?? 200;
+  const leaving = new Set<string>();
 
   return {
     ...adapter,
@@ -48,15 +49,27 @@ export function animateLifecycle<TNode extends { id: string; pose?: TPose }, TPo
         adapter.removeNode(id);
         return;
       }
+      if (leaving.has(id)) return;
+      leaving.add(id);
+      let unwatch = (): void => {};
+      const remove = (): void => {
+        if (!leaving.delete(id)) return;
+        unwatch();
+        adapter.removeNode(id);
+      };
       const current = adapter.getPose(id);
-      tweenPose(animator, adapter as never, {
+      const handle = tweenPose(animator, adapter as never, {
         id,
         to: opts.exitTo(current),
         ms,
         easing: opts.easing,
         geometry: opts.geometry,
         recordOp: false,
-        onDone: () => adapter.removeNode(id),
+        onDone: remove,
+      });
+      // A canceled tween never calls onDone, and the node still has to go.
+      unwatch = animator.watch((event) => {
+        if ((event.type === 'cancel' || event.type === 'interrupt') && event.animation.id === handle.id) remove();
       });
     },
   };

@@ -86,4 +86,37 @@ describe('animateLifecycle.remove', () => {
     expect(last.width).toBeCloseTo(0, 1);
     expect(removeNode).toHaveBeenCalledWith('a');
   });
+
+  it('removes the node when the exit tween is canceled', () => {
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 20, height: 20 }]]);
+    const { base, removeNode } = makeAdapter(initial);
+    const { result } = renderHook(() => useAnimator(clock));
+    const wrapped = animateLifecycle(base as never, result.current, {
+      exitTo: (p: RectPose) => ({ ...p, width: 0, height: 0 }),
+      ms: 100,
+    });
+    act(() => { wrapped.removeNode('a'); });
+    act(() => clock.advance(50));
+    act(() => result.current.cancelAll());
+    expect(removeNode).toHaveBeenCalledTimes(1);
+    expect(removeNode).toHaveBeenCalledWith('a');
+  });
+
+  it('removes the node once when removal is asked for again mid-exit', () => {
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 20, height: 20 }]]);
+    const { base, removeNode } = makeAdapter(initial);
+    const { result } = renderHook(() => useAnimator(clock));
+    const wrapped = animateLifecycle(base as never, result.current, {
+      exitTo: (p: RectPose) => ({ ...p, width: 0, height: 0 }),
+      ms: 100,
+    });
+    act(() => { wrapped.removeNode('a'); });
+    act(() => clock.advance(50));
+    act(() => { wrapped.removeNode('a'); });
+    expect(removeNode).not.toHaveBeenCalled();
+    act(() => clock.advance(100));
+    expect(removeNode).toHaveBeenCalledTimes(1);
+  });
 });
