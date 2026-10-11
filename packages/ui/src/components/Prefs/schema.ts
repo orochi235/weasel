@@ -1,5 +1,6 @@
 import type { UnitTable } from '@weasel-js/quantity';
 import {
+  filterPrefSubtree,
   isPrefLeaf,
   isPrefSection,
   prefGroupIsPage,
@@ -127,4 +128,20 @@ export function prefRailItems(root: PrefGroup, deep = false): PrefRailItem[] {
     nest(child, key, 1, key);
   }
   return items;
+}
+
+/**
+ * A form's root narrowed to what a filter query leaves, or null when that is nothing. The root's own name is not
+ * matched, where a group's is: it is the form's title, and a query that happened to lie in it would filter nothing.
+ */
+export function filterPrefRoot(
+  root: PrefGroup, query: string, leafAt: (path: string) => PrefLeaf | undefined,
+): PrefGroup | null {
+  if (query.trim() === '') return root;
+  const children: PrefGroup['children'] = {};
+  for (const [key, child] of Object.entries(root.children)) {
+    const kept = filterPrefSubtree(child, query, key, leafAt);
+    if (kept) children[key] = kept;
+  }
+  return Object.keys(children).length === 0 ? null : { ...root, children };
 }

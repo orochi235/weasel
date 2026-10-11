@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
@@ -39,4 +39,18 @@ it.each(['columns', 'list'] as const)('says nothing about a filter when the %s l
   render(<PrefsForm layout={layout} schema={{ name: 'Tool', children: {} }} onChange={() => {}} />);
   expect(screen.queryByRole('button', { name: 'Clear filter' })).toBeNull();
   expect(screen.queryByText(/No settings match/)).toBeNull();
+});
+
+it('does not match a filter against the schema\'s own name, which the reader is not searching', () => {
+  const schema: PrefGroup = {
+    name: 'Settings',
+    children: {
+      grid: { kind: 'boolean', name: 'Grid', description: '', default: false },
+      offset: { kind: 'boolean', name: 'Offset', description: '', default: false },
+    },
+  };
+  render(<PrefsForm layout="list" filterable schema={schema} onChange={() => {}} />);
+  fireEvent.change(screen.getByRole('textbox', { name: 'Filter Settings' }), { target: { value: 'set' } });
+  expect(screen.getByText('Offset')).toBeInTheDocument();
+  expect(screen.queryByText('Grid')).toBeNull();
 });

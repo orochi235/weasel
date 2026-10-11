@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { filterPrefSubtree, prefLeafAt, visiblePrefSubtree, type PrefGroup } from '@weasel-js/prefs';
+import { prefLeafAt, visiblePrefSubtree, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
 import { useDropMotion } from './dropMotion';
 import { formAttrs, useDropFrame } from './dropTarget';
 import { NoMatches } from './NoMatches';
-import { prefFieldChoices, type PrefFieldChoice } from './schema';
+import { filterPrefRoot, prefFieldChoices, type PrefFieldChoice } from './schema';
 import type { PrefRenderer, WalkCtx } from './PrefsRow';
 import { paneChildren } from './PrefsPane';
 import { RailLayout } from './RailLayout';
@@ -149,7 +149,7 @@ export function PrefsForm(props: PrefsFormProps) {
   const leafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
   const root = useMemo(() => {
     const visible = visiblePrefSubtree(schema, showHidden, props.showEmpty === true);
-    return visible === null ? null : filterPrefSubtree(visible, query, '', leafAt);
+    return visible === null ? null : filterPrefRoot(visible, query, leafAt);
   }, [schema, showHidden, query, props.showEmpty, leafAt]);
 
   // Every field of the whole schema, not only the visible ones: a reference may name a hidden field.
