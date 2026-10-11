@@ -21,7 +21,7 @@ describe('kindSchemas', () => {
     expect(own).toEqual({});
     const section = attributeSchema({ name: 'S', members: {} }).shared;
     expect(Object.keys(section)).toEqual(['name', 'description', 'as']);
-    expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section']);
+    expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'plain']);
   });
 
   it('uses a custom kind\'s attributes, and treats unknown attributes as read-only', () => {

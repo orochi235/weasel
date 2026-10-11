@@ -868,6 +868,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   not agreed: `showIf` also takes a condition as data, and a unit may be `{ suffix, accepts }`
   with the conversion implied; the function forms stay for what data cannot say.
 
+- **(P3) A plain group has no glyph of its own.** `as: 'plain'` borrows `layoutRows` for the editor's Group tool
+  and its row in the structure tree; the other group types each have a `form*` glyph drawn for them
+  (`packages/ui/scripts/icons/`). It wants a `formGroup` drawn and proofed the way those were.
+- **(P3) A rail does not see through a plain group.** A page nested in an `as: 'plain'` group gets no rail entry
+  and is drawn as a section where the plain group sits, the same as a group nested in a tab or a panel. If plain
+  is to be a pure macro, `prefRailItems` and `RailLayout`'s `ownOf` would treat its children as its parent's.
+  Its element has no box (`display: contents`), so a drag in `PrefSchemaEditor`'s preview cannot land beside or
+  into the group itself, only beside the rows inside it; the structure tree takes both.
+
 - **(P3) `PrefSchemaEditor` sees only a `ResolvedConfig`'s `group`.** A schema built with
   `f.section` keeps its sections, `showIf` rules, `.render` overrides and `.dialog` rows beside the
   `PrefGroup` tree, not in it, so the editor shows a sectioned schema as one flat list and its

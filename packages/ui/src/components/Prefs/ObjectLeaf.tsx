@@ -38,6 +38,10 @@ export function ObjectLeaf({
           continue;
         }
         flushTabs();
+        if (child.as === 'plain') {
+          out.push(...inner);
+          continue;
+        }
         const heading = <h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>;
         if (child.as === 'panel') out.push(<div key={`panel:${key}`} className={s.panePanel}>{heading}{inner}</div>);
         else out.push(heading, ...inner);

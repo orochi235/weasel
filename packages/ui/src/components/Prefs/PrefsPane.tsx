@@ -35,8 +35,10 @@ const within = (path: string, selected: string | null | undefined): boolean =>
 export function PrefsPane(props: PrefsPaneProps) {
   const { ctx, group, path, scrollRef, className } = props;
   const entries = Object.entries(group.children);
-  const leaves = entries.filter(([, child]) => isPrefLeaf(child));
-  const groups = entries.filter(([, child]) => !isPrefLeaf(child));
+  // A plain group's rows are rows among the leaves', not a block after them.
+  const inRows = ([, child]: Entry): boolean => isPrefLeaf(child) || child.as === 'plain';
+  const leaves = entries.filter(inRows);
+  const groups = entries.filter((entry) => !inRows(entry));
 
   return (
     <div className={[s.pane, className].filter(Boolean).join(' ')} ref={scrollRef} data-pref-into={path} data-pref-scroll="">
@@ -76,6 +78,13 @@ export function paneChildren(
       }
       i--;
       out.push(<PaneTabs key={key} ctx={ctx} tabs={tabs} depth={depth} box={box} />);
+    } else if (child.as === 'plain') {
+      // No box of its own (`display: contents`): its rows take their places in the rows around them.
+      out.push(
+        <div key={key} className={s.plain} {...selectionAttrs(p, ctx)}>
+          {paneChildren(ctx, Object.entries(child.children), p, depth, box)}
+        </div>,
+      );
     } else if (child.as === 'section') {
       out.push(<PaneSection key={key} ctx={ctx} group={child} path={p} depth={Math.max(depth, box ? 1 : 0)} box={box} />);
     } else if (box) {

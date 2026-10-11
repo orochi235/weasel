@@ -28,6 +28,10 @@ const choice = (name: string, description: string, values: readonly string[]): P
   ({ kind: 'enum', name, description, default: undefined, clearable: true, options: values.map((v) => ({ value: v, label: v })) }) as PrefLeaf;
 const strings = (name: string, description: string): PrefLeaf =>
   ({ kind: 'list', name, description, default: [], item: { kind: 'string', name: '', description: '', default: '' } }) as PrefLeaf;
+/** Text the code spells, which the editor sets in monospace. */
+const symbol = (name: string, description: string): PrefLeaf => ({ kind: 'symbol', name, description, default: '' });
+const symbols = (name: string, description: string): PrefLeaf =>
+  ({ kind: 'list', name, description, default: [], item: symbol('', '') }) as PrefLeaf;
 const control = (values: readonly string[]) => choice('Control', 'Which control draws it. Unset: the kind\'s default.', values);
 
 const LEAF_BASE: KindAttrs = {
@@ -35,7 +39,7 @@ const LEAF_BASE: KindAttrs = {
   description: text('Description', 'Help text for the tooltip or the line under the label.', true),
   hidden: flag('Hidden', 'Left out of a settings UI unless it shows hidden prefs.'),
   block: flag('Block', 'Full width with no label row, for a control with its own chrome.'),
-  icon: text('Icon', 'Glyph name in the host\'s icon set.'),
+  icon: symbol('Icon', 'Glyph name in the host\'s icon set.'),
   pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
   short: strings('Short names', 'Shorter forms of the name, longest first.'),
 };
@@ -59,26 +63,26 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   paint: { alpha: flag('Alpha', 'Offer an alpha channel.') },
   object: {},
   field: {
-    kinds: strings('Kinds', 'Only fields of these kinds may be named. Empty: any.'),
+    kinds: symbols('Kinds', 'Only fields of these kinds may be named. Empty: any.'),
   },
   list: {
     minItems: optNumber('Fewest', 'Entries cannot be removed at this many.'),
     maxItems: optNumber('Most', 'Entries cannot be added at this many.'),
   },
   map: {},
-  union: { tag: text('Tag', 'The field of the value that names its variant.') },
+  union: { tag: symbol('Tag', 'The field of the value that names its variant.') },
   action: { label: text('Button', 'The button\'s text. Unset: the name.') },
 };
 
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
-  as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, or a heading over its rows. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section']),
+  as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, or plain: its rows among its neighbors\' with nothing drawn around them. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'plain']),
 };
 const SECTION_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
-  as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, or a heading over its rows. Unset: a heading.', ['tab', 'panel', 'section']),
+  as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, or plain: its rows among its neighbors\' with nothing drawn around them. Unset: a heading.', ['tab', 'panel', 'section', 'plain']),
 };
 
 /** Written even when empty: a leaf without them is not a leaf. */

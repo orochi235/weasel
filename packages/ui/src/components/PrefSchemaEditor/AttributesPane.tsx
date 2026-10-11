@@ -65,7 +65,7 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
 
   const identity: Record<string, PrefRenderer> = {
     [KEY_KIND]: () => (
-      <Input aria-label="Key" value={key} onChange={setKey} onBlur={commitKey}
+      <Input aria-label="Key" className={s.symbol} value={key} onChange={setKey} onBlur={commitKey}
         onKeyDown={(e) => { if (e.key === 'Enter') commitKey(); }} errorMessage={keyError ?? undefined} isInvalid={keyError !== null} />
     ),
     [KIND_KIND]: () => leaf && path !== null && (

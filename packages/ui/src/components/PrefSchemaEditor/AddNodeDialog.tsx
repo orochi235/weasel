@@ -60,7 +60,7 @@ function AddNodeForm({ what, siblings, dottedKey, kinds, initial, onAdd, onClose
     }}>
       <Input label="Name" value={name} onChange={setName} autoFocus isRequired={what === 'pref'}
         description={what === 'pref' ? undefined : `Optional: a ${what} with no name shows no heading.`} />
-      <Input label="Id" value={key} onChange={setTypedKey} isRequired className={s.idField}
+      <Input label="Id" value={key} onChange={setTypedKey} isRequired className={s.symbol}
         isInvalid={shownProblem !== null} errorMessage={shownProblem ?? undefined} />
       {what === 'pref' && (
         <Select label="Kind" placeholder="Choose a kind" selectedKey={kind} onSelectionChange={(k) => setKind(String(k))}

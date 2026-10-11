@@ -69,7 +69,9 @@ export function useSelectedRow(
   // Every render, because the element may arrive a render late: a rail opens the group that holds it first.
   useEffect(() => {
     if (!pending.current || shown === null || ref.current === null) return;
-    const el = [...ref.current.querySelectorAll(`[${PATH_ATTR}]`)].find((x) => x.getAttribute(PATH_ATTR) === shown);
+    const found = [...ref.current.querySelectorAll(`[${PATH_ATTR}]`)].find((x) => x.getAttribute(PATH_ATTR) === shown);
+    // A plain group has no box of its own to scroll to; its first row stands for it.
+    const el = found && getComputedStyle(found).display === 'contents' ? found.firstElementChild ?? found : found;
     if (el === undefined) return;
     pending.current = false;
     // Optional-called: jsdom's elements have no `scrollIntoView`.

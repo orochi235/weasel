@@ -5,7 +5,8 @@
 /* Holds the remove button's column open, so the heads sit over the fields. */
 .optionHeadSpacer { inline-size: var(--wzl-icon-button-size); }
 /* The stored value is code and the label is prose; the faces say which is which on every row. */
-.optionValue input { font-family: var(--wzl-font-mono); }
+/* A field holding what the code will spell: a key, an option's stored value, a tag, a glyph's name. */
+.symbol input { font-family: var(--wzl-font-mono); }
 .number { composes: numeric from '@weasel-js/theme/numeric.module.css'; }
 .number input { text-align: right; }
 /* A whole surface a host may mount anywhere, so it brings its face rather than inheriting the page's. */
@@ -39,7 +40,8 @@
 .pane { min-height: 0; overflow: auto; }
 .structurePane { display: flex; flex-direction: column; overflow: hidden; }
 /* The tree reads at the size of the fields in the pane beside it. */
-.treeArea { flex: 1; min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); }
+/* Each level sits further in than the tree's own gutter: a group's glyph leads its row, and a child one gutter in reads as beside it. */
+.treeArea { flex: 1; min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); --wzl-tree-indent: calc(13px + var(--wzl-space-5)); }
 /* A group's glyph folds it, and says it is open. */
 .treeArea [data-tree-twisty][data-open] { color: var(--wzl-secondary-fg); }
 .storedArea { flex: 0 0 var(--stored-h); min-height: 0; overflow: auto; }
@@ -94,7 +96,6 @@
 .paneTools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wzl-space-2); }
 .treeKey { font-weight: var(--wzl-font-weight-light); color: var(--wzl-fg-muted); }
 .addForm { display: grid; gap: var(--wzl-space-3); min-width: min(360px, 80vw); }
-.idField input { font-family: var(--wzl-font-mono); }
 .addActions { display: flex; justify-content: flex-end; gap: var(--wzl-space-2); }
 .notice:not(:empty) {
   display: flex;

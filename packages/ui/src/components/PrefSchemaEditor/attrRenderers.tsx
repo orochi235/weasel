@@ -41,7 +41,7 @@ function EnumOptions({ ctx }: { ctx: PrefRenderContext }) {
       )}
       {rows.map((r, i) => (
         <div key={i} className={s.optionRow}>
-          <Input className={s.optionValue} placeholder="value" aria-label={`Option ${i + 1} value`} value={r.value} onChange={(v) => set(i, { value: v })} />
+          <Input className={s.symbol} placeholder="value" aria-label={`Option ${i + 1} value`} value={r.value} onChange={(v) => set(i, { value: v })} />
           <Input placeholder="Label" aria-label={`Option ${i + 1} label`} value={r.label} onChange={(v) => set(i, { label: v })} />
           <CloseButton ariaLabel={`Remove option ${i + 1}`} onClick={() => ctx.setValue(rows.filter((_, j) => j !== i))} />
         </div>
@@ -85,8 +85,11 @@ function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
   );
 }
 
-export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair', PrefRenderer> = {
+export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' | 'symbol', PrefRenderer> = {
   pair: (ctx) => <PairEditor ctx={ctx} />,
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,
   'enum-options': (ctx) => <EnumOptions ctx={ctx} />,
+  symbol: (ctx) => (
+    <Input className={s.symbol} aria-label={ctx.pref.name} value={typeof ctx.value === 'string' ? ctx.value : ''} onChange={ctx.setValue} />
+  ),
 };

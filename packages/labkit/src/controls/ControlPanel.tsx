@@ -316,7 +316,8 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     }
     // A group with no name organizes without heading it — core's rule for an
     // empty `PrefGroup.name` — so it contributes its rows and no chrome.
-    if (found.name === '') return <Fragment key={path}>{body(found, path, rows)}</Fragment>;
+    if (found.name === '' || found.as === 'plain')
+      return <Fragment key={path}>{body(found, path, rows)}</Fragment>;
     const lifted = lift(found.name, loosePaths(found, path));
     const reset = resolved.resettable?.has(path) ? (
       <ResetGroup
