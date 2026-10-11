@@ -1,24 +1,24 @@
 /**
  * useHoverTracking — last-hovered NodeId for chrome-caps rules.
  *
- * Attaches a `pointermove` listener to the supplied canvas; on each move it
- * runs the supplied `nodeAtClientPoint` and caches the resulting id on a ref.
- * Cleared on `pointerleave` (pointer left the canvas → nothing is hovered).
+ * Listens for `pointermove` on the element handed to the returned
+ * `canvasRef`; on each move it runs the supplied `nodeAtClientPoint` and
+ * caches the resulting id on a ref. Cleared on `pointerleave` (pointer left
+ * the canvas → nothing is hovered).
  *
- * Returns a stable getter — call once per frame from `buildChromeCtx`.
+ * `getHover` is a stable getter — call once per frame from `buildChromeCtx`.
  *
  * No re-render: the ref updates silently, and the next render that
  * reads it picks up the fresh value. Chrome-caps rules are evaluated
  * during paint, so the hover state is always read fresh.
  */
 
-import { useCallback, useEffect, useRef, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { NodeId } from '../../core/scene/types';
 
 /** Options for `useHoverTracking`. */
 export interface UseHoverTrackingArgs {
-  canvasRef: RefObject<HTMLElement | null>;
   /** Topmost id under a client point, or null. One lookup rather than a
    *  client→world thunk beside a world-space picker: a screen-pixel pick
    *  tolerance converts against the camera the point resolved to, and two
@@ -27,30 +27,60 @@ export interface UseHoverTrackingArgs {
   enabled?: boolean;
 }
 
+/** What `useHoverTracking` returns. Both members keep their identity. */
+export interface HoverTracking {
+  /** The node the pointer is over, or null. */
+  getHover: () => NodeId | null;
+  /** Hand it the element to track, or null to stop: a callback ref, so an
+   *  element that mounts after the hook is tracked from the moment it arrives. */
+  canvasRef: (element: HTMLElement | null) => void;
+}
+
 /** Track which node the pointer is over. Returns a getter rather than state,
  *  so per-frame code can read the current value without the hover re-rendering
  *  the component on every pointer move. */
-export function useHoverTracking(args: UseHoverTrackingArgs): () => NodeId | null {
-  const { canvasRef, nodeAtClientPoint, enabled = true } = args;
+export function useHoverTracking(args: UseHoverTrackingArgs): HoverTracking {
+  const { nodeAtClientPoint, enabled = true } = args;
   const hoverRef = useRef<NodeId | null>(null);
   const nodeAtRef = useLatest(nodeAtClientPoint);
+  const elementRef = useRef<HTMLElement | null>(null);
+  const enabledRef = useRef(enabled);
+  const detachRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    if (!enabled) return;
-    const c = canvasRef.current;
-    if (!c) return;
+  const sync = useCallback(() => {
+    detachRef.current?.();
+    detachRef.current = null;
+    hoverRef.current = null;
+    const el = elementRef.current;
+    if (!el || !enabledRef.current) return;
     const onMove = (e: PointerEvent) => {
       hoverRef.current = nodeAtRef.current(e.clientX, e.clientY)?.id ?? null;
     };
     const onLeave = () => { hoverRef.current = null; };
-    c.addEventListener('pointermove', onMove);
-    c.addEventListener('pointerleave', onLeave);
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerleave', onLeave);
+    detachRef.current = () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerleave', onLeave);
+    };
+  }, [nodeAtRef]);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+    sync();
     return () => {
-      c.removeEventListener('pointermove', onMove);
-      c.removeEventListener('pointerleave', onLeave);
+      detachRef.current?.();
+      detachRef.current = null;
       hoverRef.current = null;
     };
-  }, [canvasRef, enabled, nodeAtRef]);
+  }, [enabled, sync]);
 
-  return useCallback(() => hoverRef.current, []);
+  const canvasRef = useCallback((element: HTMLElement | null) => {
+    if (elementRef.current === element) return;
+    elementRef.current = element;
+    sync();
+  }, [sync]);
+  const getHover = useCallback(() => hoverRef.current, []);
+
+  return useMemo(() => ({ getHover, canvasRef }), [getHover, canvasRef]);
 }

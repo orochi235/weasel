@@ -99,6 +99,7 @@ export {
   ROTATION_HANDLE_BASE_PX,
   resolveDeviceProfile,
   useDeviceProfile,
+  watchDevicePixelRatio,
   type DeviceProfile,
   type DeviceProfileProviderProps,
   type DetectedDeviceFacts,
@@ -589,6 +590,7 @@ export type {
   BuildRuleCtxArgs,
   BuildChromeCtxArgs,
   UseHoverTrackingArgs,
+  HoverTracking,
 } from './features/chrome-caps';
 
 // ─── Selection overlay: outlines, handles, composer ─────────────────────────

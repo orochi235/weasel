@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useRef, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useHoverTracking } from './useHoverTracking';
 import { asNodeId } from '../../core/scene/types';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
@@ -25,19 +25,18 @@ function renderHoverHook(opts: {
   const canvas = document.createElement('canvas');
   document.body.appendChild(canvas);
   const { result } = renderHook(() => {
-    const ref = useRef<HTMLCanvasElement | null>(null);
-    useEffect(() => { ref.current = canvas; }, []);
-    ref.current = canvas;
     const toWorld = opts.clientToWorld ?? ((cx: number, cy: number) => ({ x: cx, y: cy }));
     return useHoverTracking({
-      canvasRef: ref,
       nodeAtClientPoint: (cx, cy) => {
         const w = toWorld(cx, cy);
         return opts.getNodeAtPoint(w.x, w.y);
       },
     });
   });
-  return { canvas, getHover: result.current, cleanup: () => canvas.remove() };
+  // After the hook's own effects have run: an element that arrives late must
+  // still be tracked.
+  act(() => { result.current.canvasRef(canvas); });
+  return { canvas, getHover: result.current.getHover, cleanup: () => canvas.remove() };
 }
 
 describe('useHoverTracking', () => {
@@ -88,29 +87,46 @@ describe('useHoverTracking', () => {
 
 describe('useHoverTracking — the getter', () => {
   it('is the same function on every render', () => {
-    const ref = { current: document.createElement('canvas') };
     const { result, rerender } = renderHook(() =>
-      useHoverTracking({ canvasRef: ref, nodeAtClientPoint: () => null }));
+      useHoverTracking({ nodeAtClientPoint: () => null }));
     const first = result.current;
     rerender();
-    expect(result.current).toBe(first);
+    expect(result.current.getHover).toBe(first.getHover);
+    expect(result.current.canvasRef).toBe(first.canvasRef);
   });
 
   it('forgets the hovered node when tracking is turned off', () => {
     const canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
-    const ref = { current: canvas };
     const { result, rerender } = renderHook(
       ({ enabled }: { enabled: boolean }) => useHoverTracking({
-        canvasRef: ref, nodeAtClientPoint: () => ({ id: asNodeId('a') }), enabled,
+        nodeAtClientPoint: () => ({ id: asNodeId('a') }), enabled,
       }),
       { initialProps: { enabled: true } },
     );
+    act(() => { result.current.canvasRef(canvas); });
     act(() => { fireMove(canvas, 1, 1); });
-    expect(result.current()).toBe(asNodeId('a'));
+    expect(result.current.getHover()).toBe(asNodeId('a'));
     rerender({ enabled: false });
-    expect(result.current()).toBeNull();
+    expect(result.current.getHover()).toBeNull();
+    act(() => { fireMove(canvas, 1, 1); });
+    expect(result.current.getHover()).toBeNull();
+    rerender({ enabled: true });
+    act(() => { fireMove(canvas, 1, 1); });
+    expect(result.current.getHover()).toBe(asNodeId('a'));
     canvas.remove();
+  });
+
+  it('stops tracking an element it is handed null for', () => {
+    const canvas = document.createElement('canvas');
+    const { result } = renderHook(() =>
+      useHoverTracking({ nodeAtClientPoint: () => ({ id: asNodeId('a') }) }));
+    act(() => { result.current.canvasRef(canvas); });
+    act(() => { fireMove(canvas, 1, 1); });
+    act(() => { result.current.canvasRef(null); });
+    expect(result.current.getHover()).toBeNull();
+    act(() => { fireMove(canvas, 1, 1); });
+    expect(result.current.getHover()).toBeNull();
   });
 });
 
@@ -118,15 +134,15 @@ describe('useHoverTracking — abandoned renders', () => {
   it('hit-tests with the committed picker, not an abandoned render\'s', () => {
     const canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
-    const ref = { current: canvas };
     const pickers = {
       a: () => ({ id: asNodeId('a') }),
       b: () => ({ id: asNodeId('b') }),
     };
     let getHover: (() => unknown) | null = null;
     function Probe({ which }: { which: 'a' | 'b' }) {
-      const g = useHoverTracking({ canvasRef: ref, nodeAtClientPoint: pickers[which] });
-      if (which === 'a') getHover = g;
+      const hover = useHoverTracking({ nodeAtClientPoint: pickers[which] });
+      useEffect(() => { hover.canvasRef(canvas); }, [hover]);
+      if (which === 'a') getHover = hover.getHover;
       return null;
     }
     renderThenAbandon<'a' | 'b'>('a', 'b', (which) => <Probe which={which} />);

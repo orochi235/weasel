@@ -1778,12 +1778,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
   // Chrome-caps hover tracking: last-hovered NodeId fed into `ChromeCtx.hover`.
-  // The hook attaches its own pointermove/leave listeners on the canvas and
+  // The hook attaches its own pointermove/leave listeners on the element
+  // `mergedRef` hands it and
   // caches the topmost-id from `getNodeAtPoint` on a ref. No re-renders.
 
   const getNodeAtPointRefForHover = useLatest(getNodeAtPoint);
-  const getHover = useHoverTracking({
-    canvasRef: internalCanvasRef,
+  const { getHover, canvasRef: trackHoverOn } = useHoverTracking({
     // One lookup, not a client→world thunk beside a picker: the point and the
     // camera its tolerance converts against have to come from the same view.
     // Hover has no pointer to capture, so it resolves fresh — whichever view
@@ -2165,6 +2165,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const mergedRef = useCallback(
     (node: CanvasExtensionApi | null) => {
       internalCanvasRef.current = node?.element ?? null;
+      trackHoverOn(internalCanvasRef.current);
       const extended: SceneCanvasApi | null = node
         ? {
             ...node,
@@ -2179,7 +2180,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       setCanvasReady(extended !== null);
       assignRef(ref, extended);
     },
-    [ref, ingestImpl, viewAnimation, addView],
+    [ref, ingestImpl, viewAnimation, addView, trackHoverOn],
   );
 
   // What a view needs to build its own overlay-aware state. `geometry` is the

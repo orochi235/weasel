@@ -49,7 +49,7 @@ the right place despite the name.
 | `resolve.ts` | Merges consumer rules over defaults and closes over ctx → `(id) => boolean`. |
 | `types.ts` | `ChromeId`, `VisibilityRules`, `Condition`, and the legacy `ChromeCtx` alias. |
 | `buildChromeCtx.ts` | Assembles a `ChromeCtx` from canvas state. |
-| `useHoverTracking.ts` | Ref-based last-hovered-node tracker feeding the `hovering` atoms. Deliberately doesn't re-render. |
+| `useHoverTracking.ts` | Ref-based last-hovered-node tracker feeding the `hovering` atoms. Deliberately doesn't re-render. Takes its element through the `canvasRef` callback it returns. |
 
 ## Two ways to write a rule
 

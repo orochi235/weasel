@@ -534,12 +534,6 @@ Core five + Crop shipped. Remaining:
   each renderer's `GLTextureCache` keeps its own copy by id, and a scene with more distinct specs
   than the bound would draw the evicted ones blank ("pattern TextureHandle not registered").
 
-- **(P3) Chrome caps: `useHoverTracking` never attaches if its canvas ref is empty on the first
-  effect run.** The effect in `packages/core/src/features/chrome-caps/useHoverTracking.ts` reads
-  `canvasRef.current` once and has no dependency that changes when the element arrives, so a canvas
-  mounted a render later is never tracked. Taking the element (or a callback ref) instead of a ref
-  object would fix it and changes the hook's arguments.
-
 - **(P2) Renderer: a translucent `ImageBitmap` is multiplied by its alpha twice.** A
   half-transparent white bitmap drawn with an image command onto a cleared canvas reads back as
   `(64, 64, 64, 128)` in headless Chromium where `(128, 128, 128, 128)` is correct, whether the

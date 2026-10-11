@@ -55,4 +55,4 @@ export { buildRuleCtx, DEFAULT_ALLOWED_CAPABILITIES } from '@weasel-js/routing';
 export { defaultVisibilityRules } from './defaults';
 export { resolveVisibility } from './resolve';
 export { buildChromeCtx, type BuildChromeCtxArgs } from './buildChromeCtx';
-export { useHoverTracking, type UseHoverTrackingArgs } from './useHoverTracking';
+export { useHoverTracking, type UseHoverTrackingArgs, type HoverTracking } from './useHoverTracking';
