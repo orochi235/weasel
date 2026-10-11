@@ -3,6 +3,7 @@ import {
   isPrefLeaf,
   isPrefSection,
   PREF_KINDS,
+  prefHoldsValue,
   type PrefEnum,
   type PrefField,
   type PrefGroup,
@@ -115,9 +116,6 @@ const AUTO_FLAGS: KindAttrs = {
   unpinned: flag('Starts auto', 'Begins unpinned, where it would begin at its default.'),
 };
 
-/** Kinds that hold no value, so have nothing to be auto. */
-const VALUELESS = new Set(['action', 'label', 'separator', 'alias']);
-
 /** Stored as given, falsy or not: `false` and `0` are values a leaf can read while auto. */
 const AS_GIVEN = new Set(['autoValue']);
 
@@ -175,7 +173,7 @@ function entryAttrs(item: PrefLeaf, custom: CustomKinds): KindAttrs {
 }
 
 function autoAttrs(leaf: PrefLeaf): KindAttrs {
-  if (VALUELESS.has(leaf.kind)) return {};
+  if (!prefHoldsValue(leaf)) return {};
   const value = valueAttr(leaf, { name: 'Auto value', description: 'What it reads while auto, where nothing computes it. It need not be the default.' });
   return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
 }
@@ -235,7 +233,9 @@ export function attributeSchema(
   for (const k of Object.keys(entry)) if (containsCode((item as unknown as Record<string, unknown>)[k])) delete entry[k];
   // What a type holds beyond the fields its use sets is the type's to show, where it is declared.
   const undrawn = node.kind === 'separator' ? SEPARATOR_UNDRAWN : NO_ATTRS;
-  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => k !== 'kind' && !SLOTS.has(k) && !undrawn.has(k) && !(k in shared) && !(k in own) && !(k in auto));
+  // Every leaf carries a `default`, which says nothing of one that holds no value.
+  const listed = (k: string): boolean => k !== 'kind' && !SLOTS.has(k) && !undrawn.has(k) && !(k === 'default' && !prefHoldsValue(node));
+  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => listed(k) && !(k in shared) && !(k in own) && !(k in auto));
   return { shared, own, auto, entry, readOnly };
 }
 
