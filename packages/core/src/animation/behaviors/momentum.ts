@@ -3,6 +3,7 @@ import type { Op } from 'core/ops/types';
 import type { MoveBehavior, GestureContext } from 'interactions/gestures/types';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { Animator } from '../types';
@@ -50,6 +51,9 @@ interface PointerSample {
 
 interface RectLike { x: number; y: number }
 
+const sameBounds = (a: Bounds, b: Bounds): boolean =>
+  a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+
 let nextCoast = 0;
 
 const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
@@ -62,7 +66,9 @@ const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
  * Plugs into the move action rather than replacing it, so the drag itself is
  * unchanged — this only decides what happens after the release. The whole
  * flick, coast included, records as one undoable transform. Dragging a node
- * again while it coasts stops the coast and records it where it stands.
+ * again while it coasts stops the coast and records it where it stands. A node
+ * something else moves or deletes mid-coast, an undo included, drops out of
+ * the coast where that left it, and nothing is recorded for it.
  */
 export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
   const friction = opts.friction ?? 0.92;
@@ -138,7 +144,20 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       // by the per-frame delta and commit one transform op per id when done.
       const startPoses = new Map<string, TPose>(ctx.current);
       let lastValue = { x: 0, y: 0 };
-      const adapter = ctx.adapter as { setPose(id: string, p: TPose): void; applyOps?(ops: Op[], label: string): void };
+      const adapter = ctx.adapter as typeof ctx.adapter & { applyOps?(ops: Op[], label: string): void };
+      // What the scene held for each node right after the coast last wrote it.
+      // A node that is gone, or reads back as anything else, has another
+      // writer now, an undo or a delete, and leaves the coast unrecorded.
+      const riding = new Set(ctx.draggedIds);
+      const lastSeen = new Map<string, Bounds>();
+      for (const id of riding) {
+        if (adapter.getNode(id)) lastSeen.set(id, d.getBounds(adapter.getPose(id)));
+      }
+      const stillOurs = (id: string): boolean => {
+        const seen = lastSeen.get(id);
+        return seen !== undefined && adapter.getNode(id) !== undefined
+          && sameBounds(d.getBounds(adapter.getPose(id)), seen);
+      };
       // Track per-id final positions when bounds clamping is active — used
       // by onDone to compute the correct final transform op (not just
       // start + decay's last delta, which may overshoot the boundary).
@@ -168,7 +187,11 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
         onTick: (delta) => {
           lastValue = delta;
           let allHit = bounds !== undefined;
-          for (const id of ctx.draggedIds) {
+          for (const id of [...riding]) {
+            if (!stillOurs(id)) {
+              riding.delete(id);
+              continue;
+            }
             const start = startPoses.get(id);
             if (!start) continue;
             const o = d.getBounds(start);
@@ -176,6 +199,12 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
             if (!hit) allHit = false;
             finalPositions.set(id, { x: nx, y: ny });
             adapter.setPose(id, translatePoseViaDescriptor(start, nx - o.x, ny - o.y, d));
+            lastSeen.set(id, d.getBounds(adapter.getPose(id)));
+          }
+          if (riding.size === 0) {
+            coasts.delete(coast);
+            decayHandle.cancel();
+            return;
           }
           // If 'stop' policy and every dragged id's clamped position hit
           // the boundary, cancel the decay so the animation settles instantly
@@ -190,7 +219,8 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       function commitFlick(): void {
         if (!coasts.delete(coast) || !adapter.applyOps) return;
         const ops: Op[] = [];
-        for (const id of ctx.draggedIds) {
+        for (const id of riding) {
+          if (!stillOurs(id)) continue;
           const start = startPoses.get(id);
           if (!start) continue;
           const o = d.getBounds(start);
