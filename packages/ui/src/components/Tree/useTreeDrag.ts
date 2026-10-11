@@ -55,9 +55,11 @@ export interface TreeDragState {
   effect: TreeDragEffect;
   mark: DropMark | null;
   ghost: ReorderGhost | null;
+  /** The pointer, in client space, and whether it is off the tree's box. */
+  pointer: { x: number; y: number; outside: boolean } | null;
 }
 
-const IDLE: TreeDragState = { dragging: null, effect: 'move', mark: null, ghost: null };
+const IDLE: TreeDragState = { dragging: null, effect: 'move', mark: null, ghost: null, pointer: null };
 
 /** Pointer drag-to-reorder for `Tree`. Inert unless `enabled`. */
 export function useTreeDrag(opts: UseTreeDragOptions) {
@@ -175,6 +177,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
         effect: how,
         mark: hit?.mark ?? null,
         ghost: { ids, left: ev.clientX - grab.x, top: ev.clientY - grab.y, width: rect.width },
+        pointer: { x: ev.clientX, y: ev.clientY, outside: out },
       });
     };
 

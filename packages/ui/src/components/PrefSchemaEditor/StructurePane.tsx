@@ -4,6 +4,7 @@ import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { filterTree, Tree, treeBranchIds, type TreeDragEffect, type TreeNode } from '../Tree';
 import { Badge } from '../Badge';
+import type { PrefRenderer } from '../Prefs';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
@@ -15,6 +16,7 @@ import { useEditorSize } from './editorPrefs';
 import type { EditorAction } from './editorActions';
 import { holdsPages, looseKeys, looseTarget, mayUnplace, schemaTarget, topLevelAllows } from './loose';
 import { Icon } from '../../icons';
+import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
 import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
 import { UnplacedTree } from './UnplacedTree';
@@ -71,6 +73,8 @@ export interface StructurePaneProps {
   kinds: readonly string[];
   /** The custom kinds' attributes, which say what a new leaf of one starts with. */
   custom?: CustomKinds;
+  /** Renderers for custom kinds, which a dragged node's ghost is drawn with. */
+  renderers?: Record<string, PrefRenderer>;
   /** The types a new pref may be made from, offered beside the kinds. */
   types: PrefTypes;
   expanded: ReadonlySet<string>;
@@ -113,7 +117,7 @@ export interface DropOutside {
 const ancestorsOf = (path: string): string[] =>
   keysOf(path).slice(0, -1).map((_, i, keys) => pathOf(keys.slice(0, i + 1))!);
 
-export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, renderers, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark }: StructurePaneProps) {
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
   const [nodes, looseNodes] = useMemo(() => {
     const all = toTreeNodes(schema, null, changed, rowMark);
@@ -247,6 +251,16 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
       <Tree
         aria-label="Schema structure"
         ghost={!outsideDraws}
+        // Out of the tree a drag is headed for the form, so it shows the node as the form draws it.
+        renderGhost={(ids, { outside: left }) => {
+          const node = left ? nodeAt(schema, ids[0]!) : undefined;
+          if (!node) return null;
+          const topLevel = parentPath(ids[0]!) === null;
+          return {
+            content: <DraggedNodes node={node} topLevel={topLevel} count={ids.length} renderers={renderers} />,
+            width: GHOST_WIDTH[ghostIsPage(node, topLevel) ? 'page' : 'node'],
+          };
+        }}
         foldBy="leading"
         guides
         nodes={shown}

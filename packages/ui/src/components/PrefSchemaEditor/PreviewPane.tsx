@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
-import { Badge } from '../Badge';
 import { DragGhost } from '../DragGhost';
 import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
@@ -9,7 +8,7 @@ import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPa
 import { Switch } from '../Switch';
 import type { DefaultEdit } from './defaults';
 import { useEditorSize } from './editorPrefs';
-import { NodeGhost } from './NodeGhost';
+import { DraggedNodes } from './NodeGhost';
 import { placedOnly } from './loose';
 import { drawsNode } from './previewDrop';
 import { PaneHeader } from './PaneHeader';
@@ -84,7 +83,7 @@ interface GroupPreviewProps {
 function PreviewDragGhost({ ghost, stageRef, drop, renderers }: Pick<GroupPreviewProps, 'ghost' | 'stageRef' | 'drop' | 'renderers'>) {
   if (!ghost || !stageRef?.current || drawsNode(drop)) return null;
   return (
-    <DragGhost at={ghost} from={stageRef.current}><NodeGhost node={ghost.node} topLevel={ghost.topLevel} renderers={renderers} />{ghost.count > 1 && <Badge size="xs" className={s.ghostCount}>{ghost.count}</Badge>}</DragGhost>
+    <DragGhost at={ghost} from={stageRef.current}><DraggedNodes node={ghost.node} topLevel={ghost.topLevel} count={ghost.count} renderers={renderers} /></DragGhost>
   );
 }
 

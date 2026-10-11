@@ -15,8 +15,7 @@ import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@wea
 import type { TreeDropTarget } from '../../dropTarget';
 import { LIST_KEYS, selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { DisclosureMark } from '../Disclosure';
-import { DragGhost } from '../DragGhost';
-import { Icon } from '../../icons';
+import { TreeDragGhost, type TreeGhost, type TreeGhostWhere } from './TreeGhost';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Tree.module.css';
 import { handleMoveKey } from './treeKeyboardMove';
@@ -112,6 +111,11 @@ export interface TreeProps {
    *  tree draws them where they would land. Default true. */
   ghost?: boolean;
   /**
+   * A stand-in to draw beside the pointer in place of the dragged rows, asked on every move of a drag begun in
+   * this tree: something that draws the rows as they will look where they are headed, say. `null` draws the rows.
+   */
+  renderGhost?(ids: readonly string[], where: TreeGhostWhere): TreeGhost | null;
+  /**
    * A drag begun outside the tree, at this client point. The tree marks where
    * it would land — asking `canDrop` with no ids — and reports the target
    * through `onExternalTarget`, `null` while the point is off its rows.
@@ -164,7 +168,7 @@ export const Tree = forwardRef(function Tree(
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', guides = false,
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
-    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, externalDrag, onExternalTarget,
+    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, renderGhost, externalDrag, onExternalTarget,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
@@ -448,19 +452,9 @@ export const Tree = forwardRef(function Tree(
           <Tooltip triggerRef={{ current: rowTip.tip!.el }} placement="right">{tipNode.tooltip}</Tooltip>
         </TooltipTrigger>
       )}
-      {ghost && drag.state.ghost && treeEl.current && (
-        <DragGhost at={drag.state.ghost} from={treeEl.current}>
-          {drag.state.ghost.ids.map((id) => {
-            // Not the shown rows: a drag also carries selected rows folded away in a closed branch.
-            const carried = nodeById(nodes, id);
-            return (
-              <div key={id} className={s.ghostRow}>
-                {drag.state.effect !== 'move' && <Icon name={drag.state.effect === 'link' ? 'link' : 'add'} size={14} className={s.ghostEffect} />}
-                {carried?.label ?? id}
-              </div>
-            );
-          })}
-        </DragGhost>
+      {ghost && treeEl.current && (
+        // Not the shown rows: a drag also carries selected rows folded away in a closed branch.
+        <TreeDragGhost state={drag.state} from={treeEl.current} labelOf={(id) => nodeById(nodes, id)?.label ?? id} render={renderGhost} />
       )}
     </>
   );

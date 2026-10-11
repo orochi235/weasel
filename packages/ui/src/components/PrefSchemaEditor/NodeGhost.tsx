@@ -1,4 +1,5 @@
 import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
+import { Badge } from '../Badge';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
 import type { SchemaNode } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
@@ -34,5 +35,20 @@ export function NodeGhost({ node, topLevel = false, renderers }: {
       <PrefsForm layout="list" schema={{ name: '', children: { ghost: drawn } }} values={NO_VALUES} onChange={ignore}
         renderers={renderers} showEmpty showHidden />
     </div>
+  );
+}
+
+/** A drag's ghost: the one node it draws, and on its corner how many it carries when that is more. */
+export function DraggedNodes({ node, topLevel, count, renderers }: {
+  node: SchemaNode;
+  topLevel: boolean;
+  count: number;
+  renderers?: Record<string, PrefRenderer>;
+}) {
+  return (
+    <>
+      <NodeGhost node={node} topLevel={topLevel} renderers={renderers} />
+      {count > 1 && <Badge size="xs" className={s.ghostCount}>{count}</Badge>}
+    </>
   );
 }

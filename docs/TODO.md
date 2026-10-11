@@ -1141,11 +1141,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   fold both into `as`. `as: 'page'` means nothing where there is no rail (`ControlPanel`, the
   columns and list layouts, any `PrefSection`) and draws as the default there.
 
-- **(P3) `PrefSchemaEditor`: a drag begun in the structure tree shows the tree's rows as its ghost over the live preview.** A
-  palette drag and a drag begun in the preview show the node as the form draws it (`NodeGhost`). `Tree` draws its
-  own ghost and has no way to be handed one, so it needs a prop for what to draw, and for when the drag has left it.
-  Over the preview that ghost now also sits on top of the node the form draws where it would land; the palette's and
-  the preview's own ghosts step aside for it (`drawsNode`).
 - **(P3) `PrefSchemaEditor`: several nodes at once, what is left.** The Unplaced tree selects one row, and a
   click there replaces a selection of several; a drag out of it or out of the palette carries one node
   (`onPaletteDrop` takes one). Add alias and an alias drag act on one pref and are off with several selected.

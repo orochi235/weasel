@@ -53,6 +53,43 @@ describe('Tree — drag ghost', () => {
   });
 });
 
+describe('Tree — a ghost the caller draws', () => {
+  const boxed = (tree: HTMLElement) => {
+    tree.getBoundingClientRect = () => ({ top: 0, left: 0, right: 200, bottom: 96, width: 200, height: 96, x: 0, y: 0 }) as DOMRect;
+  };
+
+  it('draws what renderGhost returns in place of the rows, and says whether the pointer has left the tree', () => {
+    const renderGhost = vi.fn((ids: readonly string[], where: { outside: boolean }) =>
+      where.outside ? { content: <span>stand-in for {ids.join()}</span>, width: 300 } : null);
+    const { row, tree } = setup({ renderGhost });
+    boxed(tree);
+    press(row('Zed'), 80);
+    move(60);
+    // Inside the tree the caller declined, so the rows are drawn.
+    expect(renderGhost).toHaveBeenLastCalledWith(['z'], { outside: false, effect: 'move' });
+    expect(screen.queryByText('stand-in for z')).toBeNull();
+    expect(screen.getAllByText('Zed')).toHaveLength(2);
+
+    move(60, 400);
+    expect(renderGhost).toHaveBeenLastCalledWith(['z'], { outside: true, effect: 'move' });
+    const ghost = screen.getByText('stand-in for z').parentElement!;
+    expect(screen.getAllByText('Zed')).toHaveLength(1);
+    // Its corner sits just off the pointer, at the width asked for.
+    expect([ghost.style.left, ghost.style.top, ghost.style.width]).toEqual(['410px', '70px', '300px']);
+    release(60, 400);
+    expect(screen.queryByText('stand-in for z')).toBeNull();
+  });
+
+  it('draws nothing of the caller\'s while `ghost` is off', () => {
+    const renderGhost = () => ({ content: <span>stand-in</span>, width: 300 });
+    const { row } = setup({ renderGhost, ghost: false });
+    press(row('Zed'), 80);
+    move(60, 400);
+    expect(screen.queryByText('stand-in')).toBeNull();
+    release(60, 400);
+  });
+});
+
 describe('Tree — drag to copy', () => {
   it('copies on a drag released with Alt held, and moves nothing', () => {
     const onCopy = vi.fn();
