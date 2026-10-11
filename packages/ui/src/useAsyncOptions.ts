@@ -81,7 +81,7 @@ export function useAsyncOptions<T extends Key = string>({
 
       loadRef.current(inputValue, controller.signal).then(
         (next) => {
-          if (mine <= applied.current) return;
+          if (controller.signal.aborted || mine <= applied.current) return;
           applied.current = mine;
           setOptions(next);
           setLoadError(null);

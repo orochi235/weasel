@@ -83,6 +83,35 @@ describe('useAsyncOptions', () => {
     expect(result.current.options).toEqual([BLUE]);
   });
 
+  it('ignores a superseded response that resolves before its successor', async () => {
+    const first = deferred<typeof RED[]>();
+    const second = deferred<typeof BLUE[]>();
+    const load = vi.fn()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+
+    const { result } = renderHook(() => useAsyncOptions({ load, debounceMs: 0 }));
+
+    act(() => result.current.onInputChange('r'));
+    act(() => void vi.advanceTimersByTime(1));
+    act(() => result.current.onInputChange('b'));
+    act(() => void vi.advanceTimersByTime(1));
+
+    await act(async () => {
+      first.resolve([RED]);
+      await first.promise;
+    });
+    expect(result.current.options).toEqual([]);
+    expect(result.current.isLoading).toBe(true);
+
+    await act(async () => {
+      second.resolve([BLUE]);
+      await second.promise;
+    });
+    expect(result.current.options).toEqual([BLUE]);
+    expect(result.current.isLoading).toBe(false);
+  });
+
   it('aborts a superseded request rather than only ignoring it', async () => {
     const signals: AbortSignal[] = [];
     const load = vi.fn((_q: string, signal: AbortSignal) => {
