@@ -65,7 +65,7 @@ describe('drawBooleansAdapter', () => {
   it('keeps a fill of None on the result', () => {
     const { scene, adapter } = setup();
     for (const id of ['a', 'b']) {
-      scene.update(asNodeId(id), { data: { path: rectPath(0, 0, 10, 10), fill: null, stroke: '#000' } });
+      scene.update(asNodeId(id), { data: { path: rectPath(0, 0, 10, 10), fill: null, stroke: { paint: { color: '#000' }, width: 1 } } });
     }
     scene.setSelection([asNodeId('a'), asNodeId('b')]);
     const result = applyBooleanOp(adapter, 'union');

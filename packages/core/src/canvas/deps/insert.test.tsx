@@ -87,7 +87,7 @@ describe('useInsertDepSource', () => {
   it('paints a kit shape from the `paint` option, keeping the kit geometry', () => {
     const applyOps = vi.fn();
     let reg!: DepRegistry;
-    const paint = vi.fn((kind: string) =>
+    const paint = vi.fn((kind: string, _seq: number) =>
       kind === 'line' ? { stroke: { paint: { color: '#00f' }, width: 3 } } : { fill: null, stroke: { paint: { color: '#f00' }, width: 1 } },
     );
     function Wire() {
