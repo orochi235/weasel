@@ -20,6 +20,7 @@ import type { Action } from '../interactions/actions/action';
 import { heldKeySpec } from '../interactions/actions/toolOffhand';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { hitPredicate } from '@weasel-js/gestures';
+import { createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
 
 const rect: Contribution = {
   id: 'rect',
@@ -36,23 +37,56 @@ function wrapper({ children }: { children: ReactNode }) {
   return <ActiveToolContextProvider>{children}</ActiveToolContextProvider>;
 }
 
+const overlayIds = (api: { overlays(): unknown[] }): string[] =>
+  api.overlays().map((o) => (o as { id: string }).id);
+const withOverlay = (entry: Contribution): Contribution => ({ ...entry, overlay: { id: entry.id } as never });
+
 describe('useContributions', () => {
-  it('scopes a focused entry active and a claimed entry ambient', () => {
+  it('draws a focused entry and a claimed entry, the active tier first', () => {
     const { result } = renderHook(
-      () => useContributions({ entries: [rect, hud], focused: 'rect' }),
+      () => useContributions({ entries: [withOverlay(hud), withOverlay(rect)], focused: 'rect' }),
       { wrapper },
     );
-    const scoped = result.current.scopedBindings();
-    expect(scoped.find((s) => s.ownerId === 'rect')?.scope).toBe('active');
-    expect(scoped.find((s) => s.ownerId === 'weasel-hud')?.scope).toBe('ambient');
+    expect(overlayIds(result.current)).toEqual(['rect', 'weasel-hud']);
   });
 
   it('omits an unfocused focus-only entry entirely', () => {
     const { result } = renderHook(
-      () => useContributions({ entries: [rect, hud], focused: 'other' }),
+      () => useContributions({ entries: [withOverlay(rect), withOverlay(hud)], focused: 'other' }),
       { wrapper },
     );
-    expect(result.current.scopedBindings().some((s) => s.ownerId === 'rect')).toBe(false);
+    expect(overlayIds(result.current)).toEqual(['weasel-hud']);
+  });
+});
+
+describe('overlays follow the assembly the dispatcher routes by', () => {
+  const held = (id: string): Contribution => withOverlay({ id, eligibility: { focus: true } });
+
+  it('orders two held entries newest hold first', () => {
+    const { result } = renderHook(() => {
+      const ctx = useActiveToolContext();
+      const api = useContributions({ entries: [held('hand'), held('zoom')], focused: null });
+      return { ctx, api };
+    }, { wrapper });
+    act(() => { result.current.ctx.pushHotkey('hand'); });
+    act(() => { result.current.ctx.pushHotkey('zoom'); });
+    expect(overlayIds(result.current.api)).toEqual(['zoom', 'hand']);
+  });
+
+  it('stops drawing an entry the active mode bars, and draws it again when the mode allows it', () => {
+    const mode = (id: string, allows: string[]): ModeDefinition =>
+      ({ id, kind: 'soft', allows, scoping: false });
+    const modes = createModeRegistry({ modes: [mode('draw', ['creates-shapes']), mode('view', [])], initial: 'draw' });
+    const pen = withOverlay({ id: 'pen', eligibility: { always: true, capabilities: ['creates-shapes'] } });
+    const { result } = renderHook(() => useContributions({ entries: [pen], focused: null, modes }), { wrapper });
+    expect(overlayIds(result.current)).toEqual(['pen']);
+    const before = result.current.overlays;
+    act(() => { modes.setMode('view'); });
+    expect(overlayIds(result.current)).toEqual([]);
+    // A new function, so a layer list memoized on it is rebuilt.
+    expect(result.current.overlays).not.toBe(before);
+    act(() => { modes.setMode('draw'); });
+    expect(overlayIds(result.current)).toEqual(['pen']);
   });
 });
 
@@ -74,7 +108,6 @@ describe('ContributionsApi.entries tracks the entry list', () => {
     );
     expect(result.current.entries.map((e) => e.id)).toEqual(['rect', 'weasel-hud']);
     rerender({ entries: [rect, hud, pen] });
-    expect(result.current.scopedBindings().some((s) => s.ownerId === 'pen')).toBe(true);
     expect(result.current.entries.map((e) => e.id)).toEqual(['rect', 'weasel-hud', 'pen']);
   });
 

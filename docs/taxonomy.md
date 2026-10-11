@@ -198,10 +198,12 @@ press does nothing. A dev-only warning names the owner when that happens.
 
 ### Contribution registry
 
-`useContributions({ entries, focused })` — the assembly point. It holds the
-entries and the focused id, and returns `scopedBindings()` (every live binding
-paired with the tier its declaration resolves to) plus `overlays()`. The
-dispatcher matches against that, so one place decides eligibility. It is also
+`useContributions({ entries, focused, modes })` — the registration point. It
+holds the entries and the focused id, and returns `overlays()`. Which entries
+are live, and in what order, is decided by `assembleEntries`
+(`packages/routing/src/contributions/assemble.ts`): the dispatcher builds its
+bindings from it and `overlays()` its layers, so a tool the dispatcher would
+not route to is never drawn. `useContributions` is also
 where route-conflict reporting sees both entry bindings and action
 `defaultBinding`s, which is what lets a collision between them be reported at
 all. See `packages/routing/src/contributions/useContributions.ts`.

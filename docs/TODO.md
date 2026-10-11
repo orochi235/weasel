@@ -260,17 +260,6 @@ Priority tags:
   a consumer tool hits it. Decide any-versus-every and the empty case once, as one predicate over
   `(allowedCapabilities, tags)` in `@weasel-js/modes`, and have all three call it.
 
-- **(P3) Contributions: `ContributionsApi.scopedBindings()` is a second binding assembly the
-  dispatcher never calls.** `packages/routing/src/contributions/useContributions.ts` builds its own
-  snapshot: it walks hotkey-held entries oldest-first where the dispatcher walks newest-first,
-  passes no capability gate, and has neither the view filter nor the action bindings. Its only
-  caller is its own test, but `overlays()` reads the same snapshot, so with two tools held the
-  overlay order disagrees with routing, and a tool the mode bars keeps drawing its overlay after the
-  dispatcher dropped its bindings. `docs/taxonomy.md` ("Contribution registry") says "The dispatcher
-  matches against that, so one place decides eligibility", which is not true. Export one assembly
-  function from routing (order, capability gate, view filter) for the dispatcher and `overlays()`
-  both, delete `scopedBindings()` or make it that function, and correct the taxonomy paragraph.
-
 - **(P3) `ActionsRegistry.trigger` does not ask `enabled`.** `trigger('delete')` runs while
   `delete.enabled()` reports a disabled reason, which the dispatcher honors for the same action on
   a key (`packages/routing/src/interactions/actions/ActionsProvider.tsx`). Whether a palette or

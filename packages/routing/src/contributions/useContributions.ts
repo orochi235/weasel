@@ -1,7 +1,6 @@
 // src/contributions/useContributions.ts
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { activeModeOf, type ModeRegistry } from '@weasel-js/modes';
-import type { ScopedBinding } from '../interactions/dispatcher/matcher';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { useActionsRegistry } from '../interactions/actions/ActionsProvider';
 import {
@@ -12,12 +11,14 @@ import {
 } from '../interactions/actions/toolOffhand';
 import { reportRouteConflicts } from '../tools/routing/reflection/conflicts';
 import type { HotkeyTrigger } from './types';
-import { scopeBindings } from './assemble';
+import { assembleEntries } from './assemble';
 import { liveScope } from './eligibility';
 import type { Contribution, OverlayPosition } from './types';
 import { isDev } from '../devFlag';
 import { sameList, useStableByContent } from '@weasel-js/react';
 import type { KernelOverlay } from '../index';
+
+const NO_MODES = (): (() => void) => () => {};
 
 /** Options for {@link useContributions}. */
 export interface UseContributionsOptions<TOverlay = KernelOverlay> {
@@ -27,9 +28,10 @@ export interface UseContributionsOptions<TOverlay = KernelOverlay> {
   /** Desired focused entry id, or `null` for none. First-mount-wins against
    *  the shared `ActiveToolContext` — see `useTools` for the full semantics. */
   focused: string | null;
-  /** The modes the canvas can be in. The dev-time route-conflict check reads
-   *  them to decide whether two gated actions can ever compete; without a
-   *  registry it checks against the kit's `DEFAULT_MODES`. */
+  /** The modes the canvas can be in. The active one decides which tagged
+   *  entries draw their overlays, and the dev-time route-conflict check reads
+   *  them all to decide whether two gated actions can ever compete; without a
+   *  registry nothing is barred and the check uses the kit's `DEFAULT_MODES`. */
   modes?: ModeRegistry;
 }
 
@@ -42,10 +44,9 @@ export interface ContributionsApi<TOverlay = KernelOverlay> {
   /** Focus an entry, or pass `null` to focus none. Writes through to the
    *  shared `ActiveToolContext`. */
   setFocused: (id: string | null) => void;
-  /** Every live binding, tiered by the declaring entry's eligibility. */
-  scopedBindings(): ScopedBinding[];
   /** Overlays of every live entry declaring `position`, ordered active, then
-   *  hotkey, then ambient. */
+   *  hotkey, then ambient. Live is what the dispatcher routes to: an entry the
+   *  active mode bars draws nothing. */
   overlays(position?: OverlayPosition): TOverlay[];
 }
 
@@ -91,28 +92,20 @@ export function useContributions<TOverlay = KernelOverlay>(
 
   const setFocused = useCallback((id: string | null) => { ctx.setActive(id); }, [ctx]);
 
-  /** Live eligibility state, plus the entries ordered so that hotkey-engaged
-   *  ones come first — stack order breaks ties within the hotkey tier. */
-  const snapshot = useCallback(() => {
-    const engagedIds = new Set(engaged);
-    const ordered: Contribution<TOverlay>[] = [];
-    for (const id of engaged) {
-      const entry = entries.find((e) => e.id === id);
-      if (entry && !ordered.includes(entry)) ordered.push(entry);
-    }
-    for (const entry of entries) {
-      if (!ordered.includes(entry)) ordered.push(entry);
-    }
-    return {
-      ordered,
-      state: { focusedId: focused, engagedIds },
-    };
-  }, [entries, focused, engaged]);
-
-  const scopedBindings = useCallback((): ScopedBinding[] => {
-    const { ordered, state } = snapshot();
-    return scopeBindings(ordered, state);
-  }, [snapshot]);
+  // The active mode's capability set gates overlays as it gates bindings. Read
+  // as state so `overlays` changes identity when the mode does.
+  const modes = opts.modes;
+  const modeVersion = useSyncExternalStore(
+    modes ? modes.subscribe : NO_MODES,
+    () => modes?.getVersion() ?? 0,
+  );
+  const snapshot = useCallback(() => assembleEntries(entries, {
+    focusedId: focused,
+    hotkeyStack: engaged,
+    ...(modes ? { allowedCapabilities: activeModeOf(modes.current()).allowedCapabilities } : {}),
+    // The version is what changes; `modes` is one object for the registry's life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [entries, focused, engaged, modes, modeVersion]);
 
   const overlays = useCallback((position: OverlayPosition = 'top'): TOverlay[] => {
     const { ordered, state } = snapshot();
@@ -173,8 +166,8 @@ export function useContributions<TOverlay = KernelOverlay>(
   // churn every render — which loops infinitely when the consumer setStates
   // from inside such an effect.
   return useMemo(
-    () => ({ entries, focused, setFocused, scopedBindings, overlays }),
-    [entries, focused, setFocused, scopedBindings, overlays],
+    () => ({ entries, focused, setFocused, overlays }),
+    [entries, focused, setFocused, overlays],
   );
 }
 

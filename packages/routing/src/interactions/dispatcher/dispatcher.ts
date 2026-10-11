@@ -57,7 +57,7 @@ import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSampl
 import { resolveParams } from '../actions/invoker';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { Contribution } from '../../contributions/types';
-import { scopeBindings } from '../../contributions/assemble';
+import { assembleEntries, scopeBindings } from '../../contributions/assemble';
 import type { InputEvent, BindingScope, MatchResult, ScopedBinding } from './matcher';
 import { matchSortedWithBarred, specificity } from './matcher';
 import { routesForSpec } from '../../tools/routing/reflection/registry';
@@ -67,7 +67,6 @@ import type {
 } from './dispatchRecord';
 import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../eligibility';
 import { resolveCursor, type CursorSpec } from '@weasel-js/cursor';
-import type { CapabilityTag } from '@weasel-js/modes';
 
 /**
  * The in-flight handle slot a pointer's gestures key into.
@@ -871,36 +870,17 @@ export function createDispatcher(opts?: {
   /** Assemble the ScopedBinding list: every registered entry, tiered by what
    *  it declares about its own eligibility, then the actions registry. */
   function assembleScopedBindings(ctx: DispatcherContext): ScopedBinding[] {
-    // Hotkey-engaged entries lead, so stack order breaks ties within that tier
-    // — newest hold first. `pushHotkey` appends and every other reader takes
-    // the top as the engaged one (`ToolsApi.hotkeyEngaged` is `.at(-1)`), so
-    // walking the stack bottom-first handed ties to the oldest hold and routed
-    // a drag to a tool the rest of the kit did not consider engaged.
-    const ordered: Contribution<unknown>[] = [];
-    for (let i = ctx.hotkeyStack.length - 1; i >= 0; i--) {
-      const id = ctx.hotkeyStack[i]!;
-      const entry = ctx.entriesById.get(id);
-      if (entry && !ordered.includes(entry)) ordered.push(entry);
-    }
-    for (const entry of ctx.entriesById.values()) {
-      if (!ordered.includes(entry)) ordered.push(entry);
-    }
-    // `Eligibility.capabilities` is a tool-level gate over the same tags the
-    // `capability:` selector reads. It is the only one that fires for a tool
-    // whose action declares no `eligible` rule. A consumer with no mode system
-    // supplies no `getRuleCtx`, and then `allows` stays absent and everything
-    // is permitted — which is what every such consumer has always seen.
-    const capsCtx = ctx.getRuleCtx?.();
-    const allows = capsCtx
-      ? (tags: readonly CapabilityTag[]) =>
-          tags.every((tag) => capsCtx.allowedCapabilities.has(tag))
-      : undefined;
-    const view = ctx.viewId ?? null;
-    const result: ScopedBinding[] = scopeBindings(ordered, {
+    // `allowedCapabilities` is absent for a consumer with no mode system, who
+    // supplies no `getRuleCtx`, and then every entry is permitted.
+    const allowedCapabilities = ctx.getRuleCtx?.()?.allowedCapabilities;
+    const { ordered, state } = assembleEntries(ctx.entriesById.values(), {
       focusedId: ctx.activeToolId,
-      engagedIds: new Set(ctx.hotkeyStack),
-      ...(allows ? { allows } : {}),
-    }).filter((sb) => liveInView(sb.binding, view));
+      hotkeyStack: ctx.hotkeyStack,
+      ...(allowedCapabilities ? { allowedCapabilities } : {}),
+    });
+    const view = ctx.viewId ?? null;
+    const result: ScopedBinding[] = scopeBindings(ordered, state)
+      .filter((sb) => liveInView(sb.binding, view));
 
     // Actions have no owning tool — `'&'`-channel phase atoms on their
     // bindings won't match.

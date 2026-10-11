@@ -4,7 +4,8 @@ export type {
 } from './types';
 export { liveScope } from './eligibility';
 export type { EligibilityState } from './eligibility';
-export { scopeBindings } from './assemble';
+export { assembleEntries, scopeBindings } from './assemble';
+export type { AssemblyInputs } from './assemble';
 export { mergeContributions } from './merge';
 export { modeShortcuts, modeShortcutSpec } from './modeShortcuts';
 export type { ModeShortcutHandlers } from './modeShortcuts';
