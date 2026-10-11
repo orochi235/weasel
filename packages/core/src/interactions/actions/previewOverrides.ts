@@ -49,10 +49,10 @@ export function syncPreviewOverrides(state: PreviewOverrideState): void {
   // An id can leave the preview set mid-gesture — a cascade child whose
   // container stopped being the drag root, a layout sibling that stopped
   // reflowing. Left published, it would pin that node to a stale frame.
-  for (const id of state.overrideEntries.keys()) {
+  for (const [id, entry] of state.overrideEntries) {
     if (state.previews.has(id)) continue;
     state.overrideEntries.delete(id);
-    overrides.clear(id);
+    if (overrides.get(id) === entry) overrides.clear(id);
   }
   overrides.commit();
 }
@@ -63,10 +63,16 @@ export function syncPreviewOverrides(state: PreviewOverrideState): void {
  *
  * On commit, call it *after* the ops land: dropping first leaves a window in
  * which the scene answers with the pre-gesture pose.
+ *
+ * An id whose entry something else has since replaced is left alone: a
+ * behavior that carries the node on past the release owns it now.
  */
 export function dropPreviewOverrides(state: PreviewOverrideState): void {
   if (state.overrideEntries.size === 0) return;
-  for (const id of state.overrideEntries.keys()) state.scene.overrides.clear(id);
+  const { overrides } = state.scene;
+  for (const [id, entry] of state.overrideEntries) {
+    if (overrides.get(id) === entry) overrides.clear(id);
+  }
   state.overrideEntries.clear();
   state.scene.overrides.commit();
 }

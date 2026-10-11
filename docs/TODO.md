@@ -924,20 +924,6 @@ intercepting the press that drags the body.
   where `booking.ts` says crossings fire "nothing of the laps in between". Which of the two is
   meant is undecided.
 
-- **(P2) `momentum`: under the move action a coast records an undo entry every frame, and no
-  flick.** `momentum` (`packages/core/src/animation/behaviors/momentum.ts`) writes each frame with
-  `ctx.adapter.setPose`, which under `moveAction` is `scene.setPose`, a recorded write, and commits
-  its one `'flick'` transform through `adapter.applyOps`, which `moveGestureAdapter` does not have.
-  Run 2026-10-11 against a real scene and animator: 400 frames of coast left 400 `setPose` history
-  entries, and one undo stepped the node back a single frame. Its doc says the whole flick is one
-  undoable transform. The coast needs to write the way the drag does, through pose overrides or
-  `scene.untracked`, and commit one transform at rest; the behavior reaches the scene only through
-  the adapter, so that is a change to what the move action hands a behavior. Read, not run: the
-  drag's overrides drop at release and the first coast write lands a frame later, so the node may
-  paint at its pre-drag pose for that frame. A coast now drops a node something else moved or
-  deleted, by comparing what it reads back each frame; what an undo should do to a coast that
-  writes nothing to the document is part of the same design.
-
 ### Timelines and rigging
 
 Design: `docs/superpowers/specs/2026-08-22-animation-timeline-rig-design.md`.

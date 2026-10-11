@@ -13,7 +13,8 @@
 import { documentPose } from 'core/scene/effectivePose';
 import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
 import { pickability } from 'core/scene/pickability';
-import type { Node, Scene } from 'core/scene/types';
+import type { Op } from 'core/ops/types';
+import type { Node, PoseOverride, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
 
@@ -26,12 +27,38 @@ export type MoveGestureAdapter<TPose> = MoveAdapter<Node<unknown, string, TPose>
   insertNode(node: Node<unknown, string, TPose>, index?: number): void;
   getChildren(parentId: string | null): string[];
   setChildOrder(parentId: string | null, ids: string[]): void;
+  previewPoses(poses: ReadonlyMap<string, TPose | null>): void;
 };
 
+/** `commit` is how a behavior's own `applyOps` batch lands; the returned
+ *  adapter is passed back so the ops apply through it. Left out, the adapter
+ *  has no `applyOps`. */
 export function moveGestureAdapter<TPose>(
   scene: Scene<unknown, string, TPose>,
+  commit?: (ops: Op[], label: string, adapter: MoveGestureAdapter<TPose>) => void,
 ): MoveGestureAdapter<TPose> {
-  return {
+  const previews = new Map<string, PoseOverride<TPose>>();
+  const adapter: MoveGestureAdapter<TPose> = {
+    ...(commit ? { applyOps: (ops: Op[], label: string) => commit(ops, label, adapter) } : {}),
+    previewPoses: (poses) => {
+      const { overrides } = scene;
+      for (const [id, pose] of poses) {
+        const nodeId = asNodeId(id);
+        const mine = previews.get(id);
+        const installed = mine !== undefined && overrides.get(nodeId) === mine;
+        if (pose === null) {
+          previews.delete(id);
+          if (installed) overrides.clear(nodeId);
+        } else if (installed) {
+          mine.pose = pose;
+        } else {
+          const entry = { pose };
+          previews.set(id, entry);
+          overrides.set(nodeId, entry);
+        }
+      }
+      overrides.commit();
+    },
     getNode: (id) => scene.get(asNodeId(id)),
     getNodes: () => {
       return [...scene.renderOrderNodes()] as Node<unknown, string, TPose>[];
@@ -68,4 +95,5 @@ export function moveGestureAdapter<TPose>(
       });
     },
   };
+  return adapter;
 }

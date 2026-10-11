@@ -962,7 +962,10 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         ?? DRAG_THRESHOLD_PX;
       const lifecycle = readGestureLifecycle(params, 'Move', behaviors);
       let engaged = false;
-      const adapter = moveGestureAdapter<unknown>(scene);
+      // A behavior that commits after the gesture has ended, a coast coming to
+      // rest, lands its batch the way the gesture's own commit does.
+      const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
+        commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops));
       const origin = new Map<string, unknown>();
       for (const [id, pose] of startPoses) origin.set(id as string, pose);
       const readView = gestureViewReader(ctx.deps);

@@ -121,6 +121,10 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
   setParent?(id: string, parentId: string | null): void;
   /** Optional: see SceneAdapter.applyOps. */
   applyOps?(ops: Op[], label: string): void;
+  /** Optional. Show each node at its pose without writing the document, so
+   *  nothing is recorded; `null` withdraws a node's preview. What a behavior
+   *  that keeps moving nodes after the gesture ends writes each frame. */
+  previewPoses?(poses: ReadonlyMap<string, TPose | null>): void;
   findSnapTarget?(
     draggedId: string,
     worldX: number,

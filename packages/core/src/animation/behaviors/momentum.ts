@@ -65,7 +65,9 @@ const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
  *
  * Plugs into the move action rather than replacing it, so the drag itself is
  * unchanged — this only decides what happens after the release. The whole
- * flick, coast included, records as one undoable transform. Dragging a node
+ * flick, coast included, records as one undoable transform: under an adapter
+ * with `previewPoses` the coast is shown without touching the document, and
+ * the transform is written once it comes to rest. Dragging a node
  * again while it coasts stops the coast and records it where it stands. A node
  * something else moves or deletes mid-coast, an undo included, drops out of
  * the coast where that left it, and nothing is recorded for it.
@@ -144,7 +146,11 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       // by the per-frame delta and commit one transform op per id when done.
       const startPoses = new Map<string, TPose>(ctx.current);
       let lastValue = { x: 0, y: 0 };
-      const adapter = ctx.adapter as typeof ctx.adapter & { applyOps?(ops: Op[], label: string): void };
+      const adapter = ctx.adapter;
+      const show = (poses: Map<string, TPose | null>): void => {
+        if (adapter.previewPoses) adapter.previewPoses(poses);
+        else for (const [id, pose] of poses) if (pose !== null) adapter.setPose(id, pose);
+      };
       // What the scene held for each node right after the coast last wrote it.
       // A node that is gone, or reads back as anything else, has another
       // writer now, an undo or a delete, and leaves the coast unrecorded.
@@ -176,6 +182,12 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
         },
       };
       coasts.add(coast);
+      // Held from the release itself, so no frame paints the pre-drag pose
+      // between the drag's preview going away and the first coast frame.
+      show(new Map([...riding].flatMap((id) => {
+        const start = startPoses.get(id);
+        return start === undefined ? [] : [[id, start] as const];
+      })));
       const decayHandle = opts.animator.decay<RectLike>({
         from: { x: 0, y: 0 },
         velocity: { x: vx, y: vy },
@@ -187,9 +199,11 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
         onTick: (delta) => {
           lastValue = delta;
           let allHit = bounds !== undefined;
+          const frame = new Map<string, TPose | null>();
           for (const id of [...riding]) {
             if (!stillOurs(id)) {
               riding.delete(id);
+              frame.set(id, null);
               continue;
             }
             const start = startPoses.get(id);
@@ -198,9 +212,10 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
             const { nx, ny, hit } = clampToBounds(o.x, o.y, delta.x, delta.y);
             if (!hit) allHit = false;
             finalPositions.set(id, { x: nx, y: ny });
-            adapter.setPose(id, translatePoseViaDescriptor(start, nx - o.x, ny - o.y, d));
-            lastSeen.set(id, d.getBounds(adapter.getPose(id)));
+            frame.set(id, translatePoseViaDescriptor(start, nx - o.x, ny - o.y, d));
           }
+          show(frame);
+          for (const id of riding) lastSeen.set(id, d.getBounds(adapter.getPose(id)));
           if (riding.size === 0) {
             coasts.delete(coast);
             decayHandle.cancel();
@@ -217,9 +232,11 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       });
 
       function commitFlick(): void {
-        if (!coasts.delete(coast) || !adapter.applyOps) return;
+        if (!coasts.delete(coast)) return;
         const ops: Op[] = [];
+        const shown = new Map<string, TPose | null>();
         for (const id of riding) {
+          shown.set(id, null);
           if (!stillOurs(id)) continue;
           const start = startPoses.get(id);
           if (!start) continue;
@@ -229,7 +246,12 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
           const from = ctx.origin.get(id) ?? start;
           ops.push(createTransformOp<TPose>({ id, from, to: finalPose, label: 'flick' }));
         }
-        if (ops.length > 0) adapter.applyOps(ops, 'flick');
+        // The document first, so the preview never gives way to the pre-drag pose.
+        if (ops.length > 0) {
+          if (adapter.applyOps) adapter.applyOps(ops, 'flick');
+          else if (adapter.previewPoses) for (const op of ops) op.apply(adapter);
+        }
+        adapter.previewPoses?.(shown);
       }
 
       return null;
