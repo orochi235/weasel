@@ -159,6 +159,25 @@ describe('PropertyRow', () => {
     expect(screen.getByText('ⓘ')).not.toHaveAttribute('tabindex', '0');
   });
 
+  it('opens the help the moment the pointer is over the ⓘ', () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <PropertyRow label="Opacity" description="How see-through the shape is.">
+          <input type="text" defaultValue="x" />
+        </PropertyRow>,
+      );
+      // React Aria only counts a hover once the pointer has moved.
+      fireEvent.pointerMove(document.body, { pointerType: 'mouse' });
+      const cue = screen.getByText('ⓘ');
+      fireEvent.pointerEnter(cue, { pointerType: 'mouse' });
+      fireEvent.mouseEnter(cue);
+      expect(screen.getByRole('tooltip')).toHaveTextContent('How see-through the shape is.');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('keeps focus where it is when the ⓘ is pressed', () => {
     render(
       <PropertyRow label="Opacity" description="How see-through the shape is.">

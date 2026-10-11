@@ -2,7 +2,7 @@ import { useEffect, useId, useState, type RefObject } from 'react';
 
 const CONTROLS = 'input, select, textarea, button, [tabindex]:not([tabindex="-1"])';
 
-/** How long keyboard focus rests on a row's control before its help opens: the tooltip's own hover delay. */
+/** How long keyboard focus rests on a row's control before its help opens. */
 const FOCUS_DELAY = 600;
 
 /** What {@link useRowHelp} hands the help it serves. */

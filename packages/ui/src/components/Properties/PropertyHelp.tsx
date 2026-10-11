@@ -38,7 +38,7 @@ export function PropertyHelp({ label, description, autoValue, within }: Property
     e.stopPropagation();
   };
   return (
-    <TooltipTrigger {...(inRow ? { isOpen: help.open, onOpenChange: help.setOpen } : {})}>
+    <TooltipTrigger delay={0} {...(inRow ? { isOpen: help.open, onOpenChange: help.setOpen } : {})}>
       <Focusable excludeFromTabOrder={inRow}>
         {inRow ? (
           // Not a <button>: that is a labelable element, and as the first one in a row's <label> it would be
