@@ -1,6 +1,6 @@
-import { useState, type MouseEvent } from 'react';
+import { useState } from 'react';
 import { intentOf, select, type SelectPolicy, type Selection } from '@weasel-js/select';
-import { ToggleBar } from '@weasel-js/ui';
+import { ItemList, ToggleBar } from '@weasel-js/ui';
 import s from './SelectDemo.module.css';
 
 const ROWS = ['Sky', 'Hills', 'Tree', 'Background', 'House', 'Path', 'Fence', 'Sun'];
@@ -23,7 +23,8 @@ export function SelectDemo() {
   const [state, setState] = useState<Selection<string>>({ ids: [], anchor: null });
   const [last, setLast] = useState('—');
 
-  const press = (id: string, e: MouseEvent) => {
+  // A click and Enter/Space on a row both arrive here, with the modifiers held.
+  const press = (id: string, e: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
     const intent = intentOf({ shift: e.shiftKey, meta: e.metaKey, ctrl: e.ctrlKey }, POLICIES[convention]);
     setLast(`${intent} ${id}`);
     setState((prev) => select(prev, id, intent, { order: ROWS, eligible: (x) => !LOCKED.has(x) }));
@@ -39,23 +40,23 @@ export function SelectDemo() {
         size="sm"
       />
       <div className={s.body}>
-        <ul className={s.rows} role="listbox" aria-multiselectable aria-label="Layers">
-          {ROWS.map((id) => (
-            <li
-              key={id}
-              role="option"
-              aria-selected={state.ids.includes(id)}
-              className={s.row}
-              data-anchor={state.anchor === id || undefined}
-              data-locked={LOCKED.has(id) || undefined}
-              onClick={(e) => press(id, e)}
-            >
-              {id}
-              {LOCKED.has(id) && <span className={s.tag}>locked</span>}
-              {state.anchor === id && <span className={s.tag}>anchor</span>}
-            </li>
-          ))}
-        </ul>
+        <ItemList
+          selection="multi"
+          containerProps={{ 'aria-label': 'Layers' }}
+          onActivate={(id, _index, mods) => press(id, mods)}
+          rows={ROWS.map((id) => ({
+            id,
+            selected: state.ids.includes(id),
+            className: [state.anchor === id && s.anchor, LOCKED.has(id) && s.locked].filter(Boolean).join(' '),
+            label: (
+              <span className={s.label}>
+                {id}
+                {LOCKED.has(id) && <span className={s.tag}>locked</span>}
+                {state.anchor === id && <span className={s.tag}>anchor</span>}
+              </span>
+            ),
+          }))}
+        />
         <dl className={s.state}>
           <dt>last press</dt>
           <dd>{last}</dd>

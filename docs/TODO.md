@@ -355,13 +355,15 @@ have shipped. What remains:
 
 - **(P3) `@container` in `@weasel-js/svg` stylesheets.** `packages/svg/src/cascade.ts` evaluates `@media`, `@supports` and `@layer`, but skips a `@container` block whole, so its rules never apply. That is deliberate for now: a static parse lays nothing out, so no element is a size container and no query can hold. Applying them needs container sizes from somewhere — the root's viewport as the one container, or boxes supplied by the caller.
 
-- **(P3) svg import: a skewed, non-uniformly scaled, or mirrored-and-rotated `<text>` or `<image>`
-  keeps only its position, rotation, and uniform scale.** `applyOwnTransform`
-  (`packages/svg/src/placeBox.ts`) warns and drops the rest, because `SvgTextNode` and
-  `SvgImageNode` are a box plus a rotation. `<text transform="scale(4 1)">` imports at twice the
-  size instead of four times as wide. Ruled 2026-10-11: text and image nodes carry a full transform,
-  and such text stays editable text. That leaves a `transform` on the two node types and on the kit
-  text and image poses they become, honored wherever those poses are read.
+- **(P3) svg import: a skewed or non-uniformly scaled `<text>`, or a skewed `<image>`, reaches the
+  scene without its skew or stretch.** `parseSvg` keeps it (`SvgTextNode.transform` and
+  `SvgImageNode.transform`, a `PoseLinear`: `packages/core/src/core/geometry/poseFrame.ts`) and
+  `serializeSvg` writes it back, but `svgNodesToKitDrafts` (`packages/svg/src/unpack.ts`) does not
+  carry it onto the pose and nothing in core reads `pose.transform`, so `<text
+  transform="scale(4 1)">` still draws at twice the size instead of four times as wide. Ruled
+  2026-10-11: text and image nodes carry a full transform, and such text stays editable text. That
+  leaves the kit text and image poses, honored wherever those poses are read through
+  `poseRotationOf`; `poseFrameOf` is the matrix they should share.
 
 - **(P2) geom: whether an open subpath fills is answered three ways.** For `<polyline points="0,0
   100,0 100,100" fill="red"/>` (no `Z`), `tessellate` (`packages/geom/src/tessellate/tessellate.ts`)
@@ -1707,15 +1709,6 @@ only story runner in the repo.
   nudge is undone and cut off the redo stack. The scrub should be an ongoing action with a coalesce
   key, as `setFill` is through `useOngoingAction`, so it owns one entry without rewinding the stack
   by index.
-
-- **(P2) site: the source-file tabs and the Select demo's list cannot be operated from the
-  keyboard.** `apps/site/WeaselDemos.tsx` renders `role="tablist"` / `role="tab"` buttons with no
-  `tabpanel`, no `aria-controls`, no roving tabindex, and no arrow keys.
-  `apps/site/demos/SelectDemo.tsx` puts `role="option"` and `onClick` on bare `<li>`s inside a
-  `role="listbox"` with nothing focusable, so the demo of selection conventions takes no key at all.
-  The first should be the kit's `Tabs`; the second should be `ItemList` (or a focusable child
-  filling each `<li>`, with Space/Enter and arrows feeding the same `select()` reducer the click
-  does).
 
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
   have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {

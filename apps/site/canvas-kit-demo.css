@@ -371,9 +371,10 @@ a:hover { text-decoration: underline; }
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-.ckd-code-tabs {
-  display: flex;
-  gap: 4px;
+/* The tab strip is the kit's Tabs; these only fit it to the header. */
+.ckd-code-header .ckd-code-tabs {
+  /* The header draws the rule the tabs sit on. */
+  border-bottom: none;
   /* A demo with many source files overruns the strip; scroll it rather than
      letting the row push the panel wide. `min-width: 0` is what lets this
      flex child shrink below its content. */
@@ -384,30 +385,15 @@ a:hover { text-decoration: underline; }
   overscroll-behavior-x: contain;
 }
 
-.ckd-code-tab {
-  appearance: none;
+.ckd-code-tabs .ckd-code-tab {
   flex: 0 0 auto;
   white-space: nowrap;
-  background: transparent;
-  border: 1px solid transparent;
-  border-bottom: none;
-  padding: 4px 10px;
-  font-size: var(--wzl-font-size-sm);
-  color: var(--ckd-faint);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  cursor: pointer;
-  border-radius: var(--wzl-radius-sm) var(--wzl-radius-sm) 0 0;
 }
 
-.ckd-code-tab:hover {
-  color: var(--ckd-text);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.ckd-code-tab.is-active {
-  color: var(--ckd-text);
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--ckd-border-2);
+/* `.ckd-source` pads the code; the kit panel's own padding would double it. */
+.ckd-code-panel .ckd-code-tabpanel {
+  padding: 0;
 }
 
 .ckd-source {

@@ -167,4 +167,18 @@ describe('the source panel', () => {
     await heading(second.title);
     expect(screen.getAllByRole('tab')[0].getAttribute('aria-selected')).toBe('true');
   });
+
+  it('is a tab set the keyboard can work: arrows move between files, and each tab names its panel', async () => {
+    const [first] = DEMOS.filter((d) => d.sources.length > 1);
+    go(`#${first.id}`);
+    render(<WeaselDemos />);
+    await heading(first.title);
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs.filter((t) => t.tabIndex === 0)).toHaveLength(1);
+    act(() => tabs[0].focus());
+    fireEvent.keyDown(tabs[0], { key: 'ArrowRight' });
+    expect(screen.getAllByRole('tab')[1].getAttribute('aria-selected')).toBe('true');
+    const panel = screen.getByRole('tabpanel');
+    expect(screen.getAllByRole('tab')[1].getAttribute('aria-controls')).toBe(panel.id);
+  });
 });

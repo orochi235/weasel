@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'react';
+import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, PACKAGES, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
 import { sessionStore } from './chunkReload';
 import { PageBoundary } from './PageBoundary';
@@ -214,6 +215,18 @@ function DemoView({ entry }: { entry: DemoEntry }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const code = useSourceText(current, useHasBeenNearViewport(panelRef));
 
+  const source = (
+    <div className="ckd-source">
+      {code === 'failed' ? (
+        <p className="ckd-source-failed" role="status">This file could not be loaded. Reload the page to try again.</p>
+      ) : code == null ? <div className="ckd-source-loading" /> : (
+        <Suspense fallback={<div className="ckd-source-loading" />}>
+          <SourceView code={code} language={current.language} />
+        </Suspense>
+      )}
+    </div>
+  );
+
   return (
     <article className="ckd-demo">
       <header>
@@ -247,35 +260,28 @@ function DemoView({ entry }: { entry: DemoEntry }) {
       </div>
 
       <div className="ckd-code-panel" ref={panelRef}>
-        <div className="ckd-code-header">
-          {tabs.length > 1 ? (
-            <div className="ckd-code-tabs" role="tablist">
-              {tabs.map((tab, i) => (
-                <button
-                  key={tab.path}
-                  type="button"
-                  role="tab"
-                  aria-selected={i === activeTab}
-                  className={`ckd-code-tab${i === activeTab ? ' is-active' : ''}`}
-                  onClick={() => setActiveTab(i)}
-                >
-                  {tab.path.split('/').pop()}
-                </button>
-              ))}
+        {tabs.length > 1 ? (
+          <Tabs
+            selectedKey={current.path}
+            onSelectionChange={(path) => setActiveTab(tabs.findIndex((tab) => tab.path === path))}
+          >
+            <div className="ckd-code-header">
+              <TabList aria-label="Source files" className="ckd-code-tabs">
+                {tabs.map((tab) => (
+                  <Tab key={tab.path} id={tab.path} className="ckd-code-tab">{tab.path.split('/').pop()}</Tab>
+                ))}
+              </TabList>
             </div>
-          ) : (
-            <span className="ckd-code-meta">{entry.path}</span>
-          )}
-        </div>
-        <div className="ckd-source">
-          {code === 'failed' ? (
-            <p className="ckd-source-failed" role="status">This file could not be loaded. Reload the page to try again.</p>
-          ) : code == null ? <div className="ckd-source-loading" /> : (
-            <Suspense fallback={<div className="ckd-source-loading" />}>
-              <SourceView code={code} language={current.language} />
-            </Suspense>
-          )}
-        </div>
+            <TabPanel key={current.path} id={current.path} className="ckd-code-tabpanel">{source}</TabPanel>
+          </Tabs>
+        ) : (
+          <>
+            <div className="ckd-code-header">
+              <span className="ckd-code-meta">{entry.path}</span>
+            </div>
+            {source}
+          </>
+        )}
       </div>
     </article>
   );
