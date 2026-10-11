@@ -1,14 +1,5 @@
-import { useEffect, useRef } from 'react';
-import {
-  SceneCanvas,
-  WeaselProvider,
-  useSceneAdapter,
-  useScene,
-  useSelection,
-  useSelectTool,
-  useTools,
-} from '@weasel-js/core';
-import type { FillStyle, SceneCanvasApi } from '@weasel-js/core';
+import { SceneCanvas, useScene } from '@weasel-js/core';
+import type { FillStyle } from '@weasel-js/core';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; fill: FillStyle }
 
@@ -22,41 +13,16 @@ const INITIAL: Rect[] = [
   { id: 'e', x: 220, y: 180, width: 90, height: 60, fill: { color: '#d47a7a' } },
 ];
 
-function MultiSelectDemoInner() {
+export function MultiSelectDemo() {
   const scene = useScene({ items: INITIAL });
-  const selection = useSelection({ mode: 'multi' });
-
-  // sceneToAdapter covers Move/Resize/Rotate AND AreaSelect — the marquee
-  // hitTestArea/applyOps and selection get/set are kit-defaulted from the
-  // scene + the selection passed in.
-  const selectAdapter = useSceneAdapter(scene, { selection });
-
-  // pickEvery / boundsOf default to a rect AABB scan over the adapter —
-  // no boilerplate needed for the common rect-pose case.
-  const select = useSelectTool(selectAdapter, {
-    // Marquee is opt-in at the kit level — restored here because the demo's
-    // whole point is multi-selection.
-  });
-  const tools = useTools({ active: 'select', registry: { select } });
-
-  const canvasRef = useRef<SceneCanvasApi | null>(null);
-  useEffect(() => {
-    canvasRef.current?.element?.focus();
-  }, []);
-
   return (
-    <SceneCanvas features={['outline', 'move', 'transform']}
-      ref={canvasRef}
+    <SceneCanvas
+      features={['pick', 'move', 'transform']}
       width={W}
       height={H}
       className="ckd-canvas"
       scene={scene}
-      selection={selection}
-      tools={tools}
+      selectionOptions={{ mode: 'multi' }}
     />
   );
-}
-
-export function MultiSelectDemo() {
-  return <WeaselProvider><MultiSelectDemoInner /></WeaselProvider>;
 }

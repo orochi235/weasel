@@ -1,12 +1,4 @@
-import {
-  SceneCanvas,
-  WeaselProvider,
-  useSceneAdapter,
-  useScene,
-  useSelection,
-  useSelectTool,
-  useTools,
-} from '@weasel-js/core';
+import { SceneCanvas, useSceneAdapter, useScene, useSelection } from '@weasel-js/core';
 import { LayerList, useSceneLayerList } from '@weasel-js/ui';
 import type { CSSProperties } from 'react';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -22,13 +14,12 @@ const INITIAL: Rect[] = [
   { id: 'e', x: 80,  y: 180, width: 80, height: 60, color: '#d47a7a' },
 ];
 
-function LayerListDemoInner() {
+export function LayerListDemo() {
   const scene = useScene<Rect>({ items: INITIAL });
-  const selection = useSelection({ mode: 'multi' });
+  // Lifted out of the canvas because the list reads and writes it too.
+  const selection = useSelection({ mode: 'multi', scene });
+  // Only the list's reorder needs an adapter; the canvas builds its own.
   const adapter = useSceneAdapter(scene, { selection });
-
-  const select = useSelectTool(adapter, {});
-  const tools = useTools({ active: 'select', registry: { select } });
 
   const layerList = useSceneLayerList({
     scene, selection, adapter,
@@ -43,12 +34,11 @@ function LayerListDemoInner() {
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-      <SceneCanvas features={['outline']}
+      <SceneCanvas features={['pick']}
         width={W} height={H}
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        tools={tools}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{
@@ -62,8 +52,4 @@ function LayerListDemoInner() {
       <LayerList {...layerList} />
     </div>
   );
-}
-
-export function LayerListDemo() {
-  return <WeaselProvider><LayerListDemoInner /></WeaselProvider>;
 }

@@ -1,18 +1,12 @@
-import { useEffect, useRef } from 'react';
 import {
   asNodeId,
   SceneCanvas,
-  WeaselProvider,
-  useSceneAdapter,
   useScene,
-  useSelection,
-  useSelectTool,
-  useTools,
   ROTATED_POSE_DESCRIPTOR,
   useResizePolicy,
 } from '@weasel-js/core';
 import { createGridLayer, pointSnapToGrid } from '@weasel-js/guides';
-import type { RotatedPose, PoseDescriptor, SceneCanvasApi } from '@weasel-js/core';
+import type { RotatedPose, PoseDescriptor } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 interface Rect extends RotatedPose {
@@ -42,37 +36,20 @@ function ResizePolicyBridge() {
   return null;
 }
 
-function PointSnapDemoInner() {
+const SELECTED = { mode: 'multi', initial: [asNodeId('a')] } as const;
+
+export function PointSnapDemo() {
   const scene = useScene({ items: INITIAL });
-  const selection = useSelection({ mode: 'multi' });
-
-  const adapter = useSceneAdapter(scene, { selection });
-
-  const select = useSelectTool(adapter, { leafPicking: 'silhouette' });
-  const tools = useTools({
-    active: 'select',
-    registry: { select },
-  });
-
-  const canvasRef = useRef<SceneCanvasApi | null>(null);
-  useEffect(() => { canvasRef.current?.element?.focus(); }, []);
-
-  const setSelection = selection.set;
-  useEffect(() => {
-    setSelection([asNodeId('a')]);
-  }, [setSelection]);
 
   return (
     <SceneCanvas
-      features={['resize']}
-      ref={canvasRef}
+      features={['select', 'resize']}
       width={W}
       height={H}
       className="ckd-canvas"
       scene={scene}
-      selection={selection}
+      selectionOptions={SELECTED}
       poseDescriptor={ROTATED_POSE_DESCRIPTOR as PoseDescriptor<Rect>}
-      tools={tools}
       layers={{
         grid: { layer: GRID_LAYER },
         scene: {
@@ -90,8 +67,4 @@ function PointSnapDemoInner() {
       <ResizePolicyBridge />
     </SceneCanvas>
   );
-}
-
-export function PointSnapDemo() {
-  return <WeaselProvider><PointSnapDemoInner /></WeaselProvider>;
 }
