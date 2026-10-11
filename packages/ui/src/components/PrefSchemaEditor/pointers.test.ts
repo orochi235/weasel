@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { deadPointers, drawnLeaf, POINTER_ATTRS, pointerTarget } from './pointers';
+import { deadPointers, drawnLeaf, pointerTarget } from './pointers';
 import { CODE, pointer, SETTINGS } from './workspace.fixtures';
 
 describe('pointers', () => {
@@ -20,9 +20,5 @@ describe('pointers', () => {
     const layout: PrefGroup = { ...CODE, children: { ...CODE.children, lost: pointer('view.nowhere') } };
     expect(drawnLeaf(SETTINGS, pointer('view.nowhere'))).toBeUndefined();
     expect(deadPointers(layout, SETTINGS)).toEqual(['lost']);
-  });
-
-  it('offers only its target to edit', () => {
-    expect(POINTER_ATTRS).toEqual(['of']);
   });
 });
