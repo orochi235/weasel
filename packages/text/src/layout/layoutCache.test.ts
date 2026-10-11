@@ -15,6 +15,7 @@ import {
   LAYOUT_CACHE_VARIANT_LIMIT, LAYOUT_CACHE_STRUCTURAL_LIMIT,
 } from './layoutCache';
 import type { ResolvedRun } from '../runs/resolveRuns';
+import type { BidiResolver } from './bidiSeam';
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -220,5 +221,46 @@ describe('cachedLayoutRuns', () => {
     const small = cachedLayoutRuns([{ ...r, sizeMap: [r.fontSize, r.fontSize * 0.7] }], OPTS);
     expect(small).not.toBe(full);
     expect(small.lines[0].cells[1].advance).toBeLessThan(full.lines[0].cells[1].advance);
+  });
+});
+
+describe('what the key has to tell apart', () => {
+  it('lays out again when only `direction` changes', () => {
+    const runs = [run('hello')];
+    const opts = { maxWidth: 400, lineHeight: 1.2, align: 'start' as const };
+    const ltr = cachedLayoutRuns(runs, { ...opts, direction: 'ltr' });
+    const rtl = cachedLayoutRuns(runs, { ...opts, direction: 'rtl' });
+    expect(ltr.lines[0].x0).toBe(0);
+    expect(rtl.lines[0].x1).toBeCloseTo(400, 6);
+  });
+
+  it('lays out again when a bidi engine is supplied, and per engine', () => {
+    const engine = (): BidiResolver => ({
+      analyze: () => null,
+      reorder: (_a, start, end) => ({
+        order: Array.from({ length: end - start }, (_, i) => end - 1 - i),
+        levels: new Array<number>(end - start).fill(1),
+      }),
+      mirror: () => null,
+    });
+    const runs = [run('ab')];
+    const plain = cachedLayoutRuns(runs, OPTS);
+    const first = engine();
+    const reversed = cachedLayoutRuns(runs, { ...OPTS, bidi: first });
+    expect(plain.lines[0].cells[0].x).toBeLessThan(plain.lines[0].cells[1].x);
+    expect(reversed.lines[0].cells[0].x).toBeGreaterThan(reversed.lines[0].cells[1].x);
+    expect(cachedLayoutRuns(runs, { ...OPTS, bidi: first })).toBe(reversed);
+    expect(cachedLayoutRuns(runs, { ...OPTS, bidi: engine() })).not.toBe(reversed);
+    // A fresh array reaches the structural key, which has to tell them apart too.
+    expect(cachedLayoutRuns([run('ab')], OPTS)).toBe(plain);
+  });
+
+  it('keeps a shrunken run\'s line height apart from a plain run of the same size', () => {
+    // A run scaled to 10 inside 20px text holds its line at 20; plain 10px
+    // text does not. Everything else about the two runs is identical.
+    const strut = cachedLayoutRuns([{ ...run('x', 10), strutSize: 20 }], OPTS);
+    const plain = cachedLayoutRuns([run('x', 10)], OPTS);
+    expect(strut.lines[0].y1).toBeCloseTo(24, 6);
+    expect(plain.lines[0].y1).toBeCloseTo(12, 6);
   });
 });

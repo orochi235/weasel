@@ -26,7 +26,7 @@
  * second: an identity hit never pays for it.
  *
  * Under either, one entry per distinct `(maxWidth, alignWidth, lineHeight,
- * align, outline threshold)`. Position is deliberately absent: `layoutRuns` emits
+ * align, outline threshold, direction, bidi engine)`. Position is deliberately absent: `layoutRuns` emits
  * origin-relative geometry and `drawText` translates at upload, so a text node
  * dragged across the page keeps hitting the same entry.
  *
@@ -64,6 +64,7 @@ import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { glyphGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { layoutRuns, type LaidOutRuns, type LayoutRunsOpts } from './layoutRuns';
+import { refId } from './refId';
 
 /** Distinct option combinations held for one runs array before the whole set
  *  is dropped. Sized for "a few views onto the same text". */
@@ -106,20 +107,8 @@ function outlineBucket(runs: readonly ResolvedRun[], min: number | undefined): n
 function variantKey(runs: readonly ResolvedRun[], opts: LayoutRunsOpts): string {
   const alignWidth = opts.alignWidth ?? opts.maxWidth;
   const justify = opts.justify === true || opts.align === 'justify';
-  return `${opts.maxWidth}|${alignWidth}|${opts.lineHeight}|${opts.align}|${justify ? 'j' : ''}|${outlineBucket(runs, opts.outlineMinSize)}`;
-}
-
-let nextRefId = 1;
-const refIds = new WeakMap<object, number>();
-
-/** A stable id for a paint this key cannot serialize. */
-function refId(o: object): number {
-  let id = refIds.get(o);
-  if (id === undefined) {
-    id = nextRefId++;
-    refIds.set(o, id);
-  }
-  return id;
+  return `${opts.maxWidth}|${alignWidth}|${opts.lineHeight}|${opts.align}|${justify ? 'j' : ''}|${outlineBucket(runs, opts.outlineMinSize)}`
+    + `|${opts.direction ?? ''}|${opts.bidi ? refId(opts.bidi) : ''}`;
 }
 
 /**
@@ -159,7 +148,7 @@ function runsKey(runs: readonly ResolvedRun[]): string {
     out += `${r.text.length}:${r.text}|${r.fontFamily.length}:${r.fontFamily}`
       + `|${r.fontSize}|${r.fontWeight}|${r.fontStyle}|${r.letterSpacing}`
       + `|${r.underline ? 1 : 0}${r.strikethrough ? 1 : 0}${r.overline ? 1 : 0}`
-      + `|${r.baselineShift}`
+      + `|${r.baselineShift}|${r.strutSize ?? ''}`
       + `|${paintKey(r.fill)}|${strokeKey(r.stroke)}`
       // Ends follow from starts and the length, so the two pin the cells.
       + `|${r.srcMap ? `${r.srcMap.length}:${r.srcMap.starts.join(',')}` : ''}`
