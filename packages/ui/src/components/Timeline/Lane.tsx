@@ -33,6 +33,8 @@ export interface LaneProps {
   /** Index of the key a selected segment runs INTO, or null. */
   selectedSegment?: number | null;
   onSelectSegment?: (keyIndex: number) => void;
+  /** A press on the lane that lands on no key, segment, or handle. */
+  onPressEmpty?: () => void;
 }
 
 function entryTimes(row: LaneRow): number[] {
@@ -44,7 +46,7 @@ function entryTimes(row: LaneRow): number[] {
 export function Lane(props: LaneProps): ReactElement {
   const {
     row, window: win, mode, selection, onSelect, onKeyInput, onKeyCommit, onInsert, onToggleExpand, expanded, snapTimes,
-    selectedSegment = null, onSelectSegment, onKeysInput, onKeysCommit,
+    selectedSegment = null, onSelectSegment, onPressEmpty, onKeysInput, onKeysCommit,
   } = props;
   const trackRef = useRef<HTMLDivElement | null>(null);
   const sessionRef = useRef<PointerSession | null>(null);
@@ -160,6 +162,10 @@ export function Lane(props: LaneProps): ReactElement {
         className={s.laneTrack}
         ref={trackRef}
         data-testid="timeline-lane-track"
+        onPointerDown={(e) => {
+          if ((e.target as Element).closest('[data-keyframe-index], [data-handle-index], [data-segment-index]')) return;
+          onPressEmpty?.();
+        }}
         onDoubleClick={(e) => {
           if (row.kind !== 'sampled') return;
           if ((e.target as Element).closest('[data-keyframe-index], [data-handle-index]')) return;
@@ -199,6 +205,7 @@ export function Lane(props: LaneProps): ReactElement {
                   aria-label={`${row.label} segment into ${Math.round(k.t)} ms`}
                   aria-current={selectedSegment === i ? 'true' : undefined}
                   data-testid="timeline-segment"
+                  data-segment-index={i}
                   className={s.segment}
                   style={{ left: pct(sampledKeys[i - 1].t), width: spanPercent(win, k.t - sampledKeys[i - 1].t) }}
                   onClick={() => onSelectSegment?.(i)}

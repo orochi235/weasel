@@ -228,6 +228,65 @@ describe('Timeline', () => {
     expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
   });
 
+  describe('the easing picker', () => {
+    const threeKeys = (): Track[] => ([
+      { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 400, value: 5 }, { t: 800, value: 10 }], onTick: () => {} },
+    ] as Track[]);
+    const editor = () => <span data-testid="key-editor" />;
+    const openPicker = (): void => {
+      fireEvent.click(screen.getAllByTestId('timeline-segment')[0]);
+      expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
+    };
+
+    it('closes when a key is selected', () => {
+      render(<Timeline {...base} tracks={threeKeys()} renderKeyEditor={editor} />);
+      openPicker();
+      fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[2], { clientX: 400, button: 0 });
+      fireEvent.pointerUp(document, { clientX: 400 });
+      expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+      expect(screen.getByTestId('key-editor')).toBeInTheDocument();
+    });
+
+    it('takes the place of the key editor when a segment is selected', () => {
+      render(<Timeline {...base} tracks={threeKeys()} renderKeyEditor={editor} />);
+      fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[2], { clientX: 400, button: 0 });
+      fireEvent.pointerUp(document, { clientX: 400 });
+      expect(screen.getByTestId('key-editor')).toBeInTheDocument();
+      openPicker();
+      expect(screen.queryByTestId('key-editor')).not.toBeInTheDocument();
+    });
+
+    it('tells a consumer holding the selection that a segment took it', () => {
+      const onSelect = vi.fn();
+      render(<Timeline {...base} tracks={threeKeys()} selection={{ trackPath: [0], keyIndex: 2 }} onSelect={onSelect} />);
+      fireEvent.click(screen.getAllByTestId('timeline-segment')[0]);
+      expect(onSelect).toHaveBeenLastCalledWith(null);
+    });
+
+    it('closes on a press on empty lane', () => {
+      render(<Timeline {...base} tracks={threeKeys()} />);
+      openPicker();
+      fireEvent.pointerDown(screen.getByTestId('timeline-lane-track'), { clientX: 450, button: 0 });
+      expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+    });
+
+    it('stays open for a press on its own segment', () => {
+      render(<Timeline {...base} tracks={threeKeys()} />);
+      openPicker();
+      fireEvent.pointerDown(screen.getAllByTestId('timeline-segment')[0], { clientX: 100, button: 0 });
+      expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
+    });
+
+    it('closes on Escape, and leaves an Escape with nothing to close alone', () => {
+      render(<Timeline {...base} tracks={threeKeys()} />);
+      const root = screen.getByTestId('timeline-root');
+      expect(fireEvent.keyDown(root, { key: 'Escape' })).toBe(true);
+      openPicker();
+      expect(fireEvent.keyDown(root, { key: 'Escape' })).toBe(false);
+      expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+    });
+  });
+
   it('renders the consumer’s key editor for the selection', () => {
     render(
       <Timeline

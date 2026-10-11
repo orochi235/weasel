@@ -80,6 +80,15 @@ export function Timeline(props: TimelineProps): ReactElement {
     ?? ((w: TimeWindow): void => setOwnWindow(w.from <= 0 && w.to >= duration ? null : w));
   const selection = props.selection !== undefined ? props.selection : ownSelection;
   const setSelection = props.onSelect ?? setOwnSelection;
+  // A key and a segment are one selection: taking either gives up the other.
+  const selectKey = (sel: KeySelection | null): void => {
+    setSelection(sel);
+    setSegmentSelection(null);
+  };
+  const selectSegment = (sel: KeySelection): void => {
+    setSegmentSelection(sel);
+    if (selection) setSelection(null);
+  };
   const mode = props.mode ?? ownMode;
 
   const rows = useMemo(() => buildLanes(tracks, expanded), [tracks, expanded]);
@@ -105,12 +114,16 @@ export function Timeline(props: TimelineProps): ReactElement {
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (e.defaultPrevented || isTextEntry(e.target)) return;
+    if (e.key === 'Escape' && segmentSelection) {
+      e.preventDefault();
+      setSegmentSelection(null);
+      return;
+    }
     if ((e.key === 'Delete' || e.key === 'Backspace') && selection && selectedTrack?.kind === 'sampled') {
       e.preventDefault();
       const r = deleteKey(tracks, selection);
       onChange(r.tracks);
-      setSelection(r.selection);
-      setSegmentSelection(null);
+      selectKey(r.selection);
     }
   };
 
@@ -186,32 +199,31 @@ export function Timeline(props: TimelineProps): ReactElement {
               expanded={expanded.has(row.key)}
               snapTimes={snapTimes}
               onToggleExpand={() => toggle(row.key)}
-              onSelect={(keyIndex) => setSelection({ trackPath, keyIndex })}
+              onSelect={(keyIndex) => selectKey({ trackPath, keyIndex })}
               onKeyInput={(keyIndex, toMs) => {
                 onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks);
               }}
               onKeyCommit={(keyIndex, toMs) => {
                 const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
                 onChange(r.tracks);
-                setSelection(r.selection);
-                if (r.selection?.keyIndex !== keyIndex) setSegmentSelection(null);
+                selectKey(r.selection);
               }}
               onKeysInput={(keys) => onInput?.(setKeys(tracks, trackPath, keys))}
               onKeysCommit={(keys) => onChange(setKeys(tracks, trackPath, keys))}
               onInsert={(atMs) => {
                 const r = insertKey(tracks, trackPath, atMs);
                 onChange(r.tracks);
-                setSelection(r.selection);
-                setSegmentSelection(null);
+                selectKey(r.selection);
               }}
               selectedSegment={segmentSelection && samePath(segmentSelection.trackPath, trackPath) ? segmentSelection.keyIndex : null}
-              onSelectSegment={(keyIndex) => setSegmentSelection({ trackPath, keyIndex })}
+              onSelectSegment={(keyIndex) => selectSegment({ trackPath, keyIndex })}
+              onPressEmpty={() => setSegmentSelection(null)}
             />
           );
         })}
       </div>
 
-      {renderKeyEditor && selection && selectedKey && selectedTrack?.kind === 'sampled' ? (
+      {renderKeyEditor && !segmentSelection && selection && selectedKey && selectedTrack?.kind === 'sampled' ? (
         <div className={s.inspector}>
           {renderKeyEditor({
             key: selectedKey,

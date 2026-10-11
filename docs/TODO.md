@@ -714,24 +714,12 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
-- **(P3) Text edit: the kit asks "is this node text?" two ways.** `useTextEditDepSource`
-  (`packages/core/src/canvas/deps/textEdit.ts`) answers `TextEditDep.isTextNode` with
-  `data.kind === 'text'`, while `inferredNodeRouting`'s classifier and `useSceneTextEdit`'s `isText`
-  default both use `typeof data.text === 'string'`. A scene whose text nodes carry `text` and no
-  `kind` routes as text and opens on a double-click, and `enterTextEdit` through the stub dep
-  declines it. The stub's `startEdit` only warns, so nothing breaks until a consumer sources the dep
-  without its own `isTextNode`; `useSceneTextEdit` now returns one to pass.
-
-- **(P3) Text edit: `useTextEdit` commits an edit nothing changed, and strips a trailing newline the
-  text really had.** `commit` always calls `setText`, and `trimCaretHolder` removes one trailing
-  `\n` on the assumption the browser added it, so a node whose text is `"abc\n"` becomes `"abc"` on
-  open-and-close. `useSceneTextEdit` now skips a write that matches the node, which covers the no-op
-  case there. Ruled 2026-10-11: the raw hook skips the write when the text and runs match what the
-  edit opened with. That leaves moving the skip into `useTextEdit`, so the rule has one home, and
-  rewriting the fifteen tests in `useTextEdit.test.ts` that commit an untouched overlay and expect
-  the write (one is named "an untouched edit commits the runs it started with"). An edit that did
-  change something still goes through `trimCaretHolder`; whether a browser adds a holder to seeded
-  text ending in `\n` has not been observed.
+- **(P3) Text edit: an edit that changes text ending in a newline drops that newline.**
+  `trimCaretHolder` (`packages/core/src/features/text/useTextEdit.ts`) removes one trailing `\n` on
+  the assumption the browser added it as the caret's holder, so a node whose text is `"abc\n"`
+  becomes `"xabc"` when an `x` is typed at its start. An edit that changes nothing writes nothing,
+  so open-and-close is safe. Whether a browser adds a holder to seeded text that already ends in
+  `\n` has not been observed, and the fix turns on it.
 
 - **(P3) Text edit: typed text is inserted by hand in `beforeinput`.** Every `insertText` is
   `preventDefault`-ed and inserted at the window selection
@@ -1970,13 +1958,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   (`packages/ui/src/components/Timeline/Timeline.tsx`); `false` hides the whole row. The row also
   holds the time readout and the Graph switch, which both work without a transport, so the open
   call is what an omitted `transport` draws: the readout and the switch alone, or nothing.
-
-- **(P3) Timeline: nothing dismisses the easing picker.** Clicking a segment opens the
-  `EasingPicker` under the lanes and it stays until an edit renumbers the track's keys; selecting a
-  key, clicking empty lane, or Escape leave it open, and a key editor and the easing picker can both
-  show. Ruled 2026-10-11: a key and a segment are one selection, so selecting a key, clicking empty
-  lane, or pressing Escape closes the picker, and the two editors never show together. That leaves
-  those three ways out in `packages/ui/src/components/Timeline/Timeline.tsx`.
 
 ### WeaselDraw app follow-ups (defer)
 
