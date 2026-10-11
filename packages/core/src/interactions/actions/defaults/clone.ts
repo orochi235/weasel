@@ -16,7 +16,8 @@ import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import { copyRoots, copySelection, subtreeIds } from './copySubtree';
+import { copySelection } from './copySubtree';
+import { selectedRoots, translateTargets } from '../selectionSubtree';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
@@ -90,19 +91,13 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       const ids = selection.get() as NodeId[];
       if (ids.length === 0) return {};
 
-      const rootIds = copyRoots(scene, ids);
-      const copied = new Set<NodeId>();
-      for (const root of rootIds) for (const id of subtreeIds(scene, root)) copied.add(id);
-
       // Capture origin poses once at drag start.
       const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
       const originPoses = new Map<NodeId, unknown>();
       const descriptor = poseDescriptorOf(ctx.deps.poseDescriptor);
-      for (const id of copied) {
+      for (const id of translateTargets(scene, frame, ids)) {
         const node = scene.get(id);
         if (node === undefined) continue;
-        const storedIn = frame.pc.closure === 'identity' ? null : frame.frame(id);
-        if (storedIn !== null && copied.has(storedIn)) continue;
         const toEdited = invertPlane(planeOf(ctx.deps.view, node.layer));
         originPoses.set(id, carryPose(descriptor, frame.world(id), toEdited));
       }
@@ -110,7 +105,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       if (originPoses.size === 0) return {};
 
       const scratch: CloneScratch = {
-        ids: rootIds,
+        ids: selectedRoots(scene, ids),
         scene,
         descriptor,
         frame,

@@ -10,6 +10,8 @@ import type { Action } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
+import { scenePoseFrame } from '../poseFrame';
+import { translateTargets } from '../selectionSubtree';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 const KEY_FOR: Record<Direction, string> = {
@@ -32,10 +34,11 @@ const SMALL_STEP = 1;
 const BIG_STEP = 10;
 
 /**
- * Apply a translation of (dx, dy) to all currently-selected nodes by building
- * one `createTransformOp` per node (from = pre-mutation pose, to = nudged
- * pose) and routing the batch through the consumer commit hook. Translates
- * through the `poseDescriptor` dep, so any pose shape moves.
+ * Apply a translation of (dx, dy) to the selected nodes and the descendants
+ * that do not ride on one of them, by building one `createTransformOp` per
+ * node (from = pre-mutation pose, to = nudged pose) and routing the batch
+ * through the consumer commit hook. Translates through the `poseDescriptor`
+ * dep, so any pose shape moves.
  *
  * Mirrors `moveAction`'s `commitOps` helper: when `deps.applyOps` is present
  * the ops route through the consumer's history (one undo entry there);
@@ -52,8 +55,9 @@ function nudgeSelection(
   applyOps: ((ops: Op[], label: string) => void) | undefined,
   geometryProjection: GeometryProjection | undefined,
   d: PoseDescriptor<unknown>,
+  poseComposition: unknown,
 ): void {
-  const ids = selection.get();
+  const ids = translateTargets(scene, scenePoseFrame(scene, poseComposition), selection.get());
   if (ids.length === 0) return;
   // Pure translation by the nudge step. Pushed alongside each transform op so
   // a wired geometryProjection mirrors the node's data-held geometry too.
@@ -103,7 +107,7 @@ function makeNudgeAction(dir: Direction): Action & { requires: string[] } {
       { spec: { kind: 'key', key: KEY_FOR[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
-    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor'],
+    requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'poseComposition'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
@@ -115,7 +119,7 @@ function makeNudgeAction(dir: Direction): Action & { requires: string[] } {
         const applyOps = deps.applyOps;
         const geometryProjection = deps.geometryProjection;
         if (!selection || !scene) return;
-        nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor));
+        nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor), deps.poseComposition);
       },
     },
     enabled: requiresSelection,

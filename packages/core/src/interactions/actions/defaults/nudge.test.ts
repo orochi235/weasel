@@ -34,6 +34,7 @@ function makeStubScene(initial: Record<string, Pose>) {
     poses,
     batchLog,
     renderOrder: () => [...poses.keys()].map((id) => asNodeId(id)),
+    childrenOf: () => [],
     get(id: string) {
       if (!poses.has(id as string)) return undefined;
       return { pose: poses.get(id as string) };
