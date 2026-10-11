@@ -969,14 +969,6 @@ intercepting the press that drags the body.
 
 ## Animation
 
-- **(P2) An animated insert records a stray `'animate'` op.** In the order the site demo uses,
-  `animateLifecycle(animateOnSetPose(base))`, an insert's `adapter.setPose(id, start)`
-  (`packages/core/src/animation/wrappers/animateLifecycle.ts`) goes through the animating wrapper,
-  which records a transform op from the final pose to the start pose before the entry tween
-  interrupts it. Run 2026-10-11: one insert calls the base adapter's `applyOps` once. The lifecycle
-  wrapper has no way to write a pose the wrapper beneath it will pass straight through; it needs
-  one, or an entry tween that takes its start pose and writes it on registration.
-
 - **(P3) Timeline: a frame that skips whole laps fires them under `loop: n` and not under
   `loop: true`.** In `packages/core/src/animation/timeline/createTimeline.ts`, a frame long enough
   to skip whole laps fires every skipped lap's events under `loop: n` but none under `loop: true`,

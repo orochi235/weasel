@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from '../useAnimator';
 import { animateLifecycle } from './animateLifecycle';
+import { animateOnSetPose } from './animateOnSetPose';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 interface Obj { id: string; pose: RectPose }
@@ -118,5 +119,30 @@ describe('animateLifecycle.remove', () => {
     expect(removeNode).not.toHaveBeenCalled();
     act(() => clock.advance(100));
     expect(removeNode).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('animateLifecycle over animateOnSetPose', () => {
+  it('enters from the start pose without gliding there or recording an op', () => {
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>();
+    const { base, setPose } = makeAdapter(initial);
+    const applyOps = vi.fn();
+    const { result } = renderHook(() => useAnimator(clock));
+    // A wrapper between the two that knows nothing of either still carries the write through.
+    const gliding = { ...animateOnSetPose({ ...base, applyOps } as never, result.current, { ms: 100 }) };
+    const wrapped = animateLifecycle(gliding as never, result.current, {
+      enterFrom: (p: RectPose) => ({ ...p, x: -50 }),
+      ms: 100,
+    });
+    act(() => {
+      wrapped.insertNode({ id: 'a', pose: { x: 10, y: 10, width: 20, height: 20 } } as never);
+    });
+    expect(applyOps).not.toHaveBeenCalled();
+    expect(setPose.mock.calls).toEqual([['a', { x: -50, y: 10, width: 20, height: 20 }]]);
+    act(() => clock.advance(0));
+    act(() => clock.advance(100));
+    expect(initial.get('a')).toEqual({ x: 10, y: 10, width: 20, height: 20 });
+    expect(applyOps).not.toHaveBeenCalled();
   });
 });

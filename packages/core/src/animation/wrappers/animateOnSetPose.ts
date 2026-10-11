@@ -1,4 +1,5 @@
 import { tweenPose, springPose } from '../poseHelpers';
+import { instantPoseWrite } from './instantPose';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
 import type { Animator, EasingSpec, SpringPresetName } from '../types';
@@ -59,6 +60,7 @@ export function animateOnSetPose<TNode extends { id: string }, TPose>(
 
   return {
     ...adapter,
+    ...instantPoseWrite(adapter),
     setPose(id: string, pose: TPose): void {
       const from = adapter.getPose(id);
       if (skipPredicate(id, from, pose)) {

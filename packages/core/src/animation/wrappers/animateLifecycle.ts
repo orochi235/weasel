@@ -1,4 +1,5 @@
 import { tweenPose } from '../poseHelpers';
+import { setPoseInstant } from './instantPose';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
 import type { Animator, EasingSpec } from '../types';
@@ -34,7 +35,7 @@ export function animateLifecycle<TNode extends { id: string; pose?: TPose }, TPo
       if (!opts.enterFrom) return;
       const final = adapter.getPose(object.id);
       const start = opts.enterFrom(final);
-      adapter.setPose(object.id, start);
+      setPoseInstant(adapter, object.id, start);
       tweenPose(animator, adapter as never, {
         id: object.id,
         to: final,
