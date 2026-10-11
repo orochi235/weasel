@@ -298,13 +298,6 @@ have shipped. What remains:
   That leaves dropping both style writes, checking every host for a layout that depends on them, and
   taking the caveat back out of the docs.
 
-- **(P3) `Canvas.tsx` is 1,610 lines and holds the scene-layer builders.** Its header says "Canvas
-  owns NO scene-shaped state", and it exports `buildSceneLayer`/`buildSceneLayers`, which walk the
-  scene tree, apply `toPose`, cull, and record debug bounds. Move them beside
-  `packages/core/src/canvas/sceneLayerPaint.ts` (re-exported from `Canvas.tsx` until importers
-  move), and take the uncontrolled/controlled view state (`viewRef`, `setView`, `subscribeView`, the
-  controlled-prop notification) out as a hook.
-
 - **(P3) Scene layer list: `<Canvas>` learns of a layer change by polling at paint.**
   `useSceneLayerList` (`packages/core/src/canvas/useSceneLayerList.ts`) re-reads
   `adapter.getLayers()` on every paint and queues a render when the ids differ, because the adapter

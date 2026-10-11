@@ -23,7 +23,10 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useInsertionEf
 import type React from 'react';
 import type { FillStyle } from '@weasel-js/paint';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
-import { sceneLayerKey } from './sceneLayerPaint';
+import { buildSceneLayers, type CanvasAdapter, type SceneSlotConfig } from './buildSceneLayer';
+
+export { buildSceneLayer, buildSceneLayers } from './buildSceneLayer';
+export type { SceneSlotConfig } from './buildSceneLayer';
 import {
   STANDARD_SLOTS,
   isCustomEntry,
@@ -37,6 +40,7 @@ import type { ToolsApi } from '../tools/overlayBinding';
 import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
+import { useCanvasView } from './useCanvasView';
 import { useOptionalViewRegistry } from './viewRegistry';
 import { useFrameLoop } from './useFrameLoop';
 import { useRedrawOn } from './useRedrawOn';
@@ -45,17 +49,14 @@ import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 import type { ToolCtx } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
 import type { Op } from 'core/ops/types';
-import type { Path } from '@weasel-js/geom';
 import { dispatchApplyBatch } from 'core/applyOps';
-import { normalizeView, type View } from 'core/viewport/view';
-import type { NodePaintCtx } from './NodeShape';
-import { clampView } from 'core/viewport/clampView';
+import type { View } from 'core/viewport/view';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import {
   drawLayers, isLayerPainted,
   type Dims, type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
-import { viewToMat3, cullDrawCommands, type DrawCommand, type ShaderProgramHandle } from '../renderer';
+import { viewToMat3, type ShaderProgramHandle } from '../renderer';
 import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
 import { useSceneLayerList } from './useSceneLayerList';
 import { getProgramSource, programSourceRegistry } from '../renderer/shaders/registerProgram';
@@ -73,14 +74,13 @@ import {
 } from 'features/selection/overlay';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { CanvasDebugSink, DebugConfig, DebugSink } from '../debug/types';
+import type { CanvasDebugSink, DebugConfig } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
 import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 import { frameStatsOf } from '../debug/frameStats';
 
 const alwaysVisible = (_id: string): boolean => true;
-import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { resolveCursorTier } from '@weasel-js/cursor';
 import type { ResolvedCursor } from '@weasel-js/cursor';
 import { createPaintedCursorState } from '@weasel-js/cursor';
@@ -88,99 +88,12 @@ import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from '../features/cursor/paintedCursorLayer';
 import { commandFill } from '../features/patterns/commandPaint';
 
-/**
- * The scene-tree reading methods Canvas feature-detects at draw time, as an
- * *optional* mixin. A `SceneCanvasAdapter` supplies them; flat / bare-Canvas
- * adapters don't. `getPose` already lives on the base move adapter, so only the
- * three tree-walk methods are added here.
- */
-type OptionalSceneHierarchy<TNode, TPose> = Partial<
-  Pick<HierarchicalAdapter<TNode, TPose>, 'getLayers' | 'getNode' | 'getChildren'>
->;
-
-/** The full adapter shape Canvas threads through layers + gesture hooks: the
- *  move/resize/rotate intersection plus the optional scene-tree methods. */
-type CanvasAdapter<TNode extends { id: string }, TPose> = MoveAdapter<TNode, TPose> &
-  ResizeAdapter<TNode, TPose> &
-  RotateAdapter<TNode, TPose> &
-  OptionalSceneHierarchy<TNode, TPose>;
-import { wrapNodeOutput } from './wrapNodeOutput';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { CursorCoordsHud } from './CursorCoordsHud';
 import { PickHud } from './PickHud';
 import { ModalityHud } from './ModalityHud';
 
 
-
-/** Scene slot config — describes how to draw one object with its effective pose. */
-export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
-  /** Override `adapter.getNodes()` for the object iteration. */
-  objects?: TNode[];
-  /** Project an object to its committed pose. Defaults to `adapter.getPose(obj.id)`. */
-  toPose?: (obj: TNode) => TPose;
-  /** Draw a single object as a `DrawCommand` tree. `ctx` carries what only a
-   *  scene-aware caller can supply (a node's derived path); `<SceneCanvas>`
-   *  fills it in, bare `<Canvas>` never does. */
-  drawOne: (obj: TNode, pose: TPose, view: View, ctx?: NodePaintCtx) => DrawCommand[];
-  /** The path a container derives from its dependencies' poses, for the clip
-   *  it imposes on its subtree. The other half of what only a scene-aware
-   *  caller can supply — `drawOne`'s `ctx` carries the derived path a node
-   *  *paints*, this one the clip it *imposes*. */
-  derivedPathOf?: (obj: TNode, pose: TPose) => Path | null;
-  /** Default ghost alpha for the move-overlay slot. Default 0.85. */
-  ghostAlpha?: number;
-  /**
-   * Optional per-id alpha multiplier. When supplied, each node's emitted
-   * `DrawCommand[]` is wrapped in a `{ kind: 'group', alpha }` when the
-   * returned value is not 1. The scoping-dim integration supplies this to
-   * dim non-active nodes during a mode transition.
-   *
-   * Defaults to `() => 1` (no effect).
-   */
-  alphaFor?: (id: string) => number;
-  /**
-   * Optional post-processor for the scene slot's emitted commands. Called
-   * with the final world-space `DrawCommand[]` each time a scene canvas
-   * layer draws (after per-node rotation wrapping and `alphaFor`); the
-   * return value replaces the array handed to the renderer. When the scene
-   * slot is split into per-scene-layer canvas layers (`scene:<layerId>`),
-   * it runs once per layer. Identity by default.
-   *
-   * Commands are world-space — `drawLayers` applies the view transform
-   * afterward, so e.g. a `clip` path in a wrapping group is authored in
-   * world coordinates. Note clip nesting is capped at 7 levels; a wrapping
-   * group with `clip` consumes one.
-   *
-   * The move-overlay ghost (drag preview) is not post-processed.
-   */
-  postProcess?: (cmds: DrawCommand[], view: View, dims: Dims) => DrawCommand[];
-  /**
-   * Skip what cannot reach the view. A node `paintBounds` places outside the
-   * `dims` rectangle under `view` is not painted at all; then, after
-   * `postProcess`, `cullDrawCommands` drops any remaining command that cannot
-   * reach it — see there for what it can and cannot bound. So `postProcess`
-   * sees an empty group where a culled node would have painted.
-   *
-   * Off by default because it makes the layer's world-space output depend on
-   * the view: anything that draws this layer once and shows the result under
-   * another view — a cache keyed without `view`, a consumer re-wrapping the
-   * commands — would show the first view's cull.
-   */
-  cull?: boolean;
-  /**
-   * Where `drawOne`'s output for a node can reach, in the frame it paints in
-   * — before the pose rotation the slot wraps it in. `null` for a node it
-   * cannot bound cheaply. Read only under `cull`, which skips `drawOne` for a
-   * node whose box misses the view, so it must enclose everything `drawOne`
-   * paints: a box too small makes a node vanish before it leaves the screen.
-   *
-   * `<SceneCanvas>` supplies `defaultPaintBounds` while `drawOne` is
-   * `defaultDrawOne`. Omit it with any other `drawOne` and culling only
-   * trims commands after painting.
-   */
-  paintBounds?: PaintBoundsFn<TNode, TPose>;
-}
 
 /** Selection-overlay slot config — passed through to `createSelectionOverlayLayer`,
  *  minus the `getSelection`/`getPose` Canvas wires automatically. */
@@ -596,147 +509,6 @@ export type {
   CanvasHelpers,
 } from './useViewHelpers';
 
-/**
- * Build the scene layer. Tool ghosts (in-flight drag/resize/rotate poses) are
- * published via the active tool's `previewPose`/`previewIds` and rendered on
- * top of this layer (see SceneCanvas's preview-ghost layer); we draw committed
- * poses here, and `hideIds()` lets us skip the committed paint of ids the
- * active tool is currently ghosting so the source doesn't show through.
- */
-export function buildSceneLayer<TNode extends { id: string }, TPose>(
-  cfg: SceneSlotConfig<TNode, TPose>,
-  adapter: CanvasAdapter<TNode, TPose> | undefined,
-  debugSink: DebugSink | null,
-  boundsOfFn: ((id: string) => Bounds | null) | undefined,
-  hideIds: () => Set<string> | null,
-  /** When set, the returned layer carries this `id` and paints ONLY the named
-   *  scene layer (the rest are walked for ancestor clips). Used to split the
-   *  scene slot into per-scene-layer, individually-orderable canvas layers
-   *  (`scene:<layerId>`) so consumers can interleave custom layers between
-   *  them. Omit for the single bundled `scene` layer. */
-  slot?: { id: string; forLayer: string },
-): RenderLayer<unknown> {
-  const toPose =
-    cfg.toPose ??
-    ((obj: TNode) => (adapter ? adapter.getPose(obj.id) : (obj as unknown as TPose)));
-  const drawOne = cfg.drawOne;
-  const postProcess = cfg.postProcess;
-  const finish = cfg.cull
-    ? (cmds: DrawCommand[], view: View, dims: Dims): DrawCommand[] =>
-      cullDrawCommands(cmds, viewToMat3(view), { x: 0, y: 0, width: dims.width, height: dims.height })
-    : (cmds: DrawCommand[]): DrawCommand[] => cmds;
-  const paintBounds = cfg.cull ? cfg.paintBounds : undefined;
-  const culledIn = (view: View, dims: Dims) => paintBounds
-    ? paintMissesView(paintBounds, view, { x: 0, y: 0, width: dims.width, height: dims.height })
-    : undefined;
-  return {
-    id: slot?.id ?? 'scene',
-    label: slot ? `Scene: ${slot.forLayer}` : 'Scene',
-    draw: (_data, view, dims) => {
-      const hidden = hideIds();
-      const a = adapter;
-      if (
-        a &&
-        cfg.objects === undefined &&
-        typeof a.getLayers === 'function' &&
-        typeof a.getNode === 'function' &&
-        typeof a.getChildren === 'function' &&
-        drawOne
-      ) {
-        const filteredDrawOne = (obj: TNode, pose: TPose, v: View): DrawCommand[] => {
-          if (hidden && hidden.has(obj.id)) return [];
-          const cmds = drawOne(obj, pose, v);
-          if (debugSink) {
-            const b = boundsOfFn ? boundsOfFn(obj.id) : null;
-            if (b) debugSink.recordBounds(obj.id, b);
-            const ox = (pose as { x?: number }).x ?? (b ? b.x : 0);
-            const oy = (pose as { y?: number }).y ?? (b ? b.y : 0);
-            debugSink.recordOrigin(obj.id, { x: ox, y: oy });
-          }
-          return wrapNodeOutput(cmds, pose, cfg.alphaFor ? cfg.alphaFor(obj.id) : 1);
-        };
-        // Honor cfg.toPose on the hierarchical path by shimming getPose on the
-        // adapter so buildSceneTree routes through it instead of the raw adapter.
-        const hierarchicalAdapter = cfg.toPose
-          ? {
-              ...a,
-              getPose: (id: string) => {
-                const obj = a.getNode!(id);
-                return obj ? toPose(obj) : a.getPose(id);
-              },
-            }
-          : a;
-        // World-space commands; drawLayers wraps in viewToMat3 automatically.
-        const tree = buildSceneTree(
-          hierarchicalAdapter as Parameters<typeof buildSceneTree>[0],
-          filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
-          view,
-          slot?.forLayer,
-          cfg.derivedPathOf as Parameters<typeof buildSceneTree>[4],
-          culledIn(view, dims) as Parameters<typeof buildSceneTree>[5],
-        );
-        return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
-      }
-      // Flat fallback — keep existing body verbatim. (Per-layer slotting only
-      // applies on the hierarchical path; a flat adapter has no scene layers,
-      // so the `scene:<layer>` split is a no-op and we emit the whole scene.)
-      const objects = cfg.objects ?? adapter?.getNodes() ?? [];
-      const children: DrawCommand[] = [];
-      const culled = culledIn(view, dims);
-      for (const obj of objects) {
-        if (hidden && hidden.has(obj.id)) continue;
-        const pose: TPose = toPose(obj);
-        if (drawOne && !culled?.(obj, pose)) {
-          const cmds = drawOne(obj, pose, view);
-          const wrapped = wrapNodeOutput(cmds, pose, cfg.alphaFor ? cfg.alphaFor(obj.id) : 1);
-          for (const cmd of wrapped) children.push(cmd);
-        }
-        if (debugSink) {
-          const b = boundsOfFn ? boundsOfFn(obj.id) : null;
-          if (b) debugSink.recordBounds(obj.id, { x: b.x, y: b.y, width: b.width, height: b.height });
-          const ox = (pose as { x?: number }).x ?? (b ? b.x : 0);
-          const oy = (pose as { y?: number }).y ?? (b ? b.y : 0);
-          debugSink.recordOrigin(obj.id, { x: ox, y: oy });
-        }
-      }
-      // World-space commands; drawLayers wraps in viewToMat3 automatically.
-      return finish(postProcess ? postProcess(children, view, dims) : children, view, dims);
-    },
-  };
-}
-
-/**
- * Build the scene slot as one canvas layer **per scene layer** — keyed
- * `scene:<layerId>` — when the adapter is hierarchical (exposes `getLayers`).
- * This lets consumers interleave custom layers *between* scene layers via the
- * standard slot anchoring (`before: 'scene:plantings'`). Each per-layer canvas
- * layer re-runs the scene walk for its own layer only (others are still walked
- * for ancestor clips). Falls back to a single `scene` layer for flat adapters
- * or adapters with no declared layers.
- */
-export function buildSceneLayers<TNode extends { id: string }, TPose>(
-  cfg: SceneSlotConfig<TNode, TPose>,
-  adapter: CanvasAdapter<TNode, TPose> | undefined,
-  debugSink: DebugSink | null,
-  boundsOfFn: ((id: string) => Bounds | null) | undefined,
-  hideIds: () => Set<string> | null,
-): Array<{ key: string; layer: RenderLayer<unknown> }> {
-  const sceneLayerIds =
-    cfg.objects === undefined && typeof adapter?.getLayers === 'function'
-      ? adapter.getLayers().map((l) => l.id)
-      : null;
-  if (!sceneLayerIds || sceneLayerIds.length === 0) {
-    return [{ key: 'scene', layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds) }];
-  }
-  return sceneLayerIds.map((id) => ({
-    key: sceneLayerKey(id),
-    layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds, {
-      id: sceneLayerKey(id),
-      forLayer: id,
-    }),
-  }));
-}
-
 function resolveToolsCursor(
   tools: ToolsApi,
   ctxBase?: () => Omit<ToolCtx, 'scratch'>,
@@ -951,45 +723,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     helpersForLayersRef.current,
   ), [hitTestExtrasIn, dimsRef]);
 
-  // The uncontrolled view lives in a ref, not `useState`, so a camera moving
-  // at 60 Hz costs no React render; DOM that mirrors it subscribes instead.
-  const viewRef = useRef<View>(normalizeView(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } }));
-  const isControlled = viewProp !== undefined;
-  const controlledView = isControlled ? normalizeView(viewProp) : undefined;
-  const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
-  const onViewChangeRef = useLatest(onViewChange);
-  const viewBoundsRef = useLatest(viewBounds);
-  const isControlledRef = useLatest(isControlled);
-  const controlledWarnedRef = useRef(false);
-
-  const setView = useCallback((next: View | ((current: View) => View)) => {
-    const resolved = normalizeView(typeof next === 'function' ? next(viewRef.current) : next);
-    const bounds = viewBoundsRef.current;
-    const clamped = bounds ? clampView(resolved, bounds, dimsRef.current) : resolved;
-    if (isControlledRef.current) {
-      // The prop is the authority; writing the ref would put pixels and props
-      // out of step with nothing to reconcile them.
-      const forward = onViewChangeRef.current;
-      if (!controlledWarnedRef.current) {
-        controlledWarnedRef.current = true;
-        console.warn(forward
-          ? '[weasel] setView not applied locally: this canvas is controlled by its `view` prop. The value was forwarded to `onViewChange` — update the prop from there, or drop it to take the imperative path.'
-          : '[weasel] setView ignored: this canvas is controlled by its `view` prop and has no `onViewChange`, so the value has nowhere to go. Update the prop, or drop it to take the imperative path.');
-      }
-      forward?.(clamped);
-      return;
-    }
-    viewRef.current = clamped;
-    for (const fn of viewSubsRef.current) fn(clamped);
-    onViewChangeRef.current?.(clamped);
-    requestRedraw();
-  }, [requestRedraw, dimsRef, isControlledRef, onViewChangeRef, viewBoundsRef]);
-
-  const getView = useCallback(() => viewRef.current, []);
-  const subscribeView = useCallback((fn: (v: View) => void) => {
-    viewSubsRef.current.add(fn);
-    return () => { viewSubsRef.current.delete(fn); };
-  }, []);
+  const {
+    viewRef, controlledView, setView, getView, subscribeView,
+    adoptControlled, announceControlled, clearSubscribers,
+  } = useCanvasView({ view: viewProp, defaultView, onViewChange, viewBounds, dimsRef, requestRedraw });
 
   useLayoutEffect(() => {
     const element = canvasRef.current;
@@ -1352,24 +1089,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     flattenTolerance,
   };
   const paintInputsRef = useLatest(paintInputs);
-  const controlledMovedRef = useRef(false);
   useInsertionEffect(() => {
-    if (controlledView) {
-      const was = viewRef.current;
-      controlledMovedRef.current ||= was.x !== controlledView.x || was.y !== controlledView.y
-        || was.scale.x !== controlledView.scale.x || was.scale.y !== controlledView.scale.y;
-      viewRef.current = controlledView;
-    }
+    adoptControlled();
     helpersForLayersRef.current = helpersForLayers;
     if (helpersRef) helpersRef.current = helpersForLayers;
     if (debugSinkRef) debugSinkRef.current = debugSink;
   });
-  // A controlled view reaches the ref with no `setView`, so this is where its
-  // subscribers hear of it.
   useLayoutEffect(() => {
-    if (!controlledMovedRef.current) return;
-    controlledMovedRef.current = false;
-    for (const fn of viewSubsRef.current) fn(viewRef.current);
+    announceControlled();
   });
 
   const paint = useCallback((): boolean => {
@@ -1441,12 +1168,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   useEffect(() => {
     const layerCache = layerCacheRef.current;
-    const viewSubs = viewSubsRef.current;
     return () => {
       layerCache.clear();
-      viewSubs.clear();
+      clearSubscribers();
     };
-  }, []);
+  }, [clearSubscribers]);
 
   useEffect(() => {
     if (!shaderIdKey) return;
