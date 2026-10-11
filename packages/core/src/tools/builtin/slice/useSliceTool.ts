@@ -6,7 +6,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../../renderer';
 import type { Action, ActionDeps, InvocationCtx, ToolKeybinding } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
-import type { PointerContextValue } from 'features/pointer/PointerContext';
+import { createPointerFollower } from '../shared/pointerFollower';
 import { sliceAction } from 'interactions/actions/defaults/slice';
 import { withinPxRadius } from 'core/viewport/pxExtent';
 import { worldToScreen } from 'core/viewport/viewTransform';
@@ -50,8 +50,6 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {
   // while any are placed, every move of the pointer the rubber band follows.
   const live = useMemo(() => {
     const listeners = new Set<() => void>();
-    let pointer: PointerContextValue | null = null;
-    let offPointer: (() => void) | null = null;
     const notify = (): void => { for (const fn of [...listeners]) fn(); };
     return {
       notify,
@@ -59,18 +57,7 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {
         listeners.add(fn);
         return () => { listeners.delete(fn); };
       },
-      pointer: () => pointer,
-      follow(next: PointerContextValue | undefined): void {
-        if (!next || next === pointer) return;
-        offPointer?.();
-        pointer = next;
-        offPointer = next.subscribe(notify);
-      },
-      unfollow(): void {
-        offPointer?.();
-        offPointer = null;
-        pointer = null;
-      },
+      ...createPointerFollower(notify),
     };
   }, []);
 

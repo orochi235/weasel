@@ -18,6 +18,7 @@ import { createDeleteOp } from 'core/ops/delete';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
 import { constrainTo45 } from '../../../util/constrainTo45';
 import { cursorFor } from '@weasel-js/cursor';
+import { createPointerFollower } from '../shared/pointerFollower';
 
 /**
  * In-progress pen anchor. A click places a corner, with no handles. A drag
@@ -380,6 +381,39 @@ export function usePenTool<TPose>(
     [optsRef],
   );
 
+  // The rubber band and the close hint trail the `pointer` dep while a path is
+  // in progress. `view` is the camera of the deps last followed through.
+  const trail = useMemo(() => {
+    let view: ActionDeps['view'];
+    const follower = createPointerFollower(() => track());
+    const track = (): void => {
+      const s = scratchRef.current!;
+      if (!s.current && s.finishedSubpaths.length === 0) follower.unfollow();
+      const at = s.current ? follower.pointer()?.get() ?? null : null;
+      s.cursor = at ? snap(at.worldX, at.worldY) : null;
+      const first = s.current && s.current.anchors.length >= 3 ? s.current.anchors[0] : null;
+      s.closeHintActive = first !== null && s.cursor !== null && withinPxRadius(
+        first.x - s.cursor.x, first.y - s.cursor.y,
+        optsRef.current.closeHitRadius, view?.get().scale ?? { x: 1, y: 1 },
+      );
+      forceRender();
+    };
+    return {
+      /** Repaint after a scratch change. */
+      refresh: track,
+      /** The same, following `deps`' pointer from here on. */
+      update(deps: ActionDeps): void {
+        view = deps.view;
+        follower.follow(deps.pointer);
+        track();
+      },
+      stop(): void {
+        follower.unfollow();
+        forceRender();
+      },
+    };
+  }, [snap, optsRef]);
+
   /**
    * Actions the pen owns, registered by `useToolActions` from inside the
    * ActionsProvider — see `ToolDef.actions`.
@@ -397,7 +431,7 @@ export function usePenTool<TPose>(
         id: 'pen.placeAnchor',
         label: 'Pen — place anchor',
         eligible: { capability: 'creates-paths' },
-        requires: ['view', 'areaSelect', 'editAnchors', 'scene', 'applyOps'],
+        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps'],
         invoker: {
           timing: 'immediate' as const,
           run: (deps, params) => {
@@ -408,7 +442,7 @@ export function usePenTool<TPose>(
             // pointer down. Snapping happens here rather than at press time
             // so the snapped value is what the geometry records.
             if (pickUpEndpoint(deps, p.pressX, p.pressY)) {
-              forceRender();
+              trail.update(deps);
               return;
             }
             const { x: wx, y: wy, hit } = placeAt(deps, p.pressX, p.pressY);
@@ -427,7 +461,7 @@ export function usePenTool<TPose>(
                 scratch.current = null;
                 scratch.closeHintActive = false;
                 if (optsRef.current.autoCommitOnClose) commit(scratch, deps);
-                forceRender();
+                trail.update(deps);
                 return;
               }
             }
@@ -437,7 +471,7 @@ export function usePenTool<TPose>(
             if (!scratch.current) scratch.current = { anchors: [], closed: false };
             scratch.current.anchors.push({ x: wx, y: wy });
             if (join) commitJoin(scratch, deps, hit);
-            forceRender();
+            trail.update(deps);
           },
         },
       },
@@ -474,7 +508,7 @@ export function usePenTool<TPose>(
             }
 
             commit(scratch, deps);
-            forceRender();
+            trail.refresh();
           },
         },
       },
@@ -483,7 +517,7 @@ export function usePenTool<TPose>(
         id: 'pen.dragHandle',
         label: 'Pen — drag out a bezier handle',
         eligible: { capability: 'creates-paths' },
-        requires: ['view', 'areaSelect', 'editAnchors', 'scene', 'applyOps'],
+        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps'],
         invoker: {
           timing: 'ongoing' as const,
           start: (ctx: InvocationCtx) => {
@@ -513,7 +547,7 @@ export function usePenTool<TPose>(
             // segment into it, which the pen does not reshape.
             const linked = !pickedUp;
             applyOutHandle(scratch, ctx.world, ctx.modifiers.shift, linked, optsRef.current.snapPoint);
-            forceRender();
+            trail.update(ctx.deps);
 
             return {
               onMove: (moveCtx: InvocationCtx) => {
@@ -539,7 +573,7 @@ export function usePenTool<TPose>(
                     if (se.current.anchors.length === 0) se.current = null;
                   }
                   se.draggingHandleAt = null;
-                  forceRender();
+                  trail.refresh();
                   return;
                 }
                 if (se.draggingHandleAt !== null) {
@@ -550,7 +584,7 @@ export function usePenTool<TPose>(
                   se.draggingHandleAt = null;
                 }
                 if (joinHit && se.current) commitJoin(se, ctx.deps, joinHit);
-                forceRender();
+                trail.refresh();
               },
             };
           },
@@ -567,7 +601,7 @@ export function usePenTool<TPose>(
           timing: 'immediate' as const,
           run: (deps) => {
             commit(s(), deps);
-            forceRender();
+            trail.refresh();
           },
         },
       },
@@ -589,12 +623,12 @@ export function usePenTool<TPose>(
           timing: 'immediate' as const,
           run: () => {
             resetScratch(s());
-            forceRender();
+            trail.refresh();
           },
         },
       },
     ];
-  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin, optsRef]);
+  }, [commit, placeAt, withinCloseRadius, pickUpEndpoint, joinable, commitJoin, optsRef, trail]);
 
   return useMemo(() => {
     return defineTool<PenScratch>({
@@ -626,7 +660,7 @@ export function usePenTool<TPose>(
         // ask for. Mirrors Escape's behavior so "stop drawing" is
         // consistent across exits.
         resetScratch(scratchRef.current!);
-        forceRender();
+        trail.stop();
       },
 
       bindings: [
@@ -650,7 +684,7 @@ export function usePenTool<TPose>(
         { spec: { kind: 'key' as const, key: 'Escape' }, actionId: 'pen.cancel' },
       ],
     });
-  }, [actions]);
+  }, [actions, trail]);
 }
 
 usePenTool.prefs = {

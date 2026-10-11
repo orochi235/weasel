@@ -16,6 +16,7 @@ import { pathToAnchors } from 'features/paths/anchors';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
 import { resolveEditablePathOf, useEditAnchorsDepSource } from 'canvas/deps/editAnchors';
 import type { Scene } from 'core/scene/types';
+import { createPointerStore } from 'features/pointer/PointerContext';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
@@ -419,6 +420,50 @@ describe('usePenTool', () => {
         ['key', 'Enter', 'pen.finish'],
         ['key', 'Escape', 'pen.cancel'],
       ]);
+    });
+  });
+
+  describe('rubber band and close hint', () => {
+    const at = (x: number, y: number) => ({ worldX: x, worldY: y, viewId: null });
+
+    it('trails the pointer once an anchor is placed, through snapPoint', () => {
+      const pointer = createPointerStore();
+      const p = setup({ deps: { pointer }, snapPoint: (q) => ({ x: Math.round(q.x / 10) * 10, y: q.y }) });
+      act(() => { pointer.set(at(33, 80)); });
+      expect(p.scratch.cursor).toBeNull();
+      p.click(0, 0);
+      act(() => { pointer.set(at(52, 80)); });
+      expect(p.scratch.cursor).toEqual({ x: 50, y: 80 });
+      act(() => { pointer.set(null); });
+      expect(p.scratch.cursor).toBeNull();
+    });
+
+    it('hints the close while the pointer is on the first anchor of three or more', () => {
+      const pointer = createPointerStore();
+      const p = setup({ deps: { pointer }, closeHitRadius: 8 });
+      const cursor = p.tool.cursor as (ctx: never) => string;
+      p.click(0, 0); p.click(100, 0);
+      act(() => { pointer.set(at(2, 2)); });
+      expect(p.scratch.closeHintActive).toBe(false);
+      p.click(100, 100);
+      act(() => { pointer.set(at(3, 3)); });
+      expect(p.scratch.closeHintActive).toBe(true);
+      expect(cursor({} as never)).toBe('pointer');
+      act(() => { pointer.set(at(40, 40)); });
+      expect(p.scratch.closeHintActive).toBe(false);
+    });
+
+    it('stops trailing once the path is finished or discarded', () => {
+      const pointer = createPointerStore();
+      const p = setup({ deps: { pointer } });
+      p.click(0, 0); p.click(100, 0);
+      p.escape();
+      act(() => { pointer.set(at(10, 10)); });
+      expect(p.scratch.cursor).toBeNull();
+      p.click(0, 0);
+      p.deactivate();
+      act(() => { pointer.set(at(20, 20)); });
+      expect(p.scratch.cursor).toBeNull();
     });
   });
 
