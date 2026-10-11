@@ -18,6 +18,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
 import { onEmptyCanvas } from './selectionContributions';
+import { hitPredicate } from '@weasel-js/gestures';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
@@ -132,6 +133,10 @@ interface PressClassification {
    */
   deferredClickId: string | null;
 }
+
+
+/** A press that landed on the scene rather than on chrome over it. */
+const offChrome = hitPredicate((hit) => hit == null);
 
 /** Active-slot Tool:
  *  - `select.pick` classifies the press (pointerDown) — it runs the tool's own
@@ -381,7 +386,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           {
             spec: {
               kind: 'pointerDown' as const,
-              target: { kindOf: (hit: unknown) => hit == null },
+              target: { kindOf: offChrome },
               mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
             },
             actionId: 'select.pick',
@@ -391,7 +396,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           {
             spec: {
               kind: 'click' as const,
-              target: { kindOf: (hit: unknown) => hit == null },
+              target: { kindOf: offChrome },
               mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
             },
             actionId: 'select.collapseDeferred',
@@ -408,7 +413,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           {
             spec: {
               kind: 'click' as const,
-              target: { kindOf: (hit: unknown, body?: string) => hit == null && body === 'empty' },
+              target: { kindOf: onEmptyCanvas },
               mods: {},
             },
             actionId: 'clearSelection',

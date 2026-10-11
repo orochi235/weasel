@@ -12,6 +12,7 @@ import type { Action } from '../actions/action';
 import type { Tool } from '../../tools/types';
 import type { InputEvent } from './matcher';
 import type { RuleCtx } from '../../eligibility';
+import { hitPredicate } from '@weasel-js/gestures';
 
 function registryOf(actions: Action[]): ActionsRegistry {
   return {
@@ -121,7 +122,7 @@ function dragScenario(allowed: string[]) {
   const select: Tool = {
     id: 'select',
     eligibility: { focus: true },
-    bindings: [{ spec: { kind: 'drag', target: { kindOf: (h: unknown) => h == null } }, actionId: 'areaSelect' }],
+    bindings: [{ spec: { kind: 'drag', target: { kindOf: hitPredicate((h: unknown) => h == null) } }, actionId: 'areaSelect' }],
   };
   const ctx = ctxOf([areaSelect, dragPan], {
     activeToolId: 'select',

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { forceManyBody, forceLink, forceCollide, forceCenter } from 'd3-force';
 import {
   SceneCanvas,
+  bodyPredicate,
   defineTool,
   dragPanContribution,
   useScene,
@@ -160,8 +161,8 @@ function usePinTool(
       spec: {
         kind: 'drag',
         target: {
-          kindOf: (_hit: unknown, body?: string) =>
-            body === 'selected-body' || body === 'unselected-body',
+          kindOf: bodyPredicate((body) =>
+            body === 'selected-body' || body === 'unselected-body'),
         },
       },
       actionId: 'forceGraph.pin',

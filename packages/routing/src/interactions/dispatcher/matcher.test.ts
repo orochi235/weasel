@@ -4,6 +4,7 @@ import {
   type InputEvent, type ScopedBinding,
 } from './matcher';
 import type { GestureBinding } from '../actions/binding';
+import { hitPredicate } from '@weasel-js/gestures';
 
 const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 // Default wheel event data fields (matcher only reads mods; these are pass-through).
@@ -152,12 +153,12 @@ describe('matchSorted (specificity ordering)', () => {
     };
     const bs: ScopedBinding[] = [
       {
-        binding: binding({ kind: 'drag', target: { kindOf: () => true } }, 'ambient-targeted'),
+        binding: binding({ kind: 'drag', target: { kindOf: hitPredicate(() => true) } }, 'ambient-targeted'),
         scope: 'ambient',
         ownerId: null,
       },
       {
-        binding: binding({ kind: 'drag', target: { kindOf: () => true } }, 'active-targeted'),
+        binding: binding({ kind: 'drag', target: { kindOf: hitPredicate(() => true) } }, 'active-targeted'),
         scope: 'active',
         ownerId: 't',
       },

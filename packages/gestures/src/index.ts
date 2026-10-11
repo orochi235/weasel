@@ -102,10 +102,12 @@ export type {
   DropSpec, PasteSpec,
   ModSpec, TargetSpec, TargetPredicate, PhaseSpec,
 } from './ui/spec';
+export { hitPredicate, bodyPredicate } from './ui/spec';
 
 // Pure matcher functions
 export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, mimeMatchesGlob, matchIngestTypes, parseTargetSpec } from './ui/match';
 export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
+export { isApplePlatform } from './ui/platform';
 
 // Binding precedence
 export { specificity } from './ui/specificity';

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { matchSpec, type GestureSpec } from '@weasel-js/gestures';
 import { synthesizeInput, isPredicateTarget, RESOLUTION_GESTURES, RESOLUTION_BODY_TARGETS } from './resolutionInput';
+import { hitPredicate } from '@weasel-js/core';
 
 describe('synthesizeInput', () => {
   it('builds a drag-matching event with no modifiers held', () => {
@@ -75,7 +76,7 @@ describe('synthesizeInput', () => {
 
 describe('isPredicateTarget', () => {
   it('is true for a kindOf predicate', () => {
-    expect(isPredicateTarget({ kind: 'drag', target: { kindOf: () => true } })).toBe(true);
+    expect(isPredicateTarget({ kind: 'drag', target: { kindOf: hitPredicate(() => true) } })).toBe(true);
   });
 
   it('is false for string targets and for no target', () => {

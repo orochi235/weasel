@@ -61,16 +61,15 @@ const SCOPE_PRIORITY: readonly BindingScope[] = ['hotkey', 'active', 'ambient'];
  * `bodyTarget` / `bodyKind` and never see it — which is why chrome floating
  * over empty canvas used to read as empty canvas.
  *
- * A predicate carrying `readsAffordance: false` says the same about itself;
- * the kit's own body predicates do. Shape stays the fallback for predicates
- * that declare nothing.
+ * A predicate declares which it is with `readsAffordance`; one that declares
+ * nothing, which only untyped code can write, counts as not reading the hit.
  */
 export function targetConsultsAffordance(specTarget: TargetSpec | undefined): boolean {
   if (specTarget === undefined) return false;
   const form = parseTargetSpec(specTarget);
   if (form === null) return false;
   switch (form.form) {
-    case 'predicate': return form.kindOf.readsAffordance !== false;
+    case 'predicate': return form.kindOf.readsAffordance === true;
     case 'affordance': return true;
     case 'body': return false;
     case 'kind': return false;

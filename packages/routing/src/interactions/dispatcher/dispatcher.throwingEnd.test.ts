@@ -11,6 +11,7 @@ import type { Action } from '../actions/action';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { Tool } from '../../tools/types';
 import type { InputEvent } from './matcher';
+import { hitPredicate } from '@weasel-js/gestures';
 
 const MODS = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 
@@ -39,8 +40,8 @@ function setup(log: string[]) {
   const tool = {
     id: 'tool', eligibility: { always: true },
     bindings: [
-      { spec: { kind: 'drag', target: { kindOf: (h: unknown) => h === 'bad' } }, actionId: 'bad' },
-      { spec: { kind: 'drag', target: { kindOf: (h: unknown) => h === 'good' } }, actionId: 'good' },
+      { spec: { kind: 'drag', target: { kindOf: hitPredicate((h: unknown) => h === 'bad') } }, actionId: 'bad' },
+      { spec: { kind: 'drag', target: { kindOf: hitPredicate((h: unknown) => h === 'good') } }, actionId: 'good' },
       { spec: { kind: 'key-held', key: 'h' }, actionId: 'hold' },
     ],
   } as unknown as Tool;

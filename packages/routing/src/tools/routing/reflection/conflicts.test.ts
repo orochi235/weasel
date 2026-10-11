@@ -4,6 +4,7 @@ import type { Tool } from '../../types';
 import { activeModeOf, createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
 import { modeShortcuts } from '../../../contributions/modeShortcuts';
 import { rulesExclusive } from '../../../eligibility';
+import { hitPredicate } from '@weasel-js/gestures';
 
 function tool(id: string, bindings: unknown[]): Tool<unknown> {
   return { id, bindings } as unknown as Tool<unknown>;
@@ -124,8 +125,8 @@ describe('findConflicts — predicate targets', () => {
     // the rendered target reported select's resize / rotate / move drags as a
     // three-way conflict. They are three different predicates.
     const a = tool('a', [
-      { spec: { kind: 'drag', target: { kindOf: () => true } }, actionId: 'x' },
-      { spec: { kind: 'drag', target: { kindOf: () => false } }, actionId: 'y' },
+      { spec: { kind: 'drag', target: { kindOf: hitPredicate(() => true) } }, actionId: 'x' },
+      { spec: { kind: 'drag', target: { kindOf: hitPredicate(() => false) } }, actionId: 'y' },
     ]);
     expect(findConflicts([a])).toEqual([]);
   });
@@ -250,8 +251,8 @@ describe('findScopedConflicts — buckets nothing escapes', () => {
     // Shared target objects: predicate entries bucket by the target's own
     // identity, so two separately-written literals are deliberately two
     // different targets and would not collide at all.
-    const rectTarget = { kindOf: () => true };
-    const ellipseTarget = { kindOf: () => true };
+    const rectTarget = { kindOf: hitPredicate(() => true) };
+    const ellipseTarget = { kindOf: hitPredicate(() => true) };
     const two = (id: string) => ({
       id, eligibility: { always: true },
       bindings: [

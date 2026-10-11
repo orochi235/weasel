@@ -98,7 +98,7 @@ Those declare a different condition:
 
 The conditions are a set, not a choice: the hand tool is palette-selectable
 *and* held-key engaged. A `claimed` entry must give its bindings a target that
-consults the affordance (a `kindOf` predicate or `affordance:<kind>`), or its
+consults the affordance (a `hitPredicate` or `affordance:<kind>`), or its
 own exclusive claim filters them out — a dev-only warning names it if that
 happens.
 
@@ -193,6 +193,7 @@ import {
   createCornerResizeAffordance,
   composeAffordanceLayer,
   defineTool,
+  hitPredicate,
 } from '@weasel-js/core';
 
 // 1. Build an affordance instance via a kit-shipped factory.
@@ -210,6 +211,8 @@ const overlay = composeAffordanceLayer(
 
 // 3. Plug it into your tool's overlay field, and bind the gestures that
 //    should reach your actions when a press lands on that chrome.
+const isMyHandle = hitPredicate((hit) =>
+  (hit as { kind?: string } | null)?.kind?.startsWith('handle:') ?? false);
 const myTool = defineTool({
   id: 'my-tool',
   overlay,
@@ -230,11 +233,11 @@ Affordances read state from `ChromeState` — a kit-built read-only object that 
 
 Every layer's `hitTest` is consulted on pointerdown, and the result rides the gesture as `InvocationCtx.drag.affordance` — so an affordance hit fires the action bound to it even when a different tool is active. This is the principle: visible chrome is always hittable.
 
-A layer that owns its chrome outright returns `strength: 'exclusive'` from its `hitTest`. That bars every binding whose `target` doesn't consult the affordance — a `kindOf` predicate or the `affordance:<kind>` form — so a tool needs no predicate of its own to keep its hands off; a bare `{ kind: 'drag' }` simply doesn't compete for a claimed press. The default, `'shared'`, competes on scope and specificity as bindings always have.
+A layer that owns its chrome outright returns `strength: 'exclusive'` from its `hitTest`. That bars every binding whose `target` doesn't consult the affordance — a `kindOf` predicate built with `hitPredicate`, or the `affordance:<kind>` form — so a tool needs no predicate of its own to keep its hands off; a bare `{ kind: 'drag' }` simply doesn't compete for a claimed press. The default, `'shared'`, competes on scope and specificity as bindings always have.
 
 **A claim bars a whole gesture protocol, so bind every gesture in it.** `claimedKinds: ['pointer']` is one token covering `pointerDown`, `click` and `drag` — at the event level the first two are the same press told apart by stage. Claim it and bind only `drag`, and the pointerdown matches nothing that consults the affordance: the dispatcher drops the press, and the drag it would have grown into never happens. The kit says so — `exclusive claim by "<layer>" matched no binding` — and the chrome looks simply dead. Bind all three, even when two of them do nothing but absorb the press.
 
-A tool can still decline hits explicitly (`target: { kindOf: (hit) => hit == null }` matches only presses that landed on the scene), but that is now for cases the claim doesn't cover, not the general defense against chrome.
+A tool can still decline hits explicitly (`target: { kindOf: hitPredicate((hit) => hit == null) }` matches only presses that landed on the scene), but that is now for cases the claim doesn't cover, not the general defense against chrome.
 
 ### Naming a target
 
@@ -249,7 +252,7 @@ that can say what it wants in a string should.
 | `kind:<k>` | a press on a body whose **routing-trait kind** is `<k>` | 2 |
 | `kind:<k>:selected` | the same, and that body is in the selection | 3 |
 | `affordance:<k>` | a press on chrome whose hit `kind` is exactly `<k>` | 2 |
-| `{ kindOf: (hit, bodyTarget) => boolean }` | anything you can decide in code | 1 |
+| `{ kindOf: hitPredicate((hit, bodyTarget) => …) }` / `{ kindOf: bodyPredicate((bodyTarget) => …) }` | anything you can decide in code | 1 |
 
 `<k>` in the `kind:` forms is a name from the `routing` prop — the same
 vocabulary that names `Hit.kind`, not a second one. Without `routing` the kit
@@ -260,6 +263,11 @@ Rank is the first element of the CSS-style specificity tuple: within one
 scope, a higher-ranked target wins the gesture. Predicates rank 1 no matter
 how narrow they are, because nothing can tell statically whether a `kindOf`
 means "the rotate ring" or "anything at all".
+
+A predicate declares whether it reads the hit, and the two builders are how:
+`hitPredicate` for one that does, `bodyPredicate` for one that decides from
+the body class alone. An exclusive claim bars the second kind, so chrome over
+a node never reads as that node's body. A bare function is a type error.
 
 `affordance:<k>` is an **exact** match including any parameter, so
 `affordance:anchor:3` names one anchor and there is no `affordance:anchor`

@@ -12,6 +12,7 @@ import {
 } from './match';
 import type { InputEvent } from './inputEvent';
 import type { TargetSpec } from './spec';
+import { hitPredicate, bodyPredicate } from './spec';
 
 const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 // Default wheel event data fields (matcher only reads mods; these are pass-through).
@@ -192,11 +193,11 @@ describe('matchSpec', () => {
     const e: InputEvent = {
       kind: 'click', target: { dom: true }, affordance: { foo: 1 }, ...noMods,
     };
-    expect(matchSpec(e, { kind: 'click', target: { kindOf: (t: any) => t?.foo === 1 } }, false)).toBe(true);
-    expect(matchSpec(e, { kind: 'click', target: { kindOf: (t: any) => t?.dom === true } }, false)).toBe(false);
+    expect(matchSpec(e, { kind: 'click', target: { kindOf: hitPredicate((t: any) => t?.foo === 1) } }, false)).toBe(true);
+    expect(matchSpec(e, { kind: 'click', target: { kindOf: hitPredicate((t: any) => t?.dom === true) } }, false)).toBe(false);
 
     const bare: InputEvent = { kind: 'click', target: { dom: true }, ...noMods };
-    expect(matchSpec(bare, { kind: 'click', target: { kindOf: (t: any) => t == null } }, false)).toBe(true);
+    expect(matchSpec(bare, { kind: 'click', target: { kindOf: hitPredicate((t: any) => t == null) } }, false)).toBe(true);
   });
 
   it('ClickSpec with no event target and no spec target — matches', () => {
@@ -215,12 +216,12 @@ describe('matchSpec', () => {
     // `InvocationCtx.drag.affordance` so predicates like
     // `hit => hit?.kind.startsWith('handle:')` work without a kind registry.
     const e: InputEvent = { kind: 'pointerdown', affordance: { kind: 'handle:top-left' }, ...noMods };
-    expect(matchSpec(e, { kind: 'drag', target: { kindOf: (t: any) => t?.kind === 'handle:top-left' } }, false)).toBe(true);
-    expect(matchSpec(e, { kind: 'drag', target: { kindOf: (t: any) => t?.kind === 'rotate-handle' } }, false)).toBe(false);
+    expect(matchSpec(e, { kind: 'drag', target: { kindOf: hitPredicate((t: any) => t?.kind === 'handle:top-left') } }, false)).toBe(true);
+    expect(matchSpec(e, { kind: 'drag', target: { kindOf: hitPredicate((t: any) => t?.kind === 'rotate-handle') } }, false)).toBe(false);
     // When no affordance is present, kindOf receives undefined.
     const eNoAffordance: InputEvent = { kind: 'pointerdown', ...noMods };
-    expect(matchSpec(eNoAffordance, { kind: 'drag', target: { kindOf: (t: any) => t === undefined } }, false)).toBe(true);
-    expect(matchSpec(eNoAffordance, { kind: 'drag', target: { kindOf: (t: any) => !!t } }, false)).toBe(false);
+    expect(matchSpec(eNoAffordance, { kind: 'drag', target: { kindOf: hitPredicate((t: any) => t === undefined) } }, false)).toBe(true);
+    expect(matchSpec(eNoAffordance, { kind: 'drag', target: { kindOf: hitPredicate((t: any) => !!t) } }, false)).toBe(false);
   });
 
   it('PointerDownSpec matches only the eager press dispatch', () => {
@@ -244,8 +245,8 @@ describe('matchSpec', () => {
       affordance: { kind: 'handle:top-left' },
       ...noMods,
     };
-    expect(matchSpec(e, { kind: 'pointerDown', target: { kindOf: (t: any) => t?.kind === 'handle:top-left' } }, false)).toBe(true);
-    expect(matchSpec(e, { kind: 'pointerDown', target: { kindOf: (t: any) => t?.kind === 'rotate-handle' } }, false)).toBe(false);
+    expect(matchSpec(e, { kind: 'pointerDown', target: { kindOf: hitPredicate((t: any) => t?.kind === 'handle:top-left') } }, false)).toBe(true);
+    expect(matchSpec(e, { kind: 'pointerDown', target: { kindOf: hitPredicate((t: any) => t?.kind === 'rotate-handle') } }, false)).toBe(false);
   });
 
   it('PointerDownSpec takes strict modifiers, and `optional` widens them', () => {
@@ -333,7 +334,7 @@ describe('matchSpec — pinch', () => {
 
   it('resolves a target against the affordance, as wheel does', () => {
     const hud = { kind: 'layer:weasel-hud' };
-    const isHud = { kindOf: (t: unknown) => (t as { kind?: string })?.kind === 'layer:weasel-hud' };
+    const isHud = { kindOf: hitPredicate((t: unknown) => (t as { kind?: string })?.kind === 'layer:weasel-hud') };
     expect(matchSpec({ ...base, affordance: hud }, { kind: 'pinch', target: isHud }, false)).toBe(true);
     expect(matchSpec(base, { kind: 'pinch', target: isHud }, false)).toBe(false);
   });
@@ -739,7 +740,7 @@ describe('mimeMatchesGlob / matchIngestTypes — edge cases', () => {
 
 describe('wheel target', () => {
   const hudAffordance = { kind: 'layer:weasel-hud' };
-  const isHud = { kindOf: (t: unknown) => (t as { kind?: string })?.kind === 'layer:weasel-hud' };
+  const isHud = { kindOf: hitPredicate((t: unknown) => (t as { kind?: string })?.kind === 'layer:weasel-hud') };
 
   it('matches a kindOf predicate against the wheel affordance', () => {
     const e: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData, affordance: hudAffordance };
@@ -764,8 +765,8 @@ describe('wheel target', () => {
 });
 
 describe('doubleClick / contextMenu resolve kindOf against the affordance', () => {
-  const isHud = { kindOf: (t: unknown) => (t as { kind?: string })?.kind === 'layer:weasel-hud' };
-  const isBodyish = { kindOf: (_t: unknown, body?: string) => body === 'selected-body' };
+  const isHud = { kindOf: hitPredicate((t: unknown) => (t as { kind?: string })?.kind === 'layer:weasel-hud') };
+  const isBodyish = { kindOf: bodyPredicate((body) => body === 'selected-body') };
   const hudAffordance = { kind: 'layer:weasel-hud' };
 
   it('doubleClick reads the affordance, not the DOM target', () => {

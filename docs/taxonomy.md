@@ -187,7 +187,7 @@ The factory pattern: each affordance instance is bound to one tool/context at ru
 An affordance **hit** is a claim: `{ kind, owner, strength, cursor?, payload? }`.
 `owner` names what produced it — a kit affordance's `id`, or a registered
 layer's id. `strength: 'exclusive'` bars every binding whose `target` doesn't
-consult the affordance (a `kindOf` predicate, or the `affordance:<kind>` string
+consult the affordance (a `kindOf` predicate declaring `readsAffordance: true`, or the `affordance:<kind>` string
 form), which is how chrome floating over the scene stays reachable no matter
 which tool is active; `'shared'` is the default and competes on scope and
 specificity as bindings always have. A registered layer declares both by

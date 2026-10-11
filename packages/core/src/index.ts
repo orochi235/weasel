@@ -740,6 +740,8 @@ export {
 } from './core/gradient';
 export { fillInPoseFrame, fillToBoundsFrame } from './core/fillInPoseFrame';
 export type { FillPoseBox } from './core/fillInPoseFrame';
+// A node's paint resolved into what a draw command takes.
+export { commandFill, commandStroke } from './features/patterns/commandPaint';
 
 // ─── Op model: every scene mutation routes through here ─────────────────────
 export * from './core/ops';
@@ -1041,9 +1043,11 @@ export type {
 export type { ClipboardSnapshot } from './interactions/actions/clipboard/types';
 
 // ─── Gesture specs ───
+export { hitPredicate, bodyPredicate } from '@weasel-js/gestures';
 export type {
   ModSpec,
   TargetSpec,
+  TargetPredicate,
   KeySpec,
   KeyHeldSpec,
   WheelSpec,

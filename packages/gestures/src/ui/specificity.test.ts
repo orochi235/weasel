@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { specificity } from './specificity';
 import type { GestureSpec, TargetSpec } from './spec';
+import { hitPredicate } from './spec';
 
 describe('specificity (tuple shape)', () => {
   it('bare kind: drag → [0, 0, 0, 1]', () => {
@@ -10,7 +11,7 @@ describe('specificity (tuple shape)', () => {
   it('drag with target predicate → [1, 0, 0, 1]', () => {
     const spec: GestureSpec = {
       kind: 'drag',
-      target: { kindOf: () => true },
+      target: { kindOf: hitPredicate(() => true) },
     };
     expect(specificity(spec)).toEqual([1, 0, 0, 1]);
   });
@@ -41,7 +42,7 @@ describe('specificity (tuple shape)', () => {
   it('all dimensions stack → [1, 2, 2, 1]', () => {
     const spec: GestureSpec = {
       kind: 'drag',
-      target: { kindOf: () => true },
+      target: { kindOf: hitPredicate(() => true) },
       mods: { mod: true, shift: true },
       phase: 'engaged',
     };
@@ -88,7 +89,7 @@ describe('specificity (tuple shape)', () => {
 
     it('a body class and a predicate rank the same as before', () => {
       expect(targetRank('selected-body')).toBe(1);
-      expect(targetRank({ kindOf: () => true })).toBe(1);
+      expect(targetRank({ kindOf: hitPredicate(() => true) })).toBe(1);
     });
 
     it('a node kind outranks a bare body class', () => {

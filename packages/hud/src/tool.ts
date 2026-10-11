@@ -3,7 +3,7 @@ import type {
 } from '@weasel-js/core';
 import { attachHud, type AttachHudOptions } from './attach';
 import type { Hud } from './hud';
-import { viewToTransform, worldToScreen } from '@weasel-js/core';
+import { hitPredicate, viewToTransform, worldToScreen, type TargetPredicate } from '@weasel-js/core';
 import { claimsOf, type Widget, type HudPointerEvent } from './widget';
 
 /** What the HUD layer's `hitTest` resolves and hands to the actions below. */
@@ -33,15 +33,12 @@ function widgetIn(affordance: unknown): Widget | null {
  *  gesture. Without the claim half, a widget that declines a kind would still
  *  win it: declining leaves the claim non-exclusive, which puts the scene's
  *  binding and the HUD's own in contention at once. */
-function hudHitClaiming(gesture: ClaimableGesture): (hit: unknown) => boolean {
-  return Object.assign(
-    (hit: unknown): boolean => {
+function hudHitClaiming(gesture: ClaimableGesture): TargetPredicate {
+  return hitPredicate((hit) => {
       if (!isHudHit(hit)) return false;
       const widget = widgetIn(hit);
       return widget !== null && claimsOf(widget).includes(gesture);
-    },
-    { readsAffordance: true as const },
-  );
+  });
 }
 
 /** World → screen, the space widgets lay themselves out in. Reads the `view`

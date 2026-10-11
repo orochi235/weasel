@@ -13,5 +13,6 @@ export type {
   PasteSpec,
   ModSpec,
   TargetSpec,
+  TargetPredicate,
   PhaseSpec,
 } from '@weasel-js/gestures';

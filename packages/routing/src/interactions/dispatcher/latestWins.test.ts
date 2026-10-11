@@ -17,6 +17,7 @@ import type { Action } from '../actions/action';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { Tool } from '../../tools/types';
 import type { InputEvent } from './matcher';
+import { hitPredicate } from '@weasel-js/gestures';
 
 function ongoing(id: string, activeCursor?: string, onStart?: () => void): Action {
   return {
@@ -65,10 +66,10 @@ describe('the most recently started gesture wins', () => {
     // docstring names as the case latest-wins exists for.
     const tools: [string, Tool][] = [
       ['grab', { id: 'grab', eligibility: { always: true },
-        bindings: [{ spec: { kind: 'drag', target: { kindOf: (h: unknown) => h === 'body' } },
+        bindings: [{ spec: { kind: 'drag', target: { kindOf: hitPredicate((h: unknown) => h === 'body') } },
           actionId: 'move' }] } as unknown as Tool],
       ['spin', { id: 'spin', eligibility: { always: true },
-        bindings: [{ spec: { kind: 'drag', target: { kindOf: (h: unknown) => h === 'handle' } },
+        bindings: [{ spec: { kind: 'drag', target: { kindOf: hitPredicate((h: unknown) => h === 'handle') } },
           actionId: 'rotate' }] } as unknown as Tool],
     ];
     const reg = registryOf([move, rotate]);

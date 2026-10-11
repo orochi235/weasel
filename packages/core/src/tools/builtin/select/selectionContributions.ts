@@ -7,6 +7,7 @@
  */
 import type { BindingOpts, GestureBinding } from '@weasel-js/routing';
 import { isResizeHandle, isRotateHandle, isAnchorOrControl } from '@weasel-js/routing';
+import { hitPredicate } from '@weasel-js/gestures';
 import type { Contribution } from '../../overlayBinding';
 import type { UseMoveOptions } from '../../../interactions/actions/move/options';
 import type { UseRotateOptions } from '../../../interactions/actions/rotate/options';
@@ -78,8 +79,8 @@ export function selectionMoveBindings<TPose>(
       spec: {
         kind: 'drag' as const,
         target: {
-          kindOf: (afford: unknown, body?: string): boolean =>
-            body === 'selected-body' && !isAnchorOrControl(afford),
+          kindOf: hitPredicate((afford, body) =>
+            body === 'selected-body' && !isAnchorOrControl(afford)),
         },
       },
       actionId: 'move',
@@ -195,7 +196,7 @@ export const AREA_SELECT_ID = 'selection.areaSelect';
 
 /** A press on empty canvas: no hit, and not on chrome over it — the rotation
  *  handle and the outer half of a resize handle sit off the body. */
-export const onEmptyCanvas = (hit: unknown, body?: string): boolean => hit == null && body === 'empty';
+export const onEmptyCanvas = hitPredicate((hit, body) => hit == null && body === 'empty');
 
 /** An always-live entry that marquee-selects on a drag across empty canvas,
  *  under any tool that does not claim the drag itself. No preset installs it:

@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { matchSorted, targetConsultsAffordance, type ScopedBinding } from './matcher';
 import { isBody, isEmpty, isResizeHandle, isSelectedBody, isUnselectedBody } from './predicates';
 import type { InputEvent } from '@weasel-js/gestures';
+import { hitPredicate, bodyPredicate } from '@weasel-js/gestures';
 
 const vagueActive: ScopedBinding = {
   binding: { spec: { kind: 'drag' }, actionId: 'insert' },
@@ -20,7 +21,7 @@ const namedAmbient: ScopedBinding = {
   binding: {
     spec: {
       kind: 'drag',
-      target: { kindOf: (h: unknown) => (h as { owner?: string })?.owner === 'weasel-hud' },
+      target: { kindOf: hitPredicate((h: unknown) => (h as { owner?: string })?.owner === 'weasel-hud') },
     },
     actionId: 'hud.drag',
   },
@@ -129,7 +130,7 @@ describe('an exclusive claim no binding can receive warns in dev', () => {
     // answers yes to, even when it goes on to reject this particular hit.
     // A near-miss like this used to read as handled; it must not.
     const nearMiss: ScopedBinding = {
-      binding: { spec: { kind: 'drag', target: { kindOf: () => false } }, actionId: 'never' },
+      binding: { spec: { kind: 'drag', target: { kindOf: hitPredicate(() => false) } }, actionId: 'never' },
       scope: 'active',
       ownerId: 'some-tool',
     };
@@ -202,6 +203,14 @@ describe('body predicates do not survive an exclusive claim', () => {
 
   it('stays true for a predicate that reads the hit', () => {
     expect(targetConsultsAffordance({ kindOf: isResizeHandle })).toBe(true);
+  });
+
+  it('takes the declaration and never guesses: an undeclared predicate does not read the hit', () => {
+    const undeclared = (hit: unknown): boolean => hit != null;
+    // @ts-expect-error a bare function declares nothing, so it is not a TargetPredicate
+    expect(targetConsultsAffordance({ kindOf: undeclared })).toBe(false);
+    expect(targetConsultsAffordance({ kindOf: hitPredicate(undeclared) })).toBe(true);
+    expect(targetConsultsAffordance({ kindOf: bodyPredicate((body) => body === 'empty') })).toBe(false);
   });
 
   it('an isBody doubleClick binding is barred by a chrome claim', () => {

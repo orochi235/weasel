@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildRouteRegistry, routesForSpec, routeGestureForSpecKind, PREDICATE_TARGET, type RegistryEntry } from './registry';
 import type { Tool } from '../../types';
 import { parseRoute, routeToSpec, specificity, type GestureSpec } from '@weasel-js/gestures';
+import { hitPredicate } from '@weasel-js/gestures';
 
 function tool(id: string, bindings: unknown[]): Tool<unknown> {
   return { id, bindings } as unknown as Tool<unknown>;
@@ -76,7 +77,7 @@ describe('buildRouteRegistry', () => {
 
   it('reports a predicate target as such — the grammar cannot name a function', () => {
     const r = buildRouteRegistry([tool('select', [
-      { spec: { kind: 'drag', target: { kindOf: () => true } }, actionId: 'resize' },
+      { spec: { kind: 'drag', target: { kindOf: hitPredicate(() => true) } }, actionId: 'resize' },
     ])]);
     expect(r[0].target).toBe(PREDICATE_TARGET);
   });
@@ -218,7 +219,7 @@ describe('routesForSpec', () => {
   });
 
   it('renders a predicate target with the same sentinel the registry uses', () => {
-    const [route] = routesForSpec({ kind: 'drag', target: { kindOf: () => true } } as unknown as GestureSpec);
+    const [route] = routesForSpec({ kind: 'drag', target: { kindOf: hitPredicate(() => true) } } as unknown as GestureSpec);
     expect(route).toContain(PREDICATE_TARGET);
   });
 

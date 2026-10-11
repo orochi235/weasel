@@ -37,14 +37,36 @@ export type ModSpec = Partial<{
 /** The predicate form of {@link TargetSpec}. `hit` is the affordance hit
  *  under the pointer, for every gesture kind; `bodyTarget` is the optional
  *  body-class string ('empty' | 'selected-body' | 'unselected-body') when
- *  `classifyTarget` is wired. Predicates that only need one of the two can
- *  ignore the other. */
+ *  `classifyTarget` is wired. Build one with `hitPredicate` or
+ *  `bodyPredicate`, which make the declaration below. */
 export interface TargetPredicate {
   (hit: unknown, bodyTarget?: string): boolean;
-  /** `false` declares that the predicate reads `bodyTarget` only. An
-   *  exclusive affordance claim bars bindings whose target doesn't consult
-   *  the hit; a body predicate that declares nothing looks like it does. */
-  readsAffordance?: boolean;
+  /** Whether the predicate reads `hit`. An exclusive affordance claim bars
+   *  every binding whose target does not: `false` is a predicate that decides
+   *  from `bodyTarget` alone, and chrome over a body must not read as that body. */
+  readsAffordance: boolean;
+}
+
+/** A {@link TargetPredicate} that reads the affordance hit, alone or with the
+ *  body class, so it stays in contention under an exclusive claim. */
+export function hitPredicate(
+  fn: (hit: unknown, bodyTarget?: string) => boolean,
+): TargetPredicate & { readsAffordance: true } {
+  return Object.assign(
+    (hit: unknown, bodyTarget?: string): boolean => fn(hit, bodyTarget),
+    { readsAffordance: true as const },
+  );
+}
+
+/** A {@link TargetPredicate} that decides from the body class alone, so an
+ *  exclusive affordance claim bars it. */
+export function bodyPredicate(
+  fn: (bodyTarget: string | undefined) => boolean,
+): TargetPredicate & { readsAffordance: false } {
+  return Object.assign(
+    (_hit: unknown, bodyTarget?: string): boolean => fn(bodyTarget),
+    { readsAffordance: false as const },
+  );
 }
 
 /** Target selector for click and drag gesture specs. String forms are sugar

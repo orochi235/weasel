@@ -17,7 +17,9 @@ import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRe
 import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
 import { ActionsProvider, useAction, useActionsRegistry } from '../interactions/actions/ActionsProvider';
 import type { Action } from '../interactions/actions/action';
+import { heldKeySpec } from '../interactions/actions/toolOffhand';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
+import { hitPredicate } from '@weasel-js/gestures';
 
 const rect: Contribution = {
   id: 'rect',
@@ -27,7 +29,7 @@ const rect: Contribution = {
 const hud: Contribution = {
   id: 'weasel-hud',
   eligibility: { claimed: true },
-  bindings: [{ spec: { kind: 'drag', target: { kindOf: () => true } }, actionId: 'hud.drag' }],
+  bindings: [{ spec: { kind: 'drag', target: { kindOf: hitPredicate(() => true) } }, actionId: 'hud.drag' }],
 };
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -240,7 +242,7 @@ describe('a declared offhand trigger engages its entry', () => {
     const offhands = (registry!.list()).filter((a) => a.id === 'tool.offhand');
     expect(offhands).toHaveLength(1);
     expect(offhands[0].defaultBinding).toEqual([
-      { spec: { kind: 'key-held', key: ' ' }, opts: { params: { toolId: 'hand' } } },
+      { spec: heldKeySpec(' '), opts: { params: { toolId: 'hand' } } },
     ]);
   });
 });

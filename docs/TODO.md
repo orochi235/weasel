@@ -67,17 +67,6 @@ Priority tags:
   select is active. With no base tool it works: `CustomShaderDemo` spawns its
   ripple from an ambient binding on a bare canvas.
 
-- **(P3) `targetConsultsAffordance` still guesses from shape.** The kit's four body predicates now
-  carry `readsAffordance: false` and the filter honors it (2026-08-12), so the counterexamples the
-  kit itself ships are handled — which they had to be, since `doubleclick` now carries an affordance
-  and `enterPathEdit`'s `kindOf: isBody` would otherwise have entered path-edit mode on a
-  double-click over HUD chrome. A *consumer* predicate that reads only `bodyTarget` and declares
-  nothing still survives a claim that should bar it. Ruled 2026-10-11: the filter stops inferring,
-  and every target predicate must declare whether it reads the affordance hit. That leaves requiring
-  the declaration on the predicate type, which the kit's body predicates get from one helper in
-  `packages/routing/src/interactions/dispatcher/predicates.ts`, and deleting the guess in
-  `matcher.ts` beside it.
-
 - **(P3) SVG-file ingestion — follow-ups.** Shipped 2026-07-04: `kit:svg`
   content handler (`packages/core/src/features/ingestion/svgHandler.ts`, priority -90 —
   ahead of `kit:image`, behind consumer handlers) matching `image/svg+xml`

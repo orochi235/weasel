@@ -1,5 +1,5 @@
 import { act, render, screen, fireEvent, within } from '@testing-library/react';
-import type { Action, Tool } from '@weasel-js/core';
+import { hitPredicate, type Action, type Tool } from '@weasel-js/core';
 import { ResolutionWidget } from './ToolkitBuilder';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -10,8 +10,8 @@ import { ResolutionWidget } from './ToolkitBuilder';
 // ambient before specificity is consulted).
 // ─────────────────────────────────────────────────────────────────────────
 
-const isAnchor = (hit: unknown): boolean =>
-  (hit as { kind?: string } | undefined)?.kind === 'anchor';
+const isAnchor = hitPredicate((hit: unknown): boolean =>
+  (hit as { kind?: string } | undefined)?.kind === 'anchor');
 
 const TOOLS: readonly Tool<unknown>[] = [
   {
