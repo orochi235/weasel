@@ -13,7 +13,7 @@ import { SelectionPanel } from '@weasel-js/ui';
 import { WD_RENDERERS } from '../App';
 import { useOpacityScrub } from './useOpacityScrub';
 
-type D = { fill: FillStyle | null };
+type D = { fill?: FillStyle | null; text?: string };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
@@ -34,7 +34,7 @@ const ID = asNodeId('a');
 // The fixture has no `path`, so classify it as one outright to get draw's schema.
 const PANEL_ROUTING = [{ name: 'path', matches: () => true }];
 
-function setup({ selected = true } = {}) {
+function setup({ selected = true, data = { fill: solid('#ff0000') } as D } = {}) {
   const onViewChange = vi.fn();
   let api!: {
     scene: ReturnType<typeof useScene<D, L, P>>;
@@ -46,7 +46,7 @@ function setup({ selected = true } = {}) {
       initial: [{
         id: ID, kind: 'leaf', layer: 'main',
         pose: { x: 0, y: 0, width: 50, height: 50 },
-        data: { fill: solid('#ff0000') },
+        data,
       }],
     });
     const selection = useSelection({ mode: 'multi', scene, initial: selected ? [ID] : [] });
@@ -144,6 +144,23 @@ describe('opacity scrub', () => {
     act(() => { window.dispatchEvent(new Event('blur')); });
     expect(t.api().percent).toBe(null);
     expect(t.api().scene.historyIndex()).toBe(before + 1);
+  });
+
+  it('scrubs text that paints by default from the black it shows', () => {
+    const t = setup({ data: { text: 'hi' } });
+    t.key('keydown');
+    expect(t.api().percent).toBe(100);
+    t.wheel();
+    expect((t.api().scene.get(ID)!.data as D).fill).toMatchObject({ color: '#000', opacity: 0.95 });
+    expect('stroke' in (t.api().scene.get(ID)!.data as object)).toBe(false);
+  });
+
+  it('opens no session over a node with no paint to scale', () => {
+    const t = setup({ data: {} });
+    t.key('keydown');
+    expect(t.api().percent).toBe(null);
+    t.wheel();
+    expect(t.api().scene.get(ID)!.data).toEqual({});
   });
 
   it('opens no session with nothing selected, and leaves the wheel to the viewport', () => {
