@@ -112,11 +112,13 @@ export const nurbs: CurveRepresentation = {
   curvatureAt(anchors, t) {
     if (anchors.length < 2) return 0;
     const eps = 1e-3;
-    const t0 = Math.max(0, t - eps);
-    const t1 = Math.min(1, t + eps);
+    // The stencil needs a sample each side, so at an end it sits one step in.
+    const tm = Math.min(1 - eps, Math.max(eps, t));
+    const t0 = tm - eps;
+    const t1 = tm + eps;
     const p0 = evalNurbs(anchors, t0);
     const p2 = evalNurbs(anchors, t1);
-    const pm = evalNurbs(anchors, t);
+    const pm = evalNurbs(anchors, tm);
     const d1x = (p2.x - p0.x) / (t1 - t0);
     const d1y = (p2.y - p0.y) / (t1 - t0);
     const d2x = (p2.x - 2 * pm.x + p0.x) / (eps * eps);
