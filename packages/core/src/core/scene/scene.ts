@@ -17,6 +17,7 @@ import { createLockGuard } from './lockGuard';
 import { createArrivalWindow } from './arrivalWindow';
 import { createSceneHistory } from './historyFacade';
 import { createNodeStore } from './nodeStore';
+import { createAppliedLog } from './appliedLog';
 import { registerKitOps, type RemoveSnapshot, type SetLayoutPayload } from './kitOps';
 import { layerFromSerialized, serializeScene, specsFromSerialized } from './serialization';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
@@ -231,9 +232,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   /** Above zero inside `scene.untracked`, where the APIs that exist to
    *  record refuse rather than record. */
   let untrackedDepth = 0;
-  /** Every kit op applied since the innermost `atomically` opened, so a
-   *  refused batch can revert what it already did. Null outside one. */
-  let appliedLog: { kind: string; payload: unknown; reverted?: boolean }[] | null = null;
 
   // ── Helpers ────────────────────────────────────────────────────────────
   // When `batchDepth > 0` the per-op `notify()` is coalesced: we still bump
@@ -272,42 +270,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     if (untrackedDepth > 0) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
   }
 
-  /**
-   * Run `fn` as all-or-nothing: if it throws, every kit op it applied is
-   * reverted, newest first, and the selection goes back to where it was.
-   * The log is at kit-op grain rather than per external op, because one
-   * external op can issue several scene mutations (a container move cascading
-   * to its children) and fail halfway through its own.
-   *
-   * On success the ops join an enclosing log only when `ownsEntry` says no
-   * history entry holds them: reverting ops an entry still claims would leave
-   * undo replaying a change that is no longer there.
-   */
-  function atomically<T>(fn: () => T, ownsEntry: () => boolean): T {
-    const outer = appliedLog;
-    const log: NonNullable<typeof appliedLog> = [];
-    const selectionBefore = selection;
-    appliedLog = log;
-    try {
-      const result = fn();
-      if (outer && !ownsEntry()) outer.push(...log);
-      return result;
-    } catch (err) {
-      appliedLog = null;
-      withLocksLifted(() => {
-        for (let i = log.length - 1; i >= 0; i--) {
-          const { kind, payload, reverted } = log[i];
-          const handler = registered.get(kind)!;
-          (reverted ? handler.apply : handler.revert)(payload);
-        }
-      });
-      selection = selectionBefore;
-      if (log.length > 0) notify();
-      throw err;
-    } finally {
-      appliedLog = outer;
-    }
-  }
+  const { atomically, logApplied } = createAppliedLog({
+    registered,
+    lifted: withLocksLifted,
+    getSelection: () => selection,
+    setSelection: (ids) => { selection = ids; },
+    notify,
+  });
 
   function notify(): void {
     version++;
@@ -399,7 +368,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         (dir === 'fwd' ? handler.apply : handler.revert)(payload);
         // Only a replay logs here: a first apply is recorded by the entry it
         // creates, and reverting it would leave that entry describing nothing.
-        if (suppressRecording) appliedLog?.push({ kind, payload, reverted: dir === 'rev' });
+        if (suppressRecording) logApplied(kind, payload, dir === 'rev');
       },
       invert: () => makeOp(kind, payload, dir === 'fwd' ? 'rev' : 'fwd'),
     };
@@ -470,13 +439,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   function executeAndLog(kind: string, payload: unknown, label: string): void {
     if (suppressRecording) {
       runOp(kind, payload);
-      appliedLog?.push({ kind, payload });
+      logApplied(kind, payload);
       notify();
       return;
     }
     if (currentBatch) {
       runOp(kind, payload);
-      appliedLog?.push({ kind, payload });
+      logApplied(kind, payload);
       currentBatch.ops.push(makeOp(kind, payload));
       notify();
       return;
