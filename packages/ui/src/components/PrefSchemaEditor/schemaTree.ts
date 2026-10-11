@@ -35,6 +35,14 @@ export function childrenOf(node: SchemaNode): ChildMap | undefined {
   return slot === undefined ? undefined : ((node as unknown as Record<string, unknown>)[slot] as ChildMap);
 }
 
+/** The leaves a leaf keeps where the tree draws no row for them: a list's or a map's entry, and a union's variants. */
+export function innerOf(node: SchemaNode): { item?: PrefLeaf; variants?: Record<string, PrefLeaf> } {
+  if (!isPrefLeaf(node)) return {};
+  const held = node as { item?: PrefLeaf; variants?: Record<string, PrefLeaf> };
+  if (node.kind === 'list' || node.kind === 'map') return held.item ? { item: held.item } : {};
+  return node.kind === 'union' && held.variants ? { variants: held.variants } : {};
+}
+
 /** Which branch `parent` nests: a group holds groups, and an `object` leaf or a section holds sections. */
 export function branchUnder(parent: SchemaNode): 'group' | 'section' {
   return isPrefLeaf(parent) || isPrefSection(parent) ? 'section' : 'group';

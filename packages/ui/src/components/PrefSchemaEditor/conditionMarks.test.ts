@@ -34,4 +34,28 @@ describe('what is wrong with the conditions a schema holds, by the row that hold
     } };
     expect([...conditionProblems(root).keys()]).toEqual(['rows']);
   });
+
+  it('puts the conditions inside a union\'s variants on the union, a variant\'s own and its fields\'', () => {
+    const root: PrefGroup = { name: 'Root', children: {
+      fill: { kind: 'union', name: 'Fill', description: '', default: { type: 'flat' }, tag: 'type', variants: {
+        flat: { kind: 'object', name: 'Flat', description: '', default: {}, showIf: { path: 'gone' }, children: {} },
+        ramp: { kind: 'object', name: 'Ramp', description: '', default: {}, children: {
+          angle: flag({ enableIf: { path: 'nowhere' } }),
+        } },
+      } } as unknown as PrefLeaf,
+      fine: flag(),
+    } };
+    const found = conditionProblems(root);
+    expect([...found.keys()]).toEqual(['fill']);
+    expect(found.get('fill')).toMatchObject([{ field: 'showIf', path: 'gone' }, { field: 'enableIf', path: 'nowhere' }]);
+  });
+
+  it('puts the conditions of the fields inside a list\'s entry on the list', () => {
+    const root: PrefGroup = { name: 'Root', children: {
+      rows: { kind: 'list', name: 'Rows', description: '', default: [], item: {
+        kind: 'object', name: 'Row', description: '', default: {}, children: { on: flag({ showIf: { path: 'gone' } }) },
+      } } as unknown as PrefLeaf,
+    } };
+    expect([...conditionProblems(root).keys()]).toEqual(['rows']);
+  });
 });

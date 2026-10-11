@@ -1,5 +1,5 @@
 import { isPrefCondition, isPrefLeaf, isPrefSection, mapPrefConditionPaths, type PrefLeaf } from '@weasel-js/prefs';
-import { childrenOf, joinPath, keysOf, nodeAt, pathOf, withChildren, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
+import { childrenOf, innerOf, joinPath, keysOf, nodeAt, pathOf, withChildren, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
 
 /**
  * The path a leaf's value is read and written at, which is what an alias names: every key down to it but a
@@ -32,22 +32,25 @@ export function valueMove(root: SchemaRoot, from: string, to: string): ValueMove
   return node && isPrefSection(node) ? null : [valuePathOf(root, from), valuePathOf(root, to)];
 }
 
-/** `root` with `fn` applied to every node, a list's or a map's entry among them; the same object where none changed. */
+/**
+ * `root` with `fn` applied to every node, a list's or a map's entry and a union's variants among them; the same
+ * object where none changed.
+ */
 function mapNodes<R extends SchemaRoot>(root: R, fn: (node: SchemaNode) => SchemaNode): R {
+  const each = <M extends ChildMap>(kids: M): M => {
+    const mapped = Object.fromEntries(Object.entries(kids).map(([key, kid]) => [key, go(kid)]));
+    return Object.keys(kids).every((key) => mapped[key] === kids[key]) ? kids : (mapped as M);
+  };
   const go = (node: SchemaNode): SchemaNode => {
     let self = fn(node);
-    const item = isPrefLeaf(node) && (node.kind === 'list' || node.kind === 'map') ? (node as { item?: PrefLeaf }).item : undefined;
+    const { item, variants } = innerOf(node);
     const entry = item && go(item);
     if (entry !== item) self = { ...self, item: entry } as SchemaNode;
+    const shapes = variants && each(variants);
+    if (shapes !== variants) self = { ...self, variants: shapes } as SchemaNode;
     const kids = childrenOf(node);
-    if (!kids) return self;
-    let changed = false;
-    const mapped: ChildMap = {};
-    for (const [key, kid] of Object.entries(kids)) {
-      mapped[key] = go(kid);
-      if (mapped[key] !== kid) changed = true;
-    }
-    return changed ? withChildren(self, mapped) : self;
+    const mapped = kids && each(kids);
+    return mapped === kids ? self : withChildren(self, mapped!);
   };
   return go(root) as R;
 }
@@ -77,7 +80,8 @@ function rebasedLeaf(leaf: PrefLeaf, moves: readonly ValueMove[]): PrefLeaf {
 
 /**
  * `root` with every value path a node holds to a leaf followed through `moves`: the paths a `showIf` or an
- * `enableIf` reads, on a leaf, a group, or a section, and a leaf's own (an alias's `of`, a pair's `with`, a `field`
+ * `enableIf` reads, on a leaf, a group, a section, or anything inside a list's entry or a union's variants, and a
+ * leaf's own (an alias's `of`, a pair's `with`, a `field`
  * leaf's default).
  */
 export function rebaseValuePaths<R extends SchemaRoot>(root: R, moves: ReadonlyArray<ValueMove | null>): R {
