@@ -656,14 +656,14 @@ Core five + Crop shipped. Remaining:
   does not hold, but `setSelection` keeps an id no node has (`reachable` filters on locks only, and
   `scene.selection.test.ts` selects ids it never added), so today it is a set of ids.
 
-- **(P3) `packages/core/src/core/scene/scene.ts` is one 2,000-line closure holding six jobs.**
-  `createScene` contains the node store and kit op table, the layer stack, the arrival window and
-  layout settle, the lock guard, the atomic-revert log, the `History` facade and journal wrapper,
-  and serialization. The render-order walks and their cache are out, in `renderOrder.ts`. Bugs
-  fixed here were one of these reaching into another's variables: `loadState` writing the batch
-  depth, the function-field cache keyed by id while incarnations are keyed by object. Split along
-  those owners, each closing over a small shared state record; the kit op table and the history
-  facade are the cleanest next cuts.
+- **(P3) `packages/core/src/core/scene/scene.ts` is still 1,100 lines.** The jobs that closed over
+  their own state are out, each in a module beside it: `nodeStore`, `kitOps`, `layerStack`,
+  `arrivalWindow`, `lockGuard`, `appliedLog`, `historyFacade`, `renderOrder`, and `serialization`.
+  What is left is the recording core (`makeOp`, `executeAndLog`, `applyBatchNow`, about 200 lines)
+  and the public `Scene` object's methods (about 580), and they share seven mutable variables:
+  `batchDepth`, `batchDirty`, `currentBatch`, `suppressRecording`, `untrackedDepth`, `selection`,
+  and `version`. Splitting them means putting those in one record the pieces close over, then
+  cutting the methods by what they edit: nodes, layers, selection, and history and batches.
 
 - **(P2) Clipboard: draw says nothing when a paste leaves an edge out.** A paste now drops a node
   that derives from nodes that were not copied with it, and reports each one with a reason
