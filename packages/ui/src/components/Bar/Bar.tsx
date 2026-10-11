@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { applyPrefConditions, isPrefLeaf, prefJudge, prefValueAtPath, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
-import { PropertyList, PropertyRow } from '../Properties/PropertyPanel';
+import { PropertyList } from '../Properties/PropertyList';
+import { PropertyRow } from '../Properties/PropertyRow';
 import { pairRows } from '../SelectionPanel/model';
 import { renderCells, type LeafCell } from '../SelectionPanel/cells';
 import type { PropertyRenderContext, PropertyRenderer } from '../SelectionPanel/renderContext';

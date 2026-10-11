@@ -25,24 +25,16 @@ export { PropertyControl, PropertyField } from './PropertyField';
 export type { PropertyHelpProps } from './PropertyHelp';
 export { PropertyHelp } from './PropertyHelp';
 export type {
-  PropertyAlign,
-  PropertyDensity,
   PropertyListPack,
   PropertyListProps,
-  PropertyMetricProps,
   PropertyNoteProps,
-  PropertyPanelProps,
-  PropertyRowLayout,
-  PropertyRowProps,
-  PropertyRowVariant,
   PropertySpanProps,
-} from './PropertyPanel';
-export {
-  PropertyList,
-  PropertyNote,
-  PropertyPanel,
-  PropertyRow,
-  PropertySpan,
-} from './PropertyPanel';
+} from './PropertyList';
+export type { PropertyPanelProps } from './PropertyPanel';
+export type { PropertyRowLayout, PropertyRowProps, PropertyRowVariant } from './PropertyRow';
+export type { PropertyAlign, PropertyDensity, PropertyMetricProps } from './metrics';
+export { PropertyList, PropertyNote, PropertySpan } from './PropertyList';
+export { PropertyPanel } from './PropertyPanel';
+export { PropertyRow } from './PropertyRow';
 export type { SubpanelProps } from './Subpanel';
 export { Subpanel } from './Subpanel';

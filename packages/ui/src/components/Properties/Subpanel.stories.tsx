@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { PropertyField } from './PropertyField';
-import { PropertyList, PropertyPanel } from './PropertyPanel';
+import { PropertyList } from './PropertyList';
+import { PropertyPanel } from './PropertyPanel';
 import { Subpanel } from './Subpanel';
 
 const meta: Meta<typeof Subpanel> = {

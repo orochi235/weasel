@@ -20,7 +20,7 @@ import { MapEditor } from './MapEditor';
 import { ObjectLeaf } from './ObjectLeaf';
 import { UnionPicker } from './UnionPicker';
 import { controlIsGroup, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
-import { PropertyRow } from '../Properties/PropertyPanel';
+import { PropertyRow } from '../Properties/PropertyRow';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';

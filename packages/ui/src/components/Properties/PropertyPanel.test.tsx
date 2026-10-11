@@ -2,11 +2,9 @@ import { act, createEvent, fireEvent, render, screen, within } from '@testing-li
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { PropertyField } from './PropertyField';
-import {
-  PropertyList,
-  PropertyPanel,
-  PropertyRow,
-} from './PropertyPanel';
+import { PropertyList } from './PropertyList';
+import { PropertyPanel } from './PropertyPanel';
+import { PropertyRow } from './PropertyRow';
 import s from './Properties.module.css';
 import { Subpanel } from './Subpanel';
 import { compact, decimal, fraction } from '@weasel-js/quantity';

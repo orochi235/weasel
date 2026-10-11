@@ -4,7 +4,8 @@ import { baselineOf } from '@weasel-js/react/testing/baselineOf';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { ListEditor } from '../ListEditor';
 import { PropertyField } from './PropertyField';
-import { PropertyList, PropertyRow } from './PropertyPanel';
+import { PropertyList } from './PropertyList';
+import { PropertyRow } from './PropertyRow';
 
 // Where an inline row puts its label is a layout question, so only a real
 // browser can answer it.

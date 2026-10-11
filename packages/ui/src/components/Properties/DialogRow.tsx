@@ -1,7 +1,8 @@
 import { type ReactNode, useState } from 'react';
 import { Button } from '../Button';
 import { Dialog } from '../Dialog';
-import { type PropertyMetricProps, type PropertyRowLayout, PropertyRow } from './PropertyPanel';
+import { type PropertyRowLayout, PropertyRow } from './PropertyRow';
+import { type PropertyMetricProps } from './metrics';
 import s from './Properties.module.css';
 
 /** Props for `<DialogRow>`. */

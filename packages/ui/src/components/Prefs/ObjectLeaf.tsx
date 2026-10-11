@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
-import { PropertyRow } from '../Properties/PropertyPanel';
+import { PropertyRow } from '../Properties/PropertyRow';
 import { drawsRows } from './compound';
 import { objectRows, type ObjectLeafParts } from './objectRows';
 import type { PrefRenderContext } from './PrefsRow';
