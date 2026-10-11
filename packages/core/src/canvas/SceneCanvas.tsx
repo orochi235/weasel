@@ -2247,10 +2247,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         getView: () => currentViewRef.current,
         getActiveToolId: () => liveToolsRef.current?.active ?? null,
       });
-      if (!hook) return;
-      hook._markReady();
-      return () => releaseTestHook(hook);
+      if (hook) {
+        hook._markReady();
+        return () => releaseTestHook(hook);
+      }
     }
+    return undefined;
   }, [testHookSceneRef, testHookSelectionRef, liveToolsRef]);
 
   return (
