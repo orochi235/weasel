@@ -18,6 +18,7 @@ import type { ViewApi } from 'interactions/actions/depSchema';
 import { createPointerStore } from 'features/pointer/PointerContext';
 import { createMinimapContribution, createLinkedCursorContribution } from './createMinimapContribution';
 import { createIndicatorLayer, createLinkedCursorLayer } from './layers';
+import { computeIndicatorCommand } from '../../canvas/minimapMath';
 
 type D = { kind: 'rect' };
 type P = { x: number; y: number; width: number; height: number };
@@ -136,6 +137,14 @@ describe('minimap chrome', () => {
     expect(cmd).toMatchObject({ kind: 'path', path: { kind: 'rect', x: 100, y: 50, width: 200, height: 150 } });
     // One screen pixel at the minimap's 0.08 scale.
     expect((cmd as { stroke: { width: number } }).stroke.width).toBeCloseTo(12.5);
+  });
+
+  it('draws the same command computeIndicatorCommand builds, in a mirrored minimap too', () => {
+    const layer = createIndicatorLayer({ viewId: 'minimap', root: () => root, style: { width: 2 } });
+    const mirrored = { x: 0, y: 0, scale: { x: -0.08, y: 0.08 } };
+    const [cmd] = layer.draw({ viewId: 'minimap' }, mirrored, { width: 100, height: 80 });
+    expect(cmd).toEqual(computeIndicatorCommand(root.get(), root.hostSize!(), { width: 2 }, mirrored));
+    expect((cmd as { stroke: { width: number } }).stroke.width).toBeCloseTo(25);
   });
 
   it('paints the crosshair in views the pointer is not over, at a fixed screen size', () => {

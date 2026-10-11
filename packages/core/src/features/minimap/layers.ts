@@ -7,7 +7,7 @@ import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../../renderer/DrawCommand';
 import type { ViewApi } from 'interactions/actions/depSchema';
 import type { PointerWorldPos } from 'features/pointer/PointerContext';
-import type { IndicatorStyle } from '../../canvas/minimapMath';
+import { computeIndicatorCommand, type IndicatorStyle } from '../../canvas/minimapMath';
 
 /** What a layer's `data` carries for this feature: the view it draws for. */
 function viewIdOf(data: unknown): string | null {
@@ -32,17 +32,7 @@ export function createIndicatorLayer(opts: {
       const r = root();
       const size = r?.hostSize?.();
       if (!r || !size) return [];
-      const v = r.get();
-      const px = 1 / view.scale.x;
-      return [{
-        kind: 'path',
-        path: { kind: 'rect', x: v.x, y: v.y, width: size.width / v.scale.x, height: size.height / v.scale.y },
-        stroke: {
-          paint: { fill: 'solid', color: style.stroke ?? '#ffffff' },
-          width: (style.width ?? 1) * px,
-          dash: (style.dash ?? [2, 3]).map((d) => d * px),
-        },
-      }];
+      return [computeIndicatorCommand(r.get(), size, style, view)];
     },
   };
 }

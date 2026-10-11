@@ -401,13 +401,6 @@ have shipped. What remains:
   magnitude, the view keeps the sign and offsets its origin), which changes `renderSceneToPixels`'s
   contract, or keep the limit and say so in both docs.
 
-- **(P3) Minimap indicator: two builders for one rect.** `computeIndicatorCommand`
-  (`packages/core/src/canvas/minimapMath.ts`) and `createIndicatorLayer`
-  (`packages/core/src/features/minimap/layers.ts`) each build the main camera's visible rect with
-  its own copy of the default stroke, width, dash, and screen-pixel scaling. The detached one drew
-  its stroke in world units until the two were compared. Have the layer call
-  `computeIndicatorCommand(view, size, style, minimapView)`.
-
 - **(P3) Canvas hosts: the renderer writes inline `width` and `height` style on a `<canvas>` it
   owns.** `WeaselRenderer`'s constructor and `resize` set `canvas.style.width`/`height`, so a
   `<SceneViewCanvas className>` or `<DrawCanvas className>` that sizes the element (`width: 100%`)
