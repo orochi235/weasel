@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { applyPrefConditions, prefJudge, prefLeafAt, prefReader, visiblePrefSubtree, type PrefGroup } from '@weasel-js/prefs';
+import { applyPrefConditions, prefJudge, prefLeafAt, prefReader, visiblePrefSubtree, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
 import { useDropMotion } from './dropMotion';
@@ -104,6 +104,9 @@ export interface PrefsFormProps extends MarkHiddenProps {
   /** The fields a `field` leaf may name. Default: this schema's own — a form
    *  that edits another schema passes that one's. */
   fields?: readonly PrefFieldChoice[];
+  /** The leaf whose value lives at a dotted path, which an `alias` leaf is drawn as. Default: this schema's own. A
+   *  form over a schema of aliases into another passes that one's, and its rows read and write at the paths they name. */
+  leafAt?: (path: string) => PrefLeaf | undefined;
   /** Small text after an inherited leaf's label, e.g. `() => 'from Defaults'`.
    *  Default: none. */
   inheritHint?: (path: string) => string | undefined;
@@ -159,7 +162,8 @@ export function PrefsForm(props: PrefsFormProps) {
   } = props;
   const [query, setQuery] = useState('');
   // Against the whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
-  const leafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
+  const ownLeafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
+  const leafAt = props.leafAt ?? ownLeafAt;
   const keepEmpty = props.showEmpty === true;
   // Apart from the conditions, which a new `values` object asks again: what they hand back is this tree itself
   // while they drop nothing, and a drop in flight restarts whenever the tree it is drawn in is a new one.

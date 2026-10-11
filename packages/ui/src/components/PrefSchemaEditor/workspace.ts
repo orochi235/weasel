@@ -27,6 +27,16 @@ export interface Workspace {
   readonly assets: readonly Asset[];
 }
 
+const NO_DIALOG: SchemaRoot = { name: '', children: {} };
+
+/**
+ * The root a layout's pointers name settings in, which holds none where the workspace has no such dialog.
+ * `undefined` for a dialog, whose aliases are of its own settings.
+ */
+export function overOf(workspace: Workspace, asset: Asset): SchemaRoot | undefined {
+  return asset.kind === 'layout' ? assetOf(workspace, asset.over)?.root ?? NO_DIALOG : undefined;
+}
+
 export function assetOf(workspace: Workspace, id: string): Asset | undefined {
   return workspace.assets.find((a) => a.id === id);
 }

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import { historyKey, useLatest } from '@weasel-js/core';
-import type { PrefGroup } from '@weasel-js/prefs';
+import { prefLeafAt, type PrefGroup } from '@weasel-js/prefs';
 import { CloseButton } from '../CloseButton';
 import { ResizeHandle } from '../ResizeHandle';
 import { AssetList } from './AssetList';
@@ -25,7 +25,7 @@ import { StructurePane } from './StructurePane';
 import { useDocument } from './useDocument';
 import { useAssetChanges, type SubmitAssets } from './useAssetChanges';
 import { useAssetView } from './useAssetView';
-import { assetOf, sameRoots, type Workspace } from './workspace';
+import { assetOf, overOf, sameRoots, type Workspace } from './workspace';
 import { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './workspaceEdit';
 import s from './PrefSchemaEditor.module.css';
 
@@ -37,6 +37,9 @@ const DRAFT_NOTICE = {
   carried: 'The source changed since this draft was saved. Your edits were kept on top of it.',
   unknown: 'This draft does not say which source it edited, so changes the source has made since may be listed as yours. Discard draft to start from the source.',
 } as const;
+
+/** What a value set in a layout's preview does: a pointer has no default of its own. */
+const ignore = (): void => {};
 
 /** Where Delete and Backspace belong to the control and not to the selection. */
 const TEXT_ENTRY = 'input, textarea, select, [contenteditable]';
@@ -71,6 +74,8 @@ export function AssetEditor(
   const schema = asset.root;
   const readOnly = asset.readOnly === true;
   const pageless = asset.kind === 'layout';
+  const over = overOf(workspace, asset);
+  const leafAt = useMemo(() => over && ((path: string) => prefLeafAt(over, path)), [over]);
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
 
   const latest = useLatest({ workspace, schema, paths: selection.paths });
@@ -104,7 +109,7 @@ export function AssetEditor(
   const changed = useMemo(() => changedPaths(changes), [changes]);
   const changedAttrs = useMemo(() => changedAttributes(changes, selection.lead), [changes, selection.lead]);
   const actionList = useEditorActions(actions);
-  const treeMark = useRowMarks({ schema, changes, actions: actionList, rowMark });
+  const treeMark = useRowMarks({ schema, over, changes, actions: actionList, rowMark });
   // `label` is a kind the form draws itself: text among the rows, with no attributes of its own.
   const custom = kinds;
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);
@@ -213,7 +218,7 @@ export function AssetEditor(
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={doc.canUndo} canRedo={doc.canRedo} onStep={step}
         draftSavedAt={doc.draftSavedAt} onDiscard={() => { doc.commit(base); select([]); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
       <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={custom} renderers={renderers} types={types}
-        expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} actions={actionList ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
+        expanded={expanded} onExpandedChange={setExpanded} unplaced={over ? undefined : unplaced} actions={actionList ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
         toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} readOnly={readOnly} pageless={pageless} />
       <ResizeHandle className={s.structureHandle} {...structureSize} min={180} max={640} ariaLabel="Resize structure" />
       <div className={s.middle}>
@@ -229,7 +234,7 @@ export function AssetEditor(
           onChange={(next) => commit(next, attrKey)}
           added={selection.paths.length === 1 && changes.some((c) => c.op === 'add' && c.path === selection.lead)}
           changed={selection.paths.length > 1 ? undefined : changedAttrs}
-          kinds={kindList} custom={custom} types={types} renderers={renderers} actions={actionList ?? undefined} readOnly={readOnly} onNotice={setNotice} />
+          kinds={kindList} custom={custom} types={types} renderers={renderers} actions={actionList ?? undefined} over={over} readOnly={readOnly} onNotice={setNotice} />
       </div>
       <ResizeHandle {...attributesSize} min={220} max={720} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}
@@ -237,7 +242,7 @@ export function AssetEditor(
           // The root's own entry names no node to add to a selection.
           if (how.toggle && path !== null) { selection.toggle(path); setNotice(null); }
           else reveal(path === null ? [] : [path]);
-        }} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} />
+        }} onDefaults={over ? ignore : setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} leafAt={leafAt} />
       <ExportPanel schema={schema} types={types} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} />
       {list && (
         <>
