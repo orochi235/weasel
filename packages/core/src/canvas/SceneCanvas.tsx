@@ -1457,11 +1457,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const getNodeAtPoint = useMemo(() => {
     if (!internalPickBest) return undefined;
     const nodeResolver = (id: string) => {
+      // A caller's `geometry.pickEvery` can answer an id the scene does not hold.
       const node = adapter.getNode(id);
-      const kind = node && kindClassifier ? kindClassifier(node.data) : 'unknown';
-      const pose = adapter.getWorldPose(id);
-      const data = node ?? { id };
-      return { kind, pose, data };
+      if (!node) return null;
+      const kind = kindClassifier ? kindClassifier(node.data) : 'unknown';
+      return { kind, pose: adapter.getWorldPose(id), data: node };
     };
     const base = makeGetNodeAtPoint(internalPickBest, nodeResolver);
     if (!isPointerInteractive) return base;

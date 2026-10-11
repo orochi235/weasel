@@ -30,7 +30,7 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-function setup(seed?: (scene: Scene<D, L, P>) => void) {
+function setup(seed?: (scene: Scene<D, L, P>) => void, pickEvery?: () => string | null) {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   let id = '' as NodeId;
   scene.batch('seed', () => {
@@ -42,6 +42,7 @@ function setup(seed?: (scene: Scene<D, L, P>) => void) {
     const selection = useSelection({ scene, mode: 'single' });
     return (
       <SceneCanvas features={['pick']} scene={scene} selection={selection} layers={{}} width={400} height={400}
+        {...(pickEvery ? { geometry: { pickEvery } } : {})}
         onClick={(hit) => onClick(hit, selection.get())}
       />
     );
@@ -94,5 +95,11 @@ describe('SceneCanvas onClick', () => {
     });
     click(240, 240);
     expect(onClick.mock.calls[0][0]).toEqual({ id: child, kind: expect.any(String) });
+  });
+
+  it('reports an id the scene does not hold instead of throwing', () => {
+    const { onClick, click } = setup(undefined, () => 'not-in-scene');
+    click(140, 130);
+    expect(onClick.mock.calls[0]?.[0]).toEqual({ id: 'not-in-scene', kind: 'unknown' });
   });
 });
