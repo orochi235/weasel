@@ -25,6 +25,23 @@ export class LineTracker {
   }
 }
 
+/** Report the glyph positioning on a `<text>` or `<tspan>` that import does
+ *  not read: every value after the first in an `x` or `y` list, and any `dx`
+ *  or `rotate` that is not all zeros. */
+export function warnUnreadPositions(el: Element, onWarn: (message: string) => void): void {
+  const tag = el.tagName.toLowerCase();
+  for (const name of ['x', 'y']) {
+    const raw = el.getAttribute(name)?.trim() ?? '';
+    if (/[\s,]/.test(raw)) onWarn(`<${tag} ${name}="${raw}"> positions each glyph; only the first value is read`);
+  }
+  for (const name of ['dx', 'rotate']) {
+    const raw = el.getAttribute(name)?.trim() ?? '';
+    if (raw.split(/[\s,]+/).some((v) => parseFloat(v) !== 0 && v !== '')) {
+      onWarn(`<${tag} ${name}="${raw}"> is not read; the glyphs keep their own advance and angle`);
+    }
+  }
+}
+
 /** The lines' runs as one list, each line after the first opening with `\n`.
  *  A line left with no runs still counts: it is a blank line. */
 export function joinLines(lines: StyledRun[][]): StyledRun[] {

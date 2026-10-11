@@ -28,7 +28,7 @@ import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { ABSOLUTE_PX } from './absoluteUnits';
 import { readLength } from './lengths';
-import { joinLines, LineTracker } from './tspanLines';
+import { joinLines, LineTracker, warnUnreadPositions } from './tspanLines';
 import { isNonUniform, paintThroughMatrix, strokeThroughMatrix, fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { collectGradients, WEASEL_NS, WEASEL_NS_PREFIX, type GradientTable } from './gradients';
@@ -886,10 +886,7 @@ function parseTextElement(
   const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
   // The box is built in the element's own coordinates and then taken through
   // the whole transform at once, by `placeNode`.
-  for (const name of ['x', 'y']) {
-    const raw = el.getAttribute(name)?.trim() ?? '';
-    if (/[\s,]/.test(raw)) onWarn(`<text ${name}="${raw}"> positions each glyph; only the first value is read`);
-  }
+  warnUnreadPositions(el, onWarn);
   const ax = readLength(el, 'x', 'x', 0, onWarn);
   const ay = readLength(el, 'y', 'y', 0, onWarn);
 
@@ -932,6 +929,7 @@ function parseTextElement(
         if (t) push({ text: t, ...inheritedShift });
         continue;
       }
+      warnUnreadPositions(sp, onWarn);
       if (tracker.startsLine(sp)) runLines.push([]);
       push(readTspanRun(sp, gradients, leafStyle, onWarn));
     }
@@ -1019,7 +1017,9 @@ function readTspanRun(
   const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
   if (fillAttr) {
     const parsed = readProperty('fill', fillAttr);
-    if (parsed?.kind === 'solid') {
+    if (parsed?.kind === 'none') {
+      run.fill = null;
+    } else if (parsed?.kind === 'solid') {
       run.fill = { fill: 'solid', color: parsed.color };
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);

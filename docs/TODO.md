@@ -447,8 +447,8 @@ have shipped. What remains:
 - **(P3) svg import: `<tspan>` positioning beyond line breaks is not read.** A `<tspan>` with its
   own `x` and a `dy` or new `y` now starts a line (`packages/svg/src/tspanLines.ts`), but the line
   pitch the `dy` states is discarded in favor of the default 1.2 line height, and `dx`, `rotate`,
-  and list-valued per-glyph `x` / `y` are ignored (a list on `<text>` warns; one on a `<tspan>` does
-  not). Kerned text exported as one `<tspan>` per glyph run imports with the glyphs run together.
+  and list-valued per-glyph `x` / `y` are not applied; each now warns, on `<text>` and `<tspan>`
+  alike. Kerned text exported as one `<tspan>` per glyph run imports with the glyphs run together.
 
 - **(P3) svg import: hidden content is dropped, not imported hidden.** `display="none"` and
   `visibility="hidden"` content is now left out of `parseSvg`'s result, matching what a renderer

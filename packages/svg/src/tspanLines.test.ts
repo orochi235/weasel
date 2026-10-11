@@ -55,4 +55,18 @@ describe('lines of text written as positioned tspans', () => {
     expect(node.text).toBe('abc');
     expect(warnings).toEqual([expect.stringMatching(/x="10 20 30"/)]);
   });
+
+  it('reports them on a tspan too', () => {
+    const { node, warnings } = text('<text x="10" y="5"><tspan x="10 20 30">abc</tspan></text>');
+    expect(node.text).toBe('abc');
+    expect(warnings).toEqual([expect.stringMatching(/<tspan x="10 20 30">/)]);
+  });
+
+  it('reports the dx and rotate it does not read', () => {
+    const { warnings } = text('<text x="10" y="5" rotate="45"><tspan dx="3">a</tspan><tspan dx="0">b</tspan></text>');
+    expect(warnings).toEqual([
+      expect.stringMatching(/<text rotate="45">/),
+      expect.stringMatching(/<tspan dx="3">/),
+    ]);
+  });
 });
