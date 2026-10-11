@@ -151,3 +151,25 @@
 
 /* A flagged option's message makes its cell taller than the row's other two. */
 .optionRow:has([data-invalid]) { align-items: start; }
+
+.autoValue {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  min-inline-size: 0;
+}
+
+.autoValueControl {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.autoValueControl:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}

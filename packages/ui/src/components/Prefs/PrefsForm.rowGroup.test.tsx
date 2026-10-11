@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PrefsForm } from './PrefsForm';
 
@@ -38,6 +39,15 @@ describe.each([['a row of its own', top], ['a field of an object leaf', nested]]
   it('keeps a select enum inside its label', () => {
     render(<PrefsForm layout="list" schema={schema(style('select'))} values={{}} onChange={() => {}} />);
     expect(row().tagName).toBe('LABEL');
+  });
+
+  it('draws a renderer that says it is a group as one, and any other inside a label', () => {
+    const leaf = { kind: 'range', name: 'Style', description: '', default: [0, 1] } as unknown as PrefLeaf;
+    const ends = (): ReactNode => <><input aria-label="From" /><input aria-label="To" /></>;
+    const { rerender } = render(<PrefsForm layout="list" schema={schema(leaf)} values={{}} onChange={() => {}} renderers={{ range: ends }} />);
+    expect(row().tagName).toBe('LABEL');
+    rerender(<PrefsForm layout="list" schema={schema(leaf)} values={{}} onChange={() => {}} renderers={{ range: Object.assign(ends, { group: true }) }} />);
+    expect(row().tagName).toBe('DIV');
   });
 
   it.each(['switch', 'toggle'])('draws a %s boolean as a group, not inside a label', (control) => {

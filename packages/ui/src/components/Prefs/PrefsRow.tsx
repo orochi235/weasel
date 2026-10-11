@@ -47,7 +47,10 @@ export interface PrefRenderContext {
  * Renders the control cell for one preference leaf. Returning `null`
  * collapses the row.
  */
-export type PrefRenderer = (ctx: PrefRenderContext) => ReactNode;
+export type PrefRenderer = ((ctx: PrefRenderContext) => ReactNode) & {
+  /** The control is several, or one a `<label>` may not wrap: its row is a group, and each control carries its own name. */
+  group?: boolean;
+};
 
 export interface WalkCtx {
   values: unknown;
@@ -258,7 +261,8 @@ function rowIsGroup(
   siblings?: Record<string, unknown>,
 ): boolean {
   if (drawsSeveral(ctx.pref)) return true;
-  if (renderers?.[ctx.pref.kind]) return false;
+  const custom = renderers?.[ctx.pref.kind];
+  if (custom) return custom.group === true;
   const field = leafField(ctx, siblings);
   return field !== null && controlIsGroup(field);
 }

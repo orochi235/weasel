@@ -99,9 +99,9 @@ function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
 }
 
 export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' | 'symbol', PrefRenderer> = {
-  pair: (ctx) => <PairEditor ctx={ctx} />,
+  pair: Object.assign<PrefRenderer, { group: boolean }>((ctx) => <PairEditor ctx={ctx} />, { group: true }),
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,
-  'enum-options': (ctx) => <EnumOptions ctx={ctx} />,
+  'enum-options': Object.assign<PrefRenderer, { group: boolean }>((ctx) => <EnumOptions ctx={ctx} />, { group: true }),
   symbol: (ctx) => (
     <Input className={s.symbol} aria-label={ctx.pref.name} placeholder={ctx.mixed ? MIXED_HINT : undefined}
       value={typeof ctx.value === 'string' ? ctx.value : ''} onChange={ctx.setValue} />

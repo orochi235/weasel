@@ -4,8 +4,10 @@ import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
 import { Input } from '../Input';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
+import { renderPrefControl } from '../Prefs/PrefsRow';
 import { prefFieldChoices } from '../Prefs/schema';
 import { Select } from '../Select';
+import { Switch } from '../Switch';
 import { aliasChoices } from './aliasChoices';
 import { aggregateAttributes, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
@@ -23,13 +25,11 @@ const PATH = '$path';
 const KIND = '$kind';
 const OWN = '$own';
 const AUTO = '$auto';
-const AUTO_VALUE = `${AUTO}.autoValue`;
 /** The panel for a list's or a map's entry, which draws the fields of the leaf in `item`. */
 const ENTRY = '$entry';
 const ENTRY_IS = `${ENTRY}.$kind`;
 /** The attribute panels, each drawing the node's own fields under its path. */
 const PANELS = [OWN, AUTO];
-const UNSET_AUTO_VALUE: ReadonlySet<string> = new Set([AUTO_VALUE]);
 const NONE: ReadonlySet<string> = new Set();
 /** Kinds drawn by this pane's own renderers. */
 const KEY_KIND = 'schema-key';
@@ -37,6 +37,7 @@ const PATH_KIND = 'schema-path';
 const KIND_KIND = 'schema-kind';
 const NAME_KIND = 'schema-name';
 const ENTRY_KIND = 'schema-entry-kind';
+const AUTO_VALUE_KIND = 'schema-auto-value';
 
 /** Whether an attribute kind's control can stand for several values that disagree. */
 const drawsMixed = (kind: string): boolean => (kind in ATTR_RENDERERS ? MIXED_ATTR_KINDS.has(kind) : !WHOLE.has(kind));
@@ -135,7 +136,18 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
     onRekey(path, joinPath(parent, unique));
   };
 
+  const drawn = { ...renderers, ...ATTR_RENDERERS };
   const identity: Record<string, PrefRenderer> = {
+    // Unset, the control shows the default it would start from and takes no input.
+    [AUTO_VALUE_KIND]: Object.assign<PrefRenderer, { group: boolean }>((ctx) => (
+      <span className={s.autoValue}>
+        <Switch aria-label={`Set ${ctx.pref.name}`} isSelected={!noAutoValue}
+          onChange={(on) => writeAll('autoValue', on ? held.default : undefined)} />
+        <fieldset className={s.autoValueControl} disabled={noAutoValue}>
+          {renderPrefControl({ ...ctx, pref: auto.autoValue! }, drawn)}
+        </fieldset>
+      </span>
+    ), { group: true }),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
       <Input aria-label="Name" value={String(value ?? '')} placeholder={mixed ? MIXED_HINT : undefined} onChange={setValue}
         onFocus={() => { nameAtFocus.current = node.name; }} onBlur={several ? undefined : followName} />
@@ -188,7 +200,9 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
         },
       },
     } : {}),
-    ...(Object.keys(auto).length > 0 ? { [AUTO]: { name: 'Auto', children: auto } } : {}),
+    ...(Object.keys(auto).length > 0 ? {
+      [AUTO]: { name: 'Auto', children: { ...auto, ...(auto.autoValue ? { autoValue: { ...auto.autoValue, kind: AUTO_VALUE_KIND } } : {}) } },
+    } : {}),
   };
 
   // An attribute's row sits at its own name, or under the panel that holds it.
@@ -211,14 +225,9 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
         layout="list"
         fields={fields}
         changed={marked}
-        // An unset auto value shows the default it would start from.
         values={{ ...held, [OWN]: held, [ENTRY]: item, [AUTO]: noAutoValue ? { ...held, autoValue: held.default } : held }}
         mixed={mixedPaths}
-        auto={noAutoValue ? UNSET_AUTO_VALUE : undefined}
-        canInherit={(p) => p === AUTO_VALUE}
-        inheritHint={() => 'not set'}
-        onAutoChange={(p, next) => writeAll(attrOf(p), next ? undefined : held.default)}
-        renderers={{ ...renderers, ...ATTR_RENDERERS, ...identity }}
+        renderers={{ ...drawn, ...identity }}
         onChange={(p, value) => {
           if (item && p.startsWith(`${ENTRY}.`) && p !== ENTRY_IS) {
             const attr = p.slice(ENTRY.length + 1);

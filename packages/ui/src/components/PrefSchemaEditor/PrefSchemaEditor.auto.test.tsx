@@ -39,26 +39,38 @@ describe('PrefSchemaEditor auto attributes', () => {
     expect(leaf('gap').unpinned).toBe(true);
   });
 
-  it('leaves the auto value unset until its label pins it, starting from the default', () => {
+  it('leaves the auto value unset, its control off, until the switch beside it is on', () => {
     render(<Live />);
     select('gap');
-    const pin = attributes().getByRole('button', { name: 'Pin Auto value' });
-    expect(pin.getAttribute('aria-pressed')).toBe('false');
-    expect(attributes().getByText('not set')).toBeInTheDocument();
+    const on = () => attributes().getByRole('switch', { name: 'Set Auto value' });
+    expect(on()).not.toBeChecked();
+    expect(attributes().getByRole('spinbutton', { name: 'Auto value' })).toBeDisabled();
+    expect(attributes().queryByText('not set')).toBeNull();
+    expect(attributes().queryByRole('button', { name: 'Pin Auto value' })).toBeNull();
     expect('autoValue' in leaf('gap')).toBe(false);
-    fireEvent.click(pin);
+    fireEvent.click(on());
     expect(leaf('gap').autoValue).toBe(12);
-    fireEvent.click(attributes().getByRole('button', { name: 'Pin Auto value' }));
+    expect(on()).toBeChecked();
+    expect(attributes().getByRole('spinbutton', { name: 'Auto value' })).toBeEnabled();
+    fireEvent.click(on());
     expect('autoValue' in leaf('gap')).toBe(false);
   });
 
   it('keeps an auto value of false, which an optional attribute would drop', () => {
     render(<Live />);
     select('grid');
-    fireEvent.click(attributes().getByRole('button', { name: 'Pin Auto value' }));
+    expect(attributes().getByRole('checkbox', { name: 'Auto value' })).toBeDisabled();
+    fireEvent.click(attributes().getByRole('switch', { name: 'Set Auto value' }));
     expect(leaf('grid').autoValue).toBe(true);
     fireEvent.click(attributes().getByRole('checkbox', { name: 'Auto value' }));
     expect(leaf('grid').autoValue).toBe(false);
+    expect(attributes().getByRole('switch', { name: 'Set Auto value' })).toBeChecked();
+  });
+
+  it('draws the switch and the control in a row that is not a label, which would hand its clicks to the switch', () => {
+    render(<Live />);
+    select('gap');
+    expect(attributes().getByRole('switch', { name: 'Set Auto value' }).closest('[data-property-row]')?.tagName).toBe('DIV');
   });
 
   it('offers none of it for a leaf that holds no value', () => {

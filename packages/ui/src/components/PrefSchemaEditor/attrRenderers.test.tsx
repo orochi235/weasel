@@ -10,6 +10,12 @@ const ctx = (kind: string, value: unknown, setValue = vi.fn()): PrefRenderContex
 });
 
 describe('attribute controls', () => {
+  it('marks the option list and the pair editor, each several controls, as groups a label may not wrap', () => {
+    expect(ATTR_RENDERERS['enum-options'].group).toBe(true);
+    expect(ATTR_RENDERERS.pair.group).toBe(true);
+    expect(ATTR_RENDERERS.symbol.group).toBeUndefined();
+  });
+
   it('optional-number writes a number, and undefined when cleared', () => {
     const setValue = vi.fn();
     render(<>{ATTR_RENDERERS['optional-number'](ctx('optional-number', 4, setValue))}</>);
