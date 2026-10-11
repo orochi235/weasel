@@ -501,8 +501,11 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           if (velRested && posRested) {
             if (target != null) o.onTick(target);
             codec.stop(id);
-            reportEnd(id);
-            o.onDone?.();
+            // As for a tween: canceled from its own onTick, it never completes.
+            if (animations.current.has(id)) {
+              reportEnd(id);
+              o.onDone?.();
+            }
             return true;
           }
           return false;
