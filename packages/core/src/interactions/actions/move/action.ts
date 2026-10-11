@@ -46,9 +46,9 @@ import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routi
 import { resolveParams, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/routing';
 import { documentPose, effectivePose } from 'core/scene/effectivePose';
 import { scenePoseAdapter } from 'features/groups/scenePoseAdapter';
-import type { Scene, NodeId } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
-import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
+import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel } from '../gestureLifecycle';
 import { asNodeId } from 'core/scene/types';
 import { moveSources } from '../selectionSubtree';
 import { SceneArrivalRefused } from 'core/scene/arrivals';
@@ -56,26 +56,24 @@ import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import { createReparentOp } from 'core/ops/reparent';
-import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
-import type { LayoutDep, NodeAtPointDep } from '../depSchema';
+import { geometryDataOp } from '../geometryProjection';
+import type { LayoutDep } from '../depSchema';
 import type {
   LayoutStrategy,
   LayoutContainer,
   LayoutChild,
   LayoutDragged,
-  DropTarget as LayoutDropTarget,
   DropRegion,
 } from '../../../layout/types';
 import { pointInPath } from '@weasel-js/geom';
 import {
   poseDescriptorForNode,
   translatePoseViaDescriptor,
-  type PoseDescriptor,
 } from '../resize/geometry';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { isAnchorOrControl } from '@weasel-js/routing';
 import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
-import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
+import { moveGestureAdapter } from './gestureAdapter';
 import { landedDescendantOps } from './landedDescendants';
 import {
   composeWorldPose,
@@ -87,6 +85,9 @@ import {
 } from 'features/groups/composePose';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 import { planeToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
+import type { MoveLive, MoveSession, ReparentOnDrop } from './session';
+import type { LayoutPlacement } from './layout/types';
+export type { ReparentOnDrop };
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -525,14 +526,6 @@ function unreleasedIds(scratch: MoveScratch, released: Set<NodeId>): NodeId[] {
   return out;
 }
 
-/** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
- *  default) preserves the legacy translate-only commit. `'top'` lands the
- *  moved node at the top of the container under the cursor. `'above'`
- *  lands it immediately above the hit sibling in z-order (falls back to
- *  `'top'` semantics when the hit is itself a container or when the hit
- *  and moved node share no parent). */
-export type ReparentOnDrop = 'off' | 'top' | 'above';
-
 /** `adapter`, except that an id caught mid-glide answers with the pose it was
  *  grabbed at — where the drag measures it from. */
 function grabbedPoseAdapter(
@@ -599,108 +592,30 @@ function landReleased(
 // Internal scratch
 // ---------------------------------------------------------------------------
 
-/** Where one dragged child landed, and the container state it landed against.
- *  Holding the snapshot is what lets the commit replay the same sequence the
- *  preview showed, rather than re-deriving it from a scene the earlier
- *  placements never wrote to. */
-interface LayoutPlacement {
-  dragged: LayoutDragged<unknown>;
-  children: LayoutChild<unknown>[];
-  target: LayoutDropTarget<unknown>;
-}
+/** Transitional: every helper is narrowed off this by the end of the plan. */
+type MoveScratch = MoveSession & MoveLive;
 
-/** Resolved layout drop for the latest onMove frame. Only set when a layout
- *  container accepted every member of the selection (non-null snap target for
- *  each). One placement per dragged child, in selection order. */
-interface LayoutPass {
-  layout: LayoutStrategy<unknown>;
-  container: LayoutContainer;
-  placements: LayoutPlacement[];
-  /** Source-container leftovers that actually moved (id → new pose). */
-  sourceReflow: Map<string, unknown>;
-  /** Siblings reflowing into their destination slots, from both containers.
-   *  Surfaced as `previewOpaqueIds` so they paint settled rather than as
-   *  ghosts under the pointer. */
-  reflowIds: Set<NodeId>;
-}
-
-interface MoveScratch {
-  /** Origin poses captured at drag start. Key is NodeId. Includes both
-   *  selected roots AND their descendant ids — when a container moves, the
-   *  preview-ghost layer needs every child's pose to render the subtree at
-   *  the previewed location (clipped to the container silhouette). */
-  startPoses: Map<NodeId, unknown>;
-  /** Selected ids only — the drag roots. */
-  ids: NodeId[];
-  /** Descendant ids cascaded for preview only. Their preview poses are
-   *  computed each frame so container drags show children moving along. */
-  cascadeIds: NodeId[];
-  /** Ids whose frame is itself moving, so they ride it and are not
-   *  translated. Empty under identity, where every node stores world. */
-  carried: Set<NodeId>;
-  /** For each moved id stored under a frame: its world pose and the frame's,
-   *  both at drag start — what `localDelta` rotates the drag through. */
-  frames: Map<NodeId, { world: unknown; frameWorld: unknown }>;
-  scene: Scene<unknown, string, unknown>;
-  /** Running drag delta — updated each onMove, applied once at commit. It is
-   *  in the plane the edit is measured in; `planeDelta` carries it to others. */
-  currentDelta: { dx: number; dy: number };
-  /** The view the invocation started with, read for `planeOf`. */
-  view: unknown;
-  /** For each layer on another plane than the edited one: a point of the
-   *  first dragged root on it, in its own world and in the edited one, at
-   *  press. What `planeDelta` measures that layer's drag from. */
-  planeRefs: Map<string, { own: { x: number; y: number }; edited: { x: number; y: number } }>;
-  /** In-flight preview poses keyed by node id (roots + cascaded children).
-   *  Populated on onMove; cleared on onEnd. Read by `previewIds`/`previewPose`. */
-  previews: Map<NodeId, unknown>;
-  /** The override entry published to the scene for each previewed id, held by
-   *  reference so a frame mutates it in place — see `PoseOverrides`. */
-  overrideEntries: Map<NodeId, { pose: unknown }>;
-  /** This frame's reflow poses (local) when `layout.reflow` carries them
-   *  instead of `previews`. */
-  reflowTargets: Map<NodeId, unknown>;
-  /** Every id handed to `layout.reflow` this gesture and not yet settled. */
-  gliding: Set<NodeId>;
-  /** Ids grabbed mid-glide, with how far (stored frame) the pose shown at the
-   *  grab stood from the document's. The drag starts from what was shown. */
-  caught: Map<NodeId, { dx: number; dy: number }>;
-  /** Pose descriptor captured at drag start. */
-  projection: PoseDescriptor<unknown>;
-  /** Each node's own form of `projection`, for reading and writing its pose. */
-  descriptorOf: (id: NodeId | string) => PoseDescriptor<unknown>;
-  /** Behaviors from `opts.behaviors`; empty array when none supplied. */
-  behaviors: MoveBehavior<unknown>[];
-  /** Reused gesture context handed to behaviors across the drag. */
-  gestureCtx: GestureContext<unknown>;
-  /** Scene-backed adapter the committed behavior ops apply through. */
-  adapter: MoveGestureAdapter<unknown>;
-  /** Layout dep captured at start; undefined when not registered. */
-  layout: LayoutDep | undefined;
-  /** Latest resolved layout pass, or null when no container accepted. */
-  layoutPass: LayoutPass | null;
-  /** The point the latest layout pass decided containers by (the dragged
-   *  selection's center, in the edited plane's world); null before one ran. */
-  dropCenter: { x: number; y: number } | null;
-  /** Pose-composition strategy captured at gesture start. Defaults to
-   *  IDENTITY (absolute-pose) when the `poseComposition` dep is absent;
-   *  local-pose consumers supply composeRectPose/decomposeRectPose. */
-  pc: PoseComposition<unknown>;
-  /** Optional consumer commit hook captured at gesture start. When present,
-   *  ops-based commits route through it (consumer history) instead of
-   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
-  applyOps?: (ops: Op[], label: string) => void;
-  /** Optional eager-sync seam captured at gesture start. When present, the
-   *  translate-only commit path emits a `setData` op per moved node mapping
-   *  its data-held geometry by the (dx,dy) translation. Undefined → pose-only. */
-  geometryProjection?: GeometryProjection;
-  /** Label, history and callbacks from the binding's params. */
-  lifecycle: GestureLifecycle;
-  /** The hit-test reparent-on-drop asks, captured at start: the dispatcher
-   *  ends a gesture with an empty deps bag. */
-  nodeAtPoint: NodeAtPointDep | undefined;
-  /** The pointer at the latest move. */
-  lastWorld: { x: number; y: number } | null;
+function capturePlaneRefs(
+  scene: MoveSession['scene'],
+  ids: MoveSession['ids'],
+  view: unknown,
+  frames: MoveSession['frames'],
+  startPoses: MoveSession['startPoses'],
+  projection: MoveSession['projection'],
+): MoveSession['planeRefs'] {
+  const planeRefs = new Map<string, { own: { x: number; y: number }; edited: { x: number; y: number } }>();
+  for (const id of ids) {
+    const layer = scene.get(id)?.layer;
+    if (layer === undefined || planeRefs.has(layer)) continue;
+    const m = planeOf(view, layer);
+    if (m === null) continue;
+    const world = frames.get(id)?.world ?? startPoses.get(id);
+    if (world === undefined) continue;
+    const b = projection.getBounds(world);
+    const own = { x: b.x, y: b.y };
+    planeRefs.set(layer, { own, edited: toPlane(invertPlane(m)!, own) });
+  }
+  return planeRefs;
 }
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
@@ -983,7 +898,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         scene,
         currentDelta: { dx: 0, dy: 0 },
         view: ctx.deps.view,
-        planeRefs: new Map(),
+        planeRefs: capturePlaneRefs(scene, ids, ctx.deps.view, frames, startPoses, projection),
         previews: new Map<NodeId, unknown>(),
         overrideEntries: new Map<NodeId, { pose: unknown }>(),
         reflowTargets: new Map<NodeId, unknown>(),
@@ -1003,19 +918,9 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         lifecycle,
         nodeAtPoint: ctx.deps.nodeAtPoint,
         lastWorld: null,
+        reparentOnDrop: (params?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
+        dragThresholdPx,
       };
-
-      for (const id of ids) {
-        const layer = scene.get(id)?.layer;
-        if (layer === undefined || scratch.planeRefs.has(layer)) continue;
-        const m = planeOf(scratch.view, layer);
-        if (m === null) continue;
-        const world = frames.get(id)?.world ?? startPoses.get(id);
-        if (world === undefined) continue;
-        const b = projection.getBounds(world);
-        const own = { x: b.x, y: b.y };
-        scratch.planeRefs.set(layer, { own, edited: toPlane(invertPlane(m)!, own) });
-      }
 
       // Returns whether anything reached the document.
       const commitMove = (endCtx: InvocationCtx): boolean => {
@@ -1236,7 +1141,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         // `<SceneCanvas>`) and reparents each moved root under it, then
         // writes the translated pose in the new parent's frame so the
         // visual position is preserved across the parent swap.
-        const reparentMode = ((resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off');
+        const reparentMode = scratch.reparentOnDrop;
         const dropTarget = reparentMode !== 'off'
           ? resolveDropTarget(endCtx, scratch)
           : null;
@@ -1280,7 +1185,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             const s = moveCtx.drag.screenDelta;
             if (s && !pastDragThreshold({ clientX: 0, clientY: 0 }, { clientX: s.x, clientY: s.y }, dragThresholdPx)) return;
             engaged = true;
-            lifecycle.start(scratch.ids as string[]);
+            lifecycle.start(ids as string[]);
           }
           let dx = moveCtx.drag.delta.x;
           let dy = moveCtx.drag.delta.y;
