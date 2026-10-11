@@ -1253,6 +1253,15 @@ describe('Slider thumb fit', () => {
   });
 });
 
+describe('Slider fractional step', () => {
+  it('reports a stepped value without float dust', () => {
+    const onInput = vi.fn();
+    const { getByRole } = render(<Slider min={0} max={1} step={0.1} thumbs={[{ value: 0.2 }]} onInput={onInput} />);
+    fireEvent.keyDown(getByRole('slider'), { key: 'ArrowRight' });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: 0.3 }]);
+  });
+});
+
 describe('Slider endless', () => {
   it('sits a thumb given Infinity at a stop one step past the range, and reads the display’s word', () => {
     const { getByRole, container } = render(

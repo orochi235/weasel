@@ -3,6 +3,7 @@ import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
 import { crossEnd } from './crossEnd';
+import { snapToStep } from '../spin';
 import { endlessTrack, type Endless } from '../../endless';
 import { decimal, qty, type Display } from '@weasel-js/quantity';
 
@@ -150,11 +151,6 @@ export type SliderProps<T extends Thumb = Thumb> = {
   ariaLabel?: string;
   className?: string;
 };
-
-function quantize(v: number, step: number | undefined, min: number): number {
-  if (step === undefined || step <= 0) return v;
-  return Math.round((v - min) / step) * step + min;
-}
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
@@ -370,7 +366,7 @@ function SliderBody<T extends Thumb = Thumb>(
     (f: number, trackWidth: number): number => {
       const v = fractionToValue(f);
       if (strict) return attract(v, stops, Infinity, valueToFraction);
-      const q = clamp(quantize(v, step, min), min, max);
+      const q = clamp(snapToStep(v, step, min), min, max);
       return stops.length > 0 ? attract(q, stops, STOP_SNAP_PX / trackWidth, valueToFraction) : q;
     },
     [fractionToValue, valueToFraction, strict, stops, step, min, max],
@@ -468,7 +464,7 @@ function SliderBody<T extends Thumb = Thumb>(
           return;
         }
         let dValue = dxFraction * (max - min);
-        dValue = quantize(dValue, step, 0);
+        dValue = snapToStep(dValue, step, 0);
 
         // Clamp delta so no thumb leaves [min, max] (per-thumb bounds intentionally
         // not enforced — matches the experiment's hue-band shift-translate semantics).
@@ -616,7 +612,7 @@ function SliderBody<T extends Thumb = Thumb>(
     else if (stops.length > 0) {
       v = stepStops(stops, next[index].value, stopDelta > 0 ? 1 : -1, Math.abs(stopDelta));
     } else {
-      v = crossEnd(next[index].value, delta, stepSize, range, [min, max]) ?? quantize(next[index].value + delta, step, min);
+      v = crossEnd(next[index].value, delta, stepSize, range, [min, max]) ?? snapToStep(next[index].value + delta, step, min);
     }
     v = clamp(v, lo, hi);
     if (constraint === 'ordered') v = clampOrdered(v, next, index, lo, hi, step);

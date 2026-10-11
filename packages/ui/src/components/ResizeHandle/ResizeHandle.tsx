@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
 import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
+import { snapToStep } from '../spin';
 import s from './ResizeHandle.module.css';
 
 /**
@@ -55,10 +56,7 @@ const clamp = (n: number, min: number, max: number): number => Math.min(max, Mat
  * the bound rather than overshooting it.
  */
 function settle(n: number, min: number, max: number, step: number): number {
-  const snapped = step > 0 ? Math.round(n / step) * step : n;
-  // Re-round to kill the float dust `x / 0.1 * 0.1` leaves behind.
-  const precise = Number.isInteger(step) ? snapped : Number(snapped.toFixed(10));
-  return clamp(precise, min, max);
+  return clamp(snapToStep(n, step), min, max);
 }
 
 /**

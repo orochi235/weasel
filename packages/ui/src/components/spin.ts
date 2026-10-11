@@ -21,6 +21,17 @@ function placesOf(n: number): number {
 }
 
 /**
+ * `n` moved to the nearest multiple of `step` counted from `origin`, written
+ * with the decimals `step` and `origin` carry, so three steps of `0.1` land on
+ * `0.3`. No step, no snap.
+ */
+export function snapToStep(n: number, step: number | undefined, origin = 0): number {
+  if (step === undefined || !(step > 0)) return n;
+  const places = Math.max(placesOf(step), placesOf(origin));
+  return Number((Math.round((n - origin) / step) * step + origin).toFixed(places));
+}
+
+/**
  * The value a spin-button key moves `from` to, or `null` for a key that does
  * not spin: the arrows by a step, Page Up and Page Down by ten, and Home and
  * End to a bound, where there is one. A sum of steps is rounded to the places
