@@ -62,9 +62,9 @@ export interface LayeredCurveEditorProps {
   yTicks?: TickSettings | false | null;
 
   /** Built-in undo/redo via Cmd/Ctrl+Z (Shift+Z or Y for redo) on the
-   *  focused SVG. Snapshots every layer's state on each commit; undo
-   *  fires `onLayerChange(id, prevState)` for each layer whose state
-   *  changed. Default `true`. */
+   *  focused SVG. Snapshots every layer's state on each commit, keeping
+   *  the last 100; undo fires `onLayerChange(id, prevState)` for each
+   *  layer whose state changed. Default `true`. */
   history?: boolean;
 
   /** Accessible name for the plot, which is exposed as a group so the
@@ -87,6 +87,9 @@ interface ActiveGesture {
 }
 
 /** A cancel carries no event, so a layer's `onCancel` sees no modifiers held. */
+/** Undo steps the built-in history keeps. */
+const HISTORY_DEPTH = 100;
+
 const NO_MODIFIERS: LayerModifiers = { shift: false, alt: false, meta: false, ctrl: false };
 
 function readModifiers(e: PointerEvent | ReactPointerEvent | KeyboardEvent | ReactKeyboardEvent): LayerModifiers {
@@ -172,6 +175,14 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     }
   }, [onLayerChange, layersRef]);
 
+  /** Push the state an edit started from, dropping the oldest step past the depth kept. */
+  const record = useCallback((before: Map<string, unknown>) => {
+    const past = pastRef.current;
+    past.push(before);
+    if (past.length > HISTORY_DEPTH) past.shift();
+    futureRef.current = [];
+  }, []);
+
   const undo = useCallback(() => {
     if (!historyEnabled) return;
     const past = pastRef.current;
@@ -229,8 +240,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     const finalState = a.gesture.onCommit ? a.gesture.onCommit(current, ctx) : current;
     if (finalState !== current) onLayerChange(a.layerId, finalState);
     if (historyEnabled && !sameFields(finalState, a.startSelfState)) {
-      pastRef.current.push(a.startStates);
-      futureRef.current = [];
+      record(a.startStates);
     }
     if (onLayerCommit) onLayerCommit(a.layerId, finalState, a.startSelfState);
     cleanupGesture();
@@ -310,8 +320,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       }
       if (committed !== undefined) {
         if (historyEnabled) {
-          pastRef.current.push(preEventSnapshot);
-          futureRef.current = [];
+          record(preEventSnapshot);
         }
         onLayerCommit?.(b.layer.id, committed, prevState);
       }
@@ -357,12 +366,11 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     }
     if (pendingCommit) {
       if (historyEnabled) {
-        pastRef.current.push(preEventSnapshot);
-        futureRef.current = [];
+        record(preEventSnapshot);
       }
       onLayerCommit?.(pendingCommit.id, pendingCommit.next, pendingCommit.prev);
     }
-  }, [makeCtx, installGesture, onLayerChange, onLayerCommit, historyEnabled, snapshot, layersRef]);
+  }, [makeCtx, installGesture, onLayerChange, onLayerCommit, historyEnabled, snapshot, record, layersRef]);
 
   // ── keyboard ───────────────────────────────────────────────────────
   const onSvgKeyDown = useCallback((e: ReactKeyboardEvent<SVGSVGElement>) => {
@@ -388,8 +396,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       });
       if (committed !== undefined) {
         if (historyEnabled) {
-          pastRef.current.push(preEventSnapshot);
-          futureRef.current = [];
+          record(preEventSnapshot);
         }
         onLayerCommit?.(b.layer.id, committed, b.state);
       }
@@ -397,7 +404,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       // event's `isDefaultPrevented` does not observe.
       if (e.nativeEvent.defaultPrevented) return;
     }
-  }, [historyEnabled, undo, redo, makeCtx, snapshot, onLayerChange, onLayerCommit, layersRef]);
+  }, [historyEnabled, undo, redo, makeCtx, snapshot, record, onLayerChange, onLayerCommit, layersRef]);
 
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 

@@ -2096,10 +2096,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   commit is any Enter with no option highlighted. The children form has no option text to compare
   against without reading the collection.
 
-- **(P3) LayeredCurveEditor: the built-in undo and redo stacks are unbounded.** `pastRef` and
-  `futureRef` in `packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx` hold a whole-state
-  snapshot per commit for the life of the component. Cap the depth, and decide the cap.
-
 - **(P3) BandEditor: splitting a band has no keyboard path.** A band is split only by clicking the
   ruler (`onTrackPointerDown` in `packages/ui/src/components/BandEditor/BandEditor.tsx`); every
   other edit has a key. It needs a key and a rule for where the split lands (the selected band's

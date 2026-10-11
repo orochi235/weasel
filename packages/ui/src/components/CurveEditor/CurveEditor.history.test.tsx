@@ -21,4 +21,19 @@ describe('CurveEditor — built-in undo', () => {
     fireEvent.keyDown(container.querySelector('svg')!, { key: 'z', metaKey: true });
     expect(middle().getAttribute('cy')).toBe('50');
   });
+
+  it('keeps the last 100 steps and drops older ones', () => {
+    const { container } = render(<Controlled />);
+    const cy = (): number => Number(middle().getAttribute('cy'));
+    // 101 edits, ending one nudge above where the point began.
+    for (let i = 0; i < 101; i++) fireEvent.keyDown(middle(), { key: i % 2 === 0 ? 'ArrowUp' : 'ArrowDown' });
+    const nudged = cy();
+    expect(nudged).not.toBeCloseTo(50);
+    const svg = container.querySelector('svg')!;
+    fireEvent.keyDown(svg, { key: 'z', metaKey: true });
+    expect(cy()).toBeCloseTo(50);
+    // The oldest step is gone, so undoing everything stops one edit short of the start.
+    for (let i = 0; i < 150; i++) fireEvent.keyDown(svg, { key: 'z', metaKey: true });
+    expect(cy()).toBeCloseTo(nudged);
+  });
 });
