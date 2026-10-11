@@ -44,6 +44,11 @@ export function keyFromName(name: string): string {
   const key = words
     .map((w, i) => (i === 0 ? w.charAt(0).toLowerCase() + w.slice(1) : w.charAt(0).toUpperCase() + w.slice(1)))
     .join('');
+  return undigit(key);
+}
+
+/** `key` with `_` before a leading digit, which no key may start with. */
+export function undigit(key: string): string {
   return /^\d/.test(key) ? `_${key}` : key;
 }
 

@@ -2,7 +2,7 @@ import { useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import { actionItems, actionShortcuts, useActionsRegistry, type Action } from '@weasel-js/core';
 import type { PrefAction, PrefLeaf } from '@weasel-js/prefs';
 import { formatShortcut } from '../ToolPalette/formatShortcut';
-import { childrenOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { childrenOf, undigit, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** An action a schema editor offers to place: one a host has registered, by the key an action pref fires. */
 export interface EditorAction {
@@ -49,10 +49,10 @@ export function actionLeaf(action: EditorAction): PrefLeaf {
   return leaf;
 }
 
-/** A schema key for the pref that fires `key`: its words run together, since a key holds no `.` or `:`. */
+/** A schema key for the pref that fires `key`: its words run together, since a key holds no `.` or `:`, and `_` first where it would start with a digit. */
 export function actionLeafKey(key: string): string {
   const words = key.split(/[^A-Za-z0-9]+/).filter(Boolean);
-  return words.map((w, i) => (i === 0 ? w : w[0]!.toUpperCase() + w.slice(1))).join('') || 'action';
+  return undigit(words.map((w, i) => (i === 0 ? w : w[0]!.toUpperCase() + w.slice(1))).join('')) || 'action';
 }
 
 /** The tree paths of the action prefs in `root` that fire a key not among `keys`. */

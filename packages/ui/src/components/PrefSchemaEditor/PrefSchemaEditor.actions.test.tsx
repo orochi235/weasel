@@ -96,5 +96,6 @@ describe('an action as a pref', () => {
     expect(actionLeafKey('edit.undo')).toBe('editUndo');
     expect(actionLeafKey('align:left')).toBe('alignLeft');
     expect(actionLeafKey('...')).toBe('action');
+    expect(actionLeafKey('3d.toggle')).toBe('_3dToggle');
   });
 });
