@@ -1,5 +1,16 @@
 # @weasel-js/routing
 
+## 1.9.4
+
+### Patch Changes
+
+- @weasel-js/cursor@1.9.4
+  - @weasel-js/gestures@1.9.4
+  - @weasel-js/history@1.9.4
+  - @weasel-js/modes@1.9.4
+  - @weasel-js/react@1.9.4
+  - @weasel-js/select@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

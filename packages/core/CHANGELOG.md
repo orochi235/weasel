@@ -1,5 +1,65 @@
 # Changelog
 
+## 1.9.4
+
+### Patch Changes
+
+- 9d54d0a: Core now depends on `@msb235/blits` 0.8.1, up from 0.7.0. The pin is exact, so an app that also installs blits itself gets one copy only when it names the same version.
+  
+  Nothing in core's own API changes. blits 0.8.0 is a breaking release for code that calls blits directly: `seek` rebuilds a voice's state, a history store's `cut` takes a `seq`, and the deprecated `hold`, `period`, and `hex()` are gone. Its changelog has the full list.
+- 01f9a06: Cmd/Ctrl+V now pastes on a `<SceneCanvas>` with the `edit` preset and without `ingest`. This changes behavior: such a canvas could copy and cut to the OS clipboard and ignored a paste. It now pastes the nodes a kit canvas copied, from the same tab or another, and nothing else. A pasted image, SVG, or file, a consumer's `ingestion.handlers`, and every OS drop still need `ingest`. `ingestion.clipboard` (`reviver`, `enabled: false`) applies to it as it does under `ingest`.
+  
+  The new `clipboard.pasteEvent` action does this, bound to a `paste` event carrying `text/plain`, and `clipboardPasteEventAction` is exported. `useStandardActions` registers it only while `ingest` is excluded, since `ingest` binds the same event and accepts that payload among the rest; a canvas with both presets behaves as before. `KIT_STANDARD_ACTION_IDS` lists it, so the hook with no `exclude` now registers one fewer action than that list names.
+- 20c2d26: Escape cancels a drag. `startThresholdDrag` ends a live drag as a cancel when Escape is pressed, and keeps that key press from anything else listening, so a drag inside a dialog does not also close it. Everything built on it follows: `Tree`, `useReorderDragList`, and the rows of `PrefSchemaEditor`'s live preview. The editor's palette now drags through `startThresholdDrag` too, so a press on a tool that never moves makes nothing.
+  
+  In `PrefSchemaEditor`, dropping a node where it already sits no longer adds a step to undo.
+- 9f70b3c: **Breaking change to the schema types.** A pref schema's branch node was one type, `PrefGroup`, read two ways: the prefs store and `PrefsForm` took a group's key as a path segment, and a node's property schema took it as a heading over leaves whose own keys were whole node paths. There are now two types, and a schema of one is a type error where the other is read.
+  
+  `PrefGroup` keeps `children` and the nested reading: `view` > `gridDensity` is the leaf at `view.gridDensity`. The new `PrefSection` holds `members`, and its key adds nothing to a path. `NodePropertiesEntry.schema` is a `PrefSection`, and so is a heading inside a `PrefObject`'s `children`.
+  
+  What to rewrite:
+  
+  - A node property schema passed to `createNodeProperties().register`, `<SceneCanvas>`, or `<SelectionPanel>`: rename `children` to `members` on the root and on every group inside it. An `object` leaf keeps `children`.
+  - A group nested inside an `object` leaf's `children`, in any schema: rename its `children` to `members`.
+  - Code that walks a node property schema reads `.members`. `prefSectionLeaves(members)` returns every leaf under a section's `members` or an object leaf's `children` by its own key, and `isPrefSection` tells a section from a group.
+  - `prefFieldChoices(schema)` no longer takes a second argument. It reads the path rule off the schema it is given, so pass a `PrefSection` where `false` was passed.
+  - `SelectionPanel`'s `isGroup` is gone; use `isPrefLeaf`.
+  
+  A preferences schema and a tool's `options` are unchanged unless they nest a group inside an `object` leaf.
+  
+  `PrefSchemaEditor` edits the sections inside an `object` leaf: it adds one where it used to add a group, prints it with `members`, and refuses to move a group under an object leaf or a section out from under one.
+- 812118e: New `@weasel-js/storage` package: the storage adapters and `RecordCache` that lived in labkit, split into one module per adapter. localStorage, sessionStorage, memory, and the no-op adapter gain `listSync`, and `openRecordsSync` opens a record cache over them without awaiting. `fallbackStorage(preferred, fallback, label)` wraps an adapter with a fallback for when it is unavailable, and `createDefaultStorage(preferred, label)` builds a page-wide default from one: `preferred`, or localStorage where it will not open, chosen once. Storage's own `indexedDbAdapter` and `defaultStorage` use the IndexedDB database `'weasel'`. `RecordCache.flush()` now resolves `true` when every queued write landed and `false` otherwise; it used to resolve to nothing. labkit re-exports the adapters, and its `indexedDbAdapter` and default storage stay on the database `'labkit'`, where every existing lab's records are.
+  
+  New `@weasel-js/prefs` package: the preferences schema, moved out of core, and a store for it. `openPrefs` and `openPrefsSync` keep one record per leaf and repair values against the schema on read. `store.stored()` returns the raw stored records as a tree, orphans included, and `usePrefsValues` returns it as `stored`. Versioned migrations run on open: a malformed `$version` opens the store read-only, and a newer `$version` written by another writer stops this store from persisting. `Infinity` and `-Infinity` on number leaves are stored as the strings `'Infinity'` and `'-Infinity'`. `PrefsStore.flush()` resolves a boolean, with the same meaning as `RecordCache.flush()`. The `usePref` and `usePrefsValues` hooks, imported from `@weasel-js/prefs/react`, produce the values `PrefsForm` takes; the main entry loads no React.
+  
+  Breaking: the schema types are renamed from `ToolPref*` to `Pref*` (`ToolPref` itself is `BuiltinPref`, `TOOL_PREF_KINDS` is `PREF_KINDS`, `isBuiltinToolPref` is `isBuiltinPref`) and are imported from `@weasel-js/prefs`. Neither core, ui, nor `@weasel-js/labkit/weasel-ui` re-exports them, nor ui's `isPrefLeaf`, `prefValueAtPath`, `visiblePrefSubtree`, `filterPrefSubtree`, or `prefDisplayBounds`. labkit's cross-tab BroadcastChannel is renamed, so tabs on an older and a newer labkit stop hearing each other until both reload.
+- e9a28a0: A CSS-module class name in `@weasel-js/core` and `@weasel-js/ui` now depends on its stylesheet's path alone: `_editor_b9a2b2`, where it was `_editor_s6qnh_7`. The old name hashed the file's contents, so one edited rule renamed every class in the file, and a labkit stylesheet built before the edit styled none of that component.
+- Updated dependencies [1bde2a4]
+- Updated dependencies [d617bf4]
+- Updated dependencies [151a441]
+- Updated dependencies [a14e734]
+- Updated dependencies [9f70b3c]
+- Updated dependencies [047dcf3]
+- Updated dependencies [0c1edcb]
+- Updated dependencies [27818ca]
+- Updated dependencies [812118e]
+- Updated dependencies [9de4985]
+- Updated dependencies [a14e734]
+  - @weasel-js/prefs@1.9.4
+  - @weasel-js/cursor@1.9.4
+  - @weasel-js/font@1.9.4
+  - @weasel-js/geom@1.9.4
+  - @weasel-js/gestures@1.9.4
+  - @weasel-js/history@1.9.4
+  - @weasel-js/modes@1.9.4
+  - @weasel-js/paint@1.9.4
+  - @weasel-js/quantity@1.9.4
+  - @weasel-js/react@1.9.4
+  - @weasel-js/registry@1.9.4
+  - @weasel-js/routing@1.9.4
+  - @weasel-js/select@1.9.4
+  - @weasel-js/text@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

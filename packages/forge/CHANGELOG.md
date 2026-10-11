@@ -1,5 +1,79 @@
 # @weasel-js/forge
 
+## 1.9.4
+
+### Patch Changes
+
+- 1bbf0cb: A command on a tool rail is its own type. `ToolItem` is now only a tool: it has no `onActivate` and no type parameter. A button that runs once when pressed is a `CommandItem`, which `ToolbarItem` now extends, and a `palette` contribution takes a `RailItem`, which is either one.
+  
+  This is breaking for code that names the type. `ToolItem<TCtx>` becomes `ToolItem` for a tool, `CommandItem<TCtx>` for an item carrying `onActivate`, and `RailItem<TCtx>` where either may arrive. A contribution written as an object literal needs no change. forge's Info button is declared as a `CommandItem`.
+- Updated dependencies [1bde2a4]
+- Updated dependencies [2d1960e]
+- Updated dependencies [9d54d0a]
+- Updated dependencies [a07e769]
+- Updated dependencies [01f9a06]
+- Updated dependencies [d617bf4]
+- Updated dependencies [20c2d26]
+- Updated dependencies [4f63476]
+- Updated dependencies [8763790]
+- Updated dependencies [8101299]
+- Updated dependencies [d3020c4]
+- Updated dependencies [bd2a870]
+- Updated dependencies [eaf3f09]
+- Updated dependencies [b226598]
+- Updated dependencies [e3797b1]
+- Updated dependencies [08516b6]
+- Updated dependencies [945c663]
+- Updated dependencies [151a441]
+- Updated dependencies [a14e734]
+- Updated dependencies [9f70b3c]
+- Updated dependencies [047dcf3]
+- Updated dependencies [dfc2c87]
+- Updated dependencies [148d4b1]
+- Updated dependencies [a14e734]
+- Updated dependencies [0c1edcb]
+- Updated dependencies [27818ca]
+- Updated dependencies [31a3581]
+- Updated dependencies [65c36be]
+- Updated dependencies [bbd6798]
+- Updated dependencies [1085b46]
+- Updated dependencies [812118e]
+- Updated dependencies [c9d41f2]
+- Updated dependencies [0a7db23]
+- Updated dependencies [1bbf0cb]
+- Updated dependencies [9de4985]
+- Updated dependencies [23ae360]
+- Updated dependencies [5c96216]
+- Updated dependencies [9574e9c]
+- Updated dependencies [ba55ae0]
+- Updated dependencies [b84302e]
+- Updated dependencies [f16fdad]
+- Updated dependencies [a14e734]
+- Updated dependencies [8c83067]
+- Updated dependencies [d2f3be8]
+- Updated dependencies [37268aa]
+- Updated dependencies [5ee0a1f]
+- Updated dependencies [f32c96b]
+- Updated dependencies [5e00c96]
+- Updated dependencies [ceb2e11]
+- Updated dependencies [d4c51f5]
+- Updated dependencies [8bef869]
+- Updated dependencies [40e1b8a]
+- Updated dependencies [6a35bef]
+- Updated dependencies [2b6962a]
+- Updated dependencies [c99957a]
+- Updated dependencies [ce3c1c8]
+- Updated dependencies [4f5b466]
+- Updated dependencies [e9a28a0]
+- Updated dependencies [7505ef5]
+- Updated dependencies [6e0f62e]
+- Updated dependencies [2105123]
+- Updated dependencies [74bccab]
+  - @weasel-js/ui@1.9.4
+  - @weasel-js/labkit@1.9.4
+  - @weasel-js/core@1.9.4
+  - @weasel-js/theme@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

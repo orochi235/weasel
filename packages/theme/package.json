@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/theme",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "description": "Design tokens shared by weasel-ui and weasel-hud — CSS variables + a parallel TS export.",
   "license": "MIT",
   "type": "module",
@@ -31,7 +31,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/paint": "1.9.3"
+    "@weasel-js/paint": "1.9.4"
   },
   "peerDependencies": {
     "react": ">=18"
