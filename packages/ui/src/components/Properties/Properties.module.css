@@ -1312,6 +1312,17 @@
   height: var(--wzl-field-h, var(--wzl-control-h));
 }
 
+/* A disabled inline paint: the editor itself, inert, dimmed here once since none of its controls is disabled. */
+.paintOff {
+  min-inline-size: 0;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paintOffBody {
+  display: contents;
+}
+
 /* ── PropertyGroup ──────────────────────────────────────────────────
    A MotifFrame around a grid of rows; the frame's motif draws the box and
    the title, and these rules lay out what it holds. */

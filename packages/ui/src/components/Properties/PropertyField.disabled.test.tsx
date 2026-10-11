@@ -88,7 +88,7 @@ describe('PropertyControl disabled', () => {
     expect(screen.getByRole('slider', { name: 'Tint opacity' })).toBeDisabled();
   });
 
-  it('disables a paint swatch, and draws a disabled inline paint as one', () => {
+  it('disables a paint swatch, and draws a disabled inline paint as its editor made inert', () => {
     render(
       <>
         <PropertyControl kind="paint" name="Fill" value={{ color: '#ff0000' }} disabled onChange={noop} />
@@ -96,8 +96,12 @@ describe('PropertyControl disabled', () => {
       </>,
     );
     expect(screen.getByRole('button', { name: 'Fill' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Stroke' })).toBeDisabled();
-    expect(screen.queryByRole('radiogroup', { name: 'Paint kind' })).toBeNull();
+    const stroke = screen.getByRole('group', { name: 'Stroke' });
+    expect(stroke).toHaveAttribute('aria-disabled', 'true');
+    // A proxy: jsdom gives `inert` no consequence, so this reads the attribute. The browser test tabs past it.
+    const bar = stroke.querySelector('[role="radiogroup"]')!;
+    expect(bar.closest('[inert]')).not.toBeNull();
+    expect(stroke).toContainElement(bar.closest<HTMLElement>('[inert]'));
   });
 
   it('disables the font pickers', () => {
