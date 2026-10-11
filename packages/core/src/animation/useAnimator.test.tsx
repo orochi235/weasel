@@ -755,10 +755,10 @@ describe('useAnimator visibility', () => {
 describe('useAnimator — abandoned renders', () => {
   it('schedules with the committed options, not an abandoned render\'s', () => {
     const clock = makeClock();
-    const setA = vi.fn((cb: () => void, ms: number) => setTimeout(cb, ms));
-    const setB = vi.fn((cb: () => void, ms: number) => setTimeout(cb, ms));
-    const a: UseAnimatorOptions = { ...clock, setTimer: setA };
-    const b: UseAnimatorOptions = { ...clock, setTimer: setB };
+    const nowA = vi.fn(clock.now);
+    const nowB = vi.fn(clock.now);
+    const a: UseAnimatorOptions = { ...clock, now: nowA };
+    const b: UseAnimatorOptions = { ...clock, now: nowB };
     let animator: Animator | null = null;
     function Probe({ opts }: { opts: UseAnimatorOptions }) {
       animator = useAnimator(opts);
@@ -769,8 +769,8 @@ describe('useAnimator — abandoned renders', () => {
       animator!.stagger([0, 1, 2], 100, () =>
         animator!.tween<number>({ from: 0, to: 1, ms: 10, onTick: () => {} }));
     });
-    expect(setA).toHaveBeenCalled();
-    expect(setB).not.toHaveBeenCalled();
+    expect(nowA).toHaveBeenCalled();
+    expect(nowB).not.toHaveBeenCalled();
     act(() => { animator!.cancelAll(); });
   });
 });

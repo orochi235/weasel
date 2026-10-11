@@ -2,16 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
 
-interface VirtualTimer {
-  cb: () => void;
-  due: number;
-  cleared: boolean;
-}
-
 function mountAnimator() {
   let now = 0;
   const frameCbs: ((t: number) => void)[] = [];
-  const timers: VirtualTimer[] = [];
   const { result } = renderHook(() =>
     useAnimator({
       now: () => now,
@@ -20,35 +13,21 @@ function mountAnimator() {
         return frameCbs.length;
       },
       cancelFrame: () => {},
-      setTimer: (cb, ms) => {
-        const entry: VirtualTimer = { cb, due: now + ms, cleared: false };
-        timers.push(entry);
-        return entry;
-      },
-      clearTimer: (h) => {
-        (h as VirtualTimer).cleared = true;
-      },
     }),
   );
   const advance = (ms: number): void => {
     const target = now + ms;
-    // Walk forward in time, firing the rAF callbacks and any due timers at
-    // each step. Step granularity is 16ms so animation ticks resemble what
-    // a real rAF loop would produce; due timers are checked at every step.
+    // 16ms steps, so animation ticks resemble what a real rAF loop would produce.
     while (now < target) {
       const step = Math.min(16, target - now);
       now += step;
       const due = frameCbs.splice(0);
       for (const cb of due) cb(now);
-      for (const t of timers) {
-        if (!t.cleared && t.due <= now) {
-          t.cleared = true;
-          t.cb();
-        }
-      }
     }
   };
-  return { animator: result.current, advance };
+  /** Time passes with no frame, as in a hidden tab. */
+  const skip = (ms: number): void => { now += ms; };
+  return { animator: result.current, advance, skip };
 }
 
 describe('animator.stagger', () => {
@@ -235,5 +214,67 @@ describe('animator.stagger', () => {
     advance(400);
     expect(started).toEqual([0, 1, 2]);
     animator.cancelKey('cascade');
+  });
+
+  const cascade = (animator: ReturnType<typeof mountAnimator>['animator'], started: number[]) =>
+    animator.stagger([0, 1, 2], 100, (item) => {
+      started.push(item);
+      return animator.tween({ from: 0, to: 1, ms: 10, easing: (t) => t, onTick: () => {} });
+    });
+
+  it('a global pause holds back the items still waiting', () => {
+    const { animator, advance } = mountAnimator();
+    const started: number[] = [];
+    cascade(animator, started);
+    advance(48);
+    animator.pause();
+    advance(400);
+    expect(started).toEqual([0]);
+    animator.resume();
+    advance(64);
+    expect(started).toEqual([0, 1]);
+    advance(100);
+    expect(started).toEqual([0, 1, 2]);
+  });
+
+  it('the global time scale stretches the delays along with the children', () => {
+    const { animator, advance } = mountAnimator();
+    const started: number[] = [];
+    animator.setTimeScale(0.5);
+    cascade(animator, started);
+    advance(112);
+    expect(started).toEqual([0]);
+    advance(96);
+    expect(started).toEqual([0, 1]);
+  });
+
+  it('its own time scale stretches the delays too', () => {
+    const { animator, advance } = mountAnimator();
+    const started: number[] = [];
+    cascade(animator, started).setTimeScale(0.5);
+    advance(112);
+    expect(started).toEqual([0]);
+    advance(96);
+    expect(started).toEqual([0, 1]);
+  });
+
+  it('starts nothing while no frame comes', () => {
+    const { animator, advance, skip } = mountAnimator();
+    const started: number[] = [];
+    cascade(animator, started);
+    advance(16);
+    skip(1000);
+    expect(started).toEqual([0]);
+  });
+
+  it('starts a waiting item outside the tick, so its factory is not taken for a running animation', () => {
+    const { animator, advance } = mountAnimator();
+    const ticking: boolean[] = [];
+    animator.stagger([0, 1], 50, () => {
+      ticking.push(animator.isTicking());
+      return animator.tween({ from: 0, to: 1, ms: 10, easing: (t) => t, onTick: () => {} });
+    });
+    advance(64);
+    expect(ticking).toEqual([false, false]);
   });
 });

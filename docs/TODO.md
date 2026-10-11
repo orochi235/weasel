@@ -996,16 +996,6 @@ intercepting the press that drags the body.
   wrapper has no way to write a pose the wrapper beneath it will pass straight through; it needs
   one, or an entry tween that takes its start pose and writes it on registration.
 
-- **(P2) `stagger`: delays run on wall-clock timers, so a hidden tab or a global pause collapses the
-  cascade.** `CompositeHandle.schedule` (`packages/core/src/animation/stagger.ts`) uses `setTimeout`
-  through the animator's `setTimer` option. The timers keep firing while the frame loop is suspended
-  or the animator is paused, each factory registers a child that cannot tick, and on return every
-  remaining item starts on the same frame; `animator.setTimeScale(0.5)` halves the children and
-  leaves the delays alone. Only the stagger's own `pause()` (and now `pauseKey`) freezes them. The
-  fix is to count each delay in the supervisor entry's virtual time and fire from its tick, which
-  makes `UseAnimatorOptions.setTimer` / `clearTimer` dead public options and replaces the pause
-  bookkeeping in `CompositeHandle`.
-
 - **(P3) Timeline: a frame that skips whole laps fires them under `loop: n` and not under
   `loop: true`.** In `packages/core/src/animation/timeline/createTimeline.ts`, a frame long enough
   to skip whole laps fires every skipped lap's events under `loop: n` but none under `loop: true`,

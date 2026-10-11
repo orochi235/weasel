@@ -6,7 +6,7 @@ import { createLoop, createTweenLoop } from './loop';
 import { stepSpring } from './engine/integrator';
 import { createCodec, type SpringReader } from './engine/codec';
 import { axesOf } from './engine/axes';
-import { createStagger, type StaggerTimers } from './stagger';
+import { createStagger } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
 import { ColorOverrideRegistry } from './colorRegistry';
 import { AnimatorEventHub } from './observe';
@@ -136,18 +136,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     // forever (never reaching completion).
     const now = (): number =>
       (optsRef.current.now ?? (typeof performance !== 'undefined' ? performance.now.bind(performance) : Date.now))();
-    // Resolved timer pair, snapshotted lazily from optsRef on each call so a
-    // test that updates the injection after mount still wins. Kept internal —
-    // not exposed on the public Animator surface; passed directly into
-    // `createStagger` at bind time below.
-    const staggerTimers: StaggerTimers = {
-      setTimer: (cb, ms) =>
-        (optsRef.current.setTimer ?? ((c, m) => setTimeout(c, m)))(cb, ms),
-      clearTimer: (h) =>
-        (optsRef.current.clearTimer ??
-          ((x) => clearTimeout(x as ReturnType<typeof setTimeout>)))(h),
-      now,
-    };
+    /** Supervisor frame callbacks due this frame, run once its ticks are done. */
+    const afterTicks: (() => void)[] = [];
 
     // Per-id one-shot completion listeners. Used by stagger to detect when
     // each child has left the registry (natural completion OR cancel) so the
@@ -269,6 +259,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         animations.current.delete(anim.id);
         fireCompletion(anim.id);
       }
+      for (const cb of afterTicks.splice(0)) {
+        try { cb(); } catch (err) { console.error('useAnimator: a staggered start threw', err); }
+      }
       // Notify every onTick subscriber AFTER the tick batch so they
       // see the latest `colorOverrides` / pose values. Errors in one
       // subscriber don't suppress the others.
@@ -338,6 +331,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       const id = nextId.current++;
       let onCancelCb: (() => void) | undefined;
       let onRateCb: ((paused: boolean, timeScale: number) => void) | undefined;
+      let onFrameCb: ((virtualNow: number) => void) | undefined;
       const base = register({
         id,
         kind,
@@ -346,7 +340,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         // tick is a no-op: the supervisor only ends when the owner calls
         // `cancel()` (either via animator.cancel, animator.cancelKey, or the
         // composite's natural-completion path which forwards to `cancel`).
-        tick: () => false,
+        tick: (virtualNow) => {
+          if (onFrameCb) afterTicks.push(() => onFrameCb?.(virtualNow));
+          return false;
+        },
         onCancel: () => onCancelCb?.(),
         onRate: (paused, timeScale) => onRateCb?.(paused, timeScale),
       });
@@ -360,6 +357,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         isPaused: base.isPaused,
         setOnCancel: (cb) => { onCancelCb = cb; },
         setOnRate: (cb) => { onRateCb = cb; },
+        setOnFrame: (cb) => { onFrameCb = cb; },
         finish: () => {
           if (!animations.current.has(id)) return;
           reportEnd(id);
@@ -617,7 +615,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       stagger: ((items, delay, factory, staggerOpts) =>
         createStagger(
           api,
-          staggerTimers,
           createSupervisor,
           watchCompletion,
           items,

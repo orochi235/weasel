@@ -151,18 +151,13 @@ export interface DecayOptions<T> {
 }
 
 /** Options for `useAnimator`. Everything here is an injection seam for tests;
- *  the defaults are the real clock, rAF, and `setTimeout`. */
+ *  the defaults are the real clock and rAF. */
 export interface UseAnimatorOptions {
   /** Optional clock injection for tests. Returns ms since some epoch. */
   now?: () => number;
   /** Optional rAF / cAF injection for tests. Defaults to window.requestAnimationFrame. */
   requestFrame?: (cb: (t: number) => void) => number;
   cancelFrame?: (handle: number) => void;
-  /** Optional `setTimeout` injection used by `stagger` for per-item delays.
-   *  Defaults to the global `setTimeout`. Tests inject a virtual scheduler. */
-  setTimer?: (cb: () => void, ms: number) => unknown;
-  /** Companion to `setTimer`. Defaults to global `clearTimeout`. */
-  clearTimer?: (handle: unknown) => void;
 }
 
 /**
@@ -238,11 +233,11 @@ export interface Animator {
    *   - Builder form: omit `factory`, get a `StaggerBuilder` for fluent
    *     `.each` / `.tween` / `.springPose` calls.
    *
-   * The composite handle's `cancel` cancels pending timers AND in-flight
-   * children. `pause` / `resume` / `setTimeScale` propagate to in-flight
-   * children; `pause`/`resume` also freeze and thaw pending per-item timers
-   * (the remaining time before each pending fire is preserved across the
-   * pause).
+   * The composite handle's `cancel` cancels the items still waiting AND the
+   * in-flight children. The delays run on the animator's clock, not the
+   * wall's: a pause or a time scale, on the handle, by `cancelKey` or on the
+   * whole animator, holds or stretches the waiting items along with the
+   * children, and a hidden tab holds both.
    *
    * The stagger is registered with the animator under a supervisor entry so
    * `animator.cancel(handle)`, `animator.cancelKey(opts.cancelKey)`, and

@@ -4,11 +4,10 @@
  * without being a "real" animation. A supervisor's tick is a no-op — it
  * never completes naturally; only its `cancel()` removes it from the
  * registry. The owning composite installs `setOnCancel` to tear down its
- * children (in-flight handles, pending timers) when external cancel fires
- * (`animator.cancel(handle)`, `animator.cancelKey(key)`).
+ * children (in-flight handles, items still waiting) when external cancel
+ * fires (`animator.cancel(handle)`, `animator.cancelKey(key)`).
  *
- * Not part of the public Animator surface. Passed in at bind time, the
- * same way `staggerTimers` is.
+ * Not part of the public Animator surface. Passed in at bind time.
  */
 export interface Supervisor {
   id: number;
@@ -22,6 +21,10 @@ export interface Supervisor {
   /** `cb` hears every pause, resume, and time scale set on the entry, by its
    *  handle or by `cancelKey`, so the composite can pass it to its children. */
   setOnRate(cb: (paused: boolean, timeScale: number) => void): void;
+  /** `cb` hears the entry's virtual time once a frame, after every animation
+   *  has ticked: what it starts is started outside the tick, as a caller's
+   *  own code would start it. */
+  setOnFrame(cb: (virtualNow: number) => void): void;
   /** Retire the entry because the composite completed on its own. Unlike
    *  `cancel`, skips the `setOnCancel` callback and reports an `end`. */
   finish(): void;

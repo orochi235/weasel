@@ -13,34 +13,19 @@ import type {
 } from './types';
 import type { SceneAdapter } from 'core/adapters/types';
 
-/** Resolved timer-pair + clock, supplied by `useAnimator` so stagger picks
- *  up the same test-time injection points the rAF loop uses. `now` is used
- *  by pause/resume to freeze pending timers at their remaining time. */
-export interface StaggerTimers {
-  setTimer: (cb: () => void, ms: number) => unknown;
-  clearTimer: (handle: unknown) => void;
-  now: () => number;
-}
-
+/** An item still waiting: `fire` starts it once the stagger's own virtual
+ *  time reaches `at`. */
 interface PendingEntry {
-  /** Active host-scheduler timer handle, or null while paused. */
-  timer: unknown | null;
-  /** Absolute virtual-time at which the entry should fire. */
-  resolvedAt: number;
-  /** Wrapped callback (drops itself from `pending` before invoking the user fire). */
+  at: number;
   fire: () => void;
-  /** Remaining ms when paused; ignored while running. */
-  remainingMs: number;
-  /** True while the timer is suspended by `composite.pause()`. */
-  paused: boolean;
 }
 
 /**
  * Composite handle returned by `createStagger`. Owns a list of in-flight
- * child handles and a list of pending timer entries; cancel cancels both.
- * Pause/resume/setTimeScale propagate to in-flight children; pause/resume
- * also freeze and thaw pending per-item timers, preserving each entry's
- * remaining time across the pause.
+ * child handles and a list of items still waiting; cancel cancels both.
+ * Pause/resume/setTimeScale propagate to in-flight children. The waiting
+ * items are counted in the supervisor entry's virtual time, so whatever
+ * holds or scales that entry holds or scales the delays with it.
  *
  * Registered with the animator via a supervisor so animator.cancel /
  * cancelKey / isActive all work for it.
@@ -56,7 +41,6 @@ class CompositeHandle implements AnimationHandle {
   private finished = false;
 
   constructor(
-    private timers: StaggerTimers,
     private supervisor: Supervisor,
     totalItems: number,
   ) {
@@ -68,6 +52,7 @@ class CompositeHandle implements AnimationHandle {
       else this.applyResume();
       this.applyTimeScale(timeScale);
     });
+    supervisor.setOnFrame((virtualNow) => this.fireDue(virtualNow));
   }
 
   /** Invoked when the supervisor is cancelled externally (animator.cancel /
@@ -75,9 +60,6 @@ class CompositeHandle implements AnimationHandle {
   private handleSupervisorCancel(): void {
     if (this.cancelled) return;
     this.cancelled = true;
-    for (const p of this.pending) {
-      if (p.timer != null) this.timers.clearTimer(p.timer);
-    }
     this.pending = [];
     // Snapshot children first: child.cancel() may synchronously invoke our
     // own noteChildDone path via the animator's completion listener, which
@@ -109,31 +91,23 @@ class CompositeHandle implements AnimationHandle {
 
   schedule(delayMs: number, fire: () => void): void {
     if (this.cancelled) return;
-    const entry: PendingEntry = {
-      timer: null,
-      resolvedAt: this.timers.now() + delayMs,
-      fire: () => {},
-      remainingMs: delayMs,
-      paused: false,
-    };
-    entry.fire = (): void => {
+    this.pending.push({ at: delayMs, fire });
+  }
+
+  private fireDue(virtualNow: number): void {
+    if (this.cancelled || this.pending.length === 0) return;
+    const due = this.pending.filter((p) => p.at <= virtualNow).sort((a, b) => a.at - b.at);
+    this.pending = this.pending.filter((p) => p.at > virtualNow);
+    for (const p of due) {
       if (this.cancelled) return;
-      const idx = this.pending.indexOf(entry);
-      if (idx >= 0) this.pending.splice(idx, 1);
-      fire();
-    };
-    if (this.paused_) {
-      entry.paused = true;
-    } else {
-      entry.timer = this.timers.setTimer(entry.fire, delayMs);
+      p.fire();
     }
-    this.pending.push(entry);
   }
 
   cancel(): void {
     // Route through the supervisor so the animator's id table is kept in
     // sync. The supervisor's onCancel forwards back to
-    // handleSupervisorCancel which actually tears down children + timers.
+    // handleSupervisorCancel which actually tears down children + waiting items.
     this.supervisor.cancel();
   }
 
@@ -152,29 +126,12 @@ class CompositeHandle implements AnimationHandle {
   private applyPause(): void {
     if (this.paused_) return;
     this.paused_ = true;
-    const now = this.timers.now();
-    for (const p of this.pending) {
-      if (p.timer != null) {
-        p.remainingMs = Math.max(0, p.resolvedAt - now);
-        this.timers.clearTimer(p.timer);
-        p.timer = null;
-        p.paused = true;
-      }
-    }
     for (const c of this.children) c.pause();
   }
 
   private applyResume(): void {
     if (!this.paused_) return;
     this.paused_ = false;
-    const now = this.timers.now();
-    for (const p of this.pending) {
-      if (p.paused) {
-        p.resolvedAt = now + p.remainingMs;
-        p.timer = this.timers.setTimer(p.fire, p.remainingMs);
-        p.paused = false;
-      }
-    }
     for (const c of this.children) c.resume();
   }
 
@@ -204,7 +161,6 @@ function delayFor(delay: StaggerDelay, i: number): number {
  */
 export function createStagger<TItem>(
   animator: Animator,
-  timers: StaggerTimers,
   createSupervisor: SupervisorFactory,
   watchCompletion: WatchCompletion,
   items: readonly TItem[],
@@ -214,7 +170,6 @@ export function createStagger<TItem>(
 ): AnimationHandle;
 export function createStagger<TItem>(
   animator: Animator,
-  timers: StaggerTimers,
   createSupervisor: SupervisorFactory,
   watchCompletion: WatchCompletion,
   items: readonly TItem[],
@@ -222,7 +177,6 @@ export function createStagger<TItem>(
 ): StaggerBuilder<TItem>;
 export function createStagger<TItem>(
   animator: Animator,
-  timers: StaggerTimers,
   createSupervisor: SupervisorFactory,
   watchCompletion: WatchCompletion,
   items: readonly TItem[],
@@ -230,12 +184,11 @@ export function createStagger<TItem>(
   factory?: StaggerFactory<TItem>,
   opts?: StaggerOptions,
 ): AnimationHandle | StaggerBuilder<TItem> {
-  if (factory) return runStagger(timers, createSupervisor, watchCompletion, items, delay, factory, opts);
-  return makeBuilder(animator, timers, createSupervisor, watchCompletion, items, delay);
+  if (factory) return runStagger(createSupervisor, watchCompletion, items, delay, factory, opts);
+  return makeBuilder(animator, createSupervisor, watchCompletion, items, delay);
 }
 
 function runStagger<TItem>(
-  timers: StaggerTimers,
   createSupervisor: SupervisorFactory,
   watchCompletion: WatchCompletion,
   items: readonly TItem[],
@@ -244,7 +197,7 @@ function runStagger<TItem>(
   opts?: StaggerOptions,
 ): AnimationHandle {
   const supervisor = createSupervisor({ kind: 'stagger', cancelKey: opts?.cancelKey, label: opts?.label });
-  const composite = new CompositeHandle(timers, supervisor, items.length);
+  const composite = new CompositeHandle(supervisor, items.length);
   if (items.length === 0) {
     supervisor.finish();
     return composite;
@@ -289,7 +242,6 @@ function itemId(item: unknown): string {
 
 function makeBuilder<TItem>(
   animator: Animator,
-  timers: StaggerTimers,
   createSupervisor: SupervisorFactory,
   watchCompletion: WatchCompletion,
   items: readonly TItem[],
@@ -297,9 +249,9 @@ function makeBuilder<TItem>(
 ): StaggerBuilder<TItem> {
   return {
     each: (factory, opts) =>
-      runStagger(timers, createSupervisor, watchCompletion, items, delay, factory, opts),
+      runStagger(createSupervisor, watchCompletion, items, delay, factory, opts),
     tween: <T,>(opts: StaggerTweenOptions<T, TItem>) =>
-      runStagger(timers, createSupervisor, watchCompletion, items, delay, (item, i) =>
+      runStagger(createSupervisor, watchCompletion, items, delay, (item, i) =>
         animator.tween<T>({
           from: resolvePerItem(opts.from, item, i),
           to: resolvePerItem(opts.to, item, i),
@@ -316,7 +268,7 @@ function makeBuilder<TItem>(
       poseFn: (item: TItem, index: number) => TPose,
       opts: StaggerSpringPoseOptions<TPose> = {},
     ) =>
-      runStagger(timers, createSupervisor, watchCompletion, items, delay, (item, i) =>
+      runStagger(createSupervisor, watchCompletion, items, delay, (item, i) =>
         springPose(animator, adapter, {
           id: itemId(item),
           to: poseFn(item, i),
