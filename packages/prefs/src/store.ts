@@ -1,5 +1,5 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
-import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, prefSectionLeaves, VERSION_RECORD } from './helpers';
+import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, prefSectionLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefPath, PrefValueAt } from './paths';
@@ -136,12 +136,12 @@ export function createPrefsStore<S extends PrefGroup>(
         } else {
           const branch: Record<string, unknown> = {};
           branches.add(branch);
-          cursor[part] = branch;
+          setOwnPrefValue(cursor, part, branch);
           cursor = branch;
         }
       }
       const last = parts[parts.length - 1]!;
-      if (!branches.has(cursor[last] as object)) cursor[last] = value;
+      if (!branches.has(cursor[last] as object)) setOwnPrefValue(cursor, last, value);
     }
     return tree;
   };

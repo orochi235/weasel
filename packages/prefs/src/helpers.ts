@@ -73,7 +73,7 @@ export function prefLeafAt(schema: PrefGroup | PrefSection, path: string): PrefL
 export function prefValueAtPath(values: unknown, path: string): unknown {
   let cur: unknown = values;
   for (const seg of path.split('.')) {
-    if (cur == null || typeof cur !== 'object') return undefined;
+    if (cur == null || typeof cur !== 'object' || !Object.hasOwn(cur, seg)) return undefined;
     cur = (cur as Record<string, unknown>)[seg];
   }
   return cur;
@@ -125,14 +125,21 @@ export function prefLeaves(schema: PrefGroup): Map<string, PrefLeaf> {
   return out;
 }
 
+/** Set `key` on `tree` itself. Plain assignment to `__proto__` replaces the
+ *  tree's prototype instead, and a schema key or a record name may be one. */
+export function setOwnPrefValue(tree: Record<string, unknown>, key: string, value: unknown): void {
+  Object.defineProperty(tree, key, { value, writable: true, enumerable: true, configurable: true });
+}
+
 /** Set `value` at the dotted `path` in `root` itself, creating missing branches. */
 export function assignPrefValueAtPath(root: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.');
   let cursor = root;
-  for (let i = 0; i < parts.length - 1; i++) {
-    cursor = (cursor[parts[i]!] ??= {}) as Record<string, unknown>;
+  for (const part of parts.slice(0, -1)) {
+    if (!Object.hasOwn(cursor, part) || cursor[part] == null) setOwnPrefValue(cursor, part, {});
+    cursor = cursor[part] as Record<string, unknown>;
   }
-  cursor[parts[parts.length - 1]!] = value;
+  setOwnPrefValue(cursor, parts[parts.length - 1]!, value);
 }
 
 /** Each of `schema`'s leaves that `tree` holds a value for, as a path and

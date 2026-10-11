@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ANGLE_RADIANS } from '@weasel-js/quantity';
 import {
+  assignPrefValueAtPath,
   filterPrefSubtree,
   flattenPrefValues,
   prefDisplayBounds,
   prefLeaves,
+  prefValueAtPath,
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
@@ -206,5 +208,26 @@ describe('flattenPrefValues', () => {
       ['a', 2],
       ['g.o', { x: 3 }],
     ]);
+  });
+});
+
+describe('paths through names every object inherits', () => {
+  it('reads nothing a tree does not hold itself', () => {
+    expect(prefValueAtPath({}, 'toString')).toBeUndefined();
+    expect(prefValueAtPath({ a: {} }, 'a.constructor.name')).toBeUndefined();
+    const leaf = { kind: 'boolean', name: 'On', description: '', default: true } as const;
+    const schema: PrefGroup = { name: 'T', children: { constructor: leaf, valueOf: leaf } };
+    expect(flattenPrefValues(schema, { valueOf: false })).toEqual([['valueOf', false]]);
+  });
+
+  it('assigns into the tree and nowhere else', () => {
+    const tree: Record<string, unknown> = {};
+    assignPrefValueAtPath(tree, 'constructor.probe', 1);
+    assignPrefValueAtPath(tree, '__proto__.probe', 2);
+    expect((Object as unknown as Record<string, unknown>).probe).toBeUndefined();
+    expect(({} as Record<string, unknown>).probe).toBeUndefined();
+    expect(Object.getPrototypeOf(tree)).toBe(Object.prototype);
+    expect(prefValueAtPath(tree, 'constructor.probe')).toBe(1);
+    expect(prefValueAtPath(tree, '__proto__.probe')).toBe(2);
   });
 });

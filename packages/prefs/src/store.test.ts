@@ -305,4 +305,23 @@ describe('createPrefsStore', () => {
     expect(localStorage.getItem('u.script')).toBeNull();
     await store.close();
   });
+
+  it('builds its trees from keys every object inherits without touching the originals', () => {
+    const probe = { kind: 'string', name: 'Probe', description: '', default: 'x' } as const;
+    const schema = {
+      name: 'T',
+      children: { constructor: { name: 'C', children: { probe, name: probe } } },
+    } satisfies PrefGroup;
+    const cache = createRecordCache({
+      storage: createMemoryAdapter(),
+      prefix: 'p.',
+      initial: [['__proto__.polluted', 1]],
+    });
+    const store = createPrefsStore(schema, cache);
+    expect(store.values()).toEqual({ constructor: { probe: 'x', name: 'x' } });
+    expect((Object as unknown as Record<string, unknown>).probe).toBeUndefined();
+    const stored = store.stored();
+    expect(Object.getPrototypeOf(stored)).toBe(Object.prototype);
+    expect(Object.hasOwn(stored, '__proto__')).toBe(true);
+  });
 });
