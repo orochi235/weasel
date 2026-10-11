@@ -457,36 +457,38 @@ function Level({ items, parentId, shared, path, level }: LevelProps) {
                 onFocus: () => shared.keys.onFocus(item.id),
               })}
         >
-          {shared.nested &&
-            (kids.length > 0 ? (
-              <span className={s.stop} onPointerDown={stop}>
-                <Disclosure
-                  open={open}
-                  onToggle={() => shared.toggle(item.id)}
-                  label={`${item.label} sublayers`}
-                  controls={childId}
+          <div className={s.cell} {...(ghosted ? {} : { role: 'gridcell' })}>
+            {shared.nested &&
+              (kids.length > 0 ? (
+                <span className={s.stop} onPointerDown={stop}>
+                  <Disclosure
+                    open={open}
+                    onToggle={() => shared.toggle(item.id)}
+                    label={`${item.label} sublayers`}
+                    controls={childId}
+                  />
+                </span>
+              ) : (
+                <span className={s.twistyGap} />
+              ))}
+            <Grip item={item} reorder={props.onReorder !== undefined} />
+            {props.onVisibilityChange &&
+              (item.locked ? (
+                <span className={s.check} />
+              ) : (
+                <input
+                  className={s.check}
+                  type="checkbox"
+                  checked={item.visible !== false}
+                  onPointerDown={stop}
+                  onChange={(e) => props.onVisibilityChange?.(item.id, e.target.checked)}
+                  aria-label={`Show ${item.label}`}
                 />
-              </span>
-            ) : (
-              <span className={s.twistyGap} />
-            ))}
-          <Grip item={item} reorder={props.onReorder !== undefined} />
-          {props.onVisibilityChange &&
-            (item.locked ? (
-              <span className={s.check} />
-            ) : (
-              <input
-                className={s.check}
-                type="checkbox"
-                checked={item.visible !== false}
-                onPointerDown={stop}
-                onChange={(e) => props.onVisibilityChange?.(item.id, e.target.checked)}
-                aria-label={`Show ${item.label}`}
-              />
-            ))}
-          {item.leading}
-          <span className={rows.label}>{item.title ?? item.label}</span>
-          {ghosted ? null : <Remove item={item} shared={shared} />}
+              ))}
+            {item.leading}
+            <span className={rows.label}>{item.title ?? item.label}</span>
+            {ghosted ? null : <Remove item={item} shared={shared} />}
+          </div>
         </div>
       );
     return (

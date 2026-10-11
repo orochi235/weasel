@@ -70,6 +70,11 @@
   user-select: none;
 }
 
+/* The cell a row must own. It adds no box: the row lays its content out. */
+.cell {
+  display: contents;
+}
+
 .row:focus-visible {
   outline: 2px solid var(--wzl-focus-ring);
   outline-offset: -2px;

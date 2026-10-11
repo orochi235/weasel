@@ -318,6 +318,16 @@ describe('LayerList keyboard', () => {
     expect(row('One').getAttribute('aria-level')).toBe('2');
   });
 
+  it('puts each row\'s content in a gridcell, which a row must own', () => {
+    list({ onRemove: () => {} });
+    for (const row of screen.getAllByRole('row')) {
+      const cells = Array.from(row.children).filter((c) => c.getAttribute('role') === 'gridcell');
+      expect(cells).toHaveLength(row.children.length);
+      expect(cells.length).toBeGreaterThan(0);
+    }
+    expect(screen.getByText('Alpha').closest('[role="gridcell"]')).not.toBeNull();
+  });
+
   it('walks the visible rows with the arrows, Home and End', () => {
     list({ items: TREE });
     act(() => row('Group').focus());
