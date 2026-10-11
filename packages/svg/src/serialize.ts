@@ -5,6 +5,7 @@
  * label. Gradient paints are gathered into a single `<defs>` block.
  */
 
+import { escapeAttr, escapeText } from './xmlEscape';
 import type { FontRequest, Path, Stroke, StrokeAlign } from '@weasel-js/core';
 import {
   boundsOfPath, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
@@ -308,7 +309,7 @@ function paintAttrs(
   includeOpacity = true,
 ): string[] {
   if (paint.kind === 'none') return [`${name}="none"`];
-  const out = [`${name}="${paint.kind === 'solid' ? paint.color : registry.ref(paint.paint)}"`];
+  const out = [`${name}="${paint.kind === 'solid' ? escapeAttr(paint.color) : registry.ref(paint.paint)}"`];
   if (includeOpacity) out.push(...opacityAttr(`${name}-opacity`, svgPaintOpacity(paint)));
   return out;
 }
@@ -354,7 +355,7 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
   const width = stroke.width ?? 1;
   if (!((typeof width === 'object' ? width.px : width) > 0)) return [];
   warnStrokeAlign(stroke.align, warn);
-  const attrs: string[] = [`stroke="${'color' in paint ? paint.color : registry.ref(paint)}"`];
+  const attrs: string[] = [`stroke="${'color' in paint ? escapeAttr(paint.color) : registry.ref(paint)}"`];
   attrs.push(...opacityAttr('stroke-opacity', paint.opacity));
   attrs.push(...strokeWidthAttrs(width));
   if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);
@@ -489,7 +490,7 @@ function textXml(
   // user units — the reading it already has at scale 1.
   if (style?.fontSize != null) attrs.push(`font-size="${trimNumber(resolveScreenLength(style.fontSize, 1))}"`);
   if (style?.fontFamily) attrs.push(`font-family="${escapeAttr(style.fontFamily)}"`);
-  if (style?.fontWeight != null) attrs.push(`font-weight="${String(style.fontWeight)}"`);
+  if (style?.fontWeight != null) attrs.push(`font-weight="${escapeAttr(String(style.fontWeight))}"`);
   if (style?.fontStyle && style.fontStyle !== 'normal') attrs.push(`font-style="${style.fontStyle}"`);
   if (style?.fontVariantCaps === 'small-caps') attrs.push('font-variant="small-caps"');
   const direction = style?.direction ?? 'ltr';
@@ -541,7 +542,7 @@ function textXml(
   if (node.fill === null) {
     attrs.push('fill="none"');
   } else if (node.fill) {
-    attrs.push(`fill="${'color' in node.fill ? node.fill.color : registry.ref(node.fill)}"`);
+    attrs.push(`fill="${'color' in node.fill ? escapeAttr(node.fill.color) : registry.ref(node.fill)}"`);
     attrs.push(...opacityAttr('fill-opacity', node.fill.opacity));
   }
   for (const a of coreStrokeAttrs(node.stroke, registry, warn)) attrs.push(a);
@@ -622,7 +623,7 @@ function runXml(
   if (runDecoration) attrs.push(`text-decoration="${runDecoration}"`);
   if (run.fill) {
     if ('color' in run.fill) {
-      attrs.push(`fill="${run.fill.color}"`);
+      attrs.push(`fill="${escapeAttr(run.fill.color)}"`);
     } else {
       attrs.push(`fill="${registry.ref(run.fill)}"`);
     }
@@ -649,14 +650,6 @@ function textDecorationValue(
   if (strikethrough) tokens.push('line-through');
   if (overline) tokens.push('overline');
   return tokens.length > 0 ? tokens.join(' ') : null;
-}
-
-function escapeAttr(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-}
-
-function escapeText(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function pathBounds(path: Path): { minX: number; minY: number; maxX: number; maxY: number } {

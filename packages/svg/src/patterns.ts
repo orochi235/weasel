@@ -15,6 +15,7 @@
  * gradients get.
  */
 
+import { escapeAttr } from './xmlEscape';
 import { tileGeometry, type TileShape } from '@weasel-js/core/patterns-builtin';
 import type { FillStyle, TilePatternSpec } from '@weasel-js/core';
 import { collectElementsByTag } from './elements';
@@ -68,7 +69,7 @@ export function tilePreviewSvg(spec: TilePatternSpec, background?: string): stri
   const geometry = tileGeometry(spec);
   const s = trimNumber(geometry.size);
   const bg = background
-    ? `<rect width="${s}" height="${s}" fill="${background}"/>`
+    ? `<rect width="${s}" height="${s}" fill="${escapeAttr(background)}"/>`
     : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" `
     + `viewBox="0 0 ${s} ${s}">${bg}${geometry.shapes.map(shapeXml).join('')}</svg>`;
@@ -87,7 +88,7 @@ function shapeXml(shape: TileShape): string {
         + `stroke="${shape.color}" stroke-width="${trimNumber(shape.width)}"/>`;
     case 'circle':
       return `<circle cx="${trimNumber(shape.cx)}" cy="${trimNumber(shape.cy)}" `
-        + `r="${trimNumber(shape.r)}" fill="${shape.color}"/>`;
+        + `r="${trimNumber(shape.r)}" fill="${escapeAttr(shape.color)}"/>`;
     case 'ellipse': {
       const deg = (shape.rotation * 180) / Math.PI;
       const transform = deg === 0
@@ -95,12 +96,12 @@ function shapeXml(shape: TileShape): string {
         : ` transform="rotate(${trimNumber(deg)} ${trimNumber(shape.cx)} ${trimNumber(shape.cy)})"`;
       return `<ellipse cx="${trimNumber(shape.cx)}" cy="${trimNumber(shape.cy)}" `
         + `rx="${trimNumber(shape.rx)}" ry="${trimNumber(shape.ry)}" `
-        + `fill="${shape.color}"${transform}/>`;
+        + `fill="${escapeAttr(shape.color)}"${transform}/>`;
     }
     case 'rect':
       return `<rect x="${trimNumber(shape.x)}" y="${trimNumber(shape.y)}" `
         + `width="${trimNumber(shape.width)}" height="${trimNumber(shape.height)}" `
-        + `fill="${shape.color}"/>`;
+        + `fill="${escapeAttr(shape.color)}"/>`;
     default:
       return '';
   }
@@ -147,12 +148,4 @@ function readPattern(el: Element, onWarn?: (m: string) => void): FillStyle | nul
   if (origin.x !== 0 || origin.y !== 0) paint.origin = origin;
   if (!isIdentity([m[0], m[1], m[2], m[3], 0, 0])) paint.transform = [m[0], m[1], m[2], m[3]];
   return paint;
-}
-
-function escapeAttr(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }

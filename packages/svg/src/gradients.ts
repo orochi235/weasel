@@ -13,6 +13,7 @@ import type {
 import { ownProp, ownValue } from './cascade';
 import { readProperty } from './properties';
 import { trimNumber } from './transform';
+import { escapeAttr } from './xmlEscape';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
 import { serializePathD } from './path-serializer';
@@ -474,7 +475,7 @@ function defaultMarkerXml(
   const units = size === undefined
     ? 'markerUnits="strokeWidth" markerWidth="8" markerHeight="8"'
     : `markerUnits="userSpaceOnUse" markerWidth="${trimNumber(8 * unit)}" markerHeight="${trimNumber(8 * unit)}"`
-      + ` ${WEASEL_NS_PREFIX}:key="${key}" ${WEASEL_NS_PREFIX}:size="${
+      + ` ${WEASEL_NS_PREFIX}:key="${escapeAttr(key)}" ${WEASEL_NS_PREFIX}:size="${
         typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}"`;
   const inset = writesInset(entry) ? ` ${WEASEL_NS_PREFIX}:inset="${trimNumber(entry.inset!)}"` : '';
   // `overflow="visible"` overrides the UA default of `hidden`, which would
@@ -583,5 +584,5 @@ function stopXml(s: GradStop): string {
     const alpha = parseInt(m[2], 16) / 255;
     return `<stop offset="${trimNumber(s.offset)}" stop-color="#${m[1].toLowerCase()}" stop-opacity="${trimNumber(alpha)}"/>`;
   }
-  return `<stop offset="${trimNumber(s.offset)}" stop-color="${s.color}"/>`;
+  return `<stop offset="${trimNumber(s.offset)}" stop-color="${escapeAttr(s.color)}"/>`;
 }
