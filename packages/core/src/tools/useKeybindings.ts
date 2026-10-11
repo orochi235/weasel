@@ -72,8 +72,9 @@ export function useKeybindings(
   // Built-in tools with static keys come from BUILTIN_SELECT_KEYS; tools
   // whose activation key is configurable via their ToolDef (e.g. useLassoTool)
   // are picked up dynamically from the tools registry.
+  const { disable = false } = options;
   useEffect(() => {
-    if (optionsRef.current.disable) return;
+    if (disable) return;
     if (!registry) return;
     // No tools, no tool keys: nothing to activate and nothing to return to.
     if (Object.keys(toolsRef.current.registry).length === 0) return;
@@ -91,14 +92,7 @@ export function useKeybindings(
       if (toolId in BUILTIN_SELECT_KEYS) continue;
       const binding = allTools[toolId].keybinding;
       if (!binding) continue;
-      // KeyBinding.key may be an array; the consolidated action's per-entry
-      // key spec expects a string. Take the first key in the array case —
-      // multi-key aliases are rare in practice and the action system doesn't
-      // support them yet.
-      // `KeyBinding.key` may be an array of aliases. Emit one binding per
-      // key: the old document listener matched every alias while this path
-      // only took `key[0]`, so a multi-key tool activated on all its keys
-      // through one route and only the first through the other.
+      // `KeyBinding.key` may be an array of aliases: one binding per key.
       const keys = typeof binding.key === 'string' ? [binding.key] : binding.key;
       for (const key of keys) {
         if (!key) continue;
@@ -132,6 +126,6 @@ export function useKeybindings(
     })));
 
     return () => { for (const u of unregisters) u(); };
-  }, [registry, tools, toolsRef, optionsRef]);
+  }, [registry, tools, toolsRef, optionsRef, disable]);
 }
 

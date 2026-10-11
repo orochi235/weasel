@@ -230,6 +230,25 @@ describe('useKeybindings', () => {
     expect(result.current.active).toBe('select');
   });
 
+  it('follows disable when it changes', () => {
+    const registry = {
+      select: defineTool({ id: 'select', keybinding: { key: 'v' } }),
+      pen: defineTool({ id: 'pen', keybinding: { key: 'p' } }),
+    };
+    const ids = (reg: ReturnType<typeof useActionsRegistry>) => (reg?.list() ?? []).map((a) => a.id);
+    const { result, rerender } = renderHook(({ disable }: { disable: boolean }) => {
+      const tools = useTools({ active: 'select', registry });
+      useKeybindings(tools, { disable });
+      return useActionsRegistry();
+    }, { wrapper: makeWrapper('select'), initialProps: { disable: false } });
+
+    expect(ids(result.current)).toContain('tool.activate');
+    rerender({ disable: true });
+    expect(ids(result.current)).not.toContain('tool.activate');
+    rerender({ disable: false });
+    expect(ids(result.current)).toContain('tool.activate');
+  });
+
   it('disable: true also skips tool.offhand registration', () => {
     const select = defineTool({ id: 'select' });
     const hand   = defineTool({ id: 'hand' });
