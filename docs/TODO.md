@@ -802,12 +802,11 @@ intercepting the press that drags the body.
   is allowed to read, not just how a pose is compared.
 
 - **(P2) What diagram groups still cannot do.** `DiagramData.groups` draws a box around its
-  members, and `layered` and `tree` keep them together (`cluster.ts`). Three things are left:
+  members, and `layered`, `tree`, and `force` keep them together (`cluster.ts`, `forceGroups.ts`).
+  Two things are left:
   - **Nesting.** A group is never a member of another, so a subsystem inside a system has no
     shape. The column packer would recurse: lay a group's members out as a block, then pack that
     block as one item of its parent.
-  - **`force` ignores groups.** It wants an attraction toward each group's centroid, and a
-    repulsion between boxes rather than only between nodes.
   - **The box cannot be dragged.** It is `pickable: false`, because a drag would write a pose
     its derivation overwrites on the next read. Dragging it should move its members, and that is
     a move action reading the box's `dependsOn`.
