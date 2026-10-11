@@ -47,17 +47,21 @@ function publisherOf<TPose>(overrides: PoseOverrides<TPose>): () => void {
   return publish;
 }
 
-function build<TPose>(opts: PoseTargetOptions<TPose>, onRest?: () => void): Target<TPose> | null {
-  const { overrides, descriptor } = opts;
-  const id = opts.id as NodeId;
-  let like = opts.get();
+/**
+ * `poseAxes` for the pose `get` answers, with `from` keeping the fields that are not axes as
+ * that pose has them now. Reading them once would leave them stale in every pose a canceled
+ * animation commits. Null where the pose has no axes.
+ */
+export function liveAxes<TPose>(
+  descriptor: PoseDescriptor<TPose> | undefined,
+  get: () => TPose,
+): TargetAxes<TPose> | null {
+  let like = get();
   let axes = poseAxes(descriptor, like);
   if (!axes) return null;
-  const { count } = axes;
-  // Fields the axes leave alone come from the committed pose as it is now, not as it was when
-  // the target was made, or a canceled animation would commit them stale.
+  const { count, angles } = axes;
   const current = (): TargetAxes<TPose> => {
-    const now = opts.get();
+    const now = get();
     if (now !== like) {
       const next = poseAxes(descriptor, now);
       if (next && next.count === count) axes = next;
@@ -65,12 +69,20 @@ function build<TPose>(opts: PoseTargetOptions<TPose>, onRest?: () => void): Targ
     }
     return axes!;
   };
+  return { count, angles, to: (p) => current().to(p), from: (a) => current().from(a) };
+}
+
+function build<TPose>(opts: PoseTargetOptions<TPose>, onRest?: () => void): Target<TPose> | null {
+  const { overrides } = opts;
+  const id = opts.id as NodeId;
+  const axes = liveAxes(opts.descriptor, opts.get);
+  if (!axes) return null;
   const entry: PoseOverride<TPose> = {};
   let installed = false;
   const target = createTarget<TPose>({
     get: opts.get,
     set: opts.set,
-    axes: { count, angles: axes.angles, to: (p) => current().to(p), from: (a) => current().from(a) },
+    axes,
     show(pose) {
       if (target.active) {
         entry.pose = pose;
