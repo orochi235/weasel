@@ -75,6 +75,7 @@ import { poseDescriptorOf } from '../poseDescriptorDep';
 import { isAnchorOrControl } from '@weasel-js/routing';
 import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
 import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
+import { landedDescendantOps } from '../move/landedDescendants';
 import {
   composeWorldPose,
   frameAtOrAbove,
@@ -1033,7 +1034,10 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         const { dx, dy } = scratch.currentDelta;
         let committed = false;
         const commitOps = (ops: Op[]): void => {
-          commitGestureOps(scratch, lifecycle, ops);
+          const followers = landedDescendantOps(
+            { ...scratch, roots: scratch.ids, label: lifecycle.label }, ops,
+          );
+          commitGestureOps(scratch, lifecycle, [...ops, ...followers]);
           committed = true;
         };
 

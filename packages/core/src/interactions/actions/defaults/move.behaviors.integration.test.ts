@@ -92,6 +92,26 @@ describe('moveAction behavior pipeline', () => {
     }
   });
 
+  it('carries a dragged container\'s children to where a behavior lands it', () => {
+    const { scene, box } = fixture();
+    const group = scene.add({ kind: 'container', layer: 'main', data: { color: '#ccc' }, pose: { x: 0, y: 0, width: 100, height: 100 } }) as string;
+    const child = scene.add({ kind: 'leaf', layer: 'main', parent: asNodeId(group), data: { color: '#0f0' }, pose: { x: 10, y: 10, width: 20, height: 20 } }) as string;
+    const target: SnapTarget<P> = { parentId: box, slotPose: { x: 210, y: 30, width: 100, height: 100 } };
+    const opts: BindingOpts = {
+      behaviors: [
+        snapToContainer<P>({ dwellMs: 0, isInstant: () => true, findTarget: (_id, wx) => (wx > 200 ? target : null) }) as never,
+      ],
+    };
+    const drag = { start: { x: 5, y: 5 }, current: { x: 260, y: 10 }, delta: { x: 255, y: 5 } };
+    const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [group]), opts) as OngoingHandle;
+    handle.onMove!(ctx(scene, [group], drag));
+    handle.onEnd!(ctx(scene, [group], drag), 'commit');
+    expect(scene.get(asNodeId(group))?.pose).toEqual(target.slotPose);
+    // The group landed (210, 30) from where it started, not the drag's (255, 5).
+    expect(scene.get(asNodeId(child))?.pose).toEqual({ x: 220, y: 40, width: 20, height: 20 });
+    expect(scene.get(asNodeId(child))?.parent).toBe(group);
+  });
+
   it('snapBackOrDelete aborts (no pose change) within radius', () => {
     const { scene, leaf } = fixture();
     const before = scene.get(asNodeId(leaf))!.pose;

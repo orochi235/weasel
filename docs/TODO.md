@@ -196,16 +196,6 @@ Priority tags:
   expand a container to its leaves, or to have both actions expand containers themselves. `flip`,
   `align`, and `distribute` have no descendant handling either and need the same read.
 
-- **(P2) `moveAction`: a layout drop or a behavior-claimed commit leaves a dragged container's
-  children behind.** Under absolute poses, drag a container with children into a layout container
-  (`tileGrid`), or with a behavior such as `snapToContainer` that answers `onEnd` with ops: the
-  container lands where the layout or behavior put it and each child keeps its old world pose,
-  though the preview showed the subtree moving. The reparent-on-drop branch is fixed; these two
-  return before the descendant translate in `commitMove`
-  (`packages/core/src/interactions/actions/defaults/move.ts`). The delta the children need there is
-  the dragged node's landed pose minus its start pose, not the drag delta, so the fix is a pass over
-  the committed ops rather than a call to `translateCommitOps`.
-
 - **(P3) `cloneByAltDrag` and the `CloneBehavior` contract are unreachable.** `cloneAction.start`
   ignores `opts`, so no clone behavior ever runs, and the hook that consumed `CloneBehavior` is
   gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in
