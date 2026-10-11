@@ -611,29 +611,43 @@ Core five + Crop shipped. Remaining:
 ## Scene, adapters & layout
 
 - **(P2) Pull the standalone parts of core into their own packages.** Ruled 2026-10-11: whatever
-  makes sense as a package gets extracted, whatever its size. Read from each directory's imports,
-  not from a trial build:
-  - *Under core.* `renderer/` imports only `core/gradient`, `core/strokeMarkers`, and
-    `core/markerInset` from the rest of core, while `core/paintKinds.ts` and `core/gradient.ts`
-    import back into it. `renderer/math/` goes first: `mat3` and `viewToMat3` to
-    `@weasel-js/geom`, `color` to `@weasel-js/paint`, since animation, `core/`, and the features
-    all reach into the renderer for them. `features/images` and `features/patterns` touch only
-    renderer caches and textures and go with it.
-  - *Under core.* `animation/`'s engine, timeline, and behaviors know nothing of the scene; only
-    `reflow.ts` and `rig/bindRig.ts` do. `features/simulation` needs only `useVisibleRaf`, which
-    has to leave `core/scheduling` first.
-  - *Over core.* Nothing in core imports `features/parallax`, `tiling`, or `poseRun`, so each can
-    sit on core the way `@weasel-js/kernel3d` does. `parallax` re-exports `core/viewport/parallax`,
-    which the barrel has to export directly first; `poseRun` needs a public way to publish preview
-    poses (`interactions/actions/previewOverrides.ts` is in no barrel). `minimap` can follow once
-    `canvas/MinimapCanvas.tsx` moves with it.
-  - *Not over core.* `canvas/CanvasView.tsx` is built on `features/viewports` and
-    `canvas/SceneCanvas.tsx` on `features/chrome-caps`, so both stay. `core/paintKinds.ts` loads
-    `features/meshPaint` lazily, so it goes under core with the renderer.
-  - *Held in place by an importer.* `cursor`, `longPress`, and `patterns` are imported by the
-    canvas components, `pointer` and `selection` by `WeaselProvider`, `text` by `tools/builtin`,
-    and `ingestion` by `canvas/deps` (see the drop-handler entry under Tools & gestures). Each
-    needs a seam before it can move.
+  makes sense as a package gets extracted, whatever its size. Read from the source, not from a
+  trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
+  for relative imports undercounts who uses what. In dependency order:
+  1. *Leaf math down.* `renderer/math/color.ts` and `core/gradient.ts` to `@weasel-js/paint`;
+     `mat3` and `viewToMat3` to `@weasel-js/geom`; `useVisibleRaf` to `@weasel-js/react`;
+     `poseFrame`, `pxExtent`, `mixed`, and `isPlainObject` down. Animation, text, paths, and the
+     renderer all reach into each other for these.
+  2. *Dissolve and rehome.* `features/groups`, `overlays`, `focus`, and `cursor` fold into the
+     core directories that use them. The pointer store and `SelectionContext` go to
+     `@weasel-js/routing/react`. The scene-free files in `features/text` (hit-testing, fitting,
+     range styles, `textToPath`) go to `@weasel-js/text`; path anchors and the paint-free
+     tessellate files go to geom.
+  3. *A stroke package over geom and paint.* `features/paths/tessellate/stroke.ts`,
+     `strokeToPath`, `markerSites`, and `core/strokeMarkers`, `strokeMarkerShapes`, `markerInset`.
+     The renderer, `features/paths`, and core all import these today, which is the cycle.
+  4. *Simulation and DOM text editing, under core.* `features/simulation` (root entry free of
+     React: `packages/diagram` takes `createSimulation` from `@weasel-js/core/math`), and
+     `useTextEdit` with `domRuns` and `domOffsets`, which need React and no scene.
+  5. *The renderer, under core.* It imports `core/paintKinds` and the stroke code as well as
+     `core/gradient`. Gather `paintKinds`, `fillInPoseFrame`, `features/patterns`, `images`,
+     `meshPaint`, and `text/textCommand.ts` under `renderer/` first. `paintKinds.ts` subscribes a
+     scene-memo bump and types an `Editor` slot with React; `import-shims/renderer.ts` is a star
+     export; `glRecorder` needs a testing subpath.
+  6. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
+     `useAnimator`, so it cannot sit over core. It reaches the scene through `stagger.ts`'s
+     `.springPose`, which has to be cut first. `poseHelpers.ts`, `wrappers/`,
+     `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and `rig/useRig.ts` are scene-bound
+     and stay.
+  7. *Over core, like `@weasel-js/kernel3d`.* `features/parallax` with `tiling` (the barrel has
+     to export `core/viewport/parallax` directly first); `poseRun` (needs a public way to publish
+     preview poses: `interactions/actions/previewOverrides.ts` is in no barrel); `minimap` with
+     `canvas/MinimapCanvas.tsx` (needs a public home for `accentColorOf`); the image and SVG
+     drop handlers (see the entry under Tools & gestures). Their exports leave `@weasel-js/core`.
+
+  Staying in core: `features/viewports` (`CanvasView` is built on it), `chrome-caps`
+  (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 5,
+  `selection/overlay.ts`, and the scene-bound text and path layers.
 
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
