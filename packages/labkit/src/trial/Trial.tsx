@@ -54,7 +54,6 @@ import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
-import { createEventBus, type EventBus } from '../undo/eventBus';
 import { stateOp } from '../undo/stateOp';
 import { LoupeSwitchContext } from './loupeSwitch';
 import type { LoupeBindings, UndoBindings } from './TrialChrome';
@@ -152,10 +151,6 @@ function TrialRuntime({
   const schema = useConfigSchema(instrument);
   const { config } = useResolvedConfig(schema, record.config, record.auto);
 
-  const busRef = useRef<EventBus | null>(null);
-  if (busRef.current === null) busRef.current = createEventBus();
-  const bus = busRef.current;
-
   const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({});
   const [layerOrder, setLayerOrder] = useState<string[] | null>(null);
   const [loupeOn, setLoupeOn] = useState(false);
@@ -207,19 +202,22 @@ function TrialRuntime({
   const undoEvents = useMemo(() => new Set(undoCap?.snapshotOn ?? ['state.change']), [undoCap]);
   const maxDepth = undoCap?.maxDepth ?? 50;
 
-  const snapshotIfNeeded = (event: string): void => {
-    if (!undoCap || !undoEvents.has(event)) return;
-    const current = store.getState().trials.find((w) => w.id === record.id);
-    if (!current) return;
-    let history = current.history;
-    if (!history) {
-      history = createHistory(null, { historyLimit: maxDepth });
-      setTrialHistory(record.id, history);
-    }
-    const read = () => store.getState().trials.find((w) => w.id === record.id)?.state;
-    const write = (state: unknown) => updateTrialState(record.id, state as never);
-    history.recordEntry([stateOp(structuredClone(current.state), read, write)], event);
-  };
+  const snapshotIfNeeded = useCallback(
+    (event: string): void => {
+      if (!undoCap || !undoEvents.has(event)) return;
+      const current = store.getState().trials.find((w) => w.id === record.id);
+      if (!current) return;
+      let history = current.history;
+      if (!history) {
+        history = createHistory(null, { historyLimit: maxDepth });
+        setTrialHistory(record.id, history);
+      }
+      const read = () => store.getState().trials.find((w) => w.id === record.id)?.state;
+      const write = (state: unknown) => updateTrialState(record.id, state as never);
+      history.recordEntry([stateOp(structuredClone(current.state), read, write)], event);
+    },
+    [undoCap, undoEvents, maxDepth, store, record.id, setTrialHistory, updateTrialState],
+  );
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
 
@@ -376,15 +374,12 @@ function TrialRuntime({
     setState: (next) => {
       snapshotIfNeeded('state.change');
       updateTrialState(record.id, next);
-      bus.emit('state.change');
     },
     setConfig: (path, value) => {
       const evt = `config.change:${path}`;
       snapshotIfNeeded('config.change');
       snapshotIfNeeded(evt);
       updateTrialConfig(record.id, path, value);
-      bus.emit('config.change');
-      bus.emit(evt);
     },
     trial: {
       id: record.id,
@@ -400,10 +395,7 @@ function TrialRuntime({
       pointer,
       ...(clockHandle ? { clock: clockHandle.clock } : {}),
     },
-    emit: (event) => {
-      snapshotIfNeeded(event);
-      bus.emit(event);
-    },
+    emit: snapshotIfNeeded,
     job: jobCap ? job : undefined,
   };
 
@@ -493,10 +485,7 @@ function TrialRuntime({
       snapshotIfNeeded('canvas.itemAdded');
       updateTrialState(record.id, next as never);
     },
-    emit: (evt) => {
-      snapshotIfNeeded(evt);
-      bus.emit(evt);
-    },
+    emit: snapshotIfNeeded,
   });
 
   const paletteItems: PaletteItem[] = useMemo(() => {
@@ -583,16 +572,16 @@ function TrialRuntime({
         <LayerList
           items={layerItems}
           onReorder={(move) => {
+            snapshotIfNeeded('layers.reorder');
             setLayerOrder(moveLayers(layerItems, move).map((l) => l.id));
-            bus.emit('layers.reorder');
           }}
           onVisibilityChange={(lid, visible) => {
+            snapshotIfNeeded('layers.toggle');
             setLayerVisibility((prev) => ({ ...prev, [lid]: visible }));
-            bus.emit('layers.toggle');
           }}
         />
       ) : null,
-    [instrument.layers, layerDescriptors, layerItems, bus],
+    [instrument.layers, layerDescriptors, layerItems, snapshotIfNeeded],
   );
 
   const extraChrome = useMemo<TrialContribution[]>(() => {

@@ -331,5 +331,5 @@ export * from './surface';
 export { interstellarTheme } from './theme/interstellar';
 export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';
-export type { EventBus, EventListener, UndoStack } from './undo';
-export { clearUndo, createEventBus, emptyStack, pushSnapshot, redo, undo } from './undo';
+export type { UndoStack } from './undo';
+export { clearUndo, emptyStack, pushSnapshot, redo, undo } from './undo';

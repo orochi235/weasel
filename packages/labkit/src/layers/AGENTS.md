@@ -17,8 +17,8 @@ layers: { ids: ['grid', 'plants'] }
 entry is a descriptor), keeps `visibility` and `layerOrder` in local state, and
 builds the list's items from them in the order the canvas draws. The order a
 drag produces is applied to `instrument.canvas.layers` before they reach
-`<CanvasStack>`, and each toggle and reorder emits `layers.toggle` /
-`layers.reorder` on the bus.
+`<CanvasStack>`. A toggle or a reorder is the `layers.toggle` / `layers.reorder`
+event, which an instrument can list in `undo.snapshotOn`.
 
 `layers.ids` and `canvas.layers[].id` are assumed to match. A canvas layer not
 in `layers.ids` keeps its default order and is always visible.

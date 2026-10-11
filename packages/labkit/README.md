@@ -367,7 +367,7 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/surface` | Tiled surface hooks for your own renderer |
 | `/job` | `useJob` and the job capability types |
 | `/state` | The lab store, storage adapters (re-exported from `@weasel-js/storage`), `useTrialState`, serialization helpers |
-| `/undo` | Undo stack and event bus |
+| `/undo` | Undo stack |
 | `/dragdrop` | `<Palette>`, `<DragGhost>`, `useDragDrop` |
 | `/weasel-ui`, `/weasel-canvas` | Passthroughs to `@weasel-js/ui` and `@weasel-js/core` |
 

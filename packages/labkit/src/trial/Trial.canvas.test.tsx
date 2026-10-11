@@ -228,4 +228,22 @@ describe('LabProps.instruments', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Show grid' }));
     expect([...seen]).toEqual(['glyph']);
   });
+
+  it('records an undo step on a layer toggle the instrument snapshots on', async () => {
+    const instrument = defineInstrument<St, Record<string, never>>({
+      name: 'Probe',
+      defaultConfig: () => ({}),
+      initialState: () => ({ n: 1 }),
+      render: () => null,
+      undo: { snapshotOn: ['layers.toggle'] },
+      canvas: { layers: [{ id: 'grid', draw: () => undefined }] },
+      layers: { ids: ['grid'] },
+    });
+    await renderSettled(<Lab instruments={[instrument]} defaultInstrument="Probe" />);
+    const undo = screen.getByRole('button', { name: 'Undo' });
+    expect(undo).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Show grid' }));
+    expect(undo).not.toBeDisabled();
+  });
 });

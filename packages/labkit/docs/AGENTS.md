@@ -74,7 +74,6 @@ A map of the library so agents can find what they need quickly.
 | `screenToWorld` / `worldToScreen` | `src/canvas/canvasCoords.ts` |
 | `<LayerList>` (reorder, visibility, nesting, cards) | `@weasel-js/ui` (re-exported by labkit) |
 | Trial state undo (a weasel-history `History` on `TrialRecord.history`, entries from `stateOp`) | `src/trial/Trial.tsx`, `src/undo/stateOp.ts` |
-| Synchronous event bus | `src/undo/eventBus.ts` |
 | Trial clock, its registry, the lab's frame loop, `useTrialClock` / `useClockFrame` | `src/clock/` |
 | `<Palette>` (drag source) | `src/dragdrop/Palette.tsx` |
 | `<DragGhost>` (portal-rendered floater) | `src/dragdrop/DragGhost.tsx` |

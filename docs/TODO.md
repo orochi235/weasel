@@ -1629,15 +1629,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   history, as the remote path already does for state history), remount the trial on a remote
   replacement, or merge mark by mark, which needs an answer for a mark both tabs edited.
 
-- **(P3) labkit trial: the per-trial event bus has no subscribers.** `Trial`
-  (`packages/labkit/src/trial/Trial.tsx`) creates a bus and emits to it at every state, config,
-  layer, and custom event, and nothing in `packages/labkit/src` calls `bus.on` outside
-  `undo/eventBus.test.ts`; undo snapshots are taken by the `snapshotIfNeeded` call beside each emit,
-  and the bus is not handed to the instrument or the chrome. `undo/eventBus.ts` describes itself as
-  the channel undo snapshotting listens on, which is not so. Either delete the bus and its emits, or
-  make it the one pathway (snapshotting subscribes, and it is exposed to instruments), and correct
-  the doc to match.
-
 - **(P3) `SelectionPanel`: which node properties read an absent value as their default.** A leaf
   with `absentIsDefault` draws its default where a node holds nothing, and is not Mixed beside a
   node that holds that default. Only `pose.rotation` in `defaultNodeProperties` carries the flag.
