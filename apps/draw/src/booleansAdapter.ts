@@ -71,7 +71,7 @@ export function drawBooleansAdapter(
         pose: { x: b.x, y: b.y, width: b.width, height: b.height },
         data: {
           path,
-          fill: template?.fill ?? DEFAULT_SHAPE_FILL,
+          fill: template?.fill !== undefined ? template.fill : DEFAULT_SHAPE_FILL,
           ...(template?.stroke !== undefined ? { stroke: template.stroke } : {}),
         },
         parent: scene.get(sourceId)?.parent ?? null,

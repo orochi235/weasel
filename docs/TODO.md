@@ -2528,12 +2528,6 @@ only story runner in the repo.
   reset the background to white when the file names none) and a separate Import appends; or the
   button is renamed Import and stops adopting the file's paper size and background.
 
-- **(P3) draw: a boolean of shapes with fill None comes out filled.** `createPathNode` in
-  `apps/draw/src/booleansAdapter.ts` takes `template?.fill ?? DEFAULT_SHAPE_FILL`, so an explicit
-  `null` fill (None) on the source is treated like an unset one and the union of two stroke-only
-  outlines gains the default fill. Either `null` should carry through as it does everywhere else in
-  draw's data model, or a boolean result is deliberately an area and the comment should say so.
-
 - **(P2) draw: four shortcuts shown on command-bar buttons are bound to nothing.** Hover Show grid
   (Shift+3), Release compound path (Shift+|), Record input (F9), or Preferences (Cmd+,) in
   `apps/draw/src/CommandBar.tsx`, press the key, and nothing happens: each `shortcut=` is a

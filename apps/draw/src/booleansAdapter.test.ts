@@ -61,4 +61,16 @@ describe('drawBooleansAdapter', () => {
     scene.setSelection([asNodeId('a'), asNodeId('b')]);
     expect(applyBooleanOp(adapter, 'union').kind).toBe('applied');
   });
+
+  it('keeps a fill of None on the result', () => {
+    const { scene, adapter } = setup();
+    for (const id of ['a', 'b']) {
+      scene.update(asNodeId(id), { data: { path: rectPath(0, 0, 10, 10), fill: null, stroke: '#000' } });
+    }
+    scene.setSelection([asNodeId('a'), asNodeId('b')]);
+    const result = applyBooleanOp(adapter, 'union');
+    const [id] = result.kind === 'applied' ? result.resultIds : [];
+    const node = scene.get(asNodeId(id));
+    expect(node?.kind === 'leaf' ? node.data.fill : 'missing').toBeNull();
+  });
 });
