@@ -55,20 +55,21 @@ const DEFAULT_INDICATOR_DASH: readonly number[] = [2, 3];
 function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
   const availW = Math.max(1, dims.width - padding * 2);
   const availH = Math.max(1, dims.height - padding * 2);
-  // Degenerate rect (zero / negative area): fall back to identity at the
-  // rect's top-left so we at least center *something* sensible.
-  if (rect.width <= 0 || rect.height <= 0) {
+  const hasW = rect.width > 0;
+  const hasH = rect.height > 0;
+  if (!hasW && !hasH) {
     return {
       x: rect.x - dims.width / 2,
       y: rect.y - dims.height / 2,
       scale: { x: 1, y: 1 },
     };
   }
-  const sx = availW / rect.width;
-  const sy = availH / rect.height;
-  const s = Math.min(sx, sy);
-  const worldCx = rect.x + rect.width / 2;
-  const worldCy = rect.y + rect.height / 2;
+  const s = Math.min(
+    hasW ? availW / rect.width : Infinity,
+    hasH ? availH / rect.height : Infinity,
+  );
+  const worldCx = rect.x + Math.max(0, rect.width) / 2;
+  const worldCy = rect.y + Math.max(0, rect.height) / 2;
   return {
     x: worldCx - dims.width / (2 * s),
     y: worldCy - dims.height / (2 * s),
@@ -122,11 +123,12 @@ export interface ComputeFitViewOptions {
  *
  * - `fit === "scene"`: union AABB of leaf-node poses via `descriptor`.
  *   Empty scene → {@link FALLBACK_FIT_VIEW}.
- * - `fit` is `{ kind: "world", rect }`: fit `rect`. A degenerate rect
- *   (zero or negative area) falls back to identity scale centered on the
- *   rect's top-left — we don't divide by zero.
+ * - `fit` is `{ kind: "world", rect }`: fit `rect`.
  * - `fit` is a function: called with `(scene, dims)`; its return is
  *   passed through unchanged.
+ *
+ * A rect with one zero axis (a line) is fitted along the other. One with no
+ * positive axis falls back to identity scale centered on its top-left.
  */
 export function computeFitView<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,

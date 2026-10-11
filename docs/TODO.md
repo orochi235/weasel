@@ -482,14 +482,6 @@ have shipped. What remains:
   magnitude, the view keeps the sign and offsets its origin), which changes `renderSceneToPixels`'s
   contract, or keep the limit and say so in both docs.
 
-- **(P2) Minimap fit: a rect with one zero axis gives up instead of fitting the other axis.** A
-  scene whose only leaf is a horizontal line 5000 long, or whose leaves share one y, takes
-  `fitRectInto`'s degenerate branch in `packages/core/src/canvas/minimapMath.ts`: scale 1, centered
-  on the rect's top-left, so the minimap shows the left end of the line. Fitting the positive axis
-  alone would show the whole line. Two tests in `minimapMath.test.ts` pin the current fallback
-  ("zero-width rect falls back to identity scale"), so this is a choice to make, not an oversight to
-  patch.
-
 - **(P3) Minimap indicator: two builders for one rect.** `computeIndicatorCommand`
   (`packages/core/src/canvas/minimapMath.ts`) and `createIndicatorLayer`
   (`packages/core/src/features/minimap/layers.ts`) each build the main camera's visible rect with

@@ -187,30 +187,45 @@ describe('computeFitView — fit={kind:"world", rect}', () => {
     expect(view.scale.y).toBeCloseTo(184 / 100, 6);
   });
 
-  it('zero-width rect falls back to identity scale (no divide-by-zero)', () => {
+  it('zero-width rect fits its height and centers on the line', () => {
     const scene = makeScene();
+    const dims = { width: 200, height: 200 };
     const view = computeFitView(
       scene,
-      { width: 200, height: 200 },
-      { kind: 'world', rect: { x: 5, y: 5, width: 0, height: 100 } },
+      dims,
+      { kind: 'world', rect: { x: 5, y: 5, width: 0, height: 400 } },
       identityPoseBounds,
     );
-    expect(view.scale.x).toBe(1);
-    expect(view.scale.y).toBe(1);
-    expect(Number.isFinite(view.x)).toBe(true);
-    expect(Number.isFinite(view.y)).toBe(true);
+    expect(view.scale.x).toBeCloseTo(184 / 400, 6);
+    expect(view.scale.y).toBeCloseTo(184 / 400, 6);
+    expect(view.x + dims.width / (2 * view.scale.x)).toBeCloseTo(5, 6);
+    expect(view.y + dims.height / (2 * view.scale.y)).toBeCloseTo(205, 6);
   });
 
-  it('zero-height rect falls back to identity scale (no divide-by-zero)', () => {
+  it('zero-height rect fits its width and centers on the line', () => {
+    const scene = makeScene();
+    const dims = { width: 200, height: 200 };
+    const view = computeFitView(
+      scene,
+      dims,
+      { kind: 'world', rect: { x: 0, y: 5, width: 5000, height: 0 } },
+      identityPoseBounds,
+    );
+    expect(view.scale.x).toBeCloseTo(184 / 5000, 6);
+    expect(view.scale.y).toBeCloseTo(184 / 5000, 6);
+    expect(view.x + dims.width / (2 * view.scale.x)).toBeCloseTo(2500, 6);
+    expect(view.y + dims.height / (2 * view.scale.y)).toBeCloseTo(5, 6);
+  });
+
+  it('a point rect falls back to identity scale', () => {
     const scene = makeScene();
     const view = computeFitView(
       scene,
       { width: 200, height: 200 },
-      { kind: 'world', rect: { x: 5, y: 5, width: 100, height: 0 } },
+      { kind: 'world', rect: { x: 5, y: 5, width: 0, height: 0 } },
       identityPoseBounds,
     );
-    expect(view.scale.x).toBe(1);
-    expect(view.scale.y).toBe(1);
+    expect(view).toEqual({ x: -95, y: -95, scale: { x: 1, y: 1 } });
   });
 
   it('custom padding shrinks the fit ratio', () => {
