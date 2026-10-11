@@ -156,10 +156,6 @@
     "lines": 621,
     "longestFunction": 194
   },
-  "packages/core/src/interactions/actions/move/action.ts": {
-    "lines": 1426,
-    "longestFunction": 528
-  },
   "packages/core/src/interactions/actions/defaults/resize.ts": {
     "lines": 698,
     "longestFunction": 355
@@ -172,6 +168,10 @@
   },
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 716
+  },
+  "packages/core/src/interactions/actions/move/action.ts": {
+    "lines": 1411,
+    "longestFunction": 528
   },
   "packages/core/src/renderer/WeaselRenderer.ts": {
     "lines": 745

@@ -44,7 +44,8 @@ import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/scr
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 import { resolveParams, DRAG_THRESHOLD_PX, pastDragThreshold } from '@weasel-js/routing';
-import { definesFrame, documentPose, effectivePose } from 'core/scene/effectivePose';
+import { documentPose, effectivePose } from 'core/scene/effectivePose';
+import { scenePoseAdapter } from 'features/groups/scenePoseAdapter';
 import type { Scene, NodeId } from 'core/scene/types';
 import { syncPreviewOverrides, dropPreviewOverrides } from '../previewOverrides';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
@@ -531,22 +532,6 @@ function unreleasedIds(scratch: MoveScratch, released: Set<NodeId>): NodeId[] {
  *  `'top'` semantics when the hit is itself a container or when the hit
  *  and moved node share no parent). */
 export type ReparentOnDrop = 'off' | 'top' | 'above';
-
-/** Build a `PoseAdapter` over a `Scene` for `composePose` helpers.
- *  `getParent` returns the live parent at call time so mid-batch
- *  parent updates compose correctly. */
-function scenePoseAdapter(
-  scene: Scene<unknown, string, unknown>,
-): PoseAdapter<unknown> {
-  return {
-    getPose: (id) => documentPose(scene, scene.get(id as NodeId)!),
-    getParent: (id) => scene.get(id as NodeId)?.parent ?? null,
-    definesFrame: (id) => {
-      const node = scene.get(id as NodeId);
-      return node === undefined || definesFrame(node);
-    },
-  };
-}
 
 /** `adapter`, except that an id caught mid-glide answers with the pose it was
  *  grabbed at — where the drag measures it from. */
