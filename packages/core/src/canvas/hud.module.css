@@ -3,7 +3,7 @@
    numeric face, on a child so `.hud`'s own font cannot override it. */
 .hud {
   position: fixed;
-  z-index: 10000;
+  z-index: 900;
   background: rgba(0, 0, 0, 0.7);
   color: #e8e8e8;
   font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
