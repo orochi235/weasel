@@ -398,6 +398,11 @@ export function renderBuiltin(
       );
     case 'color':
       return <PropertyControl {...field} name={ariaLabel} />;
+    default: {
+      // A control kind with no arm is a compile error here, not a cell that silently drops out of its row.
+      const _exhaustive: never = field;
+      return <span className={s.unrenderable}>({(_exhaustive as { kind: string }).kind}: no renderer)</span>;
+    }
   }
 }
 
