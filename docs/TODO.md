@@ -1813,14 +1813,6 @@ only story runner in the repo.
   `redrawOn` source) to a custom layer's owner without the demo reaching for the canvas ref in three
   places; a `useFrameUniforms(ref)` helper on the shader layer would absorb it.
 
-- **(P3) GesturesDemo: the demo hand-writes the pointer-to-controller glue the gesture hooks need.**
-  `apps/site/demos/GesturesDemo.tsx` feeds `useDragGesture` / `useDragRect` / `useDragRadial` from
-  raw `onPointerDown/Move/Up` with manual `setPointerCapture`, and its `ptOf` turns a `PointerEvent`
-  into the `{ clientX, clientY, worldX, worldY }` the controllers take. The blurb says the bypass is
-  the point, so the raw events stay, but the kit should ship that conversion (a `pointOf(event,
-  element, view?)` beside the hooks) and the demo's modifier footer should read `useKeyState`
-  instead of its own `window` key listener.
-
 ---
 
 ## Backends (WebGL future)

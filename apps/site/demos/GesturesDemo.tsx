@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  dragPointOf,
   useDragGesture,
   useDragRect,
   useDragRadial,
   useHandleDrag,
   useDragHandle,
   useDropZone,
+  useKeyModifiers,
   startThresholdDrag,
 } from '@weasel-js/core';
-import type { ModifierState, DragGesturePoint } from '@weasel-js/core';
+import type { ModifierState } from '@weasel-js/core';
 import num from '@weasel-js/theme/numeric.module.css';
 
 /**
@@ -56,7 +58,7 @@ export function GesturesDemo() {
   const [mode, setMode] = useState<ModeId>('drag');
   const modeRef = useRef<ModeId>('drag');
   const [readout, setReadout] = useState(HINTS.drag);
-  const [mods, setMods] = useState<ModifierState>({ alt: false, shift: false, meta: false, ctrl: false });
+  const mods = useKeyModifiers();
 
   // Overlay state lives in refs so draw() reads it without depending on the
   // controller instances (which change identity each render).
@@ -192,10 +194,6 @@ export function GesturesDemo() {
   const modsOf = (e: React.PointerEvent): ModifierState => ({
     alt: e.altKey, shift: e.shiftKey, meta: e.metaKey, ctrl: e.ctrlKey,
   });
-  const ptOf = (e: React.PointerEvent): DragGesturePoint => {
-    const r = canvasRef.current!.getBoundingClientRect();
-    return { clientX: e.clientX, clientY: e.clientY, worldX: e.clientX - r.left, worldY: e.clientY - r.top };
-  };
 
   // ── controllers (drag / rect / radial / click) ─────────────────────────────
   const drag = useDragGesture({
@@ -286,9 +284,8 @@ export function GesturesDemo() {
 
   // ── pointer routing on the canvas ───────────────────────────────────────────
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    setMods(modsOf(e));
     const m = modeRef.current;
-    const p = ptOf(e);
+    const p = dragPointOf(e, e.currentTarget);
     if (m === 'drag') { e.currentTarget.setPointerCapture(e.pointerId); drag.start(p, modsOf(e)); }
     else if (m === 'click') { e.currentTarget.setPointerCapture(e.pointerId); click.start(p, modsOf(e)); }
     else if (m === 'rect') { e.currentTarget.setPointerCapture(e.pointerId); rect.start(p.worldX, p.worldY, modsOf(e)); }
@@ -314,10 +311,9 @@ export function GesturesDemo() {
     }
   };
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    setMods(modsOf(e));
     if (!(e.buttons & 1)) return;
     const m = modeRef.current;
-    const p = ptOf(e);
+    const p = dragPointOf(e, e.currentTarget);
     if (m === 'drag') drag.move(p, modsOf(e));
     else if (m === 'click') click.move(p, modsOf(e));
     else if (m === 'rect') rect.move(p.worldX, p.worldY, modsOf(e));
@@ -339,14 +335,7 @@ export function GesturesDemo() {
     requestAnimationFrame(draw);
   };
 
-  // Initial clear + live modifier readout (key events, not just pointer).
   useEffect(() => { draw(); }, [draw]);
-  useEffect(() => {
-    const upd = (e: KeyboardEvent) => setMods({ alt: e.altKey, shift: e.shiftKey, meta: e.metaKey, ctrl: e.ctrlKey });
-    window.addEventListener('keydown', upd);
-    window.addEventListener('keyup', upd);
-    return () => { window.removeEventListener('keydown', upd); window.removeEventListener('keyup', upd); };
-  }, []);
 
   return (
     <div className="ckd-gestures">

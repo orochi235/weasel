@@ -122,6 +122,7 @@ export type { KeyBinding } from '@weasel-js/routing';
 export { createKeyState } from './input/keyState';
 export type { KeyState, KeyStateAttachOptions, KeyModifiers } from './input/keyState';
 export { useKeyState } from './input/useKeyState';
+export { useKeyModifiers } from './input/useKeyModifiers';
 export type { UseKeyStateOptions } from './input/useKeyState';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
@@ -1129,7 +1130,7 @@ export type {
   DragRectPoint,
   DragRectBounds,
 } from './interactions/gestures/dragRect';
-export { useDragGesture } from './interactions/gestures/dragGesture';
+export { useDragGesture, dragPointOf } from './interactions/gestures/dragGesture';
 export type {
   UseDragGestureOptions,
   DragGestureController,

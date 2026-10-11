@@ -41,6 +41,8 @@ export interface KeyState {
   take(code: string | readonly string[]): boolean;
   /** Every code down. The set is live — copy it to keep it. */
   codes(): ReadonlySet<string>;
+  /** The modifiers held. The same object until one changes, so it serves as
+   *  a `useSyncExternalStore` snapshot. */
   modifiers(): KeyModifiers;
   /** Called on every change of what is down. Returns the unsubscribe. */
   subscribe(listener: () => void): () => void;
@@ -75,6 +77,7 @@ export function createKeyState(): KeyState {
   const codeSet = new Set<string>();
   const presses = new Set<string>();
   const mods: KeyModifiers = { shift: false, ctrl: false, alt: false, meta: false };
+  let held: KeyModifiers = { ...mods };
   const listeners = new Set<() => void>();
 
   const notify = () => {
@@ -123,7 +126,12 @@ export function createKeyState(): KeyState {
       return hit;
     },
     codes: () => codeSet,
-    modifiers: () => ({ ...mods }),
+    modifiers: () => {
+      if (held.shift !== mods.shift || held.ctrl !== mods.ctrl || held.alt !== mods.alt || held.meta !== mods.meta) {
+        held = { ...mods };
+      }
+      return held;
+    },
     subscribe: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
