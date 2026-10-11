@@ -105,6 +105,15 @@ export function useSelectedRow(
       const path = pathAt(e);
       held.current = null;
       pressed.current = path;
+      // A press that becomes a drag ends with no click, and its pointer may come up outside the form.
+      const doc = e.currentTarget.ownerDocument;
+      const release = (): void => {
+        pressed.current = null;
+        doc.removeEventListener('pointerup', release, true);
+        doc.removeEventListener('pointercancel', release, true);
+      };
+      doc.addEventListener('pointerup', release, true);
+      doc.addEventListener('pointercancel', release, true);
       if (path === null) return;
       // With Alt as well the press is the start of an alias drag, not a toggle.
       if ((e.metaKey || e.ctrlKey) && !e.altKey) report(path, true);

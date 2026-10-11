@@ -105,4 +105,23 @@ describe('onSelect', () => {
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Preferences' }));
     expect(onSelect).toHaveBeenLastCalledWith('', { toggle: false });
   });
+
+  it('reports focus into a row whose last press ended without a click', () => {
+    const onSelect = vi.fn();
+    render(<PrefsForm schema={SCHEMA} onChange={() => {}} onSelect={onSelect} />);
+    // A press that becomes a drag: the pointer comes up somewhere else and no click follows.
+    fireEvent.pointerDown(screen.getByText('Show grid'));
+    fireEvent.pointerUp(document.body);
+    onSelect.mockClear();
+    fireEvent.focus(screen.getByRole('checkbox', { name: 'Show grid' }));
+    expect(onSelect).toHaveBeenCalledWith('canvas.showGrid', { toggle: false });
+  });
+
+  it('does not report the focus a press causes as a second pick', () => {
+    const onSelect = vi.fn();
+    render(<PrefsForm schema={SCHEMA} onChange={() => {}} onSelect={onSelect} />);
+    fireEvent.pointerDown(screen.getByText('Show grid'));
+    fireEvent.focus(screen.getByRole('checkbox', { name: 'Show grid' }));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
 });
