@@ -1,7 +1,6 @@
 import type { Action } from './action';
 import type { BoundGesture } from './binding';
 import { resolveParams, type InvocationCtx, type BindingOpts } from './invoker';
-import type { ActiveToolContextValue } from './activeToolContext';
 import type { HotkeyTrigger } from '../../contributions/types';
 import type { KeyHeldSpec, ModSpec } from '@weasel-js/gestures';
 
@@ -65,7 +64,7 @@ export function makeToolOffhandAction(bindings: BoundGesture[]): Action {
     invoker: {
       timing: 'ongoing',
       start: (ctx: InvocationCtx, opts?: BindingOpts) => {
-        const activeTool = ctx.deps.activeTool as ActiveToolContextValue | undefined;
+        const activeTool = ctx.deps.activeTool;
         const toolId = resolveParams(opts?.params)?.toolId as string | undefined;
         if (!activeTool || !toolId) return {};
         activeTool.pushHotkey(toolId);
@@ -75,5 +74,5 @@ export function makeToolOffhandAction(bindings: BoundGesture[]): Action {
       },
     },
     requires: ['activeTool'],
-  } as Action & { requires: string[] };
+  };
 }

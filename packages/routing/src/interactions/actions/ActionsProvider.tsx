@@ -38,7 +38,7 @@ function depsFor(a: Action, r: DepRegistry | null): Record<string, unknown> {
     scene: r.get('scene' as DepName),
     history: r.get('history' as DepName),
     view: r.get('view' as DepName),
-    activeTool: r.get('activeTool' as DepName),
+    activeTool: r.get('activeTool'),
     booleansAdapter: r.get('booleansAdapter' as DepName),
   };
 }

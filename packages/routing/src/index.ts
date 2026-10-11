@@ -15,15 +15,18 @@ export type {
 } from './vocabulary';
 
 // ─── dependency schema ────────────────────────────────────────────────────
+import type { ActiveToolContextValue } from './interactions/actions/activeToolContext';
+
 /**
  * The dependency schema — the map of dep name → value type that
  * `Action.requires`, `DepRegistry.register`/`get` and `useDepSource` are all
  * keyed on.
  *
- * It is declared **empty** here on purpose. Routing knows that an action names
- * its dependencies and that the registry resolves them at invocation time; it
- * does not know what a selection, a scene or a viewport is. Whoever supplies
- * those merges them in:
+ * It declares one entry, `activeTool`, because the value and the action that
+ * requires it (`tool.offhand`) are both routing's. Routing knows that an
+ * action names its dependencies and that the registry resolves them at
+ * invocation time; it does not know what a selection, a scene, or a viewport
+ * is. Whoever supplies those merges them in:
  *
  * ```ts
  * declare module '@weasel-js/routing' {
@@ -31,7 +34,7 @@ export type {
  * }
  * ```
  *
- * `@weasel-js/core` merges the kit's own 24 deps this way and re-exports
+ * `@weasel-js/core` merges the kit's own deps this way and re-exports
  * `DepSchema`, so a consumer adds its own against `'@weasel-js/core'` and
  * never has to know this module exists. The merge carries through the
  * re-export in both directions — `scripts/smoke-consumer-bundle.mjs` asserts
@@ -39,8 +42,10 @@ export type {
  * cross-module augmentation stops merging when `rollup-plugin-dts` flattens
  * both files into one chunk.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface DepSchema {}
+export interface DepSchema {
+  /** Currently active tool id + hotkey-hold stack. */
+  activeTool: ActiveToolContextValue;
+}
 
 /** Every dep name declared by anything that has merged into {@link DepSchema}. */
 export type DepName = keyof DepSchema;

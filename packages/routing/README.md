@@ -21,11 +21,12 @@ scene graph, the renderer and the concrete dependency interfaces all live in
 
 ## The dependency schema
 
-`DepSchema` is declared here as an empty interface. Everything that names a
-dependency — `Action.requires`, `DepRegistry.get`, `useDepSource` — is keyed on
-`keyof DepSchema`, so the set of legal names is whatever has been merged into
-it. `@weasel-js/core` merges the kit's own 24 deps; a consumer adds its own the
-same way:
+`DepSchema` is declared here with one entry, `activeTool`, the dep routing's own
+`tool.offhand` action requires. Everything that names a dependency —
+`Action.requires`, `DepRegistry.get`, `useDepSource` — is keyed on
+`keyof DepSchema`, so the set of legal names is that entry plus whatever has
+been merged in. `@weasel-js/core` merges the kit's own deps; a consumer adds its
+own the same way:
 
 ```ts
 declare module '@weasel-js/core' {
