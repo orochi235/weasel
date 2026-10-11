@@ -58,6 +58,26 @@ describe('WeaselRenderer per-frame GL state', () => {
     expect(disabled).toContain(recorder.gl.DEPTH_TEST);
     expect(disabled).toContain(recorder.gl.CULL_FACE);
   });
+
+  it('restores the color mask, the bound VAO, and the unpack flip before clearing', () => {
+    const recorder = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: recorder.gl, width: 100, height: 100, dpr: 1 });
+    r.render([]);
+    recorder.reset();
+    r.render([]);
+
+    const clearAt = recorder.calls.findIndex((c) => c.name === 'clear');
+    expect(clearAt).toBeGreaterThan(-1);
+    const before = recorder.calls.slice(0, clearAt);
+    expect(before).toContainEqual(
+      expect.objectContaining({ name: 'colorMask', args: [true, true, true, true] }),
+    );
+    expect(before).toContainEqual(expect.objectContaining({ name: 'bindVertexArray', args: [null] }));
+    expect(recorder.gl.UNPACK_FLIP_Y_WEBGL).toBe(0x9240);
+    expect(before).toContainEqual(
+      expect.objectContaining({ name: 'pixelStorei', args: [0x9240, false] }),
+    );
+  });
 });
 
 describe('WeaselRenderer.setTarget', () => {

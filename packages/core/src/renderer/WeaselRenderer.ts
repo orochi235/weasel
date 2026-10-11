@@ -425,7 +425,8 @@ export class WeaselRenderer {
     return program;
   }
 
-  /** The blend, depth, cull, and clear-color state every frame assumes.
+  /** The blend, depth, cull, clear-color, color-mask, VAO, and unpack-flip
+   *  state every frame assumes.
    *  Applied per `render()` rather than once at construction because a
    *  co-tenant sharing this context moves all of it between our frames. */
   private applyGlState(): void {
@@ -435,6 +436,9 @@ export class WeaselRenderer {
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.CULL_FACE);
     gl.clearColor(0, 0, 0, 0);
+    gl.colorMask(true, true, true, true);
+    gl.bindVertexArray(null);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
   }
 
   /** Viewport and scissor for this frame. Re-applied inside `render()` because

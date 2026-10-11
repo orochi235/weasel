@@ -53,6 +53,7 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   BLEND: 0x0BE2,
   STENCIL_TEST: 0x0B90,
   CULL_FACE: 0x0B44,
+  UNPACK_FLIP_Y_WEBGL: 0x9240,
   SCISSOR_TEST: 0x0C11,
   MAX_TEXTURE_SIZE: 0x0D33,
   // Blend factors
