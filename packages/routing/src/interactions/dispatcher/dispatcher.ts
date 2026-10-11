@@ -361,9 +361,13 @@ function sameSpecificity(a: GestureSpec, b: GestureSpec): boolean {
  *    calls the handle's `onMove`. Safe to call many times.
  *  - `end(reason)` calls `onEnd(ctx, reason)` once and removes the handle
  *    from the in-flight map. Idempotent — further calls are no-ops.
+ *  - `active` is false once the handle has ended, whether through `end` or
+ *    by the dispatcher (`cancelAll`, or a later `beginUiOngoing` for the same
+ *    action). `update` and `end` do nothing from then on.
  */
 export interface UiOngoingControl {
   readonly gestureId: string;
+  readonly active: boolean;
   update(params?: Record<string, unknown>): void;
   end(reason: 'commit' | 'cancel'): void;
 }
@@ -1641,6 +1645,7 @@ export function createDispatcher(opts?: {
     const live = (): boolean => !ended && inFlightHandles.get(gestureId) === handle;
     return {
       gestureId,
+      get active() { return live(); },
       update(nextParams) {
         if (!live()) return;
         if (!handle.onMove) return;

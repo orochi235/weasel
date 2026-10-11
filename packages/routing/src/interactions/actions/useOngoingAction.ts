@@ -15,6 +15,10 @@ import { useLatest } from '@weasel-js/react';
  *   on its own — a click on a swatch, a switch of paint kind.
  * - `cancel()` ends an open edit without keeping it.
  *
+ * An edit the dispatcher ended first — a tool switch, Escape, another control
+ * committing the same action — counts as not open: the next `input` opens a
+ * new one.
+ *
  * All three are no-ops when no action is reachable, so a control renders the
  * same with or without a canvas in scope.
  */
@@ -43,16 +47,16 @@ export function useOngoingAction(actionId: string): OngoingAction {
       ctrlRef.current = null;
       ctrl?.end(reason);
     };
+    /** Move the open edit to `params`, or open one there: the dispatcher may
+     *  have ended the one this control held. */
+    const drive = (params: Record<string, unknown>): void => {
+      if (ctrlRef.current?.active) ctrlRef.current.update(params);
+      else ctrlRef.current = regRef.current?.begin(idRef.current, params) ?? null;
+    };
     return {
-      input(params) {
-        if (ctrlRef.current) ctrlRef.current.update(params);
-        else ctrlRef.current = regRef.current?.begin(idRef.current, params) ?? null;
-      },
+      input: drive,
       commit(params) {
-        if (params !== undefined) {
-          if (ctrlRef.current) ctrlRef.current.update(params);
-          else ctrlRef.current = regRef.current?.begin(idRef.current, params) ?? null;
-        }
+        if (params !== undefined) drive(params);
         end('commit');
       },
       cancel() {

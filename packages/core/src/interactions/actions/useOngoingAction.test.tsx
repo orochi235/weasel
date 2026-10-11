@@ -45,7 +45,7 @@ function setup(ids: string[], initialId = ids[0]) {
   act(() => { for (const id of ids) reg.register(recording(id, calls[id])); });
   const d = createDispatcher({ getAction: (id) => reg.list().find((a) => a.id === id) });
   act(() => { reg.setDispatcher(d); });
-  return { hook, calls };
+  return { hook, calls, dispatcher: d };
 }
 
 describe('useOngoingAction', () => {
@@ -83,6 +83,28 @@ describe('useOngoingAction', () => {
     act(() => { hook.result.current.edit.cancel(); });
     expect(calls.paint.start).toEqual([]);
     expect(calls.paint.end).toEqual([]);
+  });
+
+  it('opens a new edit on input after the dispatcher canceled the open one', () => {
+    const { hook, calls, dispatcher } = setup(['paint']);
+    act(() => { hook.result.current.edit.input({ color: '#f00' }); });
+    act(() => { dispatcher.cancelAll('cancel'); });
+    expect(calls.paint.end).toEqual(['cancel']);
+    act(() => { hook.result.current.edit.input({ color: '#0f0' }); });
+    act(() => { hook.result.current.edit.input({ color: '#00f' }); });
+    expect(calls.paint.start).toEqual([{ color: '#f00' }, { color: '#0f0' }]);
+    expect(calls.paint.move).toEqual([{ color: '#00f' }]);
+    act(() => { hook.result.current.edit.commit(); });
+    expect(calls.paint.end).toEqual(['cancel', 'commit']);
+  });
+
+  it('runs a commit with params as a whole edit after the dispatcher canceled the open one', () => {
+    const { hook, calls, dispatcher } = setup(['paint']);
+    act(() => { hook.result.current.edit.input({ color: '#f00' }); });
+    act(() => { dispatcher.cancelAll('cancel'); });
+    act(() => { hook.result.current.edit.commit({ color: '#0f0' }); });
+    expect(calls.paint.start).toEqual([{ color: '#f00' }, { color: '#0f0' }]);
+    expect(calls.paint.end).toEqual(['cancel', 'commit']);
   });
 
   it('cancels an open edit', () => {

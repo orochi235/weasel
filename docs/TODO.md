@@ -337,16 +337,6 @@ Priority tags:
   function from routing (order, capability gate, view filter) for the dispatcher and `overlays()`
   both, delete `scopedBindings()` or make it that function, and correct the taxonomy paragraph.
 
-- **(P3) `useOngoingAction`: a control ended by the dispatcher keeps swallowing input.**
-  `packages/routing/src/interactions/actions/useOngoingAction.ts` begins a UI-driven handle on the
-  first `input()` and holds its control until `commit()` or `cancel()`. If the dispatcher ends that
-  handle first (a second `useOngoingAction` for the same action commits, which auto-commits the
-  prior handle in `beginUiOngoing`; or a tool switch or Escape calls `cancelAll`), every later
-  `input()` reaches `update`, which returns early on a dead control, and is dropped until the caller
-  commits. A color picker that scrubs with `input()` and commits on close goes inert mid-edit.
-  `UiOngoingControl` exposes no liveness; add `active` to it and have `input`/`commit` begin afresh
-  when it is false.
-
 - **(P3) Painted cursors do not survive the hover-cursor pump.** Two latent cases, since no kit tool
   or action uses a painted cursor yet. An action declaring `activeCursor: { glyph, worldRadius }`:
   `inFlightCursor()` in `packages/routing/src/interactions/dispatcher/dispatcher.ts` returns
