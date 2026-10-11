@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { pick, type AxisDefs } from '../axes';
 import type { ThemeDefinition } from '../definition';
-import { bake } from './bake';
+import { tokenAt } from '../chainTokens';
+import { bake, bakeChain } from './bake';
 
 const P: ThemeDefinition = {
   name: 'p',
@@ -99,14 +100,21 @@ describe('bake', () => {
     const parent: ThemeDefinition = { name: 'p1', axes: twoModes, semantics: { gap: { by: 'mode', dark: dim('4'), light: dim('5') } } };
     const lookup = (n: string) => ({ p1: parent })[n];
 
-    it('keeps a token the parent has no value for at the new value, even when it equals the parent default', () => {
-      const child: ThemeDefinition = {
-        name: 'c2',
-        extends: 'p1',
-        axes: threeModes,
-        semantics: { gap: { by: 'mode', dark: dim('4'), light: dim('5'), hc: dim('4') } },
-      };
-      expect(pick(bake(child, lookup).tokens.gap, { mode: 'hc' })).toEqual({ ok: true, value: { type: 'dimension', value: '4' } });
+    const withHc = (hc: string): ThemeDefinition => ({
+      name: 'c2',
+      extends: 'p1',
+      axes: threeModes,
+      semantics: { gap: { by: 'mode', dark: dim('4'), light: dim('5'), hc: dim(hc) } },
+    });
+
+    it('keeps a token whose value at the new axis value differs from the parent default', () => {
+      expect(pick(bake(withHc('6'), lookup).tokens.gap, { mode: 'hc' })).toEqual({ ok: true, value: { type: 'dimension', value: '6' } });
+    });
+
+    it('drops a token that equals the parent default at the new value, which the parent supplies there', () => {
+      const chain = bakeChain(withHc('4'), lookup);
+      expect(chain[1].tokens).toEqual({});
+      expect(tokenAt(chain, 'gap', { mode: 'hc' })).toEqual({ type: 'dimension', value: '4' });
     });
 
     it('bakes to no tokens when it overrides nothing, leaving the new value to fall through', () => {

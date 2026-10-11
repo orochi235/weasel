@@ -1,6 +1,6 @@
-import { fullSelection, mergeAxes, pickAll, type AxisDefs, type Selection } from './axes.ts';
+import { fullSelection, mergeAxes, type AxisDefs, type Selection } from './axes.ts';
+import { tokensAt } from './chainTokens.ts';
 import { resolveTokens } from './dtcg/resolve.ts';
-import type { FlatTokens } from './dtcg/types.ts';
 import type { TokenName } from './generated/themes.ts';
 import type { Theme } from './theme.ts';
 
@@ -23,15 +23,14 @@ export function themeAxes(theme: Theme): AxisDefs {
 /**
  * Merge the extends chain at a selection, resolve every alias, and key the
  * result by CSS custom-property name. A missing or unknown axis value takes the
- * axis default.
+ * axis default, and a theme in the chain reads a value it never declared at its
+ * own default for that axis.
  *
  * Pure — no DOM. An unresolvable reference throws rather than falling back.
  */
 export function resolveTheme(theme: Theme, selection: Selection = {}): ResolvedTheme {
   const sel = fullSelection(themeAxes(theme), selection);
-  let merged: FlatTokens = {};
-  for (const t of themeChain(theme)) merged = { ...merged, ...pickAll(t.tokens, sel) };
   const out: Record<string, string> = {};
-  for (const [name, value] of Object.entries(resolveTokens(merged))) out[`--wzl-${name}`] = value;
+  for (const [name, value] of Object.entries(resolveTokens(tokensAt(themeChain(theme), sel)))) out[`--wzl-${name}`] = value;
   return out as ResolvedTheme;
 }

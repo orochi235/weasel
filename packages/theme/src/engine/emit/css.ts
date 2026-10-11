@@ -1,4 +1,5 @@
-import { enumerateSelections, fullSelection, pick, pickAll, type AxisDefs, type Selection } from '../../axes.ts';
+import { enumerateSelections, fullSelection, pickAll, type AxisDefs, type Selection } from '../../axes.ts';
+import { tokenAt } from '../../chainTokens.ts';
 import { resolveTokens } from '../../dtcg/resolve.ts';
 import type { RawToken } from '../../dtcg/types.ts';
 import type { BakedTheme } from '../bake.ts';
@@ -72,23 +73,18 @@ function combineAxes(own: AxisDefs, other: AxisDefs): AxisDefs {
 class Resolved {
   readonly axes: AxisDefs;
   readonly names: readonly string[];
+  /** Root first. */
   private readonly chain: readonly BakedTheme[];
   private readonly memo = new Map<string, Map<string, string>>();
 
   constructor(axes: AxisDefs, chain: readonly BakedTheme[]) {
     this.axes = axes;
     this.chain = chain;
-    this.names = [...new Set([...chain].reverse().flatMap((t) => Object.keys(t.tokens)))];
+    this.names = [...new Set(chain.flatMap((t) => Object.keys(t.tokens)))];
   }
 
   token(name: string, sel: Selection): RawToken | undefined {
-    const full = fullSelection(this.axes, sel);
-    for (const t of this.chain) {
-      if (!Object.hasOwn(t.tokens, name)) continue;
-      const picked = pick(t.tokens[name], full);
-      if (picked.ok) return picked.value;
-    }
-    return undefined;
+    return tokenAt(this.chain, name, fullSelection(this.axes, sel));
   }
 
   /** What a browser computes: every `var()` substituted, down to literals. */
@@ -106,11 +102,12 @@ class Resolved {
   }
 }
 
+/** `baked` and every theme above it, root first. */
 function chainOf(baked: BakedTheme, byName: ReadonlyMap<string, BakedTheme>): BakedTheme[] {
   if (!baked.extends) return [baked];
   const parent = byName.get(baked.extends);
   if (!parent) throw new Error(`Theme "${baked.name}" extends "${baked.extends}", which is not being emitted`);
-  return [baked, ...chainOf(parent, byName)];
+  return [...chainOf(parent, byName), baked];
 }
 
 const union = (axes: AxisDefs, ...sets: (readonly string[] | undefined)[]) => {

@@ -1,4 +1,5 @@
-import { enumerateSelections, fullSelection, pick, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes.ts';
+import { enumerateSelections, fullSelection, selectionKey, type AxisDefs, type Selection, type Varying } from '../axes.ts';
+import { tokenAt } from '../chainTokens.ts';
 import type { SerializableColorList } from '../colorList.ts';
 import type { ThemeDefinition } from '../definition.ts';
 import type { RawToken } from '../dtcg/types.ts';
@@ -77,17 +78,8 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
   const own = table(definition, axes, lookup);
 
   const at = (sel: Selection, name: string) => own.get(selectionKey(axes, sel))?.[name];
-  /** What the runtime shows for `name` from the themes above: the nearest one whose pick succeeds. */
-  const inherited = (sel: Selection, name: string): RawToken | undefined => {
-    const full = fullSelection(axes, sel);
-    for (let i = above.length - 1; i >= 0; i--) {
-      const tokens = above[i].tokens;
-      if (!Object.hasOwn(tokens, name)) continue;
-      const picked = pick(tokens[name], full);
-      if (picked.ok) return picked.value;
-    }
-    return undefined;
-  };
+  /** What the runtime shows for `name` from the themes above. */
+  const inherited = (sel: Selection, name: string) => tokenAt(above, name, fullSelection(axes, sel));
 
   const produced = new Set([...own.values()].flatMap((t) => Object.keys(t)));
   const ordered = definitionOrder(merged).filter((n) => produced.has(n));
@@ -96,7 +88,8 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
   const selections = enumerateSelections(axes);
   const tokens: Record<string, Varying<RawToken>> = {};
   for (const name of names) {
-    if (selections.every((sel) => same(at(sel, name), inherited(sel, name)))) continue;
+    // A selection this definition produced nothing at cannot unset the token, so it never counts as a change.
+    if (selections.every((sel) => at(sel, name) === undefined || same(at(sel, name), inherited(sel, name)))) continue;
 
     const varying = Object.keys(axes).filter((axis) =>
       selections.some((sel) => Object.keys(axes[axis].values).some((v) => !same(at(sel, name), at({ ...sel, [axis]: v }, name)))),

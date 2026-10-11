@@ -1,7 +1,7 @@
-import { enumerateSelections, pickAll, selectionKey, type Selection } from '../../axes.ts';
+import { enumerateSelections, selectionKey } from '../../axes.ts';
+import { tokensAt } from '../../chainTokens.ts';
 import type { ThemeDefinition } from '../../definition.ts';
 import { resolveTokens } from '../../dtcg/resolve.ts';
-import type { FlatTokens } from '../../dtcg/types.ts';
 import type { BakedTheme } from '../bake.ts';
 
 /** One theme to write into `themes.ts`: its definition and what it bakes to. */
@@ -15,11 +15,6 @@ function chainOf(baked: BakedTheme, byName: ReadonlyMap<string, BakedTheme>): Ba
   const parent = baked.extends ? byName.get(baked.extends) : undefined;
   if (baked.extends && !parent) throw new Error(`Theme "${baked.name}" extends "${baked.extends}", which is not in themes/`);
   return [...(parent ? chainOf(parent, byName) : []), baked];
-}
-
-/** Each token from the nearest theme in the chain that has it at `sel`, as `resolveTheme` merges them. */
-function tokensAt(chain: readonly BakedTheme[], sel: Selection): FlatTokens {
-  return Object.assign({}, ...chain.map((t) => pickAll(t.tokens, sel)));
 }
 
 /** The `themes.ts` source: every theme's resolved tokens at every selection, plus the definitions and baked themes. */

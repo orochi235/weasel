@@ -36,6 +36,24 @@ describe('resolveTheme', () => {
     expect(resolveTheme(dim, { mode: 'dark' })['--wzl-surface']).toBe('#181a1e');
   });
 
+  it('resolves a theme that adds a density, reading the base at its own default', () => {
+    const big = defineTheme({ name: 'big', axes: { density: { default: 'comfortable', values: { huge: {} } } }, pins: {} });
+    const base = resolveTheme(weaselTheme, { density: 'comfortable' });
+    expect(resolveTheme(big, { density: 'huge' })).toEqual(base);
+  });
+
+  it('resolves a theme that adds a mode and makes it the default', () => {
+    const sepia = defineTheme({
+      name: 'sepia',
+      axes: { mode: { default: 'sepia', values: { sepia: { scheme: 'light' } } } },
+      pins: { 'gray-900': { by: 'mode', sepia: { type: 'color', value: '#f4ecd8' } } },
+    });
+    const resolved = resolveTheme(sepia);
+    expect(Object.keys(resolved)).toEqual(Object.keys(resolveTheme(weaselTheme)));
+    expect(resolved['--wzl-gray-900']).toBe('#f4ecd8');
+    expect(resolved['--wzl-gray-800']).toBe(resolveTheme(weaselTheme, { mode: 'dark' })['--wzl-gray-800']);
+  });
+
   it('falls back to the default for an unknown axis value', () => {
     expect(resolveTheme(weaselTheme, { mode: 'nope' })['--wzl-surface']).toBe('#181a1e');
   });
