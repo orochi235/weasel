@@ -1,6 +1,6 @@
 import { createRef, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Tree, type TreeNode } from './Tree';
 
 afterEach(() => {
@@ -267,6 +267,16 @@ describe('Tree — keyboard moves', () => {
     focusOn('Ex');
     key('ArrowLeft');
     expect(document.activeElement).toBe(screen.getByRole('treeitem', { name: 'Group' }));
+  });
+
+  it('leaves focus alone on a later render when the move never changed the nodes', async () => {
+    const { rerender } = render(<Tree aria-label="T" nodes={NODES} defaultExpandedIds={['g']} onMove={() => {}} />);
+    act(() => focusOn('Why'));
+    key('ArrowUp');
+    await act(async () => { await new Promise<void>((done) => { requestAnimationFrame(() => done()); }); });
+    act(() => focusOn('Zed'));
+    rerender(<Tree aria-label="T again" nodes={NODES} defaultExpandedIds={['g']} onMove={() => {}} />);
+    expect(document.activeElement).toBe(screen.getByRole('treeitem', { name: 'Zed' }));
   });
 
   it('keeps focus on the moved node after it remounts under its new parent', () => {

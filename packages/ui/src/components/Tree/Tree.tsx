@@ -189,6 +189,7 @@ export const Tree = forwardRef(function Tree(
   const anchor = useRef<string | null>(null);
   const typed = useRef({ text: '', at: 0 });
   const pendingFocus = useRef<string | null>(null);
+  const pendingFocusFrame = useRef(0);
   useEffect(() => {
     const id = pendingFocus.current;
     if (id == null) return;
@@ -255,7 +256,12 @@ export const Tree = forwardRef(function Tree(
     const open = !!node.children && expanded.has(node.id);
     if (onMove && handleMoveKey(e, node.id, {
       nodes, selected, expanded, setExpanded, canDrop, onMove,
-      focusAfterMove: (id) => { pendingFocus.current = id; },
+      focusAfterMove: (id) => {
+        pendingFocus.current = id;
+        // A move the consumer never renders must not hand focus to this node on some later, unrelated render.
+        cancelAnimationFrame(pendingFocusFrame.current);
+        pendingFocusFrame.current = requestAnimationFrame(() => { pendingFocus.current = null; });
+      },
     })) return;
     switch (e.key) {
       case 'ArrowDown':
