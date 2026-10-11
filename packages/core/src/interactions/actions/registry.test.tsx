@@ -113,6 +113,17 @@ describe('ActionsRegistry — full coverage', () => {
     expect(ret).toBe(true);
   });
 
+  it('trigger(id) for an ongoing action runs nothing and returns false', () => {
+    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
+    const reg = result.current!;
+    const start = vi.fn(() => ({}));
+    act(() => { reg.register({ id: 'drag', label: 'Drag', invoker: { timing: 'ongoing', start } }); });
+    let ret = true;
+    act(() => { ret = reg.trigger('drag'); });
+    expect(start).not.toHaveBeenCalled();
+    expect(ret).toBe(false);
+  });
+
   it('trigger(id) for absent id returns false (no throw)', () => {
     const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const reg = result.current!;

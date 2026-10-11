@@ -348,13 +348,15 @@ Priority tags:
   native arrow. Return the `CursorSpec` from `inFlightCursor`, and give the painted state an
   explicit "suppressed" override for a CSS-tier hover cursor.
 
-- **(P3) `ActionsRegistry.trigger` returns `true` when it ran nothing, and does not ask `enabled`.**
-  `trigger('move')`, an ongoing action, returns `true` and does nothing; `trigger('delete')` runs
-  while `delete.enabled()` reports a disabled reason, which the dispatcher honors for the same
-  action on a key (`packages/routing/src/interactions/actions/ActionsProvider.tsx`). Whether a
-  palette or toolbar is expected to gate before calling is the design call: either `trigger` returns
-  `false` for a non-immediate invoker and gates on `evaluateEnabled`, or its contract says the
-  caller gates.
+- **(P3) `ActionsRegistry.trigger` does not ask `enabled`.** `trigger('delete')` runs while
+  `delete.enabled()` reports a disabled reason, which the dispatcher honors for the same action on
+  a key (`packages/routing/src/interactions/actions/ActionsProvider.tsx`). Whether a palette or
+  toolbar is expected to gate before calling is the design call: either `trigger` gates on
+  `evaluateEnabled`, or its contract says the caller gates. `trigger` has no event, so it cannot
+  pass `enabled` the `at` point the dispatcher does, and an action that only applies at a point
+  would refuse every `trigger`. `Action.enabled`'s JSDoc
+  (`packages/routing/src/interactions/actions/action.ts`) still says keystroke dispatch is
+  unaffected by it, which stopped being true when the dispatcher began gating.
 
 - **(P3) Key bindings match `event.key` only, so they depend on the keyboard layout.** `matchKey` in
   `packages/gestures/src/ui/match.ts` compares `event.key`, and `KeySpec` has no `code` form. `{

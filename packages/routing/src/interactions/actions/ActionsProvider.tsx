@@ -163,11 +163,9 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     trigger: (id: string, params?: Record<string, unknown>) => {
       const leaf = this.start();
       const a = leaf.resolve(id);
-      if (!a) return false;
+      if (!a?.invoker || a.invoker.timing !== 'immediate') return false;
       try {
-        if (a.invoker && a.invoker.timing === 'immediate') {
-          a.invoker.run(depsFor(a, leaf.deps()) as never, params);
-        }
+        a.invoker.run(depsFor(a, leaf.deps()) as never, params);
       } catch (err) {
         console.error(`weasel ActionsRegistry: action "${id}" threw`, err);
       }
