@@ -1145,9 +1145,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P2) Disable a pref by the values of others.** A leaf has no way to say "off while
   `snap.enabled` is false": nothing on `PrefLeaf` reads another leaf's value, and the forms have no
   disabled row. The condition has to be data, since a schema exports as a literal and survives a
-  draft, so it is an expression over other leaves' paths and not a function. CEL is a candidate
-  for that expression; nothing in the repo uses it yet. Covers `PrefsForm`, `SelectionPanel`,
-  `Bar`, and labkit's `ControlPanel`, and an attribute for it in `PrefSchemaEditor`.
+  draft, and not a function. Ruled 2026-10-11: the condition is a structure over other leaves'
+  paths (`{ path: 'snap.enabled' }`, `{ path: 'layout', in: ['plate', 'card'] }`,
+  `{ all: [...] }`), not an expression string, so CEL is out; one format serves this and `showIf`
+  below. Covers `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel`, and an
+  attribute for it in `PrefSchemaEditor`.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
@@ -1186,9 +1188,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   can be written to JSON, set in `PrefSchemaEditor`, or kept in a draft (a draft holds code as a
   pointer into the source schema, which a new leaf has none of). In astv's settings nearly every
   `showIf` is one comparison against another setting (`c.mode === 'commits'`,
-  `PLATED.has(c.layout)`), and every unit is an identity conversion carrying a suffix. Proposed,
-  not agreed: `showIf` also takes a condition as data, and a unit may be `{ suffix, accepts }`
-  with the conversion implied; the function forms stay for what data cannot say.
+  `PLATED.has(c.layout)`), and every unit is an identity conversion carrying a suffix. Ruled
+  2026-10-11: `showIf` also takes a condition as data, in the structure the entry "Disable a pref
+  by the values of others" describes. Proposed, not agreed: a unit may be `{ suffix, accepts }`
+  with the conversion implied. The function forms stay for what data cannot say.
 
 - **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
   and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment
