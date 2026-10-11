@@ -100,6 +100,9 @@ export interface PrefsFormProps {
    *  entry in a rail. The empty path is the root, from the rail entry for its
    *  own leaves. */
   onSelect?: (path: string) => void;
+  /** Paths of the leaves whose rows are marked as changed, their labels in the accent color (`PropertyRow`'s `changed`): what differs
+   *  from a default, or from what was last saved. What counts as changed is the caller's to say. */
+  changed?: ReadonlySet<string>;
   /** A drag over the form. The form lays out as it would after the drop,
    *  with the dragged nodes drawn where they would land: `prefDropTargetAt`
    *  finds where that is from a pointer position. */
@@ -146,7 +149,7 @@ export function PrefsForm(props: PrefsFormProps) {
   const selection = useSelectedRow(props.selected, shown, props.onSelect);
   // Against the whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
   const leafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
-  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint, fields, leafAt, selected: shown };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint, fields, leafAt, changed: props.changed, selected: shown };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

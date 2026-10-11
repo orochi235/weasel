@@ -400,6 +400,7 @@ export const Tree = forwardRef(function Tree(
         aria-labelledby={ariaLabelledBy}
         aria-multiselectable={selectionMode === 'multiple' || undefined}
         data-drag-effect={drag.state.effect === 'move' ? undefined : drag.state.effect}
+        data-fold={foldBy}
       >
         {renderLevel(nodes, null, 1)}
       </ul>

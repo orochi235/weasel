@@ -22,6 +22,7 @@ const AUTO_VALUE = `${AUTO}.autoValue`;
 /** The attribute panels, each drawing the node's own fields under its path. */
 const PANELS = [OWN, AUTO];
 const UNSET_AUTO_VALUE: ReadonlySet<string> = new Set([AUTO_VALUE]);
+const NONE: ReadonlySet<string> = new Set();
 /** Kinds drawn by this pane's own renderers. */
 const KEY_KIND = 'schema-key';
 const KIND_KIND = 'schema-kind';
@@ -34,6 +35,8 @@ export interface AttributesPaneProps {
   onRekey(from: string, to: string): void;
   /** The node at `path` is not in the baseline, so nothing is stored under its key yet. */
   added?: boolean;
+  /** The node's attributes that differ from the baseline's, by name; `$key` for its key. Their rows are marked. */
+  changed?: ReadonlySet<string>;
   kinds: readonly string[];
   custom: CustomKinds;
   /** Renderers the consumer passes for its own kinds — a custom kind's `default` may need one. */
@@ -41,7 +44,7 @@ export interface AttributesPaneProps {
   onNotice(text: string | null): void;
 }
 
-export function AttributesPane({ schema, onChange, path, onRekey, added = false, kinds, custom, renderers, onNotice }: AttributesPaneProps) {
+export function AttributesPane({ schema, onChange, path, onRekey, added = false, changed = NONE, kinds, custom, renderers, onNotice }: AttributesPaneProps) {
   const node = nodeAt(schema, path);
   const nameAtFocus = useRef('');
   // The edited schema's fields, by its own path rule: what a reference in it names.
@@ -121,6 +124,16 @@ export function AttributesPane({ schema, onChange, path, onRekey, added = false,
     ...(Object.keys(auto).length > 0 ? { [AUTO]: { name: 'Auto', children: auto } } : {}),
   };
 
+  // An attribute's row sits at its own name, or under the panel that holds it.
+  const marked = new Set([
+    ...[...changed].flatMap((attr) => [
+      ...(attr in shared || attr === KEY ? [attr] : []),
+      ...(attr === 'kind' ? [KIND] : []),
+      ...(attr in own ? [`${OWN}.${attr}`] : []),
+      ...(attr in auto ? [`${AUTO}.${attr}`] : []),
+    ]),
+  ]);
+
   return (
     <section className={s.pane} aria-label="Attributes">
       <PaneHeader title="Attributes" />
@@ -128,6 +141,7 @@ export function AttributesPane({ schema, onChange, path, onRekey, added = false,
         schema={{ name: 'Attributes', children }}
         layout="list"
         fields={fields}
+        changed={marked}
         // An unset auto value shows the default it would start from.
         values={{ ...node, [OWN]: node, [AUTO]: noAutoValue ? { ...node, autoValue: held.default } : node }}
         auto={noAutoValue ? UNSET_AUTO_VALUE : undefined}

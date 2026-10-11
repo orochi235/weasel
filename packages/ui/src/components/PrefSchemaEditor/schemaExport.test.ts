@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import { diffSchemas, formatChanges, KEEP, printSchema } from './schemaExport';
+import { changedAttributes, changedPaths, diffSchemas, formatChanges, KEEP, printSchema } from './schemaExport';
 import { moveNodes, renameKey, setAttribute } from './schemaEdit';
 
 const ROOT: PrefGroup = {
@@ -72,6 +72,22 @@ describe('diffSchemas', () => {
     ).root;
     const changes = diffSchemas({ name: 'R', children: { g: { name: 'G', children: { k: { kind: 'string', name: 'K', description: '', default: '' } } }, h: { name: 'H', children: {} } } }, next);
     expect(changes).toEqual([{ op: 'move', from: 'g', to: 'h/g' }]);
+    // So the moved group's row is the one marked, and the rows under it are not.
+    expect([...changedPaths(changes)]).toEqual(['h/g']);
+  });
+
+  it('marks a node under a moved group once that node itself changes', () => {
+    const before: PrefGroup = { name: 'R', children: { g: { name: 'G', children: { k: { kind: 'string', name: 'K', description: '', default: '' } } }, h: { name: 'H', children: {} } } };
+    const moved = moveNodes(before, ['g'], { parentPath: 'h', index: 0 }).root;
+    const changes = diffSchemas(before, setAttribute(moved, 'h/g/k', 'name', 'Kay'));
+    expect([...changedPaths(changes)].sort()).toEqual(['h/g', 'h/g/k']);
+  });
+
+  it('names the attributes of one node that changed, and its key when a move renamed it', () => {
+    const changes = diffSchemas(ROOT, renameKey(setAttribute(setAttribute(ROOT, 'a/x', 'min', 2), null, 'name', 'Top'), 'a/x', 'ex'));
+    expect([...changedAttributes(changes, 'a/ex')].sort()).toEqual(['$key', 'min']);
+    expect([...changedAttributes(changes, null)]).toEqual(['name']);
+    expect([...changedAttributes(changes, 'a/e')]).toEqual([]);
   });
 
   it('does not report a function attribute that kept its identity', () => {

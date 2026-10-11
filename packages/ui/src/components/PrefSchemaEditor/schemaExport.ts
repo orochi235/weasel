@@ -1,6 +1,6 @@
 import { isPlainObject } from '@weasel-js/core';
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
-import { childrenOf, isUnder, isValidKey, ITEM, joinPath, keysOf, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { childrenOf, isUnder, isValidKey, ITEM, joinPath, keyOf, keysOf, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** What an attribute holding code prints as: an undeclared name, so the pasted literal fails typecheck until the
  *  original expression is put back. */
@@ -156,7 +156,6 @@ export function diffSchemas(before: SchemaRoot, after: SchemaRoot): SchemaChange
   return out;
 }
 
-/** Every path a change touches, for marking rows. */
 /**
  * Where the node now at a path sat in the baseline `changes` were measured from: a moved node's old path, and
  * under a moved branch the same path beneath where the branch was. A path nothing moved is its own.
@@ -169,11 +168,22 @@ export function baselinePaths(changes: readonly SchemaChange[]): (path: string) 
   };
 }
 
+/** Every path a change touches, for marking rows. A moved group is one path: what is under it moved with it, unchanged. */
 export function changedPaths(changes: readonly SchemaChange[]): Set<string> {
   const out = new Set<string>();
   for (const c of changes) {
     if (c.op === 'move') out.add(c.to);
     else if (c.op !== 'remove') out.add(c.path);
+  }
+  return out;
+}
+
+/** The attributes of the node at `path` (`null` is the root) that changed, by name, and `$key` where a move gave it another key. */
+export function changedAttributes(changes: readonly SchemaChange[], path: string | null): Set<string> {
+  const out = new Set<string>();
+  for (const c of changes) {
+    if (c.op === 'attr' && c.path === (path ?? '')) out.add(c.key);
+    else if (c.op === 'move' && c.to === path && keyOf(c.from) !== keyOf(c.to)) out.add('$key');
   }
   return out;
 }

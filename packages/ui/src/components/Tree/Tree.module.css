@@ -13,6 +13,11 @@
   width: 100%;
 }
 
+/* Folded by its branches' leading glyphs, the gutter is as wide as one, and the glyph hangs in it as the mark would. */
+.tree[data-fold='leading'] {
+  --tree-gutter: var(--wzl-tree-fold-size, 16px);
+}
+
 /* One gutter, so a child's mark sits under its parent's label. */
 .group {
   padding-inline-start: var(--wzl-tree-indent, var(--tree-gutter));
@@ -83,6 +88,10 @@
 
 .leading[data-tree-twisty] {
   cursor: pointer;
+  width: var(--wzl-tree-fold-size, 16px);
+  justify-content: center;
+  /* The glyph fills the gutter, so the row's gap after it is taken back: the label starts where the gutter ends. */
+  margin-inline: calc(-1 * var(--tree-gutter)) calc(-1 * var(--wzl-space-2));
 }
 
 .label {
