@@ -3,8 +3,9 @@ import type { Display } from '@weasel-js/quantity';
 import type { Endless } from '../../endless';
 
 /**
- * Passed to a custom thumb renderer: the thumb box in CSS px, and whether
- * this thumb is the one being dragged.
+ * Passed to a custom thumb renderer: the thumb box in CSS px as it is laid
+ * out, and whether this thumb is the one being dragged. The box is 0 by 0 on
+ * the render before the first layout, which is never painted.
  */
 export type ThumbRenderCtx = {
   width: number;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { snapToStep } from '../spin';
 import { clamp, clampOrdered, resolveBounds } from './stops';
@@ -25,6 +25,8 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
   // In-flight thumb buffer during a drag; null when not dragging.
   const dragBufferRef = useRef<T[] | null>(null);
   const sessionRef = useRef<PointerSession | null>(null);
+  // Which thumb a drag holds, for a thumb that draws itself differently while held.
+  const [dragged, setDragged] = useState<number | null>(null);
 
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
@@ -36,6 +38,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
       sessionRef.current?.cancel();
       const buf: T[] = (seed ?? thumbs).map(t => ({ ...t }));
       dragBufferRef.current = buf;
+      setDragged(index);
       let droppedOff = false;
 
       const onMove = (ev: PointerEvent) => {
@@ -69,12 +72,14 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
       const onCancel = () => {
         sessionRef.current = null;
         dragBufferRef.current = null;
+        setDragged(null);
       };
 
       const onEnd = () => {
         sessionRef.current = null;
         const buffer = dragBufferRef.current;
         dragBufferRef.current = null;
+        setDragged(null);
         if (!buffer) return;
 
         if (droppedOff && props.onRemoveThumb) {
@@ -98,6 +103,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
   const beginShiftAllDrag = useCallback(
     (origin: Element, down: ReactPointerEvent, anchorX: number) => {
       sessionRef.current?.cancel();
+      setDragged(null);
       const buf: T[] = thumbs.map(t => ({ ...t }));
       const startValues = buf.map(t => t.value);
       dragBufferRef.current = buf;
@@ -155,5 +161,5 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: 
     [thumbs, onInput, onChange, min, max, step, even, valueToFraction, fractionToValue, railRef],
   );
 
-  return { beginThumbDrag, beginShiftAllDrag };
+  return { beginThumbDrag, beginShiftAllDrag, dragged };
 }

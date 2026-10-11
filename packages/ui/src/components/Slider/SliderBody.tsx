@@ -7,6 +7,7 @@ import { snapToStep } from '../spin';
 import { READOUT, clamp, clampOrdered, defaultStep, fractionToPosition, resolveBounds, stepStops } from './stops';
 import type { SliderProps, Thumb } from './types';
 import { useScale, useSpan } from './useSpan';
+import { useBoxes } from './useBoxes';
 import { useThumbDrags } from './useThumbDrags';
 
 /** The slider proper, in track values: {@link Slider} maps an endless end's
@@ -30,7 +31,11 @@ export function SliderBody<T extends Thumb = Thumb>(
   const railRef = useRef<HTMLDivElement | null>(null);
   const scale = useScale(span, strict, step);
   const { valueToFraction, valueAt } = scale;
-  const { beginThumbDrag, beginShiftAllDrag } = useThumbDrags<T>({ props, span, scale, railRef });
+  const { beginThumbDrag, beginShiftAllDrag, dragged } = useThumbDrags<T>({ props, span, scale, railRef });
+  const thumbEls = useRef<(HTMLDivElement | null)[]>([]);
+  // The track first, then each thumb.
+  const boxes = useBoxes(() => [trackRef.current, ...thumbs.map((_, i) => thumbEls.current[i] ?? null)], thumbs.length);
+
 
   const onThumbPointerDown = (index: number) => (e: ReactPointerEvent) => {
     // Only bail on explicit non-primary buttons (button > 0). jsdom's PointerEvent
@@ -204,7 +209,7 @@ export function SliderBody<T extends Thumb = Thumb>(
         {props.renderTrack && (
           <div className={s.trackInner}>
             {props.renderTrack({
-              trackWidth: trackRef.current?.getBoundingClientRect().width ?? 0,
+              trackWidth: boxes[0]?.width ?? 0,
               valueToFraction,
               fractionToPosition,
             })}
@@ -231,10 +236,12 @@ export function SliderBody<T extends Thumb = Thumb>(
         {thumbs.map((thumb, i) => {
           const isNotched = thumb.shape === 'notched';
           const customRender = typeof thumb.shape === 'object' && thumb.shape !== null ? thumb.shape.render : null;
-          const cls = `${s.thumb}${isNotched ? ` ${s.notched}` : ''}`;
+          const isActive = dragged === i;
+          const cls = [s.thumb, isNotched && s.notched, isActive && s.thumbActive].filter(Boolean).join(' ');
           return (
             <div
               key={i}
+              ref={(el) => { thumbEls.current[i] = el; }}
               role="slider"
               tabIndex={0}
               aria-orientation="horizontal"
@@ -249,7 +256,7 @@ export function SliderBody<T extends Thumb = Thumb>(
               onKeyDown={onThumbKeyDown(i)}
               onContextMenu={onThumbContextMenu(i)}
             >
-              {customRender ? customRender({ width: 14, height: 24, isActive: false }) : (thumb.label ?? '')}
+              {customRender ? customRender({ width: boxes[i + 1]?.width ?? 0, height: boxes[i + 1]?.height ?? 0, isActive }) : (thumb.label ?? '')}
             </div>
           );
         })}

@@ -1526,15 +1526,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   passes the source of a change to `onInput`/`onChange`; or `Scale` owns the arrow keys for its
   thumbs and `commit` never nudges.
 
-- **(P3) Slider: `ThumbShape.render` and `renderTrack` are told constants.** A custom thumb is
-  always handed `{ width: 14, height: 24, isActive: false }`
-  (`packages/ui/src/components/Slider/Slider.tsx`), so one that highlights while dragged never does
-  and one drawn under `density="slim"` or a custom `trackHeight` is given the wrong box;
-  `.thumbActive` in `Slider.module.css` is a rule nothing references. `renderTrack`'s `trackWidth`
-  is read from a ref during render, so it is 0 on the first render and stale after a resize. Needs
-  the dragged index held in state and the thumb and track measured with a `ResizeObserver`, as
-  `Ruler` does.
-
 - **(P3) Tree: focus drops to the page when the focused node is removed.** A consumer's own Delete
   handler removes the focused row: the tab stop recomputes to the first selected or first row, but
   DOM focus falls to `<body>` and the next arrow key goes nowhere (`stopId` in
