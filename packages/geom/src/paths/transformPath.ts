@@ -3,9 +3,13 @@ import { transformCoords } from '../affine';
 import { PathBuilder } from './builder';
 import type { Path, PolygonPath } from '../path';
 
+/** Below this, a matrix's rotation and shear terms are rounding left by
+ *  composing transforms (a half turn's sine is 1.2e-16), not a slant. */
+const AXIS_ALIGNED_EPSILON = 1e-9;
+
 /** Apply an affine `Mat3` to a path's geometry.
  *
- * Axis-aligned maps (no rotation/shear, i.e. `m[1] === 0 && m[2] === 0`) keep a
+ * Axis-aligned maps (no rotation/shear: `m[1]` and `m[2]` within 1e-9 of 0) keep a
  * `RectPath` a rect — the four corners stay axis-aligned, so we transform the
  * two diagonal corners and normalize negative extent (mirror). Rotation or
  * shear promotes the rect's four corners to a `PolygonPath`. Polygon paths map
@@ -18,7 +22,7 @@ import type { Path, PolygonPath } from '../path';
 export function transformPath(path: Path, m: Mat3): Path {
   const [a, b, c, d, e, f] = m;
   if (path.kind === 'rect') {
-    if (b === 0 && c === 0) {
+    if (Math.abs(b) < AXIS_ALIGNED_EPSILON && Math.abs(c) < AXIS_ALIGNED_EPSILON) {
       // Pure scale + translate — corners remain axis-aligned.
       const x0 = a * path.x + e;
       const y0 = d * path.y + f;

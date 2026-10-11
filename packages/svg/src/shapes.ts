@@ -11,71 +11,14 @@
 import {
   PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z,
   PathBuilder,
+  transformPath,
   type Path,
-  type PolygonPath,
-  type RectPath,
 } from '@weasel-js/core';
 import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
-import { applyMatrix, isIdentity } from './transform';
 
 /** Magic constant: cubic Bezier control offset for a quarter-circle of radius 1. */
 const KAPPA = (4 * (Math.sqrt(2) - 1)) / 3;
-
-/** True when `m` represents a pure axis-aligned scale + translate. */
-function isAxisAlignedScale(m: Matrix, eps = 1e-9): boolean {
-  return Math.abs(m[1]) < eps && Math.abs(m[2]) < eps;
-}
-
-/**
- * Apply a 2x3 affine to a `Path`. RectPaths whose matrix is identity or
- * an axis-aligned scale+translate stay as `RectPath`; anything else (any
- * rotation/skew, or any PolygonPath input) is promoted to a `PolygonPath`
- * via a coords-level remap.
- */
-export function transformPath(path: Path, m: Matrix): Path {
-  if (isIdentity(m)) return path;
-  if (path.kind === 'rect') {
-    if (isAxisAlignedScale(m)) {
-      const a = m[0], d = m[3], e = m[4], f = m[5];
-      let x = path.x * a + e;
-      let y = path.y * d + f;
-      let w = path.width * a;
-      let h = path.height * d;
-      if (w < 0) { x += w; w = -w; }
-      if (h < 0) { y += h; h = -h; }
-      return { kind: 'rect', x, y, width: w, height: h };
-    }
-    // Promote to polygon, then transform.
-    return transformPath(rectToPolygon(path), m);
-  }
-  // PolygonPath: remap every coord pair. Step counts are command-dependent
-  // and all the supported commands store coord pairs, so a flat stride-2
-  // walk is correct.
-  const xs = path.coords;
-  const out = new Float32Array(xs.length);
-  for (let i = 0; i < xs.length; i += 2) {
-    const p = applyMatrix(m, xs[i], xs[i + 1]);
-    out[i] = p.x;
-    out[i + 1] = p.y;
-  }
-  return {
-    kind: 'polygon',
-    commands: new Uint8Array(path.commands),
-    coords: out,
-    fillRule: path.fillRule,
-  };
-}
-
-function rectToPolygon(r: RectPath): PolygonPath {
-  const b = new PathBuilder();
-  b.moveTo(r.x, r.y);
-  b.lineTo(r.x + r.width, r.y);
-  b.lineTo(r.x + r.width, r.y + r.height);
-  b.lineTo(r.x, r.y + r.height);
-  b.close();
-  return b.build();
-}
 
 /**
  * `<rect x y width height rx ry>` → Path. Returns a `RectPath` when there

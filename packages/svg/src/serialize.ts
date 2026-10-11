@@ -653,12 +653,6 @@ function textDecorationValue(
 }
 
 function pathBounds(path: Path): { minX: number; minY: number; maxX: number; maxY: number } {
-  if (path.kind === 'rect') {
-    return {
-      minX: path.x, minY: path.y,
-      maxX: path.x + path.width, maxY: path.y + path.height,
-    };
-  }
   const b = boundsOfPath(path);
   return { minX: b.x, minY: b.y, maxX: b.x + b.width, maxY: b.y + b.height };
 }

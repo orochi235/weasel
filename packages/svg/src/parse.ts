@@ -15,7 +15,6 @@ import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath,
   parsePoints, polylineToPath, polygonToPath,
 } from './shapes';
-import { transformPath } from './shapes';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, ParseOptions, ParseResult,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
@@ -23,7 +22,7 @@ import type {
 } from './types';
 import type { StyledRun, TextStyle, TextPaint, FillStyle, Stroke } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rebaseTransform, rotationComponent, isIdentity } from './transform';
-import { boundsOfPath, layoutRuns, resolveRuns, resolveScreenLength, resolveTextStyle } from '@weasel-js/core';
+import { boundsOfPath, layoutRuns, transformPath, resolveRuns, resolveScreenLength, resolveTextStyle } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
 import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
@@ -427,7 +426,7 @@ function parseElement(
     // `path` is already through `ctm`, so the element's own transform has to
     // be too before it is compared against these bounds.
     const worldLocal = rebaseTransform(ctm, localTransform);
-    const bounds = pathAabb(path);
+    const bounds = boundsOfPath(path);
     const cx = bounds.x + bounds.width / 2;
     const cy = bounds.y + bounds.height / 2;
     const angle = worldLocal && decomposeRotation(worldLocal, cx, cy);
@@ -538,19 +537,6 @@ function polygonToRectIfAxisAligned(p: PolygonPath): Path | null {
   const height = Math.abs(y2 - y1);
   if (width === 0 || height === 0) return null;
   return { kind: 'rect', x, y, width, height };
-}
-
-/**
- * Compute a `Path`'s axis-aligned bounding box. Mirrors the helper used by
- * the serializer for rotation pivot resolution; keep the duplication local
- * to parse.ts for now — lift to a shared module if a third call site
- * appears.
- */
-function pathAabb(path: Path): { x: number; y: number; width: number; height: number } {
-  if (path.kind === 'rect') {
-    return { x: path.x, y: path.y, width: path.width, height: path.height };
-  }
-  return boundsOfPath(path);
 }
 
 function readPaint(

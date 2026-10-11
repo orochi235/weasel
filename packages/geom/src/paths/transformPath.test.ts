@@ -19,6 +19,13 @@ describe('transformPath', () => {
     expect(out).toEqual({ kind: 'rect', x: -10, y: 0, width: 10, height: 10 });
   });
 
+  it('keeps a rect a rect when a composed map is axis-aligned to rounding', () => {
+    // A half turn's sine is 1.2e-16, not 0; the corners are still axis-aligned.
+    const out = transformPath(rectPath(0, 0, 10, 20), rotateAboutPoint(0, 0, Math.PI));
+    expect(out.kind).toBe('rect');
+    expect(boundsOfPath(out)).toEqual({ kind: 'rect', x: -10, y: -20, width: 10, height: 20 });
+  });
+
   it('promotes a rotated rect to a polygon with baked corners', () => {
     const r = rectPath(0, 0, 10, 10);
     const m = rotateAboutPoint(5, 5, Math.PI / 4);

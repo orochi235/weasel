@@ -481,13 +481,6 @@ have shipped. What remains:
   therefore lost on import. Keeping them needs a `hidden` flag on `SvgNode` that `unpack` maps to
   the scene's own hidden state.
 
-- **(P3) svg: `shapes.ts` re-implements geom's `transformPath`.** `packages/svg/src/shapes.ts` has
-  its own `transformPath` with a different axis-aligned test (`< 1e-9` against geom's `=== 0`) and
-  its own identity short-circuit, beside `packages/geom/src/paths/transformPath.ts`. `parse.ts`'s
-  `pathAabb` and `serialize.ts`'s `pathBounds` both wrap `boundsOfPath`, which already returns a
-  rect's own box. Fold each pair into the geom function; the rect-reconstitution tests in
-  `roundtrip.test.ts` are what would notice a tolerance change.
-
 - **(P3) svg and geom: two files hold several owners.** `packages/svg/src/parse.ts` is about 1,450
   lines holding the document walk, shape lowering, text, images, clip paths, and marker ingestion;
   text, image, and marker reading each split out cleanly (`placeBox.ts`, `lengths.ts`,
