@@ -16,7 +16,11 @@ import { replaceNode, nodeAt, type SchemaNode, type SchemaRoot } from './schemaE
 import { containsCode, STUB } from './schemaExport';
 import { findType, NO_TYPES, typeNamed, type PrefTypes } from './types';
 
-export type KindAttrs = Record<string, PrefLeaf>;
+/** One attribute of a kind, as the leaf that edits it. `required` keeps it on a leaf when it is emptied, and seeds
+ *  it, from this leaf's `default`, in a new leaf of the kind. */
+export type KindAttr = PrefLeaf & { required?: boolean };
+export type KindAttrs = Record<string, KindAttr>;
+/** A custom kind's own attributes, by kind. One named `default` gives the kind a Default row, and a new leaf its default. */
 export type CustomKinds = Record<string, KindAttrs>;
 
 export const BUILTIN_KINDS = Object.keys(PREF_KINDS) as readonly PrefKind[];
@@ -208,14 +212,14 @@ export function attributeSchema(
 }
 
 /** The value to store for an edited attribute: an optional one left empty is removed rather than written. */
-export function normalizeAttr(key: string, value: unknown): unknown {
-  if (REQUIRED.has(key) || AS_GIVEN.has(key)) return value;
+export function normalizeAttr(key: string, value: unknown, attr?: KindAttr): unknown {
+  if (REQUIRED.has(key) || AS_GIVEN.has(key) || attr?.required) return value;
   if (value === undefined || value === '' || value === false) return undefined;
   if (Array.isArray(value) && value.length === 0) return undefined;
   return value;
 }
 
-export function blankLeaf(kind: string): PrefLeaf {
+export function blankLeaf(kind: string, custom: CustomKinds = {}): PrefLeaf {
   const base = { kind, name: 'New pref', description: '' };
   switch (kind) {
     case 'number': return { ...base, default: 0 } as PrefLeaf;
@@ -235,7 +239,11 @@ export function blankLeaf(kind: string): PrefLeaf {
     case 'action': return { ...base, default: undefined, run: STUB } as PrefLeaf;
     // Named for what it shows until it is given a name of its own.
     case 'alias': return { kind, name: '', description: '', default: undefined, of: '' } as PrefLeaf;
-    default: return { ...base, default: undefined } as PrefLeaf;
+    default: {
+      const attrs = kindAttrs(kind, custom);
+      const required = Object.entries(attrs).filter(([, attr]) => attr.required).map(([k, attr]) => [k, attr.default]);
+      return { ...base, default: attrs.default?.default, ...Object.fromEntries(required) } as PrefLeaf;
+    }
   }
 }
 
@@ -263,9 +271,9 @@ function offers(attr: PrefLeaf | undefined, v: unknown): boolean {
 }
 
 /** A new leaf of what a kind picker's `choice` names: a blank one of a kind, or a type as it was declared. */
-export function leafOf(choice: string, types: PrefTypes = NO_TYPES): PrefLeaf {
+export function leafOf(choice: string, types: PrefTypes = NO_TYPES, custom: CustomKinds = {}): PrefLeaf {
   const type = findType(types, typeNamed(choice));
-  return type ? { ...type } : blankLeaf(choice);
+  return type ? { ...type } : blankLeaf(choice, custom);
 }
 
 /**
@@ -274,7 +282,7 @@ export function leafOf(choice: string, types: PrefTypes = NO_TYPES): PrefLeaf {
  */
 export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds = {}, types: PrefTypes = NO_TYPES): { leaf: PrefLeaf; dropped: string[] } {
   const typed = typeNamed(choice) !== undefined;
-  const blank = leafOf(choice, types) as unknown as Record<string, unknown>;
+  const blank = leafOf(choice, types, custom) as unknown as Record<string, unknown>;
   const attrs = kindAttrs(choice, custom);
   const keep = new Set([...SHARED, ...(typed ? [] : Object.keys(attrs))]);
   const next: Record<string, unknown> = { ...blank };

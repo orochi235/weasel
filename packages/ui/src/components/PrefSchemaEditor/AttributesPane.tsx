@@ -231,13 +231,13 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
         onChange={(p, value) => {
           if (item && p.startsWith(`${ENTRY}.`) && p !== ENTRY_IS) {
             const attr = p.slice(ENTRY.length + 1);
-            const next: Record<string, unknown> = { ...item, [attr]: normalizeAttr(attr, value) };
+            const next: Record<string, unknown> = { ...item, [attr]: normalizeAttr(attr, value, entry[attr]) };
             if (next[attr] === undefined) delete next[attr];
             setEntry(next as unknown as PrefLeaf);
             return;
           }
           const attr = attrOf(p);
-          writeAll(attr, normalizeAttr(attr, value));
+          writeAll(attr, normalizeAttr(attr, value, own[attr]));
         }}
       />
       {readOnly.length + agg.apart.length > 0 && (

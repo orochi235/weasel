@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { BUILTIN_KINDS, attributeSchema, blankLeaf, changeKind, convertLeaf, normalizeAttr } from './kindSchemas';
+import { BUILTIN_KINDS, attributeSchema, blankLeaf, changeKind, convertLeaf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { nodeAt } from './schemaEdit';
 import { STUB } from './schemaExport';
 
@@ -102,6 +102,35 @@ describe('kindSchemas', () => {
     expect(to({ kind: 'number', default: 4 }, 'string')).toMatchObject({ leaf: { default: '' }, dropped: ['default'] });
     expect(to({ kind: 'string', default: '#abc' }, 'color')).toMatchObject({ leaf: { default: '#abc' }, dropped: [] });
     expect(to({ kind: 'string', default: 'a' }, 'enum').leaf).toMatchObject({ default: 'a' });
+  });
+
+  describe('a custom kind\'s required attributes', () => {
+    const custom: CustomKinds = {
+      'registry-enum': {
+        default: { kind: 'string', name: 'Default', description: '', default: 'none' },
+        source: { kind: 'string', name: 'Source', description: '', default: 'tools', required: true },
+        control: { kind: 'string', name: 'Control', description: '', default: '' },
+      },
+    };
+
+    it('keeps one that is emptied, and still removes an optional one', () => {
+      expect(normalizeAttr('source', '', custom['registry-enum']!.source)).toBe('');
+      expect(normalizeAttr('control', '', custom['registry-enum']!.control)).toBeUndefined();
+    });
+
+    it('seeds them, and a default the kind declares, in a new leaf', () => {
+      expect(blankLeaf('registry-enum', custom)).toEqual({ kind: 'registry-enum', name: 'New pref', description: '', default: 'none', source: 'tools' });
+      expect(leafOf('registry-enum', undefined, custom)).toMatchObject({ source: 'tools' });
+      expect(blankLeaf('data', custom)).toEqual({ kind: 'data', name: 'New pref', description: '', default: undefined });
+    });
+
+    it('seeds them in a leaf switched to the kind, and offers its default a row', () => {
+      const made = convertLeaf({ kind: 'boolean', name: 'B', description: '', default: true }, 'registry-enum', custom);
+      expect(made.leaf).toMatchObject({ kind: 'registry-enum', name: 'B', default: 'none', source: 'tools' });
+      expect(Object.keys(attributeSchema(made.leaf, custom).own)).toEqual(['default', 'source', 'control']);
+      const kept = convertLeaf({ kind: 'string', name: 'S', description: '', default: 'pen' } as PrefLeaf, 'registry-enum', custom);
+      expect(kept.leaf).toMatchObject({ default: 'pen', source: 'tools' });
+    });
   });
 
   it('does not mistake inherited names for kinds', () => {

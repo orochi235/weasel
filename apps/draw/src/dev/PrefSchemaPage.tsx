@@ -15,7 +15,8 @@ const SOURCES: ReadonlyArray<{ id: string; label: string; schema: PrefGroup | Pr
 
 const KINDS: CustomKinds = {
   'registry-enum': {
-    source: { kind: 'string', name: 'Source', description: "Key into the modal's registryEnumSources.", default: '' },
+    default: { kind: 'string', name: 'Default', description: 'The value before anything is stored.', default: '' },
+    source: { kind: 'string', name: 'Source', description: "Key into the modal's registryEnumSources.", default: '', required: true },
     control: { kind: 'enum', name: 'Control', description: 'Which control draws it.', default: undefined, clearable: true,
       options: [{ value: 'select', label: 'select' }, { value: 'radio', label: 'radio' }] },
   },

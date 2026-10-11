@@ -19,7 +19,7 @@ import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
 import { UnplacedTree } from './UnplacedTree';
 import { stillUnplaced } from './unplaced';
-import { blankGroup, blankSection, leafOf } from './kindSchemas';
+import { blankGroup, blankSection, leafOf, type CustomKinds } from './kindSchemas';
 import { kindChoices, type PrefTypes } from './types';
 import {
   addNode, aliasOf, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, keysOf, nodeAt, parentPath, pathOf,
@@ -69,6 +69,8 @@ export interface StructurePaneProps {
   onSelect(paths: readonly string[]): void;
   changed: ReadonlySet<string>;
   kinds: readonly string[];
+  /** The custom kinds' attributes, which say what a new leaf of one starts with. */
+  custom?: CustomKinds;
   /** The types a new pref may be made from, offered beside the kinds. */
   types: PrefTypes;
   expanded: ReadonlySet<string>;
@@ -111,7 +113,7 @@ export interface DropOutside {
 const ancestorsOf = (path: string): string[] =>
   keysOf(path).slice(0, -1).map((_, i, keys) => pathOf(keys.slice(0, i + 1))!);
 
-export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, custom, types, expanded, onExpandedChange, toolSlot, unplaced, actions, outside, outsideDraws = false, onMove: move, onCopy: copy, onAlias: alias, onRemove, maxDepth, rowMark }: StructurePaneProps) {
   // What a group root holds on no page waits with the unplaced, and the tree lists the pages.
   const [nodes, looseNodes] = useMemo(() => {
     const all = toTreeNodes(schema, null, changed, rowMark);
@@ -158,7 +160,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   const branch = branchUnder(host ?? schema);
   const choices = useMemo(() => kindChoices(kinds, types), [kinds, types]);
   const add = ({ key, name, kind }: NewNode) => {
-    const node: SchemaNode = kind !== undefined ? { ...leafOf(kind, types), name } : { ...(branch === 'section' ? blankSection() : blankGroup()), name };
+    const node: SchemaNode = kind !== undefined ? { ...leafOf(kind, types, custom), name } : { ...(branch === 'section' ? blankSection() : blankGroup()), name };
     setAdding(null);
     const { parent, index } = addTarget();
     onChange(addNode(schema, parent, key, node, index));
