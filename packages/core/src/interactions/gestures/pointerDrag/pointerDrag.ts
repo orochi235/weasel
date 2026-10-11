@@ -157,6 +157,7 @@ export function useDragHandle(
     const start = { clientX: e.clientX, clientY: e.clientY };
     let ghost: GhostDrag | null = null;
     let past = false;
+    let dropClickGuard: (() => void) | null = null;
 
     // No pointer capture: zones are resolved with `document.elementFromPoint`,
     // which capture would not help, and the source row is free to be removed
@@ -169,18 +170,23 @@ export function useDragHandle(
         past = true;
         const payload = getPayload();
         if (!payload) return;
-        target.addEventListener(
-          'click',
-          (ce) => { ce.stopPropagation(); ce.preventDefault(); },
-          { capture: true, once: true },
-        );
+        const swallowClick = (ce: MouseEvent) => { ce.stopPropagation(); ce.preventDefault(); };
+        target.addEventListener('click', swallowClick, { capture: true, once: true });
+        dropClickGuard = () => target.removeEventListener('click', swallowClick, { capture: true });
         ghost = beginPointerDrag(
           payload, target, ev.clientX, ev.clientY,
           optsRef.current?.createGhost ?? defaultGhost,
         );
       },
-      onEnd: (ev) => { live.current = null; ghost?.drop(ev); },
-      onCancel: () => { live.current = null; ghost?.cancel(); },
+      onEnd: (ev) => {
+        live.current = null;
+        ghost?.drop(ev);
+        // A release away from the source sends it no click, and the guard
+        // would eat the next real one. Any click this release does bring is
+        // dispatched before a timer runs.
+        if (dropClickGuard) setTimeout(dropClickGuard, 0);
+      },
+      onCancel: () => { live.current = null; ghost?.cancel(); dropClickGuard?.(); },
     }, { capture: false });
   }, [getPayload, optsRef]);
 
