@@ -6,10 +6,11 @@ export const IN_VIEW_MARGIN = '50%';
 /**
  * Whether `ref`'s element lies within `margin` of its document's viewport; true where the browser cannot say.
  * Decided by where the element is, not by whether any of it shows: `isIntersecting` is false too for an element an
- * `overflow` ancestor clips away, as a narrow lab tile does to its content while the tiling changes.
+ * `overflow` ancestor clips away, as a narrow lab tile does to its content while the tiling changes. `initial` is
+ * the answer before the browser has given one: false for content too costly to mount everywhere at once.
  */
-export function useNearViewport(ref: RefObject<Element | null>, margin: string): boolean {
-  const [near, setNear] = useState(true);
+export function useNearViewport(ref: RefObject<Element | null>, margin: string, initial = true): boolean {
+  const [near, setNear] = useState(() => initial || typeof IntersectionObserver === 'undefined');
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;

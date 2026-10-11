@@ -5,7 +5,6 @@ import {
   createContext,
   type MouseEvent,
   type ReactNode,
-  type RefObject,
   useContext,
   useEffect,
   useId,
@@ -17,6 +16,7 @@ import type { Globals } from '../../protocol/messages';
 import { indexId } from '../../story/indexPages';
 import type { ComponentDeps, Decorator, IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
 import { StoryHost } from '../StoryHost';
+import { useNearViewport } from '../useNearViewport';
 import { mergeConfig, variantRows, withValueAt } from './variants';
 import './index.css';
 import { LibraryBadge } from './LibraryBadge';
@@ -54,22 +54,6 @@ function useEnv(): IndexEnv {
 /** How far past the viewport a cell stays mounted. */
 const NEAR_MARGIN = '100%';
 
-/** Whether `ref`'s element is near the viewport; true where the browser cannot say. */
-function useNearViewport(ref: RefObject<Element | null>): boolean {
-  const [near, setNear] = useState(typeof IntersectionObserver === 'undefined');
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver((entries) => {
-      const last = entries.at(-1);
-      if (last) setNear(last.isIntersecting);
-    }, { rootMargin: NEAR_MARGIN });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [ref]);
-  return near;
-}
-
 /**
  * One story at its defaults with `config` over them. It keeps its own config and state, so it stays interactive, and
  * it mounts only while near the viewport, so a page of canvas stories stays under the browser's WebGL context cap.
@@ -79,7 +63,8 @@ export function IndexStory({ story, config: over, label }: IndexStoryProps) {
   const [config, setConfig] = useState(() => mergeConfig(story.config.defaults(), over));
   const [state, setState] = useState<unknown>(() => story.initialState?.(config) ?? null);
   const cell = useRef<HTMLElement>(null);
-  const near = useNearViewport(cell);
+  // Starts unmounted, so a page of canvas stories never mounts every cell at once.
+  const near = useNearViewport(cell, NEAR_MARGIN, false);
   // Held while unmounted, so scrolling past a cell does not move everything after it.
   const [height, setHeight] = useState<number | null>(null);
   useEffect(() => {

@@ -1725,17 +1725,6 @@ only story runner in the repo.
   again (`createSplitStore`). The fix belongs in windease; the workaround goes
   when it lands.
 
-- **(P3) forge: the index page mounts a cell only once it is on screen, not a viewport ahead.**
-  `packages/forge/src/frame/index/IndexPage.tsx` keeps a private `useNearViewport` that reads
-  `isIntersecting` against the implicit root with `rootMargin: '100%'`. In the workshop document an
-  index page sits in a scrolling pane, and a root margin does not widen an intermediate scroller's
-  clip, so the margin does nothing there (from the IntersectionObserver spec, not measured).
-  `frame/useNearViewport.ts` already solves this by position against `root: document`. Folding the
-  copy into it needs the shared hook to take its starting value: it starts `true`, and the index
-  page's starts `false` so a page of canvas stories never mounts every cell at once. Check the
-  result with a browser test like `useNearViewport.browser.test.tsx`, with the cell inside an
-  `overflow: auto` box.
-
 - **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
   three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any
   non-CSS file even when `fullReload` is off. The page's own stamp in `~/src/wake/src/client.ts` is

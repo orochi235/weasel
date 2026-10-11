@@ -2,6 +2,11 @@ import '@weasel-js/theme/tokens.css';
 import './index.css';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
+import { page } from 'vitest/browser';
+import { meta, story } from '../../story/define';
+import { loadNativeModule } from '../../story/native';
+import type { LoadedStory } from '../../story/types';
+import { type IndexEnv, IndexEnvContext, IndexStory } from './IndexPage';
 
 // A cell's box is layout, which jsdom does not compute.
 
@@ -52,4 +57,33 @@ test('a padded cell gives a fluid specimen the column, as a page would', () => {
 
 test('a centered cell gives a fluid specimen room instead of collapsing it', () => {
   expect(fluidCell('centered').width).toBeGreaterThan(200);
+});
+
+// In the workshop an index page sits in a scrolling pane, which clips a cell the window still has room for.
+test('a cell mounts a viewport ahead inside a scrolling pane, and one far down the pane never does', async () => {
+  await page.viewport(800, 600);
+  const rendered: string[] = [];
+  const stories = loadNativeModule(
+    {
+      default: meta({ title: 'ui/Cells' }),
+      Ahead: story({ render: () => (rendered.push('ahead'), (<p data-story="ahead">ahead</p>)) }),
+      Far: story({ render: () => (rendered.push('far'), (<p data-story="far">far</p>)) }),
+    },
+    'ui/Cells',
+  );
+  const env: IndexEnv = { title: 'ui/Cells', stories, descriptions: {}, globals: {}, decorators: [], open: () => {}, onError: () => {} };
+  const [ahead, far] = stories as [LoadedStory, LoadedStory];
+  render(
+    <IndexEnvContext.Provider value={env}>
+      <div style={{ position: 'fixed', left: 0, top: 0, width: 400, height: 200, overflow: 'auto' }}>
+        <div style={{ height: 400 }} />
+        <IndexStory story={ahead} />
+        <div style={{ height: 5000 }} />
+        <IndexStory story={far} />
+      </div>
+    </IndexEnvContext.Provider>,
+  );
+  await expect.poll(() => document.querySelector('[data-story="ahead"]')).not.toBeNull();
+  await new Promise((done) => setTimeout(done, 300));
+  expect(rendered).not.toContain('far');
 });
