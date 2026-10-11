@@ -191,6 +191,37 @@ export function IndexDependencies() {
   );
 }
 
+const DAY = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
+
+function HistoryDate({ label, iso }: { label: string; iso: string }) {
+  return (
+    <div className="fg-index-history__item">
+      <dt className="fg-index-history__label">{label}</dt>
+      <dd className="fg-index-history__value">
+        <time dateTime={iso}>{DAY.format(new Date(iso))}</time>
+      </dd>
+    </div>
+  );
+}
+
+/** The release the component first shipped in, and when its source file was created and last changed, read from
+ *  git. Nothing for a gallery, or for a source file git has never committed. */
+export function IndexHistory() {
+  const { gallery, dependencies } = useEnv();
+  const history = gallery ? undefined : dependencies?.history;
+  if (!history) return null;
+  return (
+    <dl className="fg-index-history" aria-label="History">
+      <div className="fg-index-history__item">
+        <dt className="fg-index-history__label">Since</dt>
+        <dd className="fg-index-history__value">{history.introduced ?? 'Unreleased'}</dd>
+      </div>
+      <HistoryDate label="Created" iso={history.created} />
+      <HistoryDate label="Modified" iso={history.modified} />
+    </dl>
+  );
+}
+
 function StorySection({ story, variants }: { story: LoadedStory; variants: boolean }) {
   const env = useEnv();
   const headingId = useId();
@@ -251,6 +282,7 @@ export function DefaultIndex() {
           {env.gallery ? <GalleryBadge /> : null}
         </div>
         {env.description ? <p className="fg-index__description">{env.description}</p> : null}
+        <IndexHistory />
         <IndexDependencies />
       </header>
       {env.stories.map((story) => (
@@ -271,6 +303,7 @@ export function indexContext(env: IndexEnv): IndexContext {
     Variants: IndexVariants,
     DefaultIndex,
     Dependencies: IndexDependencies,
+    History: IndexHistory,
     gallery: env.gallery ?? false,
     open: env.open,
   };
