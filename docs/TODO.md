@@ -1900,21 +1900,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Pins layer on the last stored draft with the failing reference named, instead of offering only a
   discard.
 
-- **(P2) Callout: `onDismiss` fires for an Escape that did not close the callout.** With a
-  `ComboBox` inside a `Callout` and its menu open, Escape closes the menu, the callout stays open,
-  and `onDismiss` has already fired; a consumer following the prop's doc retires a message that is
-  still on screen. Reproduced in jsdom with `userEvent` (ArrowDown to open the menu, then Escape).
-  The listener in `packages/ui/src/components/Callout/Callout.tsx` is a native `keydown` on the
-  dialog element that checks only the key. A React `onKeyDown` around the dialog does not fix it:
-  the combo box lets the event continue, and it is React Aria's overlay stack that declines to close
-  a popover that is not the topmost. So the signal has to be "the popover closed because of Escape":
-  set a flag in the key listener and fire `onDismiss` from the close. In `triggerRef` / `anchorRect`
-  mode that close is `onOpenChange(false)`, which React Aria calls even when the consumer pins
-  `isOpen`. Under `CalloutTrigger` the popover reads the trigger's state from context and never
-  calls its own `onOpenChange`, so either `Callout` takes over the popover's open state there (and a
-  consumer's `onOpenChange` starts firing in composed mode) or it watches
-  `OverlayTriggerStateContext` for the close. That choice is the open question.
-
 - **(P2) CurveEditor: a right-click delete skips the built-in undo, and undo never reaches
   `onChange`.** Drag an anchor, right-click another to delete it, press Cmd+Z: one press reverts
   both, because the delete in `packages/ui/src/components/CurveEditor/CurveEditor.tsx`
