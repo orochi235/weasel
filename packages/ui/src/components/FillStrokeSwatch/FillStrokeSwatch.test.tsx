@@ -48,6 +48,18 @@ describe('FillStrokeSwatch', () => {
     expect(p.onFocusChange).toHaveBeenCalledWith('fill');
   });
 
+  // The picker closing fires a native `change` and can leave the input focused.
+  it('commits when the picker closes, without waiting for the chip to lose focus', () => {
+    const p = mount();
+    const fill = screen.getByLabelText('Fill');
+    fireEvent.input(fill, { target: { value: '#00ff00' } });
+    fireEvent(fill, new Event('change', { bubbles: true }));
+    expect(p.onChange).toHaveBeenCalledTimes(1);
+    expect(p.onChange).toHaveBeenCalledWith('fill', '#00ff00');
+    fireEvent.blur(fill);
+    expect(p.onChange).toHaveBeenCalledTimes(1);
+  });
+
   it('streams picker input and commits once on close', () => {
     const onInput = vi.fn();
     const p = mount({ onInput });

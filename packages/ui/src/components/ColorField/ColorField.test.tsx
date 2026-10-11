@@ -21,6 +21,18 @@ describe('ColorField', () => {
     expect(onChange).toHaveBeenCalledWith('#445566ff');
   });
 
+  it('commits when the picker closes, and not again on the blur that follows', () => {
+    const onChange = vi.fn();
+    render(<ColorField value="#112233ff" alpha onChange={onChange} aria-label="Fill" />);
+    const input = screen.getByLabelText('Fill');
+    fireEvent.input(input, { target: { value: '#445566' } });
+    fireEvent(input, new Event('change', { bubbles: true }));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('#445566ff');
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it('does not commit on blur with no preceding input (no-op-blur guard)', () => {
     const onChange = vi.fn();
     render(<ColorField value="#112233ff" alpha onChange={onChange} aria-label="Fill" />);

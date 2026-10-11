@@ -4,6 +4,7 @@ import { paintPreviewCss } from '../../paintPreview';
 import { solidColorOf } from '../paintValue';
 import { Button } from '../Button';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
+import { usePickerClose } from '../ColorField/usePickerClose';
 import type { PaintSlot } from '../GradientEditor';
 import s from './FillStrokeSwatch.module.css';
 
@@ -55,6 +56,12 @@ function Chip(props: {
   const none = paint === null;
   const preview = paintPreviewCss(paint);
   const pickerValue = (solidColorOf(paint) ?? PICKER_FALLBACK[slot]).slice(0, 7);
+  const commit = (): void => {
+    if (draft === null) return;
+    setDraft(null);
+    record(props.onChange(slot, draft) ?? draft);
+  };
+  const picker = usePickerClose(commit);
 
   return (
     <span
@@ -67,6 +74,7 @@ function Chip(props: {
         {preview && <span className={s.paint} style={{ background: preview }} />}
       </span>
       <input
+        ref={picker}
         type="color"
         className={s.input}
         value={draft ?? pickerValue}
@@ -86,11 +94,7 @@ function Chip(props: {
           setDraft(color);
           props.onInput?.(slot, color);
         }}
-        onBlur={() => {
-          if (draft === null) return;
-          setDraft(null);
-          record(props.onChange(slot, draft) ?? draft);
-        }}
+        onBlur={commit}
       />
     </span>
   );

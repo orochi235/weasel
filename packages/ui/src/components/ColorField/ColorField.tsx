@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { toHex8, getAlpha01, withAlpha01 } from '@weasel-js/core';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import { OpacityRange } from './OpacityRange';
+import { usePickerClose } from './usePickerClose';
 import s from './ColorField.module.css';
 
 /**
@@ -73,21 +74,7 @@ export function ColorField(props: ColorFieldProps) {
     setAlphaDraft(null);
   };
 
-  // The picker closing fires a native `change`, which React's `onChange` does
-  // not deliver apart from `input`; the input can keep focus after it closes,
-  // so waiting for blur alone would hold the commit until the next click.
-  const swatch = useRef<HTMLInputElement>(null);
-  const latestCommit = useRef(() => {});
-  useEffect(() => {
-    latestCommit.current = () => commit(visibleRgb, visibleAlphaPct / 100);
-  });
-  useEffect(() => {
-    const el = swatch.current;
-    if (!el) return;
-    const onClose = () => latestCommit.current();
-    el.addEventListener('change', onClose);
-    return () => el.removeEventListener('change', onClose);
-  }, []);
+  const swatch = usePickerClose(() => commit(visibleRgb, visibleAlphaPct / 100));
 
   return (
     <span
