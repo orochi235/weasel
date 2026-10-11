@@ -1,5 +1,714 @@
 # @weasel-js/ui
 
+## 1.9.4
+
+### Patch Changes
+
+- 6e2447b: `absentIsDefault` now also works on a field of an object leaf in `SelectionPanel`: a field the held object omits draws the field's default and is not Mixed beside an object holding that default, while a field of an object the node does not hold stays unset. `defaultNodeProperties` and `inferredNodeProperties` set the flag on every leaf the engine reads with a fallback: a stroke's width, cap, join, and align; a text node's text, style, and vertical alignment; and the style's family, size, weight, rules, tracking, case, small caps, leading, wrap, and align. So a text node with an empty style shows 16 and sans-serif where it showed blanks.
+- 9dfd8a5: A leaf may say `absentIsDefault: true`: nothing held where its value is read means its `default`. `SelectionPanel` draws that default for a node with no value at the leaf's path, and no longer reads such a node beside one holding the default as Mixed; nothing is written until an edit, which writes only the value typed. `defaultNodeProperties` sets it on `pose.rotation`, so a node whose pose has no `rotation` shows 0. `aggregateValue` takes the value an empty path reads as, and `PrefSchemaEditor` offers the flag among a leaf's attributes.
+- 53c1c1d: `PrefSchemaEditor`: dragging an action out of the Actions list no longer redraws the whole preview form on every pointer move. The list made a new pref for each move, so the preview never saw the same drop twice.
+- 4c4aa40: An action leaf fires a registered action by key. `PrefAction` gains `action`, the key of an action on the `ActionsRegistry` above the surface: its id, or `id:variant`. A leaf holding one is plain data, so a schema that carries it survives JSON. `run` is now optional and is what a leaf with no `action` calls. The leaf's `name` and `icon` are what the button shows; the registered action supplies the icon and shortcut the leaf lacks. A key the registry does not hold, or no registry, leaves the button dead. `PrefAction` also gains `control`: `'button'` reads the label, `'icon'` is the icon alone.
+  
+  An action says whether it is held down. `Action` gains `active`, a predicate under the same contract as `enabled`, and `evaluateActive` reads it safely. A button drawn for the action sets `aria-pressed` from it. An action with no `active` has no pressed state.
+  
+  `useLeafAction` answers for an action leaf on any surface. `BarAction` is the leaf as a toolbar cell, and `BarActionButton` is the button alone. `ActionBar` draws its entries with that button, so it now shows an active action as pressed. `PrefActionButton` draws through the same hook.
+- 6b0163c: `SelectionPanel` draws an `alias` leaf as the row of the leaf it points at, reading and writing that leaf's path, as `PrefsForm` does; it used to show `(alias: no renderer)`. An alias of nothing says so, and a renderer registered for the `alias` kind still gets the leaf as written. `PanelLeaf` gains an optional `own`: an alias's own key, where its `path` is its target's. In `PrefSchemaEditor`, removing a pref also removes its aliases.
+- 73011b3: In `PrefSchemaEditor`, an alias's `Of` picker offered every field, including the fields inside an `object` leaf and the alias itself, none of which an alias can show. It now offers only what the alias would resolve to a pref through.
+- f7efb73: `AnimatedTimeline` stops its frame loop when a timeline that does not loop reaches its end, and its transport shows Play there. A finished timeline still reports itself unpaused, so the component re-rendered every lane on every frame for as long as it stayed on screen, with the button stuck on Pause. The loop also starts again whenever the component renders with the timeline running, such as after an edit that lengthens a finished timeline.
+- 5569371: `AnimatedTimeline` redraws its lanes after an edit. A key dragged to a new time went on being drawn where it started, and the next drag or arrow-key step began from the old time, because the handle edits its track array in place and `Timeline` builds its rows once per array. `AnimatedTimeline` now hands `Timeline` a fresh array for every edit the handle reports.
+- 2e11673: `useAsyncOptions` ignores a superseded request that resolves anyway. A `load` that does not honor its abort signal could resolve an older query after a newer one was issued; its options were shown as current and `isLoading` went false while the newer request was still pending. An aborted request's result is now dropped whether it rejects or resolves.
+- 1bde2a4: A leaf says as data what it does when auto. `PrefBase` gains three optional fields: `manual` (never auto), `unpinned` (starts auto), and `autoValue` (what it reads while auto, which need not be its `default`). labkit already wrote the first two onto its leaves from `.manual()` and `.initial(auto)`; they are now part of the type.
+  
+  `PrefSchemaEditor` edits all three in a new Auto panel of a leaf's attributes. The auto value starts unset, and its label pins it, starting from the default. A leaf with no value, such as an action, gets no panel.
+  
+  `PrefsForm` gives a `manual` leaf no auto toggle, whatever `canInherit` says. labkit resolves an auto leaf to its `autoValue` where it has no `.auto()` resolver, and `ControlPanel` quotes that value in the row's ⓘ tooltip as it does a resolver's.
+- 2d1960e: A row's ⓘ tooltip can end with what the row reads when it is auto. `PropertyRow`, `PropertyField`, `DialogRow`, and `PropertyHelp` take a new `autoValue` prop; given, the tooltip's last line is the word `auto`, drawn as an auto row's readout draws it, followed by the value. A row with an `autoValue` and no `description` gets the ⓘ for that line alone.
+  
+  labkit's `ControlPanel` passes it for every leaf that has an `.auto()` resolver and is not `.manual()`, whether the row is pinned or auto: the value is what the resolver gives with that row unpinned beside the rows that already are.
+- 5c5ba76: `PrefSchemaEditor`'s Auto value row is a switch before the leaf's control: off, nothing is stored, and the control shows the default and takes no input; on, the value starts from the default. The pin label and the words "not set" are gone. A `PrefRenderer` may carry `group: true` to say its control is several, or one a `<label>` may not wrap, so its row is drawn as a group; the editor's option list and pair editor now say so.
+- 18d45e8: `BandEditor` cut the bottom off a band caption's descenders: "gypsy" drew with the tails of its g, y, and p missing. A caption is now clipped along the track only, so it still ends in an ellipsis in a narrow band and is drawn at full height.
+- c834f3b: `BandEditor` called `onChange` for drags that changed nothing: a seam brought back to where it started, and a click on a middle band, which also moved the band by however far the pointer slipped. A band body now moves only once the pointer passes the drag threshold, and a seam or band released where it started commits nothing.
+- b30da28: Merging a `BandEditor` band with `x` or `Delete` left keyboard focus on nothing, or on the band to the right of the selection. Focus now moves to the band that absorbed the merged one, which is also the one selected.
+- 32002e9: Dragging a `BandEditor` range end away and back to where it started left the end drawn at the previous pointer position and called `onRangeChange` with that range on release. The end now returns to its start, `onRangeInput` reports the original range, and release commits nothing.
+- a777cea: Splitting a `BandEditor` band left of the selected one moved the selection onto a different band, because the indices shifted and `onSelect` was not called. It is now called with the selected band's new index.
+- 07d96b0: A field has a bar form. `BarField` takes the props `PropertyField` takes and draws the field as a cell of a toolbar: a number or a text box behind its name, a flag as a button held down while on, a paint as its swatch, a radio group as segments. `BarPopover` is the cell for what one line cannot hold, a button that opens a popover; a text area draws through it.
+  
+  `ToolOptionsBar` draws its schema's leaves through `BarField`, which changes three of them. A boolean with no `control` is a toggle button where it was a switch. A paint is a swatch that opens its editor where it was the editor inline. A leaf whose value is made of others (`object`, `list`, `map`, `union`) is a button that opens its rows where it drew them on the line. A string's box is `12ch` wide where it was `5ch`.
+  
+  An enum takes `control: 'menu'`: a button reading the current value, as wide as that value. `PropertyField` and `PropertyControl` draw it, `PrefEnumControl` allows it, and `PrefSchemaEditor` offers it. `MenuButton` gains `current`, which draws its label as a value and not as a prompt.
+- 5c560ab: `PrefSchemaEditor` makes bars. Its palette has a Bar, a group's "Drawn as" offers `bar`, and an action pref's attributes hold the key of the registered action it fires and its control.
+  
+  A schema whose root is drawn `as: 'bar'` previews as the toolbar itself, with a switch that runs it down its side, and its prefs are rows of the tree where another group root's would be unplaced.
+  
+  The editor lists actions to drag from. `PrefSchemaEditor` gains `actions`, a list of `{ key, label, group?, icon?, shortcut? }`; left out, it lists what the `ActionsRegistry` above it can fire from a button. The list sits under the Unplaced tree and follows the structure's filter. An entry dragged into the tree or the live preview lands as an action pref that fires it by key. A pref that fires a key the list does not hold is marked in the tree, and an action pref's Action attribute is a choice among the list.
+- 799e489: `PrefsForm` draws a root `as: 'bar'` as that one bar, whatever `layout` says, and its new `orientation` prop says which way the bar runs. A drop over a bar's cell is placed by the half of the cell along the bar's axis, so `prefDropTargetAt` answers before or after a cell from left to right in a bar that runs across.
+  
+  In `PrefSchemaEditor`, the live preview of a root drawn as a bar is now that form: a pref or an action can be dropped between its cells, a cell can be dragged to a new place (a button is picked up by a press on it), and a press on a cell selects its pref in the tree.
+  
+  `Tree` has a `ghost` prop that turns off the dragged rows drawn beside the pointer. The schema editor's trees use it while the preview draws the dragged node where it would land.
+- b73b3aa: A `BarField` number field with `control: 'slider'` rendered with the literal class `undefined`. It now carries only the classes its stylesheet defines.
+- 34feefc: A group can be drawn as a bar. `PrefGroupAs` gains `'bar'`, and `Bar` draws one from a schema: `schema`, `values` keyed by dotted path, `onChange`, `mixed`, and `renderers`, as `ToolOptionsBar` takes them, plus `orientation` and `label`. A leaf is a cell in its bar form. A nested `section`, `bar`, or `fragment`, or a group that says nothing, is a run with a divider on each side and no heading. A nested `page`, `tab`, or `panel` opens from a button reading its name, as rows. A vertical bar has no room beside a field, so every leaf but an action opens from a button.
+  
+  `Bar` has no frame; the host gives it the strip it sits on. `BarLayout` is the line itself, for a surface with its own values and cells, and `groupBarNodes` reads a group into what it lays out.
+  
+  A group `as: 'bar'` draws as one line of bar forms, with no heading, in a `PrefsForm` page, in an `object` leaf of a `PrefsForm`, and as a `SelectionPanel` section. A section inside an object leaf in `SelectionPanel`, and labkit's `ControlPanel`, still draw one as a headed block of rows.
+  
+  `ToolOptionsBar` draws its schema with a `Bar`, so a nested group there is now a run between dividers, or a button for a `page`, `tab`, or `panel`, where its leaves used to join the line unmarked.
+  
+  The icon set gains `formBar`.
+- def780e: `Callout`: `onDismiss` fires for an Escape only when that Escape closes the callout. With a menu open inside it, such as a `ComboBox`'s, Escape closes the menu and the callout stays up, and `onDismiss` used to fire anyway. Under `CalloutTrigger` the consumer's `onOpenChange` is unchanged.
+- f337f1d: A `Callout` held shut with `isOpen={false}` no longer dispatches a `resize` on `window` each time its `anchorRect` changes. It still does while open, which is what moves the popover with its anchor.
+- c2a2a5d: A clearable enum can no longer declare a default: `PrefEnum` with `clearable: true` requires `default: undefined`, so a missing value stays the only stored form of cleared. This is a type error for a schema that declared both; drop the default. The fields every enum leaf carries are exported as `PrefEnumBase`. `PrefSchemaEditor` drops an enum's default when it is made clearable and offers no Default field for one.
+- 8ee81fd: `PropertyField kind="color"` with a numeric `alpha` never called `onChange` or `onAlphaChange` at the end of a gesture when the caller's `onInput` or `onAlphaInput` had already moved `value` to follow the drag, so the settled write never landed. The half the gesture moved is now committed when it ends.
+- 8469066: `ComboBox` called `onCommit` with `source: 'text'` for Enter on typed text even without `allowsCustomValue`, when the input then discards that text. A text commit is now reported only when `allowsCustomValue` is set, as the prop documents.
+- 59f518a: `ComboBox`'s `onCommit` doc now says what the component does: with `allowsCustomValue`, Enter with no option highlighted is a text commit, even when the text is an option's own label.
+- e1255f1: `PrefSchemaEditor`'s count badges (how many leaves a group holds in the structure tree, and how many nodes a drag carries) are set in the interface face with proportional digits. They were in the tabular face, whose equal-width digits left a lone "1" with space on both sides.
+- 7d49da3: In `CurveEditor` and `LayeredCurveEditor`, clicking an anchor without moving it added a step to the built-in undo, so the next Cmd/Ctrl+Z did nothing visible. A gesture that leaves its layer as it found it no longer adds a step.
+- 66373ac: A canceled anchor drag in `CurveEditor` or a `createFunctionLayer` layer (a `pointercancel`, or a second press on the same pointer) left the points where the drag had put them, including a point a click on the curve had just inserted, with no `onChange`. The points now return to where they were before the press, and `onInput` reports them.
+- 98101a3: `CurveEditor` kept drawing the points of its last gesture when the consumer had rounded them or left `value` alone, until some later `value` change. Once a gesture ends the editor draws `value` again, so a `CurveField` with a `step` shows the stepped curve. A consumer that never writes `onInput` back to `value` now sees each edit snap back.
+- f9bf6ae: `LayeredCurveEditor` and `CurveEditor`: the built-in undo keeps the last 100 steps. It held a snapshot of every layer for every edit made while the editor was mounted.
+- 18eb752: `LayeredCurveEditor` reports an undo or redo of its built-in history as a finished change: `onLayerCommit(id, restored, current)` after `onLayerChange`, so `CurveEditor` now calls `onChange` for them. A consumer that keeps its own undo, or builds ops from `onLayerCommit`, turns `history` off or records each step twice.
+  
+  A `CurveLayer` may define `onContextMenu`, dispatched to the topmost layer claiming the point; an edit it commits is one undo step. `CurveEditor`'s right-click delete goes through it, so it can be undone on its own, and `Plot2D` takes an `onContextMenu` that is handed plot and model coordinates. `CurveEditor` no longer wraps its plot in a `div`.
+- 2a87c05: `fill.color` on `CurveEditor` and `createFunctionLayer` did nothing: the fill was always painted in the theme color. The area under the curve is now painted in the color given.
+- 50c2cfe: A right or middle click on a `CurveEditor` curve, or on empty plot with `addPointMode="click-empty"`, inserted a point, and a middle press dragged an anchor. `createFunctionLayer` now acts on the primary button only; a right-click on an anchor still deletes it.
+- 0afd65c: A custom kind's attribute in `PrefSchemaEditor`'s `kinds` may say `required: true`: emptying it keeps it on the leaf, and a new leaf of the kind, or one switched to it, starts with it set to the attribute's `default`. An attribute named `default` likewise gives a new leaf its default. `KindAttr` is the attribute's type.
+- a07e769: A range's track and thumb are easier to see in dark mode: both mix from `--wzl-accent-fg`, the bright accent there, and `--wzl-slider-track-mix` and `--wzl-slider-thumb-mix` are 40% and 100% in dark mode. Light mode keeps 18% and 70% of the same color it had.
+  
+  An off `Switch` has a muted gray track, a share of the text color, where its sunken fill disappeared on a dark surface.
+  
+  A `PrefsForm` row sets its control at the row's far edge, and a select's value at that edge inside it, so the values line up down a pane.
+  
+  A `PrefsForm` rail entry is set at `--wzl-font-size`, the size of a control's text in the pane beside it, up from `--wzl-font-size-sm`.
+- b370885: A dep registry can be listened to: `subscribe(listener)` hears a source registered or released anywhere in its tree and an owner's `changed()`, which says a source's value changed. `<SceneCanvas>` calls `changed()` when its scene or its selection changes. `ActionBar` and an action leaf's button listen, so a button whose `enabled` or `active` state reads the selection now follows it without anything else re-rendering the chrome. A dep source you publish that changes on its own calls `useDepRegistry().changed?.()` when it does. Both methods are optional on `DepRegistry`, so a hand-built registry with only `register` and `get` still fits.
+- b9d5513: A `Dialog` `bodyClassName` that set `flex` could lose to the dialog's own `flex: 1`, depending on stylesheet order. That default now sits with the body's other overridable defaults, so the consumer class wins. The doc no longer says a click outside closes the dialog: it does only with `isDismissable`.
+- c289df7: Every public export now carries a JSDoc block: the ones that had none are documented, among them audio's effect and envelope types, diagram's `DiagramData` family, and `SelectContext`. No behavior changes.
+- 4f8f94e: `prefDropTargetAt` answered a point in the gap between two rows of an `as: 'fragment'` group with a drop into the enclosing page or section, so a placeholder dragged down through a fragment jumped to the end of the page at each gap. The gap now belongs to the nearest row, as it does between rows outside a fragment.
+- 1128311: `PrefSchemaEditor` handles several nodes in two more places. In the Unplaced tree, Cmd-click adds a row to the selection and shift-click takes a range, rows selected in the structure tree stay selected, and a drag of several selected rows carries them all. Add alias works with several prefs selected: it adds an alias of each, together after the one picked last, and is off while any of them has no alias to make.
+- bafbccc: `PrefSchemaEditor`: undoing a move dropped after the drag opened a rail page goes back to the selection the drag began with, so the preview shows the page the node returned to. It used to select the group whose page the drag had opened.
+- 3b6d55f: In `PrefSchemaEditor`'s structure tree, a range taken upward with shift-click now leads with the row that was clicked, as a range taken downward does. Before, the row just above the range's start led, so the attributes pane and the preview followed the wrong node.
+- 89b4ee6: `Slider` with `endless` and no `step`: the arrow keys now move a thumb onto the infinity stop and off it. A thumb at `Infinity` stayed there under ArrowLeft, and ArrowRight from the top of the range never arrived, because one keystroke covered less than half the gap the stop is drawn across. The stop is now one press past the range's end, and a larger move that would overshoot the end lands on the end first. With `stops` on a linear track, the infinity stop joins them, so arrow keys and a `snap: 'strict'` drag can land on it; it is labeled when the other stops are.
+- d617bf4: An endless slider end keeps its whole range. `endless` used to turn the end stop itself into infinity, so `min={0} max={5000} step={50} endless="max"` could reach 4,950 and then infinity, never 5,000. It now adds a stop for infinity one `step` beyond the range (a twentieth of the range where there is no step, and one more stop under `spacing: 'even'`, labeled with the display's word for infinity), so the track's own end is that stop and every value from `min` to `max` is still reachable. This reaches `Slider`, the slider `PropertyField` draws, `PrefsForm`, and labkit's `.endless()`.
+  
+  A stored `Infinity` still reads as infinity. A value stored at the old top stop was stored as `Infinity`, so nothing stored changes meaning. A typed number past the range commits infinity, as before; one within half a step of the end commits the end.
+- 20c2d26: Escape cancels a drag. `startThresholdDrag` ends a live drag as a cancel when Escape is pressed, and keeps that key press from anything else listening, so a drag inside a dialog does not also close it. Everything built on it follows: `Tree`, `useReorderDragList`, and the rows of `PrefSchemaEditor`'s live preview. The editor's palette now drags through `startThresholdDrag` too, so a press on a tool that never moves makes nothing.
+  
+  In `PrefSchemaEditor`, dropping a node where it already sits no longer adds a step to undo.
+- f3702c9: `PropertyFontWeightFieldProps` is exported. It was already a member of the public `PropertyControlProps` union, beside `PropertyFontFamilyFieldProps`, and could not be named.
+- b374c88: A `PrefsForm` filter that matched the schema's own name filtered nothing: typing `set` into a form named `Settings` kept every row. The filter now matches the groups and leaves inside the schema, not its title.
+- 1a09433: `PrefsForm` could ignore keyboard focus moving into a row: after a press on that row became a drag, with no click to end it, `onSelect` was not called when the reader later tabbed into the row. The form now forgets the press when its pointer comes up or is canceled.
+- 4f63476: `PropertyPanel`, `Subpanel`, and `PropertyGroup` take `twisty`: `'folded'` hides the twisty while the contents are open and folds on a press of the title instead; the twisty still takes keyboard focus and shows while it has it. `ControlPanel` and `ControlMatrix` pass it through. The default, `'always'`, is unchanged.
+  
+  A panel's title sits closer to its contents: the gap under it is 8px, down from 12px (`--wzl-prop-panel-title-gap`), and a twisty no longer makes the title row taller.
+- 6ee9a4e: In a `PrefsForm`, an `object` leaf's field written as `undefined` (by an enum `encoding` whose `write` returns it, say) left the key in the committed object holding `undefined`. The key is now removed, as `SelectionPanel` already did and as the `encoding` contract says.
+- 87ea5af: A `GradientHandles` or `MeshHandles` point jumped to the pointer on the first move of a drag, by up to the handle's radius when it was grabbed near its rim. A handle now moves by exactly how far the pointer moved.
+- 2213ee8: `GradientHandles` and `MeshHandles` take an optional `onCancel`, called when a handle drag is abandoned, after the last `onInput` has put the value back where the drag began. This is additive: an owner that opens an edit on `onInput` now has a place to end it without keeping it. `SceneGradientHandles` uses it to cancel its `setFill` / `setStroke` action, which a canceled drag used to leave open and commit later, on unmount or a slot change.
+- ef9e985: `GradientEditor` numbers each stop's color swatch by where the stop sits along the gradient, so a screen reader hears "Stop 1 at 0%, Stop 2 at 50%" in order whatever order the stops are stored in. A swatch still recolors the stop it stands for.
+- 8763790: A row's ⓘ shows its help the moment the pointer is over it, where it used to wait the tooltip's usual 600 ms. Help opened by keyboard focus still waits for focus to rest on the row's control.
+- ed78985: A field of an `object` pref marked `hidden` was drawn by `PrefsForm` whether or not `showHidden` was set. `visiblePrefSubtree` now drops an object leaf's hidden fields, and any section inside it that is left empty, the way it drops hidden leaves from a group; the object leaf itself stays, and a hidden field keeps its stored value when a shown one is edited.
+- 8101299: `<Icon>` takes a `mark`: a second, small glyph set in its lower right corner, with the main glyph cleared from around it, so `<Icon name="formPage" mark="markAdd" />` reads as "add a page". The mark is drawn at the main glyph's stroke weight.
+  
+  The marks are new glyphs in a `Marks` group of their own, each usable alone like any other: `markAdd`, `markRemove`, `markCheck`, `markClose`, `markDot`, `markClone`, `markLock`, `markUp`, `markDown`, `markReset`, `markSearch`, `markAlert`, and `markStar`. `MARK_ICONS` lists them and `MarkIconName` is their type.
+  
+  `PrefSchemaEditor`'s Add pref and Add group buttons use it, in place of two identical plus signs, and Remove carries the delete glyph.
+- d3020c4: An inline `Dialog` is at most 900px wide, as a modal one already was, so `PrefSchemaEditor`'s live preview no longer stretches across a wide pane. `--wzl-dialog-max-width` sets the cap for both. The editor's properties-panel preview is capped at 420px.
+- 3df8a5a: `Jog` with `count={0}` showed `1/0`. It now shows `0/0` and draws no scrubber for an empty sequence.
+- bd2a870: `PrefSchemaEditor`'s attributes set Name above Key, and the key follows the name: when the Name field loses focus, the key becomes the name in camelCase (`Line width` gives `lineWidth`), numbered if a sibling holds it. A node that was in the schema the editor opened on keeps its key unless the key already was its old name's, since values may be stored under it. A pref in a node property schema, whose key is its whole value path, is never rekeyed.
+- 0b77641: In a `createKeyframeLayer` layer, an arrow key that moved the focused key past its neighbor left focus on the neighbor, so the next press moved a different key. Focus now follows the key it was moving.
+- 28dd134: In a `createKeyframeLayer` layer, moving a key past its neighbor left `selectedSegment` naming a different segment, so the highlighted band and its bezier handles jumped. `applyKeyframeDrag` now returns `selectedSegment` too, following the key the segment runs into, and it is `null` when that key becomes the first.
+- cce05ca: `label` and `separator` are built-in pref kinds (`PrefLabel`, `PrefSeparator`): leaves that hold no value, so a store skips them and neither is a `PrefPath`. Every params surface now draws them the same way, through `PrefLabelLine` and `PrefRule` from `@weasel-js/ui`: `SelectionPanel` and labkit's `ControlPanel` drew each as an unknown kind before. labkit's builder gains `f.label(text)` and `f.separator()`. `prefFieldChoices` no longer offers either as a field, and `PrefSchemaEditor` offers a label its name, description, and Hidden, and a separator Hidden alone. Code that switches over every `PrefKind` needs an arm for the two.
+- 104fa68: labkit's `ControlPanel` draws a group `as: 'bar'` (`f.group({...}).as('bar')`) as one line of its leaves in their bar forms under no heading, where it drew a headed group of rows. A leaf that names no `control` takes the bar's default, so a boolean is a toggle button there and a checkbox in a row. A leaf whose control the lab draws itself keeps its row form.
+  
+  `@weasel-js/ui` exports `renderBarLeaf` and its `BarLeaf` argument: the one place a leaf kind's bar form is decided, for a surface that draws its own bar through `BarLayout`.
+- bca6c26: `useSceneLayerList`: `adapter` is now optional. Without one, a reorder is applied to the scene as a single history entry, so a caller no longer builds an adapter only to hand it over.
+- 01c024e: Three keyboard fixes in `LayerList`. ArrowLeft on a row under a card no longer jumps focus to the first row in the list. Removing a row from its own remove button moves focus to the row that takes its place, where it used to fall to the page. A card with a `badge` in a list without `onReorder` shows the badge as plain decoration, where it used to be a focusable "Drag to reorder" button that did nothing.
+- 216d9ae: `LayerList` selects as `Tree` does: shift-click selects every showing row from the last click to this one, and Cmd/Ctrl-click adds or removes one row. Shift-click used to toggle a single row, so this changes what an existing shift-click does.
+- 3e0b75e: `LayerList` rendered every level twice for each update, including each pointer move of a drag, because its container ref was rebuilt on every render. It now renders once.
+- 1dc28cb: A `LayerList` row is a `row` in a `treegrid` but held no `gridcell`, which the role requires and assistive technology reads the row through. Each row's content is now in a `gridcell`; the layout is unchanged.
+- e3797b1: `ListEditor` no longer holds a 28rem minimum width. It asks for 28rem and gives way to a
+  narrower container, so in a form row it stays inside its control cell rather than running
+  out past the label.
+- 74c30e6: Removing an entry from a `ListEditor` could leave keyboard focus on nothing: when the list emptied, and in any list drawn through `renderEntry` (every number, object, and map list in `PrefsForm`). Focus now lands on the entry before the removed one, its remove button where the entry has no text field, or on the add button when no entry is left.
+- 67e23db: A list leaf's entries read one way in `SelectionPanel` and `PrefsForm`: an entry holding nothing draws the item's default (`prefListEntry`), where the panel drew it unset. `SelectionPanel` also looks an entry's renderer up by its path (`data.tags.0`) before its kind, as it does for every other leaf.
+- 5794fc1: A list of plain text in `SelectionPanel` is drawn with `ListEditor`'s own fields, as `PrefsForm` and labkit's `ControlPanel` draw one, so Enter adds an entry and Backspace removes an empty one there too. Which lists those are is one exported test, `prefListIsText`, with `prefListTexts` for their entries.
+- ef90738: Two more marks for `<Icon mark>`: `markAll`, an asterisk, and `markNone`, a slashed O.
+- 08516b6: A `ControlMatrix` with a `title` draws its column headers in the panel's title row, over their columns, and a folded one draws the title alone. The table keeps a header row at no height, which still sizes the columns and names them for a screen reader. A matrix with no title keeps its headers in the table.
+  
+  `PropertyPanel`'s actions take their width from `--wzl-prop-panel-actions-basis` when an ancestor sets it; unset, they size to their content as before.
+- 5a92802: `mod` is matched and drawn from one platform read. `@weasel-js/gestures` exports `isApplePlatform()`; the gesture dispatcher uses it for the `isMac` it matches with, and ui's `detectPlatform` uses it to pick key legends. `formatShortcut` and `formatShortcutParts` now follow the platform, taking an optional `{ platform }`: off macOS a `mod` shortcut reads `Ctrl+Z`, not `⌘Z`. Behavior changes: on iPhone and iPad the dispatcher now matches `mod` on Command where it matched Ctrl, and `detectPlatform` reads an unrecognized browser as Linux where it read macOS. ui gains a dependency on `@weasel-js/gestures`.
+- ac01954: `PrefSchemaEditor` no longer makes an alias of a field inside an `object` pref: Add alias is off for one, and neither the tree's alias drag nor the preview's lands one. Such an alias named a path no reader resolves. A heading inside an `object` pref is also no longer counted as a step of its fields' value paths.
+- 0f8ab4e: `PrefsForm` in the columns and list layouts showed `No settings match “”.` and a `Clear filter` button for a schema with nothing to draw, such as an empty one or one whose leaves are all hidden. That message now appears only while a filter is typed, as it already did in the rail layout.
+- 391b2fe: A field of an object leaf in `PrefsForm` never showed its `description`: the field's row had no help cue, where a leaf's own row has one. The field's row now offers it.
+- b1ecc88: `prefObjectWithField` and `prefObjectBase` in `@weasel-js/prefs` are the one rule for writing a field of an `object` leaf, which `PrefsForm` and `SelectionPanel` each wrote their own way. Where no object is held, the write starts from the scalar lifted by `fromScalar`, else from the leaf's `default`, so the value is whole. `PrefsForm` used to start from an empty object there, and wrote one field on its own.
+- dcd14b3: `PrefsForm`: a section inside an `object` leaf draws its `description` under its heading, at the top of its panel, or at the top of its tab. It was dropped.
+- eb26807: An object leaf's row in `PrefsForm` was a `<label>` around all of its fields, so a click on the object's name, or between its fields, toggled or focused the first field. The row is now a plain group, as a list, map, or union leaf's already was.
+- 1eee4df: The `weasel.debug` flag is read and cached once. `@weasel-js/routing` now exports `isDebugEnabled` and `dwarn` beside `dlog`, and `@weasel-js/core` and `@weasel-js/ui` export those same functions where each used to parse `localStorage` with its own copy of the code. `@weasel-js/ui`'s `isDebugEnabled` now also takes no argument, to ask whether any namespace is on.
+- 5cd52f3: One hex color reader. `@weasel-js/paint` exports `parseHexBytes` (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa` to four 0–255 channels, `null` otherwise) and `hexToRgbBytes`, and core re-exports both; core's `parseColor` and `normalizeHex`, paint's `hexToOklchDeg`, `contrastLineColor`, and `hexToColorLiteral`, theme's `hexToRgb` and `withAlpha`, and ui's token panel all read through it. Fixed along the way: theme's `hexToRgb` (and `luminance`, `contrast`, `toLab` on top of it) read `#abc` as `#000abc` and shifted an eight-digit hex's alpha into blue; `contrastLineColor` did not read a four-digit background. Behavior change: `hexToOklchDeg`, `hexToRgb`, and `parseColor` now throw on a malformed hex where they computed from `NaN`.
+- da9951d: `PrefsForm` and `SelectionPanel` walk an object leaf's children with one walker, each handing it the parts it draws its own way: how a field's value is read, how a run of fields becomes rows, and how a section is framed. Two things change in a form: a section nested in a `bar` section is set apart by a divider on each side, as a bar and the panel already drew it, where its fields ran in with their neighbors; and a section with no name draws no empty heading.
+- 0bc3435: The opacity readout beside a `ColorField` slider widened when it reached `100%`, shifting the rest of the row. Its cell is now wide enough for every value.
+- 1687f69: `PaintInput` takes a `subject` prop naming what it is pointed at (a selection key, a node id). Its memory of the paint last seen for each kind is dropped when the subject changes, so a control left mounted across a selection change no longer offers the new selection the last one's gradient. A caller that gave it a `key` for this passes `subject` instead.
+- 54205a2: `SelectionPanel` draws a section `as: 'bar'` inside an object leaf as one line of the object's fields in their bar forms, where it drew a headed block of rows. Each field still writes the object whole.
+- 945c663: `PropertyPanel` and `Subpanel` fold. Both take the props `PropertyGroup` already had: `collapsible`, `defaultCollapsed`, `collapsed`, and `onCollapsedChange`. A folding panel draws a twisty before its title, keeps its contents mounted while folded, and marks its root `data-collapsed`. The props are exported as `CollapseProps`, with the `useCollapse` hook all three containers now share.
+  
+  labkit's `ControlMatrix` takes the same four props. `ControlPanel` takes `collapsible` and `defaultCollapsed` for the whole panel; its controlled state uses the key `''` in the `collapsed` record and in `onCollapse`, beside the sections' keys.
+  
+  `Subpanel`'s title row is now a `<div>` holding the `<h4>` and the rule, where the `<h4>` held both. A stylesheet that targeted `h4 > span` or `h4 > hr` inside a subpanel needs the new shape.
+- 72a85f7: `PatternPicker`'s Rotation field holds any angle. It could only hold multiples of 15°: typing `20` rotated the pattern 15°, and a paint already rotated 22.5° read as `30°`. The 15° step now applies only to the arrow keys and the stepper buttons, and a typed or existing angle is kept as it is, to one decimal place. The field is now a `UnitField`, so its input has the `spinbutton` role.
+- 4d559ca: `isPlainObject` lives in `@weasel-js/registry` (core still exports it), and `@weasel-js/geom` exports a scalar `clamp(v, lo, hi)`. theme, prefs, labkit, and forge read plain objects through the one realm-safe test, so a `Date` or a `Map` no longer passes where they accept a record; ui's Slider and ResizeHandle, hud's loupe, and labkit's ZoomControl use geom's clamp. When its bounds cross, ResizeHandle now holds to `min` where it held to `max`. theme and prefs gain a dependency on registry, and ui's on geom moves from dev to runtime.
+- 151a441: A new pref kind, `alias`: a leaf that shows another leaf. Its row draws that leaf's control and reads and writes that leaf's value, so one setting can sit on two pages over a single stored value.
+  
+  ```ts
+  play: { name: 'Play', children: { grid: { kind: 'alias', name: '', description: '', default: undefined, of: 'view.grid' } } }
+  ```
+  
+  `of` is the path the shown leaf's value lives at. `name` and `description` left empty are the target's; given, they rename the row at the alias's place only. An alias holds no value: a store neither reads nor writes one, `prefHoldsValue` answers false for it, and its path is not a `PrefPath`. `@weasel-js/prefs` adds `PrefAlias`, `prefAliasTarget` (which follows an alias of an alias and answers nothing for a missing target or a loop), `prefAliasedLeaf`, and `prefLeafAt`.
+  
+  `PrefsForm` and labkit's `ControlPanel` draw an alias as its target's row; an alias of nothing draws a note saying so, in place. In labkit `f.alias('view.grid')` builds one, and its own `.section`, `.showIf`, `.label`, and `.describe` place and name it. `SelectionPanel` does not draw aliases yet.
+  
+  `PrefSchemaEditor` lists `alias` among the kinds, with an `Of` picker, and makes one by a drag with Alt and Cmd (or Ctrl) held. Moving or renaming a pref, or a group above it, rewrites the aliases that name it.
+  
+  This adds a member to `PrefKind`, so a `switch` over a built-in leaf's kind that ends in a `never` guard stops compiling until it handles `alias`.
+- a14e734: A `PrefGroup` can say how it is drawn, with `as`: `'page'` (an entry in the form's rail and a pane of its own), `'tab'` (one tab in a strip shared with the `tab` groups beside it), `'panel'` (a bordered, titled box), or `'section'` (a heading over its rows). Unset, depth decides as before: a top-level group is a page and a nested one a section. `PrefsForm`'s rail layout draws all four; a top-level group that is not a page is drawn on the root's own page, with the root's leaves. Its columns and list layouts, and labkit's `ControlPanel`, draw tabs, panels, and sections; they have no pages, so `'page'` draws as the default there. labkit's `f.group(...)` takes `.as(kind)`. `PrefSchemaEditor` sets it from a group's "Drawn as" attribute, and its tree files non-page top-level groups under General.
+  
+  `prefGroupIsPage` and the `PrefGroupAs` type are exported from `@weasel-js/prefs`.
+  
+  A `PrefSection` takes `as` too, without `'page'`: `SelectionPanel` draws a run of tab sections as one strip and a panel section in a box, and so do the sections inside an object leaf, in both `SelectionPanel` and `PrefsForm`. `GroupTabs` is the one tab strip all of them use, exported from `@weasel-js/ui`. `PrefSchemaEditor` offers "Drawn as" on a section and a palette of tab, panel, and section for a section schema.
+- f6ea86c: `@weasel-js/prefs` exports `PREF_KIND_TRAITS`, one record saying of every built-in kind whether its value is made of other leaves and whether its control is several controls, with `prefIsCompound` and `prefDrawsSeveral` to read it. `PrefsForm`, the bar, and labkit's `ControlPanel` read it in place of their own lists of kind names, so a kind added to `PrefKind` does not compile until it says what it is. labkit's `ControlPanel` now draws `font-family` and `font-weight` leaves with the pickers ui has for them; it said it had no control for them.
+- 5d6a06a: `PrefSchemaEditor` keeps its undo history, its draft, and what it sent in a hook of their own. Nothing it draws or stores changes.
+- 9f70b3c: **Breaking change to the schema types.** A pref schema's branch node was one type, `PrefGroup`, read two ways: the prefs store and `PrefsForm` took a group's key as a path segment, and a node's property schema took it as a heading over leaves whose own keys were whole node paths. There are now two types, and a schema of one is a type error where the other is read.
+  
+  `PrefGroup` keeps `children` and the nested reading: `view` > `gridDensity` is the leaf at `view.gridDensity`. The new `PrefSection` holds `members`, and its key adds nothing to a path. `NodePropertiesEntry.schema` is a `PrefSection`, and so is a heading inside a `PrefObject`'s `children`.
+  
+  What to rewrite:
+  
+  - A node property schema passed to `createNodeProperties().register`, `<SceneCanvas>`, or `<SelectionPanel>`: rename `children` to `members` on the root and on every group inside it. An `object` leaf keeps `children`.
+  - A group nested inside an `object` leaf's `children`, in any schema: rename its `children` to `members`.
+  - Code that walks a node property schema reads `.members`. `prefSectionLeaves(members)` returns every leaf under a section's `members` or an object leaf's `children` by its own key, and `isPrefSection` tells a section from a group.
+  - `prefFieldChoices(schema)` no longer takes a second argument. It reads the path rule off the schema it is given, so pass a `PrefSection` where `false` was passed.
+  - `SelectionPanel`'s `isGroup` is gone; use `isPrefLeaf`.
+  
+  A preferences schema and a tool's `options` are unchanged unless they nest a group inside an `object` leaf.
+  
+  `PrefSchemaEditor` edits the sections inside an `object` leaf: it adds one where it used to add a group, prints it with `members`, and refuses to move a group under an object leaf or a section out from under one.
+- 047dcf3: Types declared in code, placed by `PrefSchemaEditor`.
+  
+  `prefType(name, leaf)` in `@weasel-js/prefs` returns the leaf with `name` in a new optional `type` field on `PrefBase`. The store, repair, and the forms treat it as the leaf it is; a use site spreads it under what it sets (`{ ...GradientStop, name: 'First stop' }`) or passes it as a list's or a map's `item`.
+  
+  `PrefSchemaEditor` takes `types`, an array of such leaves (`PrefTypes`):
+  
+  - The kind picker, in the attributes pane and in Add pref, offers each type by name beside the kinds.
+  - A leaf made from a type is one row in the structure tree. Its attributes are what its use sets: key, name, description, default, and the shared flags. The default is drawn by the type's own control.
+  - The literal prints the type's name: `first: { ...GradientStop, name: 'First stop' }`, or the bare `GradientStop` where nothing is set over it. The reader imports the name where the literal is pasted.
+  - A draft holds a typed leaf as the type's name and what the leaf sets, so code inside a type survives a reload for a leaf the source schema never held. A draft naming a type no longer in `types` opens with that leaf under the type's name, marked "(not registered)" in the kind picker.
+  
+  Breaking, in the editor's tree: a list's or a map's `item` and a union's variants are no longer rows.
+  
+  - A list or a map is one row. Its entry is edited in the list's own attributes, under Entry: a picker of the kinds one control edits (`number`, `boolean`, `string`, `enum`, `color`, `paint`, `field`) and the registered types, then the entry's name, its default, and a plain kind's own attributes. A list of lists or of objects needs a type.
+  - A union is one row and is no longer offered as a kind for a new pref; its variants come from a type. One already in a schema stays, and prints its literal as before.
+  - An `object` leaf with no type keeps its editable children.
+  - A change to an entry is reported under the list, as `phases.item.default`, where it was `phases/item.default`.
+  - `printSchema(root, types?)` takes the types to print by name.
+  
+  Also: an `object` leaf's fields no longer run past the edge of a narrow form. The nested control slot kept a 110px minimum inside a column that could be narrower.
+- 3080040: In a `PrefsForm` rail pane with `rowsAcross={2}`, a checkbox stays on its label's line. A row's control asked for 80px beside the label whatever it was, so a checkbox with a longer label dropped to a second line with room to spare.
+- a9b291e: `PrefsForm`: an alias row is marked as changed when the leaf it shows is named in `changed`, the same path its `auto` and `mixed` states are read at. It was read at the alias's own path, where an owner computing `changed` from stored values has no entry.
+- dfc2c87: `PrefsForm` and `PrefsDialog` show where a drag would land by laying out as they would after the drop. They take `drop` (a `PrefDrop`: where, the nodes dragged, and the paths those sit at in this schema) in place of `dropMark`: the nodes are drawn at the mark as dashed placeholders, the rows around them move aside, and a node dragged from the form is no longer drawn where it was. The bar on one edge of a row and the ring round a group are gone. This is a breaking change for a caller that passed `dropMark`.
+  
+  `prefDropTargetAt(root, x, y)` no longer takes a split axis: the form knows which of its rows share a line. While a form draws a drop it is read as it lay before the drop, so a pointer held still keeps one answer however the rows move under it, and the gaps between rows belong to the nearest row. A rail entry takes a drop beside it from its top and bottom edges and into it from its middle.
+  
+  In `PrefSchemaEditor`, a drag from the palette, the tree, or the preview reflows the live preview this way, and an entry in the preview's rail can be picked up and dropped among the others to reorder pages. The ghost beside the pointer hides while the preview draws the node in place.
+- 148d4b1: `PrefsForm` slides its rows, groups, and rail entries to their new places when a `drop` changes, where they used to jump, and a row picked up slides to where it would land. The slide takes `--wzl-motion-fast` and is skipped under reduced motion. `prefDropTargetAt` reads rows where they will lie, not where a slide is drawing them.
+  
+  A `PrefDrop` takes `where: 'home'` for a drag with nowhere to land: each node of `from` is drawn as a placeholder where it sits, and `path` is not read. `PrefSchemaEditor` draws that for a row dragged off every target, which used to go back to full strength until it found one.
+  
+  `prefDropTargetAt` no longer answers with a row hidden under its section's stuck title: a point on the title drops into the section.
+  
+  The rail layout's pane keeps room for its scrollbar (`scrollbar-gutter: stable`), so a placeholder that makes the pane scroll does not narrow the rows.
+- 3baab83: A filter matches an alias as the row it draws. `filterPrefSubtree` reads an alias with no name or description of its own by its target's, so a `PrefsForm` query that finds a pref also finds the unnamed aliases of it; before, those rows dropped out. The function takes a fourth argument, `leafAt`, for finding a target outside the subtree being filtered, which `PrefsForm` passes so an alias of a hidden pref still matches.
+- a14e734: `PrefsForm` and `PrefsDialog` take `selected`, the dotted path of a leaf or a group to mark, and `onSelect`, called when the reader presses or focuses into a row or a group. Each time `selected` changes the form scrolls to it, and a rail opens the group that holds it. `PrefSchemaEditor` uses both: selecting a node in the structure tree marks and shows it in the live preview, and pressing a row in the preview selects it in the tree. A properties-panel preview does not do this yet.
+  
+  Each leaf's row now sits in a wrapping `div`.
+  
+  `PrefSchemaEditor`'s tree lists a group root's own leaves under one branch named as the preview names it (`General` for a nameless root), ahead of the groups, and that branch is the root's row. The pane under the tree is titled "Unplaced".
+  
+  `PrefsForm` takes `rowsAcross`: at 2, a rail pane sets its rows two side by side. `PrefSchemaEditor`'s preview uses it, its dialog drags wider or narrower from a handle on its edge (360px to 900px), and its enum options are headed "Value stored" and "Label shown".
+  
+  `PrefsForm`'s rail is 176px wide by default, down from 216px, and `resizableRail` puts a drag handle between it and the pane. A modal `PrefsDialog` in rail layout settles at 800px, up from 760px. The editor's preview starts at 800px.
+- 0c1edcb: A group or a section can be drawn `as: 'fragment'`: nothing of its own, so its rows sit among its neighbors' as though they were written there. It is for holding things together and no more: one key for their values to nest under, and one node to select, move or copy. It gets no heading, box, tab or rail entry, and at the top level its rows go on the root's own page. In a form two rows across, its rows take cells in the same grid as the rows around it.
+  
+  `PrefsForm`, `SelectionPanel`, an `object` leaf's sections, and labkit's `ControlPanel` all draw it that way. Selected, it marks the rows it holds, having no box of its own to mark. `PrefSchemaEditor`'s palette makes one with a new Group tool, under the `</>` glyph, and the "Drawn as" choice lists it.
+  
+  A group nested inside a fragment is drawn where the fragment is, as a section unless it says otherwise; it gets no rail entry of its own.
+- 27818ca: Four new built-in pref kinds: `list`, `map`, `union`, and `action`.
+  
+  A `list` leaf holds an array whose entries are each described by `item`, an ordinary leaf: `{ kind: 'list', item: { kind: 'number', min: 0 }, minItems: 3, maxItems: 3 }`. The item may be any kind, built-in or app-defined, including an `object` or another `list`. A stored list reads entry by entry through the item, so one bad entry falls back to the item's default and the rest are kept; a list shorter than `minItems` reads as the default and one longer than `maxItems` is cut to it. `PrefValueOf` types a list by what its item holds.
+  
+  A `map` leaf holds a record keyed by strings nobody declared, every value described by `item` as a list's entries are: `{ kind: 'map', item: { kind: 'number' } }` types as `Record<string, number>`.
+  
+  A `union` leaf holds one of several object shapes, told apart by the string in its `tag` field. Each variant is an `object` leaf keyed by its tag value: `{ kind: 'union', tag: 'type', variants: { linear: {…}, radial: {…} } }` holds `{ type: 'linear', angle: 90 }`. Choosing a variant sets the value to that variant's default under its tag. A stored value whose tag names no variant reads as the default. `prefVariantOf` and `prefVariantDefault` are the two lookups. `PrefValueOf` types a union as each variant's fields under its tag, where the schema keeps `tag` a literal (`tag: 'type' as const`); with `tag` widened to `string` it is typed by its `default`, as before.
+  
+  `repairPrefValue` now reads inside an `object` leaf: each field the stored object holds is read as its own leaf would be, so a number field is clamped and an enum field with an unknown option falls back to that field's default. A field the object omits stays omitted, and fields no leaf describes pass through. It used to accept any plain object whole. A union's variant and an object entry of a list or a map are read the same way.
+  
+  An `action` leaf holds no value: it is a button among the rows that calls `run({ path })`, disabled while a promise `run` returned is pending. A store skips it, and its path is not a `PrefPath`. `prefHoldsValue(leaf)` tells the two sorts of leaf apart.
+  
+  `PrefsForm`, `SelectionPanel`, and labkit's `ControlPanel` draw all four. A list is a `ListEditor` with one control per entry, drawn as the item leaf would be on a row of its own, and an entry of an app-defined kind goes to that kind's renderer. In `PrefsForm`, a list whose entries are objects or lists puts its label above the entries, which need the row's whole width. `PrefsForm` now does the same for a field of an `object` leaf, which used to show "no renderer" for an app-defined kind whether or not one was registered. `ListEditor` takes entries of any type through `renderEntry` and `newEntry`, and stops at `minItems` and `maxItems`. `PrefActionButton` is the action's button, exported for surfaces that draw their own rows. `MapEditor` draws a map as a key field and the item's control per entry, and `UnionPicker` a union as a select over the chosen variant's fields; both stack under the row's label.
+  
+  `PrefControl` is one leaf's control as `PrefsForm` draws it, without the row: for a surface that lays out its own rows and has an object, a list, a map, or a union to put in one.
+  
+  labkit: `f.list(default, item)` builds a typed list (`f.list([0, 1], f.number(0).range(0, 9))`), `.count(min, max)` bounds it, and `f.action(run)` builds a button. `f.list(strings)` is unchanged. An `f.value` whose default is an array of numbers or booleans is now inferred as a list of them; it used to throw. `f.object(fields)` builds one value with named fields (where `f.group` makes each field a leaf of its own), `f.map(default, item)` a record by arbitrary key, and `f.union(tag, variants)` one of several objects; each infers its config type. `ControlPanel` opens an object, a map, a union, and a list of anything but plain strings in a dialog from its row, drawn by `PrefControl`. An object leaf used to show "no control for object".
+  
+  `PrefSchemaEditor` shows a list's or a map's `item` as a row under it in the structure tree, edited in the attributes pane like any leaf; it has no key to rename and cannot be removed or moved. A union's variants are rows under it: adding to a union adds an `object` leaf, and renaming a variant's key renames it in the union's default. A new action exports with `run: () => {}`, a stub to fill in, where it used to export `KEEP_FROM_SOURCE` with nothing in the source to keep.
+  
+  **Breaking for anyone who registered a custom kind named `list`, `map`, `union`, or `action`:** those names are built-in now, and a `list` leaf needs an `item`. labkit's own `f.list` leaves carry one.
+- 31a3581: `PrefsForm` with `rowsAcross={2}` gives a leaf whose default is a list the full width of the pane, as it does an object leaf. In half a pane a `ListEditor` had too little room to show its entries.
+- 65c36be: Under `subPages`, `PrefsForm`'s rail lists every nested group, at any depth, and each opens a page
+  of its own. A page holds its group's own leaves, tabs, and panels; a group with none of those opens
+  its first nested entry. The rail nests its entries a step in per level, and under `foldable` an entry
+  at any depth folds the ones under it. `prefRailItems` takes a second argument, `deep`, that lists
+  every level, and `PrefRailItem.depth` is no longer limited to 0 and 1.
+  
+  A top-level page under `subPages` now keeps its tabs and panels, which it used to drop, and the
+  root's own page is drawn whole.
+  
+  `PrefSchemaEditor`'s live preview draws its form with `subPages`.
+- bbd6798: A press on a rail entry of a `PrefsForm` now reports that entry's group through `onSelect`, as a press on the group's heading in the pane does. The entry for the root's own leaves reports the empty path, which the editor takes as the root. A press used to open the page and report nothing, so in `PrefSchemaEditor` choosing a group in the live preview's rail left the structure tree and the attributes pane on whatever was selected before.
+- 2807789: `PrefsForm`: a row is drawn as a group, not a `<label>`, whenever `PropertyField` would draw it as one: an enum with `control: 'radio'`, `'toggle'`, or `'menu'`, a boolean with `'switch'` or `'toggle'`, and a paint leaf, in a row of their own and as a field of an object leaf. A click on such a row's name used to write the first option, and each radio's accessible name carried the row's label.
+- 1085b46: `PrefsForm`'s rail layout no longer centers a row's label against its control. The row's own
+  alignment stands, as it does everywhere else a `PropertyRow` is drawn: a row past one line, such
+  as a radio group, sets its label on the control's first line.
+- 812118e: New `@weasel-js/storage` package: the storage adapters and `RecordCache` that lived in labkit, split into one module per adapter. localStorage, sessionStorage, memory, and the no-op adapter gain `listSync`, and `openRecordsSync` opens a record cache over them without awaiting. `fallbackStorage(preferred, fallback, label)` wraps an adapter with a fallback for when it is unavailable, and `createDefaultStorage(preferred, label)` builds a page-wide default from one: `preferred`, or localStorage where it will not open, chosen once. Storage's own `indexedDbAdapter` and `defaultStorage` use the IndexedDB database `'weasel'`. `RecordCache.flush()` now resolves `true` when every queued write landed and `false` otherwise; it used to resolve to nothing. labkit re-exports the adapters, and its `indexedDbAdapter` and default storage stay on the database `'labkit'`, where every existing lab's records are.
+  
+  New `@weasel-js/prefs` package: the preferences schema, moved out of core, and a store for it. `openPrefs` and `openPrefsSync` keep one record per leaf and repair values against the schema on read. `store.stored()` returns the raw stored records as a tree, orphans included, and `usePrefsValues` returns it as `stored`. Versioned migrations run on open: a malformed `$version` opens the store read-only, and a newer `$version` written by another writer stops this store from persisting. `Infinity` and `-Infinity` on number leaves are stored as the strings `'Infinity'` and `'-Infinity'`. `PrefsStore.flush()` resolves a boolean, with the same meaning as `RecordCache.flush()`. The `usePref` and `usePrefsValues` hooks, imported from `@weasel-js/prefs/react`, produce the values `PrefsForm` takes; the main entry loads no React.
+  
+  Breaking: the schema types are renamed from `ToolPref*` to `Pref*` (`ToolPref` itself is `BuiltinPref`, `TOOL_PREF_KINDS` is `PREF_KINDS`, `isBuiltinToolPref` is `isBuiltinPref`) and are imported from `@weasel-js/prefs`. Neither core, ui, nor `@weasel-js/labkit/weasel-ui` re-exports them, nor ui's `isPrefLeaf`, `prefValueAtPath`, `visiblePrefSubtree`, `filterPrefSubtree`, or `prefDisplayBounds`. labkit's cross-tab BroadcastChannel is renamed, so tabs on an older and a newer labkit stop hearing each other until both reload.
+- c9d41f2: `PrefsForm` with `subPages` draws a nested group set to `as: 'section'` on its parent's page, where it had a rail entry and a page of its own. Only a nested group that is a page, with `as` unset or `'page'`, gets an entry.
+  
+  A rail entry whose page would draw nothing, so that choosing it opens the first entry under it, has its name in the muted gray, and an entry nested under another is set in the light weight of the font. `PrefRailItem` says the first with `passes`.
+- 0a7db23: A value set in `PrefSchemaEditor`'s live preview becomes that leaf's `default` in the schema, in both the preferences-form preview and the properties-panel one. It shows in the Changes list and the exported literal, and undoes with the editor's other edits. The preview keeps no values of its own, so its "Reset values" button is gone.
+- 963c91f: In a `PrefsForm` rail, choosing a nested entry under a page that was not open did nothing but mark the entry for a moment. It now opens that page and scrolls to the section. `useScrollSpy`'s `scrollTo` no longer reports a section it could not find as the one in view.
+- a17a522: A `PrefsForm` rail page opened by anything but a click on its rail entry kept the last page's scroll position: a controlled `section` changing, a selection opening its page, or a filter removing the open page. Every page now opens at its top.
+- 95bf24f: `PrefsForm`'s rail layout starts a page's rows fresh when the open page changes, so a row no longer shows state left by a row with the same key on the last page, such as a map's half-typed entry. `PrefsPane` takes a `pageKey` naming the page its rows belong to, defaulting to `path`.
+- 9967309: In the `PrefsForm` rail layout a map, union, or list-of-objects leaf drew its editor beside its label, squeezed into the 260px control track, where every other layout sets the label above an editor the row's width. The rail now stacks those rows too.
+- 23ae360: The icon set gains glyphs for what a code-repository viewer shows, four takes on each of seven views: `commitNode`, `commitTimeline`, `commitHistory`, `commitFrames`; `repoWall`, `repoFolder`, `repoTree`, `repoBook`; `diffOverlap`, `diffSplit`, `diffSwap`, `diffPlusMinus`; `workPencil`, `workFile`, `workCommit`, `workBranch`; `typeClass`, `typeInherits`, `typeBraces`, `typeGeneric`; `cloudOutline`, `cloudPages`, `cloudCube`, `cloudTurned`; `demoPlay`, `demoScreen`, `demoRoute`, `demoClapper`.
+- 5c96216: A `PropertyRow`'s ⓘ no longer takes focus, by Tab or by a press, so Tab crosses a described row in one stop where it took two and lands on the row's control. The row's first control is described by the help's text (`aria-describedby`), so a screen reader reads it with the control. The tooltip opens when the keyboard brings focus to a control in the row, after the tooltip's usual delay, and closes on Escape or when focus leaves the row; a click on the control opens nothing, and hovering the ⓘ works as before. This reaches every surface that draws its rows with `PropertyRow`: `PropertyField`, `PrefsForm`, `SelectionPanel`, and labkit's `ControlPanel`. A row with no focusable control has hovering as the only way to its help.
+  
+  In a row the ⓘ is drawn as a `<span>` hidden from assistive tech where it was a `<button>` named `About <label>`. As the first labelable element in the row's `<label>`, that button was the control the label named, so a bare control passed to a `PropertyRow` now takes its name from the row's label.
+  
+  `PropertyHelp` used on its own is unchanged, a button and a tab stop, unless given `within`: a selector for the ancestor that is its row. labkit's `ControlMatrix` passes `within="tr"`, so a matrix row's help rides on that row's first cell.
+  
+  **Breaking for a test that finds a row's ⓘ by `getByRole('button', { name: 'About …' })`:** it is no longer a button. Assert the control's accessible description.
+- 19bd1c3: `PrefSchemaEditor`: an action whose key starts with a digit, such as `3d.toggle`, can be dragged in from the Actions list. Its pref's key is now `_3dToggle`; before, the key was refused and the drop did nothing.
+- 9574e9c: `PrefSchemaEditor` has a bar across its top holding the palette, Add pref, Add group, Remove, Undo, Redo, and the draft's controls, which were in the structure pane's header. A new `bar` prop sets the host's own controls first in it.
+  
+  The structure pane has a filter field: the tree narrows to the rows whose name or key matches, under the branches that hold them. Rows cannot be dragged to a new place while it is filtered.
+  
+  A press on a rail entry in the live preview that does not turn into a drag opens that page again.
+  
+  The structure tree draws no fold marks: a click on a group's glyph folds it, and the glyph is the secondary accent color while the group is open. `Tree` takes `foldBy="leading"` for this, which gives the fold to a branch's `leading` and sets `data-open` on it while the branch is open.
+- ba55ae0: `PrefSchemaEditor` marks what changed inside a node as well as which nodes changed: in the Attributes pane, the label of each attribute that differs from the baseline is drawn in the accent color, the Key's among them when a move or rename gave the node another key. The bar gains an Add alias tool, which sets an alias of the selected pref right after it.
+  
+  `PrefsForm` takes `changed`, a set of paths whose rows are marked that way, and `PropertyRow` takes a `changed` flag that does the marking. What counts as changed is the caller's to say.
+  
+  A `Tree` folded by its rows' leading glyphs (`foldBy="leading"`) hangs a branch's glyph in the row's gutter, as it does the fold mark, where it used to keep an empty gutter and set the glyph after it. A branch's label and a leaf's at the same level now start at the same x, and each level sits one glyph's width further in. `--wzl-tree-fold-size` (default `16px`) says how wide the glyph is. The schema editor's two trees drop their own wider indent for this.
+- a91f79c: `PrefSchemaEditor`: a branch's count badge in the Structure tree is bold and one step of the type scale smaller than its row's text.
+- 6589491: In `PrefSchemaEditor`'s Structure and Unplaced trees, a group's count of leaves is set at the size of the row's label, where it was the smallest badge size. The kind badges are unchanged.
+- 264404a: `PrefSchemaEditor`: Delete, Backspace, and Mod+Z pressed in one of the editor's own dialogs or popovers no longer act on the schema behind it. Backspace on the Add pref dialog's Kind picker removed the selected pref, and Mod+Z in its Name field undid a schema step.
+- b84302e: `PrefSchemaEditor` takes `draftStorage`: somewhere other than `localStorage` to keep the draft under `draftKey`, and what was last submitted beside it. It is the `getItem`, `setItem`, and `removeItem` of a `Storage` (exported as `DraftStorage`), so a host can back it with a file. It is read as the editor mounts, so it has to hold its contents by then; a `setItem` that throws is asked again with fewer undo steps, as a full `localStorage` is.
+- f16fdad: `PrefSchemaEditor` takes `draftKey`: a name to keep the edited schema under in the browser's `localStorage`. With it set, every edit is saved, and an editor opened later under the same name starts from those edits, still listed as changes from `original`. "Discard draft" goes back to the baseline and removes the saved copy; it undoes like any edit. Beside it the editor says when the draft was last saved.
+  
+  Code a schema holds, such as a boolean's `encoding`, is not stored. It is taken back from the baseline, and a node that was moved or re-keyed still finds its own. A draft remembers the source it edited. Opened on a source that has changed since, it is carried onto the new one, so the source's own changes come through and only the reader's edits are listed as changes; the editor says so when it does. A node the reader moved does not follow later changes to it in the source.
+  
+  The draft keeps the twenty steps nearest it each way, so undo and redo still work after a reload. A browser short of storage keeps fewer, down to the schema alone.
+- dab8fbb: `PrefSchemaEditor`: the exported literal now escapes a carriage return in a string, which printed raw and left the literal unparseable. The Changes list, and what `onSubmit` is handed, now include a reorder inside a group that was also moved or re-keyed.
+- a60613a: `PrefSchemaEditor`'s options editor flags an enum option whose stored value is empty or repeats an earlier row's: the value field takes the invalid state, with "Value is empty" or "Repeats an earlier value" under it. The edit is still taken and the export is unchanged, so a flagged row is exported as it stands.
+- f60bfe1: `PrefSchemaEditor`: renaming or moving a pref now carries every path another pref holds to it, where before only an alias followed. A `pair` naming the pref, and a `field` pref whose default names it, kept the old path and pointed at nothing. Renaming or moving a section no longer rewrites aliases of prefs whose path happens to start with the section's key: a section's key is no part of a value's path.
+- ca19703: `PrefSchemaEditor`: changing a pref's kind no longer carries an attribute across when the new kind's attribute of the same name does not offer its value. A number drawn as a `slider` became a boolean still holding `control: 'slider'`, exported that way, and the notice did not list it. It is now dropped and named in the notice.
+- 2070f0a: `PrefSchemaEditor`: with an `object` pref and one of its own fields both selected, picking a kind now converts the object. It threw and changed nothing, since converting the object first removed the field the next step looked for.
+- a14e734: `PrefSchemaEditor` lays a schema out by dragging. A node dragged from the structure tree can be dropped in the live preview: beside a row, into a group, or onto a rail entry, which opens that page when the drag rests on it. A palette under the toolbar holds chips for a new page, tab, panel, section, and label, each dragged into the tree or the preview. The preview draws empty groups, so a new one is somewhere to drop into.
+  
+  `PrefsForm` draws a leaf of kind `label` as text among its rows: the leaf's name, with its description under it. Nothing is stored for it. `PrefsForm` also takes `dropMark`, to mark where a drag would land, and `showEmpty`, to draw groups with no leaves; `prefDropTargetAt` finds a drop mark from a pointer position. `visiblePrefSubtree` takes `keepEmpty`.
+  
+  `Tree` takes `onDragOutside` and `onDropOutside`, so a drag begun in it can end somewhere else, and `externalDrag` with `onExternalTarget`, so a drag begun somewhere else can land in it.
+- 8c83067: `PrefSchemaEditor` lists what a group root holds on no page, its own leaves and its groups that are not pages, under Unplaced, ahead of the host's `unplaced` nodes. The structure tree's General row is gone and the tree's top level holds pages only; the live preview leaves those nodes out. A row dragged from Unplaced into a page moves there, a row of the tree dragged onto the Unplaced list comes off its page, and a row picked in Unplaced shows its attributes. Unplaced is drawn for every group root, with or without `unplaced`.
+- d2f3be8: `PrefSchemaEditor` lets a page nest: dragged over a rail entry in the live preview it drops into that entry's group from the middle and beside it from either end, as a tab, panel, or section does. `prefDropTargetAt` takes no options again; its `railInto` was only ever in an unreleased build.
+  
+  A new `maxDepth` prop caps how many levels of groups the schema may nest. A drag in the tree or the preview, a palette drop, or Add group that would nest deeper is refused. It defaults to 2.
+- 4539f92: `PrefSchemaEditor`: a node moved into a group that is folded in the structure tree opens that group, as a copy or an alias dropped there already did. The moved node was selected but no row showed it.
+- 8025cd7: `PrefSchemaEditor` selects several nodes at once. In the structure tree, Cmd or Ctrl on a click adds a row or takes it out and Shift takes a range; in the live preview, Cmd or Ctrl on a press does the same. The selected nodes drag, copy, and delete together as one step back, and a press on one of them in the preview that ends without a drag selects that one alone.
+  
+  With several selected, the attributes pane is headed with how many, and shows the attributes every one of them has. An attribute they agree on shows its value; one they differ on shows "Mixed" and takes an edit that is written to all of them. A list, map, object, or union attribute that differs is listed as "mixed" and not edited. The Key row, a key that follows its name, a list's Entry panel, and Add alias are for one node, and are not offered for several.
+  
+  **`PrefsForm` and `PrefsDialog`: `selected` is now a list of dotted paths**, where it was one path. Every path in it is marked, and the last is the one scrolled to and whose rail page or tab opens. A caller that passed a string passes a list of one. `onSelect` is called with a second argument, `{ toggle }`, true when Cmd or Ctrl was held without Alt. A press on one of several selected rows is reported on its click, not on the way down.
+  
+  `PrefsForm` takes `mixed`, a set of dotted paths whose leaves stand for several values that disagree: each draws its control with no value, and a custom renderer is told through `mixed` on its `PrefRenderContext`.
+  
+  `Tree` puts each row's node id on it as `data-tree-id`.
+  
+  labkit's `ControlPanel` hands a custom control the `fields` a `field` leaf may name, as it already did for its built-in ones.
+- cd9a828: `PrefSchemaEditor`: a pair's "Row label" can be typed with a space in it. The label was trimmed on every keystroke, so `Line style` came out as `Linestyle`; it is now trimmed when the field is left.
+- 37268aa: `PrefSchemaEditor`'s tool palette sits at the middle of the bar across its top, with the host's `bar` controls at the start and undo, redo, and the draft's controls at the end. Add pref, Add group (or Add section), and Remove moved into the palette as tool buttons, after a rule that sets them apart from the tools that are dragged.
+- f65f952: `PrefSchemaEditor`'s attributes pane shows a node's path as plain text in the interface face. It was a read-only input in the monospace face, which looked like a field you could type in.
+- bb0c0f7: `PrefSchemaEditor`: the Attributes pane shows a read-only Path row under Key, holding the selected node's whole dotted path as the schema has it now.
+- 5ee0a1f: `PrefSchemaEditor` has settings of its own. A Preferences button at the end of its bar opens them, and the first is "Select what is dropped": on, as before, a node dropped into the live preview becomes the selection; off, the selection stays where it was, including through a drag begun on a row of the preview, whose press had selected that row.
+  
+  The settings are a prefs schema, exported as `PREF_SCHEMA_EDITOR_PREFS`. A host keeps them by opening a prefs store over it and passing the store as the new `prefs` prop; with none, they last as long as the editor is mounted.
+- 318a188: `PrefSchemaEditor`: a drag begun in the live preview is canceled when the editor unmounts. Its window key listener stayed behind and could call back into the editor that was gone.
+- 73705ce: `PrefSchemaEditor` keeps every size the reader can drag in its own settings: the widths of the structure, the attributes, the sidebar, and the live preview, and the heights of the Unplaced and Actions lists under the structure tree. They are hidden number prefs under `layout` in `PREF_SCHEMA_EDITOR_PREFS`, written once when a drag ends, so a host that passes a store as `prefs` gets them remembered with no further wiring. With no store they last as long as the editor is mounted, as before.
+- f32c96b: `PrefSchemaEditor` takes `rowMark`: a function from a node's path in `original` to something to draw on its row in the structure tree, before the kind badge. Asking by the original path means a mark follows a node the reader moves.
+  
+  With a `draftKey`, the structure tree's folded rows are kept in `localStorage` beside it, and the editor opens with them folded.
+- aa59c5b: `PrefSchemaEditor`: editing a value in the live preview of a node property schema no longer rewrites the default of every pref keyed outside `pose.` and `data.`. A pref keyed `lineWidth` lost its default on any preview edit, and one keyed `kind` or `id` took the scratch node's own value. Only the value that was edited becomes a default now.
+- 5e00c96: `PrefSchemaEditor` opens a node's property schema as well as a preferences schema. Pass a `PrefSection` as `schema` and `onChange` hands a `PrefSection` back. A leaf under a section takes a dotted id (`pose.x`), the Add button reads "Add section" wherever a section is what gets added, and the live preview is a `SelectionPanel` over one scratch node holding the schema's defaults. The new `propertyRenderers` prop passes that panel its renderers.
+  
+  **Breaking change to `SchemaChange` paths.** `diffSchemas` and `formatChanges` now join a node's keys with `/`: a change at `view` > `gridDensity` is reported at `view/gridDensity`, where it was `view.gridDensity`. A key under a section may hold dots, so a dot could no longer separate keys.
+- ceb2e11: `PrefSchemaEditor` gains a right sidebar beside the live preview, empty for now, with a handle to resize it; it runs the editor's height under the bar, as the structure pane does at the other edge. Undo, Redo, Discard draft, and Preferences are tool buttons in a palette of their own at the bar's end, where they were text buttons. A group's row in the structure tree no longer carries a badge naming how it is drawn, since its glyph says so; it keeps its count.
+  
+  A `Tree` folded by its leading glyphs leaves 2px between a branch's glyph and its label, so each level steps in 18px.
+  
+  `Tree` takes `guides`: a bracket down the side of each open branch's rows, straight from under the branch's mark and curving in at its foot, colored by `--wzl-tree-guide`. The schema editor's structure and unplaced trees turn it on.
+  
+  With `guides` on, a row with nothing to fold stands half a gutter in, where it stood a whole one: the bracket already says which branch holds it.
+- d4c51f5: `PrefSchemaEditor`'s structure pane runs the editor's full height under the bar, and the attributes, the live preview, and the literal and changes panes sit in what is left beside it. The literal and changes panes used to run the full width under all three.
+- 8bef869: `PrefSchemaEditor` takes `onSubmit(changes, literal)`. Given, the Changes pane draws a Submit button, disabled while nothing has changed, that hands over the changes since `original` and the schema as a TypeScript literal. When `onSubmit` returns a promise the button reads "Sending…" until it settles, then "Sent" or "Failed"; it offers to submit again once the changes are different ones. The callback's type is exported as `SubmitChanges`.
+- 40e1b8a: `PrefSchemaEditor` sets the fields that hold what the code will spell in monospace: a node's key, the id in the add dialog, an enum option's stored value, a union's tag, an icon's name, and the kinds a `field` leaf accepts. Its structure tree indents each level 6px further, so a child no longer reads as beside its parent's glyph.
+  
+  A `PrefsForm` marks its selected row or group in the secondary accent where it used the primary one, which is a control's own color and made the mark read as one more control state.
+- 6a35bef: `PrefSchemaEditor` takes `taken`: the host's word that what `onSubmit` last handed over is now in `original`. Once it is true the editor drops the submitted changes from its draft and its Changes pane, and keeps any edits made after the submission. What was submitted is kept beside the draft under `draftKey`, so this holds across a reload.
+- 2b6962a: `PrefSchemaEditor`'s palette is a row of tool buttons, a glyph over a name, in place of dashed text chips; each is still dragged into the tree or the live preview. The glyphs are new in the icon set: `formPage`, `formTab`, `formPanel`, `formSection`, and `formLabel`.
+  
+  Delete or Backspace removes the selected node, from anywhere in the editor but a field, where the key still edits the field.
+  
+  What follows the pointer while a new item, or a row picked up in the live preview, is dragged is that node drawn as the form will draw it: a leaf as its row, a page as a rail entry, and any other group as its tab, box, or heading. A drag begun in the structure tree still shows the tree's rows.
+  
+  Each branch of the structure tree shows how many leaves it holds, at any depth, in a badge before its kind, and a group's row leads with the glyph of the palette tool that makes it.
+  
+  The structure tree's text is the size of the fields beside it, 15px by default, up from 13px, and a row's key is in the UI font at light weight where it was monospace. `Tree` reads its text size from `--wzl-tree-font-size`, which falls back to the size it had.
+- 2b366ec: `PrefSchemaEditor`: undoing or redoing a group's re-keying or move leaves the group as open as it was. It came back folded, and with a `draftKey` was saved as folded.
+- 12a1b0f: `PrefSchemaEditor`: the Unplaced list takes a drop from the tree only where the schema files its prefs onto pages. Under a node property schema or a bar it lit up as a drop target and moved the pref to the end of the root, still in the tree.
+- c99957a: `PrefSchemaEditor`'s Unplaced rows are set at the structure tree's size and indent, and the structure's filter narrows them too.
+- ce3c1c8: `PrefSchemaEditor` takes `unplaced`: a `PrefGroup` of nodes that have no place in the schema yet, each whole already with its key, name, description, and default. They are drawn under the structure tree as a second tree, and a row is dragged from there into the structure tree or onto the live preview, where it lands as it is; a group dragged brings what it holds. A leaf leaves the list once the schema holds a leaf of its key.
+  
+  This replaces the `stored` prop, which listed stored values no leaf described and opened a dialog to add a leaf for one. `stored` is removed.
+- 4f5b466: `PrefSchemaEditor` marks a changed node in the structure tree by drawing its label in the accent color, where it used to set the whole tree item bold. The row's count and kind badges no longer change with it, and neither do the rows nested under a changed group.
+- 9dfc01a: `SelectionPanel` read two nodes holding equal paints, lists, or maps as Mixed whenever the values were separate objects, as they are after a load: a fill drew its mixed chip over two identical reds, and a list or map showed the word Mixed with no editor. Values are now compared by content, so equal ones read as one value and stay editable.
+- 3357235: A `separator` leaf draws a rule and holds no value. `PrefsForm` draws it as a line across the rows, and a bar draws it as an upright rule in a cell of its own, so it stays where it was put even at the bar's end. `PrefSchemaEditor`'s palette has a Separator tool to drag one in, with a new `formSeparator` icon.
+- 45eec5b: `createSetCurveOp` skipped an edit whose only change was a point's `locked` flag, so locking or unlocking a control point through the op never reached the adapter. The op now applies it.
+- 4592880: A slider taking settled values only (a `PrefsForm` slider) could go on showing a drag's last position after the value changed from outside: a drag that ends where it began fires no `change`, so the position held during the drag was never let go. The held position now applies only to the value it was dragged from.
+- 51dfb20: `Endless`, the type of `SliderProps.endless`, is now exported, so a consumer can name it instead of writing `SliderProps['endless']`.
+- ff039f6: A slider's editable readout committed the typed text on Escape, and called `onChange` twice on Enter. Escape now leaves the value alone, and Enter writes it once.
+- 2329b3e: A `Slider`'s custom thumb is handed the box it is laid out in and `isActive: true` while it is the one being dragged; it was always told 14 by 24 and never active. `renderTrack`'s `trackWidth` is the track's measured width from the first paint and follows a resize. The dragged thumb also carries the stylesheet's active class, which raises it over its neighbors.
+- 6c91c5b: `Slider`'s source is split by job: its types, the stop math, the value span and scale, the two drag gestures, and the body each have a file. Nothing it exports or does changes.
+- 14f86d8: `Slider` reports a clean value for a fractional `step`. With `step={0.1}`, three steps up from 0 reached `onInput`, `onChange`, and `aria-valuenow` as `0.30000000000000004`. A stepped value is now written with the decimals its `step` and `min` carry, by the same rule `ResizeHandle` and the spin keys use.
+- e9a28a0: A CSS-module class name in `@weasel-js/core` and `@weasel-js/ui` now depends on its stylesheet's path alone: `_editor_b9a2b2`, where it was `_editor_s6qnh_7`. The old name hashed the file's contents, so one edited rule renamed every class in the file, and a labkit stylesheet built before the edit styled none of that component.
+- 9420f68: `PrefSchemaEditor`'s Structure pane has "Expand all" and "Collapse all" buttons at the right of its header, which open or fold every branch of the tree. Both are disabled while the filter is set, since a filter opens every branch it shows.
+- 6366dde: `FillStrokeSwatch` called `onChange` for a picked color only when the chip lost focus, so closing the picker left the edit as an uncommitted preview until the next click. It now commits when the picker closes, as `ColorField` does.
+- 7505ef5: `Switch` draws the 1px border around its track only while hovered, fading it in. The track keeps its size, and the focus ring is unchanged.
+- fc0e2a3: `PrefsForm` showed the first tab of a tab strip that drew for the first time with `selected` naming a row in a later tab, leaving the selected row out of the page. The strip now opens on the tab that holds the selection.
+- 89b5ac6: `Timeline` no longer deletes the selected keyframe when Delete or Backspace is typed into a field inside it. Correcting a digit in an input drawn by `renderKeyEditor` removed the key and unmounted the editor under the cursor. The shortcut now skips a key press whose target is an input, textarea, select, or contenteditable element, and one a child already handled with `preventDefault`.
+- 819b4ef: `Timeline`: with no `mode` prop the Graph switch works, holding the mode itself as it does `selection` and `window`. It was wired to `onModeChange` alone and did nothing without a caller holding the mode.
+- db1a07b: `Timeline` treats a key and a segment as one selection. Selecting a key, pressing on empty lane, or pressing Escape closes the easing picker; selecting a segment gives up the selected key (`onSelect(null)`), so the key editor and the easing picker never show together.
+- c253018: Three fixes to the key marks in `Timeline`'s lanes. Clicking a key to select it no longer calls `onChange`: a press that travels less than the drag threshold commits no move, where it used to commit one on every click and, with Alt held, shift the key to the click's exact millisecond. An arrow key that carries a key past its neighbor keeps focus on the moved key, so the next press moves the same key rather than the one that took its place; Enter and Space on a focused key now select it. Double-clicking a key no longer inserts a second key on top of it.
+- bb28e63: A timeline handle has `subscribePlayback(cb)`, notified on `pause`, `resume`, `seek`, `setTimeScale`, `setLoop`, a cancel, and the playhead reaching the end; `subscribe` still reports edits only. `AnimatedTimeline` listens to it, so a resume, pause, or seek made on the handle from the app's own controls moves its playhead and Play button. Anything implementing `TimelineHandle` by hand needs the new method.
+- 70f3f31: `Timeline`'s ruler labels each tick differently at high zoom. Zoomed to a window a few milliseconds wide, the ticks sat a fraction of a millisecond apart and every label was rounded to a whole one, so the ruler read `0ms 0ms 0ms 1ms 1ms`. A label now carries the decimals its tick spacing needs.
+- 1eb3bd1: A wheel over `Timeline`'s ruler no longer moves the page as well. A pinch or Ctrl-wheel zoomed the timeline and the browser page together, and a plain wheel panned the window while scrolling whatever was under it. The ruler now takes the wheel for itself, handing it back to the page only when the window is already at the end it is being panned toward. A sideways trackpad swipe pans too.
+- 37039d5: Two `Timeline` fixes. Deleting, inserting, or re-ordering a key drops the selected segment: the easing picker stayed open after such an edit and went on editing whichever segment had taken the old index. Delete or Backspace with an event mark selected no longer calls `onChange` with an unchanged track list; events cannot be deleted from the timeline, and the key press is now left alone.
+- 0cc8b79: `Timeline`'s own window follows `duration` until the user zooms in. The window was fixed at the first `duration` it saw, so a timeline mounted with `duration={0}` while its tracks loaded stacked every key at the left edge once the real duration arrived, and a key dragged past the end of an `AnimatedTimeline` was drawn off the track. A window the user zoomed is kept, and zooming all the way back out returns to following the duration. A controlled `window` is unchanged.
+- 0981447: A `ToastRegion` given a `portalContainer` no longer holds its next toast open after the last one was closed under the pointer. The region unmounts without a pointer-leave, so it went on believing it was hovered, and the next toast's timer could stay paused until the pointer entered and left the stack again.
+- dc9c665: `TokenPanel` no longer files a token valued `inherit`, `initial`, `unset`, `revert`, or `revert-layer` under Color. In a browser, `inferTokenType` asked `CSS.supports('color', value)`, which is true for every CSS-wide keyword, so such a token was drawn with a color chip.
+- 51aff41: `TokenPanel` no longer rewrites a token when its number field is focused and left untouched. The fields show four decimal places and commit what they show on blur, so clicking into a token valued `0.33333rem` and tabbing out changed it to `0.3333rem` and marked it overridden. A commit that reads the same as the current value at the field's precision is now ignored, for token values and for a scale's base, ratio, and step.
+- 6e0f62e: `Tree` copies on a drag with Alt held, and links on one with Alt and Cmd or Ctrl held. Given a new `onCopy(ids, target)` or `onLink(ids, target)` beside `onMove`, a drag released with those keys down calls it and leaves the rows where they are; `Tree` makes no copy and no link itself. While the keys are held the dragged rows are not dimmed, the ghost carries a plus or a link glyph, and a drop beside the row's own place is taken, since a second row there is not nothing. A key pressed or let go mid-drag switches at once. Without `onCopy` or `onLink`, the keys change nothing.
+  
+  `canDrop`, `onDragOutside`, and `onDropOutside` each take a trailing `effect: 'move' | 'copy' | 'link'` (the new `TreeDragEffect`), so a host can refuse a copy it would allow as a move, or the reverse.
+  
+  `PrefSchemaEditor` uses both. Alt-dragging a node in the structure tree, or a row, heading, or rail entry in the live preview, sets a copy of it where it is dropped; the copy keeps its key where that is free among its new siblings, and takes a numbered one (`grid2`) where it is not. With Cmd or Ctrl held as well, the drag sets an alias of a pref in place of a copy.
+- 9494688: Three small `Tree` fixes. The drag ghost names every row it carries by its label: a selected row hidden inside a collapsed branch was listed by its raw id. A space typed while a type-ahead search is under way is part of the search, so typing `new f` reaches "New folder" where the space used to activate the focused row. ArrowLeft on a disabled branch that `expandedIds` holds open moves focus to its parent, where it used to do nothing.
+- d4871bd: `Tree`'s `guides` bracket now starts under the start of its branch's label rather than under its fold mark, and the branch's rows stand `--wzl-space-2` past it, so every level steps in alike. `--wzl-tree-indent` still overrides the step.
+- fcfb0a8: `Tree` no longer moves focus to a node long after an Alt+arrow move that changed nothing. Focus follows a moved node on the render the move causes; when `onMove` leaves `nodes` as they were, or updates them more than a frame later, the tree used to hold on to that node and focus it on the next unrelated render. It now gives up after one frame, so a move that lands later than that leaves focus where it is.
+- 199b0e2: `Tree` takes `renderGhost`: a stand-in to draw beside the pointer in place of the dragged rows, asked on every move with the dragged ids, the drag's effect, and whether the pointer has left the tree. `PrefSchemaEditor` uses it, so a drag begun in the structure tree shows the node as the form draws it once it leaves the tree, as a palette drag and a preview drag already did, with a count when it carries several.
+- 2105123: A `Tree` row can carry a tooltip. `TreeNode` takes a new `tooltip`, shown beside the row once the pointer or keyboard focus has rested on it for 300 ms, and closed by a press or by leaving. A string tooltip is also the item's `aria-description`.
+  
+  `PrefSchemaEditor` sets it on the rows of its Structure and Unplaced trees to each node's `description`. The Unplaced rows used a native `title` for this before.
+- 12c29b7: `Tree` selects every visible row on Cmd/Ctrl+A under `selectionMode="multiple"`, reporting the set through `onSelectionChange`. Rows inside a folded branch and disabled rows are left out, as a Shift range leaves them. A single-select tree, and one with no selection, leave the key alone.
+- f264c83: `UnitField` takes back on Escape what it sent through `onInput` while typing. Every readable keystroke reached `onInput`, and Escape then only cleared the text, so a caller holding the live value kept the abandoned one: a property row wired with a single callback showed `25` after typing `25` over `10` and pressing Escape. Escape now sends the value typing began from through `onInput`.
+- 80a86e1: `UnitField` takes `onCancel`, called when typing that reached `onInput` is abandoned by Escape or by text it cannot read. A field that began at NaN (a mixed selection) has no starting value to send back, so this is how its caller learns to drop the live value. `PropertyField`'s number field passes an `onCancel` through to it.
+- ceadadd: A held `UnitField` stepper stops repeating when the value reaches its bound. The repeat ended only on the button's own release, and the button is disabled at the bound while still held; where the release never reached it, the field went on sending the bound through `onInput` every 60 ms and wiping anything typed until it unmounted.
+- aaaead2: `UnitField`: typing that ends in text the field cannot read sends the value it began from through `onInput`, as Escape does. A caller holding the live value, such as a `PropertyField` number row with one callback, was left on the last keystroke that read, while the field showed the old value.
+- f86967a: In a `PrefsForm` rail with `rowsAcross={2}`, a list, object, `block`, or `label` leaf inside an `as: 'fragment'` group took one column beside its neighbor, where the same leaf outside a fragment spans both. It now spans both there too.
+- Updated dependencies [6e2447b]
+- Updated dependencies [9dfd8a5]
+- Updated dependencies [4c4aa40]
+- Updated dependencies [f17d213]
+- Updated dependencies [7420a37]
+- Updated dependencies [7b1da16]
+- Updated dependencies [41a4b4e]
+- Updated dependencies [50b294e]
+- Updated dependencies [f7872a9]
+- Updated dependencies [1bde2a4]
+- Updated dependencies [07d96b0]
+- Updated dependencies [34feefc]
+- Updated dependencies [9d54d0a]
+- Updated dependencies [d99eb26]
+- Updated dependencies [0a2eba9]
+- Updated dependencies [3df6f75]
+- Updated dependencies [719b2eb]
+- Updated dependencies [095c055]
+- Updated dependencies [4b0688a]
+- Updated dependencies [103f988]
+- Updated dependencies [c567961]
+- Updated dependencies [6ba9cad]
+- Updated dependencies [3f18dbe]
+- Updated dependencies [8d25bd4]
+- Updated dependencies [bb078c0]
+- Updated dependencies [663248a]
+- Updated dependencies [c2a2a5d]
+- Updated dependencies [92c8af4]
+- Updated dependencies [9b4fc5c]
+- Updated dependencies [e023a51]
+- Updated dependencies [184be75]
+- Updated dependencies [9ad839d]
+- Updated dependencies [fb505bb]
+- Updated dependencies [0aaeebc]
+- Updated dependencies [e589003]
+- Updated dependencies [ec79c3f]
+- Updated dependencies [1c401e3]
+- Updated dependencies [158e471]
+- Updated dependencies [001aaae]
+- Updated dependencies [a845b8c]
+- Updated dependencies [a843f5a]
+- Updated dependencies [2fda51b]
+- Updated dependencies [a07e769]
+- Updated dependencies [557c01d]
+- Updated dependencies [b370885]
+- Updated dependencies [8a21a87]
+- Updated dependencies [86fd792]
+- Updated dependencies [8f23c57]
+- Updated dependencies [a7c9133]
+- Updated dependencies [c289df7]
+- Updated dependencies [eb123ad]
+- Updated dependencies [f06caab]
+- Updated dependencies [2b3b637]
+- Updated dependencies [55fd8a6]
+- Updated dependencies [fc8068c]
+- Updated dependencies [efcb538]
+- Updated dependencies [1268f79]
+- Updated dependencies [452fffc]
+- Updated dependencies [01f9a06]
+- Updated dependencies [41bddcc]
+- Updated dependencies [94abaef]
+- Updated dependencies [d617bf4]
+- Updated dependencies [20c2d26]
+- Updated dependencies [f5d50b0]
+- Updated dependencies [b39b0f3]
+- Updated dependencies [eefcc9a]
+- Updated dependencies [f66ec41]
+- Updated dependencies [1896646]
+- Updated dependencies [ccf595e]
+- Updated dependencies [546fd8a]
+- Updated dependencies [310c9db]
+- Updated dependencies [ad0b554]
+- Updated dependencies [7da269f]
+- Updated dependencies [f21325d]
+- Updated dependencies [bb5c5dc]
+- Updated dependencies [04caa20]
+- Updated dependencies [d8ba470]
+- Updated dependencies [f12ac6a]
+- Updated dependencies [8fca412]
+- Updated dependencies [a2e0462]
+- Updated dependencies [234f718]
+- Updated dependencies [5e1cbe4]
+- Updated dependencies [8fa3cbc]
+- Updated dependencies [ed78985]
+- Updated dependencies [fb297fb]
+- Updated dependencies [657872c]
+- Updated dependencies [110142d]
+- Updated dependencies [39b26f9]
+- Updated dependencies [3a4fa8e]
+- Updated dependencies [71f5742]
+- Updated dependencies [e39b73c]
+- Updated dependencies [cf3d535]
+- Updated dependencies [7c2e054]
+- Updated dependencies [243984f]
+- Updated dependencies [c527f50]
+- Updated dependencies [b8a988c]
+- Updated dependencies [9e51015]
+- Updated dependencies [cce05ca]
+- Updated dependencies [ab164dd]
+- Updated dependencies [68dcc32]
+- Updated dependencies [20617cc]
+- Updated dependencies [71f5742]
+- Updated dependencies [07d7cfe]
+- Updated dependencies [2010b82]
+- Updated dependencies [d490ebc]
+- Updated dependencies [fc4676d]
+- Updated dependencies [9d9eb3b]
+- Updated dependencies [cc57bc6]
+- Updated dependencies [420ba9c]
+- Updated dependencies [abe11f9]
+- Updated dependencies [316ecd0]
+- Updated dependencies [fae67cb]
+- Updated dependencies [5a92802]
+- Updated dependencies [cf170b8]
+- Updated dependencies [b4f06f1]
+- Updated dependencies [427ea6c]
+- Updated dependencies [dcc041e]
+- Updated dependencies [0a17152]
+- Updated dependencies [f356bd0]
+- Updated dependencies [9472e9a]
+- Updated dependencies [928cafc]
+- Updated dependencies [7536ff8]
+- Updated dependencies [9842451]
+- Updated dependencies [95e64cd]
+- Updated dependencies [d01459d]
+- Updated dependencies [b1ecc88]
+- Updated dependencies [1eee4df]
+- Updated dependencies [cca79cf]
+- Updated dependencies [5cd52f3]
+- Updated dependencies [cad8bd9]
+- Updated dependencies [190622a]
+- Updated dependencies [36c6ca0]
+- Updated dependencies [747e03e]
+- Updated dependencies [6983df3]
+- Updated dependencies [399033f]
+- Updated dependencies [2d1c6af]
+- Updated dependencies [e31a360]
+- Updated dependencies [33e0710]
+- Updated dependencies [a8e964e]
+- Updated dependencies [b444e46]
+- Updated dependencies [e4d444f]
+- Updated dependencies [bdf0a97]
+- Updated dependencies [0641010]
+- Updated dependencies [667ca34]
+- Updated dependencies [e06409e]
+- Updated dependencies [1268f79]
+- Updated dependencies [4d559ca]
+- Updated dependencies [60ac0a5]
+- Updated dependencies [93780f6]
+- Updated dependencies [188604d]
+- Updated dependencies [036d768]
+- Updated dependencies [151a441]
+- Updated dependencies [a14e734]
+- Updated dependencies [f6ea86c]
+- Updated dependencies [80eee37]
+- Updated dependencies [9f70b3c]
+- Updated dependencies [047dcf3]
+- Updated dependencies [3baab83]
+- Updated dependencies [0c1edcb]
+- Updated dependencies [7e05174]
+- Updated dependencies [27818ca]
+- Updated dependencies [2cc1b5a]
+- Updated dependencies [3edffaf]
+- Updated dependencies [812118e]
+- Updated dependencies [7905beb]
+- Updated dependencies [afbc295]
+- Updated dependencies [9a6f7a5]
+- Updated dependencies [7908e8f]
+- Updated dependencies [4bbffa2]
+- Updated dependencies [e640378]
+- Updated dependencies [ec5e31d]
+- Updated dependencies [2db1963]
+- Updated dependencies [9de4985]
+- Updated dependencies [72a40c5]
+- Updated dependencies [a66fcf5]
+- Updated dependencies [20cb4c6]
+- Updated dependencies [0a83dfb]
+- Updated dependencies [b413e19]
+- Updated dependencies [d8b791e]
+- Updated dependencies [dc856b3]
+- Updated dependencies [0b93821]
+- Updated dependencies [8b405d0]
+- Updated dependencies [6fd724f]
+- Updated dependencies [a145539]
+- Updated dependencies [279d88f]
+- Updated dependencies [60edb93]
+- Updated dependencies [66f7465]
+- Updated dependencies [62d3561]
+- Updated dependencies [9c10943]
+- Updated dependencies [e98e95b]
+- Updated dependencies [8261c9c]
+- Updated dependencies [4787e75]
+- Updated dependencies [c2ec0c3]
+- Updated dependencies [16559ef]
+- Updated dependencies [ba7cc48]
+- Updated dependencies [569a013]
+- Updated dependencies [ac8491b]
+- Updated dependencies [5601761]
+- Updated dependencies [7123087]
+- Updated dependencies [1ca2395]
+- Updated dependencies [47d868f]
+- Updated dependencies [77fe781]
+- Updated dependencies [d18b041]
+- Updated dependencies [97bcbef]
+- Updated dependencies [a53f3da]
+- Updated dependencies [cd5ff3e]
+- Updated dependencies [a14e734]
+- Updated dependencies [d9df523]
+- Updated dependencies [ec3c147]
+- Updated dependencies [24bdb50]
+- Updated dependencies [5d1ffd6]
+- Updated dependencies [6b42996]
+- Updated dependencies [6122f67]
+- Updated dependencies [50cb70e]
+- Updated dependencies [e9a28a0]
+- Updated dependencies [ea6842f]
+- Updated dependencies [54faddb]
+- Updated dependencies [0cf2bf4]
+- Updated dependencies [c5389a8]
+- Updated dependencies [89ecc69]
+- Updated dependencies [4604414]
+- Updated dependencies [35231a1]
+- Updated dependencies [aac08d1]
+- Updated dependencies [2dcd6fb]
+- Updated dependencies [4448634]
+- Updated dependencies [70315c1]
+- Updated dependencies [99120b4]
+- Updated dependencies [4c72db6]
+- Updated dependencies [3e3af12]
+- Updated dependencies [288e237]
+- Updated dependencies [a02b807]
+- Updated dependencies [a1ea9ff]
+- Updated dependencies [501ee43]
+- Updated dependencies [8953d33]
+- Updated dependencies [8d56051]
+- Updated dependencies [d16306d]
+- Updated dependencies [b931128]
+- Updated dependencies [a200c36]
+- Updated dependencies [2bbcc5a]
+- Updated dependencies [d3635ee]
+- Updated dependencies [2098025]
+- Updated dependencies [6a4a8ad]
+- Updated dependencies [5b8578a]
+- Updated dependencies [d8e003d]
+- Updated dependencies [b3b209e]
+- Updated dependencies [72002f8]
+- Updated dependencies [26c11b8]
+- Updated dependencies [e30e47c]
+- Updated dependencies [12a42f0]
+- Updated dependencies [732f5c3]
+- Updated dependencies [44e1258]
+- Updated dependencies [40533db]
+- Updated dependencies [d71fc46]
+- Updated dependencies [4334f6d]
+- Updated dependencies [bb28e63]
+- Updated dependencies [3dff419]
+- Updated dependencies [8411fa2]
+- Updated dependencies [611573e]
+- Updated dependencies [ba4684e]
+- Updated dependencies [0d82f92]
+- Updated dependencies [c90cff1]
+- Updated dependencies [6befeae]
+- Updated dependencies [7c45605]
+  - @weasel-js/core@1.9.4
+  - @weasel-js/prefs@1.9.4
+  - @weasel-js/theme@1.9.4
+  - @weasel-js/font@1.9.4
+  - @weasel-js/modes@1.9.4
+  - @weasel-js/svg@1.9.4
+  - @weasel-js/geom@1.9.4
+  - @weasel-js/select@1.9.4
+  - @weasel-js/gestures@1.9.4
+  - @weasel-js/react@1.9.4
+  - @weasel-js/quantity@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

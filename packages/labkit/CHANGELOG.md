@@ -1,5 +1,582 @@
 # @weasel-js/labkit
 
+## 1.9.4
+
+### Patch Changes
+
+- 1bde2a4: A leaf says as data what it does when auto. `PrefBase` gains three optional fields: `manual` (never auto), `unpinned` (starts auto), and `autoValue` (what it reads while auto, which need not be its `default`). labkit already wrote the first two onto its leaves from `.manual()` and `.initial(auto)`; they are now part of the type.
+  
+  `PrefSchemaEditor` edits all three in a new Auto panel of a leaf's attributes. The auto value starts unset, and its label pins it, starting from the default. A leaf with no value, such as an action, gets no panel.
+  
+  `PrefsForm` gives a `manual` leaf no auto toggle, whatever `canInherit` says. labkit resolves an auto leaf to its `autoValue` where it has no `.auto()` resolver, and `ControlPanel` quotes that value in the row's ⓘ tooltip as it does a resolver's.
+- 2d1960e: A row's ⓘ tooltip can end with what the row reads when it is auto. `PropertyRow`, `PropertyField`, `DialogRow`, and `PropertyHelp` take a new `autoValue` prop; given, the tooltip's last line is the word `auto`, drawn as an auto row's readout draws it, followed by the value. A row with an `autoValue` and no `description` gets the ⓘ for that line alone.
+  
+  labkit's `ControlPanel` passes it for every leaf that has an `.auto()` resolver and is not `.manual()`, whether the row is pinned or auto: the value is what the resolver gives with that row unpinned beside the rows that already are.
+- 9ad839d: A `PathDrawCommand`'s `fill` and `stroke` are now `CommandFill` and `CommandStroke`: a pattern must name a registered texture, and no paint may be in `'bounds'` units, so a tile spec or a box-relative gradient on a hand-built command is a type error where it used to draw blank or in screen space. This is a breaking change to types: code that passes a node's `FillStyle` or `Stroke` straight into a command now calls `commandFill(fill, box)` or `commandStroke(stroke, box)`, which resolve both. Options that feed commands directly (`createPathLayer`'s `getFill` and `getStroke`, affordance paints, selection overlay and guide strokes, overlay role strokes) take the narrowed types. `<Canvas backgroundFill>`, `<DrawCanvas background>`, the rect fallback painter, a marker's own fill, and `diagramShape` now resolve their paint, so a tile spec or `'bounds'` gradient there paints.
+- 2c7459d: `deserializeTrials`'s docstring said it returns an empty list rather than throwing on malformed input. That holds only for input that is not an array, and the docstring now says so.
+- c289df7: Every public export now carries a JSDoc block: the ones that had none are documented, among them audio's effect and envelope types, diagram's `DiagramData` family, and `SelectContext`. No behavior changes.
+- d617bf4: An endless slider end keeps its whole range. `endless` used to turn the end stop itself into infinity, so `min={0} max={5000} step={50} endless="max"` could reach 4,950 and then infinity, never 5,000. It now adds a stop for infinity one `step` beyond the range (a twentieth of the range where there is no step, and one more stop under `spacing: 'even'`, labeled with the display's word for infinity), so the track's own end is that stop and every value from `min` to `max` is still reachable. This reaches `Slider`, the slider `PropertyField` draws, `PrefsForm`, and labkit's `.endless()`.
+  
+  A stored `Infinity` still reads as infinity. A value stored at the old top stop was stored as `Infinity`, so nothing stored changes meaning. A typed number past the range commits infinity, as before; one within half a step of the end commits the end.
+- 4f63476: `PropertyPanel`, `Subpanel`, and `PropertyGroup` take `twisty`: `'folded'` hides the twisty while the contents are open and folds on a press of the title instead; the twisty still takes keyboard focus and shows while it has it. `ControlPanel` and `ControlMatrix` pass it through. The default, `'always'`, is unchanged.
+  
+  A panel's title sits closer to its contents: the gap under it is 8px, down from 12px (`--wzl-prop-panel-title-gap`), and a twisty no longer makes the title row taller.
+- a2e0462: New export `heldKeySpec(key)`, from `@weasel-js/routing` and `@weasel-js/core`: the `key-held` spec for holding a key, with every modifier optional when the key is itself a modifier and forbidden otherwise. It is general surface for any hold-a-key binding; offhand tool triggers and the labkit loupe's peek key both build their spec with it. The loupe changes for a peek key that is not a modifier: a letter no longer starts a peek while another modifier is down, the same as an offhand tool's trigger. The default peek key, Alt, behaves as before.
+- 7366d0c: A hold-a-key trigger that is not itself a modifier now engages while Shift or Alt is down: hold Shift, then Space, and the hand tool is pushed. Cmd and Ctrl still bar it, so a letter trigger leaves its browser chord alone. `heldKeySpec` carries the rule, so labkit's loupe peek key follows it too.
+- f948b1d: A stored lab opens when one of its trials or snapshots cannot be read. A trial whose instrument throws from `deserialize` or `migrateConfig` is left out with a console warning, and its record stays in storage, neither written over nor deleted; before, one such trial rejected `openLabStore` and the whole lab showed an error on every load. A trial another tab stores in a state this tab cannot read is dropped from this tab the same way.
+- a9b48e9: A lab whose storage cannot be read at open now recovers. `openLabStore` retries the read on the record cache's backoff, and when one lands it migrates the stored lab as it would have at open, a document from before records included, then merges it into whatever was built meanwhile: a stored trial or snapshot replaces one of the same id, the rest of what was built follows the stored ones and is written, and layout and undocked panels merge by trial with the stored entry winning. Before, such a lab stayed empty and unsaved for the session. A write storage rejects is also sent again on its own now, where it waited for the next change.
+- cce05ca: `label` and `separator` are built-in pref kinds (`PrefLabel`, `PrefSeparator`): leaves that hold no value, so a store skips them and neither is a `PrefPath`. Every params surface now draws them the same way, through `PrefLabelLine` and `PrefRule` from `@weasel-js/ui`: `SelectionPanel` and labkit's `ControlPanel` drew each as an unknown kind before. labkit's builder gains `f.label(text)` and `f.separator()`. `prefFieldChoices` no longer offers either as a field, and `PrefSchemaEditor` offers a label its name, description, and Hidden, and a separator Hidden alone. Code that switches over every `PrefKind` needs an arm for the two.
+- a89cbcf: Under React `StrictMode`, an instrument's `job` with `auto: true` never ran and reported `running` forever: the rehearsal unmount aborted the first start, and the remount took it for already started. `useJob` now starts it again.
+- 9f8e55a: A stage or canvas trial whose opening view is fitted once its size is known (no `initialView`, or a function one) could open below the instrument's `minZoom`, and the first drag then snapped the zoom up to `minZoom` while panning. The same happened after entering presentation refitted the view. The camera now widens its zoom range to reach any view it is handed from outside, not only the one it mounted with; its own zoom gestures still never widen it.
+- e48143a: In a lab with several canvas trials, any change to one trial (each frame of a pan, each job item, each saved mark) cleared and redrew every layer of every other trial. `CanvasStack` now treats a `view` with the same zoom and pan as the same view, whatever object carries it, so only a real view, size, or layer change repaints.
+- ceca1ea: Closing a trial, or swapping its instrument, left any sidebar section undocked from it behind as an empty panel that could not be docked or dismissed, and that came back on reload. A lab store now docks a trial's panels in the same write that drops the trial from `trials`, whichever caller made it, and `closeTrial` goes through the store's `removeTrial`.
+- b6e7dc8: When the settings panel, or a chrome contribution's `ctx.setConfig`, wrote several config paths before the next render (resetting a section does), an instrument's `onConfigChange` was handed the config with only the last write applied and the state from before the first, so the state it derived reflected one path. Each write now reads the trial's stored config and state, so every call sees the writes before it.
+- 104fa68: labkit's `ControlPanel` draws a group `as: 'bar'` (`f.group({...}).as('bar')`) as one line of its leaves in their bar forms under no heading, where it drew a headed group of rows. A leaf that names no `control` takes the bar's default, so a boolean is a toggle button there and a checkbox in a row. A leaf whose control the lab draws itself keeps its row form.
+  
+  `@weasel-js/ui` exports `renderBarLeaf` and its `BarLeaf` argument: the one place a leaf kind's bar form is decided, for a surface that draws its own bar through `BarLayout`.
+- 1f2cdb0: Three `ControlPanel` row fixes. A leaf with no single control (an action, list, map, union, or alias) that a `pair` put beside a neighbor drew its caption over an empty cell; it now keeps a row of its own. Clicking an action row's label ran the action, because the row was a `<label>` around the button; only the button runs it now. And a row whose resolver reads a path that is already auto and reads it back no longer offers the auto toggle, where clicking it threw `auto resolver cycle` out of the panel's render.
+- 2e72827: A text control in `ControlPanel` or `ControlMatrix` lost what was typed when its row went away inside the debounce window: closing a matrix cell's popover, switching tabs, or a `showIf` hiding the row right after the last key. The pending text is now written as the row unmounts. Text still waiting is also dropped when the value is replaced from outside, so a reset is no longer overwritten by the keystrokes before it.
+- eaf3f09: `f.enum(...).toggle()` declares an enum drawn as segments, writing `control: 'toggle'` on its leaf. A `ControlPanel` draws it as it draws `.radio()`; a preferences form reading the same leaf draws `.toggle()` as segments and `.radio()` as radio buttons.
+- 74248c9: Undocking the first floating panel in a lab, or docking the last one, remounted every trial: each lost its mark undo history, layer visibility, and running job, and a playing clock jumped back. `Workspace` now always renders its `lk-workspace-host` box around the grid, so the grid keeps its place when the floating layer comes and goes. A stylesheet that targeted `.lk-workspace` as a direct child of the lab body should target `.lk-workspace-host` instead.
+- 3424f82: Opening a lab stored in the four keys labkit used before lab documents lost its tile sizes on the next load: for a `storageKey` with nothing to URI-encode, the old layout key is also the key of the new layout record, and the fold deleted it right after writing it. `openLabStore` now leaves a key it has just written.
+- b226598: `ControlPanel` draws a section's governing control in the section's title row. `.heading()` on a boolean or enum leaf puts its control beside the title of the section, the group, or the panel `title` holding it, and that title becomes the control's accessible name: an on/off switch, or a kind picker. A first row whose label only repeats its heading, such as "Chuck" under "Chuck" or "Pump" under "Pumping", is lifted the same way, with a development warning naming it, since the repeat is an authoring mistake. A repeating row whose control is too big for a title row (a slider, a text field, or a custom renderer) stays a row and still warns.
+- bf4f085: A `ControlMatrix` popover row drew its label as a focusable toggle named "Pin …" that did nothing when pressed, since a matrix has no auto state. The label is a plain label now.
+- 86c3b42: A stored `<Lab>`, `SingletonExperimentProvider`, or `<Persistence>` whose open rejected (an unknown `defaultInstrument`, an instrument `deserialize` that throws on its stored state) showed its fallback forever and reported only an unhandled promise rejection. The error is now thrown from render, so an error boundary catches it the way it catches the same failure in a lab with no `storageKey`.
+- 16ca7a2: A trial's Reset returned its config, state, and view to what it opened on but left which fields were `auto` as the user last had them: a field pinned since opening stayed pinned at its default, and one switched to auto stayed auto. `resetTrial` now restores the opening set too.
+- 715494b: `Split` gives way in a strip too narrow for both panes' floors: it lays the sidebar out below `minWidth` first, down to nothing, and only then the content below `contentMinWidth`, so a trial tile under 300px no longer runs its content pane out past the tile. The sidebar's stored width is untouched and comes back when the strip widens; `minWidth` still bounds a drag.
+- c6bb42d: `useTiledSurface` produced no frame when a tile unregistered and every other tile kept its rect, so the registered clears never ran and whatever the departed tile had painted stayed on the shared buffer until something else moved. A tile leaving now makes the next frame `retiled`, as `SurfaceFrame.retiled` documents, including when it was the last tile.
+- 2360522: A `ControlPanel` row for a list of strings whose item sets `control: 'textarea'` drew each entry as a one-line input. Each entry is now a textarea, as it is in a `PrefsForm`.
+- e748d97: An instrument that lists `layers.toggle` or `layers.reorder` in `undo.snapshotOn` now gets an undo step when a layer is shown, hidden, or reordered; before, those two events reached nothing. Breaking: `createEventBus`, `EventBus`, and `EventListener` are removed from `@weasel-js/labkit` and `@weasel-js/labkit/undo`. The trial created a bus and published to it, but nothing ever subscribed, and undo snapshots never went through it. `ctx.emit` and `undo.snapshotOn` work as before.
+- ba87325: A trial's Mod+Z, Mod+Shift+Z, and Mod+S now work with focus outside every trial, such as on the page body after a click on empty space: they go to the focused trial, or to the first where none is focused. Before, the chords were heard only inside the trial's own section, so undo did nothing there while the toolbar's Undo button worked. A text field keeps its own undo wherever it is, and a slider or checkbox inside a trial still undoes the trial.
+- 047efee: Cmd/Ctrl+Z and its redo forms pressed while typing in a text field inside a trial (a settings field, an input the instrument renders, one in an undocked panel) stepped the trial's undo history and blocked the field's own undo. The trial now leaves those chords to a text field, a textarea, or editable content, and still answers them from a slider, a checkbox, or a button. It also leaves alone a chord something inside the trial has already handled.
+- ab164dd: labkit's shared surface and `CanvasStack` take the new backing size when the device pixel ratio changes and nothing resizes, as when a window moves to a display of another density; before, they stayed blurry or oversampled until the next resize. Core exports `watchDevicePixelRatio`, the listener they use.
+- 2e69cc0: A wheel or trackpad pinch over an annotation mark's box zoomed the trial's camera and was also left for the browser, which could scroll or zoom the page at the same time. The event handed to the camera is now canceled on the original when the camera takes it.
+- 5794fc1: A list of plain text in `SelectionPanel` is drawn with `ListEditor`'s own fields, as `PrefsForm` and labkit's `ControlPanel` draw one, so Enter adds an entry and Backspace removes an empty one there too. Which lists those are is one exported test, `prefListIsText`, with `prefListTexts` for their entries.
+- c4a7c2a: labkit no longer lists `@weasel-js/kernel3d` as a dependency: only its unpublished 3D example imports it, so installing labkit stops installing kernel3d. d3 drops its `react` peer, which none of its source imports. labkit's lightbox button takes its size from `--wzl-control-h-sm`, so it follows the density.
+- d52829c: A redo run on one annotation target's scene directly, as a pane's own keymap does, no longer clears the redo order across targets: the toolbar's Redo stays enabled while another target still has one. `HistoryScene` gains `historyEntries()`, which the ordering reads to tell a redo from a new change by entry id; a `Scene` already has it.
+- 08516b6: A `ControlMatrix` with a `title` draws its column headers in the panel's title row, over their columns, and a folded one draws the title alone. The table keeps a header row at no height, which still sizes the columns and names them for a screen reader. A matrix with no title keeps its headers in the table.
+  
+  `PropertyPanel`'s actions take their width from `--wzl-prop-panel-actions-basis` when an ancestor sets it; unset, they size to their content as before.
+- 945c663: `PropertyPanel` and `Subpanel` fold. Both take the props `PropertyGroup` already had: `collapsible`, `defaultCollapsed`, `collapsed`, and `onCollapsedChange`. A folding panel draws a twisty before its title, keeps its contents mounted while folded, and marks its root `data-collapsed`. The props are exported as `CollapseProps`, with the `useCollapse` hook all three containers now share.
+  
+  labkit's `ControlMatrix` takes the same four props. `ControlPanel` takes `collapsible` and `defaultCollapsed` for the whole panel; its controlled state uses the key `''` in the `collapsed` record and in `onCollapse`, beside the sections' keys.
+  
+  `Subpanel`'s title row is now a `<div>` holding the `<h4>` and the rule, where the `<h4>` held both. A stylesheet that targeted `h4 > span` or `h4 > hr` inside a subpanel needs the new shape.
+- 4d559ca: `isPlainObject` lives in `@weasel-js/registry` (core still exports it), and `@weasel-js/geom` exports a scalar `clamp(v, lo, hi)`. theme, prefs, labkit, and forge read plain objects through the one realm-safe test, so a `Date` or a `Map` no longer passes where they accept a record; ui's Slider and ResizeHandle, hud's loupe, and labkit's ZoomControl use geom's clamp. When its bounds cross, ResizeHandle now holds to `min` where it held to `max`. theme and prefs gain a dependency on registry, and ui's on geom moves from dev to runtime.
+- 151a441: A new pref kind, `alias`: a leaf that shows another leaf. Its row draws that leaf's control and reads and writes that leaf's value, so one setting can sit on two pages over a single stored value.
+  
+  ```ts
+  play: { name: 'Play', children: { grid: { kind: 'alias', name: '', description: '', default: undefined, of: 'view.grid' } } }
+  ```
+  
+  `of` is the path the shown leaf's value lives at. `name` and `description` left empty are the target's; given, they rename the row at the alias's place only. An alias holds no value: a store neither reads nor writes one, `prefHoldsValue` answers false for it, and its path is not a `PrefPath`. `@weasel-js/prefs` adds `PrefAlias`, `prefAliasTarget` (which follows an alias of an alias and answers nothing for a missing target or a loop), `prefAliasedLeaf`, and `prefLeafAt`.
+  
+  `PrefsForm` and labkit's `ControlPanel` draw an alias as its target's row; an alias of nothing draws a note saying so, in place. In labkit `f.alias('view.grid')` builds one, and its own `.section`, `.showIf`, `.label`, and `.describe` place and name it. `SelectionPanel` does not draw aliases yet.
+  
+  `PrefSchemaEditor` lists `alias` among the kinds, with an `Of` picker, and makes one by a drag with Alt and Cmd (or Ctrl) held. Moving or renaming a pref, or a group above it, rewrites the aliases that name it.
+  
+  This adds a member to `PrefKind`, so a `switch` over a built-in leaf's kind that ends in a `never` guard stops compiling until it handles `alias`.
+- a14e734: A `PrefGroup` can say how it is drawn, with `as`: `'page'` (an entry in the form's rail and a pane of its own), `'tab'` (one tab in a strip shared with the `tab` groups beside it), `'panel'` (a bordered, titled box), or `'section'` (a heading over its rows). Unset, depth decides as before: a top-level group is a page and a nested one a section. `PrefsForm`'s rail layout draws all four; a top-level group that is not a page is drawn on the root's own page, with the root's leaves. Its columns and list layouts, and labkit's `ControlPanel`, draw tabs, panels, and sections; they have no pages, so `'page'` draws as the default there. labkit's `f.group(...)` takes `.as(kind)`. `PrefSchemaEditor` sets it from a group's "Drawn as" attribute, and its tree files non-page top-level groups under General.
+  
+  `prefGroupIsPage` and the `PrefGroupAs` type are exported from `@weasel-js/prefs`.
+  
+  A `PrefSection` takes `as` too, without `'page'`: `SelectionPanel` draws a run of tab sections as one strip and a panel section in a box, and so do the sections inside an object leaf, in both `SelectionPanel` and `PrefsForm`. `GroupTabs` is the one tab strip all of them use, exported from `@weasel-js/ui`. `PrefSchemaEditor` offers "Drawn as" on a section and a palette of tab, panel, and section for a section schema.
+- f6ea86c: `@weasel-js/prefs` exports `PREF_KIND_TRAITS`, one record saying of every built-in kind whether its value is made of other leaves and whether its control is several controls, with `prefIsCompound` and `prefDrawsSeveral` to read it. `PrefsForm`, the bar, and labkit's `ControlPanel` read it in place of their own lists of kind names, so a kind added to `PrefKind` does not compile until it says what it is. labkit's `ControlPanel` now draws `font-family` and `font-weight` leaves with the pickers ui has for them; it said it had no control for them.
+- 0c1edcb: A group or a section can be drawn `as: 'fragment'`: nothing of its own, so its rows sit among its neighbors' as though they were written there. It is for holding things together and no more: one key for their values to nest under, and one node to select, move or copy. It gets no heading, box, tab or rail entry, and at the top level its rows go on the root's own page. In a form two rows across, its rows take cells in the same grid as the rows around it.
+  
+  `PrefsForm`, `SelectionPanel`, an `object` leaf's sections, and labkit's `ControlPanel` all draw it that way. Selected, it marks the rows it holds, having no box of its own to mark. `PrefSchemaEditor`'s palette makes one with a new Group tool, under the `</>` glyph, and the "Drawn as" choice lists it.
+  
+  A group nested inside a fragment is drawn where the fragment is, as a section unless it says otherwise; it gets no rail entry of its own.
+- 27818ca: Four new built-in pref kinds: `list`, `map`, `union`, and `action`.
+  
+  A `list` leaf holds an array whose entries are each described by `item`, an ordinary leaf: `{ kind: 'list', item: { kind: 'number', min: 0 }, minItems: 3, maxItems: 3 }`. The item may be any kind, built-in or app-defined, including an `object` or another `list`. A stored list reads entry by entry through the item, so one bad entry falls back to the item's default and the rest are kept; a list shorter than `minItems` reads as the default and one longer than `maxItems` is cut to it. `PrefValueOf` types a list by what its item holds.
+  
+  A `map` leaf holds a record keyed by strings nobody declared, every value described by `item` as a list's entries are: `{ kind: 'map', item: { kind: 'number' } }` types as `Record<string, number>`.
+  
+  A `union` leaf holds one of several object shapes, told apart by the string in its `tag` field. Each variant is an `object` leaf keyed by its tag value: `{ kind: 'union', tag: 'type', variants: { linear: {…}, radial: {…} } }` holds `{ type: 'linear', angle: 90 }`. Choosing a variant sets the value to that variant's default under its tag. A stored value whose tag names no variant reads as the default. `prefVariantOf` and `prefVariantDefault` are the two lookups. `PrefValueOf` types a union as each variant's fields under its tag, where the schema keeps `tag` a literal (`tag: 'type' as const`); with `tag` widened to `string` it is typed by its `default`, as before.
+  
+  `repairPrefValue` now reads inside an `object` leaf: each field the stored object holds is read as its own leaf would be, so a number field is clamped and an enum field with an unknown option falls back to that field's default. A field the object omits stays omitted, and fields no leaf describes pass through. It used to accept any plain object whole. A union's variant and an object entry of a list or a map are read the same way.
+  
+  An `action` leaf holds no value: it is a button among the rows that calls `run({ path })`, disabled while a promise `run` returned is pending. A store skips it, and its path is not a `PrefPath`. `prefHoldsValue(leaf)` tells the two sorts of leaf apart.
+  
+  `PrefsForm`, `SelectionPanel`, and labkit's `ControlPanel` draw all four. A list is a `ListEditor` with one control per entry, drawn as the item leaf would be on a row of its own, and an entry of an app-defined kind goes to that kind's renderer. In `PrefsForm`, a list whose entries are objects or lists puts its label above the entries, which need the row's whole width. `PrefsForm` now does the same for a field of an `object` leaf, which used to show "no renderer" for an app-defined kind whether or not one was registered. `ListEditor` takes entries of any type through `renderEntry` and `newEntry`, and stops at `minItems` and `maxItems`. `PrefActionButton` is the action's button, exported for surfaces that draw their own rows. `MapEditor` draws a map as a key field and the item's control per entry, and `UnionPicker` a union as a select over the chosen variant's fields; both stack under the row's label.
+  
+  `PrefControl` is one leaf's control as `PrefsForm` draws it, without the row: for a surface that lays out its own rows and has an object, a list, a map, or a union to put in one.
+  
+  labkit: `f.list(default, item)` builds a typed list (`f.list([0, 1], f.number(0).range(0, 9))`), `.count(min, max)` bounds it, and `f.action(run)` builds a button. `f.list(strings)` is unchanged. An `f.value` whose default is an array of numbers or booleans is now inferred as a list of them; it used to throw. `f.object(fields)` builds one value with named fields (where `f.group` makes each field a leaf of its own), `f.map(default, item)` a record by arbitrary key, and `f.union(tag, variants)` one of several objects; each infers its config type. `ControlPanel` opens an object, a map, a union, and a list of anything but plain strings in a dialog from its row, drawn by `PrefControl`. An object leaf used to show "no control for object".
+  
+  `PrefSchemaEditor` shows a list's or a map's `item` as a row under it in the structure tree, edited in the attributes pane like any leaf; it has no key to rename and cannot be removed or moved. A union's variants are rows under it: adding to a union adds an `object` leaf, and renaming a variant's key renames it in the union's default. A new action exports with `run: () => {}`, a stub to fill in, where it used to export `KEEP_FROM_SOURCE` with nothing in the source to keep.
+  
+  **Breaking for anyone who registered a custom kind named `list`, `map`, `union`, or `action`:** those names are built-in now, and a `list` leaf needs an `item`. labkit's own `f.list` leaves carry one.
+- 812118e: New `@weasel-js/storage` package: the storage adapters and `RecordCache` that lived in labkit, split into one module per adapter. localStorage, sessionStorage, memory, and the no-op adapter gain `listSync`, and `openRecordsSync` opens a record cache over them without awaiting. `fallbackStorage(preferred, fallback, label)` wraps an adapter with a fallback for when it is unavailable, and `createDefaultStorage(preferred, label)` builds a page-wide default from one: `preferred`, or localStorage where it will not open, chosen once. Storage's own `indexedDbAdapter` and `defaultStorage` use the IndexedDB database `'weasel'`. `RecordCache.flush()` now resolves `true` when every queued write landed and `false` otherwise; it used to resolve to nothing. labkit re-exports the adapters, and its `indexedDbAdapter` and default storage stay on the database `'labkit'`, where every existing lab's records are.
+  
+  New `@weasel-js/prefs` package: the preferences schema, moved out of core, and a store for it. `openPrefs` and `openPrefsSync` keep one record per leaf and repair values against the schema on read. `store.stored()` returns the raw stored records as a tree, orphans included, and `usePrefsValues` returns it as `stored`. Versioned migrations run on open: a malformed `$version` opens the store read-only, and a newer `$version` written by another writer stops this store from persisting. `Infinity` and `-Infinity` on number leaves are stored as the strings `'Infinity'` and `'-Infinity'`. `PrefsStore.flush()` resolves a boolean, with the same meaning as `RecordCache.flush()`. The `usePref` and `usePrefsValues` hooks, imported from `@weasel-js/prefs/react`, produce the values `PrefsForm` takes; the main entry loads no React.
+  
+  Breaking: the schema types are renamed from `ToolPref*` to `Pref*` (`ToolPref` itself is `BuiltinPref`, `TOOL_PREF_KINDS` is `PREF_KINDS`, `isBuiltinToolPref` is `isBuiltinPref`) and are imported from `@weasel-js/prefs`. Neither core, ui, nor `@weasel-js/labkit/weasel-ui` re-exports them, nor ui's `isPrefLeaf`, `prefValueAtPath`, `visiblePrefSubtree`, `filterPrefSubtree`, or `prefDisplayBounds`. labkit's cross-tab BroadcastChannel is renamed, so tabs on an older and a newer labkit stop hearing each other until both reload.
+- 1bbf0cb: A command on a tool rail is its own type. `ToolItem` is now only a tool: it has no `onActivate` and no type parameter. A button that runs once when pressed is a `CommandItem`, which `ToolbarItem` now extends, and a `palette` contribution takes a `RailItem`, which is either one.
+  
+  This is breaking for code that names the type. `ToolItem<TCtx>` becomes `ToolItem` for a tool, `CommandItem<TCtx>` for an item carrying `onActivate`, and `RailItem<TCtx>` where either may arrive. A contribution written as an object literal needs no change. forge's Info button is declared as a `CommandItem`.
+- 9de4985: A record cache whose first read fails now recovers. This changes behavior: `openRecords` and `openRecordsSync` used to answer a failed read with a cache that stayed empty and read-only until the page reloaded. It now reads again on a backoff, starting at `retryMs` (default 1000 ms) and doubling to `retryMaxMs` (default 30000 ms), and `cache.read()` tries at once. When a read lands, the cache holds the records, reports them to listeners as one batch of `remote` changes, hears other writers, and turns `writable` on. Records set or deleted while it waited win over what was read and are then written, and a delete made while unread is now queued even though the cache holds no such record. `retryMs: false` keeps the old behavior, and a cache its opener stopped with `stopWriting()` stays read-only and stops retrying. `RecordCache` gains the `read()` method, which anything implementing the interface by hand must add.
+  
+  A prefs store opened while its storage was away therefore shows the stored values and starts persisting once the read lands. `PrefsStore` gains `read()` to try at once, `writable` turns true when it does, and a store with migrations now also stops persisting when the records that arrive late carry a version newer than the build knows. Migrations are not rerun over records that arrive late.
+  
+  labkit's lab store opens its records with `retryMs: false`, so a lab whose storage could not be read stays empty and unsaved for the session, as before. `<Persistence>` uses the default and recovers.
+- 5c96216: A `PropertyRow`'s ⓘ no longer takes focus, by Tab or by a press, so Tab crosses a described row in one stop where it took two and lands on the row's control. The row's first control is described by the help's text (`aria-describedby`), so a screen reader reads it with the control. The tooltip opens when the keyboard brings focus to a control in the row, after the tooltip's usual delay, and closes on Escape or when focus leaves the row; a click on the control opens nothing, and hovering the ⓘ works as before. This reaches every surface that draws its rows with `PropertyRow`: `PropertyField`, `PrefsForm`, `SelectionPanel`, and labkit's `ControlPanel`. A row with no focusable control has hovering as the only way to its help.
+  
+  In a row the ⓘ is drawn as a `<span>` hidden from assistive tech where it was a `<button>` named `About <label>`. As the first labelable element in the row's `<label>`, that button was the control the label named, so a bare control passed to a `PropertyRow` now takes its name from the row's label.
+  
+  `PropertyHelp` used on its own is unchanged, a button and a tab stop, unless given `within`: a selector for the ancestor that is its row. labkit's `ControlMatrix` passes `within="tr"`, so a matrix row's help rides on that row's first cell.
+  
+  **Breaking for a test that finds a row's ⓘ by `getByRole('button', { name: 'About …' })`:** it is no longer a button. Assert the control's accessible description.
+- 8025cd7: `PrefSchemaEditor` selects several nodes at once. In the structure tree, Cmd or Ctrl on a click adds a row or takes it out and Shift takes a range; in the live preview, Cmd or Ctrl on a press does the same. The selected nodes drag, copy, and delete together as one step back, and a press on one of them in the preview that ends without a drag selects that one alone.
+  
+  With several selected, the attributes pane is headed with how many, and shows the attributes every one of them has. An attribute they agree on shows its value; one they differ on shows "Mixed" and takes an edit that is written to all of them. A list, map, object, or union attribute that differs is listed as "mixed" and not edited. The Key row, a key that follows its name, a list's Entry panel, and Add alias are for one node, and are not offered for several.
+  
+  **`PrefsForm` and `PrefsDialog`: `selected` is now a list of dotted paths**, where it was one path. Every path in it is marked, and the last is the one scrolled to and whose rail page or tab opens. A caller that passed a string passes a list of one. `onSelect` is called with a second argument, `{ toggle }`, true when Cmd or Ctrl was held without Alt. A press on one of several selected rows is reported on its click, not on the way down.
+  
+  `PrefsForm` takes `mixed`, a set of dotted paths whose leaves stand for several values that disagree: each draws its control with no value, and a custom renderer is told through `mixed` on its `PrefRenderContext`.
+  
+  `Tree` puts each row's node id on it as `data-tree-id`.
+  
+  labkit's `ControlPanel` hands a custom control the `fields` a `field` leaf may name, as it already did for its built-in ones.
+- ec596b9: `setInstruments` no longer rejects when an instrument's `migrateConfig` throws on one held trial's or snapshot's config: that one keeps its config as stored, with a console warning, and the rest are migrated. A `defaultConfig` that throws still rejects the call and changes nothing.
+- 74bccab: A trial keeps its instrument mounted when its first sidebar section arrives or its last one leaves. The body used to swap between two different trees at that moment, so the instrument's output was thrown away and rebuilt; in forge that reloaded a story's frame as soon as the story reported a config schema.
+  
+  `Split` takes `sidebar={null}`: the content fills the strip with no pane or seam beside it, and stays mounted when a sidebar arrives.
+- Updated dependencies [6e2447b]
+- Updated dependencies [9dfd8a5]
+- Updated dependencies [53c1c1d]
+- Updated dependencies [4c4aa40]
+- Updated dependencies [6b0163c]
+- Updated dependencies [73011b3]
+- Updated dependencies [f17d213]
+- Updated dependencies [7420a37]
+- Updated dependencies [f7efb73]
+- Updated dependencies [5569371]
+- Updated dependencies [7b1da16]
+- Updated dependencies [41a4b4e]
+- Updated dependencies [50b294e]
+- Updated dependencies [f7872a9]
+- Updated dependencies [2e11673]
+- Updated dependencies [1bde2a4]
+- Updated dependencies [2d1960e]
+- Updated dependencies [5c5ba76]
+- Updated dependencies [18d45e8]
+- Updated dependencies [c834f3b]
+- Updated dependencies [b30da28]
+- Updated dependencies [32002e9]
+- Updated dependencies [a777cea]
+- Updated dependencies [07d96b0]
+- Updated dependencies [5c560ab]
+- Updated dependencies [799e489]
+- Updated dependencies [b73b3aa]
+- Updated dependencies [34feefc]
+- Updated dependencies [9d54d0a]
+- Updated dependencies [0a2eba9]
+- Updated dependencies [def780e]
+- Updated dependencies [f337f1d]
+- Updated dependencies [3df6f75]
+- Updated dependencies [719b2eb]
+- Updated dependencies [095c055]
+- Updated dependencies [4b0688a]
+- Updated dependencies [103f988]
+- Updated dependencies [c567961]
+- Updated dependencies [6ba9cad]
+- Updated dependencies [3f18dbe]
+- Updated dependencies [8d25bd4]
+- Updated dependencies [bb078c0]
+- Updated dependencies [663248a]
+- Updated dependencies [c2a2a5d]
+- Updated dependencies [92c8af4]
+- Updated dependencies [9b4fc5c]
+- Updated dependencies [e023a51]
+- Updated dependencies [184be75]
+- Updated dependencies [8ee81fd]
+- Updated dependencies [8469066]
+- Updated dependencies [59f518a]
+- Updated dependencies [9ad839d]
+- Updated dependencies [fb505bb]
+- Updated dependencies [0aaeebc]
+- Updated dependencies [e589003]
+- Updated dependencies [ec79c3f]
+- Updated dependencies [1c401e3]
+- Updated dependencies [158e471]
+- Updated dependencies [e1255f1]
+- Updated dependencies [001aaae]
+- Updated dependencies [a845b8c]
+- Updated dependencies [a843f5a]
+- Updated dependencies [7d49da3]
+- Updated dependencies [66373ac]
+- Updated dependencies [98101a3]
+- Updated dependencies [f9bf6ae]
+- Updated dependencies [18eb752]
+- Updated dependencies [2a87c05]
+- Updated dependencies [50c2cfe]
+- Updated dependencies [0afd65c]
+- Updated dependencies [2fda51b]
+- Updated dependencies [a07e769]
+- Updated dependencies [557c01d]
+- Updated dependencies [b370885]
+- Updated dependencies [8a21a87]
+- Updated dependencies [86fd792]
+- Updated dependencies [8f23c57]
+- Updated dependencies [b9d5513]
+- Updated dependencies [c289df7]
+- Updated dependencies [eb123ad]
+- Updated dependencies [f06caab]
+- Updated dependencies [2b3b637]
+- Updated dependencies [55fd8a6]
+- Updated dependencies [fc8068c]
+- Updated dependencies [efcb538]
+- Updated dependencies [4f8f94e]
+- Updated dependencies [1268f79]
+- Updated dependencies [452fffc]
+- Updated dependencies [01f9a06]
+- Updated dependencies [1128311]
+- Updated dependencies [bafbccc]
+- Updated dependencies [3b6d55f]
+- Updated dependencies [41bddcc]
+- Updated dependencies [94abaef]
+- Updated dependencies [89b4ee6]
+- Updated dependencies [d617bf4]
+- Updated dependencies [20c2d26]
+- Updated dependencies [f5d50b0]
+- Updated dependencies [f3702c9]
+- Updated dependencies [b374c88]
+- Updated dependencies [1a09433]
+- Updated dependencies [4f63476]
+- Updated dependencies [b39b0f3]
+- Updated dependencies [6ee9a4e]
+- Updated dependencies [eefcc9a]
+- Updated dependencies [f66ec41]
+- Updated dependencies [1896646]
+- Updated dependencies [ccf595e]
+- Updated dependencies [546fd8a]
+- Updated dependencies [310c9db]
+- Updated dependencies [ad0b554]
+- Updated dependencies [7da269f]
+- Updated dependencies [f21325d]
+- Updated dependencies [bb5c5dc]
+- Updated dependencies [04caa20]
+- Updated dependencies [87ea5af]
+- Updated dependencies [2213ee8]
+- Updated dependencies [ef9e985]
+- Updated dependencies [f12ac6a]
+- Updated dependencies [8fca412]
+- Updated dependencies [a2e0462]
+- Updated dependencies [8763790]
+- Updated dependencies [234f718]
+- Updated dependencies [5e1cbe4]
+- Updated dependencies [8fa3cbc]
+- Updated dependencies [ed78985]
+- Updated dependencies [fb297fb]
+- Updated dependencies [657872c]
+- Updated dependencies [110142d]
+- Updated dependencies [8101299]
+- Updated dependencies [39b26f9]
+- Updated dependencies [3a4fa8e]
+- Updated dependencies [e437227]
+- Updated dependencies [d3020c4]
+- Updated dependencies [71f5742]
+- Updated dependencies [e39b73c]
+- Updated dependencies [cf3d535]
+- Updated dependencies [3df8a5a]
+- Updated dependencies [bd2a870]
+- Updated dependencies [7c2e054]
+- Updated dependencies [243984f]
+- Updated dependencies [0b77641]
+- Updated dependencies [28dd134]
+- Updated dependencies [c527f50]
+- Updated dependencies [b8a988c]
+- Updated dependencies [9e51015]
+- Updated dependencies [cce05ca]
+- Updated dependencies [104fa68]
+- Updated dependencies [ab164dd]
+- Updated dependencies [68dcc32]
+- Updated dependencies [bca6c26]
+- Updated dependencies [01c024e]
+- Updated dependencies [216d9ae]
+- Updated dependencies [3e0b75e]
+- Updated dependencies [1dc28cb]
+- Updated dependencies [20617cc]
+- Updated dependencies [71f5742]
+- Updated dependencies [e3797b1]
+- Updated dependencies [74c30e6]
+- Updated dependencies [67e23db]
+- Updated dependencies [5794fc1]
+- Updated dependencies [07d7cfe]
+- Updated dependencies [c19221d]
+- Updated dependencies [d490ebc]
+- Updated dependencies [fc4676d]
+- Updated dependencies [9d9eb3b]
+- Updated dependencies [ef90738]
+- Updated dependencies [08516b6]
+- Updated dependencies [cc57bc6]
+- Updated dependencies [420ba9c]
+- Updated dependencies [abe11f9]
+- Updated dependencies [316ecd0]
+- Updated dependencies [fae67cb]
+- Updated dependencies [5a92802]
+- Updated dependencies [b4f06f1]
+- Updated dependencies [427ea6c]
+- Updated dependencies [dcc041e]
+- Updated dependencies [0a17152]
+- Updated dependencies [f356bd0]
+- Updated dependencies [9472e9a]
+- Updated dependencies [928cafc]
+- Updated dependencies [ac01954]
+- Updated dependencies [0f8ab4e]
+- Updated dependencies [95e64cd]
+- Updated dependencies [d01459d]
+- Updated dependencies [391b2fe]
+- Updated dependencies [b1ecc88]
+- Updated dependencies [dcd14b3]
+- Updated dependencies [eb26807]
+- Updated dependencies [1eee4df]
+- Updated dependencies [cca79cf]
+- Updated dependencies [5cd52f3]
+- Updated dependencies [cad8bd9]
+- Updated dependencies [da9951d]
+- Updated dependencies [190622a]
+- Updated dependencies [36c6ca0]
+- Updated dependencies [0bc3435]
+- Updated dependencies [6983df3]
+- Updated dependencies [399033f]
+- Updated dependencies [1687f69]
+- Updated dependencies [2d1c6af]
+- Updated dependencies [54205a2]
+- Updated dependencies [945c663]
+- Updated dependencies [e31a360]
+- Updated dependencies [33e0710]
+- Updated dependencies [72a85f7]
+- Updated dependencies [a8e964e]
+- Updated dependencies [b444e46]
+- Updated dependencies [e4d444f]
+- Updated dependencies [bdf0a97]
+- Updated dependencies [0641010]
+- Updated dependencies [667ca34]
+- Updated dependencies [e06409e]
+- Updated dependencies [1268f79]
+- Updated dependencies [4d559ca]
+- Updated dependencies [60ac0a5]
+- Updated dependencies [93780f6]
+- Updated dependencies [188604d]
+- Updated dependencies [036d768]
+- Updated dependencies [151a441]
+- Updated dependencies [a14e734]
+- Updated dependencies [f6ea86c]
+- Updated dependencies [80eee37]
+- Updated dependencies [5d6a06a]
+- Updated dependencies [9f70b3c]
+- Updated dependencies [047dcf3]
+- Updated dependencies [3080040]
+- Updated dependencies [a9b291e]
+- Updated dependencies [dfc2c87]
+- Updated dependencies [148d4b1]
+- Updated dependencies [3baab83]
+- Updated dependencies [a14e734]
+- Updated dependencies [0c1edcb]
+- Updated dependencies [7e05174]
+- Updated dependencies [27818ca]
+- Updated dependencies [31a3581]
+- Updated dependencies [2cc1b5a]
+- Updated dependencies [3edffaf]
+- Updated dependencies [65c36be]
+- Updated dependencies [bbd6798]
+- Updated dependencies [2807789]
+- Updated dependencies [1085b46]
+- Updated dependencies [812118e]
+- Updated dependencies [c9d41f2]
+- Updated dependencies [0a7db23]
+- Updated dependencies [7905beb]
+- Updated dependencies [afbc295]
+- Updated dependencies [9a6f7a5]
+- Updated dependencies [7908e8f]
+- Updated dependencies [963c91f]
+- Updated dependencies [a17a522]
+- Updated dependencies [95bf24f]
+- Updated dependencies [9967309]
+- Updated dependencies [4bbffa2]
+- Updated dependencies [e640378]
+- Updated dependencies [ec5e31d]
+- Updated dependencies [2db1963]
+- Updated dependencies [d113843]
+- Updated dependencies [9de4985]
+- Updated dependencies [b23225f]
+- Updated dependencies [72a40c5]
+- Updated dependencies [a66fcf5]
+- Updated dependencies [20cb4c6]
+- Updated dependencies [0a83dfb]
+- Updated dependencies [b413e19]
+- Updated dependencies [d8b791e]
+- Updated dependencies [dc856b3]
+- Updated dependencies [0b93821]
+- Updated dependencies [8b405d0]
+- Updated dependencies [6fd724f]
+- Updated dependencies [a145539]
+- Updated dependencies [23ae360]
+- Updated dependencies [279d88f]
+- Updated dependencies [60edb93]
+- Updated dependencies [66f7465]
+- Updated dependencies [9c10943]
+- Updated dependencies [5c96216]
+- Updated dependencies [e98e95b]
+- Updated dependencies [8261c9c]
+- Updated dependencies [4787e75]
+- Updated dependencies [c2ec0c3]
+- Updated dependencies [16559ef]
+- Updated dependencies [ba7cc48]
+- Updated dependencies [569a013]
+- Updated dependencies [ac8491b]
+- Updated dependencies [5601761]
+- Updated dependencies [7123087]
+- Updated dependencies [1ca2395]
+- Updated dependencies [47d868f]
+- Updated dependencies [77fe781]
+- Updated dependencies [d18b041]
+- Updated dependencies [97bcbef]
+- Updated dependencies [a53f3da]
+- Updated dependencies [cd5ff3e]
+- Updated dependencies [19bd1c3]
+- Updated dependencies [9574e9c]
+- Updated dependencies [ba55ae0]
+- Updated dependencies [a91f79c]
+- Updated dependencies [6589491]
+- Updated dependencies [264404a]
+- Updated dependencies [b84302e]
+- Updated dependencies [f16fdad]
+- Updated dependencies [dab8fbb]
+- Updated dependencies [a60613a]
+- Updated dependencies [f60bfe1]
+- Updated dependencies [ca19703]
+- Updated dependencies [2070f0a]
+- Updated dependencies [a14e734]
+- Updated dependencies [8c83067]
+- Updated dependencies [d2f3be8]
+- Updated dependencies [4539f92]
+- Updated dependencies [8025cd7]
+- Updated dependencies [cd9a828]
+- Updated dependencies [37268aa]
+- Updated dependencies [f65f952]
+- Updated dependencies [bb0c0f7]
+- Updated dependencies [5ee0a1f]
+- Updated dependencies [318a188]
+- Updated dependencies [73705ce]
+- Updated dependencies [f32c96b]
+- Updated dependencies [aa59c5b]
+- Updated dependencies [5e00c96]
+- Updated dependencies [ceb2e11]
+- Updated dependencies [d4c51f5]
+- Updated dependencies [8bef869]
+- Updated dependencies [40e1b8a]
+- Updated dependencies [6a35bef]
+- Updated dependencies [2b6962a]
+- Updated dependencies [2b366ec]
+- Updated dependencies [12a1b0f]
+- Updated dependencies [c99957a]
+- Updated dependencies [ce3c1c8]
+- Updated dependencies [4f5b466]
+- Updated dependencies [ec3c147]
+- Updated dependencies [9dfc01a]
+- Updated dependencies [3357235]
+- Updated dependencies [45eec5b]
+- Updated dependencies [24bdb50]
+- Updated dependencies [5d1ffd6]
+- Updated dependencies [4592880]
+- Updated dependencies [51dfb20]
+- Updated dependencies [ff039f6]
+- Updated dependencies [2329b3e]
+- Updated dependencies [6c91c5b]
+- Updated dependencies [14f86d8]
+- Updated dependencies [6b42996]
+- Updated dependencies [6122f67]
+- Updated dependencies [50cb70e]
+- Updated dependencies [e9a28a0]
+- Updated dependencies [ea6842f]
+- Updated dependencies [54faddb]
+- Updated dependencies [0cf2bf4]
+- Updated dependencies [9420f68]
+- Updated dependencies [c5389a8]
+- Updated dependencies [89ecc69]
+- Updated dependencies [4604414]
+- Updated dependencies [35231a1]
+- Updated dependencies [aac08d1]
+- Updated dependencies [2dcd6fb]
+- Updated dependencies [4448634]
+- Updated dependencies [70315c1]
+- Updated dependencies [99120b4]
+- Updated dependencies [4c72db6]
+- Updated dependencies [3e3af12]
+- Updated dependencies [288e237]
+- Updated dependencies [a02b807]
+- Updated dependencies [a1ea9ff]
+- Updated dependencies [501ee43]
+- Updated dependencies [8953d33]
+- Updated dependencies [6366dde]
+- Updated dependencies [7505ef5]
+- Updated dependencies [fc0e2a3]
+- Updated dependencies [8d56051]
+- Updated dependencies [d16306d]
+- Updated dependencies [b931128]
+- Updated dependencies [a200c36]
+- Updated dependencies [2bbcc5a]
+- Updated dependencies [d3635ee]
+- Updated dependencies [2098025]
+- Updated dependencies [6a4a8ad]
+- Updated dependencies [5b8578a]
+- Updated dependencies [d8e003d]
+- Updated dependencies [b3b209e]
+- Updated dependencies [72002f8]
+- Updated dependencies [26c11b8]
+- Updated dependencies [e30e47c]
+- Updated dependencies [12a42f0]
+- Updated dependencies [732f5c3]
+- Updated dependencies [44e1258]
+- Updated dependencies [40533db]
+- Updated dependencies [d71fc46]
+- Updated dependencies [89b5ac6]
+- Updated dependencies [4334f6d]
+- Updated dependencies [819b4ef]
+- Updated dependencies [db1a07b]
+- Updated dependencies [c253018]
+- Updated dependencies [bb28e63]
+- Updated dependencies [70f3f31]
+- Updated dependencies [1eb3bd1]
+- Updated dependencies [37039d5]
+- Updated dependencies [0cc8b79]
+- Updated dependencies [0981447]
+- Updated dependencies [dc9c665]
+- Updated dependencies [51aff41]
+- Updated dependencies [3dff419]
+- Updated dependencies [6e0f62e]
+- Updated dependencies [8411fa2]
+- Updated dependencies [9494688]
+- Updated dependencies [d4871bd]
+- Updated dependencies [fcfb0a8]
+- Updated dependencies [199b0e2]
+- Updated dependencies [2105123]
+- Updated dependencies [12c29b7]
+- Updated dependencies [f264c83]
+- Updated dependencies [80a86e1]
+- Updated dependencies [ceadadd]
+- Updated dependencies [aaaead2]
+- Updated dependencies [b18c036]
+- Updated dependencies [ba4684e]
+- Updated dependencies [0d82f92]
+- Updated dependencies [c90cff1]
+- Updated dependencies [f86967a]
+- Updated dependencies [6befeae]
+- Updated dependencies [7c45605]
+  - @weasel-js/ui@1.9.4
+  - @weasel-js/core@1.9.4
+  - @weasel-js/prefs@1.9.4
+  - @weasel-js/theme@1.9.4
+  - @weasel-js/svg@1.9.4
+  - @weasel-js/geom@1.9.4
+  - @weasel-js/storage@1.9.4
+  - @weasel-js/quantity@1.9.4
+  - @weasel-js/loupe@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

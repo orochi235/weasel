@@ -1,5 +1,91 @@
 # @weasel-js/routing
 
+## 1.9.4
+
+### Patch Changes
+
+- 8e1e212: An action re-registered in the same tick keeps its place in registration order. `useAction` releases and registers whenever its action object changes, which used to move the action to the back, so of two actions tied on a key the winner could flip after a re-render.
+- 4c4aa40: An action leaf fires a registered action by key. `PrefAction` gains `action`, the key of an action on the `ActionsRegistry` above the surface: its id, or `id:variant`. A leaf holding one is plain data, so a schema that carries it survives JSON. `run` is now optional and is what a leaf with no `action` calls. The leaf's `name` and `icon` are what the button shows; the registered action supplies the icon and shortcut the leaf lacks. A key the registry does not hold, or no registry, leaves the button dead. `PrefAction` also gains `control`: `'button'` reads the label, `'icon'` is the icon alone.
+  
+  An action says whether it is held down. `Action` gains `active`, a predicate under the same contract as `enabled`, and `evaluateActive` reads it safely. A button drawn for the action sets `aria-pressed` from it. An action with no `active` has no pressed state.
+  
+  `useLeafAction` answers for an action leaf on any surface. `BarAction` is the leaf as a toolbar cell, and `BarActionButton` is the button alone. `ActionBar` draws its entries with that button, so it now shows an active action as pressed. `PrefActionButton` draws through the same hook.
+- bcf67ba: The route-conflict check (`findScopedConflicts`, `reportRouteConflicts`) compared hotkey-held tools only when the trigger was written as `ToolDef.hotkey`. Two entries declaring `eligibility: { offhand }` directly can be held together and tie on a binding just the same, and are now reported.
+- b370885: A dep registry can be listened to: `subscribe(listener)` hears a source registered or released anywhere in its tree and an owner's `changed()`, which says a source's value changed. `<SceneCanvas>` calls `changed()` when its scene or its selection changes. `ActionBar` and an action leaf's button listen, so a button whose `enabled` or `active` state reads the selection now follows it without anything else re-rendering the chrome. A dep source you publish that changes on its own calls `useDepRegistry().changed?.()` when it does. Both methods are optional on `DepRegistry`, so a hand-built registry with only `register` and `get` still fits.
+- 43970d9: Internal: `dispatcher.ts` is split by owner. The dev trace, the candidate ranking, the trace-record projection, and the dispatcher's public interfaces each live in a module of their own beside it, and everything it exported is still exported from it. No behavior change.
+- c289df7: Every public export now carries a JSDoc block: the ones that had none are documented, among them audio's effect and envelope types, diagram's `DiagramData` family, and `SelectContext`. No behavior changes.
+- 259fbd3: On a canvas with several views, a file dropped on one view while the pointer moved to another before the items finished loading ran on the first view's dispatcher with the second view's deps and rule context. The drop now keeps the view it landed in for both.
+- 63af505: `Action.enabled`'s documentation says what the dispatcher does with it: a disabled action is skipped on a key as on a pointer. It used to say keystroke dispatch was unaffected.
+- 2db1c27: Internal: `useGestureDispatcher`'s keyboard, wheel, WebKit pinch, contextmenu, and drop and paste handling each moved to a module of their own around a shared routing core, and its option types moved beside them. Everything the file exported is still exported from it. No behavior change.
+- 875faf7: An ongoing action whose `onEnd` threw stayed in flight for good: the hover cursor stopped updating, its overlay kept drawing, and its tool's `phase: 'initial'` bindings stopped matching. The dispatcher now takes a gesture out of flight before calling its `onEnd`, logs a throw with `console.error` as it does for an immediate action, and `cancelAll` ends every remaining handle after one throws.
+- d8ba470: Documentation only. `ModSpec` said only `shift` accepts `'optional'`; every modifier does. `DoubleClickSpec` quoted 500 ms and 5 px; the dispatcher uses 600 ms and 8 px. `TargetPredicate` said `hit` is the DOM target for gestures other than drag; it is the affordance hit for every gesture. `ActionsRegistry.activate` said a dispatcher activates its scope on focus; it does so on pointerdown and wheel.
+- b07a91e: On a canvas with a `<CanvasView>` panel, holding a key with the pointer over the panel and releasing it with the pointer anywhere else left the key's action running: Space-for-hand stayed engaged until Space was pressed again over the panel. `useGestureDispatcher` now sends a held key's release, and the release a window blur stands in for, to the view that took the keydown.
+- a2e0462: New export `heldKeySpec(key)`, from `@weasel-js/routing` and `@weasel-js/core`: the `key-held` spec for holding a key, with every modifier optional when the key is itself a modifier and forbidden otherwise. It is general surface for any hold-a-key binding; offhand tool triggers and the labkit loupe's peek key both build their spec with it. The loupe changes for a peek key that is not a modifier: a letter no longer starts a peek while another modifier is down, the same as an offhand tool's trigger. The default peek key, Alt, behaves as before.
+- 7366d0c: A hold-a-key trigger that is not itself a modifier now engages while Shift or Alt is down: hold Shift, then Space, and the hand tool is pushed. Cmd and Ctrl still bar it, so a letter trigger leaves its browser chord alone. `heldKeySpec` carries the rule, so labkit's loupe peek key follows it too.
+- db2818c: Moving the mouse over an idle canvas re-rendered `<SceneCanvas>` once per mouse event, and each keystroke twice: the dispatcher notified its subscribers after every input, whether or not a gesture was in flight. `Dispatcher.subscribe` and `getVersion` now fire only for input that found or left a gesture in flight. A gesture's start, each pump, its end, and a cancel still notify, as does any other input handled while one is in flight.
+- 7c2e054: A key binding can name the physical key. `KeySpec` and `KeyHeldSpec` take a `code` (`KeyboardEvent.code`, one or several), tried before `key`, with either one matching; key input events carry the code. Bring to Front and Send to Back on Cmd+Alt+] and Cmd+Alt+[ use it, so they fire on layouts where Option makes those keys type something other than the US glyphs. A held key is now tracked by its code, so with both Shift keys down, releasing one no longer ends a Shift hold.
+- c527f50: A key or a paste that reaches the page now goes to the canvas the user last pressed or scrolled in, across every provider on the page, and to no canvas before the first such interaction. A lone canvas used to take every key from the moment it mounted, so a read-only canvas in a side panel took Space from the page around it. This changes behavior for every canvas: its shortcuts do nothing until it is pressed or scrolled in. An app whose canvas is the page passes the new `<SceneCanvas claimKeys>` (`claimKeys` on `useGestureDispatcher`) to take the keys on mount. A press gives a canvas the keys with any button and whichever channels are on; a dispatcher with no canvas element still follows the active input scope. `ActionsRegistry` gains `holdsKeys()` and `dropKeys()`, which a hand-built registry must now supply. For tests, `@weasel-js/react/testing/giveKeys` exports `giveKeys(canvas)` and `renderWithKeys`.
+- fe6006b: A tool's `onActivate` and `onDeactivate` each received a fresh `initScratch()` result, so anything `onActivate` stored on `scratch` (a subscription to release, say) was gone by `onDeactivate`. The two now receive the same object for one stretch of the tool being live, and a new one the next time it becomes live.
+- 40c1ec3: Lifting a finger after a long-press fired also dispatched a `click` at the same point, so whatever click does there ran underneath the menu the long-press had just opened, and moving the finger before lifting started a drag. A press whose long-press (or its `contextMenu` fallback) was handled now produces neither. A hold that fired nothing still clicks on release.
+- 5a92802: `mod` is matched and drawn from one platform read. `@weasel-js/gestures` exports `isApplePlatform()`; the gesture dispatcher uses it for the `isMac` it matches with, and ui's `detectPlatform` uses it to pick key legends. `formatShortcut` and `formatShortcutParts` now follow the platform, taking an optional `{ platform }`: off macOS a `mod` shortcut reads `Ctrl+Z`, not `⌘Z`. Behavior changes: on iPhone and iPad the dispatcher now matches `mod` on Command where it matched Ctrl, and `detectPlatform` reads an unrecognized browser as Linux where it read macOS. ui gains a dependency on `@weasel-js/gestures`.
+- 7536ff8: Lifting one finger of a pinch committed every gesture in flight, so a drag started by another finger ended mid-drag and a held Space released its tool. A three-finger gesture whose fingers lifted one at a time was never ended at all, and neither was a pinch one of whose pointers was canceled. `useGestureDispatcher` now ends the multitouch gesture alone, on the first finger to lift (`'commit'`) or be canceled (`'cancel'`). `MultiTouchEvent` gains an optional `end` field, which is how the dispatcher is told.
+- 9842451: A `multiTouchTap` binding no longer fires after a long hold. Fingers that rest in place for as long as a long-press takes (500 ms, or the dispatcher's `longPress.duration`) and then lift are not a tap.
+- ae7346d: A tool held on a modifier key (`eligibility: { offhand: 'alt' }`, or `'shift'`, `'ctrl'`, `'meta'`) never engaged: the modifier's own keydown reports its flag set, and the binding `buildToolOffhandBindings` wrote forbade every modifier. A modifier trigger now engages on its keydown whichever other modifiers are down. A trigger that is not a modifier (`'space'`, `'o'`) still engages only with no modifier held.
+- 1eee4df: The `weasel.debug` flag is read and cached once. `@weasel-js/routing` now exports `isDebugEnabled` and `dwarn` beside `dlog`, and `@weasel-js/core` and `@weasel-js/ui` export those same functions where each used to parse `localStorage` with its own copy of the code. `@weasel-js/ui`'s `isDebugEnabled` now also takes no argument, to ask whether any namespace is on.
+- cca79cf: Tool overlays follow the entry assembly the dispatcher routes by. With two tools held by hotkey, their overlays now stack newest hold first, as their bindings do, and under a `modes` registry a tool the active mode bars stops drawing its overlay as well as losing its bindings. `assembleEntries` is the one function behind both and is exported. `ContributionsApi.scopedBindings()` is removed, a breaking change for a caller of it: nothing in the kit called it, and it answered in a different order with no capability gate. `scopeBindings(assembleEntries(...))` gives the bindings the dispatcher sees.
+- fc0c5c7: `useOngoingAction`: a control whose edit the dispatcher ended (a tool switch, Escape, or another control committing the same action) opens a new edit on its next `input()`, where it used to drop every input until it committed. `UiOngoingControl` gains a read-only `active` flag, false once its handle has ended by any route, so any driver of `ActionsRegistry.begin` can tell.
+- d0588d0: A painted cursor survives the hover-cursor pump. An action whose `activeCursor` is a painted glyph keeps its cursor through the gesture, where it used to show none: `Dispatcher.inFlightCursor()` now returns the declared `CursorSpec` and no longer its CSS form. And a painted tool cursor stops drawing under a CSS cursor a handle shows: `PaintedCursorState.setOverride` takes `'none'` for that, which paints nothing until the override clears.
+- 383771a: With two canvases on a page, one Cmd+V pasted into both: each `useGestureDispatcher` hears `paste` on `window` and neither checked whether it was the one to act. A paste now goes to the active input scope only, the canvas that last took a pointerdown or wheel, as a keystroke does, and a paste something else already called `preventDefault` on is left alone.
+- 8b3f84a: A pinch whose two fingers moved apart evenly ended with a `multiTouchTap`, because the tap test looked only at how far the midpoint between the fingers had traveled. A binding such as two-finger-tap-to-undo fired after every centered zoom. A tap now also requires that no finger moved more than 8 px from where it landed.
+- 62d3561: The route-conflict check compares two kinds of tie it used to miss. A binding with an optional modifier is now compared with one that forbids it, since both take the bare press at equal rank: `ArrowLeft` with `shift: 'optional'` against plain `ArrowLeft` is reported. And `multiTouch` is a route gesture, written `multiTouch(2)`, so two bindings on the same finger count are compared, `routesForSpec` prints one, and `routeToSpec` parses it.
+- 9c10943: `DepSchema` declares the `activeTool` dep in `@weasel-js/routing` itself, where its type and the `tool.offhand` action that requires it live, so `ctx.deps.activeTool` is typed without core's augmentation. Nothing changes for a consumer naming `'@weasel-js/core'`.
+- 8d56051: A `kindOf` target predicate must now declare whether it reads the affordance hit: `TargetPredicate.readsAffordance` is required, and the exclusive-claim filter reads it and no longer guesses. Build one with the new `hitPredicate((hit, bodyTarget) => …)` or `bodyPredicate((bodyTarget) => …)`, exported from `@weasel-js/gestures` and `@weasel-js/core`. This is a breaking change: a bare function as `kindOf` is a type error, and one passed from untyped code counts as not reading the hit, so an exclusive claim bars its binding.
+- 3dff419: A tool's activation key now comes only from the `keybinding` on its definition. The built-in select, rect, ellipse, line, polygon, pencil, text, hand, and pen tools declare theirs there, with the same keys as before. Two things change for a consumer tool that reuses one of those ids: a `keybinding` it declares is honored, where it used to be ignored in favor of the built-in key, and one that declares none no longer gets the built-in key by id.
+- 18fe0a0: `ActionsRegistry.trigger` returns `false` for an action it cannot run: one with an ongoing invoker, or none. It used to return `true` after doing nothing.
+- 0d82f92: `View`, `ZOOM_FLOOR`, and a pure `normalizeZoom` live in `@weasel-js/geom`; routing and core re-export them under the names they had. `@weasel-js/loupe` depends on geom and no longer peers on core, so its framework-free model installs without core or React. routing gains a dependency on geom. loupe's model no longer logs core's dev warning for an invalid zoom factor; it still clamps it.
+- Updated dependencies [41a4b4e]
+- Updated dependencies [b48fd2c]
+- Updated dependencies [001aaae]
+- Updated dependencies [a843f5a]
+- Updated dependencies [c289df7]
+- Updated dependencies [f66ec41]
+- Updated dependencies [1896646]
+- Updated dependencies [ccf595e]
+- Updated dependencies [546fd8a]
+- Updated dependencies [310c9db]
+- Updated dependencies [ad0b554]
+- Updated dependencies [7da269f]
+- Updated dependencies [f21325d]
+- Updated dependencies [bb5c5dc]
+- Updated dependencies [04caa20]
+- Updated dependencies [d8ba470]
+- Updated dependencies [a97ba6f]
+- Updated dependencies [fb297fb]
+- Updated dependencies [f26bf6f]
+- Updated dependencies [7c2e054]
+- Updated dependencies [c527f50]
+- Updated dependencies [9e51015]
+- Updated dependencies [5a92802]
+- Updated dependencies [cf170b8]
+- Updated dependencies [7536ff8]
+- Updated dependencies [9842451]
+- Updated dependencies [d0588d0]
+- Updated dependencies [4d559ca]
+- Updated dependencies [62d3561]
+- Updated dependencies [d9df523]
+- Updated dependencies [cae90d2]
+- Updated dependencies [0cf2bf4]
+- Updated dependencies [8953d33]
+- Updated dependencies [8d56051]
+- Updated dependencies [0d82f92]
+  - @weasel-js/history@1.9.4
+  - @weasel-js/modes@1.9.4
+  - @weasel-js/geom@1.9.4
+  - @weasel-js/select@1.9.4
+  - @weasel-js/gestures@1.9.4
+  - @weasel-js/react@1.9.4
+  - @weasel-js/cursor@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

@@ -1,5 +1,28 @@
 # @weasel-js/loupe
 
+## 1.9.4
+
+### Patch Changes
+
+- 0d82f92: `View`, `ZOOM_FLOOR`, and a pure `normalizeZoom` live in `@weasel-js/geom`; routing and core re-export them under the names they had. `@weasel-js/loupe` depends on geom and no longer peers on core, so its framework-free model installs without core or React. routing gains a dependency on geom. loupe's model no longer logs core's dev warning for an invalid zoom factor; it still clamps it.
+- Updated dependencies [a843f5a]
+- Updated dependencies [f66ec41]
+- Updated dependencies [1896646]
+- Updated dependencies [ccf595e]
+- Updated dependencies [546fd8a]
+- Updated dependencies [310c9db]
+- Updated dependencies [ad0b554]
+- Updated dependencies [7da269f]
+- Updated dependencies [f21325d]
+- Updated dependencies [bb5c5dc]
+- Updated dependencies [04caa20]
+- Updated dependencies [9e51015]
+- Updated dependencies [4d559ca]
+- Updated dependencies [0cf2bf4]
+- Updated dependencies [8953d33]
+- Updated dependencies [0d82f92]
+  - @weasel-js/geom@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

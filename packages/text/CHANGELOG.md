@@ -1,5 +1,58 @@
 # @weasel-js/text
 
+## 1.9.4
+
+### Patch Changes
+
+- 455c865: `layoutRuns` with a `bidi` engine analyzed text containing line breaks as one paragraph, so punctuation opening a line could jump to the wrong end because of the line above it, and an unclosed override or embedding kept applying after the break. Each hard-broken line is now its own paragraph, and under `direction: 'auto'` takes its direction from its own first strong character.
+- 663248a: A click no longer places the caret inside a grapheme cluster. `LaidOutCell` gains `clusterEnd`, true on the code point that closes a cluster, and `caretIndexAt` stops only after such a cell: never between a letter and its combining mark, between the parts of a joined emoji or a flag, or before a variation selector.
+- 29f94d8: `layoutRuns` put every glyph of a gradient- or pattern-filled run in a draw group of its own, so a 500-character run was 500 draws. Glyphs sharing one paint object now share a group, as solid-filled ones do.
+- 7edfaf5: `cachedLayoutRuns` could hand back a layout made for different options: its key left out `direction`, the `bidi` engine, and a run's `strutSize`. A call differing only in `direction` or in whether an engine was passed got the earlier call's lines, and a shrunken run (`fontScale`) could share a line height with plain text of the same size. All three are now part of the key.
+- 0ec7cc1: Three edge cases in the markdown run helpers. `markdownToRuns` with a custom grammar whose shortest marker is longer than one character (`~~`) treated a lone `~` as that marker and swallowed the character after it; a delimiter run too short for any marker is now literal text. `runsToMarkdown` wrote an empty bold run as `****`, which reads back as "bold on" for everything after it; empty runs are now skipped. `layoutMarkdown` reported `width: -Infinity` for runs with no characters and now reports 0.
+- fa14b97: With a `bidi` engine, a bracket in right-to-left text whose mirrored form is missing from the run's atlas was drawn as an arbitrary patch of that atlas: `layoutRuns` took the mirrored glyph from the fallback tier but kept sampling the original texture. The mirrored glyph is now drawn from the tier that served it. Under the `'none'` fallback policy the bracket stays unmirrored, as before, without the warning that claimed it was skipped.
+- 0a83dfb: Right-to-left text lays out in visual order everywhere once a bidi engine is registered: `registerBidi(bidi)` (from `@weasel-js/text` or `@weasel-js/core`, with `bidi` from `@weasel-js/bidi`) gives `layoutRuns` an engine to fall back on when its options carry none, so painting, picking, the caret, `measureTextBounds`, and `textToPath` all reorder.
+  
+  An omitted `direction` now means `'auto'` for alignment as well as for reordering: each paragraph's first strong character decides which edge `start` and `end` are. `TextStyle.direction` and `LayoutRunsOpts.direction` accept `'auto'`, `ResolvedTextStyle.direction` defaults to it, and a text command carries `direction` and the unresolved `align`. `paragraphDirection(text, direction)` answers which way a text reads.
+  
+  Breaking for a custom engine: `BidiResolver` gains `baseLevel(analysis)`, which `@weasel-js/bidi`'s `bidi` implements. `TextDrawCommand.align` and `TextPoseLayoutInput.opts.align` may now be `start`, `end`, or `justify`.
+  
+  The edit overlay states the same direction in CSS, and `@weasel-js/svg` writes the direction a text actually reads in and keeps a stated `ltr` through a round trip.
+- 245a3a3: Two placement fixes in `layoutRuns` with a `bidi` engine. A wrapped line in a right-to-left paragraph ended in a space that was drawn at the left but subtracted from the right, so each wrapped line poked one space past the aligned edge; the space now hangs off the left. And a character the engine removes from the visual order (a zero-width joiner, a soft hyphen, a bidi control) reported its cell at the far end of the line; it now sits beside the character it follows.
+- e98e95b: A run can carry no fill: `StyledRun.fill` accepts `null`, which `resolveRuns` keeps as unfilled where it used to read it as "inherit the node's". The range algebra reads and writes it (`styleAtRange` reports `null`, a `{ fill: null }` patch unfills the range, `undefined` still clears back to inheriting), the edit overlay carries it through an edit, and `@weasel-js/svg` writes it as `<tspan fill="none">` and reads that back.
+- 7e1ecc6: `layoutRuns` lays a tab out: U+0009 advances to the next tab stop from the start of its line, where it used to go to glyph lookup and come back zero-width or as whatever the canvas measured. Stops are `tabSize` spaces apart (a new layout option, default 8, as CSS `tab-size`), a tab counts toward the width a line wraps by, and a trailing tab hangs past the aligned edge the way a trailing space does.
+- 87f162f: `layoutRuns` gave the first space of a line no width and every later one its full advance, so `" AB"` drew `A` at 0 and `"  AB"` one space in. Every leading space now takes its advance, at the start of the text and after a hard break, which is what the edit overlay's `white-space: pre` shows; text indented with spaces no longer shifts left by one space when an edit commits. A line that opens with spaces is that much wider and its glyphs that much further right.
+- b3b209e: `TextStyle.tabSize` sets the distance between tab stops for a text node, in spaces (default 8). It reaches the painter, `layoutTextPose`, `measureTextBounds`, and the edit overlay's CSS `tab-size`, and `@weasel-js/svg` keeps it in `data-weasel-tab-size`. `measureText` and `layoutMarkdown` leave a hanging tab out of a wrapped line the way they leave out a hanging space.
+  
+  `@weasel-js/svg` reads a `<text>` another writer left without a `direction` as `ltr`, which is what SVG means by it; text weasel wrote keeps an omitted direction as the text's own.
+- Updated dependencies [d99eb26]
+- Updated dependencies [9ad839d]
+- Updated dependencies [a843f5a]
+- Updated dependencies [a7c9133]
+- Updated dependencies [c289df7]
+- Updated dependencies [f66ec41]
+- Updated dependencies [1896646]
+- Updated dependencies [ccf595e]
+- Updated dependencies [546fd8a]
+- Updated dependencies [310c9db]
+- Updated dependencies [ad0b554]
+- Updated dependencies [7da269f]
+- Updated dependencies [f21325d]
+- Updated dependencies [bb5c5dc]
+- Updated dependencies [04caa20]
+- Updated dependencies [a8d8efb]
+- Updated dependencies [9e51015]
+- Updated dependencies [2010b82]
+- Updated dependencies [5cd52f3]
+- Updated dependencies [747e03e]
+- Updated dependencies [4d559ca]
+- Updated dependencies [0cf2bf4]
+- Updated dependencies [8953d33]
+- Updated dependencies [611573e]
+- Updated dependencies [0d82f92]
+  - @weasel-js/font@1.9.4
+  - @weasel-js/paint@1.9.4
+  - @weasel-js/geom@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

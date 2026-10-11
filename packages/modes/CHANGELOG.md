@@ -1,5 +1,15 @@
 # @weasel-js/modes
 
+## 1.9.4
+
+### Patch Changes
+
+- 001aaae: `@weasel-js/registry` exports `createEmitter()`, one subscribe/notify pair with stated semantics: a pass calls the listeners held when it began, one unsubscribed before its turn is skipped, and a listener that throws is reported to `console.error` without stopping the others or throwing into the store. The reflectable registry, modes' scoping layer and decorations, and core's pose overrides, pose feed, layout reflow, parallax plane, and key state are built on it. For those stores, a listener that subscribes during a notify now waits for the next one, and a throwing listener no longer aborts the notify.
+- cf170b8: `createModeRegistry` throws when two modes share an id, where it used to keep the second for lookups and list both. `ModeDecorations.register` now returns a release that removes the painter, so a painter registered from a component can be taken out when the component unmounts; a call that ignored the old `void` return is unaffected.
+- Updated dependencies [001aaae]
+- Updated dependencies [4d559ca]
+  - @weasel-js/registry@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

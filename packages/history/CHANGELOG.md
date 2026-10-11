@@ -1,5 +1,16 @@
 # @weasel-js/history
 
+## 1.9.4
+
+### Patch Changes
+
+- 41a4b4e: An op that gives a container its layout by calling `adapter.setLayout` itself now arranges the container in the same undo step, on a scene that had no layout before; only `createSetLayoutOp` did. `Op` gains `elideNoop`: an op carrying it is left out of the recorded entry when its first apply reports a no-op, which is how the scene's arrange op stays out of edits that needed no arranging.
+- b48fd2c: A branching history with a `historyLimit` (or after `prune`) offered branches from a state it could no longer return to: with the undo stack emptied down to the evicted entries, `branches()` listed futures that forked from the original start, and redoing one applied it on top of the evicted edits. The history now tracks the floor the evictions leave. An evicted entry takes along the branches that forked from the state before it and keeps the ones that fork from the state it leaves, which is the reverse of what eviction dropped before. `SerializedHistory` gains an optional `floor` so a restored history files those branches in the same place; a snapshot without it reads as before.
+- a97ba6f: `serialize()` left an entry with a nameless op out of the snapshot and kept the entries on its far side, so after `restore` an undo stepped underneath a change that was still applied and could no longer be undone. The snapshot is now cut there: it keeps the undo entries newer than the last such entry, the redo entries nearer than the first, and the branches that fork from an entry it kept, and `droppedEntries` counts everything left out. A history holding a nameless entry reloads with less to undo than it did before.
+- fb297fb: An undo, redo, or `goto` whose op threw used to drop the entry from both stacks and leave the ops that had already run applied, so the edit could be neither undone nor redone. A step is now all-or-nothing: the ops that ran are inverted, the entry stays on the stack it was on, and the error still propagates. `applyOps` does the same for a batch that throws partway, and `scene.undo`, `scene.redo`, and `scene.jumpToHistoryIndex` also revert the scene writes of an op that threw partway through its own.
+- f26bf6f: A journal whose pushes coalesced committed an entry that undid only the last of them: two same-key edits inside the coalesce window, then `commit`, then undo on the parent, stopped at the value between the two. `Journal.commit` now hands the parent both halves of each entry, so undo returns to the state the session opened on and redo to the one it closed on.
+- cae90d2: The docs for `History.serialize()` and `SerializedHistory` called the snapshot structured-clone-safe. It is only as serializable as the op `args` it carries by reference: a scene's remove entry holds a node's live functions, which `JSON.stringify` drops and IndexedDB rejects with `DataCloneError`. The docs now say so.
+
 ## 1.9.3
 
 No changes in this release.

@@ -1,5 +1,12 @@
 # @weasel-js/select
 
+## 1.9.4
+
+### Patch Changes
+
+- c289df7: Every public export now carries a JSDoc block: the ones that had none are documented, among them audio's effect and envelope types, diagram's `DiagramData` family, and `SelectContext`. No behavior changes.
+- d9df523: `select()` documents that it returns the selection it was given when a press changes nothing, so a caller can compare by reference, but it did so only for an empty range. Pressing the one selected id, or ranging to the end already selected, returned a new equal object. It now returns the same one.
+
 ## 1.9.3
 
 No changes in this release.
