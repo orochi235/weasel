@@ -328,7 +328,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   let lockBypass = 0;
   /** Every kit op applied since the innermost `atomically` opened, so a
    *  refused batch can revert what it already did. Null outside one. */
-  let appliedLog: { kind: string; payload: unknown }[] | null = null;
+  let appliedLog: { kind: string; payload: unknown; reverted?: boolean }[] | null = null;
 
   // ── Helpers ────────────────────────────────────────────────────────────
   // When `batchDepth > 0` the per-op `notify()` is coalesced: we still bump
@@ -535,7 +535,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    */
   function atomically<T>(fn: () => T, ownsEntry: () => boolean): T {
     const outer = appliedLog;
-    const log: { kind: string; payload: unknown }[] = [];
+    const log: NonNullable<typeof appliedLog> = [];
     const selectionBefore = selection;
     appliedLog = log;
     try {
@@ -546,8 +546,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       appliedLog = null;
       withLocksLifted(() => {
         for (let i = log.length - 1; i >= 0; i--) {
-          const { kind, payload } = log[i];
-          registered.get(kind)!.revert(payload);
+          const { kind, payload, reverted } = log[i];
+          const handler = registered.get(kind)!;
+          (reverted ? handler.apply : handler.revert)(payload);
         }
       });
       selection = selectionBefore;
@@ -1026,6 +1027,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         const handler = registered.get(kind);
         if (!handler) throw new Error(`Scene: no registered op for kind "${kind}"`);
         (dir === 'fwd' ? handler.apply : handler.revert)(payload);
+        // Only a replay logs here: a first apply is recorded by the entry it
+        // creates, and reverting it would leave that entry describing nothing.
+        if (suppressRecording) appliedLog?.push({ kind, payload, reverted: dir === 'rev' });
       },
       invert: () => makeOp(kind, payload, dir === 'fwd' ? 'rev' : 'fwd'),
     };
@@ -1080,6 +1084,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       suppressRecording = prevSuppress;
       batchDirty = prevDirty;
     }
+  }
+
+  /** Run an engine step that replays recorded ops — undo, redo, goto, a
+   *  journal stepping. The engine inverts whole ops when one throws; this
+   *  also reverts the scene writes of the op that threw partway. */
+  function replay(step: () => void): void {
+    atomically(() => withLocksLifted(() => withRecordingSuppressed(step)), () => true);
   }
 
   function executeAndLog(kind: string, payload: unknown, label: string): void {
@@ -1273,11 +1284,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         });
       },
       undo() {
-        withLocksLifted(() => withRecordingSuppressed(() => raw.undo()));
+        replay(() => raw.undo());
         notify();
       },
       redo() {
-        withLocksLifted(() => withRecordingSuppressed(() => raw.redo()));
+        replay(() => raw.redo());
         notify();
       },
       canUndo: () => raw.canUndo(),
@@ -1293,7 +1304,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         notify();
       },
       cancel() {
-        withLocksLifted(() => withRecordingSuppressed(() => raw.cancel()));
+        replay(() => raw.cancel());
         notify();
       },
       suspend: () => raw.suspend(),
@@ -1834,14 +1845,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     undo() {
       if (!history.canUndo()) return false;
-      withLocksLifted(() => withRecordingSuppressed(() => history.undo()));
+      replay(() => history.undo());
       notify();
       return true;
     },
 
     redo() {
       if (!history.canRedo()) return false;
-      withLocksLifted(() => withRecordingSuppressed(() => history.redo()));
+      replay(() => history.redo());
       notify();
       return true;
     },
@@ -1873,7 +1884,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const total = history.undoDepth() + history.redoDepth();
       const target = Math.max(0, Math.min(total, targetIndex));
       if (target === history.undoDepth()) return false;
-      withLocksLifted(() => withRecordingSuppressed(() => history.goto(target)));
+      replay(() => history.goto(target));
       notify();
       return true;
     },

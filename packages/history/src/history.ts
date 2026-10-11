@@ -143,7 +143,9 @@ export interface History {
   /** Walk the history forward/back until exactly `n` entries are on the
    *  undo stack (0 ≤ n ≤ entries().undo.length + entries().redo.length).
    *  Equivalent to repeated `undo()`/`redo()` calls but doesn't bother
-   *  rebuilding entry snapshots between steps. No-op if already at `n`. */
+   *  rebuilding entry snapshots between steps. No-op if already at `n`.
+   *  When a step throws, as with `undo` and `redo`, the ops it ran are
+   *  inverted and the history stays where the call found it. */
   goto(n: number): void;
   /** The `timestamp` of entry `i`, counting in time order through the undo
    *  stack and on into the redo stack, so `timestampAt(undoDepth())` is the
@@ -395,21 +397,42 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     }
   }
 
-  function applyOps(ops: Op[]): void {
-    for (const op of ops) op.apply(adapter);
+  /** Apply `ops` best-effort while unwinding a failed step: the throw being
+   *  unwound is the one the caller sees, so a second one is only logged. */
+  function applyUnwinding(ops: Op[]): void {
+    for (const op of ops) {
+      try {
+        op.apply(adapter);
+      } catch (err) {
+        logger.warn(`unwinding a failed step: op "${op.name ?? '?'}" threw: ${String(err)}`);
+      }
+    }
   }
 
-  /** Apply each op and collect whether any reported a real mutation.
-   *  Returns true iff at least one op did NOT explicitly return `false` /
-   *  `'noop'`. Used by `pushOrCoalesce` to skip pushing entries when every
-   *  op in the batch was a silent no-op (e.g. reorder where the order
-   *  already matched). Existing ops that return `undefined`/`void` count
-   *  as "mutated" — the default — so this is backwards-compatible. */
-  function applyOpsAndDetectMutation(ops: Op[]): boolean {
+  /** Apply every op or none: when one throws, the ops that ran before it are
+   *  inverted, newest first, then `settle` is applied, and the throw
+   *  propagates. Returns true iff at least one op did NOT explicitly return
+   *  `false` / `'noop'` — `pushOrCoalesce` skips the entry when every op in
+   *  the batch was a silent no-op (e.g. reorder where the order already
+   *  matched). Ops returning `undefined`/`void` count as "mutated".
+   *
+   *  `settle` is for a coalesced entry, whose two halves are not each
+   *  other's inverse: inverting what ran lands on the other half's far side,
+   *  and re-applying that half is what returns to where the step began. */
+  function applyAllOrNothing(ops: Op[], settle?: () => Op[]): boolean {
     let anyMutated = false;
-    for (const op of ops) {
-      const r = op.apply(adapter);
-      if (r !== false && r !== 'noop') anyMutated = true;
+    let done = 0;
+    try {
+      for (; done < ops.length; done++) {
+        const r = ops[done]!.apply(adapter);
+        if (r !== false && r !== 'noop') anyMutated = true;
+      }
+    } catch (err) {
+      if (done > 0) {
+        applyUnwinding(ops.slice(0, done).reverse().map((op) => op.invert()));
+        if (settle) applyUnwinding(settle());
+      }
+      throw err;
     }
     return anyMutated;
   }
@@ -428,17 +451,37 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
    *  op can't overwrite the snapshot. */
   function stepBack(entry: Entry): void {
     const leaving = readSelection();
+    const coalesced = entry.forwardOps !== entry.baseOps;
+    applyAllOrNothing(invertEntry(entry), coalesced ? () => entry.forwardOps : undefined);
     if (leaving) entry.selectionAfter = leaving;
-    applyOps(invertEntry(entry));
     if (selection && entry.selectionBefore) selection.set(entry.selectionBefore);
   }
 
   /** Walk one entry forwards. Mirror of `stepBack`. */
   function stepForward(entry: Entry): void {
     const leaving = readSelection();
+    const coalesced = entry.forwardOps !== entry.baseOps;
+    applyAllOrNothing(entry.forwardOps, coalesced ? () => invertEntry(entry) : undefined);
     if (leaving) entry.selectionBefore = leaving;
-    applyOps(entry.forwardOps);
     if (selection && entry.selectionAfter) selection.set(entry.selectionAfter);
+  }
+
+  /** Step until `n` entries are on the undo stack. An entry changes stacks
+   *  only once its step has run, so a throw leaves both stacks describing
+   *  the state as it is. */
+  function walkTo(n: number): void {
+    while (undoStack.length > n) {
+      const entry = undoStack[undoStack.length - 1]!;
+      stepBack(entry);
+      undoStack.pop();
+      redoStack.push(entry);
+    }
+    while (undoStack.length < n && redoStack.length > 0) {
+      const entry = redoStack[redoStack.length - 1]!;
+      stepForward(entry);
+      redoStack.pop();
+      undoStack.push(entry);
+    }
   }
 
   /** Coalesce eligibility: every op on both sides has a `coalesceKey`, and
@@ -470,7 +513,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   function pushOrCoalesce(ops: Op[], label: string): void {
     if (ops.length === 0) return;
     const selectionBefore = readSelection();
-    const anyMutated = applyOpsAndDetectMutation(ops);
+    const anyMutated = applyAllOrNothing(ops);
     if (!anyMutated) {
       // Every op reported `false`/`'noop'`. Skip the push so undo stays
       // tied to real state changes. Surfaced through the kit's debug
@@ -538,17 +581,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       pushOrCoalesce(ops, label);
     },
     undo() {
-      const entry = undoStack.pop();
-      if (!entry) return;
-      stepBack(entry);
-      redoStack.push(entry);
+      if (undoStack.length === 0) return;
+      walkTo(undoStack.length - 1);
       bump();
     },
     redo() {
-      const entry = redoStack.pop();
-      if (!entry) return;
-      stepForward(entry);
-      undoStack.push(entry);
+      if (redoStack.length === 0) return;
+      walkTo(undoStack.length + 1);
       bump();
     },
     seal() {
@@ -585,16 +624,20 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // entries between undo and redo stacks).
       const total = undoStack.length + redoStack.length;
       if (n < 0 || n > total || n === undoStack.length) return;
-      while (undoStack.length > n) {
-        const entry = undoStack.pop()!;
-        stepBack(entry);
-        redoStack.push(entry);
-      }
-      while (undoStack.length < n) {
-        const entry = redoStack.pop();
-        if (!entry) break; // defensive — shouldn't fire given the bounds check above
-        stepForward(entry);
-        undoStack.push(entry);
+      const start = undoStack.length;
+      try {
+        walkTo(n);
+      } catch (err) {
+        // Stop where the walk began rather than partway. A second throw on
+        // the way back is logged: the stacks still match the state, at
+        // whatever depth that walk reached.
+        try {
+          walkTo(start);
+        } catch (back) {
+          logger.warn(`goto: returning to depth ${start} threw: ${String(back)}`);
+        }
+        if (undoStack.length !== start) bump();
+        throw err;
       }
       bump();
     },
