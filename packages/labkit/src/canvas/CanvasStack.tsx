@@ -58,7 +58,10 @@ export function CanvasStack({
   ticks,
   gestures,
 }: CanvasStackProps) {
-  const view = normalize2DView(viewProp);
+  // Keyed on its numbers: a caller handing over an equal view in a new object
+  // must not mark every layer dirty.
+  const { zoom, pan } = normalize2DView(viewProp);
+  const view = useMemo(() => ({ zoom, pan: { x: pan.x, y: pan.y } }), [zoom, pan.x, pan.y]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasMap = useRef<Map<string, HTMLCanvasElement>>(new Map());
   const [size, setSize] = useState({ width: 0, height: 0, dpr: 1 });

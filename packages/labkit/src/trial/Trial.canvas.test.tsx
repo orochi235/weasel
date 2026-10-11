@@ -1,12 +1,16 @@
 import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
+import { useContext } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { auto } from '../config/auto';
 import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
+import { LabContext, type LabContextValue } from '../lab/LabContext';
+import { LabStoreContext } from '../state/context';
+import type { LabStore } from '../state/store';
 
 /** Waits one animation frame inside act, so what the frame loop sets commits there. */
 const nextFrame = () => act(() => new Promise((r) => requestAnimationFrame(() => r(null))));
@@ -78,6 +82,36 @@ describe('an instrument that draws', () => {
       expect.anything(),
       expect.objectContaining({ zoom: 2, state: { n: 7 } }),
     );
+  });
+});
+
+describe('two trials that draw', () => {
+  it("leaves one trial's layers alone while the other's view changes", async () => {
+    const draw = vi.fn();
+    let lab: LabContextValue | null = null;
+    let store: LabStore | null = null;
+    function Capture() {
+      lab = useContext(LabContext);
+      store = useContext(LabStoreContext)?.store ?? null;
+      return null;
+    }
+    await renderSettled(
+      <Lab instruments={[makeInstrument(draw)]} defaultInstrument="Probe">
+        <Capture />
+      </Lab>,
+    );
+    await act(async () => lab?.addTrial('Probe'));
+    await nextFrame();
+    const first = lab?.trials[0]?.id ?? '';
+    draw.mockClear();
+
+    await act(async () =>
+      store?.getState().updateTrialView(first, { zoom: 3, pan: { x: 0, y: 0 } }),
+    );
+    await nextFrame();
+
+    const zooms = draw.mock.calls.map(([, args]) => (args as { zoom: number }).zoom);
+    expect(zooms).toEqual([3]);
   });
 });
 
