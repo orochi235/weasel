@@ -515,6 +515,25 @@ describe('scene container layout', () => {
         expect(posOf(scene, 'b')).toEqual([100, 110]);
       });
 
+      it('arranges the container from a custom op that sets the layout itself', () => {
+        const scene = bare();
+        const layout = stack();
+        const depth = scene.historyIndex();
+        const custom = (to: LayoutStrategy<RectPose> | null): import('core/ops/types').Op => ({
+          name: 'test:layOut',
+          apply: (adapter) => { (adapter as ReturnType<typeof adapterOf>).setLayout(C as string, to); },
+          invert: () => custom(to === null ? layout : null),
+        });
+        scene.applyBatch([custom(layout)], 'Lay out', adapterOf(scene));
+        expect(scene.layoutOf(C)).toBe(layout);
+        expect(posOf(scene, 'b')).toEqual([100, 110]);
+        expect(scene.historyIndex()).toBe(depth + 1);
+
+        scene.undo();
+        expect(scene.layoutOf(C)).toBeNull();
+        expect(scene.get(asNodeId('b'))!.pose).toEqual(LOOSE);
+      });
+
       it('arranges the container from a setLayout inside scene.batch', () => {
         const scene = bare();
         scene.batch('Lay out', () => scene.setLayout(C, stack()));

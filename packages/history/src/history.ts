@@ -447,13 +447,14 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
    *  `settle` is for a coalesced entry, whose two halves are not each
    *  other's inverse: inverting what ran lands on the other half's far side,
    *  and re-applying that half is what returns to where the step began. */
-  function applyAllOrNothing(ops: Op[], settle?: () => Op[]): boolean {
+  function applyAllOrNothing(ops: Op[], settle?: () => Op[], idle?: Set<Op>): boolean {
     let anyMutated = false;
     let done = 0;
     try {
       for (; done < ops.length; done++) {
         const r = ops[done]!.apply(adapter);
         if (r !== false && r !== 'noop') anyMutated = true;
+        else idle?.add(ops[done]!);
       }
     } catch (err) {
       if (done > 0) {
@@ -538,10 +539,12 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     return true;
   }
 
-  function pushOrCoalesce(ops: Op[], label: string): void {
-    if (ops.length === 0) return;
+  function pushOrCoalesce(applied: Op[], label: string): void {
+    if (applied.length === 0) return;
     const selectionBefore = readSelection();
-    const anyMutated = applyAllOrNothing(ops);
+    const idle = new Set<Op>();
+    const anyMutated = applyAllOrNothing(applied, undefined, idle);
+    const ops = idle.size === 0 ? applied : applied.filter((op) => !(op.elideNoop && idle.has(op)));
     if (!anyMutated) {
       // Every op reported `false`/`'noop'`. Skip the push so undo stays
       // tied to real state changes. Surfaced through the kit's debug

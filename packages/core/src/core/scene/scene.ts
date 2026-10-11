@@ -245,6 +245,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       args: op.args,
       label: op.label,
       coalesceKey: op.coalesceKey,
+      elideNoop: op.elideNoop,
       apply: () => {
         const get = historyAdapterAccessor;
         if (!get) {
@@ -446,17 +447,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     scene.setPose(asNodeId(id), pose as TPose);
   }
 
-  /** Whether `op` is a `createSetLayoutOp` giving a container a layout. An
-   *  edit's op list is fixed before it runs, so a layout-less scene has to see
-   *  this coming to append the arrange op its first layout needs. */
-  function givesLayout(op: Op): boolean {
-    return op.name === 'setLayout' && (op.args as { to?: unknown } | undefined)?.to != null;
-  }
-
   /** `ops` plus the op that settles their arrivals, when this call owns the
-   *  window; `ops` unchanged otherwise. */
+   *  window; `ops` unchanged otherwise. Opened even on a scene with no layout
+   *  yet: an edit's op list is fixed before it runs, and any op in it may give
+   *  the scene its first. The arrange op that settles nothing elides itself. */
   function withArrivalOps(ops: Op[]): { ops: Op[]; owned: boolean } {
-    if (!openArrivals(ops.some(givesLayout))) return { ops, owned: false };
+    if (!openArrivals(true)) return { ops, owned: false };
     return { ops: [...ops, createArrangeOp({}, settleArrivals, writePose)], owned: true };
   }
 
@@ -1027,6 +1023,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       args: op.args,
       label: op.label,
       coalesceKey: op.coalesceKey,
+      elideNoop: op.elideNoop,
       apply: () => op.apply(adapter),
       invert: () => bindOpToAdapter(op.invert(), adapter),
     };

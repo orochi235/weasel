@@ -38,6 +38,7 @@ export function createArrangeOp(
     name: 'arrange',
     args: self,
     label: 'Arrange',
+    elideNoop: true,
     // Names what it moved, so a coalesced entry never undoes to a pose only
     // a later push wrote.
     get coalesceKey() {

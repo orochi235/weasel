@@ -871,13 +871,7 @@ intercepting the press that drags the body.
   `UseSceneOptions.layoutFrame` unless a canvas installs its handler, so a scene whose
   canvas composes poses or uses a custom descriptor states that twice — folds away once
   composition is a scene property (see the cascade entry below); and whether the `layouts` prop, now a second way to name a container's layout, should
-  be retired in favor of the node declaration. Also: an op-driven edit opens the
-  arrival window on a layout-less scene only when it carries a `setLayout` op, so a
-  custom op that calls `adapter.setLayout` itself sets the layout and arranges nothing until
-  the container's next change (reproduced 2026-10-11). Opening the window for every op-driven
-  edit fixes it and breaks coalescing: the appended arrange op stays in the entry when it does
-  nothing, and `scene.test.ts`'s key-multiset test fails. Wants a no-op arrange op dropped
-  from the recorded entry first.
+  be retired in favor of the node declaration.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is adapter-level
   configuration, two mutually exclusive ways: `sceneToAdapter({ cascadeContainerPose: true })`
   translates every descendant by a container's delta through the pose descriptor, and

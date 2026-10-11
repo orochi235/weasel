@@ -21,6 +21,10 @@ export interface Op {
    *  don't need to change). */
   apply(adapter: unknown): void | boolean | 'noop';
   invert(): Op;
+  /** Leave this op out of the recorded entry when its first apply reports a
+   *  no-op. For an op an owner appends to every edit in case it is needed:
+   *  left in, it would stop the edit coalescing with one that needed none. */
+  elideNoop?: boolean;
   label?: string;
   coalesceKey?: string;
   /** Stable factory name for op-registry lookup. Kit-emitted ops always
