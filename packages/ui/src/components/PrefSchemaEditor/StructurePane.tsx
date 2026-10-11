@@ -157,6 +157,14 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
   /** What a drag would set down: the nodes themselves, or aliases of them. */
   const landing = (ids: readonly string[], effect: TreeDragEffect): SchemaNode[] =>
     effect === 'link' ? ids.map((id) => aliasOf(schema, id)) : nodesAt(ids);
+  /** Where the bar's alias of the selected pref goes: after the pref, to be dragged where it belongs. Null when there is none to make. */
+  const aliasAt = ((): SchemaTarget | null => {
+    if (selected === null || !nodeAt(schema, selected) || !canLand([selected], 'link')) return null;
+    const parent = parentPath(selected);
+    if (!treeTakesNew(schema, aliasOf(schema, selected), parent, maxDepth) && !(parent === null && !isPrefSection(schema))) return null;
+    const sibs = Object.keys(childrenOf(nodeAt(schema, parent) ?? schema) ?? {});
+    return { parentPath: parent, index: sibs.indexOf(keyOf(selected)) + 1 };
+  })();
 
   // A drag from the palette: over the tree it lands where the tree marks, and elsewhere wherever `outside` takes it.
   const [paletteDrag, setPaletteDrag] = useState<PaletteDrag | null>(null);
@@ -201,6 +209,8 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
           <ToolButton icon={<Icon name="tune" mark="markAdd" />} label="Add pref" onClick={() => setAdding('pref')} />
           <ToolButton icon={<Icon name={GROUP_ICON.section} mark="markAdd" />} label={`Add ${branch}`} disabled={branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth)} onClick={() => setAdding('branch')} />
+          <ToolButton icon={<Icon name="link" mark="markAdd" />} label="Add alias" title="Show the selected pref in a second place"
+            disabled={aliasAt === null} onClick={() => { if (aliasAt) alias([selected!], aliasAt); }} />
           <ToolButton icon={<Icon name="delete" />} label="Remove" disabled={selected === null} onClick={onRemove} />
         </Palette>,
         toolSlot,

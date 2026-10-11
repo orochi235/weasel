@@ -1,6 +1,6 @@
 import { isPlainObject } from '@weasel-js/core';
 import { isPrefLeaf, isPrefSection, type PrefLeaf } from '@weasel-js/prefs';
-import { childrenOf, isUnder, isValidKey, joinPath, keysOf, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { childrenOf, isUnder, isValidKey, joinPath, keyOf, keysOf, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { findType, NO_TYPES, type PrefTypes } from './types';
 
 /** What an attribute holding code prints as: an undeclared name, so the pasted literal fails typecheck until the
@@ -133,7 +133,10 @@ function attrChanges(path: string, a: SchemaNode, b: SchemaNode): SchemaChange[]
   for (const k of keys) {
     const from = (a as unknown as Record<string, unknown>)[k];
     const to = (b as unknown as Record<string, unknown>)[k];
-    if (!same(from, to)) out.push({ op: 'attr', path, key: k, from, to });
+    if (same(from, to)) continue;
+    // An entry on both sides is reported by its own attributes, each under `item.`.
+    if (isEntry(a, k, from) && isEntry(b, k, to)) out.push(...attrChanges(path, from, to).map((c) => ({ ...c, key: `${k}.${(c as { key: string }).key}` }) as SchemaChange));
+    else out.push({ op: 'attr', path, key: k, from, to });
   }
   return out;
 }
@@ -181,7 +184,6 @@ export function diffSchemas(before: SchemaRoot, after: SchemaRoot): SchemaChange
   return out;
 }
 
-/** Every path a change touches, for marking rows. */
 /**
  * Where the node now at a path sat in the baseline `changes` were measured from: a moved node's old path, and
  * under a moved branch the same path beneath where the branch was. A path nothing moved is its own.
@@ -194,11 +196,22 @@ export function baselinePaths(changes: readonly SchemaChange[]): (path: string) 
   };
 }
 
+/** Every path a change touches, for marking rows. A moved group is one path: what is under it moved with it, unchanged. */
 export function changedPaths(changes: readonly SchemaChange[]): Set<string> {
   const out = new Set<string>();
   for (const c of changes) {
     if (c.op === 'move') out.add(c.to);
     else if (c.op !== 'remove') out.add(c.path);
+  }
+  return out;
+}
+
+/** The attributes of the node at `path` (`null` is the root) that changed, by name, and `$key` where a move gave it another key. */
+export function changedAttributes(changes: readonly SchemaChange[], path: string | null): Set<string> {
+  const out = new Set<string>();
+  for (const c of changes) {
+    if (c.op === 'attr' && c.path === (path ?? '')) out.add(c.key);
+    else if (c.op === 'move' && c.to === path && keyOf(c.from) !== keyOf(c.to)) out.add('$key');
   }
   return out;
 }

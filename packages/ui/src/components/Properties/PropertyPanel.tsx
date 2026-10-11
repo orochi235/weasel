@@ -275,6 +275,8 @@ export interface PropertyRowProps extends PropertyMetricProps {
   autoControl?: 'hidden' | 'dimmed';
   /** Small muted text after the label — where an inherited value comes from. */
   hint?: ReactNode;
+  /** The row's value differs from a baseline of the caller's: its label is drawn in the accent color. */
+  changed?: boolean;
   /** What the row reads when it is auto, whether or not it is now. Shown as the
    *  last line of the ⓘ tooltip, after the word `auto`; with no `description`
    *  the tooltip is that line alone. */
@@ -300,6 +302,7 @@ export function PropertyRow({
   onAutoChange,
   autoControl = 'hidden',
   hint,
+  changed = false,
   autoValue,
 }: PropertyRowProps) {
   const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
@@ -345,7 +348,7 @@ export function PropertyRow({
     </span>
   );
   const tail = trailing ? <em className={`${s.readout} ${s.readoutAfter}`}>{readout}</em> : null;
-  const multi = { [ROW_ATTR]: '', ...(multiline ? { 'data-multiline': '' } : {}) };
+  const multi = { [ROW_ATTR]: '', ...(multiline ? { 'data-multiline': '' } : {}), ...(changed ? { 'data-changed': '' } : {}) };
   return group ? (
     <div className={cls} ref={rowRef as RefObject<HTMLDivElement>} {...multi}>
       {head}

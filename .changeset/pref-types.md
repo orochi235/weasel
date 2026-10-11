@@ -19,7 +19,7 @@ Breaking, in the editor's tree: a list's or a map's `item` and a union's variant
 - A list or a map is one row. Its entry is edited in the list's own attributes, under Entry: a picker of the kinds one control edits (`number`, `boolean`, `string`, `enum`, `color`, `paint`, `field`) and the registered types, then the entry's name, its default, and a plain kind's own attributes. A list of lists or of objects needs a type.
 - A union is one row and is no longer offered as a kind for a new pref; its variants come from a type. One already in a schema stays, and prints its literal as before.
 - An `object` leaf with no type keeps its editable children.
-- A change to an entry is reported as the list's `item` attribute changing, where it was a change at `<list>/item`.
+- A change to an entry is reported under the list, as `phases.item.default`, where it was `phases/item.default`.
 - `printSchema(root, types?)` takes the types to print by name.
 
 Also: an `object` leaf's fields no longer run past the edge of a narrow form. The nested control slot kept a 110px minimum inside a column that could be narrower.

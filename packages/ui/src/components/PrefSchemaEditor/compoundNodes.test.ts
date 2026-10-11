@@ -144,9 +144,14 @@ describe('the literal', () => {
     expect(printSchema(ROOT)).toContain("type: 'GradientStop',");
   });
 
-  it('reports a change to an entry as the list\'s item changed', () => {
+  it('reports a change to an entry by the entry\'s attribute, under the list', () => {
     const changes = diffSchemas(ROOT, withEntry(ROOT, 'phases', { default: 4 }));
-    expect(formatChanges(changes)).toMatch(/^~ phases\.item {2}\{.*default: 0.*\} → \{.*default: 4.*\}$/);
+    expect(formatChanges(changes)).toBe('~ phases.item.default  0 → 4');
+  });
+
+  it('reports an entry made a type as its kind, its type, and what else differs', () => {
+    const keys = diffSchemas(ROOT, setAttribute(ROOT, 'phases', 'item', Stop)).map((c) => (c.op === 'attr' ? c.key : c.op));
+    expect(keys).toEqual(expect.arrayContaining(['item.kind', 'item.type', 'item.children']));
   });
 });
 

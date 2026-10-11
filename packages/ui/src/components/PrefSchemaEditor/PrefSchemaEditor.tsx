@@ -16,7 +16,7 @@ import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { NO_TYPES, type PrefTypes } from './types';
 import { aliasNodes, branchPaths, copyNodes, keysOf, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
-import { baselinePaths, changedPaths, diffSchemas } from './schemaExport';
+import { baselinePaths, changedAttributes, changedPaths, diffSchemas } from './schemaExport';
 import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
 import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
@@ -205,6 +205,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
 
   const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);
   const changed = useMemo(() => changedPaths(changes), [changes]);
+  const changedAttrs = useMemo(() => changedAttributes(changes, selected), [changes, selected]);
   const treeMark = useMemo(() => {
     if (!rowMark) return undefined;
     const baseline = baselinePaths(changes);
@@ -354,7 +355,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           )}
         </div>
         <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selected ?? ''}`)} path={selected} onRekey={rekey}
-          added={changes.some((c) => c.op === 'add' && c.path === selected)}
+          added={changes.some((c) => c.op === 'add' && c.path === selected)} changed={changedAttrs}
           kinds={kindList} custom={custom} types={types} renderers={renderers} onNotice={setNotice} />
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />

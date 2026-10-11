@@ -57,6 +57,8 @@ export interface WalkCtx {
   fields?: readonly PrefFieldChoice[];
   /** The leaf whose value lives at a path, anywhere in the form's schema: what an alias is resolved against. */
   leafAt?: (path: string) => PrefLeaf | undefined;
+  /** Paths of the rows whose labels are drawn as changed. */
+  changed?: ReadonlySet<string>;
   /** Path of the row or group the form marks as selected. */
   selected?: string | null;
   /** The drop the form is drawing. */
@@ -123,6 +125,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
     <div className={s.rowSlot} data-wide={pref.kind === 'object' || stacked || Array.isArray(pref.default) ? '' : undefined} {...selectionAttrs(own, ctx, true)}>
     <PropertyRow
       label={pref.name}
+      changed={ctx.changed?.has(own)}
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
       className={s.row}
