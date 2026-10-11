@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { isInControlWithin, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { isPrefLeaf, prefHoldsValue } from '@weasel-js/prefs';
 import { swallowNextClick } from '../../useReorderDragList';
@@ -37,6 +37,8 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, 
 }): { ghost: PreviewGhost | null; onPointerDown(e: ReactPointerEvent): void } {
   const [ghost, setGhost] = useState<PreviewGhost | null>(null);
   const drag = useRef<ThresholdDragHandle | null>(null);
+  // Its end also tells `place` the drag is over, which stops what `place` had waiting on it.
+  useEffect(() => () => { drag.current?.cancel(); }, []);
 
   const onPointerDown = (e: ReactPointerEvent): void => {
     const box = stage.current;
