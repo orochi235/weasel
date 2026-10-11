@@ -5,8 +5,7 @@ import type { IndexRender, LoadedStory } from './types';
 
 /**
  * A story module's stories: a module whose default export is a forge `meta` is native, anything else is CSF under
- * `parameters`. `title` is the module's index entry title; a native module's stories take it as given, a CSF
- * module's only when its meta names no title.
+ * `parameters`. `title` is the module's index entry title, which every story takes as given.
  */
 export function loadStories(
   mod: Record<string, unknown>,

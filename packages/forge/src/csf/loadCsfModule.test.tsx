@@ -53,7 +53,7 @@ describe('loadCsfModule', () => {
         notAStory: 42,
         __namedExportsOrder: ['Primary', 'Named', 'Legacy'],
       },
-      AUTO_TITLE,
+      'ui/Button',
     );
     expect(stories.map((s) => [s.id, s.name, s.exportName])).toEqual([
       ['ui-button--primary', 'Primary', 'Primary'],
@@ -67,9 +67,12 @@ describe('loadCsfModule', () => {
     expect(stories.map((s) => s.exportName)).toEqual(['Two']);
   });
 
-  it('titles its stories with the auto title when the meta names none', () => {
-    const [only] = loadCsfModule({ default: {}, A: {} }, AUTO_TITLE);
-    expect(only?.title).toBe('ui/Auto');
+  it("titles its stories with the index's title, whatever the meta names", () => {
+    const [bare] = loadCsfModule({ default: {}, A: {} }, 'ui/Auto');
+    expect(bare?.title).toBe('ui/Auto');
+    // The index reads the meta without running it; a title it could not read must not give the story a second id.
+    const [computed] = loadCsfModule({ default: { title: ['ui', 'Computed'].join('/') }, A: {} }, 'ui/Auto');
+    expect([computed?.title, computed?.id]).toEqual(['ui/Auto', 'ui-auto--a']);
   });
 
   it('builds config from merged args and argTypes', () => {
@@ -125,7 +128,7 @@ describe('loadCsfModule', () => {
     const onClick = () => {};
     const [story] = loadCsfModule(
       { default: { title: 'ui/Button', args: { label: 'from args', onClick } }, Primary: { render: renderFn } },
-      AUTO_TITLE,
+      'ui/Button',
     );
     if (!story) throw new Error('no story');
     show(story, ctxFor(story, { config: { label: 'from config' }, globals: { theme: 'dark' } }));

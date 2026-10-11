@@ -134,16 +134,16 @@ function Scoped({
 }
 
 /**
- * Normalizes a Component Story Format module. `autoTitle` titles the stories when the meta names no title;
- * `parameters` are the project's, under the meta's and each story's.
+ * Normalizes a Component Story Format module. `title` is the index entry's, which wins over the meta's own: the
+ * index reads the meta without running it and falls back to the auto title for one it cannot read, so taking the
+ * meta's here would give one story two ids. `parameters` are the project's, under the meta's and each story's.
  */
 export function loadCsfModule(
   mod: Record<string, unknown>,
-  autoTitle: string,
+  title: string,
   projectParameters: Record<string, unknown> = {},
 ): LoadedStory[] {
   const meta = (isPlainObject(mod.default) ? mod.default : {}) as Annotations;
-  const title = meta.title ?? autoTitle;
   const stories: LoadedStory[] = [];
 
   for (const [exportName, value] of Object.entries(mod)) {

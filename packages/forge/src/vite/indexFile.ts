@@ -7,14 +7,15 @@ import {
   calleeOf,
   docOf,
   exportedName,
-  isLiteralValue,
   isDefaultExport,
   objectOf,
   parseFile,
   prop,
   stringLiteral,
+  stringOf,
   stringProp,
 } from './ast.ts';
+import { mayBeStory } from './nativeExports.ts';
 
 /**
  * The stories `code` declares, in source order, without running it. `file` is absolute; `autoTitle` titles a meta
@@ -66,7 +67,7 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
   return [...found.values()];
 }
 
-/** The program's top-level `const` initializers, and its locals that are forge's `meta` or `story`. */
+/** The program's top-level bindings, and its locals that are forge's `meta` or `story`. */
 function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindings; wrappers: Set<string> } {
   const bindings: Bindings = new Map();
   const wrappers = new Set(extra);
@@ -81,6 +82,8 @@ function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindi
     const decl = stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt;
     if (decl?.type === 'VariableDeclaration') {
       for (const d of decl.declarations) if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);
+    } else if (decl?.type === 'FunctionDeclaration' && decl.id) {
+      bindings.set(decl.id.name, decl);
     }
   }
   return { bindings, wrappers };
@@ -91,9 +94,7 @@ function indexProgram(program: t.Program, file: string, autoTitle: string, extra
 
   let metaNode: t.Node | undefined;
   let metaDoc: string | undefined;
-  // `plain`: the export is written out as a value, so it cannot be what forge's `story` returned.
-  const exported: { name: string; node: t.Node | undefined; doc: string | undefined; plain: boolean }[] = [];
-  const plain = (node: t.Node | undefined) => isLiteralValue(node, bindings);
+  const exported: { name: string; node: t.Node | undefined; doc: string | undefined }[] = [];
   for (const stmt of program.body) {
     if (stmt.type === 'ExportDefaultDeclaration') {
       metaNode = stmt.declaration;
@@ -104,10 +105,10 @@ function indexProgram(program: t.Program, file: string, autoTitle: string, extra
     const decl = stmt.declaration;
     if (decl?.type === 'VariableDeclaration') {
       for (const d of decl.declarations) {
-        if (d.id.type === 'Identifier') exported.push({ name: d.id.name, node: d.init ?? undefined, doc: docOf(d) ?? doc, plain: plain(d.init ?? undefined) });
+        if (d.id.type === 'Identifier') exported.push({ name: d.id.name, node: d.init ?? undefined, doc: docOf(d) ?? doc });
       }
     } else if (decl?.type === 'FunctionDeclaration' && decl.id) {
-      exported.push({ name: decl.id.name, node: undefined, doc, plain: true });
+      exported.push({ name: decl.id.name, node: decl, doc });
     }
     for (const spec of stmt.specifiers) {
       if (spec.type !== 'ExportSpecifier' || spec.exportKind === 'type') continue;
@@ -116,13 +117,13 @@ function indexProgram(program: t.Program, file: string, autoTitle: string, extra
       if (name === 'default') {
         metaNode = node;
         metaDoc ??= doc;
-      } else exported.push({ name, node, doc, plain: plain(node) });
+      } else exported.push({ name, node, doc });
     }
   }
   if (!metaNode && !program.body.some(isDefaultExport)) return [];
 
   const meta = objectOf(metaNode, bindings, wrappers);
-  const title = stringProp(meta, 'title') ?? autoTitle;
+  const title = stringOf(prop(meta, 'title'), bindings) ?? autoTitle;
   const include = storyFilter(meta, 'includeStories');
   const exclude = storyFilter(meta, 'excludeStories');
   const componentNode = prop(meta, 'component');
@@ -134,7 +135,7 @@ function indexProgram(program: t.Program, file: string, autoTitle: string, extra
   return exported
     .filter(({ name }) => name !== '__namedExportsOrder')
     .filter(({ name }) => (!include || include(name)) && (!exclude || !exclude(name)))
-    .filter((e) => !(native && e.plain))
+    .filter((e) => !native || mayBeStory(e.node, bindings, wrappers))
     .map(({ name, node, doc }) => {
       const spec = objectOf(node, bindings, wrappers);
       const isolate = isolateOf(spec, bindings, wrappers, name) ?? metaIsolate;

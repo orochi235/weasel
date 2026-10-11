@@ -7,6 +7,17 @@ component can be compared side by side.
 
 Direction: `docs/superpowers/specs/2026-09-13-forge-design.md`.
 
+## What the index reads
+
+The story list is read from each file's source without running it, and a
+loaded story takes its title from that list. So a meta's `title` has to be
+readable there: a string, a template with no expression, or a `const` of the
+same file holding one. Any other title, such as an imported constant, is
+passed over for the title the file's path gives it. In a file whose meta is
+forge's `meta`, a story is an export that calls `story`, directly or through
+a function of that file that returns the call; any other exported call, such
+as `export const rows = makeRows()`, is not listed.
+
 ## Where a story renders
 
 A story renders inside a host element in the workshop document. The host

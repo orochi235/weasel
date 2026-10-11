@@ -65,13 +65,14 @@ export async function runStory(
   mod: Record<string, unknown>,
   exportName: string,
   file: string,
-  autoTitle: string,
+  /** The file's index entry title. */
+  title: string,
   { setup = {}, viewport }: RunStoryOptions = {},
 ): Promise<void> {
   leftover?.();
   let story: LoadedStory | undefined;
   try {
-    story = loadStories(mod, autoTitle, setup.parameters).find((s) => s.exportName === exportName);
+    story = loadStories(mod, title, setup.parameters).find((s) => s.exportName === exportName);
   } catch (error) {
     throw phased('load', error);
   }

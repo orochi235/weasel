@@ -42,6 +42,39 @@ export { Other } from './other.stories';
     ]);
   });
 
+  it('leaves out of a native file an export that is a call to anything but story, which the loader skips', () => {
+    const code = `
+import { meta, story } from '@weasel-js/forge';
+import { makeRows } from './rows';
+export default meta({ title: 'ui/Slider' });
+export const rows = makeRows();
+export const count = [1, 2].map(String);
+const sized = (size: number) => story({ render: () => size });
+function named(name: string) {
+  return story({ name, render: () => null });
+}
+const table = () => makeRows();
+export const Small = sized(1);
+export const Named = named('x');
+export const data = table();
+export const Basic = story({ render: () => null });
+`;
+    expect(ids(code)).toEqual([
+      ['ui-slider--small', 'Small'],
+      ['ui-slider--named', 'Named'],
+      ['ui-slider--basic', 'Basic'],
+    ]);
+  });
+
+  it('reads a CSF title written as a constant or a template with no expression, and falls back to the auto title otherwise', () => {
+    const titled = (title: string) => ids(`const TITLE = 'ui/Const';\nexport default { title: ${title} };\nexport const A = {};\n`)[0]?.[0];
+    expect(titled('TITLE')).toBe('ui-const--a');
+    expect(titled('TITLE as string')).toBe('ui-const--a');
+    expect(titled('`ui/Tpl`')).toBe('ui-tpl--a');
+    expect(titled('`ui/${name}`')).toBe('ui-auto--a');
+    expect(titled('imported')).toBe('ui-auto--a');
+  });
+
   it('indexes CSF with a typed meta constant and call-built stories', () => {
     const csf = `
 import type { Meta, StoryObj } from '@storybook/react-vite';

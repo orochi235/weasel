@@ -1,7 +1,7 @@
 import { type ParserPlugin, parse } from '@babel/parser';
 import type * as t from '@babel/types';
 
-/** A program's top-level `const` initializers, by name. */
+/** A program's top-level variable initializers and function declarations, by name. */
 export type Bindings = Map<string, t.Node>;
 
 export function parseFile(code: string, file: string): t.Program {
@@ -39,6 +39,7 @@ const LITERALS: ReadonlySet<string> = new Set([
   'ArrayExpression',
   'ArrowFunctionExpression',
   'FunctionExpression',
+  'FunctionDeclaration',
   'ClassExpression',
   'JSXElement',
   'JSXFragment',
@@ -69,6 +70,23 @@ export function stringLiteral(node: t.Node): string | undefined {
   if (node.type === 'StringLiteral') return node.value;
   if (node.type === 'TemplateLiteral' && node.expressions.length === 0) return node.quasis.map((q) => q.value.cooked ?? q.value.raw).join('');
   return undefined;
+}
+
+/** The string `node` is written as: a literal, through casts and top-level `const`s. */
+export function stringOf(node: t.Node | undefined, bindings: Bindings, depth = 0): string | undefined {
+  if (!node || depth > 16) return undefined;
+  switch (node.type) {
+    case 'TSSatisfiesExpression':
+    case 'TSAsExpression':
+    case 'TSTypeAssertion':
+    case 'TSNonNullExpression':
+    case 'ParenthesizedExpression':
+      return stringOf(node.expression, bindings, depth + 1);
+    case 'Identifier':
+      return stringOf(bindings.get(node.name), bindings, depth + 1);
+    default:
+      return stringLiteral(node);
+  }
 }
 
 export function isDefaultExport(stmt: t.Statement): boolean {

@@ -1,7 +1,6 @@
 import { relative, resolve, sep } from 'node:path';
 import type { Plugin } from 'vite';
-import { autoTitle } from './autoTitle.ts';
-import { indexFile } from './indexFile.ts';
+import { indexStoryResolved } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
@@ -49,9 +48,14 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
       configResolved(config) {
         root = config.root;
       },
-      transform(code, id) {
+      async transform(code, id) {
         if (!matches(id)) return undefined;
-        const entries = indexFile(code, id, autoTitle(id, root, options.stories));
+        const { entries } = await indexStoryResolved(
+          code,
+          id,
+          { root, stories: options.stories },
+          async (spec, importer) => (await this.resolve(spec, importer))?.id ?? null,
+        );
         const title = entries[0]?.title;
         if (title === undefined) return undefined;
         const q = (value: string) => JSON.stringify(value);

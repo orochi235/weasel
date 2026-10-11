@@ -3,10 +3,10 @@ import { basename, relative, resolve, sep } from 'node:path';
 import type { EnvironmentModuleNode, Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
-import { autoTitle } from './autoTitle.ts';
 import { createDepGraph, type DepGraphBuilder, type ResolveImport } from './depGraph.ts';
 import { html } from './html.ts';
-import { foreignCallees, indexFile } from './indexFile.ts';
+import { foreignCallees } from './indexFile.ts';
+import { indexStory } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
@@ -64,7 +64,7 @@ export function forge(options: ForgeOptions): Plugin[] {
     return !path.split('/').includes('node_modules') && storyGlobOf(path, options.stories) !== undefined;
   };
   const read = (file: string) =>
-    indexFile(readFileSync(file, 'utf8'), file, autoTitle(file, root, options.stories), wrappersOf.get(file)?.wrappers);
+    indexStory(readFileSync(file, 'utf8'), file, { root, stories: options.stories }, wrappersOf.get(file)?.wrappers);
   const logError = (err: unknown) => logger?.error(`[forge] ${err instanceof Error ? err.message : String(err)}`);
   /** A file that fails to parse stays in the map with no entries, so an edit that fixes it re-indexes it. */
   const files = (): Map<string, IndexEntry[]> => {

@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { fileURLToPath } from 'node:url';
 import type { Plugin, ResolvedConfig, TransformResult } from 'vite';
 import { describe, expect, it } from 'vitest';
 import { forgeTest } from './forgeTest';
@@ -9,9 +10,10 @@ function transformer(options: Parameters<typeof forgeTest>[0]) {
   const plugins = forgeTest(options);
   const main = plugins.find((p) => p.name === 'weaselforge:test') as Plugin;
   (main.configResolved as (c: ResolvedConfig) => void)({ root: ROOT } as ResolvedConfig);
-  const transform = main.transform as (code: string, id: string) => TransformResult | string | undefined;
-  return (code: string, id: string) => {
-    const out = transform.call({}, code, id);
+  const transform = main.transform as (code: string, id: string) => Promise<TransformResult | string | undefined>;
+  return async (code: string, id: string, resolve: (spec: string) => string | null = () => null) => {
+    const context = { resolve: async (spec: string) => (resolve(spec) === null ? null : { id: resolve(spec) }) };
+    const out = await transform.call(context, code, id);
     return typeof out === 'object' && out !== null ? out.code : out;
   };
 }
@@ -23,9 +25,9 @@ export const Named = story({ name: 'With "quotes"', render: () => null });
 `;
 
 describe('forgeTest', () => {
-  it('appends one test per indexed story, calling runStory on the module itself', () => {
+  it('appends one test per indexed story, calling runStory on the module itself', async () => {
     const file = `${ROOT}/apps/x/Counter.stories.tsx`;
-    const code = transformer({ stories: ['apps/**/*.stories.tsx'] })(source, file);
+    const code = await transformer({ stories: ['apps/**/*.stories.tsx'] })(source, file);
     expect(code).toBeDefined();
     expect(code).toContain(source);
     expect(code).toContain(`import { runStory as __forge_runStory } from "@weasel-js/forge/test";`);
@@ -41,65 +43,76 @@ describe('forgeTest', () => {
     expect(code).toContain(`__forge_test(${JSON.stringify('With "quotes"')}, () => __forge_run("Named"), __forge_timeout);`);
   });
 
-  it('skips an isolated story, naming the reason, since the test page is no document of its own', () => {
+  it("titles and isolates stories whose meta reaches forge through a project helper, as the workshop's index does", async () => {
+    const helper = fileURLToPath(new URL('../story/define.ts', import.meta.url));
+    const wrapped = `import { meta as defineMeta, story } from './helpers';
+export default defineMeta({ title: 'forge/Wrapped', isolate: 'needs a document' });
+export const One = story({ render: () => null });
+`;
+    const code = await transformer({ stories: ['apps/**/*.stories.tsx'] })(wrapped, `${ROOT}/apps/x/Wrapped.stories.tsx`, () => helper);
+    expect(code).toContain('const __forge_title = "forge/Wrapped";');
+    expect(code).toContain('__forge_test.skip("One (isolated: needs a document)", () => {});');
+  });
+
+  it('skips an isolated story, naming the reason, since the test page is no document of its own', async () => {
     const file = `${ROOT}/apps/x/Edge.stories.tsx`;
     const isolated = `import { meta, story } from '@weasel-js/forge';
 export default meta({ title: 'forge/Edge' });
 export const Plain = story({ render: () => null });
 export const Edge = story({ isolate: 'asserts placement against the window edge', render: () => null });
 `;
-    const code = transformer({ stories: ['apps/**/*.stories.tsx'] })(isolated, file);
+    const code = await transformer({ stories: ['apps/**/*.stories.tsx'] })(isolated, file);
     expect(code).toContain('__forge_test("Plain", () => __forge_run("Plain"), __forge_timeout);');
     expect(code).toContain('__forge_test.skip("Edge (isolated: asserts placement against the window edge)", () => {});');
     expect(code).not.toContain('__forge_run("Edge")');
   });
 
-  it('keeps every test line short, whatever the file path', () => {
+  it('keeps every test line short, whatever the file path', async () => {
     const file = `${ROOT}/${'deeply/'.repeat(20)}Counter.stories.tsx`;
-    const code = transformer({ stories: ['**/*.stories.tsx'] })(source, file) ?? '';
+    const code = (await transformer({ stories: ['**/*.stories.tsx'] })(source, file)) ?? '';
     const tests = code.split('\n').filter((line) => line.startsWith('__forge_test('));
     expect(tests).toHaveLength(2);
     for (const line of tests) expect(line).not.toContain(file);
   });
 
   // vitest imports a test file with a cache-busting query, so a static self-import would evaluate it a second time.
-  it('takes the module from its own URL rather than a static self-import', () => {
-    const code = transformer({ stories: ['apps/**/*.stories.tsx'] })(source, `${ROOT}/apps/x/Counter.stories.tsx`);
+  it('takes the module from its own URL rather than a static self-import', async () => {
+    const code = await transformer({ stories: ['apps/**/*.stories.tsx'] })(source, `${ROOT}/apps/x/Counter.stories.tsx`);
     expect(code).not.toMatch(/import \* as \w+ from "\.\/Counter\.stories\.tsx"/);
   });
 
-  it('sizes the browser page to the story’s viewport through vitest’s page', () => {
-    const code = transformer({ stories: ['*.stories.tsx'] })(source, `${ROOT}/a.stories.tsx`);
+  it('sizes the browser page to the story’s viewport through vitest’s page', async () => {
+    const code = await transformer({ stories: ['*.stories.tsx'] })(source, `${ROOT}/a.stories.tsx`);
     expect(code).toContain(`import { page as __forge_page } from "vitest/browser";`);
     expect(code).toContain('viewport: (width, height) => __forge_page.viewport(width, height)');
   });
 
-  it('hands the frame config module to every story', () => {
-    const code = transformer({ stories: ['*.stories.tsx'], frameConfig: 'forge.frame.tsx' })(source, `${ROOT}/a.stories.tsx`);
+  it('hands the frame config module to every story', async () => {
+    const code = await transformer({ stories: ['*.stories.tsx'], frameConfig: 'forge.frame.tsx' })(source, `${ROOT}/a.stories.tsx`);
     expect(code).toContain(`import __forge_frame_config from "${ROOT}/forge.frame.tsx";`);
     expect(code).toContain('setup: __forge_frame_config,');
   });
 
-  it('runs stories with no setup when there is no frame config', () => {
-    const code = transformer({ stories: ['*.stories.tsx'] })(source, `${ROOT}/a.stories.tsx`);
+  it('runs stories with no setup when there is no frame config', async () => {
+    const code = await transformer({ stories: ['*.stories.tsx'] })(source, `${ROOT}/a.stories.tsx`);
     expect(code).not.toContain('__forge_frame_config');
     expect(code).toContain('setup: undefined,');
   });
 
-  it('leaves files outside the globs, and query-suffixed ids, alone', () => {
+  it('leaves files outside the globs, and query-suffixed ids, alone', async () => {
     const run = transformer({ stories: ['apps/**/*.stories.tsx'] });
-    expect(run(source, `${ROOT}/packages/x/Counter.stories.tsx`)).toBeUndefined();
-    expect(run(source, `${ROOT}/apps/x/Counter.stories.tsx?raw`)).toBeUndefined();
-    expect(run(source, `${ROOT}/apps/node_modules/x/Counter.stories.tsx`)).toBeUndefined();
+    expect(await run(source, `${ROOT}/packages/x/Counter.stories.tsx`)).toBeUndefined();
+    expect(await run(source, `${ROOT}/apps/x/Counter.stories.tsx?raw`)).toBeUndefined();
+    expect(await run(source, `${ROOT}/apps/node_modules/x/Counter.stories.tsx`)).toBeUndefined();
   });
 
-  it('matches a glob written with a leading ./', () => {
-    const code = transformer({ stories: ['./apps/**/*.stories.tsx'] })(source, `${ROOT}/apps/x/Counter.stories.tsx`);
+  it('matches a glob written with a leading ./', async () => {
+    const code = await transformer({ stories: ['./apps/**/*.stories.tsx'] })(source, `${ROOT}/apps/x/Counter.stories.tsx`);
     expect(code).toContain('__forge_test(');
   });
 
-  it('leaves a story file with no stories alone', () => {
-    expect(transformer({ stories: ['*.stories.tsx'] })('export const x = 1;\n', `${ROOT}/a.stories.tsx`)).toBeUndefined();
+  it('leaves a story file with no stories alone', async () => {
+    expect(await transformer({ stories: ['*.stories.tsx'] })('export const x = 1;\n', `${ROOT}/a.stories.tsx`)).toBeUndefined();
   });
 
   // The imports runStory reaches are appended by transform, which vite's dependency scan never runs, so a cold
