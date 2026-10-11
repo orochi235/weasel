@@ -271,8 +271,13 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (typeof e.button === 'number' && e.button > 0) return;
     e.preventDefault();
-    const next = splitBands(committed, fromUnit(unitAt(e.clientX)), min, max, splitBand);
-    if (next !== committed) onChange(next);
+    const at = fromUnit(unitAt(e.clientX));
+    const next = splitBands(committed, at, min, max, splitBand);
+    if (next === committed) return;
+    onChange(next);
+    // The new band takes the next index, so a selection to its right moves up one to stay on its band.
+    const split = committed.filter((b) => b.from < at).length - 1;
+    if (selectedIndex !== null && selectedIndex !== undefined && selectedIndex > split) onSelect?.(selectedIndex + 1);
   };
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {

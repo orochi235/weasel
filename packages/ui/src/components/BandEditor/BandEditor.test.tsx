@@ -255,6 +255,19 @@ describe('split', () => {
     expect(froms(next)).toEqual([0, 10, 20, 60]);
   });
 
+  it('keeps the selection on the band it named when a split lands to its left', () => {
+    const { ruler, onSelect } = setup({ selectedIndex: 2 });
+    fireEvent.pointerDown(ruler(), { clientX: 40, clientY: 5, button: 0 });
+    expect(onSelect.mock.calls).toEqual([[3]]);
+  });
+
+  it('leaves the selection alone when a split lands in or right of the selected band', () => {
+    const { ruler, onSelect } = setup({ selectedIndex: 0 });
+    fireEvent.pointerDown(ruler(), { clientX: 40, clientY: 5, button: 0 });
+    fireEvent.pointerDown(ruler(), { clientX: 160, clientY: 5, button: 0 });
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
   it('duplicates the split band payload by default', () => {
     const { ruler, onChange } = setup();
     fireEvent.pointerDown(ruler(), { clientX: 160, clientY: 5, button: 0 });
