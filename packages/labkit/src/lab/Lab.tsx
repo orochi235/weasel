@@ -479,11 +479,18 @@ function LabRuntime({
         const record = next.find((w) => w.id === id);
         if (!record) return;
         store.setState((s) => ({
-          trials: s.trials.map((w) =>
-            w.id === id
-              ? { ...w, config: record.config, state: record.state, view: record.view }
-              : w,
-          ),
+          trials: s.trials.map((w) => {
+            if (w.id !== id) return w;
+            const { auto: _pinnedNow, ...kept } = w;
+            const reset: TrialRecord = {
+              ...kept,
+              config: record.config,
+              state: record.state,
+              view: record.view,
+            };
+            if (record.auto) reset.auto = record.auto;
+            return reset;
+          }),
         }));
         const handle = clocks.get(id);
         // The lab's clock is every trial's on it, so resetting one leaves it.

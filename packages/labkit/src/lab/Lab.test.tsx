@@ -1,9 +1,12 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { createMemoryAdapter } from '@weasel-js/storage';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useContext, useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
+import { auto } from '../config/auto';
 import type { Instrument } from '../instrument/types';
+import { LabStoreContext } from '../state/context';
+import type { LabStore } from '../state/store';
 import { Lab, type LabProps } from './Lab';
 import { LabContext, type LabContextValue } from './LabContext';
 
@@ -96,6 +99,28 @@ describe('<Lab>', () => {
     const reset = labRef?.trials[0];
     expect(reset?.config).toEqual({ count: 0 });
     expect(reset?.state).toEqual({ value: 0 });
+  });
+
+  it('resetTrial returns a pinned field to the auto it opened on', async () => {
+    let store: LabStore | null = null;
+    function CaptureStore() {
+      store = useContext(LabStoreContext)?.store ?? null;
+      return null;
+    }
+    labRef = null;
+    await renderSettled(
+      <Lab instruments={[stub]} defaultInstrument="Stub">
+        <CaptureLab>
+          <CaptureStore />
+        </CaptureLab>
+      </Lab>,
+    );
+    await act(async () => labRef?.addTrial('Stub', { config: { count: auto } }));
+    const id = labRef?.trials[1]?.id ?? '';
+    await act(async () => store?.getState().updateTrialConfig(id, 'count', 5));
+    expect(labRef?.trials[1]?.auto).toBeUndefined();
+    await act(async () => labRef?.resetTrial(id));
+    expect(labRef?.trials[1]?.auto).toEqual(['count']);
   });
 
   it('mode="light" stamps light on the lab root', async () => {
