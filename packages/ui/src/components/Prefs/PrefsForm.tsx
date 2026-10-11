@@ -1,5 +1,5 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { filterPrefSubtree, visiblePrefSubtree, type PrefGroup } from '@weasel-js/prefs';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { filterPrefSubtree, prefLeafAt, visiblePrefSubtree, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
 import { useDropMotion } from './dropMotion';
@@ -144,7 +144,9 @@ export function PrefsForm(props: PrefsFormProps) {
   const fields = props.fields ?? own;
   const shown = useMemo(() => shownPath(root, props.selected), [root, props.selected]);
   const selection = useSelectedRow(props.selected, shown, props.onSelect);
-  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint, fields, selected: shown };
+  // Against the whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
+  const leafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
+  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint, fields, leafAt, selected: shown };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

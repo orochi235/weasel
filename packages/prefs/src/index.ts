@@ -9,6 +9,7 @@ export {
   isPrefSection,
   prefDisplayBounds,
   prefHoldsValue,
+  prefLeafAt,
   prefLeaves,
   prefSectionLeaves,
   prefValueAtPath,
@@ -16,6 +17,7 @@ export {
   visiblePrefSubtree,
 } from './helpers';
 export type { PrefAction, PrefActionContext } from './action';
+export { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 export type { PrefList } from './list';
 export type { PrefMap } from './map';
 export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';

@@ -130,7 +130,8 @@
 
 .item[data-dragging] > .row { opacity: 0.5; }
 
-.tree[data-copying] .row { cursor: copy; }
+.tree[data-drag-effect='copy'] .row { cursor: copy; }
+.tree[data-drag-effect='link'] .row { cursor: alias; }
 
 .ghostRow {
   height: var(--wzl-control-h);
@@ -140,4 +141,4 @@
   font-size: var(--wzl-tree-font-size, var(--wzl-font-size-sm));
 }
 
-.ghostCopy { flex: none; margin-inline-end: var(--wzl-space-1); color: var(--wzl-accent-fg); }
+.ghostEffect { flex: none; margin-inline-end: var(--wzl-space-1); color: var(--wzl-accent-fg); }

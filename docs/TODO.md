@@ -835,13 +835,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   grid gap above the attributes pane, and the Key/Kind rows are wider than the attribute form
   under them. Seen on `#/dev/prefs` at 1440×900.
 
-- **(P2) `PrefSchemaEditor` layout by dragging, what is left.** A stored value in the Unplaced
-  list cannot be dragged; it is still added by a click. A `label` is a kind only `PrefsForm`'s rail
+- **(P2) `PrefSchemaEditor` layout by dragging, what is left.** A `label` is a kind only `PrefsForm`'s rail
   and columns rows draw: `SelectionPanel` and labkit's `ControlPanel` show it as an unknown kind,
   `prefFieldChoices` offers it as a field, and `@weasel-js/prefs` does not know the kind.
   `PrefsForm.drop.browser.test.tsx` checks the form's drop target and reflow in a real browser; no
   test in the repo drives a pointer through the editor itself. Palette, row, rail, and tree drags
   were driven through a headless browser on astv's page and on the editor's story on 2026-10-10.
+
+- **(P2) An `alias` leaf, what is left.** `PrefsForm` and labkit's `ControlPanel` draw an alias as
+  its target's row; `SelectionPanel` does not, and shows it as a kind with no renderer.
+  `PrefsForm`'s filter matches an alias on its own name and description, so one left unnamed is
+  dropped by a query its target would match. In `PrefSchemaEditor`, removing a pref leaves its
+  aliases pointing at nothing (each draws `(alias: no pref at …)` in the preview), where moving or
+  renaming it carries them along; and the `Of` picker offers every field, including the fields
+  inside an `object` leaf and other aliases, though an alias resolves only a whole leaf.
 
 - **(P3) `PrefSchemaEditor`: undoing a move made through a rail entry leaves the moved node out of
   sight.** Holding a drag over a rail entry opens that page by selecting its group, so the step

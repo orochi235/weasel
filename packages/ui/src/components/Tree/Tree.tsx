@@ -17,10 +17,12 @@ import { selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { DisclosureMark } from '../Disclosure';
 import { DragGhost } from '../DragGhost';
 import { Icon } from '../../icons';
+import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Tree.module.css';
 import { handleMoveKey } from './treeKeyboardMove';
 import { modsOf, textOf, useControlledSet } from './treeUtils';
-import { useTreeDrag, type TreeDragHow } from './useTreeDrag';
+import { useRowTip } from './useRowTip';
+import { useTreeDrag, type TreeDragEffect } from './useTreeDrag';
 
 /** One node. A node with `children` is a branch, even when the array is empty. */
 export interface TreeNode {
@@ -34,6 +36,9 @@ export interface TreeNode {
   /** Decoration after the label — a count badge. Not a control. Read as part
    *  of the row's accessible name. */
   trailing?: ReactNode;
+  /** Shown beside the row once the pointer, or keyboard focus, has rested on it. A string is also the row's
+   *  accessible description. */
+  tooltip?: ReactNode;
   children?: readonly TreeNode[];
   /** Present but not in effect. */
   muted?: boolean;
@@ -85,17 +90,20 @@ export interface TreeProps {
   /** A drag with Alt held copies: the rows stay put, and this is called with them and where the copies land.
    *  `Tree` makes no copy itself. Without it Alt changes nothing, and the drag moves. Needs `onMove`. */
   onCopy?(ids: string[], target: TreeDropTarget): void;
+  /** A drag with Alt and Cmd or Ctrl held links: the rows stay put, and this is called with them and where
+   *  something that stands for them should land. What that is, is the caller's to say. Needs `onMove`. */
+  onLink?(ids: string[], target: TreeDropTarget): void;
   /** Refuse a drop. A drop into a dragged node or beneath one is refused
    *  regardless. Default: allow. */
-  canDrop?(ids: readonly string[], target: TreeDropTarget, how: TreeDragHow): boolean;
+  canDrop?(ids: readonly string[], target: TreeDropTarget, effect: TreeDragEffect): boolean;
   /**
    * Asked while a drag begun in this tree is outside it: whether what is under
    * the client point would take the drop. While it answers true the tree marks
    * nothing, and a release there calls `onDropOutside` and not `onMove`.
    * Called with `null` when the drag comes back inside or ends.
    */
-  onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, how: TreeDragHow): boolean;
-  onDropOutside?(ids: string[], point: { x: number; y: number }, how: TreeDragHow): void;
+  onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, effect: TreeDragEffect): boolean;
+  onDropOutside?(ids: string[], point: { x: number; y: number }, effect: TreeDragEffect): void;
   /**
    * A drag begun outside the tree, at this client point. The tree marks where
    * it would land — asking `canDrop` with no ids — and reports the target
@@ -150,13 +158,14 @@ export const Tree = forwardRef(function Tree(
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty',
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
-    onAction, onMove, onCopy, canDrop, onDragOutside, onDropOutside, externalDrag, onExternalTarget,
+    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, externalDrag, onExternalTarget,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
   const [expanded, setExpanded] = useControlledSet(expandedIds, defaultExpandedIds, onExpandedChange);
   const [selected, setSelected] = useControlledSet(selectedIds, defaultSelectedIds, onSelectionChange);
   const selectable = selectionMode !== 'none';
+  const rowTip = useRowTip();
   const baseId = useId();
 
   const visible = useMemo(() => {
@@ -227,7 +236,7 @@ export const Tree = forwardRef(function Tree(
     nodes, visible, expanded, selected,
     container: () => treeEl.current,
     rowEl: (id) => items.current.get(id)?.firstElementChild as HTMLElement | undefined,
-    canDrop, onMove, onCopy,
+    canDrop, onMove, onCopy, onLink,
     onPress: (id, mods) => { const v = visible[indexOf.get(id) ?? -1]; if (v) activate(v.node, mods); },
     expand: (id) => { if (!expanded.has(id)) setExpanded(new Set(expanded).add(id)); },
   });
@@ -302,6 +311,8 @@ export const Tree = forwardRef(function Tree(
     }
   };
 
+  const tipNode = rowTip.tip && !drag.state.dragging ? visible[indexOf.get(rowTip.tip.id) ?? -1]?.node : undefined;
+
   const onRowClick = (node: TreeNode) => (e: MouseEvent<HTMLDivElement>) => activate(node, modsOf(e));
 
   const onTwistyClick = (node: TreeNode) => (e: MouseEvent<HTMLSpanElement>) => {
@@ -335,17 +346,29 @@ export const Tree = forwardRef(function Tree(
           aria-selected={selectable ? selected.has(node.id) : undefined}
           aria-disabled={node.disabled || undefined}
           aria-labelledby={trailingId ? `${labelId} ${trailingId}` : labelId}
+          aria-description={typeof node.tooltip === 'string' ? node.tooltip : undefined}
           data-muted={node.muted ? 'true' : undefined}
           data-drop={drag.state.mark?.id === node.id ? drag.state.mark.where : undefined}
-          data-dragging={!drag.state.copy && drag.state.dragging?.includes(node.id) ? 'true' : undefined}
+          data-dragging={drag.state.effect === 'move' && drag.state.dragging?.includes(node.id) ? 'true' : undefined}
           tabIndex={node.id === stopId ? 0 : -1}
           onKeyDown={onKeyDown({ node, parentId, level, index: pos })}
-          onFocus={(e) => { if (e.target === e.currentTarget) setFocusId(node.id); }}
+          onFocus={(e) => {
+            if (e.target !== e.currentTarget) return;
+            setFocusId(node.id);
+            // A press focuses the item too, and the pointer's own rest is what opens the tooltip then.
+            if (node.tooltip != null && e.currentTarget.matches(':focus-visible')) rowTip.rest(node.id, e.currentTarget.firstElementChild as HTMLElement);
+          }}
+          onBlur={(e) => { if (e.target === e.currentTarget) rowTip.clear(); }}
         >
           <div
             className={s.row}
             onClick={onRowClick(node)}
-            onPointerDown={onMove ? (e) => drag.onPointerDown(node.id, e) : undefined}
+            onPointerEnter={node.tooltip != null ? (e) => rowTip.rest(node.id, e.currentTarget) : undefined}
+            onPointerLeave={node.tooltip != null ? rowTip.clear : undefined}
+            onPointerDown={(e) => {
+              rowTip.clear();
+              if (onMove) drag.onPointerDown(node.id, e);
+            }}
           >
             {foldBy === 'twisty' && (
               <span className={s.twisty} aria-hidden="true" data-tree-twisty="" onClick={branch ? onTwistyClick(node) : undefined}>
@@ -376,17 +399,23 @@ export const Tree = forwardRef(function Tree(
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
         aria-multiselectable={selectionMode === 'multiple' || undefined}
-        data-copying={drag.state.copy ? '' : undefined}
+        data-drag-effect={drag.state.effect === 'move' ? undefined : drag.state.effect}
       >
         {renderLevel(nodes, null, 1)}
       </ul>
+      {tipNode?.tooltip != null && (
+        // The trigger is the row, handed over by ref: the tooltip only reads its open state from the wrapper.
+        <TooltipTrigger isOpen>
+          <Tooltip triggerRef={{ current: rowTip.tip!.el }} placement="right">{tipNode.tooltip}</Tooltip>
+        </TooltipTrigger>
+      )}
       {drag.state.ghost && treeEl.current && (
         <DragGhost at={drag.state.ghost} from={treeEl.current}>
           {drag.state.ghost.ids.map((id) => {
             const v = visible[indexOf.get(id) ?? -1];
             return (
               <div key={id} className={s.ghostRow}>
-                {drag.state.copy && <Icon name="add" size={14} className={s.ghostCopy} />}
+                {drag.state.effect !== 'move' && <Icon name={drag.state.effect === 'link' ? 'link' : 'add'} size={14} className={s.ghostEffect} />}
                 {v?.node.label ?? id}
               </div>
             );

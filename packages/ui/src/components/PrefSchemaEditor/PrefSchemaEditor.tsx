@@ -11,12 +11,11 @@ import { EditorBar } from './EditorBar';
 import { EditorPrefsButton, useEditorPrefs, type PrefSchemaEditorPrefs } from './editorPrefs';
 import { dropDraft, openDraft, saveDraft, SWAP, type DraftStorage, type SwapArgs } from './draft';
 import { openFolds, saveFolds } from './folds';
-import { GENERAL } from './generalBranch';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { NO_TYPES, type PrefTypes } from './types';
-import { branchPaths, copyNodes, keysOf, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { aliasNodes, branchPaths, copyNodes, keysOf, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { baselinePaths, changedPaths, diffSchemas } from './schemaExport';
 import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
 import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
@@ -128,10 +127,10 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   // Every row starts open but the ones the reader folded last time.
   const [expanded, setExpanded] = useState(() => {
     const folded = new Set(draftKey === undefined ? [] : openFolds(draftKey));
-    return new Set([GENERAL, ...branchPaths(opened?.schema ?? schema)].filter((id) => !folded.has(id)));
+    return new Set(branchPaths(opened?.schema ?? schema).filter((id) => !folded.has(id)));
   });
   useEffect(() => {
-    if (draftKey !== undefined) saveFolds(draftKey, [GENERAL, ...branchPaths(schema)].filter((id) => !expanded.has(id)));
+    if (draftKey !== undefined) saveFolds(draftKey, branchPaths(schema).filter((id) => !expanded.has(id)));
   }, [draftKey, schema, expanded]);
   const [structureWidth, setStructureWidth] = useState(300);
   const [attributesWidth, setAttributesWidth] = useState(320);
@@ -294,12 +293,19 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     if (keepsSelection() && restore !== undefined) setSelected(restore);
     reveal(copied.paths[0] ?? null);
   };
+  const aliasTo = (paths: readonly string[], target: SchemaTarget, restore?: string | null) => {
+    const made = aliasNodes(latest.current.schema, paths, target);
+    commit(made.root);
+    if (keepsSelection() && restore !== undefined) setSelected(restore);
+    reveal(made.paths[0] ?? null);
+  };
   // What was selected before a press in the preview, which selects the row pressed.
   const beforePress = useRef<string | null>(null);
   const previewDrag = usePreviewDrag({
     stage, schema: () => latest.current.schema, place: outside,
     onMove: (paths, target) => moveTo(paths, target, beforePress.current),
     onCopy: (paths, target) => copyTo(paths, target, beforePress.current),
+    onAlias: (paths, target) => aliasTo(paths, target, beforePress.current),
   });
   // One value dragged through a control is one step back.
   const setDefaultsFrom = (edits: readonly DefaultEdit[]) =>
@@ -335,7 +341,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={history.canUndo()} canRedo={history.canRedo()} onStep={step}
         draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select(null); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList} types={types}
-        expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onRemove={remove}
+        expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
         toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} />
       <ResizeHandle className={s.structureHandle} value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
       <div className={s.middle}>
