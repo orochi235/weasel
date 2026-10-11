@@ -152,8 +152,7 @@ import { useDepRegistry } from '@weasel-js/routing/react';
 import { assignRef, useLatest } from '@weasel-js/react';
 import { createNodeRouting, type NodeRoutingEntry } from '../core/scene/NodeRouting';
 import { inferredNodeRouting } from './SceneCanvas/defaultNodeRouting';
-import { installTestHookIfRequested } from '../test-hook/install';
-import type { WeaselTestHook } from '../test-hook/types';
+import { installTestHookIfRequested, releaseTestHook } from '../test-hook/install';
 import {
   createSelectionOverlayLayer,
   rotationBadgeOf,
@@ -1308,10 +1307,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
    * extend-click lock — reads this rather than the raw state. Leaving
    * path-edit mode therefore tears all of them down at once, by any route.
    * That matters because `exitPathEditAction` is not the only way out:
-   * `apps/draw` handles Escape in a capture-phase listener and calls
-   * `stopPropagation()`, so the dispatcher never sees the key, and before
-   * this the raw id stayed set — inert anchor squares kept drawing over
-   * the shape and the selection outline stayed suppressed.
+   * a host's own mode machine can leave the mode without running it
+   * (`apps/draw` binds Escape to one), and before this the raw id stayed
+   * set — inert anchor squares kept drawing over the shape and the
+   * selection outline stayed suppressed.
    *
    * Masking rather than clearing on purpose: the mode can change without
    * re-rendering this component, so there is no reliable moment to write
@@ -2233,7 +2232,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const testHookSceneRef = useLatest(scene);
   const testHookSelectionRef = useLatest(selection);
 
-  const testHookRef = useRef<WeaselTestHook | null>(null);
   useEffect(() => {
     // Call-site gate: in a consumer's production build, esbuild/webpack/Vite
     // constant-fold `process.env.NODE_ENV` to `"production"` and DCE this
@@ -2242,14 +2240,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // is not enough — a called function can't be tree-shaken even if its body
     // is dead, so the gate must sit at the call site too.
     if (process.env.NODE_ENV !== 'production') {
-      testHookRef.current = installTestHookIfRequested({
+      const hook = installTestHookIfRequested({
         getScene: () => testHookSceneRef.current as never,
         getSelectionIds: () =>
           (testHookSelectionRef.current?.current as readonly string[] | undefined) ?? [],
         getView: () => currentViewRef.current,
         getActiveToolId: () => liveToolsRef.current?.active ?? null,
       });
-      testHookRef.current?._markReady();
+      if (!hook) return;
+      hook._markReady();
+      return () => releaseTestHook(hook);
     }
   }, [testHookSceneRef, testHookSelectionRef, liveToolsRef]);
 

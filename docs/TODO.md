@@ -2709,11 +2709,6 @@ only story runner in the repo.
   `ActiveSwatches.tsx` translating; `ActivePaint` could be `FillStyle | null` and the translation
   would go.
 
-- **(P3) core: a comment in `SceneCanvas.tsx` describes an Escape listener draw does not have.** The
-  `effectivePathEditingId` block says "`apps/draw` handles Escape in a capture-phase listener and
-  calls `stopPropagation()`". draw's only capture listeners are in the unwired `recorder.ts`; Escape
-  reaches draw's modes through `modalityShortcuts` on the dispatcher.
-
 - **(P3) CustomShaderDemo: every frame re-renders React to move one uniform.**
   `apps/site/demos/CustomShaderDemo.tsx` calls `setTime` from its `useVisibleRaf` loop, rebuilding
   three uniform objects and re-rendering three `<SceneCanvas>` trees for a number only the shader
