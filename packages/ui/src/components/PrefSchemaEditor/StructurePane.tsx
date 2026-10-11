@@ -251,7 +251,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
             onInput={setStoredHeight} ariaLabel="Resize unplaced" />
           <div className={s.storedArea} ref={unplacedArea} data-drop={unplacing || undefined} style={{ '--stored-h': `${storedHeight}px` } as CSSProperties}>
             <PaneHeader title="Unplaced" />
-            <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting}
+            <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting} sought={sought}
               selected={selected} onSelect={onSelect} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
           </div>
         </>

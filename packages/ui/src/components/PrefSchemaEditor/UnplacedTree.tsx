@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { Icon } from '../../icons';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
-import { Tree, treeBranchIds, type TreeNode } from '../Tree';
+import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
 import { GROUP_ICON, type PaletteDrag } from './Palette';
 import { keyOf, type SchemaNode } from './schemaEdit';
 import { unplacedAt } from './unplaced';
@@ -27,13 +27,15 @@ function toRows(group: PrefGroup, path: string): TreeNode[] {
  * what its host says it does not hold yet. Each is whole already, with its key, its name and its description, and
  * lands as it is wherever the structure tree or the live preview takes it. A group dragged brings what it holds.
  */
-export function UnplacedTree({ loose, looseAt, waiting, selected, onSelect, onDrag, onDrop }: {
+export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onSelect, onDrag, onDrop }: {
   /** The rows of what the schema holds on no page, each by its tree path. */
   loose: readonly TreeNode[];
   /** The schema's node at a tree path. */
   looseAt(path: string): SchemaNode | undefined;
   /** What the schema does not hold yet; `null` when nothing is left. */
   waiting: PrefGroup | null;
+  /** What the structure's filter holds, lowercased: only rows whose name or key has it are listed. Empty for all. */
+  sought: string;
   /** The tree path selected in the editor, marked here when it is one of these rows. */
   selected: string | null;
   /** A row the schema holds was picked. */
@@ -42,8 +44,12 @@ export function UnplacedTree({ loose, looseAt, waiting, selected, onSelect, onDr
   onDrag(drag: PaletteDrag | null): void;
   onDrop(drag: PaletteDrag): void;
 }) {
-  const rows = useMemo(() => [...loose, ...(waiting ? toRows(waiting, NEW) : [])], [loose, waiting]);
-  const open = useMemo(() => treeBranchIds(rows), [rows]);
+  const all = useMemo(() => [...loose, ...(waiting ? toRows(waiting, NEW) : [])], [loose, waiting]);
+  const rows = useMemo(
+    () => (sought === '' ? all : filterTree(all, (n) => (n.textValue ?? '').toLowerCase().includes(sought))),
+    [all, sought],
+  );
+  const open = useMemo(() => treeBranchIds(all), [all]);
   const dragOf = (id: string, point: { x: number; y: number }): PaletteDrag | null => {
     const held = !id.startsWith(NEW);
     const node = held ? looseAt(id) : waiting ? unplacedAt(waiting, id.slice(NEW.length).split(SEP)) : undefined;
@@ -55,7 +61,7 @@ export function UnplacedTree({ loose, looseAt, waiting, selected, onSelect, onDr
     <Tree
       aria-label="Unplaced"
       nodes={rows}
-      empty={<p className={s.storedEmpty}>Nothing is waiting for a place.</p>}
+      empty={<p className={s.storedEmpty}>{all.length === 0 ? 'Nothing is waiting for a place.' : 'Nothing matches.'}</p>}
       foldBy="leading"
       defaultExpandedIds={open}
       selectionMode="single"

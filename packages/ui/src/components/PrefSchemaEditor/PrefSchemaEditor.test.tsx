@@ -160,6 +160,16 @@ describe('PrefSchemaEditor', () => {
     expect(within(structure()).queryByRole('treeitem', { name: /\(view\)/ })).toBeNull();
   });
 
+  it('narrows the unplaced rows by the same filter', () => {
+    const start: PrefGroup = { name: '', children: { ...START.children, author: { kind: 'string', name: 'Author', description: '', default: '' } } };
+    const waiting: PrefGroup = { name: '', children: { glow: { kind: 'boolean', name: 'Glow', description: '', default: false } } };
+    render(<PrefSchemaEditor schema={start} onChange={() => {}} unplaced={waiting} />);
+    const unplaced = screen.getByRole('tree', { name: 'Unplaced' });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'glo' } });
+    expect(within(unplaced).getByRole('treeitem', { name: /\(glow\)/ })).toBeInTheDocument();
+    expect(within(unplaced).queryByRole('treeitem', { name: /\(author\)/ })).toBeNull();
+  });
+
   it('sets the host\'s controls, the palette, and the add and remove buttons in one bar above the panes', () => {
     render(<PrefSchemaEditor schema={START} onChange={() => {}} bar={<button type="button">Source</button>} />);
     const bar = screen.getByRole('group', { name: 'Schema tools' });
