@@ -48,6 +48,13 @@ const acme = defineTheme({
 applyTheme(document.documentElement, acme, { mode: 'light' });
 ```
 
+`applyTheme` returns a release. Applying to the same element again replaces
+what it held, so a page restyling its root never calls it; call it when a
+themed subtree goes away, and its rule leaves the stylesheet once nothing
+else holds it. The rule goes into the document or shadow root the element
+lives in, so a popout window and a shadow tree are themed like any other.
+
+
 `extends` defaults to the built-in theme, so a partial theme can never be
 accidentally incomplete. Overriding a primitive rebases every alias that
 references it — set `accent-base` and `--wzl-accent`, `--wzl-accent-hover`,

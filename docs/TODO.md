@@ -1392,18 +1392,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   version from `CanvasExtensionApi.getPaintedVersion`, compared before and after the loupe's own
   request, is one candidate), or a public `refresh()` on the handle that the consumer calls.
 
-- **(P3) theme: `applyTheme` publishes into the global `document` and never retires a rule.**
-  `packages/theme/src/applyTheme.ts` keeps one module-level sheet on the bare `document`, keyed by
-  theme name and selection. An element in another document (a `window.open` popout fed by a portal)
-  or in a shadow root gets its `data-wzl-*` attributes but no rule, so a theme that is not built
-  into `tokens.css` has no effect there, with no error. `emitted` only grows: every name ever
-  applied keeps a full token block for the life of the page, which is unbounded for a consumer that
-  mints a theme name per instance. Two different `Theme` objects sharing a name on two subtrees
-  overwrite each other's rule while each `<ThemeProvider>`'s `resolved` still reports its own
-  values. Fixing it means keying the sheet by `el.getRootNode()` and counting references from
-  `ThemeProvider`'s effect cleanup, which changes `applyTheme` from fire-and-forget to something
-  that returns a release, a public API change.
-
 - **(P3) theme-editor: discarding a draft that does not derive throws away every other unsaved
   edit.** When a stored draft fails to derive, `ThemeWorkbench`
   (`apps/theme-editor/src/ThemeWorkbench.tsx`) offers "Discard the draft and reload from disk" for a

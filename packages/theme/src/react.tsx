@@ -70,9 +70,12 @@ export function ThemeProvider({
     [theme, key, tones],
   );
 
+  // Applying again replaces what the element held, so only the unmount releases.
+  const release = useRef<(() => void) | null>(null);
   useLayoutEffect(() => {
-    if (ref.current) applyTheme(ref.current, theme, value.selection);
+    if (ref.current) release.current = applyTheme(ref.current, theme, value.selection);
   }, [theme, value]);
+  useLayoutEffect(() => () => release.current?.(), []);
 
   const attrs = Object.fromEntries(Object.keys(axes).map((a) => [`data-wzl-${a}`, full[a]]));
   return (

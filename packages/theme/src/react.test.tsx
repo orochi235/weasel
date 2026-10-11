@@ -49,6 +49,21 @@ describe('ThemeProvider', () => {
     expect(screen.getByTestId('p').textContent).toBe('weasel/dark/#181a1e');
   });
 
+  it('holds its rule while mounted, across a re-render, and lets go of it on unmount', () => {
+    const sheet = (): string =>
+      (document.adoptedStyleSheets ?? []).flatMap((s) => [...s.cssRules].map((r) => r.cssText)).join('\n')
+      + (document.getElementById('wzl-themes')?.textContent ?? '');
+    const theme = defineTheme({ name: 'held', pins: { 'color-accent': '#0a0b0c' } });
+    const view = (mode: string) => <ThemeProvider theme={theme} selection={{ mode }}>x</ThemeProvider>;
+    const { rerender, unmount } = render(view('light'));
+    expect(sheet()).toContain("[data-wzl-mode='light']");
+    rerender(view('dark'));
+    expect(sheet()).toContain("[data-wzl-mode='dark']");
+    expect(sheet()).not.toContain("[data-wzl-mode='light']");
+    unmount();
+    expect(sheet()).not.toContain('held');
+  });
+
   it('throws when useTheme is used outside a provider', () => {
     expect(() => render(<Probe />)).toThrow(/ThemeProvider/);
   });

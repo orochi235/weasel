@@ -1,77 +1,60 @@
-import { fullSelection, selectionKey, type Selection } from './axes';
+import { fullSelection, type Selection } from './axes';
 import { resolveTheme, themeAxes } from './resolveTheme';
 import type { Theme } from './theme';
+import { holdRule, styleRootOf } from './themeSheet';
 
-const STYLE_ID = 'wzl-themes';
-/** `theme.name::selection key` → the rule text currently published for it. Keyed by
- *  name because that is what the rule's selector matches on, and holding the
- *  text is what lets a redefinition under the same name replace its rule
- *  rather than be swallowed as a cache hit. */
-const emitted = new Map<string, string>();
-let sheet: CSSStyleSheet | null = null;
-let styleEl: HTMLStyleElement | null = null;
+export { __resetThemeSheet } from './themeSheet';
 
-/** Test seam — drops the module-level cache so each case starts clean. */
-export function __resetThemeSheet(): void {
-  emitted.clear();
-  sheet = null;
-  styleEl = null;
-}
-
-function canAdopt(): boolean {
-  return (
-    typeof CSSStyleSheet !== 'undefined' &&
-    'replaceSync' in CSSStyleSheet.prototype &&
-    Array.isArray(document.adoptedStyleSheets)
-  );
-}
-
-/** Republish every rule from `emitted`. Rewriting the whole sheet rather than
- *  appending keeps it the size of the theme set: a theme redefined under a
- *  name it already used replaces its rule instead of stacking another one. */
-function flushRules(): void {
-  const css = [...emitted.values()].join('\n');
-  if (canAdopt()) {
-    if (!sheet) {
-      sheet = new CSSStyleSheet();
-      document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
-    }
-    sheet.replaceSync(css);
-    return;
-  }
-  if (!styleEl) {
-    styleEl = document.createElement('style');
-    styleEl.id = STYLE_ID;
-    document.head.appendChild(styleEl);
-  }
-  styleEl.textContent = css;
-}
+/** What an element holds from its last `applyTheme`, so the next one, or its release, can let go of it. */
+const holds = new WeakMap<HTMLElement, () => void>();
 
 /**
- * Apply `theme` at `selection` to `el`'s subtree.
+ * Apply `theme` at `selection` to `el`'s subtree, and return the release.
  *
- * Stamps `data-wzl-theme` and one `data-wzl-<axis>` per axis, and ensures a
- * matching rule block exists in a module-owned stylesheet. Deliberately not
- * inline properties: the cascade then does the work, per-subtree overrides are
- * just a different theme name, and no `!important` is ever needed. No-op
- * outside a DOM.
+ * Stamps `data-wzl-theme` and one `data-wzl-<axis>` per axis, and holds a
+ * matching rule block in the stylesheet of the document or shadow root `el`
+ * lives in. Deliberately not inline properties: the cascade then does the
+ * work, per-subtree overrides are just a different theme name, and no
+ * `!important` is ever needed. No-op outside a DOM.
+ *
+ * An element holds one application: applying again replaces what it held, so
+ * a caller restyling one root never has to release. The release is for a
+ * subtree that goes away. It takes the attributes back off and lets go of the
+ * rule, which leaves the sheet once no element holds it; a release whose
+ * element has since been given something else does nothing.
+ *
+ * Two different themes may share a name. The second held at once has its rule
+ * kept to its own elements by a `data-wzl-variant` attribute, matched inside
+ * `:where()` so the rule's specificity is the first's.
  */
-export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection = {}): void {
-  if (typeof document === 'undefined') return;
+export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection = {}): () => void {
+  if (typeof document === 'undefined') return () => {};
 
   const axes = themeAxes(theme);
   const sel = fullSelection(axes, selection);
-  const key = `${theme.name}::${selectionKey(axes, sel)}`;
   const body = Object.entries(resolveTheme(theme, sel))
     .map(([name, value]) => `${name}: ${value};`)
     .join(' ');
-  const attrs = Object.keys(axes).map((a) => `[data-wzl-${a}='${sel[a]}']`).join('');
-  const rule = `[data-wzl-theme='${theme.name}']${attrs} { ${body} }`;
-  if (emitted.get(key) !== rule) {
-    emitted.set(key, rule);
-    flushRules();
-  }
+  const names = Object.keys(axes);
+  const selector = `[data-wzl-theme='${theme.name}']${names.map((a) => `[data-wzl-${a}='${sel[a]}']`).join('')}`;
+  // Held before the last one is let go, so re-applying the same rule rewrites nothing.
+  const { variant, release: releaseRule } = holdRule(styleRootOf(el), selector, body);
+  holds.get(el)?.();
 
   el.setAttribute('data-wzl-theme', theme.name);
-  for (const a of Object.keys(axes)) el.setAttribute(`data-wzl-${a}`, sel[a]);
+  for (const a of names) el.setAttribute(`data-wzl-${a}`, sel[a]);
+  if (variant === 0) el.removeAttribute('data-wzl-variant');
+  else el.setAttribute('data-wzl-variant', String(variant));
+
+  // The attributes go only through `release`: a hold replaced by the next application leaves them to it.
+  const letGo = (): void => {
+    holds.delete(el);
+    releaseRule();
+  };
+  holds.set(el, letGo);
+  return () => {
+    if (holds.get(el) !== letGo) return;
+    letGo();
+    for (const a of ['theme', 'variant', ...names]) el.removeAttribute(`data-wzl-${a}`);
+  };
 }
