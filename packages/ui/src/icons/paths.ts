@@ -195,6 +195,8 @@ export const ICON_PATHS = {
   markSearch: `<circle cx="8.5" cy="8.5" r="4.5"/><path d="M12 12 16.5 16.5"/>`,
   markAlert: `<path d="M10 3.5v7.5"/><path d="M10 16.2v.01"/>`,
   markStar: `<path d="M10 4 8.3 8.15 3.82 8.49 7.24 11.4 6.18 15.76 10 13.4 13.82 15.76 12.76 11.4 16.18 8.49 11.7 8.15Z" fill="currentColor"/>`,
+  markAll: `<path d="M10 3.5 10 16.5M15.63 6.75 4.37 13.25M4.37 6.75 15.63 13.25"/>`,
+  markNone: `<circle cx="10" cy="10" r="5.5"/><path d="M3.5 16.5 16.5 3.5"/>`,
 
   // Arc profiles
   arcStraight: `<path d="M2.6 15H17.4"/>`,
@@ -691,6 +693,8 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'markSearch',
       'markAlert',
       'markStar',
+      'markAll',
+      'markNone',
     ],
   },
   {
@@ -854,6 +858,8 @@ export const MARK_ICONS = [
   'markSearch',
   'markAlert',
   'markStar',
+  'markAll',
+  'markNone',
 ] as const satisfies readonly IconName[];
 
 /** A glyph `<Icon mark>` takes. */

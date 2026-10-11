@@ -52,6 +52,13 @@ const resetHead = [
   [RESET_TO[0] - out[0] * HEAD_HALF, RESET_TO[1] - out[1] * HEAD_HALF],
 ];
 
+// Three strokes through the center, their six ends on the circle the plus's arms end on.
+const spoke = (deg) => `M${pt(onCircle(C, C, REACH, deg))} ${pt(onCircle(C, C, REACH, deg + 180))}`;
+const asterisk = [90, 30, 150].map(spoke).join('');
+
+// As wide a ring as leaves the slash's ends clear of it: at a slot's size a smaller one closes up around the slash.
+const NONE_R = 5.5;
+
 const star = `M${Array.from({ length: 10 }, (_, i) => pt(onCircle(C, C + 0.5, i % 2 ? 2.9 : 6.5, 90 + i * 36))).join(' ')}Z`;
 
 export const MARKS = {
@@ -78,4 +85,10 @@ export const MARKS = {
   'mark-alert': `<path d="M${C} ${C - REACH}v7.5"/><path d="M${C} 16.2v.01"/>`,
 
   'mark-star': `<path d="${star}" fill="currentColor"/>`,
+
+  // Every one: an asterisk.
+  'mark-all': `<path d="${asterisk}"/>`,
+
+  // Not one: a slashed O, the slash rising to the right.
+  'mark-none': `<circle cx="${C}" cy="${C}" r="${NONE_R}"/><path d="M${C - REACH} ${C + REACH} ${C + REACH} ${C - REACH}"/>`,
 };
