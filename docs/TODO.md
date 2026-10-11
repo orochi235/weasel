@@ -2535,13 +2535,6 @@ only story runner in the repo.
   buttons call `scene.setPose` / `scene.add`, and per-node effects repaint through `redrawOn` /
   `requestRedraw`.
 
-- **(P3) useSceneLayerList: the hook needs an adapter the caller has to build.** `LayerListDemo` and
-  draw's `RightSidebar` both call `useSceneAdapter(scene, …)` only to hand `useSceneLayerList`
-  something to dispatch its reorder against
-  (`packages/ui/src/components/LayerList/useSceneLayerList.ts`). The hook should default to the
-  scene's own commit adapter (`defaultCommitAdapter(scene, selection.adapterMethods)`) and keep
-  `adapter` as an override.
-
 - **(P2) draw: Record, the recording-profile select, and Play are live controls that do nothing.**
   `apps/draw/src/App.tsx` passes no-op handlers for all three (`onToggleRecord`,
   `onChangeRecordingProfile`, `onPlay`; Play even opens a file picker and parses the file first),

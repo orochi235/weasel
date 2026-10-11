@@ -1,4 +1,4 @@
-import { asNodeId, createMoveToIndexOp, dispatchApplyBatch } from '@weasel-js/core';
+import { asNodeId, createMoveToIndexOp, defaultCommitAdapter, dispatchApplyBatch } from '@weasel-js/core';
 import type { NodeId, Scene, SceneNode, SelectionApi } from '@weasel-js/core';
 import type { LayerListItem, LayerListProps } from './LayerList';
 
@@ -6,8 +6,8 @@ import type { LayerListItem, LayerListProps } from './LayerList';
 export interface UseSceneLayerListArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
   selection: SelectionApi;
-  /** What the reorder op is dispatched against — the adapter `<SceneCanvas>` uses. */
-  adapter: object;
+  /** What the reorder op is dispatched against. Default: the scene itself, as one history entry. */
+  adapter?: object;
   /** A row's content for a node: its label, a leading swatch or icon, whether it is locked. */
   itemFor: (node: SceneNode<TData, TLayer, TPose>) => Omit<LayerListItem, 'id' | 'children'>;
   /** Label of the reorder's history entry. Default `'Reorder'`. */
@@ -43,7 +43,9 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
       const siblings = parentId === null ? scene.roots : scene.childrenOf(asNodeId(parentId));
       // `index` counts from the front among the siblings the drag left behind.
       const back = siblings.length - ids.length - index;
-      dispatchApplyBatch(adapter, [createMoveToIndexOp({ ids, parentId, index: Math.max(0, back) })], label);
+      const ops = [createMoveToIndexOp({ ids, parentId, index: Math.max(0, back) })];
+      if (adapter) dispatchApplyBatch(adapter, ops, label);
+      else scene.applyBatch(ops, label, defaultCommitAdapter(scene, selection.adapterMethods));
     },
   };
 }

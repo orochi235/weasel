@@ -52,6 +52,15 @@ describe('useSceneLayerList', () => {
     expect(scene.roots).toEqual(['b', 'a', 'g']);
   });
 
+  it('reorders through the scene when no adapter is passed, as one undo step', () => {
+    const { scene, selection } = setup();
+    const hook = renderHook(() => useSceneLayerList({ scene, selection, itemFor: (n) => ({ label: n.data.name }) }));
+    hook.result.current.onReorder({ ids: ['a'], parentId: null, index: 0 });
+    expect(scene.roots).toEqual(['g', 'b', 'a']);
+    scene.undo();
+    expect(scene.roots).toEqual(['a', 'g', 'b']);
+  });
+
   it('moves a child within its container', () => {
     const { hook, scene } = setup();
     hook.result.current.onReorder({ ids: ['g1'], parentId: 'g', index: 0 });

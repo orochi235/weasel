@@ -372,11 +372,9 @@ function RightSidebar({
   docSelected,
   setDocSelected,
 }: RightSidebarProps): ReactElement {
-  const adapter = useSceneAdapter(scene, {});
   const baseLayerListProps = useSceneLayerList({
     scene,
     selection,
-    adapter,
     itemFor: (node) => {
       const data = node.data as WeaselDrawData;
       return {

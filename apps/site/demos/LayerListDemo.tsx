@@ -1,4 +1,4 @@
-import { SceneCanvas, useSceneAdapter, useScene, useSelection } from '@weasel-js/core';
+import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
 import { LayerList, useSceneLayerList } from '@weasel-js/ui';
 import type { CSSProperties } from 'react';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -18,11 +18,9 @@ export function LayerListDemo() {
   const scene = useScene<Rect>({ items: INITIAL });
   // Lifted out of the canvas because the list reads and writes it too.
   const selection = useSelection({ mode: 'multi', scene });
-  // Only the list's reorder needs an adapter; the canvas builds its own.
-  const adapter = useSceneAdapter(scene, { selection });
 
   const layerList = useSceneLayerList({
-    scene, selection, adapter,
+    scene, selection,
     itemFor: (n) => {
       const { color } = n.data as Rect;
       return {
