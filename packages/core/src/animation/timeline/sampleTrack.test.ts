@@ -165,4 +165,51 @@ describe('sampleTrack', () => {
     expect(sampleTrack(t, 200)).toBe('b');
     expect(() => sampleTrack(t, 50)).toThrow(/interpolate/);
   });
+
+  it('samples a NaN time as the first key', () => {
+    expect(sampleTrack(track([{ t: 0, value: 3 }, { t: 100, value: 7 }]), NaN)).toBe(3);
+    expect(sampleTrack(track([{ t: 0, value: 3 }]), NaN)).toBe(3);
+    const strings = {
+      kind: 'sampled', keys: [{ t: 0, value: 'a' }, { t: 100, value: 'b' }], onTick: () => {},
+    } as unknown as SampledTrack<string>;
+    expect(sampleTrack(strings, NaN)).toBe('a');
+  });
+
+  type P = { x: number };
+  const points = (extra: Partial<SampledTrack<P>>): SampledTrack<P> => ({
+    kind: 'sampled',
+    keys: [{ t: 0, value: { x: 0 } }, { t: 100, value: { x: 10 } }, { t: 100, value: { x: 20 } }, { t: 200, value: { x: 30 } }],
+    onTick: () => {},
+    ...extra,
+  });
+
+  it('hands back a fresh value at an interior key of a track with its own interpolate', () => {
+    const interpolate = vi.fn((a: P, b: P, u: number): P => ({ x: a.x + (b.x - a.x) * u }));
+    const t = points({ interpolate });
+    const at = sampleTrack(t, 100)!;
+    // The later of the two keys at 100 opens the segment, as it does for a number track.
+    expect(at).toEqual({ x: 20 });
+    expect(interpolate).toHaveBeenLastCalledWith(t.keys[2].value, t.keys[3].value, 0);
+    at.x = 99;
+    expect(t.keys[2].value).toEqual({ x: 20 });
+    expect(sampleTrack(t, 100)).toEqual({ x: 20 });
+  });
+
+  it('asks an interpolator for its value at an interior key, through the segment cache', () => {
+    const interpolator = vi.fn((a: P, b: P) => (u: number): P => ({ x: a.x + (b.x - a.x) * u }));
+    const t = points({ interpolator });
+    const cache = new Map<number, (u: number) => P>();
+    const at = sampleTrack(t, 100, cache)!;
+    expect(at).toEqual({ x: 20 });
+    expect(at).not.toBe(t.keys[2].value);
+    sampleTrack(t, 100, cache);
+    sampleTrack(t, 150, cache);
+    expect(interpolator).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds the end keys of an interpolated track as they are', () => {
+    const t = points({ interpolate: (a, b, u) => ({ x: a.x + (b.x - a.x) * u }) });
+    expect(sampleTrack(t, 0)).toBe(t.keys[0].value);
+    expect(sampleTrack(t, 200)).toBe(t.keys[3].value);
+  });
 });

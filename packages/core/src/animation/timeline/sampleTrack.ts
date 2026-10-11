@@ -19,6 +19,9 @@ interface Built {
   /** Every key's time to the value sampling exactly there returns: the later of keys sharing a
    *  time, and the key's own value where blits would reach it as `a + (b - a) * ease(1)`. */
   exact: Map<number, unknown>;
+  /** For a track that makes its own values, each interior key's time to a fresh value there, so
+   *  a caller changing its sample leaves the key alone. */
+  fresh: Map<number, () => unknown> | null;
   first: unknown;
   last: unknown;
   read: (v: unknown) => unknown;
@@ -40,7 +43,7 @@ function build<T>(track: SampledTrack<T>, cache: Map<number, (u: number) => T> |
     exact.set(k.t, k.value);
   }
   const span = t1 - t0;
-  const out: Built = { track, keys, patch: null, t0, span, exact, first: keys[0].value, last: keys[keys.length - 1].value, read: (v) => v };
+  const out: Built = { track, keys, patch: null, t0, span, exact, fresh: null, first: keys[0].value, last: keys[keys.length - 1].value, read: (v) => v };
   if (span <= 0) return out;
 
   const ease = (k: (typeof keys)[number]) => (k.easing ? resolveEasing(k.easing) : undefined);
@@ -64,6 +67,11 @@ function build<T>(track: SampledTrack<T>, cache: Map<number, (u: number) => T> |
       { lerpBy: () => lerp as (a: never, b: never, u: number) => unknown },
     );
     out.read = (v) => (v as Box).value;
+    out.fresh = new Map();
+    for (let i = 0; i < keys.length - 1; i++) {
+      const at = keys[i].t;
+      if (at > t0 && at < t1) out.fresh.set(at, () => lerp(boxes[i], boxes[i + 1], 0).value);
+    }
     return out;
   }
 
@@ -105,6 +113,9 @@ export function sampleTrack<T>(
     b = build(track, segmentCache);
     cache?.set(BUILT, b);
   }
+  if (Number.isNaN(t)) return b.first as T;
+  const fresh = b.fresh?.get(t);
+  if (fresh) return fresh() as T;
   const hit = b.exact.get(t);
   if (hit !== undefined || b.exact.has(t)) return hit as T;
   if (!b.patch) {
