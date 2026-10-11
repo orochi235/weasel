@@ -1,13 +1,18 @@
+import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
+import { DRAG_THRESHOLD_PX, isAnchorOrControl, resolveParams } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { PoseComposition } from 'features/groups/composePose';
+import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'features/groups/composePose';
+import { gesturePlaneReader, gestureViewReader } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, MoveBehavior } from '../../gestures/types';
 import type { LayoutDep, NodeAtPointDep } from '../depSchema';
 import type { GeometryProjection } from '../geometryProjection';
-import type { GestureLifecycle } from '../gestureLifecycle';
-import type { MoveGestureAdapter } from './gestureAdapter';
-import type { LayoutPass } from './layout/types';
+import { commitGestureOps, readGestureLifecycle, type GestureLifecycle } from '../gestureLifecycle';
+import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
+import { moveSources } from '../selectionSubtree';
+import { buildGestureContext, captureFrames, capturePlaneRefs, captureStartPoses } from './capture';
+import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
 
 /** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
  *  default) preserves the legacy translate-only commit. `'top'` lands the
@@ -60,15 +65,80 @@ export interface MoveFrame {
   readonly previews: Map<NodeId, unknown>;
 }
 
-/** The drag's state that is neither: what it publishes and what the layout
- *  pass last decided. Step 3 of the spec moves the layout half into a behavior. */
-export interface MoveLive {
-  currentDelta: { dx: number; dy: number };
-  previews: Map<NodeId, unknown>;
-  overrideEntries: Map<NodeId, { pose: unknown }>;
-  reflowTargets: Map<NodeId, unknown>;
-  gliding: Set<NodeId>;
-  layoutPass: LayoutPass | null;
-  dropCenter: { x: number; y: number } | null;
-  lastWorld: { x: number; y: number } | null;
+export interface MoveReaders {
+  view: () => GestureContext<unknown>['view'];
+  plane: () => GestureContext<unknown>['plane'];
+}
+
+/** Capture a drag at press. Null when there is nothing to move. Runs each
+ *  behavior's `onStart`. */
+export function beginMove(
+  ctx: InvocationCtx,
+  opts: BindingOpts | undefined,
+): { session: MoveSession; readers: MoveReaders } | null {
+  const selection = ctx.deps.selection;
+  const scene = ctx.deps.scene;
+  const projection = poseDescriptorOf(ctx.deps.poseDescriptor);
+  const layout = ctx.deps.layout;
+  const applyOps = ctx.deps.applyOps;
+  const geometryProjection = ctx.deps.geometryProjection;
+  // Pose-composition strategy: how the consumer's scene folds local poses
+  // up to world (and back). Absent → IDENTITY (absolute-pose: nodes store
+  // world coords, parents are grouping-only). Local-pose consumers supply
+  // { compose: composeRectPose, decompose: decomposeRectPose }.
+  const pc = ctx.deps.poseComposition
+    ?? IDENTITY_POSE_COMPOSITION;
+
+  if (!selection || !scene) return null;
+  // Anchors sit on the selected body, and this binding ties editAnchors' on
+  // specificity; with no mode registry to filter move out, declining is what lets it through.
+  if (isAnchorOrControl(ctx.drag?.affordance)) return null;
+
+  const params = resolveParams(opts?.params);
+  const expandIds = params?.['expandIds'] as ((ids: string[]) => string[]) | undefined;
+  const selected = [...selection.get()] as string[];
+  const ids = moveSources(scene, expandIds ? expandIds(selected) : selected) as NodeId[];
+  if (ids.length === 0) return null;
+
+  const reflow = layout?.reflow ?? null;
+  const { startPoses, cascadeIds, caught } = captureStartPoses(scene, ids, reflow, projection);
+  const { carried, frames } = captureFrames(scene, startPoses, pc);
+
+  const behaviors = (opts?.behaviors ?? []) as MoveBehavior<unknown>[];
+  const dragThresholdPx = (params?.['dragThresholdPx'] as number | undefined)
+    ?? DRAG_THRESHOLD_PX;
+  const lifecycle = readGestureLifecycle(params, 'Move', behaviors);
+  // A behavior that commits after the gesture has ended, a coast coming to
+  // rest, lands its batch the way the gesture's own commit does.
+  const adapter = moveGestureAdapter<unknown>(scene, (ops, _label, through) =>
+    commitGestureOps({ scene, applyOps, adapter: through }, lifecycle, ops));
+  const readers: MoveReaders = { view: gestureViewReader(ctx.deps), plane: gesturePlaneReader(ctx.deps) };
+  const gestureCtx = buildGestureContext(ctx, ids, startPoses, adapter, readers);
+  for (const b of behaviors) b.onStart?.(gestureCtx);
+
+  const session: MoveSession = {
+    startPoses,
+    ids,
+    cascadeIds,
+    carried,
+    frames,
+    scene,
+    view: ctx.deps.view,
+    planeRefs: capturePlaneRefs(scene, ids, ctx.deps.view, frames, startPoses, projection),
+    caught,
+    projection,
+    descriptorOf: nodeDescriptors(scene, projection),
+    behaviors,
+    gestureCtx,
+    adapter,
+    layout,
+    pc,
+    applyOps,
+    geometryProjection,
+    lifecycle,
+    nodeAtPoint: ctx.deps.nodeAtPoint,
+    reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
+    dragThresholdPx,
+  };
+  return { session, readers };
 }

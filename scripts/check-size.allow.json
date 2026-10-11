@@ -169,10 +169,6 @@
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 716
   },
-  "packages/core/src/interactions/actions/move/action.ts": {
-    "lines": 502,
-    "longestFunction": 340
-  },
   "packages/core/src/renderer/WeaselRenderer.ts": {
     "lines": 745
   },
