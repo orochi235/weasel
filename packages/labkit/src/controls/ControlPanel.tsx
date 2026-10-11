@@ -626,7 +626,7 @@ export function ControlRow<TC extends Record<string, unknown>>({
     renderers?.[leaf.kind];
   // A custom row places itself like any other; one that needs the full width
   // says so with `<PropertyRow span>`, which is the same opt-out a built-in has.
-  if (custom) return custom({ path, pref: leaf, value, setValue: write, auto: isAutoRow, setAuto });
+  if (custom) return custom({ path, pref: leaf, value, setValue: write, auto: isAutoRow, setAuto, fields: choices });
 
   const label = leaf.name;
   const description = leaf.description;
