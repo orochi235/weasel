@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { createPortal } from 'react-dom';
-import { isPrefLeaf, isPrefSection, prefHoldsValue, type PrefGroup } from '@weasel-js/prefs';
+import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { filterTree, Tree, treeBranchIds, type TreeDragEffect, type TreeNode } from '../Tree';
 import { Badge } from '../Badge';
@@ -22,7 +22,7 @@ import { stillUnplaced } from './unplaced';
 import { blankGroup, blankSection, leafOf, type CustomKinds } from './kindSchemas';
 import { kindChoices, type PrefTypes } from './types';
 import {
-  addNode, aliasOf, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, keysOf, nodeAt, parentPath, pathOf,
+  addNode, aliasOf, branchUnder, canAlias, childrenOf, fitsUnder, joinPath, keyOf, keysOf, nodeAt, parentPath, pathOf,
   uniqueKey, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
@@ -169,9 +169,8 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   };
 
   const nodesAt = (ids: readonly string[]): SchemaNode[] => ids.map((id) => nodeAt(schema, id)!);
-  // Only a leaf that holds a value has one to show a second time.
   const canLand = (ids: readonly string[], effect: TreeDragEffect): boolean =>
-    effect !== 'link' || nodesAt(ids).every((node) => isPrefLeaf(node) && (prefHoldsValue(node) || node.kind === 'alias'));
+    effect !== 'link' || ids.every((id) => canAlias(schema, id));
   /** What a drag would set down: the nodes themselves, or aliases of them. */
   const landing = (ids: readonly string[], effect: TreeDragEffect): SchemaNode[] =>
     effect === 'link' ? ids.map((id) => aliasOf(schema, id)) : nodesAt(ids);

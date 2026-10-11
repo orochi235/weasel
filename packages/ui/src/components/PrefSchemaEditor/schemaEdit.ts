@@ -1,6 +1,7 @@
 import {
   isPrefLeaf,
   isPrefSection,
+  prefHoldsValue,
   type PrefAlias,
   type PrefGroup,
   type PrefLeaf,
@@ -326,9 +327,19 @@ export function moveNodes<R extends SchemaRoot>(
   return { root: rebaseValuePaths(next, from.map((f, i) => valueMove(root, f, out[i]!))), from, paths: out };
 }
 
-/** The path a leaf's value is read and written at, which is what an alias names: every key under a group root, the leaf's own under a section root. */
+/**
+ * The path a leaf's value is read and written at, which is what an alias names: the leaf's own key under a section
+ * root, and under a group root every key down to it but a section's, which is a heading inside an `object` leaf.
+ */
 export function valuePathOf(root: SchemaRoot, path: string): string {
-  return isPrefSection(root) ? keyOf(path) : keysOf(path).join('.');
+  if (isPrefSection(root)) return keyOf(path);
+  const keys = keysOf(path);
+  // A path a node is about to take has no node at its end yet.
+  const isHeading = (i: number): boolean => {
+    const node = nodeAt(root, pathOf(keys.slice(0, i + 1)));
+    return node !== undefined && isPrefSection(node);
+  };
+  return keys.filter((_, i) => !isHeading(i)).join('.');
 }
 
 type ValueMove = readonly [from: string, to: string];
@@ -383,6 +394,14 @@ function rebaseValuePaths<R extends SchemaRoot>(root: R, moves: ReadonlyArray<Va
   });
 }
 
+/** Whether the node at `path` can be shown a second time: a leaf that holds a value, or an alias of one, and no field of an `object` leaf. */
+export function canAlias(root: SchemaRoot, path: string): boolean {
+  const node = nodeAt(root, path);
+  if (!node || !isPrefLeaf(node) || !(prefHoldsValue(node) || node.kind === 'alias')) return false;
+  const keys = keysOf(path);
+  return !keys.slice(0, -1).some((_, i) => isPrefLeaf(nodeAt(root, pathOf(keys.slice(0, i + 1)))!));
+}
+
 /** An alias of the leaf at `path`: unnamed, so it reads as the leaf it shows. */
 export function aliasOf(root: SchemaRoot, path: string): PrefAlias {
   return { kind: 'alias', name: '', description: '', default: undefined, of: valuePathOf(root, path) };
@@ -399,6 +418,7 @@ export function aliasNodes<R extends SchemaRoot>(root: R, paths: readonly string
   const made = paths.map((p) => {
     const node = nodeAt(root, p);
     if (!node || !isPrefLeaf(node)) throw new Error(`schemaEdit: no leaf at ${p} to alias`);
+    if (!canAlias(root, p)) throw new Error(`schemaEdit: ${p} cannot be aliased`);
     const alias = aliasOf(root, p);
     checkFits(destNode, alias);
     return { key: keyOf(p), alias };

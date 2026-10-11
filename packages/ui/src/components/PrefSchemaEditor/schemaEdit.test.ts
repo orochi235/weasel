@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { addNode, aliasNodes, branchPaths, carried, copyNodes, outermost, removeNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
+import { addNode, aliasNodes, branchPaths, canAlias, carried, copyNodes, outermost, removeNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey, valuePathOf } from './schemaEdit';
 
 const enc = { read: () => true, write: (on: boolean) => on };
 const ROOT: PrefGroup = {
@@ -164,6 +164,30 @@ describe('aliases', () => {
     expect(aliased.paths).toEqual(['b/y']);
     expect(nodeAt(aliased.root, 'b/y')).toEqual({ kind: 'alias', name: '', description: '', default: undefined, of: 'a.y' });
     expect(nodeAt(aliased.root, 'a/y')).toBe(nodeAt(ROOT, 'a/y'));
+  });
+
+  describe('of a field inside an object pref', () => {
+    const STROKE: PrefGroup = { name: 'Root', children: {
+      stroke: { kind: 'object', name: 'Stroke', description: '', default: {}, children: {
+        width: { kind: 'number', name: 'Width', description: '', default: 1 },
+        ends: { name: 'Ends', members: { cap: { kind: 'string', name: 'Cap', description: '', default: '' } } },
+      } } as PrefLeaf,
+      other: { name: 'Other', children: {} },
+    } };
+
+    it('are refused, the object pref itself is not', () => {
+      expect(canAlias(STROKE, 'stroke')).toBe(true);
+      expect(canAlias(STROKE, 'stroke/width')).toBe(false);
+      expect(canAlias(STROKE, 'stroke/ends/cap')).toBe(false);
+      expect(canAlias(STROKE, 'other')).toBe(false);
+      expect(canAlias(STROKE, 'nowhere')).toBe(false);
+      expect(() => aliasNodes(STROKE, ['stroke/width'], { parentPath: 'other', index: 0 })).toThrow(/cannot be aliased/);
+    });
+
+    it('leaves a heading inside the object out of a field\'s value path', () => {
+      expect(valuePathOf(STROKE, 'stroke/width')).toBe('stroke.width');
+      expect(valuePathOf(STROKE, 'stroke/ends/cap')).toBe('stroke.cap');
+    });
   });
 
   it('refuses to alias a group', () => {

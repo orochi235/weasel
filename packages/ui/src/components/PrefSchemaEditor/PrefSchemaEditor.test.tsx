@@ -669,4 +669,18 @@ describe('PrefSchemaEditor changed fields and aliases', () => {
     expect(keys.findIndex((r) => r.includes('grid2'))).toBe(keys.findIndex((r) => r.includes('(grid)')) + 1);
     expect(within(attrs()).getByRole('button', { name: /Of/ })).toHaveTextContent('view.grid');
   });
+
+  it('offers no alias of a field inside an object pref', () => {
+    const start: PrefGroup = { name: 'Prefs', children: { view: { name: 'View', children: {
+      stroke: { kind: 'object', name: 'Stroke', description: '', default: {}, children: {
+        width: { kind: 'number', name: 'Width', description: '', default: 1 },
+      } } as PrefGroup['children'][string],
+    } } } };
+    render(<Live start={start} />);
+    const add = () => screen.getByRole('button', { name: 'Add alias' });
+    fireEvent.click(row('width'));
+    expect(add()).toBeDisabled();
+    fireEvent.click(row('stroke'));
+    expect(add()).toBeEnabled();
+  });
 });

@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { isInControlWithin, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
-import { isPrefLeaf, prefHoldsValue } from '@weasel-js/prefs';
 import { swallowNextClick } from '../../useReorderDragList';
 import { GHOST_WIDTH, ghostIsPage } from './NodeGhost';
-import { aliasOf, carried, nodeAt, parentPath, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { aliasOf, canAlias, carried, nodeAt, parentPath, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import type { DropOutside } from './StructurePane';
 
 export interface PreviewGhost {
@@ -71,7 +70,7 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, 
       setGhost(null);
     };
     // An alias is of one leaf: a drag of several moves or copies them.
-    const aliasable = !several && isPrefLeaf(node) && (prefHoldsValue(node) || node.kind === 'alias');
+    const aliasable = !several && canAlias(schema(), path);
     const effectOf = (ev: PointerEvent): 'move' | 'copy' | 'link' =>
       !ev.altKey ? 'move' : (ev.metaKey || ev.ctrlKey) && aliasable ? 'link' : 'copy';
     // A copy or an alias is new where it lands, so the place is asked about it with no path of its own.
