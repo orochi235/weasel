@@ -1,5 +1,23 @@
 # @weasel-js/diagram
 
+## 1.9.4
+
+### Patch Changes
+
+- 6b67d5d: `@weasel-js/diagram/layout` no longer loads React. Its body builder imported
+  `cssFamilyName` from the `@weasel-js/core` barrel, which pulled the whole kit
+  into a subpath meant for a server with no DOM; it now imports from
+  `@weasel-js/font`, which `@weasel-js/diagram` declares as a peer.
+- Updated dependencies [9d54d0a]
+- Updated dependencies [01f9a06]
+- Updated dependencies [20c2d26]
+- Updated dependencies [9f70b3c]
+- Updated dependencies [812118e]
+- Updated dependencies [e9a28a0]
+  - @weasel-js/core@1.9.4
+  - @weasel-js/font@1.9.4
+  - @weasel-js/geom@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes
