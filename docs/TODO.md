@@ -2037,9 +2037,8 @@ one dead `const` and four stale disable directives.
   Widening the walk means moving those to tokens first, and each move wants a look at the page.
   `check:controls` already walks all of them.
 
-- **(P3) Two more files past a thousand lines, each with a split along its owners.**
-  `canvas/SceneCanvas.tsx` (2,973 lines): the props type, `SceneCanvasInner`, and five sibling
-  mounters and registrars, each of which is a file in the existing `SceneCanvas/` directory.
-  `core/src/index.ts` (1,502): per-area barrels re-exported by name. `draw.ts`, `scene.ts`,
-  `Canvas.tsx`, the two dispatcher files, and draw's `App.tsx` have their own entries.
+- **(P3) `canvas/SceneCanvas.tsx` is past a thousand lines.** 2,973 lines: the props type,
+  `SceneCanvasInner`, and five sibling mounters and registrars, each of which is a file in the
+  existing `SceneCanvas/` directory. `draw.ts`, `scene.ts`, `Canvas.tsx`, the two dispatcher files,
+  and draw's `App.tsx` have their own entries.
 

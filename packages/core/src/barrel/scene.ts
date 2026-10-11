@@ -1,0 +1,113 @@
+/** Part of the `@weasel-js/core` barrel. The scene, its ops, history, groups, and adapters. */
+
+// ─── Op model: every scene mutation routes through here ─────────────────────
+export * from '../core/ops';
+
+// ─── Mixed sentinel: cross-cutting "these values disagree" marker ──────────
+export { MIXED } from '../core/mixed';
+export type { Mixed } from '../core/mixed';
+
+// ─── Group/parent composition: world pose, rebase, ordered groups ───────────
+export {
+  composeWorldPose,
+  composeRectPose,
+  decomposeRectPose,
+  composeRigidPose,
+  decomposeRigidPose,
+  rebaseLocalPose,
+  translateRectPose,
+  worldPoseLookup,
+  IDENTITY_POSE_COMPOSITION,
+  RECT_POSE_COMPOSITION,
+  RIGID_POSE_COMPOSITION,
+} from '../features/groups/composePose';
+export type { PoseAdapter, PoseComposition, PoseClosure } from '../features/groups/composePose';
+export { nestedHitTester } from '../features/groups/nestedHit';
+export { unionOfChildrenVia } from '../features/groups/unionOfChildren';
+export type {
+  NestedHitOpts,
+  NestedHitTester,
+} from '../features/groups/nestedHit';
+
+// ─── Groups: union the bounds of a node set ─────────────────────────────────
+export { unionBounds, unionAABB, axisAlignedBounds } from '../core/geometry/unionBounds';
+export type { RectPose } from '../core/geometry/unionBounds';
+
+// ─── Undo history: createHistory + entry shape ──────────────────────────────
+// Core's `createHistory` stands in for the engine's own: the wrapper injects
+// the global op-factory registry as the restore-time rebuild hook (see
+// ./core/ops/createHistory). The engine's types are named rather than
+// `export *`: esbuild cannot enumerate a star re-export across a package
+// boundary and emits no binding for it.
+export { createHistory } from '../core/ops/createHistory';
+export type {
+  History,
+  CreateHistoryOptions,
+  HistoryEntry,
+  EvictedEntry,
+  SerializedOp,
+  SerializedHistoryEntry,
+  SerializedHistory,
+  HistoryLogger,
+  HistorySelection,
+  HistoryBranch,
+  RecordEntryOptions,
+  Op,
+  Journal,
+  BeginJournalOptions,
+} from '@weasel-js/history';
+
+// ─── Adapters: contract types + reference arrayAdapter ──────────────────────
+export * from '../core/adapters/types';
+export { arrayAdapter } from '../core/adapters/arrayAdapter';
+export type { ArrayAdapter, ArrayAdapterConfig } from '../core/adapters/arrayAdapter';
+export { useArrayAdapter } from '../core/adapters/useArrayAdapter';
+export type { UseArrayAdapterOptions } from '../core/adapters/useArrayAdapter';
+
+// ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
+export {
+  createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId,
+  createPoseFeed, createPoseOverrides, definesFrame, derivedDepOf, derivedPose, documentPose, effectivePose,
+  UNION_OF_CHILDREN, unionOfChildren, SceneArrivalRefused, reconcileSpecs,
+} from '../core/scene';
+export type { PoseSource, PosedNode } from '../core/scene';
+export type {
+  AddLayerSpec,
+  AddNodeSpec,
+  ClipFromPoseFn,
+  DerivedDep,
+  DerivePathFn,
+  DerivePoseFn,
+  ContainerNode,
+  FeedDelta,
+  FeedNode,
+  LayerRecord,
+  LayoutFrame,
+  LayoutMove,
+  LeafNode,
+  Node as SceneNode,
+  NodeId,
+  PoseFeed,
+  PoseOverride,
+  PoseOverrides,
+  RegisteredOp,
+  Scene,
+  SceneArrivalHandler,
+  SceneRegistry,
+  SerializedLayer,
+  SerializedNode,
+  SerializedScene,
+  SystemLayerRecord,
+  SystemLayerSpec,
+  UserLayerRecord,
+  UseSceneOptions,
+} from '../core/scene';
+
+// ─── Reorder: ops ───────────────────────────────────────────────────────────
+export {
+  createReorderOp,
+  createMoveToIndexOp,
+  canBringForward,
+  canSendBackward,
+} from '../core/ops/reorder';
+export type { ReorderDirection } from '../core/ops/reorder';

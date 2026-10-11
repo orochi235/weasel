@@ -152,7 +152,7 @@ describe('draw command exports', () => {
 
   /**
    * Every `*DrawCommand` the renderer barrel names must be nameable from the
-   * main barrel too. `src/index.ts` re-exports the renderer by name rather
+   * main barrel too. `src/barrel/` re-exports the renderer by name rather
    * than with a star, so adding a variant there and stopping reaches only
    * consumers importing the `/renderer` subpath — which is how
    * `SpritesDrawCommand` shipped in 1.4.1 unreachable from `@weasel-js/core`.
@@ -161,7 +161,7 @@ describe('draw command exports', () => {
     const variantsIn = (src: string) =>
       new Set([...src.matchAll(/\b(\w+DrawCommand)\b/g)].map((m) => m[1]));
     const fromRenderer = variantsIn(barrelSrc('renderer/index.ts'));
-    const fromMain = variantsIn(barrelSrc('index.ts'));
+    const fromMain = variantsIn(readdirSync(join(ROOT, 'barrel')).map((f) => barrelSrc(`barrel/${f}`)).join('\n'));
     expect(fromRenderer.size).toBeGreaterThan(4);
     expect([...fromRenderer].filter((n) => !fromMain.has(n))).toEqual([]);
   });
