@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { pathsIn, scopedPath } from './assetScope';
-import { openAfterStep, openFolds, saveFolds } from './folds';
+import { foldsUnder, openAfterStep } from './folds';
 import { branchPaths, type SchemaRoot } from './schemaEdit';
 import { useEditorSelection, type EditorSelection } from './useEditorSelection';
 import { assetOf, type Asset, type Workspace } from './workspace';
@@ -26,21 +26,22 @@ export interface AssetView {
 
 /**
  * The view of `workspace`, starting on its first asset. `opened` is the draft the editor mounts on, when it found
- * one, and `draftKey` the name each asset's folded rows are kept beside.
+ * one, and `draftKey` the name each asset's folded rows are kept beside; with none they are kept while the editor is up.
  */
 export function useAssetView(workspace: Workspace, opened: Workspace | undefined, draftKey: string | undefined): AssetView {
   const [assetId, setAssetId] = useState(workspace.assets[0]!.id);
   const asset = assetOf(workspace, assetId) ?? workspace.assets[0]!;
   const schema = asset.root;
   // Every row starts open but the ones the reader folded last time.
+  const folds = useMemo(() => foldsUnder(draftKey), [draftKey]);
   const startOpen = (id: string, root: SchemaRoot): Set<string> => {
-    const folded = new Set(draftKey === undefined ? [] : openFolds(draftKey, id));
+    const folded = new Set(folds.open(id));
     return new Set(branchPaths(root).filter((path) => !folded.has(path)));
   };
   const [expanded, setExpanded] = useState(() => startOpen(asset.id, (opened && assetOf(opened, asset.id)?.root) ?? schema));
   useEffect(() => {
-    if (draftKey !== undefined) saveFolds(draftKey, asset.id, branchPaths(schema).filter((id) => !expanded.has(id)));
-  }, [draftKey, asset.id, schema, expanded]);
+    folds.save(asset.id, branchPaths(schema).filter((id) => !expanded.has(id)));
+  }, [folds, asset.id, schema, expanded]);
   // The rows open under each schema shown, for a step back to one to open what it brings back.
   const openAt = useRef(new WeakMap<SchemaRoot, ReadonlySet<string>>());
   useEffect(() => { openAt.current.set(schema, expanded); }, [schema, expanded]);
