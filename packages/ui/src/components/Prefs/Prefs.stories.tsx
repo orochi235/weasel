@@ -193,6 +193,24 @@ export const Form: Story = {
   },
 };
 
+const SEVERAL = ['canvas.showGrid', 'canvas.zoomStep'];
+const MIXED: ReadonlySet<string> = new Set(['canvas.zoomStep']);
+
+/** Two rows marked as selected, one of them standing for several values that disagree. Cmd or Ctrl on a
+ *  press reports a toggle, which this story takes as adding the row or taking it out. */
+export const SeveralSelected: Story = {
+  render: function SeveralSelectedStory() {
+    const { values, onChange } = useStoryValues();
+    const [selected, setSelected] = useState<readonly string[]>(SEVERAL);
+    return (
+      <PrefsForm schema={SCHEMA} values={values} onChange={onChange} renderers={STORY_RENDERERS} mixed={MIXED}
+        selected={selected}
+        onSelect={(path, how) => setSelected((cur) =>
+          !how.toggle ? [path] : cur.includes(path) ? cur.filter((p) => p !== path) : [...cur, path])} />
+    );
+  },
+};
+
 export const InDialog: Story = {
   render: function DialogStory() {
     const [open, setOpen] = useState(false);
