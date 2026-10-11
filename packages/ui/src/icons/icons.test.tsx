@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { Icon } from './Icon';
 import { CheckIcon, DeleteIcon, RedoIcon, UndoIcon } from './index';
 import { isFillable } from './Icon';
-import { ICON_FILLS, ICON_GROUPS, ICON_PATHS, type IconName } from './paths';
+import { ICON_FILLS, ICON_GROUPS, ICON_PATHS, MARK_ICONS, type IconName } from './paths';
 
 const NAMES = Object.keys(ICON_PATHS) as IconName[];
 
@@ -85,6 +85,47 @@ describe('icon set', () => {
     expect(ICON_PATHS.shapeCircle).not.toContain('stroke-linejoin');
     // A waveform's acute corners grow spikes under miter, so they stay round.
     expect(ICON_PATHS.arcZigzag).not.toContain('stroke-linejoin');
+  });
+});
+
+describe('a marked glyph', () => {
+  it('draws the mark after the glyph, scaled into the corner at the glyph\'s own stroke weight', () => {
+    const { container } = render(<Icon name="formPage" mark="markAdd" />);
+    const [glyph, mark] = [...container.querySelectorAll('svg > g')];
+    expect(glyph?.querySelector('rect')).not.toBeNull();
+    expect(mark?.querySelector('path')?.getAttribute('d')).toBe(ICON_PATHS.markAdd.match(/d="([^"]+)"/)?.[1]);
+    expect(mark?.getAttribute('transform')).toBe('translate(11.5 11.5) scale(0.4)');
+    // 1.5 on the frame, once the group's scale has been applied to it.
+    expect(Number(mark?.getAttribute('stroke-width')) * 0.4).toBeCloseTo(1.5);
+  });
+
+  it('clears the glyph from around the mark with a mask of its own', () => {
+    const { container } = render(<><Icon name="formPage" mark="markAdd" /><Icon name="formTab" mark="markAdd" /></>);
+    const ids = [...container.querySelectorAll('svg')].map((svg) => {
+      const id = svg.querySelector('mask')?.id;
+      expect(svg.querySelector('g')?.getAttribute('mask')).toBe(`url(#${id})`);
+      return id;
+    });
+    expect(new Set(ids).size).toBe(2);
+  });
+
+  it('keeps the shade\'s tint off the mark and the mask', () => {
+    const { container } = render(<Icon name="shapeHexagon" filled mark="markDot" />);
+    expect(container.querySelector('svg')?.getAttribute('fill-opacity')).toBe('0.16');
+    expect(container.querySelector('mask')?.getAttribute('fill-opacity')).toBe('1');
+    expect(container.querySelectorAll('svg > g')[1]?.getAttribute('fill-opacity')).toBe('1');
+  });
+
+  it('keeps its drawn nodes across a re-render', () => {
+    const { container, rerender } = render(<Icon name="formPage" mark="markAdd" />);
+    const first = container.querySelector('svg')?.firstElementChild;
+    rerender(<Icon name="formPage" mark="markAdd" className="pressed" />);
+    expect(container.querySelector('svg')?.firstElementChild).toBe(first);
+  });
+
+  it('takes the Marks family, none of which sets a stroke width the slot would scale down', () => {
+    expect(ICON_GROUPS.find((g) => g.label === 'Marks')?.names).toEqual([...MARK_ICONS]);
+    for (const name of MARK_ICONS) expect(ICON_PATHS[name], name).not.toContain('stroke-width');
   });
 });
 

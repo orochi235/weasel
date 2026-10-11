@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Icon } from './Icon';
-import { ICON_GROUPS } from './paths';
+import { ICON_GROUPS, MARK_ICONS, type IconName } from './paths';
 import {
   SelectIcon, LassoIcon, RectIcon, EllipseIcon, ImageIcon, EyedropperIcon,
   LineIcon, ArrowIcon, PolygonIcon, StarIcon, PencilIcon, TextIcon, PenIcon,
@@ -55,6 +55,29 @@ function Sheet({ size, proof }: { size: number; proof?: boolean }) {
     </>
   );
 }
+
+const MARKED: readonly IconName[] = ['formPage', 'formSection', 'tune', 'layers', 'shapeHexagon'];
+
+function MarkedSheet({ size, proof }: { size: number; proof?: boolean }) {
+  return (
+    <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
+      {MARKED.flatMap((name) => MARK_ICONS.map((mark) => (
+        <figure key={name + mark}>
+          <Icon name={name} mark={mark} size={size} label={`${name}, ${mark}`} />
+          <figcaption>{name} + {mark}</figcaption>
+        </figure>
+      )))}
+    </div>
+  );
+}
+
+/** Each mark set in the corner of a few glyphs, the glyph cleared from around it. */
+export const MarkedAtChromeSize: StoryObj = { render: () => <MarkedSheet size={20} /> };
+
+/** The tree's size, where a slot is some six pixels across. */
+export const MarkedAtTreeSize: StoryObj = { render: () => <MarkedSheet size={16} /> };
+
+export const MarkedAtProofSize: StoryObj = { render: () => <MarkedSheet size={160} proof /> };
 
 /** Chrome size — the legibility check, not the design surface. */
 export const AtChromeSize: StoryObj = { render: () => <Sheet size={20} /> };

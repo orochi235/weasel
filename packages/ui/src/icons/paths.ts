@@ -149,6 +149,13 @@ export const ICON_PATHS = {
   formSection: `<path d="M3.75 5.5h6.5" stroke-width="2.25"/><path d="M3.75 10.5h3M9.75 10.5h6.5M3.75 14.5h3M9.75 14.5h6.5"/>`,
   formLabel: `<path d="M8 5.5H15.25a1.5 1.5 0 0 1 1.5 1.5V13a1.5 1.5 0 0 1 -1.5 1.5H8L3.25 10Z"/><circle cx="8.75" cy="10" r="1.1" fill="currentColor" stroke="none"/>`,
 
+  // Marks
+  markAdd: `<path d="M10 3.5v13M3.5 10h13"/>`,
+  markRemove: `<path d="M3.5 10h13"/>`,
+  markCheck: `<path d="M3.57 10.66 7.74 14.83 16.43 5.17"/>`,
+  markClose: `<path d="M5.4 5.4 14.6 14.6M14.6 5.4 5.4 14.6"/>`,
+  markDot: `<circle cx="10" cy="10" r="5" fill="currentColor" stroke="none"/>`,
+
   // Arc profiles
   arcStraight: `<path d="M2.6 15H17.4"/>`,
   arcParabola: `<path d="M2.6 15Q10 -5 17.4 15"/>`,
@@ -594,6 +601,16 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
     ],
   },
   {
+    label: 'Marks',
+    names: [
+      'markAdd',
+      'markRemove',
+      'markCheck',
+      'markClose',
+      'markDot',
+    ],
+  },
+  {
     label: 'Arc profiles',
     names: [
       'arcStraight',
@@ -738,3 +755,15 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
     ],
   },
 ];
+
+/** The glyphs drawn to be read small, which `<Icon mark>` sets in a corner of another. */
+export const MARK_ICONS = [
+  'markAdd',
+  'markRemove',
+  'markCheck',
+  'markClose',
+  'markDot',
+] as const satisfies readonly IconName[];
+
+/** A glyph `<Icon mark>` takes. */
+export type MarkIconName = (typeof MARK_ICONS)[number];

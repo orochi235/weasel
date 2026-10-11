@@ -203,9 +203,9 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
       </div>
       {toolSlot && createPortal(
         <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
-          <ToolButton icon={<Icon name="add" />} label="Add pref" onClick={() => setAdding('pref')} />
-          <ToolButton icon={<Icon name="add" />} label={`Add ${branch}`} disabled={variants || !withinDepth(addTarget().parent, [blankGroup()], maxDepth)} onClick={() => setAdding('branch')} />
-          <ToolButton icon={<Icon name="remove" />} label="Remove" disabled={selected === null || isFixed(schema, selected)} onClick={onRemove} />
+          <ToolButton icon={<Icon name="tune" mark="markAdd" />} label="Add pref" onClick={() => setAdding('pref')} />
+          <ToolButton icon={<Icon name={GROUP_ICON.section} mark="markAdd" />} label={`Add ${branch}`} disabled={variants || !withinDepth(addTarget().parent, [blankGroup()], maxDepth)} onClick={() => setAdding('branch')} />
+          <ToolButton icon={<Icon name="delete" />} label="Remove" disabled={selected === null || isFixed(schema, selected)} onClick={onRemove} />
         </Palette>,
         toolSlot,
       )}

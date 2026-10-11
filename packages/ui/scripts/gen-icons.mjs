@@ -23,10 +23,14 @@ import { SOLIDS } from './icons/solids.mjs';
 import { PARAGRAPH, TEXT } from './icons/text.mjs';
 import { STATUSES } from './icons/status.mjs';
 import { VARIANTS } from './icons/variants.mjs';
+import { MARKS } from './icons/marks.mjs';
 
 // `save` split: the tray-and-arrow reads as download, so it carries `export`,
 // and capturing a trial's state gets its own camera.
 const RENAME = { save: 'export', zoom: 'zoomIn' };
+
+// The group whose glyphs `<Icon mark>` takes.
+const MARK_GROUP = 'Marks';
 
 const GROUPS = [
   ['View and lifecycle', BASE],
@@ -41,6 +45,7 @@ const GROUPS = [
   ['Stroke cap, join, align and dash', PAINT],
   ['Workspace layout', LAYOUT],
   ['Settings form', FORM],
+  [MARK_GROUP, MARKS],
   ['Arc profiles', ARCS],
   ['Curves', CURVES],
   ['Shapes', SHAPES],
@@ -109,6 +114,9 @@ for (const [label, set] of GROUPS) {
       if (prior === drawing) continue;
       throw new Error(`icon "${key}" is drawn twice, differently — rename one`);
     }
+    if (label === MARK_GROUP && drawing.includes('stroke-width')) {
+      throw new Error(`mark "${key}" sets a stroke-width, which the slot would scale down with it`);
+    }
     seen.set(key, drawing);
     names.push(key);
     const fill = fillElement(body);
@@ -143,6 +151,15 @@ for (const [label, names] of members) {
   out += `  {\n    label: '${label}',\n    names: [\n${names.map((n) => `      '${n}',\n`).join('')}    ],\n  },\n`;
 }
 out += `];
+`;
+
+out += `
+/** The glyphs drawn to be read small, which \`<Icon mark>\` sets in a corner of another. */
+export const MARK_ICONS = [
+${members.find(([label]) => label === MARK_GROUP)[1].map((n) => `  '${n}',\n`).join('')}] as const satisfies readonly IconName[];
+
+/** A glyph \`<Icon mark>\` takes. */
+export type MarkIconName = (typeof MARK_ICONS)[number];
 `;
 
 for (const key of CORE_GLYPHS) {
