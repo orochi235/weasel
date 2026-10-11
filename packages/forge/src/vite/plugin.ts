@@ -1,6 +1,6 @@
 import { globSync, readFileSync, statSync } from 'node:fs';
 import { basename, matchesGlob, relative, resolve, sep } from 'node:path';
-import type { Logger, Plugin, ViteDevServer } from 'vite';
+import type { EnvironmentModuleNode, Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
 import { autoTitle } from './autoTitle.ts';
@@ -25,6 +25,7 @@ export interface ForgeOptions {
 
 const PREFIX = 'virtual:forge/';
 const MODULES = new Set(['index.js', 'importers.js', 'deps.js', 'frame-config.js', 'shell-config.js', 'shell-entry.js', 'frame-entry.js']);
+const SCRIPT = /\.[cm]?[jt]sx?$/;
 const PAGES: Record<string, string> = { '/': 'shell-entry.js', '/index.html': 'shell-entry.js', '/frame.html': 'frame-entry.js' };
 
 /**
@@ -139,8 +140,9 @@ import.meta.hot?.on('forge:index', (next) => workshop.setIndex(next));
 // Read from source on first request, so the graph costs nothing until the page is up.
 import('virtual:forge/deps.js').then((m) => workshop.setDependencies(m.default));
 import.meta.hot?.on('forge:deps', (next) => workshop.setDependencies(next));
-// A story edit reaches here as an update of the importers module, whose fresh import() URLs carry the new
-// timestamps; the file it names arrives just before, so the reload waits for the importers that can fetch it.
+// An edit to a story file, or to a module one imports, reaches here as an update of the importers module, whose
+// fresh import() URLs carry the new timestamps; the files it reaches arrive just before, so the reload waits for
+// the importers that can fetch them.
 const stale = new Set();
 import.meta.hot?.on('forge:story', ({ file }) => stale.add(file));
 import.meta.hot?.accept('virtual:forge/importers.js', (next) => {
@@ -192,10 +194,26 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
       });
   }
 
+  /** The story files an edit to `changed` reaches, climbing the way vite's own update does: through every importer. */
+  const storiesReaching = (changed: readonly EnvironmentModuleNode[]): string[] => {
+    const current = files();
+    const seen = new Set<EnvironmentModuleNode>();
+    const reached = new Set<string>();
+    const climb = (mod: EnvironmentModuleNode): void => {
+      if (seen.has(mod)) return;
+      seen.add(mod);
+      if (mod.file && current.has(mod.file)) reached.add(mod.file);
+      // A stylesheet takes its own update, so the edit stops there.
+      if (mod.isSelfAccepting && !(mod.file && SCRIPT.test(mod.file))) return;
+      for (const importer of mod.importers) climb(importer);
+    };
+    for (const mod of changed) climb(mod);
+    return [...reached];
+  };
+
   /** Re-reads a story file after `event`, and any story file whose meta or stories were resolved through it; true when the index changed. */
   async function reindex(server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink'): Promise<boolean> {
     const current = files();
-    if (event === 'change' && current.has(file)) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
     const own = event === 'add' ? matches(file) : current.has(file);
     const through = [...wrappersOf]
       .filter(([story, { reads, unresolved }]) => story !== file && (reads.has(file) || (event === 'add' && unresolved)))
@@ -272,13 +290,17 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
         depsSent = JSON.stringify(graph);
         return `export default ${depsSent};\n`;
       },
+      hotUpdate({ modules, server }) {
+        if (this.environment.name !== 'client') return;
+        for (const file of storiesReaching(modules)) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
+      },
       configureServer(server) {
         server.watcher.add([...files().keys()]);
         for (const event of ['add', 'change', 'unlink'] as const) {
           server.watcher.on(event, (path) => {
             const file = resolve(path);
             // A new file can answer an import that resolved to nothing before.
-            const added = event === 'add' && /\.[cm]?[jt]sx?$/.test(file) && !file.split(sep).includes('node_modules');
+            const added = event === 'add' && SCRIPT.test(file) && !file.split(sep).includes('node_modules');
             if (added) depGraph().reset();
             const read = added || (event !== 'add' && depGraph().invalidate(file));
             reindex(server, file, event).then((indexed) => {

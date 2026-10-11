@@ -4,7 +4,7 @@ import { createServer as createHttpServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { build, createLogger, createServer, type InlineConfig, type Plugin, type ViteDevServer } from 'vite';
+import { build, createLogger, createServer, type HotPayload, type InlineConfig, type Plugin, type ViteDevServer } from 'vite';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { IndexEntry } from '../story/types';
 import { forge } from './plugin';
@@ -20,6 +20,21 @@ const FOLLOWS = { timeout: 15_000, interval: 50 };
 
 const story = (title: string, ...names: string[]) =>
   `export default { title: '${title}' };\n${names.map((n) => `export const ${n} = {};`).join('\n')}\n`;
+
+// The entries import forge's and labkit's published modules, which a temp root cannot resolve.
+const stubs: Plugin = {
+  name: 'stub-weasel',
+  enforce: 'pre',
+  resolveId: (id) => (id.startsWith('@weasel-js/') ? `\0stub:${id}.js` : undefined),
+  load: (id) =>
+    // The side effects keep vite 8.3's bundler from dropping the shell as dead code.
+    id.startsWith('\0stub:')
+      ? 'export const mountWorkshop = () => { globalThis.mounted = true; return { setIndex() {} }; };\nexport const mountFrame = () => { globalThis.mounted = true; };\n'
+      : undefined,
+};
+
+/** The importers module as the page asks for it. */
+const IMPORTERS_URL = '/@id/__x00__virtual:forge/importers.js';
 
 describe('forge vite plugin', () => {
   let root: string;
@@ -237,6 +252,61 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     expect(sent).toHaveBeenCalledWith(expect.objectContaining({ event: 'forge:deps' }));
   });
 
+  // The workshop entry imports forge's and labkit's published modules, which a temp root cannot resolve.
+  const served = (): InlineConfig => ({
+    plugins: [stubs, forge({ stories: ['*.stories.tsx'] })],
+    optimizeDeps: { noDiscovery: true },
+  });
+
+  /** Fetches what an opening workshop page fetches, which is what puts those modules in vite's graph under the page's URLs. */
+  const open = async (s: ViteDevServer, ...more: string[]) => {
+    const listening = createHttpServer(s.middlewares);
+    http = listening;
+    await new Promise<void>((done) => listening.listen(0, 'localhost', done));
+    const { port } = listening.address() as AddressInfo;
+    for (const url of ['/@id/virtual:forge/shell-entry.js', IMPORTERS_URL, ...more]) {
+      expect((await fetch(`http://localhost:${port}${url}`)).status).toBe(200);
+    }
+  };
+
+  /** Every payload the server pushes to the page from here on, forge's events and vite's updates alike. */
+  const pushed = (s: ViteDevServer) => {
+    const payloads: HotPayload[] = [];
+    const keep = (payload: unknown) => {
+      if (typeof payload === 'object' && payload !== null && !payloads.includes(payload as HotPayload)) payloads.push(payload as HotPayload);
+    };
+    vi.spyOn(s.ws, 'send').mockImplementation(keep);
+    vi.spyOn(s.environments.client.hot, 'send').mockImplementation(keep);
+    return payloads;
+  };
+  const storyEvents = (payloads: readonly HotPayload[]) =>
+    payloads.flatMap((p) => (p.type === 'custom' && p.event === 'forge:story' ? [(p.data as { file: string }).file] : []));
+  /** Where in `payloads` vite tells the workshop entry to take the importers module again; -1 when it has not. */
+  const importersUpdate = (payloads: readonly HotPayload[]) =>
+    payloads.findIndex((p) => p.type === 'update' && p.updates.some((u) => u.acceptedPath.endsWith('virtual:forge/importers.js')));
+
+  it('names the story file to reload when it changes, or a module it imports does', async () => {
+    const { dir, server: s } = await start(
+      {
+        'rows.ts': `export const rows = [1];\n`,
+        'a.stories.tsx': `import { rows } from './rows';\nexport default { title: 'ui/A' };\nexport const One = { args: { rows } };\n`,
+      },
+      served(),
+    );
+    await open(s, '/a.stories.tsx');
+    const payloads = pushed(s);
+    writeFileSync(join(dir, 'rows.ts'), `export const rows = [1, 2];\n`);
+    await expect.poll(() => importersUpdate(payloads), FOLLOWS).not.toBe(-1);
+    const named = payloads.findIndex((p) => p.type === 'custom' && p.event === 'forge:story');
+    expect(storyEvents(payloads)).toEqual([join(dir, 'a.stories.tsx')]);
+    expect(named).toBeLessThan(importersUpdate(payloads));
+
+    payloads.length = 0;
+    writeFileSync(join(dir, 'a.stories.tsx'), story('ui/A', 'One'));
+    await expect.poll(() => importersUpdate(payloads), FOLLOWS).not.toBe(-1);
+    expect(storyEvents(payloads)).toEqual([join(dir, 'a.stories.tsx')]);
+  });
+
   it('serves the workshop at its base with or without the trailing slash', async () => {
     const { server: s } = await start({}, { base: '/x/' });
     const listening = createHttpServer(s.middlewares);
@@ -336,18 +406,6 @@ describe('forge vite plugin, built', () => {
     if (root) rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
     root = undefined;
   });
-
-  // The entries import forge's and labkit's published modules, which a temp root cannot resolve.
-  const stubs: Plugin = {
-    name: 'stub-weasel',
-    enforce: 'pre',
-    resolveId: (id) => (id.startsWith('@weasel-js/') ? `\0stub:${id}.js` : undefined),
-    load: (id) =>
-      // The side effects keep vite 8.3's bundler from dropping the shell as dead code.
-      id.startsWith('\0stub:')
-        ? 'export const mountWorkshop = () => { globalThis.mounted = true; return { setIndex() {} }; };\nexport const mountFrame = () => { globalThis.mounted = true; };\n'
-        : undefined,
-  };
 
   it('writes the workshop and frame documents at the output root, loading bundles under base', async () => {
     const dir = realpathSync(mkdtempSync(join(tmpdir(), 'forge-build-')));
