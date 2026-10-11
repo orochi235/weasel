@@ -8,7 +8,7 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { parseSvg } from '@weasel-js/svg';
 import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type TextStyle } from '@weasel-js/core';
-import { svgNodesToSceneDrafts } from './svgInterop';
+import { parsedToDoc, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
 import { asPaint, registerPaintKindLoader, solid, strokeOf } from '@weasel-js/core';
@@ -201,6 +201,38 @@ describe('Save then Open', () => {
     const { data } = leafOfObj(drafts[0].obj);
     expect(data.fill).toBeNull();
     expect(data.stroke).toMatchObject({ paint: { color: '#00ff00' }, width: 2 });
+  });
+});
+
+describe('Save then Open: the page background', () => {
+  it('comes back as the document background, not as a node', async () => {
+    const scene = fakeScene({
+      r: {
+        kind: 'leaf',
+        pose: { x: 10, y: 20, width: 30, height: 40 },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 40 }, fill: solid('#ff0000') },
+      },
+    }, ['r']);
+    const svg = await sceneToSvgString(scene, {
+      filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffcc',
+    });
+
+    const parsed = parseSvg(svg, { namespaces: SWILL_NAMESPACES });
+    let n = 0;
+    const drafts = svgNodesToSceneDrafts(parsed, () => `n${n++}`);
+    expect(drafts).toHaveLength(1);
+    expect(parsedToDoc(parsed).backgroundColor).toBe('#ffffcc');
+  });
+
+  it('leaves an ordinary page-sized rectangle in a foreign SVG as a node', () => {
+    const parsed = parseSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+      + '<rect x="0" y="0" width="100" height="100" fill="#ffffcc"/></svg>',
+      { namespaces: SWILL_NAMESPACES },
+    );
+    let n = 0;
+    expect(svgNodesToSceneDrafts(parsed, () => `n${n++}`)).toHaveLength(1);
+    expect(parsedToDoc(parsed).backgroundColor).toBeUndefined();
   });
 });
 

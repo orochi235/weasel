@@ -541,6 +541,7 @@ interface ToolbarProps {
   setPaperSize: (k: PaperSizeKey) => void;
   filename: string;
   backgroundColor: string;
+  setBackgroundColor: (color: string) => void;
   onOpenPrefs: () => void;
   /** Called at the start of every explicit save/load so stale journal
    *  caches don't survive across document boundaries. */
@@ -552,7 +553,7 @@ function Toolbar({
   gridVisible, setGridVisible,
   snapToGrid, setSnapToGrid,
   paperSize, setPaperSize,
-  filename, backgroundColor,
+  filename, backgroundColor, setBackgroundColor,
   onOpenPrefs,
   onClearJournalCache,
 }: ToolbarProps): ReactElement {
@@ -704,6 +705,7 @@ function Toolbar({
             for (const w of parsed.warnings) console.warn('[svg import]', w);
             const docPatch = parsedToDoc(parsed);
             if (docPatch.paperSize) setPaperSize(docPatch.paperSize);
+            if (docPatch.backgroundColor) setBackgroundColor(docPatch.backgroundColor);
             let seq = 0;
             const drafts = svgNodesToSceneDrafts(parsed, () => `svg-${++seq}`);
             scene.batch('Import SVG', () => {
@@ -1327,6 +1329,7 @@ function EditorWithSharedScene({
         setPaperSize={setPaperSize}
         filename={filename}
         backgroundColor={backgroundColor}
+        setBackgroundColor={setBackgroundColor}
         onOpenPrefs={() => setPrefsOpen(true)}
         onClearJournalCache={() => modality.machine.clearJournalCache()}
       />

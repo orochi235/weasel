@@ -63,6 +63,22 @@ export interface ParsedDocPatch {
   title?: string;
   size?: { width: number; height: number };
   paperSize?: WeaselDrawPaperSize;
+  backgroundColor?: string;
+}
+
+/** The page background as the leading node of an export, marked so an import
+ *  reads it back as the document's color and not as a shape. */
+export function backgroundSvgNode(color: string, width: number, height: number): SvgPathNode {
+  return {
+    kind: 'path',
+    path: { kind: 'rect', x: 0, y: 0, width, height },
+    fill: { kind: 'solid', color },
+    meta: { wd: { attrs: { role: 'background' } } },
+  };
+}
+
+function isBackgroundNode(n: SvgNode): n is SvgPathNode {
+  return n.kind === 'path' && n.meta?.wd?.attrs?.role === 'background';
 }
 
 /**
@@ -103,6 +119,8 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
   }
   const ps = parsed.documentMeta?.wd?.attrs?.paperSize;
   if (ps === 'letter' || ps === 'a4' || ps === 'legal') out.paperSize = ps;
+  const bg = parsed.nodes.find(isBackgroundNode);
+  if (bg?.fill.kind === 'solid') out.backgroundColor = bg.fill.color;
   return out;
 }
 
@@ -274,8 +292,9 @@ export function svgNodesToSceneDrafts(
   input: ParseResult | readonly SvgNode[],
   nextId: () => string,
 ): SceneDraft[] {
+  const nodes = ('nodes' in input ? input.nodes : input).filter((n) => !isBackgroundNode(n));
   const drafts = svgNodesToKitDrafts(
-    input,
+    'nodes' in input ? { ...input, nodes } : nodes,
     (n) => (n.kind === 'group' ? n.meta?.wd?.attrs?.['group-id'] : undefined) ?? nextId(),
     { leaf: kitLeafToObj },
   );

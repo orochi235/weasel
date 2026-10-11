@@ -29,7 +29,6 @@ import {
   embedWeaselMetadataInSvg,
   fillInPoseFrame,
   pathInPoseFrame,
-  rectPath,
   unionAABB,
 } from '@weasel-js/core';
 import {
@@ -40,6 +39,7 @@ import {
 } from '@weasel-js/svg';
 
 import {
+  backgroundSvgNode,
   docToSerializeOptions,
   sceneToSvgNodes,
   SWILL_NAMESPACES,
@@ -229,11 +229,7 @@ export function sceneToSvgString<TLayer extends string>(
   // Background — prepend so it paints first (SVG paint order is document
   // order). Omit when white-equivalent to keep the file small.
   if (!WHITE.test(opts.backgroundColor)) {
-    nodes.push({
-      kind: 'path',
-      path: rectPath(0, 0, opts.paperWidth, opts.paperHeight),
-      fill: { kind: 'solid', color: opts.backgroundColor },
-    });
+    nodes.push(backgroundSvgNode(opts.backgroundColor, opts.paperWidth, opts.paperHeight));
   }
 
   nodes.push(...sceneToSvgNodes(sceneSourceOf(scene, poseOfIn(scene, opts.poseComposition))));
