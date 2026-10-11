@@ -64,7 +64,7 @@ import type {
   WalkStep,
 } from './dispatchRecord';
 import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../eligibility';
-import { resolveCursor } from '@weasel-js/cursor';
+import { resolveCursor, type CursorSpec } from '@weasel-js/cursor';
 import type { CapabilityTag } from '@weasel-js/modes';
 
 /**
@@ -521,12 +521,12 @@ export interface Dispatcher {
   inFlight(): ReadonlyMap<string, OngoingHandle>;
 
   /**
-   * CSS cursor for the gesture currently in flight, or `null` when nothing
+   * Cursor for the gesture currently in flight, as declared, or `null` when nothing
    * is. Reads `Action.activeCursor` (falling back to `Action.cursor`) off the
    * action whose handle is open — the hover pump applies this instead of its
    * prediction once a gesture starts, which is how `grab` becomes `grabbing`.
    */
-  inFlightCursor(): string | null;
+  inFlightCursor(): CursorSpec | null;
 
   /**
    * Read-only iterator over currently in-flight `OngoingHandle` instances.
@@ -1525,15 +1525,17 @@ export function createDispatcher(opts?: {
     return inFlightHandles;
   }
 
-  function inFlightCursor(): string | null {
+  function inFlightCursor(): CursorSpec | null {
     // Latest start wins, matching `getActiveAction` — with a mouse and a pen
     // in flight together the cursor belongs to the gesture the user just
     // began, not the one they began first. Map iteration is insertion order
     // and each gestureId is set exactly once, so the last entry is the newest.
-    let cursor: string | null = null;
+    let cursor: CursorSpec | null = null;
     for (const action of inFlightActions.values()) {
-      const c = resolveCursor(action.activeCursor ?? action.cursor);
-      if (c) cursor = c;
+      const spec = action.activeCursor ?? action.cursor;
+      // The spec, not its CSS form: a painted glyph resolves to 'none', which
+      // would tell the pump to hide the cursor and paint nothing.
+      if (spec !== undefined && resolveCursor(spec)) cursor = spec;
     }
     return cursor;
   }

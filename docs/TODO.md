@@ -271,17 +271,6 @@ Priority tags:
   function from routing (order, capability gate, view filter) for the dispatcher and `overlays()`
   both, delete `scopedBindings()` or make it that function, and correct the taxonomy paragraph.
 
-- **(P3) Painted cursors do not survive the hover-cursor pump.** Two latent cases, since no kit tool
-  or action uses a painted cursor yet. An action declaring `activeCursor: { glyph, worldRadius }`:
-  `inFlightCursor()` in `packages/routing/src/interactions/dispatcher/dispatcher.ts` returns
-  `resolveCursor(...)`, which is the string `'none'` for a painted spec, and the pump in
-  `useGestureDispatcher.tsx` treats `'none'` as a CSS cursor and clears the painted override, so
-  there is no cursor at all mid-gesture. And a painted base cursor with the pointer over a handle
-  whose cursor is CSS: the pump sets the CSS cursor and `setOverride(null)`, and
-  `PaintedCursorState.current()` is `override ?? base`, so the painted base keeps drawing under the
-  native arrow. Return the `CursorSpec` from `inFlightCursor`, and give the painted state an
-  explicit "suppressed" override for a CSS-tier hover cursor.
-
 - **(P3) `ActionsRegistry.trigger` does not ask `enabled`.** `trigger('delete')` runs while
   `delete.enabled()` reports a disabled reason, which the dispatcher honors for the same action on
   a key (`packages/routing/src/interactions/actions/ActionsProvider.tsx`). Whether a palette or

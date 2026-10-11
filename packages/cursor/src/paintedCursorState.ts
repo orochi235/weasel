@@ -26,8 +26,9 @@ export interface PaintedCursorFrame {
 export interface PaintedCursorState {
   /** The active tool's cursor. */
   setBase(cursor: PaintedCursor | null): void;
-  /** An affordance's or action's cursor; wins over the base while set. */
-  setOverride(cursor: PaintedCursor | null): void;
+  /** An affordance's or action's cursor; wins over the base while set.
+   *  `'none'` is a CSS cursor showing: nothing is painted, the base included. */
+  setOverride(cursor: PaintedCursor | 'none' | null): void;
   /** Canvas-local CSS px. */
   setPointer(x: number, y: number): void;
   /** Pointer left the surface: nothing to draw until it returns. */
@@ -52,9 +53,9 @@ export interface PaintedCursorState {
  * every render — so identity comparison would report a change constantly and
  * drive a repaint per pointer event.
  */
-function same(a: PaintedCursor | null, b: PaintedCursor | null): boolean {
+function same(a: PaintedCursor | 'none' | null, b: PaintedCursor | 'none' | null): boolean {
   if (a === b) return true;
-  if (!a || !b) return false;
+  if (!a || !b || a === 'none' || b === 'none') return false;
   return (
     a.glyph === b.glyph &&
     a.angle === b.angle &&
@@ -66,13 +67,14 @@ function same(a: PaintedCursor | null, b: PaintedCursor | null): boolean {
 /** An empty store: no cursor set, pointer outside the surface. */
 export function createPaintedCursorState(): PaintedCursorState {
   let base: PaintedCursor | null = null;
-  let override: PaintedCursor | null = null;
+  let override: PaintedCursor | 'none' | null = null;
   let at: { x: number; y: number } | null = null;
   const subs = new Set<() => void>();
 
   const notify = (): void => {
     for (const fn of subs) fn();
   };
+  const shown = (): PaintedCursor | null => (override === 'none' ? null : override ?? base);
 
   return {
     setBase(cursor) {
@@ -91,7 +93,7 @@ export function createPaintedCursorState(): PaintedCursorState {
       // for a cursor the compositor is drawing itself.
       if (at && at.x === x && at.y === y) return;
       at = { x, y };
-      if (override ?? base) notify();
+      if (shown()) notify();
     },
     clearPointer() {
       if (at === null) return;
@@ -99,10 +101,10 @@ export function createPaintedCursorState(): PaintedCursorState {
       notify();
     },
     active() {
-      return (override ?? base) !== null;
+      return shown() !== null;
     },
     current() {
-      const cursor = override ?? base;
+      const cursor = shown();
       if (!cursor || !at) return null;
       return { cursor, at };
     },

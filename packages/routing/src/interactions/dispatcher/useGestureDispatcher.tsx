@@ -1280,13 +1280,14 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // A painted cursor is two writes, not one: the native cursor gets out of
       // the way and the layer is told what to draw. Doing only the first is a
       // pointer with no cursor at all.
-      const painted = tier.kind === 'painted' ? tier : null;
-      paintedCursorRef.current?.()?.setOverride(painted);
       const cursor = tier.kind === 'css' ? tier.css : 'none';
       if (!cursor) {
         clearHoverCursor();
         return;
       }
+      // A CSS cursor has to silence the layer too, or a painted tool cursor
+      // keeps drawing under the native one.
+      paintedCursorRef.current?.()?.setOverride(tier.kind === 'painted' ? tier : 'none');
       canvas.style.cursor = cursor;
       cursorOverridden = true;
     };
