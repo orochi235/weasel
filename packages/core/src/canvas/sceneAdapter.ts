@@ -150,6 +150,9 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   poseComposition?: PoseComposition<TPose>;
 }
 
+const pickability = (n: { pickable?: boolean }): { pickable?: boolean } =>
+  n.pickable !== undefined ? { pickable: n.pickable } : {};
+
 // Fallback id generator for `commitInsert` when the consumer factory omits
 // `created.id`. Mirrors `scene.ts`'s `defaultGenerateId` shape; module-scoped
 // counter keeps ids unique across adapters in a session.
@@ -354,6 +357,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         // Derivation travels with the node, or undo of a delete brings an
         // edge back as a static path that never follows its endpoints again.
         ...(node.dependsOn !== undefined ? { dependsOn: node.dependsOn } : {}),
+        ...pickability(node),
         ...fnFieldsOfNode(node),
       });
     },
@@ -469,6 +473,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             pose: copyField(poseFor(n, isRoot)),
             data: copyField(n.data),
             children: [...n.children],
+            ...pickability(n),
             ...(n.clipFromPose ? { clipFromPose: n.clipFromPose } : {}),
             ...derivation(n),
           });
@@ -481,6 +486,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             parent: n.parent,
             pose: copyField(poseFor(n, isRoot)),
             data: copyField(n.data),
+            ...pickability(n),
           });
         }
       };
@@ -549,6 +555,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           parent: isRoot(item) ? null : idMap.get(item.parent as string)!,
           pose: ridesPastedFrame(item) ? copyField(item.pose) : translate(copyField(item.pose), dx, dy),
           data: copyField(item.data),
+          ...pickability(item),
         };
         if (item.kind === 'container') {
           out.push({
