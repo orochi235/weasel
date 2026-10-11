@@ -12,7 +12,7 @@
  * during paint, so the hover state is always read fresh.
  */
 
-import { useEffect, useRef, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { NodeId } from '../../core/scene/types';
 
@@ -48,8 +48,9 @@ export function useHoverTracking(args: UseHoverTrackingArgs): () => NodeId | nul
     return () => {
       c.removeEventListener('pointermove', onMove);
       c.removeEventListener('pointerleave', onLeave);
+      hoverRef.current = null;
     };
   }, [canvasRef, enabled, nodeAtRef]);
 
-  return () => hoverRef.current;
+  return useCallback(() => hoverRef.current, []);
 }

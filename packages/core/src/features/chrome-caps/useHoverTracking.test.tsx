@@ -86,6 +86,34 @@ describe('useHoverTracking', () => {
   });
 });
 
+describe('useHoverTracking — the getter', () => {
+  it('is the same function on every render', () => {
+    const ref = { current: document.createElement('canvas') };
+    const { result, rerender } = renderHook(() =>
+      useHoverTracking({ canvasRef: ref, nodeAtClientPoint: () => null }));
+    const first = result.current;
+    rerender();
+    expect(result.current).toBe(first);
+  });
+
+  it('forgets the hovered node when tracking is turned off', () => {
+    const canvas = document.createElement('canvas');
+    document.body.appendChild(canvas);
+    const ref = { current: canvas };
+    const { result, rerender } = renderHook(
+      ({ enabled }: { enabled: boolean }) => useHoverTracking({
+        canvasRef: ref, nodeAtClientPoint: () => ({ id: asNodeId('a') }), enabled,
+      }),
+      { initialProps: { enabled: true } },
+    );
+    act(() => { fireMove(canvas, 1, 1); });
+    expect(result.current()).toBe(asNodeId('a'));
+    rerender({ enabled: false });
+    expect(result.current()).toBeNull();
+    canvas.remove();
+  });
+});
+
 describe('useHoverTracking — abandoned renders', () => {
   it('hit-tests with the committed picker, not an abandoned render\'s', () => {
     const canvas = document.createElement('canvas');
