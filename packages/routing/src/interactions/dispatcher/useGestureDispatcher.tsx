@@ -610,7 +610,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Held keys by physical key, mapped to the `key` they went down as (Shift
     // pressed mid-hold makes the keyup of an 'o' press report 'O') and the
     // dispatcher that took the down, which hover may have routed away from.
-    const heldKeys = new Map<string, { key: string; on: Dispatcher }>();
+    const heldKeys = new Map<string, { key: string; code?: string; on: Dispatcher }>();
+    const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
     const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
 
     // Every pointer currently held on the canvas, one `openPointerSession`
@@ -773,6 +774,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const keyEv: InputEvent = {
         kind: 'key',
         key: e.key,
+        ...codeOf(e),
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
@@ -788,6 +790,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const heldEv: InputEvent = {
         kind: 'key-held',
         key: e.key,
+        ...codeOf(e),
         phase: 'down',
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
@@ -798,7 +801,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const heldResult = dispatch(heldEv, heldOn);
 
       if (heldResult === 'handled') {
-        heldKeys.set(physicalKey(e), { key: e.key, on: heldOn });
+        heldKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), on: heldOn });
       }
 
       if (keyResult === 'handled' || heldResult === 'handled') {
@@ -813,6 +816,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const ev: InputEvent = {
         kind: 'key-held',
         key: down.key,
+        ...(down.code !== undefined ? { code: down.code } : {}),
         phase: 'up',
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
@@ -832,10 +836,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       for (const p of [...held.values()]) p.session.cancel();
       const releasing = [...heldKeys.values()];
       heldKeys.clear();
-      for (const { key, on } of releasing) {
+      for (const { key, code, on } of releasing) {
         const ev: InputEvent = {
           kind: 'key-held',
           key,
+          ...(code !== undefined ? { code } : {}),
           phase: 'up',
           altKey: false,
           ctrlKey: false,

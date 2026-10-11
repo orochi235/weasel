@@ -107,6 +107,11 @@ export interface KeySpec {
   kind: 'key';
   /** A single key, or an array of acceptable keys (case-insensitive match). */
   key: string | string[];
+  /** The physical key, as `KeyboardEvent.code` (`'BracketRight'`), or several.
+   *  Tried before `key`, and either matching is enough: the binding then holds
+   *  on that key whatever a layout or a held modifier makes it type, and still
+   *  on any key that types `key`. `key` is what a route names the binding by. */
+  code?: string | string[];
   mods?: ModSpec;
   phase?: PhaseSpec;
 }
@@ -117,6 +122,8 @@ export interface KeyHeldSpec {
   kind: 'key-held';
   /** A single key, or an array of acceptable keys (case-insensitive match). */
   key: string | string[];
+  /** The physical key or keys, as on {@link KeySpec.code}. */
+  code?: string | string[];
   mods?: ModSpec;
   phase?: PhaseSpec;
 }

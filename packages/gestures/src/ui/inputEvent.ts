@@ -53,6 +53,8 @@ export interface BodyClassification {
 export interface KeyEvent extends EventModifiers {
   kind: 'key';
   key: string;
+  /** `KeyboardEvent.code`, when the source event had one. */
+  code?: string;
   repeat?: boolean;
 }
 
@@ -60,6 +62,8 @@ export interface KeyEvent extends EventModifiers {
 export interface KeyHeldEvent extends EventModifiers {
   kind: 'key-held';
   key: string;
+  /** `KeyboardEvent.code`, when the source event had one. */
+  code?: string;
   phase: 'down' | 'up';
 }
 

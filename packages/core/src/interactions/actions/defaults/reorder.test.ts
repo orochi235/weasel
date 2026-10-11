@@ -431,6 +431,12 @@ describe('reorder default bindings', () => {
       .toBe('extreme');
   });
 
+  it('takes Cmd+Alt on the bracket keys whatever Option makes them type', () => {
+    const alt = { metaKey: true, altKey: true };
+    expect(distanceFor(reorderForwardAction, { ...keyEvent('+', alt), code: 'BracketRight' } as InputEvent)).toBe('extreme');
+    expect(distanceFor(reorderBackwardAction, { ...keyEvent('\u00fc', alt), code: 'BracketLeft' } as InputEvent)).toBe('extreme');
+  });
+
   it('keeps Cmd+Alt as the extreme fallback for browsers that eat Cmd+Shift', () => {
     expect(distanceFor(reorderForwardAction, keyEvent(']', { metaKey: true, altKey: true })))
       .toBe('extreme');

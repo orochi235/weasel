@@ -120,6 +120,16 @@ export function matchKey(eventKey: string, specKey: string | string[]): boolean 
   return specKey.toLowerCase() === lower;
 }
 
+/** A key event against a key spec: by `code` first when the spec names one,
+ *  then by `key`. Either is enough. */
+function matchKeyOrCode(
+  e: { key: string; code?: string },
+  spec: { key: string | string[]; code?: string | string[] },
+): boolean {
+  if (spec.code !== undefined && e.code !== undefined && [spec.code].flat().includes(e.code)) return true;
+  return matchKey(e.key, spec.key);
+}
+
 // ---------------------------------------------------------------------------
 // matchTarget
 // ---------------------------------------------------------------------------
@@ -361,14 +371,14 @@ export function matchSpec(
   switch (spec.kind) {
     case 'key': {
       if (e.kind !== 'key') return false;
-      if (!matchKey(e.key, spec.key)) return false;
+      if (!matchKeyOrCode(e, spec)) return false;
       return matchModifiers(e, spec.mods, isMac);
     }
 
     case 'key-held': {
       if (e.kind !== 'key-held') return false;
       if (e.phase !== 'down') return false; // only match the down phase
-      if (!matchKey(e.key, spec.key)) return false;
+      if (!matchKeyOrCode(e, spec)) return false;
       return matchModifiers(e, spec.mods, isMac);
     }
 

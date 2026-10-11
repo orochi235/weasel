@@ -11,7 +11,7 @@ import {
   type PhaseContext,
 } from './match';
 import type { InputEvent } from './inputEvent';
-import type { TargetSpec } from './spec';
+import type { GestureSpec, TargetSpec } from './spec';
 import { hitPredicate, bodyPredicate } from './spec';
 
 const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
@@ -260,6 +260,20 @@ describe('matchSpec', () => {
     const plain: InputEvent = { kind: 'pointerdown', stage: 'press', ...noMods };
     expect(matchSpec(plain, { kind: 'pointerDown', mods: { shift: 'optional' } }, false)).toBe(true);
     expect(matchSpec(plain, { kind: 'pointerDown', mods: { shift: true } }, false)).toBe(false);
+  });
+
+  it('a key spec naming a code matches the physical key, whatever it types', () => {
+    const spec = { kind: 'key', key: ']', code: 'BracketRight', mods: { meta: true, alt: true } } as const;
+    const mods = { ...noMods, metaKey: true, altKey: true };
+    // Option turns `]` into a curly quote on a US Mac.
+    expect(matchSpec({ kind: 'key', key: '\u2018', code: 'BracketRight', ...mods }, spec, true)).toBe(true);
+    expect(matchSpec({ kind: 'key', key: '\\', code: 'Backslash', ...mods }, spec, true)).toBe(false);
+    // The key still matches: a layout that types `]` on another key, or an event with no code.
+    expect(matchSpec({ kind: 'key', key: ']', code: 'Equal', ...mods }, spec, true)).toBe(true);
+    expect(matchSpec({ kind: 'key', key: ']', ...mods }, spec, true)).toBe(true);
+    const held: GestureSpec = { kind: 'key-held', key: 'F13', code: ['ShiftLeft'] };
+    expect(matchSpec({ kind: 'key-held', phase: 'down', key: 'Shift', code: 'ShiftLeft', ...noMods }, held, false)).toBe(true);
+    expect(matchSpec({ kind: 'key-held', phase: 'down', key: 'Shift', code: 'ShiftRight', ...noMods }, held, false)).toBe(false);
   });
 
   it('MultiTouchSpec matches when fingers count matches', () => {

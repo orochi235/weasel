@@ -281,14 +281,11 @@ Priority tags:
   (`packages/routing/src/interactions/actions/action.ts`) still says keystroke dispatch is
   unaffected by it, which stopped being true when the dispatcher began gating.
 
-- **(P3) Key bindings match `event.key` only, so they depend on the keyboard layout.** `matchKey` in
-  `packages/gestures/src/ui/match.ts` compares `event.key`, and `KeySpec` has no `code` form. `{
-  key: ']', mods: { mod: true, alt: true } }` cannot match on a US Mac, where Option turns `]` into
-  `‘`; core lists the glyph per binding (`key: [']', '‘']` in
-  `packages/core/src/interactions/actions/defaults/reorder.ts`), which is right for one layout. A
-  layout that types `[` with AltGr reports `ctrlKey` and `altKey`, which the strict modifier match
-  rejects. Left and right Shift also share one `key-held-Shift` gesture id, so releasing either ends
-  the hold. Let a key spec name a `code` and match it before `key`.
+- **(P3) A key typed with AltGr cannot match a binding.** A layout that types `[` with AltGr
+  reports `ctrlKey` and `altKey`, which the strict modifier match in
+  `packages/gestures/src/ui/match.ts` rejects. Dropping both flags while
+  `getModifierState('AltGraph')` holds is the usual fix, and needs checking in real browsers:
+  Firefox on Windows reports AltGraph for a plain Ctrl+Alt too, which would then stop matching.
 
 - **(P3) Route-conflict check: `mod` is never compared with the key it resolves to.** In
   `packages/routing/src/tools/routing/reflection/conflicts.ts`, `mods: { mod: true }` and

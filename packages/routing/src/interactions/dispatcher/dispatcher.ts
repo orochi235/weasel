@@ -27,7 +27,9 @@
  * when its required deps aren't wired.
  *
  * ## gestureId scheme
- * - `key-held` ongoing actions: `key-held-<key>` (e.g. `key-held- ` for Space).
+ * - `key-held` ongoing actions: `key-held-<code>` (`key-held-Space`), so two
+ *   keys that share a `key`, such as the two Shifts, hold separately. An event
+ *   with no code keys by `key`.
  *   Chosen because key-held gestures are identified by the held key alone.
  * - `pointerdown` / drag ongoing actions: `pointer-<pointerId>`, taken from
  *   the originating DOM `PointerEvent`. Each physical pointer — mouse, each
@@ -850,7 +852,7 @@ export function createDispatcher(opts?: {
    */
   function gestureIdFor(event: InputEvent): string {
     if (event.kind === 'key-held') {
-      return `key-held-${event.key}`;
+      return `key-held-${event.code ?? event.key}`;
     }
     if (
       event.kind === 'pointerdown' ||

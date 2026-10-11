@@ -87,9 +87,9 @@ export const reorderForwardAction: Action & { requires: string[] } = {
     {
       // Cmd+Alt+] → bring-to-front. On macOS Option+] emits '‘' (U+2018);
       // whether Cmd suppresses that transform is browser-dependent, so match
-      // both the bracket and the Option-produced char (US layout). matchKey is
-      // character-based, so non-US layouts may need a rebind.
-      spec: { kind: 'key', key: [']', '‘'], mods: { mod: true, alt: true } },
+      // both the bracket and the Option-produced char (US layout). `code`
+      // covers the layouts where Option types something else on that key.
+      spec: { kind: 'key', key: [']', '‘'], code: 'BracketRight', mods: { mod: true, alt: true } },
       opts: { params: { distance: 'extreme' } },
     },
   ],
@@ -137,7 +137,7 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
     {
       // Cmd+Alt+[ → send-to-back, the binding no browser reserves. On macOS
       // Option+[ emits '“' (U+201C), included alongside the bracket.
-      spec: { kind: 'key', key: ['[', '“'], mods: { mod: true, alt: true } },
+      spec: { kind: 'key', key: ['[', '“'], code: 'BracketLeft', mods: { mod: true, alt: true } },
       opts: { params: { distance: 'extreme' } },
     },
   ],
