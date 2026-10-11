@@ -268,12 +268,12 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   // Ambient tools and ungated ambient actions are all live together.
   if (ambient.length > 1) add(findConflictsKeyed(ambient, rules, modes));
   if (gatedActions.length > 1) add(findConflictsKeyed(gatedActions, rules, modes));
-  // Hotkey-capable tools can stack on each other. `hotkey` is declared on the
-  // authored `ToolDef`, not carried onto the runtime `Tool` — `Tool.def` is
-  // the reflection handle for exactly this kind of read, and it's typed
-  // `unknown` so consumers cast at the use site.
+  // Hotkey-capable tools can stack on each other. An entry declares the
+  // trigger as `eligibility.offhand`; a tool handed to `useTools` without
+  // going through `defineTool` carries it only on its authored `def`.
   const hotkey = [
-    ...registry.filter((t) => (t.def as { hotkey?: unknown } | undefined)?.hotkey !== undefined),
+    ...registry.filter((t) => t.eligibility?.offhand !== undefined
+      || (t as { def?: { hotkey?: unknown } }).def?.hotkey !== undefined),
     ...hotkeyActions,
   ];
   if (hotkey.length > 1) add(findConflictsKeyed(hotkey, rules, modes));

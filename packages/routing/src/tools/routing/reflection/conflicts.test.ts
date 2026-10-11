@@ -184,6 +184,12 @@ describe('findScopedConflicts', () => {
     expect(findScopedConflicts({ registry: [a, b] })).toHaveLength(1);
   });
 
+  it('flags two entries that declare an offhand trigger themselves', () => {
+    const a = { ...tool('a', [clickRect('x')]), eligibility: { focus: true, offhand: 'space' } } as never;
+    const b = { ...tool('b', [clickRect('y')]), eligibility: { focus: true, offhand: 'alt' } } as never;
+    expect(findScopedConflicts({ registry: [a, b] })).toHaveLength(1);
+  });
+
   it('accepts the registry as a record, matching useTools', () => {
     const a = tool('a', [clickRect('x')]);
     const b = tool('b', [clickRect('y')]);
