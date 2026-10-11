@@ -8,7 +8,7 @@
 import { escapeAttr, escapeText } from './xmlEscape';
 import type { FontRequest, Path, Stroke, StrokeAlign } from '@weasel-js/core';
 import {
-  boundsOfPath, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
+  boundsOfPath, poseFrameOf, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
 } from '@weasel-js/core';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
@@ -20,6 +20,7 @@ import { serializePathD } from './path-serializer';
 import { formatMatrix, multiply, trimNumber } from './transform';
 import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { anchorOffset, svgDirection } from './textAnchor';
+import { boxTransformAttr } from './placeBox';
 
 /**
  * Walk the tree and produce an SVG document string. The root `<svg>`'s
@@ -211,12 +212,8 @@ function imageXml(node: SvgImageNode, namespaces: Record<string, string>): strin
   if (node.opacity != null && node.opacity !== 1) {
     outer.push(`opacity="${trimNumber(node.opacity)}"`);
   }
-  if (node.rotation != null && node.rotation !== 0) {
-    const cx = node.x + node.width / 2;
-    const cy = node.y + node.height / 2;
-    const deg = (node.rotation * 180) / Math.PI;
-    outer.push(`transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`);
-  }
+  const frame = boxTransformAttr(node);
+  if (frame) outer.push(frame);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);
   const href = `href="${escapeAttr(node.href)}"`;
@@ -429,7 +426,9 @@ function computeBounds(nodes: SvgNode[]): { x: number; y: number; width: number;
     const b = n.kind === 'text' || n.kind === 'image'
       ? { minX: n.x, minY: n.y, maxX: n.x + n.width, maxY: n.y + n.height }
       : pathBounds(n.path);
-    const local = n.rotation ? rotateAboutCenter(ctm, b, n.rotation) : ctm;
+    const frame = n.kind === 'path' ? null : poseFrameOf(n);
+    const local = frame ? multiply(ctm, frame)
+      : n.rotation ? rotateAboutCenter(ctm, b, n.rotation) : ctm;
     for (const [x, y] of corners(b)) {
       const px = local[0] * x + local[2] * y + local[4];
       const py = local[1] * x + local[3] * y + local[5];
@@ -551,12 +550,8 @@ function textXml(
   if (node.opacity != null && node.opacity !== 1) {
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
   }
-  if (node.rotation != null && node.rotation !== 0) {
-    const cx = node.x + node.width / 2;
-    const cy = node.y + node.height / 2;
-    const deg = (node.rotation * 180) / Math.PI;
-    attrs.push(`transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`);
-  }
+  const frame = boxTransformAttr(node);
+  if (frame) attrs.push(frame);
 
   const body = node.runs && node.runs.length > 0
     ? node.runs.map((r) => runXml(r, style, registry, warn)).join('')

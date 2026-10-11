@@ -817,6 +817,9 @@ export {
   pathInWorld,
   worldEditToStorage,
   poseRotationOf,
+  poseFrameOf,
+  poseFrameInverseOf,
+  poseLinearOf,
   rotatePathAround,
   createPathLayer,
   flattenCubic,
@@ -871,6 +874,7 @@ export type {
   PointAlongPathOptions,
   SplitBySegmentOptions,
   PoseRotation,
+  PoseLinear,
 } from './features/paths';
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {

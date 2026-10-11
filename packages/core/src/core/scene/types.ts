@@ -3,6 +3,7 @@ import type { History, SerializedHistory } from '@weasel-js/history';
 import type { ParallaxOpts } from '../viewport/parallax';
 import type { ContainerBounds, LayoutStrategy } from '../../layout/types';
 import type { PoseComposition } from './composeFrame';
+import type { PoseLinear } from '../geometry/poseFrame';
 
 /**
  * Axis-aligned rectangle pose with optional rotation. The canonical pose
@@ -20,6 +21,9 @@ export interface RectPose {
   height: number;
   /** Rotation in radians around the unrotated AABB center. Absent === 0. */
   rotation?: number;
+  /** A skew or per-axis scale the box and rotation cannot hold; see
+   *  {@link PoseLinear}. Absent is the identity. */
+  transform?: PoseLinear;
 }
 
 /**

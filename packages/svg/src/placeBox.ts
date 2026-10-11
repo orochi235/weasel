@@ -1,11 +1,12 @@
 /**
- * Carry an axis-aligned box through an affine matrix, for the nodes that are
- * a box plus a rotation about its center (`<text>`, `<image>`) and so cannot
+ * Carry an axis-aligned box through an affine matrix and back, for the nodes
+ * that are a box in a frame of their own (`<text>`, `<image>`) and so cannot
  * have a matrix baked into their geometry the way a path can.
  */
 import type { Matrix } from './types';
 import { invert } from '@weasel-js/geom';
-import { applyMatrix, decomposeRotation, isIdentity } from './transform';
+import { poseFrameOf, poseLinearOf, type PoseLinear } from '@weasel-js/core';
+import { applyMatrix, decomposeRotation, formatMatrix, isIdentity, trimNumber } from './transform';
 
 export interface Box {
   x: number;
@@ -22,14 +23,20 @@ export interface BoxPlacement extends Box {
   scale: number;
   flipX: boolean;
   flipY: boolean;
-  /** False when the matrix holds something the placement does not: a skew,
-   *  or a non-uniform scale or mirror the node cannot take. */
-  exact: boolean;
+  /** What the matrix holds beyond the box, rotation, and flips, in the
+   *  `PoseLinear` convention; absent when they hold all of it. */
+  transform?: PoseLinear;
 }
 
+const near = (v: number, target: number): boolean => Math.abs(v - target) <= 1e-9;
+
 /**
+ * Split a non-singular `m` into the box it makes of `box`, a rotation, flips,
+ * and the residual `transform` that none of them hold.
+ *
  * `stretch` says the node can scale its two axes independently and mirror
- * (an image); without it only a uniform scale is exact (text).
+ * (an image), which leaves only a skew for the residual; without it the box
+ * takes the uniform scale alone (text).
  */
 export function placeBox(box: Box, m: Matrix, stretch: boolean): BoxPlacement {
   const [a, b, c, d] = m;
@@ -48,35 +55,47 @@ export function placeBox(box: Box, m: Matrix, stretch: boolean): BoxPlacement {
       scale,
       flipX: a < 0,
       flipY: d < 0,
-      exact: true,
     };
   }
+  // Turned back by the x axis's angle, the linear part is `[[p, q], [0, r]]`.
+  const p = Math.hypot(a, b);
+  const q = (a * c + b * d) / p;
+  const r = (a * d - b * c) / p;
+  // A scale within the rounding of a written `matrix(...)` is no scale, or a
+  // font size would drift a little on every export and import.
+  const settle = (v: number): number => (Math.abs(v - 1) <= 1e-5 ? 1 : v);
+  const sx = settle(stretch ? p : scale);
+  const sy = settle(stretch ? Math.abs(r) : scale);
+  const flipY = stretch && r < 0;
+  const ry = flipY ? -sy : sy;
+  const linear: PoseLinear = [p / sx, 0, q / ry, r / ry];
   const center = applyMatrix(m, box.x + box.width / 2, box.y + box.height / 2);
-  const width = box.width * scale;
-  const height = box.height * scale;
-  return {
+  const width = box.width * sx;
+  const height = box.height * sy;
+  const placed: BoxPlacement = {
     x: center.x - width / 2,
     y: center.y - height / 2,
     width,
     height,
     rotation: Math.atan2(b, a),
-    scale,
+    scale: settle(scale),
     flipX: false,
-    flipY: false,
-    exact: uniform && Math.abs(b + c) <= eps && a * d - b * c > 0,
+    flipY,
   };
+  if (!near(linear[0], 1) || !near(linear[2], 0) || !near(linear[3], 1)) placed.transform = linear;
+  return placed;
 }
 
 /**
  * Take the box `node` holds in its element's own coordinates through `m`,
  * the element's whole transform (inherited and own): the box moves and
- * scales, a rotation lands on `node.rotation`, and what the node cannot
- * hold is reported.
+ * scales, a rotation lands on `node.rotation`, and a skew or a scale the
+ * box cannot take lands on `node.transform`.
  *
  * Returns the uniform scale the caller owes the lengths inside the box.
  */
 export function placeNode(
-  node: Box & { rotation?: number; flipX?: boolean; flipY?: boolean },
+  node: Box & { rotation?: number; flipX?: boolean; flipY?: boolean; transform?: PoseLinear },
   tag: string,
   m: Matrix,
   stretch: boolean,
@@ -92,7 +111,7 @@ export function placeNode(
     node.y = center.y - node.height / 2;
     return 1;
   }
-  // The form `serialize.ts` writes: the box stays put, to the last bit.
+  // The form `boxTransformAttr` writes for a rotation: the box stays put, to the last bit.
   const turn = decomposeRotation(m, cx, cy);
   if (turn != null) {
     node.rotation = turn;
@@ -106,8 +125,27 @@ export function placeNode(
   if (Math.abs(placed.rotation) > 1e-9) node.rotation = placed.rotation;
   if (placed.flipX) node.flipX = !node.flipX;
   if (placed.flipY) node.flipY = !node.flipY;
-  if (!placed.exact) {
-    onWarn(`<${tag}> transform has a skew or non-uniform scale the node cannot hold; kept its position, rotation, and uniform scale`);
-  }
+  if (placed.transform) node.transform = placed.transform;
   return placed.scale;
+}
+
+/**
+ * The `transform` attribute a text or image node's own frame is written as,
+ * or `null` when it has none. A rotation alone is `rotate(deg cx cy)`; with a
+ * `transform` it is the whole frame as a `matrix(...)`, which `placeNode`
+ * splits back into the same parts.
+ */
+export function boxTransformAttr(
+  node: Box & { rotation?: number; transform?: PoseLinear },
+): string | null {
+  if (poseLinearOf(node)) {
+    const frame = poseFrameOf(node);
+    const m = frame && formatMatrix(frame);
+    return m ? `transform="${m}"` : null;
+  }
+  if (!node.rotation) return null;
+  const cx = node.x + node.width / 2;
+  const cy = node.y + node.height / 2;
+  const deg = (node.rotation * 180) / Math.PI;
+  return `transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`;
 }

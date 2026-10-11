@@ -98,6 +98,7 @@ export {
 } from './anchorEdits';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './pathInWorld';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from 'core/geometry/poseRotation';
+export { poseFrameOf, poseFrameInverseOf, poseLinearOf, type PoseLinear } from 'core/geometry/poseFrame';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export { pathPoseDescriptor } from './poseDescriptor';
 export { pathOriginProjection } from './originProjection';

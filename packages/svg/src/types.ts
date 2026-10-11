@@ -14,7 +14,7 @@
 import { identity, type Mat3 } from '@weasel-js/geom';
 import type { SvgMediaEnvironment } from './media';
 import type {
-  Path, FillStyle, MarkerEntry, MarkerRef, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
+  Path, FillStyle, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
   TextVerticalAlign,
 } from '@weasel-js/core';
 
@@ -205,6 +205,11 @@ export interface SvgTextNode {
    *  AABB center `(x + width/2, y + height/2)`. Emitted as SVG
    *  `transform="rotate(angleDegrees cx cy)"`. */
   rotation?: number;
+  /** The skew or per-axis scale the box, `rotation`, and flips cannot hold,
+   *  applied about the box center inside the rotation; see `PoseLinear`.
+   *  With one, the element is written with its whole frame as a
+   *  `transform="matrix(...)"`. */
+  transform?: PoseLinear;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -245,6 +250,11 @@ export interface SvgImageNode {
    *  AABB center `(x + width/2, y + height/2)`. Emitted as SVG
    *  `transform="rotate(angleDegrees cx cy)"`. */
   rotation?: number;
+  /** The skew or per-axis scale the box, `rotation`, and flips cannot hold,
+   *  applied about the box center inside the rotation; see `PoseLinear`.
+   *  With one, the element is written with its whole frame as a
+   *  `transform="matrix(...)"`. */
+  transform?: PoseLinear;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
