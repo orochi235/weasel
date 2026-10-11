@@ -1141,13 +1141,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   module, cross-thread messaging and a bundling story. Revisit if jank proves
   audible.
 
-- **(P3) audio: a voice stolen or stopped inside the lookahead may report neither `onDone` nor
-  `onDrop`.** A voice gets its source up to a lookahead before the source sounds, and from then on
-  its ending is reported by the source's `onended` as `onDone`. Stolen or stopped in that window,
-  the source is stopped ahead of its own start time, and whether a browser raises `ended` for
-  that is read from the spec, not run. Needs a `*.browser.test.ts` that stops a source before its
-  start time; if `ended` does not come, teardown has to report those voices itself.
-
 ---
 
 ## Selection, actions & UI panels
@@ -1351,16 +1344,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   The same gap leaves a leaf switched to a custom kind with `default: undefined` and no Default row
   unless the kind's entry declares one. A type made with `prefType` has no such gap, carrying its
   own default.
-
-- **(P2) `PrefSchemaEditor`: an unset Auto value reads as "not set" and as a value at once.** The
-  row is drawn through `PrefsForm`'s own auto state (`AttributesPane.tsx` passes
-  `auto={UNSET_AUTO_VALUE}` and substitutes the leaf's default as the value), so its label is a pin
-  button, the words "not set" sit beside it, and the control under them shows the default at full
-  strength: `Auto value not set [8]`, or a ticked checkbox. Nothing says the 8 is the default and
-  not something stored, and the way to set or clear it is the label, which does not look like a
-  control. Ruled 2026-10-11: a switch sits before the control on the same row, and the control is
-  disabled until the switch is on. That leaves drawing the row that way in `AttributesPane.tsx`, for
-  every kind, in place of the auto state.
 
 - **(P3) `PrefSchemaEditor` layout rough edges.** The always-mounted notice row adds one grid gap
   above the attributes pane, and the Key/Kind rows are wider than the attribute form under them.
