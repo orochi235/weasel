@@ -242,6 +242,7 @@ describe('what the key has to tell apart', () => {
         levels: new Array<number>(end - start).fill(1),
       }),
       mirror: () => null,
+      baseLevel: () => 0,
     });
     const runs = [run('ab')];
     const plain = cachedLayoutRuns(runs, OPTS);

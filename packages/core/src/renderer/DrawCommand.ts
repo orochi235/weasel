@@ -4,7 +4,7 @@
 // cycle that makes the dts bundler split them into mutually-dependent chunks and warn.
 import type { Path } from '@weasel-js/geom';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
-import type { TextStyle } from '@weasel-js/text';
+import type { TextAlign, TextDirection, TextStyle } from '@weasel-js/text';
 import type { ResolvedRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
 import type { GlMat3 } from './math/mat3';
@@ -110,7 +110,10 @@ export interface TextDrawCommand {
   runs: ResolvedRun[];
   /** Wrap width. Absent never wraps. */
   maxWidth?: number;
-  align?: 'left' | 'center' | 'right';
+  align?: TextAlign;
+  /** What `start` / `end` resolve against, and the base direction of bidi
+   *  reordering — see `LayoutRunsOpts.direction`. Default `style`'s. */
+  direction?: TextDirection | 'auto';
   /** Spread each wrapped line across `width` — see `LayoutRunsOpts.justify`.
    *  `align` then sets only the lines it does not spread. Default `false`. */
   justify?: boolean;

@@ -16,20 +16,26 @@ interface Paragraph {
   analysis: BidiAnalysis;
 }
 
-/** Visual order for the line `[from, to)`, as positions in the whole text. */
-export type LineReorder = (from: number, to: number) => BidiReordering;
+/** A text's paragraphs, analyzed. */
+export interface AnalyzedParagraphs {
+  /** Visual order for the line `[from, to)`, as positions in the whole text. */
+  reorder(from: number, to: number): BidiReordering;
+  /** The level the paragraph holding position `at` reads at; 0 for a position
+   *  in none, which is a hard break or a blank line. */
+  baseLevel(at: number): number;
+}
 
 /**
  * Analyze `codePoints` paragraph by paragraph. `isBreak` marks the hard breaks,
- * which belong to no paragraph. The returned function reorders one line, which
- * must lie within a single paragraph — true of any line a wrap produces.
+ * which belong to no paragraph. `reorder` takes one line, which must lie within
+ * a single paragraph — true of any line a wrap produces.
  */
 export function analyzeParagraphs(
   engine: BidiResolver,
   codePoints: readonly number[],
   isBreak: (index: number) => boolean,
   direction: 'ltr' | 'rtl' | 'auto',
-): LineReorder {
+): AnalyzedParagraphs {
   const paragraphs: Paragraph[] = [];
   let start = 0;
   for (let i = 0; i <= codePoints.length; i++) {
@@ -40,18 +46,29 @@ export function analyzeParagraphs(
     start = i + 1;
   }
 
-  return (from, to) => {
+  const holding = (at: number): Paragraph | undefined => {
     let lo = 0;
     let hi = paragraphs.length - 1;
     while (lo < hi) {
       const mid = (lo + hi) >> 1;
-      if (paragraphs[mid].end <= from) lo = mid + 1;
+      if (paragraphs[mid].end <= at) lo = mid + 1;
       else hi = mid;
     }
     const p = paragraphs[lo];
-    if (p === undefined || from < p.start || to > p.end) return { order: [], levels: [] };
-    const r = engine.reorder(p.analysis, from - p.start, to - p.start);
-    return { order: r.order.map((i) => i + p.start), levels: r.levels };
+    return p !== undefined && at >= p.start && at < p.end ? p : undefined;
+  };
+
+  return {
+    reorder(from, to) {
+      const p = holding(from);
+      if (p === undefined || to > p.end) return { order: [], levels: [] };
+      const r = engine.reorder(p.analysis, from - p.start, to - p.start);
+      return { order: r.order.map((i) => i + p.start), levels: r.levels };
+    },
+    baseLevel(at) {
+      const p = holding(at);
+      return p === undefined ? 0 : engine.baseLevel(p.analysis);
+    },
   };
 }
 

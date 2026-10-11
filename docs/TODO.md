@@ -577,16 +577,6 @@ Core five + Crop shipped. Remaining:
   leaving `dispatch` in `draw.ts`; the fill and stroke sections move together, since the
   bind-half/draw-half rule in CLAUDE.md spans them.
 
-- **(P3) Renderer: `PathDrawCommand` accepts `FillStyle` shapes the renderer cannot draw.** A
-  hand-built command with `fill: { fill: 'pattern', pattern: { tile: 'hatch', color: '#000' } }`
-  draws nothing and warns `pattern TextureHandle "undefined" not registered`, because `bindPattern`
-  (`packages/core/src/renderer/draw.ts`) casts `fill.pattern` to a `TextureHandle`. A gradient with
-  `units: 'bounds'` is painted in screen space with no warning. The node painter resolves both
-  before the renderer; a consumer-built command skips that. Ruled 2026-10-11: the command's fill
-  type narrows to what the renderer takes, a resolved pattern handle and world or local gradient
-  units, so a tile spec or `units: 'bounds'` on a command is a type error, not a blank draw. That
-  leaves the narrower type and whatever emit sites it turns up.
-
 - **(P3) Layers: `LayerGroup.alpha` without `effects` fades each member, not the group.** Its doc
   (`packages/core/src/core/layers/render.ts`) says the opacity applies "to the group's composited
   result, not to each member", but `wrapGroup` emits a plain group command, whose alpha multiplies
@@ -665,7 +655,7 @@ Core five + Crop shipped. Remaining:
   `super`/`sub` 12px rows of `npx vitest run -c
   scripts/measure-overlay-alignment.config.ts` show both.
 
-- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Shaping is also what real small caps needs: `fontVariantCaps: 'small-caps'` is synthesized today (capitals scaled by x-height over cap height), and a face with an `smcp` feature should get its own small-cap glyphs instead.
+- **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Shaping is also what real small caps needs: `fontVariantCaps: 'small-caps'` is synthesized today (capitals scaled by x-height over cap height), and a face with an `smcp` feature should get its own small-cap glyphs instead.
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
@@ -692,27 +682,15 @@ Core five + Crop shipped. Remaining:
   handler; inserting `text/plain`, or sanitizing to run spans, would keep the overlay to what
   `runsToDom` writes. Which elements each browser inserts on paste has not been observed.
 
-- **(P2) Text nodes: right-to-left text lays out reversed, because no kit entry point hands
-  `layoutRuns` a bidi engine.** A text node holding `שלום` paints, picks, and places its caret in
-  logical order. `layoutRuns` reorders only when `opts.bidi` is set, and none of its kit callers set
-  it: `drawText` (`packages/core/src/renderer/draw.ts`), `textPoseLayoutInput`
-  (`packages/text/src/layout/textPoseLayout.ts`), `measureTextBounds`
-  (`packages/text/src/measure/measureTextBounds.ts`), and `textToPath`
-  (`packages/core/src/features/text/textToPath.ts`). `TextStyle.direction` reaches `resolveAlign`
-  and nothing else. The console warning tells the consumer to "add it to the layout options", which
-  a `<SceneCanvas>` consumer does not have. The engine itself is finished and conformance-tested,
-  and `layoutRuns` now handles paragraphs, hanging spaces, and the cache key correctly when one is
-  passed, so what is left is the wiring; `packages/text/src/layout/bidiSeam.ts` says outright that
-  text must not depend on `@weasel-js/bidi`. For an omitted `direction`, bidi analysis uses `'auto'`
-  (first strong character) while `start`/`end` alignment uses `'ltr'`, so Hebrew with no `direction`
-  gets a right-to-left paragraph aligned left. Ruled 2026-10-11: an omitted `direction` means auto
-  for both, so the first strong character sets the paragraph's direction and its alignment, and the
-  engine arrives through one registration point in `@weasel-js/text` (`registerBidi(engine)`, or a
-  `bidi` dep) that `layoutRuns` falls back to when `opts.bidi` is absent, which fixes every caller
-  at once and keeps the seam. That leaves the registration point, passing `style.direction` through
-  as `direction`, moving `resolveAlign`'s `'ltr'` fallback to auto, and rewording the warning to
-  name the real fix. `docs/TODO.md`'s HarfBuzz entry lists reordering as missing; it is implemented
-  and unwired.
+- **(P3) Text direction: three readers of an omitted `direction` are not the layout's.** An omitted
+  `TextStyle.direction` is `'auto'`, each paragraph's first strong character, once a bidi engine is
+  registered (`registerBidi`). Still short of that: the Align bar's encoding
+  (`alignEncoding` in `packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts`) lights
+  `start` / `end` as if auto were `ltr`, because it is handed the style and not the text; the edit
+  overlay states auto as `unicode-bidi: plaintext` (`overlayDirection.ts`), which is CSS's spelling
+  of the same rule but has not been checked against the canvas in a browser; and an imported SVG
+  `<text>` with no `direction` reads as auto where SVG means `ltr`, so its neutrals can land on the
+  other side of right-to-left text.
 
 - **(P2) Text editing: caret stops fall inside grapheme clusters.** `layoutRuns` emits one
   `LaidOutCell` per code point and the cell contract says a caret stop is a cell's `x`, so
@@ -1448,12 +1426,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   history, as the remote path already does for state history), remount the trial on a remote
   replacement, or merge mark by mark, which needs an answer for a mark both tabs edited.
 
-- **(P3) `SelectionPanel`: which node properties read an absent value as their default.** A leaf
-  with `absentIsDefault` draws its default where a node holds nothing, and is not Mixed beside a
-  node that holds that default. Only `pose.rotation` in `defaultNodeProperties` carries the flag.
-  Left: going through the other leaves of `defaultNodeProperties` and `inferredNodeProperties` for
-  fields the engine reads with `??`, and flagging those; a leaf whose absence means the node has no
-  such property (`data.stroke` on a text node) must stay unflagged.
+- **(P3) A text node's `direction` reads as unset where the engine reads `auto`.** `TextStyle.direction`
+  defaults to `auto` (`DEFAULT_TEXT_STYLE`), and the Direction leaf in `defaultNodeProperties` offers
+  only `ltr` and `rtl` with a default of `ltr`, so it cannot carry `absentIsDefault` the way the rest
+  of the style's fields do, and a style with no direction lights neither segment.
 
 - **(P3) An object leaf is drawn by two implementations that disagree.**
   `packages/ui/src/components/Prefs/ObjectLeaf.tsx` and `ObjectLeaf` in

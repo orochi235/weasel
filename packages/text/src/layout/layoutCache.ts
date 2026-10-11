@@ -65,6 +65,7 @@ import { glyphGeneration } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { layoutRuns, type LaidOutRuns, type LayoutRunsOpts } from './layoutRuns';
 import { refId } from './refId';
+import { registeredBidi } from './bidiRegistry';
 
 /** Distinct option combinations held for one runs array before the whole set
  *  is dropped. Sized for "a few views onto the same text". */
@@ -107,8 +108,9 @@ function outlineBucket(runs: readonly ResolvedRun[], min: number | undefined): n
 function variantKey(runs: readonly ResolvedRun[], opts: LayoutRunsOpts): string {
   const alignWidth = opts.alignWidth ?? opts.maxWidth;
   const justify = opts.justify === true || opts.align === 'justify';
+  const bidi = opts.bidi ?? registeredBidi();
   return `${opts.maxWidth}|${alignWidth}|${opts.lineHeight}|${opts.align}|${justify ? 'j' : ''}|${outlineBucket(runs, opts.outlineMinSize)}`
-    + `|${opts.direction ?? ''}|${opts.bidi ? refId(opts.bidi) : ''}|${opts.tabSize ?? ''}`;
+    + `|${opts.direction ?? ''}|${bidi ? refId(bidi) : ''}|${opts.tabSize ?? ''}`;
 }
 
 /**

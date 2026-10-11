@@ -1573,7 +1573,7 @@ describe('layoutRuns — reading-order alignment', () => {
     expect(xs(leftRtl)).toEqual(xs(leftLtr));
   });
 
-  it('defaults direction to ltr when the caller omits it', async () => {
+  it('reads left to right when the caller omits direction and no engine is registered', async () => {
     await registerFixture('inter', [{}]);
     const bare = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'start' });
     const left = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
@@ -1637,6 +1637,7 @@ describe('layoutRuns — bidi seam', () => {
       return { order, levels: new Int16Array(end - start).fill(1) };
     },
     mirror: () => null,
+    baseLevel: () => 0,
   };
 
   it('lays out in logical order when no engine is supplied', async () => {

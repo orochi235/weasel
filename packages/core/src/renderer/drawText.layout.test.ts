@@ -141,6 +141,20 @@ describe('drawText and the alignment box', () => {
     expect(laid.lines).toHaveLength(1);
     expect(laid.lines[0].x0).toBeCloseTo(356, 5);
   });
+
+  it('resolves a reading-order alignment against the command\'s direction', () => {
+    const base = bottomAlignedText() as Extract<DrawCommand, { kind: 'text' }>;
+    const cmd: DrawCommand = {
+      ...base,
+      verticalAlign: undefined,
+      align: 'start',
+      direction: 'rtl',
+      width: 400,
+      runs: [{ ...base.runs[0], text: 'AB', underline: false }],
+    };
+    r.render([cmd]);
+    expect(captured[captured.length - 1].result.lines[0].x0).toBeCloseTo(356, 5);
+  });
 });
 
 /** Y coordinates from every vertex buffer uploaded this frame. Text quads are

@@ -73,14 +73,23 @@ export function mirror(cp: number): number | null {
   return mirrorOf(cp);
 }
 
+/**
+ * The level an analysed paragraph reads at: 0 left to right, 1 right to left.
+ * Under `'auto'` this is where P2/P3's first-strong answer comes back out.
+ */
+export function baseLevel(analysis: BidiAnalysis): 0 | 1 {
+  return analysis.paragraphLevel;
+}
+
 /** The whole seam a text layout needs, and all this package is used through. */
 export interface BidiEngine {
   analyze(codePoints: readonly number[], direction?: BidiDirection): BidiAnalysis;
   reorder(analysis: BidiAnalysis, start: number, end: number): ReorderedLine;
   mirror(cp: number): number | null;
+  baseLevel(analysis: BidiAnalysis): 0 | 1;
 }
 
 /** The default engine — pass this where a `BidiEngine` is wanted. */
-export const bidi: BidiEngine = { analyze, reorder, mirror };
+export const bidi: BidiEngine = { analyze, reorder, mirror, baseLevel };
 
 export { UNICODE_VERSION as BIDI_UNICODE_VERSION };

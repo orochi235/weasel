@@ -30,8 +30,9 @@ export type TextDirection = 'ltr' | 'rtl';
 /**
  * Collapse a possibly reading-order-relative alignment to an absolute edge.
  *
- * Layout works in absolute edges, so this runs once at its entry and `start` /
- * `end` never reach the geometry. `justify` collapses to the start edge, which
+ * Layout works in absolute edges, so it runs this once per line, against the
+ * direction of the paragraph the line is in, and `start` / `end` never reach
+ * the geometry. `justify` collapses to the start edge, which
  * is where it sets every line it does not spread; whether to spread is carried
  * separately, as `LayoutRunsOpts.justify`.
  */
@@ -60,8 +61,12 @@ export interface TextStyle {
   fontStyle?: 'normal' | 'italic';
   /** Default `'left'`. Pass `'start'` to align by reading order instead. */
   align?: TextAlign;
-  /** Reading direction, resolving `align: 'start' | 'end'`. Default `'ltr'`. */
-  direction?: TextDirection;
+  /**
+   * Reading direction: the base direction of bidi reordering, and what
+   * `align: 'start' | 'end'` resolve against. Default `'auto'`, each
+   * paragraph's own first strong character.
+   */
+  direction?: TextDirection | 'auto';
   /** Multiplier applied to `fontSize`. Default 1.2. */
   lineHeight?: number;
   /**
@@ -117,7 +122,7 @@ export interface ResolvedTextStyle {
   fontStyle: 'normal' | 'italic';
   /** Still relative if the author wrote it that way — `direction` resolves it. */
   align: TextAlign;
-  direction: TextDirection;
+  direction: TextDirection | 'auto';
   lineHeight: number;
   wrap: boolean;
   /** `null` is an explicit no-fill, the way it is on every other node kind:
@@ -160,7 +165,7 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   fontWeight: 400,
   fontStyle: 'normal',
   align: 'left',
-  direction: 'ltr',
+  direction: 'auto',
   lineHeight: 1.2,
   wrap: false,
   fill: DEFAULT_FILL,

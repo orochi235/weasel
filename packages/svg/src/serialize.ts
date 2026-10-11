@@ -19,7 +19,7 @@ import { IDENTITY_MATRIX } from './types';
 import { serializePathD } from './path-serializer';
 import { formatMatrix, multiply, trimNumber } from './transform';
 import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
-import { anchorOffset } from './textAnchor';
+import { anchorOffset, svgDirection } from './textAnchor';
 
 /**
  * Walk the tree and produce an SVG document string. The root `<svg>`'s
@@ -475,7 +475,7 @@ function textXml(
   node: SvgTextNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
 ): string {
   const attrs: string[] = [
-    `x="${trimNumber(node.x + anchorOffset(node.style, node.width))}"`,
+    `x="${trimNumber(node.x + anchorOffset(node.style, node.width, node.text))}"`,
     `y="${trimNumber(node.y)}"`,
     `dominant-baseline="text-before-edge"`,
     // The runs model stores real line breaks; SVG's default whitespace
@@ -493,8 +493,9 @@ function textXml(
   if (style?.fontWeight != null) attrs.push(`font-weight="${escapeAttr(String(style.fontWeight))}"`);
   if (style?.fontStyle && style.fontStyle !== 'normal') attrs.push(`font-style="${style.fontStyle}"`);
   if (style?.fontVariantCaps === 'small-caps') attrs.push('font-variant="small-caps"');
-  const direction = style?.direction ?? 'ltr';
-  if (direction === 'rtl') attrs.push('direction="rtl"');
+  const direction = svgDirection(style, node.text);
+  // A stated `ltr` is written too: absent reads back as the text's own direction.
+  if (direction === 'rtl' || style?.direction === 'ltr') attrs.push(`direction="${direction}"`);
   if (style?.align != null || direction === 'rtl') {
     // `text-anchor` is reading-order relative in SVG exactly as `start` / `end`
     // are here, so the two relative values pass straight through and only the

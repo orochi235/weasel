@@ -30,10 +30,11 @@ describe('textCommand', () => {
     expect(cmd.align).toBe('right');
   });
 
-  it('carries justify beside the start edge it sets a last line at', () => {
+  it('carries justify beside the direction that sets a last line\'s edge', () => {
     const cmd = textCommand(0, 0, 'x', { align: 'justify', direction: 'rtl' });
     if (cmd.kind !== 'text') throw new Error('unreachable');
-    expect(cmd.align).toBe('right');
+    expect(cmd.align).toBe('justify');
+    expect(cmd.direction).toBe('rtl');
     expect(cmd.justify).toBe(true);
     const plain = textCommand(0, 0, 'x', { align: 'right' });
     if (plain.kind !== 'text') throw new Error('unreachable');
@@ -44,7 +45,8 @@ describe('textCommand', () => {
     const cmd = textCommandFromPose({
       x: 0, y: 0, width: 100, height: 20, text: 'x', style: { align: 'justify', wrap: true },
     });
-    expect(cmd.align).toBe('left');
+    expect(cmd.align).toBe('justify');
+    expect(cmd.direction).toBe('auto');
     expect(cmd.justify).toBe(true);
   });
 

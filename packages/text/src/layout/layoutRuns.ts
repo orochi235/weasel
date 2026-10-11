@@ -64,6 +64,7 @@ import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
 import { analyzeParagraphs, restoreRemoved } from './bidiLines';
+import { directionOfLevel, registeredBidi } from './bidiRegistry';
 import { refId } from './refId';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
 import { graphemeEnds } from '../measure/graphemes';
@@ -317,18 +318,19 @@ export interface LayoutRunsOpts {
    */
   justify?: boolean;
   /**
-   * Bidi engine. Omit and the text lays out in logical order, which is correct
-   * for left-to-right text and wrong for right-to-left text — see the warning
-   * this emits when it detects the latter without one.
+   * Bidi engine. Default: the one given to `registerBidi`. With neither, the
+   * text lays out in logical order, which is correct for left-to-right text
+   * and wrong for right-to-left text — see the warning this emits when it
+   * detects the latter without one.
    */
   bidi?: BidiResolver;
   /**
-   * Reading direction, for resolving `start` / `end`. Default `'ltr'`.
-   *
-   * Taken as an input rather than sniffed: this package has no DOM, so a
-   * consumer reading `getComputedStyle(box).direction` passes what it found.
+   * Reading direction: the base direction of the bidi analysis, and what
+   * `start` / `end` resolve against. Default `'auto'`, each paragraph's own
+   * first strong character, which only an engine can find: with none, `'auto'`
+   * reads left to right.
    */
-  direction?: TextDirection;
+  direction?: TextDirection | 'auto';
   /**
    * Distance between tab stops, in spaces of the tab's own run (its advance
    * plus the run's tracking), as CSS `tab-size` counts it. A tab advances to
@@ -552,9 +554,9 @@ function warnLogicalRtlOnce(): void {
     // Naming the import in `from "<pkg>"` form would trip labkit's
     // consumer smoke test, which greps dist for that exact shape.
     'weasel layoutRuns: this text contains right-to-left characters but no ' +
-    '`bidi` engine was supplied, so it is being laid out in logical order — ' +
+    '`bidi` engine is registered, so it is being laid out in logical order — ' +
     'the glyphs will appear reversed. Import `bidi` out of the ' +
-    '`@weasel-js/bidi` package and add it to the layout options.',
+    '`@weasel-js/bidi` package and call `registerBidi(bidi)` once at startup.',
   );
 }
 
@@ -614,7 +616,8 @@ export function layoutRuns(
   opts: LayoutRunsOpts,
 ): LaidOutRuns {
   const ctx: LayoutContext = { groups: new Map() };
-  const align = resolveAlign(opts.align, opts.direction ?? 'ltr');
+  const bidi = opts.bidi ?? registeredBidi();
+  const direction = opts.direction ?? 'auto';
   const justify = opts.justify === true || opts.align === 'justify';
   const tabSize = opts.tabSize ?? DEFAULT_TAB_SIZE;
 
@@ -848,10 +851,10 @@ export function layoutRuns(
 
   // Each paragraph is analyzed once; each line then asks for its own range,
   // because L1 resets trailing whitespace against a line's end.
-  const reorderLine = opts.bidi
-    ? analyzeParagraphs(opts.bidi, entries.map((e) => e.cp), (i) => entries[i].isNewline, opts.direction ?? 'auto')
+  const paragraphs = bidi
+    ? analyzeParagraphs(bidi, entries.map((e) => e.cp), (i) => entries[i].isNewline, direction)
     : null;
-  if (!opts.bidi
+  if (!bidi
       && entries.some((e) => RTL_BLOCKS.some(([lo, hi]) => e.cp >= lo && e.cp <= hi))) {
     warnLogicalRtlOnce();
   }
@@ -1008,6 +1011,8 @@ export function layoutRuns(
       if (gaps.size > 0) gapExtra = (alignWidth - inkWidth) / gaps.size;
     }
     const spread = gapExtra * gaps.size;
+    const align = resolveAlign(opts.align, direction !== 'auto' ? direction
+      : directionOfLevel(line.entries.length > 0 ? paragraphs?.baseLevel(line.entries[0].flat) ?? 0 : 0));
     const alignShift = (() => {
       if (spread > 0) return 0;
       if (align === 'left') return 0;
@@ -1044,10 +1049,10 @@ export function layoutRuns(
     flatOf.forEach((f, pos) => posOfFlat.set(f, pos));
     let visual: number[] = line.entries.map((_, k) => k);
     let levelOf: (pos: number) => number = () => 0;
-    if (reorderLine !== null && line.entries.length > 0) {
+    if (paragraphs !== null && line.entries.length > 0) {
       const from = flatOf[0];
       const to = flatOf[flatOf.length - 1] + 1;
-      const r = reorderLine(from, to);
+      const r = paragraphs.reorder(from, to);
       const seen = new Set<number>();
       const ordered: number[] = [];
       for (const f of r.order) {
@@ -1065,11 +1070,11 @@ export function layoutRuns(
     // L4 — a bracket in a right-to-left run paints as its mirror. Done here
     // rather than during analysis because the same code point mirrors in one
     // run and not in another, and the level is only known now.
-    if (opts.bidi) {
+    if (bidi) {
       for (let pos = 0; pos < line.entries.length; pos++) {
         if (levelOf(pos) % 2 === 0) continue;
         const e = line.entries[pos];
-        const m = opts.bidi.mirror(e.cp);
+        const m = bidi.mirror(e.cp);
         if (m === null || m === e.cp) continue;
         // The outline tier reads `cp` directly; the atlas tier needs the other
         // glyph looked up. A face without it keeps the unmirrored one.

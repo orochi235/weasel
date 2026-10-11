@@ -19,13 +19,13 @@
 
 import type { DrawCommand, TextDrawCommand } from '../../renderer';
 import type { TextPaint, TextPose, TextStyle } from '@weasel-js/text';
-import { resolveAlign, resolveTextStyle, textPoseLayoutInput } from '@weasel-js/text';
+import { resolveTextStyle, textPoseLayoutInput } from '@weasel-js/text';
 import { resolveRuns } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextVerticalAlign, ResolvedRun } from '@weasel-js/text';
 import type { FillStyle } from '@weasel-js/paint';
-import { fillInPoseFrame, type FillPoseBox } from '../../core/fillInPoseFrame';
-import { resolveFillPattern } from '../patterns/resolveSpec';
+import type { FillPoseBox } from '../../core/fillInPoseFrame';
+import { commandFill } from '../patterns/commandPaint';
 
 /** Build a draw command from styled runs, for text with no pose. `style`
  *  supplies the defaults each run inherits; the rest match `textCommand`. */
@@ -47,7 +47,8 @@ export function textCommandFromRuns(
     x,
     y,
     runs: resolveRuns(runs, resolved, scale),
-    align: resolveAlign(resolved.align, resolved.direction),
+    align: resolved.align,
+    direction: resolved.direction,
     justify: resolved.align === 'justify',
     maxWidth,
     style: style ?? {},
@@ -95,6 +96,7 @@ export function textCommandFromPose(pose: TextPose, scale = 1): TextDrawCommand 
     y: pose.y,
     runs: runsInPoseFrame(runs, pose),
     align: opts.align,
+    direction: opts.direction,
     justify: opts.justify,
     maxWidth: opts.maxWidth,
     width: opts.alignWidth,
@@ -107,8 +109,8 @@ export function textCommandFromPose(pose: TextPose, scale = 1): TextDrawCommand 
 function runsInPoseFrame(runs: ResolvedRun[], box: FillPoseBox): ResolvedRun[] {
   if (runs.every((r) => isSolid(r.fill) && isSolid(r.stroke?.paint))) return runs;
   return runs.map((r) => {
-    const fill = r.fill && resolveFillPattern(fillInPoseFrame(r.fill, box));
-    const paint = r.stroke?.paint && resolveFillPattern(fillInPoseFrame(r.stroke.paint, box));
+    const fill = r.fill && commandFill(r.fill, box);
+    const paint = r.stroke?.paint && commandFill(r.stroke.paint, box);
     return { ...r, fill, stroke: r.stroke && { ...r.stroke, paint: paint || undefined } };
   });
 }

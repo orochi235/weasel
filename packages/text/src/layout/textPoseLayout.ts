@@ -10,7 +10,7 @@
  */
 import type { LaidOutRuns, LayoutRunsOpts } from './layoutRuns';
 import { cachedLayoutRuns } from './layoutCache';
-import { resolveAlign, resolveTextStyle, type ResolvedTextStyle } from '../textStyle';
+import { resolveTextStyle, type ResolvedTextStyle } from '../textStyle';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
 import { toRuns } from '../runs';
 import { verticalAlignOffset } from '../measure/verticalAlign';
@@ -20,7 +20,7 @@ import type { TextPose } from '../pose';
 export interface TextPoseLayoutInput {
   style: ResolvedTextStyle;
   runs: ResolvedRun[];
-  opts: LayoutRunsOpts & { align: 'left' | 'center' | 'right'; justify: boolean };
+  opts: LayoutRunsOpts & { justify: boolean };
 }
 
 /**
@@ -45,7 +45,8 @@ export function textPoseLayoutInput(pose: TextPose, scale = 1): TextPoseLayoutIn
       maxWidth: style.wrap ? pose.width : Infinity,
       alignWidth: pose.width,
       lineHeight: style.lineHeight,
-      align: resolveAlign(style.align, style.direction),
+      align: style.align,
+      direction: style.direction,
       justify: style.align === 'justify',
     },
   };

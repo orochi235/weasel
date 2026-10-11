@@ -2239,6 +2239,7 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const style = resolveTextStyle(cmd.style);
   const lineHeight = style.lineHeight;
   const align = cmd.align ?? style.align;
+  const direction = cmd.direction ?? style.direction;
   const maxWidth = cmd.maxWidth ?? Infinity;
 
   // Screen threshold → world threshold. Zooming in lowers the world size that
@@ -2250,7 +2251,7 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
     : undefined;
 
   const laid = cachedLayoutRuns(cmd.runs, {
-    maxWidth, alignWidth: cmd.width, lineHeight, align, justify: cmd.justify, outlineMinSize,
+    maxWidth, alignWidth: cmd.width, lineHeight, align, direction, justify: cmd.justify, outlineMinSize,
   });
   // Decorations are checked too: text whose glyphs are all ink-free — every
   // one still awaiting a dynamic-atlas bake, say — produces no groups at all

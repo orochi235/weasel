@@ -638,6 +638,8 @@ export {
   isSmallCapsLetter,
   layoutRuns,
   cachedLayoutRuns,
+  registerBidi,
+  paragraphDirection,
   layoutTextPose,
   textPoseLayoutInput,
   measureText,

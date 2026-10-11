@@ -11,7 +11,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseSvg, serializeSvg, type SvgImageNode, type SvgNode } from './index';
-import { resolveAlign, type Path } from '@weasel-js/core';
+import { registerBidi, resolveAlign, type Path } from '@weasel-js/core';
 import * as F from './__fixtures__/fixtures';
 
 interface NormalizedPath {
@@ -1258,6 +1258,50 @@ describe('text direction', () => {
     const back = parseSvg(out).nodes[0] as { style?: Record<string, unknown> };
     expect(back.style?.direction).toBe('rtl');
     expect(resolveAlign(back.style?.align as never, 'rtl')).toBe('right');
+  });
+});
+
+describe('text with no stated direction', () => {
+  const VIEW = { viewBox: { x: 0, y: 0, width: 200, height: 100 } };
+  /** Stands in for a bidi engine that reads every paragraph right to left. */
+  const RTL_ENGINE = {
+    analyze: () => null,
+    reorder: (_a: unknown, start: number, end: number) => ({
+      order: Array.from({ length: end - start }, (_, i) => end - 1 - i),
+      levels: new Uint8Array(end - start).fill(1),
+    }),
+    mirror: () => null,
+    baseLevel: () => 1,
+  };
+  const ser = (style: Record<string, unknown>) => serializeSvg(
+    [{ id: 't1', kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'AB', style }] as unknown as SvgNode[],
+    VIEW,
+  );
+
+  it('writes the direction its text reads in, and anchors `start` at that edge', () => {
+    const unregister = registerBidi(RTL_ENGINE);
+    try {
+      const out = ser({ align: 'start' });
+      expect(out).toContain('direction="rtl"');
+      expect(out).toContain('x="100"');
+      expect(out).not.toContain('text-anchor=');
+    } finally {
+      unregister();
+    }
+  });
+
+  it('writes a stated ltr, which would otherwise read back as the text\'s own', () => {
+    const out = ser({ align: 'left', direction: 'ltr' });
+    expect(out).toContain('direction="ltr"');
+    const back = parseSvg(out).nodes[0] as { style?: Record<string, unknown> };
+    expect(back.style?.direction).toBe('ltr');
+    expect(parseSvg(ser({ align: 'left' })).nodes[0]).not.toHaveProperty('style.direction');
+  });
+
+  it('reads left to right with no engine registered', () => {
+    const out = ser({ align: 'start' });
+    expect(out).not.toContain('direction=');
+    expect(out).toContain('x="0"');
   });
 });
 

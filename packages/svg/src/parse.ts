@@ -951,7 +951,7 @@ function parseTextElement(
   const opacity = ownValue(el, 'opacity');
   const node: SvgTextNode = {
     kind: 'text',
-    x: ax - anchorOffset(textStyle, width),
+    x: ax - anchorOffset(textStyle, width, plain),
     y: topY,
     width,
     height,
@@ -1052,7 +1052,8 @@ function readTextStyle(
   if (fw != null) out.fontWeight = fw;
   const fs = styleValue(style, 'font-style', onWarn);
   if (fs) out.fontStyle = fs;
-  if (styleValue(style, 'direction') === 'rtl') out.direction = 'rtl';
+  const direction = styleValue(style, 'direction');
+  if (direction === 'rtl' || direction === 'ltr') out.direction = direction;
   // Read back as an absolute edge against the direction just parsed: SVG has
   // one relative pair where this model has a relative pair and an absolute
   // one, so the spelling cannot survive the trip — the rendered edge does.

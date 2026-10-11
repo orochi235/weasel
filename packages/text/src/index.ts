@@ -48,6 +48,7 @@ export {
 export { layoutTextPose, textPoseLayoutInput } from './layout/textPoseLayout';
 export type { TextPoseLayout, TextPoseLayoutInput } from './layout/textPoseLayout';
 export type { BidiResolver, BidiReordering, BidiAnalysis } from './layout/bidiSeam';
+export { registerBidi, paragraphDirection } from './layout/bidiRegistry';
 export type {
   LayoutRunsOpts,
   LaidOutRuns,

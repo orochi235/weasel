@@ -1130,12 +1130,47 @@ describe('useTextEdit — alignment on the overlay', () => {
   });
 
   it('leaves the last line to text-align when not justifying', () => {
-    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, align: 'end' });
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, align: 'end', direction: 'ltr' });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     expect(overlay.style.textAlign).toBe('right');
     expect(overlay.style.getPropertyValue('text-align-last')).toBe('');
+  });
+
+  // Proxies, all three: what a browser does with these properties is layout,
+  // which jsdom does not have.
+  it('states the direction the canvas analyzes with', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, direction: 'rtl' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.direction).toBe('rtl');
+    expect(overlay.style.getPropertyValue('unicode-bidi')).toBe('');
+  });
+
+  it('lets each paragraph find its own direction when the style states none', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16 });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.direction).toBe('');
+    expect(overlay.style.getPropertyValue('unicode-bidi')).toBe('plaintext');
+  });
+
+  it('leaves a reading-order alignment to the browser when the direction is the text\'s', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, align: 'end' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.textAlign).toBe('end');
+    act(() => result.current.cancelEdit());
+
+    const j = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, align: 'justify' });
+    const second = renderHook(() => useTextEdit(j.opts));
+    act(() => second.result.current.startEdit('a'));
+    const overlay = getOverlay(j.container)!;
+    expect(overlay.style.textAlign).toBe('justify');
+    expect(overlay.style.getPropertyValue('text-align-last')).toBe('start');
   });
 });
 

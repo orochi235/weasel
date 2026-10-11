@@ -14,7 +14,7 @@ import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import {
-  fontString, numericWeight, resolveAlign, resolveTextStyle, scriptMetricsFor, smallCapsScaleFor,
+  fontString, numericWeight, resolveTextStyle, scriptMetricsFor, smallCapsScaleFor,
 } from '@weasel-js/text';
 import { cssFontFamily, cssFontFamilyLoading, isCanvasFont } from '@weasel-js/font';
 import type { TextPaint, TextVerticalAlign } from '@weasel-js/text';
@@ -29,6 +29,7 @@ import { applyStyleToRange, patchRangeStyle, runsCarryStyling, styleAtRange, sup
 import { nodeHasFlag, setFlagOverRange, unboldPatch, type FlagKey } from './runs/flagRange';
 import { rangeWeight } from './runs/effectiveRangeStyle';
 import type { RangeStyle, RunStylePatch } from './runs/rangeStyle';
+import { applyOverlayDirection, overlayAlignEdge } from './overlayDirection';
 
 /**
  * A styling a shortcut or a control toggles. The additive booleans, plus the
@@ -1140,11 +1141,7 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   // long. A canvas font is measured by the browser's default rendering, so keeps it.
   el.style.textRendering = isCanvasFont(style.fontFamily) ? '' : 'geometricPrecision';
   el.style.lineHeight = String(style.lineHeight);
-  // The overlay sets no `direction`, so a justified paragraph's last line is
-  // pinned to the edge the canvas puts it at rather than left to `start`.
-  const edge = resolveAlign(style.align, style.direction);
-  el.style.textAlign = style.align === 'justify' ? 'justify' : edge;
-  el.style.setProperty('text-align-last', style.align === 'justify' ? edge : '');
+  applyOverlayDirection(el, style);
   // Node-level decoration, so the overlay looks like the canvas the moment
   // editing starts. Runs are additive over the node style (a run can't un-set
   // a flag), which is exactly how CSS decoration propagates to descendants —
@@ -1286,7 +1283,7 @@ function placeOverlay(
   // sizes to its text and grows from that same anchor: `left` puts the anchor
   // there and a trailing translate pulls the box back by that fraction of its
   // own width.
-  const anchor = style.wrap ? 0 : ALIGN_ANCHOR[resolveAlign(style.align, style.direction)];
+  const anchor = style.wrap ? 0 : ALIGN_ANCHOR[overlayAlignEdge(el, style)];
   el.style.left = `${pose.x + pose.width * (pose.zoom ?? 1) * anchor - (clip?.x ?? 0)}px`;
   el.style.width = style.wrap ? `${pose.width}px` : 'max-content';
   el.style.minWidth = style.wrap ? '' : `${pose.width}px`;

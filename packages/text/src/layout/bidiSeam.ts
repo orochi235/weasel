@@ -26,8 +26,8 @@ export interface BidiReordering {
 }
 
 /**
- * A bidi engine, passed to `layoutRuns` as `opts.bidi`. `@weasel-js/bidi`'s
- * `bidi` object satisfies it. `reorder`'s `start` / `end` index the code points
+ * A bidi engine, registered with `registerBidi` or passed to `layoutRuns` as
+ * `opts.bidi`. `@weasel-js/bidi`'s `bidi` object satisfies it. `reorder`'s `start` / `end` index the code points
  * `analyze` was given.
  */
 export interface BidiResolver {
@@ -35,4 +35,7 @@ export interface BidiResolver {
   reorder(analysis: BidiAnalysis, start: number, end: number): BidiReordering;
   /** L4 — the mirrored form for a character in a right-to-left run, or null. */
   mirror(cp: number): number | null;
+  /** The level the analysed paragraph reads at: even left to right, odd right
+   *  to left. What `'auto'` resolved to, for aligning `start` and `end`. */
+  baseLevel(analysis: BidiAnalysis): number;
 }
