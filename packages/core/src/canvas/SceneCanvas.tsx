@@ -132,7 +132,7 @@ import {
 } from 'features/ingestion';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 import type { ClipboardIngestCtx, SvgIngestOptions } from 'interactions/actions/depSchema';
-import type { InsertAdapter } from 'core/adapters/types';
+import type { InsertAdapter, PasteOmission } from 'core/adapters/types';
 import { resolveEditablePathOf } from './deps/editAnchors';
 import type { PolygonPath } from '@weasel-js/geom';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
@@ -574,6 +574,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       clipboard?: {
         reviver?: (key: string, value: unknown) => unknown;
         enabled?: boolean;
+        /** Called when a paste left copied nodes out, with each one and the
+         *  reason. `useClipboardOps` takes the same callback as
+         *  `onPasteOmitted` for a paste from its own in-memory copy. */
+        onOmitted?: (omitted: PasteOmission[]) => void;
       };
     };
 
@@ -2113,13 +2117,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // future adapter overrides).
   const ingestionClipboardReviver = ingestion?.clipboard?.reviver;
   const ingestionClipboardEnabled = ingestion?.clipboard?.enabled !== false;
+  const ingestionClipboardOmitted = useLatest(ingestion?.clipboard?.onOmitted);
   const ingestionClipboard = useMemo<ClipboardIngestCtx | undefined>(() => {
     if (!ingestionClipboardEnabled || !adapter?.commitPaste) return undefined;
     return {
       adapter: adapter as unknown as InsertAdapter<{ id: string }>,
       ...(ingestionClipboardReviver ? { reviver: ingestionClipboardReviver } : {}),
+      onOmitted: (omitted) => ingestionClipboardOmitted.current?.(omitted),
     };
-  }, [adapter, ingestionClipboardEnabled, ingestionClipboardReviver]);
+  }, [adapter, ingestionClipboardEnabled, ingestionClipboardReviver, ingestionClipboardOmitted]);
   const ingestImpl = useCallback(
     (input: File[] | IngestItem[], point?: { x: number; y: number }) => {
       const items: IngestItem[] = (input as (File | IngestItem)[]).map((entry) =>

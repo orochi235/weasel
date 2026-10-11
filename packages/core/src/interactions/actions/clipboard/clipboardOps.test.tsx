@@ -123,6 +123,29 @@ describe('useClipboardOps', () => {
     expect(result.current.isEmpty()).toBe(false);
   });
 
+  it('onPasteOmitted is told what a paste left out, and not called when it left nothing', () => {
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const commitPaste = helpers.adapter.commitPaste!;
+    let omit = true;
+    helpers.adapter.commitPaste = (clipboard, offset, ctx) => {
+      if (omit) ctx?.onOmit?.({ id: 'edge', reason: 'dependency-not-copied', missing: ['b'] });
+      return commitPaste(clipboard, offset, ctx);
+    };
+    const seen: unknown[] = [];
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        onPasteOmitted: (omitted) => seen.push(omitted),
+      }),
+    );
+    act(() => { result.current.copy(); });
+    act(() => { result.current.paste(); });
+    omit = false;
+    act(() => { result.current.paste(); });
+    expect(seen).toEqual([[{ id: 'edge', reason: 'dependency-not-copied', missing: ['b'] }]]);
+  });
+
   it('onPaste callback receives the new ids', () => {
     const helpers = makeAdapter();
     helpers.seed({ id: 'a', x: 0, y: 0 });

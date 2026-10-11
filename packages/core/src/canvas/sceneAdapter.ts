@@ -17,6 +17,7 @@ import type {
   AreaSelectAdapter,
   ClipboardSnapshot,
   InsertAdapter,
+  PasteCtx,
   LassoHitMode,
   LassoSelectAdapter,
   RegionPickView,
@@ -27,7 +28,7 @@ import type {
 } from 'core/adapters/types';
 import type { LayoutStrategy } from '../layout/types';
 import type { Op } from 'core/ops/types';
-import type { Node, NodeId, Scene } from 'core/scene/types';
+import type { Node, Scene } from 'core/scene/types';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { fnFieldsOfNode } from 'core/scene/nodeFnFields';
 import { pickability } from 'core/scene/pickability';
@@ -44,6 +45,7 @@ import {
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { composeWorldPose, frameAtOrAbove, type PoseComposition } from 'features/groups/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
+import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
  *  `setSelection`. Matches `useSelection().adapterMethods` plus an imperative
@@ -106,7 +108,7 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       commitPaste(
         clipboard: ClipboardSnapshot,
         offset: { dx: number; dy: number },
-        ctx?: { dropPoint?: { worldX: number; worldY: number } },
+        ctx?: PasteCtx,
       ): Node<TData, TLayer, TPose>[];
       getPasteOffset(clipboard: ClipboardSnapshot): { dx: number; dy: number };
     };
@@ -159,27 +161,6 @@ function adapterFallbackId(): string {
   return `n${(adapterFallbackIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// Fresh ids for pasted nodes. The scene's own `generateId` isn't reachable
-// from the adapter, so `commitPaste` mints ids in the same shape as
-// `defaultGenerateId` with a `paste-` prefix (module-scoped counter + random
-// suffix keeps them unique across adapters and repeated pastes). Accepted
-// risk: the counter is per-tab, so cross-tab paste (the OS-clipboard path)
-// leans on the random suffix alone for uniqueness — a collision makes
-// `scene.add` throw rather than silently overwrite.
-let pasteIdCounter = 0;
-function pasteNodeId(): string {
-  return `paste-${(pasteIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-// Copy one node field (pose / data / children) so clipboard snapshots don't
-// alias live scene state. Spread-level copy per the clipboard contract:
-// mutating a snapshot's pose/data/children must not touch the scene.
-function copyField<T>(value: T): T {
-  if (Array.isArray(value)) return [...value] as T;
-  if (value !== null && typeof value === 'object') return { ...(value as object) } as T;
-  return value;
-}
-
 /** Derive the adapter for a scene. Reads go straight to the scene; writes are
  *  ops applied through its history, so anything done through the adapter is
  *  undoable. */
@@ -221,6 +202,15 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       'the cascade would move every descendant twice. Drop cascadeContainerPose.',
     );
   }
+
+  const clipboardEnv: SceneClipboardEnv<TData, TLayer, TPose> = {
+    scene,
+    composes,
+    worldPoseOf: (id) => adapter.getWorldPose(id),
+    frameAtOrAbove: (id) => frameAtOrAbove(adapter, id),
+    poseBounds,
+    translate,
+  };
 
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
     getNode(id) {
@@ -429,151 +419,15 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         }
       : {}),
     // Clipboard seam (`useClipboardOps` / the paste ingestion path).
-    //
-    // `snapshotSelection` captures adapter-shaped node copies; `commitPaste`
-    // is a pure factory like `commitInsert` above — it mints fresh nodes but
-    // NEVER touches the scene. Insertion happens via the hook's InsertOps
-    // (one per created node, parents before children), which is what makes a
-    // whole paste a single undo entry.
     snapshotSelection(ids: string[]): ClipboardSnapshot {
-      const idSet = new Set(ids);
-      const taken = new Set<string>();
-      const items: Node<TData, TLayer, TPose>[] = [];
-      // DFS from one snapshot root: push the node, then its subtree —
-      // parents-before-children, so paste can re-insert in array order.
-      // A stored pose is relative to its frame, and a node whose frame is not
-      // copied with it lands somewhere else entirely on paste. Capture those in
-      // world coordinates: every root, and under an envelope root, the nodes
-      // sharing the frame the root left behind.
-      const poseFor = (n: Node<TData, TLayer, TPose>, isRoot: boolean): TPose => {
-        if (!composes) return n.pose;
-        if (isRoot) return adapter.getWorldPose(n.id);
-        const frame = frameAtOrAbove(adapter, n.parent);
-        return frame !== null && taken.has(frame) ? n.pose : adapter.getWorldPose(n.id);
-      };
-      // Only a derivation over `'children'` survives the copy: an id list
-      // would still name the originals.
-      const derivation = (n: Node<TData, TLayer, TPose>) =>
-        n.dependsOn === 'children' && n.derivePose
-          ? { dependsOn: n.dependsOn, derivePose: n.derivePose }
-          : {};
-
-      const capture = (id: string, isRoot = false): void => {
-        if (taken.has(id)) return;
-        const n = scene.get(asNodeId(id));
-        if (!n) return;
-        taken.add(id);
-        if (n.kind === 'container') {
-          items.push({
-            kind: 'container',
-            id: n.id,
-            layer: n.layer,
-            parent: n.parent,
-            pose: copyField(poseFor(n, isRoot)),
-            data: copyField(n.data),
-            children: [...n.children],
-            ...pickability(n),
-            ...(n.clipFromPose ? { clipFromPose: n.clipFromPose } : {}),
-            ...derivation(n),
-          });
-          for (const cid of scene.childrenOf(asNodeId(id))) capture(cid);
-        } else {
-          items.push({
-            kind: 'leaf',
-            id: n.id,
-            layer: n.layer,
-            parent: n.parent,
-            pose: copyField(poseFor(n, isRoot)),
-            data: copyField(n.data),
-            ...pickability(n),
-          });
-        }
-      };
-      for (const id of ids) {
-        // Dedupe: an id whose ancestor is also selected is already covered
-        // by that ancestor's subtree walk.
-        if (scene.ancestorsOf(asNodeId(id)).some((a) => idSet.has(a))) continue;
-        capture(id, true);
-      }
-      return { items };
+      return snapshotSceneSelection(clipboardEnv, ids);
     },
     commitPaste(
       clipboard: ClipboardSnapshot,
       offset: { dx: number; dy: number },
-      ctx?: { dropPoint?: { worldX: number; worldY: number } },
+      ctx?: PasteCtx,
     ): Node<TData, TLayer, TPose>[] {
-      // Snapshot items are adapter-shaped node copies: what snapshotSelection
-      // captures, and what commitPaste itself returns (`useClipboardOps`
-      // feeds `created` back in as the next cascade source).
-      const src = clipboard.items as Node<TData, TLayer, TPose>[];
-      if (src.length === 0) return [];
-      const idMap = new Map<string, NodeId>();
-      for (const item of src) idMap.set(item.id, asNodeId(pasteNodeId()));
-      // Items whose captured parent isn't part of the snapshot become roots
-      // of the pasted cluster.
-      const isRoot = (item: Node<TData, TLayer, TPose>): boolean =>
-        item.parent === null || !idMap.has(item.parent);
-      // Under a composing strategy a node inside a pasted frame rides it, and
-      // offsetting it as well would move it twice.
-      const byId = new Map(src.map((item) => [item.id, item]));
-      const ridesPastedFrame = (item: Node<TData, TLayer, TPose>): boolean => {
-        if (!composes) return false;
-        let p = item.parent === null ? undefined : byId.get(item.parent);
-        while (p !== undefined) {
-          if (definesFrame(p)) return true;
-          p = p.parent === null ? undefined : byId.get(p.parent);
-        }
-        return false;
-      };
-      // Scene v1 poses are absolute (see the cascade notes above), so the
-      // delta applies to EVERY pasted node — the cluster translates rigidly,
-      // descendants staying attached to their parents.
-      let dx = offset.dx;
-      let dy = offset.dy;
-      if (ctx?.dropPoint) {
-        // Drop-point policy: land the cluster origin (min corner of the root
-        // items' bounds) on the drop point; `offset` is ignored.
-        let minX = Infinity;
-        let minY = Infinity;
-        for (const item of src) {
-          if (!isRoot(item)) continue;
-          const b = poseBounds(item.pose, item);
-          if (b.x < minX) minX = b.x;
-          if (b.y < minY) minY = b.y;
-        }
-        if (Number.isFinite(minX) && Number.isFinite(minY)) {
-          dx = ctx.dropPoint.worldX - minX;
-          dy = ctx.dropPoint.worldY - minY;
-        }
-      }
-      const out: Node<TData, TLayer, TPose>[] = [];
-      for (const item of src) {
-        const base = {
-          id: idMap.get(item.id)!,
-          layer: item.layer,
-          parent: isRoot(item) ? null : idMap.get(item.parent as string)!,
-          pose: ridesPastedFrame(item) ? copyField(item.pose) : translate(copyField(item.pose), dx, dy, item),
-          data: copyField(item.data),
-          ...pickability(item),
-        };
-        if (item.kind === 'container') {
-          out.push({
-            ...base,
-            kind: 'container',
-            children: item.children.filter((c) => idMap.has(c)).map((c) => idMap.get(c)!),
-            ...(item.clipFromPose ? { clipFromPose: item.clipFromPose } : {}),
-            ...(item.dependsOn === 'children' && item.derivePose
-              ? { dependsOn: item.dependsOn, derivePose: item.derivePose }
-              : {}),
-          });
-        } else {
-          out.push({ ...base, kind: 'leaf' });
-        }
-      }
-      // `src` is parents-before-children (snapshotSelection's DFS order),
-      // and this loop preserves it — children re-attach to freshly-inserted
-      // parents when the hook's InsertOps apply in order.
-      return out;
+      return pasteSceneSnapshot(clipboardEnv, clipboard, offset, ctx);
     },
     // Constant cascade: the hook re-snapshots the just-created items, so
     // repeated pastes stack +12/+12 each time.

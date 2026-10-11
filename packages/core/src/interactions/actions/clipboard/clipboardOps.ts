@@ -2,7 +2,7 @@ import { useCallback, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
-import type { InsertAdapter } from 'core/adapters/types';
+import type { InsertAdapter, PasteOmission } from 'core/adapters/types';
 import type { ClipboardSnapshot } from './types';
 import { usePointerContext } from 'features/pointer/PointerContext';
 import { dwarn } from 'debug/flag';
@@ -18,6 +18,10 @@ export interface UseClipboardOpsOptions {
   getSelection: () => NodeId[];
   /** Called after a successful paste with the ids of the newly inserted objects. */
   onPaste?: (newIds: NodeId[]) => void;
+  /** Called when a paste left copied nodes out, with each one and the reason
+   *  — an edge whose endpoints were not copied with it, say. Also called for
+   *  a paste that made nothing. */
+  onPasteOmitted?: (omitted: PasteOmission[]) => void;
   /** Label for the history entry produced by paste. Default 'Paste'. */
   pasteLabel?: string;
   /** Pulled once per paste() call. When non-null, threaded to commitPaste
@@ -57,7 +61,9 @@ export function useClipboardOps<TNode extends { id: string }>(
   adapter: InsertAdapter<TNode>,
   options: UseClipboardOpsOptions,
 ): UseClipboardOpsReturn {
-  const { getSelection, onPaste, pasteLabel = 'Paste', getDropPoint, produceFlavors, jsonReplacer } = options;
+  const {
+    getSelection, onPaste, onPasteOmitted, pasteLabel = 'Paste', getDropPoint, produceFlavors, jsonReplacer,
+  } = options;
   // Fall back to the ambient pointer context (auto-published by SceneCanvas)
   // when the caller didn't supply an explicit `getDropPoint`. Null context
   // (no provider in scope) and no caller-supplied thunk together mean
@@ -68,7 +74,8 @@ export function useClipboardOps<TNode extends { id: string }>(
   // Keep callbacks stable across renders.
   const adapterRef = useLatest(adapter);
   const optsRef = useLatest({
-    getSelection, onPaste, pasteLabel, getDropPoint: effectiveGetDropPoint, produceFlavors, jsonReplacer,
+    getSelection, onPaste, onPasteOmitted, pasteLabel, getDropPoint: effectiveGetDropPoint, produceFlavors,
+    jsonReplacer,
   });
 
   const copy = useCallback(() => {
@@ -100,6 +107,7 @@ export function useClipboardOps<TNode extends { id: string }>(
     const result = materializePaste(a, cb, {
       currentSelection: optsRef.current.getSelection(),
       dropPoint: optsRef.current.getDropPoint?.(),
+      onOmitted: optsRef.current.onPasteOmitted,
     });
     if (!result) return;
     dispatchApplyBatch(a, result.ops, optsRef.current.pasteLabel);

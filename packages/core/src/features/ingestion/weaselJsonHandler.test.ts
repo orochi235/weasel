@@ -100,6 +100,19 @@ describe('kitWeaselJsonHandler.match', () => {
 });
 
 describe('kitWeaselJsonHandler.handle — paste', () => {
+  it('tells ctx.clipboard.onOmitted what the paste left out', async () => {
+    const adapter = stubAdapter();
+    adapter.commitPaste.mockImplementation((clipboard, _offset, pasteCtx) => {
+      (pasteCtx as { onOmit?: (o: unknown) => void } | undefined)
+        ?.onOmit?.({ id: 'b', reason: 'dependency-not-copied', missing: ['z'] });
+      return [{ ...(clipboard.items[0] as object), id: 'paste-0' }];
+    });
+    const onOmitted = vi.fn();
+    const c = ctx({ clipboard: { adapter, onOmitted } });
+    await kitWeaselJsonHandler.handle([stringItem(buildWeaselClipboardText(NODES))], c);
+    expect(onOmitted).toHaveBeenCalledWith([{ id: 'b', reason: 'dependency-not-copied', missing: ['z'] }]);
+  });
+
   it('commits the paste through ctx.clipboard.adapter and applies insert + selection ops', async () => {
     const adapter = stubAdapter();
     const c = ctx({ clipboard: { adapter } });

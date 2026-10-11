@@ -13,7 +13,7 @@ import { createInsertOp } from 'core/ops/create';
 import { createSetSelectionOp } from 'core/ops/select';
 import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
-import type { ClipboardSnapshot, InsertAdapter } from 'core/adapters/types';
+import type { ClipboardSnapshot, InsertAdapter, PasteCtx, PasteOmission } from 'core/adapters/types';
 
 /** Shared paste materialization: offset policy → commitPaste → the op batch
  *  both the in-memory paste and the OS-paste handler dispatch. Returns null
@@ -24,13 +24,23 @@ export function materializePaste<TNode extends { id: string }>(
   opts: {
     currentSelection: string[];
     dropPoint?: { worldX: number; worldY: number } | null;
+    /** Told what the paste left out and why, when it left anything out —
+     *  including a paste that made nothing. */
+    onOmitted?: (omitted: PasteOmission[]) => void;
   },
 ): { ops: Op[]; newIds: string[]; created: TNode[] } | null {
   const commitPaste = adapter.commitPaste;
   if (!commitPaste) return null;
   const offset = adapter.getPasteOffset?.(snapshot) ?? { dx: 0, dy: 0 };
-  const ctx = opts.dropPoint != null ? { dropPoint: opts.dropPoint } : undefined;
-  const created = commitPaste.call(adapter, snapshot, offset, ctx);
+  const omitted: PasteOmission[] = [];
+  const ctx: PasteCtx = {
+    ...(opts.dropPoint != null ? { dropPoint: opts.dropPoint } : {}),
+    ...(opts.onOmitted ? { onOmit: (omission: PasteOmission) => omitted.push(omission) } : {}),
+  };
+  const created = commitPaste.call(
+    adapter, snapshot, offset, Object.keys(ctx).length > 0 ? ctx : undefined,
+  );
+  if (omitted.length > 0) opts.onOmitted?.(omitted);
   if (created.length === 0) return null;
   const newIds = created.map((o) => o.id);
   const ops: Op[] = [

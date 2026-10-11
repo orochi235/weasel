@@ -15,6 +15,30 @@ export interface ClipboardSnapshot {
 }
 
 /**
+ * A copied node a paste did not make, and why:
+ *
+ * - `dependency-not-copied` — it derives from the nodes in `missing`, which
+ *   were not copied with it.
+ * - `derivation-not-registered` — it derives from other nodes through a
+ *   function that did not survive the clipboard and is not in the scene's
+ *   registry.
+ * - `container-not-pasted` — its container was left out.
+ */
+export interface PasteOmission {
+  /** The id the node had when it was copied. */
+  id: string;
+  reason: 'dependency-not-copied' | 'derivation-not-registered' | 'container-not-pasted';
+  missing?: string[];
+}
+
+/** What `commitPaste` is told beyond the snapshot and the offset. */
+export interface PasteCtx {
+  dropPoint?: { worldX: number; worldY: number };
+  /** Called once per copied node the paste leaves out. */
+  onOmit?: (omission: PasteOmission) => void;
+}
+
+/**
  * SnapTarget — where a dragged node would re-parent to if released.
  *
  * `slotPose` is the pose (in world coordinates) the node should snap to
@@ -239,7 +263,7 @@ export interface InsertAdapter<TNode extends { id: string }> {
   commitPaste?(
     clipboard: ClipboardSnapshot,
     offset: { dx: number; dy: number },
-    ctx?: { dropPoint?: { worldX: number; worldY: number } },
+    ctx?: PasteCtx,
   ): TNode[];
   /** Snapshot the current selection into the clipboard payload shape.
    *  Optional — required by `useClipboard.copy` / `cut` and `useClone`'s

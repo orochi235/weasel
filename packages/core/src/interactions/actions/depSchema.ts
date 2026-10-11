@@ -30,7 +30,7 @@ import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { GestureLifecycleOptions } from './gestureLifecycle';
-import type { InsertAdapter, RegionPickView } from 'core/adapters/types';
+import type { InsertAdapter, PasteOmission, RegionPickView } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
 import type {
   PointSnapBehavior,
@@ -282,6 +282,9 @@ export interface ClipboardIngestCtx {
   /** JSON reviver for the weasel wire payload (typed arrays etc.) — from
    *  `SceneCanvasProps.ingestion.clipboard.reviver`. */
   reviver?: (key: string, value: unknown) => unknown;
+  /** Told what a paste left out and why — from
+   *  `SceneCanvasProps.ingestion.clipboard.onOmitted`. */
+  onOmitted?: (omitted: PasteOmission[]) => void;
 }
 
 /**

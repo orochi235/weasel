@@ -14,11 +14,11 @@ type Reviver = (key: string, value: unknown) => unknown;
 
 /** Serialize snapshot items into the versioned wire text.
  *
- *  Function-valued fields (e.g. a container's `clipFromPose`) are dropped by
- *  JSON serialization — OS-pasted clip containers arrive unclipped.
- *  Consumers who need clips to survive the OS round-trip can translate
- *  function ↔ registry key in their `jsonReplacer`/reviver pair (the
- *  scene-serialization `clipFromPoseKey` precedent). */
+ *  JSON drops a function-valued field (a container's `clipFromPose`, a
+ *  node's `derivePath`). A scene adapter's snapshot also carries each one's
+ *  `SceneRegistry` key (`clipFromPoseKey`, `derivePathKey`, …), which does
+ *  cross, and its paste restores the function from the pasting scene's
+ *  registry. A function that is not registered does not survive. */
 export function buildWeaselClipboardText(items: unknown[], replacer?: Replacer): string {
   const payload: WeaselClipboardPayload = { weaselClipboard: 1, nodes: items };
   return JSON.stringify(payload, replacer as Parameters<typeof JSON.stringify>[1]);

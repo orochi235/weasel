@@ -209,6 +209,10 @@ string), and the returned `isTextNode(id)` asks the same question by id, for
 Logic-only clipboard: `copy` / `cut` / `paste` over the adapter clipboard seam
 (`snapshotSelection` / `commitPaste` / `getPasteOffset`), with a
 `produceFlavors` / `jsonReplacer` outbound seam for OS-clipboard writes.
+A paste leaves out a node that derives from nodes that were not copied with
+it; `onPasteOmitted` is told which and why (`PasteOmission`), and
+`<SceneCanvas ingestion={{ clipboard: { onOmitted } }}>` is told the same for
+a paste arriving from the OS clipboard.
 Binds no keys. Companion exports: `WEASEL_CLIPBOARD_MIME`,
 `buildWeaselClipboardText`, `sniffWeaselClipboardText`,
 `parseWeaselClipboardText`, `embedWeaselMetadataInSvg`,

@@ -1042,7 +1042,7 @@ export type {
   PointSnapBehavior,
   BehaviorEnd,
 } from './interactions/gestures/types';
-export type { ClipboardSnapshot } from './interactions/actions/clipboard/types';
+export type { ClipboardSnapshot, PasteCtx, PasteOmission } from './interactions/actions/clipboard/types';
 
 // ─── Gesture specs ───
 export { hitPredicate, bodyPredicate } from '@weasel-js/gestures';

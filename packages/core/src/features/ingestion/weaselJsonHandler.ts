@@ -90,6 +90,7 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
     const snapshot: ClipboardSnapshot = { items: nodes };
     const result = materializePaste(clipboard.adapter, snapshot, {
       currentSelection: ctx.selection.get(),
+      onOmitted: clipboard.onOmitted,
     });
     if (!result) return;
     ctx.applyOps(result.ops, 'Paste');

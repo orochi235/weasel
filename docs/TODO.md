@@ -785,19 +785,12 @@ Core five + Crop shipped. Remaining:
   keyed by id while incarnations are keyed by object. Split along those owners, each closing over a
   small shared state record; the kit op table and the history facade are the cleanest first cuts.
 
-- **(P2) Clipboard: a pasted derived edge is an invisible node, and a pasted layout container loses
-  its layout.** `snapshotSelection` in `canvas/sceneAdapter.ts` keeps a derivation only for
-  `dependsOn: 'children'` ("an id list would still name the originals"), so copying two nodes and
-  the edge between them pastes the edge as a plain leaf with the original's zero-sized placeholder
-  pose: it paints nothing, is selected with the rest, and one more accumulates per paste.
-  `commitPaste` already builds the old-to-new `idMap` a remap needs. Ruled 2026-10-11: an edge is
-  pasted, with its id list remapped, only when every node it depends on was copied too; otherwise it
-  is dropped, and the paste reports what it left out and why, so an app can show it, which draw does
-  with a toast. That leaves the remap, the drop, the report from the paste, and draw's toast.
-  Separately `layout` is not copied though `clipFromPose` is, so pasted children stop being
-  arranged. Both also need the wire format (`interactions/actions/clipboard/wireFormat.ts`), which
-  drops function-valued fields, to carry registry keys the way scene serialization does. Not
-  checked: whether duplicate and Alt-drag clone go through these two functions.
+- **(P2) Clipboard: draw says nothing when a paste leaves an edge out.** A paste now drops a node
+  that derives from nodes that were not copied with it, and reports each one with a reason
+  (`PasteOmission`) to `useClipboardOps({ onPasteOmitted })` and
+  `<SceneCanvas ingestion={{ clipboard: { onOmitted } }}>`. `apps/draw` passes neither. Ruled
+  2026-10-11: draw shows a toast. Draw mounts no toast region today, so this needs one and a look at
+  it in a browser.
 
 - **(P2) Container-pose cascade: a batch that poses a container and its descendants does not undo.**
   Through `sceneToAdapter(scene, { cascadeContainerPose: true })` (what `<SceneCanvas>` uses without
