@@ -171,4 +171,36 @@ describe('opacity scrub', () => {
     expect(t.onViewChange).toHaveBeenCalled();
     expect(t.alpha()).toBe(100);
   });
+
+  it('keeps an edit made between two wheel turns, and its place in the undo stack', () => {
+    const t = setup();
+    t.key('keydown');
+    t.wheel();
+    const scene = t.api().scene;
+    act(() => scene.setPose(ID, { x: 7, y: 0, width: 50, height: 50 }));
+    t.wheel();
+    expect(scene.get(ID)!.pose.x).toBe(7);
+    expect(t.alpha()).toBe(90);
+    t.key('keyup');
+    // Undo walks back through the second turn, the move, then the first turn.
+    act(() => scene.undo());
+    expect(t.alpha()).toBe(95);
+    expect(scene.get(ID)!.pose.x).toBe(7);
+    act(() => scene.undo());
+    expect(scene.get(ID)!.pose.x).toBe(0);
+    act(() => scene.undo());
+    expect(t.alpha()).toBe(100);
+  });
+
+  it('still leaves one entry for a run of turns nothing interrupts', () => {
+    const t = setup();
+    t.key('keydown');
+    t.wheel();
+    t.wheel();
+    t.wheel();
+    t.key('keyup');
+    expect(t.alpha()).toBe(85);
+    act(() => t.api().scene.undo());
+    expect(t.alpha()).toBe(100);
+  });
 });

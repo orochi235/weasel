@@ -1585,14 +1585,6 @@ only story runner in the repo.
   reset the background to white when the file names none) and a separate Import appends; or the
   button is renamed Import and stops adopting the file's paper size and background.
 
-- **(P3) draw: turning the wheel during an opacity scrub can rewind an edit made while O was held.**
-  `applyLive` in `apps/draw/src/opacityScrub/useOpacityScrub.ts` calls
-  `jumpToHistoryIndex(session.startHistoryIndex)` on every tick, assuming nothing else pushed
-  history since the session opened; hold O, wheel, tap an arrow key to nudge, wheel again, and the
-  nudge is undone and cut off the redo stack. The scrub should be an ongoing action with a coalesce
-  key, as `setFill` is through `useOngoingAction`, so it owns one entry without rewinding the stack
-  by index.
-
 - **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
   have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
   selection })`, overrides `insertNode` / `removeNode` / `snapshotSelection` by hand, wraps the

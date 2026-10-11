@@ -7,7 +7,8 @@ import {
 } from './computeScrubbedPaints';
 
 interface ScrubSession {
-  startHistoryIndex: number;
+  /** The history index just after this session's own entry, once it has written one. */
+  ownIndex: number | null;
   snapshots: Map<string, PaintSnapshot>;
   targetAlpha: number;
 }
@@ -35,8 +36,8 @@ export interface UseOpacityScrubArgs {
 /**
  * Hold O and turn the wheel to scrub the selection's opacity; Shift steps
  * finer. A spring-loaded tool: holding O engages it at hotkey scope, which
- * opens a session over the selection's paints, and releasing it commits the
- * session as one undo entry. With nothing selected no session opens and the
+ * opens a session over the selection's paints. A run of wheel turns is one
+ * undo entry; an edit made in between ends the run, and stays. With nothing selected no session opens and the
  * wheel falls through to the viewport.
  */
 export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
@@ -69,10 +70,13 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       );
     }
 
-    // Each tick rewinds the previous tick's entry before writing, so the
-    // session holds at most one 'Adjust opacity' entry, replaced in place.
+    // A tick replaces the previous tick's entry, but only while that entry is
+    // still the newest: after any other edit or an undo, it starts a new one.
     function applyLive(session: ScrubSession) {
-      sceneRef.current.jumpToHistoryIndex(session.startHistoryIndex);
+      const history = sceneRef.current;
+      if (session.ownIndex !== null && history.historyIndex() === session.ownIndex) {
+        history.jumpToHistoryIndex(session.ownIndex - 1);
+      }
       sceneRef.current.batch('Adjust opacity', () => {
         for (const [id, snap] of session.snapshots) {
           const currentNode = sceneRef.current.get(asNodeId(id));
@@ -87,6 +91,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
           });
         }
       });
+      session.ownIndex = history.historyIndex();
     }
 
     function startSession() {
@@ -100,14 +105,14 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       }
       if (snapshots.size === 0) return;
       sessionRef.current = {
-        startHistoryIndex: sceneRef.current.historyIndex(),
+        ownIndex: null,
         snapshots,
         targetAlpha: sessionBrightest,
       };
       setPercent(Math.round(sessionBrightest * 100));
     }
 
-    // The last `applyLive` batch is already the session's one history entry.
+    // The entries `applyLive` wrote are already in history.
     function commitSession() {
       sessionRef.current = null;
       setPercent(null);
