@@ -17,6 +17,21 @@ export {
   visiblePrefSubtree,
 } from './helpers';
 export type { PrefAction, PrefActionContext, PrefActionControl } from './action';
+export {
+  checkPrefCondition,
+  checkPrefConditions,
+  isPrefCondition,
+  mapPrefConditionPaths,
+  prefConditionHolds,
+  prefConditionPaths,
+  prefIsEnabled,
+  prefIsShown,
+  type PrefCondition,
+  type PrefConditionProblem,
+  type PrefConditionValue,
+  type PrefSchemaConditionProblem,
+  type PrefTest,
+} from './condition';
 export { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 export type { PrefLabel, PrefSeparator } from './label';
 export { prefObjectBase, prefObjectWithField } from './object';

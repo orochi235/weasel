@@ -1,0 +1,5 @@
+---
+'@weasel-js/prefs': patch
+---
+
+Adds API: a condition over other prefs' values, written as data. A leaf, a `PrefGroup`, and a `PrefSection` take two optional fields holding one, `showIf` (drawn only while it holds) and `enableIf` (drawn, and disabled while it does not). A `PrefCondition` is a test of one path, `{ path, is }`, `{ path, isNot }`, `{ path, in: [...] }`, `{ path, above | below | atLeast | atMost }`, or a bare `{ path }` for truthy, combined with `{ all: [...] }`, `{ any: [...] }`, and `{ not }`. Being plain data, it exports as a literal and survives a schema draft. `prefConditionHolds` evaluates one against a function that reads a value by path, and `prefIsShown` and `prefIsEnabled` answer for a node. `checkPrefCondition` and `checkPrefConditions` report a condition that is malformed, reads a path no leaf holds a value at, or compares a leaf against a value its kind or options rule out; a store warns of each when it opens. `prefConditionPaths` lists the paths a condition reads, and `mapPrefConditionPaths` rewrites them. Nothing draws the two fields yet: the forms in `@weasel-js/ui` do not read them.

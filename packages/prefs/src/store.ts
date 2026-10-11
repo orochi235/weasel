@@ -1,4 +1,5 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
+import { checkPrefConditions } from './condition';
 import { recordValue, stampRecord } from './stamp';
 import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, prefSectionLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
 import type { PrefList } from './list';
@@ -92,6 +93,9 @@ export function createPrefsStore<S extends PrefGroup>(
   version = 0,
 ): PrefsStore<S> {
   const leaves = new Map([...prefLeaves(schema)].filter(([, leaf]) => prefHoldsValue(leaf)));
+  for (const { field, at, problem } of checkPrefConditions(schema)) {
+    console.warn(`[prefs] ${field} of ${at === '' ? 'the schema' : `"${at}"`}: ${problem}`);
+  }
   let snapshot: Snapshot | null = null;
   let previous: { raw: Map<string, unknown>; byPath: Map<string, unknown> } | null = null;
 

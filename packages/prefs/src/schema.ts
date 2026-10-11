@@ -6,6 +6,7 @@
 import { formatUnit, unitScale } from '@weasel-js/quantity';
 import type { PrefAction } from './action';
 import type { PrefAlias } from './alias';
+import type { PrefCondition } from './condition';
 import type { PrefSection } from './groups';
 import type { PrefLabel, PrefSeparator } from './label';
 import type { PrefList } from './list';
@@ -42,6 +43,11 @@ export interface PrefBase<K extends string, Value> {
   default: Value;
   /** Hide from a host app's settings UI by default. */
   hidden?: boolean;
+  /** Drawn only while this holds. Presentational: the value stays stored
+   *  and readable while the leaf is not drawn. */
+  showIf?: PrefCondition;
+  /** Drawn, and disabled while this does not hold. */
+  enableIf?: PrefCondition;
   /** Nothing held where this leaf's value is read means `default`, because
    *  whoever reads the value takes it that way (`pose.rotation ?? 0`). A
    *  surface over sparse settings reads every leaf so already. One over a

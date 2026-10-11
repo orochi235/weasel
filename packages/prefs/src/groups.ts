@@ -3,6 +3,7 @@
 // property, so a schema of one kind is neither assignable to nor walkable as
 // the other.
 
+import type { PrefCondition } from './condition';
 import type { PrefLeaf } from './schema';
 
 /**
@@ -35,6 +36,10 @@ export interface PrefGroup {
   /** How the group is drawn. Unset, its depth decides: a top-level group is a
    *  `page`, and one inside another is a `section`. */
   as?: PrefGroupAs;
+  /** Drawn, with everything under it, only while this holds. */
+  showIf?: PrefCondition;
+  /** Everything under it is disabled while this does not hold. */
+  enableIf?: PrefCondition;
   children: Record<string, PrefLeaf | PrefGroup>;
 }
 
@@ -54,6 +59,10 @@ export interface PrefSection {
    *  `page`, since nothing that draws sections has a rail. Unset: a heading
    *  over its rows. */
   as?: PrefSectionAs;
+  /** As a {@link PrefGroup}'s. */
+  showIf?: PrefCondition;
+  /** As a {@link PrefGroup}'s. */
+  enableIf?: PrefCondition;
   members: Record<string, PrefLeaf | PrefSection>;
 }
 
