@@ -428,3 +428,65 @@ describe('createCodec rate', () => {
     expect(b.voiceCount()).toBe(1);
   });
 });
+
+describe('createCodec voices on a shared subject', () => {
+  const T = { name: 'target' };
+
+  it('reads several voices on one subject as their sum, once', () => {
+    const b = createCodec();
+    const r1 = b.tween({ id: 1, on: T, ms: 1000, ease: linear, from: [100, 0], to: [0, 0] });
+    const r2 = b.tween({ id: 2, on: T, ms: 1000, ease: linear, from: [0, 50], to: [0, 0] });
+    expect(r2).toBe(r1);
+    b.frame(500);
+    expect(vals(r1, 2)).toEqual([50, 25]);
+    expect(b.voiceCount()).toBe(2);
+  });
+
+  it("answers each voice's own value and velocity apart from the sum", () => {
+    const b = createCodec();
+    b.tween({ id: 1, on: T, ms: 1000, ease: linear, from: [100], to: [0] });
+    b.spring({ id: 2, on: T, axes: 1, from: [10], to: [0], velocity: [0], ...SPRING });
+    expect(b.own(1)).toEqual({ value: [100], velocity: [0] });
+    b.frame(500);
+    expect(b.own(1)!.value[0]).toBeCloseTo(50, 9);
+    expect(b.own(1)!.velocity[0]).toBeCloseTo(-100, 9);
+    expect(b.own(2)!.value[0]).toBeGreaterThan(0);
+    expect(b.own(2)!.value[0]).toBeLessThan(10);
+  });
+
+  it('keeps the subject while one of its voices is left, and forgets it after the last', () => {
+    const b = createCodec();
+    const r = b.tween({ id: 1, on: T, ms: 1000, ease: linear, from: [100], to: [0] });
+    b.spring({ id: 2, on: T, axes: 1, from: [10], to: [0], velocity: [0], ...SPRING });
+    b.frame(100);
+    b.stop(1);
+    b.frame(100);
+    expect(vals(r, 1)[0]).toBeCloseTo(b.own(2)!.value[0]!, 9);
+    b.stop(2);
+    b.frame(0);
+    expect(held(mixes.at(-1))).toBe(0);
+  });
+
+  it("moves a voice along the caller's path", () => {
+    const b = createCodec();
+    const r = b.path({ id: 1, on: T, ms: 1000, axes: 2, at: (u) => [10 * (1 - u), u * u] });
+    expect(b.own(1)).toEqual({ value: [10, 0], velocity: [0, 0] });
+    b.frame(500);
+    expect(vals(r, 2)).toEqual([5, 0.25]);
+    expect(b.own(1)!.value).toEqual([5, 0.25]);
+  });
+
+  it('re-cues a spring from a place and velocity it is given, held or free', () => {
+    const b = createCodec();
+    const r = b.spring({ id: 1, on: T, axes: 1, from: [10], to: [0], velocity: [0], ...SPRING });
+    b.frame(100);
+    const v = b.own(1)!.velocity[0]!;
+    b.recue(1, [40], [v], [0]);
+    b.frame(0);
+    expect(vals(r, 1)[0]).toBeCloseTo(40, 9);
+    expect(b.own(1)!.velocity[0]).toBeCloseTo(v, 9);
+    b.recue(1, [40], [100], null);
+    b.frame(1000);
+    expect(vals(r, 1)[0]).toBeGreaterThan(40);
+  });
+});
