@@ -38,6 +38,23 @@ function makeNode(data: unknown, pose: RectPose): Node<unknown, string, RectPose
 const ELLIPSE = { shape: 'ellipse' };
 const POSE: RectPose = { x: 0, y: 0, width: 100, height: 60 };
 
+describe('painter match caching', () => {
+  it('re-matches when a node stops, or starts, deriving its path', () => {
+    const path = { kind: 'rect', x: 0, y: 0, width: 4, height: 4 };
+    const node = makeNode({ path }, POSE) as Node<unknown, string, RectPose> & {
+      dependsOn?: readonly string[]; derivePath?: unknown;
+    };
+    node.derivePath = () => null;
+    node.dependsOn = [asNodeId('a'), asNodeId('b')];
+    expect(findNodeShape(node)?.id).toBe('kit:derived');
+    // What `scene.setDependsOn(id, undefined)` does: the field goes, `data` stays.
+    delete node.dependsOn;
+    expect(findNodeShape(node)?.id).toBe('kit:path');
+    node.dependsOn = [asNodeId('a'), asNodeId('b')];
+    expect(findNodeShape(node)?.id).toBe('kit:derived');
+  });
+});
+
 describe('silhouette caching', () => {
   it('returns an identical path for repeated calls with the same pose', () => {
     const node = makeNode(ELLIPSE, POSE);

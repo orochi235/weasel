@@ -278,6 +278,8 @@ export function registerNodeShape<TData, TPose>(
  */
 const PAINTER_SLOT = 'shape:painter';
 const PAINTER_SLOT_NONRECT = 'shape:painter:nonrect';
+const PAINTER_SLOT_DERIVED = 'shape:painter:derived';
+const PAINTER_SLOT_DERIVED_NONRECT = 'shape:painter:derived:nonrect';
 const SILHOUETTE_SLOT = 'shape:silhouette';
 const TEXT_SILHOUETTE_SLOT = 'shape:silhouette:text';
 
@@ -299,14 +301,22 @@ const TEXT_SILHOUETTE_SLOT = 'shape:silhouette:text';
  */
 const PAINT_SLOT = 'shape:paint';
 
+function derivesPath(node: { dependsOn?: readonly unknown[] | 'children'; derivePath?: unknown }): boolean {
+  return (node.dependsOn?.length ?? 0) > 0 && node.derivePath !== undefined;
+}
+
 /** Find the painter that will render `node` — first match in priority
  *  order. Returns undefined if no painter (including the built-in
  *  fallback) accepts the node. */
 export function findNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
 ): NodeShapeEntry<TData, TPose> | undefined {
-  // Built-in painters also gate on pose shape, so the key carries it too.
-  const slot = paintsPose(node.pose) ? PAINTER_SLOT : PAINTER_SLOT_NONRECT;
+  // Built-in painters also gate on pose shape and on whether the node derives
+  // its path, neither of which shows in `data`, so the key carries both.
+  const rect = paintsPose(node.pose);
+  const slot = derivesPath(node)
+    ? (rect ? PAINTER_SLOT_DERIVED : PAINTER_SLOT_DERIVED_NONRECT)
+    : (rect ? PAINTER_SLOT : PAINTER_SLOT_NONRECT);
   return nodeMemo(node as { data?: unknown }, slot, undefined, () =>
     matchNodeShape(node),
   );
@@ -932,7 +942,7 @@ const DERIVED_PAINTER: NodeShapeEntry = {
   // and `kit:add` restores a node with its `dependsOn` intact when its
   // `derivePath` key is missing from the registry. Claiming that node would paint
   // nothing where the authored appearance is what the warning promises.
-  matches: (node) => (node.dependsOn?.length ?? 0) > 0 && node.derivePath !== undefined,
+  matches: derivesPath,
   paint: (node, _pose, ctx) => {
     const path = ctx?.derivedPath;
     if (path == null) return [];
