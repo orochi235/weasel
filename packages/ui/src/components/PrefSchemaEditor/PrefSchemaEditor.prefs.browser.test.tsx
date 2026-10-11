@@ -55,7 +55,8 @@ test('with "Select what is dropped" off in the editor\'s preferences, the select
   fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
   fireEvent.click(within(screen.getByRole('dialog', { name: 'Schema editor preferences' })).getByRole('checkbox', { name: 'Select what is dropped' }));
   fireEvent.click(within(screen.getByRole('dialog', { name: 'Schema editor preferences' })).getByRole('button', { name: 'Close dialog' }));
-  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Schema editor preferences' })).toBeNull());
+  // The dialog leaves on its exit animation, which a loaded fleet node has taken over a second to finish.
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Schema editor preferences' })).toBeNull(), { timeout: 10_000 });
   fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(snap)'));
   await drag('Dock', 'Show grid');
   expect(order()).not.toEqual(['grid', 'snap', 'dock']);
