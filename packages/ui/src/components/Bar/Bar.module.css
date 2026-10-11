@@ -80,3 +80,52 @@
   font-size: var(--wzl-font-size-sm);
   white-space: nowrap;
 }
+
+/* One action's button. Square around an icon; as wide as its words with a label. */
+.action {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wzl-space-2);
+  width: var(--wzl-tb-height);
+  height: var(--wzl-tb-height);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--wzl-radius-sm);
+  color: var(--wzl-fg);
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size-sm);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.actionLabeled {
+  width: auto;
+  padding: 0 var(--wzl-space-3);
+}
+
+.action:hover:not([disabled], [aria-disabled='true']) {
+  background: var(--wzl-border);
+}
+
+.action:active:not([disabled], [aria-disabled='true']) {
+  background: color-mix(in srgb, var(--wzl-border) 70%, transparent);
+}
+
+.action[aria-pressed='true'] {
+  background: var(--wzl-accent);
+  color: var(--wzl-fg-on-accent);
+  --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
+  --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
+}
+
+.action[disabled],
+.action[aria-disabled='true'] {
+  opacity: 0.4;
+}
+
+.action > svg {
+  display: block;
+}

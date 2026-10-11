@@ -269,6 +269,7 @@ export function renderBuiltin(
   if (surface === 'bar') {
     return renderBarLeaf({
       leaf: pref,
+      path: ctx.path,
       name: ariaLabel,
       field: leafField(ctx, nested),
       row: () => renderBuiltin(ctx, ariaLabel, renderers, { selectionKey, nested }),

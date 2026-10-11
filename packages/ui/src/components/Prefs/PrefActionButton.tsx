@@ -1,29 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
 import type { PrefAction } from '@weasel-js/prefs';
 import { Button } from '../Button';
+import { useLeafAction } from './useLeafAction';
 
-/** An `action` leaf's button, disabled while a promise its `run` returned is pending. */
+/** An `action` leaf's button in a row: its label, or its icon alone for `control: 'icon'`. */
 export function PrefActionButton({ pref, path }: { pref: PrefAction; path: string }) {
-  const [pending, setPending] = useState(false);
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-  const press = (): void => {
-    // A schema that has been through JSON, as a schema editor's saved draft has, comes back without `run`.
-    const out = (pref.run as PrefAction['run'] | undefined)?.({ path });
-    if (typeof out?.then !== 'function') return;
-    setPending(true);
-    void out.finally(() => {
-      if (mounted.current) setPending(false);
-    });
-  };
-  return (
-    <Button size="sm" disabled={pending} onClick={press}>
-      {pref.label ?? pref.name}
-    </Button>
-  );
+  const { press, label, icon, shortcut, disabled, active, missing } = useLeafAction(pref, path);
+  const button = {
+    size: 'sm',
+    disabled: disabled || missing !== undefined,
+    pressed: active,
+    shortcut,
+    onClick: press,
+  } as const;
+  if (pref.control === 'icon' && icon != null) {
+    return (
+      <Button {...button} iconOnly ariaLabel={label}>
+        {icon}
+      </Button>
+    );
+  }
+  return <Button {...button}>{label}</Button>;
 }

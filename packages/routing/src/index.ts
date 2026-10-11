@@ -86,7 +86,7 @@ export { ActionDisabledReason } from './interactions/actions/action';
 export type { ActionDisabledReason as ActionDisabledReasonValue } from './interactions/actions/action';
 export { actionBindings } from './interactions/actions/binding';
 export type { GestureBinding, BoundGesture, BindingSource } from './interactions/actions/binding';
-export { evaluateEnabled } from './interactions/actions/actionEnabled';
+export { evaluateActive, evaluateEnabled } from './interactions/actions/actionEnabled';
 export type { ActionEnabledResult } from './interactions/actions/actionEnabled';
 export { buildDepsFromRequires } from './interactions/actions/buildDeps';
 export { createDepRegistry } from './interactions/actions/depNode';

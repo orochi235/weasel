@@ -130,6 +130,17 @@ export interface ActionDispatch extends BindingSource {
    */
   enabled?: (deps?: ActionDeps, at?: { x: number; y: number }) => true | ActionDisabledReason;
   /**
+   * @experimental
+   * Whether the action reads as held down right now: bold on the selected
+   * text, snapping switched on. A toolbar button draws it as pressed.
+   * Omitted = the action has no pressed state, which is not the same as
+   * one that is off. Never read during dispatch.
+   *
+   * Under the same contract as `enabled`: pure, fast, and it must not
+   * throw. `deps` is the bag `enabled` is given.
+   */
+  active?: (deps?: ActionDeps) => boolean;
+  /**
    * Declarative eligibility rule, evaluated against the current
    * `RuleCtx` by the dispatcher before invoking `start()`. Omitted =
    * always eligible.

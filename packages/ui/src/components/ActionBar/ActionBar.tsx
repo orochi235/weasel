@@ -1,8 +1,8 @@
 import { useLayoutEffect, useReducer, useSyncExternalStore, type ReactNode } from 'react';
-import { Focusable } from 'react-aria-components';
 import {
   useActionsRegistry,
   useOptionalDepRegistry,
+  evaluateActive,
   evaluateEnabled,
   buildDepsFromRequires,
   actionItems,
@@ -10,7 +10,7 @@ import {
   type Action,
   type ActionItem,
 } from '@weasel-js/core';
-import { Tooltip, TooltipTrigger } from '../Tooltip';
+import { BarActionButton } from '../Bar/BarAction';
 import { formatShortcut } from '../ToolPalette/formatShortcut';
 import s from './ActionBar.module.css';
 
@@ -47,10 +47,6 @@ function resolveIcon(item: ActionItem, override: ReactNode | undefined): ReactNo
   return i;
 }
 
-function resolveTitle(label: string, item: ActionItem): string {
-  const shortcut = item.action.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0]);
-  return shortcut ? `${label} (${shortcut})` : label;
-}
 
 /**
  * Generic group-keyed action toolbar. Reads the parent `ActionsRegistry`,
@@ -76,16 +72,20 @@ export function ActionBar(props: ActionBarProps) {
     registry ? registry.list : () => EMPTY_LIST,
   );
   const items = all.filter((a) => a.group === group).flatMap(actionItems);
-  const isEnabled = (item: ActionItem): boolean => {
+  const read = (item: ActionItem): { enabled: boolean; active: boolean | undefined } => {
     const deps = depReg ? buildDepsFromRequires(item.action, depReg) : undefined;
-    return evaluateEnabled(item.action, deps).enabled;
+    return { enabled: evaluateEnabled(item.action, deps).enabled, active: evaluateActive(item.action, deps) };
   };
   // Dep sources publish on commit, so a render reads the previous commit's
   // deps. Once this one commits, re-render if what they say now differs.
-  const shown = items.map(isEnabled);
+  const shown = items.map(read);
   const [, recheck] = useReducer((n: number) => n + 1, 0);
   useLayoutEffect(() => {
-    if (items.some((item, i) => isEnabled(item) !== shown[i])) recheck();
+    const stale = items.some((item, i) => {
+      const now = read(item);
+      return now.enabled !== shown[i]!.enabled || now.active !== shown[i]!.active;
+    });
+    if (stale) recheck();
   });
 
   const cls = [s.bar, orientation === 'vertical' && s.vertical, className]
@@ -94,36 +94,20 @@ export function ActionBar(props: ActionBarProps) {
 
   return (
     <div className={cls} role="toolbar" aria-label={`${group} actions`}>
-      {items.map((item, i) => {
-        const label = labels?.[item.key] ?? item.label;
-        const icon = resolveIcon(item, icons?.[item.key]);
-        const disabled = !shown[i];
-        const title = resolveTitle(label, item);
-        return (
-          <TooltipTrigger key={item.key} isDisabled={disabled}>
-            <Focusable isDisabled={disabled}>
-              <button
-                type="button"
-                data-testid={`action-bar-item-${item.key}`}
-                aria-label={label}
-                aria-disabled={disabled || undefined}
-                disabled={disabled}
-                className={s.button}
-                onClick={() => {
-                  if (disabled) return;
-                  // Dispatch through the registry so the enabled() guard runs.
-                  // If no registry is in scope the click is a no-op — ActionBar
-                  // is expected to render under an `ActionsProvider`.
-                  registry?.trigger(item.action.id, item.params);
-                }}
-              >
-                {icon}
-              </button>
-            </Focusable>
-            <Tooltip>{title}</Tooltip>
-          </TooltipTrigger>
-        );
-      })}
+      {items.map((item, i) => (
+        <BarActionButton
+          key={item.key}
+          data-testid={`action-bar-item-${item.key}`}
+          label={labels?.[item.key] ?? item.label}
+          icon={resolveIcon(item, icons?.[item.key])}
+          shortcut={item.action.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0])}
+          disabled={!shown[i]!.enabled}
+          active={shown[i]!.active}
+          // Through the registry, so the action's own guard runs. With no
+          // registry in scope the click does nothing.
+          onPress={() => registry?.trigger(item.action.id, item.params)}
+        />
+      ))}
     </div>
   );
 }

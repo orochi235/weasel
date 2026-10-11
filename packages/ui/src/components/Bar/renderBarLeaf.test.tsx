@@ -40,13 +40,13 @@ function prefCtx(pref: PrefLeaf): PrefRenderContext {
 describe('renderBarLeaf', () => {
   it('draws a leaf that is one control as a bar field', () => {
     const field = { kind: 'number', value: 12, onChange: () => {} } as const;
-    const { container } = render(<>{renderBarLeaf({ leaf: size, name: 'Size', field, row: () => null })}</>);
+    const { container } = render(<>{renderBarLeaf({ leaf: size, path: 'p', name: 'Size', field, row: () => null })}</>);
     expect(barLabel(container)).toBe('Size');
     expect(screen.getByLabelText('Size')).toBeInTheDocument();
   });
 
   it('opens a leaf made of others from a button reading its name', () => {
-    render(<>{renderBarLeaf({ leaf: margins, name: 'Margins', field: null, row: () => <i>the row form</i> })}</>);
+    render(<>{renderBarLeaf({ leaf: margins, path: 'p', name: 'Margins', field: null, row: () => <i>the row form</i> })}</>);
     expect(screen.queryByText('the row form')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Margins' }));
     expect(screen.getByText('the row form')).toBeInTheDocument();
@@ -54,13 +54,13 @@ describe('renderBarLeaf', () => {
 
   it('draws a label leaf as its words', () => {
     const label = { kind: 'label', name: 'Stroke', description: '', default: undefined } as PrefLeaf;
-    render(<>{renderBarLeaf({ leaf: label, name: 'Stroke', field: null, row: () => <i>the row form</i> })}</>);
+    render(<>{renderBarLeaf({ leaf: label, path: 'p', name: 'Stroke', field: null, row: () => <i>the row form</i> })}</>);
     expect(screen.getByText('Stroke')).toBeInTheDocument();
     expect(screen.queryByText('the row form')).toBeNull();
   });
 
   it('draws nothing where a leaf made of others draws nothing', () => {
-    expect(renderBarLeaf({ leaf: margins, name: 'Margins', field: null, row: () => null })).toBeNull();
+    expect(renderBarLeaf({ leaf: margins, path: 'p', name: 'Margins', field: null, row: () => null })).toBeNull();
     expect(withBarLabel(size, undefined)).toBeNull();
   });
 });

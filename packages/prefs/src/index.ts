@@ -16,7 +16,7 @@ export {
   VERSION_RECORD,
   visiblePrefSubtree,
 } from './helpers';
-export type { PrefAction, PrefActionContext } from './action';
+export type { PrefAction, PrefActionContext, PrefActionControl } from './action';
 export { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 export type { PrefList } from './list';
 export type { PrefMap } from './map';

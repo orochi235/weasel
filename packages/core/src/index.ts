@@ -133,7 +133,7 @@ export type { Action, ActionDispatch, ActionPresentation, ActionVariant } from '
 export { actionBindings, actionItems } from '@weasel-js/routing';
 export type { ActionItem } from '@weasel-js/routing';
 export type { BoundGesture, BindingSource } from '@weasel-js/routing';
-export { evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
+export { evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
 export type { ActionEnabledResult } from '@weasel-js/routing';
 export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
 export type { ActionShortcut } from './interactions/actions/actionShortcuts';

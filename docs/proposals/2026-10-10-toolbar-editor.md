@@ -1,7 +1,8 @@
 # A toolbar is a group drawn as a bar
 
 **Partly built.** Written 2026-10-10 on branch `toolbar-editor`, which holds the bar forms
-(`BarField`, `BarPopover`, `renderBarLeaf`); everything else below is unbuilt. For whoever builds it. It says what has to change for `PrefSchemaEditor` to lay
+(`BarField`, `BarPopover`, `BarAction`, `renderBarLeaf`) and action leaves that fire by key
+(`useLeafAction`); everything else below is unbuilt. For whoever builds it. It says what has to change for `PrefSchemaEditor` to lay
 out toolbars as well as settings forms, and in what order.
 
 ## What was decided
@@ -21,10 +22,10 @@ out toolbars as well as settings forms, and in what order.
 |---|---|---|
 | Group forms | `PrefGroupAs` is `'page' \| 'tab' \| 'panel' \| 'section'` | No bar |
 | Drawing a schema on one line | `ToolOptionsBar` flattens a `PrefGroup` to its leaves; nested groups draw nothing | It is a whole component, not a form a group can take inside a page |
-| Bar-sized controls | `BarField` draws a field's bar form and `BarPopover` what one line cannot hold | An `action` leaf still draws its row button |
+| Bar-sized controls | `BarField` draws a field's bar form, `BarAction` an action's, and `BarPopover` what one line cannot hold | None |
 | Kind to control | Both `renderBuiltin`s take a surface, and for `'bar'` hand the leaf and its field props to `renderBarLeaf` in `Bar/renderBarLeaf.tsx` | Nothing but `ToolOptionsBar` asks for `'bar'` yet |
-| Action leaves | `PrefAction` holds a `run` closure; `PrefActionButton` draws it | Code, so it cannot be dragged in, drafted, or exported |
-| Registered actions | `ActionBar` draws every action in one `group` from the `ActionsRegistry` | Not placeable one at a time; `Action` has no pressed state |
+| Action leaves | `PrefAction.action` names a registered action by key, and `useLeafAction` fires it | The editor cannot place one |
+| Registered actions | `ActionBar` draws every action in one `group` from the `ActionsRegistry`, pressed while `active` | Not placeable one at a time |
 | Editor preview | A `PrefsDialog` for a group root, a `SelectionPanel` for a section root | Nothing draws a bar, and drops are hit-tested as rows |
 
 ## Schema
@@ -33,20 +34,7 @@ In `@weasel-js/prefs`:
 
 ```ts
 export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'bar';
-
-export interface PrefAction extends PrefBase<'action', undefined> {
-  /** The key of a registered action to fire: its id, or `id:variant`. */
-  action?: string;
-  /** What to call when no `action` is named. */
-  run?: (ctx: PrefActionContext) => void | Promise<void>;
-  label?: string;
-  control?: 'button' | 'icon';
-}
 ```
-
-`action` is a plain string, so the package still depends on nothing. A leaf with both fires
-`action`. The leaf's `name` and `icon` win over the registered action's own, which is how a layout
-relabels one.
 
 A bar's children, by what they are:
 
@@ -60,13 +48,6 @@ A bar's children, by what they are:
 A bar's key is a segment of its leaves' paths, as any `PrefGroup`'s is, so moving a field into a
 bar moves where its value is stored. Showing one setting in two places needs a leaf that points at
 another, which this design leaves out.
-
-## Bar forms
-
-Built, but for the action cell. `BarAction` is that cell: an icon button with the label and
-shortcut in its tooltip, or icon and label for `control: 'button'`. `ActionBar`'s button moves into
-it, so the registry-driven icon button has one definition, and `renderBarLeaf` hands it an `action`
-leaf where it draws the row button today.
 
 ## `Bar`
 
@@ -83,25 +64,6 @@ A schema-driven strip: `schema`, `values`, `onChange`, `mixed`, and `renderers`,
 Focus keeps plain tab order, for the reason `ToolOptionsBar` gives: a bar holding number boxes and
 selects has to leave the arrow keys to them.
 
-## Actions
-
-In `@weasel-js/routing`, `ActionDispatch` gains a pressed state beside `enabled`:
-
-```ts
-active?: (deps?: ActionDeps) => boolean;
-```
-
-`BarAction` reads it into `aria-pressed`. Bold, snapping, and a visible grid are toggles, and a
-toolbar that cannot show one as held down is missing the common case.
-
-One hook, `useLeafAction(leaf, path)`, answers for an action leaf on any surface: what pressing it
-does, and its label, icon, shortcut, and whether it is disabled, pending, or active. The row button,
-the bar button, and a menu item all draw from it. With no `ActionsProvider` above, or a key the
-registry does not hold, the button is disabled and its tooltip names the key.
-
-Only actions `actionItems` lists can be placed, which leaves out any whose invoker is not
-`'immediate'`.
-
 ## Editor
 
 | Change | Where |
@@ -114,7 +76,8 @@ Only actions `actionItems` lists can be placed, which leaves out any whose invok
 | A root drawn `as: 'bar'` previews as a `Bar` on a stage, with a switch for its orientation | `PreviewPane.tsx` |
 | A drop into a bar is placed along the bar's axis, with the mark between two cells | `Prefs/dropTarget.ts`, `previewDrop.ts` |
 
-The list comes from a new `actions` prop, a list of `{ key, label, group?, icon?, shortcut? }`.
+Only actions `actionItems` lists can be placed, which leaves out any whose invoker is not
+`'immediate'`. The list comes from a new `actions` prop, a list of `{ key, label, group?, icon?, shortcut? }`.
 Left out, the editor reads the `ActionsRegistry` above it. Dropping an entry makes
 `{ kind: 'action', name: <its label>, description: '', default: undefined, action: <its key> }`.
 
@@ -124,16 +87,14 @@ allow.
 
 ## forge
 
-- `ui/Bar/BarAction`: enabled, disabled, pressed, pending, labeled, and an unknown key.
 - `ui/Bar/Bar`: fields and actions together, divided runs, a popover group, both orientations.
 - `ui/PrefSchemaEditor`: a toolbar story over a registry of sample actions.
 
 ## Order
 
-1. **Actions by key.** `PrefAction.action`, `Action.active`, `useLeafAction`, `BarAction`.
-2. **`Bar` and `as: 'bar'`.** The component, the schema value, and the surfaces that draw it;
+1. **`Bar` and `as: 'bar'`.** The component, the schema value, and the surfaces that draw it;
    `ToolOptionsBar` and `ActionBar` rebuilt on it.
-3. **Editor.** Palette, attributes, the Actions list, the bar preview, and drops along a bar.
+2. **Editor.** Palette, attributes, the Actions list, the bar preview, and drops along a bar.
 
 ## Left out
 

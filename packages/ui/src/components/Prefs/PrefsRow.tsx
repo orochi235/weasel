@@ -175,6 +175,7 @@ function renderBuiltin(
   if (surface === 'bar') {
     return renderBarLeaf({
       leaf: pref,
+      path: ctx.path,
       name: pref.name,
       field: leafField(ctx, siblings),
       row: () => renderBuiltin(ctx, renderers, siblings),
