@@ -37,6 +37,12 @@ describe('parsesAsColor', () => {
     expect(parsesAsColor('#abc')).toBe(true);
     expect(parsesAsColor('12px')).toBe(false);
   });
+
+  it('does not take a CSS-wide keyword for a color, though every property supports one', () => {
+    for (const word of ['inherit', 'initial', 'unset', 'revert', 'revert-layer', ' Inherit ']) {
+      expect(parsesAsColor(word, () => true)).toBe(false);
+    }
+  });
 });
 
 describe('toHex', () => {
