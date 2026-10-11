@@ -255,7 +255,7 @@ describe('createPrefsStore', () => {
           kind: 'union',
           name: 'Shape',
           description: '',
-          default: { type: 'open' },
+          default: { type: 'open' } as { type: string; cap?: number },
           tag: 'type',
           variants: {
             open: { kind: 'object', name: 'Open', description: '', default: {}, children: {} },
