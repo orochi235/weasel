@@ -1799,19 +1799,10 @@ only story runner in the repo.
   and `moveBefore` moves an iframe without reloading it), or has `Trial` keep
   the body at one tree position whether or not there is a stage.
 
-- **(P3) A trial tile narrower than 300px cuts off its content pane.** A trial's `Split`
-  (`packages/labkit/src/primitives/Split.tsx`) holds the sidebar at its 140px floor and the content
-  at its 160px floor however narrow the tile gets, so below 300px the content pane runs out past the
-  tile. Measured in forge on 2026-09-28 with two trials beside the story sidebar and CSS Vars aside:
-  at a 1000px viewport each tile is 176px and the content pane reaches 124px past it, at 1100px
-  74px; at 1718px with default sidebar widths the tiles are 535px and nothing overflows. The
-  2026-09-13 fit-check warning (`.lk-shell-body` scrolls, a pane 68px past `lk-trial__panes`) was
-  this, but every split zone between the pane and the shell body now has `overflow: hidden`, so the
-  lab no longer scrolls and the fit check stays silent: the story is clipped with no way to reach
-  its right side. Ruled 2026-10-11: the split gives way: when the zone cannot hold both panes it
-  shrinks its sidebar below its floor first, then its content. That leaves relaxing the two floors
-  in `Split`. At the same 140px the forge Globals group's label/value columns overlap ("MODE" over
-  "Lab").
+- **(P3) At a 140px trial sidebar the forge Globals group's label and value columns overlap** ("MODE"
+  over "Lab"). Seen in forge on 2026-09-28; 140px is the narrowest a drag makes the sidebar of a
+  trial's `Split` (`packages/labkit/src/primitives/Split.tsx`), and a tile under 300px now lays the
+  sidebar out narrower still, which no browser run has looked at yet.
 
 - **(P3) windease lays out a node that was registered and never shown.** A
   strip gives a `mounted` node its room and a seam, while `Container` renders

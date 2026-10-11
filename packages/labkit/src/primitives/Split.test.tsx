@@ -66,6 +66,86 @@ describe('Split', () => {
     expect(onWidthChange).toHaveBeenLastCalledWith(VIEWPORT.w - 300);
   });
 
+  describe('in a zone too narrow for both floors', () => {
+    const widths = (container: HTMLElement) =>
+      ['lk-split-sidebar', 'lk-split-content'].map(
+        (id) => (container.querySelector(`[data-node="${id}"]`) as HTMLElement).style.width,
+      );
+    const at = (w: number, sidebar: ReactNode | null = <p>side</p>) => (
+      <Split viewport={{ w, h: 600 }} width={320} sidebar={sidebar}>
+        <p>main</p>
+      </Split>
+    );
+
+    it('shrinks the sidebar below its floor first, so the content keeps its own', () => {
+      const { container } = render(at(176));
+      expect(widths(container)).toEqual(['16px', '160px']);
+    });
+
+    it('shrinks the content once the sidebar has nothing left to give', () => {
+      const { container } = render(at(100));
+      expect(widths(container)).toEqual(['0px', '100px']);
+    });
+
+    it('holds a lone content pane to the zone', () => {
+      const { container } = render(at(100, null));
+      const pane = container.querySelector('[data-node="lk-split-content"]') as HTMLElement;
+      expect(pane.style.width).toBe('100px');
+    });
+
+    it('gives the sidebar its width back when the zone widens, with nothing reported as a resize', async () => {
+      const onWidthChange = vi.fn();
+      const sized = (w: number) => (
+        <Split viewport={{ w, h: 600 }} width={320} sidebar={<p>side</p>} onWidthChange={onWidthChange}>
+          <p>main</p>
+        </Split>
+      );
+      const { container, rerender } = render(sized(800));
+      await act(async () => rerender(sized(176)));
+      expect(widths(container)).toEqual(['16px', '160px']);
+      await act(async () => rerender(sized(800)));
+      expect(widths(container)).toEqual(['320px', '480px']);
+      expect(onWidthChange).not.toHaveBeenCalled();
+    });
+
+    it('measures the zone when no viewport is given', async () => {
+      const observed: { el: Element; report: (width: number) => void }[] = [];
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(private callback: ResizeObserverCallback) {}
+          observe(el: Element) {
+            observed.push({
+              el,
+              report: (width) =>
+                this.callback([{ contentRect: { width, height: 600 } } as ResizeObserverEntry], this as unknown as ResizeObserver),
+            });
+          }
+          disconnect() {}
+        },
+      );
+      try {
+        const { container } = render(
+          <Split width={320} sidebar={<p>side</p>}>
+            <p>main</p>
+          </Split>,
+        );
+        const zone = container.querySelector('.lk-split') as HTMLElement;
+        const report = () =>
+          act(async () => {
+            for (const o of observed.filter((seen) => seen.el === zone)) o.report(176);
+          });
+        // The strip renders no pane until it has an extent, and Split measures from a pane.
+        await report();
+        expect(widths(container)).toEqual(['140px', '160px']);
+        await report();
+        expect(widths(container)).toEqual(['16px', '160px']);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+  });
+
   it('puts the caller’s class names on its boxes', () => {
     const { container } = render(
       <Split

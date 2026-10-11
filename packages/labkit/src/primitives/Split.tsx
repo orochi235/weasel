@@ -1,7 +1,8 @@
 import { useLatest } from '@weasel-js/core';
-import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { asNodeId, createNode, Store, stripStrategy } from 'windease';
 import { type ChromeMap, Container, Provider, StrategyRegistryProvider } from 'windease/react';
+import { splitFloors, useZoneWidth } from './splitFloors';
 
 const ZONE_ID = asNodeId('lk-split');
 const SIDEBAR_ID = asNodeId('lk-split-sidebar');
@@ -31,10 +32,13 @@ export interface SplitProps {
   width?: number;
   /** Where the sidebar starts before anyone drags it. */
   defaultWidth?: number;
+  /** How narrow a drag may make the sidebar. A strip too narrow for this and
+   *  `contentMinWidth` lays the sidebar out below it, down to nothing. */
   minWidth?: number;
   maxWidth?: number;
   /** How little the content pane may be squeezed to. Reported as the seam's
-   *  reachable maximum, so the drag stops there rather than clamping silently. */
+   *  reachable maximum, so the drag stops there rather than clamping silently.
+   *  A strip narrower than this lays the content out at the strip's width. */
   contentMinWidth?: number;
   /** Fires through the drag, not on release: the pane is already there. */
   onWidthChange?: (width: number) => void;
@@ -138,6 +142,8 @@ export function Split({
   // The cross-axis half of every size hint below is inert: a horizontal strip
   // stretches its panes to the container's height and never reads `h`.
   const hasSidebar = sidebar !== null;
+  const [contentEl, setContentEl] = useState<HTMLDivElement | null>(null);
+  const floors = splitFloors(useZoneWidth(contentEl, viewport?.w), hasSidebar, minWidth, contentMinWidth);
   const storeRef = useRef<Store | null>(null);
   if (storeRef.current === null) {
     storeRef.current = createSplitStore({
@@ -145,9 +151,9 @@ export function Split({
       label,
       hasSidebar,
       sidebarWidth: width ?? defaultWidth,
-      minWidth,
+      minWidth: floors.sidebar,
       maxWidth,
-      contentMinWidth,
+      contentMinWidth: floors.content,
     });
   }
   const store = storeRef.current;
@@ -164,11 +170,11 @@ export function Split({
 
   useEffect(() => {
     store.setHints(SIDEBAR_ID, {
-      minSize: { w: minWidth, h: 0 },
+      minSize: { w: floors.sidebar, h: 0 },
       maxSize: { w: maxWidth, h: 0 },
     });
-    store.setHints(CONTENT_ID, { minSize: { w: contentMinWidth, h: 0 } });
-  }, [store, minWidth, maxWidth, contentMinWidth]);
+    store.setHints(CONTENT_ID, { minSize: { w: floors.content, h: 0 } });
+  }, [store, floors.sidebar, floors.content, maxWidth]);
 
   useEffect(() => {
     store.setMeta(SIDEBAR_ID, { title: label });
@@ -199,7 +205,11 @@ export function Split({
   const chrome = useMemo<ChromeMap>(
     () => ({
       sidebar: () => <div className={sidebarClassName}>{sidebar}</div>,
-      content: () => <div className={contentClassName}>{children}</div>,
+      content: () => (
+        <div ref={setContentEl} className={contentClassName}>
+          {children}
+        </div>
+      ),
     }),
     [sidebar, children, sidebarClassName, contentClassName],
   );
