@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, type CSSProperties, type Keybo
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
+import { crossEnd } from './crossEnd';
 import { endlessTrack, type Endless } from '../../endless';
 import { decimal, qty, type Display } from '@weasel-js/quantity';
 
@@ -283,17 +284,18 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     () => props.thumbs.map(t => (t.value === Infinity ? { ...t, value: track.max } : t.value === -Infinity ? { ...t, value: track.min } : t)),
     [props.thumbs, track.min, track.max],
   );
-  const stops = useMemo(
-    () =>
-      span.even
-        ? [
-            ...(track.min < span.min ? [{ value: track.min, label: qty(-Infinity, display ?? READOUT).text }] : []),
-            ...stopList,
-            ...(track.max > span.max ? [{ value: track.max, label: qty(Infinity, display ?? READOUT).text }] : []),
-          ]
-        : props.stops,
-    [span.even, stopList, props.stops, track.min, track.max, span.min, span.max, display],
-  );
+  // The infinity stops join whatever stops there are, so arrow keys and a
+  // strict drag can land on them; they are labeled only among labeled stops.
+  const stops = useMemo(() => {
+    if (stopList.length === 0) return props.stops;
+    const labeled = span.even || stopList.some(stop => stop.label !== undefined);
+    const end = (value: number, sign: number) => (labeled ? { value, label: qty(sign * Infinity, display ?? READOUT).text } : { value });
+    return [
+      ...(track.min < span.min ? [end(track.min, -1)] : []),
+      ...stopList,
+      ...(track.max > span.max ? [end(track.max, 1)] : []),
+    ];
+  }, [span.even, stopList, props.stops, track.min, track.max, span.min, span.max, display]);
   if (endless === undefined) return <SliderBody {...props} thumbs={thumbs} />;
   const outward = (next: T[]) => next.map(t => ({ ...t, value: fromTrack(t.value) }));
   return (
@@ -303,6 +305,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
       max={track.max}
       stops={stops}
       thumbs={thumbs}
+      range={[span.min, span.max]}
       onInput={next => onInput(outward(next))}
       onChange={onChange && (next => onChange(outward(next)))}
       renderReadout={(t, i) => {
@@ -316,7 +319,13 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
 
 /** The slider proper, in track values: {@link Slider} maps an endless end's
  *  ±Infinity onto the end stop and back, and speaks it through `spokenAt`. */
-function SliderBody<T extends Thumb = Thumb>(props: SliderProps<T> & { spokenAt?: (v: number) => string | undefined }): ReactElement {
+function SliderBody<T extends Thumb = Thumb>(
+  props: SliderProps<T> & {
+    spokenAt?: (v: number) => string | undefined;
+    /** The finite range, where the track runs past it to an endless end's stop. */
+    range?: readonly [number, number];
+  },
+): ReactElement {
   const { thumbs, onInput, onChange, step, constraint, trackHeight, density, ariaLabel, className } = props;
 
   const { stopList, stops, even, min, max } = useSpan(props);
@@ -560,7 +569,8 @@ function SliderBody<T extends Thumb = Thumb>(props: SliderProps<T> & { spokenAt?
   };
 
   const onThumbKeyDown = (index: number) => (e: ReactKeyboardEvent) => {
-    const stepSize = defaultStep(step, min, max);
+    const range = props.range ?? [min, max];
+    const stepSize = defaultStep(step, range[0], range[1]);
     let delta = 0;
     // With stops, a keystroke moves by whole stops rather than by value.
     let stopDelta = 0;
@@ -606,7 +616,7 @@ function SliderBody<T extends Thumb = Thumb>(props: SliderProps<T> & { spokenAt?
     else if (stops.length > 0) {
       v = stepStops(stops, next[index].value, stopDelta > 0 ? 1 : -1, Math.abs(stopDelta));
     } else {
-      v = quantize(next[index].value + delta, step, min);
+      v = crossEnd(next[index].value, delta, stepSize, range, [min, max]) ?? quantize(next[index].value + delta, step, min);
     }
     v = clamp(v, lo, hi);
     if (constraint === 'ordered') v = clampOrdered(v, next, index, lo, hi, step);

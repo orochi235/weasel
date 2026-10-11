@@ -1295,4 +1295,45 @@ describe('Slider endless', () => {
     fireEvent.keyDown(getByRole('slider'), { key: 'End' });
     expect(onChange).toHaveBeenLastCalledWith([{ value: Infinity }]);
   });
+
+  it('steps a stepless thumb off the infinity stop and back onto it with the arrow keys', () => {
+    const onInput = vi.fn();
+    const at = (value: number) => render(<Slider min={0} max={100} endless="max" thumbs={[{ value }]} onInput={onInput} />);
+    let view = at(Infinity);
+    fireEvent.keyDown(view.getByRole('slider'), { key: 'ArrowLeft' });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: 100 }]);
+    view.unmount();
+    view = at(100);
+    fireEvent.keyDown(view.getByRole('slider'), { key: 'ArrowRight' });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: Infinity }]);
+    view.unmount();
+    view = at(50);
+    fireEvent.keyDown(view.getByRole('slider'), { key: 'ArrowRight' });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: 51 }]);
+    view.unmount();
+    view = at(95);
+    fireEvent.keyDown(view.getByRole('slider'), { key: 'ArrowRight', shiftKey: true });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: 100 }]);
+  });
+
+  it('steps a stepless thumb off and onto the minus infinity stop', () => {
+    const onInput = vi.fn();
+    const at = (value: number) => render(<Slider min={0} max={100} endless="min" thumbs={[{ value }]} onInput={onInput} />);
+    let view = at(-Infinity);
+    fireEvent.keyDown(view.getByRole('slider'), { key: 'ArrowRight' });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: 0 }]);
+    view.unmount();
+    view = at(0);
+    fireEvent.keyDown(view.getByRole('slider'), { key: 'ArrowLeft' });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: -Infinity }]);
+  });
+
+  it('reaches the infinity stop from the last of linearly spaced stops', () => {
+    const onInput = vi.fn();
+    const { getByRole } = render(
+      <Slider min={0} max={100} stops={[0, 50, 100]} snap="strict" endless="max" thumbs={[{ value: 100 }]} onInput={onInput} />,
+    );
+    fireEvent.keyDown(getByRole('slider'), { key: 'ArrowRight' });
+    expect(onInput).toHaveBeenLastCalledWith([{ value: Infinity }]);
+  });
 });
