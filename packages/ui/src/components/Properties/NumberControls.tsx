@@ -23,14 +23,16 @@ import s from './Properties.module.css';
  * draft the controlled track snaps back on every move and commits from there.
  */
 function useSliderDraft(p: PropertyNumberFieldProps): PropertyNumberFieldProps {
-  const [draft, setDraft] = useState<number>();
+  // Held with the value it was dragged from: a drag that ends where it began
+  // fires no `change`, and a draft left behind must not mask the next value.
+  const [draft, setDraft] = useState<{ from: number | null | undefined; at: number }>();
   const { onInput, onChange } = p;
   if (!onInput) return p;
   return {
     ...p,
-    value: draft ?? p.value,
+    value: draft !== undefined && Object.is(draft.from, p.value) ? draft.at : p.value,
     onInput: (next) => {
-      setDraft(next);
+      setDraft({ from: p.value, at: next });
       onInput(next);
     },
     onChange: (next) => {
