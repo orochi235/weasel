@@ -107,7 +107,6 @@ describe('<Lab>', () => {
       store = useContext(LabStoreContext)?.store ?? null;
       return null;
     }
-    labRef = null;
     await renderSettled(
       <Lab instruments={[stub]} defaultInstrument="Stub">
         <CaptureLab>

@@ -88,11 +88,13 @@ describe('an instrument that draws', () => {
 describe('two trials that draw', () => {
   it("leaves one trial's layers alone while the other's view changes", async () => {
     const draw = vi.fn();
-    let lab: LabContextValue | null = null;
-    let store: LabStore | null = null;
+    const seen: { lab: LabContextValue | null; store: LabStore | null } = {
+      lab: null,
+      store: null,
+    };
     function Capture() {
-      lab = useContext(LabContext);
-      store = useContext(LabStoreContext)?.store ?? null;
+      seen.lab = useContext(LabContext);
+      seen.store = useContext(LabStoreContext)?.store ?? null;
       return null;
     }
     await renderSettled(
@@ -100,13 +102,13 @@ describe('two trials that draw', () => {
         <Capture />
       </Lab>,
     );
-    await act(async () => lab?.addTrial('Probe'));
+    await act(async () => seen.lab?.addTrial('Probe'));
     await nextFrame();
-    const first = lab?.trials[0]?.id ?? '';
+    const first = seen.lab?.trials[0]?.id ?? '';
     draw.mockClear();
 
     await act(async () =>
-      store?.getState().updateTrialView(first, { zoom: 3, pan: { x: 0, y: 0 } }),
+      seen.store?.getState().updateTrialView(first, { zoom: 3, pan: { x: 0, y: 0 } }),
     );
     await nextFrame();
 
