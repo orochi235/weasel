@@ -157,6 +157,18 @@ describe('useReorderDragList', () => {
     expect(latest.draggedIds).toBeNull();
   });
 
+  it('Escape during a drag resets state, and a later release reorders nothing', () => {
+    const { onReorder, row } = setup();
+    press(row('a'), 16);
+    move(64);
+    expect(latest.draggedIds).toEqual(['a']);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(latest.draggedIds).toBeNull();
+    expect(latest.ghost).toBeNull();
+    release(64);
+    expect(onReorder).not.toHaveBeenCalled();
+  });
+
   it('drop at the source row index is a no-op — does not fire onReorder', () => {
     const { onReorder, row } = setup();
     press(row('b'), 48);

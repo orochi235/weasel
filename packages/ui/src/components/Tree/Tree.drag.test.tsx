@@ -151,6 +151,22 @@ describe('Tree — drag to reorder', () => {
     expect(screen.getByRole('treeitem', { name: 'Ex' })).not.toHaveAttribute('data-drop');
   });
 
+  it('drops the drag on Escape: the rows stay, the marks clear, and a later release moves nothing', () => {
+    const { onMove, row } = setup();
+    press(row('Zed'), 80);
+    move(30);
+    expect(screen.getByRole('treeitem', { name: 'Zed' })).toHaveAttribute('data-dragging', 'true');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('treeitem', { name: 'Zed' })).not.toHaveAttribute('data-dragging');
+    expect(screen.getByRole('treeitem', { name: 'Ex' })).not.toHaveAttribute('data-drop');
+    release(30);
+    expect(onMove).not.toHaveBeenCalled();
+    // The hook is free again, so the next press starts a drag of its own.
+    press(row('Zed'), 80);
+    move(30);
+    expect(screen.getByRole('treeitem', { name: 'Zed' })).toHaveAttribute('data-dragging', 'true');
+  });
+
   it('refuses a drop into the dragged node itself even when canDrop allows everything', () => {
     const canDrop = vi.fn(() => true);
     const { onMove, row } = setup({ canDrop });
