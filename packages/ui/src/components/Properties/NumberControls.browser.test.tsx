@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { endless, unit } from '@weasel-js/quantity';
 import { afterEach, expect, test } from 'vitest';
 import { PropertyField } from './PropertyField';
-import { PropertyList } from './PropertyPanel';
+import { PropertyList } from './PropertyList';
 
 // Whether a readout's box holds its text is layout, which jsdom does not do.
 

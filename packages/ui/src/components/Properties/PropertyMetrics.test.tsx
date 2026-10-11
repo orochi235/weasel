@@ -7,12 +7,10 @@ import { Subpanel } from './Subpanel';
 import s from './Properties.module.css';
 import { PropertyGroup } from './PropertyGroup';
 import { PropertyField } from './PropertyField';
-import {
-  PropertyList,
-  type PropertyMetricProps,
-  PropertyPanel,
-  PropertyRow,
-} from './PropertyPanel';
+import { PropertyList } from './PropertyList';
+import { PropertyPanel } from './PropertyPanel';
+import { PropertyRow } from './PropertyRow';
+import { type PropertyMetricProps } from './metrics';
 
 // The CSS-module proxy answers to any key, so `s.densityTight` resolves whether
 // or not a rule defines it — a class assertion alone proves only that the

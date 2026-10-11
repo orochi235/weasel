@@ -1,7 +1,7 @@
 import type { AnimationHandle } from '../types';
 import { createBooker, firstAfter, firstAtOrAfter } from './booking';
-import { sampleTrack } from './sampleTrack';
-import type { EventTrack, SampledTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
+import { createTrackSampler, type OpenTrackHold } from './trackHolds';
+import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
 /** The animator's internal `register`, narrowed to what a timeline needs. */
 export type TimelineRegister = (seed: {
@@ -52,6 +52,9 @@ function tracksEnd(tracks: Track[], explicit?: number): number {
  * keeps seek and wrap-around entirely inside the timeline and needs no setter
  * on the animator's entry.
  *
+ * A sampled track naming a `target` is held on it through `hold` while the playhead is within its
+ * keys; see `SampledTrack.target`.
+ *
  * A finished timeline leaves the animator's table, so `seek` and a
  * duration-extending `edit` re-register it. Staying registered instead would
  * hold a slot — and the rAF loop — open for every timeline ever created.
@@ -61,6 +64,7 @@ export function createTimeline(
   id: number,
   opts: TimelineOptions,
   report?: TimelineReport,
+  hold?: OpenTrackHold,
 ): TimelineHandle {
   let duration = tracksEnd(opts.tracks, opts.duration);
   let offset = 0;
@@ -101,25 +105,7 @@ export function createTimeline(
     : null;
   let warnedUnbooked = false;
 
-  // Per-sampled-track sampling caches, dropped wholesale by `edit`.
-  let caches = new WeakMap<object, Map<number, (u: number) => unknown>>();
-  const cacheFor = (track: object): Map<number, (u: number) => unknown> => {
-    let c = caches.get(track);
-    if (!c) { c = new Map(); caches.set(track, c); }
-    return c;
-  };
-
-  const applySampled = (tracks: Track[], t: number): void => {
-    for (const track of tracks) {
-      if (track.kind === 'sampled') {
-        const st = track as SampledTrack<unknown>;
-        const v = sampleTrack(st, t, cacheFor(st));
-        if (v !== undefined) st.onTick(v);
-      } else if (track.kind === 'timeline') {
-        applySampled(track.timeline.tracks, t - track.at);
-      }
-    }
-  };
+  const sampler = createTrackSampler(hold);
 
   // Track indexes from the root down to the track being fired, for `report`.
   const path: number[] = [];
@@ -189,7 +175,7 @@ export function createTimeline(
     playhead = Math.min(playhead, duration);
 
     // Sampled before fired, so a handler reads the current frame's values.
-    applySampled(opts.tracks, playhead);
+    sampler.apply(opts.tracks, playhead);
     if (!held) {
       fireEvents(opts.tracks, prevPlayhead, playhead, prevOpen);
       prevPlayhead = playhead;
@@ -202,6 +188,7 @@ export function createTimeline(
     // retiring the entry would strand the replay its own handler just started.
     if (playhead < duration) return false;
     live = false;
+    sampler.release();
     return true;
   };
 
@@ -212,6 +199,7 @@ export function createTimeline(
     cancelled = true;
     live = false;
     booker?.retract();
+    sampler.release();
     if (first) playbackChanged();
   };
 
@@ -271,7 +259,7 @@ export function createTimeline(
     loop: () => (loopsLeft === Infinity ? true : loopsLeft === 0 ? false : loopsLeft),
     edit(fn) {
       fn();
-      caches = new WeakMap();
+      sampler.edited();
       duration = tracksEnd(opts.tracks, opts.duration);
       booker?.retract();
       rearm();

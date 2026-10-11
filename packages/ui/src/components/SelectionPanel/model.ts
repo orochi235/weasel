@@ -134,25 +134,29 @@ export function pairRows(leaves: readonly PanelLeaf[]): PanelRow[] {
   return rows.map((row) => (row.leaves.length > 1 ? row : { label: row.label, leaves: row.leaves }));
 }
 
+const NOTHING: PrefSection = { name: '', members: {} };
+
 /**
  * The schema the panel shows for a set of kinds: one kind → its full
  * schema; several → the intersection by (path, leaf kind), shaped by the
  * first kind's section/row layout. Kinds without a registered schema
  * contribute nothing, so their presence collapses the intersection.
  * `rawAliases` leaves each alias leaf as it is written, for a caller that
- * draws the kind itself.
+ * draws the kind itself. `shownOf` narrows each kind's schema before it is
+ * read, to what that kind draws now; null is nothing.
  */
 export function effectiveSections(
   kinds: readonly string[],
   entries: readonly NodePropertiesEntry[],
   rawAliases = false,
+  shownOf?: (schema: PrefSection) => PrefSection | null,
 ): PanelSection[] {
   const uniq = [...new Set(kinds)];
   if (uniq.length === 0) return [];
   const byName = new Map(entries.map((e) => [e.name, e]));
   const schemas = uniq.map((k) => byName.get(k)?.schema);
   if (schemas.some((s) => s === undefined)) return [];
-  const [first, ...rest] = schemas as PrefSection[];
+  const [first, ...rest] = (schemas as PrefSection[]).map((schema) => (shownOf ? (shownOf(schema) ?? NOTHING) : schema));
 
   const flatFirst = flatten(first, rawAliases);
   if (rest.length === 0) return flatFirst;

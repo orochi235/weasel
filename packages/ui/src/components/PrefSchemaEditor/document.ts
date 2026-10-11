@@ -1,5 +1,13 @@
 import { swapOp as swap, type Op, type SerializedHistory } from '@weasel-js/core';
-import { SWAP, type DraftStorage } from './draft';
+
+/**
+ * Where a draft is kept: the calls of a `Storage` the editor makes. `setItem` may throw when the text is more
+ * than it can hold, and is then asked again with fewer steps.
+ */
+export type DraftStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+
+/** The name of the editor's one op: a whole value swapped for another. Stored drafts name it. */
+export const SWAP = 'schema.swap';
 
 /** A draft as a document opens it. */
 export interface OpenedDocument<V> {
@@ -21,6 +29,11 @@ export interface DocumentCodec<V> {
   packSent(value: V, base: V): unknown;
   /** `value` once what was `sent` is in `base`: edits made since the submission stay. */
   afterTaken(value: V, sent: unknown, base: V): V;
+  /** Keep what {@link packSent} made beside the draft under `key`. */
+  saveSent(key: string, sent: unknown, storage?: DraftStorage): void;
+  /** What was last kept so; `null` with none. */
+  openSent(key: string, storage?: DraftStorage): unknown;
+  dropSent(key: string, storage?: DraftStorage): void;
 }
 
 /** An edit as the swap of one whole value for another: values are immutable, so the snapshots cost nothing. */

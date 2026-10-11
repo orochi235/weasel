@@ -144,6 +144,28 @@
   gap: var(--wzl-space-6);
 }
 
+.fg-index-history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-2) var(--wzl-space-8);
+  margin: var(--wzl-space-8) 0 0;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.fg-index-history__item {
+  display: flex;
+  gap: var(--wzl-space-3);
+}
+
+.fg-index-history__label {
+  color: var(--wzl-fg-muted);
+}
+
+.fg-index-history__value {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
 .fg-index-deps {
   display: grid;
   grid-template-columns: max-content 1fr;

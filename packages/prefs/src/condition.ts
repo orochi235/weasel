@@ -3,10 +3,11 @@
 
 import { isPlainObject } from '@weasel-js/registry';
 import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, isPrefSection, prefHoldsValue, prefSectionLeaves } from './helpers';
+import { isPrefLeaf, isPrefSection, prefHoldsValue } from './helpers';
+import { prefLeafHolding, UNSEEN } from './holding';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
-import { isBuiltinPref, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefObject } from './schema';
+import { isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject } from './schema';
 import type { PrefUnion } from './union';
 
 /** What a condition can compare a leaf's value against. `null` stands for
@@ -16,7 +17,9 @@ export type PrefConditionValue = string | number | boolean | null;
 /**
  * One leaf's value, tested. `path` is the full path the value is read and
  * written at (`'windows.paging'`), a field of an `object` or `union` leaf
- * included (`'stroke.width'`, `'fill.type'`). With no operator it holds
+ * included (`'stroke.width'`, `'fill.type'`). The value compared is the one
+ * the leaf's control shows, where an `encoding` stores another. With no
+ * operator it holds
  * while the value is truthy; with several, while all of them do, so
  * `{ path: 'count', atLeast: 1, below: 10 }` is a range.
  */
@@ -153,9 +156,10 @@ export function mapPrefConditionPaths(condition: PrefCondition, move: (path: str
 }
 
 /** One thing wrong with a condition: it is not one, it reads a path no leaf
- *  holds a value at, or it compares a leaf against a value it never holds. */
+ *  holds a value at, it compares a leaf against a value it never holds, or
+ *  it never holds whatever the leaf does, as an `in` of no values. */
 export interface PrefConditionProblem {
-  code: 'malformed' | 'no-leaf' | 'no-value' | 'value';
+  code: 'malformed' | 'no-leaf' | 'no-value' | 'value' | 'never';
   /** The path read, where the problem is with one. */
   path?: string;
   problem: string;
@@ -173,46 +177,6 @@ export interface PrefSchemaConditionProblem extends PrefConditionProblem {
   field: 'showIf' | 'enableIf';
 }
 
-/** A value the schema says nothing about: an entry of a list, a field of an app-defined kind. */
-const UNSEEN = Symbol('unseen');
-
-function amongFields(fields: [key: string, leaf: PrefLeaf][], path: string): PrefLeaf | typeof UNSEEN | undefined {
-  const exact = fields.find(([key]) => key === path);
-  if (exact) return exact[1];
-  const outer = fields.find(([key]) => path.startsWith(`${key}.`));
-  return outer && insideLeaf(outer[1], path.slice(outer[0].length + 1));
-}
-
-function insideLeaf(leaf: PrefLeaf, rest: string): PrefLeaf | typeof UNSEEN | undefined {
-  if (leaf.kind === 'object') return amongFields(prefSectionLeaves((leaf as PrefObject).children), rest);
-  if (leaf.kind === 'union') {
-    const { tag, variants } = leaf as PrefUnion;
-    if (rest === tag) {
-      const options = Object.keys(variants).map((value) => ({ value, label: variants[value]!.name }));
-      return { kind: 'enum', name: tag, description: '', default: undefined, options } as PrefEnum;
-    }
-    for (const variant of Object.values(variants)) {
-      const found = amongFields(prefSectionLeaves(variant.children), rest);
-      if (found !== undefined) return found;
-    }
-    return undefined;
-  }
-  return !isBuiltinPref(leaf) || leaf.kind === 'list' || leaf.kind === 'map' || leaf.kind === 'paint' ? UNSEEN : undefined;
-}
-
-/** The leaf describing the value at `path`, looking inside `object` and `union` leaves. */
-function leafHolding(schema: PrefGroup | PrefSection, path: string): PrefLeaf | typeof UNSEEN | undefined {
-  if (isPrefSection(schema)) return amongFields(prefSectionLeaves(schema.members), path);
-  const steps = path.split('.');
-  let node: PrefLeaf | PrefGroup = schema;
-  for (let i = 0; i < steps.length; i++) {
-    if (isPrefLeaf(node)) return insideLeaf(node, steps.slice(i).join('.'));
-    if (!Object.hasOwn(node.children, steps[i]!)) return undefined;
-    node = node.children[steps[i]!]!;
-  }
-  return isPrefLeaf(node) ? node : undefined;
-}
-
 const show = (value: unknown): string => (typeof value === 'string' ? `'${value}'` : String(value));
 
 /** Why `leaf` never holds `value`; `undefined` when it may. */
@@ -222,14 +186,14 @@ function neverHolds(leaf: PrefLeaf, value: PrefConditionValue): string | undefin
     case 'number':
       return typeof value === 'number' ? undefined : 'it is a number';
     case 'boolean':
-      return (leaf as PrefBoolean).encoding || typeof value === 'boolean' ? undefined : 'it is a boolean';
+      return typeof value === 'boolean' ? undefined : 'it is a boolean';
     case 'string':
     case 'color':
     case 'field':
       return typeof value === 'string' ? undefined : `it is a ${leaf.kind === 'string' ? 'string' : `${leaf.kind}, held as a string`}`;
     case 'enum': {
-      const { encoding, options } = leaf as PrefEnum;
-      if (encoding || options.some((option) => option.value === value)) return undefined;
+      const { options } = leaf as PrefEnum;
+      if (options.some((option) => option.value === value)) return undefined;
       return `its options are ${options.map((option) => show(option.value)).join(', ')}`;
     }
     case 'object':
@@ -240,10 +204,17 @@ function neverHolds(leaf: PrefLeaf, value: PrefConditionValue): string | undefin
 }
 
 function testProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefConditionProblem[] {
+  const found = leafProblems(test, schema);
+  if (test.in?.length !== 0) return found;
+  return [...found, { code: 'never', path: test.path, problem: `"${test.path}" is one of nothing, which never holds` }];
+}
+
+function leafProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefConditionProblem[] {
   const { path } = test;
-  const leaf = leafHolding(schema, path);
-  if (leaf === undefined) return [{ code: 'no-leaf', path, problem: `no leaf holds a value at "${path}"` }];
-  if (leaf === UNSEEN) return [];
+  const held = prefLeafHolding(schema, path);
+  if (held === undefined) return [{ code: 'no-leaf', path, problem: `no leaf holds a value at "${path}"` }];
+  if (held === UNSEEN) return [];
+  const { leaf } = held;
   if (!prefHoldsValue(leaf)) return [{ code: 'no-value', path, problem: `"${path}" is a${leaf.kind === 'separator' || leaf.kind === 'label' ? '' : 'n'} ${leaf.kind}, which holds no value` }];
   const out: PrefConditionProblem[] = [];
   const compared = [test.is, test.isNot, ...(test.in ?? [])].filter((value) => value !== undefined);
@@ -260,8 +231,9 @@ function testProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefCond
 
 /**
  * What is wrong with `condition` as one of `schema`'s: every part of it that
- * is not a condition, every path it reads that no leaf holds a value at, and
- * every comparison against a value the leaf's kind or options rule out.
+ * is not a condition, every path it reads that no leaf holds a value at,
+ * every comparison against a value the leaf's kind or options rule out, and
+ * every `in` of no values.
  * `null` is never ruled out, and neither is anything under an app-defined
  * kind or inside a list, a map, or a paint, which the schema does not
  * describe. Takes `unknown`, since a schema read from JSON or built without

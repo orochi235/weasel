@@ -60,7 +60,7 @@ export function BarActionButton(props: BarActionButtonProps) {
 }
 
 /** An `action` leaf as a bar's cell: an icon button, or icon and label for `control: 'button'`. */
-export function BarAction({ leaf, path }: { leaf: PrefAction; path: string }) {
-  const { press, ...button } = useLeafAction(leaf, path);
+export function BarAction({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
+  const { press, ...button } = useLeafAction(leaf, path, disabled);
   return <BarActionButton {...button} labeled={leaf.control === 'button'} onPress={press} />;
 }

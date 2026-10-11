@@ -1,9 +1,10 @@
 # The animator on blits
 
-**Status: the values are computed in blits; nothing combines yet.** Built and merged: pose overrides
+**Status: the values are computed in blits, and targets exist; nothing in the tree uses one yet.** Built and merged: pose overrides
 fold through a mix, tweens, springs, physics, decay, and keyframe sampling compute in blits ("What
-step 3 built"), on `@msb235/blits` 0.8.1, and a global pause holds the mix clock. Not built: the
-five arcs under "The arcs", which are what make two animations on one value combine. Delete this
+step 3 built"), on `@msb235/blits` 0.8.1, and a global pause holds the mix clock. Animation targets
+are built, so animations given one combine; nothing in the tree is on a target yet. Not built: the
+last four arcs under "The arcs", which are what make two animations on one value combine. Delete this
 once they are all built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
@@ -131,14 +132,54 @@ and hands its value to the caller's `onTick`, so the later writer still wins. Wh
 Each is its own spec, plan, and merge, in this order. The first three steps of the original order
 are built: blits' stepping and springs, pose overrides as a mix, and values computed on blits.
 
-1. **Targets.** The public target type; `target` on `tween`, `spring`, `physics`, and `decay`; the
-   codec cueing offset voices onto a target; same-key interrupts carrying velocity. Spec:
-   `docs/superpowers/specs/2026-10-11-animation-targets-design.md`.
+1. **Targets.** Built 2026-10-11: `createTarget` (`packages/core/src/animation/target.ts`), and
+   `target` on `tween`, `spring`, `physics`, and `decay`. Each animation on a target is a voice
+   on the target as its blits subject, so the codec's `pull` reads their sum. A coast has no
+   destination, so it commits where it stops, not a landing point up front. Offsets live in the
+   animator that cued them, and a second animator cueing onto a moving target throws.
 2. **Pose.** Pose overrides fold offsets over entries; `tweenPose`, `springPose`, reflow, and
    momentum move onto targets, closing reflow's "velocity does not carry over".
-3. **Color and camera.** `ColorOverrideRegistry` and `useViewAnimation` rebuilt on targets.
-4. **Timeline.** Sampled tracks take a target and cue absolute voices; event tracks and booking
-   read the mix's clock, so a sound cue cannot drift against the motion it belongs to.
+3. **Color and camera.** Built 2026-10-11.
+   - **Camera.** `useViewAnimationOn` makes one target for its view and exposes it as
+     `viewTarget`. The committed view lives in the hook while anything is in flight, and the
+     target's `show` writes the folded view through the channel, so `view.get()` stays live. The
+     hook's own animations still replace each other under its key. An outside write cancels the
+     hook's animation and drops the committed view, so anything else on the target carries on
+     over what the writer wrote, less the offset it was showing when the writer read the view.
+     `<SceneCanvas>` does not expose the target: its camera animator is private, and a target
+     is no use without the animator that moves it.
+   - **Color.** `ColorOverrideRegistry.target(id, channel, length)` is one target per node and
+     channel, with its committed colors held in the registry. `tweenVertexColors` and
+     `staggerVertexColors` share a key with `interrupt: false` and add; `springVertexColors`
+     interrupts and carries velocity, springing each number on its own. `resolve` answers the
+     target's colors where `set` stored nothing, and over a `set` override it adds only the
+     target's live offset. A finished animation releases its colors; a canceled one holds them
+     until `clear`.
+   - **`interrupt: false`** on a targeted animation joins its `cancelKey` without canceling the
+     holders.
+4. **Timeline.** Built 2026-10-11. An absolute voice is a *hold*: a voice on the target's own
+   subject, beside its offsets, answering the held value less the committed one, and cued into
+   one locus shared by every hold (`engine/holds.ts`). Holds on a target so fold as alternatives,
+   offsets add on top, and weights short of 1 leave the rest to the committed value.
+   `animator.hold({ target, value, weight? })` is the public form, for a drag preview or a value
+   driven from outside; a hold of plain values asks for no frames. A sampled track takes `target`
+   and `weight`, and is a hold while the playhead is within its keys
+   (`timeline/trackHolds.ts`). Decided along the way:
+   - A hold that leaves commits what keeps the screen still: its own value where it was alone
+     at full weight, and otherwise the committed value solved for against the holds that stay.
+     Where those cover the target outright, it commits its own value and the screen follows
+     them. `release({ commit: false })` falls back to the committed value instead.
+   - A track commits its last key once the playhead is past it, stepped over or not, and lets
+     the target go; before its first key it leaves the target alone.
+   - The timeline samples in its tick, after the frame's pull, so it touches the subject and the
+     animator reads touched subjects again before `show`. A seek or a loop seam shows that frame.
+     blits keeps a patch's answer while its clock stands still, so the codec touches every held
+     subject ahead of each pull too.
+   - An animation's clock is seeded from the frame clock where one is running, as its voice is,
+     so an event at time E and a tween of length E started between frames land on one frame.
+     Booking reads that same clock through the timeline's tick and needed no change.
+   - An offset canceled under a full-weight hold commits what it had left, but the hold stands
+     in front of the committed value, so the screen loses that much.
 5. **Rig.** Clips as absolute voices on joint targets, and `blendPoses` replaced by a locus
    ("Decisions this needs").
 
@@ -171,11 +212,9 @@ reads every subject with one `mix.pull` per mix a frame.
   two sharing a time, where blits would return the earlier and reach an interior key as
   `a + (b - a) * ease(1)`.
 
-  It cues no voice. The timeline keeps its own clock for seek, loops and nesting, and a voice
-  would have to be seeked to that playhead every frame; the codec pulls before the animator
-  ticks, so it would read a frame late on every seek and loop seam. Nor would a voice combine
-  anything while a track delivers through `onTick` rather than into a target mix. Revisit at
-  steps 4–5.
+  Sampling itself cues no voice: the timeline keeps its own clock for seek, loops and nesting,
+  and samples at its playhead. Since arc 4 a track given a `target` shows that sample through a
+  hold on the target, read again the same frame ("The arcs").
 
   `tests/perf/bench/timeline-sampling.bench.ts`, teitou (M5 Max, Node 26.10.0), blits 0.7.0,
   four-key tracks each sampled once a frame, mean ms per frame over three passes (the 1.04 is one

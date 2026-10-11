@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
-import { PropertyRow } from '../Properties/PropertyPanel';
+import { PropertyRow } from '../Properties/PropertyRow';
 import { drawsRows } from './compound';
 import { objectRows, type ObjectLeafParts } from './objectRows';
 import type { PrefRenderContext } from './PrefsRow';
@@ -46,6 +46,8 @@ export function ObjectLeaf({
       auto: ctx.auto,
       setAuto: ctx.setAuto,
       ...(ctx.fields ? { fields: ctx.fields } : {}),
+      disabled: ctx.disabled === true || ctx.disabledAt?.(path) === true,
+      disabledAt: ctx.disabledAt,
     };
   };
   const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: PrefRenderContext }> = {
@@ -60,6 +62,7 @@ export function ObjectLeaf({
           description={child.description}
           layout={stacked ? 'block' : 'inline'}
           group={isGroup(field, held)}
+          disabled={field.disabled}
           className={stacked ? undefined : s.objectRow}
         >
           <span className={s.rowControl}>

@@ -1,0 +1,243 @@
+import {
+  type PrefAction,
+  type PrefAlias,
+  type PrefLeaf,
+  type PrefList,
+  prefAliasedLeaf,
+  prefAliasTarget,
+  prefIsCompound,
+  prefLeafAt,
+} from '@weasel-js/prefs';
+import {
+  DialogRow,
+  ListEditor,
+  PrefActionButton,
+  PrefControl,
+  PrefWords,
+  PropertyField,
+  PropertyRow,
+  type PropertyRowLayout,
+  prefDrawsNoControl,
+  prefListIsText,
+  prefListTexts,
+} from '@weasel-js/ui';
+import { useMemo } from 'react';
+import { autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
+import { valueAtPath } from '../config/path';
+import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import type { ControlPack } from './controlPack';
+import { useFieldChoices } from './fieldChoices';
+import { extra, labField } from './fields';
+import { inDialog, summarizeValue } from './inDialog';
+import { DebouncedTextRow, UnwiredRow } from './rows';
+
+export interface ControlRowProps<TC extends Record<string, unknown>> {
+  path: string;
+  leaf: PrefLeaf;
+  resolved: ResolvedConfig;
+  config: TC;
+  /** `config` with every auto path resolved -- what the instrument reads. */
+  shown: TC;
+  setConfig: (path: string, value: unknown) => void;
+  renderers?: Record<string, ControlRenderer>;
+  pack: ControlPack;
+  layout?: PropertyRowLayout;
+  auto?: ReadonlySet<string>;
+  /** Hands a row to its resolver or takes it back. Without it no row can go
+   *  auto, and its label is only a label. */
+  setRowAuto?: (path: string, next: boolean, value: unknown) => void;
+  /** The row takes no input: its `enableIf`, or that of a group above it, does not hold. */
+  disabled?: boolean;
+}
+
+/** An auto value as tooltip text. A computed number is cut to 6 significant
+ *  digits, so `0.1 + 0.2` reads `0.3`. */
+function summarizeAuto(value: unknown): string {
+  return summarizeValue(typeof value === 'number' ? Number(value.toPrecision(6)) : value);
+}
+
+/** One leaf's row, as the panel draws it. Shared with `ControlMatrix`, whose
+ *  popover edits one cell with exactly this row. An alias draws the row of the
+ *  leaf it shows, at that leaf's path: its value, its auto state and whatever
+ *  renders it are all the target's. */
+export function ControlRow<TC extends Record<string, unknown>>(props: ControlRowProps<TC>) {
+  const { leaf, resolved, renderers } = props;
+  const drawn = (renderers?.[props.path] ?? resolved.renderers[props.path]) !== undefined;
+  if (prefDrawsNoControl(leaf) && !drawn && !renderers?.[leaf.kind]) {
+    return (
+      <div className="lk-control-words">
+        <PrefWords pref={leaf} />
+      </div>
+    );
+  }
+  if (leaf.kind !== 'alias' || drawn) return <LeafRow {...props} />;
+  const alias = leaf as PrefAlias;
+  const target = prefAliasTarget(alias, (path) => prefLeafAt(resolved.group, path));
+  if (target)
+    return <LeafRow {...props} path={target.path} leaf={prefAliasedLeaf(alias, target.leaf)} />;
+  // An alias of nothing is a wiring fault, shown where it sits and not dropped from the panel.
+  return (
+    <PropertyRow
+      label={alias.name === '' ? 'Alias' : alias.name}
+      description={alias.description}
+      layout={props.layout}
+    >
+      <span>(alias: no control at {alias.of === '' ? 'an empty path' : alias.of})</span>
+    </PropertyRow>
+  );
+}
+
+function LeafRow<TC extends Record<string, unknown>>({
+  path,
+  leaf,
+  resolved,
+  config,
+  shown,
+  setConfig,
+  renderers,
+  pack,
+  layout,
+  auto,
+  setRowAuto,
+  disabled = false,
+}: ControlRowProps<TC>) {
+  const write = (value: unknown): void => setConfig(path, value);
+  const choices = useFieldChoices();
+  const fallback = extra<unknown>(leaf, 'default');
+  const pinned = valueAtPath(config, path) ?? fallback;
+
+  const isAutoRow = auto?.has(path) ?? false;
+  const canAuto = setRowAuto !== undefined && !extra<boolean>(leaf, 'manual');
+  // Read out of the resolved config rather than re-running this leaf's own
+  // resolver, so the row reports the value the instrument actually got — the
+  // two diverge as soon as a resolver reads another auto path.
+  const resolvedValue = isAutoRow ? valueAtPath(shown, path) : undefined;
+  // An auto row draws what the resolver decided, not the value underneath it —
+  // a handle sitting at the pinned number while the readout says something else
+  // reads as a rendering bug. Pinning then keeps what you were looking at.
+  const value = resolvedValue ?? pinned;
+  const setAuto = (next: boolean): void => setRowAuto?.(path, next, value);
+  // An auto row hides its control, so the word is all the row has to say.
+  const autoReadout = isAutoRow ? 'auto' : undefined;
+  // What the row would read as auto, pinned or not: the config resolved with
+  // this path unpinned beside the ones that already are.
+  const resolves = canAuto && autoResolverOf(leaf) !== undefined;
+  const unpinned = useMemo((): { value?: unknown; cycles?: true } => {
+    if (!resolves) return {};
+    if (isAutoRow) return { value: valueAtPath(shown, path) };
+    try {
+      return {
+        value: valueAtPath(
+          resolveAutoConfig(resolved, config, new Set([...(auto ?? []), path])),
+          path,
+        ),
+      };
+    } catch {
+      // Unpinning this path would close a resolver cycle: the row has no auto
+      // value to quote, and going auto would throw out of the panel's render.
+      return { cycles: true };
+    }
+  }, [resolves, isAutoRow, shown, resolved, config, auto, path]);
+  const onAutoChange = canAuto && !unpinned.cycles ? setAuto : undefined;
+  const autoValue = unpinned.value === undefined ? undefined : summarizeAuto(unpinned.value);
+  const autoProps = { auto: isAutoRow, onAutoChange, autoValue };
+
+  // Most specific wins, and within a tier the lab's entry beats the
+  // instrument's: controls[path] -> node .render/.dialog -> controls[kind] -> built-in.
+  const dialog = resolved.dialogs[path];
+  const custom =
+    renderers?.[path] ??
+    resolved.renderers[path] ??
+    (dialog ? inDialog(dialog.body, dialog) : undefined) ??
+    renderers?.[leaf.kind];
+  // A custom row places itself like any other; one that needs the full width
+  // says so with `<PropertyRow span>`, which is the same opt-out a built-in has.
+  if (custom)
+    return custom({
+      path,
+      pref: leaf,
+      value,
+      setValue: write,
+      auto: isAutoRow,
+      setAuto,
+      fields: choices,
+      disabled,
+    });
+
+  const label = leaf.name;
+  const description = leaf.description;
+  // `auto` gives the whole width to the controls that read badly at half of a
+  // sidebar's: free text, a slider track, a segmented toggle. `pairs` doesn't.
+  const wide = pack === 'auto';
+  const row = { label, description, layout, readout: autoReadout, ...autoProps };
+
+  if (leaf.kind === 'action') {
+    return (
+      // Not a `<label>`: that would hand a click on its text to the button.
+      <PropertyRow
+        group
+        label={label}
+        description={description}
+        layout={layout}
+        disabled={disabled}
+      >
+        <PrefActionButton pref={leaf as PrefAction} path={path} disabled={disabled} />
+      </PropertyRow>
+    );
+  }
+
+  // Too much for a row, so the row opens it in a dialog.
+  if (prefIsCompound(leaf)) {
+    const item = leaf.kind === 'list' ? (leaf as PrefList).item : undefined;
+    // Plain text entries keep the list's own fields, and the placeholder only they have.
+    const texts =
+      leaf.kind === 'list' && prefListIsText(leaf as PrefList, renderers?.string !== undefined);
+    return (
+      <DialogRow
+        label={label}
+        summary={summarizeValue(value)}
+        readout={autoReadout}
+        layout={layout}
+        description={description}
+        disabled={disabled}
+        {...autoProps}
+      >
+        {() =>
+          texts ? (
+            <ListEditor
+              aria-label={item?.name || label}
+              value={prefListTexts(value)}
+              onChange={write}
+              minItems={(leaf as PrefList).minItems}
+              maxItems={(leaf as PrefList).maxItems}
+              placeholder={extra<string>(leaf, 'placeholder')}
+            />
+          ) : (
+            <PrefControl
+              pref={leaf}
+              path={path}
+              value={value}
+              onChange={write}
+              renderers={renderers}
+              fields={choices}
+            />
+          )
+        }
+      </DialogRow>
+    );
+  }
+
+  const field = labField(leaf, value, write, choices, disabled);
+  if (field === null)
+    return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
+  switch (field.kind) {
+    case 'string':
+      return <DebouncedTextRow leaf={leaf} field={field} span={wide} {...row} />;
+    case 'number':
+      return <PropertyField {...field} {...row} span={field.control === 'slider' && wide} />;
+    case 'enum':
+      return <PropertyField {...field} {...row} span={field.control === 'toggle' && wide} />;
+    default:
+      return <PropertyField {...field} {...row} />;
+  }
+}

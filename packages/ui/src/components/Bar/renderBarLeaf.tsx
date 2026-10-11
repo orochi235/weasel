@@ -21,6 +21,8 @@ export interface BarLeaf {
   /** The leaf as one control's props, with the surface's own values and
    *  writers. Null for a leaf that is not one control. */
   field: PropertyControlProps | null;
+  /** The leaf takes no input. `field` and `row` carry it already; this reaches an action's button. */
+  disabled?: boolean;
   /** The leaf's row form: what a popover holds for a leaf whose value is made
    *  of others, and what a kind with no bar form draws. */
   row: () => ReactNode;
@@ -30,13 +32,13 @@ export interface BarLeaf {
  * A leaf's bar form: the one place a kind's control in a bar is decided, for
  * a bar in a form and a bar over a selection alike.
  */
-export function renderBarLeaf({ leaf, path, name, field, row }: BarLeaf): ReactNode {
+export function renderBarLeaf({ leaf, path, name, field, disabled, row }: BarLeaf): ReactNode {
   if (field !== null) {
     // A flag's icon is already its button's face.
     const icon = field.kind === 'boolean' ? undefined : glyphOf(leaf);
     return <BarField {...field} name={name} short={leaf.short} icon={icon} />;
   }
-  if (leaf.kind === 'action') return <BarAction leaf={leaf as PrefAction} path={path} />;
+  if (leaf.kind === 'action') return <BarAction leaf={leaf as PrefAction} path={path} disabled={disabled} />;
   if (leaf.kind === 'label') return <span className={s.words}>{leaf.name}</span>;
   const body = row();
   if (body == null || !prefIsCompound(leaf)) return body;

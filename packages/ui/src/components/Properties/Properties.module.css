@@ -92,13 +92,7 @@
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
-}
-
-/* A hidden twisty leaves the flow, and these are what it is placed against. */
-.panelHeader,
-.subpanelTitle,
-.group {
-  position: relative;
+  align-self: var(--wzl-prop-panel-actions-align, center);
 }
 
 /* The twisty's target is taller than a title's line; it overhangs the line
@@ -108,15 +102,10 @@
 }
 
 /* Hidden until the keyboard reaches it: still focusable, so `twisty="folded"`
-   leaves a way to fold that is not the pointer. */
+   leaves a way to fold that is not the pointer. It keeps its room while hidden,
+   so the title is where it will be once the twisty shows. */
 .foldTwistyQuiet:not(:focus-visible) {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  min-inline-size: 0;
-  min-block-size: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
+  opacity: 0;
 }
 
 .foldTitle {
@@ -138,7 +127,8 @@
   display: flex;
   flex: 0 0 var(--wzl-prop-panel-actions-basis, auto);
   min-width: 0;
-  align-items: center;
+  align-self: var(--wzl-prop-panel-actions-align, center);
+  align-items: var(--wzl-prop-panel-actions-align, center);
   gap: var(--wzl-space-2);
   margin-inline-start: auto;
 }
@@ -689,6 +679,20 @@
    label already spans the row, and a width there would narrow it instead. */
 .row[data-changed] > .rowLabel {
   color: var(--wzl-accent-fg);
+}
+
+/* As `Checkbox` dims the text beside a disabled box: the control dims itself. */
+.row[data-disabled] > .rowLabel {
+  opacity: 0.5;
+}
+
+.row[data-disabled] {
+  cursor: not-allowed;
+}
+
+/* A slider's readout sits in the label, which has dimmed it once already. */
+.row[data-disabled] > .rowLabel .readoutInput:disabled {
+  opacity: 1;
 }
 
 .rowInline > .rowLabel,

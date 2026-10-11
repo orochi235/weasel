@@ -204,4 +204,10 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     value: 'auto',
     description: 'Width a PropertyPanel’s title row gives its actions. Set, it holds that width whatever the actions are.',
   },
+  {
+    name: 'prop-panel-actions-align',
+    type: 'string',
+    value: 'center',
+    description: 'How a PropertyPanel’s title row lines its actions up with the title: center, or baseline for actions that are text.',
+  },
 ];

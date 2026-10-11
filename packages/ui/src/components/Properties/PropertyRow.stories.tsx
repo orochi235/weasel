@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { PropertyRow } from './PropertyPanel';
+import { PropertyRow } from './PropertyRow';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof PropertyRow> = {

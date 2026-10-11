@@ -15,6 +15,8 @@ export interface PrefControlProps {
   renderers?: Record<string, PrefRenderer>;
   /** The fields a `field` leaf may name. */
   fields?: readonly PrefFieldChoice[];
+  /** The control takes no input. */
+  disabled?: boolean;
 }
 
 /**
@@ -22,7 +24,7 @@ export interface PrefControlProps {
  * surface that lays out its own rows and has a leaf whose value is made of
  * others' (an `object`, a `list`, a `map`, a `union`) to put in one.
  */
-export function PrefControl({ pref, path = '', value, onChange, renderers, fields }: PrefControlProps) {
+export function PrefControl({ pref, path = '', value, onChange, renderers, fields, disabled }: PrefControlProps) {
   return renderPrefControl(
     {
       path,
@@ -32,6 +34,7 @@ export function PrefControl({ pref, path = '', value, onChange, renderers, field
       auto: false,
       setAuto: () => {},
       ...(fields ? { fields } : {}),
+      disabled,
     },
     renderers,
   );

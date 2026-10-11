@@ -1,9 +1,12 @@
 import { isPlainObject, type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/core';
 import { carry } from './carry';
+import { SWAP, type DraftStorage } from './document';
 import { isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
 import { childrenOf, joinPath, nodeAt, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { containsCode, overridesOf, STUB } from './schemaExport';
 import { findType, NO_TYPES, type PrefTypes } from './types';
+
+export { SWAP, type DraftStorage };
 
 /** A schema as storage can hold it, when it was saved, and the steps that led to it. */
 export interface StoredDraft {
@@ -13,12 +16,6 @@ export interface StoredDraft {
   source?: unknown;
   steps?: StoredSteps;
 }
-
-/**
- * Where a draft is kept: the calls of a `Storage` the editor makes. `setItem` may throw when the text is more
- * than it can hold, and is then asked again with fewer steps.
- */
-export type DraftStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 /** A draft as an editor opens it. */
 export interface OpenedDraft<R extends SchemaRoot> {
@@ -32,9 +29,6 @@ export interface OpenedDraft<R extends SchemaRoot> {
    */
   met: 'same' | 'carried' | 'unknown';
 }
-
-/** The name of the editor's one op: a whole schema swapped for another. */
-export const SWAP = 'schema.swap';
 
 /** What a {@link SWAP} op carries: the schema it leaves and the one it makes. */
 export interface SwapArgs<R extends SchemaRoot = SchemaRoot> {

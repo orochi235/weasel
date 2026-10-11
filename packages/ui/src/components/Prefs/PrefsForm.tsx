@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { prefLeafAt, visiblePrefSubtree, type PrefGroup } from '@weasel-js/prefs';
+import { applyPrefConditions, prefJudge, prefLeafAt, prefReader, visiblePrefSubtree, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
 import { useDropMotion } from './dropMotion';
@@ -158,10 +158,16 @@ export function PrefsForm(props: PrefsFormProps) {
   const [query, setQuery] = useState('');
   // Against the whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
   const leafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
-  const root = useMemo(() => {
-    const visible = visiblePrefSubtree(schema, showHidden, props.showEmpty === true);
-    return visible === null ? null : filterPrefRoot(visible, query, leafAt);
-  }, [schema, showHidden, query, props.showEmpty, leafAt]);
+  const applied = useMemo(() => {
+    const keepEmpty = props.showEmpty === true;
+    const visible = visiblePrefSubtree(schema, showHidden, keepEmpty);
+    return visible === null ? null : applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), keepEmpty);
+  }, [schema, showHidden, props.showEmpty, values]);
+  const conditioned = applied?.shown ?? null;
+  const root = useMemo(
+    () => (conditioned === null ? null : filterPrefRoot(conditioned, query, leafAt)),
+    [conditioned, query, leafAt],
+  );
 
   // Every field of the whole schema, not only the visible ones: a reference may name a hidden field.
   const own = useMemo(() => prefFieldChoices(schema), [schema]);
@@ -173,7 +179,7 @@ export function PrefsForm(props: PrefsFormProps) {
   );
   const lead = shown.at(-1) ?? null;
   const selection = useSelectedRow(selected, lead, props.onSelect);
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, leafAt, changed: props.changed, selected: shown, lead };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, leafAt, changed: props.changed, selected: shown, lead, disabled: applied?.disabled };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

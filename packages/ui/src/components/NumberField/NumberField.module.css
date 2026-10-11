@@ -71,6 +71,11 @@
   cursor: not-allowed;
 }
 
+/* A disabled field dims at its frame, steppers included. */
+.frame[data-disabled] .stepper:disabled {
+  opacity: 1;
+}
+
 /* Mirrors the property rows' editable readout (`.readoutInput`), so a number
    sitting inside other chrome does not draw a second box around itself. */
 .ghost {

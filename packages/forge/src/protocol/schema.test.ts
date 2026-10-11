@@ -42,6 +42,19 @@ describe('schema descriptions', () => {
     expect(resolved.showIf.get('grid.spacing')?.(off as never)).toBe(false);
   });
 
+  it('answers a showIf written as data too, and ships the condition itself', () => {
+    const schema = f.schema({
+      on: f.boolean(false),
+      spacing: f.number(10).showIf({ path: 'on' }),
+      more: f.group({ deep: f.number(1) }).showIf({ path: 'on' }),
+    });
+    expect(answerSchema(schema, { on: false }).hidden).toEqual(['spacing', 'more']);
+    expect(answerSchema(schema, { on: true }).hidden).toEqual([]);
+    const described = describeSchema(schema);
+    expect(described.nodes.spacing).toMatchObject({ conditional: false, annotations: { showIf: { path: 'on' } } });
+    expect(structuredClone(described)).toEqual(described);
+  });
+
   it('marks a custom control without shipping it', () => {
     const custom = f.schema({ blob: f.custom('json', { a: 1 }) });
     const d = describeSchema(custom);

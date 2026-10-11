@@ -2,7 +2,7 @@ import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { useState } from 'react';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import { drag } from './pointerDrag.fixture';
 
@@ -53,4 +53,26 @@ test('the same drag without Alt moves it', () => {
   drag(row('grid'), row('panels'));
   expect(Object.keys((latest.children.view as PrefGroup).children)).toEqual([]);
   expect(Object.keys((latest.children.panels as PrefGroup).children).sort()).toEqual(['dock', 'grid']);
+});
+
+const NODE: PrefSection = {
+  name: 'Rect',
+  members: {
+    layout: { name: 'Layout', members: { 'pose.x': { kind: 'number', name: 'X', description: '', default: 0 } } },
+    look: { name: 'Look', members: { opacity: { kind: 'number', name: 'Opacity', description: '', default: 1 } } },
+  },
+};
+
+test('over a node property schema, where a second pref cannot have the first\'s path, an Alt drag sets an alias', () => {
+  let held: PrefSection = NODE;
+  function LiveNode() {
+    const [schema, setSchema] = useState(NODE);
+    held = schema;
+    return <div style={{ height: 600 }}><PrefSchemaEditor schema={schema} onChange={setSchema} /></div>;
+  }
+  render(<LiveNode />);
+  drag(row('pose.x'), row('look'), { altKey: true });
+  expect(Object.keys((held.members.layout as PrefSection).members)).toEqual(['pose.x']);
+  expect((held.members.look as PrefSection).members.pose_xAlias).toEqual({ kind: 'alias', name: '', description: '', default: undefined, of: 'pose.x' });
+  expect(Object.keys((held.members.look as PrefSection).members).sort()).toEqual(['opacity', 'pose_xAlias']);
 });

@@ -24,7 +24,7 @@ import { stillUnplaced } from './unplaced';
 import { blankGroup, blankSection, leafOf, type CustomKinds } from './kindSchemas';
 import { kindChoices, type PrefTypes } from './types';
 import {
-  addNode, aliasOf, branchUnder, canAlias, childrenOf, fitsUnder, joinPath, keyOf, keysOf, nodeAt, parentPath, pathOf,
+  addNode, aliasOf, branchUnder, canAlias, childrenOf, fitsUnder, joinPath, keyOf, keysOf, keysTakenAt, nodeAt, parentPath, pathOf,
   uniqueKey, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
@@ -209,8 +209,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
       move(drag.from, target);
       return;
     }
-    const kids = childrenOf(nodeAt(schema, target.parentPath)!) ?? {};
-    const key = uniqueKey(kids, drag.item.key);
+    const key = uniqueKey(keysTakenAt(schema, target.parentPath, isPrefLeaf(drag.node)), drag.item.key);
     onChange(addNode(schema, target.parentPath, key, drag.node, target.index));
     const path = joinPath(target.parentPath, key);
     onExpandedChange((e) => new Set([...e, ...ancestorsOf(path), path]));
@@ -249,7 +248,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
         toolSlot,
       )}
       <AddNodeDialog what={adding === 'branch' ? branch : adding} kinds={choices} onAdd={add}
-        siblings={(host && childrenOf(host)) ?? {}} dottedKey={adding === 'pref' && branch === 'section'}
+        taken={keysTakenAt(schema, addTarget().parent, adding === 'pref')} dottedKey={adding === 'pref' && branch === 'section'}
         onClose={() => setAdding(null)} />
       <div className={s.treeArea} ref={treeArea}>
       <Tree

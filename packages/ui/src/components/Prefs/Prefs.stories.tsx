@@ -340,3 +340,41 @@ export const RailInDialog: Story = {
     );
   },
 };
+
+const CONDITIONS_SCHEMA: PrefGroup = {
+  name: 'Snapping',
+  children: {
+    enabled: { kind: 'boolean', name: 'Snap', description: 'Turns the rows below on.', default: false, control: 'switch' },
+    target: {
+      kind: 'enum', name: 'Snap to', description: 'Disabled while Snap is off.', default: 'grid',
+      options: [{ value: 'grid', label: 'Grid' }, { value: 'guides', label: 'Guides' }],
+      enableIf: { path: 'enabled' },
+    },
+    tolerance: {
+      kind: 'number', name: 'Tolerance', description: 'Disabled while Snap is off.', default: 6, min: 1, max: 24, control: 'slider',
+      enableIf: { path: 'enabled' },
+    },
+    spacing: {
+      kind: 'number', name: 'Grid spacing', description: 'Drawn only while Snap is on and snapping to the grid.', default: 10,
+      showIf: { all: [{ path: 'enabled' }, { path: 'target', is: 'grid' }] },
+    },
+    guides: {
+      name: 'Guides',
+      as: 'panel',
+      enableIf: { path: 'enabled' },
+      showIf: { path: 'target', is: 'guides' },
+      children: {
+        smart: { kind: 'boolean', name: 'Smart guides', description: 'The whole panel is hidden while snapping to the grid.', default: true },
+        color: { kind: 'color', name: 'Color', description: '', default: '#ff3b7f' },
+      },
+    },
+  },
+};
+
+/** `enableIf` and `showIf`: with Snap off, two rows are drawn disabled and the spacing row is not drawn at all. */
+export const Conditions: Story = {
+  render: function ConditionsStory() {
+    const { values, onChange } = useStoryValues();
+    return <PrefsForm layout="list" schema={CONDITIONS_SCHEMA} values={values} onChange={onChange} />;
+  },
+};

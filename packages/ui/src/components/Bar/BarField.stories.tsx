@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { Fragment } from 'react';
 import { PropertyField } from '../Properties/PropertyField';
-import { PropertyList } from '../Properties/PropertyPanel';
+import { PropertyList } from '../Properties/PropertyList';
 import { BarField } from './BarField';
 import { useStoryFields } from './barStoryFields';
 import s from './Bar.stories.module.css';

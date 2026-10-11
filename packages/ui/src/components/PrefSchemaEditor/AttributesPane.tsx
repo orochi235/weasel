@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefCondition, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
 import { Input } from '../Input';
+import { PrefConditionEditor } from '../PrefConditionEditor';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
 import { renderPrefControl } from '../Prefs/PrefsRow';
 import { prefFieldChoices } from '../Prefs/schema';
@@ -12,8 +13,8 @@ import { aliasChoices } from './aliasChoices';
 import { aggregateAttributes, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
-import { changeKind, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { childrenOf, joinPath, keyFromName, keyOf, keyProblem, keysOf, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, uniqueKey, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
+import { keyFromName, keyOf, keyProblem, keysOf, keysTakenAt, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, valuePathsAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
@@ -40,14 +41,16 @@ const ENTRY_KIND = 'schema-entry-kind';
 const AUTO_VALUE_KIND = 'schema-auto-value';
 
 /** Whether an attribute kind's control can stand for several values that disagree. */
-const drawsMixed = (kind: string): boolean => (kind in ATTR_RENDERERS ? MIXED_ATTR_KINDS.has(kind) : !WHOLE.has(kind));
+const drawsMixed = (kind: string): boolean =>
+  kind !== CONDITION_KIND && (kind in ATTR_RENDERERS ? MIXED_ATTR_KINDS.has(kind) : !WHOLE.has(kind));
 
 export interface AttributesPaneProps {
   schema: SchemaRoot;
   onChange(next: SchemaRoot): void;
   /** The nodes to edit together; none is the root. */
   paths: readonly string[];
-  onRekey(from: string, to: string): void;
+  /** Put the node at `path` under `key`. The host does it, since what else names the node has to follow. */
+  onRename(path: string, key: string): void;
   /** The one node selected is not in the baseline, so nothing is stored under its key yet. */
   added?: boolean;
   /** The one selected node's attributes that differ from the baseline's, by name; `$key` for its key. Their rows are marked. */
@@ -63,7 +66,7 @@ export interface AttributesPaneProps {
   onNotice(text: string | null): void;
 }
 
-export function AttributesPane({ schema, onChange, paths, onRekey, added = false, changed = NONE, kinds, custom, types, actions, renderers, onNotice }: AttributesPaneProps) {
+export function AttributesPane({ schema, onChange, paths, onRename, added = false, changed = NONE, kinds, custom, types, actions, renderers, onNotice }: AttributesPaneProps) {
   const targets: ReadonlyArray<string | null> = useMemo(() => (paths.length === 0 ? [null] : paths), [paths]);
   const several = targets.length > 1;
   // The key, a key that follows the name, and a list's entry belong to one node.
@@ -77,6 +80,8 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
     () => new Set([...(agg?.mixed ?? [])].flatMap((k) => [k, `${OWN}.${k}`, `${AUTO}.${k}`])),
     [agg],
   );
+  // What the selected nodes hold themselves, which none of them is shown or enabled by.
+  const ownPaths = useMemo(() => targets.flatMap((p, i) => (nodes[i] ? valuePathsAt(schema, p, nodes[i]) : [])), [schema, targets, nodes]);
   const nameAtFocus = useRef('');
   // The edited schema's fields, by its own path rule: what a reference in it names.
   const fields = useMemo(() => {
@@ -116,10 +121,9 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
     if (path === null || key === keyOf(path)) return;
     const parent = parentPath(path);
     const host = nodeAt(schema, parent)!;
-    const problem = keyProblem(childrenOf(host) ?? {}, key, takesDottedKey(host, node));
+    const problem = keyProblem(keysTakenAt(schema, parent, isPrefLeaf(node)), key, takesDottedKey(host, node));
     if (problem) { setKeyError(problem); return; }
-    onChange(renameKey(schema, path, key));
-    onRekey(path, joinPath(parent, key));
+    onRename(path, key);
   };
 
   // A key something may be stored under is left alone unless it was following the name already.
@@ -131,9 +135,8 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
     const next = keyFromName(node.name);
     if (takesDottedKey(host, node) || next === '' || next === current) return;
     if (!added && current !== keyFromName(nameAtFocus.current)) return;
-    const unique = uniqueKey(childrenOf(host) ?? {}, next);
-    onChange(renameKey(schema, path, unique));
-    onRekey(path, joinPath(parent, unique));
+    const unique = uniqueKey(keysTakenAt(schema, parent, isPrefLeaf(node)), next);
+    onRename(path, unique);
   };
 
   const drawn = { ...renderers, ...ATTR_RENDERERS };
@@ -147,6 +150,9 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
           {renderPrefControl({ ...ctx, pref: auto.autoValue! }, drawn)}
         </fieldset>
       </span>
+    ), { group: true }),
+    [CONDITION_KIND]: Object.assign<PrefRenderer, { group: boolean }>(({ pref, value, setValue }) => (
+      <PrefConditionEditor aria-label={pref.name} schema={schema} exclude={ownPaths} value={value as PrefCondition | undefined} onChange={setValue} />
     ), { group: true }),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
       <Input aria-label="Name" value={String(value ?? '')} placeholder={mixed ? MIXED_HINT : undefined} onChange={setValue}

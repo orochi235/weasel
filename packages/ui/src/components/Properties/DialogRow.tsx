@@ -1,7 +1,8 @@
 import { type ReactNode, useState } from 'react';
 import { Button } from '../Button';
 import { Dialog } from '../Dialog';
-import { type PropertyMetricProps, type PropertyRowLayout, PropertyRow } from './PropertyPanel';
+import { type PropertyRowLayout, PropertyRow } from './PropertyRow';
+import { type PropertyMetricProps } from './metrics';
 import s from './Properties.module.css';
 
 /** Props for `<DialogRow>`. */
@@ -29,6 +30,8 @@ export interface DialogRowProps extends PropertyMetricProps {
   onAutoChange?: (next: boolean) => void;
   /** What the row reads when it is auto — see `<PropertyRow autoValue>`. */
   autoValue?: ReactNode;
+  /** The row takes no input: its button is disabled, and still reads the summary. */
+  disabled?: boolean;
 }
 
 /**
@@ -51,6 +54,7 @@ export function DialogRow({
   auto,
   onAutoChange,
   autoValue,
+  disabled,
 }: DialogRowProps) {
   const [open, setOpen] = useState(false);
   const close = (): void => setOpen(false);
@@ -67,6 +71,7 @@ export function DialogRow({
       auto={auto}
       onAutoChange={onAutoChange}
       autoValue={autoValue}
+      disabled={disabled}
       // A `<label>` hands a click on its text to its button, which would open
       // the dialog from the label — and the label is the auto toggle.
       group
@@ -76,6 +81,7 @@ export function DialogRow({
         className={s.dialogTrigger}
         aria-haspopup="dialog"
         aria-label={name === undefined ? undefined : `Edit ${name}`}
+        disabled={disabled}
         onClick={() => setOpen(true)}
       >
         <span className={s.dialogSummary}>{summary}</span>

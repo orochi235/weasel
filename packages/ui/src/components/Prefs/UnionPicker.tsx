@@ -10,6 +10,8 @@ export interface UnionPickerProps {
   value: unknown;
   /** Nodes whose variants differ: nothing is chosen and no fields are drawn. */
   mixed?: boolean;
+  /** The select of variants takes no input. `children` disables the fields it draws. */
+  disabled?: boolean;
   /** A variant chosen: the whole value, which is that variant's default under its tag. */
   onChange: (next: Record<string, unknown>) => void;
   /** Draws the chosen variant's fields. The value they edit keeps its tag. */
@@ -17,7 +19,7 @@ export interface UnionPickerProps {
 }
 
 /** A `union` leaf: a select of its variants, over the fields of the one its value is. */
-export function UnionPicker({ pref, value, mixed = false, onChange, children }: UnionPickerProps) {
+export function UnionPicker({ pref, value, mixed = false, disabled, onChange, children }: UnionPickerProps) {
   const current = mixed ? undefined : prefVariantOf(pref, value);
   const choice: PrefEnum = {
     kind: 'enum',
@@ -32,6 +34,7 @@ export function UnionPicker({ pref, value, mixed = false, onChange, children }: 
     value: current?.[0],
     mixed,
     unset: !mixed && current === undefined,
+    disabled,
     setValue: (key) => {
       if (typeof key === 'string') onChange(prefVariantDefault(pref, key));
     },

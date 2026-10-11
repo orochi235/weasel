@@ -4,12 +4,8 @@ import { type Motif, MotifFrame } from '../MotifFrame';
 import type { StanceProps } from '../stance';
 import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
 import s from './Properties.module.css';
-import {
-  type PropertyListPack,
-  type PropertyMetricProps,
-  PropertyNote,
-  propertyMetricClass,
-} from './PropertyPanel';
+import { type PropertyListPack, PropertyNote } from './PropertyList';
+import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 
 /** Props for `<PropertyGroup>`. */
 export interface PropertyGroupProps extends PropertyMetricProps, StanceProps, CollapseProps {

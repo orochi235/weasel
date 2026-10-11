@@ -1,12 +1,8 @@
 import { type ReactNode, useId } from 'react';
 import { ControlBody, nameOf } from './fieldControls';
 import type { PropertyControlProps } from './fieldTypes';
-import {
-  type PropertyMetricProps,
-  PropertyRow,
-  type PropertyRowLayout,
-  type PropertyRowVariant,
-} from './PropertyPanel';
+import { PropertyRow, type PropertyRowLayout, type PropertyRowVariant } from './PropertyRow';
+import { type PropertyMetricProps } from './metrics';
 import { SliderCell, SliderRow } from './NumberControls';
 
 export type {
@@ -109,6 +105,7 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     className: rowClassName,
     variant: shape.variant,
     group: shape.group,
+    disabled: control.disabled,
     // The font pickers take no id; any other single control is named by the
     // row's `<label>` through this one.
     htmlFor: shape.group || control.kind === 'font-family' || control.kind === 'font-weight'

@@ -17,6 +17,11 @@
   --_edge-ink: oklch(from var(--_edge) clamp(0, (0.564 - l) * 1000, 1) 0 0);
 }
 
+/* The motifs that paint the frame's fill, which is sunken by default, as a field's frame is. */
+.frame:where([data-motif='rule'], [data-motif='stereo'], [data-motif='tab']) {
+  --wzl-input-surface: var(--wzl-surface);
+}
+
 /* BEGIN GENERATED stance rules: frame — `npm run gen:stances`, do not edit. */
 
 .frame {
@@ -25,7 +30,7 @@
 
 .frame {
   --_s-surface: var(--wzl-surface-sunken);
-  --_s-border-color: var(--wzl-border);
+  --_s-border-color: color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface));
   --_s-border-style: solid;
   --_s-border-width: 0px;
   --_s-radius: var(--wzl-radius-md);
@@ -43,7 +48,7 @@
 
 .frame[data-stance='scope'] {
   --_s-surface: var(--wzl-stance-scope-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-scope-border-color, var(--wzl-border));
+  --_s-border-color: var(--wzl-stance-scope-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
   --_s-border-style: var(--wzl-stance-scope-border-style, solid);
   --_s-border-width: var(--wzl-stance-scope-border-width, 0px);
   --_s-radius: var(--wzl-stance-scope-radius, var(--wzl-radius-md));
@@ -61,7 +66,7 @@
 
 .frame[data-stance='aside'] {
   --_s-surface: var(--wzl-stance-aside-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-aside-border-color, var(--wzl-border));
+  --_s-border-color: var(--wzl-stance-aside-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
   --_s-border-style: var(--wzl-stance-aside-border-style, solid);
   --_s-border-width: var(--wzl-stance-aside-border-width, 0px);
   --_s-radius: var(--wzl-stance-aside-radius, var(--wzl-radius-md));
@@ -79,7 +84,7 @@
 
 .frame[data-stance='advanced'] {
   --_s-surface: var(--wzl-stance-advanced-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-advanced-border-color, var(--wzl-border));
+  --_s-border-color: var(--wzl-stance-advanced-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
   --_s-border-style: var(--wzl-stance-advanced-border-style, solid);
   --_s-border-width: var(--wzl-stance-advanced-border-width, 0px);
   --_s-radius: var(--wzl-stance-advanced-radius, var(--wzl-radius-md));
@@ -97,7 +102,7 @@
 
 .frame[data-stance='debug'] {
   --_s-surface: var(--wzl-stance-debug-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-debug-border-color, var(--wzl-border));
+  --_s-border-color: var(--wzl-stance-debug-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
   --_s-border-style: var(--wzl-stance-debug-border-style, solid);
   --_s-border-width: var(--wzl-stance-debug-border-width, 0px);
   --_s-radius: var(--wzl-stance-debug-radius, var(--wzl-radius-md));
@@ -115,7 +120,7 @@
 
 .frame[data-stance='danger'] {
   --_s-surface: var(--wzl-stance-danger-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-danger-border-color, var(--wzl-border));
+  --_s-border-color: var(--wzl-stance-danger-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
   --_s-border-style: var(--wzl-stance-danger-border-style, solid);
   --_s-border-width: var(--wzl-stance-danger-border-width, 0px);
   --_s-radius: var(--wzl-stance-danger-radius, var(--wzl-radius-md));
@@ -133,7 +138,7 @@
 
 .frame[data-stance='notice'] {
   --_s-surface: var(--wzl-stance-notice-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-notice-border-color, var(--wzl-border));
+  --_s-border-color: var(--wzl-stance-notice-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
   --_s-border-style: var(--wzl-stance-notice-border-style, solid);
   --_s-border-width: var(--wzl-stance-notice-border-width, 0px);
   --_s-radius: var(--wzl-stance-notice-radius, var(--wzl-radius-md));
@@ -151,7 +156,7 @@
 
 .frame[data-stance='important'] {
   --_s-surface: var(--wzl-stance-important-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-important-border-color, var(--wzl-border));
+  --_s-border-color: var(--wzl-stance-important-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
   --_s-border-style: var(--wzl-stance-important-border-style, solid);
   --_s-border-width: var(--wzl-stance-important-border-width, 0px);
   --_s-radius: var(--wzl-stance-important-radius, var(--wzl-radius-md));
@@ -169,7 +174,7 @@
 
 .frame[data-stance='preview'] {
   --_s-surface: var(--wzl-stance-preview-surface, var(--wzl-surface-sunken));
-  --_s-border-color: var(--wzl-stance-preview-border-color, var(--wzl-border));
+  --_s-border-color: var(--wzl-stance-preview-border-color, color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface)));
   --_s-border-style: var(--wzl-stance-preview-border-style, solid);
   --_s-border-width: var(--wzl-stance-preview-border-width, 0px);
   --_s-radius: var(--wzl-stance-preview-radius, var(--wzl-radius-md));

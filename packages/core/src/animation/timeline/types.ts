@@ -1,3 +1,4 @@
+import type { Target } from '../target';
 import type { AnimationHandle, EasingSpec, Interpolate, InterpolatorFactory } from '../types';
 
 /** One keyframe. `easing` shapes the approach INTO this key from the previous
@@ -11,7 +12,7 @@ export interface Keyframe<T> {
 }
 
 /** A track sampled as a pure function of the playhead. Scrubbing one is free
- *  and order-independent. */
+ *  and order-independent. Give it `onTick`, a `target`, or both. */
 export interface SampledTrack<T> {
   kind: 'sampled';
   label?: string;
@@ -23,7 +24,18 @@ export interface SampledTrack<T> {
   interpolate?: Interpolate<T>;
   /** Built once per segment and cached. Takes precedence over `interpolate`. */
   interpolator?: InterpolatorFactory<T>;
-  onTick: (value: T) => void;
+  /** Told each sampled value, at any playhead. Optional beside a `target`. */
+  onTick?: (value: T) => void;
+  /**
+   * A value for the track to move. While the playhead is within the track's keys, the target
+   * shows the sampled value in place of its committed one, as under `animator.hold`, and
+   * animations on the target add on top. Once the playhead is past the last key, or the
+   * timeline finishes or is canceled, the target keeps the value it was showing; before the
+   * first key the track leaves the target alone.
+   */
+  target?: Target<T>;
+  /** The track's share among the target's holds, as `HoldOptions.weight`. Default 1. */
+  weight?: number | (() => number);
 }
 
 /** A clock that events are booked against, reading in ms. An `AudioEngine`

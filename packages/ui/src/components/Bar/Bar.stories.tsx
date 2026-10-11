@@ -122,3 +122,31 @@ export const FieldsAndActions: Story = { render: () => <TextBar /> };
 /** Down a side there is no room beside a field, so every leaf but an action
  *  opens from a button. */
 export const Vertical: Story = { render: () => <TextBar orientation="vertical" /> };
+
+const CONDITIONED: PrefGroup = {
+  name: 'Text',
+  as: 'bar',
+  children: {
+    snap: { kind: 'boolean', name: 'Snap', description: 'Turns the cells beside it on.', control: 'toggle', default: false },
+    step: { kind: 'number', name: 'Step', description: 'Disabled while Snap is off.', default: 8, min: 1, enableIf: { path: 'snap' } },
+    angle: { kind: 'number', name: 'Angle', description: 'Drawn only while Snap is on.', default: 45, showIf: { path: 'snap' } },
+    guides: {
+      name: 'Guides',
+      as: 'panel',
+      enableIf: { path: 'snap' },
+      children: { color: { kind: 'color', name: 'Color', description: 'Guide color.', default: '#7ec8e3' } },
+    },
+  },
+};
+
+/** `enableIf` and `showIf`: with Snap off, Step is disabled, Angle is not drawn, and Guides opens to a disabled row. */
+export const Conditions: Story = {
+  render: function ConditionsStory() {
+    const [values, setValues] = useState<Record<string, unknown>>({ snap: false, step: 8, angle: 45 });
+    return (
+      <div className={s.strip}>
+        <Bar schema={CONDITIONED} label="Snapping" values={values} onChange={(path, value) => setValues((v) => ({ ...v, [path]: value }))} />
+      </div>
+    );
+  },
+};

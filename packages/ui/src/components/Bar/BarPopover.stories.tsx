@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { Icon } from '../../icons/Icon';
 import { PropertyField } from '../Properties/PropertyField';
-import { PropertyList } from '../Properties/PropertyPanel';
+import { PropertyList } from '../Properties/PropertyList';
 import { BarPopover } from './BarPopover';
 import s from './Bar.stories.module.css';
 

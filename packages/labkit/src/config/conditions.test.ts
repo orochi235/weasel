@@ -2,7 +2,7 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
-import { isLeafEnabled, isLeafVisible } from './visible';
+import { isEntryShown, isLeafEnabled, isLeafVisible } from './visible';
 
 const schema = () =>
   f.schema({
@@ -122,9 +122,34 @@ describe('isLeafVisible and isLeafEnabled', () => {
     );
   });
 
+  it('answer for everything above a path too, whichever form its condition takes', () => {
+    const off = { ...base, showGrid: false };
+    // `grid` is disabled by data and `fine` hidden by a function.
+    expect(isLeafEnabled(r, 'grid.size', off)).toBe(false);
+    expect(isLeafEnabled(r, 'grid.color', off)).toBe(false);
+    expect(isLeafVisible(r, 'fine.step', off)).toBe(false);
+    const column = { ...base, mode: 'column' };
+    expect(isLeafVisible(r, 'grid.size', column)).toBe(false);
+    expect(isLeafEnabled(r, 'fine.step', column)).toBe(false);
+    expect(isLeafVisible(r, 'grid.size', base)).toBe(true);
+    expect(isLeafEnabled(r, 'fine.step', base)).toBe(true);
+  });
+
   it('answer yes for a path with neither, and for one naming nothing', () => {
     expect(isLeafEnabled(r, 'showGrid', {})).toBe(true);
     expect(isLeafEnabled(r, 'nowhere', {})).toBe(true);
+  });
+});
+
+describe('isEntryShown', () => {
+  it('answers a node of an unresolved schema by its own showIf, in either form', () => {
+    const { cellSize, seed, grid, showGrid } = schema().nodes;
+    expect(isEntryShown(cellSize, { showGrid: true })).toBe(true);
+    expect(isEntryShown(cellSize, { showGrid: false })).toBe(false);
+    expect(isEntryShown(seed, { mode: 'row' })).toBe(true);
+    expect(isEntryShown(seed, { mode: 'column' })).toBe(false);
+    expect(isEntryShown(grid, { mode: 'column' })).toBe(false);
+    expect(isEntryShown(showGrid, {})).toBe(true);
   });
 });
 

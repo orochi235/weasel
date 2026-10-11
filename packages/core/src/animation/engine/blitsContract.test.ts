@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { kit, mix, spring, sum, tween, vec } from '@msb235/blits';
+import { kit, mix, patch, spring, sum, tween, vec } from '@msb235/blits';
 
 type U = { u: number };
 type P = { p: number[] };
@@ -90,5 +90,133 @@ describe('blits behaviors the animator codec relies on', () => {
     expect(after.velocity).toEqual(before.velocity);
     sp.push(1, [5, 5]);
     expect(sp.read(1)!.velocity).toEqual([5, 5]);
+  });
+
+  it('voices that each name the same subject pull as their sum', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    const a = tween<object, P, number[]>('p', { from: [100, 0], to: [100, 0], ms: 1000, ease: linear });
+    const b = tween<object, P, number[]>('p', { from: [0, 50], to: [0, 50], ms: 1000, ease: linear });
+    m.cue({ patch: a, subjects: [subject] });
+    m.cue({ patch: b, subjects: [subject] });
+    a.to(subject, [0, 0], 0);
+    b.to(subject, [0, 0], 0);
+    m.sync(500);
+    const cols = { p: new Float64Array(2) };
+    m.pull([subject], cols);
+    expect([...cols.p]).toEqual([50, 25]);
+  });
+
+  it("a tween's read answers its velocity, in units a second", () => {
+    const m = mix<number, U>(kit<U>({ u: sum() }));
+    m.sync(0);
+    const tw = tween<number, U>('u', { from: 0, to: 0, ms: 1000, ease: linear });
+    m.cue({ patch: tw });
+    tw.to(1, 100, 0);
+    m.sync(250);
+    m.pull([1], { u: new Float64Array(1) });
+    expect(tw.read(1)!.velocity).toBeCloseTo(100, 9);
+  });
+
+  /** A voice answering whatever `read` returns now, the way a hold answers its value. */
+  const live = (read: () => number[]) =>
+    patch<object, P>(1, () => ({ p: read() }), { writes: ['p'] });
+  const pulled = (m: ReturnType<typeof mix<object, P>>, subject: object): number[] => {
+    const cols = { p: new Float64Array(2) };
+    m.pull([subject], cols);
+    return [...cols.p];
+  };
+
+  it('a locus of two voices at weights w and 1 - w reads as their lerp', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    m.cue({ patch: live(() => [100, 10]), subjects: [subject], loop: true, locus: 'hold', weight: 0.25 });
+    m.cue({ patch: live(() => [200, 50]), subjects: [subject], loop: true, locus: 'hold', weight: 0.75 });
+    m.sync(16);
+    const got = pulled(m, subject);
+    expect(got[0]).toBeCloseTo(175, 9);
+    expect(got[1]).toBeCloseTo(40, 9);
+  });
+
+  it('a locus voice beside a voice with no locus reads as the lerp, then the sum', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    m.cue({ patch: live(() => [100, 10]), subjects: [subject], loop: true, locus: 'hold', weight: 0.5 });
+    m.cue({ patch: live(() => [200, 50]), subjects: [subject], loop: true, locus: 'hold', weight: 0.5 });
+    m.cue({ patch: live(() => [7, 3]), subjects: [subject], loop: true });
+    m.sync(16);
+    const got = pulled(m, subject);
+    expect(got[0]).toBeCloseTo(157, 9);
+    expect(got[1]).toBeCloseTo(33, 9);
+  });
+
+  it('a locus whose weights total less than 1 is scaled toward rest', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    m.cue({ patch: live(() => [100, 10]), subjects: [subject], loop: true, locus: 'hold', weight: 0.25 });
+    m.cue({ patch: live(() => [200, 50]), subjects: [subject], loop: true, locus: 'hold', weight: 0.25 });
+    m.sync(16);
+    const got = pulled(m, subject);
+    expect(got[0]).toBeCloseTo(75, 9);
+    expect(got[1]).toBeCloseTo(15, 9);
+  });
+
+  it('a weight signal is asked again each frame', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    let w = 1;
+    m.cue({ patch: live(() => [100, 10]), subjects: [subject], loop: true, locus: 'hold', weight: () => w });
+    m.sync(16);
+    expect(pulled(m, subject)[0]).toBeCloseTo(100, 9);
+    w = 0.5;
+    m.sync(32);
+    expect(pulled(m, subject)[0]).toBeCloseTo(50, 9);
+  });
+
+  it('a locus whose weights total more than 1 reads as their weighted average, each weight capped at 1', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    m.cue({ patch: live(() => [8, 0]), subjects: [subject], loop: true, locus: 'hold', weight: 1 });
+    const b = m.cue({ patch: live(() => [16, 0]), subjects: [subject], loop: true, locus: 'hold', weight: 0.5 });
+    m.sync(16);
+    expect(pulled(m, subject)[0]).toBeCloseTo(32 / 3, 9);
+    b.fade({ over: 0 });
+    m.cue({ patch: live(() => [16, 0]), subjects: [subject], loop: true, locus: 'hold', weight: 3 });
+    expect(pulled(m, subject)[0]).toBeCloseTo(12, 9);
+  });
+
+  it('a patch reading an outside value keeps its answer while the clock stands still, until touch', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    let x = 1;
+    m.cue({ patch: live(() => [x, 0]), subjects: [subject], loop: true, locus: 'hold' });
+    m.sync(16);
+    expect(pulled(m, subject)[0]).toBe(1);
+    x = 2;
+    m.sync(16);
+    expect(pulled(m, subject)[0]).toBe(1);
+    m.touch(subject);
+    expect(pulled(m, subject)[0]).toBe(2);
+    expect(m.probe(subject).p[0]).toBe(2);
+  });
+
+  it('a voice cued or faded since the last sync is in or out of the next read at once', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    const a = m.cue({ patch: live(() => [1, 0]), subjects: [subject], loop: true });
+    m.sync(16);
+    expect(pulled(m, subject)[0]).toBe(1);
+    m.cue({ patch: live(() => [10, 0]), subjects: [subject], loop: true });
+    expect(m.probe(subject).p[0]).toBe(11);
+    a.fade({ over: 0 });
+    expect(m.probe(subject).p[0]).toBe(10);
   });
 });

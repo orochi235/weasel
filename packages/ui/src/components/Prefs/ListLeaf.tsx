@@ -38,6 +38,7 @@ export function ListLeaf({
     onChange: ctx.setValue,
     minItems: pref.minItems,
     maxItems: pref.maxItems,
+    disabled: ctx.disabled,
   };
   const entries = Array.isArray(ctx.value) ? (ctx.value as unknown[]) : [];
   if (prefListIsText(pref, renderers?.string !== undefined)) return <ListEditor {...shared} value={prefListTexts(ctx.value)} />;
@@ -56,6 +57,7 @@ export function ListLeaf({
           auto: ctx.auto,
           setAuto: ctx.setAuto,
           ...(ctx.fields ? { fields: ctx.fields } : {}),
+          disabled: ctx.disabled,
         })
       }
     />

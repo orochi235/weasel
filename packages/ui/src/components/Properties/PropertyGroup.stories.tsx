@@ -4,7 +4,8 @@ import { CloseButton } from '../CloseButton';
 import { DragGrip } from '../DragGrip';
 import { PropertyGroup } from './PropertyGroup';
 import { PropertyField } from './PropertyField';
-import { PropertyList, PropertyPanel } from './PropertyPanel';
+import { PropertyList } from './PropertyList';
+import { PropertyPanel } from './PropertyPanel';
 import { Subpanel } from './Subpanel';
 
 const meta: Meta<typeof PropertyGroup> = {

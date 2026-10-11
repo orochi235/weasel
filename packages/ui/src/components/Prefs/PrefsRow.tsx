@@ -20,7 +20,7 @@ import { MapEditor } from './MapEditor';
 import { ObjectLeaf } from './ObjectLeaf';
 import { UnionPicker } from './UnionPicker';
 import { controlIsGroup, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
-import { PropertyRow } from '../Properties/PropertyPanel';
+import { PropertyRow } from '../Properties/PropertyRow';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
@@ -48,6 +48,11 @@ export interface PrefRenderContext {
   setAuto: (next: boolean) => void;
   /** The form's fields, which a `field` leaf names one of. */
   fields?: readonly PrefFieldChoice[];
+  /** The leaf takes no input: its `enableIf`, or that of a group above it, does not hold. A renderer draws its
+   *  control disabled. */
+  disabled?: boolean;
+  /** Whether the field at a path under this leaf's is disabled by a condition of its own. */
+  disabledAt?: (path: string) => boolean;
 }
 
 /**
@@ -79,6 +84,8 @@ export interface WalkCtx {
   lead?: string | null;
   /** The drop the form is drawing. */
   drop?: PrefDrop | null;
+  /** Paths of the leaves, fields, and groups a failed `enableIf` disables. */
+  disabled?: ReadonlySet<string>;
 }
 
 /**
@@ -133,6 +140,8 @@ export function prefRenderContext(
       if (toggles) onAutoChange(path, next);
     },
     ...(ctx.fields ? { fields: ctx.fields } : {}),
+    disabled: ctx.disabled?.has(own) ?? false,
+    disabledAt: (at) => ctx.disabled?.has(at) ?? false,
   };
   return { renderCtx, toggles };
 }
@@ -182,6 +191,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       autoControl="dimmed"
       onAutoChange={toggles ? setAuto : undefined}
       hint={inherited ? ctx.inheritHint?.(path) : undefined}
+      disabled={renderCtx.disabled}
     >
       <span className={s.rowControl}>{control}</span>
     </PropertyRow>
@@ -216,6 +226,7 @@ function renderBuiltin(
       path: ctx.path,
       name: pref.name,
       field: leafField(ctx, siblings),
+      disabled: ctx.disabled,
       row: () => renderBuiltin(ctx, renderers, siblings),
     });
   }
@@ -237,6 +248,7 @@ function renderBuiltin(
         pref={map}
         value={value}
         onChange={setValue}
+        disabled={ctx.disabled}
         renderValue={(held, set, name, key) =>
           renderPrefControl({ ...ctx, path: `${ctx.path}.${key}`, pref: { ...map.item, name }, value: held, setValue: set }, renderers)
         }
@@ -245,12 +257,12 @@ function renderBuiltin(
   }
   if (pref.kind === 'union') {
     return (
-      <UnionPicker pref={pref as PrefUnion} value={value} mixed={ctx.mixed} onChange={setValue}>
+      <UnionPicker pref={pref as PrefUnion} value={value} mixed={ctx.mixed} disabled={ctx.disabled} onChange={setValue}>
         {(variant) => object({ ...ctx, pref: variant })}
       </UnionPicker>
     );
   }
-  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
+  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} />;
   const field = leafField(ctx, siblings);
   if (field === null) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a
@@ -282,7 +294,7 @@ function rowIsGroup(
  * Null for a leaf that is not one control.
  */
 function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined): PropertyControlProps | null {
-  const field = prefFieldProps(ctx.pref, { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields });
+  const field = prefFieldProps(ctx.pref, { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields, disabled: ctx.disabled });
   return field?.kind === 'number' || field?.kind === 'color' ? { ...field, onInput: settledOnly } : field;
 }
 

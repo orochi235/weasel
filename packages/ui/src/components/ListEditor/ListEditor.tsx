@@ -26,6 +26,8 @@ export interface ListEditorProps<T = string> {
   /** Text of the add button. */
   addLabel?: string;
   /** Names the list for assistive tech; each entry is named from it. */
+  /** The list takes no input: no entry is typed in, added, or removed. A `renderEntry` disables what it draws. */
+  disabled?: boolean;
   'aria-label'?: string;
   className?: string;
 }
@@ -54,6 +56,7 @@ export function ListEditor<T>({
   newEntry,
   minItems = 0,
   maxItems = Infinity,
+  disabled = false,
 }: ListEditorProps<T>) {
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
   const removes = useRef<(HTMLButtonElement | null)[]>([]);
@@ -117,6 +120,7 @@ export function ListEditor<T>({
                   aria-label={name(i)}
                   value={entry as string}
                   placeholder={placeholder}
+                  disabled={disabled}
                   onChange={(e) => set(i, e.target.value as T)}
                   onKeyDown={(e) => onKeyDown(e, i)}
                 />
@@ -126,7 +130,7 @@ export function ListEditor<T>({
                   removes.current[i] = el;
                 }}
                 ariaLabel={`Remove ${name(i)}`}
-                disabled={value.length <= minItems}
+                disabled={disabled || value.length <= minItems}
                 onClick={() => remove(i)}
               />
             </li>
@@ -134,7 +138,7 @@ export function ListEditor<T>({
         </ul>
       )}
       <div className={s.actions}>
-        <Button ref={add} size="sm" disabled={value.length >= maxItems} onClick={() => insert(value.length)}>
+        <Button ref={add} size="sm" disabled={disabled || value.length >= maxItems} onClick={() => insert(value.length)}>
           {addLabel}
         </Button>
       </div>

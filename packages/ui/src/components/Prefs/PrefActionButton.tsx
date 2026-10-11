@@ -3,8 +3,8 @@ import { Button } from '../Button';
 import { useLeafAction } from './useLeafAction';
 
 /** An `action` leaf's button in a row: its label, or its icon alone for `control: 'icon'`. */
-export function PrefActionButton({ pref, path }: { pref: PrefAction; path: string }) {
-  const { press, label, icon, shortcut, disabled, active, missing } = useLeafAction(pref, path);
+export function PrefActionButton({ pref, path, disabled: off }: { pref: PrefAction; path: string; disabled?: boolean }) {
+  const { press, label, icon, shortcut, disabled, active, missing } = useLeafAction(pref, path, off);
   const button = {
     size: 'sm',
     disabled: disabled || missing !== undefined,

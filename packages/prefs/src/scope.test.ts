@@ -3,7 +3,7 @@ import type { PrefCondition } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { prefValueAtPath } from './helpers';
 import type { PrefLeaf, PrefObject } from './schema';
-import { applyPrefConditions, PREF_SCOPE, prefJudge, prefScopeAt, prefScopeUnder } from './scope';
+import { applyPrefConditions, PREF_SCOPE, prefJudge, prefReader, prefScopeAt, prefScopeUnder } from './scope';
 import type { PrefUnion } from './union';
 
 const bool = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
@@ -11,7 +11,7 @@ const bool = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
 const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
   ({ kind: 'number', name, description: '', default: 0, ...extra }) as PrefLeaf;
 
-const over = (values: unknown) => prefJudge((path) => prefValueAtPath(values, path));
+const over = (values: unknown) => prefJudge({ name: '', children: {} }, (path) => prefValueAtPath(values, path));
 
 const on: PrefCondition = { path: 'snap.on' };
 
@@ -174,5 +174,32 @@ describe('prefScopeAt', () => {
 
   it('stops at the last node a path reaches', () => {
     expect(prefScopeAt({ ...schema, enableIf: on }, 'no.such', over({}))).toEqual({ shown: true, enabled: false });
+  });
+});
+
+describe('prefReader', () => {
+  const stroke = {
+    kind: 'object', name: 'Stroke', description: '', default: { width: 2, ends: { cap: 1 } },
+    children: { width: num('Width') },
+  } as PrefObject;
+  const root: PrefGroup = { name: '', children: { snap: { name: 'Snap', children: { on: bool('On', { default: true }) } }, stroke } };
+
+  it('reads what is held', () => {
+    const read = prefReader(root, { snap: { on: false }, stroke: { width: 5 } });
+    expect(read('snap.on')).toBe(false);
+    expect(read('stroke.width')).toBe(5);
+  });
+
+  it('reads a leaf holding nothing as its default, and a field of one inside that default', () => {
+    const read = prefReader(root, {});
+    expect(read('snap.on')).toBe(true);
+    expect(read('stroke.width')).toBe(2);
+    expect(read('stroke.ends.cap')).toBe(1);
+  });
+
+  it('reads a path no leaf holds as undefined', () => {
+    const read = prefReader(root, {});
+    expect(read('snap')).toBeUndefined();
+    expect(read('no.such')).toBeUndefined();
   });
 });

@@ -8,6 +8,8 @@ import { ConditionRow } from './ConditionRow';
 import { conditionLeaves, conditionParts, joinCondition, testOf, type ConditionMode } from './conditionRows';
 import s from './PrefConditionEditor.module.css';
 
+const NO_PATHS: readonly string[] = [];
+
 const MODES: ReadonlyArray<{ value: ConditionMode; label: string }> = [
   { value: 'all', label: 'All of' },
   { value: 'any', label: 'Any of' },
@@ -21,6 +23,12 @@ export interface PrefConditionEditorProps {
   onChange(next: PrefCondition | undefined): void;
   /** The schema the condition belongs to: a row reads one of its leaves, and the condition is checked against it. */
   schema: PrefGroup | PrefSection;
+  /**
+   * Value paths no row is offered: the pref at one, and every pref beneath one, is left out of the pickers. For
+   * what the condition belongs to, which cannot sensibly be shown or enabled by its own value. A row that
+   * already reads such a pref keeps it.
+   */
+  exclude?: readonly string[];
   /** What the condition decides, which names the group of controls: `Shown if`. */
   'aria-label'?: string;
   className?: string;
@@ -37,13 +45,15 @@ export interface PrefConditionEditorProps {
  * offer are each a row of text, which can be removed and is otherwise handed back as the object it was. Whatever
  * `checkPrefCondition` finds wrong with a row is said on that row. With no rows left the condition is `undefined`.
  */
-export function PrefConditionEditor({ value, onChange, schema, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
+export function PrefConditionEditor({ value, onChange, schema, exclude = NO_PATHS, 'aria-label': ariaLabel, className }: PrefConditionEditorProps) {
   const leaves = useMemo(() => conditionLeaves(schema), [schema]);
-  const prefOptions = useMemo<SelectOption[]>(() => leaves.map(({ path, leaf }) => ({
-    value: path,
-    label: <>{leaf.name || path} <span className={s.path}>{path}</span></>,
-    textValue: `${leaf.name} ${path}`,
-  })), [leaves]);
+  const prefOptions = useMemo<SelectOption[]>(() => leaves
+    .filter(({ path }) => !exclude.some((out) => path === out || path.startsWith(`${out}.`)))
+    .map(({ path, leaf }) => ({
+      value: path,
+      label: <>{leaf.name || path} <span className={s.path}>{path}</span></>,
+      textValue: `${leaf.name} ${path}`,
+    })), [leaves, exclude]);
   const classes = [s.editor, className].filter(Boolean).join(' ');
 
   if (value !== undefined && !isPrefCondition(value)) {
@@ -72,7 +82,7 @@ export function PrefConditionEditor({ value, onChange, schema, 'aria-label': ari
           onRemove={() => write(parts.filter((_, j) => j !== i))} />
       ))}
       <Select aria-label="Add a condition" placeholder="Add a condition on…" selectedKey={null} options={prefOptions}
-        isDisabled={leaves.length === 0}
+        isDisabled={prefOptions.length === 0}
         onSelectionChange={(path) => {
           const found = leaves.find((l) => l.path === path);
           if (found) write([...parts, testOf(found.path, found.leaf)]);
