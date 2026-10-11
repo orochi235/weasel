@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { keySpecFromKey } from '@weasel-js/ui';
-import { RegistryDetail, RouteBadge } from './RegistryDetail';
+import { RegistryDetail } from './RegistryDetail';
+import { RouteBadge } from './detail/RouteBadge';
 import { collectBundles, type ActionEntry, type TreeEntry } from './registryData';
 
 describe('RegistryDetail', () => {
