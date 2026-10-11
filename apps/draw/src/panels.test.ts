@@ -1,7 +1,8 @@
-import { describe, expect, it, beforeAll, beforeEach } from 'vitest';
+import { describe, expect, it, beforeAll, beforeEach, vi } from 'vitest';
+import { createMemoryAdapter } from '@weasel-js/storage';
 import { renderHook, act } from '@testing-library/react';
 import { migrateLegacyPanelFlags, usePanel } from './panels';
-import { drawPrefs } from './prefs';
+import { drawPrefs, openDrawPrefs } from './prefs';
 
 // Same in-memory Storage shim as prefs.test.ts: jsdom 26 + Node 26 can
 // leave `window.localStorage` undefined.
@@ -52,27 +53,41 @@ describe('migrateLegacyPanelFlags', () => {
     window.localStorage.clear();
   });
 
-  it('folds wd:panel:*:collapsed into ui.panels and removes the old keys', () => {
+  it('folds wd:panel:*:collapsed into ui.panels and removes the old keys', async () => {
     window.localStorage.setItem('wd:panel:layers:collapsed', '1');
     window.localStorage.setItem('wd:panel:history:collapsed', '0');
-    migrateLegacyPanelFlags(window.localStorage);
+    migrateLegacyPanelFlags(drawPrefs(), window.localStorage);
     expect(drawPrefs().get('ui.panels')).toEqual({
       layers: { collapsed: true },
       history: { collapsed: false },
     });
-    expect(window.localStorage.getItem('wd:panel:layers:collapsed')).toBeNull();
+    await vi.waitFor(() => expect(window.localStorage.getItem('wd:panel:layers:collapsed')).toBeNull());
     expect(window.localStorage.getItem('wd:panel:history:collapsed')).toBeNull();
+  });
+
+  it('keeps the old keys while the folded value has not reached storage', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const failing = { ...createMemoryAdapter(), set: () => Promise.reject(new Error('quota')) };
+    const prefs = openDrawPrefs(failing);
+    window.localStorage.setItem('wd:panel:layers:collapsed', '1');
+    migrateLegacyPanelFlags(prefs, window.localStorage);
+    expect(prefs.get('ui.panels')).toEqual({ layers: { collapsed: true } });
+    expect(await prefs.flush()).toBe(false);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(window.localStorage.getItem('wd:panel:layers:collapsed')).toBe('1');
+    await prefs.close();
+    warn.mockRestore();
   });
 
   it('does not overwrite a value already in ui.panels', () => {
     drawPrefs().set('ui.panels', { layers: { collapsed: false } });
     window.localStorage.setItem('wd:panel:layers:collapsed', '1');
-    migrateLegacyPanelFlags(window.localStorage);
+    migrateLegacyPanelFlags(drawPrefs(), window.localStorage);
     expect(drawPrefs().get('ui.panels')).toEqual({ layers: { collapsed: false } });
   });
 
   it('is a no-op without legacy keys', () => {
-    migrateLegacyPanelFlags(window.localStorage);
+    migrateLegacyPanelFlags(drawPrefs(), window.localStorage);
     expect(drawPrefs().isSet('ui.panels')).toBe(false);
   });
 });

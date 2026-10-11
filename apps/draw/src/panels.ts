@@ -2,7 +2,7 @@
 // the inline chevron / × and the Preferences dialog edit the same map.
 
 import { useCallback } from 'react';
-import { drawPrefs, usePref } from './prefs';
+import { drawPrefs, removeOnceStored, usePref, whenWritable } from './prefs';
 
 export const PANELS = [
   { id: 'properties', label: 'Properties' },
@@ -46,22 +46,33 @@ const LEGACY_COLLAPSED_KEYS: Partial<Record<PanelId, string>> = {
 };
 
 /** Fold the pre-prefs `wd:panel:*:collapsed` flags into `ui.panels` once,
- *  then delete them. A value already in `ui.panels` wins. */
-export function migrateLegacyPanelFlags(storage: Storage | undefined = globalThis.localStorage): void {
+ *  and delete them once the new value is on disk. A value already in
+ *  `ui.panels` wins. A store that cannot persist leaves the flags alone. */
+export function migrateLegacyPanelFlags(
+  target = drawPrefs(),
+  storage: Storage | undefined = globalThis.localStorage,
+): void {
   if (!storage) return;
-  try {
+  whenWritable(target, () => {
+    const found: string[] = [];
     let panels: PanelsValue | null = null;
-    for (const [id, key] of Object.entries(LEGACY_COLLAPSED_KEYS)) {
-      const raw = storage.getItem(key);
-      if (raw == null) continue;
-      panels ??= { ...drawPrefs().get('ui.panels') };
-      if (panels[id]?.collapsed === undefined) {
-        panels[id] = { ...panels[id], collapsed: raw === '1' };
+    try {
+      for (const [id, key] of Object.entries(LEGACY_COLLAPSED_KEYS)) {
+        const raw = storage.getItem(key);
+        if (raw == null) continue;
+        found.push(key);
+        panels ??= { ...target.get('ui.panels') };
+        if (panels[id]?.collapsed === undefined) {
+          panels[id] = { ...panels[id], collapsed: raw === '1' };
+        }
       }
-      storage.removeItem(key);
+    } catch {
+      return;
     }
-    if (panels) drawPrefs().set('ui.panels', panels);
-  } catch {
-    /* storage unavailable — nothing to migrate */
-  }
+    if (!panels) return;
+    target.set('ui.panels', panels);
+    removeOnceStored(target, () => {
+      for (const key of found) storage.removeItem(key);
+    });
+  });
 }

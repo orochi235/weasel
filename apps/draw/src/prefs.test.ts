@@ -52,6 +52,15 @@ describe('openDrawPrefs', () => {
     expect(store.get('view.gridVisible')).toBe(true);
   });
 
+  it('reads a stored panel map that is not a map as its default', () => {
+    for (const stored of [null, 'x', 3, [1]]) {
+      const backing = new Map<string, unknown>([[`${PREFS_PREFIX}ui.panels`, stored]]);
+      expect(openDrawPrefs(createMemoryAdapter(backing)).get('ui.panels')).toEqual({});
+    }
+    const backing = new Map<string, unknown>([[`${PREFS_PREFIX}ui.panels`, { layers: { hidden: true } }]]);
+    expect(openDrawPrefs(createMemoryAdapter(backing)).get('ui.panels')).toEqual({ layers: { hidden: true } });
+  });
+
   it('round-trips a tool-contributed pref at its composed path', async () => {
     const backing = new Map<string, unknown>();
     const store = openDrawPrefs(createMemoryAdapter(backing));

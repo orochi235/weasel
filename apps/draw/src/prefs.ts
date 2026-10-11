@@ -180,9 +180,13 @@ export const LEGACY_PREFS_KEY = 'weaseldraw.prefs.v2';
 export type DrawPrefPath = PrefPath<typeof PREFS>;
 export type DrawPrefValue<P extends DrawPrefPath> = PrefValueAt<typeof PREFS, P>;
 
-// `data` has no validator: its shape belongs to the code that owns the value.
+const shapeOf = (v: unknown): string => (v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v);
+
 const VALIDATORS: Record<string, PrefValidator> = {
   'registry-enum': (v) => (typeof v === 'string' ? v : undefined),
+  // The code that owns a `data` value reads it unchecked, so a stored value
+  // must at least be the kind of thing its default is.
+  data: (v, leaf) => (shapeOf(v) === shapeOf(leaf.default) ? v : undefined),
 };
 
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
@@ -207,9 +211,29 @@ export function importLegacyPrefs(
   storage: Pick<Storage, 'getItem' | 'removeItem'> | undefined = globalThis.localStorage,
 ): void {
   if (!storage) return;
-  if (target.writable) return foldLegacyPrefs(target, storage);
+  whenWritable(target, () => foldLegacyPrefs(target, storage));
+}
+
+/** Run `fold` once `target` can persist: now, or when a first read that
+ *  failed lands. Never, for a store that stays read-only. */
+export function whenWritable(target: PrefsStore<typeof PREFS>, fold: () => void): void {
+  if (target.writable) return fold();
   void target.whenRead().then(() => {
-    if (target.writable) foldLegacyPrefs(target, storage);
+    if (target.writable) fold();
+  });
+}
+
+/** Run `remove`, which deletes a legacy copy, once everything `target` has
+ *  queued is in storage. A write that does not land leaves the copy for the
+ *  next open to import again. */
+export function removeOnceStored(target: PrefsStore<typeof PREFS>, remove: () => void): void {
+  void target.flush().then((landed) => {
+    if (!landed) return;
+    try {
+      remove();
+    } catch {
+      /* storage gone: the next open imports it again, and every leaf is already set */
+    }
   });
 }
 
@@ -234,14 +258,7 @@ function foldLegacyPrefs(
   for (const [path, value] of flattenPrefValues(PREFS, parsed)) {
     if (!target.isSet(path as DrawPrefPath)) target.set(path as DrawPrefPath, value as never);
   }
-  void target.flush().then((landed) => {
-    if (!landed) return;
-    try {
-      storage.removeItem(LEGACY_PREFS_KEY);
-    } catch {
-      /* storage gone: the next open imports it again, and every leaf is already set */
-    }
-  });
+  removeOnceStored(target, () => storage.removeItem(LEGACY_PREFS_KEY));
 }
 
 /** One leaf of the app's prefs, as React state. */
