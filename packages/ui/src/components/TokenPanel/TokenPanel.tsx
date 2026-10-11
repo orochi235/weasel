@@ -13,6 +13,7 @@ import {
   bezierPoints,
   NUMBER_FORMAT,
   type OnTokenChange as OnChange,
+  shownAlike,
   splitUnit,
   TOKEN_CATEGORIES,
   type TokenCategory,
@@ -139,7 +140,7 @@ function TokenControl({ token, set }: { token: TokenEntry; set: (value: string) 
             hideSteppers
             formatOptions={NUMBER_FORMAT}
             onChange={(amount) => {
-              if (Number.isFinite(amount)) set(`${amount}${split.unit}`);
+              if (Number.isFinite(amount) && !shownAlike(amount, split.amount)) set(`${amount}${split.unit}`);
             }}
           />
           {split.unit ? <span className={s.unit}>{split.unit}</span> : null}

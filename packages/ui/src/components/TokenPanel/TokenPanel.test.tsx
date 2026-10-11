@@ -264,4 +264,18 @@ describe('TokenPanel', () => {
     expect(rail('--wzl-checker-a').querySelector('[data-hidden]')).toBeNull();
     expect(rail('--wzl-shadow').textContent).toBe('shadow');
   });
+
+  it('leaves a token alone when its number field is focused and blurred untouched', () => {
+    const onChange = vi.fn();
+    render(
+      <TokenPanel
+        tokens={[{ name: '--wzl-line', type: 'dimension', group: 'line', value: '0.33333rem' }]}
+        onChange={onChange}
+      />,
+    );
+    const field = screen.getByRole('textbox', { name: '--wzl-line value' });
+    act(() => field.focus());
+    act(() => field.blur());
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

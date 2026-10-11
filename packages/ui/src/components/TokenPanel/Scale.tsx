@@ -9,6 +9,7 @@ import {
   NUMBER_FORMAT,
   type OnTokenChange,
   refitScale,
+  shownAlike,
   splitUnit,
   type TokenEntry,
   type TokenScale,
@@ -50,7 +51,7 @@ function ScaleRuleControls({
           hideSteppers
           formatOptions={NUMBER_FORMAT}
           onChange={(base) => {
-            if (Number.isFinite(base)) onScaleChange({ ...scale, base });
+            if (Number.isFinite(base) && !shownAlike(base, scale.base)) onScaleChange({ ...scale, base });
           }}
         />
       </span>
@@ -73,7 +74,7 @@ function ScaleRuleControls({
             hideSteppers
             formatOptions={NUMBER_FORMAT}
             onChange={(value) => {
-              if (Number.isFinite(value)) onScaleChange({ ...scale, rule: { kind: param.key, [param.key]: value } as TokenScaleRule });
+              if (Number.isFinite(value) && !shownAlike(value, param.value)) onScaleChange({ ...scale, rule: { kind: param.key, [param.key]: value } as TokenScaleRule });
             }}
           />
         </span>
@@ -267,7 +268,7 @@ function ScaleStep({
           hideSteppers
           formatOptions={NUMBER_FORMAT}
           onChange={(amount) => {
-            if (Number.isFinite(amount)) onChange(token.name, `${amount}${split.unit}`);
+            if (Number.isFinite(amount) && !shownAlike(amount, split.amount)) onChange(token.name, `${amount}${split.unit}`);
           }}
         />
         {showUnit && split.unit ? <span className={s.unit}>{split.unit}</span> : null}

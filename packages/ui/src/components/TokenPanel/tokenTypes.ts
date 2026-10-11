@@ -20,6 +20,13 @@ export type OnTokenChange = (name: string, value: string | null) => void;
 /** How the panel's number fields show an amount. */
 export const NUMBER_FORMAT = { maximumFractionDigits: 4, useGrouping: false } as const;
 
+/** Whether a number field shows `a` and `b` as the same text. A field commits
+ *  what it shows on blur, so an untouched one reports its value rounded. */
+export function shownAlike(a: number, b: number): boolean {
+  const places = NUMBER_FORMAT.maximumFractionDigits;
+  return a.toFixed(places) === b.toFixed(places);
+}
+
 /** How a scale's steps follow from its base: one multiplier per step, a constant ratio, or a constant step. */
 export type TokenScaleRule =
   | { kind: 'factors'; factors: readonly number[] }
