@@ -2433,13 +2433,6 @@ one dead `const` and four stale disable directives.
   a second scheme in the same document from Cmd+G, Cmd+D, paste, an SVG drop, or a tool whose
   factory omits `id`. Expose the minter on the scene and have all five call it.
 
-- **(P3) The root `prepublishOnly` never fires, and CLAUDE.md says `check:bumps` runs there.** The
-  root package is private and the release workflow does not call the script, so its chain
-  (`check:bumps`, `check:test-projects`, `typecheck`, `lint`, `test`, the builds, and the smoke
-  checks) runs only when someone types it. CI and `release.yml` each run `check:bumps` themselves;
-  CLAUDE.md's "Releases" section lists `prepublishOnly` as a third place. `audit:jsdoc` and
-  `lint:ref-writes` also run nowhere, and neither can fail: both print a report and exit 0.
-
 - **(P3) Overlays sit on two unrelated z-index scales.** The theme defines `--wzl-z-toolbar`,
   `--wzl-z-overlay`, and `--wzl-z-modal` as 10, 20, and 30. `Dialog` (1000), `Toast` (1100),
   `Tooltip` and `Callout` (1200), core's debug HUDs (900), labkit's `DragGhost` (9999), and

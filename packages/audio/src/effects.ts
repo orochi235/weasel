@@ -4,6 +4,7 @@ import { writeParam } from './param';
 // Built-in insert effects. Each exposes its Web Audio nodes for anything its
 // options do not cover; times are ms, as everywhere else in the package.
 
+/** Options for `createFilterEffect`. Unset ones keep the node's defaults. */
 export interface FilterEffectOptions {
   /** Default 'lowpass'. */
   type?: BiquadFilterType;
@@ -14,6 +15,7 @@ export interface FilterEffectOptions {
   gain?: number;
 }
 
+/** A filter insert, with its `BiquadFilterNode` exposed. */
 export interface FilterEffect extends InsertEffect {
   readonly filter: BiquadFilterNode;
 }
@@ -74,6 +76,7 @@ function wetDry(
   };
 }
 
+/** Options for `createReverbEffect`. */
 export interface ReverbEffectOptions {
   /** The room: an impulse response, loaded or synthesized like any buffer. */
   impulse: AudioBuffer;
@@ -83,6 +86,7 @@ export interface ReverbEffectOptions {
   normalize?: boolean;
 }
 
+/** A reverb insert, with its `ConvolverNode` exposed. */
 export interface ReverbEffect extends InsertEffect, WetDryMix {
   readonly convolver: ConvolverNode;
 }
@@ -97,6 +101,7 @@ export function createReverbEffect(ctx: BaseAudioContext, opts: ReverbEffectOpti
   return { input: m.input, output: m.output, convolver, mix: m.mix, setMix: m.setMix };
 }
 
+/** Options for `createDelayEffect`. */
 export interface DelayEffectOptions {
   /** ms. Default 250. */
   time?: number;
@@ -109,6 +114,7 @@ export interface DelayEffectOptions {
   maxTime?: number;
 }
 
+/** A feedback delay insert, with its `DelayNode` exposed. Ramps are ms. */
 export interface DelayEffect extends InsertEffect, WetDryMix {
   readonly delay: DelayNode;
   setTime(ms: number, rampMs?: number): void;
@@ -158,6 +164,7 @@ export function createDelayEffect(ctx: BaseAudioContext, opts: DelayEffectOption
   };
 }
 
+/** Options for `createCompressorEffect`. Unset ones keep the node's defaults. */
 export interface CompressorEffectOptions {
   /** dB. */
   threshold?: number;
@@ -172,6 +179,7 @@ export interface CompressorEffectOptions {
   makeup?: number;
 }
 
+/** A compressor insert, with its `DynamicsCompressorNode` and makeup `GainNode` exposed. */
 export interface CompressorEffect extends InsertEffect {
   readonly compressor: DynamicsCompressorNode;
   readonly makeup: GainNode;

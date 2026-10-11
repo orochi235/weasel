@@ -8,6 +8,7 @@ import { ConditionSyntaxError, evaluateCondition } from './condition';
 import { parseDeclaration } from './cssScan';
 import { isDeclarationHonored } from './properties';
 
+/** Options for evaluating a `@supports` condition. */
 export interface SupportsOptions {
   /** Answers `selector(…)`; without it every selector test is false. */
   readonly selector?: (selector: string) => boolean;

@@ -51,6 +51,7 @@ export interface ControlMatrixRow {
   label?: string;
 }
 
+/** Props for `ControlMatrix`. */
 export interface ControlMatrixProps extends StanceProps, CollapseProps {
   /** Heads the matrix. With `title`, `stance` or `tone` given, or with any of
    *  the fold props, it sits in a `<PropertyPanel>`, as a `ControlPanel` does.

@@ -12,9 +12,9 @@ import {
 } from '@weasel-js/loupe';
 
 /** Anything a lens can be pointed at for its pixels: a `CanvasSource`, a
- *  canvas, a context on one, or a function returning any of those once it
- *  exists. */
+ *  canvas, or a context on one. */
 export type LoupeSourceTarget = CanvasSource | SourceCanvas | SourceContext;
+/** A {@link LoupeSourceTarget}, or a function returning one once it exists. */
 export type LoupeSource = LoupeSourceTarget | (() => LoupeSourceTarget | null | undefined);
 
 function isCanvasSource(t: LoupeSourceTarget): t is CanvasSource {

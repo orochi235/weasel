@@ -24,6 +24,8 @@ Options:
   --undocumented  List every undocumented symbol with its definition site.
   --quiet         Summary table only.
   --exclude <a,b> Drop these packages from the report (by directory name).
+  --check         Exit 1 when an export is undocumented, or an @internal one is
+                  reachable through a consumer entry.
 `);
   process.exit(0);
 }
@@ -31,6 +33,7 @@ const only = args.includes('--pkg') ? args[args.indexOf('--pkg') + 1] : null;
 const asJson = args.includes('--json');
 const listUndocumented = args.includes('--undocumented');
 const quiet = args.includes('--quiet');
+const check = args.includes('--check');
 // Packages to leave out of the report entirely (still scanned, so a symbol
 // defined elsewhere but re-exported through them is not lost).
 const exclude = args.includes('--exclude') ? args[args.indexOf('--exclude') + 1].split(',') : [];
@@ -91,7 +94,8 @@ async function entryPoints(pkgDir) {
 
 /** The node whose leading comment counts as this declaration's JSDoc. */
 function jsdocHost(node) {
-  if (Node.isVariableDeclaration(node)) {
+  // `export const { a, b } = …` documents its names on the statement too.
+  if (Node.isVariableDeclaration(node) || Node.isBindingElement(node)) {
     const stmt = node.getFirstAncestor(Node.isVariableStatement);
     if (stmt) return stmt;
   }
@@ -99,9 +103,21 @@ function jsdocHost(node) {
 }
 
 function docTextOf(node) {
-  const host = jsdocHost(node);
-  if (typeof host.getJsDocs !== 'function') return '';
-  return host.getJsDocs().map((d) => d.getInnerText().trim()).join('\n').trim();
+  // `export * as ns from './dir'` resolves to the file; its doc is the file's
+  // leading `@module` block.
+  if (Node.isSourceFile(node)) {
+    const lead = node.getFullText().match(/^\s*\/\*\*([\s\S]*?)\*\//);
+    return lead && /@module\b/.test(lead[1]) ? lead[1].trim() : '';
+  }
+  // One block documents an overload set, whichever signature carries it.
+  const hosts = Node.isFunctionDeclaration(node)
+    ? [...node.getOverloads(), node.getImplementation() ?? node]
+    : [jsdocHost(node)];
+  return hosts
+    .filter((h) => typeof h.getJsDocs === 'function')
+    .flatMap((h) => h.getJsDocs().map((d) => d.getInnerText().trim()))
+    .join('\n')
+    .trim();
 }
 
 const project = new Project({
@@ -215,20 +231,30 @@ for (const [name, e] of [...byPkg].sort()) {
 const undoc = sites.filter((r) => !r.documented).length;
 console.log(`\n${sites.length} public exports (unique definition sites), ${undoc} undocumented (${sites.length ? Math.round((undoc / sites.length) * 100) : 0}%)`);
 
+// A `test-seams` entry parks reset hooks another workspace's tests need, and
+// an `internal` entry parks types a sibling package fills across the
+// boundary. Reaching either is deliberate, so an @internal symbol there is
+// placed, not leaked.
+const isSeamEntry = (e) => /(^|\/)(test-seams|internal)\.ts$/.test(e);
+const internal = sites.filter((r) => r.internal);
+const leaked = internal.filter((r) => !r.entries.every(isSeamEntry));
+const parked = internal.length - leaked.length;
+
 if (!quiet) {
   console.log('\nEntry points scanned:');
   for (const p of perPackage) console.log(`  ${pad(p.pkg, 12)} ${p.entries} entry point(s)${p.note ? ` — ${p.note}` : ''}`);
-  // A `test-seams` entry parks reset hooks another workspace's tests need, and
-  // an `internal` entry parks types a sibling package fills across the
-  // boundary. Reaching either is deliberate, so an @internal symbol there is
-  // placed, not leaked.
-  const isSeamEntry = (e) => /(^|\/)(test-seams|internal)\.ts$/.test(e);
-  const internal = sites.filter((r) => r.internal);
-  const leaked = internal.filter((r) => !r.entries.every(isSeamEntry));
-  const parked = internal.length - leaked.length;
-  if (leaked.length) {
-    console.log(`\n${leaked.length} export(s) whose own JSDoc marks them @internal:`);
-    for (const r of leaked) console.log(`  ${r.symbol}\t${r.file}:${r.line}\tvia ${r.barrels.join(', ')}`);
+}
+if (leaked.length && (check || !quiet)) {
+  console.log(`\n${leaked.length} export(s) whose own JSDoc marks them @internal:`);
+  for (const r of leaked) console.log(`  ${r.symbol}\t${r.file}:${r.line}\tvia ${r.barrels.join(', ')}`);
+}
+if (parked && !quiet) console.log(`\n${parked} @internal export(s) reachable only through a test-seams or internal entry.`);
+
+if (check && (undoc || leaked.length)) {
+  if (undoc && !listUndocumented) {
+    console.log(`\n${undoc} undocumented export(s):`);
+    for (const r of sites.filter((r) => !r.documented)) console.log(`  ${r.symbol}\t${r.file}:${r.line}`);
   }
-  if (parked) console.log(`\n${parked} @internal export(s) reachable only through a test-seams or internal entry.`);
+  console.error('\n[audit:jsdoc] FAILED — every public export carries a JSDoc block, and none is @internal (docs/conventions.md).');
+  process.exit(1);
 }

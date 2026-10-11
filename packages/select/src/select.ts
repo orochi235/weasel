@@ -24,6 +24,7 @@ export interface Selection<K> {
   readonly anchor: K | null;
 }
 
+/** What a press is resolved against besides the selection: the order a range walks, and which ids may be multi-selected. */
 export interface SelectContext<K> {
   /** The sequence a range walks. A range without one replaces. */
   readonly order?: readonly K[];

@@ -121,6 +121,7 @@ export const DIAGRAM_GROUP = 'diagram:group';
 /** Registry key for {@link ANCHOR_DERIVE_POSE}. */
 export const DIAGRAM_ANCHOR = 'diagram:anchor';
 
-/** The default derivations, as stable references so `toJSON` can find their keys. */
+/** The default group derivation, a stable reference so `toJSON` can find its key. */
 export const GROUP_DERIVE_POSE = groupDerivePose<unknown>();
+/** The default anchor derivation, a stable reference for the same reason. */
 export const ANCHOR_DERIVE_POSE = anchorDerivePose<unknown>();

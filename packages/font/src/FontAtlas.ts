@@ -6,6 +6,7 @@
 
 import { parseFaceMetrics, type FaceMetrics } from './faceMetrics';
 
+/** The face an atlas was generated from, and the size in pixels it was generated at. */
 export interface BmFontInfo {
   face: string;
   size: number;

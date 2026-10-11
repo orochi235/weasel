@@ -69,8 +69,10 @@ anywhere moves every package**. weasel is 1.0.0 as of 2026-08-12 — reached by
 accident, from two `major` changesets that sat in `.changeset/` for days until
 an unrelated release consumed them.
 
-`npm run check:bumps` enforces this and runs in CI, in the release workflow,
-and in `prepublishOnly`. Overriding it requires a marker in the changeset body
+`npm run check:bumps` enforces this and runs in CI and in the release workflow.
+The root `prepublishOnly` script runs it too, but only when someone types
+`npm run prepublishOnly`: the root package is private, so npm never fires it.
+Overriding it requires a marker in the changeset body
 naming the level it approves:
 
 ```

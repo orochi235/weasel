@@ -10,14 +10,17 @@ export interface Envelope {
   release?: number;
 }
 
+/** An envelope with every default filled in and every value in range. */
 export type ResolvedEnvelope = Required<Envelope>;
 
+/** One breakpoint of an envelope's curve: a level at a time. */
 export interface EnvelopePoint {
   /** ms from the note's start. */
   at: number;
   value: number;
 }
 
+/** Fill an envelope's defaults, clamping times to zero or more and `sustain` to 0..1. */
 export function resolveEnvelope(env: Envelope = {}): ResolvedEnvelope {
   return {
     attack: Math.max(0, env.attack ?? 5),

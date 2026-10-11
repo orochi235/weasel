@@ -94,7 +94,9 @@ expires partway through the thirteen packages, just run it again.
 ## Gates
 
 `npm run prepublishOnly` is the full gate — typecheck, the whole test suite,
-build, manifest check, consumer smoke test. CI runs the build and manifest check
+build, manifest check, consumer smoke test. It runs only when typed: the root
+package is private, so npm never fires it as a lifecycle hook, and the release
+workflow does not call it. CI runs the build and manifest check
 on every release. The manifest check is the one that specifically guards tarball
 contents: it fails the release if any `exports`/`types` path promises a file that
 `npm pack` would not include.

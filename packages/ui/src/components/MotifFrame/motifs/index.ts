@@ -1,3 +1,8 @@
+/**
+ * The built-in motifs a `MotifFrame` can wear.
+ *
+ * @module
+ */
 export type { NotchParams } from './notch';
 export { notch } from './notch';
 export type { PlaqueParams } from './plaque';

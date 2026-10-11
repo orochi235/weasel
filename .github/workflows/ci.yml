@@ -66,6 +66,9 @@ jobs:
       - run: npm run check:spacing
       - run: npm run check:controls
       - run: npm run check:labels
+      # Every public export carries a JSDoc block, and none is @internal
+      # (docs/conventions.md). The report alone exits 0 whatever it finds.
+      - run: npm run audit:jsdoc -- --quiet --check
       - run: npm run typecheck
       # Two things (eslint.config.js). The scoped no-restricted-imports blocks
       # guard one-way dependency arrows — core/ ← features/, and the leaf purity

@@ -30,6 +30,7 @@ export interface InsertSlot {
   index(): number;
 }
 
+/** Where `InsertChain.add` puts an effect, and whether it starts bypassed. */
 export interface InsertAddOptions {
   /** Default: the end of the chain. Clamped. */
   index?: number;
@@ -49,6 +50,7 @@ export interface InsertChain {
   settled(): Promise<void>;
 }
 
+/** Options for an insert chain: its crossfade length, and the timers it schedules with. */
 export interface InsertChainOptions extends Partial<Timers> {
   /** Crossfade length for every edit, in ms. Default 15. */
   fadeMs?: number;

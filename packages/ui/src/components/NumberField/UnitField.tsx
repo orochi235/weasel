@@ -42,6 +42,7 @@ export interface UnitFieldProps {
   'aria-label'?: string;
 }
 
+/** Which end of a `UnitField` its steppers sit at. */
 export type StepperSide = 'start' | 'end';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });

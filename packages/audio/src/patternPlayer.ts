@@ -21,6 +21,7 @@ export interface PatternHit extends Omit<PlayOptions, 'when'> {
   sound: SoundHandle;
 }
 
+/** Anything a pattern plays on a step. */
 export type PatternEvent = PatternNote | PatternNoise | PatternHit;
 
 /** Options for `createPatternPlayer`. */

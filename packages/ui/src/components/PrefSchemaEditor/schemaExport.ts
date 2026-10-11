@@ -220,6 +220,7 @@ function brief(v: unknown): string {
   return v === undefined ? '(unset)' : printValue(v).replace(/\s*\n\s*/g, ' ');
 }
 
+/** A list of schema changes as text, one line each. */
 export function formatChanges(changes: readonly SchemaChange[]): string {
   return changes.map((c) => {
     switch (c.op) {

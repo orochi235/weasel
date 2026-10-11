@@ -117,7 +117,8 @@ this rule governs the consumer boundary, not kit internals.
 ## Every public export is documented and nameable
 
 `npm run audit:jsdoc` must report zero undocumented exports and no
-`@internal` symbol on a consumer entry; `npx typedoc` must report no
+`@internal` symbol on a consumer entry, and CI fails on either
+(`audit:jsdoc -- --check`); `npx typedoc` must report no
 warnings, and its usual one is a documented export referencing a type the
 barrel does not export. Run both before adding an export. Export the
 referenced type rather than listing it in the package's

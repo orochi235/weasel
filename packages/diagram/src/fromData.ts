@@ -22,6 +22,7 @@ import { tree } from './tree';
 import type { DiagramNode, PortSpec } from './types';
 import type { Vec2 } from '@weasel-js/core/math';
 
+/** One node of a {@link DiagramData}: its rows of text, and optionally its outline, ports, size, and starting place. */
 export interface DataNode {
   id: string;
   /** Shorthand for one `label` row per line. Ignored when `rows` is given. */
@@ -48,6 +49,7 @@ export interface DataNode {
   verticalAlign?: BodySpec['verticalAlign'];
 }
 
+/** One edge of a {@link DiagramData}, between two nodes or groups by id. */
 export interface DataEdge {
   /** A node's id, or a group's: an edge naming a group meets its box. */
   from: string;
@@ -79,6 +81,7 @@ export interface DataGroup {
   padding?: number;
 }
 
+/** A diagram as plain data, the input to `diagramScene`. */
 export interface DiagramData {
   nodes: readonly DataNode[];
   edges: readonly DataEdge[];
@@ -88,6 +91,7 @@ export interface DiagramData {
   groups?: readonly DataGroup[];
 }
 
+/** The colors and outline a node is drawn with. */
 export interface NodeStyle {
   fill: string;
   stroke: string;
@@ -96,6 +100,7 @@ export interface NodeStyle {
   dash?: number[];
 }
 
+/** The stroke, markers, and label color an edge is drawn with. */
 export interface EdgeStyle {
   stroke: string;
   width?: number;
@@ -111,6 +116,7 @@ export interface EdgeStyle {
 type Router = 'straight' | 'bezier' | 'orthogonal';
 type TextStyle = { fontFamily: string; fontSize: number; fontWeight?: number };
 
+/** The `data` of a scene node `diagramScene` makes: its diagram role, and what it paints. */
 export interface DiagramSceneData {
   diagram?: DiagramNode | DiagramEdge | { label: DiagramLabel } | { anchor: DiagramAnchor };
   fill?: { color: string };
@@ -119,8 +125,10 @@ export interface DiagramSceneData {
   style?: TextStyle;
 }
 
+/** A scene node spec, as `diagramScene` returns them. */
 export type DiagramSpec = AddNodeSpec<DiagramSceneData, 'main', RectPose>;
 
+/** How `diagramScene` lays out, routes, and styles a {@link DiagramData}. */
 export interface DiagramSceneOptions {
   /** A layout by name, or any `LayoutFn`. Default `'layered'`. `'none'`
    *  leaves every node at its `at`. */
@@ -164,6 +172,7 @@ const GLYPH = 0.6;
 const MIN_WIDTH = 64;
 const LAYOUTS = { layered, tree, force } as const;
 
+/** The scene node id `diagramScene` gives an edge, built from its ends, ports, and label. */
 export const edgeIdOf = (e: DataEdge) =>
   `edge:${e.from}${e.fromPort ? `.${e.fromPort}` : ''}->${e.to}${e.toPort ? `.${e.toPort}` : ''}${e.label ? `:${e.label}` : ''}`;
 

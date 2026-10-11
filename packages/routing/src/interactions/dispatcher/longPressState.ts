@@ -75,6 +75,7 @@ export interface LongPressOptions {
 const nowMs = (): number =>
   typeof performance !== 'undefined' ? performance.now() : Date.now();
 
+/** A store holding the press currently being held, or none. Pass it as `LongPressOptions.state`. */
 export function createLongPressStore(): LongPressStore {
   let current: PendingLongPress | null = null;
   const listeners = new Set<() => void>();

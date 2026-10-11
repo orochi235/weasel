@@ -36,6 +36,7 @@ export const PREF_SCHEMA_EDITOR_PREFS = {
 } as const satisfies PrefGroup;
 
 type Schema = typeof PREF_SCHEMA_EDITOR_PREFS;
+/** A prefs store opened over {@link PREF_SCHEMA_EDITOR_PREFS}. */
 export type PrefSchemaEditorPrefs = PrefsStore<Schema>;
 
 /** What the editor reads its settings through. */

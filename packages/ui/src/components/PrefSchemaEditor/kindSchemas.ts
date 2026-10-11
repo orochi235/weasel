@@ -19,6 +19,7 @@ import { findType, NO_TYPES, typeNamed, type PrefTypes } from './types';
 /** One attribute of a kind, as the leaf that edits it. `required` keeps it on a leaf when it is emptied, and seeds
  *  it, from this leaf's `default`, in a new leaf of the kind. */
 export type KindAttr = PrefLeaf & { required?: boolean };
+/** A kind's attributes, by attribute name. */
 export type KindAttrs = Record<string, KindAttr>;
 /** A custom kind's own attributes, by kind. One named `default` gives the kind a Default row, and a new leaf its default. */
 export type CustomKinds = Record<string, KindAttrs>;

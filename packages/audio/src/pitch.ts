@@ -20,6 +20,7 @@ export function noteToMidi(name: string): number {
   return (Number(m[3]) + 1) * 12 + semitone;
 }
 
+/** A pitch in hertz. Throws on a note name it cannot read, and on a frequency that is not positive and finite. */
 export function toFrequency(pitch: Pitch): number {
   const hz = typeof pitch === 'number' ? pitch
     : typeof pitch === 'string' ? midiToFrequency(noteToMidi(pitch))

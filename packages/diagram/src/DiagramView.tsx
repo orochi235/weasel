@@ -27,6 +27,7 @@ import { registerDiagramShape } from './shape';
 /** Where a moved node now stands. */
 export interface NodeMove { id: string; x: number; y: number }
 
+/** Props for `DiagramView`. */
 export interface DiagramViewProps {
   /** Every spec needs an id, which `diagramScene` gives them. A new array is
    *  reconciled into the scene the view already holds, so the view, the
