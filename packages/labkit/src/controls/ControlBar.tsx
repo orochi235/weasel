@@ -10,6 +10,8 @@ export interface ControlBarProps {
   path: string;
   /** Whether the panel shows the leaf at a path. */
   visible: (path: string) => boolean;
+  /** Whether the leaf at a path takes input. */
+  enabled: (path: string) => boolean;
   /** The value the leaf at a path shows. */
   value: (path: string, leaf: PrefLeaf) => unknown;
   write: (path: string, value: unknown) => void;
@@ -27,7 +29,7 @@ export interface ControlBarProps {
  * dividers, and a nested page, tab, or panel opens from a button.
  */
 export function ControlBar(props: ControlBarProps) {
-  const { group, path, visible, value, write, custom, row, open } = props;
+  const { group, path, visible, enabled, value, write, custom, row, open } = props;
   return (
     <BarLayout
       framed
@@ -46,6 +48,7 @@ export function ControlBar(props: ControlBarProps) {
                 leaf={leaf}
                 value={value(at, leaf)}
                 write={(v) => write(at, v)}
+                disabled={!enabled(at)}
                 row={() => row(at)}
               />
             ),
@@ -61,19 +64,21 @@ function Cell({
   leaf,
   value,
   write,
+  disabled,
   row,
 }: {
   path: string;
   leaf: PrefLeaf;
   value: unknown;
   write: (value: unknown) => void;
+  disabled: boolean;
   row: () => ReactNode;
 }) {
-  const made = labField(leaf, value, write, useFieldChoices());
+  const made = labField(leaf, value, write, useFieldChoices(), disabled);
   // `labField` names a row's control where the leaf names none; in a bar that choice is the bar's.
   const field =
     made !== null && extra<string>(leaf, 'control') === undefined
       ? ({ ...made, control: undefined } as PropertyControlProps)
       : made;
-  return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, row })}</>;
+  return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, disabled, row })}</>;
 }

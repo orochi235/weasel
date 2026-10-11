@@ -38,10 +38,11 @@ export function labField(
   value: unknown,
   write: (value: unknown) => void,
   fields: readonly PrefFieldChoice[],
+  disabled = false,
 ): PropertyControlProps | null {
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
   if (leaf.kind === 'paint' || leaf.kind === 'object') return null;
-  const field = prefFieldProps(leaf, { value, setValue: write, fields });
+  const field = prefFieldProps(leaf, { value, setValue: write, fields, disabled });
   if (field === null) return null;
   switch (field.kind) {
     case 'number':
@@ -84,18 +85,21 @@ export function BareControl({
   value,
   write,
   name = leaf.name,
+  disabled,
 }: {
   leaf: PrefLeaf;
   value: unknown;
   write: (value: unknown) => void;
   name?: string;
+  /** The control takes no input: an `enableIf` on the way to it does not hold. */
+  disabled?: boolean;
 }) {
   const text = useDebouncedText(
     typeof value === 'string' ? value : '',
     write,
     extra<number>(leaf, 'debounceMs') ?? 150,
   );
-  const field = labField(leaf, value, write, useFieldChoices());
+  const field = labField(leaf, value, write, useFieldChoices(), disabled);
   if (field === null) return null;
   switch (field.kind) {
     case 'string':

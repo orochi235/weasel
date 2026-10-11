@@ -122,6 +122,19 @@ describe('isLeafVisible and isLeafEnabled', () => {
     );
   });
 
+  it('answer for everything above a path too, whichever form its condition takes', () => {
+    const off = { ...base, showGrid: false };
+    // `grid` is disabled by data and `fine` hidden by a function.
+    expect(isLeafEnabled(r, 'grid.size', off)).toBe(false);
+    expect(isLeafEnabled(r, 'grid.color', off)).toBe(false);
+    expect(isLeafVisible(r, 'fine.step', off)).toBe(false);
+    const column = { ...base, mode: 'column' };
+    expect(isLeafVisible(r, 'grid.size', column)).toBe(false);
+    expect(isLeafEnabled(r, 'fine.step', column)).toBe(false);
+    expect(isLeafVisible(r, 'grid.size', base)).toBe(true);
+    expect(isLeafEnabled(r, 'fine.step', base)).toBe(true);
+  });
+
   it('answer yes for a path with neither, and for one naming nothing', () => {
     expect(isLeafEnabled(r, 'showGrid', {})).toBe(true);
     expect(isLeafEnabled(r, 'nowhere', {})).toBe(true);

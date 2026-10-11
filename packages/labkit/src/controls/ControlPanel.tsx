@@ -21,7 +21,6 @@ import {
   type PrefFieldChoice,
   PrefWords,
   type PropertyAlign,
-  type PropertyControlProps,
   type PropertyDensity,
   PropertyField,
   PropertyGroup,
@@ -42,13 +41,14 @@ import { autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
 import { fromConfigFields } from '../config/fromConfigField';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
-import { isLeafVisible } from '../config/visible';
+import { isLeafEnabled, isLeafVisible } from '../config/visible';
 import { ControlBar } from './ControlBar';
 import { FieldChoicesContext, useFieldChoices, useFieldChoicesOf } from './fieldChoices';
-import { BareControl, extra, isSliderLeaf, labField, useDebouncedText } from './fields';
+import { BareControl, extra, isSliderLeaf, labField } from './fields';
 import { headingLeaf } from './headingControl';
 import { inDialog, summarizeValue } from './inDialog';
 import { ResetGroup } from './ResetGroup';
+import { DebouncedTextRow, PairedRow, UnwiredRow } from './rows';
 import type { ConfigField } from './types';
 
 /** How a panel packs its rows into the two-column property grid.
@@ -228,6 +228,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
     onCollapsedChange: onCollapse ? (next: boolean) => onCollapse(key, next) : undefined,
   });
 
+  const enabled = (path: string): boolean =>
+    isLeafEnabled(resolved, path, config as Record<string, unknown>);
+
   /** A group's paths that no section inside it claims, in schema order. */
   const loosePaths = (group: PrefGroup, at: string): string[] => {
     const sectioned = new Set(resolved.sections.filter((s) => s.at === at).flatMap((s) => s.paths));
@@ -251,6 +254,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
           write={(value) => setConfig(path, value)}
           name={typeof heading === 'string' ? heading : undefined}
+          disabled={!enabled(path)}
         />
       ) : undefined,
     };
@@ -276,6 +280,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           layout={rows.layout}
           auto={auto}
           setRowAuto={setRowAuto}
+          disabled={!enabled(path)}
         />
       );
     }
@@ -286,6 +291,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           group={found}
           path={path}
           visible={(p) => isLeafVisible(resolved, p, config as Record<string, unknown>, showHidden)}
+          enabled={enabled}
           value={(p, leaf) => valueAtPath(shown, p) ?? extra<unknown>(leaf, 'default')}
           write={setConfig}
           custom={(p, leaf) =>
@@ -432,12 +438,12 @@ export function ControlPanel<TC extends Record<string, unknown>>({
         continue;
       }
       const { pair } = head;
-      const cells = [{ path: paths[i], leaf: head.leaf }];
+      const cells = [{ path: paths[i], leaf: head.leaf, disabled: !enabled(paths[i]) }];
       let j = i + 1;
       for (; j < paths.length; j += 1) {
         const next = pairable(paths[j], pairs);
         if (!next || next.pair.key !== pair.key) break;
-        cells.push({ path: paths[j], leaf: next.leaf });
+        cells.push({ path: paths[j], leaf: next.leaf, disabled: !enabled(paths[j]) });
       }
       out.push(
         <PairedRow
@@ -551,6 +557,8 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
   /** Hands a row to its resolver or takes it back. Without it no row can go
    *  auto, and its label is only a label. */
   setRowAuto?: (path: string, next: boolean, value: unknown) => void;
+  /** The row takes no input: its `enableIf`, or that of a group above it, does not hold. */
+  disabled?: boolean;
 }
 
 /** An auto value as tooltip text. A computed number is cut to 6 significant
@@ -602,6 +610,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   layout,
   auto,
   setRowAuto,
+  disabled = false,
 }: ControlRowProps<TC>) {
   const write = (value: unknown): void => setConfig(path, value);
   const choices = useFieldChoices();
@@ -663,6 +672,7 @@ function LeafRow<TC extends Record<string, unknown>>({
       auto: isAutoRow,
       setAuto,
       fields: choices,
+      disabled,
     });
 
   const label = leaf.name;
@@ -675,8 +685,14 @@ function LeafRow<TC extends Record<string, unknown>>({
   if (leaf.kind === 'action') {
     return (
       // Not a `<label>`: that would hand a click on its text to the button.
-      <PropertyRow group label={label} description={description} layout={layout}>
-        <PrefActionButton pref={leaf as PrefAction} path={path} />
+      <PropertyRow
+        group
+        label={label}
+        description={description}
+        layout={layout}
+        disabled={disabled}
+      >
+        <PrefActionButton pref={leaf as PrefAction} path={path} disabled={disabled} />
       </PropertyRow>
     );
   }
@@ -694,6 +710,7 @@ function LeafRow<TC extends Record<string, unknown>>({
         readout={autoReadout}
         layout={layout}
         description={description}
+        disabled={disabled}
         {...autoProps}
       >
         {() =>
@@ -721,7 +738,7 @@ function LeafRow<TC extends Record<string, unknown>>({
     );
   }
 
-  const field = labField(leaf, value, write, choices);
+  const field = labField(leaf, value, write, choices, disabled);
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
   switch (field.kind) {
@@ -734,95 +751,4 @@ function LeafRow<TC extends Record<string, unknown>>({
     default:
       return <PropertyField {...field} {...row} />;
   }
-}
-
-/** A leaf this panel has no control for is named rather than dropped: a silent
- *  gap reads as "this control does not exist". */
-function UnwiredRow({
-  label,
-  kind,
-  description,
-}: {
-  label: string;
-  kind: string;
-  description?: string;
-}) {
-  return (
-    <PropertyRow label={label} description={description}>
-      <span className="lk-control-panel__unknown">no control for “{kind}”</span>
-    </PropertyRow>
-  );
-}
-
-/** A text row whose writes are debounced — see {@link useDebouncedText}. */
-function DebouncedTextRow({
-  leaf,
-  field,
-  ...row
-}: {
-  leaf: PrefLeaf;
-  field: PropertyControlProps & { kind: 'string' };
-  label: string;
-  layout?: PropertyRowLayout;
-  span?: boolean;
-  description?: string;
-  readout?: ReactNode;
-  auto?: boolean;
-  onAutoChange?: (next: boolean) => void;
-}) {
-  const text = useDebouncedText(
-    field.value ?? '',
-    field.onChange,
-    extra<number>(leaf, 'debounceMs') ?? 150,
-  );
-  return <PropertyField {...field} {...row} value={text.local} onChange={text.type} />;
-}
-
-/** One cell of a paired row, with its path and the leaf it draws. */
-interface PairCellSpec {
-  path: string;
-  leaf: PrefLeaf;
-}
-
-/**
- * Leaves sharing a `pair` id, side by side on one row the pair names — the
- * compact `X` / `Y` idiom `SelectionPanel` draws for the same annotation.
- *
- * The cells are bare controls: a row holds one label column, so each leaf's
- * own name stays with its control as the accessible name and its description
- * as a title. For the same reason the row's label does not toggle auto — it
- * names one path, and this row has several.
- */
-function PairedRow<TC extends Record<string, unknown>>({
-  label,
-  cells,
-  shown,
-  setConfig,
-  layout,
-  span,
-}: {
-  label: string;
-  cells: readonly PairCellSpec[];
-  shown: TC;
-  setConfig: (path: string, value: unknown) => void;
-  layout?: PropertyRowLayout;
-  span?: boolean;
-}) {
-  return (
-    <PropertyRow group span={span} label={label} layout={layout}>
-      {cells.map(({ path, leaf }) => (
-        // The row is named by the pair, so a cell that shares it says which
-        // knob it is — without a caption a paired switch reads only to a
-        // screen reader. A cell whose leaf is deliberately unnamed keeps none.
-        <span key={path} className="lk-pair-cell" title={leaf.description || undefined}>
-          {leaf.name ? <span className="lk-pair-label">{leaf.name}</span> : null}
-          <BareControl
-            leaf={leaf}
-            value={valueAtPath(shown, path) ?? extra<unknown>(leaf, 'default')}
-            write={(value) => setConfig(path, value)}
-          />
-        </span>
-      ))}
-    </PropertyRow>
-  );
 }
