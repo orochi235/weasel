@@ -2854,16 +2854,12 @@ one dead `const` and four stale disable directives.
   One `isApplePlatform()` in `@weasel-js/gestures`, beside `matchModifiers(e, mods, isMac)`, read by
   all of them.
 
-- **(P2) CI runs neither the `site` nor the `smoke` vitest project.** `.github/workflows/ci.yml`
-  names `core`, `weasel-ui`, `draw`, `labkit`, `forge`, and `forge-node`; `npm test` and the fleet's
-  `.onto/tests` also run `site` (44 test files under `apps/site/`) and `smoke`
-  (`SceneCanvas.smoke.test.tsx`). `check:test-projects` validates the list in `package.json`'s
-  `test` script, which CI does not use, so it stays green. A break in either project is caught by
-  the fleet run after merge and never by CI. Also run nowhere: `check:spacing`, `check:controls`,
-  and `check:labels` (`docs/conventions.md` says each "fails on" a violation),
-  `check:forge-stories`, `audit:jsdoc`, and `lint:ref-writes`. The root `prepublishOnly` never fires
-  either, since the root package is private and the release workflow does not call it; CLAUDE.md's
-  "Releases" section says `check:bumps` runs there.
+- **(P3) The root `prepublishOnly` never fires, and CLAUDE.md says `check:bumps` runs there.** The
+  root package is private and the release workflow does not call the script, so its chain
+  (`check:bumps`, `check:test-projects`, `typecheck`, `lint`, `test`, the builds, and the smoke
+  checks) runs only when someone types it. CI and `release.yml` each run `check:bumps` themselves;
+  CLAUDE.md's "Releases" section lists `prepublishOnly` as a third place. `audit:jsdoc` and
+  `lint:ref-writes` also run nowhere, and neither can fail: both print a report and exit 0.
 
 - **(P3) Overlays sit on two unrelated z-index scales.** The theme defines `--wzl-z-toolbar`,
   `--wzl-z-overlay`, and `--wzl-z-modal` as 10, 20, and 30. `Dialog` (1000), `Toast` (1100),

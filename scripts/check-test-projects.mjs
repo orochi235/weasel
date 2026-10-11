@@ -11,6 +11,9 @@
  * The claim comes from vitest itself (`vitest list --filesOnly`), for the
  * projects named in package.json's `test` script, so this checks the command
  * people actually run rather than a second copy of the globs.
+ *
+ * CI names its projects on its own `vitest run` lines, so those are held to
+ * the same list: a project `npm test` runs and CI does not is a failure here.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -67,7 +70,34 @@ const claimed = (projects) => {
   return byFile;
 };
 
+/** Projects ci.yml runs: its `vitest run` lines, plus those of each npm script a step calls. */
+const projectsInCi = () => {
+  const { scripts } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const names = new Set();
+  const take = (command) => {
+    if (!/\bvitest run\b/.test(command)) return;
+    for (const m of command.matchAll(/--project=([\w-]+)/g)) names.add(m[1]);
+  };
+  for (const line of readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8').split('\n')) {
+    const step = /^\s*-?\s*run:\s*(.+)$/.exec(line)?.[1];
+    if (!step) continue;
+    take(step);
+    const script = /^npm run ([\w:-]+)\s*$/.exec(step)?.[1];
+    if (script) take(scripts?.[script] ?? '');
+  }
+  return names;
+};
+
 const projects = projectsInTestScript();
+const inCi = projectsInCi();
+const notInCi = projects.filter((p) => !inCi.has(p));
+if (notInCi.length > 0) {
+  console.error(
+    `check:test-projects — ${notInCi.length} project(s) \`npm test\` runs that .github/workflows/ci.yml does not: ` +
+      `${notInCi.join(', ')}.\nAdd each to a \`vitest run\` step there.`,
+  );
+  process.exit(1);
+}
 const byFile = claimed(projects);
 const tracked = git('ls-files').split('\n').filter(isVitestFile);
 
