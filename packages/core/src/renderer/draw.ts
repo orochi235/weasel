@@ -386,6 +386,9 @@ export function setUniform(
       return;
     }
     const unit = nextTexUnit.value++;
+    // An upload binds and unbinds on the active unit, so it has to be this
+    // uniform's own unit and not one an earlier sampler already holds.
+    gl.activeTexture(gl.TEXTURE0 + unit);
     textureCache.upload(handle.id, entry.source);
     textureCache.bind(handle.id, unit);
     gl.uniform1i(loc, unit);

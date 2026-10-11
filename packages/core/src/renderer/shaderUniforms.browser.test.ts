@@ -7,6 +7,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { WeaselRenderer } from './WeaselRenderer';
 import { registerProgram, _resetProgramRegistryForTests, type ShaderUniform } from './shaders/registerProgram';
+import { registerTexture, _resetTextureRegistryForTests } from './textures/registerTexture';
 
 const W = 4;
 
@@ -44,7 +45,14 @@ const COLORS = new Float32Array([
   1, 1, 1, 1,
 ]);
 
-afterEach(() => { _resetProgramRegistryForTests(); });
+afterEach(() => {
+  _resetProgramRegistryForTests();
+  _resetTextureRegistryForTests();
+});
+
+function solidBitmap(r: number, g: number, b: number): Promise<ImageBitmap> {
+  return createImageBitmap(new ImageData(new Uint8ClampedArray([r, g, b, 255]), 1, 1));
+}
 
 describe('array uniforms in a real context', () => {
   it('fills every slot of a vec4 array from one flat Float32Array', () => {
@@ -68,6 +76,29 @@ describe('array uniforms in a real context', () => {
     ]);
     expect(gl.getParameter(gl.CURRENT_PROGRAM)).not.toBe(before);
     expect(gl.isProgram(before)).toBe(false);
+    renderer.dispose();
+  });
+});
+
+describe('texture uniforms in a real context, on the frame that first uploads them', () => {
+  const TWO_SAMPLERS = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_left;
+uniform sampler2D u_right;
+out vec4 outColor;
+void main() {
+  outColor = v_uv.x < 0.5 ? texture(u_left, vec2(0.5)) : texture(u_right, vec2(0.5));
+}`;
+
+  it('keeps the first sampler bound while the second uploads', async () => {
+    const { gl, renderer } = setup();
+    renderer.registerProgram(registerProgram('browser-two-tex', '', TWO_SAMPLERS));
+    const u_left = registerTexture(await solidBitmap(255, 0, 0));
+    const u_right = registerTexture(await solidBitmap(0, 0, 255));
+    const px = draw(renderer, gl, 'browser-two-tex', { u_left, u_right });
+    expect(px[0]).toEqual([255, 0, 0, 255]);
+    expect(px[3]).toEqual([0, 0, 255, 255]);
     renderer.dispose();
   });
 });

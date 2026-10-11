@@ -7,6 +7,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { pathFromD } from '@weasel-js/geom';
 import { WeaselRenderer } from '../WeaselRenderer';
 import { registerEffect } from './types';
+import { registerTexture } from '../textures/registerTexture';
 import type { DrawCommand } from '../DrawCommand';
 
 const SIZE = 8;
@@ -111,5 +112,22 @@ describe('a group with effects, in a real context', () => {
     }]);
     expect(at(1, 1)).toEqual([255, 0, 0, 255]);
     expect(at(6, 6)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('keeps its source bound on the frame an effect\'s own texture first uploads', async () => {
+    const program = registerEffect('browser-fx-tint', `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_source;
+uniform sampler2D u_tint;
+out vec4 outColor;
+void main() { outColor = texture(u_source, v_uv) * texture(u_tint, vec2(0.5)); }`);
+    const white = await createImageBitmap(new ImageData(new Uint8ClampedArray([255, 255, 255, 255]), 1, 1));
+    const at = paint([{
+      kind: 'group',
+      effects: [{ program, uniforms: { u_tint: registerTexture(white) } }],
+      children: [RED],
+    }]);
+    expect(at(4, 4)).toEqual([255, 0, 0, 255]);
   });
 });
