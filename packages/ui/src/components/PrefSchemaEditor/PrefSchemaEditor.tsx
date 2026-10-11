@@ -152,11 +152,14 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     emitted.current = next;
     latest.current.onChange(next);
   };
+  // What was selected when a drag opened a rail page, which selects that page's group: a step back from the drop
+  // returns to this and not to the group.
+  const beforeOpening = useRef<readonly string[] | null>(null);
   const [history] = useState(() =>
     createHistory(null, {
       coalesceWindowMs: COALESCE_MS,
       selection: {
-        get: () => [...latest.current.paths],
+        get: () => [...(beforeOpening.current ?? latest.current.paths)],
         set: (ids) => selection.set(ids),
       },
       rebuildOp: (name, args) => (name === SWAP ? swapOp((args as SwapArgs<S>).before, (args as SwapArgs<S>).after, hand) : null),
@@ -280,7 +283,13 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
         if (opening.current?.path !== next.path) {
           stopOpening();
           const path = next.path;
-          opening.current = { path, timer: setTimeout(() => select(path === '' ? [] : [pathOf(path.split('.'))!]), RAIL_OPEN_MS) };
+          opening.current = {
+            path,
+            timer: setTimeout(() => {
+              beforeOpening.current ??= latest.current.paths;
+              select(path === '' ? [] : [pathOf(path.split('.'))!]);
+            }, RAIL_OPEN_MS),
+          };
         }
       } else {
         stopOpening();
@@ -298,6 +307,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     end() {
       stopOpening();
       setDrop(null);
+      // A preview drag ends before its drop is committed, in the same task.
+      queueMicrotask(() => { beforeOpening.current = null; });
     },
   };
   // `restore` is the selection to go back to where the drop keeps it: a drag begun in the preview selected its row on the press.

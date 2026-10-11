@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
@@ -44,5 +44,25 @@ describe('PrefSchemaEditor moves from the live preview', () => {
     fireEvent.pointerUp(preview.querySelector('[data-pref-path]')!, { clientX: 60, clientY: 60 });
     expect(item(/\(grid\)/)).toHaveAttribute('aria-selected', 'true');
     expect(item(/\(grid\)/)!.closest('[role="group"]')!.closest('[role="treeitem"]')).toHaveAccessibleName(/\(panels\)/);
+  });
+
+  it('steps back from a move through a rail entry to the selection the drag began with', () => {
+    vi.useFakeTimers();
+    try {
+      render(<Live />);
+      const preview = screen.getByRole('region', { name: 'Live preview' });
+      const label = within(preview).getByText('Grid color');
+      fireEvent.pointerDown(label, { button: 0, clientX: 5, clientY: 5 });
+      fireEvent.pointerMove(label, { clientX: 60, clientY: 60 });
+      // Held on the rail entry long enough to open its page, which selects its group.
+      act(() => { vi.advanceTimersByTime(1000); });
+      expect(item(/\(panels\)/)).toHaveAttribute('aria-selected', 'true');
+      fireEvent.pointerUp(preview.querySelector('[data-pref-path]')!, { clientX: 60, clientY: 60 });
+      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+      expect(item(/\(grid\)/)).toHaveAttribute('aria-selected', 'true');
+      expect(item(/\(panels\)/)).toHaveAttribute('aria-selected', 'false');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

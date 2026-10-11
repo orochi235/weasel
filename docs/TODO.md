@@ -1605,11 +1605,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   aliases pointing at nothing (each draws `(alias: no pref at …)` in the preview), where moving or
   renaming it carries them along.
 
-- **(P3) `PrefSchemaEditor`: undoing a move made through a rail entry leaves the moved node out of
-  sight.** Holding a drag over a rail entry opens that page by selecting its group, so the step
-  records that group as the selection to go back to. Undo puts the node back on its own page and
-  selects the group, and the preview stays on the page the node just left.
-
 - **(P3) `subPages` and `foldable` overlap a group's `as`.** `PrefsForm`'s form-wide `subPages`
   and `foldable` props decide what `as: 'page'` on a nested group and a folding panel should;
   fold both into `as`. `as: 'page'` means nothing where there is no rail (`ControlPanel`, the
