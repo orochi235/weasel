@@ -44,6 +44,13 @@ describe('PrefSchemaEditor with several nodes selected', () => {
     expect(item('dock')).toHaveAttribute('aria-selected', 'false');
   });
 
+  it('selects every row the tree shows with Cmd+A', () => {
+    render(<Live />);
+    fireEvent.click(row('grid'));
+    fireEvent.keyDown(item('grid'), { key: 'a', metaKey: true });
+    for (const key of ['grid', 'snap', 'zoom', 'dock']) expect(item(key)).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('says how many are selected', () => {
     render(<Live />);
     fireEvent.click(row('grid'));

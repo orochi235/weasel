@@ -799,11 +799,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
 
-- **(P3) `PrefSchemaEditor` exports enum options with empty or duplicate values.** The options
-  editor adds a row as `{ value: '', label: '' }` and accepts repeats, and the exported literal
-  carries them as-is — an enum that cannot round-trip. Flag the bad rows in the editor rather
-  than export them silently.
-
 - **(P3) `PrefSchemaEditor` clears required custom attributes.** Emptying an attribute removes
   it, which is right for optional built-in attributes but deletes a custom kind's required one —
   `registry-enum`'s `source` on WeaselDraw's `#/dev/prefs`. `CustomKinds` has no way to mark an
@@ -849,8 +844,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) `PrefSchemaEditor`: several nodes at once, what is left.** The Unplaced tree selects one row, and a
   click there replaces a selection of several; a drag out of it or out of the palette carries one node
   (`onPaletteDrop` takes one). Add alias and an alias drag act on one pref and are off with several selected.
-  Shift does nothing in the live preview, where a range across pages has no clear meaning. `Tree` has no
-  select-all. A range taken upward in the tree leaves the newest path, which leads, at the range's far end.
+  Shift does nothing in the live preview, where a range across pages has no clear meaning. A range taken upward in the tree leaves the newest path, which leads, at the range's far end.
 
 - **(P3) `PrefSchemaEditor`'s properties-panel preview ignores the selection.** For a group
   schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s
