@@ -40,7 +40,7 @@ export interface PathDrawCommand {
   path: Path;
   /** Any `FillStyle` variant: solid, pattern, or gradient (linear/radial/conic). */
   fill?: FillStyle;
-  /** Stroke spec. Only solid `paint` supported through step 4. */
+  /** Stroke spec. Its `paint` takes any `FillStyle` variant, as `fill` does. */
   stroke?: Stroke;
   /**
    * Optional flat RGBA-per-path-anchor color array (length =

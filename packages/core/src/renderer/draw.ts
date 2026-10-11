@@ -172,13 +172,6 @@ function drawTriangles(ctx: DrawContext, count: number, type: number): void {
 }
 
 /**
- * Upload the cumulative color matrix from GroupState to a shader's
- * `u_colorMatrix` (mat4) and `u_colorBias` (vec4) uniforms. Splits the 4×5
- * row-major form into a column-major mat4 + vec4 bias. Used by every shader
- * that accepts the group color matrix: pathFill, pathFillVColor, imageFill,
- * batchFill.
- */
-/**
  * Uniform values a program already holds this frame.
  *
  * GL keeps uniform state per program object, so re-sending a value the program
@@ -903,8 +896,6 @@ function flushForOwnDraw(ctx: DrawContext): void {
   flushBatch(ctx);
   if (ctx.clipStack.length > 0) materializeClips(ctx);
 }
-
-/** A path command whose stroke actually paints something. */
 
 function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
   if (cmd.fill) drawPathFill(ctx, cmd);
@@ -2336,16 +2327,6 @@ function drawOutlineMesh(ctx: DrawContext, fill: FillStyle, mesh: Mesh): void {
   drawPathFillByKind(ctx, fill, ctx.meshCache.uploadTransient(mesh));
 }
 
-/**
- * Paint underline / strikethrough rules. These are untextured solid rects, so
- * they cannot ride in a `LaidOutGroup`'s quads — those upload a 5-float
- * stride with atlas UVs into an MSDF program. They go through `pathFill`
- * instead, batched by resolved color so a whole decorated paragraph costs
- * one draw call per distinct rule color.
- *
- * Drawn after the glyphs, so a rule sits on top of glyph ink where they
- * overlap (the CSS spec allows either order).
- */
 /**
  * Stage the rules an underline, strikethrough or overline asks for.
  *

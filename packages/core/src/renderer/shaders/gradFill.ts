@@ -9,10 +9,6 @@
  *
  * `u_ramp` is `GradientRampAtlas`'s texture, which holds every baked ramp in
  * the frame, one per row; `u_rampV` picks this fill's row.
- *
- * Step-4 limitation: u_worldInv is identity in v1 since draw.ts doesn't yet
- * receive a view matrix. Gradient coords therefore render in screen space.
- * Step 7 (port createPathLayer) wires the actual view-inverse through layers.
  */
 
 export const GRAD_VERT_SRC = /* glsl */ `#version 300 es

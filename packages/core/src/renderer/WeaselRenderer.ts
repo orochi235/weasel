@@ -86,9 +86,6 @@ function compileCustomProgram(gl: WebGL2RenderingContext, src: ProgramSource): S
   return program;
 }
 
-/** How to construct a `WeaselRenderer`: the GL context or canvas to draw
- *  into, the output size, and the quality knobs that separate screen
- *  rendering from print. */
 /** A run of top-level commands, `[start, end)` by index, that
  *  {@link WeaselRenderer.lastFrameStats} accounts for separately — one render
  *  layer's commands, say. Spans are in order and do not overlap. */
@@ -428,9 +425,9 @@ export class WeaselRenderer {
     return program;
   }
 
-  /** The GL state every frame assumes. Applied per `render()` rather than once
-   *  at construction because a co-tenant sharing this context moves all of it
-   *  between our frames. */
+  /** The blend, depth, cull, and clear-color state every frame assumes.
+   *  Applied per `render()` rather than once at construction because a
+   *  co-tenant sharing this context moves all of it between our frames. */
   private applyGlState(): void {
     const gl = this.gl;
     gl.enable(gl.BLEND);
