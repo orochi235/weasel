@@ -74,6 +74,8 @@ export interface StructurePaneProps {
   onRemove(): void;
   /** Move the nodes at `paths` to `target`, keeping them open and selected. */
   onMove(paths: readonly string[], target: SchemaTarget): void;
+  /** Set copies of the nodes at `paths` at `target`, leaving the nodes where they are. */
+  onCopy(paths: readonly string[], target: SchemaTarget): void;
 }
 
 /** A place outside the structure pane that takes drops of schema nodes. */
@@ -96,7 +98,7 @@ const nameOfKey = (key: string): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, stored, outside, outsideDraws = false, onMove: move, onRemove, maxDepth, rowMark }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, stored, outside, outsideDraws = false, onMove: move, onCopy: copy, onRemove, maxDepth, rowMark }: StructurePaneProps) {
   const nodes = useMemo(() => {
     const all = toTreeNodes(schema, null, changed, rowMark);
     const loose = new Set(generalKeys(schema));
@@ -238,14 +240,15 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         }}
         externalDrag={paletteDrag}
         onExternalTarget={(t) => { treeTarget.current = t; }}
-        onDragOutside={outside && ((ids, point) => {
-          if (point) return outside.over(nodesAt(ids), ids, point);
+        // A copy is new where it lands, so the place it is dropped is asked about it with no paths, as for a palette's node.
+        onDragOutside={outside && ((ids, point, how) => {
+          if (point) return outside.over(nodesAt(ids), how.copy ? [] : ids, point);
           outside.end();
           return false;
         })}
-        onDropOutside={outside && ((ids, point) => {
-          const target = outside.target(nodesAt(ids), ids, point);
-          if (target) move(ids, target);
+        onDropOutside={outside && ((ids, point, how) => {
+          const target = outside.target(nodesAt(ids), how.copy ? [] : ids, point);
+          if (target) (how.copy ? copy : move)(ids, target);
         })}
         canDrop={(ids, t) => {
           // A place among the rows shown is not that place among all of them.
@@ -259,6 +262,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
           return !!childrenOf(parent) && [...ids].every((id) => fitsUnder(parent, nodeAt(schema, id)!));
         }}
         onMove={(ids, t) => move(ids, schemaTarget(schema, t.parentId, t.index))}
+        onCopy={(ids, t) => copy(ids, schemaTarget(schema, t.parentId, t.index))}
       />
       </div>
       {stored !== undefined && (

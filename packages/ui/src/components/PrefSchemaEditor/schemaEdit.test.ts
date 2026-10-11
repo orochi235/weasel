@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { addNode, branchPaths, isValidKey, keyProblem, kindOfValue, undescribedValues, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
+import { addNode, branchPaths, copyNodes, isValidKey, keyProblem, kindOfValue, undescribedValues, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
 
 const enc = { read: () => true, write: (on: boolean) => on };
 const ROOT: PrefGroup = {
@@ -122,6 +122,28 @@ describe('schemaEdit', () => {
   it('rebases paths at and beneath a moved node, leaving the rest', () => {
     const next = rebasePaths(['a', 'a/x', 'ab', 'b'], [['a', 'b/a2'], ['b', 'c']]);
     expect([...next].sort()).toEqual(['ab', 'b/a2', 'b/a2/x', 'c']);
+  });
+});
+
+describe('copyNodes', () => {
+  it('sets a copy at the target and leaves the original, keeping the key where it is free', () => {
+    const { root, paths } = copyNodes(ROOT, ['a/y'], { parentPath: 'b', index: 0 });
+    expect(paths).toEqual(['b/y']);
+    expect(keys(root, 'b')).toEqual(['y', 'x']);
+    expect(nodeAt(root, 'b/y')).toBe(nodeAt(ROOT, 'a/y'));
+    expect(nodeAt(root, 'a/y')).toBe(nodeAt(ROOT, 'a/y'));
+  });
+
+  it('numbers the key of a copy set beside its original', () => {
+    const { root, paths } = copyNodes(ROOT, ['a/x'], { parentPath: 'a', index: 1 });
+    expect(paths).toEqual(['a/x2']);
+    expect(keys(root, 'a')).toEqual(['x', 'x2', 'y']);
+  });
+
+  it('copies a group with what is under it, once', () => {
+    const { root, paths } = copyNodes(ROOT, ['a', 'a/x'], { parentPath: null, index: 0 });
+    expect(paths).toEqual(['a2']);
+    expect(nodeAt(root, 'a2/x')).toBe(nodeAt(ROOT, 'a/x'));
   });
 });
 

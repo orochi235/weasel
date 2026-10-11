@@ -17,13 +17,14 @@ export interface PreviewGhost {
 /**
  * Dragging what the live preview draws: a press on a row's label, on a group's heading, or on a group's entry in the
  * rail picks that node up, and it drops wherever `place` takes it — the preview itself. A press on a row's control is
- * the control's.
+ * the control's. With Alt held the node stays and a copy of it drops.
  */
-export function usePreviewDrag({ stage, schema, place, onMove }: {
+export function usePreviewDrag({ stage, schema, place, onMove, onCopy }: {
   stage: RefObject<HTMLDivElement | null>;
   schema(): SchemaRoot;
   place: DropOutside;
   onMove(paths: readonly string[], target: SchemaTarget): void;
+  onCopy(paths: readonly string[], target: SchemaTarget): void;
 }): { ghost: PreviewGhost | null; onPointerDown(e: ReactPointerEvent): void } {
   const [ghost, setGhost] = useState<PreviewGhost | null>(null);
   const drag = useRef<ThresholdDragHandle | null>(null);
@@ -50,8 +51,10 @@ export function usePreviewDrag({ stage, schema, place, onMove }: {
       place.end();
       setGhost(null);
     };
+    // A copy is new where it lands, so the place is asked about it with no path of its own.
+    const held = (ev: PointerEvent): string[] => (ev.altKey ? [] : [path]);
     const update = (ev: PointerEvent) => {
-      place.over([node], [path], { x: ev.clientX, y: ev.clientY });
+      place.over([node], held(ev), { x: ev.clientX, y: ev.clientY });
       // Offset from the pointer so what is under it stays visible.
       setGhost({ left: ev.clientX + 10, top: ev.clientY + 10, width: GHOST_WIDTH[ghostIsPage(node, topLevel) ? 'page' : 'node'], node, topLevel });
     };
@@ -60,11 +63,11 @@ export function usePreviewDrag({ stage, schema, place, onMove }: {
       onActivate: update,
       onMove: update,
       onCommit: (ev) => {
-        const to = place.target([node], [path], { x: ev.clientX, y: ev.clientY });
+        const to = place.target([node], held(ev), { x: ev.clientX, y: ev.clientY });
         // The release would otherwise click the label it began on, and toggle its control.
         swallowNextClick(box);
         end();
-        if (to) onMove([path], to);
+        if (to) (ev.altKey ? onCopy : onMove)([path], to);
       },
       onClick: () => {
         end();

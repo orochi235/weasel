@@ -8,6 +8,14 @@ import { modsOf } from './treeUtils';
 
 const HOVER_EXPAND_MS = 600;
 
+/** What a drag would do with its rows where it lands. */
+export interface TreeDragHow {
+  /** Alt is held and the tree takes copies: the rows stay where they are, and copies of them land. */
+  copy: boolean;
+}
+
+const MOVE: TreeDragHow = { copy: false };
+
 /** A visible row as `Tree` walks it. */
 export interface TreeDragRow {
   node: TreeNode;
@@ -24,10 +32,11 @@ export interface UseTreeDragOptions {
   selected: ReadonlySet<string>;
   container(): HTMLElement | null;
   rowEl(id: string): HTMLElement | undefined;
-  canDrop?(ids: readonly string[], target: TreeDropTarget): boolean;
+  canDrop?(ids: readonly string[], target: TreeDropTarget, how: TreeDragHow): boolean;
   onMove?(ids: string[], target: TreeDropTarget): void;
-  onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null): boolean;
-  onDropOutside?(ids: string[], point: { x: number; y: number }): void;
+  onCopy?(ids: string[], target: TreeDropTarget): void;
+  onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, how: TreeDragHow): boolean;
+  onDropOutside?(ids: string[], point: { x: number; y: number }, how: TreeDragHow): void;
   externalDrag?: { x: number; y: number } | null;
   onExternalTarget?(target: TreeDropTarget | null): void;
   /** A press released without dragging — the row's activation. */
@@ -37,11 +46,13 @@ export interface UseTreeDragOptions {
 
 export interface TreeDragState {
   dragging: readonly string[] | null;
+  /** The drag in flight would copy its rows. */
+  copy: boolean;
   mark: DropMark | null;
   ghost: ReorderGhost | null;
 }
 
-const IDLE: TreeDragState = { dragging: null, mark: null, ghost: null };
+const IDLE: TreeDragState = { dragging: null, copy: false, mark: null, ghost: null };
 
 /** Pointer drag-to-reorder for `Tree`. Inert unless `enabled`. */
 export function useTreeDrag(opts: UseTreeDragOptions) {
@@ -56,7 +67,8 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
   };
   useEffect(() => () => { drag.current?.cancel(); clearHover(); }, []);
 
-  const resolve = useCallback((ids: readonly string[], x: number, y: number): ResolvedDrop | null => {
+
+  const resolve = useCallback((ids: readonly string[], x: number, y: number, how: TreeDragHow = MOVE): ResolvedDrop | null => {
     const { visible, expanded, rowEl, nodes, canDrop } = o.current;
     const rows: DropRow[] = [];
     for (const v of visible) {
@@ -77,20 +89,26 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       ? { originX: first.getBoundingClientRect().left, indent: deepEl.getBoundingClientRect().left - parentEl.getBoundingClientRect().left }
       : undefined;
     const hit = resolveDrop(rows, { x, y }, indent);
-    if (landsInside(nodes, ids, hit.target) || isNoopMove(nodes, ids, hit.target)) return null;
-    if (canDrop && !canDrop(ids, hit.target)) return null;
+    // A copy dropped where its original sits is a second one beside it, and not nothing.
+    if (landsInside(nodes, ids, hit.target) || (!how.copy && isNoopMove(nodes, ids, hit.target))) return null;
+    if (canDrop && !canDrop(ids, hit.target, how)) return null;
     return hit;
   }, [o]);
 
   // Whether something outside the tree has said it would take the drag in flight.
   const outside = useRef<readonly string[] | null>(null);
   const leaveOutside = useCallback(() => {
-    if (outside.current) o.current.onDragOutside?.(outside.current, null);
+    if (outside.current) o.current.onDragOutside?.(outside.current, null, MOVE);
     outside.current = null;
   }, [o]);
 
+  // Alt pressed or let go with the pointer still: the drag changes what it would do without moving.
+  const unwatchAlt = useRef<(() => void) | null>(null);
+
   const reset = useCallback(() => {
     drag.current = null;
+    unwatchAlt.current?.();
+    unwatchAlt.current = null;
     clearHover();
     leaveOutside();
     setState(IDLE);
@@ -123,13 +141,17 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     const grab = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     let ids: string[] = [];
 
-    const update = (ev: { clientX: number; clientY: number }) => {
+    let last = { clientX: e.clientX, clientY: e.clientY };
+    const howOf = (ev: { altKey: boolean }): TreeDragHow => ({ copy: ev.altKey && !!o.current.onCopy });
+    const update = (ev: { clientX: number; clientY: number; altKey: boolean }) => {
+      last = { clientX: ev.clientX, clientY: ev.clientY };
+      const how = howOf(ev);
       const r = box.getBoundingClientRect();
       const out = ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom;
-      const taken = out && o.current.onDragOutside?.(ids, { x: ev.clientX, y: ev.clientY }) === true;
+      const taken = out && o.current.onDragOutside?.(ids, { x: ev.clientX, y: ev.clientY }, how) === true;
       if (taken) outside.current = ids;
       else leaveOutside();
-      const hit = taken ? null : resolve(ids, ev.clientX, ev.clientY);
+      const hit = taken ? null : resolve(ids, ev.clientX, ev.clientY, how);
       const into = hit?.mark?.where === 'into' ? hit.mark.id : null;
       if (into && !o.current.expanded.has(into)) {
         if (hover.current?.id !== into) {
@@ -141,6 +163,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       }
       setState({
         dragging: ids,
+        copy: how.copy,
         mark: hit?.mark ?? null,
         ghost: { ids, left: ev.clientX - grab.x, top: ev.clientY - grab.y, width: rect.width },
       });
@@ -151,14 +174,22 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       onActivate: (ev) => {
         ids = draggedIdsFor(o.current.nodes, o.current.selected, id);
         update(ev);
+        const onKey = (k: KeyboardEvent) => { if (k.key === 'Alt') update({ ...last, altKey: k.type === 'keydown' }); };
+        window.addEventListener('keydown', onKey);
+        window.addEventListener('keyup', onKey);
+        unwatchAlt.current = () => {
+          window.removeEventListener('keydown', onKey);
+          window.removeEventListener('keyup', onKey);
+        };
       },
       onMove: update,
       onCommit: (ev) => {
+        const how = howOf(ev);
         if (outside.current) {
-          o.current.onDropOutside?.(ids, { x: ev.clientX, y: ev.clientY });
+          o.current.onDropOutside?.(ids, { x: ev.clientX, y: ev.clientY }, how);
         } else {
-          const hit = resolve(ids, ev.clientX, ev.clientY);
-          if (hit) o.current.onMove?.(ids, hit.target);
+          const hit = resolve(ids, ev.clientX, ev.clientY, how);
+          if (hit) (how.copy ? o.current.onCopy : o.current.onMove)?.(ids, hit.target);
         }
         reset();
       },

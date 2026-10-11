@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Badge } from '../Badge';
 import { Input } from '../Input';
-import { applyMove } from './Tree.fixtures';
+import { applyCopy, applyMove } from './Tree.fixtures';
 import { Tree, filterTree, treeBranchIds, type TreeNode } from './Tree';
 
 const meta: Meta<typeof Tree> = {
@@ -145,6 +145,27 @@ export const Reorderable: Story = {
           defaultExpandedIds={['src', 'components']}
           selectionMode="multiple"
           onMove={(ids, target) => setNodes((n) => applyMove(n, ids, target))}
+        />
+      </div>
+    );
+  },
+};
+
+/** With `onCopy` too, a drag with Alt held leaves the rows where they are and lands copies of them. The rows
+ *  are not dimmed while it is held, and the ghost carries a plus. */
+export const Copyable: Story = {
+  render: function Render() {
+    const [nodes, setNodes] = useState<readonly TreeNode[]>(FILES);
+    const made = useRef(0);
+    return (
+      <div style={{ width: 240 }}>
+        <Tree
+          aria-label="Files"
+          nodes={nodes}
+          defaultExpandedIds={['src', 'components']}
+          selectionMode="multiple"
+          onMove={(ids, target) => setNodes((n) => applyMove(n, ids, target))}
+          onCopy={(ids, target) => setNodes((n) => applyCopy(n, ids, target, `copy${++made.current}`))}
         />
       </div>
     );

@@ -310,6 +310,36 @@ export function moveNodes<R extends SchemaRoot>(
   return { root: next, from, paths: out };
 }
 
+/**
+ * `root` with a copy of each node at `paths` set at `target`, the originals left where they are. A copy keeps its
+ * key where the target's children have none like it, and takes a numbered one where they do. `paths` are the
+ * copies' paths, in the order given, less any node already under another one copied.
+ */
+export function copyNodes<R extends SchemaRoot>(root: R, paths: readonly string[], target: SchemaTarget): { root: R; paths: string[] } {
+  const tops = paths.filter((p) => !paths.some((q) => isUnder(p, q)));
+  const dest = target.parentPath;
+  const destNode = nodeAt(root, dest) ?? root;
+  if (!childrenOf(destNode)) throw new Error(`schemaEdit: ${dest} cannot hold children`);
+  const copying = tops.map((p) => {
+    const node = nodeAt(root, p);
+    if (!node) throw new Error(`schemaEdit: no node at ${p}`);
+    checkFits(destNode, node);
+    return { key: keyOf(p), node };
+  });
+  const out: string[] = [];
+  const next = editChildren(root, dest, (kids) => {
+    const taken: ChildMap = { ...kids };
+    const entries: Array<[string, SchemaNode]> = copying.map((c) => {
+      const key = uniqueKey(taken, c.key);
+      taken[key] = c.node;
+      out.push(joinPath(dest, key));
+      return [key, c.node];
+    });
+    return insertAt(kids, entries, target.index);
+  });
+  return { root: next, paths: out };
+}
+
 /** Every path whose node can hold children, in tree order. */
 export function branchPaths(root: SchemaRoot): string[] {
   const out: string[] = [];
