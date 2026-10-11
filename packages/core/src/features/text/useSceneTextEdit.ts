@@ -259,6 +259,9 @@ export function useSceneTextEdit<
     // element it started on is what the click coordinates are relative to.
     const canvas = e.target instanceof HTMLElement ? e.target : null;
     if (!canvas) return;
+    // Inside the editor a double-click selects a word, and its target is a run
+    // span whose box the click would be measured against as if it were a canvas.
+    if (canvas.closest('[contenteditable="true"]')) return;
 
     // `pointInTextPose` and `caretIndexAt` both work in world units, so the
     // canvas-space click has to be un-projected before either sees it.

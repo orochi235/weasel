@@ -526,6 +526,29 @@ describe('useSceneTextEdit — a line longer than its box', () => {
   });
 });
 
+describe('useSceneTextEdit — a double-click inside the open editor', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('selects a word there instead of opening the node at that offset from the origin', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const near = { ...NODE, id: 'near', x: 0, y: 0 };
+    const hook = renderHook(() => {
+      const scene = useScene({ items: [near, NODE] });
+      return useSceneTextEdit(scene, container);
+    });
+    act(() => hook.result.current.startEdit('a'));
+    // jsdom lays nothing out, so the click's offset within the overlay is its
+    // client position: (5, 5), which is inside `near` if read as a canvas point.
+    act(() => hook.result.current.onDoubleClick({
+      target: overlayOf(container), clientX: 5, clientY: 5,
+    } as unknown as MouseEvent<HTMLElement>));
+    expect(hook.result.current.editingId).toBe('a');
+  });
+});
+
 describe('useSceneTextEdit — a commit that changes nothing', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
