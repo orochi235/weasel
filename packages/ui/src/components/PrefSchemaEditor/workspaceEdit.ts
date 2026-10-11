@@ -1,8 +1,7 @@
-import { prefLeafAt } from '@weasel-js/prefs';
 import { gainsSetting, moveLayoutNodes, removeLayoutNodes, renameLayoutKey } from './layoutEdit';
 import { pointersIn } from './pointers';
 import {
-  joinPath, moveNodes, outermost, parentPath, rebaseValuePaths, removeNode, removeNodes, renameKey, valueMove,
+  heldValuePaths, joinPath, moveNodes, outermost, parentPath, rebaseValuePaths, removeNode, removeNodes, renameKey, valueMove,
   type SchemaRoot, type SchemaTarget, type ValueMove,
 } from './schemaEdit';
 import { assetOf, type Asset, type Workspace } from './workspace';
@@ -11,14 +10,16 @@ import { assetOf, type Asset, type Workspace } from './workspace';
 export const NO_MOVES: readonly ValueMove[] = [];
 
 /**
- * `layout` after its dialog went from `before` to `after`: its pointers follow `moves`, and one whose setting went
- * goes too. A pointer a move rewrote stays whatever it names now, as an alias in the dialog does.
+ * `layout` after its dialog went from `before` to `after`: its pointers follow `moves`, and one goes when the node its
+ * path named went, a field inside an `object` leaf as much as a setting. A pointer a move rewrote stays whatever it
+ * names now, as an alias in the dialog does, and one whose path named nothing before is left as it was.
  */
 function following(layout: SchemaRoot, before: SchemaRoot, after: SchemaRoot, moves: readonly ValueMove[]): SchemaRoot {
   const followed = rebaseValuePaths(layout, moves);
   const now = pointersIn(followed);
+  const [held, holds] = [heldValuePaths(before), heldValuePaths(after)];
   const lost = pointersIn(layout)
-    .filter(([, was], i) => now[i]![1].of === was.of && prefLeafAt(before, was.of) !== undefined && prefLeafAt(after, was.of) === undefined)
+    .filter(([, was], i) => now[i]![1].of === was.of && held.has(was.of) && !holds.has(was.of))
     .map(([path]) => path);
   // Not `removeNodes`: it takes a removed node's tree path for a value path, and would drop a pointer naming a live setting there.
   return lost.reduce((root, path) => removeNode(root, path), followed);
