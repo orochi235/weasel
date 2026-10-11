@@ -47,14 +47,11 @@ import { pxExtent } from 'core/viewport/pxExtent';
 import type { PolygonPath } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from './editAnchors';
 import { inPlane, editingLayer } from '../planeInput';
+import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 
 // ---------------------------------------------------------------------------
 // Shared plumbing
 // ---------------------------------------------------------------------------
-
-/** Nudge step sizes — mirror `nudge.ts` so anchors and nodes move alike. */
-const SMALL_STEP = 1;
-const BIG_STEP = 10;
 
 /** Screen-pixel radius for "this click landed on an anchor". Matches the
  *  affordance hit radius closely enough that anything the user can see as
@@ -179,22 +176,6 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
 // nudgeAnchors
 // ---------------------------------------------------------------------------
 
-type Direction = 'up' | 'down' | 'left' | 'right';
-const KEY_FOR: Record<Direction, string> = {
-  up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight',
-};
-const LABEL_FOR: Record<Direction, string> = {
-  up: 'Up', down: 'Down', left: 'Left', right: 'Right',
-};
-function delta(dir: Direction, step: number): { dx: number; dy: number } {
-  switch (dir) {
-    case 'up':    return { dx: 0,     dy: -step };
-    case 'down':  return { dx: 0,     dy:  step };
-    case 'left':  return { dx: -step, dy: 0     };
-    case 'right': return { dx:  step, dy: 0     };
-  }
-}
-
 /**
  * Move the selected anchors by one step. Shift multiplies the step, same
  * as node nudging.
@@ -203,14 +184,14 @@ function delta(dir: Direction, step: number): { dx: number; dy: number } {
  * arrow down and undo walks back one step at a time rather than
  * collapsing the run.
  */
-function makeNudgeAnchorsAction(dir: Direction): Action & { requires: string[] } {
+function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: string[] } {
   return {
     id: `nudgeAnchors.${dir}`,
-    label: `Nudge Anchors ${LABEL_FOR[dir]}`,
+    label: `Nudge Anchors ${NUDGE_LABEL[dir]}`,
     group: 'nudgeAnchors',
     defaultBinding: [
-      { spec: { kind: 'key', key: KEY_FOR[dir] },                        opts: { params: { magnitude: 'small' } } },
-      { spec: { kind: 'key', key: KEY_FOR[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
+      { spec: { kind: 'key', key: NUDGE_KEY[dir] },                        opts: { params: { magnitude: 'small' } } },
+      { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors'],
@@ -219,8 +200,7 @@ function makeNudgeAnchorsAction(dir: Direction): Action & { requires: string[] }
       run: (deps, params) => {
         const dep = depOf(deps);
         if (!dep || dep.selectedAnchors.size === 0) return;
-        const step = params?.magnitude === 'big' ? BIG_STEP : SMALL_STEP;
-        const { dx, dy } = delta(dir, step);
+        const { dx, dy } = nudgeDelta(dir, params?.magnitude);
         const selected = [...dep.selectedAnchors];
         commitAnchorEdit(dep, 'Nudge anchor', (set) => {
           let any = false;

@@ -1,7 +1,6 @@
 import type { Node, NodeId } from 'core/scene/types';
 import { createElement } from 'react';
 import { GroupIcon, UngroupIcon } from './icons/editIcons';
-import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
@@ -11,20 +10,10 @@ import { poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../resize/geometry';
 import { createTransformOp } from 'core/ops/transform';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
+import { freshNodeId } from './freshNodeId';
 import { requiresSelection } from './requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-
-/** Mint a fresh NodeId for a new container. The old `scene.add(spec)` path
- *  (no explicit id) let the scene generate a random id, so the produced id
- *  was never deterministic/observable — pre-generating one here to feed the
- *  insert op preserves behavior. Mirrors the scene's default id scheme
- *  (`n{counter}-{random}`), which `core/scene/scene.ts` keeps module-private.
- *  Same approach as `cloneAction`. */
-let containerIdCounter = 0;
-function freshContainerId(): NodeId {
-  return asNodeId(`n${(containerIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
-}
 
 /**
  * @experimental
@@ -111,7 +100,7 @@ export const groupAction: Action & { requires: string[] } = {
       // The container must exist before any child reparents into it, so the
       // insert op is emitted first. A member's pose then follows its reparent,
       // re-expressed in the container's frame so the member does not move.
-      const containerId = freshContainerId();
+      const containerId = freshNodeId();
       const ops: Op[] = [
         createInsertOp<Node<unknown, string, unknown>>({
           node: {

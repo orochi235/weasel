@@ -12,26 +12,7 @@ import { requiresSelection } from './requiresSelection';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import { scenePoseFrame } from '../poseFrame';
 import { translateTargets } from '../selectionSubtree';
-
-type Direction = 'up' | 'down' | 'left' | 'right';
-const KEY_FOR: Record<Direction, string> = {
-  up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight',
-};
-const LABEL_FOR: Record<Direction, string> = {
-  up: 'Up', down: 'Down', left: 'Left', right: 'Right',
-};
-function delta(dir: Direction, step: number): { dx: number; dy: number } {
-  switch (dir) {
-    case 'up':    return { dx: 0,     dy: -step };
-    case 'down':  return { dx: 0,     dy:  step };
-    case 'left':  return { dx: -step, dy: 0     };
-    case 'right': return { dx:  step, dy: 0     };
-  }
-}
-
-/** Default step sizes used by the nudge descriptors. */
-const SMALL_STEP = 1;
-const BIG_STEP = 10;
+import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
 
 /**
  * Apply a translation of (dx, dy) to the selected nodes and the descendants
@@ -97,23 +78,21 @@ function nudgeSelection(
  *
  * Requires dep-schema entries: `selection`, `scene`.
  */
-function makeNudgeAction(dir: Direction): Action & { requires: string[] } {
+function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
   return {
     id: `nudge.${dir}`,
-    label: `Nudge ${LABEL_FOR[dir]}`,
+    label: `Nudge ${NUDGE_LABEL[dir]}`,
     group: 'nudge',
     defaultBinding: [
-      { spec: { kind: 'key', key: KEY_FOR[dir] },                              opts: { params: { magnitude: 'small' } } },
-      { spec: { kind: 'key', key: KEY_FOR[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
+      { spec: { kind: 'key', key: NUDGE_KEY[dir] },                              opts: { params: { magnitude: 'small' } } },
+      { spec: { kind: 'key', key: NUDGE_KEY[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
     eligible: { capability: 'transforms-selection' },
     requires: ['selection', 'scene', 'applyOps', 'geometryProjection', 'poseDescriptor', 'poseComposition'],
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
-        const magnitude = (params?.magnitude as 'small' | 'big' | undefined) ?? 'small';
-        const step = magnitude === 'big' ? BIG_STEP : SMALL_STEP;
-        const { dx, dy } = delta(dir, step);
+        const { dx, dy } = nudgeDelta(dir, params?.magnitude);
         const selection = deps.selection;
         const scene = deps.scene;
         const applyOps = deps.applyOps;
