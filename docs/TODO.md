@@ -1176,14 +1176,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
-- **(P3) `PrefSchemaEditor` layout rough edges.** The always-mounted notice row adds one grid gap
-  above the attributes pane, and the Key/Kind rows are wider than the attribute form under them.
-  Seen on `#/dev/prefs` at 1440×900.
+- **(P3) `PrefSchemaEditor` rough edges seen in headless Chromium, 2026-10-11.** While a drag is
+  over the Unplaced list, its 2px inset outline covers the first letter of the heading, which
+  reads "JNPLACED". A row dragged onto a tree branch has its ghost drawn over the branch's name. A
+  label's attributes pane shows a read-only row `DEFAULT undefined`. A selected label row's
+  outline touches the label of the row under it in the preview.
 
-- **(P3) `PrefsForm` two across: a spanning leaf's rows line up with neither column.** Seen
-  2026-10-11 in headless Chromium, rail layout, `rowsAcross={2}`, pane 443px wide. An object or
-  list leaf spans both columns, and its inner rows start at about 60% of the pane, under neither
-  column's labels nor its controls.
+- **(P3) `PropertyGroup` title rough edges, same pass.** With `twisty="folded"` the title moves
+  32px right when the hidden twisty takes focus. In light mode the rules either side of a title do
+  not show, where in dark they do.
+
+- **(P3) A field in a labkit `ControlPanel` panel box has not been checked against its box.** In
+  light mode a text field inside an `as: 'panel'` box was the box's own color and invisible in
+  `SelectionPanel` and in `PrefsForm`'s rail panel; both are fixed (`cb7fa4996`). Nobody has
+  looked at `ControlPanel`.
 
 - **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
   drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
