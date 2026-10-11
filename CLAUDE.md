@@ -353,7 +353,8 @@ then `export type { X };`.
 
 **The consumer smoke test cannot catch an undeclared dependency.** It packs every `@weasel-js`
 package into the tree, so a bare specifier resolves whether or not the importer declared it.
-`npm run check:manifests` is the check that works.
+`npm run check:imports` is the check that works: it compares each package's source imports with
+its manifest. `check:manifests` reads no imports, only that advertised paths exist in the tarball.
 
 **`glRecorder`'s proxy answers to every name.** An ALL-CAPS property the constants table
 does not carry comes back as `0`, so an assertion naming a missing flag compares 0 against

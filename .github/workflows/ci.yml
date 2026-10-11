@@ -40,6 +40,9 @@ jobs:
       # And that the group is still the whole set: it is a hand-written list of
       # names, so a new package omitted from it versions on its own in silence.
       - run: npm run check:lockstep
+      # A package importing a module its manifest does not declare builds here,
+      # where hoisting resolves it, and ships inlined or unresolvable.
+      - run: npm run check:imports
       # A package that has never been published cannot be published by the
       # release job's OIDC token — it needs one manual publish first. Warn
       # here rather than fail: the PR that adds a package is legitimately the
