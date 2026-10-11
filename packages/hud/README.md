@@ -24,7 +24,7 @@ import { /* … */ } from '@weasel-js/hud/react';
 `rect`, `text`, `image`, `label`, `button`, and `window` — a draggable,
 resizable frame whose interior is painted by an opt-in `content` callback. See
 [`src/widgets/window`](src/widgets/window/README.md) for how content composes
-with the frame, and `createLoupe` in [`src/loupe`](src/loupe) for the first
+with the frame, and `createLoupe` in [`src/loupe`](src/loupe/createLoupe.ts) for the first
 consumer.
 
 Widgets draw from a data-free context (`{ dims, defaultFont, tokens }`), which

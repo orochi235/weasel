@@ -48,7 +48,7 @@ export interface Conflict {
  *    mode's own Escape exit, say. See {@link rulesExclusive}.
  *
  *  - Two bindings whose `opts.views` keep them from being live and equally
- *    ranked in any one view. See {@link viewsTie}.
+ *    ranked in any one view. See `viewsTie`.
  *
  *  Note that two bindings sharing a tuple on the SAME tool are now possible
  *  (bindings are an array, where phase tables were objects with unique
@@ -56,7 +56,7 @@ export interface Conflict {
  *
  *  This is the raw same-tuple detector. Feeding it a whole tool *registry*
  *  over-reports, because registry tools take turns in the active slot and
- *  can't collide with each other — see {@link findScopedConflicts}.
+ *  can't collide with each other — see `findScopedConflicts`.
  */
 export function findConflicts(entries: readonly Contribution<unknown>[]): Conflict[] {
   return findConflictsKeyed(entries).map((k) => k.conflict);

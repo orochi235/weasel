@@ -16,7 +16,7 @@ export interface MeasureTextBoundsOpts {
 
 /**
  * Measure how the GL/MSDF renderer will lay out a single plain-text string,
- * using the registered font atlas metrics. Mirrors {@link textCommand} exactly
+ * using the registered font atlas metrics. Mirrors `textCommand` exactly
  * (`resolveTextStyle` → `resolveRuns` → `cachedLayoutRuns`), so the returned
  * bounds match what actually gets drawn — use it to size backgrounds/pills, place
  * labels, or test overlap without guessing widths.

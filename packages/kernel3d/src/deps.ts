@@ -333,7 +333,7 @@ export function createInsert(opts: {
  * take a screen rectangle, which names a pose only once something supplies a
  * depth. Both resolve it against the plane through the pose they were handed,
  * facing the camera, so nothing they produce changes depth. See
- * {@link viewPlaneAt}.
+ * `viewPlaneAt`.
  */
 export function createPoseDescriptor<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,

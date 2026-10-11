@@ -23,7 +23,7 @@ export type TooltipTriggerProps = TooltipTriggerComponentProps;
 /**
  * TooltipTrigger with kit defaults: ~600 ms open delay, instant close.
  * Wrap a focusable trigger plus a `<Tooltip>`. Non-RAC triggers (plain
- * `<button>`, a `Badge` etc.) must be wrapped in {@link Focusable} so
+ * `<button>`, a `Badge` etc.) must be wrapped in `Focusable` so
  * hover/focus props reach the DOM node.
  *
  * Caveat: while a tooltip is open, react-aria captures the first Escape

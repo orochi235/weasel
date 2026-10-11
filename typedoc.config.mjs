@@ -33,6 +33,10 @@ export default {
   readme: 'README.md',
   plugin: ['./typedoc/plugin.mjs'],
   categorizeByGroup: false,
+  // TypeDoc's defaults, plus `xml` for the SVG in svg's README.
+  highlightLanguages: [
+    'bash', 'console', 'css', 'html', 'javascript', 'json', 'jsonc', 'json5', 'yaml', 'tsx', 'typescript', 'xml',
+  ],
   navigation: {
     includeCategories: true,
     includeGroups: false,
