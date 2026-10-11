@@ -3,6 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { useAnimator } from '../useAnimator';
 import { momentum } from './momentum';
 import type { GestureContext } from 'interactions/gestures/types';
+import type { Op } from 'core/ops/types';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
 interface RectPose { x: number; y: number; width: number; height: number }
@@ -128,6 +129,65 @@ describe('momentum', () => {
     expect(finalPose.x).toBeLessThanOrEqual(100);
     // Decay canceled or finished — no animations active.
     expect(result.current.isActive()).toBe(false);
+  });
+});
+
+describe('momentum — the committed flick', () => {
+  function flick(friction: number) {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const beh = momentum<RectPose>({ animator: result.current, threshold: 0, friction, now: clock.now });
+    const setPose = vi.fn();
+    const applyOps = vi.fn((_ops: Op[], _label: string) => {});
+    const ctx = makeCtx({ x: 0, y: 0, width: 10, height: 10 }, setPose);
+    (ctx.adapter as { applyOps?: typeof applyOps }).applyOps = applyOps;
+    beh.onStart?.(ctx);
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
+    clock.advance(16);
+    ctx.pointer = { worldX: 20, worldY: 0, clientX: 20, clientY: 0 };
+    beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
+    ctx.current.set('a', { x: 20, y: 0, width: 10, height: 10 });
+    beh.onEnd?.(ctx, { answered: false });
+    return { clock, animator: result.current, beh, setPose, applyOps, ctx };
+  }
+
+  it('records the transform from where the drag began, not from the release point', () => {
+    const { clock, animator, applyOps } = flick(1e-9);
+    for (let i = 0; i < 100 && animator.isActive(); i++) clock.advance(100);
+    expect(animator.isActive()).toBe(false);
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const args = applyOps.mock.calls[0]![0][0]!.args as { from: RectPose; to: RectPose };
+    expect(args.from.x).toBe(0);
+    expect(args.to.x).toBeGreaterThan(20);
+  });
+
+  it('a new drag of a coasting node stops the coast and commits it where it stands', () => {
+    const { clock, animator, beh, setPose, applyOps, ctx } = flick(0.92);
+    clock.advance(16);
+    clock.advance(16);
+    expect(animator.isActive()).toBe(true);
+    const stoodAt = (setPose.mock.calls[setPose.mock.calls.length - 1]![1] as RectPose).x;
+
+    const next = makeCtx({ x: stoodAt, y: 0, width: 10, height: 10 }, setPose);
+    beh.onStart?.(next);
+    expect(animator.isActive()).toBe(false);
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const args = applyOps.mock.calls[0]![0][0]!.args as { from: RectPose; to: RectPose };
+    expect(args.to.x).toBe(stoodAt);
+
+    const writes = setPose.mock.calls.length;
+    for (let i = 0; i < 5; i++) clock.advance(16);
+    expect(setPose.mock.calls.length).toBe(writes);
+    expect(ctx.draggedIds).toEqual(['a']);
+  });
+
+  it('a drag of another node leaves the coast running', () => {
+    const { clock, animator, beh, setPose } = flick(0.92);
+    clock.advance(16);
+    const other = makeCtx({ x: 0, y: 0, width: 10, height: 10 }, setPose);
+    other.draggedIds = ['b'];
+    beh.onStart?.(other);
+    expect(animator.isActive()).toBe(true);
   });
 });
 

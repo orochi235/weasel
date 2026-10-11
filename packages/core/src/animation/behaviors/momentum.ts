@@ -12,7 +12,7 @@ export interface MomentumOptions {
   /** Required: the per-Canvas animator that will own the decay. */
   animator: Animator;
   friction?: number;     // default 0.92 (per second)
-  threshold?: number;    // default 200 px/sec
+  threshold?: number;    // default 200 world units/sec; the slowest release that coasts
   /** Sample window in ms for velocity computation. Default 80ms. */
   velocitySampleMs?: number;
   /** Optional clock override for tests. Defaults to `Date.now`. */
@@ -50,16 +50,19 @@ interface PointerSample {
 
 interface RectLike { x: number; y: number }
 
+let nextCoast = 0;
+
 const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
 
 /**
  * Move behavior that keeps a dragged node coasting after the pointer is
- * released, at the velocity it was travelling, until friction brings it below
- * `threshold`.
+ * released, at the velocity it was traveling, until friction brings it to
+ * rest. A release slower than `threshold` does not coast at all.
  *
  * Plugs into the move action rather than replacing it, so the drag itself is
  * unchanged — this only decides what happens after the release. The whole
- * flick, coast included, records as one undoable transform.
+ * flick, coast included, records as one undoable transform. Dragging a node
+ * again while it coasts stops the coast and records it where it stands.
  */
 export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
   const friction = opts.friction ?? 0.92;
@@ -100,8 +103,13 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
     while (samples.length > 1 && samples[0].t < cutoff) samples.shift();
   };
 
+  const coasts = new Set<{ ids: readonly string[]; stop(): void }>();
+
   return {
     onStart(ctx) {
+      for (const coast of [...coasts]) {
+        if (coast.ids.some((id) => ctx.draggedIds.includes(id))) coast.stop();
+      }
       setScratch(ctx.scratch, SAMPLES, []);
       recordSample(ctx);
     },
@@ -135,11 +143,25 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       // by onDone to compute the correct final transform op (not just
       // start + decay's last delta, which may overshoot the boundary).
       const finalPositions = new Map<string, { x: number; y: number }>();
-      let decayHandle: { cancel(): void } | null = null;
-      decayHandle = opts.animator.decay<RectLike>({
+      const cancelKey = `momentum:${nextCoast++}`;
+      const coast = {
+        ids: ctx.draggedIds.slice(),
+        stop: (): void => {
+          // Canceled from outside (cancelAll, unmount), it stopped long ago and somewhere else.
+          if (!opts.animator.isActive(cancelKey)) {
+            coasts.delete(coast);
+            return;
+          }
+          decayHandle.cancel();
+          commitFlick();
+        },
+      };
+      coasts.add(coast);
+      const decayHandle = opts.animator.decay<RectLike>({
         from: { x: 0, y: 0 },
         velocity: { x: vx, y: vy },
         friction,
+        cancelKey,
         add: (a, b) => ({ x: a.x + b.x, y: a.y + b.y }),
         scale: (v, k) => ({ x: v.x * k, y: v.y * k }),
         magnitude: (v) => Math.hypot(v.x, v.y),
@@ -158,11 +180,7 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
           // If 'stop' policy and every dragged id's clamped position hit
           // the boundary, cancel the decay so the animation settles instantly
           // instead of drifting along the edge as friction wears off.
-          if (boundaryPolicy === 'stop' && allHit && decayHandle) {
-            decayHandle.cancel();
-            // Manually fire onDone since cancel() bypasses it.
-            commitFlick();
-          }
+          if (boundaryPolicy === 'stop' && allHit) coast.stop();
         },
         onDone: () => {
           commitFlick();
@@ -170,7 +188,7 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       });
 
       function commitFlick(): void {
-        if (!adapter.applyOps) return;
+        if (!coasts.delete(coast) || !adapter.applyOps) return;
         const ops: Op[] = [];
         for (const id of ctx.draggedIds) {
           const start = startPoses.get(id);
@@ -178,7 +196,8 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
           const o = d.getBounds(start);
           const fp = finalPositions.get(id) ?? { x: o.x + lastValue.x, y: o.y + lastValue.y };
           const finalPose = translatePoseViaDescriptor(start, fp.x - o.x, fp.y - o.y, d);
-          ops.push(createTransformOp<TPose>({ id, from: start, to: finalPose, label: 'flick' }));
+          const from = ctx.origin.get(id) ?? start;
+          ops.push(createTransformOp<TPose>({ id, from, to: finalPose, label: 'flick' }));
         }
         if (ops.length > 0) adapter.applyOps(ops, 'flick');
       }
