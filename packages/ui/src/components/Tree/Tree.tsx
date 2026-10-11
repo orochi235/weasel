@@ -69,7 +69,7 @@ export interface TreeProps {
   /** What folds a branch on a click of its own. Default `'twisty'`, the mark in the row's gutter. `'leading'`
    *  draws no mark and gives the job to the branch's `leading`, which carries `data-open` while it is open. */
   foldBy?: 'twisty' | 'leading';
-  /** Draw a bracket down the side of each open branch's rows, from under the start of its label to its last row, to show
+  /** Draw a bracket down the side of each open branch's rows, from under its mark to its last row, to show
    *  what a branch holds. `--wzl-tree-guide` is its color. */
   guides?: boolean;
 

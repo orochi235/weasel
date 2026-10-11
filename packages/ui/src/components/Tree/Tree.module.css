@@ -25,8 +25,8 @@
   padding-inline-start: var(--wzl-tree-indent, var(--tree-gutter));
 }
 
-/* A bracket down the side of an open branch's rows: straight from under the start of the branch's label, and
-   curving in at its foot. The foot's edge is there, unseen, so the curve keeps its weight to the turn's middle and stops. */
+/* A bracket down the side of an open branch's rows: straight from under the branch's mark, and curving in at its
+   foot. The foot's edge is there, unseen, so the curve keeps its weight to the turn's middle and stops. */
 .tree[data-guides] .group {
   position: relative;
 }
@@ -35,7 +35,7 @@
   content: '';
   position: absolute;
   inset-block: 0 var(--wzl-space-1);
-  inset-inline-start: var(--tree-gutter);
+  inset-inline-start: calc(var(--tree-mark) / 2 - 0.5px);
   inline-size: 10px;
   border-inline-start: 1px solid var(--wzl-tree-guide, var(--wzl-fg-subtle));
   border-block-end: 1px solid transparent;

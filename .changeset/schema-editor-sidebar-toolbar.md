@@ -6,4 +6,4 @@
 
 A `Tree` folded by its leading glyphs leaves 2px between a branch's glyph and its label, so each level steps in 18px.
 
-`Tree` takes `guides`: a bracket down the side of each open branch's rows, straight from under the start of the branch's label and curving in at its foot, colored by `--wzl-tree-guide`. The schema editor's structure and unplaced trees turn it on.
+`Tree` takes `guides`: a bracket down the side of each open branch's rows, straight from under the branch's mark and curving in at its foot, colored by `--wzl-tree-guide`. The schema editor's structure and unplaced trees turn it on.
