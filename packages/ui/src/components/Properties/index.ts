@@ -15,6 +15,7 @@ export type {
   PropertyFieldProps,
   PropertyFieldRowProps,
   PropertyFontFamilyFieldProps,
+  PropertyFontWeightFieldProps,
   PropertyNumberFieldProps,
   PropertyOption,
   PropertyPaintFieldProps,
