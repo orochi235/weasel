@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
@@ -8,7 +8,7 @@ import { prefFieldChoices } from '../Prefs/schema';
 import { Select } from '../Select';
 import { ATTR_RENDERERS } from './attrRenderers';
 import { attributeSchema, changeKind, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { childrenOf, holdsFixed, joinPath, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, type SchemaRoot } from './schemaEdit';
+import { childrenOf, holdsFixed, joinPath, keyFromName, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, uniqueKey, type SchemaRoot } from './schemaEdit';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
 import s from './PrefSchemaEditor.module.css';
@@ -25,12 +25,15 @@ const UNSET_AUTO_VALUE: ReadonlySet<string> = new Set([AUTO_VALUE]);
 /** Kinds drawn by this pane's own renderers. */
 const KEY_KIND = 'schema-key';
 const KIND_KIND = 'schema-kind';
+const NAME_KIND = 'schema-name';
 
 export interface AttributesPaneProps {
   schema: SchemaRoot;
   onChange(next: SchemaRoot): void;
   path: string | null;
   onRekey(from: string, to: string): void;
+  /** The node at `path` is not in the baseline, so nothing is stored under its key yet. */
+  added?: boolean;
   kinds: readonly string[];
   custom: CustomKinds;
   /** Renderers the consumer passes for its own kinds — a custom kind's `default` may need one. */
@@ -38,8 +41,9 @@ export interface AttributesPaneProps {
   onNotice(text: string | null): void;
 }
 
-export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom, renderers, onNotice }: AttributesPaneProps) {
+export function AttributesPane({ schema, onChange, path, onRekey, added = false, kinds, custom, renderers, onNotice }: AttributesPaneProps) {
   const node = nodeAt(schema, path);
+  const nameAtFocus = useRef('');
   // The edited schema's fields, by its own path rule: what a reference in it names.
   const fields = useMemo(() => prefFieldChoices(schema), [schema]);
   const [key, setKey] = useState(path === null ? '' : keyOf(path));
@@ -74,7 +78,25 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
     onRekey(path, joinPath(parent, key));
   };
 
+  // A key something may be stored under is left alone unless it was following the name already.
+  const followName = () => {
+    if (path === null || !keyed) return;
+    const parent = parentPath(path);
+    const host = nodeAt(schema, parent)!;
+    const current = keyOf(path);
+    const next = keyFromName(node.name);
+    if (takesDottedKey(host, node) || next === '' || next === current) return;
+    if (!added && current !== keyFromName(nameAtFocus.current)) return;
+    const unique = uniqueKey(childrenOf(host) ?? {}, next);
+    onChange(renameKey(schema, path, unique));
+    onRekey(path, joinPath(parent, unique));
+  };
+
   const identity: Record<string, PrefRenderer> = {
+    [NAME_KIND]: ({ value, setValue }) => (
+      <Input aria-label="Name" value={String(value ?? '')} onChange={setValue}
+        onFocus={() => { nameAtFocus.current = node.name; }} onBlur={followName} />
+    ),
     [KEY_KIND]: () => (
       <Input aria-label="Key" className={s.symbol} value={key} onChange={setKey} onBlur={commitKey}
         onKeyDown={(e) => { if (e.key === 'Enter') commitKey(); }} errorMessage={keyError ?? undefined} isInvalid={keyError !== null} />
@@ -90,9 +112,11 @@ export function AttributesPane({ schema, onChange, path, onRekey, kinds, custom,
     ),
   };
   const children: Record<string, PrefLeaf | PrefGroup> = {
+    // First, so the key under it can follow it.
+    ...(shared.name ? { name: { ...shared.name, kind: NAME_KIND } as PrefLeaf } : {}),
     ...(keyed ? { [KEY]: { kind: KEY_KIND, name: 'Key', description: 'The name its value is stored under.', default: '' } as PrefLeaf } : {}),
     ...(anyKind ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of its value, which picks the control that draws it.', default: '' } as PrefLeaf } : {}),
-    ...shared,
+    ...Object.fromEntries(Object.entries(shared).filter(([k]) => k !== 'name')),
     ...(Object.keys(own).length > 0 ? { [OWN]: { name: leaf ? node.kind : 'group', children: own } } : {}),
     ...(Object.keys(auto).length > 0 ? { [AUTO]: { name: 'Auto', children: auto } } : {}),
   };

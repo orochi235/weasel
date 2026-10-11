@@ -304,6 +304,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           )}
         </div>
         <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selected ?? ''}`)} path={selected} onRekey={rekey}
+          added={changes.some((c) => c.op === 'add' && c.path === selected)}
           kinds={kindList} custom={custom} renderers={renderers} onNotice={setNotice} />
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
