@@ -603,7 +603,11 @@ function drawGroupWithEffects(
   const scissorWasOn = gl.isEnabled(gl.SCISSOR_TEST);
 
   let front = targets.acquire(width, height);
-  const composited = ctx.state.pushIsolated({ transform: cmd.transform });
+  const composited = ctx.state.pushIsolated({
+    transform: cmd.transform,
+    alpha: cmd.alpha,
+    colorMatrix: cmd.colorMatrix,
+  });
   ctx.clipDepth = 0;
   ctx.clipStack = [];
   ctx.drawBatch.clip = null;
@@ -619,8 +623,10 @@ function drawGroupWithEffects(
   flushBatch(ctx);
 
   // Passes replace rather than blend: each writes every texel of its target
-  // from the whole of its source.
+  // from the whole of its source. A child that ended by popping a stencil
+  // clip leaves the test on, and no pass target has that clip's bits.
   gl.disable(gl.BLEND);
+  gl.disable(gl.STENCIL_TEST);
   for (const effect of cmd.effects!) {
     const program = ctx.ensureProgram?.(effect.program.id) ?? null;
     if (!program) {
@@ -735,7 +741,18 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
   // paint straight through — a frame missing its blur, not a frame missing.
   if (cmd.effects && cmd.effects.length > 0 && ctx.effectTargets
       && ctx.deviceWidth && ctx.deviceHeight) {
+    // The clip cuts the composite, so it goes on the parent's buffer, in the
+    // group's own space.
+    if (cmd.clip) {
+      ctx.state.push({ transform: cmd.transform });
+      try {
+        enterGroupClip(ctx, cmd.clip);
+      } finally {
+        ctx.state.pop();
+      }
+    }
     drawGroupWithEffects(ctx, cmd, ctx.effectTargets, ctx.deviceWidth, ctx.deviceHeight);
+    if (cmd.clip) leaveClip(ctx);
     return;
   }
   ctx.state.push({
@@ -744,20 +761,29 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
     colorMatrix: cmd.colorMatrix,
   });
   if (cmd.clip) {
-    const pending = ctx.clipStack.reduce((n, e) => n + (e.depth === 0 ? 1 : 0), 0);
-    if (ctx.clipDepth + pending + 1 > 7) {
+    try {
+      enterGroupClip(ctx, cmd.clip);
+    } catch (err) {
       ctx.state.pop();
-      throw new Error(
-        'weasel: clip nesting depth exceeded (max 7). You can\'t nest more than 7 levels ' +
-        'of clipped containers in a single draw tree. Flatten the hierarchy or compose ' +
-        'poses outside the scene graph.',
-      );
+      throw err;
     }
-    enterClip(ctx, cmd.clip);
   }
   for (const child of cmd.children) dispatch(ctx, child);
   if (cmd.clip) leaveClip(ctx);
   ctx.state.pop();
+}
+
+/** `enterClip` for a group command, refusing one past the stencil's budget. */
+function enterGroupClip(ctx: DrawContext, clip: Path): void {
+  const pending = ctx.clipStack.reduce((n, e) => n + (e.depth === 0 ? 1 : 0), 0);
+  if (ctx.clipDepth + pending + 1 > 7) {
+    throw new Error(
+      'weasel: clip nesting depth exceeded (max 7). You can\'t nest more than 7 levels ' +
+      'of clipped containers in a single draw tree. Flatten the hierarchy or compose ' +
+      'poses outside the scene graph.',
+    );
+  }
+  enterClip(ctx, clip);
 }
 
 /**
