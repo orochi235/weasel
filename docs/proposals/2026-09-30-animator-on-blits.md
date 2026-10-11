@@ -113,19 +113,24 @@ and hands its value to the caller's `onTick`, so the later writer still wins. Wh
   separate animation package was turned down because core still animates its own camera, which
   would leave two animators. Folding blits into the monorepo as its own `@weasel-js` package is
   still open.
-- **`blendPoses` folds into a blits locus — decided 2026-09-30.** A clip crossfade is a locus,
-  so rig clips become voices and blend with any other voice on the same joint. Three things to
-  settle when it's built:
-  - **Rotation** needs a channel of weasel's own whose `lerp` takes the short way round the circle.
-    blits' `sum` blends angles in a straight line, so 0.1 and 2π−0.1 would average to π.
+- **`blendPoses` folds into a blits locus — decided 2026-09-30, built 2026-10-11.** A clip
+  crossfade is a locus, so rig clips are holds on the rig's target and blend with any other voice
+  on it. `blendPoses` is deleted; its test cases run against holds in `rig/poseHolds.test.tsx`.
+  What was settled:
+  - **Rotation** got no channel of its own. A hold answers its value less the committed one, and
+    that difference is taken the short way round on an angle axis, so 0.1 and 2π−0.1 held at
+    half weight each show 0. The short way is measured from the committed pose, not between the
+    holds: 3 and −3 held over a bind pose at 0 meet at 0, where `blendPoses` met at π. Two clips
+    differ from `blendPoses` only where a joint's two rotations are more than half a turn apart
+    going through the committed pose's. Fading one clip in over the committed pose is always the short way.
+    A result lands on the committed pose's turn, where `blendPoses` kept the first pose's.
   - **Weights adding up to less than 1 follow the locus — decided 2026-09-30.** `[0.3, 0.3]` gives
-    an even mix at 60% strength, pulled toward the bind pose, as for every other voice;
-    `blendPoses` normalizes it to full strength. Every caller in the tree passes weights summing
-    to 1 (`[1 - u, u]`), so nothing visible changes. Only `blendPoses.test.ts`'s `[1, 1]` case
-    asserts the old behavior.
-  - **Three or more clips:** a locus folds its members a pair at a time, which can differ slightly
-    from `blendPoses`' single weighted average once angles take the short way. Test against
-    `blendPoses`' own cases before deleting it.
+    an even mix at 60% strength, pulled toward the committed pose, which for a rig nobody has
+    posed is the bind pose. `[1, 1]` is still an even mix.
+  - **Three or more clips** fold to their weighted sum, in any order: each is a difference from
+    the committed pose before blits sees it, so no fold takes a short way of its own.
+  - A pose read back from a target names every joint of the skeleton in full, where `blendPoses`
+    named only the joints its inputs did.
 
 ## The arcs
 
@@ -180,8 +185,29 @@ are built: blits' stepping and springs, pose overrides as a mix, and values comp
      Booking reads that same clock through the timeline's tick and needed no change.
    - An offset canceled under a full-weight hold commits what it had left, but the hold stands
      in front of the committed value, so the screen loses that much.
-5. **Rig.** Clips as absolute voices on joint targets, and `blendPoses` replaced by a locus
-   ("Decisions this needs").
+5. **Rig.** Built 2026-10-11. A bound rig is a target, `Rig.target` (`rig/bindRig.ts`): its
+   committed value starts at the bind pose and its `show` poses the bound nodes. Its axes are
+   `poseAxes(skeleton)`, five a joint with every rotation an angle, exported for a pose target
+   bound to no nodes. A clip is a `SampledTrack<Pose>` naming the target, so clips crossfade by
+   `weight` and a spring or tween adds on top, and nothing in the fold is the rig's own.
+   `blendPoses` is deleted ("Decisions this needs"). Decided along the way:
+   - A track with a `target` and no `interpolate` is sampled in the target's axes, an angle axis
+     the short way from the key before (`timeline/targetStops.ts`). That was the one job a pose
+     track's `interpolate` had.
+   - `rig.pose(pose, root)` is still a direct write, and commits `pose`. `rig.place(root)` sets
+     the placement with no pose, and a `pose` given no `root` keeps the last one. A hold of plain
+     values under a `pose` weighs the new pose in when the hold is next read.
+   - IK weighs against animation as a hold of the solved pose at `w`, beside the clip at `1 - w`.
+     A hold covers every joint, so there is no holding part of a rig: an arm solved at full
+     strength over a body on other holds starts from the body as one pose, which the rig demo
+     samples from a track. A hold over some joints only is not built.
+   - The platformer's clips are tracks on one pose target, and its cross-fade is the target's
+     arithmetic: canceling the outgoing clip's timeline commits the pose on screen, and the next
+     clip fades in over it by weight. Its simulation seeks each clip, and a seek shows at the
+     next frame, so joint angles run one frame behind the body's position.
+   - A frame the animator asks for from inside its own ticks now waits until after `onTick`. Asked
+     for from a tick (a track taking hold of its target, an `onDone` starting an animation), it
+     ran ahead of the paint a canvas requests from `onTick`, and the tick after painted nothing.
 
 ## What step 3 built
 
