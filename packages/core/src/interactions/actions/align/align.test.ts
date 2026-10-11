@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
-import { PointerContextProvider, createPointerStore } from 'features/pointer/PointerContext';
+import { PointerContextProvider, createPointerStore } from '@weasel-js/routing/react';
 import { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './align';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { AlignAdapter } from './align';

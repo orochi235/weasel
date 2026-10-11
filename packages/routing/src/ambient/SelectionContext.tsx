@@ -28,7 +28,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useLatest } from '@weasel-js/react';
-import type { NodeId } from 'core/scene/types';
+import type { NodeId } from '../vocabulary';
 
 /** @experimental */
 export interface SelectionContextValue {

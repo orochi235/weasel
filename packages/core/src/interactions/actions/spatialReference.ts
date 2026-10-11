@@ -1,6 +1,6 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { PointerContextValue } from 'features/pointer/PointerContext';
+import type { PointerContextValue } from '@weasel-js/routing/react';
 import type { PoseDescriptor } from './resize/geometry';
 import { visualBoundsViaDescriptor } from './resize/geometry';
 import type { PoseFrame } from './poseFrame';

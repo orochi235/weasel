@@ -503,7 +503,7 @@ affordance-facing read-only view) is built from the `SelectionApi` via
 prop-drilling. Provides the current selection ids and optional per-id `kinds`
 labels. The `kinds` parallel array is a temporary half-step toward typed scene
 references (see `docs/TODO.md` Tier 1.5). See
-`packages/core/src/features/selection/SelectionContext.tsx`.
+`packages/routing/src/ambient/SelectionContext.tsx`.
 
 ---
 

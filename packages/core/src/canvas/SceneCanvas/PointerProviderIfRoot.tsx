@@ -8,7 +8,7 @@
  * surrounding context's `pointerRef`.
  */
 import { useEffect, type MutableRefObject, type ReactNode } from 'react';
-import { PointerContextProvider, usePointerContext } from 'features/pointer/PointerContext';
+import { PointerContextProvider, usePointerContext } from '@weasel-js/routing/react';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 import { useOptionalViewRegistry } from '../viewRegistry';
 

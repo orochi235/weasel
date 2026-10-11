@@ -8,7 +8,7 @@ import type { View } from 'core/viewport/view';
 import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
-import type { PointerWorldPos } from 'features/pointer/PointerContext';
+import type { PointerWorldPos } from '@weasel-js/routing/react';
 import type { CanvasExtensionApi } from '../../canvas/canvasExtension';
 import type { ViewRect } from '../../canvas/CanvasView';
 import type { ContributionDepReader, SurfaceContribution } from '../../canvas/surfaceContribution';

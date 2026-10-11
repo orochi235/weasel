@@ -9,7 +9,7 @@ import { useEffect } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { CanvasView } from './CanvasView';
 import { createScene } from 'core/scene/scene';
-import { usePointerContext, type PointerContextValue } from 'features/pointer/PointerContext';
+import { usePointerContext, type PointerContextValue } from '@weasel-js/routing/react';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import type { View } from 'core/viewport/view';
 

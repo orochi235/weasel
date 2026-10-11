@@ -18,7 +18,7 @@ import { unionAABB } from 'core/geometry/unionBounds';
 import { visualBoundsViaDescriptor } from '../align/align';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { actionReferenceSources, resolveSpatialReference } from '../spatialReference';
-import type { PointerContextValue } from 'features/pointer/PointerContext';
+import type { PointerContextValue } from '@weasel-js/routing/react';
 import type { RectPose } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';

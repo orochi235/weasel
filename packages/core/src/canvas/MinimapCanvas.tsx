@@ -33,7 +33,7 @@ import {
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Tool } from '@weasel-js/routing';
 import { PointerProviderIfRoot } from './SceneCanvas/PointerProviderIfRoot';
-import { usePointerContext, usePointerPosition } from 'features/pointer/PointerContext';
+import { usePointerContext, usePointerPosition } from '@weasel-js/routing/react';
 import {
   MINIMAP_CENTER, MINIMAP_PAN, minimapCenterAction, minimapPanAction,
 } from 'features/minimap/actions';

@@ -15,7 +15,7 @@ import { useOptionalViewRegistry, type ViewRegistry } from '../../canvas/viewReg
 import type { View } from 'core/viewport/view';
 import type { CanvasExtensionApi } from '../../canvas/canvasExtension';
 import type { ViewApi } from 'interactions/actions/depSchema';
-import { createPointerStore } from 'features/pointer/PointerContext';
+import { createPointerStore } from '@weasel-js/routing/react';
 import { createMinimapContribution, createLinkedCursorContribution } from './createMinimapContribution';
 import { createIndicatorLayer, createLinkedCursorLayer } from './layers';
 import { computeIndicatorCommand } from '../../canvas/minimapMath';

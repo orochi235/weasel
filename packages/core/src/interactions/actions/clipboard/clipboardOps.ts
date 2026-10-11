@@ -4,7 +4,7 @@ import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { InsertAdapter, PasteOmission } from 'core/adapters/types';
 import type { ClipboardSnapshot } from './types';
-import { usePointerContext } from 'features/pointer/PointerContext';
+import { usePointerContext } from '@weasel-js/routing/react';
 import { dwarn } from 'debug/flag';
 import { materializePaste } from './materializePaste';
 import { WEASEL_CLIPBOARD_MIME, buildWeaselClipboardText } from './wireFormat';

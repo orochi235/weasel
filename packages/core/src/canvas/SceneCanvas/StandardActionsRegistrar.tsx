@@ -1,12 +1,11 @@
 import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
 import type { Dispatcher } from '@weasel-js/routing';
-import { useActionsRegistry, useDepSource } from '@weasel-js/routing/react';
+import { useActionsRegistry, useDepSource, usePointerContext } from '@weasel-js/routing/react';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { useDecayLoop } from 'core/viewport/useDecayLoop';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { View } from 'core/viewport/view';
-import { usePointerContext } from 'features/pointer/PointerContext';
 import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
 import type { WheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
 import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';

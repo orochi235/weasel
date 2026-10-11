@@ -9,7 +9,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { unionAABB } from 'core/geometry/unionBounds';
 import { poseFrame } from '../poseFrame';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'features/groups/composePose';
-import { usePointerContext } from 'features/pointer/PointerContext';
+import { usePointerContext } from '@weasel-js/routing/react';
 import { resolveSpatialReference, type SpatialReference, type SpatialReferenceSources } from '../spatialReference';
 
 export { visualBoundsViaDescriptor, translatePoseViaDescriptor } from '../resize/geometry';

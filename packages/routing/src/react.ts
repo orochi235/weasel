@@ -29,6 +29,15 @@ export type {
   ActiveToolContextValue, ActiveToolContextProviderProps,
 } from './interactions/actions/activeToolContext';
 
+export {
+  PointerContextProvider, createPointerStore, usePointerContext, usePointerPosition,
+} from './ambient/PointerContext';
+export type { PointerContextValue, PointerWorldPos } from './ambient/PointerContext';
+export {
+  SelectionContextProvider, SelectionContextProviderIfRoot, useSelectionContext, usePublishSelection,
+} from './ambient/SelectionContext';
+export type { SelectionContextValue } from './ambient/SelectionContext';
+
 export { useTools } from './tools/useTools';
 export type { UseToolsOptions, ToolsApi } from './tools/useTools';
 export { useContributions, useOffhandAction } from './contributions/useContributions';

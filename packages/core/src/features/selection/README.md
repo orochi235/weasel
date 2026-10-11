@@ -1,8 +1,7 @@
 # selection
 
-Two unrelated things that both concern selection: the **overlay render layers**
-and an **ambient context** for publishing selection to non-canvas UI. Both go
-out through `index.ts`; `packages/core/src/index.ts` reaches them only there.
+The **overlay render layers** that draw a selection. They go out through
+`index.ts`; `packages/core/src/index.ts` reaches them only there.
 
 The selection *protocol* is not here. `SelectionApi`, `useSelection`,
 `ChromeState` and `MULTI_RESIZE_TARGET_ID` live in
@@ -34,22 +33,3 @@ The matching hit-test in `canvas/affordanceAt.ts` asks the *same* ids, which is
 what keeps visible-and-hittable in sync. If you add a new piece of selection
 chrome, give it a chrome id and gate both paths on it — don't add a local
 boolean.
-
-## `SelectionContext.tsx` — publishing selection
-
-`@experimental`
-
-A tiny ambient context so non-canvas UI (command palette, status bar,
-breadcrumbs, undo-label generation) can read "what's selected" without
-threading a prop through the tree.
-
-**Single-slot, last-writer-wins.** The context holds one selection array;
-whichever publisher called `publishSelection` most recently owns the slot. For
-single-canvas pages — the typical case — this is invisible. Multi-canvas pages
-get approximately "most recently rendered," which is a real limitation, not a
-bug to be surprised by. A focus-aware v2 (claim on focus, release on blur) is
-deferred until a genuine multi-canvas use case exists.
-
-`<SceneCanvas>` publishes automatically when wrapped in a `<SelectionContext>`.
-Bare-`<Canvas>` consumers opt in by calling
-`useSelectionContext().publishSelection(ids)` themselves.

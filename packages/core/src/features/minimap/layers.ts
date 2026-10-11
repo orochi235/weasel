@@ -6,7 +6,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand } from '../../renderer/DrawCommand';
 import type { ViewApi } from 'interactions/actions/depSchema';
-import type { PointerWorldPos } from 'features/pointer/PointerContext';
+import type { PointerWorldPos } from '@weasel-js/routing/react';
 import { computeIndicatorCommand, type IndicatorStyle } from '../../canvas/minimapMath';
 
 /** What a layer's `data` carries for this feature: the view it draws for. */

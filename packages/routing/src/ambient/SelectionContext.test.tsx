@@ -5,8 +5,10 @@ import {
   useSelectionContext,
   usePublishSelection,
 } from './SelectionContext';
-import { asNodeId, type NodeId } from 'core/scene/types';
+import type { NodeId } from '../vocabulary';
 import { useState, type ReactNode } from 'react';
+
+const asNodeId = (id: string): NodeId => id as NodeId;
 
 const wrap = ({ children }: { children: ReactNode }) => (
   <SelectionContextProvider>{children}</SelectionContextProvider>

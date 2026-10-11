@@ -21,7 +21,7 @@ import { getActiveModeFor } from '@weasel-js/modes';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { Action, ActionsProp, ActionsRegistry } from '@weasel-js/routing';
 import { createDispatcher, type Dispatcher } from '@weasel-js/routing';
-import { InputScope } from '@weasel-js/routing/react';
+import { InputScope, usePublishSelection } from '@weasel-js/routing/react';
 import type { Affordance } from 'affordances/types';
 import type { InsertAdapter } from 'core/adapters/types';
 import { sceneFromJSON } from 'core/scene/scene';
@@ -48,7 +48,6 @@ import {
 } from 'features/ingestion';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
-import { usePublishSelection } from 'features/selection/SelectionContext';
 import {
   createSelectionOverlayLayer,
   rotationBadgeOf,

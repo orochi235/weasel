@@ -699,7 +699,7 @@ declare module '@weasel-js/routing' {
      * The pointer store in scope: where the pointer is, in which view. Shared
      * by every surface under one `<PointerContextProvider>`.
      */
-    pointer?: import('../../features/pointer/PointerContext').PointerContextValue;
+    pointer?: import('@weasel-js/routing/react').PointerContextValue;
     /**
      * The touch or pen long-press being held, if any: where, since when, how
      * far through, and whether any binding would fire on it. Sourced by

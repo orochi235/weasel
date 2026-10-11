@@ -29,7 +29,7 @@ import { ColorOverrideRegistry } from '../animation/colorRegistry';
 import type { Animator } from '../animation/types';
 import { pathFromD } from '@weasel-js/geom';
 import { strokeOf } from '../util/paint';
-import { PointerContextProvider, usePointerContext, type PointerContextValue } from 'features/pointer/PointerContext';
+import { PointerContextProvider, usePointerContext, type PointerContextValue } from '@weasel-js/routing/react';
 
 const RAINBOW = [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1];
 const RED = [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1];

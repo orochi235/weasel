@@ -10,7 +10,7 @@ import {
   type AlignReference,
 } from '../align/align';
 import { actionReferenceSources } from '../spatialReference';
-import type { PointerContextValue } from 'features/pointer/PointerContext';
+import type { PointerContextValue } from '@weasel-js/routing/react';
 import { scenePoseFrame } from '../poseFrame';
 import { translateEach } from '../selectionSubtree';
 import type { Action } from '@weasel-js/routing';

@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { WeaselProvider } from './WeaselProvider';
-import { useActionsRegistry } from '@weasel-js/routing/react';
-import { useSelectionContext } from './features/selection/SelectionContext';
+import { useActionsRegistry, useSelectionContext } from '@weasel-js/routing/react';
 
 /** Reports the registry identities visible at this point in the tree. */
 function Probe({ into }: { into: { actions: unknown[]; selection: unknown[] } }) {
