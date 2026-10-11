@@ -363,6 +363,27 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     };
   }
 
+  /** The state with one anchor removed, or null where it may not be. */
+  function withoutAnchor(state: FunctionLayerState, index: number): FunctionLayerState | null {
+    if (state.points[index]?.locked) return null;
+    if (isPinnedEndpointAt(index, state.points.length, endpoints)) return null;
+    if (cfg.minPoints !== undefined && state.points.length <= cfg.minPoints) return null;
+    return { ...state, points: state.points.filter((_, i) => i !== index), activeIndex: null };
+  }
+
+  function onContextMenu(
+    state: FunctionLayerState,
+    hit: { kind: string; payload?: unknown },
+    e: MouseEvent,
+    _ctx: LayerCtx,
+    extra: EmptyDownArgs<FunctionLayerState>,
+  ): void {
+    if (!interactive || hit.kind !== 'anchor') return;
+    e.preventDefault();
+    const next = withoutAnchor(state, (hit.payload as { index: number }).index);
+    if (next) extra.commit(next);
+  }
+
   // ── pointerdown on a positive hit ───────────────────────────────────
   function onPointerDown(
     state: FunctionLayerState,
@@ -377,13 +398,8 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
       dlog('function-layer', 'anchor-down', { id, index, shift: ctx.modifiers.shift, button: e.button });
       if (state.points[index]?.locked) return;
       if (ctx.modifiers.shift) {
-        if (isPinnedEndpointAt(index, state.points.length, endpoints)) return;
-        if (cfg.minPoints !== undefined && state.points.length <= cfg.minPoints) return;
-        extra.commit({
-          ...state,
-          points: state.points.filter((_, i) => i !== index),
-          activeIndex: null,
-        });
+        const next = withoutAnchor(state, index);
+        if (next) extra.commit(next);
         return;
       }
       extra.commit({ ...state, activeIndex: index });
@@ -481,6 +497,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     render,
     hitTest,
     onPointerDown,
+    onContextMenu,
     onEmptyPointerDown,
     onKeyDown,
   };

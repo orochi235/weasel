@@ -2,6 +2,7 @@ import {
   useCallback, useEffect, useMemo, useRef, useState,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
@@ -19,6 +20,7 @@ import {
 } from '../Plot2D/geometry';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
+import { dispatchContextMenu } from './contextMenuDispatch';
 import { sameFields } from './sameFields';
 import type {
   CurveLayer, LayerCtx, LayerGesture, LayerModifiers, ModelPoint, PlotPoint,
@@ -44,8 +46,8 @@ export interface LayeredCurveEditorProps {
   onLayerChange(id: string, next: unknown): void;
 
   /** Fires once per discrete user action (drag-end, one-shot insert,
-   *  delete) for the layer that produced the change. `prev` is the
-   *  layer's state at gesture start. */
+   *  delete, undo, redo) for the layer that produced the change. `prev` is
+   *  the layer's state before the action. */
   onLayerCommit?(id: string, next: unknown, prev: unknown): void;
 
   width: number;
@@ -63,8 +65,11 @@ export interface LayeredCurveEditorProps {
 
   /** Built-in undo/redo via Cmd/Ctrl+Z (Shift+Z or Y for redo) on the
    *  focused SVG. Snapshots every layer's state on each commit, keeping
-   *  the last 100; undo fires `onLayerChange(id, prevState)` for each
-   *  layer whose state changed. Default `true`. */
+   *  the last 100. An undo or redo reports each layer whose state changed
+   *  the way a finished edit is reported: `onLayerChange(id, restored)`,
+   *  then `onLayerCommit(id, restored, current)`. Default `true`; turn it
+   *  off when the consumer keeps its own undo or builds ops from
+   *  `onLayerCommit`, or each step is recorded twice. */
   history?: boolean;
 
   /** Accessible name for the plot, which is exposed as a group so the
@@ -92,7 +97,7 @@ const HISTORY_DEPTH = 100;
 
 const NO_MODIFIERS: LayerModifiers = { shift: false, alt: false, meta: false, ctrl: false };
 
-function readModifiers(e: PointerEvent | ReactPointerEvent | KeyboardEvent | ReactKeyboardEvent): LayerModifiers {
+function readModifiers(e: PointerEvent | ReactPointerEvent | ReactMouseEvent | KeyboardEvent | ReactKeyboardEvent): LayerModifiers {
   return {
     shift: e.shiftKey,
     alt: e.altKey,
@@ -171,9 +176,10 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       const prev = snap.get(b.layer.id);
       if (prev !== undefined && prev !== b.state) {
         onLayerChange(b.layer.id, prev);
+        onLayerCommit?.(b.layer.id, prev, b.state);
       }
     }
-  }, [onLayerChange, layersRef]);
+  }, [onLayerChange, onLayerCommit, layersRef]);
 
   /** Push the state an edit started from, dropping the oldest step past the depth kept. */
   const record = useCallback((before: Map<string, unknown>) => {
@@ -406,6 +412,18 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     }
   }, [historyEnabled, undo, redo, makeCtx, snapshot, record, onLayerChange, onLayerCommit, layersRef]);
 
+  const onSvgContextMenu = useCallback((
+    e: ReactMouseEvent<SVGSVGElement>,
+    coords: { plot: PlotPoint; model: ModelPoint },
+  ) => {
+    if (activeRef.current) return;
+    const before = snapshot();
+    const edit = dispatchContextMenu(layersRef.current, coords, e.nativeEvent, makeCtx(readModifiers(e)), onLayerChange);
+    if (!edit) return;
+    if (historyEnabled) record(before);
+    onLayerCommit?.(edit.id, edit.next, edit.prev);
+  }, [historyEnabled, makeCtx, snapshot, record, onLayerChange, onLayerCommit, layersRef]);
+
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
   // ── render ─────────────────────────────────────────────────────────
@@ -435,6 +453,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       role="group"
       aria-label={props['aria-label']}
       onPointerDown={onSvgPointerDown}
+      onContextMenu={onSvgContextMenu}
       onKeyDown={onSvgKeyDown}
     >
       {children}

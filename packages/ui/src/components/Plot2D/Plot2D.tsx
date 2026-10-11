@@ -2,6 +2,7 @@ import {
   forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
@@ -94,6 +95,7 @@ export interface Plot2DProps {
   /** Pointer down on the SVG. Receives both plot- and model-space coords
    *  pre-computed so consumers don't repeat the rect/transform dance. */
   onPointerDown?: (e: ReactPointerEvent<SVGSVGElement>, coords: Plot2DCoords) => void;
+  onContextMenu?: (e: ReactMouseEvent<SVGSVGElement>, coords: Plot2DCoords) => void;
   onKeyDown?: (e: ReactKeyboardEvent<SVGSVGElement>) => void;
   children?: ReactNode;
 }
@@ -177,6 +179,7 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
     className,
     style,
     onPointerDown,
+    onContextMenu,
     onKeyDown,
     children,
   } = props;
@@ -213,12 +216,10 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
     get height() { return plotSize.height; },
   }), [modelRange, plotSize, clientToPlot]);
 
-  const handlePointerDown = useCallback((e: ReactPointerEvent<SVGSVGElement>) => {
-    if (!onPointerDown) return;
+  const coordsOf = useCallback((e: { clientX: number; clientY: number }): Plot2DCoords => {
     const plot = clientToPlot(e);
-    const model = plotToModel(plot, modelRange, plotSize);
-    onPointerDown(e, { plot, model });
-  }, [onPointerDown, clientToPlot, modelRange, plotSize]);
+    return { plot, model: plotToModel(plot, modelRange, plotSize) };
+  }, [clientToPlot, modelRange, plotSize]);
 
   const xTickList = xTicks
     ? resolveTicks(xTicks, 'x', xRange, width, (v) => modelToPlot({ x: v, y: yRange[0] }, modelRange, plotSize).x)
@@ -320,7 +321,8 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
       role={role}
       aria-label={props['aria-label']}
       tabIndex={tabIndex}
-      onPointerDown={onPointerDown ? handlePointerDown : undefined}
+      onPointerDown={onPointerDown ? (e) => onPointerDown(e, coordsOf(e)) : undefined}
+      onContextMenu={onContextMenu ? (e) => onContextMenu(e, coordsOf(e)) : undefined}
       onKeyDown={onKeyDown}
     >
       {grid && (() => {

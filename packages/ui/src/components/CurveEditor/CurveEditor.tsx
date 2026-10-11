@@ -7,7 +7,6 @@
 import {
   useCallback, useMemo, useState,
   type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
 import {
@@ -38,7 +37,9 @@ export type {
 
 /**
  * Props for {@link CurveEditor}. `onInput` fires throughout a gesture and
- * `onChange` once at its end, with the pre-gesture points as `prev`.
+ * `onChange` once at its end, with the pre-gesture points as `prev`. An undo
+ * or redo of the built-in `history` is reported through both, like any other
+ * finished change; a consumer that keeps its own undo turns `history` off.
  */
 export interface CurveEditorProps {
   value: readonly ControlPoint[];
@@ -124,55 +125,26 @@ export function CurveEditor(props: CurveEditorProps) {
     }
   }, [onChange]);
 
-  // Right-click on an anchor → delete (preserves original CurveEditor
-  // behavior). LayeredCurveEditor doesn't model contextmenu as a
-  // gesture; we intercept at the wrapper level by walking the DOM
-  // target for `data-anchor-index`.
-  const onContextMenu = useCallback((e: ReactMouseEvent<HTMLDivElement>) => {
-    const target = e.target as Element | null;
-    const node = target?.closest?.('[data-anchor-index]') as Element | null;
-    if (!node) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const idxAttr = node.getAttribute('data-anchor-index');
-    if (idxAttr === null) return;
-    const idx = Number(idxAttr);
-    const points = layerStateRef.current.points;
-    if (!Number.isInteger(idx) || idx < 0 || idx >= points.length) return;
-    if (points[idx]?.locked) return;
-    if (endpoints !== undefined && endpoints !== 'free' && (idx === 0 || idx === points.length - 1)) return;
-    if (minPoints !== undefined && points.length <= minPoints) return;
-    const next = points.filter((_, i) => i !== idx);
-    setHeld(null);
-    onInput(next as ControlPoint[]);
-    onChange?.(next as ControlPoint[], points);
-  }, [endpoints, minPoints, onInput, onChange, layerStateRef]);
-
   const layers = useMemo(() => [{ layer, state: layerState }], [layer, layerState]);
 
   return (
-    <div
-      onContextMenu={onContextMenu}
-      style={{ display: 'contents' }}
+    <LayeredCurveEditor
+      layers={layers}
+      onLayerChange={handleLayerChange}
+      onLayerCommit={handleLayerCommit}
+      width={width}
+      height={height}
+      xRange={xRange}
+      yRange={yRange}
+      grid={grid}
+      axes={axes}
+      xTicks={xTicks}
+      yTicks={yTicks}
+      history={history}
+      className={className}
+      style={style}
     >
-      <LayeredCurveEditor
-        layers={layers}
-        onLayerChange={handleLayerChange}
-        onLayerCommit={handleLayerCommit}
-        width={width}
-        height={height}
-        xRange={xRange}
-        yRange={yRange}
-        grid={grid}
-        axes={axes}
-        xTicks={xTicks}
-        yTicks={yTicks}
-        history={history}
-        className={className}
-        style={style}
-      >
-        {decorations}
-      </LayeredCurveEditor>
-    </div>
+      {decorations}
+    </LayeredCurveEditor>
   );
 }

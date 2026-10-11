@@ -1707,23 +1707,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Pins layer on the last stored draft with the failing reference named, instead of offering only a
   discard.
 
-- **(P2) CurveEditor: a right-click delete skips the built-in undo, and undo never reaches
-  `onChange`.** Drag an anchor, right-click another to delete it, press Cmd+Z: one press reverts
-  both, because the delete in `packages/ui/src/components/CurveEditor/CurveEditor.tsx`
-  (`onContextMenu`) writes the points directly and never pushes onto `LayeredCurveEditor`'s history;
-  a delete that was the first edit cannot be undone at all. Separately, undo and redo in
-  `LayeredCurveEditor.tsx` (`restore`) call `onLayerChange` only, so `CurveEditor` emits `onInput`
-  and never `onChange`, and a consumer that saves on `onChange` is not told the curve changed. The
-  delete's guards (locked, pinned endpoint, `minPoints`) are also a second copy of the ones in
-  `createFunctionLayer.tsx`, and the wrapper `div` with an inline `display: contents` exists only to
-  host the handler. For the delete: a `contextmenu` hook on `CurveLayer`, dispatched with hit
-  testing and history like `onPointerDown` (new public surface on the layer type), which also
-  retires the duplicate guards and the wrapper. Ruled 2026-10-11: undo and redo report a finished
-  change the same way the end of a drag does, so `CurveEditor` emits `onChange` for them. That
-  leaves `restore` calling `onLayerCommit` too, and the documented contract ("undo fires
-  `onLayerChange`") reworded to say so and to tell a consumer that keeps its own undo, or builds ops
-  from `onLayerCommit`, to turn `history` off.
-
 - **(P2) LayerList: rows under a card are `role="row"` with no `treegrid` ancestor.** When a level
   holds any item with a body, `Level` in `packages/ui/src/components/LayerList/LayerList.tsx`
   renders it as a `PropertyList` with no role, and a nested level's container is `role="none"`, so

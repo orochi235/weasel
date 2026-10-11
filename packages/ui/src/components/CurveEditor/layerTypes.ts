@@ -97,6 +97,19 @@ export interface CurveLayer<S> {
     extra: EmptyDownArgs<S>,
   ): LayerGesture<S> | void;
 
+  /** The context-menu gesture (a right-click, a long press, the menu key)
+   *  on a positive hit-test. `e.preventDefault()` keeps the browser's menu
+   *  shut; publish a one-shot edit with `extra.commit(next)`, which is one
+   *  undo step like any other. Only the topmost layer claiming the point is
+   *  asked. */
+  onContextMenu?(
+    state: S,
+    hit: LayerHit,
+    e: MouseEvent,
+    ctx: LayerCtx,
+    extra: EmptyDownArgs<S>,
+  ): void;
+
   /** Pointerdown landed where no layer claimed a hit. Layers get a
    *  turn top-to-bottom; first non-void return wins. Either start a
    *  gesture or commit a one-shot edit (return void after publishing
