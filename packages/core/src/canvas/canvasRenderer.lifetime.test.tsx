@@ -152,6 +152,22 @@ describe('leaseCanvasRenderer', () => {
   });
 });
 
+describe('a context the renderer refuses', () => {
+  it('says why once, and does not build a renderer again on every paint', () => {
+    rec = makeGLRecorder({ contextAttributes: { stencil: false } });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const lease = leaseCanvasRenderer();
+    const canvas = document.createElement('canvas');
+    const size = { width: 10, height: 10, dpr: 1 };
+    expect(lease.bind(canvas, size)).toBeNull();
+    expect(lease.bind(canvas, size)).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][1])).toContain('no stencil buffer');
+    expect(rec.calls.filter((c) => c.name === 'getContextAttributes')).toHaveLength(1);
+    warn.mockRestore();
+  });
+});
+
 describe('a canvas whose lost context comes back', () => {
   const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 

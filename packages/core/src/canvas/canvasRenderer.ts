@@ -20,6 +20,10 @@ import type { View } from '../core/viewport/view';
 /** The live renderers painting into each element, across every lease. */
 const TENANTS: WeakMap<HTMLCanvasElement, Set<WeaselRenderer>> = new WeakMap();
 
+/** Canvases whose context the renderer refused, so a redraw does not rebuild
+ *  and fail again, and the reason is reported once. */
+const REFUSED: WeakSet<HTMLCanvasElement> = new WeakSet();
+
 /** A renderer painting into the canvas, if any lease holds one. Test seam. */
 export function cachedCanvasRenderer(canvas: HTMLCanvasElement): WeaselRenderer | undefined {
   const set = TENANTS.get(canvas);
@@ -137,6 +141,7 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       held = null;
     }
     if (!held) {
+      if (REFUSED.has(canvas)) return null;
       const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
       if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') return null;
       let renderer: WeaselRenderer;
@@ -147,7 +152,13 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
           width, height, dpr,
           flattenTolerance: options.flattenTolerance,
         });
-      } catch {
+      } catch (e) {
+        // A lost context fails to compile and may yet come back; anything
+        // else fails the same way next time.
+        if (!(gl as Partial<WebGL2RenderingContext>).isContextLost?.()) {
+          REFUSED.add(canvas);
+          console.warn('weasel: this canvas cannot be painted:', e);
+        }
         return null;
       }
       // Added after the renderer's own listeners, so a subscriber runs against
