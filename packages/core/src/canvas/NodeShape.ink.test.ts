@@ -12,7 +12,7 @@ import { solid, strokeOf } from '../util/paint';
 import { linePath } from '@weasel-js/geom';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import { registerMarker } from '../core/strokeMarkers';
+import { registerMarker } from '@weasel-js/stroke';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 

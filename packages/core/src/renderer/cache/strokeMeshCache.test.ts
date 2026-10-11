@@ -6,7 +6,7 @@ import {
   _resetStrokeMeshCacheForTests,
   STROKE_CONFIGS_PER_PATH,
 } from './strokeMeshCache';
-import { strokeSpaceOf } from 'features/paths/tessellate/metric';
+import { strokeSpaceOf } from '@weasel-js/stroke';
 
 const rect = (): RectPath => ({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
 const base: Stroke = { width: 2, paint: { color: '#000000' } };

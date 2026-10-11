@@ -124,4 +124,4 @@ export {
   pathDivide,
   trianglesToPath,
 } from '@weasel-js/geom/booleans';
-export { strokeToPath, type StrokeToPathOptions } from './strokeToPath';
+export { strokeToPath, type StrokeToPathOptions } from '@weasel-js/stroke';

@@ -24,7 +24,7 @@ export {
   strokeDashStyleOf,
   STROKE_DASH_RATIOS,
 } from '@weasel-js/paint';
-export { resolveStrokeWidth } from '../features/paths/tessellate/stroke';
+export { resolveStrokeWidth } from '@weasel-js/stroke';
 export type {
   ColorSpace,
   CommandFill,
@@ -95,12 +95,12 @@ export type { ShaderProgram } from '../renderer/shaders/ShaderProgram';
 
 export {
   registerMarker, getMarker, listMarkers, markerRegistry,
-} from '../core/strokeMarkers';
-export type { MarkerEntry, MarkerCtx, MarkerPaint } from '../core/strokeMarkers';
-export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from '../core/markerInset';
-export { markerSites } from '../features/paths/markerSites';
-export type { MarkerSite, MarkerSiteRequest } from '../features/paths/markerSites';
-export { BUILTIN_MARKERS } from '../core/strokeMarkerShapes';
+} from '@weasel-js/stroke';
+export type { MarkerEntry, MarkerCtx, MarkerPaint } from '@weasel-js/stroke';
+export { markerInset, markerKeyOf, resolveMarkerSize, strokeInsets } from '@weasel-js/stroke';
+export { markerSites } from '@weasel-js/stroke';
+export type { MarkerSite, MarkerSiteRequest } from '@weasel-js/stroke';
+export { BUILTIN_MARKERS } from '@weasel-js/stroke';
 export { trimPolyline } from '@weasel-js/geom/tessellate';
 export type { Polyline } from '@weasel-js/geom/tessellate';
 

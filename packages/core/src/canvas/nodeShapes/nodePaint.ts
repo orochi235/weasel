@@ -1,8 +1,8 @@
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import type { NodeInk, NodePaintCtx } from 'canvas/NodeShape';
 import { countPathAnchors } from '@weasel-js/geom';
-import { markerReach } from 'features/paths/markerCommands';
-import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
+import { markerReach } from '@weasel-js/stroke';
+import { resolveStrokeWidth } from '@weasel-js/stroke';
 import type { DrawCommand, PathDrawCommand } from '../../renderer';
 
 /**

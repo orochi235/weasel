@@ -55,6 +55,7 @@ export const RULES = [
   ['packages/paint/src', 'Paint & fills'],
   ['packages/quantity/src', 'Scene'],
   ['packages/simulation/src', 'Rendering'],
+  ['packages/stroke/src', 'Paint & fills'],
   ['packages/react/src/useVisibleRaf', 'Rendering'],
   ['packages/react/src', 'Extension points'],
   ['packages/registry/src', 'Extension points'],

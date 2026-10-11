@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { prefSectionLeaves, type PrefBoolean, type PrefEnum, type PrefLeaf, type PrefSection, type PrefObject } from '@weasel-js/prefs';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
-import { getMarker, registerMarker } from 'core/strokeMarkers';
+import { getMarker, registerMarker } from '@weasel-js/stroke';
 import { inferredNodeRouting } from './defaultNodeRouting';
 import { DEFAULT_TEXT_STYLE, type TextStyle } from '@weasel-js/text';
 

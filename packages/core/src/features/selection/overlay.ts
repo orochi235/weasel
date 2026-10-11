@@ -32,7 +32,7 @@ import {
 } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { alignedStrokeRect, type CommandFill, type CommandStroke } from '@weasel-js/paint';
-import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
+import { resolveStrokeWidth } from '@weasel-js/stroke';
 import {
   rotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,

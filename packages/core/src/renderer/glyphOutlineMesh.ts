@@ -4,7 +4,7 @@
  */
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { LaidOutGroup, LaidOutOutlineGlyph } from '@weasel-js/text';
-import { strokeSpaceOf } from 'features/paths/tessellate/metric';
+import { strokeSpaceOf } from '@weasel-js/stroke';
 import type { GlMat3 } from '@weasel-js/geom';
 import { quantizeStrokeScale } from './cache/strokeMeshCache';
 import { outlineMesh } from './cache/outlineMeshCache';

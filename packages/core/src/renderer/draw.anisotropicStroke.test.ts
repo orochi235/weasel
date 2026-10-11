@@ -17,7 +17,7 @@ import { FLOATS_PER_VERTEX } from './drawBatch';
 import { meshBatching } from './draw';
 import { _resetStrokeMeshCacheForTests } from './cache/strokeMeshCache';
 import { _resetMarkerCommandCacheForTests } from './cache/markerCommandCache';
-import { registerMarker } from '../core/strokeMarkers';
+import { registerMarker } from '@weasel-js/stroke';
 
 type Recorder = ReturnType<typeof makeGLRecorder>;
 type Point = [number, number];

@@ -9,4 +9,4 @@
  */
 
 export { _resetPaintKindsForTests } from '../core/paintKinds';
-export { _resetMarkersForTests } from '../core/strokeMarkers';
+export { _resetMarkersForTests } from '@weasel-js/stroke/test-seams';

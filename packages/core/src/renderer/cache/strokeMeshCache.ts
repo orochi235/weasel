@@ -10,10 +10,10 @@
 
 import type { Path } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
-import { tessellateStroke, resolveStrokeWidth } from 'features/paths/tessellate/stroke';
-import { strokeInsets } from '../../core/markerInset';
-import { metricKey, type ScreenSpace, type StrokeSpaces } from 'features/paths/tessellate/metric';
-import type { InsetLength } from 'features/paths/tessellate/insets';
+import { tessellateStroke, resolveStrokeWidth } from '@weasel-js/stroke';
+import { strokeInsets } from '@weasel-js/stroke';
+import { metricKey, type ScreenSpace, type StrokeSpaces } from '@weasel-js/stroke';
+import type { InsetLength } from '@weasel-js/stroke';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 
 /**

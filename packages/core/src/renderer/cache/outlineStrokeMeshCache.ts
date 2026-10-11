@@ -24,8 +24,8 @@
  */
 
 import { pathFromD } from '@weasel-js/geom';
-import { tessellateStroke } from 'features/paths/tessellate/stroke';
-import { metricKey, type StrokeMetric } from 'features/paths/tessellate/metric';
+import { tessellateStroke } from '@weasel-js/stroke';
+import { metricKey, type StrokeMetric } from '@weasel-js/stroke';
 import type { Stroke } from '@weasel-js/paint';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { OUTLINE_FLATTEN_TOLERANCE } from './outlineMeshCache';

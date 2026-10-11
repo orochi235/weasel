@@ -104,6 +104,7 @@
     "@weasel-js/routing": "1.9.4",
     "@weasel-js/select": "1.9.4",
     "@weasel-js/simulation": "1.9.4",
+    "@weasel-js/stroke": "1.9.4",
     "@weasel-js/text": "1.9.4",
     "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7"

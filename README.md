@@ -188,6 +188,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `registry` | keyed registries you can enumerate and subscribe to; no React, no DOM |
 | `react` | generic React hooks the other packages share: `useLatest`, `useStableByContent`, `useVisibleRaf` |
 | `paint` | fills, strokes, gradients and dashes as plain data |
+| `stroke` | a stroke as geometry: the ribbon mesh, the marker registry, and a stroke outlined as a path |
 | `text` | styled runs, kerned layout, wrapping and measurement |
 | `bidi` | the Unicode Bidirectional Algorithm (UAX #9) |
 | `font` | MSDF atlases, glyph metrics and runtime glyph rasterization |

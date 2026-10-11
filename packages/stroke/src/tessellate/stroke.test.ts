@@ -3,8 +3,8 @@ import {
   PATH_M, PATH_L,
   type PolygonPath,
   type RectPath,
-  type Stroke,
-} from '@weasel-js/core';
+} from '@weasel-js/geom';
+import type { Stroke } from '@weasel-js/paint';
 import { tessellateStroke } from './stroke';
 import { PathBuilder } from '@weasel-js/geom';
 

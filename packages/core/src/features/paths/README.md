@@ -67,9 +67,9 @@ handle-drag with smooth mirroring, insert-on-segment, delete-with-refit,
 scissors, rect select). The anchor model itself (`pathToAnchors` /
 `anchorsToPath`, `PenAnchor`, `nearestSegmentT`) is in `@weasel-js/geom`.
 
-**Rendering** — `pathLayer.ts`, `markerCommands.ts`,
-`markerSites.ts`, `tessellate/stroke.ts` (stroke ribbons; stays in core because
-it reads `@weasel-js/paint`'s `Stroke`), plus `penPreviewLayer.ts` (the pen's
+**Rendering** — `pathLayer.ts`, `markerCommands.ts` (marker heads as draw
+commands; the ribbon, the marker registry and `strokeToPath` are in
+`@weasel-js/stroke`), plus `penPreviewLayer.ts` (the pen's
 in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome)
 
 ## Anchors are a view, not the storage

@@ -1,12 +1,12 @@
 import type { CommandFill, MarkerRef, CommandStroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from './DrawCommand';
 import type { GlMat3 } from '@weasel-js/geom';
-import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
+import { resolveStrokeWidth } from '@weasel-js/stroke';
 import {
   strokeSpaceOf, type ScreenSpace, type StrokeSpaces,
-} from 'features/paths/tessellate/metric';
+} from '@weasel-js/stroke';
 import { quantizeStrokeScale } from './cache/strokeMeshCache';
-import { resolveMarkerSize } from '../core/markerInset';
+import { resolveMarkerSize } from '@weasel-js/stroke';
 
 /** A path command whose stroke paints. */
 export type StrokedPathCommand = PathDrawCommand & { stroke: CommandStroke & { paint: CommandFill } };

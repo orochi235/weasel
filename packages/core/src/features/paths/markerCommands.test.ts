@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { markerDrawCommands, markerReach } from './markerCommands';
-import { registerMarker, type MarkerEntry } from '../../core/strokeMarkers';
+import { markerDrawCommands } from './markerCommands';
+import { markerReach } from '@weasel-js/stroke';
+import { registerMarker, type MarkerEntry } from '@weasel-js/stroke';
 import { PATH_Z, PATH_M, PATH_L, type PolygonPath } from '@weasel-js/geom';
 import type { CommandStroke } from '@weasel-js/paint';
 

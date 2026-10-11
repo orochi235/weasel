@@ -8,9 +8,9 @@
 import type { Stroke } from '@weasel-js/paint';
 import type { Path, PolygonPath } from '@weasel-js/geom';
 import { pathIntersect, pathSubtract, pathUnion, trianglesToPath } from '@weasel-js/geom/booleans';
-import { strokeInsets } from '../../core/markerInset';
+import { strokeInsets } from './markerInset';
 import { resolveStrokeWidth, tessellateStroke } from './tessellate/stroke';
-import { markerHeads } from './markerCommands';
+import { markerHeads } from './markerHeads';
 
 /** Options for {@link strokeToPath}. */
 export interface StrokeToPathOptions {

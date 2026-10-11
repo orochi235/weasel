@@ -15,7 +15,7 @@ import type { DrawCommand } from './DrawCommand';
 import { mat3 } from '@weasel-js/geom';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { _resetStrokeMeshCacheForTests } from './cache/strokeMeshCache';
-import { registerMarker } from '../core/strokeMarkers';
+import { registerMarker } from '@weasel-js/stroke';
 
 const M = 0, L = 1;
 

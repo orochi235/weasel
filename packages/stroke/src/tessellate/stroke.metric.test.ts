@@ -4,7 +4,8 @@
  * point of building it after the transform's linear part.
  */
 import { describe, it, expect } from 'vitest';
-import type { Path, Stroke } from '@weasel-js/core';
+import type { Path } from '@weasel-js/geom';
+import type { Stroke } from '@weasel-js/paint';
 import { ellipsePath, linePath } from '@weasel-js/geom';
 import { extractPolylines } from '@weasel-js/geom/tessellate';
 import { tessellateStroke } from './stroke';

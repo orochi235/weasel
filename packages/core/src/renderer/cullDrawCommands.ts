@@ -1,8 +1,8 @@
 import { type Path, mat3, type GlMat3 } from '@weasel-js/geom';
 import { resolveScreenLength, type Stroke } from '@weasel-js/paint';
 import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
-import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
-import { markerReach } from 'features/paths/markerCommands';
+import { resolveStrokeWidth } from '@weasel-js/stroke';
+import { markerReach } from '@weasel-js/stroke';
 
 /** A screen-space rectangle, CSS pixels. */
 export interface CullRect {
