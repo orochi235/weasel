@@ -2,7 +2,7 @@ import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it, vi } from 'vitest';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
-import { isLeafEnabled, isLeafVisible } from './visible';
+import { isEntryShown, isLeafEnabled, isLeafVisible } from './visible';
 
 const schema = () =>
   f.schema({
@@ -138,6 +138,18 @@ describe('isLeafVisible and isLeafEnabled', () => {
   it('answer yes for a path with neither, and for one naming nothing', () => {
     expect(isLeafEnabled(r, 'showGrid', {})).toBe(true);
     expect(isLeafEnabled(r, 'nowhere', {})).toBe(true);
+  });
+});
+
+describe('isEntryShown', () => {
+  it('answers a node of an unresolved schema by its own showIf, in either form', () => {
+    const { cellSize, seed, grid, showGrid } = schema().nodes;
+    expect(isEntryShown(cellSize, { showGrid: true })).toBe(true);
+    expect(isEntryShown(cellSize, { showGrid: false })).toBe(false);
+    expect(isEntryShown(seed, { mode: 'row' })).toBe(true);
+    expect(isEntryShown(seed, { mode: 'column' })).toBe(false);
+    expect(isEntryShown(grid, { mode: 'column' })).toBe(false);
+    expect(isEntryShown(showGrid, {})).toBe(true);
   });
 });
 

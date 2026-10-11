@@ -1,6 +1,12 @@
-import { type PrefScope, prefJudge, prefScopeAt } from '@weasel-js/prefs';
+import {
+  PREF_SCOPE,
+  type PrefScope,
+  prefJudge,
+  prefScopeAt,
+  prefScopeUnder,
+} from '@weasel-js/prefs';
 import { schemaNodeAtPath, valueAtPath } from './path';
-import type { ResolvedConfig } from './types';
+import type { ConfigEntry, ResolvedConfig } from './types';
 
 /**
  * Whether the node at a dotted path is shown and enabled, with every group
@@ -55,4 +61,15 @@ export function isLeafEnabled(
   config: Record<string, unknown>,
 ): boolean {
   return scopeAt(resolved, path, config).enabled;
+}
+
+/**
+ * Whether a node of a schema not yet resolved is drawn by its own `showIf`,
+ * as a condition or a function. It answers for the node alone: a walk that
+ * skips what is under a node not shown counts the nesting.
+ */
+export function isEntryShown(entry: ConfigEntry, config: Record<string, unknown>): boolean {
+  const judge = prefJudge((at) => valueAtPath(config, at));
+  if (!prefScopeUnder(PREF_SCOPE, entry.annotations, judge).shown) return false;
+  return entry.options.showIf?.(config) ?? true;
 }
