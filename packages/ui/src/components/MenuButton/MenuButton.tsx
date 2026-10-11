@@ -7,6 +7,7 @@ import {
   Popover as RACPopover,
 } from 'react-aria-components';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import { Caret } from '../Caret';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './MenuButton.module.css';
@@ -26,6 +27,9 @@ export type MenuButtonItem<T extends string = string> = {
 export type MenuButtonProps<T extends string = string> = {
   /** What the button says. It never changes to show a chosen row. */
   label: ReactNode;
+  /** The label is a value the caller holds and has set from the last row
+   *  chosen, so it reads as a value and not as a prompt. */
+  current?: boolean;
   items: ReadonlyArray<MenuButtonItem<T>>;
   /** Fired with the value of the row chosen. */
   onAction: (value: T) => void;
@@ -44,6 +48,7 @@ export type MenuButtonProps<T extends string = string> = {
  */
 export function MenuButton<T extends string = string>({
   label,
+  current,
   items,
   onAction,
   isDisabled,
@@ -65,11 +70,10 @@ export function MenuButton<T extends string = string>({
           className={[f.frame, s.trigger, className].filter(Boolean).join(' ')}
           isDisabled={isDisabled}
           aria-label={ariaLabel}
+          {...(current ? { 'data-current': '' } : {})}
         >
           <span className={s.label}>{label}</span>
-          <svg className={s.chevron} viewBox="0 0 10 10" aria-hidden="true">
-            <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <Caret className={s.chevron} />
         </RACButton>
       </TriggerTooltip>
       {/* `data-weasel-overlay`: see Select — the list renders in a portal,

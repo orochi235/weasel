@@ -34,6 +34,22 @@ export const AddTrial: Story = {
   },
 };
 
+/** `current` marks the label as a value the caller holds: it reads in the
+ *  text color, and the button is as wide as that value. */
+export const ReadsItsValue: Story = {
+  render: () => {
+    const [held, setHeld] = useState('sine');
+    return (
+      <MenuButton
+        current
+        label={INSTRUMENTS.find((i) => i.value === held)!.label}
+        items={INSTRUMENTS}
+        onAction={setHeld}
+      />
+    );
+  },
+};
+
 /** `shortcut` hovers as `New (⌘N)`; `tooltip` replaces that text with a
  *  longer hint for a label too terse to say what the menu holds. */
 export const Tooltips: Story = {

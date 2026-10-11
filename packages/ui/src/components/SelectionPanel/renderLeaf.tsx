@@ -28,7 +28,11 @@ import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { renderBarLeaf, type LeafSurface } from '../Bar/renderBarLeaf';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
-import { PropertyControl, type PropertyBooleanFieldProps } from '../Properties/PropertyField';
+import {
+  PropertyControl,
+  type PropertyBooleanFieldProps,
+  type PropertyControlProps,
+} from '../Properties/PropertyField';
 import { ToggleBar } from '../ToggleBar';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
@@ -261,10 +265,12 @@ export function renderBuiltin(
   renderers?: Record<string, PropertyRenderer>,
   { selectionKey = '', nested = false, surface = 'row' }: RenderBuiltinOptions = {},
 ): ReactNode {
-  const { pref, value, mixed, unset, setValue } = ctx;
+  const { pref, value, mixed, setValue } = ctx;
   if (surface === 'bar') {
     return renderBarLeaf({
       leaf: pref,
+      name: ariaLabel,
+      field: leafField(ctx, nested),
       row: () => renderBuiltin(ctx, ariaLabel, renderers, { selectionKey, nested }),
     });
   }
@@ -340,24 +346,7 @@ export function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
-  const field = prefFieldProps(pref, {
-    value,
-    mixed,
-    unset,
-    fields: ctx.fields,
-    siblings: ctx.siblings,
-    setValue,
-    ...perNodeState(ctx),
-    // The font pickers read the rest of the font from the leaves beside
-    // them: the family's substitution probe runs at the weight and style
-    // that will paint, and a weight lists what its family has. A mixed
-    // selection has no single one; the probe falls back to 400/normal there.
-    fontVariant: {
-      weight: ctx.valueAt(siblingPath(ctx.path, 'fontWeight')).value,
-      style: ctx.valueAt(siblingPath(ctx.path, 'fontStyle')).value,
-    },
-    fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
-  });
+  const field = leafField(ctx, nested);
   if (field === null) {
     return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
   }
@@ -374,19 +363,10 @@ export function renderBuiltin(
       );
     case 'number':
       return (
-        <PropertyControl
-          {...field}
-          name={ariaLabel}
-          className={field.control === 'slider' ? s.slider : s.number}
-          // A typed number writes once it is entered, as text does; a slider
-          // writes as it moves.
-          onInput={field.control === 'slider' ? field.onInput : settledOnly}
-        />
+        <PropertyControl {...field} name={ariaLabel} className={field.control === 'slider' ? s.slider : s.number} />
       );
     case 'string':
-      // Settled values only: a live write per keystroke would be one undo
-      // step per character.
-      return <PropertyControl {...field} name={ariaLabel} onInput={settledOnly} />;
+      return <PropertyControl {...field} name={ariaLabel} />;
     case 'enum':
       return (
         <PropertyControl
@@ -397,7 +377,7 @@ export function renderBuiltin(
           className={
             field.control === 'toggle'
               ? field.onClear ? s.flagToggle : s.toggle
-              : field.control === 'radio' ? undefined : s.select
+              : field.control === 'radio' || field.control === 'menu' ? undefined : s.select
           }
         />
       );
@@ -413,16 +393,57 @@ export function renderBuiltin(
           // across would recall the previous node's gradient.
           key={selectionKey}
           control="inline"
-          // A nested paint writes one field of its parent, and no kit paint
-          // field is optional — `Stroke.paint` is required. Removing the
-          // whole parent is a different edit than repainting it, so the
-          // control must not offer one as the other.
-          allowNone={!nested}
         />
       );
     case 'color':
+      return <PropertyControl {...field} name={ariaLabel} />;
+  }
+}
+
+/**
+ * A leaf as one control's props, writing the way a selection surface commits:
+ * what is the same whether the control then sits in a row or in a bar. Null
+ * for a leaf that is not one control.
+ */
+function leafField(ctx: PropertyRenderContext, nested: boolean): PropertyControlProps | null {
+  const field = prefFieldProps(ctx.pref, {
+    value: ctx.value,
+    mixed: ctx.mixed,
+    unset: ctx.unset,
+    fields: ctx.fields,
+    siblings: ctx.siblings,
+    setValue: ctx.setValue,
+    ...perNodeState(ctx),
+    // The font pickers read the rest of the font from the leaves beside
+    // them: the family's substitution probe runs at the weight and style
+    // that will paint, and a weight lists what its family has. A mixed
+    // selection has no single one; the probe falls back to 400/normal there.
+    fontVariant: {
+      weight: ctx.valueAt(siblingPath(ctx.path, 'fontWeight')).value,
+      style: ctx.valueAt(siblingPath(ctx.path, 'fontStyle')).value,
+    },
+    fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
+  });
+  switch (field?.kind) {
+    case 'number':
+      // A typed number writes once it is entered, as text does; a slider
+      // writes as it moves.
+      return field.control === 'slider' ? field : { ...field, onInput: settledOnly };
+    case 'string':
+      // Settled values only: a live write per keystroke would be one undo
+      // step per character.
+      return { ...field, onInput: settledOnly };
+    case 'color':
       // One write per gesture, not one per step of the picker.
-      return <PropertyControl {...field} name={ariaLabel} onInput={settledOnly} />;
+      return { ...field, onInput: settledOnly };
+    case 'paint':
+      // A nested paint writes one field of its parent, and no kit paint
+      // field is optional — `Stroke.paint` is required. Removing the
+      // whole parent is a different edit than repainting it, so the
+      // control must not offer one as the other.
+      return { ...field, allowNone: !nested };
+    default:
+      return field;
   }
 }
 

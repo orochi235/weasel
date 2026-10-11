@@ -12,6 +12,10 @@
   color: var(--wzl-fg-subtle);
 }
 
+.trigger[data-current] .label {
+  color: var(--wzl-fg);
+}
+
 .chevron {
   width: 10px;
   height: 10px;

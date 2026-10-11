@@ -1,7 +1,82 @@
-.label {
+/* One field on a bar's line. `flex: none` keeps the bar from squeezing it:
+   a bar too long for its room scrolls. */
+.field {
+  display: inline-flex;
+  align-items: center;
   flex: none;
-  margin-right: var(--wzl-space-2);
+  gap: var(--wzl-space-2);
+  font-family: var(--wzl-font-ui);
+}
+
+.label {
+  display: inline-flex;
+  flex: none;
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-muted);
+  white-space: nowrap;
+}
+
+/* A label after its control, as a switch and a checkbox have it. */
+.after {
+  flex: none;
+  font-size: var(--wzl-font-size-sm);
+  white-space: nowrap;
+}
+
+/* A bar's budget is one line rather than a column, so a number carries only
+   the digits it needs and a track stops short of pushing its neighbors off
+   the end. */
+.number {
+  --wzl-number-field-width: 5ch;
+}
+
+.number input[type='text'] {
+  inline-size: var(--wzl-number-field-width);
+}
+
+.text input[type='text'] {
+  inline-size: 12ch;
+}
+
+.field input[type='range'] {
+  inline-size: 64px;
+  flex: none;
+}
+
+/* The swatch fills a row's control column; here it is as wide as what it says. */
+.paint > button {
+  inline-size: auto;
+}
+
+.popTrigger {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  padding: 0 var(--wzl-space-3) 0 var(--wzl-space-4);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.caret {
+  width: 10px;
+  height: 10px;
+  color: var(--wzl-fg-muted);
+  flex: none;
+}
+
+.popover {
+  outline: none;
+}
+
+.popBody {
+  inline-size: 260px;
+  padding: var(--wzl-space-4);
+}
+
+/* A `label` leaf: words on the line, holding no value. */
+.words {
+  flex: none;
+  font-size: var(--wzl-font-size-sm);
   white-space: nowrap;
 }

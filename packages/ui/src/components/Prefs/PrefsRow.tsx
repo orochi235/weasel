@@ -16,7 +16,7 @@ import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
 import { ObjectLeaf } from './ObjectLeaf';
 import { UnionPicker } from './UnionPicker';
-import { PropertyControl } from '../Properties/PropertyField';
+import { PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyPanel';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
@@ -172,7 +172,14 @@ function renderBuiltin(
   surface: LeafSurface = 'row',
 ): ReactNode {
   const { pref, value, setValue } = ctx;
-  if (surface === 'bar') return renderBarLeaf({ leaf: pref, row: () => renderBuiltin(ctx, renderers, siblings) });
+  if (surface === 'bar') {
+    return renderBarLeaf({
+      leaf: pref,
+      name: pref.name,
+      field: leafField(ctx, siblings),
+      row: () => renderBuiltin(ctx, renderers, siblings),
+    });
+  }
   const object = (of: PrefRenderContext): ReactNode => (
     <ObjectLeaf ctx={of} renderField={(field, held) => renderPrefControl(field, renderers, held)} />
   );
@@ -200,29 +207,26 @@ function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
-  const field = prefFieldProps(pref, { value, mixed: ctx.mixed, siblings, setValue, fields: ctx.fields });
+  const field = leafField(ctx, siblings);
   if (field === null) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a
     // crash — a missing wiring should be visible and recoverable.
     return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
   }
-  switch (field.kind) {
-    // A form stores what was settled on: a number once it is entered, a color
-    // once its gesture ends.
-    case 'number':
-      return (
-        <PropertyControl
-          {...field}
-          name={pref.name}
-          onInput={settledOnly}
-          steppers={field.accepts === undefined}
-        />
-      );
-    case 'color':
-      return <PropertyControl {...field} name={pref.name} onInput={settledOnly} />;
-    default:
-      return <PropertyControl {...field} name={pref.name} />;
+  if (field.kind === 'number') {
+    return <PropertyControl {...field} name={pref.name} steppers={field.accepts === undefined} />;
   }
+  return <PropertyControl {...field} name={pref.name} />;
+}
+
+/**
+ * A leaf as one control's props, writing the way a form stores: what was
+ * settled on, a number once it is entered and a color once its gesture ends.
+ * Null for a leaf that is not one control.
+ */
+function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined): PropertyControlProps | null {
+  const field = prefFieldProps(ctx.pref, { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields });
+  return field?.kind === 'number' || field?.kind === 'color' ? { ...field, onInput: settledOnly } : field;
 }
 
 const settledOnly = (): void => {};

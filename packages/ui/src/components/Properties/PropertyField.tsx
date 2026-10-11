@@ -12,6 +12,7 @@ import { ColorField } from '../ColorField';
 import { FontFamilySelect } from '../FontFamilySelect';
 import { FontWeightSelect } from '../FontWeightSelect';
 import { Input } from '../Input';
+import { MenuButton } from '../MenuButton';
 import { PaintField } from '../PaintField';
 import { PaintInput } from '../PaintInput';
 import { Radio, RadioGroup } from '../RadioGroup';
@@ -152,8 +153,9 @@ export interface PropertyEnumFieldProps<T extends string = string> extends Field
   /**
    * `select` (default) is a dropdown. `radio` and `toggle` show every option
    * at once — a radio group lists them, and a toggle is a row of segments.
+   * `menu` is a button reading the value, as wide as that value and no wider.
    */
-  control?: 'select' | 'radio' | 'toggle';
+  control?: 'select' | 'radio' | 'toggle' | 'menu';
   /** Absent, or not one of `options`, chooses nothing. */
   value: T | undefined;
   options: ReadonlyArray<PropertyOption<T>>;
@@ -370,8 +372,8 @@ function rowShape(p: PropertyControlProps<string>): { variant: PropertyRowVarian
       return { variant: 'checkbox', group: p.control === 'switch' || p.control === 'toggle' };
     case 'enum':
       // A <label> hands a click on its text to its first control, which in a
-      // group of options means choosing the first one.
-      return { variant: 'default', group: p.control === 'radio' || p.control === 'toggle' };
+      // group of options means choosing the first one, and for a menu opening it.
+      return { variant: 'default', group: p.control === 'radio' || p.control === 'toggle' || p.control === 'menu' };
     case 'color':
       return { variant: 'color', group: false };
     case 'paint':
@@ -576,6 +578,22 @@ function EnumControl(p: PropertyEnumFieldProps) {
           </Radio>
         ))}
       </RadioGroup>
+    );
+  }
+  if (p.control === 'menu') {
+    const held = current === null ? undefined : p.options.find((o) => o.value === current);
+    const reads = p.mixed ? 'Mixed' : held ? held.label : (p.placeholder ?? (p.unset ? '—' : 'Choose option…'));
+    // The button's text is its value, so its name has to carry both.
+    const named = p.name === undefined ? undefined : typeof reads === 'string' ? `${p.name}: ${reads}` : p.name;
+    return (
+      <MenuButton<string>
+        className={p.className}
+        aria-label={named}
+        label={reads}
+        current={held !== undefined}
+        items={p.options.map((o) => ({ value: o.value, label: o.label, isDisabled: o.disabled }))}
+        onAction={p.onChange}
+      />
     );
   }
   if (p.control === 'toggle' && p.onClear) {

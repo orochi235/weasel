@@ -80,7 +80,7 @@ export type PrefBooleanControl = 'checkbox' | 'switch' | 'toggle';
 /** How a schema-driven UI should present a string pref. */
 export type PrefStringControl = 'input' | 'textarea';
 /** How a schema-driven UI should present an enum pref. */
-export type PrefEnumControl = 'select' | 'radio' | 'toggle';
+export type PrefEnumControl = 'select' | 'radio' | 'toggle' | 'menu';
 
 /** Display-unit conversion for number leaves whose stored value uses a
  *  canonical unit the user shouldn't see (e.g. radians stored, degrees

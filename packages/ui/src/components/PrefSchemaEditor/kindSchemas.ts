@@ -58,7 +58,7 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   enum: {
     options: { kind: 'enum-options', name: 'Options', description: 'Values and their labels, in order.', default: [] },
     clearable: flag('Clearable', 'Can be set back to no value.'),
-    control: control(['select', 'radio', 'toggle']),
+    control: control(['select', 'radio', 'toggle', 'menu']),
   },
   color: { alpha: flag('Alpha', 'Offer an alpha channel.') },
   paint: { alpha: flag('Alpha', 'Offer an alpha channel.') },

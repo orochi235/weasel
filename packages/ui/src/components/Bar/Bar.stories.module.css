@@ -1,0 +1,34 @@
+/* A stand-in for the bar these cells sit on: one line at the toolbar's height. */
+.strip {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-4);
+  height: var(--wzl-tb-height);
+  padding: 0 var(--wzl-space-4);
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  color: var(--wzl-fg);
+}
+
+.matrix {
+  display: grid;
+  grid-template-columns: 96px 280px auto;
+  gap: var(--wzl-space-3) var(--wzl-space-6);
+  align-items: center;
+  justify-items: start;
+}
+
+.matrix > .row {
+  justify-self: stretch;
+}
+
+.head,
+.kind {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
+.head {
+  text-transform: uppercase;
+  letter-spacing: var(--wzl-tracking-wider);
+}

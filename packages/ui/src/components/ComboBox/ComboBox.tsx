@@ -16,6 +16,7 @@ import {
 } from 'react-aria-components';
 import type { FieldOrientation } from '../Field/Field';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
+import { Caret } from '../Caret';
 import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './ComboBox.module.css';
@@ -238,9 +239,7 @@ function ComboBoxFrame({
       />
       {children}
       <RACButton className={s.openButton} aria-label="Show options">
-        <svg viewBox="0 0 10 10" aria-hidden="true">
-          <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <Caret />
       </RACButton>
     </div>
   );

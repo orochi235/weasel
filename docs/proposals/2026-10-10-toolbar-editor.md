@@ -1,7 +1,7 @@
 # A toolbar is a group drawn as a bar
 
-**Unbuilt, but for the dispatchers' surface argument.** Written 2026-10-10 on branch
-`toolbar-editor`. For whoever builds it. It says what has to change for `PrefSchemaEditor` to lay
+**Partly built.** Written 2026-10-10 on branch `toolbar-editor`, which holds the bar forms
+(`BarField`, `BarPopover`, `renderBarLeaf`); everything else below is unbuilt. For whoever builds it. It says what has to change for `PrefSchemaEditor` to lay
 out toolbars as well as settings forms, and in what order.
 
 ## What was decided
@@ -21,8 +21,8 @@ out toolbars as well as settings forms, and in what order.
 |---|---|---|
 | Group forms | `PrefGroupAs` is `'page' \| 'tab' \| 'panel' \| 'section'` | No bar |
 | Drawing a schema on one line | `ToolOptionsBar` flattens a `PrefGroup` to its leaves; nested groups draw nothing | It is a whole component, not a form a group can take inside a page |
-| Bar-sized controls | CSS in `ToolOptionsBar.module.css` narrows whatever `PropertyControl` drew (`5ch` number box, `64px` range) | No component owns the bar form of a kind, so nothing else can draw one |
-| Kind to control | Decided twice for a row: `renderBuiltin` in `Prefs/PrefsRow.tsx` and in `SelectionPanel/renderLeaf.tsx`. Both take a surface, and for `'bar'` hand the leaf to `renderBarLeaf` in `Bar/renderBarLeaf.tsx` | `renderBarLeaf` draws the row form behind a label, which is what `ToolOptionsBar` drew before it |
+| Bar-sized controls | `BarField` draws a field's bar form and `BarPopover` what one line cannot hold | An `action` leaf still draws its row button |
+| Kind to control | Both `renderBuiltin`s take a surface, and for `'bar'` hand the leaf and its field props to `renderBarLeaf` in `Bar/renderBarLeaf.tsx` | Nothing but `ToolOptionsBar` asks for `'bar'` yet |
 | Action leaves | `PrefAction` holds a `run` closure; `PrefActionButton` draws it | Code, so it cannot be dragged in, drafted, or exported |
 | Registered actions | `ActionBar` draws every action in one `group` from the `ActionsRegistry` | Not placeable one at a time; `Action` has no pressed state |
 | Editor preview | A `PrefsDialog` for a group root, a `SelectionPanel` for a section root | Nothing draws a bar, and drops are hit-tested as rows |
@@ -63,39 +63,10 @@ another, which this design leaves out.
 
 ## Bar forms
 
-One new component, `BarField`, takes the same `PropertyControlProps` union `PropertyField` takes
-and draws the cell a bar holds: the control at bar size, with an icon or a shortening label before
-it where the control does not name itself. `PropertyField` stays the row form. The narrowing rules
-in `ToolOptionsBar.module.css` move into it.
-
-| Kind | Bar form by default | Other controls, on either surface |
-|---|---|---|
-| `number` | Narrow number box behind a `FitLabel` | `slider`: a short range |
-| `string` | Narrow text box behind a `FitLabel` | `textarea`: a button that opens it in a popover |
-| `boolean` | Toggle button, fused with paired neighbors into one `ToggleBar` | `checkbox`, `switch`: the control, then its label |
-| `enum` | Bare `Select` | `toggle`: a segmented `ToggleBar`; `menu`: a `MenuButton` reading the current value; `radio` draws as `toggle` |
-| `color`, `paint` | Swatch that opens the picker | |
-| `field` | Bare `Select` | |
-| `font-family`, `font-weight` | The selects they have now | |
-| `object`, `list`, `map`, `union` | A button reading the leaf's name, which opens the row form in a popover | |
-| `action` | Icon button with the label and shortcut in its tooltip | `button`: icon and label |
-| `label` | Its text | |
-
-`BarAction` is the action cell. `ActionBar`'s button moves into it, so the registry-driven icon
-button has one definition.
-
-`BarPopover` is the button-and-popover cell. Compound kinds use it, and so does a paged, tabbed, or
-paneled group inside a bar.
-
-## One place decides a leaf's bar form
-
-`renderBarLeaf` is where the table above goes. Today it is handed the leaf and its row form, and
-draws that. To draw a `BarField` it also needs the leaf's `prefFieldProps`, which each dispatcher
-builds from its own values and has to pass in. A bar inside a `PrefsForm` page and a bar inside a
-`SelectionPanel` then draw a kind the same way without either dispatcher copying the other.
-
-An app's own renderer for a kind still draws that kind in a bar. `withBarLabel` sets the bar's
-label before what it returns.
+Built, but for the action cell. `BarAction` is that cell: an icon button with the label and
+shortcut in its tooltip, or icon and label for `control: 'button'`. `ActionBar`'s button moves into
+it, so the registry-driven icon button has one definition, and `renderBarLeaf` hands it an `action`
+leaf where it draws the row button today.
 
 ## `Bar`
 
@@ -138,7 +109,6 @@ Only actions `actionItems` lists can be placed, which leaves out any whose invok
 | `Bar` in the palette, with a new `formBar` glyph | `Palette.tsx`, `packages/ui/scripts/icons/` |
 | `bar` among a group's "Drawn as" choices | `kindSchemas.ts` |
 | An action leaf's attributes: `action` as a choice among the listed keys, and `control` | `kindSchemas.ts`, `attrRenderers.tsx` |
-| Each kind's `control` choices widened to the table under "Bar forms" | `kindSchemas.ts` |
 | An **Actions** list under the tree, beside the stored-values list: every action the host has, by group, with a filter box, each one draggable into the tree or the preview | New `ActionList.tsx`; `StructurePane.tsx` |
 | A leaf firing a key the list does not hold is marked in the tree | `StructurePane.tsx` |
 | A root drawn `as: 'bar'` previews as a `Bar` on a stage, with a switch for its orientation | `PreviewPane.tsx` |
@@ -154,23 +124,16 @@ allow.
 
 ## forge
 
-- `ui/Bar/BarField`: a story per kind and control, and one matrix story setting every leaf kind's
-  row form beside its bar form.
 - `ui/Bar/BarAction`: enabled, disabled, pressed, pending, labeled, and an unknown key.
 - `ui/Bar/Bar`: fields and actions together, divided runs, a popover group, both orientations.
 - `ui/PrefSchemaEditor`: a toolbar story over a registry of sample actions.
 
-A `*.browser.test.tsx` beside `BarField` checks what jsdom cannot: every bar form is the bar's
-height and they share a baseline.
-
 ## Order
 
-1. **Bar forms.** `BarField`, `BarPopover`, and their stories. `ToolOptionsBar`'s CSS overrides go.
-2. **Actions by key.** `PrefAction.action`, `Action.active`, `useLeafAction`, `BarAction`.
-   Independent of the bar forms.
-3. **`Bar` and `as: 'bar'`.** The component, the schema value, and the surfaces that draw it;
+1. **Actions by key.** `PrefAction.action`, `Action.active`, `useLeafAction`, `BarAction`.
+2. **`Bar` and `as: 'bar'`.** The component, the schema value, and the surfaces that draw it;
    `ToolOptionsBar` and `ActionBar` rebuilt on it.
-4. **Editor.** Palette, attributes, the Actions list, the bar preview, and drops along a bar.
+3. **Editor.** Palette, attributes, the Actions list, the bar preview, and drops along a bar.
 
 ## Left out
 
