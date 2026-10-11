@@ -1688,6 +1688,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   unless the kind's entry declares one. A type made with `prefType` has no such gap, carrying its
   own default.
 
+- **(P2) `PrefSchemaEditor`: an unset Auto value reads as "not set" and as a value at once.** The
+  row is drawn through `PrefsForm`'s own auto state (`AttributesPane.tsx` passes
+  `auto={UNSET_AUTO_VALUE}` and substitutes the leaf's default as the value), so its label is a pin
+  button, the words "not set" sit beside it, and the control under them shows the default at full
+  strength: `Auto value  not set  [8]`, or a ticked checkbox. Nothing says the 8 is the default and
+  not something stored, and the way to set or clear it is the label, which does not look like a
+  control. Whether it is set has to be a state the control itself shows. Open: a switch or a
+  "Set" button before the control with the control absent or disabled until it is on; an empty
+  control with the default as its placeholder, which a number or text can do and a checkbox or a
+  color cannot; or a two-way choice ("Same as default" / "Its own value") above the control. The
+  behavior is decided and the drawing is not.
+
 - **(P3) `PrefSchemaEditor` layout rough edges.** The always-mounted notice row adds one grid gap
   above the attributes pane, and the Key/Kind rows are wider than the attribute form under them.
   Seen on `#/dev/prefs` at 1440×900.
