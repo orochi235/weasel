@@ -33,6 +33,7 @@ import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanva
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
 import { caretIndexAt, pointInTextPose } from './hitTest';
+import { isTextData } from './isTextData';
 import type { StyledRun } from '@weasel-js/text';
 import type { TextPaint, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { useTextEdit, type TextEditClipRect, type UseTextEditReturn } from './useTextEdit';
@@ -54,8 +55,7 @@ export interface UseSceneTextEditOptions<TData> {
   /**
    * Is this node text? A double-click opens an edit only on a node that
    * answers yes, and passes through any other to the text under it. Default:
-   * `typeof data.text === 'string'`, the test `inferredNodeRouting` classifies
-   * a text node by. Pass one when `getText` reads some other shape.
+   * `isTextData`, the test `inferredNodeRouting` classifies a text node by. Pass one when `getText` reads some other shape.
    */
   isText?: (data: TData) => boolean;
   /** Read plain text from `data`. Default: `data.text ?? ''`. */
@@ -179,7 +179,7 @@ export function useSceneTextEdit<
 
   const read = useMemo(() => ({
     isText: (data: TData): boolean =>
-      optsRef.current.isText ? optsRef.current.isText(data) : typeof data.text === 'string',
+      optsRef.current.isText ? optsRef.current.isText(data) : isTextData(data),
     text: (data: TData): string =>
       optsRef.current.getText ? optsRef.current.getText(data) : (data.text ?? ''),
     style: (data: TData): TextStyle | undefined =>
@@ -248,13 +248,10 @@ export function useSceneTextEdit<
       const node = sceneRef.current.get(nid);
       if (!node) return;
       const { setText, setRuns, setStyle } = optsRef.current;
-      let data = node.data;
-      if (read.text(data) !== text) data = setText ? setText(data, text) : { ...data, text };
-      if (runs && JSON.stringify(read.runs(node.data)) !== JSON.stringify(runs)) {
-        data = setRuns ? setRuns(data, runs) : { ...data, runs };
-      }
+      let data = setText ? setText(node.data, text) : { ...node.data, text };
+      if (runs) data = setRuns ? setRuns(data, runs) : { ...data, runs };
       if (style) data = setStyle ? setStyle(data, style) : { ...data, style };
-      if (data !== node.data) sceneRef.current.update(nid, { data });
+      sceneRef.current.update(nid, { data });
     },
   });
 

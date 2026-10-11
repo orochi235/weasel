@@ -31,6 +31,60 @@ function getOverlay(container: HTMLElement): HTMLDivElement | null {
   return container.querySelector('div[contenteditable="true"]');
 }
 
+/** A keystroke at the end of the text, so the commit has something to write. */
+function appendChar(overlay: HTMLElement, ch: string): void {
+  const walker = document.createTreeWalker(overlay, NodeFilter.SHOW_TEXT);
+  let last: Text | null = null;
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) last = n as Text;
+  if (last) last.data += ch;
+  else overlay.appendChild(document.createTextNode(ch));
+}
+
+describe('useTextEdit — an edit that changed nothing writes nothing', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('opening and closing leaves the text alone, trailing newline included', () => {
+    const h = makeHarness({ a: 'abc\n' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.commit());
+    expect(h.commits).toEqual([]);
+    expect(h.texts.a).toBe('abc\n');
+  });
+
+  it('does not call `commit` either', () => {
+    const h = makeHarness({ a: 'hi' });
+    const commit = vi.fn();
+    h.opts.commit = commit;
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.commit());
+    expect(commit).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing when the text was changed and changed back', () => {
+    const h = makeHarness({ a: 'hi' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    overlay.textContent = 'hello';
+    overlay.textContent = 'hi';
+    act(() => result.current.commit());
+    expect(h.commits).toEqual([]);
+  });
+
+  it('still writes an edit that changed the text', () => {
+    const h = makeHarness({ a: 'hi' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    getOverlay(h.container)!.textContent = 'hello';
+    act(() => result.current.commit());
+    expect(h.commits).toEqual([{ id: 'a', text: 'hello' }]);
+  });
+});
+
 describe('overlayTop', () => {
   const pose = { x: 0, y: 100, width: 200, height: 90, fontSize: 16 };
 
@@ -391,8 +445,9 @@ describe('useTextEdit', () => {
       act(() => result.current.startEdit('a'));
       const overlay = getOverlay(h.container)!;
       expect(overlay.textContent).toBe('first line\nsecond line\nthird line');
+      appendChar(overlay, '!');
       act(() => result.current.commit());
-      expect(h.commits).toEqual([{ id: 'a', text: 'first line\nsecond line\nthird line' }]);
+      expect(h.commits).toEqual([{ id: 'a', text: 'first line\nsecond line\nthird line!' }]);
     });
 
     it('Shift+Enter is not preempted, so the browser would insert a newline', () => {
@@ -439,10 +494,11 @@ describe('useTextEdit', () => {
       r.setStart(overlay, 0);
       r.collapse(true);
       sel.addRange(r);
+      appendChar(overlay, '!');
       act(() => {
         overlay.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
       });
-      expect(h.commits).toEqual([{ id: 'a', text: 'alpha\nbeta\ngamma' }]);
+      expect(h.commits).toEqual([{ id: 'a', text: 'alpha\nbeta\ngamma!' }]);
     });
 
     it('strips a single trailing newline on commit', () => {
@@ -461,8 +517,9 @@ describe('useTextEdit', () => {
       act(() => result.current.startEdit('a'));
       const overlay = getOverlay(h.container)!;
       expect(overlay.textContent).toBe('top\n\nbottom');
+      appendChar(overlay, '!');
       act(() => result.current.commit());
-      expect(h.commits).toEqual([{ id: 'a', text: 'top\n\nbottom' }]);
+      expect(h.commits).toEqual([{ id: 'a', text: 'top\n\nbottom!' }]);
     });
   });
 
@@ -693,8 +750,8 @@ describe('useTextEdit — superscript and subscript', () => {
     act(() => { pressKey(overlay, '+', { meta: true, shift: true }); });
     act(() => result.current.commit());
     // Off is the enum's absence, not `script: false` — so the runs coalesce
-    // back to one, exactly as they were.
-    expect(h.runCommits[0].runs).toEqual([{ text: 'x2' }]);
+    // back to one, exactly as they were, and there is nothing to write.
+    expect(h.runCommits).toEqual([]);
   });
 
   it('subscript replaces superscript rather than stacking with it', () => {
@@ -915,8 +972,9 @@ describe('useTextEdit — one write per session', () => {
     h.opts.commit = commit;
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
+    appendChar(getOverlay(h.container)!, 'd');
     act(() => result.current.commit());
-    expect(commit).toHaveBeenCalledWith('a', { text: 'abc' });
+    expect(commit).toHaveBeenCalledWith('a', { text: 'abcd' });
   });
 });
 
@@ -1213,8 +1271,9 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     expect(parseFloat(overlay.style.lineHeight)).toBeCloseTo(16 * 1.2, 3);
     expect(overlay.style.top).toBe('-5.328px');
     // Node styling, so it must not come back as run styling.
+    appendChar(overlay, 'd');
     act(() => result.current.commit());
-    expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abcd' }]);
   });
 
   it("carries the node's text-transform onto the overlay", () => {
@@ -1223,8 +1282,9 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     act(() => result.current.startEdit('a'));
     expect(getOverlay(h.container)!.style.textTransform).toBe('uppercase');
     // Inherited by every run span, so it must not come back as run styling.
+    appendChar(getOverlay(h.container)!, 'd');
     act(() => result.current.commit());
-    expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abcd' }]);
   });
 
   it("sets the node's small caps in pieces at the canvas scale, and commits the source text", () => {
@@ -1235,8 +1295,9 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     expect(overlay.style.fontVariant).toBe('small-caps');
     expect(overlay.style.getPropertyValue('--weasel-small-caps')).toBe(String(SMALL_CAPS_SCALE));
     expect(overlay.querySelector('[data-small-caps]')?.textContent).toBe('bc');
+    appendChar(overlay, 'd');
     act(() => result.current.commit());
-    expect(h.runCommits[0].runs).toEqual([{ text: 'Abc' }]);
+    expect(h.runCommits[0].runs).toEqual([{ text: 'Abcd' }]);
   });
 
   it('splits a plain node with small caps too, so its lowercase is sized', () => {
@@ -1273,8 +1334,9 @@ describe('useTextEdit — node-level decoration on the overlay', () => {
     const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, underline: true });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
+    appendChar(getOverlay(h.container)!, 'd');
     act(() => result.current.commit());
-    expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abcd' }]);
   });
 });
 
@@ -1283,7 +1345,7 @@ describe('useTextEdit — decoration and tracking survive the commit path', () =
     document.body.innerHTML = '';
   });
 
-  it('an untouched edit commits the runs it started with', () => {
+  it('an edit commits the keys of the runs it did not touch', () => {
     const runs: StyledRun[] = [
       { text: 'a', underline: true },
       { text: 'b', strikethrough: true, letterSpacing: 2 },
@@ -1292,8 +1354,11 @@ describe('useTextEdit — decoration and tracking survive the commit path', () =
     const h = makeTrackingHarness(runs, { fontSize: 16, letterSpacing: 3 }, 32);
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
+    appendChar(getOverlay(h.container)!, 'd');
     act(() => result.current.commit());
-    expect(h.runCommits).toEqual([{ id: 'a', runs }]);
+    expect(h.runCommits).toEqual([
+      { id: 'a', runs: [runs[0], runs[1], { text: 'cd', letterSpacing: 0 }] },
+    ]);
   });
 
   it('Cmd-B on a tracked, decorated range keeps the other keys', () => {
@@ -1513,7 +1578,7 @@ describe('useTextEdit — range styling surface', () => {
     // user didn't select.
     expect(result.current.pendingStyle).toEqual({ underline: true });
     act(() => result.current.commit());
-    expect(h.runCommits[0].runs).toEqual([{ text: 'abcd' }]);
+    expect(h.runCommits).toEqual([]);
   });
 
   it('leaves the runs alone when the patch is empty', async () => {
@@ -1526,7 +1591,7 @@ describe('useTextEdit — range styling surface', () => {
     await selectCharsAndSettle(overlay, 0, 4);
     act(() => result.current.applyStyleToSelection({}));
     act(() => result.current.commit());
-    expect(h.runCommits[0].runs).toEqual([{ text: 'ab', bold: true }, { text: 'cd' }]);
+    expect(h.runCommits).toEqual([]);
   });
 
   it('reports null selection when not editing', () => {
@@ -1781,12 +1846,12 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    seedPlainOverlay(overlay, 'one two');
+    seedPlainOverlay(overlay, 'one too');
     await selectCharsAndSettle(overlay, 0, 3);
     act(() => result.current.commit());
     // No pointless single-run array written back to the node.
     expect(h.runCommits).toEqual([]);
-    expect(h.textCommits).toEqual([{ id: 'a', text: 'one two' }]);
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'one too' }]);
   });
 
   it('still writes runs when an edit strips the styling a node already had', () => {
@@ -1841,8 +1906,9 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     const h = makeRichHarness({ a: { text: 'a\nb', runs: [{ text: 'a\nb' }] } });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
+    appendChar(getOverlay(h.container)!, 'c');
     act(() => result.current.commit());
-    expect(h.textCommits).toEqual([{ id: 'a', text: 'a\nb' }]);
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'a\nbc' }]);
   });
 });
 
@@ -1959,10 +2025,11 @@ describe('useTextEdit — abandoned renders', () => {
     act(() => api!.startEdit('a'));
     act(() => { startTransition(() => abandon()); });
     const el = getOverlay(h.container)!;
+    appendChar(el, '!');
     await act(async () => {
       el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     });
     expect(setB).not.toHaveBeenCalled();
-    expect(h.commits).toEqual([{ id: 'a', text: 'hi' }]);
+    expect(h.commits).toEqual([{ id: 'a', text: 'hi!' }]);
   });
 });

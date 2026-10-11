@@ -509,6 +509,8 @@ export interface UseTextEditReturn {
   editingId: string | null;
   startEdit: (id: string, opts?: StartEditOptions) => void;
   cancelEdit: () => void;
+  /** End the edit and write it. An edit that leaves the text, the runs, and
+   *  the node's style as it found them writes nothing. */
   commit: () => void;
   isEditing: (id: string) => boolean;
   /**
@@ -607,6 +609,8 @@ export function useTextEdit(
   const tickRef = useRef<() => void>(() => {});
   const frameLoop = useVisibleRaf(() => { tickRef.current(); });
   const initialCaretRef = useRef<number | 'all'>('all');
+  /** What the overlay read back as when the edit opened, before any input. */
+  const openedRef = useRef<string | null>(null);
   const [selection, setSelection] = useState<TextEditSelection | null>(null);
   const [rangeStyle, setRangeStyle] = useState<RangeStyle | null>(null);
   const [pendingStyle, setPendingStyle] = useState<RunStylePatch>(NO_PENDING);
@@ -712,13 +716,20 @@ export function useTextEdit(
     // array just for being edited.
     const { getRuns, setRuns, setText, setStyle, commit: commitAll } = optsRef.current;
     const priorRuns = getRuns?.(id);
-    const runs = trimCaretHolder(domToRuns(overlay));
+    const read = domToRuns(overlay);
+    const style = nodeStyleRef.current;
+    // Compared untrimmed: a seeded trailing newline reads back the same at
+    // both ends, where the trimmed form would differ from the node's text.
+    if (!style && JSON.stringify(read) === openedRef.current) {
+      setEditingId(null);
+      return;
+    }
+    const runs = trimCaretHolder(read);
     const hadRuns = priorRuns != null && priorRuns.length > 0;
     const runsInPlay = hadRuns || runsCarryStyling(runs);
     // Read from the DOM, not `innerText`: a browser applies `text-transform`
     // to what that reports, and a break stand-in reads back as its `\n`.
     const text = runsToPlainText(runs);
-    const style = nodeStyleRef.current;
     holdNodeStyle(null);
     if (commitAll) {
       commitAll(id, { text, ...(runsInPlay ? { runs } : {}), ...(style ? { style } : {}) });
@@ -853,6 +864,7 @@ export function useTextEdit(
       // walkers cannot count and U+2028 into a space.
       appendOverlayText(overlay, getText(editingId));
     }
+    openedRef.current = JSON.stringify(domToRuns(overlay));
     applyOverlayStyle(overlay, style);
     const hold = holdForFaces(style, initialRuns ?? []);
     if (hold) overlay.style.opacity = '0';
