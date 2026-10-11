@@ -43,14 +43,44 @@ function validateLengths(from: readonly number[], to: readonly number[]): void {
 const cancelKeyFor = (id: string, channel: VertexColorChannel): string =>
   `colors:${id}:${channel}`;
 
+/** Under a thousandth of full scale from `to`, and slower than that a second, a color spring is done. */
+const COLOR_REST = 0.001;
+
+/** What the from-to helpers share: the node's color target, moved by a path through `colorsAt`. */
+function tweenColors(
+  animator: Animator,
+  opts: { id: string; channel: VertexColorChannel; from: readonly number[]; to: readonly number[]; onDone?: () => void },
+  ms: number,
+  easing: EasingSpec | undefined,
+  colorsAt: (t: number) => number[],
+): AnimationHandle {
+  const { id, channel } = opts;
+  const registry = animator.colorOverrides;
+  return animator.tween<number[]>({
+    target: registry.target(id, channel, opts.from.length),
+    from: opts.from.slice(),
+    to: opts.to.slice(),
+    ms,
+    easing,
+    cancelKey: cancelKeyFor(id, channel),
+    interrupt: false,
+    interpolate: (_from, _to, t) => colorsAt(t),
+    onDone: () => {
+      registry.release(id, channel);
+      opts.onDone?.();
+    },
+  });
+}
+
 /**
  * Animate one node's per-anchor colors from `from` to `to` over `ms`.
  *
- * The colors are published to the animator's `colorOverrides` registry rather
- * than written into the scene, so nothing is recorded in history and the
- * node's own data is untouched; the override is dropped when the animation
- * finishes. Starting another color animation on the same node and channel
- * cancels this one.
+ * It moves the node's color target (`animator.colorOverrides.target`) rather
+ * than writing the scene, so nothing is recorded in history and the node's own
+ * data is untouched. Another tween or stagger on the same node and channel adds
+ * to this one; a spring interrupts it. What it painted is dropped when the last
+ * animation on the node and channel finishes, and held where it was if canceled
+ * until `animator.colorOverrides.clear`.
  */
 export function tweenVertexColors(
   animator: Animator,
@@ -58,22 +88,7 @@ export function tweenVertexColors(
 ): AnimationHandle {
   validateLengths(opts.from, opts.to);
   const interp = resolveInterpolator(opts);
-  const { id, channel } = opts;
-  return animator.tween<number>({
-    from: 0,
-    to: 1,
-    ms: opts.ms,
-    easing: opts.easing,
-    cancelKey: cancelKeyFor(id, channel),
-    interpolate: (a, b, t) => a + (b - a) * t,
-    onTick: (t) => {
-      animator.colorOverrides.set(id, channel, interp(opts.from, opts.to, t));
-    },
-    onDone: () => {
-      animator.colorOverrides.clear(id, channel);
-      opts.onDone?.();
-    },
-  });
+  return tweenColors(animator, opts, opts.ms, opts.easing, (t) => interp(opts.from, opts.to, t));
 }
 
 /** Options for `springVertexColors`. */
@@ -88,35 +103,36 @@ export interface SpringVertexColorsOptions {
   stiffness?: number;
   damping?: number;
   mass?: number;
-  interpolation?: ColorSpace;
-  interpolate?: ColorInterpolate;
   onDone?: () => void;
 }
 
-/** `tweenVertexColors` driven by a spring instead of a duration. Same override
- *  semantics. */
+/**
+ * `tweenVertexColors` driven by a spring instead of a duration. Each number
+ * springs on its own, so an underdamped spring overshoots `to` and the path is
+ * a straight line in RGB.
+ *
+ * It interrupts whatever is animating the node and channel, and starts at the
+ * velocity of the one it interrupts, so retargeting mid-flight does not stall.
+ */
 export function springVertexColors(
   animator: Animator,
   opts: SpringVertexColorsOptions,
 ): AnimationHandle {
   validateLengths(opts.from, opts.to);
-  const interp = resolveInterpolator(opts);
   const { id, channel } = opts;
-  return animator.spring<number>({
-    from: 0,
-    to: 1,
+  const registry = animator.colorOverrides;
+  return animator.spring<number[]>({
+    target: registry.target(id, channel, opts.from.length),
+    from: opts.from.slice(),
+    to: opts.to.slice(),
     preset: opts.preset,
     stiffness: opts.stiffness,
     damping: opts.damping,
     mass: opts.mass,
+    restThreshold: COLOR_REST,
     cancelKey: cancelKeyFor(id, channel),
-    interpolate: (a, b, t) => a + (b - a) * t,
-    onTick: (t) => {
-      const clamped = Math.max(0, Math.min(1, t));
-      animator.colorOverrides.set(id, channel, interp(opts.from, opts.to, clamped));
-    },
     onDone: () => {
-      animator.colorOverrides.clear(id, channel);
+      registry.release(id, channel);
       opts.onDone?.();
     },
   });
@@ -142,15 +158,15 @@ export interface StaggerVertexColorsOptions {
 }
 
 /** Run the same color change across a node's anchors as a wave, each anchor
- *  starting later than the one before it. Same override semantics as
- *  `tweenVertexColors`. */
+ *  starting later than the one before it. It moves the same target as
+ *  `tweenVertexColors`, and adds to other animations the same way. */
 export function staggerVertexColors(
   animator: Animator,
   opts: StaggerVertexColorsOptions,
 ): AnimationHandle {
   validateLengths(opts.from, opts.to);
   const interp = resolveInterpolator(opts);
-  const { id, channel, from, to, anchorMs, perAnchorDelay } = opts;
+  const { from, to, anchorMs, perAnchorDelay } = opts;
   const n = from.length / 4;
   const easing = resolveEasing(opts.easing);
 
@@ -181,23 +197,5 @@ export function staggerVertexColors(
     return out;
   };
 
-  // A plain array, not a function override: painters call those with their
-  // own clock (`performance.now()`), not time since this stagger began.
-  animator.colorOverrides.set(id, channel, colorsAt(0));
-
-  return animator.tween<number>({
-    from: 0,
-    to: 1,
-    ms: totalMs,
-    easing: linear,
-    cancelKey: cancelKeyFor(id, channel),
-    interpolate: (a, b, t) => a + (b - a) * t,
-    onTick: (t) => {
-      animator.colorOverrides.set(id, channel, colorsAt(t * totalMs));
-    },
-    onDone: () => {
-      animator.colorOverrides.clear(id, channel);
-      opts.onDone?.();
-    },
-  });
+  return tweenColors(animator, opts, totalMs, linear, (t) => colorsAt(t * totalMs));
 }
