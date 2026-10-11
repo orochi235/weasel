@@ -5,6 +5,7 @@ import { DragGrip } from '../DragGrip';
 import { PropertyGroup } from './PropertyGroup';
 import { PropertyField } from './PropertyField';
 import { PropertyList, PropertyPanel } from './PropertyPanel';
+import { Subpanel } from './Subpanel';
 
 const meta: Meta<typeof PropertyGroup> = {
   title: 'ui/Properties/PropertyGroup',
@@ -61,6 +62,34 @@ export const Collapsible: StoryObj<typeof PropertyGroup> = {
     }
     return <Sections />;
   },
+};
+
+/** `twisty="folded"` shows a container's twisty only while it is folded: open, a press on the title folds it, and
+ *  the twisty comes back under keyboard focus. Bevel and Noise start folded, so theirs show. */
+export const FoldedTwisty: StoryObj<typeof PropertyGroup> = {
+  render: () => (
+    <>
+      <PropertyPanel title="Fill" twisty="folded" collapsible>
+        <PropertyList>
+          <PropertyGroup title="Aqua" twisty="folded" collapsible>
+            <PropertyField kind="number" control="slider" label="Gloss" value={0.55} min={0} max={1} step={0.02} onChange={() => {}} />
+          </PropertyGroup>
+          <PropertyGroup title="Bevel" twisty="folded" defaultCollapsed>
+            <PropertyField kind="number" control="slider" label="Rings" value={32} min={4} max={96} step={1} onChange={() => {}} />
+          </PropertyGroup>
+          <Subpanel title="Grain" twisty="folded" collapsible>
+            <PropertyField kind="number" control="slider" label="Amount" value={0.2} min={0} max={1} step={0.02} onChange={() => {}} />
+          </Subpanel>
+          <Subpanel title="Noise" twisty="folded" defaultCollapsed>
+            <PropertyField kind="number" control="slider" label="Scale" value={4} min={1} max={16} step={1} onChange={() => {}} />
+          </Subpanel>
+        </PropertyList>
+      </PropertyPanel>
+      <PropertyPanel title="Stroke" twisty="folded" defaultCollapsed>
+        <PropertyField kind="number" control="slider" label="Width" value={2} min={0} max={16} step={1} onChange={() => {}} />
+      </PropertyPanel>
+    </>
+  ),
 };
 
 /** `leading` and `actions` share the title row with the title: a handle before it, a value and a remove button after

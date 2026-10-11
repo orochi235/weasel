@@ -9,8 +9,11 @@ import {
   gradientForBounds,
   solid,
   strokeOf,
+  type NodePropertiesEntry,
+  type NodeRoutingEntry,
   type RectPose,
 } from '@weasel-js/core';
+import type { PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { SelectionPanel, type SelectionPanelProps } from './SelectionPanel';
 
 interface Data {
@@ -153,4 +156,35 @@ export const SelectedRows: Story = {
       />
     );
   },
+};
+
+const field = (name: string, kind: 'string' | 'number' = 'number'): PrefLeaf =>
+  ({ kind, name, description: '', default: kind === 'number' ? 0 : '' }) as PrefLeaf;
+
+const SECTIONED: PrefSection = {
+  name: 'Card',
+  members: {
+    'data.title': field('Title', 'string'),
+    size: { name: 'Size', as: 'tab', members: { 'pose.width': field('Width'), 'pose.height': field('Height') } },
+    place: { name: 'Place', as: 'tab', members: { 'pose.x': field('X'), 'pose.y': field('Y') } },
+    edge: { name: 'Edge', as: 'panel', members: { 'data.radius': field('Radius'), 'data.inset': field('Inset') } },
+    notes: { name: 'Notes', members: { 'data.note': field('Note', 'string') } },
+  },
+};
+const SECTIONED_PROPERTIES: NodePropertiesEntry[] = [{ name: 'card', schema: SECTIONED }];
+const SECTIONED_ROUTING: NodeRoutingEntry[] = [{ name: 'card', matches: () => true }];
+
+/** A schema's sections each drawn their own way: neighboring `as: 'tab'` sections as one strip of tabs, an
+ *  `as: 'panel'` section in a box, and a plain section under its heading. */
+export const Sections: Story = {
+  render: () => (
+    <div style={{ inlineSize: 260 }}>
+      <SelectionPanel
+        scene={sceneWith({ text: '' })}
+        selection={selection}
+        properties={SECTIONED_PROPERTIES}
+        routing={SECTIONED_ROUTING}
+      />
+    </div>
+  ),
 };
