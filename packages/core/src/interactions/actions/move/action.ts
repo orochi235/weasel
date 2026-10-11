@@ -80,13 +80,13 @@ import {
   frameAtOrAbove,
   rebaseLocalPose,
   IDENTITY_POSE_COMPOSITION,
-  type PoseAdapter,
   type PoseComposition,
 } from 'features/groups/composePose';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 import { planeToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { MoveLive, MoveSession, ReparentOnDrop } from './session';
 import type { LayoutPlacement } from './layout/types';
+import { draggedWorldPose, grabbedPoseAdapter, localDelta, planeDelta } from './delta';
 export type { ReparentOnDrop };
 
 // ---------------------------------------------------------------------------
@@ -469,45 +469,6 @@ function translateCommitOps(
   return ops;
 }
 
-/**
- * The world drag `(dx, dy)` as a translation of `id`'s stored pose. A pose is
- * stored in its frame, so under a turned frame the two point different ways.
- */
-function localDelta(
-  scratch: MoveScratch,
-  id: NodeId,
-  dx0: number,
-  dy0: number,
-): { dx: number; dy: number } {
-  const { dx, dy } = planeDelta(scratch, id, dx0, dy0);
-  const f = scratch.frames.get(id);
-  if (f === undefined) return { dx, dy };
-  const { pc } = scratch;
-  const d = scratch.descriptorOf(id);
-  const from = d.getBounds(pc.decompose(f.frameWorld, f.world));
-  const to = d.getBounds(
-    pc.decompose(f.frameWorld, translatePoseViaDescriptor(f.world, dx, dy, d)),
-  );
-  return { dx: to.x - from.x, dy: to.y - from.y };
-}
-
-/** The drag `(dx, dy)`, measured in the edited plane, as the drag of `id` in
- *  the world its own layer stores it in. */
-function planeDelta(
-  scratch: MoveScratch,
-  id: NodeId,
-  dx: number,
-  dy: number,
-): { dx: number; dy: number } {
-  const layer = scratch.scene.get(id)?.layer;
-  const ref = layer === undefined ? undefined : scratch.planeRefs.get(layer);
-  if (!ref) return { dx, dy };
-  const out = planeOf(scratch.view, layer!);
-  const at = { x: ref.edited.x + dx, y: ref.edited.y + dy };
-  const p = out ? toPlane(out, at) : at;
-  return { dx: p.x - ref.own.x, dy: p.y - ref.own.y };
-}
-
 /** Selected roots no source layout claimed on release, plus the descendants
  *  that follow them — the part of the selection the translate commit owns. */
 function unreleasedIds(scratch: MoveScratch, released: Set<NodeId>): NodeId[] {
@@ -524,21 +485,6 @@ function unreleasedIds(scratch: MoveScratch, released: Set<NodeId>): NodeId[] {
     if (!claimed) out.push(id);
   }
   return out;
-}
-
-/** `adapter`, except that an id caught mid-glide answers with the pose it was
- *  grabbed at — where the drag measures it from. */
-function grabbedPoseAdapter(
-  scratch: MoveScratch,
-  adapter: PoseAdapter<unknown>,
-): PoseAdapter<unknown> {
-  if (scratch.caught.size === 0) return adapter;
-  return {
-    ...adapter,
-    getPose: (id) => (scratch.caught.has(id as NodeId)
-      ? scratch.startPoses.get(id as NodeId)
-      : adapter.getPose(id)),
-  };
 }
 
 /** Where a dragged id was shown when the gesture ended: its stored pose then,
@@ -692,13 +638,11 @@ function applyReparent(
     // it adds in directly. Reads from the current scene state, which is
     // unchanged from drag start because `moveAction` doesn't write
     // during `onMove`.
-    const startWorld = composeWorldPose(poseAdapter, id, pc.compose);
-    const own = planeDelta(scratch, id, dx, dy);
     const layer = scene.get(id)!.layer;
     // Landing on another plane's layer, the pose crosses into that plane.
     const draggedWorld = carryPose(
       scratch.descriptorOf(id),
-      translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.descriptorOf(id)),
+      draggedWorldPose(scratch, poseAdapter, id, { dx, dy }),
       layer === target.newLayer
         ? null
         : planeToPlane(planeOf(scratch.view, layer), planeOf(scratch.view, target.newLayer)),
@@ -1079,11 +1023,10 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               const startWorld = composeWorldPose(
                 grabbedPoseAdapter(scratch, commitAdapter), id as string, pc.compose,
               );
-              const own = planeDelta(scratch, id, dx, dy);
               const ops = srcLayout.releaseDrop!(srcContainer, srcChildren, {
                 id: id as string,
                 originPose: startWorld,
-                pose: translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.descriptorOf(id)),
+                pose: draggedWorldPose(scratch, grabbedPoseAdapter(scratch, commitAdapter), id, { dx, dy }),
                 sourceContainerId: srcId,
               });
               if (ops === null) continue;
@@ -1102,11 +1045,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           exits = resolveLayoutExits(scratch, scratch.ids.filter((id) => !released.has(id)));
           for (const [id, toParent] of exits) {
             const node = scratch.scene.get(id)!;
-            const startWorld = composeWorldPose(
-              grabbedPoseAdapter(scratch, commitAdapter), id as string, pc.compose,
-            );
-            const own = planeDelta(scratch, id, dx, dy);
-            const world = translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.descriptorOf(id));
+            const world = draggedWorldPose(scratch, grabbedPoseAdapter(scratch, commitAdapter), id, { dx, dy });
             exitOps.push(createReparentOp({
               id: id as string,
               fromParentId: node.parent as string | null,
