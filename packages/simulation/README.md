@@ -1,6 +1,17 @@
-# simulation
+# @weasel-js/simulation
 
 Continuous N-body simulation — force-directed layout, physics-ish motion.
+
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
+scene-graph canvas kit for React. See the
+[API reference](https://orochi235.github.io/weasel/api/).
+
+```sh
+npm install @weasel-js/simulation
+```
+
+`createSimulation` is the root entry and needs no React or DOM. `useSimulation`
+is in `@weasel-js/simulation/react`.
 
 `createSimulation` is the velocity-Verlet integrator and nothing else: `tick()`
 is the only thing that moves a node, so a caller wanting the whole relaxation at

@@ -42,13 +42,13 @@ export {
 export type { Vec2 } from 'core/geometry/vec2';
 export type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 export { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
-export { createSimulation } from 'features/simulation/createSimulation';
+export { createSimulation } from '@weasel-js/simulation';
 export type {
   Simulation,
   SimulationCore,
   SimulationForce,
   SimulationNode,
   SimulationOptions,
-} from 'features/simulation/types';
+} from '@weasel-js/simulation';
 export { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 export { rotatePoint } from 'interactions/actions/rotate/geometry';

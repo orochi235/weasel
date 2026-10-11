@@ -7,7 +7,21 @@ export { VERSION } from '../version';
 export * from '../features/viewports';
 export * from '../features/parallax';
 export * from '../features/tiling';
-export * from '../features/simulation';
+export {
+  createSimulation,
+  DEFAULT_ALPHA_DECAY,
+  DEFAULT_ALPHA_MIN,
+  DEFAULT_VELOCITY_DECAY,
+} from '@weasel-js/simulation';
+export type {
+  Simulation,
+  SimulationCore,
+  SimulationForce,
+  SimulationNode,
+  SimulationOptions,
+  UseSimulationOptions,
+} from '@weasel-js/simulation';
+export { useSimulation } from '@weasel-js/simulation/react';
 export * from '../features/poseRun';
 export * from '../features/overlays';
 

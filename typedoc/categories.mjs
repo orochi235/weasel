@@ -54,6 +54,7 @@ export const RULES = [
   ['packages/history/src', 'History'],
   ['packages/paint/src', 'Paint & fills'],
   ['packages/quantity/src', 'Scene'],
+  ['packages/simulation/src', 'Rendering'],
   ['packages/react/src/useVisibleRaf', 'Rendering'],
   ['packages/react/src', 'Extension points'],
   ['packages/registry/src', 'Extension points'],
