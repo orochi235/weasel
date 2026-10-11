@@ -160,6 +160,15 @@ describe('an <image> element\'s own transform', () => {
     expect(node.flipY).toBeUndefined();
   });
 
+  it('cancels a cropped image\'s own flip against a mirroring transform', () => {
+    const { node } = only<SvgImageNode>(
+      '<g data-weasel-image="true" transform="scale(-1 1)"><svg x="1" y="2" width="20" height="10" viewBox="0 0 1 1" preserveAspectRatio="none">'
+      + '<image href="a.png" x="0" y="0" width="1" height="1" preserveAspectRatio="none" transform="matrix(-1 0 0 1 1 0)"/></svg></g>',
+    );
+    expect(node.flipX).toBeFalsy();
+    expect(node).toMatchObject({ x: -21, y: 2, width: 20, height: 10 });
+  });
+
   it('keeps a rotation about a corner', () => {
     // Box (0, 0, 20, 10), center (10, 5). rotate(90) about the origin takes
     // (x, y) to (-y, x): center (-5, 10).

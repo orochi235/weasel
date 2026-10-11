@@ -79,7 +79,13 @@ export function parseCroppedImage(
     node.source = source;
   }
   const flip = parseTransform(img.getAttribute('transform'), onWarn);
-  if (flip[0] < 0) node.flipX = true;
-  if (flip[3] < 0) node.flipY = true;
+  // Toggled, not set: the group's own transform may already have mirrored it.
+  if (flip[0] < 0) toggle(node, 'flipX');
+  if (flip[3] < 0) toggle(node, 'flipY');
   return node;
+}
+
+function toggle(node: SvgImageNode, key: 'flipX' | 'flipY'): void {
+  if (node[key]) delete node[key];
+  else node[key] = true;
 }
