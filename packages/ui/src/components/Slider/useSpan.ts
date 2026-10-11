@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { snapToStep } from '../spin';
-import { STOP_SNAP_PX, attract, clamp, usableStops } from './stops';
+import { clamp } from '@weasel-js/geom';
+import { STOP_SNAP_PX, attract, usableStops } from './stops';
 import type { SliderProps } from './types';
 
 /** The reachable stops and the value span the track runs over: the first stop

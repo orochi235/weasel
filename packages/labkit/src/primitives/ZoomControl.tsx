@@ -1,4 +1,5 @@
 import { normalizeZoom } from '@weasel-js/core';
+import { clamp } from '@weasel-js/geom';
 import { NumberField, Slider } from '../passthrough/weasel-ui';
 
 /** Props for `<ZoomControl>`. */
@@ -21,8 +22,6 @@ export interface ZoomControlProps {
 // the slider runs on log2 and 100% lands mid-track for a symmetric range.
 const toTrack = (zoom: number): number => Math.log2(zoom);
 const fromTrack = (v: number): number => 2 ** v;
-
-const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 
 /** Zoom as a log-scaled slider with an editable percentage beside it. Pair it
  *  with zoom-in / zoom-out buttons in a `<Toolbar.Group>`; this component owns

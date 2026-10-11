@@ -1,5 +1,5 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, valueAtPath } from '@weasel-js/labkit/config';
-import { isPlainObject } from '../csf/isPlainObject';
+import { isPlainObject } from '@weasel-js/core';
 import { stableStringify } from '../protocol/messages';
 
 /**

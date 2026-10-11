@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/registry';
 import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
@@ -100,9 +101,6 @@ function repairList(
   return kept === stored && read.every((entry, i) => entry === stored[i]) ? stored : read;
 }
 
-function isPlainObject(v: unknown): boolean {
-  return v !== null && typeof v === 'object' && !Array.isArray(v);
-}
 
 function repairNumber(leaf: PrefNumber, stored: unknown): unknown {
   if (typeof stored !== 'number' || Number.isNaN(stored)) return leaf.default;

@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/registry';
 import { fullSelection, isByAxis, pick, type Selection, type Varying } from '../axes.ts';
 import type { PinObject, PinValue, ThemeDefinition } from '../definition.ts';
 import type { RawToken, TokenValue } from '../dtcg/types.ts';
@@ -113,13 +114,13 @@ class Reader {
 
   record(x: unknown, path: string): Record<string, unknown> {
     if (x === undefined) return {};
-    if (typeof x === 'object' && x !== null && !Array.isArray(x)) return x as Record<string, unknown>;
+    if (isPlainObject(x)) return x;
     this.fail(path, 'expected an object');
     return {};
   }
 }
 
-const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+const isRecord = isPlainObject;
 
 const stepNames = (x: unknown): string[] | undefined =>
   Array.isArray(x) && x.every((s) => typeof s === 'string') ? x : undefined;
@@ -281,7 +282,7 @@ function inferTypes(tokens: Record<string, RawToken>, provenance: Record<string,
 }
 
 const isPinObject = (v: PinValue): v is PinObject =>
-  typeof v === 'object' && v !== null && !Array.isArray(v) && 'value' in v;
+  isPlainObject(v) && 'value' in v;
 
 const NAMED_LAYERS = ['ramps', 'scales', 'semantics', 'components', 'pins'] as const;
 /** A reference reads a dot as a group, and a name reaches CSS custom properties and the generated module unescaped. */

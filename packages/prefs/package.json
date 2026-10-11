@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@weasel-js/quantity": "1.9.3",
+    "@weasel-js/registry": "1.9.3",
     "@weasel-js/storage": "1.9.3"
   },
   "peerDependencies": {

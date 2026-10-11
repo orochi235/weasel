@@ -14,7 +14,7 @@ import { storyId, storyNameFromExport } from '../story/ids';
 import type { Decorator, LoadedStory, PlayContext, StoryContext } from '../story/types';
 import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } from './argsContext';
 import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
-import { isPlainObject } from './isPlainObject';
+import { isPlainObject } from '@weasel-js/core';
 import { withUnsent } from './portSafe';
 import { timelineOf } from '../timeline/declare';
 

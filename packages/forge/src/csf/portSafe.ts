@@ -1,4 +1,4 @@
-import { isPlainObject } from './isPlainObject';
+import { isPlainObject } from '@weasel-js/core';
 
 const g = globalThis as Record<string, unknown>;
 const CLONED_WHOLE = new Set<unknown>(

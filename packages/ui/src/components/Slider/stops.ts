@@ -1,9 +1,6 @@
+import { clamp } from '@weasel-js/geom';
 import { decimal } from '@weasel-js/quantity';
 import type { BoundsCtx, SliderProps, SliderStop, Thumb } from './types';
-
-export function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
 
 /** How close a drag has to come to a stop, in track pixels, to land on it. */
 export const STOP_SNAP_PX = 8;

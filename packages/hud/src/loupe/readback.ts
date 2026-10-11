@@ -1,3 +1,5 @@
+import { clamp } from '@weasel-js/geom';
+
 /**
  * Read a `rw × rh` device-pixel region of the drawing buffer centered on
  * `pointer`, returned top-down. `pointer` is in CSS px relative to `target`,
@@ -32,8 +34,4 @@ export function readbackRegion(
     flipped.set(raw.subarray(src, src + stride), row * stride);
   }
   return new ImageData(flipped, rw, rh);
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }

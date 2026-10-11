@@ -1,4 +1,5 @@
 export { createReflectable } from './reflectable';
+export { isPlainObject, isPlainPrototype } from './isPlainObject';
 export type {
   Reflectable,
   Reflection,

@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/registry';
 import { isByAxis, type AxisDefs, type Varying } from './axes.ts';
 import type { SerializableColorList } from './colorList.ts';
 import type { PinObject, PinValue, ThemeDefinition } from './definition.ts';
@@ -24,7 +25,7 @@ export interface Theme {
 export type ThemeInput = Omit<ThemeDefinition, 'extends'> & { readonly extends?: Theme | null };
 
 const isPinObject = (v: PinValue): v is PinObject =>
-  typeof v === 'object' && v !== null && !Array.isArray(v) && 'value' in v;
+  isPlainObject(v) && 'value' in v;
 
 function toRaw(v: Varying<PinValue>): Varying<RawToken> {
   if (isByAxis(v)) {

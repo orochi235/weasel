@@ -1,5 +1,5 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, titleCase } from '@weasel-js/labkit/config';
-import { isPlainObject } from '../../csf/isPlainObject';
+import { isPlainObject } from '@weasel-js/core';
 
 export interface VariantValue {
   value: unknown;

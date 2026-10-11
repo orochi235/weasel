@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/core';
 import type { LabDocument, SavedSnapshot, SerializedTrial } from './types';
 
 /** Every record of the lab stored under `storageKey` starts with this. The key
@@ -68,9 +69,7 @@ export interface LabMeta {
   mode: unknown;
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === 'object' && !Array.isArray(value);
-}
+const isObject = isPlainObject;
 
 /** A document as the records a lab stores it in, `meta` last — so a write in
  *  this order that stops partway leaves no `meta`, and the next open folds the

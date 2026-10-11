@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/registry';
 import { pick, type Selection, type Varying } from '../axes.ts';
 import type { PinObject, SemanticRule } from '../definition.ts';
 import type { RawToken, TokenValue } from '../dtcg/types.ts';
@@ -41,7 +42,7 @@ interface Env {
   readonly positionAt: (name: string) => Position | undefined;
 }
 
-const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+const isRecord = isPlainObject;
 
 const refTarget = (value: TokenValue): string | undefined =>
   typeof value === 'string' ? TOKEN_REF.exec(value.trim())?.[1] : undefined;

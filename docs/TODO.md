@@ -2089,13 +2089,6 @@ one dead `const` and four stale disable directives.
   listener. One `createEmitter()` with stated semantics in a leaf package every tier can reach
   (`@weasel-js/registry`).
 
-- **(P3) `isPlainObject`, `shallowEqual`, and `clamp` have no home below core.** core's
-  `isPlainObject` is realm-safe; `prefs/src/repair.ts`, three files in `theme/src`,
-  `labkit/src/state/labRecords.ts`, and `forge/src/shell/globals.ts` use
-  `typeof v === 'object' && v !== null && !Array.isArray(v)`, which accepts a `Date` or a `Map`.
-  Scalar `clamp` is defined locally in ten places and `@weasel-js/geom` exports none. Put
-  `isPlainObject` in a leaf, re-export it from core, and add `clamp` to geom's scalars.
-
 - **(P3) `@weasel-js/loupe` peers on all of core for one function and one type.** Its model is
   framework-free and `sideEffects: false`, and it imports `normalizeZoom` and the `View` type from
   `@weasel-js/core`, which makes core, and React through it, a requirement of anything using the

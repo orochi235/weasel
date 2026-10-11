@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/registry';
 import { mergeAxes, type AxisDef, type AxisDefs, type Selection, type Varying } from './axes';
 import { AXES_EXT, overrideKey, type DtcgAxesExtension } from './dtcg/axesExtension';
 import { flattenTokens } from './dtcg/flatten';
@@ -19,7 +20,7 @@ interface Layer {
   readonly modes: Record<string, FlatTokens>;
 }
 
-const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const isRecord = isPlainObject;
 
 function readLayer(src: { primitives?: unknown; modes?: unknown }): Layer {
   const modes = isRecord(src.modes) ? src.modes : {};

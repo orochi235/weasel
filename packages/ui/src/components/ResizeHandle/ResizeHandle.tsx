@@ -1,3 +1,4 @@
+import { clamp } from '@weasel-js/geom';
 import { useCallback, useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
 import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import { snapToStep } from '../spin';
@@ -48,7 +49,6 @@ export interface ResizeHandleProps {
   className?: string;
 }
 
-const clamp = (n: number, min: number, max: number): number => Math.min(max, Math.max(min, n));
 
 /**
  * Snap to the step grid, then clamp. Bounds win over the grid: `min`/`max`

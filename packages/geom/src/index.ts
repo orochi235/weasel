@@ -1,7 +1,7 @@
 /** @weasel-js/geom — pure 2D geometry kernel: scalars, affines, curves, the
  *  `Path` command stream and the math over it, and easing curves. Curve
  *  representations, tessellation and booleans live in subpaths. */
-export { cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
+export { clamp, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
 export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Mat3 } from './mat3';
 export { boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, rectToContour, type Box, type Rect } from './box';
 export { PATH_COMMANDS, PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS, pathCommandCoordCount, forEachSegment, type PathCommandName, type PathCommandCode } from './commands';

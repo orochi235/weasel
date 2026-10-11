@@ -1,3 +1,5 @@
+import { isPlainObject } from '@weasel-js/registry';
+
 /** One value of an axis. `scheme` becomes `color-scheme` in that value's CSS blocks. */
 export interface AxisValue {
   readonly scheme?: 'dark' | 'light';
@@ -28,7 +30,7 @@ export type Picked<T> = { ok: true; value: T } | { ok: false; axis: string; valu
 
 /** Whether `v` is a {@link ByAxis} value. */
 export function isByAxis(v: unknown): v is ByAxis<unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v) && typeof (v as { by?: unknown }).by === 'string';
+  return isPlainObject(v) && typeof v.by === 'string';
 }
 
 /** Every axis given a known value; anything missing or unknown takes its default. */

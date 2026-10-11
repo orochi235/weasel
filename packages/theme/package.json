@@ -31,7 +31,8 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/paint": "1.9.3"
+    "@weasel-js/paint": "1.9.3",
+    "@weasel-js/registry": "1.9.3"
   },
   "peerDependencies": {
     "react": ">=18"

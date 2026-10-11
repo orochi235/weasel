@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/core';
 import type { IconName } from '@weasel-js/ui';
 import type { LabMode } from '@weasel-js/labkit';
 import { type ConfigSchema, f } from '@weasel-js/labkit/config';
@@ -42,8 +43,7 @@ export const FOLLOW_APP = 'app';
 
 const APP_OPTION = { value: FOLLOW_APP, label: 'App' } as const;
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
+const isRecord = isPlainObject;
 
 export const isGlobalsPath = (path: string): boolean => path === GLOBALS_KEY || path.startsWith(`${GLOBALS_KEY}.`);
 

@@ -15,6 +15,11 @@ export const EPS = 1e-6;
  *  large one whose determinant is only rounding does not. */
 export const SINGULAR_RATIO = 1e-12;
 
+/** `v` held to `lo`..`hi`. `lo` wins when the bounds cross; `NaN` passes through. */
+export function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
 /** 2D cross (wedge) product of vectors (ax,ay) and (bx,by). */
 export function cross(ax: number, ay: number, bx: number, by: number): number {
   return ax * by - ay * bx;

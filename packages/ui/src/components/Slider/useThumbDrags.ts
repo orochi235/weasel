@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { snapToStep } from '../spin';
-import { clamp, clampOrdered, resolveBounds } from './stops';
+import { clamp } from '@weasel-js/geom';
+import { clampOrdered, resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 import type { useScale, useSpan } from './useSpan';
 

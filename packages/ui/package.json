@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@weasel-js/font": "1.9.3",
+    "@weasel-js/geom": "1.9.3",
     "@weasel-js/gestures": "1.9.3",
     "@weasel-js/modes": "1.9.3",
     "@weasel-js/prefs": "1.9.3",
@@ -66,7 +67,6 @@
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/cursor": "1.9.3",
-    "@weasel-js/geom": "1.9.3"
+    "@weasel-js/cursor": "1.9.3"
   }
 }
