@@ -55,7 +55,7 @@ import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import { createReparentOp } from 'core/ops/reparent';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
-import type { LayoutDep } from '../depSchema';
+import type { LayoutDep, NodeAtPointDep } from '../depSchema';
 import type {
   LayoutStrategy,
   LayoutContainer,
@@ -706,6 +706,11 @@ interface MoveScratch {
   geometryProjection?: GeometryProjection;
   /** Label, history and callbacks from the binding's params. */
   lifecycle: GestureLifecycle;
+  /** The hit-test reparent-on-drop asks, captured at start: the dispatcher
+   *  ends a gesture with an empty deps bag. */
+  nodeAtPoint: NodeAtPointDep | undefined;
+  /** The pointer at the latest move. */
+  lastWorld: { x: number; y: number } | null;
 }
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
@@ -725,13 +730,17 @@ function resolveDropTarget(
   endCtx: InvocationCtx,
   scratch: MoveScratch,
 ): DropTarget | null {
-  const dep = endCtx.deps.nodeAtPoint;
+  const dep = scratch.nodeAtPoint;
   if (!dep) return null;
+  // An end with no drag carries no pointer: the dispatcher's `cancelAll`
+  // reports the world origin.
+  const at = endCtx.drag ? endCtx.world : scratch.lastWorld;
+  if (!at) return null;
 
   // Exclude moved roots + their descendants. Otherwise we'd happily
   // reparent a node into itself (or under one of its own children).
   const exclude = new Set<NodeId>([...scratch.ids, ...scratch.cascadeIds]);
-  const hit = dep(endCtx.world, exclude);
+  const hit = dep(at, exclude);
   if (!hit) return null;
 
   const hitNode = scratch.scene.get(hit);
@@ -1000,6 +1009,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         applyOps,
         geometryProjection,
         lifecycle,
+        nodeAtPoint: ctx.deps.nodeAtPoint,
+        lastWorld: null,
       };
 
       for (const id of ids) {
@@ -1269,6 +1280,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         kind: 'move',
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
+          scratch.lastWorld = moveCtx.world;
           if (!engaged) {
             const s = moveCtx.drag.screenDelta;
             if (s && !pastDragThreshold({ clientX: 0, clientY: 0 }, { clientX: s.x, clientY: s.y }, dragThresholdPx)) return;
