@@ -8,7 +8,7 @@ import type { EditorAction } from './editorActions';
 import type { PrefSchemaEditorPrefs } from './editorPrefs';
 import type { SubmitChanges } from './ExportPanel';
 import type { CustomKinds } from './kindSchemas';
-import { asWorkspace, oneAssetCodec, schemaOf } from './oneAsset';
+import { asWorkspace, oneAssetCodec, sameSchema, schemaOf } from './oneAsset';
 import { NO_TYPES, type PrefTypes } from './types';
 
 /** Props for {@link PrefSchemaEditor}. */
@@ -78,9 +78,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>({ schema, onChange, original, types = NO_TYPES, ...rest }: PrefSchemaEditorProps<S>) {
   const codec = useMemo(() => oneAssetCodec<S>(types), [types]);
-  return (
-    <AssetEditor {...rest} types={types} codec={codec}
-      workspace={asWorkspace(schema)} onChange={(next) => onChange(schemaOf<S>(next))}
-      original={original && asWorkspace(original)} />
-  );
+  const workspace = useMemo(() => asWorkspace(schema), [schema]);
+  const base = useMemo(() => original && asWorkspace(original), [original]);
+  return <AssetEditor {...rest} types={types} codec={codec} same={sameSchema} workspace={workspace} onChange={(next) => onChange(schemaOf<S>(next))} original={base} />;
 }

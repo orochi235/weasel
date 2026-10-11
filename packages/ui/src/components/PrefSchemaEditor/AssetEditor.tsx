@@ -55,12 +55,14 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   /** Baseline for the change list. Default: the first `workspace` seen. */
   original?: Workspace;
   codec: DocumentCodec<Workspace>;
+  /** Whether two workspaces are one, for a host that makes its workspace anew from something else it holds. Default: `Object.is`. */
+  same?: (a: Workspace, b: Workspace) => boolean;
   onSubmit?: SubmitChanges;
 }
 
 /** The editor {@link PrefSchemaEditorProps} describes, over a workspace: it shows and edits one asset's root, and its history and draft are the workspace's. */
 export function AssetEditor(
-  { workspace, onChange, original, codec, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
+  { workspace, onChange, original, codec, same, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
   const [first] = useState(workspace);
   const base = original ?? first;
@@ -87,7 +89,7 @@ export function AssetEditor(
   // returns to this and not to the group.
   const beforeOpening = useRef<readonly string[] | null>(null);
   const doc = useDocument<Workspace>({
-    value: workspace, onChange, base, codec, opened, draftKey, draftStorage, taken,
+    value: workspace, onChange, base, same, codec, opened, draftKey, draftStorage, taken,
     selection: {
       get: () => [...(beforeOpening.current ?? latest.current.paths)],
       set: (ids) => selection.set(ids),

@@ -10,6 +10,8 @@ export interface DocumentOptions<V> {
   onChange(next: V): void;
   /** What the change list and the draft are measured against. */
   base: V;
+  /** Whether two values are one: the hook's own from a host's, and the baseline from an edit. Default: `Object.is`. */
+  same?: (a: V, b: V) => boolean;
   codec: DocumentCodec<V>;
   /** The draft found under `draftKey` as the editor mounted, which the document hands to `onChange` once. */
   opened: OpenedDocument<V> | null;
@@ -39,7 +41,7 @@ interface Swap<V> { before: V; after: V }
 
 /** One controlled value's undo history, its draft in storage, and what of it was sent. */
 export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
-  const { value, base, codec, opened, draftKey, draftStorage, taken } = options;
+  const { value, base, codec, opened, draftKey, draftStorage, taken, same = Object.is } = options;
   const latest = useLatest(options);
   const emitted = useRef(value);
   const hand = (next: V) => {
@@ -58,16 +60,16 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
   );
   useSyncExternalStore(history.subscribe, history.getVersion);
   useEffect(() => {
-    if (value === emitted.current) return;
+    if (same(value, emitted.current)) return;
     emitted.current = value;
     history.clear();
-  }, [value, history]);
+  }, [value, history, same]);
 
   // The draft follows every step, with the steps around it; back at the baseline there is nothing to keep.
   const [draftSavedAt, setDraftSavedAt] = useState(() => opened?.savedAt ?? null);
   const keep = () => {
     if (draftKey === undefined) return;
-    const savedAt = emitted.current === base ? null : Date.now();
+    const savedAt = same(emitted.current, base) ? null : Date.now();
     if (savedAt === null) codec.dropDraft(draftKey, draftStorage);
     else codec.saveDraft(draftKey, emitted.current, base, history.serialize(), savedAt, draftStorage);
     setDraftSavedAt(savedAt);
