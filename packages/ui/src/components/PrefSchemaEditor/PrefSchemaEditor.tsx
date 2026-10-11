@@ -12,14 +12,16 @@ import { dropDraft, openDraft, saveDraft, SWAP, type DraftStorage, type SwapArgs
 import { openFolds, saveFolds } from './folds';
 import { GENERAL } from './generalBranch';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
+import { PaneHeader } from './PaneHeader';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
-import { branchPaths, copyNodes, isFixed, keysOf, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { branchPaths, copyNodes, isFixed, keysOf, moveNodes, outermost, parentPath, pathOf, rebasePaths, removeNodes, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { baselinePaths, changedPaths, diffSchemas } from './schemaExport';
 import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
 import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
 import { StructurePane, type DropOutside } from './StructurePane';
+import { useEditorSelection } from './useEditorSelection';
 import s from './PrefSchemaEditor.module.css';
 
 const NO_KINDS: CustomKinds = {};
@@ -111,7 +113,6 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
-  const [selected, setSelected] = useState<string | null>(null);
   const [opened] = useState(() => (draftKey === undefined ? null : openDraft(draftKey, base, draftStorage)));
   const [notice, setNotice] = useState<string | null>(() => (opened ? DRAFT_NOTICE[opened.met] : null));
   // Every row starts open but the ones the reader folded last time.
@@ -122,11 +123,12 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   useEffect(() => {
     if (draftKey !== undefined) saveFolds(draftKey, [GENERAL, ...branchPaths(schema)].filter((id) => !expanded.has(id)));
   }, [draftKey, schema, expanded]);
+  const selection = useEditorSelection(schema, setExpanded);
   const [structureWidth, setStructureWidth] = useState(300);
   const [attributesWidth, setAttributesWidth] = useState(320);
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
 
-  const latest = useLatest({ schema, onChange, selected });
+  const latest = useLatest({ schema, onChange, paths: selection.paths });
   const emitted = useRef(schema);
   const hand = (next: S) => {
     emitted.current = next;
@@ -136,8 +138,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     createHistory(null, {
       coalesceWindowMs: COALESCE_MS,
       selection: {
-        get: () => (latest.current.selected === null ? [] : [latest.current.selected]),
-        set: (ids) => setSelected(ids[0] ?? null),
+        get: () => [...latest.current.paths],
+        set: (ids) => selection.set(ids),
       },
       rebuildOp: (name, args) => (name === SWAP ? swapOp((args as SwapArgs<S>).before, (args as SwapArgs<S>).after, hand) : null),
     }),
@@ -203,16 +205,18 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   // `label` is a kind the form draws itself: text among the rows, with no attributes of its own.
   const custom = useMemo(() => ({ label: {}, ...kinds }), [kinds]);
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);
-  const select = (path: string | null) => {
-    setSelected(path);
+  const select = (paths: readonly string[]) => {
+    selection.set(paths);
     setNotice(null);
   };
-  /** Select a node picked outside the tree, opening the branches above it so the tree shows it. */
-  const reveal = (path: string | null) => {
-    const above: string[] = [];
-    for (let p = path === null ? null : parentPath(path); p !== null; p = parentPath(p)) above.push(p);
-    setExpanded((e) => new Set([...e, ...above]));
-    select(path);
+  const pick = (ids: Iterable<string>) => {
+    selection.pick(ids);
+    setNotice(null);
+  };
+  /** Select nodes picked outside the tree, opening the branches above them so the tree shows them. */
+  const reveal = (paths: readonly string[]) => {
+    selection.reveal(paths);
+    setNotice(null);
   };
   // The live preview as a place to drop: the form says what is under the pointer, the schema whether it fits there.
   const stage = useRef<HTMLDivElement | null>(null);
@@ -235,7 +239,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
         if (opening.current?.path !== next.path) {
           stopOpening();
           const path = next.path;
-          opening.current = { path, timer: setTimeout(() => select(path === '' ? null : pathOf(path.split('.'))), RAIL_OPEN_MS) };
+          opening.current = { path, timer: setTimeout(() => select(path === '' ? [] : [pathOf(path.split('.'))!]), RAIL_OPEN_MS) };
         }
       } else {
         stopOpening();
@@ -254,26 +258,27 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     if (moved.root === latest.current.schema) return;
     commit(moved.root);
     setExpanded((e) => rebasePaths(e, moved.from.map((f, i) => [f, moved.paths[i]!] as const)));
-    select(moved.paths[0] ?? null);
+    select(moved.paths);
   };
   const copyTo = (paths: readonly string[], target: SchemaTarget) => {
     const copied = copyNodes(latest.current.schema, paths, target);
     commit(copied.root);
-    reveal(copied.paths[0] ?? null);
+    reveal(copied.paths);
   };
   const previewDrag = usePreviewDrag({ stage, schema: () => latest.current.schema, place: outside, onMove: moveTo, onCopy: copyTo });
   // One value dragged through a control is one step back.
   const setDefaultsFrom = (edits: readonly DefaultEdit[]) =>
     commit(setDefaults(latest.current.schema, edits), `default:${edits.map(([path]) => path.join('.')).join(',')}`);
   const remove = () => {
-    const path = latest.current.selected;
-    if (path === null || isFixed(latest.current.schema, path)) return;
-    commit(removeNode(latest.current.schema, path));
-    select(parentPath(path));
+    const { paths, schema: now } = latest.current;
+    if (paths.length === 0 || paths.some((p) => isFixed(now, p))) return;
+    const parent = parentPath(outermost(paths)[0]!);
+    commit(removeNodes(now, paths));
+    select(parent === null ? [] : [parent]);
   };
   const rekey = (from: string, to: string) => {
     setExpanded((e) => rebasePaths(e, [[from, to]]));
-    setSelected(to);
+    selection.rebase([[from, to]]);
   };
 
   return (
@@ -288,14 +293,14 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
         return;
       }
       // In a field the key edits the text; anywhere else it removes what is selected.
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selected !== null && !(e.target as HTMLElement).closest(TEXT_ENTRY)) {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selection.paths.length > 0 && !(e.target as HTMLElement).closest(TEXT_ENTRY)) {
         e.preventDefault();
         remove();
       }
     }}>
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={history.canUndo()} canRedo={history.canRedo()} onStep={step}
-        draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select(null); }} />
-      <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
+        draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select([]); }} />
+      <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList}
         expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onRemove={remove}
         toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} />
       <ResizeHandle className={s.structureHandle} value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
@@ -308,12 +313,14 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
             </>
           )}
         </div>
-        <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selected ?? ''}`)} path={selected} onRekey={rekey}
-          added={changes.some((c) => c.op === 'add' && c.path === selected)}
-          kinds={kindList} custom={custom} renderers={renderers} onNotice={setNotice} />
+        {selection.paths.length > 1
+          ? <section className={s.pane} aria-label="Attributes"><PaneHeader title={`${selection.paths.length} selected`} /></section>
+          : <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selection.lead ?? ''}`)} path={selection.lead} onRekey={rekey}
+              added={changes.some((c) => c.op === 'add' && c.path === selection.lead)}
+              kinds={kindList} custom={custom} renderers={renderers} onNotice={setNotice} />}
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
-      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={previewDrag.onPointerDown} ghost={previewDrag.ghost} />
+      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.lead} onSelect={(path) => reveal(path === null ? [] : [path])} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={previewDrag.onPointerDown} ghost={previewDrag.ghost} />
       <ExportPanel schema={schema} changes={changes} onSubmit={submit} />
     </div>
   );

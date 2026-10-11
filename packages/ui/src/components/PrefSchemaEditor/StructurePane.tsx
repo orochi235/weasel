@@ -53,8 +53,14 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
 export interface StructurePaneProps {
   schema: SchemaRoot;
   onChange(next: SchemaRoot): void;
-  selected: string | null;
-  onSelect(path: string | null): void;
+  /** The selected paths; empty is the root. */
+  selected: readonly string[];
+  /** The path that stands for the selection: where an add lands and which row is brought into view. */
+  lead: string | null;
+  /** The tree's rows now selected, General among them when it is. */
+  onPick(ids: Iterable<string>): void;
+  /** Select exactly these, after an add. */
+  onSelect(paths: readonly string[]): void;
   changed: ReadonlySet<string>;
   kinds: readonly string[];
   expanded: ReadonlySet<string>;
@@ -71,7 +77,7 @@ export interface StructurePaneProps {
   maxDepth?: number;
   /** What a host draws on a node's row before its kind, by the node's path in this tree. */
   rowMark?: (path: string) => ReactNode;
-  /** Remove the selected node. */
+  /** Remove the selected nodes. */
   onRemove(): void;
   /** Move the nodes at `paths` to `target`, keeping them open and selected. */
   onMove(paths: readonly string[], target: SchemaTarget): void;
@@ -93,7 +99,7 @@ export interface DropOutside {
 const ancestorsOf = (path: string): string[] =>
   keysOf(path).slice(0, -1).map((_, i, keys) => pathOf(keys.slice(0, i + 1))!);
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, unplaced, outside, outsideDraws = false, onMove: move, onCopy: copy, onRemove, maxDepth, rowMark }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, lead, onPick, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, unplaced, outside, outsideDraws = false, onMove: move, onCopy: copy, onRemove, maxDepth, rowMark }: StructurePaneProps) {
   const nodes = useMemo(() => {
     const all = toTreeNodes(schema, null, changed, rowMark);
     const loose = new Set(generalKeys(schema));
@@ -121,17 +127,19 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
   const treeArea = useRef<HTMLDivElement | null>(null);
   // A selection made in the preview may sit outside the tree's scrolled view. Optional-called for jsdom.
   useEffect(() => {
-    treeArea.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({ block: 'nearest' });
-  }, [selected]);
+    if (lead === null) return;
+    const rows = treeArea.current?.querySelectorAll('[data-tree-id]') ?? [];
+    [...rows].find((r) => r.getAttribute('data-tree-id') === lead)?.scrollIntoView?.({ block: 'nearest' });
+  }, [lead]);
   const waiting = useMemo(() => (unplaced ? stillUnplaced(unplaced, schema) : null), [unplaced, schema]);
 
-  /** Where an add lands: inside the selection if it holds children, else after it. */
+  /** Where an add lands: inside the lead if it holds children, else after it. */
   const addTarget = (): { parent: string | null; index?: number } => {
-    const node = selected === null ? undefined : nodeAt(schema, selected);
-    if (selected === null || !node) return { parent: null };
-    if (childrenOf(node) && !holdsFixed(node)) return { parent: selected };
+    const node = lead === null ? undefined : nodeAt(schema, lead);
+    if (lead === null || !node) return { parent: null };
+    if (childrenOf(node) && !holdsFixed(node)) return { parent: lead };
     // A list's item has no siblings to join: the add lands after the list.
-    let at = selected;
+    let at = lead;
     while (isFixed(schema, at)) at = parentPath(at)!;
     const parent = parentPath(at);
     const sibs = Object.keys(childrenOf(nodeAt(schema, parent)!) ?? {});
@@ -148,7 +156,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
     const { parent, index } = addTarget();
     onChange(addNode(schema, parent, key, node, index));
     if (parent !== null) onExpandedChange((e) => new Set(e).add(parent));
-    onSelect(joinPath(parent, key));
+    onSelect([joinPath(parent, key)]);
   };
 
   const nodesAt = (ids: readonly string[]): SchemaNode[] => ids.map((id) => nodeAt(schema, id)!);
@@ -170,7 +178,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
     onChange(addNode(schema, target.parentPath, key, drag.node, target.index));
     const path = joinPath(target.parentPath, key);
     onExpandedChange((e) => new Set([...e, ...ancestorsOf(path), path]));
-    onSelect(path);
+    onSelect([path]);
   };
 
   return (
@@ -183,7 +191,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
           <ToolButton icon={<Icon name="tune" mark="markAdd" />} label="Add pref" onClick={() => setAdding('pref')} />
           <ToolButton icon={<Icon name={GROUP_ICON.section} mark="markAdd" />} label={`Add ${branch}`} disabled={variants || (branch === 'group' && !withinDepth(addTarget().parent, [blankGroup()], maxDepth))} onClick={() => setAdding('branch')} />
-          <ToolButton icon={<Icon name="delete" />} label="Remove" disabled={selected === null || isFixed(schema, selected)} onClick={onRemove} />
+          <ToolButton icon={<Icon name="delete" />} label="Remove" disabled={selected.length === 0 || selected.some((p) => isFixed(schema, p))} onClick={onRemove} />
         </Palette>,
         toolSlot,
       )}
@@ -201,13 +209,10 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         onExpandedChange={(next) => {
           if (sought === '') onExpandedChange(next);
         }}
-        selectionMode="single"
+        selectionMode="multiple"
         // General is the root's row: with nothing selected the attributes pane shows the root's.
-        selectedIds={selected === null ? (hasGeneral ? [GENERAL] : []) : [selected]}
-        onSelectionChange={(ids) => {
-          const id = [...ids][0] ?? null;
-          onSelect(id === GENERAL ? null : id);
-        }}
+        selectedIds={selected.length === 0 ? (hasGeneral ? [GENERAL] : []) : selected}
+        onSelectionChange={onPick}
         externalDrag={paletteDrag}
         onExternalTarget={(t) => { treeTarget.current = t; }}
         // A copy is new where it lands, so the place it is dropped is asked about it with no paths, as for a palette's node.
