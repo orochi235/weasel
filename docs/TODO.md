@@ -799,11 +799,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
 
-- **(P2) Finish the toolbar editor.** A group drawn `as: 'bar'`, its bar forms, action leaves,
-  and the schema editor's Actions list are built. Left: a drop placed along a bar's axis, drops
-  and click-to-select in the preview of a root drawn as a bar, and a bar section inside
-  `SelectionPanel`'s object leaf and labkit's `ControlPanel`. Each is listed with its files in
-  `docs/proposals/2026-10-10-toolbar-editor.md`.
+- **(P2) Disable a pref by the values of others.** A leaf has no way to say "off while
+  `snap.enabled` is false": nothing on `PrefLeaf` reads another leaf's value, and the forms have no
+  disabled row. The condition has to be data, since a schema exports as a literal and survives a
+  draft, so it is an expression over other leaves' paths and not a function. CEL is a candidate
+  for that expression; nothing in the repo uses it yet. Covers `PrefsForm`, `SelectionPanel`,
+  `Bar`, and labkit's `ControlPanel`, and an attribute for it in `PrefSchemaEditor`.
+
+- **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
+  overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
+  that prop to become icon names or `Bar` to take icon overrides by path. A bar too long for its
+  room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
+  labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
 - **(P3) `PrefSchemaEditor` clears required custom attributes.** Emptying an attribute removes
   it, which is right for optional built-in attributes but deletes a custom kind's required one —

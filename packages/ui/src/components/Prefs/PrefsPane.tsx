@@ -1,7 +1,7 @@
 import { type ReactNode, type RefObject, useState } from 'react';
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { GroupTabs } from './GroupTabs';
-import { BarLayout, groupBarNodes } from '../Bar/BarLayout';
+import { BarLayout, groupBarNodes, type BarOrientation } from '../Bar/BarLayout';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { selectionAttrs } from './selection';
 import s from './Prefs.module.css';
@@ -138,15 +138,17 @@ function PaneSection({ ctx, group, path, depth, box }: {
  * heading. A page, tab, or panel inside it opens from a button, as the form
  * would draw it.
  */
-function PaneBar({ ctx, group, path, depth }: {
+export function PaneBar({ ctx, group, path, depth, orientation }: {
   ctx: WalkCtx;
   group: PrefGroup;
   path: string;
   depth: number;
+  orientation?: BarOrientation;
 }) {
   return (
     <BarLayout
       framed
+      orientation={orientation}
       rootAttrs={{ ...selectionAttrs(path, ctx), 'data-pref-bar': '' }}
       label={group.name === '' ? undefined : group.name}
       nodes={groupBarNodes(group, path, (inner, at) => (

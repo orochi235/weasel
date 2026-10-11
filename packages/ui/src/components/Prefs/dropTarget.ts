@@ -25,7 +25,7 @@ interface Box {
   scroller: number;
   /** Index of the group box whose rows this row is among, or -1. */
   owner: number;
-  /** Split across: the row shares its line with another. */
+  /** Split across: the row shares its line with another, or is a cell of a bar that runs across. */
   across: boolean;
   /** Index of the cover whose title can sit over the box, or -1. */
   cover: number;
@@ -80,13 +80,14 @@ function measure(form: Element): Frame {
     const rail = el.getAttribute(RAIL_ATTR);
     const leaf = el.hasAttribute('data-pref-leaf');
     const owner = leaf ? ownerOf(el) : null;
+    const bar = leaf ? el.closest('[data-pref-bar]') : null;
     return {
       kind: rail !== null ? 'rail' : leaf ? 'row' : 'group',
       path: rail ?? el.getAttribute(PATH_ATTR) ?? el.getAttribute('data-pref-into')!,
       rect: rectOf(el),
       scroller: scrollerOf(el),
       owner: owner ? index.get(owner) ?? -1 : -1,
-      across: twoAcross && !el.hasAttribute('data-wide'),
+      across: bar ? bar.getAttribute('data-orientation') !== 'vertical' : twoAcross && !el.hasAttribute('data-wide'),
       cover: sections.findIndex((s) => s.el !== el && s.el.contains(el)),
     };
   });
@@ -156,7 +157,7 @@ function hit(frame: Frame, form: Element, clientX: number, clientY: number): Pre
 
 /**
  * Where a drop at a client point inside `root` would land in the form there: before or after the leaf under it,
- * by the half of its row the point is in, across for rows set side by side; into the group under it; or, on a
+ * by the half of its row the point is in, across for rows set side by side and for a bar's cells; into the group under it; or, on a
  * rail entry, beside it from either end and into it from the middle. Null over none of those.
  *
  * A form drawing a `drop` is read as it lay before it drew one, so the answer never depends on the reflow the

@@ -74,3 +74,40 @@ describe('a section drawn as a bar in a form’s object leaf', () => {
     expect(onChange).toHaveBeenCalledWith('font', { bold: true, italic: true });
   });
 });
+
+describe('a section drawn as a bar in a panel’s object leaf', () => {
+  it('is one line of the object’s fields in their bar forms, each writing the object whole', () => {
+    const scene = createScene<Data, 'default', Pose>({ systemLayers: [{ id: 'default' }] });
+    scene.add({ id: asNodeId('a'), kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { kind: 'thing', font: { bold: false, size: 12 } } });
+    const properties: NodePropertiesEntry[] = [{
+      name: 'thing',
+      schema: {
+        name: 'Properties',
+        members: {
+          'data.font': {
+            kind: 'object',
+            name: 'Font',
+            description: '',
+            default: { bold: false, size: 12 },
+            children: {
+              style: { name: 'Style', as: 'bar', members: { bold: flag('Bold'), size: { kind: 'number', name: 'Size', description: '', default: 12 } } },
+            },
+          } as PrefLeaf,
+        },
+      },
+    }];
+    render(
+      <SelectionPanel
+        scene={scene}
+        selection={{ current: ['a'] } as unknown as SelectionApi}
+        properties={properties}
+        routing={routing}
+      />,
+    );
+    const bar = screen.getByRole('toolbar', { name: 'Style' });
+    expect(screen.queryByRole('heading', { name: 'Style' })).toBeNull();
+    expect(bar.querySelector('[data-bar-label]')).toHaveTextContent('Size');
+    fireEvent.click(within(bar).getByRole('button', { name: 'Bold' }));
+    expect(scene.get(asNodeId('a'))?.data.font).toEqual({ bold: true, size: 12 });
+  });
+});
