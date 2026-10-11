@@ -930,11 +930,28 @@ export { unionBounds, unionAABB, axisAlignedBounds } from './core/geometry/union
 export type { RectPose } from './core/geometry/unionBounds';
 
 // ─── Undo history: createHistory + entry shape ──────────────────────────────
-// The explicit `createHistory` shadows the engine's own in the star re-export
-// below: core's wrapper injects the global op-factory registry as the
-// restore-time rebuild hook (see ./core/ops/createHistory).
+// Core's `createHistory` stands in for the engine's own: the wrapper injects
+// the global op-factory registry as the restore-time rebuild hook (see
+// ./core/ops/createHistory). The engine's types are named rather than
+// `export *`: esbuild cannot enumerate a star re-export across a package
+// boundary and emits no binding for it.
 export { createHistory } from './core/ops/createHistory';
-export * from '@weasel-js/history';
+export type {
+  History,
+  CreateHistoryOptions,
+  HistoryEntry,
+  EvictedEntry,
+  SerializedOp,
+  SerializedHistoryEntry,
+  SerializedHistory,
+  HistoryLogger,
+  HistorySelection,
+  HistoryBranch,
+  RecordEntryOptions,
+  Op,
+  Journal,
+  BeginJournalOptions,
+} from '@weasel-js/history';
 
 // ─── Adapters: contract types + reference arrayAdapter ──────────────────────
 export * from './core/adapters/types';
