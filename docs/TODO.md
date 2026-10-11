@@ -994,7 +994,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   The same switch lets a contained `ToastRegion` drop its own region for RAC's,
   which would make it an F6 landmark again. Still absent from RAC's index at
   1.21.1 (still `latest`) and at nightly `3.0.0-nightly-99e610236-261006`,
-  checked 2026-10-07.
+  checked 2026-10-07. The installed 1.21.1 was read again on 2026-10-11: no
+  `PortalProvider` in `dist/exports/index.*`, its types, or as a file under `dist/exports/`.
 
 - **(P3) The grammar names no hover gesture.** The loupe now routes its peek key
   and its wheel through the dispatcher, but aiming the lens is still a plain
