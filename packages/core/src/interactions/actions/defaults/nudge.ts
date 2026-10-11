@@ -5,7 +5,7 @@ import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import type { PoseDescriptor } from '../resize/geometry';
 import { translatePoseViaDescriptor } from '../resize/geometry';
-import { poseDescriptorOf } from '../poseDescriptorDep';
+import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import type { Action } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
@@ -38,6 +38,7 @@ function nudgeSelection(
   d: PoseDescriptor<unknown>,
   poseComposition: unknown,
 ): void {
+  const descriptorOf = nodeDescriptors(scene, d);
   const ids = translateTargets(
     scene, scenePoseFrame(scene, poseComposition), moveSources(scene, selection.get()),
   );
@@ -55,7 +56,7 @@ function nudgeSelection(
     ops.push(createTransformOp<unknown>({
       id: id as string,
       from: node.pose,
-      to: translatePoseViaDescriptor(node.pose, dx, dy, d),
+      to: translatePoseViaDescriptor(node.pose, dx, dy, descriptorOf(id)),
       label: 'Nudge',
     }));
     const dataOp = geometryDataOp(

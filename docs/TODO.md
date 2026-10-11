@@ -191,13 +191,6 @@ Priority tags:
   gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in
   `cloneAction` the way move, rotate, and insert do, or remove the behavior and the type.
 
-- **(P3) `PoseDescriptor.forNode` is honored by some actions and not others.** `rotateAction`
-  measures with the per-node descriptor and writes with the unspecialized one; `moveAction`
-  specializes in its layout pass only; `resize`, `clone`, `nudge`, and `duplicate` never call
-  `poseDescriptorForNode`. With `@weasel-js/kernel3d`'s descriptor the selection chrome is drawn
-  from specialized bounds while resize anchors on the default box. Resolve the descriptor per node
-  once, where start poses are captured.
-
 - **(P3) `GestureContext.pointer.clientX` / `clientY` are always 0.** Every default action fills
   them with a literal, so a behavior reading them gets a plausible wrong answer. Remove the fields
   from `PointerState`, or carry the client point through `InvocationCtx`.

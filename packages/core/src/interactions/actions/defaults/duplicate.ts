@@ -4,7 +4,7 @@ import { DuplicateIcon } from './icons/editIcons';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { copySelection } from './copySubtree';
 import { requiresSelection } from './requiresSelection';
-import { poseDescriptorOf } from '../poseDescriptorDep';
+import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor } from '../resize/geometry';
 
 /** Same nudge `sceneToAdapter.getPasteOffset` gives a paste, so duplicate and
@@ -38,15 +38,15 @@ export const duplicateAction: Action & { requires: string[] } = {
       const ids = selection.get();
       if (ids.length === 0) return;
 
-      const descriptor = poseDescriptorOf(deps.poseDescriptor);
+      const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(deps.poseDescriptor));
       // With a `poseComposition` a child's pose is relative, so offsetting the
       // root carries the subtree and offsetting a child again would double it.
       const offsetDescendants = deps.poseComposition === undefined;
       const { ops, copies: newIds } = copySelection(
         scene,
         ids,
-        (_id, node, isRoot) => (isRoot || offsetDescendants
-          ? translatePoseViaDescriptor(node.pose, DUPLICATE_OFFSET, DUPLICATE_OFFSET, descriptor)
+        (id, node, isRoot) => (isRoot || offsetDescendants
+          ? translatePoseViaDescriptor(node.pose, DUPLICATE_OFFSET, DUPLICATE_OFFSET, descriptorOf(id))
           : node.pose),
         'Duplicate',
       );

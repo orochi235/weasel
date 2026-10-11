@@ -18,7 +18,7 @@ import type { Op } from 'core/ops/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { copySelection } from './copySubtree';
 import { selectedRoots, translateTargets } from '../selectionSubtree';
-import { poseDescriptorOf } from '../poseDescriptorDep';
+import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
@@ -31,7 +31,7 @@ interface CloneScratch {
   /** The selected ids a copy starts from; each brings its subtree. */
   ids: NodeId[];
   scene: Scene<unknown, string, unknown>;
-  descriptor: PoseDescriptor<unknown>;
+  descriptorOf: (id: NodeId) => PoseDescriptor<unknown>;
   /** World reads and local writes over the scene's composition strategy. */
   frame: PoseFrame<unknown>;
   /** Origin poses captured at drag start, in world — the frame the drag
@@ -94,12 +94,12 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       // Capture origin poses once at drag start.
       const frame = scenePoseFrame(scene, ctx.deps.poseComposition);
       const originPoses = new Map<NodeId, unknown>();
-      const descriptor = poseDescriptorOf(ctx.deps.poseDescriptor);
+      const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(ctx.deps.poseDescriptor));
       for (const id of translateTargets(scene, frame, ids)) {
         const node = scene.get(id);
         if (node === undefined) continue;
         const toEdited = invertPlane(planeOf(ctx.deps.view, node.layer));
-        originPoses.set(id, carryPose(descriptor, frame.world(id), toEdited));
+        originPoses.set(id, carryPose(descriptorOf(id), frame.world(id), toEdited));
       }
 
       if (originPoses.size === 0) return {};
@@ -107,7 +107,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
       const scratch: CloneScratch = {
         ids: selectedRoots(scene, ids),
         scene,
-        descriptor,
+        descriptorOf,
         frame,
         originPoses,
         view: ctx.deps.view,
@@ -121,8 +121,9 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
         const origin = scratch.originPoses.get(id);
         const node = scratch.scene.get(id);
         if (origin === undefined || !node) return undefined;
-        const moved = translatePoseViaDescriptor(origin, dx, dy, scratch.descriptor);
-        return scratch.frame.local(id, carryPose(scratch.descriptor, moved, planeOf(scratch.view, node.layer)));
+        const d = scratch.descriptorOf(id);
+        const moved = translatePoseViaDescriptor(origin, dx, dy, d);
+        return scratch.frame.local(id, carryPose(d, moved, planeOf(scratch.view, node.layer)));
       };
 
       return {

@@ -57,7 +57,7 @@ import type { ResizePolicy } from '../depSchema';
 import { DEFAULT_RESIZE_BEHAVIORS } from '../resize/behaviors';
 import { remapRotatedLeaf, translatePoseViaDescriptor, visualBoundsViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { poseRotationOf } from 'core/geometry/poseRotation';
-import { poseDescriptorOf } from '../poseDescriptorDep';
+import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { isRectPose } from '../resize/autoPoseDescriptor';
 import { fixedCornerOf } from '../resize/cornerHandles';
 import { rotatePoint } from '../rotate/geometry';
@@ -286,7 +286,7 @@ interface ResizeScratch {
   /** In-flight preview poses buffered during drag. */
   previews: Map<NodeId, unknown>;
   overrideEntries: Map<NodeId, { pose: unknown }>;
-  geometry: PoseDescriptor<unknown>;
+  geometryOf: (id: NodeId) => PoseDescriptor<unknown>;
   behaviors: BoundsConstraint<Bounds>[];
   pointSnap: PointSnapBehavior<Bounds>[];
   /** Gesture context handed to behaviors. Reused across move/end. */
@@ -341,6 +341,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
       if (!anchor) return {};
 
       const { behaviors, pointSnap, expandIds, geometry, policy } = resolveDeps(ctx);
+      const geometryOf = nodeDescriptors(scene, geometry);
 
       // Group expansion. When the starting selection is a single id but
       // `expandIds` returns a different set, we're in the group path:
@@ -363,7 +364,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
       /** A world result for `id`, as stored. */
       const stored = (id: NodeId, world: unknown): unknown => {
         const layer = scene.get(id)?.layer;
-        return frame.local(id, carryPose(geometry, world, layer === undefined ? null : planeOf(view, layer)));
+        return frame.local(id, carryPose(geometryOf(id), world, layer === undefined ? null : planeOf(view, layer)));
       };
       const startPoses = new Map<NodeId, unknown>();
       const startWorlds = new Map<NodeId, unknown>();
@@ -373,10 +374,11 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
         const node = scene.get(id);
         if (!node) continue;
         startPoses.set(id, node.pose);
-        const world = carryPose(geometry, frame.world(id), invertPlane(planeOf(view, node.layer)));
+        const g = geometryOf(id);
+        const world = carryPose(g, frame.world(id), invertPlane(planeOf(view, node.layer)));
         startWorlds.set(id, world);
-        leafBounds.push(geometry.getBounds(world));
-        drawnBounds.push(visualBoundsViaDescriptor(world, geometry));
+        leafBounds.push(g.getBounds(world));
+        drawnBounds.push(visualBoundsViaDescriptor(world, g));
       }
       if (startPoses.size === 0) return {};
 
@@ -393,8 +395,10 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
       const originPose = !isGroupPath && writeIds.length === 1
         ? startWorlds.get(writeIds[0])
         : (originBounds as unknown);
+      // A lone target is read as its own shape; a shared box is a plain rect.
+      const originGeometry = !isGroupPath && writeIds.length === 1 ? geometryOf(writeIds[0]) : geometry;
       const originRotation = !isGroupPath
-        ? (geometry.getRotation?.(originPose) ?? 0)
+        ? (originGeometry.getRotation?.(originPose) ?? 0)
         : 0;
 
       const fixedLocal = fixedCornerOf(originBounds, anchor);
@@ -413,7 +417,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
       // legacy hook: the starting id (not the expanded leaf set).
       const readView = gestureViewReader(ctx.deps);
       const readPlane = gesturePlaneReader(ctx.deps);
-      const ruleOrigin = boundsForRules(geometry, originPose);
+      const ruleOrigin = boundsForRules(originGeometry, originPose);
       const gestureCtx: GestureContext<unknown> = {
         draggedIds: ids as unknown as string[],
         origin: new Map<string, unknown>([[ids[0] as string, ruleOrigin]]),
@@ -444,7 +448,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
         fixedWorld,
         previews: new Map<NodeId, unknown>(),
         overrideEntries: new Map<NodeId, { pose: unknown }>(),
-        geometry,
+        geometryOf,
         behaviors,
         pointSnap,
         gestureCtx,
@@ -486,8 +490,8 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
           if (scratch.geometryProjection) {
             const node = scratch.scene.get(id);
             if (node) {
-              const sb = scratch.geometry.getBounds(from);
-              const db = scratch.geometry.getBounds(next);
+              const sb = scratch.geometryOf(id).getBounds(from);
+              const db = scratch.geometryOf(id).getBounds(next);
               const m: Mat3 = boxToBox(
                 sb.x, sb.y, sb.width, sb.height,
                 db.x, db.y, db.width, db.height,
@@ -514,7 +518,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
                     width: Math.abs(db.width),
                     height: Math.abs(db.height),
                   };
-                  committed = scratch.geometry.remapBounds(next, db, nb) as typeof next;
+                  committed = scratch.geometryOf(id).remapBounds(next, db, nb) as typeof next;
                 }
               }
             }
@@ -588,7 +592,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
                 sp as RotatedPose, scratch.originBounds, proposedBounds,
               );
             }
-            return scratch.geometry.remapBounds(sp, scratch.originBounds, proposedBounds);
+            return scratch.geometryOf(id).remapBounds(sp, scratch.originBounds, proposedBounds);
           };
 
           // Single-id path: apply rotation correction + point-snap, then
@@ -598,6 +602,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
 
           if (!isGroupPath && scratch.writeIds.length === 1) {
             const id = scratch.writeIds[0];
+            const g = scratch.geometryOf(id);
             let proposedPose = computePose(id);
             if (proposedPose === undefined) { syncPreviewOverrides(scratch); return; }
 
@@ -612,13 +617,13 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
               );
               const correctionX = scratch.fixedWorld.x - newFixedWorld.x;
               const correctionY = scratch.fixedWorld.y - newFixedWorld.y;
-              proposedPose = translatePoseViaDescriptor(proposedPose, correctionX, correctionY, scratch.geometry);
+              proposedPose = translatePoseViaDescriptor(proposedPose, correctionX, correctionY, g);
             }
 
             if (scratch.pointSnap.length > 0) {
               const rotation = scratch.originRotation;
               const unsnapped = proposedPose;
-              const poseAsRect = boundsForRules(scratch.geometry, unsnapped);
+              const poseAsRect = boundsForRules(g, unsnapped);
               const psCtx = buildPointSnapContext(
                 poseAsRect,
                 rotation,
@@ -636,7 +641,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
                   const snapped = applyPointSnap(poseAsRect, rotation, result, psCtx);
                   proposedPose = isRectPose(unsnapped)
                     ? snapped
-                    : scratch.geometry.remapBounds(unsnapped, poseAsRect, snapped);
+                    : g.remapBounds(unsnapped, poseAsRect, snapped);
                   break;
                 }
               }
@@ -644,7 +649,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
 
             scratch.previews.set(id, stored(id, proposedPose));
             scratch.gestureCtx.current = new Map<string, unknown>([
-              [id as string, boundsForRules(scratch.geometry, proposedPose)],
+              [id as string, boundsForRules(g, proposedPose)],
             ]);
           } else {
             // Group / multi path: remap each leaf and store.

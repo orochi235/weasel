@@ -71,7 +71,7 @@ import {
   translatePoseViaDescriptor,
   type PoseDescriptor,
 } from '../resize/geometry';
-import { poseDescriptorOf } from '../poseDescriptorDep';
+import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { isAnchorOrControl } from '@weasel-js/routing';
 import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
 import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
@@ -451,7 +451,7 @@ function translateCommitOps(
     ops.push(createTransformOp<unknown>({
       id: id as string,
       from: authored,
-      to: translatePoseViaDescriptor(authored, l.dx, l.dy, scratch.projection),
+      to: translatePoseViaDescriptor(authored, l.dx, l.dy, scratch.descriptorOf(id)),
       label: scratch.lifecycle.label,
     }));
     if (scratch.geometryProjection) {
@@ -480,7 +480,8 @@ function localDelta(
   const { dx, dy } = planeDelta(scratch, id, dx0, dy0);
   const f = scratch.frames.get(id);
   if (f === undefined) return { dx, dy };
-  const { pc, projection: d } = scratch;
+  const { pc } = scratch;
+  const d = scratch.descriptorOf(id);
   const from = d.getBounds(pc.decompose(f.frameWorld, f.world));
   const to = d.getBounds(
     pc.decompose(f.frameWorld, translatePoseViaDescriptor(f.world, dx, dy, d)),
@@ -681,6 +682,8 @@ interface MoveScratch {
   caught: Map<NodeId, { dx: number; dy: number }>;
   /** Pose descriptor captured at drag start. */
   projection: PoseDescriptor<unknown>;
+  /** Each node's own form of `projection`, for reading and writing its pose. */
+  descriptorOf: (id: NodeId | string) => PoseDescriptor<unknown>;
   /** Behaviors from `opts.behaviors`; empty array when none supplied. */
   behaviors: MoveBehavior<unknown>[];
   /** Reused gesture context handed to behaviors across the drag. */
@@ -794,8 +797,8 @@ function applyReparent(
     const layer = scene.get(id)!.layer;
     // Landing on another plane's layer, the pose crosses into that plane.
     const draggedWorld = carryPose(
-      scratch.projection,
-      translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.projection),
+      scratch.descriptorOf(id),
+      translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.descriptorOf(id)),
       layer === target.newLayer
         ? null
         : planeToPlane(planeOf(scratch.view, layer), planeOf(scratch.view, target.newLayer)),
@@ -1002,6 +1005,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         gliding: new Set<NodeId>(),
         caught,
         projection,
+        descriptorOf: nodeDescriptors(scene, projection),
         behaviors,
         gestureCtx,
         adapter,
@@ -1046,7 +1050,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           const gctx = scratch.gestureCtx;
           for (const [id, ori] of scratch.startPoses) {
             const own = planeDelta(scratch, id, dx, dy);
-            gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, scratch.projection));
+            gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, scratch.descriptorOf(id)));
           }
           const r = reduceBehaviorEnd(scratch.behaviors, gctx);
           if (r === null) return false;           // abort (e.g. snap-back)
@@ -1189,7 +1193,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               const ops = srcLayout.releaseDrop!(srcContainer, srcChildren, {
                 id: id as string,
                 originPose: startWorld,
-                pose: translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.projection),
+                pose: translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.descriptorOf(id)),
                 sourceContainerId: srcId,
               });
               if (ops === null) continue;
@@ -1212,7 +1216,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               grabbedPoseAdapter(scratch, commitAdapter), id as string, pc.compose,
             );
             const own = planeDelta(scratch, id, dx, dy);
-            const world = translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.projection);
+            const world = translatePoseViaDescriptor(startWorld, own.dx, own.dy, scratch.descriptorOf(id));
             exitOps.push(createReparentOp({
               id: id as string,
               fromParentId: node.parent as string | null,
@@ -1311,7 +1315,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             // the unmodified delta at this frame's start).
             for (const [id, ori] of scratch.startPoses) {
               const own = planeDelta(scratch, id, dx, dy);
-              gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, scratch.projection));
+              gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, scratch.descriptorOf(id)));
             }
             let transform: GroupTransform = { kind: 'translate', dx, dy };
             const primary = scratch.ids[0] as NodeId | undefined;
@@ -1345,7 +1349,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
               continue;
             }
             const l = localDelta(scratch, id, dx, dy);
-            scratch.previews.set(id, posed.get(id) ?? translatePoseViaDescriptor(ori, l.dx, l.dy, scratch.projection));
+            scratch.previews.set(id, posed.get(id) ?? translatePoseViaDescriptor(ori, l.dx, l.dy, scratch.descriptorOf(id)));
           }
 
           // Layout reflow pass — no-op without a layout dep.

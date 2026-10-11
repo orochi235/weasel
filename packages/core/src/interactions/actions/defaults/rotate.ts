@@ -37,9 +37,8 @@ import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { unionAABB } from 'core/geometry/unionBounds';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { poseDescriptorOf } from '../poseDescriptorDep';
+import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import {
-  poseDescriptorForNode,
   translatePoseViaDescriptor,
   visualBoundsViaDescriptor,
   type PoseDescriptor,
@@ -83,7 +82,7 @@ function applyRotationDelta(
 interface RotateScratch {
   ids: NodeId[];
   scene: Scene<unknown, string, unknown>;
-  descriptor: PoseDescriptor<unknown>;
+  descriptorOf: (id: NodeId) => PoseDescriptor<unknown>;
   /** World reads and local writes over the scene's composition strategy. */
   frame: PoseFrame<unknown>;
   /** Origin pose for each selected node as stored — the `from` of its op. */
@@ -148,7 +147,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
       const ids = selection.get() as NodeId[];
       if (ids.length === 0) return {};
 
-      const descriptor = poseDescriptorOf(ctx.deps.poseDescriptor);
+      const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(ctx.deps.poseDescriptor));
       // The pivot the pointer orbits is a world point, so every pose the
       // gesture turns is a world pose. Each turned result is stored back in
       // the node's own parent frame at preview and commit alike.
@@ -162,7 +161,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
       for (const id of ids) {
         const node = scene.get(id);
         if (!node) continue;
-        const g = poseDescriptorForNode(descriptor, node);
+        const g = descriptorOf(id);
         if (!g.withRotation || g.supportsRotation?.(node.pose) === false) continue;
         originPoses.set(id, node.pose);
         // The pivot is a world point, so every measurement the gesture orbits
@@ -192,7 +191,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
       const scratch: RotateScratch = {
         ids,
         scene,
-        descriptor,
+        descriptorOf,
         frame,
         originPoses,
         originWorlds,
@@ -227,7 +226,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
         const out = new Map<NodeId, unknown>();
         for (const [id, origin] of scratch.originWorlds) {
           out.set(id, applyRotationDelta(
-            scratch.descriptor,
+            scratch.descriptorOf(id),
             origin,
             scratch.originRotations.get(id) ?? 0,
             delta,
@@ -262,7 +261,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
         for (const b of scratch.behaviors) {
           const r = b.onMove?.(gctx, proposed);
           if (!r || r.pose === undefined) continue;
-          const rotation = scratch.descriptor.getRotation?.(r.pose) ?? 0;
+          const rotation = scratch.descriptorOf(primary).getRotation?.(r.pose) ?? 0;
           delta = rotation - originRotation;
           proposed = { pose: r.pose, rotation };
         }
@@ -312,7 +311,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
           for (const [id, turned] of turnedWorlds(delta)) {
             const layer = scratch.scene.get(id)?.layer;
             const own = layer === undefined ? null : planeOf(view, layer);
-            scratch.previews.set(id, scratch.frame.local(id, carryPose(scratch.descriptor, turned, own)));
+            scratch.previews.set(id, scratch.frame.local(id, carryPose(scratch.descriptorOf(id), turned, own)));
           }
         }
         syncPreviewOverrides(scratch);
