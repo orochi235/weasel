@@ -1,6 +1,6 @@
 import type { Display } from './quantity';
 import type { Unit } from './units';
-import { MINUS_SIGN } from './number';
+import { MINUS_SIGN, unsignedZero } from './number';
 
 /**
  * One run of a formatted value, named for what it is: `number`, `unit`,
@@ -40,7 +40,7 @@ export function textOf(parts: readonly Part[]): string {
 
 /** A number run from `Intl`, with the real minus sign. */
 export function numberPart(value: number, locale: string, options?: Intl.NumberFormatOptions): Part {
-  return { type: 'number', value: signed(value.toLocaleString(locale, options)) };
+  return { type: 'number', value: signed(unsignedZero(value, (n) => n.toLocaleString(locale, options))) };
 }
 
 /** `-` swapped for {@link MINUS_SIGN} at the front of already-formatted text. */
@@ -66,7 +66,9 @@ export function plural(value: number, locale: string, singular: string, pluralFo
  */
 export function intlParts(value: number, locale: string, options: Intl.NumberFormatOptions): Part[] {
   const out: Part[] = [];
-  for (const p of new Intl.NumberFormat(locale, options).formatToParts(value)) {
+  const nf = new Intl.NumberFormat(locale, options);
+  const shown = value <= 0 && nf.format(value) === nf.format(-0) ? 0 : value;
+  for (const p of nf.formatToParts(shown)) {
     const type = DIGIT_RUNS.has(p.type) ? 'number' : p.type;
     const v = p.type === 'minusSign' ? MINUS_SIGN : p.value;
     const last = out[out.length - 1];

@@ -95,6 +95,7 @@ export function formatUnit(
   const display = (baseValue - offset) / factor;
   // Trim trailing zeros (and a dangling decimal point) without losing precision.
   let s = display.toFixed(precision);
+  if (Number(s) === 0) s = s.replace(/^-/, '');
   if (s.includes('.')) {
     s = s.replace(/0+$/, '').replace(/\.$/, '');
   }

@@ -1,5 +1,5 @@
 import { intlParts, numberPart, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
-import { latinDigits, MINUS_SIGN, parseNumber } from '../number';
+import { latinDigits, MINUS_SIGN, parseNumber, unsignedZero } from '../number';
 
 /** A share of one as a percentage: 0.25 shows `25%`. Typed text reads as
  *  percent with or without the sign. */
@@ -314,7 +314,11 @@ export function zoom(): ZoomDisplay {
 function zoomParts(z: number): Part[] {
   if (!Number.isFinite(z)) return [{ type: 'number', value: String(z) }];
   const n = (v: number, grouping = false) =>
-    ({ type: 'number', value: v.toLocaleString('en-US', { useGrouping: grouping, maximumFractionDigits: 1 }).replace(/^-/, MINUS_SIGN) });
+    ({
+      type: 'number',
+      value: unsignedZero(v, (x) => x.toLocaleString('en-US', { useGrouping: grouping, maximumFractionDigits: 1 }))
+        .replace(/^-/, MINUS_SIGN),
+    });
   if (z <= 2) return [n(Math.round(z * 100)), { type: 'percentSign', value: '%' }];
   if (z >= 100) return [n(Math.round(z), true), { type: 'symbol', value: 'x' }];
   return [n(Math.round(z * 10) / 10), { type: 'symbol', value: 'x' }];

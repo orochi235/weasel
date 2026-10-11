@@ -18,9 +18,18 @@ export const MINUS_SIGN = '−';
  */
 export function formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
   const formatted = Number.isFinite(value)
-    ? value.toLocaleString(undefined, options)
+    ? unsignedZero(value, (n) => n.toLocaleString(undefined, options))
     : String(value);
   return formatted.replace(/^-/, MINUS_SIGN);
+}
+
+/**
+ * `value` through `format`, with a negative that rounds to zero shown as the
+ * zero it reads as: −0.0004 at two places is `0`, not `−0`.
+ */
+export function unsignedZero(value: number, format: (n: number) => string): string {
+  const shown = format(value);
+  return value <= 0 && shown === format(-0) ? format(0) : shown;
 }
 
 /**
@@ -50,7 +59,7 @@ export function formatCompact(value: number, decimals = 0): string {
     Math.abs(value) < 1000
       ? { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals }
       : { notation: 'compact', minimumSignificantDigits: 3, maximumSignificantDigits: 3 };
-  return value.toLocaleString('en-US', options).replace(/^-/, MINUS_SIGN);
+  return unsignedZero(value, (n) => n.toLocaleString('en-US', options)).replace(/^-/, MINUS_SIGN);
 }
 
 /**
