@@ -17,6 +17,7 @@ import type { Op } from 'core/ops/types';
 import type { Node, PoseOverride, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
+import { scenePoseTarget } from '../../../animation/poseTarget';
 
 export type MoveGestureAdapter<TPose> = MoveAdapter<Node<unknown, string, TPose>, TPose> & {
   /** Required override — this adapter always provides parent lookup. */
@@ -59,6 +60,7 @@ export function moveGestureAdapter<TPose>(
       }
       overrides.commit();
     },
+    poseTarget: (id, descriptor) => scenePoseTarget(scene, id, descriptor),
     getNode: (id) => scene.get(asNodeId(id)),
     getNodes: () => {
       return [...scene.renderOrderNodes()] as Node<unknown, string, TPose>[];

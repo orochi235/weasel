@@ -43,8 +43,11 @@ export interface AnimateOnSetPoseOptions<TPose> {
  * written for a node currently under a gesture, are passed straight through:
  * animating those would fight whatever is already driving the node.
  *
- * Writing a node again while its glide is still running ends the glide: the
- * new pose is written at once and stands.
+ * Over a scene-backed adapter the document takes each pose as it is written
+ * and only the node on screen glides. Writing a node again while it glides
+ * bends the glide toward the new pose, or under `spring` carries its velocity
+ * into the new one. Over an adapter with no `poseTarget`, a second write ends
+ * the glide: the new pose is written at once and stands.
  */
 export function animateOnSetPose<TNode extends { id: string }, TPose>(
   adapter: SceneAdapter<TNode, TPose>,
@@ -79,7 +82,8 @@ export function animateOnSetPose<TNode extends { id: string }, TPose>(
         adapter.setPose(id, pose);
         return;
       }
-      if (animator.isActive('pose:' + id)) {
+      // Without a pose target a second glide would fight the first, so the write ends it.
+      if (!adapter.poseTarget?.(id, opts.geometry) && animator.isActive('pose:' + id)) {
         animator.cancelKey('pose:' + id);
         adapter.setPose(id, pose);
         return;

@@ -24,6 +24,10 @@ export type { BezierEasing, EasingSpec } from '@weasel-js/geom';
 export { useAnimator } from './useAnimator';
 export { createTarget, type Target, type TargetAxes, type TargetOptions } from './target';
 export {
+  createPoseTarget, poseAxes, scenePoseTarget,
+  type PoseTargetOptions, type PoseTargetScene,
+} from './poseTarget';
+export {
   tweenPose, springPose,
   type TweenPoseOptions, type SpringPoseOptions,
 } from './poseHelpers';
