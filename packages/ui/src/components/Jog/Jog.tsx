@@ -36,7 +36,8 @@ export function Jog(props: JogProps) {
 
   const last = Math.max(0, count - 1);
   const at = Math.min(Math.max(index, 0), last);
-  const spoken = `${unit} ${at + 1} of ${count}`;
+  const ordinal = count > 0 ? at + 1 : 0;
+  const spoken = `${unit} ${ordinal} of ${count}`;
 
   return (
     <div className={[s.jog, className].filter(Boolean).join(' ')}>
@@ -71,7 +72,7 @@ export function Jog(props: JogProps) {
         <StepForwardIcon size={14} />
       </Button>
 
-      {onScrub && (
+      {onScrub && count > 0 && (
         <Slider
           className={s.scrub}
           min={0}
@@ -86,7 +87,7 @@ export function Jog(props: JogProps) {
       )}
 
       <span className={s.readout} data-testid="jog-readout">
-        {pad(at + 1, count)}/{count}
+        {pad(ordinal, count)}/{count}
       </span>
       {caption ? <span className={s.caption}>{caption}</span> : null}
     </div>

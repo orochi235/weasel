@@ -59,6 +59,12 @@ describe('Jog', () => {
     expect(screen.getByTestId('jog-readout').textContent).toBe('\u2007\u20073/120');
   });
 
+  it('reads 0/0 for an empty sequence, and draws no scrubber for it', () => {
+    render(<Jog {...props} index={0} count={0} onScrub={() => {}} />);
+    expect(screen.getByTestId('jog-readout').textContent).toBe('0/0');
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument();
+  });
+
   it('holds an out-of-range index at the end rather than reporting past it', () => {
     render(<Jog {...props} index={99} count={24} onScrub={() => {}} />);
     expect(screen.getByRole('slider')).toHaveAttribute('aria-valuetext', 'Step 24 of 24');
