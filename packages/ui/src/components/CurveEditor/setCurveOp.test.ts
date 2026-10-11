@@ -35,6 +35,19 @@ describe('createSetCurveOp', () => {
     expect(op.invert().coalesceKey).toBe('curve:c1');
   });
 
+  it('applies an edit that only locks a point', () => {
+    const setValue = vi.fn();
+    const to: ControlPoint[] = [{ x: 0, y: 0, locked: true }, { x: 1, y: 1 }];
+    expect(createSetCurveOp({ id: 'c1', from: FROM, to }).apply({ setValue })).toBeUndefined();
+    expect(setValue).toHaveBeenCalledWith('c1', to);
+  });
+
+  it('treats an absent lock and `locked: false` as the same point', () => {
+    const setValue = vi.fn();
+    const to: ControlPoint[] = [{ x: 0, y: 0, locked: false }, { x: 1, y: 1 }];
+    expect(createSetCurveOp({ id: 'c1', from: FROM, to }).apply({ setValue })).toBe(false);
+  });
+
   it('reports a no-op when from === to (structural equality)', () => {
     const same: ControlPoint[] = [{ x: 0, y: 0 }, { x: 1, y: 1 }];
     const op = createSetCurveOp({ id: 'c1', from: same, to: same.map((p) => ({ ...p })) });

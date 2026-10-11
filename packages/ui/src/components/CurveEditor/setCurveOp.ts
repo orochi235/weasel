@@ -63,7 +63,7 @@ function controlPointsEqual(
   if (a === b) return true;
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
-    if (a[i].x !== b[i].x || a[i].y !== b[i].y) return false;
+    if (a[i].x !== b[i].x || a[i].y !== b[i].y || !a[i].locked !== !b[i].locked) return false;
   }
   return true;
 }
