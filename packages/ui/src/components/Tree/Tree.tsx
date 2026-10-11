@@ -69,6 +69,9 @@ export interface TreeProps {
   /** What folds a branch on a click of its own. Default `'twisty'`, the mark in the row's gutter. `'leading'`
    *  draws no mark and gives the job to the branch's `leading`, which carries `data-open` while it is open. */
   foldBy?: 'twisty' | 'leading';
+  /** Draw a bracket down the side of each open branch's rows, from under its mark to its last row, to show
+   *  what a branch holds. `--wzl-tree-guide` is its color. */
+  guides?: boolean;
 
   /** Default `'none'`. `'multiple'` adds to the selection with Cmd/Ctrl and
    *  extends it over visible rows with Shift. */
@@ -156,7 +159,7 @@ export const Tree = forwardRef(function Tree(
   {
     nodes, empty, className,
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
-    expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty',
+    expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', guides = false,
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
     onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, externalDrag, onExternalTarget,
   }: TreeProps,
@@ -401,6 +404,7 @@ export const Tree = forwardRef(function Tree(
         aria-multiselectable={selectionMode === 'multiple' || undefined}
         data-drag-effect={drag.state.effect === 'move' ? undefined : drag.state.effect}
         data-fold={foldBy}
+        data-guides={guides ? '' : undefined}
       >
         {renderLevel(nodes, null, 1)}
       </ul>

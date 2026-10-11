@@ -64,6 +64,7 @@ export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onSele
       nodes={rows}
       empty={<p className={s.storedEmpty}>{all.length === 0 ? 'Nothing is waiting for a place.' : 'Nothing matches.'}</p>}
       foldBy="leading"
+      guides
       defaultExpandedIds={open}
       selectionMode="single"
       selectedIds={selected === null ? [] : [selected]}

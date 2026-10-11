@@ -70,3 +70,15 @@ test('folded by its leading glyphs, a branch and a leaf at one level start their
   expect(step).toBe(18);
   expect(left('Why') - left('Inner')).toBe(step);
 });
+
+test('with guides, an open branch draws a bracket from under its mark down the side of its rows', () => {
+  render(<Tree aria-label="T" nodes={START} defaultExpandedIds={['g']} guides />);
+  const group = screen.getByRole('treeitem', { name: 'Group' }).querySelector('[role="group"]')!;
+  const bracket = getComputedStyle(group, '::before');
+  expect(bracket.borderInlineStartWidth).toBe('1px');
+  // As tall as the rows it brackets, less a sliver at its foot.
+  expect(group.getBoundingClientRect().height - parseFloat(bracket.height)).toBeLessThan(6);
+  cleanup();
+  render(<Tree aria-label="T" nodes={START} defaultExpandedIds={['g']} />);
+  expect(getComputedStyle(screen.getByRole('treeitem', { name: 'Group' }).querySelector('[role="group"]')!, '::before').content).toBe('none');
+});

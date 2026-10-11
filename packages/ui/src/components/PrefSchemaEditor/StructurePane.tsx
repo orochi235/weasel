@@ -223,6 +223,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
       <Tree
         aria-label="Schema structure"
         foldBy="leading"
+        guides
         nodes={shown}
         empty={sought === '' ? undefined : 'Nothing matches.'}
         // Filtered, every match shows, and what is folded stays as it was for when the filter goes.
