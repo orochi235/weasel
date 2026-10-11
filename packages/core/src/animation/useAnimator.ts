@@ -271,7 +271,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     };
 
     const ensureLoop = (): void => {
-      if (animations.current.size === 0) return;
+      // A frame in progress asks for the next one itself, after `onTick`: asked for from a tick,
+      // it would run ahead of a paint `onTick` requests, and the tick after would paint nothing.
+      if (animations.current.size === 0 || framing) return;
       frameLoopRef.current.request();
     };
 
@@ -340,7 +342,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         codec.touch(target);
         if (framing && !at) return;
         reread();
-        frameLoopRef.current.request();
+        if (!framing) frameLoopRef.current.request();
       },
       tripwire,
       interrupt: (key, by) => cancelByKey(key, by as ActiveAnimation),
