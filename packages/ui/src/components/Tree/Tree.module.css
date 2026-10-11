@@ -31,6 +31,11 @@
   position: relative;
 }
 
+/* The bracket says what a branch holds, so a row with no mark of its own need not stand a whole gutter in to say it. */
+.tree[data-guides] .item:not([aria-expanded]) > .row {
+  padding-inline-start: calc(var(--tree-gutter) / 2);
+}
+
 .tree[data-guides] .group::before {
   content: '';
   position: absolute;
