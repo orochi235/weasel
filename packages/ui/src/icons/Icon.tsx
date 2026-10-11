@@ -1,5 +1,6 @@
-import type { SVGProps } from 'react';
-import { ICON_FILLS, ICON_PATHS, type FillableIconName, type IconName } from './paths';
+import { useId, useMemo, type SVGProps } from 'react';
+import { ICON_SLOTS, inset } from './layers';
+import { ICON_FILLS, ICON_PATHS, type FillableIconName, type IconName, type MarkIconName } from './paths';
 
 /** Shared prop shape for the icon set. Color comes from the surrounding
  *  `color` CSS property — every glyph strokes in `currentColor`. */
@@ -16,6 +17,9 @@ export interface IconProps {
   filled?: boolean;
   /** Tint strength for `filled`. */
   fillOpacity?: number;
+  /** A second, small glyph set in the lower right corner, with this one cleared from around it: a plus on what a
+   *  press adds, a minus on what it takes away. */
+  mark?: MarkIconName;
 }
 
 /** True when `filled` will shade this glyph. */
@@ -30,15 +34,6 @@ const SVG_BASE: SVGProps<SVGSVGElement> = {
   strokeLinejoin: 'round',
 };
 
-// React 19 rewrites innerHTML whenever this object's identity changes, and a
-// rewrite during a press removes the node pointerdown hit, so no click follows.
-const markup = new Map<string, { __html: string }>();
-const markupFor = (html: string) => {
-  let m = markup.get(html);
-  if (!m) markup.set(html, (m = { __html: html }));
-  return m;
-};
-
 /** Renders one glyph by name. The named components below are the usual way
  *  in; reach for this when the glyph is chosen at runtime. */
 export function Icon({
@@ -48,8 +43,15 @@ export function Icon({
   label,
   filled = false,
   fillOpacity = 0.16,
+  mark,
 }: IconProps & { name: IconName }) {
   const shade = filled && isFillable(name) ? ICON_FILLS[name] : '';
+  const maskId = useId();
+  const body = shade + ICON_PATHS[name];
+  const html = mark ? inset(body, ICON_PATHS[mark], ICON_SLOTS.mark, maskId) : body;
+  // React 19 rewrites innerHTML whenever this object's identity changes, and a
+  // rewrite during a press removes the node pointerdown hit, so no click follows.
+  const markup = useMemo(() => ({ __html: html }), [html]);
   return (
     <svg
       {...SVG_BASE}
@@ -65,7 +67,7 @@ export function Icon({
       aria-hidden={label ? undefined : true}
       // Glyph bodies are generated from scripts/icons/ and contain no
       // interpolated input.
-      dangerouslySetInnerHTML={markupFor(shade + ICON_PATHS[name])}
+      dangerouslySetInnerHTML={markup}
     />
   );
 }
