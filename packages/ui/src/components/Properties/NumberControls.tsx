@@ -269,8 +269,11 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, display
   const widest = Math.max(...[min, min + step, max - step, max].map((at) => text(settle(at)).length));
   const fit = { '--wzl-property-readout-fit': `${widest}ch` };
 
+  // Escape and Enter both leave by blurring, and that blur runs the handler of
+  // the last render: a draft cleared in the same keydown is still set there.
+  const canceled = useRef(false);
   const commit = () => {
-    if (draft !== null) {
+    if (draft !== null && !canceled.current) {
       const n = read(draft);
       if (!Number.isNaN(n)) onCommit(settle(n));
     }
@@ -292,6 +295,7 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, display
         style={fit as CSSProperties}
         value={displayValue}
         onFocus={(e) => {
+          canceled.current = false;
           setDraft(text(value));
           e.currentTarget.select();
         }}
@@ -305,10 +309,9 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, display
         onMouseDown={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
-            commit();
             e.currentTarget.blur();
           } else if (e.key === 'Escape') {
-            setDraft(null);
+            canceled.current = true;
             e.currentTarget.blur();
           } else {
             const typed = draft === null ? value : read(draft);
