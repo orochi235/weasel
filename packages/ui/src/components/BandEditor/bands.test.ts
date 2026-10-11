@@ -203,7 +203,7 @@ describe('edgeReach', () => {
 
 describe('scaleEdges', () => {
   const edges = [0, 0.2, 0.6, 1];
-  const round = (xs: number[] | null) => xs?.map((x) => Math.round(x * 1e6) / 1e6);
+  const round = (xs: readonly number[] | null) => xs?.map((x) => Math.round(x * 1e6) / 1e6);
 
   it('stretches every band in proportion when none is locked', () => {
     expect(round(scaleEdges(edges, [false, false, false], 'max', 2))).toEqual([0, 0.4, 1.2, 2]);
