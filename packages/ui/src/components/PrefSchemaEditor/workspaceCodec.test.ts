@@ -12,9 +12,14 @@ import { editAsset, NO_MOVES, renameInAsset } from './workspaceEdit';
 const KEY = 'ws';
 const codec = workspaceCodec([]);
 
-function memory(): DraftStorage {
+/** A storage that throws on text longer than `room`. */
+function memory(room = Infinity): DraftStorage {
   const held = new Map<string, string>();
-  return { getItem: (k) => held.get(k) ?? null, setItem: (k, v) => void held.set(k, v), removeItem: (k) => void held.delete(k) };
+  return {
+    getItem: (k) => held.get(k) ?? null,
+    setItem: (k, v) => { if (v.length > room) throw new Error('full'); held.set(k, v); },
+    removeItem: (k) => void held.delete(k),
+  };
 }
 
 /** A workspace under a real history, as `useDocument` holds one. */
@@ -27,7 +32,7 @@ function editor(start: Workspace) {
   return {
     history,
     value: () => value,
-    commit: (next: Workspace) => history.applyOps([swapOp(value, next, emit)], 'edit'),
+    commit: (next: Workspace) => history.applyOps([swapOp(value, next, emit)], 'edit schema'),
   };
 }
 
@@ -44,6 +49,15 @@ function reopened(opened: { value: Workspace; stacks: SerializedHistory | null }
   const doc = editor(opened.value);
   doc.history.restore(opened.stacks!);
   return doc;
+}
+
+const view = SETTINGS.children.view as PrefGroup;
+const ZOOM: PrefLeaf = { kind: 'number', name: 'Zoom', description: '', default: 1 };
+/** {@link WORKSPACE} over a dialog whose source `took` a new name for its grid, and gained a setting. */
+function sourceMoved(took?: string): Workspace {
+  const grid = took === undefined ? view.children.grid! : { ...view.children.grid!, name: took };
+  const dialog: PrefGroup = { ...SETTINGS, children: { view: { ...view, children: { ...view.children, grid, zoom: ZOOM } } } };
+  return { assets: [{ ...WORKSPACE.assets[0]!, root: dialog }, WORKSPACE.assets[1]!] };
 }
 
 const rootOf = (ws: Workspace, id: string) => assetOf(ws, id)!.root;
@@ -114,21 +128,67 @@ describe('workspaceCodec', () => {
 
   it('carries a draft onto a dialog with one more setting, the reader’s edit kept', () => {
     const { storage } = saved(WORKSPACE, [nameGrid('Grid')]);
-    const view = SETTINGS.children.view as PrefGroup;
-    const zoom: PrefLeaf = { kind: 'number', name: 'Zoom', description: '', default: 1 };
-    const wider: PrefGroup = { ...SETTINGS, children: { view: { ...view, children: { ...view.children, zoom } } } };
-    const base: Workspace = { assets: [{ ...WORKSPACE.assets[0]!, root: wider }, WORKSPACE.assets[1]!] };
+    const base = sourceMoved();
     const opened = codec.openDraft(KEY, base, storage)!;
     expect(opened.met).toBe('carried');
     expect(gridName(opened.value)).toBe('Grid');
-    expect(nodeAt(rootOf(opened.value, 'settings'), 'view/zoom')).toEqual(zoom);
+    expect(nodeAt(rootOf(opened.value, 'settings'), 'view/zoom')).toEqual(ZOOM);
     expect(rootOf(opened.value, 'code')).toBe(CODE);
+    const doc = reopened(opened);
+    doc.history.undo();
+    expect(doc.value()).toBe(base);
   });
 
-  it('keeps the values without the steps in a storage that throws on the first write', () => {
+  it('keeps the steps of a layout edited alone when the dialog’s source has changed since', () => {
+    const { storage } = saved(WORKSPACE, [nameCode('Editor'), nameCode('Code editor')]);
+    const base = sourceMoved();
+    const opened = codec.openDraft(KEY, base, storage)!;
+    expect(rootOf(opened.value, 'code').name).toBe('Code editor');
+    expect(nodeAt(rootOf(opened.value, 'settings'), 'view/zoom')).toEqual(ZOOM);
+    const doc = reopened(opened);
+    doc.history.undo();
+    expect(rootOf(doc.value(), 'code').name).toBe('Editor');
+    doc.history.undo();
+    expect(doc.value()).toBe(base);
+  });
+
+  it('keeps the other assets’ steps when the source took all of one asset’s edits, and says the draft was carried', () => {
+    const { storage } = saved(WORKSPACE, [nameGrid('Grid'), nameCode('Editor'), nameCode('Code editor')]);
+    const base = sourceMoved('Grid');
+    const opened = codec.openDraft(KEY, base, storage)!;
+    expect(opened.met).toBe('carried');
+    expect(rootOf(opened.value, 'settings')).toBe(rootOf(base, 'settings'));
+    const doc = reopened(opened);
+    doc.history.undo();
+    expect(rootOf(doc.value(), 'code').name).toBe('Editor');
+    doc.history.undo();
+    doc.history.undo();
+    expect(doc.value()).toBe(base);
+  });
+
+  it('opens nothing, and removes the draft, when the source took the reader’s only edit', () => {
+    const { storage } = saved(WORKSPACE, [nameGrid('Grid')]);
+    expect(codec.openDraft(KEY, sourceMoved('Grid'), storage)).toBeNull();
+    expect(storage.getItem(KEY)).toBeNull();
+  });
+
+  it('keeps the nearest steps in a storage with room for most of the draft', () => {
+    const edits = Array.from({ length: 12 }, (_, i) => nameGrid(`Grid ${i}`));
+    const whole = saved(WORKSPACE, edits).storage.getItem(KEY)!.length;
+    const { storage, value } = saved(WORKSPACE, edits, memory(Math.floor(whole * 0.8)));
+    const opened = codec.openDraft(KEY, WORKSPACE, storage)!;
+    expect(opened.value).toEqual(value);
+    const kept = opened.stacks?.undoStack.length ?? 0;
+    expect(kept).toBeGreaterThan(0);
+    expect(kept).toBeLessThan(edits.length);
+    const doc = reopened(opened);
+    doc.history.undo();
+    expect(gridName(doc.value())).toBe('Grid 10');
+  });
+
+  it('keeps the values without the steps in a storage with no room for a step', () => {
     const inner = memory();
-    let writes = 0;
-    const storage: DraftStorage = { ...inner, setItem: (k, v) => { if (writes++ === 0) throw new Error('full'); inner.setItem(k, v); } };
+    const storage: DraftStorage = { ...inner, setItem: (k, v) => { if (v.includes('"steps"')) throw new Error('full'); inner.setItem(k, v); } };
     const { value } = saved(WORKSPACE, [nameGrid('Grid'), nameCode('Editor')], storage);
     const opened = codec.openDraft(KEY, WORKSPACE, storage)!;
     expect(opened.value).toEqual(value);

@@ -1,6 +1,6 @@
 import { isPlainObject, type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/core';
 import type { DocumentCodec, DraftStorage, OpenedDocument } from './document';
-import { dropDraft, openDraft, saveDraft, type OpenedDraft } from './draft';
+import { dropDraft, openDraft, saveDraft, STEPS_KEPT } from './draft';
 import type { SchemaRoot } from './schemaEdit';
 import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
 import { mapSwaps } from './swaps';
@@ -36,7 +36,8 @@ function workspaces(base: Workspace): (roots: readonly SchemaRoot[]) => Workspac
 
 /**
  * One history of workspaces from each asset's history of roots, which hold the same steps; `null` for an asset
- * that takes no part in them. `null` when an asset's steps are missing or do not line up with the rest.
+ * that stands at the baseline's root through all of them. `null` when an asset's steps are missing (`undefined`)
+ * or do not line up with the rest.
  */
 function zipStacks(each: ReadonlyArray<SerializedHistory | null | undefined>, base: Workspace, at: (roots: readonly SchemaRoot[]) => Workspace): SerializedHistory | null {
   const first = each.find((stacks) => stacks != null);
@@ -85,39 +86,49 @@ export function workspaceCodec(types: PrefTypes): DocumentCodec<Workspace> {
     openDraft(key, base, storage): OpenedDocument<Workspace> | null {
       const draft = readWorkspace(key, storage);
       if (!draft) return null;
-      // `undefined` for an asset whose entry did not open; `null` for one the draft never held, which stays the baseline's.
-      const opened: Array<OpenedDraft<SchemaRoot> | null | undefined> = base.assets.map((asset) => {
+      // An asset the draft does not hold, or holds nothing of that the source does not say now, is the baseline's.
+      const opened = base.assets.map((asset) => {
         const entry = draft.assets[asset.id];
-        return entry === undefined ? null : openDraft(asset.id, asset.root, shim(JSON.stringify(entry)), types) ?? undefined;
+        return entry === undefined ? null : { draft: openDraft(asset.id, asset.root, shim(JSON.stringify(entry)), types) };
       });
-      const read = opened.filter((o) => o != null);
-      if (read.length === 0) return null;
       const at = workspaces(base);
+      const value = at(base.assets.map((a, i) => opened[i]?.draft?.schema ?? a.root));
+      if (value === base) {
+        dropDraft(key, storage);
+        return null;
+      }
+      // An entry that opens as nothing was carried there: `draft.ts` drops only a draft whose source moved.
+      const met = opened.flatMap((o) => (o ? [o.draft?.met ?? 'carried'] : []));
       return {
         savedAt: draft.savedAt,
-        value: at(base.assets.map((a, i) => opened[i]?.schema ?? a.root)),
-        stacks: zipStacks(opened.map((o) => (o ? o.stacks ?? undefined : o)), base, at),
-        met: read.some((o) => o.met === 'carried') ? 'carried' : read.some((o) => o.met === 'unknown') ? 'unknown' : 'same',
+        value,
+        stacks: zipStacks(opened.map((o) => (o?.draft ? o.draft.stacks ?? undefined : null)), base, at),
+        met: met.includes('carried') ? 'carried' : met.includes('unknown') ? 'unknown' : 'same',
       };
     },
     saveDraft(key, value, base, stacks, savedAt, storage) {
-      const assets: Record<string, Record<string, unknown>> = {};
-      for (const asset of value.assets) {
-        const source = assetOf(base, asset.id)?.root;
-        if (!source) continue;
-        const kept = shim();
-        saveDraft(asset.id, asset.root, source, mapSwaps(stacks, (w: Workspace) => assetOf(w, asset.id)?.root ?? source), savedAt, kept, types);
-        const text = kept.text();
-        if (text !== undefined) assets[asset.id] = JSON.parse(text) as Record<string, unknown>;
-      }
-      const bare = Object.fromEntries(Object.entries(assets).map(([id, { steps: _steps, ...rest }]) => [id, rest]));
-      // A storage short of room is asked again for the values alone; one that refuses keeps nothing.
-      for (const held of [assets, bare]) {
+      // A storage short of room is asked again for half the steps, down to the values alone; one that refuses keeps nothing.
+      for (let keep = STEPS_KEPT; ; keep >>= 1) {
+        const near = { ...stacks, undoStack: keep > 0 ? stacks.undoStack.slice(-keep) : [], redoStack: keep > 0 ? stacks.redoStack.slice(-keep) : [] };
+        const stepped = new Set<Workspace>([value]);
+        mapSwaps(near, (w: Workspace) => stepped.add(w));
+        const assets: Record<string, unknown> = {};
+        for (const asset of value.assets) {
+          const source = assetOf(base, asset.id)?.root;
+          const rootIn = (w: Workspace): SchemaRoot | undefined => assetOf(w, asset.id)?.root ?? source;
+          // An asset the baseline's all the way through is left out, so a change to its source has nothing to carry.
+          if (!source || [...stepped].every((w) => rootIn(w) === source)) continue;
+          const kept = shim();
+          saveDraft(asset.id, asset.root, source, mapSwaps(near, (w: Workspace) => rootIn(w)!), savedAt, kept, types);
+          const { steps, ...rest } = JSON.parse(kept.text()!) as Record<string, unknown>;
+          assets[asset.id] = keep > 0 ? { ...rest, steps } : rest;
+        }
         try {
-          (storage ?? localStorage).setItem(key, JSON.stringify({ savedAt, assets: held } satisfies StoredWorkspace));
+          (storage ?? localStorage).setItem(key, JSON.stringify({ savedAt, assets } satisfies StoredWorkspace));
           return;
         } catch {
           // Private windows and full quotas throw; the editor goes on with what was kept before.
+          if (keep === 0) return;
         }
       }
     },

@@ -8,8 +8,8 @@ interface Doc { n: number }
 describe('mapSwaps', () => {
   const [a, b, c]: Doc[] = [{ n: 0 }, { n: 1 }, { n: 2 }];
   const history = createHistory(null);
-  history.applyOps([swapOp(a, b, () => {})], 'edit');
-  history.applyOps([swapOp(b, c, () => {})], 'edit');
+  history.applyOps([swapOp(a, b, () => {})], 'edit schema');
+  history.applyOps([swapOp(b, c, () => {})], 'edit schema');
   history.undo();
   const stacks = history.serialize();
 
