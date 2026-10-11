@@ -11,7 +11,7 @@
  * path-then-rect detector fired, else `tool: 'imported'`.
  */
 
-import type { FillStyle, PolygonPath, TextStyle } from '@weasel-js/core';
+import type { FillStyle, TextStyle } from '@weasel-js/core';
 import {
   svgImageFromKit,
   svgLeafFromKit,
@@ -185,7 +185,7 @@ export function objToSvgNode(o: Obj): SvgNode {
   const node: SvgPathNode = {
     kind: 'path',
     path: o.path,
-    fill: svgPaintFromKit(o.closed ? o.fill : null, o),
+    fill: svgPaintFromKit(o.fill, o),
   };
   const stroke = svgStrokeFromKit(o.stroke, o);
   if (stroke) node.stroke = stroke;
@@ -254,8 +254,7 @@ function kitLeafToObj(
     tool,
     ...box,
     path: data.path,
-    closed: data.path.kind === 'rect' || isClosedPolygon(data.path),
-    fill: data.fill ?? DEFAULT_IMPORT_FILL,
+    fill: data.fill === undefined ? DEFAULT_IMPORT_FILL : data.fill,
     stroke: data.stroke ?? null,
     ...(params ? { params } : {}),
   };
@@ -323,17 +322,8 @@ export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]):
   });
 }
 
-/** What an imported `fill="none"` path is filled with. WeaselDraw's own
- *  `closed` flag decides whether that fill is painted, so the import keeps a
- *  color for the object to fall back on when it is closed later. */
+/** SVG's initial `fill`, for a path that names none. */
 const DEFAULT_IMPORT_FILL: FillStyle = { color: '#000000' };
-
-function isClosedPolygon(path: PolygonPath): boolean {
-  const commands = path.commands;
-  if (commands.length === 0) return false;
-  const last = commands[commands.length - 1];
-  return last === 4 /* PATH_Z */;
-}
 
 /** Trigger a browser download of `svg` as a file named `filename`. */
 export function downloadSvg(svg: string, filename: string): void {

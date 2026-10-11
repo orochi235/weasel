@@ -149,6 +149,7 @@ import { useSliceTool } from '@weasel-js/core';
 import { drawBooleansAdapter, textSourceOf, type DrawScene } from './booleansAdapter';
 import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
+import { leafOfObj } from './svgImport';
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
 import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
@@ -757,30 +758,10 @@ function Toolbar({
                   idMap.set(draft.id, sceneId);
                   continue;
                 }
-                const o = draft.obj;
-                const pose: WeaselDrawPose = { x: o.x, y: o.y, width: o.width, height: o.height };
-                if (o.rotation) pose.rotation = o.rotation;
-                // `style` carries the typography the painter reads — size and
-                // family. Dropping it imported every `<text>` as default-black
-                // 16px, however it was written. The paint rides beside it in
-                // `fill` / `stroke`, the same two leaves a path node uses.
-                const data: WeaselDrawData = o.tool === 'text'
-                  ? {
-                      text: o.text,
-                      fill: o.fill === undefined ? solid('#000000') : o.fill,
-                      ...(o.stroke ? { stroke: o.stroke } : {}),
-                      ...(o.style ? { style: o.style } : {}),
-                      ...(o.runs ? { runs: o.runs } : {}),
-                      ...(o.verticalAlign ? { verticalAlign: o.verticalAlign } : {}),
-                    }
-                  : o.tool === 'image'
-                    ? { image: o.image }
-                    : { path: o.path, fill: o.fill, stroke: o.stroke };
                 const sceneId = scene.add({
                   kind: 'leaf',
                   layer: 'default',
-                  pose,
-                  data,
+                  ...leafOfObj(draft.obj),
                   ...(parent != null ? { parent } : {}),
                 });
                 idMap.set(draft.id, sceneId);

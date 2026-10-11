@@ -9,6 +9,7 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { parseSvg } from '@weasel-js/svg';
 import { boundsOfPath, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, type TextStyle } from '@weasel-js/core';
 import { svgNodesToSceneDrafts } from './svgInterop';
+import { leafOfObj } from './svgImport';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
 import { asPaint, registerPaintKindLoader, solid, strokeOf } from '@weasel-js/core';
 import type { FillStyle, Stroke, StyledRun } from '@weasel-js/core';
@@ -177,6 +178,29 @@ describe('text export', () => {
       if (n.kind !== 'text') throw new Error('expected text');
       expect(n.stroke).toBeUndefined();
     }
+  });
+});
+
+describe('Save then Open', () => {
+  const PAGE = { filename: 'page', paperSize: 'letter', paperWidth: 100, paperHeight: 100, backgroundColor: '#ffffff' } as const;
+
+  it('keeps a rectangle with fill None unfilled', async () => {
+    const scene = fakeScene({
+      r: {
+        kind: 'leaf',
+        pose: { x: 10, y: 20, width: 30, height: 40 },
+        data: { path: { kind: 'rect', x: 0, y: 0, width: 30, height: 40 }, fill: null, stroke: strokeOf('#00ff00', 2) },
+      },
+    }, ['r']);
+
+    const svg = await sceneToSvgString(scene, PAGE);
+    let n = 0;
+    const drafts = svgNodesToSceneDrafts(parseSvg(svg), () => `n${n++}`);
+    expect(drafts).toHaveLength(1);
+    if (drafts[0].kind !== 'leaf') throw new Error('expected a leaf');
+    const { data } = leafOfObj(drafts[0].obj);
+    expect(data.fill).toBeNull();
+    expect(data.stroke).toMatchObject({ paint: { color: '#00ff00' }, width: 2 });
   });
 });
 

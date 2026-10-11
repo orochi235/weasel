@@ -74,8 +74,6 @@ const WHITE = /^#?fff(fff)?(ff)?$/i;
  * rides on the `Obj` so the serializer emits a rotate transform. Returns
  * `null` for a leaf with no drawable data.
  */
-const EXPORT_FALLBACK_FILL = { color: '#000000' };
-
 function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj | null {
   if (data.image) {
     const o: ImageObj = {
@@ -107,14 +105,10 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     tool: 'imported',
     x: pose.x, y: pose.y, width: pose.width, height: pose.height,
     path,
-    // `objToSvgNode` emits a fill iff `closed`, else fill:none. The
-    // WeaselDraw leaf model has no `closed` flag — fill presence is the
-    // signal — so derive `closed` from `data.fill`.
-    closed: data.fill != null,
     // The path above is baked into page coordinates, and the serializer
     // emits gradients as `userSpaceOnUse` — so a box-relative gradient has
     // to be resolved against the same pose, exactly as the painter does.
-    fill: data.fill == null ? EXPORT_FALLBACK_FILL : fillInPoseFrame(data.fill, pose),
+    fill: data.fill == null ? null : fillInPoseFrame(data.fill, pose),
     // A gradient stroke paint gets the same pose-frame resolution the fill
     // above gets, and for the same reason.
     // A stroke with no paint draws nothing, and exports as no stroke.

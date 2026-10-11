@@ -29,14 +29,14 @@ import {
 interface RectObjT {
   id: string; tool: 'rect'; x: number; y: number; width: number; height: number;
   path: { kind: 'rect'; x: number; y: number; width: number; height: number };
-  closed: boolean; fill: FillStyle | null; stroke: Stroke | null;
+  fill: FillStyle | null; stroke: Stroke | null;
 }
 interface TextObjT { id: string; tool: 'text'; x: number; y: number; width: number; height: number; text: string }
 interface PathObjT {
   id: string; tool: 'pen' | 'pencil' | 'imported' | 'ellipse' | 'polygon' | 'star' | 'line';
   x: number; y: number; width: number; height: number;
   path: { kind: 'polygon'; commands: Uint8Array; coords: Float32Array; fillRule: 'nonzero' };
-  closed: boolean; fill: FillStyle | null; stroke: Stroke | null;
+  fill: FillStyle | null; stroke: Stroke | null;
 }
 
 // `sceneToSvgNodes` reads only a node's kind; the leaf itself comes from `objOf`.
@@ -61,7 +61,7 @@ describe('objToSvgNode', () => {
     const rect: RectObjT = {
       id: 'r1', tool: 'rect',
       x: 10, y: 20, width: 30, height: 40,
-      path: { kind: 'rect', x: 10, y: 20, width: 30, height: 40 }, closed: true,
+      path: { kind: 'rect', x: 10, y: 20, width: 30, height: 40 },
       fill: solid('#ff0000'), stroke: strokeOf('#000000', 2),
     };
     const node = objToSvgNode(rect as never) as SvgPathNode;
@@ -75,7 +75,7 @@ describe('objToSvgNode', () => {
     const rect: RectObjT = {
       id: 'r2', tool: 'rect',
       x: 0, y: 0, width: 10, height: 10,
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
       fill: solid('#abcdef'), stroke: null,
     };
     const node = objToSvgNode(rect as never) as SvgPathNode;
@@ -93,24 +93,22 @@ describe('objToSvgNode', () => {
     expect(node).toMatchObject({ x: 5, y: 6, width: 100, height: 20, text: 'hello' });
   });
 
-  it('emits fill=none on an open PathObj', () => {
+  it('emits fill=none on an unfilled PathObj', () => {
     const path: PathObjT = {
       id: 'p1', tool: 'pen',
       x: 0, y: 0, width: 50, height: 50,
       path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1]), coords: new Float32Array([0, 0, 50, 0, 50, 50]), fillRule: 'nonzero' },
-      closed: false,
-      fill: solid('#ff0000'), stroke: strokeOf('#000000', 1),
+      fill: null, stroke: strokeOf('#000000', 1),
     };
     const node = objToSvgNode(path as never) as SvgPathNode;
     expect(node.fill).toEqual({ kind: 'none' });
   });
 
-  it('emits a solid fill on a closed PathObj', () => {
+  it('emits a solid fill on a filled PathObj', () => {
     const path: PathObjT = {
       id: 'p2', tool: 'pen',
       x: 0, y: 0, width: 50, height: 50,
       path: { kind: 'polygon', commands: new Uint8Array([0, 1, 1, 4]), coords: new Float32Array([0, 0, 50, 0, 50, 50]), fillRule: 'nonzero' },
-      closed: true,
       fill: solid('#00ff00'), stroke: strokeOf('#000000', 1),
     };
     const node = objToSvgNode(path as never) as SvgPathNode;
@@ -232,12 +230,12 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
     // A minimal SceneSource: one container 'c1' holding two leaves.
     const a: RectObjT = {
       id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
       fill: solid('#fff'), stroke: null,
     };
     const b: RectObjT = {
       id: 'b', tool: 'rect', x: 20, y: 0, width: 10, height: 10,
-      path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, closed: true,
+      path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
       fill: solid('#fff'), stroke: null,
     };
     const source: SceneSource = {
@@ -258,7 +256,7 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
   it('emits root leaves at the document root', () => {
     const a: RectObjT = {
       id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
       fill: solid('#fff'), stroke: null,
     };
     const source: SceneSource = {
@@ -275,7 +273,7 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
   it('nests SvgGroupNodes for nested containers', () => {
     const a: RectObjT = {
       id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
       fill: solid('#fff'), stroke: null,
     };
     const source: SceneSource = {
@@ -301,7 +299,7 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
 describe('sceneToSvgNodes — hidden layers', () => {
   const rect = (id: string, x: number): RectObjT => ({
     id, tool: 'rect', x, y: 0, width: 10, height: 10,
-    path: { kind: 'rect', x, y: 0, width: 10, height: 10 }, closed: true,
+    path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
     fill: solid('#fff'), stroke: null,
   });
 
@@ -338,12 +336,12 @@ describe('sceneToSvgNodes — hidden layers', () => {
 describe('sceneToSvgNodes — optional roots override', () => {
   const a: RectObjT = {
     id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
-    path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+    path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
     fill: solid('#111111'), stroke: null,
   };
   const b: RectObjT = {
     id: 'b', tool: 'rect', x: 20, y: 0, width: 10, height: 10,
-    path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, closed: true,
+    path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
     fill: solid('#222222'), stroke: null,
   };
   const source: SceneSource = {
@@ -380,12 +378,12 @@ describe('container round-trip: drafts → svg → drafts (stable ids)', () => {
     // Build a scene source: container 'c1' with two rect leaves.
     const a: RectObjT = {
       id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
       fill: solid('#112233'), stroke: null,
     };
     const b: RectObjT = {
       id: 'b', tool: 'rect', x: 20, y: 0, width: 10, height: 10,
-      path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, closed: true,
+      path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
       fill: solid('#445566'), stroke: null,
     };
     const source: SceneSource = {
@@ -479,14 +477,14 @@ describe('objToSvgNode — coverage gaps', () => {
         coords: new Float32Array([0, 0, 50, 50, 100, 0]),
         fillRule: 'nonzero' as const,
       },
-      closed: false, fill: solid('#aaa'), stroke: strokeOf('#000', 2),
+      fill: null, stroke: strokeOf('#000', 2),
     };
     const node = objToSvgNode(original as never);
     expect(node.kind).toBe('path');
     const out = leavesOf([node], ids());
-    const back = out[0] as unknown as { tool: string; closed: boolean; stroke: Stroke };
+    const back = out[0] as unknown as { tool: string; fill: FillStyle | null; stroke: Stroke };
     expect(back.tool).toBe('pen');
-    expect(back.closed).toBe(false);
+    expect(back.fill).toBeNull();
     expect(back.stroke).toMatchObject({ paint: { color: '#000' }, width: 2 });
   });
 });
@@ -495,7 +493,7 @@ describe('rotation emit', () => {
   it('writes transform="rotate(...)" for a rotated rect', () => {
     const a = {
       id: 'r', tool: 'rect' as const, x: 0, y: 0, width: 100, height: 50,
-      path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 }, closed: true,
+      path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 },
       fill: solid('#3366ff'), stroke: null, rotation: Math.PI / 6,
     };
     const node = objToSvgNode(a as never);
@@ -516,7 +514,7 @@ describe('rotation emit', () => {
   it('omits transform when rotation is 0 or undefined', () => {
     const a = {
       id: 'r', tool: 'rect' as const, x: 0, y: 0, width: 100, height: 50,
-      path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 }, closed: true,
+      path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 },
       fill: solid('#3366ff'), stroke: null,
     };
     const node = objToSvgNode(a as never);
@@ -529,7 +527,7 @@ describe('rotation parse', () => {
   it('round-trips a rotated rect through serialize → parse → drafts', () => {
     const a = {
       id: 'r', tool: 'rect' as const, x: 0, y: 0, width: 100, height: 50,
-      path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 }, closed: true,
+      path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 },
       fill: solid('#3366ff'), stroke: null, rotation: Math.PI / 6,
     };
     const node = objToSvgNode(a as never);
@@ -566,7 +564,7 @@ describe('stroke is a whole Stroke', () => {
   const rect = (stroke: Stroke | null): RectObjT => ({
     id: 'r', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
     path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-    closed: true, fill: solid('#ffffff'), stroke,
+    fill: solid('#ffffff'), stroke,
   });
 
   it('emits dash, cap and join', () => {
@@ -616,7 +614,7 @@ describe('paint fidelity through the kit bridge', () => {
   it('exports a solid fill with its opacity', () => {
     const rect: RectObjT = {
       id: 'r', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
       fill: { ...solid('#ff0000'), opacity: 0.5 }, stroke: null,
     };
     expect((objToSvgNode(rect as never) as SvgPathNode).fill)

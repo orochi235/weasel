@@ -24,7 +24,6 @@ export interface BaseObj {
 export interface PathObj extends BaseObj {
   tool: PathToolKind;
   path: Path;
-  closed: boolean;
   /** The object's paint — solid, gradient or pattern. A non-solid one is
    *  emitted by the SVG serializer as a `<defs>` entry. `null` is unfilled. */
   fill: FillStyle | null;
