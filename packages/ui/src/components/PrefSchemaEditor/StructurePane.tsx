@@ -11,7 +11,7 @@ import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
 import { ActionList } from './ActionList';
 import type { EditorAction } from './editorActions';
-import { holdsPages, isLoose, looseKeys, looseTarget, schemaTarget, topLevelAllows } from './loose';
+import { holdsPages, looseKeys, looseTarget, mayUnplace, schemaTarget, topLevelAllows } from './loose';
 import { Icon } from '../../icons';
 import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
@@ -138,7 +138,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
   const overUnplaced = (ids: readonly string[], point: { x: number; y: number }): boolean => {
     const box = unplacedArea.current?.getBoundingClientRect();
     if (!box || point.x < box.left || point.x > box.right || point.y < box.top || point.y > box.bottom) return false;
-    return ids.every((id) => isLoose(nodeAt(schema, id)!));
+    return mayUnplace(schema, ids);
   };
   const waiting = useMemo(() => (unplaced ? stillUnplaced(unplaced, schema) : null), [unplaced, schema]);
 
@@ -264,7 +264,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
         onDropOutside={(ids, point, effect) => {
           setUnplacing(false);
           if (!canLand(ids, effect)) return;
-          const target = overUnplaced(ids, point) ? looseTarget(schema) : outside?.target(landing(ids, effect), effect === 'move' ? ids : [], point);
+          const target = overUnplaced(ids, point) && holdsPages(schema) ? looseTarget(schema) : outside?.target(landing(ids, effect), effect === 'move' ? ids : [], point);
           if (target) ({ move, copy, link: alias })[effect](ids, target);
         }}
         canDrop={(ids, t, effect) => {

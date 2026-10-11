@@ -1,6 +1,6 @@
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
-import { looseKeys, looseTarget, placedOnly, schemaTarget, topLevelAllows } from './loose';
+import { looseKeys, looseTarget, mayUnplace, placedOnly, schemaTarget, topLevelAllows } from './loose';
 
 const leaf = (name: string) => ({ kind: 'boolean' as const, name, description: '', default: false });
 // Root order: a page, a leaf, a page, a leaf, a tab. The tree shows canvas and tools; the rest are loose.
@@ -43,5 +43,14 @@ describe('what a root holds outside any page', () => {
     expect(schemaTarget(ROOT, null, 2)).toEqual({ parentPath: null, index: 5 });
     expect(schemaTarget(ROOT, 'canvas', 1)).toEqual({ parentPath: 'canvas', index: 1 });
     expect(looseTarget(ROOT)).toEqual({ parentPath: null, index: 5 });
+  });
+});
+
+describe('taking nodes off their pages', () => {
+  it('is for a root that holds pages, and for what would be loose under it', () => {
+    expect(mayUnplace(ROOT, ['canvas/grid'])).toBe(true);
+    expect(mayUnplace(ROOT, ['canvas/grid', 'tools'])).toBe(false);
+    expect(mayUnplace(SECTION, ['pose.x'])).toBe(false);
+    expect(mayUnplace({ ...ROOT, as: 'bar' }, ['canvas/grid'])).toBe(false);
   });
 });

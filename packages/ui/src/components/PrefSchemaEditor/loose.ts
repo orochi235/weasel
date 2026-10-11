@@ -50,7 +50,15 @@ export function schemaTarget(root: SchemaRoot, parentId: string | null, index: n
   return { parentPath: null, index: at === undefined ? keys.length : keys.indexOf(at) };
 }
 
+/** Whether the nodes at `paths` may be taken off their pages: under a root that holds pages, each one that would be loose there. */
+export function mayUnplace(root: SchemaRoot, paths: readonly string[]): boolean {
+  return holdsPages(root) && paths.every((p) => {
+    const node = nodeAt(root, p);
+    return node !== undefined && isLoose(node);
+  });
+}
+
 /** Where a node taken off its page lands: the end of the root, where it is loose. */
-export function looseTarget(root: SchemaRoot): SchemaTarget {
-  return { parentPath: null, index: Object.keys(isPrefSection(root) ? root.members : root.children).length };
+export function looseTarget(root: PrefGroup): SchemaTarget {
+  return { parentPath: null, index: Object.keys(root.children).length };
 }
