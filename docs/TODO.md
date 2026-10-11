@@ -948,13 +948,21 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) `defaults/move.ts` is 1,426 lines doing four jobs.** In
-  `packages/core/src/interactions/actions/defaults/`, most files hold one action and are under
-  250 lines. `move.ts` also holds the layout pass a drag runs through its containers
-  (`runLayoutPass`, `resolveLayoutExits`), reparent-on-drop (`resolveDropTarget`, `applyReparent`),
-  the landing of released nodes (`releasedPoses`, `landReleased`), and a `moveAction` literal that
-  is itself about 570 lines. Each wants its own module. `resize.ts` (698) carries its point-snap
-  helpers the same way, and `insert.ts` (621) holds two actions.
+- **(P2) `defaults/move.ts` is 1,426 lines doing four jobs.** Designed, not built:
+  `docs/superpowers/specs/2026-10-11-move-action-decomposition-design.md` splits it by phase into
+  `actions/move/`, adds what the behavior contract lacks, and makes a layout drop and
+  reparent-on-drop move behaviors. It also adds `check:size`.
+
+- **(P2) `resize.ts` (698) and `rotate.ts` (353) are built like `move.ts` was.** Each is a scratch
+  interface every helper takes whole and a `commitX` closure inside `start()`. They take the split
+  the move spec describes: a readonly session captured at press, a frame replaced each move, and
+  commit paths that return ops. `resize.ts` also carries its point-snap helpers, and `insert.ts`
+  (621) holds two actions.
+
+- **(P3) A consumer's behavior cannot do frame math.** `GestureContext` carries no pose
+  composition and no per-layer plane map, so `ctx.current` is a stored pose shifted by a plane
+  delta and a behavior outside core cannot compose it to world. Move's own behaviors close over the
+  session instead.
 
 - **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
   sibling `actions/<name>/` (move, resize, rotate, flip, align, distribute, clone, clipboard,
