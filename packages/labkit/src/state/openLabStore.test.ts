@@ -628,6 +628,17 @@ describe('openLabStore — folding the four pre-document keys', () => {
     expect(backing.has(labStorageKey('test', 'theme'))).toBe(false);
   });
 
+  it('keeps the layout, whose old key is also the name of its record', async () => {
+    const backing = new Map<string, unknown>();
+    const layout = { w1: { w: 2, h: 1 } };
+    backing.set(labStorageKey('test', 'workspaces'), JSON.stringify([trial('w1')]));
+    backing.set(labStorageKey('test', 'layout'), JSON.stringify(layout));
+    const first = await open(backing);
+    expect(first.store.getState().layout).toEqual(layout);
+    await first.close();
+    expect((await open(backing)).store.getState().layout).toEqual(layout);
+  });
+
   it('honors initialMode when the old lab never set a theme', async () => {
     const backing = new Map<string, unknown>();
     backing.set(labStorageKey('test', 'workspaces'), JSON.stringify([]));

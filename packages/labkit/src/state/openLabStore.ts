@@ -185,7 +185,13 @@ async function foldOldStorage(
   const entries = recordsOfDocument(doc);
   records.seed(entries);
   if (await writeConfirmed(storage, records.prefix, entries)) {
-    await deleteConfirmed(storage, oldKeys);
+    // The old layout bucket and the layout record share a key when the storage
+    // key needs no encoding.
+    const written = new Set(entries.map(([name]) => records.prefix + name));
+    await deleteConfirmed(
+      storage,
+      oldKeys.filter((key) => !written.has(key)),
+    );
   } else {
     console.warn(
       `[labkit] keeping the old storage for "${storageKey}": could not confirm its records were written`,
