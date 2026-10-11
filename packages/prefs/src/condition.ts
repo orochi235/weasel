@@ -153,9 +153,10 @@ export function mapPrefConditionPaths(condition: PrefCondition, move: (path: str
 }
 
 /** One thing wrong with a condition: it is not one, it reads a path no leaf
- *  holds a value at, or it compares a leaf against a value it never holds. */
+ *  holds a value at, it compares a leaf against a value it never holds, or
+ *  it never holds whatever the leaf does, as an `in` of no values. */
 export interface PrefConditionProblem {
-  code: 'malformed' | 'no-leaf' | 'no-value' | 'value';
+  code: 'malformed' | 'no-leaf' | 'no-value' | 'value' | 'never';
   /** The path read, where the problem is with one. */
   path?: string;
   problem: string;
@@ -240,6 +241,12 @@ function neverHolds(leaf: PrefLeaf, value: PrefConditionValue): string | undefin
 }
 
 function testProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefConditionProblem[] {
+  const found = leafProblems(test, schema);
+  if (test.in?.length !== 0) return found;
+  return [...found, { code: 'never', path: test.path, problem: `"${test.path}" is one of nothing, which never holds` }];
+}
+
+function leafProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefConditionProblem[] {
   const { path } = test;
   const leaf = leafHolding(schema, path);
   if (leaf === undefined) return [{ code: 'no-leaf', path, problem: `no leaf holds a value at "${path}"` }];
@@ -260,8 +267,9 @@ function testProblems(test: PrefTest, schema: PrefGroup | PrefSection): PrefCond
 
 /**
  * What is wrong with `condition` as one of `schema`'s: every part of it that
- * is not a condition, every path it reads that no leaf holds a value at, and
- * every comparison against a value the leaf's kind or options rule out.
+ * is not a condition, every path it reads that no leaf holds a value at,
+ * every comparison against a value the leaf's kind or options rule out, and
+ * every `in` of no values.
  * `null` is never ruled out, and neither is anything under an app-defined
  * kind or inside a list, a map, or a paint, which the schema does not
  * describe. Takes `unknown`, since a schema read from JSON or built without

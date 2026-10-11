@@ -216,6 +216,15 @@ describe('checkPrefCondition', () => {
     expect(codes({ path: 'go' })).toEqual(['no-value']);
   });
 
+  it('reports an in with nothing in it, which never holds whatever the leaf', () => {
+    expect(checkPrefCondition({ path: 'mode', in: [] }, SCHEMA)).toEqual([
+      { code: 'never', path: 'mode', problem: '"mode" is one of nothing, which never holds' },
+    ]);
+    expect(codes({ path: 'widget', in: [] })).toEqual(['never']);
+    expect(codes({ path: 'nope', in: [] })).toEqual(['no-leaf', 'never']);
+    expect(codes({ any: [{ path: 'mode', in: ['row'] }, { not: { path: 'mode', in: [] } }] })).toEqual(['never']);
+  });
+
   it('reports a value the leaf cannot hold', () => {
     expect(codes({ path: 'mode', is: 'diagonal' })).toEqual(['value']);
     expect(codes({ path: 'mode', in: ['row', 'diagonal', 3] })).toEqual(['value', 'value']);

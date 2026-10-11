@@ -11,10 +11,12 @@ describe('what is wrong with the conditions a schema holds, by the row that hold
         on: flag(),
         size: { kind: 'number', name: 'Size', description: '', default: 0, showIf: { path: 'a.on', is: 'yes' }, enableIf: { path: 'a.on' } },
         fine: flag({ showIf: { path: 'a.on', is: true } }),
+        never: flag({ showIf: { path: 'a.size', in: [] } }),
       } },
     } };
     const found = conditionProblems(root);
-    expect([...found.keys()]).toEqual(['a', 'a/size']);
+    expect([...found.keys()]).toEqual(['a', 'a/size', 'a/never']);
+    expect(found.get('a/never')).toMatchObject([{ field: 'showIf', code: 'never' }]);
     expect(found.get('a')).toMatchObject([{ field: 'enableIf', code: 'no-leaf' }]);
     expect(found.get('a/size')).toMatchObject([{ field: 'showIf', code: 'value' }]);
   });
