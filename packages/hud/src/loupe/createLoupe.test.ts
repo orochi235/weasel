@@ -137,6 +137,20 @@ describe('createLoupe', () => {
     expect(onColorChange).toHaveBeenCalledWith('#0a7bd5');
   });
 
+  it('reports no color over a transparent pixel', () => {
+    const hud = createHud();
+    const frame = bindHost(hud);
+    const el = makeElement();
+    vi.spyOn(el, 'getContext').mockReturnValue({
+      RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
+      readPixels: (_x: number, _y: number, _w: number, _h: number, _f: number, _t: number, buf: Uint8Array) => { buf.fill(0); },
+    } as unknown as WebGL2RenderingContext);
+    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
+    loupe.aimAt({ x: 400, y: 300 });
+    frame();
+    expect(loupe.color).toBeNull();
+  });
+
   it('reads a detached pane at its own rect of the surface', () => {
     const hud = createHud();
     const frame = bindHost(hud);

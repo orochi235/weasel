@@ -246,7 +246,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
 
   const readHex = (at: { x: number; y: number }): string | null => {
     const px = read(at, () => 1, () => 1);
-    if (!px) return null;
+    if (!px || px.data[3] === 0) return null;
     return '#' + [px.data[0], px.data[1], px.data[2]]
       .map((c) => c.toString(16).padStart(2, '0')).join('');
   };
