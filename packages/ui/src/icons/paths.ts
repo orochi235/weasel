@@ -149,6 +149,7 @@ export const ICON_PATHS = {
   formSection: `<path d="M3.75 5.5h6.5" stroke-width="2.25"/><path d="M3.75 10.5h3M9.75 10.5h6.5M3.75 14.5h3M9.75 14.5h6.5"/>`,
   formBar: `<rect x="3.25" y="6.75" width="13.5" height="7.75" rx="1.5"/><path d="M8.1 6.75V14.5M10.75 10.625h3.5"/><circle cx="5.7" cy="10.625" r="1" fill="currentColor" stroke="none"/>`,
   formLabel: `<path d="M8 5.5H15.25a1.5 1.5 0 0 1 1.5 1.5V13a1.5 1.5 0 0 1 -1.5 1.5H8L3.25 10Z"/><circle cx="8.75" cy="10" r="1.1" fill="currentColor" stroke="none"/>`,
+  formSeparator: `<path d="M3.25 10.625h13.5"/><path d="M3.75 5.625h3M9.75 5.625h6.5M3.75 15.625h3M9.75 15.625h6.5"/>`,
 
   // Repository views
   commitNode: `<circle cx="10" cy="10" r="3"/><path d="M2.75 10H7M13 10h4.25"/>`,
@@ -638,6 +639,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
       'formSection',
       'formBar',
       'formLabel',
+      'formSeparator',
     ],
   },
   {

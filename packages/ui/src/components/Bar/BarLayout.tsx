@@ -82,6 +82,12 @@ export function BarLayout(props: BarLayoutProps) {
       pending = [];
     };
     for (const node of list) {
+      if (node.kind === 'leaf' && node.leaf.kind === 'separator') {
+        flush();
+        const rule = <span className={s.rule} role="separator" aria-orientation={vertical ? 'horizontal' : 'vertical'} />;
+        items.push({ path: node.path, leaf: true, content: rule });
+        continue;
+      }
       if (node.kind === 'leaf') {
         pending.push(node);
         continue;

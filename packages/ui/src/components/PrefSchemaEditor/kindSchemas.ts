@@ -97,7 +97,7 @@ const AUTO_FLAGS: KindAttrs = {
 };
 
 /** Kinds that hold no value, so have nothing to be auto. */
-const VALUELESS = new Set(['action', 'label', 'alias']);
+const VALUELESS = new Set(['action', 'label', 'separator', 'alias']);
 
 /** Stored as given, falsy or not: `false` and `0` are values a leaf can read while auto. */
 const AS_GIVEN = new Set(['autoValue']);

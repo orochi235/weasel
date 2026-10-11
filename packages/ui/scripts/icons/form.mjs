@@ -1,5 +1,5 @@
 // What a settings form is built from, as PrefSchemaEditor's palette offers
-// them: the ways a group is drawn, and a label.
+// them: the ways a group is drawn, a label, and a separator.
 //
 // The three framed ones share one 13.5 x 11.5 box, so what tells them apart is
 // only what the form itself adds: a page gets a rail down its side, a tab
@@ -60,4 +60,9 @@ export const FORM = {
     <circle cx="5.7" cy="${BAR_MID}" r="1" fill="currentColor" stroke="none"/>`,
 
   formLabel: `<path d="${tag}"/><circle cx="8.75" cy="10" r="1.1" fill="currentColor" stroke="none"/>`,
+
+  // A rule the width of the form, with a row above it and a row below.
+  formSeparator: `
+    <path d="M${L} ${BAR_MID}h${W}"/>
+    <path d="M3.75 5.625h3M9.75 5.625h6.5M3.75 15.625h3M9.75 15.625h6.5"/>`,
 };

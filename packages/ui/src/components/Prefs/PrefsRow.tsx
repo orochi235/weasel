@@ -140,6 +140,13 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       </div>
     );
   }
+  if (pref.kind === 'separator' && !custom) {
+    return (
+      <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>
+        <hr className={s.rule} />
+      </div>
+    );
+  }
   const control = custom ? custom(renderCtx) : renderBuiltin(renderCtx, ctx.renderers);
   if (custom && control === null) return null;
 

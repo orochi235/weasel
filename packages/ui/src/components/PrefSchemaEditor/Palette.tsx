@@ -9,7 +9,7 @@ import { GHOST_WIDTH, NodeGhost, ghostIsPage } from './NodeGhost';
 import type { SchemaNode } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
 
-/** Something the palette makes: a kind of group, or a label. */
+/** Something the palette makes: a kind of group, a label, or a separator. */
 export interface PaletteItem {
   id: string;
   label: string;
@@ -33,6 +33,7 @@ const group = (name: string, as: PrefGroup['as']): PrefGroup => ({ name, descrip
 
 const section = (name: string, as: PrefSection['as']): PrefSection => ({ name, description: '', as, members: {} });
 const LABEL: PaletteItem = { id: 'label', label: 'Label', icon: 'formLabel', key: 'label', make: () => ({ kind: 'label', name: 'Label', description: '', default: undefined }) as PrefLeaf };
+const SEPARATOR: PaletteItem = { id: 'separator', label: 'Separator', icon: 'formSeparator', key: 'separator', make: () => ({ kind: 'separator', name: '', description: '', default: undefined }) as PrefLeaf };
 
 /** What a section root takes: the same, less the page, each a section. */
 export const SECTION_PALETTE: readonly PaletteItem[] = [
@@ -42,6 +43,7 @@ export const SECTION_PALETTE: readonly PaletteItem[] = [
   { id: 'fragment', label: 'Group', icon: GROUP_ICON.fragment, key: 'group', make: () => section('New group', 'fragment') },
   { id: 'bar', label: 'Bar', icon: GROUP_ICON.bar, key: 'bar', make: () => section('New bar', 'bar') },
   LABEL,
+  SEPARATOR,
 ];
 
 export const PALETTE: readonly PaletteItem[] = [
@@ -52,6 +54,7 @@ export const PALETTE: readonly PaletteItem[] = [
   { id: 'fragment', label: 'Group', icon: GROUP_ICON.fragment, key: 'group', make: () => group('New group', 'fragment') },
   { id: 'bar', label: 'Bar', icon: GROUP_ICON.bar, key: 'bar', make: () => group('New bar', 'bar') },
   LABEL,
+  SEPARATOR,
 ];
 
 export interface PaletteDrag {

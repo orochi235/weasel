@@ -55,6 +55,20 @@
   margin-inline: var(--wzl-space-2);
 }
 
+/* A `separator` leaf. It keeps a cell of its own, unlike a divider, so it is always drawn where it was put. */
+.rule {
+  flex: none;
+  inline-size: 1px;
+  block-size: calc(var(--wzl-tb-height) - 2 * var(--wzl-space-2));
+  background: var(--wzl-border);
+}
+
+.bar[data-orientation='vertical'] > .cell > .rule {
+  flex: 1;
+  block-size: 1px;
+  margin-inline: var(--wzl-space-2);
+}
+
 /* A nested group inside a group a bar opened. */
 .opened {
   grid-column: 1 / -1;
