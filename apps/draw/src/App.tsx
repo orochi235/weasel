@@ -53,7 +53,6 @@ import {
   isGradientFill,
   type NodeId,
   type Path,
-  PATH_M,
   type PoseComposition,
   type RangeStyle,
   rectPath,
@@ -148,7 +147,8 @@ import { drawBooleansAdapter, textSourceOf, type DrawScene } from './booleansAda
 import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
-import { releaseCompoundPaths } from './releaseCompound';
+import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
+import { appCommandsContribution, type AppCommands } from './appCommands';
 import { writeSession } from './sessionStore';
 import { DEFAULT_FILENAME, PAPER_PRESETS, loadDoc, saveDoc } from './docPersistence';
 import { useModality } from './modality/useModality';
@@ -532,16 +532,11 @@ function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
 interface ToolbarProps {
   scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
   selection: ReturnType<typeof useSelection>;
-  gridVisible: boolean;
-  setGridVisible: (v: boolean) => void;
-  snapToGrid: boolean;
-  setSnapToGrid: (v: boolean) => void;
   paperSize: PaperSizeKey;
   setPaperSize: (k: PaperSizeKey) => void;
   filename: string;
   backgroundColor: string;
   setBackgroundColor: (color: string) => void;
-  onOpenPrefs: () => void;
   /** Called at the start of every explicit save/load so stale journal
    *  caches don't survive across document boundaries. */
   onClearJournalCache: () => void;
@@ -549,11 +544,8 @@ interface ToolbarProps {
 
 function Toolbar({
   scene, selection,
-  gridVisible, setGridVisible,
-  snapToGrid, setSnapToGrid,
   paperSize, setPaperSize,
   filename, backgroundColor, setBackgroundColor,
-  onOpenPrefs,
   onClearJournalCache,
 }: ToolbarProps): ReactElement {
   const adapter = useSceneAdapter(scene, {});
@@ -604,26 +596,6 @@ function Toolbar({
     isEmpty: clipboard.isEmpty,
   }), [clipboard]);
   useDepSource('clipboard', () => clipboardDep);
-
-  // Any selected leaf whose path is a polygon with ≥2 `M` commands is a
-  // compound path — release explodes it into N independent leaves.
-  const canReleaseCompound = (() => {
-    for (const id of selection.current) {
-      const node = scene.get(asNodeId(id));
-      if (!node || node.kind !== 'leaf') continue;
-      const path = (node.data as WeaselDrawData).path;
-      if (path?.kind !== 'polygon') continue;
-      let mCount = 0;
-      for (let i = 0; i < path.commands.length; i++) {
-        if (path.commands[i] === PATH_M && ++mCount >= 2) return true;
-      }
-    }
-    return false;
-  })();
-
-  const onReleaseCompound = useCallback(() => {
-    selection.set(releaseCompoundPaths(scene, selection.current));
-  }, [scene, selection]);
 
   return (
     <>
@@ -698,13 +670,6 @@ function Toolbar({
             scene.removeMany([...scene.renderOrder()]);
           });
         }}
-        gridVisible={gridVisible}
-        onToggleGrid={() => setGridVisible(!gridVisible)}
-        snapToGrid={snapToGrid}
-        onToggleSnap={() => setSnapToGrid(!snapToGrid)}
-        canReleaseCompound={canReleaseCompound}
-        onReleaseCompound={onReleaseCompound}
-        onOpenPrefs={onOpenPrefs}
       />
     </>
   );
@@ -1140,7 +1105,21 @@ function EditorWithSharedScene({
   const hudTool = useHudContribution();
   const colorsRef = useLatest(colors);
   const colorKeys = useMemo(() => colorContribution(() => colorsRef.current), [colorsRef]);
-  const ambient = useMemo(() => [hudTool, modalityKeys, colorKeys], [hudTool, modalityKeys, colorKeys]);
+  const appCommands: AppCommands = {
+    gridVisible,
+    toggleGrid: () => setGridVisible(!gridVisible),
+    snapToGrid,
+    toggleSnap: () => setSnapToGrid(!snapToGrid),
+    canReleaseCompound: hasCompoundPath(scene, selection.current),
+    releaseCompound: () => selection.set(releaseCompoundPaths(scene, selection.current)),
+    openPrefs: () => setPrefsOpen(true),
+  };
+  const appCommandsRef = useLatest(appCommands);
+  const appKeys = useMemo(() => appCommandsContribution(() => appCommandsRef.current), [appCommandsRef]);
+  const ambient = useMemo(
+    () => [hudTool, modalityKeys, colorKeys, appKeys],
+    [hudTool, modalityKeys, colorKeys, appKeys],
+  );
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect
   // and neither retries, so the loupe chrome can only mount once the handle
@@ -1281,16 +1260,11 @@ function EditorWithSharedScene({
       <Toolbar
         scene={scene}
         selection={selection}
-        gridVisible={gridVisible}
-        setGridVisible={setGridVisible}
-        snapToGrid={snapToGrid}
-        setSnapToGrid={setSnapToGrid}
         paperSize={paperSize}
         setPaperSize={setPaperSize}
         filename={filename}
         backgroundColor={backgroundColor}
         setBackgroundColor={setBackgroundColor}
-        onOpenPrefs={() => setPrefsOpen(true)}
         onClearJournalCache={() => modality.machine.clearJournalCache()}
       />
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />

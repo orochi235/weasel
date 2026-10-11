@@ -1,7 +1,18 @@
-import { asNodeId, boundsOfPath, pathInWorld, splitSubpaths, type NodeId, type Scene } from '@weasel-js/core';
+import { asNodeId, boundsOfPath, PATH_M, pathInWorld, splitSubpaths, type NodeId, type Scene } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './App';
 
 type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
+
+/** Whether any leaf among `ids` holds a polygon path with more than one subpath. */
+export function hasCompoundPath(scene: DrawScene, ids: readonly string[]): boolean {
+  return ids.some((id) => {
+    const node = scene.get(asNodeId(id));
+    if (node?.kind !== 'leaf' || node.data.path?.kind !== 'polygon') return false;
+    let moves = 0;
+    for (const command of node.data.path.commands) if (command === PATH_M && ++moves >= 2) return true;
+    return false;
+  });
+}
 
 /**
  * Split each compound path among `ids` into one node per subpath, each in the

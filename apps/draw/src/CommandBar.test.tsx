@@ -7,13 +7,6 @@ function props(over: Partial<CommandBarProps> = {}): CommandBarProps {
     onSaveSvg: vi.fn(),
     onOpenSvg: vi.fn(),
     onNew: vi.fn(),
-    gridVisible: false,
-    onToggleGrid: vi.fn(),
-    snapToGrid: false,
-    onToggleSnap: vi.fn(),
-    canReleaseCompound: false,
-    onReleaseCompound: vi.fn(),
-    onOpenPrefs: vi.fn(),
     ...over,
   };
 }
@@ -41,16 +34,6 @@ describe('CommandBar', () => {
     openMenu(/Debug/);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Bundle Inspector' }));
     expect(open).toHaveBeenCalledWith(expect.stringMatching(/#\/dev\/registry$/), '_blank', 'noopener');
-  });
-
-  it('shows grid and snap as pressed toggles and flips only the one clicked', () => {
-    const p = props({ gridVisible: true });
-    render(<CommandBar {...p} />);
-    expect(screen.getByRole('button', { name: 'Show grid' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Snap to grid' }).getAttribute('aria-pressed')).toBe('false');
-    fireEvent.click(screen.getByRole('button', { name: 'Snap to grid' }));
-    expect(p.onToggleSnap).toHaveBeenCalledTimes(1);
-    expect(p.onToggleGrid).not.toHaveBeenCalled();
   });
 
   it('offers no control for recording or replay, which nothing drives yet', () => {

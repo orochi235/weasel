@@ -1751,14 +1751,6 @@ only story runner in the repo.
   reset the background to white when the file names none) and a separate Import appends; or the
   button is renamed Import and stops adopting the file's paper size and background.
 
-- **(P2) draw: three shortcuts shown on command-bar buttons are bound to nothing.** Hover Show grid
-  (Shift+3), Release compound path (Shift+|), or Preferences (Cmd+,) in
-  `apps/draw/src/CommandBar.tsx`, press the key, and nothing happens: each `shortcut=` is a
-  `formatShortcut` label with no binding behind it. Each should be a registered action with a
-  `defaultBinding` (an ambient `Contribution`, the way `colorContribution` carries the color keys)
-  and the button should render from the registry as the `KitActionBar` groups do, so a label cannot
-  name a key nothing listens for.
-
 - **(P3) draw: turning the wheel during an opacity scrub can rewind an edit made while O was held.**
   `applyLive` in `apps/draw/src/opacityScrub/useOpacityScrub.ts` calls
   `jumpToHistoryIndex(session.startHistoryIndex)` on every tick, assuming nothing else pushed

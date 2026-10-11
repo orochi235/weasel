@@ -4,23 +4,48 @@ import {
   ActionsProvider,
   DepRegistryProvider,
   asNodeId,
+  useAction,
+  useDepSource,
   useSelection,
   useStandardActions,
 } from '@weasel-js/core';
 import { CommandBar, type CommandBarProps } from './CommandBar';
+import {
+  preferencesAction,
+  releaseCompoundAction,
+  toggleGridAction,
+  toggleSnapAction,
+  type AppCommands,
+} from './appCommands/actions';
 import './app.css';
 
-// The editing strips are the kit's registry-driven `<ActionBar>`s, so the
-// story registers the kit actions itself, the way `<SceneCanvas>` does in the
-// app. Only a selection is published — enough to light up the
-// selection-gated buttons; undo, paste and ungroup read deps a story has no
-// document for, and stay off.
-function KitActions({ selected, children }: { selected: number; children: ReactNode }) {
+// Every strip but the file buttons is the kit's registry-driven `<ActionBar>`,
+// so the story registers the kit actions and the app's own itself, the way
+// `<SceneCanvas>` does in the app. Only a selection is published for the kit's:
+// enough to light up the selection-gated buttons; undo, paste and ungroup read
+// deps a story has no document for, and stay off.
+function Actions({ selected, compound, children }: { selected: number; compound: boolean; children: ReactNode }) {
   const selection = useSelection({
     mode: 'multi',
     initial: Array.from({ length: selected }, (_, i) => asNodeId(`n${i}`)),
   });
   useStandardActions({ selection });
+  const [gridVisible, setGrid] = useState(false);
+  const [snapToGrid, setSnap] = useState(false);
+  const commands: AppCommands = {
+    gridVisible,
+    toggleGrid: () => setGrid((v) => !v),
+    snapToGrid,
+    toggleSnap: () => setSnap((v) => !v),
+    canReleaseCompound: compound,
+    releaseCompound: noop,
+    openPrefs: noop,
+  };
+  useDepSource('appCommands', () => commands);
+  useAction(toggleGridAction);
+  useAction(toggleSnapAction);
+  useAction(releaseCompoundAction);
+  useAction(preferencesAction);
   return <>{children}</>;
 }
 
@@ -30,21 +55,14 @@ const baseArgs: CommandBarProps = {
   onSaveSvg: noop,
   onOpenSvg: noop,
   onNew: noop,
-  gridVisible: false,
-  onToggleGrid: noop,
-  snapToGrid: false,
-  onToggleSnap: noop,
-  canReleaseCompound: false,
-  onReleaseCompound: noop,
-  onOpenPrefs: noop,
 };
 
-const withKit = (selected: number) => (Story: ComponentType) => (
+const withActions = (selected: number, compound = false) => (Story: ComponentType) => (
   <ActionsProvider>
     <DepRegistryProvider>
-      <KitActions selected={selected}>
+      <Actions selected={selected} compound={compound}>
         <Story />
-      </KitActions>
+      </Actions>
     </DepRegistryProvider>
   </ActionsProvider>
 );
@@ -58,34 +76,13 @@ export default meta;
 
 type Story = StoryObj<typeof CommandBar>;
 
+// Grid and snap toggle in every story: their state lives in the decorator.
 export const EmptyDocument: Story = {
   args: baseArgs,
-  decorators: [withKit(0)],
+  decorators: [withActions(0)],
 };
 
 export const WithSelection: Story = {
-  args: { ...baseArgs, canReleaseCompound: true },
-  decorators: [withKit(3)],
-};
-
-// Interactive variant lets the reader toggle the grid/snap state
-// buttons and see the active styling, without wiring real ops.
-function InteractiveCommandBar(args: CommandBarProps) {
-  const [grid, setGrid] = useState(args.gridVisible);
-  const [snap, setSnap] = useState(args.snapToGrid);
-  return (
-    <CommandBar
-      {...args}
-      gridVisible={grid}
-      onToggleGrid={() => setGrid((v) => !v)}
-      snapToGrid={snap}
-      onToggleSnap={() => setSnap((v) => !v)}
-    />
-  );
-}
-
-export const ToggleableViewState: Story = {
   args: baseArgs,
-  decorators: [withKit(0)],
-  render: (args) => <InteractiveCommandBar {...args} />,
+  decorators: [withActions(3, true)],
 };

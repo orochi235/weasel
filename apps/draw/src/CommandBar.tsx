@@ -3,25 +3,13 @@
  *  Every editing command (history, clipboard, reorder, group, align,
  *  distribute, flip, booleans, create outlines) is a kit action, rendered by
  *  the kit's `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills,
- *  glyphs included. The buttons built here are the app's own: file, view toggles,
- *  preferences. */
-import {
-  ActionBar as KitActionBar,
-  Button,
-  ButtonBar,
-  GridIcon,
-  MenuButton,
-  SnapIcon,
-  ToggleBar,
-  formatShortcut,
-} from '@weasel-js/ui';
+ *  glyphs included. The app's own view toggles, Release compound path, and
+ *  Preferences are actions too (`appCommands`), so a button's shortcut is the
+ *  binding that fires it. The buttons built here are the file ones. */
+import { ActionBar as KitActionBar, ButtonBar, MenuButton } from '@weasel-js/ui';
 
 /** Paper-size keys; `PAPER_PRESETS` in `docPersistence.ts` holds the dimensions. */
 export type PaperSizeKey = 'letter' | 'a4' | 'legal';
-import {
-  ReleaseCompoundIcon,
-  SettingsIcon,
-} from './actionIcons';
 
 export interface CommandBarProps {
   // File I/O — SVG round-trip via @weasel-js/svg.
@@ -30,16 +18,6 @@ export interface CommandBarProps {
   /** Start a fresh document at the picked paper size. Removing the old nodes
    *  is one undoable entry; the view refits only when the paper size changes. */
   onNew(size: PaperSizeKey): void;
-  // View toggles
-  gridVisible: boolean;
-  onToggleGrid(): void;
-  snapToGrid: boolean;
-  onToggleSnap(): void;
-  // Release compound path — split a multi-region polygon into its subpaths.
-  canReleaseCompound: boolean;
-  onReleaseCompound(): void;
-  // Preferences modal
-  onOpenPrefs(): void;
 }
 
 const PAPER_ITEMS: ReadonlyArray<{ value: PaperSizeKey; label: string }> = [
@@ -50,13 +28,6 @@ const PAPER_ITEMS: ReadonlyArray<{ value: PaperSizeKey; label: string }> = [
 
 const KIT_GROUPS = [
   'history', 'clipboard', 'edit', 'reorder', 'structure', 'align', 'distribute', 'flip',
-] as const;
-
-type ViewToggle = 'grid' | 'snap';
-
-const VIEW_TOGGLES = [
-  { value: 'grid', label: <GridIcon />, ariaLabel: 'Show grid', shortcut: formatShortcut({ key: '3', shift: true }) },
-  { value: 'snap', label: <SnapIcon />, ariaLabel: 'Snap to grid' },
 ] as const;
 
 /** The in-repo dev surfaces, hash-routed in main.tsx; each opens in a new tab. */
@@ -71,10 +42,6 @@ function openDebugRoute(hash: string) {
 }
 
 export function CommandBar(p: CommandBarProps) {
-  const viewValue: ViewToggle[] = [
-    ...(p.gridVisible ? ['grid' as const] : []),
-    ...(p.snapToGrid ? ['snap' as const] : []),
-  ];
   return (
     <div className="wd-commandbar" role="toolbar" aria-label="Actions">
       <div className="wd-commandbar-group">
@@ -90,41 +57,15 @@ export function CommandBar(p: CommandBarProps) {
         />
       </div>
       {KIT_GROUPS.map((group) => <KitActionBar key={group} group={group} />)}
-      <ToggleBar
-        mode="multiple"
-        ariaLabel="View"
-        items={VIEW_TOGGLES}
-        value={viewValue}
-        onChange={(next) => {
-          if (next.includes('grid') !== p.gridVisible) p.onToggleGrid();
-          if (next.includes('snap') !== p.snapToGrid) p.onToggleSnap();
-        }}
-      />
+      <KitActionBar group="view" />
       <KitActionBar group="pathfinder" />
       <KitActionBar group="text" />
-      <Button
-        variant="ghost"
-        iconOnly
-        ariaLabel="Release compound path"
-        shortcut={formatShortcut({ key: '|', shift: true })}
-        onClick={p.onReleaseCompound}
-        disabled={!p.canReleaseCompound}
-      >
-        <ReleaseCompoundIcon />
-      </Button>
+      <KitActionBar group="compound" />
       <div className="wd-commandbar-spacer" />
       <div className="wd-commandbar-group">
         <MenuButton label="Debug" tooltip="Debug surfaces" items={DEBUG_ROUTES} onAction={openDebugRoute} />
       </div>
-      <Button
-        variant="ghost"
-        iconOnly
-        ariaLabel="Preferences"
-        shortcut={formatShortcut({ key: ',', mod: true })}
-        onClick={p.onOpenPrefs}
-      >
-        <SettingsIcon />
-      </Button>
+      <KitActionBar group="app" />
     </div>
   );
 }

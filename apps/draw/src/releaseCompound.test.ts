@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { asNodeId, createScene, pathFromD } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './App';
-import { releaseCompoundPaths } from './releaseCompound';
+import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
 
 const box = (x: number) => ({ x, y: 0, width: 10, height: 10 });
 const rect = (x: number) => ({ kind: 'rect' as const, ...box(x) });
@@ -43,5 +43,16 @@ describe('releaseCompoundPaths', () => {
     releaseCompoundPaths(scene, ['compound']);
     scene.undo();
     expect(scene.childrenOf(g)).toEqual(['below', 'compound', 'above'].map(asNodeId));
+  });
+});
+
+describe('hasCompoundPath', () => {
+  it('is true only when a selected leaf holds more than one subpath', () => {
+    const { scene } = setup();
+    expect(hasCompoundPath(scene, ['compound'])).toBe(true);
+    expect(hasCompoundPath(scene, ['below', 'compound'])).toBe(true);
+    expect(hasCompoundPath(scene, ['below', 'top'])).toBe(false);
+    expect(hasCompoundPath(scene, [])).toBe(false);
+    expect(hasCompoundPath(scene, ['gone'])).toBe(false);
   });
 });
