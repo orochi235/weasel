@@ -24,3 +24,12 @@ test('a group\'s count is set 2px under its row\'s label, and a kind badge stays
   expect(sizeOf(tree.getByText('2'))).toBe(label - 2);
   expect(sizeOf(tree.getAllByText('boolean')[0]!)).toBeLessThan(label);
 });
+
+test('a group\'s count is set in the row\'s own face, with digits of their own widths', () => {
+  render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
+  const tree = within(screen.getByRole('tree', { name: 'Schema structure' }));
+  const count = getComputedStyle(tree.getByText('2'));
+  expect(count.fontFamily).toBe(getComputedStyle(tree.getByText('View')).fontFamily);
+  expect(count.fontFamily).not.toContain('Tabular');
+  expect(count.fontVariantNumeric).toBe('normal');
+});
