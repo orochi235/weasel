@@ -1135,6 +1135,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     (wx: number, wy: number): string | null => pickBestRef.current?.(wx, wy) ?? null,
     [pickBestRef],
   );
+  const toWorldForHud = useCallback((clientX: number, clientY: number): [number, number] => {
+    const el = canvasRef.current;
+    if (!el) return [clientX, clientY];
+    return toWorld(el, clientX, clientY, viewRef.current, clientToWorldRef.current);
+  }, [clientToWorldRef]);
   // Selection-driven action gestures (delete/nudge/undoRedo/duplicate) used
   // to be wired here via legacy hooks. They now go through the Actions
   // Registry / dispatcher path; consumers register them via the kit's
@@ -1541,6 +1546,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           canvasRef={canvasRef}
           {...(detached ? { anchorRef: canvasRef } : {})}
           viewRef={viewRef}
+          toWorld={toWorldForHud}
         />
       )}
       {pickHud && (
@@ -1548,6 +1554,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           canvasRef={canvasRef}
           {...(detached ? { anchorRef: canvasRef } : {})}
           viewRef={viewRef}
+          toWorld={toWorldForHud}
           pickEvery={stablePickEveryForHud}
           pickBest={stablePickBestForHud}
         />

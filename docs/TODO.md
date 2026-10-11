@@ -480,14 +480,6 @@ have shipped. What remains:
   the style write and let hosts size the element by class, which needs every host checked for a
   layout that depends on it.
 
-- **(P3) Dev HUDs: `CursorCoordsHud` and `PickHud` ignore the canvas's `clientToWorld` prop.** With
-  a consumer-supplied `clientToWorld` (a CSS-transformed canvas, a 3D host), routing uses the
-  override while both HUDs convert through the canvas rect and view, so the readout meant for
-  diagnosing pointer drift disagrees with the picks it explains. `<Canvas>` should hand them a
-  `toWorld(clientX, clientY)` thunk built from its own `toWorld`
-  (`packages/core/src/canvas/Canvas.tsx`); both components are exported, so that is a new prop on
-  each.
-
 - **(P3) Frame loop: subscribers get a clock and no way to learn it was suspended.** `useFrameLoop`
   (`packages/core/src/canvas/useFrameLoop.ts`) passes no `onResume` to `useVisibleRaf` and the ref
   handle exposes no equivalent, so a `beforePaint` hook that advances by `time - last` gets one

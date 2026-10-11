@@ -7,6 +7,7 @@
  * canvas through layout changes.
  */
 import { useEffect, useState } from 'react';
+import { useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 import { useHostAnchor } from './useHostAnchor';
@@ -20,6 +21,10 @@ export interface PickHudProps {
    *  box, whose parent is the shared surface every pane sits in. */
   anchorRef?: React.RefObject<HTMLElement | null>;
   viewRef: React.RefObject<View>;
+  /** Client coords to world. Defaults to the canvas's rect and `viewRef`. A
+   *  canvas whose routing converts some other way (a CSS transform, a 3D host)
+   *  passes that conversion, so the readout agrees with the picks. */
+  toWorld?: (clientX: number, clientY: number) => [number, number];
   /** World-space hit-test. Same shape as `useSelectTool`'s `pickEvery`. */
   pickEvery: (worldX: number, worldY: number) => readonly string[];
   /** Optional single-best resolver — the id this point would select on a
@@ -38,7 +43,8 @@ interface HudState {
 
 /** Debug overlay listing every node under the pointer, with the one a click
  *  would actually select shown in bold. */
-export function PickHud({ canvasRef, anchorRef, viewRef, pickEvery, pickBest, offset }: PickHudProps) {
+export function PickHud({ canvasRef, anchorRef, viewRef, toWorld, pickEvery, pickBest, offset }: PickHudProps) {
+  const toWorldRef = useLatest(toWorld);
   const [state, setState] = useState<HudState>({
     ids: [], best: null, inCanvas: false,
   });
@@ -66,7 +72,8 @@ export function PickHud({ canvasRef, anchorRef, viewRef, pickEvery, pickBest, of
         setState({ ids: [], best: null, inCanvas: false });
         return;
       }
-      const [worldX, worldY] = clientToWorld(e.clientX, e.clientY, rect, view);
+      const [worldX, worldY] = toWorldRef.current?.(e.clientX, e.clientY)
+        ?? clientToWorld(e.clientX, e.clientY, rect, view);
       let ids: readonly string[] = [];
       try {
         ids = pickEvery(worldX, worldY);

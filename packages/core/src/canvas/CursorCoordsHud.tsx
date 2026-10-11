@@ -10,6 +10,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { decimal, qty } from '@weasel-js/quantity';
+import { useLatest } from '@weasel-js/react';
 import { useVisibleRaf } from '../scheduling/useVisibleRaf';
 import s from './hud.module.css';
 import { useHostAnchor } from './useHostAnchor';
@@ -24,6 +25,10 @@ export interface CursorCoordsHudProps {
    *  box, whose parent is the shared surface every pane sits in. */
   anchorRef?: React.RefObject<HTMLElement | null>;
   viewRef: React.RefObject<View>;
+  /** Client coords to world. Defaults to the canvas's rect and `viewRef`. A
+   *  canvas whose routing converts some other way (a CSS transform, a 3D host)
+   *  passes that conversion, so the readout agrees with the picks. */
+  toWorld?: (clientX: number, clientY: number) => [number, number];
   /** Inset from the canvas's top-right corner, in px. Default 8 on both axes. */
   offset?: { top?: number; right?: number };
 }
@@ -36,7 +41,8 @@ interface HudState {
 
 /** Debug overlay showing the pointer's client and world coordinates and the
  *  current frame rate, pinned to the canvas's top-right corner. */
-export function CursorCoordsHud({ canvasRef, anchorRef, viewRef, offset }: CursorCoordsHudProps) {
+export function CursorCoordsHud({ canvasRef, anchorRef, viewRef, toWorld, offset }: CursorCoordsHudProps) {
+  const toWorldRef = useLatest(toWorld);
   const [state, setState] = useState<HudState>({
     client: { x: 0, y: 0 }, world: null, inCanvas: false,
   });
@@ -93,7 +99,8 @@ export function CursorCoordsHud({ canvasRef, anchorRef, viewRef, offset }: Curso
       const inCanvas =
         e.clientX >= rect.left && e.clientX <= rect.right &&
         e.clientY >= rect.top  && e.clientY <= rect.bottom;
-      const [wx, wy] = clientToWorld(e.clientX, e.clientY, rect, view);
+      const [wx, wy] = toWorldRef.current?.(e.clientX, e.clientY)
+        ?? clientToWorld(e.clientX, e.clientY, rect, view);
       const world = { x: wx, y: wy };
       setState({ client, world, inCanvas });
     };

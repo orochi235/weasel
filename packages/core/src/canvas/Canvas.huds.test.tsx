@@ -164,6 +164,31 @@ describe('<Canvas> HUDs', () => {
     expect(container.querySelectorAll('div').length).toBeGreaterThan(0);
   });
 
+  it('both HUDs convert the pointer through the clientToWorld prop', async () => {
+    const pickEvery = vi.fn((_wx: number, _wy: number): string[] => []);
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = render(
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+          cursorCoordsHud
+          pickHud
+          pickEvery={pickEvery}
+          clientToWorld={(_canvas, cx, cy) => [cx + 1000, cy + 2000]}
+        />,
+      ));
+    });
+    await act(async () => {
+      const ev = new Event('pointermove', { bubbles: true });
+      Object.defineProperties(ev, { clientX: { value: 0 }, clientY: { value: 0 } });
+      document.dispatchEvent(ev);
+    });
+    expect(pickEvery).toHaveBeenCalledWith(1000, 2000);
+    expect(container.textContent).toContain('(1000.0, 2000.0)');
+  });
+
   it('does NOT render extra DOM nodes when HUD flags are absent', async () => {
     // Baseline: only the <canvas> element, no extra divs from HUDs.
     let container!: HTMLElement;
