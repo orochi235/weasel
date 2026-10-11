@@ -36,11 +36,17 @@ export function offhandKeyFor(trigger: HotkeyTrigger): string {
 export function buildToolOffhandBindings(
   specs: readonly ToolOffhandBindingSpec[],
 ): BoundGesture[] {
-  return specs.map(({ toolId, key }) => {
-    const spec: KeyHeldSpec = { kind: 'key-held', key };
-    if ([key].flat().some((k) => MODIFIER_KEYS.has(k))) spec.mods = ANY_MODS;
-    return { spec, opts: { params: { toolId } } };
-  });
+  return specs.map(({ toolId, key }) => ({ spec: heldKeySpec(key), opts: { params: { toolId } } }));
+}
+
+/** The `key-held` spec for holding `key` (a `KeyboardEvent.key`, or several).
+ *  A modifier key gets every modifier optional, since its own keydown reports
+ *  its flag set; any other key keeps the bare spec, which forbids modifiers.
+ *  Every hold-a-key binding builds its spec here, so that rule has one home. */
+export function heldKeySpec(key: string | string[]): KeyHeldSpec {
+  const spec: KeyHeldSpec = { kind: 'key-held', key };
+  if ([key].flat().some((k) => MODIFIER_KEYS.has(k))) spec.mods = { ...ANY_MODS };
+  return spec;
 }
 
 const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Alt', 'Control', 'Meta', 'Shift']);

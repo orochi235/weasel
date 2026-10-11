@@ -131,6 +131,7 @@ export type { ActionEntry, ActionsProp, ActionsRegistry, UiOngoingControl } from
 export { ActionDisabledReason } from '@weasel-js/routing';
 export type { Action, ActionDispatch, ActionPresentation, ActionVariant } from '@weasel-js/routing';
 export { actionBindings, actionItems } from '@weasel-js/routing';
+export { heldKeySpec } from '@weasel-js/routing';
 export type { ActionItem } from '@weasel-js/routing';
 export type { BoundGesture, BindingSource } from '@weasel-js/routing';
 export { evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';

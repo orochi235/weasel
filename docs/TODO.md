@@ -279,17 +279,6 @@ Priority tags:
   later click; telling "canceled, release still to come" from "canceled, pointer already gone" needs
   the pointer session to say which.
 
-- **(P3) labkit loupe: the peek key restates the modifier rule `buildToolOffhandBindings` now
-  owns.** `packages/labkit/src/loupe/loupeActions.ts` gives its `key-held` peek binding `mods: {
-  alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' }` because the default peek
-  key is Alt and a modifier's own keydown sets its flag. `@weasel-js/routing` now applies that rule
-  to modifier keys in `buildToolOffhandBindings`
-  (`packages/routing/src/interactions/actions/toolOffhand.ts`). Two copies of one decision: either
-  export the rule from routing as a helper that builds a held-key spec for any key and have the
-  loupe call it, or make the loupe's peek an `offhand` entry. Note the loupe relaxes modifiers for
-  every peek key, a letter included, where the offhand builder relaxes them for modifier keys only;
-  pick one answer when folding them.
-
 - **(P3) Offhand tools: a non-modifier trigger does not engage while a modifier is down.** Hold
   Shift, then press Space: the hand tool is not pushed, because the `key-held` spec for `' '`
   forbids Shift (`packages/routing/src/interactions/actions/toolOffhand.ts`, matched by

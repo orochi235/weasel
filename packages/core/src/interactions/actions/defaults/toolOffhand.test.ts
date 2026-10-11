@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { makeToolOffhandAction, buildToolOffhandBindings, offhandKeyFor, TOOL_OFFHAND_ID } from '@weasel-js/routing';
+import { makeToolOffhandAction, buildToolOffhandBindings, heldKeySpec, offhandKeyFor, TOOL_OFFHAND_ID } from '@weasel-js/routing';
 
 describe('makeToolOffhandAction', () => {
   it("declares scope:'hotkey' so the offhand action beats the active tool", () => {
@@ -114,6 +114,24 @@ describe('buildToolOffhandBindings', () => {
     ]);
     const first = bindings[0] as { spec: { key: string | string[] } };
     expect(first.spec.key).toEqual([' ', 'Spacebar']);
+  });
+});
+
+describe('heldKeySpec', () => {
+  const ANY = { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' };
+
+  it('leaves every modifier optional for a modifier key', () => {
+    expect(heldKeySpec('Shift')).toEqual({ kind: 'key-held', key: 'Shift', mods: ANY });
+    expect(heldKeySpec(['z', 'Alt'])).toEqual({ kind: 'key-held', key: ['z', 'Alt'], mods: ANY });
+  });
+
+  it('forbids modifiers for any other key', () => {
+    expect(heldKeySpec(' ')).toEqual({ kind: 'key-held', key: ' ' });
+  });
+
+  it('is the spec an offhand binding carries', () => {
+    const [binding] = buildToolOffhandBindings([{ toolId: 'eyedropper', key: 'Alt' }]);
+    expect((binding as { spec: unknown }).spec).toEqual(heldKeySpec('Alt'));
   });
 });
 

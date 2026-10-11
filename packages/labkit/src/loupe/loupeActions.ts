@@ -5,7 +5,7 @@
  *
  * Free of React so the routing can be tested without a DOM.
  */
-import type { Action } from '@weasel-js/core';
+import { heldKeySpec, type Action } from '@weasel-js/core';
 
 /** Canonical id of the hold-to-peek action. */
 export const LOUPE_PEEK_ID = 'loupe.peek';
@@ -77,19 +77,7 @@ export function createLoupeActions(
     // Hotkey scope: peeking must beat whatever the lab's active tool binds to
     // the same key, the way every other held-key trigger does.
     scope: 'hotkey',
-    // Every modifier optional because the peek key may BE one: the keydown
-    // that carries `Alt` — the default — also reports `altKey: true`, and the
-    // matcher forbids any modifier a spec does not name.
-    defaultBinding: [
-      {
-        spec: {
-          kind: 'key-held',
-          key: peekKey,
-          mods: { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' },
-        },
-        opts: {},
-      },
-    ],
+    defaultBinding: [{ spec: heldKeySpec(peekKey), opts: {} }],
     invoker: {
       timing: 'ongoing',
       start() {
