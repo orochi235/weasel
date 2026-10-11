@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
@@ -138,4 +138,22 @@ test('a map entry sets its key beside its value, and a union its fields under it
   expect(angle.top).toBeGreaterThanOrEqual(pick.bottom);
   expect(angle.right).toBeLessThanOrEqual(frame.right);
   expect(angle.width).toBeGreaterThan(60);
+});
+
+test('a map or union leaf\'s editor runs under its label in the rail layout, at the pane\'s width', async () => {
+  await page.viewport(900, 800);
+  render(
+    <div style={{ width: 820, height: 760, display: 'flex' }}>
+      <PrefsForm layout="rail" schema={SCHEMA} values={{}} onChange={() => {}} />
+    </div>,
+  );
+  for (const [path, name] of [['limits', 'Limits'], ['ramp', 'Ramp'], ['stops', 'Stops']] as const) {
+    const slot = document.querySelector(`[data-pref-path="${path}"]`)!;
+    const label = within(slot as HTMLElement).getAllByText(name)[0]!.getBoundingClientRect();
+    const control = slot.querySelector('[role="group"], select, button')!.getBoundingClientRect();
+    expect(control.top, name).toBeGreaterThanOrEqual(label.bottom - 1);
+    expect(Math.abs(control.left - label.left), name).toBeLessThan(4);
+    // The inline row's control track stops at 260px.
+    if (path !== 'ramp') expect(control.width, name).toBeGreaterThan(300);
+  }
 });

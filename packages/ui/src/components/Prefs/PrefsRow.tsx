@@ -156,7 +156,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       changed={ctx.changed?.has(own)}
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
-      className={s.row}
+      className={stacked ? `${s.row} ${s.rowStacked}` : s.row}
       group={drawsSeveral(pref)}
       // The owner passes an inherited leaf's value already resolved, so the
       // control keeps drawing it; editing it pins, through `onChange`.

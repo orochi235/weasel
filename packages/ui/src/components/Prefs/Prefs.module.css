@@ -477,8 +477,9 @@
 }
 
 /* In the rail layout a row is a grid, so the control track grows with the
-   pane instead of holding at the columns layout's fixed slot. */
-.railLayout .row {
+   pane instead of holding at the columns layout's fixed slot. A stacked row
+   keeps PropertyRow's own layout: its label over a control the row's width. */
+.railLayout .row:where(:not(.rowStacked)) {
   display: grid;
   /* The control track is capped rather than taking the rest: a number field
      as wide as the pane reads as a text area, and every row's control starts
