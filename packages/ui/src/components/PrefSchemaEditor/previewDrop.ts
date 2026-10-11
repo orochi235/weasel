@@ -1,6 +1,6 @@
-import { isPrefLeaf, isPrefSection, prefGroupIsPage, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, isPrefSection, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import type { PrefDrop, PrefDropMark } from '../Prefs';
-import { GENERAL, generalKeys } from './generalBranch';
+import { isLoose } from './loose';
 import { childrenOf, fitsUnder, isUnder, keyOf, keysOf, nodeAt, parentPath, pathOf, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 
 /**
@@ -24,6 +24,8 @@ export function previewTarget(
   const kids = host && !isPrefLeaf(host) ? childrenOf(host) : undefined;
   if (!host || !kids) return null;
   if (!nodes.every((n) => fitsUnder(host, n)) || !withinDepth(dest, nodes, maxDepth)) return null;
+  // The root takes pages alone: anything else dropped there would be on none.
+  if (dest === null && nodes.some(isLoose)) return null;
   if (dest !== null && paths.some((p) => dest === p || isUnder(dest, p))) return null;
   const keys = Object.keys(kids);
   return { parentPath: dest, index: into ? keys.length : keys.indexOf(keyOf(at!)) + (mark.where === 'after' ? 1 : 0) };
@@ -75,12 +77,9 @@ export function sameDrop(a: PrefDrop | null, b: PrefDrop | null): boolean {
 
 /** Whether a node not in the schema yet may be dropped under tree row `parentId`. */
 export function treeTakesNew(schema: SchemaRoot, node: SchemaNode, parentId: string | null, maxDepth?: number): boolean {
-  if (!withinDepth(parentId === GENERAL ? null : parentId, [node], maxDepth)) return false;
-  if (!isPrefSection(schema) && (parentId === GENERAL || parentId === null)) {
-    const loose = isPrefLeaf(node) || (!isPrefSection(node) && !prefGroupIsPage(node));
-    // General holds what the root's own page draws; with no General yet, the top level takes anything.
-    return parentId === GENERAL ? loose : !loose || generalKeys(schema).length === 0;
-  }
+  if (!withinDepth(parentId, [node], maxDepth)) return false;
+  // Under a group root the top level holds the pages alone.
+  if (!isPrefSection(schema) && parentId === null) return !isLoose(node);
   const host = nodeAt(schema, parentId);
   return !!host && !isPrefLeaf(host) && !!childrenOf(host) && fitsUnder(host, node);
 }

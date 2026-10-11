@@ -1,6 +1,5 @@
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
-import { GENERAL } from './generalBranch';
 import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop, treeTakesNew } from './previewDrop';
 
 const leaf = (name: string): PrefLeaf => ({ kind: 'boolean', name, description: '', default: false });
@@ -22,7 +21,9 @@ describe('previewTarget', () => {
 
   it('lands at the end of the group under the pointer, the root for the root\'s own page', () => {
     expect(previewTarget(ROOT, { path: 'canvas.box', where: 'into' }, [leaf('X')], [])).toEqual({ parentPath: 'canvas/box', index: 0 });
-    expect(previewTarget(ROOT, { path: '', where: 'into' }, [TAB], [])).toEqual({ parentPath: null, index: 2 });
+    expect(previewTarget(ROOT, { path: '', where: 'into' }, [PAGE], [])).toEqual({ parentPath: null, index: 2 });
+    // The root takes pages alone.
+    expect(previewTarget(ROOT, { path: '', where: 'into' }, [TAB], [])).toBeNull();
   });
 
   it('refuses a group dropped into itself, a drop into a leaf, and a path the schema lacks', () => {
@@ -84,9 +85,7 @@ describe('a drag over the preview', () => {
 });
 
 describe('treeTakesNew', () => {
-  it('puts what the root\'s own page draws under General, and pages at the top level', () => {
-    expect(treeTakesNew(ROOT, TAB, GENERAL)).toBe(true);
-    expect(treeTakesNew(ROOT, PAGE, GENERAL)).toBe(false);
+  it('takes pages alone at the top level, and what fits under a row', () => {
     expect(treeTakesNew(ROOT, PAGE, null)).toBe(true);
     expect(treeTakesNew(ROOT, TAB, null)).toBe(false);
     expect(treeTakesNew(ROOT, TAB, 'canvas')).toBe(true);

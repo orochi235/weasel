@@ -54,6 +54,8 @@ export const PALETTE: readonly PaletteItem[] = [
 export interface PaletteDrag {
   item: PaletteItem;
   node: SchemaNode;
+  /** The tree path the node sits at, for one the schema holds already: the drop moves it and adds nothing. */
+  from?: string;
   x: number;
   y: number;
 }

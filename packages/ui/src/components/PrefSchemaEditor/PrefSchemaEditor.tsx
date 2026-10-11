@@ -11,7 +11,6 @@ import { EditorBar } from './EditorBar';
 import { EditorPrefsButton, useEditorPrefs, type PrefSchemaEditorPrefs } from './editorPrefs';
 import { dropDraft, openDraft, saveDraft, SWAP, type DraftStorage, type SwapArgs } from './draft';
 import { openFolds, saveFolds } from './folds';
-import { GENERAL } from './generalBranch';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
@@ -121,10 +120,10 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   // Every row starts open but the ones the reader folded last time.
   const [expanded, setExpanded] = useState(() => {
     const folded = new Set(draftKey === undefined ? [] : openFolds(draftKey));
-    return new Set([GENERAL, ...branchPaths(opened?.schema ?? schema)].filter((id) => !folded.has(id)));
+    return new Set(branchPaths(opened?.schema ?? schema).filter((id) => !folded.has(id)));
   });
   useEffect(() => {
-    if (draftKey !== undefined) saveFolds(draftKey, [GENERAL, ...branchPaths(schema)].filter((id) => !expanded.has(id)));
+    if (draftKey !== undefined) saveFolds(draftKey, branchPaths(schema).filter((id) => !expanded.has(id)));
   }, [draftKey, schema, expanded]);
   const [structureWidth, setStructureWidth] = useState(300);
   const [attributesWidth, setAttributesWidth] = useState(320);
