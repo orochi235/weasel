@@ -22,6 +22,21 @@ function labelDraw(node: { data: Data }, _pose: Pose): DrawCommand[] {
 }
 
 describe('buildSceneTree', () => {
+  it('does not call the painter for a node on a hidden layer', () => {
+    const scene = makeScene();
+    scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'hidden' } });
+    scene.add({ kind: 'leaf', layer: 'fg', pose: POSE, data: { label: 'shown' } });
+    scene.setLayerVisible('bg', false);
+    const painted: string[] = [];
+    const draw = (node: { data: Data }, pose: Pose): DrawCommand[] => {
+      painted.push(node.data.label);
+      return labelDraw(node, pose);
+    };
+    const out = buildSceneTree(sceneToAdapter(scene) as never, draw as never, VIEW);
+    expect(out).toHaveLength(1);
+    expect(painted).toEqual(['shown']);
+  });
+
   it('flat scene → one root group per layer, leaf wrappers inside', () => {
     const scene = makeScene();
     scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'a' } });

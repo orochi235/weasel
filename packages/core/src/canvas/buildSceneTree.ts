@@ -90,8 +90,9 @@ export function buildSceneTree<
   culled?: (node: TNode, pose: TPose, view: View) => boolean,
 ): DrawCommand[] {
   const layers = adapter.getLayers();
+  // A hidden layer gets no bucket, and a node with no bucket is not painted.
   const buckets = new Map<string, DrawCommand[]>();
-  for (const l of layers) buckets.set(l.id, []);
+  for (const l of layers) if (l.visible) buckets.set(l.id, []);
   let planeViews: Map<string, View> | null = null;
   for (const l of layers) {
     if (l.parallax) (planeViews ??= new Map()).set(l.id, deriveParallaxView(view, l.parallax));
@@ -113,9 +114,10 @@ export function buildSceneTree<
     const pose = compose && parentFrame !== null ? compose(parentFrame, local) : local;
     // Skip the (potentially expensive) painter for nodes we won't emit; their
     // clip still extends the chain for descendants below.
-    const paints = forLayer === undefined || node.layer === forLayer;
+    const bucket = forLayer === undefined || node.layer === forLayer
+      ? buckets.get(node.layer) : undefined;
     const v = planeViews?.get(node.layer) ?? view;
-    const self = paints && !culled?.(node, pose, v) ? drawOne(node, pose, v) : [];
+    const self = bucket && !culled?.(node, pose, v) ? drawOne(node, pose, v) : [];
 
     // Extend the clip chain with this node's own clip when it is a container.
     let ownClips = ancestorClips;
@@ -142,11 +144,8 @@ export function buildSceneTree<
     // Emit this node's own paint into its own layer's bucket, clipped by the
     // accumulated chain (ancestors + own). Every node emits a wrapper group
     // even with empty paint, keeping the per-node tree shape stable.
-    if (paints) {
-      const bucket = buckets.get(node.layer);
-      if (bucket) {
-        bucket.push(ownClips.length > 0 ? wrapInClips(self, ownClips, node.layer, carry) : { kind: 'group', children: self });
-      }
+    if (bucket) {
+      bucket.push(ownClips.length > 0 ? wrapInClips(self, ownClips, node.layer, carry) : { kind: 'group', children: self });
     }
 
     // An envelope's children share its own parent's frame.
