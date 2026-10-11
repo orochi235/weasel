@@ -1,6 +1,6 @@
 import { isPrefLeaf, isPrefSection, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import type { PrefDrop, PrefDropMark } from '../Prefs';
-import { isLoose } from './loose';
+import { holdsPages, isLoose } from './loose';
 import { childrenOf, fitsUnder, isUnder, keyOf, keysOf, nodeAt, parentPath, pathOf, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 
 /**
@@ -25,7 +25,7 @@ export function previewTarget(
   if (!host || !kids) return null;
   if (!nodes.every((n) => fitsUnder(host, n)) || !withinDepth(dest, nodes, maxDepth)) return null;
   // The root takes pages alone: anything else dropped there would be on none.
-  if (dest === null && nodes.some(isLoose)) return null;
+  if (dest === null && holdsPages(schema) && nodes.some(isLoose)) return null;
   if (dest !== null && paths.some((p) => dest === p || isUnder(dest, p))) return null;
   const keys = Object.keys(kids);
   return { parentPath: dest, index: into ? keys.length : keys.indexOf(keyOf(at!)) + (mark.where === 'after' ? 1 : 0) };
@@ -79,7 +79,7 @@ export function sameDrop(a: PrefDrop | null, b: PrefDrop | null): boolean {
 export function treeTakesNew(schema: SchemaRoot, node: SchemaNode, parentId: string | null, maxDepth?: number): boolean {
   if (!withinDepth(parentId, [node], maxDepth)) return false;
   // Under a group root the top level holds the pages alone.
-  if (!isPrefSection(schema) && parentId === null) return !isLoose(node);
+  if (holdsPages(schema) && parentId === null) return !isLoose(node);
   const host = nodeAt(schema, parentId);
   return !!host && !isPrefLeaf(host) && !!childrenOf(host) && fitsUnder(host, node);
 }

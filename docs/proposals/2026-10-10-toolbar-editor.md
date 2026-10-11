@@ -54,14 +54,17 @@ icon overrides by path.
 
 The palette makes a bar, a group's "Drawn as" offers one, and an action leaf's attributes hold the
 key it fires and its `control`. A bar inside a page already previews, since the preview is a
-`PrefsDialog`. Still to build, in this order:
+`PrefsDialog`. A root drawn `as: 'bar'` previews as the toolbar itself, with a switch that runs it
+down its side, and the tree lists its prefs directly, where any other group root lists pages.
+Still to build, in this order:
 
 | Change | Where |
 |---|---|
 | An **Actions** list in the structure column, beside the Unplaced tree: every action the host has, by group, with a filter box, each one draggable into the tree or the preview | New `ActionList.tsx`; `StructurePane.tsx` |
 | An action leaf's `action` attribute as a choice among the listed keys. It is a text box today | `kindSchemas.ts`, `attrRenderers.tsx` |
 | A leaf firing a key the list does not hold is marked in the tree | `StructurePane.tsx` |
-| A root drawn `as: 'bar'` previews as a `Bar` on a stage, with a switch for its orientation | `PreviewPane.tsx` |
+| A click in the bar preview selects that pref in the tree, as a click in the form preview does | `PreviewPane.tsx`, `Bar` |
+| The root's own `as`, set by selecting the root in the tree, which is not a row today. A host starts a toolbar from a schema whose root is `as: 'bar'` | `StructurePane.tsx`, `AttributesPane.tsx` |
 | A drop into a bar is placed along the bar's axis, with the mark between two cells | `Prefs/dropTarget.ts`, `previewDrop.ts` |
 
 Only actions `actionItems` lists can be placed, which leaves out any whose invoker is not
@@ -71,8 +74,7 @@ it. Dropping an entry makes
 `{ kind: 'action', name: <its label>, description: '', default: undefined, action: <its key> }`.
 
 That leaf holds no code, so it exports as written and survives a draft, which a `run` leaf does
-not. The root's own `as` is set by selecting the root in the tree, which the attributes pane has to
-allow.
+not.
 
 ## forge
 
