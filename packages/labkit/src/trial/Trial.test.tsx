@@ -296,6 +296,23 @@ describe('<TrialChrome>', () => {
     );
     expect(undo).toHaveBeenCalledTimes(1);
   });
+
+  it('answers Cmd+Z with focus outside the trial, and leaves a text field there its own', async () => {
+    const undo = vi.fn();
+    const bindings = { canUndo: true, canRedo: false, undo, redo: vi.fn() };
+    await renderSettled(
+      <>
+        <input data-testid="outside" type="text" />
+        <ChromeHarness instrument={{ ...stubInstrument, undo: {} }} undoBindings={bindings} />
+      </>,
+    );
+    expect(fireEvent.keyDown(document.body, { key: 'z', metaKey: true })).toBe(false);
+    expect(undo).toHaveBeenCalledTimes(1);
+    expect(fireEvent.keyDown(screen.getByTestId('outside'), { key: 'z', metaKey: true })).toBe(
+      true,
+    );
+    expect(undo).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('chrome regions in a mounted lab', () => {

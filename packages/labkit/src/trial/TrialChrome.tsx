@@ -1,11 +1,5 @@
 import { historyKey } from '@weasel-js/core';
-import {
-  type KeyboardEvent,
-  type ReactNode,
-  useContext,
-  useMemo,
-  useSyncExternalStore,
-} from 'react';
+import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
@@ -35,6 +29,7 @@ import { editsText } from './editsText';
 import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';
 import { UndockedSections } from './UndockedSections';
+import { useTrialKeys } from './useTrialKeys';
 
 /** The trial's loupe as its chrome sees it: a switch and its position. */
 export interface LoupeBindings {
@@ -254,7 +249,7 @@ export function TrialChrome({
   const inRegion = (region: TrialRegion): TrialContribution[] =>
     contributions.filter((c) => c.region === region);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLElement>): void => {
+  const handleKeyDown = (e: KeyboardEvent): void => {
     const mod = e.metaKey || e.ctrlKey;
     // A presented trial has no chrome, so nothing the chrome's keys act on.
     if (!mod || presented || e.defaultPrevented) return;
@@ -272,6 +267,8 @@ export function TrialChrome({
       ctx.saveSnapshot();
     }
   };
+  // With focus on the page body the chords go to the focused trial, or to the first where none is.
+  useTrialKeys(trialId, (lab.focusedTrialId ?? lab.trials[0]?.id) === trialId, handleKeyDown);
 
   return (
     <section
@@ -282,7 +279,6 @@ export function TrialChrome({
       data-lk-presented={presented ? '' : undefined}
       aria-label={`Trial ${title}`}
       tabIndex={-1}
-      onKeyDown={handleKeyDown}
     >
       <TrialTitleBar
         title={title}
