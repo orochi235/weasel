@@ -20,9 +20,10 @@ export interface LayoutAsset extends AssetBase {
   over: string;
 }
 
-/** One thing the editor edits. */
+/** One thing the editor edits: a dialog, or a layout over one. */
 export type Asset = SchemaAsset | LayoutAsset;
 
+/** Everything one editor holds: its dialogs, and the layouts that point into them. The set is the host's, and fixed. */
 export interface Workspace {
   readonly assets: readonly Asset[];
 }

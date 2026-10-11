@@ -60,7 +60,12 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   onSubmit?: SubmitAssets;
 }
 
-/** The editor {@link PrefSchemaEditorProps} describes, over a workspace: it shows and edits one asset's root, and its history and draft are the workspace's. */
+/**
+ * The editor {@link PrefSchemaEditorProps} describes, over a workspace: it shows and edits one asset's root, and its
+ * history and draft are the workspace's. With `list` its far pane lists the assets, to pick the one shown; picking is
+ * not an edit, and an undo or a redo shows the asset it changed. A setting re-keyed, moved, or removed in a dialog
+ * takes the pointers of every layout over that dialog with it, in the same step. A read-only asset takes no edit.
+ */
 export function AssetEditor(
   { workspace, onChange, original, codec, same = sameRoots, list = false, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
