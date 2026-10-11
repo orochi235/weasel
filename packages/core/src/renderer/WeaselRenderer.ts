@@ -15,12 +15,6 @@ import {
   DEFAULT_BAKE_BUDGET,
 } from '@weasel-js/font';
 import {
-  IMAGE_VERT_SRC,
-  IMAGE_FRAG_SRC,
-  IMAGE_FILL_UNIFORMS,
-  IMAGE_FILL_ATTRIBUTES,
-} from './shaders/imageFill';
-import {
   BATCH_VERT_SRC,
   BATCH_FRAG_SRC,
   BATCH_FILL_UNIFORMS,
@@ -196,7 +190,6 @@ export class WeaselRenderer {
   private stats: RenderStats = { drawCalls: 0, ms: 0, spans: [] };
   private pathFill: ShaderProgram;
   private pathFillVColor: ShaderProgram;
-  private imageFill: ShaderProgram;
   private batchFill: ShaderProgram;
   private gradFill: ShaderProgram;
   private patternFill: ShaderProgram;
@@ -303,10 +296,6 @@ export class WeaselRenderer {
     this.pathFillVColor.lookupUniforms(PATH_FILL_UNIFORMS);
     this.pathFillVColor.lookupAttributes(PATH_FILL_VCOLOR_ATTRIBUTES);
 
-    this.imageFill = new ShaderProgram(this.gl, IMAGE_VERT_SRC, IMAGE_FRAG_SRC);
-    this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
-    this.imageFill.lookupAttributes(IMAGE_FILL_ATTRIBUTES);
-
     this.batchFill = new ShaderProgram(this.gl, BATCH_VERT_SRC, BATCH_FRAG_SRC);
     this.batchFill.lookupUniforms(BATCH_FILL_UNIFORMS);
     this.batchFill.lookupAttributes(BATCH_FILL_ATTRIBUTES);
@@ -319,9 +308,7 @@ export class WeaselRenderer {
     this.patternFill.lookupUniforms(PATTERN_FILL_UNIFORMS);
     this.patternFill.lookupAttributes(PATTERN_FILL_ATTRIBUTES);
 
-    const aPos = this.pathFill.attribute('a_position');
-    if (aPos === undefined) throw new Error('WeaselRenderer: a_position not found in path-fill shader');
-    this.meshCache = new GLMeshCache(this.gl, aPos);
+    this.meshCache = new GLMeshCache(this.gl);
     this.textureCache = new GLTextureCache(this.gl);
     this.imageCache = new GLImageCache(this.gl, this.imageMinification);
     this.gradRamps = new GradientRampAtlas(this.gl);
@@ -509,9 +496,7 @@ export class WeaselRenderer {
     this.pathFill.lookupAttributes(PATH_FILL_ATTRIBUTES);
     this.pathFillVColor = new ShaderProgram(this.gl, VCOLOR_VERT_SRC, VCOLOR_FRAG_SRC);
     this.pathFillVColor.lookupUniforms(PATH_FILL_UNIFORMS);
-    this.pathFillVColor.lookupAttributes(PATH_FILL_VCOLOR_ATTRIBUTES);    this.imageFill = new ShaderProgram(this.gl, IMAGE_VERT_SRC, IMAGE_FRAG_SRC);
-    this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
-    this.imageFill.lookupAttributes(IMAGE_FILL_ATTRIBUTES);
+    this.pathFillVColor.lookupAttributes(PATH_FILL_VCOLOR_ATTRIBUTES);
 
     this.batchFill = new ShaderProgram(this.gl, BATCH_VERT_SRC, BATCH_FRAG_SRC);
     this.batchFill.lookupUniforms(BATCH_FILL_UNIFORMS);
@@ -524,9 +509,7 @@ export class WeaselRenderer {
     this.patternFill.lookupUniforms(PATTERN_FILL_UNIFORMS);
     this.patternFill.lookupAttributes(PATTERN_FILL_ATTRIBUTES);
     this.glyphPaintPrograms.clear();
-    const aPos = this.pathFill.attribute('a_position');
-    if (aPos === undefined) throw new Error('a_position missing after restore');
-    this.meshCache = new GLMeshCache(this.gl, aPos);
+    this.meshCache = new GLMeshCache(this.gl);
     this.textureCache = new GLTextureCache(this.gl);
     this.imageCache.abandon();
     this.imageCache = new GLImageCache(this.gl, this.imageMinification);
@@ -571,7 +554,7 @@ export class WeaselRenderer {
     this.meshCache.dispose();
     this.paintResources.release();
     for (const prog of [
-      this.pathFill, this.pathFillVColor, this.imageFill, this.batchFill, this.gradFill, this.patternFill,
+      this.pathFill, this.pathFillVColor, this.batchFill, this.gradFill, this.patternFill,
       ...this.glyphPaintPrograms.values(),
     ]) {
       gl.deleteProgram(prog.handle);
@@ -638,7 +621,6 @@ export class WeaselRenderer {
       gl,
       pathFill: this.pathFill,
       pathFillVColor: this.pathFillVColor,
-      imageFill: this.imageFill,
       batchFill: this.batchFill,
       gradFill: this.gradFill,
       patternFill: this.patternFill,
@@ -728,7 +710,6 @@ export class WeaselRenderer {
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
   /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor; }
   /** @internal */ _drawBatch(): DrawBatch { return this.drawBatch; }
-  /** @internal */ _imageFill(): ShaderProgram { return this.imageFill; }
   /** @internal */ _batchFill(): ShaderProgram { return this.batchFill; }
   /** @internal */ _gradFill(): ShaderProgram { return this.gradFill; }
   /** @internal */ _patternFill(): ShaderProgram { return this.patternFill; }

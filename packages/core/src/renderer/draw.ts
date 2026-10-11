@@ -60,7 +60,6 @@ export interface DrawContext {
   gl: WebGL2RenderingContext;
   pathFill: ShaderProgram;
   pathFillVColor: ShaderProgram;
-  imageFill: ShaderProgram;
   /** The one program a batch flush draws with — `shaders/batchFill.ts`. */
   batchFill: ShaderProgram;
   gradFill: ShaderProgram;
@@ -1520,6 +1519,33 @@ export function flushBatch(ctx: DrawContext): void {
   ctx.batchState = undefined;
 }
 
+interface VertexColorBinding { vbo: WebGLBuffer; location: number | undefined }
+
+/** Point the bound mesh VAO's a_vertexColor at a fresh buffer of per-vertex
+ *  colors. Pair with `detachVertexColors` before the VAO is unbound. */
+function attachVertexColors(
+  gl: WebGL2RenderingContext, prog: ShaderProgram, perAnchor: number[], handle: GLMeshHandle,
+): VertexColorBinding {
+  const vbo = gl.createBuffer();
+  if (!vbo) throw new Error('attachVertexColors: createBuffer returned null');
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, expandAnchorColors(perAnchor, handle), gl.DYNAMIC_DRAW);
+  const location = prog.attribute('a_vertexColor');
+  if (location !== undefined) {
+    gl.enableVertexAttribArray(location);
+    gl.vertexAttribPointer(location, 4, gl.FLOAT, false, 0, 0);
+  }
+  return { vbo, location };
+}
+
+// Order matters: a buffer deleted after its VAO is unbound stays attached to
+// that VAO and is not freed until the mesh is, and one deleted while its
+// attribute is still enabled leaves the VAO unable to draw.
+function detachVertexColors(gl: WebGL2RenderingContext, { vbo, location }: VertexColorBinding): void {
+  if (location !== undefined) gl.disableVertexAttribArray(location);
+  gl.deleteBuffer(vbo);
+}
+
 function expandAnchorColors(perAnchor: number[], handle: GLMeshHandle): Float32Array {
   const aA = handle.anchorA;
   const aB = handle.anchorB;
@@ -1557,16 +1583,7 @@ function drawPathFillVColor(
   setSolidPaintUniforms(ctx, prog, fill.color, fill.opacity);
   setColorMatrixUniforms(ctx, prog);
 
-  const expanded = expandAnchorColors(cmd.vertexColors!, handle);
-  const colorVbo = gl.createBuffer();
-  if (!colorVbo) throw new Error('drawPathFillVColor: createBuffer (color VBO) returned null');
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
-  gl.bufferData(gl.ARRAY_BUFFER, expanded, gl.DYNAMIC_DRAW);
-  const aVColorLoc = prog.attribute('a_vertexColor');
-  if (aVColorLoc !== undefined) {
-    gl.enableVertexAttribArray(aVColorLoc);
-    gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
-  }
+  const colors = attachVertexColors(gl, prog, cmd.vertexColors!, handle);
 
   if (handle.requiresStencil) {
     beginParityMask(ctx, handle.indexCount);
@@ -1576,10 +1593,8 @@ function drawPathFillVColor(
     applyClipTest(ctx);
     drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
   }
+  detachVertexColors(gl, colors);
   gl.bindVertexArray(null);
-  // The per-vertex color VBO is freshly allocated per draw; free it now
-  // (after unbinding the VAO) so we don't leak one buffer per vColor draw.
-  gl.deleteBuffer(colorVbo);
 }
 
 function setProjAndModel(
@@ -2071,21 +2086,11 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: StrokedPathCommand, spac
     setSolidPaintUniforms(ctx, prog, isSolid ? solid.color : '#ffffff', paint.opacity);
     setColorMatrixUniforms(ctx, prog);
 
-    const expanded = expandAnchorColors(stroke.vertexColors!, handle);
-    const colorVbo = gl.createBuffer();
-    if (!colorVbo) throw new Error('drawPathStrokeUnclipped: createBuffer (color VBO) returned null');
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
-    gl.bufferData(gl.ARRAY_BUFFER, expanded, gl.DYNAMIC_DRAW);
-    const aVColorLoc = prog.attribute('a_vertexColor');
-    if (aVColorLoc !== undefined) {
-      gl.enableVertexAttribArray(aVColorLoc);
-      gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
-    }
+    const colors = attachVertexColors(gl, prog, stroke.vertexColors!, handle);
     applyClipTest(ctx);
     drawTriangles(ctx, handle.indexCount, ctx.gl.UNSIGNED_INT);
+    detachVertexColors(gl, colors);
     gl.bindVertexArray(null);
-    // Per-draw color VBO; free after VAO unbind to avoid leak per stroke vColor draw.
-    gl.deleteBuffer(colorVbo);
     return;
   }
 
@@ -2183,19 +2188,9 @@ function drawPathStrokeStenciled(
   }
   gl.bindVertexArray(ribbonHandle.vao);
 
-  let colorVbo: WebGLBuffer | null = null;
-  if (useVColor) {
-    const expanded = expandAnchorColors(stroke.vertexColors!, ribbonHandle);
-    colorVbo = gl.createBuffer();
-    if (!colorVbo) throw new Error('drawPathStrokeStenciled: createBuffer (color VBO) returned null');
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
-    gl.bufferData(gl.ARRAY_BUFFER, expanded, gl.DYNAMIC_DRAW);
-    const aVColorLoc = ribbonProg.attribute('a_vertexColor');
-    if (aVColorLoc !== undefined) {
-      gl.enableVertexAttribArray(aVColorLoc);
-      gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
-    }
-  }
+  const colors = useVColor
+    ? attachVertexColors(gl, ribbonProg, stroke.vertexColors!, ribbonHandle)
+    : null;
 
   drawTriangles(ctx, ribbonHandle.indexCount, ctx.gl.UNSIGNED_INT);
 
@@ -2204,10 +2199,8 @@ function drawPathStrokeStenciled(
   gl.stencilMask(0x01);
   gl.clear(gl.STENCIL_BUFFER_BIT);
   gl.disable(gl.STENCIL_TEST);
+  if (colors) detachVertexColors(gl, colors);
   gl.bindVertexArray(null);
-  // Delete after the unbind: deleting a bound buffer leaves its attribute
-  // enabled and pointing at nothing, recorded in whatever VAO is live.
-  if (colorVbo) gl.deleteBuffer(colorVbo);
 }
 
 /**

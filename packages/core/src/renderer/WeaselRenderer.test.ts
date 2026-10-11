@@ -237,9 +237,9 @@ describe('dispose', () => {
     }] as never);
     r.dispose();
     const names = rec.calls.map((c) => c.name);
-    // Every built-in: pathFill, pathFillVColor, imageFill, batchFill, gradFill,
-    // patternFill. Exact, so dropping one from the list is caught.
-    expect(names.filter((n) => n === 'deleteProgram').length).toBe(6);
+    // Every built-in: pathFill, pathFillVColor, batchFill, gradFill, patternFill.
+    // Exact, so dropping one from the list is caught.
+    expect(names.filter((n) => n === 'deleteProgram').length).toBe(5);
     expect(names).toContain('deleteBuffer');
     // The solid batch's VAO must also be freed.
     expect(names).toContain('deleteVertexArray');
@@ -253,8 +253,8 @@ describe('dispose', () => {
     rec.reset();
     r.dispose();
     const names = rec.calls.map((c) => c.name);
-    // 6 built-ins + 1 registered.
-    expect(names.filter((n) => n === 'deleteProgram').length).toBe(7);
+    // 5 built-ins + 1 registered.
+    expect(names.filter((n) => n === 'deleteProgram').length).toBe(6);
   });
 
   it('looks up a uniform the program declares in its own vertex shader', () => {

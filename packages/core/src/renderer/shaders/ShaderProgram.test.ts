@@ -21,6 +21,17 @@ describe('ShaderProgram', () => {
     expect(prog.handle).toBeTruthy();
   });
 
+  it('binds a_position to location 0 before it links', () => {
+    // Mesh VAOs are built once and drawn with every fill program, so the
+    // attribute cannot sit wherever each program's linker happened to put it.
+    const prog = new ShaderProgram(recorder.gl, VERT_SRC, FRAG_SRC);
+    const bind = recorder.calls.findIndex((c) => c.name === 'bindAttribLocation');
+    const link = recorder.calls.findIndex((c) => c.name === 'linkProgram');
+    expect(bind).toBeGreaterThanOrEqual(0);
+    expect(recorder.calls[bind].args).toEqual([prog.handle, 0, 'a_position']);
+    expect(bind).toBeLessThan(link);
+  });
+
   it('looks up uniform locations by name', () => {
     const prog = new ShaderProgram(recorder.gl, VERT_SRC, FRAG_SRC);
     prog.lookupUniforms(PATH_FILL_UNIFORMS);

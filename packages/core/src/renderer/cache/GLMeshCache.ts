@@ -1,4 +1,5 @@
 import type { Mesh } from '@weasel-js/geom/tessellate';
+import { POSITION_ATTRIBUTE_LOCATION } from '../shaders/ShaderProgram';
 
 export interface GLMeshHandle {
   readonly vao: WebGLVertexArrayObject;
@@ -58,7 +59,6 @@ export class GLMeshCache {
 
   constructor(
     private readonly gl: WebGL2RenderingContext,
-    private readonly aPositionLoc: number,
   ) {
     this.finalizer = new FinalizationRegistry<MeshResources>((resources) => {
       // Defer the actual gl.delete* until the renderer's next render(),
@@ -190,8 +190,8 @@ export class GLMeshCache {
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     gl.bufferData(gl.ARRAY_BUFFER, mesh.vertices, gl.STATIC_DRAW);
 
-    gl.enableVertexAttribArray(this.aPositionLoc);
-    gl.vertexAttribPointer(this.aPositionLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(POSITION_ATTRIBUTE_LOCATION);
+    gl.vertexAttribPointer(POSITION_ATTRIBUTE_LOCATION, 2, gl.FLOAT, false, 0, 0);
 
     const ibo = gl.createBuffer();
     if (!ibo) throw new Error('createBuffer (IBO) returned null');

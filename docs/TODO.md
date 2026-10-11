@@ -598,21 +598,6 @@ Core five + Crop shipped. Remaining:
   `GroupState` transforms in doubles and convert at the uniform upload, and fold the translation
   into a camera-relative offset on the CPU for own-draw meshes.
 
-- **(P3) Renderer: mesh VAOs assume `a_position` is at the same location in every program.**
-  `GLMeshCache` builds its VAOs with `pathFill`'s `a_position` location, and `pathFillVColor`,
-  `gradFill`, `patternFill`, and every registered paint kind's program draw with them. None pins the
-  location, so a registered kind whose vertex shader declares another attribute first can link
-  `a_position` elsewhere and paint nothing with no error. `shaders/batchFill.ts` pins its attributes
-  for this reason. Pin `a_position` to 0 in the kit shaders and call `bindAttribLocation(program, 0,
-  'a_position')` before linking a registered program. Related: `drawPathFillVColor` enables
-  `a_vertexColor` on a persistent VAO and then deletes the buffer it points at, where its stroke
-  sibling takes a transient VAO.
-
-- **(P3) Renderer: `imageFill` is compiled on every renderer and never drawn with.** Images go
-  through the batch program. `packages/core/src/renderer/shaders/imageFill.ts`, its two compile
-  sites in `WeaselRenderer.ts`, the `_imageFill()` accessor, and the `DrawContext.imageFill` field
-  (set in every renderer test that builds a context) can all go; `IMAGE_VOPACITY_*` has no importer.
-
 - **(P3) Renderer: `draw.ts` is about 2,700 lines with several owners.** It holds the per-frame
   uniform cache, custom-shader uniform upload, group effects and the fullscreen quad, the clip stack
   and its stencil helpers, batch staging and `flushBatch`, gradient coordinate math, the path fill

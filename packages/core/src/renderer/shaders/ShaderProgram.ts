@@ -26,6 +26,11 @@ export interface UniformArray {
   readonly location: WebGLUniformLocation;
 }
 
+/** Where every program links `a_position`. A mesh VAO is built once and drawn
+ *  with whichever fill program its paint picks, so the location cannot be
+ *  left to each program's linker. */
+export const POSITION_ATTRIBUTE_LOCATION = 0;
+
 /** A linked GL program with its uniform and attribute locations cached by name. */
 export class ShaderProgram {
   readonly handle: WebGLProgram;
@@ -54,6 +59,7 @@ export class ShaderProgram {
     }
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
+    gl.bindAttribLocation(program, POSITION_ATTRIBUTE_LOCATION, 'a_position');
     gl.linkProgram(program);
     // Flagged for deletion, attached shaders live exactly as long as the
     // program, so `deleteProgram` frees them too.

@@ -14,7 +14,7 @@ describe('GLMeshCache', () => {
 
   beforeEach(() => {
     recorder = makeGLRecorder();
-    cache = new GLMeshCache(recorder.gl, /* aPositionLoc */ 0);
+    cache = new GLMeshCache(recorder.gl);
   });
 
   it('uploads VBO + IBO + VAO on first lookup', () => {
@@ -102,7 +102,7 @@ describe('GLMeshCache', () => {
       cache.uploadRecurring(mesh);
 
       const otherRecorder = makeGLRecorder();
-      const other = new GLMeshCache(otherRecorder.gl, 0);
+      const other = new GLMeshCache(otherRecorder.gl);
       other.uploadRecurring(mesh);
       expect(other._transientCount()).toBe(1);
     });
@@ -168,7 +168,7 @@ describe('GLMeshCache', () => {
           },
         },
       ) as unknown as WebGL2RenderingContext;
-      const lostCache = new GLMeshCache(lostGl, 0);
+      const lostCache = new GLMeshCache(lostGl);
       lostCache._enqueueDeleteForTest({
         vao: { __id: 'vao_x' } as unknown as WebGLVertexArrayObject,
         vbo: { __id: 'vbo_x' } as unknown as WebGLBuffer,
