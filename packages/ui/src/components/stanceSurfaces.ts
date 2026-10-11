@@ -48,8 +48,8 @@ export const STANCE_SURFACES: readonly StanceSurface[] = [
     fills: true,
     base: {
       surface: 'var(--wzl-surface-sunken)',
-      // Also the color of the rules flanking the title.
-      'border-color': 'var(--wzl-border)',
+      // Also the color of the rules flanking the title. Mixed from the surface: light mode's --wzl-border is --wzl-surface-sunken.
+      'border-color': 'color-mix(in oklab, var(--wzl-fg) 12%, var(--_s-surface))',
       'border-style': 'solid',
       'border-width': '0px',
       radius: 'var(--wzl-radius-md)',
