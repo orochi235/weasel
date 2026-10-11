@@ -710,13 +710,6 @@ Core five + Crop shipped. Remaining:
   `a_vertexColor` on a persistent VAO and then deletes the buffer it points at, where its stroke
   sibling takes a transient VAO.
 
-- **(P3) Renderer: a co-tenant's GL state leaks into a frame.** `WeaselRenderer.applyGlState` resets
-  blend, depth test, cull face, and clear color, and `render()` binds the default framebuffer. A
-  consumer drawing with the same `gl` between frames can still leave `colorMask` off (the frame
-  comes out blank), a VAO bound (`drawShader` and `drawFullscreenQuad` bind none and edit whatever
-  is current), or `UNPACK_FLIP_Y_WEBGL` on (every later texture upload is flipped). Reset those per
-  frame too, or state which of them a co-tenant must restore.
-
 - **(P3) Renderer: `imageFill` is compiled on every renderer and never drawn with.** Images go
   through the batch program. `packages/core/src/renderer/shaders/imageFill.ts`, its two compile
   sites in `WeaselRenderer.ts`, the `_imageFill()` accessor, and the `DrawContext.imageFill` field
@@ -821,16 +814,6 @@ Core five + Crop shipped. Remaining:
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/text/src/layout/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Shaping is also what real small caps needs: `fontVariantCaps: 'small-caps'` is synthesized today (capitals scaled by x-height over cap height), and a face with an `smcp` feature should get its own small-cap glyphs instead.
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
-
-- **(P2) Text edit: double-clicking any node opens a text edit on it.** `useSceneTextEdit`'s
-  `onDoubleClick` (`packages/core/src/features/text/useSceneTextEdit.ts`) takes the topmost unlocked
-  node whose pose rect contains the point; `pointInTextPose` is a rect test and nothing asks whether
-  the node is text. In draw, double-clicking a rectangle mounts an empty editor over it and hides
-  the rectangle until the edit ends, and typing there writes `text` onto a path node. The hook's doc
-  says it hits "the top-most text node". The options: give the hook a text predicate (default
-  `data.text !== undefined`, or the `data.kind === 'text'` convention `useTextEditDepSource` uses
-  for `TextEditDep.isTextNode`) and use one predicate for both entry paths; or keep any-node as the
-  way to label a shape and make draw paint the result.
 
 - **(P2) Text edit: one styled commit is two or three undo steps, and a canceled edit can still
   change the node.** `useTextEdit`'s `commit` calls `setText` then `setRuns`, and `useSceneTextEdit`
@@ -1390,13 +1373,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
-
-- **(P3) Should routing declare the `activeTool` dep itself?** `ActionDeps` types each dep
-  through `DepSchema`, but `activeTool` is merged in by core, so routing's own
-  `makeToolOffhandAction` still reads `ctx.deps.activeTool as ActiveToolContextValue` — routing
-  builds without core's augmentation, and the type it casts to is routing's own. Declaring the
-  entry in routing's `DepSchema` would drop that last cast; the question is whether routing
-  should own a dep entry at all, when it is empty by design today.
 
 - **(P3) Range selection on the canvas.** `@weasel-js/select` ranges over an `order` the caller
   supplies, and a canvas has none of its own, so core's `useSelection` never ranges and keeps no

@@ -257,6 +257,58 @@ describe('useSceneTextEdit — view thunk', () => {
   });
 });
 
+describe('useSceneTextEdit — a double-click on a node that is not text', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  type Item = Omit<TextItem, 'text'> & { text?: string; label?: string };
+  const BOX: Item = { id: 'box', x: 100, y: 50, width: 200, height: 40 };
+
+  function mount(items: Item[], isText?: (data: Item) => boolean) {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const canvas = document.createElement('canvas');
+    container.appendChild(canvas);
+    const hook = renderHook(() => {
+      const scene = useScene({ items });
+      return useSceneTextEdit(scene, container, { isText });
+    });
+    const dblclick = () => act(() => hook.result.current.onDoubleClick({
+      target: canvas, clientX: 110, clientY: 60,
+    } as unknown as MouseEvent<HTMLElement>));
+    return { hook, dblclick };
+  }
+
+  it('opens no editor on it', () => {
+    const { hook, dblclick } = mount([BOX]);
+    dblclick();
+    expect(hook.result.current.editingId).toBeNull();
+  });
+
+  it('opens the text node under it', () => {
+    const { hook, dblclick } = mount([NODE, BOX]);
+    dblclick();
+    expect(hook.result.current.editingId).toBe('a');
+  });
+
+  it('asks the isText option when one is passed', () => {
+    const { hook, dblclick } = mount(
+      [NODE, { ...BOX, label: 'x' }],
+      (data) => data.label !== undefined,
+    );
+    dblclick();
+    expect(hook.result.current.editingId).toBe('box');
+  });
+
+  it('answers isTextNode by id with the same predicate', () => {
+    const { hook } = mount([NODE, BOX]);
+    expect(hook.result.current.isTextNode('a')).toBe(true);
+    expect(hook.result.current.isTextNode('box')).toBe(false);
+    expect(hook.result.current.isTextNode('gone')).toBe(false);
+  });
+});
+
 /**
  * With no `view` passed, the camera comes from the kit canvas mounted inside
  * the container — the consumer should not have to thread it through.

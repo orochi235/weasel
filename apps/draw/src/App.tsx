@@ -1401,10 +1401,7 @@ function EditorWithSharedScene({
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
             <CreateOutlinesAdapterPublisher scene={scene} selection={selection} />
-            <TextEditDepPublisher
-              edit={textEdit}
-              scene={scene}
-            />
+            <TextEditDepPublisher edit={textEdit} />
           </SceneCanvas>
           )}
           <SceneGradientHandles

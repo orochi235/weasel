@@ -193,6 +193,10 @@ The text layer should hide the node it's editing
 scene. It projects through the view of the weasel canvas mounted inside
 `container` and clips the overlay to that canvas's box, so a canvas that pans
 or zooms needs no extra wiring; pass `options.view` only to use another camera.
+Its `onDoubleClick` opens an edit on the topmost text node under the pointer.
+A node is text when `options.isText(data)` says so (default: `data.text` is a
+string), and the returned `isTextNode(id)` asks the same question by id, for
+`TextEditDep.isTextNode`.
 
 ### `useClipboardOps(options)`
 

@@ -14,28 +14,14 @@
  * outside the canvas and needs the same `editingId` / `selection` this dep
  * exposes.
  */
-import { type NodeId, type Scene, useDepSource, useLatest, type UseSceneTextEditReturn } from '@weasel-js/core';
+import { useDepSource, useLatest, type UseSceneTextEditReturn } from '@weasel-js/core';
 
-export function TextEditDepPublisher({
-  edit,
-  scene,
-}: {
-  edit: UseSceneTextEditReturn;
-  scene: Scene<unknown, string, unknown>;
-}): null {
+export function TextEditDepPublisher({ edit }: { edit: UseSceneTextEditReturn }): null {
   const editRef = useLatest(edit);
-  const sceneRef = useLatest(scene);
 
   useDepSource('textEdit', () => ({
     startEdit: (id, opts) => editRef.current.startEdit(id, opts),
-    // WeaselDraw's data carries no `kind` tag, so the kit stub's
-    // `data.kind === 'text'` test never matches here. This mirrors
-    // `inferredNodeRouting`'s text classifier, which is what the rest of the
-    // app (hit kinds, the properties schema) already routes on.
-    isTextNode: (id) => {
-      const data = sceneRef.current.get(id as NodeId)?.data as { text?: unknown } | null;
-      return typeof data?.text === 'string';
-    },
+    isTextNode: (id) => editRef.current.isTextNode(id),
   }));
 
   return null;

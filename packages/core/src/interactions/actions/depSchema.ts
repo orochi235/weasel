@@ -32,7 +32,6 @@ import type { Op } from 'core/ops/types';
 import type { GestureLifecycleOptions } from './gestureLifecycle';
 import type { InsertAdapter, RegionPickView } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
-import type { ActiveToolContextValue } from '@weasel-js/routing/react';
 import type {
   PointSnapBehavior,
   BoundsConstraint,
@@ -425,10 +424,10 @@ export interface LayoutDep {
  *
  * @example
  * ```ts
- * const textEdit = useSceneTextEdit({ scene, container });
+ * const textEdit = useSceneTextEdit(scene, container);
  * useDepSource('textEdit', () => ({
  *   startEdit: textEdit.startEdit,
- *   isTextNode: (id) => scene.get(id as NodeId)?.data?.kind === 'text',
+ *   isTextNode: textEdit.isTextNode,
  * }));
  * ```
  */
@@ -476,9 +475,9 @@ export interface SliceDep {
  * The names an action may declare in `requires`, and what each resolves to.
  *
  * This is the whole vocabulary of things an action can reach — selection,
- * scene, view, history, and the rest. The interface itself is declared empty
- * in `@weasel-js/routing`, which knows that an action names its dependencies
- * but not what any of them are; these entries are the kit's, merged in from
+ * scene, view, history, and the rest. The interface is declared in
+ * `@weasel-js/routing`, which knows that an action names its dependencies but
+ * owns only `activeTool` among them; these entries are the kit's, merged in from
  * outside exactly the way a consumer merges its own
  * (`declare module '@weasel-js/core'`).
  */
@@ -499,8 +498,6 @@ declare module '@weasel-js/routing' {
     scene: Scene<unknown, string, unknown>;
     /** Undo/redo history bound to the current scene. */
     history: History;
-    /** Currently active tool id + hotkey-hold stack. */
-    activeTool: ActiveToolContextValue;
     /**
      * Area-select dep — AABB hit-test + selection read/write.
      *

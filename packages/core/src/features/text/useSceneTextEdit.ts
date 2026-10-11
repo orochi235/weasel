@@ -51,6 +51,13 @@ export interface DefaultTextData {
 
 /** All-optional projections + fontSize fallback. */
 export interface UseSceneTextEditOptions<TData> {
+  /**
+   * Is this node text? A double-click opens an edit only on a node that
+   * answers yes, and passes through any other to the text under it. Default:
+   * `typeof data.text === 'string'`, the test `inferredNodeRouting` classifies
+   * a text node by. Pass one when `getText` reads some other shape.
+   */
+  isText?: (data: TData) => boolean;
   /** Read plain text from `data`. Default: `data.text ?? ''`. */
   getText?: (data: TData) => string;
   /** Read style from `data`. Default: `data.style`. */
@@ -122,6 +129,9 @@ export interface UseSceneTextEditReturn extends UseTextEditReturn {
    *  top-most text node under the cursor via `pointInTextPose`, resolves
    *  a caret offset via `caretIndexAt`, and starts edit on that node. */
   onDoubleClick: (e: MouseEvent<HTMLElement>) => void;
+  /** The `isText` option asked of the node with this id: what
+   *  `TextEditDep.isTextNode` wants, so both ways into an edit agree. */
+  isTextNode: (id: string) => boolean;
 }
 
 /** Wire double-click-to-edit text on a scene: mounts a DOM editing overlay
@@ -165,6 +175,8 @@ export function useSceneTextEdit<
   };
 
   const read = useMemo(() => ({
+    isText: (data: TData): boolean =>
+      optsRef.current.isText ? optsRef.current.isText(data) : typeof data.text === 'string',
     text: (data: TData): string =>
       optsRef.current.getText ? optsRef.current.getText(data) : (data.text ?? ''),
     style: (data: TData): TextStyle | undefined =>
@@ -277,6 +289,7 @@ export function useSceneTextEdit<
     for (let i = order.length - 1; i >= 0; i--) {
       const node = order[i];
       if (sceneRef.current.isLocked(node.id)) continue;
+      if (!read.isText(node.data)) continue;
       const text = read.text(node.data);
       const at = effectivePose(sceneRef.current, node);
       const pose = {
@@ -297,5 +310,10 @@ export function useSceneTextEdit<
     }
   }, [edit, containerRef, optsRef, read, sceneRef]);
 
-  return { ...edit, onDoubleClick };
+  const isTextNode = useCallback((id: string): boolean => {
+    const node = sceneRef.current.get(asNodeId(id));
+    return node !== undefined && read.isText(node.data);
+  }, [read, sceneRef]);
+
+  return { ...edit, onDoubleClick, isTextNode };
 }
