@@ -107,10 +107,15 @@ export function UnitField({
     return true;
   };
 
-  // The latest `spin`, for the listeners below, which outlive a render.
+  /** Whether `key` has nowhere left to step to. */
+  const spent = (key: string): boolean => spinKey(key, from(), bounds) === from();
+
+  // The latest `spin` and `spent`, for the listeners below, which outlive a render.
   const latestSpin = useRef(spin);
+  const latestSpent = useRef(spent);
   useEffect(() => {
     latestSpin.current = spin;
+    latestSpent.current = spent;
   });
 
   // The wheel steps only a focused field, so scrolling past one changes nothing.
@@ -138,6 +143,9 @@ export function UnitField({
     latestSpin.current(key);
     const tick = (delay: number) => {
       repeat.current = setTimeout(() => {
+        // At a bound the button is disabled while still held, and a disabled
+        // button may never hear the release that would end the repeat.
+        if (latestSpent.current(key)) return stopRepeat();
         latestSpin.current(key);
         tick(REPEAT_EVERY_MS);
       }, delay);

@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { useState } from 'react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { act, render, fireEvent, screen } from '@testing-library/react';
 import { UnitField } from './UnitField';
 
 const CM = { mm: 0.1, cm: 1, m: 100 };
@@ -114,5 +115,27 @@ describe('UnitField compound values', () => {
     fireEvent.change(input, { target: { value: '5ft 3' } });
     fireEvent.blur(input);
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('UnitField held stepper', () => {
+  afterEach(() => { vi.useRealTimers(); });
+
+  // The button is disabled at the bound while still held, and a disabled
+  // button may never hear the release, so the repeat has to end on its own.
+  it('stops repeating at the bound without waiting for the release', () => {
+    vi.useFakeTimers();
+    const onInput = vi.fn();
+    function Host() {
+      const [value, setValue] = useState(8);
+      return <UnitField value={value} maxValue={10} steppers onChange={setValue} onInput={onInput} aria-label="Width" />;
+    }
+    render(<Host />);
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Increment' }));
+    act(() => { vi.advanceTimersByTime(400); });
+    expect(screen.getByRole('spinbutton', { name: 'Width' })).toHaveValue('10');
+    onInput.mockClear();
+    act(() => { vi.advanceTimersByTime(600); });
+    expect(onInput).not.toHaveBeenCalled();
   });
 });
