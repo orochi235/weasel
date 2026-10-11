@@ -747,13 +747,14 @@ Core five + Crop shipped. Remaining:
   does not hold, but `setSelection` keeps an id no node has (`reachable` filters on locks only, and
   `scene.selection.test.ts` selects ids it never added), so today it is a set of ids.
 
-- **(P3) `packages/core/src/core/scene/scene.ts` is one 2,100-line closure holding seven jobs.**
+- **(P3) `packages/core/src/core/scene/scene.ts` is one 2,000-line closure holding six jobs.**
   `createScene` contains the node store and kit op table, the layer stack, the arrival window and
   layout settle, the lock guard, the atomic-revert log, the `History` facade and journal wrapper,
-  the render-order walks with their cache, and serialization. Bugs fixed here were one of these
-  reaching into another's variables: `loadState` writing the batch depth, the function-field cache
-  keyed by id while incarnations are keyed by object. Split along those owners, each closing over a
-  small shared state record; the kit op table and the history facade are the cleanest first cuts.
+  and serialization. The render-order walks and their cache are out, in `renderOrder.ts`. Bugs
+  fixed here were one of these reaching into another's variables: `loadState` writing the batch
+  depth, the function-field cache keyed by id while incarnations are keyed by object. Split along
+  those owners, each closing over a small shared state record; the kit op table and the history
+  facade are the cleanest next cuts.
 
 - **(P2) Clipboard: draw says nothing when a paste leaves an edge out.** A paste now drops a node
   that derives from nodes that were not copied with it, and reports each one with a reason
