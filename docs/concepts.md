@@ -503,13 +503,6 @@ descriptor in the route grammar (alongside `keyDown` / `keyUp`), so route
 strings like `[*:initial] keyHeld(Space)` parse, format, and render in
 the inspector exactly like other gestures.
 
-A known carryover: the document-level `keydown` listener in
-`packages/core/src/tools/useKeybindings.ts` still serves as the authoritative tap-switch
-path for the bundled `SceneCanvas` mount topology, while the action
-registry path is exercised by tests and other consumers. Unifying these
-paths is a follow-up; the action registry path is now the canonical
-source of truth for what shortcuts exist (the inspector reads from it).
-
 ## Selection mode
 
 Click policy belongs to the selection, not the canvas:
