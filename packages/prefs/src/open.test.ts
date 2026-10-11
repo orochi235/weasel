@@ -196,6 +196,30 @@ describe('storage that is away at open', () => {
     warn.mockRestore();
   });
 
+  it('leaves a value set meanwhile out of the migration, as this build wrote it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>([
+      ['p.density', 10],
+      ['p.legacy', 1],
+    ]);
+    const double = (records: Map<string, unknown>, name: string) => {
+      if (records.has(name)) records.set(name, (records.get(name) as number) * 2);
+    };
+    const store = openPrefsSync(SCHEMA, {
+      storage: awayAtFirst(backing),
+      prefix: 'p.',
+      migrations: [(records) => (double(records, 'density'), double(records, 'legacy'))],
+    });
+    store.set('density', 30);
+    await store.read();
+    expect(store.get('density')).toBe(30);
+    expect(await store.flush()).toBe(true);
+    expect(backing.get('p.density')).toBe(30);
+    expect(backing.get('p.legacy')).toBe(2);
+    await store.close();
+    warn.mockRestore();
+  });
+
   it('stays read-only when the records that land are from a newer build', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const backing = new Map<string, unknown>([

@@ -12,11 +12,13 @@ export type PrefsMigration = (records: Map<string, unknown>) => void;
  * a migration leaves is written back, so a migration may replace values or
  * mutate them in place. Stops writing, and writes nothing, when the stored
  * version is newer than this build knows or a migration throws. Returns
- * whether it wrote.
+ * whether it wrote. With `only`, the migrations see and change just those
+ * records, the rest being this build's shape already.
  */
 export function runPrefsMigrations(
   cache: OwnedRecordCache,
   migrations: readonly PrefsMigration[],
+  only?: ReadonlySet<string>,
 ): boolean {
   const target = migrations.length;
   const raw = cache.get(VERSION_RECORD);
@@ -37,7 +39,9 @@ export function runPrefsMigrations(
   }
   if (stored === target || !cache.writable) return false;
 
-  const before = cache.entries().filter(([name]) => name !== VERSION_RECORD);
+  const before = cache
+    .entries()
+    .filter(([name]) => name !== VERSION_RECORD && (only?.has(name) ?? true));
   const records = new Map(before.map(([name, value]): [string, unknown] => [name, structuredClone(value)]));
   for (let v = stored; v < target; v++) {
     try {
@@ -65,7 +69,8 @@ export function runPrefsMigrations(
  * version past `migrations.length`, from a newer build in another tab, stops
  * persisting: this build would otherwise keep writing the old shape. A version
  * below it, from an older build or from records read after the open, runs the
- * migrations again over what the cache now holds. Returns the unsubscribe.
+ * migrations over the records other writers have changed, which leaves out
+ * what this build set itself. Returns the unsubscribe.
  */
 export function watchPrefsVersion(
   cache: OwnedRecordCache,
@@ -75,6 +80,7 @@ export function watchPrefsVersion(
   // A version record another writer deleted is a cleared store, whose
   // remaining records are this build's shape, not version 0.
   let versioned = cache.has(VERSION_RECORD);
+  const theirs = new Set<string>();
   const heard = (version: unknown): void => {
     if (!isVersion(version)) {
       console.warn(
@@ -95,11 +101,14 @@ export function watchPrefsVersion(
   const stopChanges = cache.subscribe((changes) => {
     const remote = changes.filter((change) => change.origin === 'remote');
     for (const change of remote) {
-      if (change.name === VERSION_RECORD && change.value !== undefined) heard(change.value);
+      if (change.name !== VERSION_RECORD) theirs.add(change.name);
+      else if (change.value !== undefined) heard(change.value);
     }
     const cleared = versioned && !cache.has(VERSION_RECORD);
     versioned ||= cache.has(VERSION_RECORD);
-    if (remote.length > 0 && !cleared && cache.writable && runPrefsMigrations(cache, migrations)) {
+    if (remote.length === 0 || cleared || !cache.writable) return;
+    if (runPrefsMigrations(cache, migrations, theirs)) {
+      theirs.clear();
       void cache.flush();
     }
   });
