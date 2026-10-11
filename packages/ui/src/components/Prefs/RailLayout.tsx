@@ -11,7 +11,7 @@ import { PrefsPane } from './PrefsPane';
 import { PrefsRail } from './PrefsRail';
 import type { WalkCtx } from './PrefsRow';
 import { looseEntryName, prefGroupNests, prefRailItems, prefRailParent } from './schema';
-import type { SelectionRoot } from './selection';
+import { pathWithin, type SelectionRoot } from './selection';
 import s from './Prefs.module.css';
 
 /** The rail's width before a drag; the stylesheet's fallback for `--wzl-prefs-rail-width`. */
@@ -101,7 +101,7 @@ export function RailLayout(props: PrefsFormProps & {
   // The page holding the selection: the deepest rail entry it is or lies under, else the loose leaves.
   const selected = props.ctx.lead ?? null;
   const home = selected === null ? null : items
-    .filter((i) => (i.depth === 0 || subPages) && (selected === i.path || selected.startsWith(`${i.path}.`)))
+    .filter((i) => (i.depth === 0 || subPages) && pathWithin(i.path, selected))
     .reduce((best, i) => (i.path.length > best.length ? i.path : best), '');
   const latest = useRef({ home, open, show });
   useEffect(() => { latest.current = { home, open, show }; });

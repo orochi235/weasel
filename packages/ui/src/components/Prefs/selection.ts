@@ -1,7 +1,8 @@
-import { useEffect, useRef, type FocusEvent, type MouseEvent, type PointerEvent, type RefObject } from 'react';
+import { useEffect, useRef, useState, type FocusEvent, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { prefersReducedMotion } from '../../reducedMotion';
 import { dropSlot, isDropPath } from './drop';
+import './selection.css';
 
 /** On the element a form draws for a leaf or a group, its dotted path. */
 export const PATH_ATTR = 'data-pref-path';
@@ -47,6 +48,28 @@ export function shownPath(root: PrefGroup | null, path: string | undefined): str
     cursor = next;
   }
   return path;
+}
+
+/** Whether `selected` is `path` or lies beneath it. */
+export const pathWithin = (path: string, selected: string | null | undefined): boolean =>
+  selected != null && (selected === path || selected.startsWith(`${path}.`));
+
+/**
+ * The open one of a run of tabs, and its setter. `holder` is the tab `lead` lies in, if any: a selection inside
+ * another tab opens that tab once, when it arrives, and the reader may then leave it.
+ */
+export function useHeldTab(
+  ids: readonly string[],
+  holder: string | undefined,
+  lead: string | null | undefined,
+): [open: string, pick: (id: string) => void] {
+  const [picked, setPicked] = useState(holder ?? ids[0]!);
+  const [seen, setSeen] = useState(lead);
+  if (seen !== lead) {
+    setSeen(lead);
+    if (holder !== undefined && holder !== picked) setPicked(holder);
+  }
+  return [ids.find((id) => id === picked) ?? ids[0]!, setPicked];
 }
 
 export interface SelectionRoot {

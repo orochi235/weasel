@@ -27,11 +27,12 @@ import {
   type PanelLeaf,
   type PanelSection,
 } from './model';
-import { GroupTabs } from '../Prefs/GroupTabs';
 import { prefDrawsNoControl } from '../Prefs/PrefWords';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
+import { pathWithin, selectionAttrs, useSelectedRow, type PrefSelectHow } from '../Prefs/selection';
 import { BarLayout } from '../Bar/BarLayout';
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
+import { PanelMarksContext, PanelTabs, panelShownPath, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
 export type { PropertyRenderContext, PropertyRenderer } from './renderLeaf';
@@ -41,7 +42,7 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> {
   /** The scene handle (`useScene`). The panel subscribes itself, so it
    *  re-renders on scene mutations regardless of parent renders. */
   scene: Scene<TData, TLayer, TPose>;
-  /** Selection handle (`useSelection`). Only `current` is read. */
+  /** Selection handle (`useSelection`): the nodes the panel edits. Only `current` is read. */
   selection: Pick<SelectionApi, 'current'>;
   /** Properties-trait entries, e.g. core's `defaultNodeProperties` /
    *  `inferredNodeProperties` (+ consumer extras). Memoize or hoist. */
@@ -58,8 +59,22 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> {
   kindLabel?: (kind: string) => string;
   /** Rendered when the selection is empty. */
   emptyState?: ReactNode;
+  /**
+   * Paths of the rows to mark: a leaf's key in the schema (`data.fill`), or a
+   * field of an object leaf under its leaf's (`data.stroke.width`). Each time
+   * the last one changes the panel brings it into view, opening the tab that
+   * holds it. A path the panel draws no row for marks the row it lies inside,
+   * or nothing.
+   */
+  selected?: readonly string[];
+  /** The reader pressed or focused into a row. `how.toggle` is true when Cmd
+   *  or Ctrl was held. A press on one of several marked rows is reported on
+   *  its click. */
+  onSelect?: (path: string, how: PrefSelectHow) => void;
   className?: string;
 }
+
+const NO_MARKS: readonly string[] = [];
 
 const defaultKindLabel = (kind: string): string =>
   kind.length === 0 ? kind : kind[0].toUpperCase() + kind.slice(1);
@@ -102,6 +117,10 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     const leaf = leaves.get(path);
     return leaf && absentValue(leaf);
   };
+  const drawnRows = sections.flatMap((section) => section.rows.flatMap((row) => row.leaves.map((item) => [panelLeafKey(item), item.leaf] as const)));
+  const shown = (props.selected ?? NO_MARKS).map((path) => panelShownPath(drawnRows, path)).filter((path): path is string => path !== null);
+  const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null };
+  const rowSelection = useSelectedRow(props.selected ?? NO_MARKS, marks.lead ?? null, props.onSelect);
 
   if (nodes.length === 0) {
     return <div className={[s.root, className].filter(Boolean).join(' ')}>{emptyState}</div>;
@@ -133,7 +152,8 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   };
 
   return (
-    <div className={[s.root, className].filter(Boolean).join(' ')}>
+    <PanelMarksContext.Provider value={marks}>
+    <div className={[s.root, className].filter(Boolean).join(' ')} {...rowSelection}>
       <header className={s.header}>
         {nodes.length === 1 ? (
           <span className={s.kind}>{kindLabel(kinds[0])}</span>
@@ -164,6 +184,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
               nodes={cells.map((cell) => ({ kind: 'cell', path: cell.key, content: cell.content }))}
               cells={() => []}
               row={() => null}
+              attrs={(at, leaf) => selectionAttrs(at, marks, leaf)}
             />
           );
           return [{ section, content: bar }];
@@ -205,7 +226,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
               // headless section nothing else names it, so it heads itself;
               // an object leaf already renders its own heading.
               row.leaves.length === 1 && controls[0].block ? (
-                <div key={panelLeafKey(row.leaves[0])}>
+                <div key={panelLeafKey(row.leaves[0])} {...selectionAttrs(panelLeafKey(row.leaves[0]), marks, true)}>
                   {section.name === '' && row.leaves[0].leaf.kind !== 'object' && !prefDrawsNoControl(row.leaves[0].leaf) && (
                     <h4 className={s.sectionTitle} title={row.leaves[0].leaf.description}>
                       {row.leaves[0].leaf.name}
@@ -214,7 +235,9 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                   {controls[0].content}
                 </div>
               ) : (
-              <div key={panelLeafKey(row.leaves[0])} className={s.row}>
+              // A row several leaves share stands for no one of them.
+              <div key={panelLeafKey(row.leaves[0])} className={s.row}
+                {...(row.leaves.length === 1 ? selectionAttrs(panelLeafKey(row.leaves[0]), marks, true) : {})}>
                 <span className={s.rowLabel} title={row.leaves[0].leaf.description}>
                   {row.label}
                 </span>
@@ -229,13 +252,14 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
           </>
         );
         return [{ section, content }];
-      }))}
+      }), marks.lead)}
     </div>
+    </PanelMarksContext.Provider>
   );
 }
 
 /** The sections in order: a run of `tab` sections as one strip, a `panel` in a box, the rest under their headings. */
-function drawn(sections: ReadonlyArray<{ section: PanelSection; content: ReactNode }>): ReactNode[] {
+function drawn(sections: ReadonlyArray<{ section: PanelSection; content: ReactNode }>, lead: string | null | undefined): ReactNode[] {
   const out: ReactNode[] = [];
   for (let i = 0; i < sections.length; i++) {
     const { section, content } = sections[i]!;
@@ -246,10 +270,12 @@ function drawn(sections: ReadonlyArray<{ section: PanelSection; content: ReactNo
     }
     const run = [];
     for (; i < sections.length && sections[i]!.section.as === 'tab'; i++) {
-      run.push({ id: sections[i]!.section.key, name: sections[i]!.section.name, content: sections[i]!.content });
+      const at = sections[i]!.section;
+      const holds = at.rows.some((row) => row.leaves.some((item) => pathWithin(panelLeafKey(item), lead)));
+      run.push({ id: at.key, name: at.name, content: sections[i]!.content, holds });
     }
     i--;
-    out.push(<GroupTabs key={section.key} className={s.section} tabs={run} />);
+    out.push(<PanelTabs key={section.key} className={s.section} tabs={run} lead={lead} />);
   }
   return out;
 }

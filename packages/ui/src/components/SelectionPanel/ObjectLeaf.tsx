@@ -2,14 +2,16 @@
  * An object leaf in a selection panel: the object's own fields as rows, and
  * each section of them as its `as` says.
  */
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, useContext, type ReactNode } from 'react';
 import { isPrefLeaf, pairRowsOf, prefObjectBase, prefObjectWithField, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { objectRows, type ObjectLeafParts } from '../Prefs/objectRows';
+import { pathWithin, selectionAttrs } from '../Prefs/selection';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { absentValue, MIXED, sharedValue } from './model';
 import { renderBuiltin, renderCells, type LeafCell, type PropertyRenderContext, type PropertyRenderer } from './renderLeaf';
+import { PanelMarksContext, PanelTabs } from './selection';
 import s from './SelectionPanel.module.css';
 
 /** One labeled row inside an object leaf; `pair` merges adjacent fields into
@@ -41,6 +43,7 @@ export function ObjectLeaf({
   selectionKey?: string;
 }): ReactNode {
   const pref = ctx.pref as PrefObject;
+  const marks = useContext(PanelMarksContext);
   const held = typeof ctx.value === 'object' && ctx.value !== null
     ? (ctx.value as Record<string, unknown>)
     : undefined;
@@ -154,19 +157,32 @@ export function ObjectLeaf({
           controls: [<Fragment key={key}>{content}</Fragment>],
         });
       }
+      // A row several fields share stands for no one of them.
+      const attrs = (entry: ObjectRow) =>
+        cells.filter((cell) => cell.pair !== undefined && cell.pair.key === entry.pair).length > 1 ? {} : selectionAttrs(entry.key, marks, true);
       return rows.map((entry) =>
         entry.block ? (
-          <div key={entry.key} className={`${s.rowControls} ${s.blockRow}`} title={entry.title}>
+          <div key={entry.key} className={`${s.rowControls} ${s.blockRow}`} title={entry.title} {...attrs(entry)}>
             {entry.controls}
           </div>
         ) : (
-          <div key={entry.key} className={s.row}>
+          <div key={entry.key} className={s.row} {...attrs(entry)}>
             <span className={s.rowLabel} title={entry.title}>{entry.label}</span>
             <span className={s.rowControls}>{entry.controls}</span>
           </div>
         ),
       );
     },
+    barAttrs: (at, leaf) => (leaf ? selectionAttrs(at, marks, true) : {}),
+    tabs: (run) => (
+      <PanelTabs
+        lead={marks.lead}
+        tabs={run.map((tab) => ({
+          ...tab,
+          holds: prefSectionLeaves(tab.section.members).some(([key]) => pathWithin(`${ctx.path}.${key}`, marks.lead)),
+        }))}
+      />
+    ),
     // Depth is drawn only where a label marks it.
     frame: (key, section, inner, { labeled, indent }) => [
       <div key={`group:${key}`} className={section.as === 'panel' ? s.objectPanel : labeled && indent ? s.objectGroup : undefined}>

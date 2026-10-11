@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { isPrefLeaf, type PrefLeaf, type PrefObject, type PrefSection } from '@weasel-js/prefs';
 import { BarLayout, type BarNode } from '../Bar/BarLayout';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
@@ -10,6 +10,11 @@ export interface ObjectSectionAt {
   labeled: boolean;
   /** Something visible sits above the section's rows, so depth can be drawn against it. */
   indent: boolean;
+}
+
+/** One tab of a run inside an object leaf. */
+export interface ObjectTab extends GroupTab {
+  section: PrefSection;
 }
 
 /**
@@ -27,6 +32,10 @@ export interface ObjectLeafParts<Cell> {
   barCells(cells: readonly Cell[]): BarNode[];
   /** What a section's tab holds besides its rows, ahead of them: a note, say. Default: nothing. */
   lead?(key: string, section: PrefSection): ReactNode[];
+  /** A run of neighboring `tab` sections, each with the section it draws. Default: a strip that keeps its own open tab. */
+  tabs?(run: readonly ObjectTab[]): ReactNode;
+  /** Attributes for the element a bar draws for the field at `path`. Default: none. */
+  barAttrs?(path: string, leaf: boolean): Record<string, string | undefined>;
   /** A section drawn in place, with `inner` its rows: under a heading, in a panel, or as a fragment. */
   frame(key: string, section: PrefSection, inner: ReactNode[], at: ObjectSectionAt): ReactNode[];
 }
@@ -44,9 +53,12 @@ export function objectRows<Cell>(children: PrefObject['children'], parts: Object
     pending = [];
   };
   // A run of neighboring `tab` sections, held until something else ends it.
-  let tabs: GroupTab[] = [];
+  let tabs: ObjectTab[] = [];
   const flushTabs = (): void => {
-    if (tabs.length > 0) out.push(<GroupTabs key={`tabs:${tabs[0]!.id}`} tabs={tabs} />);
+    if (tabs.length > 0) {
+      const key = `tabs:${tabs[0]!.id}`;
+      out.push(parts.tabs ? <Fragment key={key}>{parts.tabs(tabs)}</Fragment> : <GroupTabs key={key} tabs={tabs} />);
+    }
     tabs = [];
   };
   for (const [key, child] of Object.entries(children)) {
@@ -62,7 +74,7 @@ export function objectRows<Cell>(children: PrefObject['children'], parts: Object
       flushTabs();
       out.push(
         <BarLayout key={`bar:${key}`} framed label={child.name === '' ? undefined : child.name}
-          nodes={nodes} cells={() => []} row={() => null} />,
+          nodes={nodes} cells={() => []} row={() => null} attrs={parts.barAttrs} />,
       );
       continue;
     }
@@ -71,7 +83,7 @@ export function objectRows<Cell>(children: PrefObject['children'], parts: Object
     if (inner.length === 0) continue;
     flush();
     if (child.as === 'tab') {
-      tabs.push({ id: key, name: child.name, content: [...(parts.lead?.(key, child) ?? []), ...inner] });
+      tabs.push({ id: key, name: child.name, section: child, content: [...(parts.lead?.(key, child) ?? []), ...inner] });
       continue;
     }
     flushTabs();

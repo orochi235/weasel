@@ -12,6 +12,7 @@ import { DraggedNodes } from './NodeGhost';
 import { placedOnly } from './loose';
 import { drawsNode } from './previewDrop';
 import { PaneHeader } from './PaneHeader';
+import { panelPathOf, treePathOfPanel } from './panelPaths';
 import { keysOf, pathOf, type SchemaRoot } from './schemaEdit';
 import type { PreviewGhost } from './usePreviewDrag';
 import s from './PrefSchemaEditor.module.css';
@@ -41,7 +42,7 @@ export interface PreviewPaneProps {
  * and a toolbar for a group drawn as a bar.
  */
 export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: PreviewPaneProps) {
-  if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} onDefaults={onDefaults} />;
+  if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} />;
   if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
   return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
 }
@@ -139,9 +140,11 @@ function sceneOf(schema: PrefSection): PreviewScene {
   return scene;
 }
 
-function SectionPreview({ schema, renderers, onDefaults }: {
+function SectionPreview({ schema, renderers, selected, onSelect, onDefaults }: {
   schema: PrefSection;
   renderers?: Record<string, PropertyRenderer>;
+  selected: readonly string[];
+  onSelect?: (path: string | null, how: PrefSelectHow) => void;
   onDefaults(edits: readonly DefaultEdit[]): void;
 }) {
   // Each leaf's value as the node was seeded, which is no value for a key outside `pose` and `data`: only what an edit changed is a new default.
@@ -158,12 +161,17 @@ function SectionPreview({ schema, renderers, onDefaults }: {
     });
     if (edits.length > 0) onDefaults(edits);
   }), [scene, seeded, onDefaults]);
+  const marked = useMemo(() => selected.flatMap((path) => panelPathOf(schema, path) ?? []), [schema, selected]);
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview" />
       <div className={s.previewPanel}>
         <SelectionPanel scene={scene} selection={SELECTION} properties={[{ name: KIND, schema }]} routing={ROUTING}
-          renderers={renderers} kindLabel={() => schema.name} />
+          renderers={renderers} kindLabel={() => schema.name} selected={marked}
+          onSelect={onSelect && ((path, how) => {
+            const at = treePathOfPanel(schema, path);
+            if (at !== null) onSelect(at, how);
+          })} />
       </div>
     </section>
   );

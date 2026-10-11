@@ -1,9 +1,9 @@
-import { Fragment, type ReactNode, type RefObject, useState } from 'react';
+import { Fragment, type ReactNode, type RefObject } from 'react';
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, type BarOrientation } from '../Bar/BarLayout';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
-import { selectionAttrs } from './selection';
+import { pathWithin, selectionAttrs, useHeldTab } from './selection';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsPane}. */
@@ -25,8 +25,6 @@ export interface PrefsPaneProps {
 type Entry = [key: string, child: PrefLeaf | PrefGroup];
 
 const join = (path: string, key: string): string => (path === '' ? key : `${path}.${key}`);
-const within = (path: string, selected: string | null | undefined): boolean =>
-  selected != null && (selected === path || selected.startsWith(`${path}.`));
 
 /**
  * One rail section's settings: the group's own leaves, then its nested groups,
@@ -198,15 +196,8 @@ function PaneTabs({ ctx, tabs, depth, box }: {
   depth: number;
   box?: (key: string, group: PrefGroup, path: string) => ReactNode;
 }) {
-  // A selection inside another tab opens that tab once, when it arrives; the reader may then leave it.
-  const [picked, setPicked] = useState(() => (tabs.find(([p]) => within(p, ctx.lead)) ?? tabs[0]!)[0]);
-  const [seen, setSeen] = useState(ctx.lead);
-  if (seen !== ctx.lead) {
-    setSeen(ctx.lead);
-    const holder = tabs.find(([p]) => within(p, ctx.lead));
-    if (holder && holder[0] !== picked) setPicked(holder[0]);
-  }
-  const open = tabs.find(([p]) => p === picked)?.[0] ?? tabs[0]![0];
+  const ids = tabs.map(([p]) => p);
+  const [open, setPicked] = useHeldTab(ids, ids.find((p) => pathWithin(p, ctx.lead)), ctx.lead);
   return (
     <GroupTabs
       className={s.paneTabs}

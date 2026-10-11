@@ -1,0 +1,9 @@
+/* The mark on whatever `selectionAttrs` names as selected, in every surface that draws one.
+   The secondary accent: the primary one is a control's own (a checked box, a focused field), and a mark in it
+   around a row of them reads as one more. */
+[data-pref-path][data-selected] {
+  background: color-mix(in oklab, var(--wzl-secondary) 12%, transparent);
+  outline: 1px solid var(--wzl-secondary);
+  outline-offset: 3px;
+  border-radius: var(--wzl-radius-sm);
+}

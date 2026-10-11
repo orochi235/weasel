@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import {
   asNodeId,
@@ -10,7 +11,7 @@ import {
   strokeOf,
   type RectPose,
 } from '@weasel-js/core';
-import { SelectionPanel } from './SelectionPanel';
+import { SelectionPanel, type SelectionPanelProps } from './SelectionPanel';
 
 interface Data {
   path?: unknown;
@@ -30,14 +31,20 @@ function sceneWith(data: Data) {
 
 const selection = { current: [asNodeId('n')] };
 
-function Panel({ data }: { data: Data }) {
+type Marks = Pick<SelectionPanelProps<Data, 'default', RectPose>, 'selected' | 'onSelect'>;
+
+function Panel({ data, selected, onSelect }: { data: Data } & Marks) {
+  // One scene per story, so an edit outlasts the render a pressed row causes.
+  const scene = useMemo(() => sceneWith(data), [data]);
   return (
     <div style={{ inlineSize: 260 }}>
       <SelectionPanel
-        scene={sceneWith(data)}
+        scene={scene}
         selection={selection}
         properties={[...defaultNodeProperties, ...inferredNodeProperties]}
         routing={inferredNodeRouting}
+        selected={selected}
+        onSelect={onSelect}
       />
     </div>
   );
@@ -128,5 +135,22 @@ export const PatternFillPaint: Story = {
       fill: { fill: 'pattern', pattern: { tile: 'crosshatch', color: '#7fb069ff', size: 8 }, units: 'bounds' },
       stroke: strokeOf('#1c1c1c', 4),
     },
+  },
+};
+
+/** Rows marked as selected: the fill, and the stroke's width. A press on a row selects it, and Cmd or Ctrl
+ *  on a press adds it or takes it out. */
+export const SelectedRows: Story = {
+  args: Shape.args,
+  render: function SelectedRowsStory(args) {
+    const [selected, setSelected] = useState<readonly string[]>(['data.fill', 'data.stroke.width']);
+    return (
+      <Panel
+        {...args}
+        selected={selected}
+        onSelect={(path, how) => setSelected((cur) =>
+          !how.toggle ? [path] : cur.includes(path) ? cur.filter((p) => p !== path) : [...cur, path])}
+      />
+    );
   },
 };
