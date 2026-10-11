@@ -162,10 +162,10 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
   const announced = useRef(false);
   useEffect(() => {
     if (!host || !inView || announced.current) return;
-    announced.current = true;
     let canceled = false;
     const done = () => {
       if (canceled) return;
+      announced.current = true;
       setPending(false);
       latest.current.onRendered?.();
     };

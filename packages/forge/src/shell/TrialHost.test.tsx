@@ -129,6 +129,40 @@ describe('TrialHost', () => {
     expect(container.querySelector('.fg-story')?.hasAttribute('data-pending')).toBe(false);
   });
 
+  it('still unhides itself when it left view and came back before its fonts settled', async () => {
+    let settle!: () => void;
+    const ready = new Promise<void>((resolve) => { settle = resolve; });
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { ready } });
+    let report!: (isIntersecting: boolean) => void;
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: (entries: unknown[]) => void) {
+          report = (isIntersecting) => callback([{ isIntersecting, rootBounds: null }]);
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const onRendered = vi.fn();
+    try {
+      const { container } = render(
+        <TrialHost layout="padded" setup={{}} config={{}} onRendered={onRendered}>
+          {() => <span>x</span>}
+        </TrialHost>,
+      );
+      act(() => report(false));
+      act(() => report(true));
+      settle();
+      await waitFor(() => expect(onRendered).toHaveBeenCalledTimes(1));
+      expect(container.querySelector('.fg-story')?.hasAttribute('data-pending')).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+      delete (document as { fonts?: unknown }).fonts;
+    }
+  });
+
   it('announces its first render to the committed onRendered, not an abandoned render\'s', async () => {
     // Fonts that settle only once the abandoned render has come and gone.
     let settle!: () => void;
