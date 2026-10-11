@@ -46,3 +46,40 @@ test('a fragment\'s rows take cells among their neighbors\' in a form two rows a
   const outlined = (name: string): boolean => getComputedStyle(slot(name)).outlineStyle === 'solid';
   expect([outlined('Grid'), outlined('Snap'), outlined('Guides'), outlined('Rulers')]).toEqual([false, true, true, false]);
 });
+
+const WIDE: PrefGroup = {
+  name: 'Prefs',
+  children: {
+    view: {
+      name: 'View',
+      children: {
+        grid: flag('Grid'),
+        rulers: flag('Rulers'),
+        glue: {
+          name: 'Glued',
+          as: 'fragment',
+          children: {
+            snap: flag('Snap'),
+            globs: { kind: 'list', name: 'Globs', description: '', default: ['a'], item: { kind: 'string', name: 'Glob', description: '', default: '' } },
+            guides: flag('Guides'),
+          },
+        },
+      },
+    },
+  },
+};
+
+test('a wide row inside a fragment spans both columns of a form two rows across', async () => {
+  await page.viewport(900, 500);
+  render(
+    <div style={{ width: 820, height: 400 }}>
+      <PrefsForm layout="rail" rowsAcross={2} schema={WIDE} values={{}} onChange={() => {}} />
+    </div>,
+  );
+  const globs = document.querySelector('[data-pref-path="view.glue.globs"]')!.getBoundingClientRect();
+  expect(Math.abs(globs.left - box('Grid').left)).toBeLessThan(2);
+  expect(globs.right).toBeGreaterThan(box('Rulers').right - 2);
+  // Snap is alone on its line before it, and Guides starts the line after.
+  expect(globs.top).toBeGreaterThan(box('Snap').bottom - 1);
+  expect(box('Guides').top).toBeGreaterThan(globs.bottom - 1);
+});

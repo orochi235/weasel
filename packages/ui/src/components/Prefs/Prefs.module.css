@@ -526,8 +526,9 @@
   min-inline-size: 0;
 }
 
-/* Anything in the grid that is not one leaf's row is a group, and runs the full width. */
-.railLayout[data-across='2'] .rows > :is(:not(.rowSlot), [data-wide]) {
+/* Anything in the grid that is not one leaf's row is a group, and runs the full width. A fragment's children are
+   in the grid too, though not children of it. */
+.railLayout[data-across='2'] :is(.rows, .fragment) > :is(:not(.rowSlot), [data-wide]) {
   grid-column: 1 / -1;
 }
 
