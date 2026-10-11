@@ -7,8 +7,12 @@
  * silhouette/clip bake (`findShapeSilhouette`), the hit-test inverse
  * (`poseContainsRotated`), and selection chrome — derives its pivot + angle
  * from `poseRotationOf` rather than re-inlining the `if (rotation && x != null
- * …)` gate. If the convention ever changes (different pivot, a transform
- * field, etc.), it changes here.
+ * …)` gate. If the convention ever changes (a different pivot, say), it
+ * changes here.
+ *
+ * A pose may also carry a `transform` inside the rotation. `poseFrameOf`
+ * (`./poseFrame`) composes the two, and is what a reader that draws, bounds,
+ * or picks the node wants; this module is the angle and pivot alone.
  *
  * Lives in `core/geometry` so `core/`'s own adapters can bake rotation too.
  */

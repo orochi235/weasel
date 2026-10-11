@@ -5,7 +5,10 @@
  * picking all read a pose through `poseFrameOf` so they agree on where the
  * node is.
  */
-import { invert, multiply, rotateAboutPoint, type Mat3 } from '@weasel-js/geom';
+import {
+  invert, multiply, rotateAboutPoint, transformPath, type Mat3, type Path,
+} from '@weasel-js/geom';
+import { poseRotationOf, rotatePathAround } from './poseRotation';
 
 /**
  * The linear part of a box pose that its box, rotation, and flips cannot
@@ -65,4 +68,14 @@ export function poseFrameOf(pose: unknown): Mat3 | null {
 export function poseFrameInverseOf(pose: unknown): Mat3 | null {
   const frame = poseFrameOf(pose);
   return frame && invert(frame);
+}
+
+/** `path`, given in the pose's unrotated box frame, as the node draws it. */
+export function pathThroughPoseFrame(path: Path, pose: unknown): Path {
+  if (poseLinearOf(pose)) {
+    const frame = poseFrameOf(pose);
+    return frame ? transformPath(path, frame) : path;
+  }
+  const r = poseRotationOf(pose);
+  return r ? rotatePathAround(path, r.cx, r.cy, r.rotation) : path;
 }

@@ -12,6 +12,7 @@ import {
   type FillStyle,
   type ImageNodeData,
   type Path,
+  type PoseLinear,
   type Stroke,
   type StyledRun,
   type TextStyle,
@@ -29,6 +30,8 @@ export interface SvgKitPose {
   width: number;
   height: number;
   rotation?: number;
+  /** Read for text and image leaves only; a path leaf's is not written. */
+  transform?: PoseLinear;
 }
 
 /** The leaf data the kit's path, text and image painters read — what
@@ -89,6 +92,7 @@ export function svgImageFromKit(image: ImageNodeData['image'], pose: SvgKitPose)
   if (image.flipY) node.flipY = true;
   if (image.opacity != null) node.opacity = image.opacity;
   if (pose.rotation) node.rotation = pose.rotation;
+  if (pose.transform) node.transform = pose.transform;
   return node;
 }
 
@@ -130,6 +134,7 @@ export function svgLeafFromKit(
     if (data.fill !== undefined) node.fill = data.fill && fillInPoseFrame(data.fill, pose);
     if (data.stroke) node.stroke = strokeInPoseFrame(data.stroke, pose);
     if (pose.rotation) node.rotation = pose.rotation;
+    if (pose.transform) node.transform = pose.transform;
     return node;
   }
   if (!data.path) return null;

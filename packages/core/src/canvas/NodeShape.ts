@@ -71,7 +71,7 @@ import { markerReach } from 'features/paths/markerCommands';
 import { strokeReachAt } from '../renderer/cullDrawCommands';
 import { hasSlop, slopForStrokeHit, widenSlop, type PickSlop } from 'core/viewport/screenSlop';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { poseRotationOf, rotatePathAround } from 'core/geometry/poseRotation';
+import { pathThroughPoseFrame } from 'core/geometry/poseFrame';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { commandFill, commandStroke } from '../features/patterns/commandPaint';
 import {
@@ -355,10 +355,10 @@ function matchNodeShape<TData, TPose>(
  *  the kit needs the "closed boundary" of whatever this kind of node draws as.
  *
  *  Painters return their silhouette in the pose's local (unrotated) frame;
- *  this bakes `pose.rotation` on top via the shared rotation convention, so
- *  clips/area-select of a rotated node use the rotated boundary the renderer
- *  draws. (`paint()` is unaffected — it applies rotation via the render wrap,
- *  not the silhouette, so there is no double-rotation.) */
+ *  this bakes the pose's frame (`poseFrameOf`: its rotation and `transform`)
+ *  on top, so clips/area-select of a turned or skewed node use the boundary
+ *  the renderer draws. (`paint()` is unaffected — the render wrap applies
+ *  the frame, not the silhouette, so nothing is applied twice.) */
 export function findShapeSilhouette<TData, TPose>(
   node: Node<TData, string, TPose>,
   pose: TPose,
@@ -366,8 +366,7 @@ export function findShapeSilhouette<TData, TPose>(
 ): Path | null {
   const build = (): Path | null => {
     const sil = findNodeShape(node)?.silhouette?.(node, pose, ctx) ?? null;
-    const r = sil ? poseRotationOf(pose) : null;
-    return sil && r ? rotatePathAround(sil, r.cx, r.cy, r.rotation) : sil;
+    return sil && pathThroughPoseFrame(sil, pose);
   };
   // `SILHOUETTE_SLOT`'s key is (node, pose, data) and cannot see
   // `ctx.derivedPath` — the same reason `kit:derived` skips `PAINT_SLOT`.

@@ -19,7 +19,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { LassoHitMode } from 'core/adapters/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { Vec2 } from './vec2';
-import { poseRotationOf, rotatePathAround } from './poseRotation';
+import { pathThroughPoseFrame, poseFrameOf } from './poseFrame';
 import { visualBoundsViaDescriptor, type PoseDescriptor } from './poseDescriptor';
 
 /** A closed selection area: a marquee rect or a lasso polygon. */
@@ -95,16 +95,12 @@ export function regionBoundsOf(node: object, pose: unknown, g: PoseDescriptor<un
     : visualBoundsViaDescriptor(pose, g);
 }
 
-/** The outline of a node nothing paints: its pose rect, turned by the pose's
- *  rotation, else its visual bounds `b`. */
+/** The outline of a node nothing paints: its pose rect through the pose's
+ *  frame, else its visual bounds `b`. */
 export function poseOutline(pose: unknown, b: Bounds): Path {
-  const r = poseRotationOf(pose);
-  if (r) {
+  if (poseFrameOf(pose)) {
     const p = pose as Bounds;
-    return rotatePathAround(
-      { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-      r.cx, r.cy, r.rotation,
-    );
+    return pathThroughPoseFrame({ kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height }, pose);
   }
   return { kind: 'rect', x: b.x, y: b.y, width: b.width, height: b.height };
 }

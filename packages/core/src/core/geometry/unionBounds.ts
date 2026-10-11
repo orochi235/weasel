@@ -10,7 +10,9 @@
  * when the consumer is watching it move.
  */
 
+import { applyToPoint } from '@weasel-js/geom';
 import type { RectPose } from 'core/scene/types';
+import { poseFrameOf } from './poseFrame';
 export type { RectPose };
 
 /** Compute the AABB envelope of a set of rect-shaped poses, ignoring any
@@ -36,23 +38,19 @@ export function unionBounds<TPose extends RectPose>(poses: Iterable<TPose>): Rec
 }
 
 /**
- * Axis-align a pose that carries a `rotation`: returns the AABB of the
- * rotated rectangle, with `rotation` dropped. Follows the kit's rotation
- * convention (`poseRotationOf`): rotate about the unrotated AABB center.
+ * Axis-align a pose that carries a `rotation` or a `transform`: returns the
+ * AABB of the box as drawn, its four corners through `poseFrameOf`, with both
+ * fields dropped.
  *
- * Unrotated input is returned as-is.
+ * A pose with neither is returned as-is.
  */
 export function axisAlignedBounds<TPose extends RectPose>(b: TPose): RectPose {
-  const rotation = b.rotation;
-  if (!rotation) {
+  const frame = poseFrameOf(b);
+  if (!frame) {
     // Strip an explicit `rotation: 0` so callers can rely on the absence of
     // the field meaning "axis-aligned".
     return { x: b.x, y: b.y, width: b.width, height: b.height };
   }
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-  const cx = b.x + b.width / 2;
-  const cy = b.y + b.height / 2;
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -64,10 +62,7 @@ export function axisAlignedBounds<TPose extends RectPose>(b: TPose): RectPose {
     [b.x, b.y + b.height],
   ];
   for (const [px, py] of corners) {
-    const dx = px - cx;
-    const dy = py - cy;
-    const rx = cx + dx * cos - dy * sin;
-    const ry = cy + dx * sin + dy * cos;
+    const [rx, ry] = applyToPoint(frame, px, py);
     if (rx < minX) minX = rx;
     if (rx > maxX) maxX = rx;
     if (ry < minY) minY = ry;

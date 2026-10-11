@@ -41,6 +41,7 @@ import {
   type ImageNodeData,
   type IngestCtx,
   type Op,
+  type PoseLinear,
   type Stroke,
   type StyledRun,
   type TextStyle,
@@ -58,7 +59,7 @@ export interface SvgDraftBounds {
   height: number;
 }
 
-type DraftPose = SvgDraftBounds & { rotation?: number };
+type DraftPose = SvgDraftBounds & { rotation?: number; transform?: PoseLinear };
 
 /**
  * One node the unpack wants the scene to materialize, in parent-before-child
@@ -247,6 +248,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         x: n.x, y: n.y, width: n.width, height: n.height,
       };
       if (n.rotation) pose.rotation = n.rotation;
+      if (n.transform) pose.transform = n.transform;
       const box: SvgDraftBounds = {
         x: pose.x, y: pose.y, width: pose.width, height: pose.height,
       };
@@ -270,6 +272,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     if (n.kind === 'image') {
       const pose: DraftPose = { x: n.x, y: n.y, width: n.width, height: n.height };
       if (n.rotation) pose.rotation = n.rotation;
+      if (n.transform) pose.transform = n.transform;
       return pushLeaf(n, parentId, pose, {
         image: {
           src: n.href,

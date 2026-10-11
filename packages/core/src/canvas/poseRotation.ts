@@ -13,7 +13,7 @@
  * preview), so every code path produces rotated geometry uniformly.
  */
 import type { DrawCommand } from '../renderer';
-import { poseRotationOf } from 'core/geometry/poseRotation';
+import { poseFrameOf } from 'core/geometry/poseFrame';
 import { rotateAboutPoint } from '@weasel-js/geom';
 import { mat3, type GlMat3 } from '../renderer/math/mat3';
 
@@ -32,26 +32,21 @@ export function rotateAroundAABBCenter(
   return rotationMatrixAbout(x + width / 2, y + height / 2, rotation);
 }
 
-/** Wrap a per-node draw-command list in a rotation group when the pose
- *  carries a non-zero `rotation` and AABB fields (`x`, `y`, `width`,
- *  `height`). The wrap rotates the emitted geometry around the AABB
- *  center, matching the rotation-handle math and `pathInWorld` so chrome
- *  + geometry stay aligned.
+/** Wrap a per-node draw-command list in a group carrying the pose's frame
+ *  (`poseFrameOf`): its `rotation`, its `transform`, or both, about the AABB
+ *  center, matching the rotation-handle math, `pathInWorld`, and picking so
+ *  chrome and geometry stay aligned.
  *
- *  No-ops when `cmds` is empty, when `pose.rotation` is missing/zero, or
- *  when any of the AABB fields are missing (the wrap requires a center
- *  to rotate about). Painters / consumers that need different rotation
- *  semantics (e.g. pivot at origin) should still wrap themselves. */
+ *  No-ops when `cmds` is empty, when the pose has neither field, or when any
+ *  of the AABB fields are missing (the wrap requires a center to turn about).
+ *  Painters / consumers that need different semantics (e.g. pivot at origin)
+ *  should still wrap themselves. */
 export function wrapWithPoseRotation(
   cmds: DrawCommand[],
   pose: unknown,
 ): DrawCommand[] {
   if (cmds.length === 0) return cmds;
-  const r = poseRotationOf(pose);
-  if (!r) return cmds;
-  return [{
-    kind: 'group',
-    transform: rotationMatrixAbout(r.cx, r.cy, r.rotation),
-    children: cmds,
-  }];
+  const frame = poseFrameOf(pose);
+  if (!frame) return cmds;
+  return [{ kind: 'group', transform: mat3.fromAffine(frame), children: cmds }];
 }

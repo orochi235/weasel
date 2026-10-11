@@ -820,6 +820,7 @@ export {
   poseFrameOf,
   poseFrameInverseOf,
   poseLinearOf,
+  pathThroughPoseFrame,
   rotatePathAround,
   createPathLayer,
   flattenCubic,

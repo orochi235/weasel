@@ -236,6 +236,18 @@ describe('svgImageFromKit', () => {
     expect(parseSvg(serializeSvg([back])).nodes).toEqual(original);
   });
 
+  it('carries the pose transform of an image and of a text back onto the node', () => {
+    const original = parseSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg">'
+      + '<image transform="skewX(45)" width="20" height="10" href="a.png"/>'
+      + '<text transform="scale(4 1)" x="0" y="10" font-size="10" data-weasel-width="40" data-weasel-height="12">Hi</text></svg>',
+    ).nodes;
+    const [image, text] = svgNodesToKitDrafts(original, () => 'i');
+    if (image.kind !== 'leaf' || text.kind !== 'leaf') throw new Error('expected leaves');
+    expect(svgLeafFromKit(image.data, image.pose)).toEqual(original[0]);
+    expect(svgLeafFromKit(text.data, text.pose)).toEqual(original[1]);
+  });
+
   it('writes a plain image without source, flips, opacity or rotation', () => {
     expect(svgImageFromKit({ src: 'a.png' }, { x: 1, y: 2, width: 3, height: 4 })).toEqual({
       kind: 'image', href: 'a.png', x: 1, y: 2, width: 3, height: 4,

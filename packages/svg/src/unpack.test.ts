@@ -520,6 +520,29 @@ describe('svgNodesToKitDrafts — consumer hooks', () => {
     }).map((d) => d.kind)).toEqual(['leaf']);
   });
 
+  it("carries a text's and an image's transform onto the pose", () => {
+    const { nodes } = parseSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg">'
+      + '<text transform="scale(4 1)" x="0" y="10" font-size="10" data-weasel-width="40" data-weasel-height="12">Hi</text>'
+      + '<image transform="skewX(45)" width="20" height="10" href="a.png"/></svg>',
+    );
+    const [text, image] = svgNodesToKitDrafts(nodes, seq());
+    if (text.kind !== 'leaf' || image.kind !== 'leaf') throw new Error('expected leaves');
+    expect(text.pose).toEqual({ x: 40, y: -6, width: 80, height: 24, transform: [2, 0, 0, 0.5] });
+    expect(text.data.text).toBe('Hi');
+    expect(image.pose).toMatchObject({ x: 5, y: 0, width: 20, height: 10 });
+    image.pose.transform!
+      .forEach((v, i) => expect(v).toBeCloseTo([1, 0, 1, 1][i], 9));
+  });
+
+  it("bounds a container by its stretched text's drawn box", () => {
+    const g: SvgNode = {
+      kind: 'group',
+      children: [{ kind: 'text', x: 40, y: -6, width: 80, height: 24, text: 'Hi', transform: [2, 0, 0, 0.5] }],
+    };
+    expect(svgNodesToKitDrafts([g], seq())[0].pose).toEqual({ x: 0, y: 0, width: 160, height: 12 });
+  });
+
   it("never gives a container its only child's rotation", () => {
     const g: SvgNode = { kind: 'group', children: [rectNode(0, 0, 10, 10, { rotation: 0.5 })] };
     expect(svgNodesToKitDrafts([g], seq())[0].pose).not.toHaveProperty('rotation');

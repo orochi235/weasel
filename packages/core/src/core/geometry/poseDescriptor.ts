@@ -1,5 +1,6 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
+import { poseLinearOf } from 'core/geometry/poseFrame';
 
 /** `Bounds` with a required rotation angle (radians). Pivot is the AABB
  *  center of the unrotated `{x, y, width, height}`. */
@@ -174,8 +175,9 @@ export function remapRotatedLeaf<TPose extends RotatedPose>(
   };
 }
 
-/** The pose's visual bounds: its frame expanded to cover the rotated
- *  rectangle, so a turned shape reports the extent of its ink. */
+/** The pose's visual bounds: its box expanded to cover the box as drawn
+ *  under its rotation and `transform`, so a turned or skewed shape reports
+ *  the extent of its ink. */
 export function visualBoundsViaDescriptor<TPose>(
   pose: TPose,
   geometry: PoseDescriptor<TPose>,
@@ -183,7 +185,8 @@ export function visualBoundsViaDescriptor<TPose>(
   const b = geometry.getBounds(pose);
   const rotation =
     geometry.getRotation?.(pose) ?? (b as { rotation?: number }).rotation ?? 0;
-  return axisAlignedBounds({ x: b.x, y: b.y, width: b.width, height: b.height, rotation });
+  const transform = poseLinearOf(pose) ?? undefined;
+  return axisAlignedBounds({ x: b.x, y: b.y, width: b.width, height: b.height, rotation, transform });
 }
 
 /** Translate through `geometry.translate`, or via `remapBounds` onto a shifted

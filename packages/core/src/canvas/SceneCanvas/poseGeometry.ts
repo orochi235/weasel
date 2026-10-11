@@ -7,10 +7,10 @@
  * extraction, so a consumer-supplied descriptor reaches all three.
  */
 import type { Bounds } from 'tools/builtin/select';
-import { applyToPoint, pointInPath, rotateAboutPoint, strokeHitTest } from '@weasel-js/geom';
+import { applyToPoint, invert, pointInPath, strokeHitTest } from '@weasel-js/geom';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR, isPathLike } from 'interactions/actions/resize/autoPoseDescriptor';
-import { poseRotationOf } from 'core/geometry/poseRotation';
+import { poseFrameOf, poseLinearOf } from 'core/geometry/poseFrame';
 import { hasSlop, slopForStrokeHit, type ScreenSlop } from 'core/viewport/screenSlop';
 
 export { isPathLike };
@@ -52,15 +52,18 @@ export function poseContains<TPose>(
 }
 
 /**
- * Containment for `<SceneCanvas>`'s default `pickEvery`. When the pose carries
- * an effective rotation (`poseRotationOf`), inverse-rotates the query point
- * about the AABB center and tests in the pose's own frame — exactly mirroring
- * the renderer's rotation wrap, so the click target matches the rendered shape.
- * This covers both rect-shaped poses and rotated `kind:'rect'`/polygon poses
- * that carry an AABB. Poses with no effective rotation test directly.
+ * Containment for `<SceneCanvas>`'s default `pickEvery`. When the pose has a
+ * frame (`poseFrameOf`: a rotation, a `transform`, or both), takes the query
+ * point back through it and tests in the pose's own box frame, mirroring the
+ * renderer's wrap so the click target matches the drawn shape. This covers
+ * rect-shaped poses and `kind:'rect'`/polygon poses that carry an AABB. A pose
+ * with no frame tests directly, and one whose `transform` is singular draws
+ * nothing and contains nothing.
  *
  * Rotation comes from the descriptor when one is supplied, and otherwise from
- * `pose.rotation` — the convention the renderer reads.
+ * `pose.rotation`, the convention the renderer reads. A world `tolerance` is
+ * measured in the pose's own frame, so a `transform` stretches it with the
+ * node.
  */
 export function poseContainsRotated<TPose>(
   pose: TPose,
@@ -69,17 +72,14 @@ export function poseContainsRotated<TPose>(
   tolerance?: number | PoseSlop,
   descriptor: PoseDescriptor<unknown> = AUTO_POSE_DESCRIPTOR,
 ): boolean {
-  const r = descriptor === AUTO_POSE_DESCRIPTOR
-    ? poseRotationOf(pose)
-    : rotationAboutCenter(pose, descriptor);
-  if (r) {
-    // Inverse of `rotateAboutPoint(cx, cy, θ)` is `rotateAboutPoint(cx, cy, -θ)`
-    // (same pivot + negated angle). Rotation is rigid, so world reach carries
-    // over unchanged; a screen slop does not, and gets the rotation passed on.
-    const [lx, ly] = applyToPoint(rotateAboutPoint(r.cx, r.cy, -r.rotation), wx, wy);
-    return containsInFrame(pose, lx, ly, tolerance, descriptor, r.rotation);
-  }
-  return containsInFrame(pose, wx, wy, tolerance, descriptor, 0);
+  const framed = descriptor === AUTO_POSE_DESCRIPTOR ? pose : framedBounds(pose, descriptor);
+  const frame = poseFrameOf(framed);
+  if (!frame) return containsInFrame(pose, wx, wy, tolerance, descriptor, 0);
+  const back = invert(frame);
+  if (!back) return false;
+  const [lx, ly] = applyToPoint(back, wx, wy);
+  const rotation = (framed as { rotation?: number }).rotation ?? 0;
+  return containsInFrame(pose, lx, ly, tolerance, descriptor, rotation);
 }
 
 /** `(x, y)` is in the pose's own frame, which reaches world by `rotation`. */
@@ -117,12 +117,12 @@ function containsInFrame<TPose>(
   return hasSlop(screen) && strokeHitTest(grown, x, y, 0, opts);
 }
 
-function rotationAboutCenter<TPose>(
-  pose: TPose,
-  descriptor: PoseDescriptor<unknown>,
-): { cx: number; cy: number; rotation: number } | null {
-  const rotation = descriptor.getRotation?.(pose) ?? 0;
-  if (!rotation) return null;
+/** The box, rotation, and `transform` a descriptor-read pose is drawn in. */
+function framedBounds<TPose>(pose: TPose, descriptor: PoseDescriptor<unknown>): unknown {
   const b = descriptor.getBounds(pose);
-  return { cx: b.x + b.width / 2, cy: b.y + b.height / 2, rotation };
+  return {
+    x: b.x, y: b.y, width: b.width, height: b.height,
+    rotation: descriptor.getRotation?.(pose) ?? 0,
+    transform: poseLinearOf(pose) ?? undefined,
+  };
 }
