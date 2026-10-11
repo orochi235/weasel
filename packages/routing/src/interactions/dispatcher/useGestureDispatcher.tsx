@@ -13,38 +13,32 @@
  * See `docs/superpowers/specs/2026-05-16-registry-unification-design.md` § Q4.
  */
 import { useCallback, useEffect, useRef } from 'react';
-import type { RefObject } from 'react';
-import { activatesFocusedControl, isEditableTarget } from '../keyHelpers';
 import { useLatest } from '@weasel-js/react';
 import { useActiveToolContext } from '../actions/activeToolContext';
-import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
-import type { DepName, DepSchema } from '../../index';
-import type { ActionsRegistry } from '../actions/registry';
-import type { AffordanceHit } from '../actions/invoker';
+import { useDepRegistry } from '../actions/depRegistry';
 import { isTool } from '../../tools/types';
-import type { Contribution } from '../../contributions/types';
 import {
   createDispatcher, pointerGestureId, publishLiveDispatch, type Dispatcher, type DispatcherContext,
 } from './dispatcher';
 import { isApplePlatform, isInControlWithin, pastDragThreshold } from '@weasel-js/gestures';
 import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
-import { itemsFromDataTransfer, itemsFromClipboardData } from '../../ingestion/ingestItems';
 import type { InputEvent } from './matcher';
-import { LONG_PRESS_MS, type LongPressOptions } from './longPressState';
-import type { BodyTarget, BodyClassification } from '@weasel-js/gestures';
+import { LONG_PRESS_MS } from './longPressState';
+import type { BodyTarget } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
-import type { PaintedCursorState } from '@weasel-js/cursor';
 import { resolveCursorTier } from '@weasel-js/cursor';
+import { withViewDeps, type DispatchCore } from './dispatchCore';
+import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
+import { contextMenuInput } from './channels/contextMenu';
+import { DROPOVER_CLASS, ingestInput } from './channels/ingest';
+import { keyboardInput } from './channels/keyboard';
+import { webkitPinchInput } from './channels/webkitPinch';
+import { wheelInput } from './channels/wheel';
 
-// ---------------------------------------------------------------------------
-// Drop-over styling — class toggled on the canvas while an OS drag hovers it;
-// consumers style it. Not exported: the string is an observable public value
-// but the symbol is internal.
-// ---------------------------------------------------------------------------
-
-/** Class toggled on the canvas while an OS drag hovers it — consumers style it. */
-const DROPOVER_CLASS = 'weasel-dropover';
+export type {
+  DispatcherChannels, DispatcherViewTarget, UseGestureDispatcherOptions, ViewIdResolver,
+} from './gestureDispatcherOptions';
 
 /**
  * Lift the stylus fields off a DOM `PointerEvent` onto the normalized
@@ -70,290 +64,6 @@ function stylusOf(e: PointerEvent): {
 // ---------------------------------------------------------------------------
 
 const IS_MAC = isApplePlatform();
-
-// ---------------------------------------------------------------------------
-// API
-// ---------------------------------------------------------------------------
-
-/**
- * Everything about handling an input event that depends on *which view* it
- * landed in: the dispatcher that runs it, and the three lookups that resolve
- * a client point against that view's camera.
- *
- * @internal One per view. The hook builds the `id: null` one from its flat
- *   options; `views` supplies the rest, and the hook chooses between them per
- *   event, so that it — and its listener set — still mounts exactly once.
- */
-export interface DispatcherViewTarget {
-  /** `null` is the root view — the whole canvas. Matches `ViewTarget.id`. */
-  id: string | null;
-  dispatcher: Dispatcher;
-  affordanceAt: UseGestureDispatcherOptions['affordanceAt'];
-  classifyTarget: UseGestureDispatcherOptions['classifyTarget'];
-  clientToWorld: UseGestureDispatcherOptions['clientToWorld'];
-  /**
-   * The deps this view answers for itself — its camera, its selection, and
-   * whatever else is per-view rather than per-canvas. Read per event; every
-   * name it does not carry still resolves through the canvas registry.
-   *
-   * This is why a view does not get a `DepRegistryProvider` of its own. The
-   * registry is where a consumer registers *sources*, and one per view would
-   * fragment that: a consumer overriding `insert` would have to know how many
-   * views exist and override each. An overlay keeps one place to register and
-   * one authority per dep, with the view claiming only what is genuinely its.
-   *
-   * Without this a gesture inside a panel pans the whole canvas and selects
-   * into the canvas's selection — correct coordinates alone do not make
-   * routing correct.
-   */
-  deps?: () => Partial<DepSchema>;
-  /**
-   * This view's chrome-caps rule context, for the eligibility filter. The rule
-   * table is the surface's, but a rule keyed on selection or the in-flight
-   * action answers per view — so an action hidden in one panel must not
-   * decline a gesture in another. `undefined` means "nothing gates here", the
-   * same answer a surface with no mode registry gives.
-   */
-  getRuleCtx?: () => import('../../eligibility').RuleCtx | undefined;
-}
-
-/**
- * `base` with the routed view's own deps in front of it. Both sides are read
- * through thunks, so the result is stable for the life of a listener set while
- * still answering for whichever view the current event landed in.
- */
-function withViewDeps(
-  base: () => DepRegistry,
-  overlay: () => Partial<DepSchema> | undefined,
-): DepRegistry {
-  return {
-    register: (name, source) => base().register(name, source),
-    get: <K extends DepName>(name: K): DepSchema[K] | undefined => {
-      const own = overlay()?.[name];
-      if (own !== undefined) return own as DepSchema[K];
-      return base().get(name);
-    },
-  };
-}
-
-/**
- * The part of `features/viewports`' `ViewResolver` the dispatcher needs: which
- * view a client point belongs to, pinned to the view a gesture began in.
- *
- * @internal Structural on purpose — a `ViewResolver` satisfies it, and the
- *   dispatcher stays free of the viewport module.
- */
-export interface ViewIdResolver {
-  begin(pointerId: number, clientX: number, clientY: number): { id: string | null };
-  at(pointerId: number | null, clientX: number, clientY: number): { id: string | null };
-  end(pointerId: number): void;
-}
-
-/** Per-channel switches for the listeners `useGestureDispatcher` attaches to
- *  the canvas element. Omitted or `true` attaches the channel. */
-export interface DispatcherChannels {
-  /** `pointerdown`, hover `pointermove`, `pointerleave` — press, drag, click,
-   *  long-press, multi-touch and the hover-cursor pump. */
-  pointer?: boolean;
-  /** `wheel`. */
-  wheel?: boolean;
-  /** WebKit's `gesturestart` / `gesturechange` / `gestureend` — Safari's
-   *  trackpad pinch, dispatched as `pinch` events. */
-  pinch?: boolean;
-  /** `contextmenu`. Off leaves the browser's native menu in place. */
-  contextMenu?: boolean;
-  /** OS drop on the element plus `paste` on the window. Off leaves the
-   *  element a non-drop-target and stops `weasel-dropover` being applied. */
-  ingest?: boolean;
-}
-
-/** Options for `useGestureDispatcher`: the element to listen on, the actions
- *  and tools in play, and the hooks that turn raw DOM events into the world
- *  coordinates and hit targets bindings match against. */
-export interface UseGestureDispatcherOptions {
-  /** Ref to the canvas element. Pointer/wheel/multitouch listeners attach here. */
-  canvasRef: RefObject<HTMLElement | null>;
-  /** Action registry (ActionsRegistry from registry.tsx). */
-  actions: ActionsRegistry;
-  /** Tool definitions keyed by id. Typically passes an empty Map. */
-  entriesById: ReadonlyMap<string, Contribution<unknown>>;
-  /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
-  enabled?: boolean;
-  /**
-   * Observer fired whenever the dispatcher synthesizes a double click, in
-   * world coordinates. Runs BEFORE the event is dispatched and independently
-   * of which binding (if any) handles it.
-   *
-   * This is deliberately not an Action. `<SceneCanvas onDoubleClick>` is a
-   * notification — "the user double-clicked, here's what they hit" — and a
-   * notification must not compete with behavior for the gesture. As a binding
-   * it would lose to `enterPathEdit` on any body hit and silently never fire.
-   * Routing it here keeps a single definition of "double click" (the point of
-   * consolidating the kit's three detectors) without giving it
-   * first-match-wins semantics it shouldn't have.
-   */
-  onDoubleClick?: (world: { x: number; y: number }) => void;
-  /**
-   * Observer fired on every synthesized click, in world coordinates — an
-   * observer for the same reason as `onDoubleClick`. Unlike it, this runs
-   * AFTER the click is dispatched, so whatever the click's binding changed
-   * (a pick, say) is already readable.
-   */
-  onClick?: (world: { x: number; y: number }) => void;
-  /**
-   * Default true. Set false to leave the window `keydown`/`keyup` listeners
-   * unattached so keyboard-bound actions never dispatch — pointer, wheel, and
-   * contextmenu channels stay live. `<SceneCanvas>` wires this to
-   * `enableKeybindings`, so opting out of keybindings disables the modern
-   * dispatcher key path as well as the legacy `useKeybindings` hook.
-   *
-   * Every dispatcher hears keys on `window`, and a keystroke one of them
-   * claims — or anything else calls `preventDefault` on — is not dispatched by
-   * the rest. `'first'` listens in the capture phase, so this dispatcher gets
-   * the keystroke ahead of every dispatcher listening normally, whatever the
-   * mount order: the shape for chrome that owns a key only when it can act.
-   */
-  keyboard?: boolean | 'first';
-  /**
-   * Optional affordance classifier. Called with the **world** coordinates of
-   * the pointer — this hook applies the routed view's `clientToWorld` before
-   * calling it, the same conversion that produces `InputEvent.x`/`y`, so a
-   * consumer hit-tests in one space. Returns an `AffordanceHit` when the
-   * pointer lands on a known affordance (resize handle, rotate handle, etc.)
-   * or `null` when the pointer hit open canvas.
-   *
-   * The hit is packed into `InputEvent.pointerdown.affordance` and flows
-   * through into `InvocationCtx.drag.affordance`. Action invokers that require
-   * a specific affordance (e.g. `resizeAction` requires `handle:*`) use this
-   * field as a guard in their `start` body.
-   *
-   * When omitted, `affordance` is always `undefined` — meaning only consumers
-   * that explicitly wire a classifier get affordance-gated behavior.
-   * `<SceneCanvas>` wires the full chrome→dispatcher bridge.
-   */
-  affordanceAt?: (worldPoint: { x: number; y: number }) => AffordanceHit | null;
-
-  /**
-   * Optional body classifier. Called on every pointerdown with the world-space
-   * coordinates of the pointer. Its result is packed onto the event as
-   * `bodyTarget` + `bodyKind`, which `matchTarget` reads to resolve the
-   * string-form `TargetSpec` values in `Tool.bindings`.
-   *
-   * `body` is `'empty'` when nothing is under the pointer, `'selected-body'`
-   * when the topmost hit belongs to the current selection, or
-   * `'unselected-body'` when it belongs to a node that isn't selected. `kind`
-   * is the hit node's semantic kind, when the scene can name it.
-   *
-   * When omitted, every body-derived target form (`'empty'`,
-   * `'selected-body'`, `'unselected-body'`, `kind:<k>`, `kind:<k>:selected`)
-   * never matches — bindings using those specs are silently skipped.
-   * `<SceneCanvas>` wires this.
-   *
-   * World coordinates, on every path, for the same reason as `affordanceAt`.
-   */
-  classifyTarget?: (worldPoint: { x: number; y: number }) => BodyClassification;
-
-  /**
-   * Optional pre-created `Dispatcher`. When provided, this hook pumps events
-   * into the supplied instance instead of creating its own. Lets a parent
-   * scope (e.g. `<SceneCanvas>`) share one dispatcher between the gesture
-   * mounter and other consumers (the preview-ghost layer).
-   */
-  dispatcher?: Dispatcher;
-
-  /**
-   * Converts a client-space pointer position (e.g. `e.clientX`, `e.clientY`)
-   * to world-space coordinates. When supplied, every pointer/wheel event's
-   * `x`/`y` is converted before the dispatcher builds `InvocationCtx.world`.
-   *
-   * Without this, `ctx.world` is populated with the raw client coords, which
-   * silently breaks any action whose overlay/output uses absolute world
-   * positions (marquee, lasso polyline, world-space affordances). Actions
-   * that only read `drag.delta` are unaffected because client→world deltas
-   * are equal at scale 1, but as soon as a consumer pans/zooms the view the
-   * deltas diverge too.
-   *
-   * `<SceneCanvas>` always wires this via its canvas rect + current view.
-   * Tests / harnesses without a view can omit it and continue passing raw
-   * coordinates as before.
-   */
-  clientToWorld?: (clientX: number, clientY: number) => { x: number; y: number };
-
-  /**
-   * Invoked once per pump event (`pointermove`, `pointerup`, `pointercancel`,
-   * `key-held` up-phase, `multitouch` move) when a dispatcher-side handle is
-   * in flight. Lets the host canvas schedule a redraw so dispatcher-only
-   * overlays (marquee, lasso, preview-ghost) repaint on each frame.
-   *
-   * Required because dispatcher actions don't go through the legacy
-   * `tools.dispatcher.onGestureChange` redraw bump that ambient tool drags
-   * relied on. Without it, the overlay layer's `draw` never runs between
-   * pointerdown and pointerup, and the chrome flashes once at gesture start
-   * and then sits frozen until the gesture ends.
-   *
-   * `<SceneCanvas>` wires this to the canvas's `requestRedraw`. Test
-   * harnesses can omit it; their dispatchers won't paint between events but
-   * that's already the test contract.
-   */
-  requestRedraw?: () => void;
-  /**
-   * The surface's painted-cursor channel, read live because the canvas handle
-   * it lives on arrives a render after this hook runs.
-   *
-   * Given one, a cursor the CSS tier cannot express — sized in world units, or
-   * past the size the browser drops the image at — is published here and drawn
-   * by the painted-cursor layer instead. Without one, such a cursor resolves to
-   * `none` and the pointer shows nothing.
-   */
-  paintedCursor?: () => PaintedCursorState | undefined;
-
-  /** How touch and pen long-presses are timed, published and felt. */
-  longPress?: LongPressOptions;
-
-  /**
-   * Thunk returning the live `RuleCtx` for the current frame. When supplied,
-   * the dispatcher filters matched candidates by their declared
-   * `Action.eligible` rule (omitted => always eligible). `<SceneCanvas>`
-   * wires this; tests / harnesses without chrome-caps state can omit it.
-   */
-  getRuleCtx?: () => import('../../eligibility').RuleCtx | undefined;
-
-  /**
-   * Which of the canvas element's input channels to attach. Every one
-   * defaults to `true`; naming a channel `false` leaves its listeners
-   * unattached, so the element behaves as if the dispatcher were not there.
-   *
-   * A mount that binds two gestures should not also have to take the rest of
-   * the pipeline's side effects: `contextMenu` suppresses the native menu
-   * unconditionally, and `ingest` makes the element a valid drop target and
-   * styles it while an OS drag hovers. `@weasel-js/labkit`'s loupe mounts on
-   * a lab's own canvas host for a wheel and a held key, and turning the other
-   * three off is what keeps right-click and file drops working there.
-   *
-   * The window keyboard channel is `keyboard` instead of an entry here,
-   * because `<SceneCanvas enableKeybindings>` drives it.
-   */
-  channels?: DispatcherChannels;
-
-  /**
-   * Routing for a canvas hosting more than one view: the non-root dispatch
-   * records to choose between, read fresh per event, and the resolver that
-   * chooses. Omit for a single view — then every event runs on the record the
-   * flat options above describe, which is what they are: view zero.
-   *
-   * A resolved id with no live record falls back to the root, so a view that
-   * unmounts mid-gesture degrades instead of dropping the event.
-   *
-   * Keyboard and paste have no coordinates to resolve; they run on the view
-   * the last coordinate-bearing event resolved to.
-   *
-   * @internal
-   */
-  views?: {
-    targets: () => readonly DispatcherViewTarget[];
-    resolver: ViewIdResolver;
-  };
-}
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -607,12 +317,27 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       return result;
     };
 
-    // Held keys by physical key, mapped to the `key` they went down as (Shift
-    // pressed mid-hold makes the keyup of an 'o' press report 'O') and the
-    // dispatcher that took the down, which hover may have routed away from.
-    const heldKeys = new Map<string, { key: string; code?: string; on: Dispatcher }>();
-    const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
-    const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
+    const core: DispatchCore = {
+      canvas,
+      target,
+      routeAt,
+      routedView: () => routedId,
+      setRoutedView: (id) => { routedId = id; },
+      dispatcherNow,
+      ctxNow,
+      toWorld,
+      dispatch,
+      isActive: () => registryRef.current.isActive(),
+      activate: () => registryRef.current.activate(),
+      disposed: () => disposed,
+    };
+    const keys = keyboardInput(core);
+    const { onKeyDown, onKeyUp } = keys;
+    const pinch = webkitPinchInput(core);
+    const { onGestureStart, onGestureChange, onGestureEnd } = pinch;
+    const onWheel = wheelInput(core, pinch.live);
+    const onContextMenu = contextMenuInput(core);
+    const { onDragOver, onDragLeave, onDrop, onPaste } = ingestInput(core);
 
     // Every pointer currently held on the canvas, one `openPointerSession`
     // each. The session owns capture, pointer identity, teardown and the
@@ -633,19 +358,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         [...held.values()].map((p) => p.pos),
       );
       return { centroid: toCanvasLocal(centroid), spread };
-    };
-
-    // Set on a `gesturestart` some binding claims, cleared on its end. `scale`
-    // and `rotation` on a GestureEvent are cumulative from the start; these
-    // hold the previous sample's so each dispatched `pinch` is a step.
-    let pinchLive = false;
-    let pinchScale = 1;
-    let pinchRotation = 0;
-
-    const endPinch = (): void => {
-      pinchLive = false;
-      pinchScale = 1;
-      pinchRotation = 0;
     };
 
     // Tracks the start state of an active multitouch episode so we can
@@ -746,227 +458,14 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const DOUBLE_CLICK_MAX_MS = 600;
     const DOUBLE_CLICK_MAX_PX = 8;
 
-    // -----------------------------------------------------------------------
-    // Window key listeners
-    // -----------------------------------------------------------------------
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || isEditableTarget(e.target) || activatesFocusedControl(e)) return;
-      // Every dispatcher hears keys on window; only the active scope's act.
-      if (!registryRef.current.isActive()) return;
-
-      // Autorepeat for a key that's already engaged a key-held binding is
-      // suppressed entirely — no dispatch (no trace flood) and the
-      // browser default is blocked. Holding Space-for-hand otherwise
-      // streamed an 'unhandled' immediate-`key` trace entry per repeat.
-      // Autorepeat for a key that ISN'T held still dispatches normally,
-      // so things like Cmd+= step-zoom keep auto-repeating.
-      if (e.repeat && heldKeys.has(physicalKey(e))) {
-        e.preventDefault();
-        return;
-      }
-
-      // Dispatch both key and key-held forms unconditionally. The dispatcher
-      // de-dupes naturally because each form uses a different gestureId and
-      // different GestureSpec kind. The dispatcher returns 'unhandled' when no
-      // binding matches the alternate form, so there's no double-fire risk.
-
-      const keyEv: InputEvent = {
-        kind: 'key',
-        key: e.key,
-        ...codeOf(e),
-        altKey: e.altKey,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        shiftKey: e.shiftKey,
-        repeat: e.repeat,
-      };
-      const keyResult = dispatch(keyEv);
-
-      // Always dispatch key-held DOWN, even on autorepeat. The dispatcher's
-      // own defense returns 'handled' (no-op) when a handle is already in
-      // flight for this gestureId, which both prevents start() re-invocation
-      // and lets us preventDefault the repeat so the page doesn't react.
-      const heldEv: InputEvent = {
-        kind: 'key-held',
-        key: e.key,
-        ...codeOf(e),
-        phase: 'down',
-        altKey: e.altKey,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        shiftKey: e.shiftKey,
-      };
-      const heldOn = dispatcherNow();
-      const heldResult = dispatch(heldEv, heldOn);
-
-      if (heldResult === 'handled') {
-        heldKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), on: heldOn });
-      }
-
-      if (keyResult === 'handled' || heldResult === 'handled') {
-        e.preventDefault();
-      }
-    };
-
-    const onKeyUp = (e: KeyboardEvent) => {
-      const physical = physicalKey(e);
-      const down = heldKeys.get(physical);
-      if (down === undefined) return;
-      const ev: InputEvent = {
-        kind: 'key-held',
-        key: down.key,
-        ...(down.code !== undefined ? { code: down.code } : {}),
-        phase: 'up',
-        altKey: e.altKey,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        shiftKey: e.shiftKey,
-      };
-      heldKeys.delete(physical);
-      dispatch(ev, down.on);
-    };
-
     // A window that loses focus never delivers the keyup, so without this every
     // in-flight key-held handle stays engaged until that key is pressed again.
     // Nor can a drag trust the release it may or may not see later, so every
     // held pointer is canceled — through its session, which reports once.
     const onWindowBlur = () => {
-      endPinch();
+      pinch.end();
       for (const p of [...held.values()]) p.session.cancel();
-      const releasing = [...heldKeys.values()];
-      heldKeys.clear();
-      for (const { key, code, on } of releasing) {
-        const ev: InputEvent = {
-          kind: 'key-held',
-          key,
-          ...(code !== undefined ? { code } : {}),
-          phase: 'up',
-          altKey: false,
-          ctrlKey: false,
-          metaKey: false,
-          shiftKey: false,
-        };
-        dispatch(ev, on);
-      }
-    };
-
-    // -----------------------------------------------------------------------
-    // Canvas wheel listener
-    // -----------------------------------------------------------------------
-
-    const onWheel = (e: WheelEvent) => {
-      registryRef.current.activate();
-      // Safari can report one trackpad pinch as both a gesture stream and
-      // ctrl+wheel. While a claimed gesture is live it is the only driver.
-      if (pinchLive && e.ctrlKey) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      routeAt(null, e.clientX, e.clientY);
-      // Convert client-space cursor to canvas-local: zoomAt() (and any other
-      // wheel consumer of clientX/Y) anchors in canvas-top-left coords, not
-      // viewport coords. Without this, anchored-wheel zoom drifts by the
-      // canvas's offset from the viewport top-left.
-      const rect = canvas?.getBoundingClientRect();
-      const [localX, localY] = rect
-        ? clientToCanvasRect(rect, e.clientX, e.clientY)
-        : [e.clientX, e.clientY];
-      const hitPoint = toWorld(e.clientX, e.clientY);
-      const affordance = target().affordanceAt?.(hitPoint) ?? undefined;
-      const body = target().classifyTarget?.(hitPoint);
-      const ev: InputEvent = {
-        kind: 'wheel',
-        altKey: e.altKey,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        shiftKey: e.shiftKey,
-        deltaX: e.deltaX,
-        deltaY: e.deltaY,
-        clientX: localX,
-        clientY: localY,
-        ...(affordance !== undefined ? { affordance } : {}),
-        ...(body?.body !== undefined ? { bodyTarget: body.body } : {}),
-        ...(body?.kind !== undefined ? { bodyKind: body.kind } : {}),
-      };
-      const result = dispatch(ev);
-      // A claimed wheel neither scrolls the page nor reaches the canvas's other listeners
-      // (a host's camera would zoom under a loupe); capture phase lets this run first.
-      if (result === 'handled') {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-      }
-    };
-
-    // -----------------------------------------------------------------------
-    // Canvas gesture listeners (WebKit trackpad pinch)
-    // -----------------------------------------------------------------------
-
-    const pinchEventOf = (e: Event, scale: number, rotation: number): InputEvent => {
-      const g = e as Event & {
-        clientX?: number; clientY?: number;
-        altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean;
-      };
-      const rect = canvas?.getBoundingClientRect();
-      // A focal point is part of the WebKit shape; the canvas center stands
-      // in for an embedder that leaves it off.
-      const cx = typeof g.clientX === 'number' ? g.clientX : (rect ? rect.left + rect.width / 2 : 0);
-      const cy = typeof g.clientY === 'number' ? g.clientY : (rect ? rect.top + rect.height / 2 : 0);
-      routeAt(null, cx, cy);
-      const [localX, localY] = rect ? clientToCanvasRect(rect, cx, cy) : [cx, cy];
-      const hitPoint = toWorld(cx, cy);
-      const affordance = target().affordanceAt?.(hitPoint) ?? undefined;
-      const body = target().classifyTarget?.(hitPoint);
-      return {
-        kind: 'pinch',
-        altKey: g.altKey === true,
-        ctrlKey: g.ctrlKey === true,
-        metaKey: g.metaKey === true,
-        shiftKey: g.shiftKey === true,
-        scale,
-        rotation,
-        clientX: localX,
-        clientY: localY,
-        ...(affordance !== undefined ? { affordance } : {}),
-        ...(body?.body !== undefined ? { bodyTarget: body.body } : {}),
-        ...(body?.kind !== undefined ? { bodyKind: body.kind } : {}),
-      };
-    };
-
-    const onGestureStart = (e: Event) => {
-      endPinch();
-      // Claimed up front, with a probe at unit scale: Safari starts its own
-      // page zoom from an unprevented start, before any change arrives.
-      // `direction`-filtered bindings cannot match a unit step, so they are
-      // resolved per change instead and do not claim the start.
-      const probe = pinchEventOf(e, 1, 0);
-      if (dispatcherNow().resolveOnly(probe, ctxNow()) === null) return;
-      pinchLive = true;
-      e.preventDefault();
-    };
-
-    const onGestureChange = (e: Event) => {
-      const g = e as Event & { scale?: number; rotation?: number };
-      const scale = typeof g.scale === 'number' && g.scale > 0 ? g.scale : pinchScale;
-      const rotation = typeof g.rotation === 'number' ? g.rotation : pinchRotation;
-      const step = scale / pinchScale;
-      const turn = rotation - pinchRotation;
-      pinchScale = scale;
-      pinchRotation = rotation;
-      if (dispatch(pinchEventOf(e, step, turn)) === 'handled') {
-        pinchLive = true;
-        e.preventDefault();
-      } else if (pinchLive) {
-        // The start was claimed; letting one change through would hand the
-        // rest of the pinch to Safari's page zoom mid-gesture.
-        e.preventDefault();
-      }
-    };
-
-    const onGestureEnd = (e: Event) => {
-      if (pinchLive) e.preventDefault();
-      endPinch();
+      keys.releaseAll();
     };
 
     // -----------------------------------------------------------------------
@@ -1588,117 +1087,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       };
       dispatch(ev);
       routeRelease(pointerId);
-    };
-
-    // -----------------------------------------------------------------------
-    // Canvas contextmenu listener (right-click)
-    // -----------------------------------------------------------------------
-
-    const onContextMenu = (e: MouseEvent) => {
-      // Suppress native menu so tools/actions own the right-click UX.
-      e.preventDefault();
-      routeAt(null, e.clientX, e.clientY);
-      const w = toWorld(e.clientX, e.clientY);
-      // A secondary button never reaches `onPointerDown`, so unlike click and
-      // long-press there is no press to replay the classification from.
-      const affordance = target().affordanceAt?.(w) ?? undefined;
-      const menuBody = target().classifyTarget?.(w);
-      const ev: InputEvent = {
-        kind: 'contextmenu',
-        target: e.target,
-        altKey: e.altKey,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        shiftKey: e.shiftKey,
-        x: w.x,
-        y: w.y,
-        clientX: e.clientX,
-        clientY: e.clientY,
-        ...(affordance !== undefined ? { affordance } : {}),
-        ...(menuBody?.body !== undefined ? { bodyTarget: menuBody.body } : {}),
-        ...(menuBody?.kind !== undefined ? { bodyKind: menuBody.kind } : {}),
-      };
-      dispatch(ev);
-    };
-
-    // -----------------------------------------------------------------------
-    // External-content ingestion: OS drop on the canvas, paste on window.
-    // Items are materialized DURING the event (DataTransfer is only live on
-    // the event stack); dispatch happens when materialization resolves.
-    // -----------------------------------------------------------------------
-
-    // Attached to both dragover and dragenter: cancelling dragenter (WHATWG)
-    // guarantees the element stays the active drop target and shows the copy
-    // cursor on entry rather than waiting for the first dragover tick.
-    const onDragOver = (e: DragEvent) => {
-      if (!e.dataTransfer) return;
-      // preventDefault is what makes the canvas a valid drop target.
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
-      canvas?.classList.add(DROPOVER_CLASS);
-    };
-
-    const onDragLeave = () => {
-      canvas?.classList.remove(DROPOVER_CLASS);
-    };
-
-    // No stopPropagation: handled-ness is only known after the async
-    // materialization microtask, so a conditional stop (wheel-style) is
-    // impossible; an unconditional one would swallow drops the kit doesn't
-    // dispatch. Callers that need exclusivity should gate on the action result.
-    const onDrop = (e: DragEvent) => {
-      canvas?.classList.remove(DROPOVER_CLASS);
-      const dt = e.dataTransfer;
-      if (!dt) return;
-      e.preventDefault();
-      routeAt(null, e.clientX, e.clientY);
-      const dropView = routedId;
-      const w = toWorld(e.clientX, e.clientY);
-      // Real modifiers forwarded (Option-drag is a copy-drag on macOS); the
-      // kit ingest binding declares all modifiers optional, so they can't
-      // block the default route — but a consumer binding may key on them.
-      const base = {
-        altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
-      };
-      void itemsFromDataTransfer(dt).then((items) => {
-        if (disposed) return;
-        if (items.length === 0) return;
-        // The routed view is whatever moved under the cursor since; the drop
-        // runs on the one it landed in, dispatcher and context both.
-        const routedNow = routedId;
-        routedId = dropView;
-        try {
-          dispatch({
-            kind: 'drop', items,
-            x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY,
-            ...base,
-          });
-        } finally {
-          routedId = routedNow;
-        }
-      });
-    };
-
-    const onPaste = (e: ClipboardEvent) => {
-      // Text-editing surfaces (inputs, the text-edit overlay) own their own
-      // paste — never steal it for scene ingestion.
-      if (e.defaultPrevented || isEditableTarget(e.target)) return;
-      // Every dispatcher hears paste on window; only the active scope's acts.
-      if (!registryRef.current.isActive()) return;
-      const cd = e.clipboardData;
-      if (!cd) return;
-      const items = itemsFromClipboardData(cd);
-      if (items.length === 0) return;
-      // Wheel's shape: dispatch first, suppress the default only when a
-      // binding claimed it. Clipboard items materialize synchronously, so
-      // unlike `onDrop` the result is known while `preventDefault` is still
-      // honored — and a paste no binding wanted stays the page's to handle.
-      const result = dispatch({
-        kind: 'paste', items,
-        // ClipboardEvent carries no modifier state.
-        altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
-      });
-      if (result === 'handled') e.preventDefault();
     };
 
     // -----------------------------------------------------------------------

@@ -236,15 +236,15 @@ Priority tags:
   stops counting as a conflict, which `conflicts.test.ts` ("checks a lone action against itself")
   asserts the opposite of today, or `viewport.zoom` drops the duplicate some other way.
 
-- **(P3) The two dispatcher files are about 1,700 lines each and mix owners.**
-  `packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx` holds keyboard, wheel,
-  WebKit pinch, pointer and multitouch synthesis, click and double-click, long-press, the
-  hover-cursor pump, drop and paste, and tool lifecycle in one effect closure; `dispatcher.ts` holds
-  dev tracing, per-kind context building, ranking, the walk, the record projection, and UI-driven
-  handles. Several bugs fixed in these files came from state one channel keeps that another needs
-  (which gesture a lifting finger ends, which view a held key belongs to). Split into one module per
-  channel around a shared dispatch and routing core, and move tracing and record building out of
-  `dispatcher.ts`.
+- **(P3) The pointer channel is still one closure.**
+  `packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx` (about 1,170 lines) keeps
+  pointer and multitouch synthesis, click and double-click, long-press, the hover-cursor pump, and
+  tool lifecycle in one effect; keyboard, wheel, WebKit pinch, contextmenu, and drop and paste each
+  moved to `channels/` around `DispatchCore`. Those that remain share the held-pointer map and the
+  last hover position, so splitting them means deciding who owns each. `dispatcher.ts` (about 1,020
+  lines) is down to `createDispatcher`: per-kind context building, the walk, and UI-driven handles,
+  which share its in-flight maps.
+
 
 ### Cursor package follow-ups
 
