@@ -966,17 +966,18 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
   });
 
+  /** Finds the layer by id, not by where the payload last left it: moves of
+   *  one layer coalesce, and the entry then reverts the first payload from
+   *  wherever the last one put the layer. */
+  function placeLayer(layer: TLayer, index: number): void {
+    const [rec] = state.layers.splice(requireLayerIndex(layer), 1);
+    state.layers.splice(index, 0, rec);
+    rebuildLayerIndex();
+  }
+
   registerKitOp<{ layer: TLayer; from: number; to: number }>('kit:moveLayer', {
-    apply: (p) => {
-      const [rec] = state.layers.splice(p.from, 1);
-      state.layers.splice(p.to, 0, rec);
-      rebuildLayerIndex();
-    },
-    revert: (p) => {
-      const [rec] = state.layers.splice(p.to, 1);
-      state.layers.splice(p.from, 0, rec);
-      rebuildLayerIndex();
-    },
+    apply: (p) => placeLayer(p.layer, p.to),
+    revert: (p) => placeLayer(p.layer, p.from),
   });
 
   // ── Op execution (used by both kit mutations and consumer recordOp) ────
