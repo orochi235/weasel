@@ -53,12 +53,6 @@ import { asNodeId } from 'core/scene/types';
 import { moveSources } from '../selectionSubtree';
 import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Op } from 'core/ops/types';
-import { createTransformOp } from 'core/ops/transform';
-import { createReparentOp } from 'core/ops/reparent';
-import type {
-  LayoutContainer,
-  LayoutChild,
-} from '../../../layout/types';
 import {
   translatePoseViaDescriptor,
 } from '../resize/geometry';
@@ -77,11 +71,12 @@ import {
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 import { planeToPlane, toPlane } from 'core/viewport/parallax';
 import type { MoveLive, MoveSession, ReparentOnDrop } from './session';
-import { groupBySourceContainer, runDropPass } from './layout/dropPass';
-import { resolveLayoutExits } from './layout/exits';
+import { runDropPass } from './layout/dropPass';
 import { catchGliding, landReleased, releasedPoses, stepGlide } from './layout/glide';
-import { draggedWorldPose, grabbedPoseAdapter, localDelta, planeDelta } from './delta';
-import { translateOps, unreleasedIds } from './translate';
+import { draggedWorldPose, localDelta, planeDelta } from './delta';
+import { translateOps } from './translate';
+import { layoutDropOps } from './commit/layoutDrop';
+import { layoutReleaseOps } from './commit/layoutRelease';
 export type { ReparentOnDrop };
 
 // ---------------------------------------------------------------------------
@@ -450,173 +445,13 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         // reflow distributes per-child poses with no single global delta; not
         // exercised by the geometry contract gate.
         if (scratch.layout && scratch.layoutPass) {
-          const lp = scratch.layoutPass;
-          const pc = scratch.pc;
-          const commitAdapter = scenePoseAdapter(scratch.scene);
-          const destId = lp.container.id;
-          const draggedIds = new Set<string>(scratch.ids.map((id) => id as string));
-          // commitDrop returns world poses (the contract is world in/out).
-          // Rebase each transform op to local: a dragged id lands under the
-          // destination container; any other id keeps its current parent.
-          // `from` rebases under the node's PRE-commit parent.
-          const rebaseOpToLocal = (op: Op): Op => {
-            if (op.name !== 'transform') return op;
-            const a = op.args as { id: string; from: unknown; to: unknown; label?: string; coalesceKey?: string };
-            const curParent = scratch.scene.get(asNodeId(a.id))?.parent ?? null;
-            const toParent = draggedIds.has(a.id) ? destId : curParent;
-            return createTransformOp<unknown>({
-              id: a.id,
-              from: rebaseLocalPose(commitAdapter, a.from, curParent, pc.compose, pc.decompose),
-              to: rebaseLocalPose(commitAdapter, a.to, toParent, pc.compose, pc.decompose),
-              label: a.label,
-              coalesceKey: a.coalesceKey,
-            });
-          };
-          // Cross-container drop: reparent each dragged node under the
-          // destination container so its tree position matches its new
-          // visual home. Scene v1's absolute-pose semantics mean the
-          // subsequent pose op still lands the child at the snapped cell.
-          // Every reparent precedes every drop.
-          const reparentOps: Op[] = [];
-          const dropOps: Op[] = [];
-          for (const placement of lp.placements) {
-            if (placement.dragged.sourceContainerId !== destId) {
-              reparentOps.push(createReparentOp({
-                id: placement.dragged.id,
-                fromParentId: placement.dragged.sourceContainerId,
-                toParentId: destId,
-                label: 'Reparent',
-              }));
-            }
-            const ops = lp.layout.commitDrop(
-              lp.container,
-              placement.children,
-              placement.dragged,
-              placement.target,
-            );
-            for (const op of ops) dropOps.push(rebaseOpToLocal(op));
-          }
-          const reflowOps: Op[] = [];
-          for (const [cid, worldPose] of lp.sourceReflow) {
-            const parent = scratch.scene.get(asNodeId(cid))?.parent ?? null;
-            // Source-reflow siblings keep their parent, so `from` is already
-            // the live local pose (no rebase); only `to` (a world pose stored
-            // in `lp.sourceReflow`) is rebased to local. This is the
-            // intentional counterpart to the dropOps rebaser above, where
-            // `from` comes from a world `commitDrop` op and so does rebase.
-            reflowOps.push(createTransformOp<unknown>({
-              id: cid,
-              from: scratch.scene.get(asNodeId(cid))!.pose,
-              to: rebaseLocalPose(commitAdapter, worldPose, parent, pc.compose, pc.decompose),
-              label: 'Source reflow',
-            }));
-          }
-          const ops = [...reparentOps, ...dropOps, ...reflowOps];
+          const ops = layoutDropOps(scratch, scratch.layoutPass);
           if (ops.length > 0) commitOps(ops);
           return committed;
         }
-
-        // No container accepted the drop. Each source layout gets a say
-        // over its own children before they are left wherever the pointer
-        // stopped; the rest of the selection falls through to the translate.
-        const released = new Set<NodeId>();
-        const releasedOps: Op[] = [];
-        let exits = new Map<NodeId, NodeId | null>();
-        const exitOps: Op[] = [];
-        if (scratch.layout && !scratch.layoutPass) {
-          const pc = scratch.pc;
-          const commitAdapter = scenePoseAdapter(scratch.scene);
-          // Released children keep their parent, so both ends of a transform
-          // rebase under the same frame.
-          const rebaseReleased = (op: Op): Op => {
-            if (op.name !== 'transform') return op;
-            const a = op.args as { id: string; from: unknown; to: unknown; label?: string; coalesceKey?: string };
-            const parent = scratch.scene.get(asNodeId(a.id))?.parent ?? null;
-            return createTransformOp<unknown>({
-              id: a.id,
-              from: rebaseLocalPose(commitAdapter, a.from, parent, pc.compose, pc.decompose),
-              to: rebaseLocalPose(commitAdapter, a.to, parent, pc.compose, pc.decompose),
-              label: a.label,
-              coalesceKey: a.coalesceKey,
-            });
-          };
-          const sources = groupBySourceContainer(
-            scratch.ids.map((id) => ({
-              id,
-              sourceContainerId: (scratch.scene.get(id)?.parent ?? null) as string | null,
-            })),
-            null,
-          );
-          for (const [srcId, leaving] of sources) {
-            const srcLayout = scratch.layout.getLayout(srcId);
-            if (!srcLayout?.releaseDrop) continue;
-            const srcContainer: LayoutContainer = {
-              id: srcId,
-              bounds: scratch.projection.getBounds(
-                composeWorldPose(commitAdapter, srcId, pc.compose),
-              ),
-            };
-            // What the container is left holding — grown back as each
-            // release puts one of its own home again.
-            let srcChildren: LayoutChild<unknown>[] =
-              scratch.scene.childrenOf(asNodeId(srcId))
-                .filter((cid) => !leaving.has(cid))
-                .map((cid) => ({
-                  id: cid as string,
-                  pose: composeWorldPose(commitAdapter, cid as string, pc.compose),
-                }));
-            for (const id of leaving) {
-              const startWorld = composeWorldPose(
-                grabbedPoseAdapter(scratch, commitAdapter), id as string, pc.compose,
-              );
-              const ops = srcLayout.releaseDrop!(srcContainer, srcChildren, {
-                id: id as string,
-                originPose: startWorld,
-                pose: draggedWorldPose(scratch, grabbedPoseAdapter(scratch, commitAdapter), id, { dx, dy }),
-                sourceContainerId: srcId,
-              });
-              if (ops === null) continue;
-              released.add(id);
-              let landed: unknown = startWorld;
-              for (const op of ops) {
-                const a = op.args as { id?: string; to?: unknown };
-                if (op.name === 'transform' && a.id === (id as string)) landed = a.to;
-                releasedOps.push(rebaseReleased(op));
-              }
-              srcChildren = [...srcChildren, { id: id as string, pose: landed }];
-            }
-          }
-          // A child its container let go of outside that container leaves it,
-          // keeping the world pose it was dropped at.
-          exits = resolveLayoutExits(scratch, scratch.dropCenter, scratch.ids.filter((id) => !released.has(id)));
-          for (const [id, toParent] of exits) {
-            const node = scratch.scene.get(id)!;
-            const world = draggedWorldPose(scratch, grabbedPoseAdapter(scratch, commitAdapter), id, { dx, dy });
-            exitOps.push(createReparentOp({
-              id: id as string,
-              fromParentId: node.parent as string | null,
-              toParentId: toParent as string | null,
-              label: 'Reparent',
-            }));
-            exitOps.push(createTransformOp<unknown>({
-              id: id as string,
-              from: node.pose,
-              to: rebaseLocalPose(commitAdapter, world, toParent as string | null, pc.compose, pc.decompose),
-              label: lifecycle.label,
-            }));
-          }
-        }
-        if (released.size > 0 || exits.size > 0) {
-          const ops = [
-            ...releasedOps,
-            ...exitOps,
-            ...translateOps(
-              scratch,
-              unreleasedIds(scratch, released).filter((id) => !exits.has(id)),
-              { dx, dy },
-            ),
-          ];
-          if (ops.length > 0) commitOps(ops);
+        const release = scratch.layout ? layoutReleaseOps(scratch, { dx, dy }, scratch.dropCenter) : undefined;
+        if (release !== undefined) {
+          if (release.length > 0) commitOps(release);
           return committed;
         }
 
