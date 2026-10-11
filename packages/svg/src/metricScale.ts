@@ -20,9 +20,10 @@ interface StrokeMetrics {
 
 export function scaleStroke<T extends StrokeMetrics>(stroke: T, scale: number): T {
   // A screen-pinned width takes its dashes with it.
-  if (scale === 1 || typeof stroke.width === 'object') return stroke;
+  const { width } = stroke;
+  if (scale === 1 || typeof width === 'object') return stroke;
   const out = { ...stroke };
-  if (out.width !== undefined) out.width = out.width * scale;
+  if (width !== undefined) out.width = width * scale;
   if (out.dash) out.dash = out.dash.map((n) => n * scale);
   return out;
 }

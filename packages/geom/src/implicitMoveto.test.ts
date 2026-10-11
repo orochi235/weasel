@@ -71,6 +71,7 @@ describe('a path with no opening M', () => {
     kind: 'polygon',
     commands: new Uint8Array([PATH_L, PATH_L]),
     coords: new Float32Array([10, 10, 20, 0]),
+    fillRule: 'nonzero',
   };
 
   it('strokes from the origin instead of throwing', () => {

@@ -494,7 +494,8 @@ function writesInset(entry: MarkerEntry | undefined): boolean {
 function defaultMarkerXml(
   id: string, entry: MarkerEntry, onWarn?: (m: string) => void, key?: string, size?: ScreenLength,
 ): string {
-  const unit = size === undefined ? 1 : resolveMarkerSize({ key: key ?? id, size }, 1);
+  const name = key ?? id;
+  const unit = size === undefined ? 1 : resolveMarkerSize({ key: name, size }, 1);
   const path = entry.path({ size: unit, stroke: { paint: { fill: 'solid', color: '#000' } } });
   const d = serializePathD(path);
   const fill = markerPaintAttrs('fill', entry.fill, id, onWarn);
@@ -510,7 +511,7 @@ function defaultMarkerXml(
   const units = size === undefined
     ? 'markerUnits="strokeWidth" markerWidth="8" markerHeight="8"'
     : `markerUnits="userSpaceOnUse" markerWidth="${trimNumber(8 * unit)}" markerHeight="${trimNumber(8 * unit)}"`
-      + ` ${WEASEL_NS_PREFIX}:key="${escapeAttr(key)}" ${WEASEL_NS_PREFIX}:size="${
+      + ` ${WEASEL_NS_PREFIX}:key="${escapeAttr(name)}" ${WEASEL_NS_PREFIX}:size="${
         typeof size === 'number' ? trimNumber(size) : `${trimNumber(size.px)}px`}"`;
   const inset = writesInset(entry) ? ` ${WEASEL_NS_PREFIX}:inset="${trimNumber(entry.inset!)}"` : '';
   // `overflow="visible"` overrides the UA default of `hidden`, which would
