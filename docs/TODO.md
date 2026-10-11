@@ -251,9 +251,7 @@ Priority tags:
   toolbar is expected to gate before calling is the design call: either `trigger` gates on
   `evaluateEnabled`, or its contract says the caller gates. `trigger` has no event, so it cannot
   pass `enabled` the `at` point the dispatcher does, and an action that only applies at a point
-  would refuse every `trigger`. `Action.enabled`'s JSDoc
-  (`packages/routing/src/interactions/actions/action.ts`) still says keystroke dispatch is
-  unaffected by it, which stopped being true when the dispatcher began gating.
+  would refuse every `trigger`.
 
 - **(P3) A key typed with AltGr cannot match a binding.** A layout that types `[` with AltGr
   reports `ctrlKey` and `altKey`, which the strict modifier match in

@@ -96,12 +96,13 @@ export interface ActionDispatch extends BindingSource {
   scope?: 'hotkey';
   /**
    * @experimental
-   * Optional predicate the command palette consults when rendering. Return
-   * `true` when the action is currently triggerable. Return a reason string
-   * (e.g. `'Selection required'`) when disabled — the palette greys out
-   * the row, skips it in keyboard nav, ignores clicks, and shows the
-   * reason next to the label. Keystroke dispatch (the registered binding)
-   * is unaffected; the action's own `run` should self-guard.
+   * Optional predicate saying whether the action can run right now. Return
+   * `true` when it can, or a reason string (e.g. `'Selection required'`)
+   * when it cannot. The command palette greys out a disabled row, skips it
+   * in keyboard nav, ignores clicks, and shows the reason next to the label.
+   * The dispatcher skips a disabled action too, on a key as on a pointer, and
+   * falls through to the next binding that matches. `ActionsRegistry.trigger`
+   * does not ask, so the action's own `run` should still self-guard.
    *
    * **Contract:** must be pure (no side effects), fast (< 4ms in dev), and
    * must not throw. If a call throws or exceeds the budget in dev mode,
