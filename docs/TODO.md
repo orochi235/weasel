@@ -202,11 +202,6 @@ Priority tags:
   `insert` with a path request and drop `adapter.addNode` / `makeNode`; this changes
   `UsePenToolOptions`.
 
-- **(P3) Test hook: with two canvases on a page, the hook does not pass to the survivor.** The first
-  canvas to mount owns `window.__weaselTest` (`packages/core/src/test-hook/install.ts`) and removes
-  it when it unmounts; a second canvas still mounted then has no hook until something remounts it.
-  Left: deciding which canvas the hook answers for when several are live.
-
 - **(P3) Tool activation keys are decided in two places.** `BUILTIN_SELECT_KEYS` in
   `packages/core/src/tools/useKeybindings.ts` hard-codes the key for nine tool ids and the registry
   walk skips any id in that table, so a `keybinding` declared on a tool with one of those ids is
