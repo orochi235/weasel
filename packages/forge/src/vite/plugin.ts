@@ -16,7 +16,7 @@ import { createWrapperResolver, type WrapperResolution } from './wrappers.ts';
 export interface ForgeOptions {
   /** Globs of story files, relative to the vite root. */
   stories: string[];
-  /** Path to the frame config module, relative to the vite root. Only frame documents import it. Optional. */
+  /** Path to the frame config module, relative to the vite root. The workshop page and every frame document import it. Optional. */
   frameConfig?: string;
   /** Path to the shell config module, relative to the vite root. Only the workshop page imports it. Optional. */
   shellConfig?: string;
