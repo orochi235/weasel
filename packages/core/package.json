@@ -18,12 +18,8 @@
     "*.css",
     "./src/import-shims/mesh.ts",
     "./src/features/meshPaint/register.ts",
-    "./src/renderer/effects/composite.ts",
-    "./src/canvas/NodeShape.ts",
     "./dist/mesh.js",
-    "./dist/features/meshPaint/register.js",
-    "./dist/renderer/effects/composite.js",
-    "./dist/canvas/NodeShape.js"
+    "./dist/features/meshPaint/register.js"
   ],
   "engines": {
     "node": ">=22"

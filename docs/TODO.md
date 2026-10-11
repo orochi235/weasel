@@ -2812,6 +2812,17 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P3) core: two modules register at load and are not listed as side effects, and listing them
+  costs every one-symbol import 83 KB.** `renderer/effects/composite.ts` registers the program group
+  effects composite with, and `canvas/NodeShape.ts` registers the built-in shape painters, each as a
+  statement in the module body. Neither is in `packages/core/package.json`'s `sideEffects`, so a
+  consumer's bundler that inlines the one constant imported from `composite.ts` (the hazard
+  `packages/core/vite.config.ts` documents and turns off for core's own build) is left with a bare
+  import it may drop, registration and all. Adding both to `sideEffects` was tried on 2026-10-11:
+  `check:treeshake` then measured esbuild shipping 83,480 B for `import { asNodeId }` against a 512
+  B budget, because the barrel reaches both. The registrations want to move behind an explicit call
+  the renderer and the canvas make, as mesh paint's does through `features/meshPaint/register.ts`.
+
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
   React overlay, and a DOM layer moved as one element, on an idle node
