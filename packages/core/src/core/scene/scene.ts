@@ -1,4 +1,4 @@
-import { createHistory, type History, type HistorySelection, type Journal, type SerializedHistory } from '@weasel-js/history';
+import { createHistory, type HistorySelection, type Journal, type SerializedHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import type { ParallaxOpts } from 'core/viewport/parallax';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
@@ -19,6 +19,7 @@ import { createPoseOverrides } from './poseOverrides';
 import { createRenderOrder } from './renderOrder';
 import { createLockGuard } from './lockGuard';
 import { createArrivalWindow } from './arrivalWindow';
+import { createSceneHistory } from './historyFacade';
 import { layerFromSerialized, serializeScene, specsFromSerialized } from './serialization';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
 import type { LayoutStrategy } from '../../layout/types';
@@ -936,120 +937,18 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
   }
 
-  // ── scene.history ──────────────────────────────────────────────────────
-  // The `History` the kit's `undo`/`redo` actions resolve their `history` dep
-  // to, and the handle a mode machine opens journals against. Handing out
-  // `history` (the engine) directly would let an action-driven undo replay ops
-  // with scene-side recording still armed and without bumping the version, so
-  // every member that mutates routes through the scene's own wrapper
-  // (`withRecordingSuppressed` + one `notify()`); reads forward to the engine.
-
-  /** Wrapped journal → the engine's own, for `resumeJournal`: the engine keys
-   *  resumability off journal identity, which a wrapper would not match. */
-  const rawJournals = new WeakMap<Journal, Journal>();
-
-  /** Same treatment as the façade: a journal drives adapter mutation itself,
-   *  so its applies/undos re-enter scene mutation methods. */
-  function wrapJournal(raw: Journal): Journal {
-    const wrapped: Journal = {
-      targetId: raw.targetId,
-      forkedAtEntryId: raw.forkedAtEntryId,
-      applyBatch(ops, label) {
-        runArrivalEdit(ops, (all) => {
-          atomically(() => withRecordingSuppressed(() => raw.applyBatch(all, label)), () => true);
-          notify();
-        });
-      },
-      undo() {
-        replay(() => raw.undo());
-        notify();
-      },
-      redo() {
-        replay(() => raw.redo());
-        notify();
-      },
-      canUndo: () => raw.canUndo(),
-      canRedo: () => raw.canRedo(),
-      entries: () => raw.entries(),
-      seal: () => raw.seal(),
-      getVersion: () => raw.getVersion(),
-      subscribe: (listener) => raw.subscribe(listener),
-      commit(label) {
-        // Flushes the session's net ops to the parent stack — no apply, but
-        // the parent's undo depth changes and listeners read that.
-        raw.commit(label);
-        notify();
-      },
-      cancel() {
-        replay(() => raw.cancel());
-        notify();
-      },
-      suspend: () => raw.suspend(),
-      isActive: () => raw.isActive(),
-    };
-    rawJournals.set(wrapped, raw);
-    return wrapped;
-  }
-
-  const sceneHistory: History = {
-    // Mutating: applied ops re-enter the scene's own mutation methods.
-    apply(op, label) {
-      refuseUntracked('history.apply');
-      runArrivalEdit([op], (all) => {
-        const run = () => (all.length === 1
-          ? history.apply(op, label)
-          : history.applyOps(all, label ?? op.label ?? ''));
-        atomically(() => withRecordingSuppressed(run), () => true);
-        notify();
-      });
-    },
-    applyOps(ops, label) {
-      refuseUntracked('history.applyOps');
-      runArrivalEdit(ops, (all) => {
-        atomically(() => withRecordingSuppressed(() => history.applyOps(all, label)), () => true);
-        notify();
-      });
-    },
+  const sceneHistory = createSceneHistory({
+    engine: history,
+    applying: (step) => atomically(() => withRecordingSuppressed(step), () => true),
+    replay,
+    notify,
+    refuseUntracked,
+    runArrivalEdit,
     undo: () => { scene.undo(); },
     redo: () => { scene.redo(); },
     goto: (n) => { scene.jumpToHistoryIndex(n); },
-    // Stack-only: nothing applies, but what `canUndo()` answers changes.
-    clear() {
-      history.clear();
-      notify();
-    },
-    recordEntry(ops, label, opts) {
-      history.recordEntry(ops, label, opts);
-      notify();
-    },
-    prune(t) {
-      history.prune(t);
-      notify();
-    },
-    switchBranch(id) {
-      history.switchBranch(id);
-      notify();
-    },
     restore: (snapshot) => { scene.restoreHistory(snapshot); },
-    // Reads forward to the engine, `version` included: it counts history
-    // operations, where the scene's counts every mutation.
-    canUndo: () => history.canUndo(),
-    canRedo: () => history.canRedo(),
-    undoDepth: () => history.undoDepth(),
-    redoDepth: () => history.redoDepth(),
-    entries: () => history.entries(),
-    timestampAt: (i) => history.timestampAt(i),
-    depthAt: (t) => history.depthAt(t),
-    branches: () => history.branches(),
-    getVersion: () => history.getVersion(),
-    subscribe: (listener) => history.subscribe(listener),
-    serialize: () => history.serialize(),
-    allForwardOps: () => history.allForwardOps(),
-    seal: () => history.seal(),
-    currentEntryId: () => history.currentEntryId(),
-    beginJournal: (opts) => wrapJournal(history.beginJournal(opts)),
-    resumeJournal: (journal) => history.resumeJournal(rawJournals.get(journal) ?? journal),
-  };
+  });
 
   function applyBatchNow(ops: Op[], label: string, adapter: unknown): void {
     const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
