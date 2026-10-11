@@ -223,9 +223,9 @@ describe('scaleEdges', () => {
     expect(round(scaleEdges([0, 0, 0.5, 0.5], [false, true, false], 'max', 1.5))).toEqual([0, 0.5, 1, 1.5]);
   });
 
-  it('returns null for no change or a collapse to a point', () => {
-    expect(scaleEdges(edges, [false, false, false], 'max', 1)).toBeNull();
+  it('returns the edges it was given for no change, and null for a collapse to a point', () => {
+    expect(scaleEdges(edges, [false, false, false], 'max', 1)).toBe(edges);
+    expect(scaleEdges(edges, [true, true, true], 'max', 3)).toBe(edges);
     expect(scaleEdges(edges, [false, false, false], 'max', -1)).toBeNull();
-    expect(scaleEdges(edges, [true, true, true], 'max', 3)).toBeNull();
   });
 });

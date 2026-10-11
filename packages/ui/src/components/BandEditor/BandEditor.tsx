@@ -234,8 +234,8 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     if (index !== selectedIndex) onSelect?.(index);
   };
 
-  const rangeInput = (edit: RangeEdit<T>): void => {
-    setDraft({ bands: edit.bands, range: edit.range, ghost: { at: edit.range[0] !== min ? min : max } });
+  const rangeInput = (edge: RangeEdge, edit: RangeEdit<T>): void => {
+    setDraft({ bands: edit.bands, range: edit.range, ghost: { at: edge === 'min' ? min : max } });
     props.onRangeInput?.(edit.range[0], edit.range[1], retagged(edit.bands));
   };
   const rangeCommit = (edit: RangeEdit<T>): void => {
@@ -256,7 +256,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
       toUnit={toUnit}
       pointerUnit={(clientX, altKey) => snapped(rawUnitAt(clientX), altKey)}
       drag={drag}
-      onInput={rangeInput}
+      onInput={(edit) => rangeInput(edge, edit)}
       onCommit={rangeCommit}
     />
   );

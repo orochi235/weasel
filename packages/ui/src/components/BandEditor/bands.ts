@@ -185,7 +185,8 @@ export function edgeReach(
  * Band edges, in track units, after moving `edge` to `to` with the other end
  * held. Locked bands keep their length; the rest share what is left in
  * proportion to their current lengths, or equally if they are all empty.
- * `null` when nothing would change or the range would collapse to a point.
+ * Returns `edges` itself when nothing would change, and `null` when the range
+ * would collapse to a point.
  */
 export function scaleEdges(
   edges: readonly number[],
@@ -193,13 +194,14 @@ export function scaleEdges(
   edge: RangeEdge,
   to: number,
   limits?: readonly [number, number],
-): number[] | null {
+): readonly number[] | null {
   const n = edges.length - 1;
   const [lo, hi] = edgeReach(edges, locked, edge, limits);
   const at = Math.max(lo, Math.min(hi, to));
   const total = edge === 'min' ? edges[n] - at : at - edges[0];
   const current = edges[n] - edges[0];
-  if (!(total > 0) || total === current) return null;
+  if (!(total > 0)) return null;
+  if (total === current) return edges;
   let lockedSpan = 0;
   let freeSpan = 0;
   let freeCount = 0;

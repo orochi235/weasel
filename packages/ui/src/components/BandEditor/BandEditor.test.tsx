@@ -440,6 +440,28 @@ describe('range edges', () => {
     expect(onRangeChange.mock.calls.map(([lo, hi]) => [lo, hi])).toEqual([[0, 110], [-20, 100]]);
   });
 
+  it('puts an end dragged away and back where it started, and commits nothing', () => {
+    const onRangeInput = vi.fn();
+    const onRangeChange = vi.fn();
+    const { container, bodies } = setup({ onRangeInput, onRangeChange });
+    fireEvent.pointerDown(edges(container).max, { clientX: 400, clientY: 20, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 20 });
+    expect(bodies()[2].style.getPropertyValue('--be-to')).toBe('75%');
+    fireEvent.pointerMove(document, { clientX: 400, clientY: 20 });
+    expect(bodies()[2].style.getPropertyValue('--be-to')).toBe('100%');
+    expect(onRangeInput.mock.calls.at(-1)!.slice(0, 2)).toEqual([0, 100]);
+    fireEvent.pointerUp(document, { clientX: 400, clientY: 20 });
+    expect(onRangeChange).not.toHaveBeenCalled();
+  });
+
+  it('ghosts the min end at min while it is dragged back to its start', () => {
+    const { container } = setup({ onRangeChange: () => {} });
+    fireEvent.pointerDown(edges(container).min, { clientX: 0, clientY: 20, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 40, clientY: 20 });
+    fireEvent.pointerMove(document, { clientX: 0, clientY: 20 });
+    expect(container.querySelector<HTMLElement>('[data-band-ghost]')!.style.getPropertyValue('--be-at')).toBe('0%');
+  });
+
   it('commits nothing for an edge drag that never moved', () => {
     const onRangeChange = vi.fn();
     const { container } = setup({ onRangeChange });

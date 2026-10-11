@@ -10,7 +10,8 @@ import { edgeReach, scaleEdges, unitEdges, type Band, type RangeEdge } from './b
 import type { BandScale } from './scale';
 import { arrowStep, pct } from './track';
 
-/** A rescale of the whole range: the new ends and the bands refitted between them. */
+/** A rescale of the whole range: the new ends and the bands refitted between them. `bands` is the committed
+ *  array itself when the end is where it started. */
 export type RangeEdit<T> = { range: [number, number]; bands: Band<T>[] };
 
 export interface RangeEdgeHandleProps<T> {
@@ -60,6 +61,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
   const fit = (to: number): RangeEdit<T> | null => {
     const next = scaleEdges(edges, locked, edge, to, unitLimits);
     if (!next) return null;
+    if (next === edges) return { range: [min, max], bands: committed };
     const range: [number, number] = edge === 'min' ? [fromBase(next[0]), max] : [min, fromBase(next[next.length - 1])];
     const bands = committed.map((b, i) => ({ ...b, from: i === 0 ? range[0] : fromBase(next[i]) }));
     return { range, bands };
@@ -75,7 +77,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
       (ev) => {
         const edit = fit(props.pointerUnit(ev.clientX, ev.altKey));
         if (!edit) return;
-        latest = edit;
+        latest = edit.bands === committed ? null : edit;
         props.onInput(edit);
       },
       () => {
@@ -95,7 +97,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
     }
     e.preventDefault();
     const edit = fit(to);
-    if (edit) props.onCommit(edit);
+    if (edit && edit.bands !== committed) props.onCommit(edit);
   };
 
   return (
