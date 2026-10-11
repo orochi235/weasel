@@ -42,6 +42,13 @@ export function WeaselDemos() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   useCommandPaletteShortcut(paletteOpen, setPaletteOpen);
 
+  // A page opened from inside the app is a history entry of its own, so Back
+  // returns to the one before it.
+  const open = (id: string): void => {
+    if (id !== activeId) window.history.pushState(null, '', `#${id}`);
+    setActiveId(id);
+  };
+
   useEffect(() => {
     const onHash = () => setActiveId(readHash());
     window.addEventListener('hashchange', onHash);
@@ -87,21 +94,21 @@ export function WeaselDemos() {
                 <a
                   href={`#${GET_STARTED_ID}`}
                   className={activeId === GET_STARTED_ID ? 'active' : ''}
-                  onClick={(e) => { e.preventDefault(); setActiveId(GET_STARTED_ID); }}
+                  onClick={(e) => { e.preventDefault(); open(GET_STARTED_ID); }}
                 >🚀 Get started</a>
               </li>
               <li>
                 <a
                   href={`#${WHATS_NEW_ID}`}
                   className={activeId === WHATS_NEW_ID ? 'active' : ''}
-                  onClick={(e) => { e.preventDefault(); setActiveId(WHATS_NEW_ID); }}
+                  onClick={(e) => { e.preventDefault(); open(WHATS_NEW_ID); }}
                 >✨ What's new</a>
               </li>
               <li>
                 <a
                   href={`#${RELEASES_ID}`}
                   className={activeId === RELEASES_ID ? 'active' : ''}
-                  onClick={(e) => { e.preventDefault(); setActiveId(RELEASES_ID); }}
+                  onClick={(e) => { e.preventDefault(); open(RELEASES_ID); }}
                 >🏷️ Releases</a>
               </li>
             </ul>
@@ -109,7 +116,7 @@ export function WeaselDemos() {
           {CATEGORIES.map((cat) => (
             <section key={cat} className="ckd-nav-section">
               <h2>{cat}</h2>
-              <DemoLinks demos={DEMOS.filter((d) => d.category === cat)} activeId={activeId} onPick={setActiveId} />
+              <DemoLinks demos={DEMOS.filter((d) => d.category === cat)} activeId={activeId} onPick={open} />
             </section>
           ))}
           {PACKAGES.length > 0 && (
@@ -118,7 +125,7 @@ export function WeaselDemos() {
               {PACKAGES.map((pkg) => (
                 <section key={pkg} className="ckd-nav-package">
                   <h3>{pkg}</h3>
-                  <DemoLinks demos={DEMOS.filter((d) => d.package === pkg)} activeId={activeId} onPick={setActiveId} />
+                  <DemoLinks demos={DEMOS.filter((d) => d.package === pkg)} activeId={activeId} onPick={open} />
                 </section>
               ))}
             </section>
@@ -132,7 +139,7 @@ export function WeaselDemos() {
           <Suspense fallback={null}>
             {!active && activeId === GET_STARTED_ID ? <GetStarted /> : null}
             {!active && activeId === RELEASES_ID ? <Releases /> : null}
-            {!active && activeId === WHATS_NEW_ID ? <WhatsNew onSelect={setActiveId} /> : null}
+            {!active && activeId === WHATS_NEW_ID ? <WhatsNew onSelect={open} /> : null}
           </Suspense>
         </PageBoundary>
       </main>
@@ -179,14 +186,18 @@ function useHasBeenNearViewport(ref: RefObject<Element | null>): boolean {
   return near;
 }
 
-function useSourceText(tab: DemoSourceTab | undefined, enabled: boolean): string | null {
-  const [text, setText] = useState<string | null>(null);
+/** A source tab's text: `null` while it loads, `'failed'` when it could not be fetched. */
+function useSourceText(tab: DemoSourceTab | undefined, enabled: boolean): string | null | 'failed' {
+  const [text, setText] = useState<string | null | 'failed'>(null);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the last tab's text while the next one loads
     setText(null);
     if (!tab || !enabled) return;
     let live = true;
-    void tab.load().then((t) => { if (live) setText(t.trim()); });
+    tab.load().then(
+      (t) => { if (live) setText(t.trim()); },
+      () => { if (live) setText('failed'); },
+    );
     return () => { live = false; };
   }, [tab, enabled]);
   return text;
@@ -257,7 +268,9 @@ function DemoView({ entry }: { entry: DemoEntry }) {
           )}
         </div>
         <div className="ckd-source">
-          {code == null ? <div className="ckd-source-loading" /> : (
+          {code === 'failed' ? (
+            <p className="ckd-source-failed" role="status">This file could not be loaded. Reload the page to try again.</p>
+          ) : code == null ? <div className="ckd-source-loading" /> : (
             <Suspense fallback={<div className="ckd-source-loading" />}>
               <SourceView code={code} language={current.language} />
             </Suspense>

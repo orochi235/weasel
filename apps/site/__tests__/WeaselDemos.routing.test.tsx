@@ -133,6 +133,27 @@ describe('the sidebar', () => {
   });
 });
 
+describe('sidebar navigation', () => {
+  it('adds a history entry per demo opened, so Back returns to the one before', async () => {
+    const [first, second, third] = DEMOS;
+    go(`#${first.id}`);
+    render(<WeaselDemos />);
+    await heading(first.title);
+    const before = window.history.length;
+    const nav = screen.getByRole('navigation');
+
+    fireEvent.click(within(nav).getByRole('link', { name: second.title }));
+    await heading(second.title);
+    expect(window.location.hash).toBe(`#${second.id}`);
+    fireEvent.click(within(nav).getByRole('link', { name: third.title }));
+    await heading(third.title);
+    expect(window.history.length).toBe(before + 2);
+
+    fireEvent.click(within(nav).getByRole('link', { name: third.title }));
+    expect(window.history.length).toBe(before + 2);
+  });
+});
+
 describe('the source panel', () => {
   it('opens each demo on its first tab, whichever tab the last one was left on', async () => {
     const [first, second] = DEMOS.filter((d) => d.sources.length > 1);

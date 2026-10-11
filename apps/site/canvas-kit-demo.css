@@ -420,6 +420,13 @@ a:hover { text-decoration: underline; }
   height: 240px;
 }
 
+.ckd-source-failed {
+  margin: 0;
+  padding: 16px;
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
+}
+
 .ckd-source pre {
   font-size: calc(var(--wzl-font-size-sm) + 1px);
   line-height: 1.5;
