@@ -138,6 +138,12 @@ describe.skipIf(!existsSync(INTER_TTF))('sfnt collection unpacking', () => {
     }
   });
 
+  it('refuses a collection cut off before the end of a table', () => {
+    const collection = synthesizeCollection(interBytes());
+    const truncated = collection.slice(0, collection.byteLength - 1024);
+    expect(() => sfntFromCollection(truncated)).toThrow(/truncated/);
+  });
+
   it('selects the member whose PostScript name matches', () => {
     const collection = synthesizeCollection(interBytes());
     // Both synthesized members are the same face, so the real assertion is

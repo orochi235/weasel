@@ -158,7 +158,12 @@ function extractFont(source: ArrayBuffer, view: DataView, dirOffset: number): Ar
   // what every checksum in the directory was computed over.
   const padded = (n: number): number => (n + 3) & ~3;
   let total = SFNT_HEADER_BYTES + records.length * TABLE_RECORD_BYTES;
-  for (const r of records) total += padded(r.length);
+  for (const r of records) {
+    if (r.offset + r.length > source.byteLength) {
+      throw new Error(`font collection is truncated: table "${r.tag}" runs past the end of the file`);
+    }
+    total += padded(r.length);
+  }
 
   const out = new ArrayBuffer(total);
   const dst = new DataView(out);
