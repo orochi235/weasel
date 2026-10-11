@@ -2050,11 +2050,6 @@ only story runner in the repo.
   the port lock; either re-read and compare just before the write, or have the next `claim` treat a
   dead holder as released and make the exit-time release a no-op.
 
-- **(P3) forge: a URL naming a story that does not exist keeps the last page in the stage.** Opening
-  `#/<an id no story has>` shows `No story <id>` over the story list, and the stage goes on showing
-  the component index or story that was open before, under that page's breadcrumb. Seen in headless
-  Chromium with `#/labkit-controls-controlpanel:nested`. The stage should say the story is missing.
-
 ---
 
 ## Demos & visual regression

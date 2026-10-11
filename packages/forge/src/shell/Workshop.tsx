@@ -15,6 +15,7 @@ import { indexEntries } from '../story/indexPages';
 import { LibrariesContext, librariesFrom } from '../story/library';
 import type { DepGraph, IndexEntry } from '../story/types';
 import { DependenciesContext } from './dependencies';
+import { missingInstrument } from './documentInstrument';
 import { InfoIcon } from '@weasel-js/ui';
 import { A11Y_SECTION } from './a11y/A11yPanel';
 import { CSS_VARS_SECTION } from './cssVars/CssVarsPanel';
@@ -55,19 +56,13 @@ export interface WorkshopProps {
 const NO_DECLARATIONS: GlobalDeclarations = {};
 const DEFAULT_TITLE = 'weaselforge';
 
-/** The story or index page `#/<id>` names, when there is one; otherwise `fallback`. Read when the lab mounts. */
-function initialStory(entries: readonly IndexEntry[], fallback: string): string {
-  const route = readRoute();
-  return route !== null && entries.some((entry) => entry.id === route) ? route : fallback;
-}
-
 /**
  * Shows the story the route names when no trial shows it, once per route, so closing that trial sticks. It goes
  * into the trial the previous route was in when a history step crosses an in-place swap, so Back returns that
  * trial to its previous story; otherwise into the focused trial, as a click in the tree does. Only a lab with no
  * trial at all gets a new one: another trial is what Shift-click is for.
  */
-function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
+function RouteOpener() {
   const lab = useLabContext();
   const [route] = useRoute();
   const handled = useRef<string | null>(null);
@@ -75,7 +70,7 @@ function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
   useEffect(() => {
     const from = last.current;
     if (route !== from.route) last.current = { route, entry: readRouteEntry() };
-    if (route === null || handled.current === route || !index.some((e) => e.id === route)) return;
+    if (route === null || handled.current === route || !lab.instruments.some((i) => i.name === route)) return;
     handled.current = route;
     if (lab.trials.some((trial) => trial.instrumentName === route)) return;
     const previous = lab.trials.find((trial) => trial.instrumentName === from.route);
@@ -85,7 +80,7 @@ function RouteOpener({ index }: { index: readonly IndexEntry[] }) {
       lab.trials[0];
     if (target) lab.swapTrial(target.id, route);
     else lab.addTrial(route);
-  }, [route, index, lab]);
+  }, [route, lab]);
   return null;
 }
 
@@ -140,6 +135,13 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
     ...(importers ? { importers } : {}),
     ...(setup ? { setup } : {}),
   });
+  // A route no story has gets an instrument of its own, so the trial it would open in says the story is missing.
+  const [route] = useRoute();
+  const missing = route !== null && !entries.some((entry) => entry.id === route) ? route : null;
+  const instruments = useMemo(
+    () => (missing === null ? registry.instruments : [...registry.instruments, missingInstrument(missing, declarations)]),
+    [registry.instruments, missing, declarations],
+  );
   const reload = registry.reload;
   useEffect(() => changes?.subscribe(reload), [changes, reload]);
   const [labValues, setLabValues] = useState<Globals>(() => labGlobals(declarations, undefined));
@@ -196,8 +198,8 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
                 title={title}
                 density="roomy"
                 {...(labTheme ? { theme: labTheme } : {})}
-                instruments={registry.instruments}
-                defaultInstrument={initialStory(entries, first.id)}
+                instruments={instruments}
+                defaultInstrument={readRoute() ?? first.id}
                 storageKey={storageKey ?? 'weaselforge'}
                 {...(storage ? { storage } : {})}
                 labChrome={labChrome}
@@ -206,7 +208,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
                 {...(config?.pages ? { pages: config.pages } : {})}
                 {...(config?.path !== undefined ? { path: config.path } : {})}
               >
-                <RouteOpener index={entries} />
+                <RouteOpener />
                 <RouteKnobs instruments={registry.instruments} isReady={registry.isReady} />
                 <RoutePlayhead />
                 <StoryInfoDialog

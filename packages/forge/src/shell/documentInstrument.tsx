@@ -63,6 +63,16 @@ export interface PendingInstrumentOptions {
   generation?: number;
 }
 
+/** Why a trial has no story to show, drawn over its whole stage. */
+function Fault({ phase, message }: { phase: string; message: string }) {
+  return (
+    <div className="fg-fault" role="alert">
+      <span className="fg-fault__phase">{phase}</span>
+      <p className="fg-fault__message">{message}</p>
+    </div>
+  );
+}
+
 /** The instrument's face while its module loads, and the fault when the load fails. */
 function StoryLoad({ entry, load, fault }: PendingInstrumentOptions) {
   useEffect(() => {
@@ -70,12 +80,7 @@ function StoryLoad({ entry, load, fault }: PendingInstrumentOptions) {
   }, [entry, load, fault]);
   return (
     <div className="fg-story fg-story--loading" data-fg-layout="fullscreen">
-      {fault ? (
-        <div className="fg-fault" role="alert">
-          <span className="fg-fault__phase">import</span>
-          <p className="fg-fault__message">{fault.message}</p>
-        </div>
-      ) : null}
+      {fault ? <Fault phase="import" message={fault.message} /> : null}
     </div>
   );
 }
@@ -91,5 +96,22 @@ export function pendingInstrument(options: PendingInstrumentOptions): Instrument
     defaultConfig: () => config.defaults(),
     initialState: () => null,
     render: () => <StoryLoad key={options.generation ?? 0} {...options} />,
+  };
+}
+
+/** The instrument a trial runs when the URL names `id` and no story has it, so the stage says so. */
+export function missingInstrument(id: string, globals: GlobalDeclarations = {}): Instrument<unknown, unknown> {
+  const config = withGlobals(f.schema({}) as ConfigSchema<unknown>, globals);
+  return {
+    name: id,
+    title: `No story ${id}`,
+    config,
+    defaultConfig: () => config.defaults(),
+    initialState: () => null,
+    render: () => (
+      <div className="fg-story fg-story--loading" data-fg-layout="fullscreen">
+        <Fault phase="route" message={`No story ${id}`} />
+      </div>
+    ),
   };
 }

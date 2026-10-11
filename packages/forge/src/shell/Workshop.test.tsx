@@ -83,6 +83,23 @@ describe('Workshop', () => {
     expect(container.querySelector('[role="tree"]')).not.toBeNull();
   });
 
+  it('says in the stage that the story the hash names does not exist, and shows a real one again when the hash names it', async () => {
+    location.hash = '#/x--a';
+    render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > A' })).toBeInTheDocument());
+    act(() => {
+      location.hash = '#/no-such--story';
+    });
+    const trial = await screen.findByRole('region', { name: 'Trial No story no-such--story' });
+    expect(within(trial).getByRole('alert').textContent).toContain('no-such--story');
+    expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
+    act(() => {
+      location.hash = '#/x--b';
+    });
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Trial X > B' })).toBeInTheDocument());
+    expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
+  });
+
   it('opens exactly one trial of a story clicked in the tree', async () => {
     location.hash = '#/x--a';
     render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
@@ -191,10 +208,12 @@ describe('Workshop', () => {
     expect(screen.getAllByRole('region', { name: /^Trial / })).toHaveLength(1);
   });
 
-  it('opens the first story when the hash names none that is indexed', async () => {
+  it('opens on the missing story, not the first one, when the hash names none that is indexed', async () => {
     location.hash = '#/nope';
     const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
-    expect(await frameSrc(container)).toBe('/frame.html#x--a');
+    const trial = await screen.findByRole('region', { name: 'Trial No story nope' });
+    expect(within(trial).getByRole('alert').textContent).toContain('nope');
+    expect(container.querySelector('iframe.fg-frame-view')).toBeNull();
   });
 
   it('keeps a story frame hidden until the frame reports its first render, so a new trial shows no blank page', async () => {
