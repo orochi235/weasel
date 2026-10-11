@@ -1993,12 +1993,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   resolve a path into an object. `valuePathOf` is also wrong for anything under a section inside an
   `object` leaf of a group root, where it counts the section's key as a step.
 
-- **(P3) `PrefSchemaEditor`: a rail-open timer started by a tree drag is not cleared when the editor
-  unmounts.** Holding a drag over a rail entry starts a 500 ms timer (`opening` in
-  `PrefSchemaEditor.tsx`) that selects that page. A drag begun in the preview now ends on unmount
-  and clears it; one begun in the structure tree or the palette ends only when `Tree` or `Palette`
-  reports it, and `Tree` has no unmount cancel. The late call sets state on an editor that is gone.
-
 - **(P2) `PrefsForm`: a mixed object, list, map, or union leaf draws as unset, and one edit
   overwrites every node's whole value.** `mixed={new Set(['appearance.stroke'])}` on an object leaf
   draws each field at its default, not mixed, because `ObjectLeaf`'s `fieldCtx`
