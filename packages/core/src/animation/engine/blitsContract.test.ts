@@ -91,4 +91,31 @@ describe('blits behaviors the animator codec relies on', () => {
     sp.push(1, [5, 5]);
     expect(sp.read(1)!.velocity).toEqual([5, 5]);
   });
+
+  it('voices that each name the same subject pull as their sum', () => {
+    const m = mix<object, P>(kit<P>({ p: vec(2, sum()) }));
+    m.sync(0);
+    const subject = {};
+    const a = tween<object, P, number[]>('p', { from: [100, 0], to: [100, 0], ms: 1000, ease: linear });
+    const b = tween<object, P, number[]>('p', { from: [0, 50], to: [0, 50], ms: 1000, ease: linear });
+    m.cue({ patch: a, subjects: [subject] });
+    m.cue({ patch: b, subjects: [subject] });
+    a.to(subject, [0, 0], 0);
+    b.to(subject, [0, 0], 0);
+    m.sync(500);
+    const cols = { p: new Float64Array(2) };
+    m.pull([subject], cols);
+    expect([...cols.p]).toEqual([50, 25]);
+  });
+
+  it("a tween's read answers its velocity, in units a second", () => {
+    const m = mix<number, U>(kit<U>({ u: sum() }));
+    m.sync(0);
+    const tw = tween<number, U>('u', { from: 0, to: 0, ms: 1000, ease: linear });
+    m.cue({ patch: tw });
+    tw.to(1, 100, 0);
+    m.sync(250);
+    m.pull([1], { u: new Float64Array(1) });
+    expect(tw.read(1)!.velocity).toBeCloseTo(100, 9);
+  });
 });
