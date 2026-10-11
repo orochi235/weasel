@@ -204,6 +204,33 @@ describe('Tree — selection', () => {
     expect(onSelectionChange).toHaveBeenLastCalledWith(new Set(['apple', 'banana', 'citrus']));
   });
 
+  it('selects every shown row that can be selected with Cmd/Ctrl+A (multiple)', () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <Tree
+        aria-label="Food"
+        nodes={[...NODES, { id: 'salt', label: 'Salt', disabled: true }]}
+        selectionMode="multiple"
+        defaultExpandedIds={['fruit']}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+    expect(fireEvent.keyDown(item('Apple'), { key: 'a', metaKey: true })).toBe(false);
+    // Lemon and Lime sit in a folded branch, and Salt is disabled.
+    expect(onSelectionChange.mock.calls).toEqual([[new Set(['fruit', 'apple', 'banana', 'citrus', 'veg', 'water'])]]);
+    expect(item('Banana')).toHaveAttribute('aria-selected', 'true');
+    expect(item('Salt')).toHaveAttribute('aria-selected', 'false');
+    fireEvent.keyDown(item('Apple'), { key: 'a', ctrlKey: true });
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves Cmd/Ctrl+A alone in a single-select tree', () => {
+    const onSelectionChange = vi.fn();
+    render(<Tree aria-label="Food" nodes={NODES} selectionMode="single" onSelectionChange={onSelectionChange} />);
+    expect(fireEvent.keyDown(item('Water'), { key: 'a', metaKey: true })).toBe(true);
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
+
   it('calls onAction for every activated row, with modifiers', () => {
     const onAction = vi.fn();
     render(<Tree aria-label="Food" nodes={NODES} onAction={onAction} />);

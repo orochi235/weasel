@@ -44,7 +44,8 @@ export const Basic: Story = {
 };
 
 /** Click, Enter or Space selects. `selectionMode="multiple"` adds Cmd/Ctrl to
- *  toggle a row and Shift to extend over the visible rows between. */
+ *  toggle a row, Shift to extend over the visible rows between, and Cmd/Ctrl+A
+ *  to select every visible row. */
 export const Selectable: Story = {
   render: function Render() {
     const [selected, setSelected] = useState<ReadonlySet<string>>(new Set(['Tree.tsx']));

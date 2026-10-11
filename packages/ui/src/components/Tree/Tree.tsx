@@ -11,7 +11,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import { intentOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
+import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
 import type { TreeDropTarget } from '../../dropTarget';
 import { selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { DisclosureMark } from '../Disclosure';
@@ -73,8 +73,8 @@ export interface TreeProps {
    *  what a branch holds. `--wzl-tree-guide` is its color. */
   guides?: boolean;
 
-  /** Default `'none'`. `'multiple'` adds to the selection with Cmd/Ctrl and
-   *  extends it over visible rows with Shift. */
+  /** Default `'none'`. `'multiple'` adds to the selection with Cmd/Ctrl,
+   *  extends it over visible rows with Shift, and takes them all with Cmd/Ctrl+A. */
   selectionMode?: TreeSelectionMode;
   /** Selected rows, controlled. */
   selectedIds?: Iterable<string>;
@@ -143,7 +143,8 @@ const LIST_KEYS = { toggle: ['meta', 'ctrl'], range: 'shift' } as const;
  * the first selected, else the first. Up/Down move between visible rows,
  * Home/End go to the first and last. Right opens a closed branch, then moves
  * into it; Left closes an open branch, else moves to the parent. Enter and
- * Space activate, as a click does. Typing moves to the next row whose text
+ * Space activate, as a click does. Under `selectionMode="multiple"`, Cmd/Ctrl+A
+ * selects every visible row. Typing moves to the next row whose text
  * starts with what was typed. With `onMove`, Alt+Up/Down move the focused node
  * (or the selection holding it) among its siblings, and Alt+Left/Right outdent
  * it and indent it under the sibling above; each goes through `canDrop`.
@@ -211,15 +212,25 @@ export const Tree = forwardRef(function Tree(
     setExpanded(next);
   };
 
+  const order = () => visible.map((v) => v.node.id);
+  const eligible = (id: string) => !visible[indexOf.get(id) ?? -1]?.node.disabled;
+  const commitSelection = (ids: readonly string[]) => {
+    const next = new Set(ids);
+    if (next.size !== selected.size || [...next].some((x) => !selected.has(x))) setSelected(next);
+  };
+
   const select = (id: string, mods: PressModifiers) => {
     const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multi' : 'single', ...LIST_KEYS };
     const result = selectFrom({ ids: [...selected], anchor: anchor.current }, id, intentOf(selectModifiers(mods), policy), {
-      order: visible.map((v) => v.node.id),
-      eligible: (x) => !visible[indexOf.get(x) ?? -1]?.node.disabled,
+      order: order(), eligible,
     });
     anchor.current = result.anchor;
-    const next = new Set(result.ids);
-    if (next.size !== selected.size || [...next].some((x) => !selected.has(x))) setSelected(next);
+    commitSelection(result.ids);
+  };
+
+  const selectAll = () => {
+    const ids = order();
+    commitSelection(rangeOf(ids, ids[0]!, ids[ids.length - 1]!, eligible));
   };
 
   const activate = (node: TreeNode, mods: PressModifiers) => {
@@ -263,6 +274,11 @@ export const Tree = forwardRef(function Tree(
         pendingFocusFrame.current = requestAnimationFrame(() => { pendingFocus.current = null; });
       },
     })) return;
+    if (selectionMode === 'multiple' && e.key.toLowerCase() === 'a' && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
+      e.preventDefault();
+      selectAll();
+      return;
+    }
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
