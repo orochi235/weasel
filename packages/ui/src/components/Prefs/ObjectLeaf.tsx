@@ -38,7 +38,7 @@ export function ObjectLeaf({
           continue;
         }
         flushTabs();
-        if (child.as === 'plain') {
+        if (child.as === 'fragment') {
           out.push(...inner);
           continue;
         }

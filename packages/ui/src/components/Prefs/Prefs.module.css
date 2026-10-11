@@ -398,13 +398,13 @@
   margin-top: var(--wzl-space-6);
 }
 
-/* `as: 'plain'`: a group with nothing of its own to draw. Its rows are laid out by whatever holds the group. */
-.plain {
+/* `as: 'fragment'`: a group with nothing of its own to draw. Its rows are laid out by whatever holds the group. */
+.fragment {
   display: contents;
 }
 
 /* It has no box to mark, so a selected one marks its rows. */
-.plain[data-selected] > [data-pref-path] {
+.fragment[data-selected] > [data-pref-path] {
   background: color-mix(in oklab, var(--wzl-secondary) 12%, transparent);
   outline: 1px solid var(--wzl-secondary);
   outline-offset: 3px;

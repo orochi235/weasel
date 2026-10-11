@@ -525,7 +525,7 @@ function ObjectLeaf({
 
     for (const [key, child] of Object.entries(children)) {
       if (!isPrefLeaf(child)) {
-        const labeled = child.name !== '' && child.as !== 'plain';
+        const labeled = child.name !== '' && child.as !== 'fragment';
         const inner = rowsOf(child.members, labeled && child.as !== 'tab');
         if (inner.length === 0) continue;
         flush();

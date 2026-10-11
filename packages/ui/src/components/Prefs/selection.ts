@@ -70,7 +70,7 @@ export function useSelectedRow(
   useEffect(() => {
     if (!pending.current || shown === null || ref.current === null) return;
     const found = [...ref.current.querySelectorAll(`[${PATH_ATTR}]`)].find((x) => x.getAttribute(PATH_ATTR) === shown);
-    // A plain group has no box of its own to scroll to; its first row stands for it.
+    // A fragment has no box of its own to scroll to; its first row stands for it.
     const el = found && getComputedStyle(found).display === 'contents' ? found.firstElementChild ?? found : found;
     if (el === undefined) return;
     pending.current = false;

@@ -35,8 +35,8 @@ const within = (path: string, selected: string | null | undefined): boolean =>
 export function PrefsPane(props: PrefsPaneProps) {
   const { ctx, group, path, scrollRef, className } = props;
   const entries = Object.entries(group.children);
-  // A plain group's rows are rows among the leaves', not a block after them.
-  const inRows = ([, child]: Entry): boolean => isPrefLeaf(child) || child.as === 'plain';
+  // A fragment's rows are rows among the leaves', not a block after them.
+  const inRows = ([, child]: Entry): boolean => isPrefLeaf(child) || child.as === 'fragment';
   const leaves = entries.filter(inRows);
   const groups = entries.filter((entry) => !inRows(entry));
 
@@ -78,10 +78,10 @@ export function paneChildren(
       }
       i--;
       out.push(<PaneTabs key={key} ctx={ctx} tabs={tabs} depth={depth} box={box} />);
-    } else if (child.as === 'plain') {
+    } else if (child.as === 'fragment') {
       // No box of its own (`display: contents`): its rows take their places in the rows around them.
       out.push(
-        <div key={key} className={s.plain} {...selectionAttrs(p, ctx)}>
+        <div key={key} className={s.fragment} {...selectionAttrs(p, ctx)}>
           {paneChildren(ctx, Object.entries(child.children), p, depth, box)}
         </div>,
       );

@@ -5,7 +5,7 @@ import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
 
-// A plain group has no box (`display: contents`), so whether its rows take cells in the grid around them, and
+// A fragment has no box (`display: contents`), so whether its rows take cells in the grid around them, and
 // whether a selected one shows any mark, are layout's to answer.
 
 afterEach(cleanup);
@@ -19,7 +19,7 @@ const SCHEMA: PrefGroup = {
       name: 'View',
       children: {
         grid: flag('Grid'),
-        glue: { name: 'Glued', as: 'plain', children: { snap: flag('Snap'), guides: flag('Guides') } },
+        glue: { name: 'Glued', as: 'fragment', children: { snap: flag('Snap'), guides: flag('Guides') } },
         rulers: flag('Rulers'),
       },
     },
@@ -29,7 +29,7 @@ const SCHEMA: PrefGroup = {
 const slot = (name: string): Element => screen.getByText(name).closest('[data-pref-path]')!;
 const box = (name: string): DOMRect => slot(name).getBoundingClientRect();
 
-test('a plain group\'s rows take cells among their neighbors\' in a form two rows across', async () => {
+test('a fragment\'s rows take cells among their neighbors\' in a form two rows across', async () => {
   await page.viewport(900, 500);
   render(
     <div style={{ width: 820, height: 400 }}>

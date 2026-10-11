@@ -165,7 +165,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
         const tab = section.as === 'tab';
         const content = (
           <>
-            {section.name !== '' && !tab && section.as !== 'plain' && <h3 className={s.sectionTitle}>{section.name}</h3>}
+            {section.name !== '' && !tab && section.as !== 'fragment' && <h3 className={s.sectionTitle}>{section.name}</h3>}
             {rows.map(({ row, controls }) => (
               // A `block` leaf brings its own chrome — it spans the section
               // instead of sitting in a labeled row's control cell. Under a

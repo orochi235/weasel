@@ -9,11 +9,11 @@ import type { PrefLeaf } from './schema';
  * How a {@link PrefGroup} is drawn: `page` gets an entry in a form's rail and
  * a pane of its own; `tab` shares a tab strip with the `tab` groups beside it;
  * `panel` is a bordered, titled box; `section` is a heading over its rows;
- * `plain` draws nothing of its own, so its rows sit among its neighbors' as
- * though they were written there. A plain group exists to hold things
+ * `fragment` draws nothing of its own, so its rows sit among its neighbors'
+ * as though they were written there. A fragment exists to hold things
  * together: one key for their values to nest under, one node to move.
  */
-export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'plain';
+export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'fragment';
 
 /** How a {@link PrefSection} is drawn. */
 export type PrefSectionAs = Exclude<PrefGroupAs, 'page'>;

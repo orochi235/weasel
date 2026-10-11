@@ -15,14 +15,14 @@ const SCHEMA: PrefGroup = {
       name: 'View',
       children: {
         grid: flag('Grid'),
-        glue: { name: 'Glued', as: 'plain', children: { snap: flag('Snap'), guides: flag('Guides') } },
+        glue: { name: 'Glued', as: 'fragment', children: { snap: flag('Snap'), guides: flag('Guides') } },
         rulers: flag('Rulers'),
       },
     },
   },
 };
 
-describe('a plain group', () => {
+describe('a fragment group', () => {
   it('draws its rows with no heading, in schema order among its neighbors\'', () => {
     render(<PrefsForm layout="rail" schema={SCHEMA} values={{}} onChange={() => {}} />);
     expect(screen.queryByText('Glued')).toBeNull();
@@ -46,7 +46,7 @@ describe('a plain group', () => {
   it('at the top level puts its rows on the root\'s own page', () => {
     const top: PrefGroup = {
       name: 'Prefs',
-      children: { loose: flag('Loose'), glue: { name: 'Glued', as: 'plain', children: { snap: flag('Snap') } } },
+      children: { loose: flag('Loose'), glue: { name: 'Glued', as: 'fragment', children: { snap: flag('Snap') } } },
     };
     expect(prefRailItems(top).map((i) => i.path)).toEqual(['']);
     render(<PrefsForm layout="rail" schema={top} values={{}} onChange={() => {}} />);
