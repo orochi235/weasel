@@ -657,7 +657,14 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Tracks the start state of an active multitouch episode so we can
     // synthesize a `multitouchtap` event on release when the centroid hasn't
     // moved past the tap threshold. `fingers` records the peak count.
-    let multiTouchStart: { fingers: number; centroid: { x: number; y: number } } | null = null;
+    let multiTouchStart: {
+      fingers: number;
+      centroid: { x: number; y: number };
+      /** Where each finger was when it joined, and whether any has left it:
+       *  a pinch about a still center moves every finger and no centroid. */
+      at: Map<number, { x: number; y: number }>;
+      moved: boolean;
+    } | null = null;
     const TAP_THRESHOLD_PX = 8;
 
     // Long-press synthesis. Armed on pointerdown for touch/pen, cancelled by
@@ -1118,9 +1125,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         // we record the centroid; subsequent pointerdowns at higher finger
         // counts only bump the recorded peak fingers count.
         if (!multiTouchStart) {
-          multiTouchStart = { fingers: held.size, centroid: { ...centroid } };
+          multiTouchStart = { fingers: held.size, centroid: { ...centroid }, at: new Map(), moved: false };
         } else {
           multiTouchStart.fingers = held.size;
+        }
+        for (const [id, p] of held) {
+          if (!multiTouchStart.at.has(id)) multiTouchStart.at.set(id, { ...p.pos });
         }
         const mt: InputEvent = {
           kind: 'multitouch',
@@ -1156,6 +1166,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       routeAt(e.pointerId, e.clientX, e.clientY);
       const rec = held.get(e.pointerId);
       if (rec) rec.pos = { x: e.clientX, y: e.clientY };
+      const joinedAt = multiTouchStart?.at.get(e.pointerId);
+      if (multiTouchStart && joinedAt
+          && Math.hypot(e.clientX - joinedAt.x, e.clientY - joinedAt.y) > TAP_THRESHOLD_PX) {
+        multiTouchStart.moved = true;
+      }
 
       // Threshold gate: if a pointerdown is buffered for this pointer and
       // the movement crossed the drag threshold, forward the buffered
@@ -1410,7 +1425,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           );
           const dx = centroid.x - start.centroid.x;
           const dy = centroid.y - start.centroid.y;
-          if (Math.hypot(dx, dy) <= TAP_THRESHOLD_PX) {
+          if (!start.moved && Math.hypot(dx, dy) <= TAP_THRESHOLD_PX) {
             const tap: InputEvent = {
               kind: 'multitouchtap',
               fingers: start.fingers,

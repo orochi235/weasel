@@ -34,6 +34,11 @@ function ongoing(id: string, log: string[]): Action {
   };
 }
 
+const tap = (log: string[]): Action => ({
+  id: 'tap', label: 'tap',
+  invoker: { timing: 'immediate', run: () => { log.push('tap'); } },
+});
+
 const touch: Contribution = {
   id: 'touch',
   eligibility: { always: true },
@@ -41,6 +46,7 @@ const touch: Contribution = {
     { spec: { kind: 'drag' }, actionId: 'move' },
     { spec: { kind: 'multiTouch', fingers: 2 }, actionId: 'zoom' },
     { spec: { kind: 'multiTouch', fingers: 3 }, actionId: 'swipe' },
+    { spec: { kind: 'multiTouchTap', fingers: 2 }, actionId: 'tap' },
   ],
 };
 const ENTRIES = new Map([[touch.id, touch]]);
@@ -51,13 +57,14 @@ function Mount({ actions }: { actions: Action[] }): ReactNode {
   useAction(actions[0]!);
   useAction(actions[1]!);
   useAction(actions[2]!);
+  useAction(actions[3]!);
   useGestureDispatcher({ canvasRef, actions: registry!, entriesById: ENTRIES });
   return <canvas ref={canvasRef} data-testid="c" />;
 }
 
 function mount(): { log: string[]; fire: (type: string, pointerId: number, x: number) => void } {
   const log: string[] = [];
-  const actions = ['move', 'zoom', 'swipe'].map((id) => ongoing(id, log));
+  const actions = [...['move', 'zoom', 'swipe'].map((id) => ongoing(id, log)), tap(log)];
   render(
     <DepRegistryProvider>
       <ActiveToolContextProvider>
@@ -122,5 +129,27 @@ describe('lifting a finger from a multitouch gesture', () => {
     expect(ends(log)).toEqual(['end:zoom:cancel']);
     fire('pointerup', 1, 0);
     expect(ends(log)).toEqual(['end:zoom:cancel']);
+  });
+});
+
+describe('a two-finger tap', () => {
+  it('fires when both fingers land and lift in place', () => {
+    const { log, fire } = mount();
+    fire('pointerdown', 1, 100);
+    fire('pointerdown', 2, 200);
+    fire('pointerup', 2, 200);
+    fire('pointerup', 1, 100);
+    expect(log.filter((l) => l === 'tap')).toEqual(['tap']);
+  });
+
+  it('does not fire after a pinch that kept its center still', () => {
+    const { log, fire } = mount();
+    fire('pointerdown', 1, 100);
+    fire('pointerdown', 2, 200);
+    fire('pointermove', 1, 50);
+    fire('pointermove', 2, 250);
+    fire('pointerup', 2, 250);
+    fire('pointerup', 1, 50);
+    expect(log).not.toContain('tap');
   });
 });
