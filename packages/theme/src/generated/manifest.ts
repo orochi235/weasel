@@ -212,6 +212,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-prefs-control-min', type: "dimension", group: "prefs", defaultValue: "80px", description: "Narrowest a PrefsForm row’s control gets in a two-across pane before the row wraps it under its label.", hook: true },
   { name: '--wzl-prefs-rail-width', type: "dimension", group: "prefs", defaultValue: "216px", description: "Width of the Prefs navigation rail.", hook: true },
   { name: '--wzl-prop-number-width', type: "dimension", group: "prop", defaultValue: "9ch", description: "Width of a numeric field in the Properties panel.", hook: true },
+  { name: '--wzl-prop-panel-actions-align', type: "string", group: "prop", defaultValue: "center", description: "How a PropertyPanel’s title row lines its actions up with the title: center, or baseline for actions that are text.", hook: true },
   { name: '--wzl-prop-panel-actions-basis', type: "dimension", group: "prop", defaultValue: "auto", description: "Width a PropertyPanel’s title row gives its actions. Set, it holds that width whatever the actions are.", hook: true },
   { name: '--wzl-prop-row-h', type: "dimension", group: "prop", defaultValue: "20px", description: "Floor under every Properties row, whatever control it holds. Unset, it is the panel’s own field height, so it follows density — 20px at the default one.", hook: true },
   { name: '--wzl-prop-text-width', type: "dimension", group: "prop", defaultValue: "16ch", description: "Width of a text field in the Properties panel.", hook: true },
