@@ -78,6 +78,13 @@ export function createTimeline(
   let wantScale = 1;
 
   const subscribers = new Set<() => void>();
+  const playbackSubscribers = new Set<() => void>();
+  const notify = (set: Set<() => void>): void => {
+    for (const cb of set) {
+      try { cb(); } catch (err) { console.error('timeline: subscriber threw', err); }
+    }
+  };
+  const playbackChanged = (): void => notify(playbackSubscribers);
 
   const loopOpt = opts.loop ?? false;
   let loopsLeft = loopOpt === true ? Infinity : loopOpt === false ? 0 : loopOpt;
@@ -190,7 +197,7 @@ export function createTimeline(
     }
     booker?.tick(virtualNow, rate);
 
-    if (finished && !done) { done = true; opts.onDone?.(); }
+    if (finished && !done) { done = true; opts.onDone?.(); playbackChanged(); }
     // Re-read: `onDone` may have seeked back or extended the duration, and
     // retiring the entry would strand the replay its own handler just started.
     if (playhead < duration) return false;
@@ -200,7 +207,13 @@ export function createTimeline(
 
   // Every cancel path inside the animator routes through here, so a timeline
   // cancelled by key or by `cancelAll` is as dead as one cancelled by hand.
-  const onCancel = (): void => { cancelled = true; live = false; booker?.retract(); };
+  const onCancel = (): void => {
+    const first = !cancelled;
+    cancelled = true;
+    live = false;
+    booker?.retract();
+    if (first) playbackChanged();
+  };
 
   const progress = (): number => (duration > 0 ? playhead / duration : 1);
   const seed = { id, cancelKey: opts.cancelKey, tick, onCancel, kind: 'timeline' as const, label: opts.label, progress };
@@ -232,9 +245,9 @@ export function createTimeline(
     cancel() { onCancel(); base.cancel(); },
     // Playback intent is tracked here, not read back from the entry: a revived
     // one is a fresh registration, and defaults to running at scale 1.
-    pause() { wantPaused = true; base.pause(); booker?.retract(); },
-    resume() { wantPaused = false; base.resume(); },
-    setTimeScale(s) { wantScale = s; base.setTimeScale(s); },
+    pause() { wantPaused = true; base.pause(); booker?.retract(); playbackChanged(); },
+    resume() { wantPaused = false; base.resume(); playbackChanged(); },
+    setTimeScale(s) { wantScale = s; base.setTimeScale(s); playbackChanged(); },
     timeScale: () => (live ? base.timeScale() : wantScale),
     isPaused: () => (live ? base.isPaused() : wantPaused),
     seek(t) {
@@ -245,6 +258,7 @@ export function createTimeline(
       prevOpen = true;
       booker?.seek();
       rearm();
+      playbackChanged();
     },
     time: () => playhead,
     duration: () => duration,
@@ -252,6 +266,7 @@ export function createTimeline(
     setLoop(loop) {
       loopsLeft = loop === true ? Infinity : loop === false ? 0 : loop;
       booker?.retract();
+      playbackChanged();
     },
     loop: () => (loopsLeft === Infinity ? true : loopsLeft === 0 ? false : loopsLeft),
     edit(fn) {
@@ -260,13 +275,15 @@ export function createTimeline(
       duration = tracksEnd(opts.tracks, opts.duration);
       booker?.retract();
       rearm();
-      for (const cb of subscribers) {
-        try { cb(); } catch (err) { console.error('timeline: subscriber threw', err); }
-      }
+      notify(subscribers);
     },
     subscribe(cb) {
       subscribers.add(cb);
       return () => { subscribers.delete(cb); };
+    },
+    subscribePlayback(cb) {
+      playbackSubscribers.add(cb);
+      return () => { playbackSubscribers.delete(cb); };
     },
   };
 }

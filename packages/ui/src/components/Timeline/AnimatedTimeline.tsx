@@ -29,6 +29,9 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
   // `subscribe` fires on `edit` only, so the playhead comes from the frame loop.
   const [edits, setEdits] = useState(0);
   useEffect(() => handle.subscribe(() => setEdits((n) => n + 1)), [handle]);
+  // A resume, pause, or seek made on the handle from elsewhere: the render it
+  // asks for is what restarts the frame loop below.
+  useEffect(() => handle.subscribePlayback(bump), [handle]);
   // `<Timeline>` tells one track list from the next by identity, and the handle
   // edits its array in place, so every edit hands over a fresh copy.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `edits` is the signal

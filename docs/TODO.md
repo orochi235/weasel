@@ -621,12 +621,12 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) The character strip has no "no fill" chip.** WeaselDraw's text objects carry `fill: null`
   through its SVG export and import, and the sidebar's Fill leaf already offers None for a text
-  node. What is missing is a None chip beside the strip's Color field. The strip is range-scoped,
-  and a run cannot be unfilled today (`StyledRun.fill` is `FillStyle`, no `null`). Ruled 2026-10-11:
-  a run can carry no fill, so the chip unfills only the selected range. That leaves `fill: null` on
-  a run through `resolveRuns` (which reads a run's `null` as "inherit" today, `run.fill ??
-  style.fill`), the DOM overlay, the range algebra, and `@weasel-js/svg`'s `<tspan>` output, and
-  then the chip.
+  node. What is missing is a None chip beside the strip's Color field. Ruled 2026-10-11: a run can
+  carry no fill, so the chip unfills only the selected range. A run now holds `fill: null` through
+  `resolveRuns`, the range algebra, the edit overlay, and SVG, so the chip is all that is left: a
+  control that sends `{ fill: null }` through `CharacterOptions`' `onPatch`, and a reading of a
+  `null` range fill (and of an unfilled node, which `effectiveRangeStyle` reports as an absent
+  `fill`) that lights it. It wants looking at on screen.
 
 - **(P3) At 12px with a script, the atlas tier's ink still sits ~0.55px off
   the overlay's at DPR 1, and the sign follows the sub-pixel phase.** `dx` is
@@ -1667,15 +1667,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   at NaN, which is not a value to send, so a caller holding the live value keeps the last readable
   keystroke. It needs a way to say "typing was abandoned" that carries no value, such as an
   `onCancel` callback.
-
-- **(P2) AnimatedTimeline: a resume made off the component does not start its playhead.** Call
-  `handle.resume()` (or `seek` on a finished timeline) from the app's own button while
-  `<AnimatedTimeline>` shows the same handle: the animation runs, but the playhead and the
-  transport's Play button stay put until something else re-renders the component, because
-  `TimelineHandle.subscribe` (`packages/core/src/animation/timeline/createTimeline.ts`) fires on
-  `edit` only and the component's frame loop is started from its own Play button or a render. The
-  handle needs to report play-state changes (pause, resume, seek, finish) to subscribers, or expose
-  a second subscription for them; `AnimatedTimeline` then requests a frame from it.
 
 - **(P2) TokenPanel scale: dragging a step's thumb back to where it started reads one unit off.** On
   a `px` scale with a step at 16, drag its thumb to 20 and back in one drag: near the start the

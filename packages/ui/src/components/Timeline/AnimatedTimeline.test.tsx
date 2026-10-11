@@ -27,19 +27,22 @@ function fakeHandle(over: Partial<TimelineHandle> = {}): TimelineHandle & { live
   let loop: boolean | number = false;
   let scale = 1;
   const subscribers = new Set<() => void>();
+  const playback = new Set<() => void>();
+  const changed = (): void => { for (const cb of playback) cb(); };
   return {
     live,
     id: 1,
-    cancel: vi.fn(), pause: vi.fn(() => { paused = true; }), resume: vi.fn(() => { paused = false; }),
+    cancel: vi.fn(), pause: vi.fn(() => { paused = true; changed(); }), resume: vi.fn(() => { paused = false; changed(); }),
     setTimeScale: vi.fn((s: number) => { scale = s; }),
     timeScale: () => scale,
     isPaused: () => paused,
-    seek: vi.fn((to: number) => { t = to; }),
+    seek: vi.fn((to: number) => { t = to; changed(); }),
     time: () => t,
     duration: () => 1000,
     tracks: () => live,
     edit: vi.fn((fn: () => void) => { fn(); for (const cb of subscribers) cb(); }),
     subscribe: (cb: () => void) => { subscribers.add(cb); return () => { subscribers.delete(cb); }; },
+    subscribePlayback: (cb: () => void) => { playback.add(cb); return () => { playback.delete(cb); }; },
     setLoop: vi.fn((next: boolean | number) => { loop = next; }),
     loop: () => loop,
     ...over,
@@ -75,6 +78,30 @@ describe('AnimatedTimeline', () => {
     render(<AnimatedTimeline handle={h} />);
     fireEvent.pointerDown(screen.getByTestId('timeline-ruler'), { clientX: 250, clientY: 5, button: 0 });
     expect(h.seek).toHaveBeenCalledWith(500);
+  });
+
+  it('follows a resume, a pause, and a seek made on the handle from elsewhere', () => {
+    const h = fakeHandle();
+    render(<AnimatedTimeline handle={h} />);
+    expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
+
+    act(() => h.resume());
+    expect(screen.getByRole('button', { name: /pause/i })).toBeInTheDocument();
+    act(() => h.pause());
+    expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
+
+    const playhead = (): string => screen.getByTestId('timeline-playhead').style.left;
+    const before = playhead();
+    act(() => h.seek(500));
+    expect(playhead()).not.toBe(before);
+  });
+
+  it('stops listening to a handle it no longer shows', () => {
+    const h = fakeHandle();
+    const off = vi.fn();
+    h.subscribePlayback = () => off;
+    render(<AnimatedTimeline handle={h} />).unmount();
+    expect(off).toHaveBeenCalledTimes(1);
   });
 
   it('resumes on play', () => {

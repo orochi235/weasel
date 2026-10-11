@@ -140,4 +140,9 @@ export interface TimelineHandle extends AnimationHandle {
   edit(fn: () => void): void;
   /** Notified after each `edit`. Returns an unsubscribe. */
   subscribe(cb: () => void): () => void;
+  /** Notified when playback changes other than by time passing: `pause`,
+   *  `resume`, `seek`, `setTimeScale`, `setLoop`, a cancel, and the playhead
+   *  reaching the end. What a view of the playhead listens to, so a change
+   *  made elsewhere reaches it. Returns an unsubscribe. */
+  subscribePlayback(cb: () => void): () => void;
 }
