@@ -1630,13 +1630,9 @@ only story runner in the repo.
   `setEditingId`, or the kit's edit state drives the mode registry and the machine keeps only
   journals.
 
-- **(P3) draw: `apps/draw/src/App.tsx` is about 1,450 lines holding seven jobs.** The document model
-  types, scene and history loading, the right sidebar (layers, properties, colors, history panels),
-  the toolbar with SVG open/save, two dep publishers, the editor shell, and the status bar. Each
-  wants its own module; `docPersistence.ts`, `sessionStore.ts`, `svgImport.ts`, and
-  `releaseCompound.ts` are the first pieces out. `apps/site/demos/RotatedResizeMathDemo.tsx` (713
-  lines) has the same shape: the four-panel ledger chrome and the resize math variants are
-  separable.
+- **(P3) `apps/site/demos/RotatedResizeMathDemo.tsx` is 713 lines holding two jobs.** The four-panel
+  ledger chrome and the resize math variants are separable. draw's `App.tsx` had the same shape and
+  is split by job now; what is left in it is `EditorWithSharedScene`, one 500-line component.
 
 - **(P3) draw: dead surface left in the tree.** `modality/backgroundClickPolicy.ts` has no caller
   outside its test, and a TODO in `App.tsx` says it waits on a hook into the dispatcher for

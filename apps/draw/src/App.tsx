@@ -25,197 +25,88 @@
  *     after each change by an effect in `App`.
  */
 import {
-  Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState,
-  type CSSProperties, type ReactElement,
-} from 'react';
-import { useColorModeControl } from './colorMode';
-import {
   ActiveToolContextProvider,
-  type AddNodeSpec,
   asNodeId,
-  boundsOfPath,
   buildSceneViewCommands,
-  buildWeaselClipboardText,
   BUILTIN_TOOL_IDS,
-  type ClipboardDep,
-  type ClipboardSnapshot,
   contrastLineColor,
-  type CreateOutlinesAdapter,
   DEFAULT_STROKE_COLOR,
   defaultCommitAdapter,
   defaultDrawOne,
-  type FillStyle,
   fitViewToBounds,
-  getAlpha01,
-  type ImageNodeData,
-  inferredNodeProperties,
-  inferredNodeRouting,
-  isGradientFill,
-  type NodeId,
-  type Path,
-  type PoseComposition,
   type RangeStyle,
-  rectPath,
   type RenderLayer,
-  resolveTextStyle,
-  sampleGradientStops,
   SceneCanvas,
   type SceneCanvasApi,
-  type SerializedScene,
-  solid,
-  type Stroke,
-  UNION_OF_CHILDREN,
-  unionOfChildren,
-  strokeOf,
-  type StyledRun,
-  type TextStyle,
-  type TextVerticalAlign,
-  toHex8,
   type ToolsApi,
   transformPath,
   useActionsRegistry,
-  useActiveToolContext,
-  useBooleansAdapter,
   useCanvasSize,
-  useClipboardOps,
-  useCreateOutlinesAdapter,
-  useDepSource,
   useLatest,
-  useOngoingAction,
   useScene,
   useSceneTextEdit,
   useSelection,
   type View,
-  WEASEL_CLIPBOARD_MIME,
-  withAlpha01,
-  workspaceTintLayer,
+  workspaceTintLayer
 } from '@weasel-js/core';
 import { createGridLayer, gridSnapStrategy } from '@weasel-js/guides';
 import { useHudContribution } from '@weasel-js/hud/react';
-import { qty, zoom } from '@weasel-js/quantity';
 import {
-  ResizeHandle,
-  Sidebar,
-  SidebarPanel,
-  SceneGradientHandles,
-  SelectionPanel,
-  StatusBar,
-  StatusBarItem,
-  StatusBarSpacer,
-  ToolPalette,
-  type PropertyRenderer,
-  type PropertyRenderContext,
-  PaintInput,
-  PropertyList,
-  PropertyField,
-  ThemeSwitcher,
-  SwatchStrip,
-  RecentColorsProvider,
   createRecentColorsStore,
-  type PropertyOption,
-  LayerList,
-  type LayerListItem,
-  useSceneLayerList,
+  RecentColorsProvider,
+  ResizeHandle,
+  SceneGradientHandles,
+  Sidebar,
+  ToolPalette
 } from '@weasel-js/ui';
+import {
+  type CSSProperties,
+  type ReactElement,
+  useCallback, useEffect, useMemo, useRef, useState
+} from 'react';
 
-import { CommandBar, type PaperSizeKey } from './CommandBar';
-import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
-import { PreferencesModal } from './PreferencesModal';
-import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
-import { HistoryList } from './ui/HistoryList';
-import { buildLabel, buildTitle } from '../../shared/buildInfo';
-import { PREFS, usePref } from './prefs';
-import { usePanel, type PanelChrome } from './panels';
+import type { SceneCanvasHit } from '@weasel-js/core';
+import { effectiveRangeStyle, patchRangeStyle, useSliceTool } from '@weasel-js/core';
+import { unpackSvgFiles } from '@weasel-js/svg';
+import { type ActivePaint, ActiveSwatches } from './ActiveSwatches';
+import type { PaperSizeKey } from './CommandBar';
 import { LoupeControls } from './LoupeControls';
-import { enableMachineFontOutlines, disableMachineFontOutlines } from './fonts';
+import { PreferencesModal } from './PreferencesModal';
+import { type AppCommands, appCommandsContribution } from './appCommands';
+import { lookupShortcutByToolId } from './dev/keybindingsView';
+import { loadDoc, PAPER_PRESETS, saveDoc } from './docPersistence';
+import { disableMachineFontOutlines, enableMachineFontOutlines } from './fonts';
+import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
+import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
+import { useModality } from './modality/useModality';
+import { OpacityHud } from './opacityScrub/OpacityHud';
+import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
+import { clipboardJsonReviver, serializeReplacer } from './persistence';
+import { PREFS, usePref } from './prefs';
+import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
+import { writeSession } from './sessionStore';
+import { colorContribution, useColorContext } from './tools/colorContext';
+import { ColorContextProvider } from './tools/colorContext/ColorContextProvider';
+import { CharacterOptions, TextEditDepPublisher } from './ui/CharacterOptions';
 
 // Bounds for the sidebar drag come from the pref that stores the result, so
 // the handle and the Preferences number field can't drift apart. app.css
 // clamps to the same numbers as a backstop.
 const RIGHT_SIDEBAR_MIN = PREFS.children.ui.children.rightSidebarWidth.min;
 const RIGHT_SIDEBAR_MAX = PREFS.children.ui.children.rightSidebarWidth.max;
-import { CharacterOptions, TextEditDepPublisher } from './ui/CharacterOptions';
-import { lookupShortcutByToolId } from './dev/keybindingsView';
-import { colorContribution, useColorContext } from './tools/colorContext';
-import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
-import { OpacityHud } from './opacityScrub/OpacityHud';
-import { useSceneAdapter, effectiveRangeStyle, patchRangeStyle } from '@weasel-js/core';
-import type { SerializedHistory } from '@weasel-js/history';
-import { serializeReplacer, reviveSnapshot, clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
-import { useSliceTool } from '@weasel-js/core';
-import { drawBooleansAdapter, textSourceOf, type DrawScene } from './booleansAdapter';
-import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
-import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
-import { leafOfObj } from './svgImport';
-import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
-import { appCommandsContribution, type AppCommands } from './appCommands';
-import { writeSession } from './sessionStore';
-import { DEFAULT_FILENAME, PAPER_PRESETS, loadDoc, saveDoc } from './docPersistence';
-import { useModality } from './modality/useModality';
-import type { ModeMachine } from './modality';
-import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
-import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
-import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
-import type { SceneCanvasHit } from '@weasel-js/core';
-import { sceneToSvgString, selectionToClipboardSvgString, clipboardSnapshotRootIds } from './svgExport';
 
+import { EditorStatusBar, useModeId } from './EditorStatusBar';
+import { RightSidebar } from './RightSidebar';
+import { Toolbar } from './Toolbar';
+import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher } from './adapterPublishers';
 import './app.css';
-
-// The trace log it reads is only populated in DEV, so production leaves the
-// panel out of the bundle entirely.
-const DispatchTracePanel = import.meta.env.DEV
-  ? lazy(() => import('./dev/DispatchTracePanel').then((m) => ({ default: m.DispatchTracePanel })))
-  : null;
+import { DRAW_POSE_COMPOSITION, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
+import { TEXT_CHROME_CLASS } from './paintRenderers';
+import { HISTORY_KEY, loadHistory, loadInitial, loadSceneHistory, LS_KEY, SCENE_HISTORY_KEY } from './sceneLoading';
 
 // ─── Document / scene shapes ────────────────────────────────────────────────
-
-/** Pose stored on every leaf — rectangular AABB plus optional rotation
- *  (radians, pivot = unrotated AABB center). Matches the auto-rotation
- *  hook `SceneCanvas.defaultDrawOne` applies for any pose carrying a
- *  non-zero `rotation` field. */
-export interface WeaselDrawPose {
-  x: number; y: number; width: number; height: number; rotation?: number;
-}
-
-/** How a container's pose composes into its children's. The canvas and the
- *  SVG export both read it; absent, every stored pose is already world. */
-const DRAW_POSE_COMPOSITION: PoseComposition<WeaselDrawPose> | undefined = undefined;
-
-/** Data stored on every leaf — kit-native shape consumed by PATH_PAINTER
- *  and the text painter. Tools synthesized by `defaultTools={BUILTIN_TOOL_IDS}`
- *  already produce this shape, so no per-tool `create` overrides are
- *  required. `text` is present on text-tool leaves only. */
-export interface WeaselDrawData {
-  path?: Path;
-  text?: string;
-  /** Node-level typography. What the sidebar's Character / Paragraph groups
-   *  edit, and what runs inherit from. */
-  style?: TextStyle;
-  /** Inline styling over `text`. Kept in sync with it by every writer —
-   *  `runsToPlainText(runs) === text` — and preferred by the `kit:text`
-   *  painter when present. */
-  runs?: StyledRun[];
-  /** Where the lines sit in the box's height — read by the `kit:text`
-   *  painter and the editor, edited beside the Paragraph group. */
-  verticalAlign?: TextVerticalAlign;
-  /** The node's paint — solid, gradient or pattern. `null` is an explicit
-   *  "no fill"; absent takes the painter's default. */
-  fill?: FillStyle | null;
-  /** The whole stroke — paint, width, dash, cap, join, align. */
-  stroke?: Stroke | null;
-  /** A dropped bitmap, a dropped SVG kept whole, or an imported `<image>` —
-   *  what the `kit:image` painter draws. */
-  image?: ImageNodeData['image'];
-  label?: string;
-}
-
-export type WeaselDrawLayer = 'default';
-
 /** The grid's pitch in world units: what the grid layer draws and what snap rounds to. */
 const GRID_SPACING = 20;
-
-const LS_KEY = 'weaseldraw:scene-v1';
-const HISTORY_KEY = 'weaseldraw:history-v1';
 const RECENT_COLORS_KEY = 'weaseldraw:recent-colors';
 
 // Draw's full ingestion config: SVG unpack + clipboard revival.
@@ -230,598 +121,15 @@ const RECENT_COLORS_KEY = 'weaseldraw:recent-colors';
 // persistence.ts). Module const: SceneCanvas keys its dep wiring off the
 // prop identity.
 const DRAW_INGESTION = { svg: { unpack: unpackSvgFiles }, clipboard: { reviver: clipboardJsonReviver } };
-/** Synthetic id for the locked "Background" row in the Layers panel.
- *  Selecting this row surfaces the Document properties branch in the
- *  Properties panel; clicking any real node clears it. */
-const BACKGROUND_ROW_ID = '__background__';
-
 /** Seed fill for a fresh document. Intentionally a friendly blue rather than
  *  the kit's white `DEFAULT_FILL_COLOR` — a new shape lands visible against
  *  the white page instead of disappearing into it. Keep distinct from the
  *  kit default on purpose. */
 const INITIAL_FILL_COLOR = '#7ab8d4ff';
-
-/** Every `FillStyle` variant, not just the gradients. Keyed on the union's
- *  own discriminant, so a variant added later needs no change here — the
- *  earlier `'stops' in raw` test silently downgraded patterns to the
- *  fallback color. */
-function isFillStyleObject(raw: unknown): raw is FillStyle {
-  if (raw === null || typeof raw !== 'object') return false;
-  return 'fill' in raw || 'stops' in raw || 'color' in raw;
-}
-
-/**
- * A paint leaf routed through an action, so a scrub coalesces into one undo
- * entry instead of one per tick. The control itself is the kit's `PaintInput`
- * — the app supplies only which action the writes land on.
- */
-function wdPaintRenderer(actionId: string): PropertyRenderer {
-  return (ctx) => <WdPaintLeaf ctx={ctx} actionId={actionId} />;
-}
-
-function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: string }) {
-  const edit = useOngoingAction(actionId);
-
-  const fallback = ctx.pref.default;
-  const raw = ctx.value;
-  // `null` is an explicit "no paint" and must not fall through to the schema
-  // default, or the None segment unlights itself on the next render.
-  const value: FillStyle | null | undefined = raw === null ? null
-    : isFillStyleObject(raw) ? raw
-    : isFillStyleObject(fallback) ? fallback
-    : undefined;
-
-  return (
-    <PaintInput
-      subject={ctx.selectionKey}
-      value={value}
-      mixed={ctx.mixed}
-      unset={ctx.unset}
-      aria-label={ctx.pref.name}
-      onInput={(paint) => edit.input({ paint })}
-      onChange={(paint) => edit.commit({ paint })}
-    />
-  );
-}
-
-/** Marks the tool options bar as the text editor's own chrome, so focus
- *  landing in it doesn't commit the edit those controls are there to style.
- *  A class rather than a ref because the check is a `closest()` from an
- *  arbitrary focus target, including one inside a portalled popover. */
-const TEXT_CHROME_CLASS = 'wd-text-chrome';
-
-export const WD_RENDERERS: Record<string, PropertyRenderer> = {
-  'data.fill': wdPaintRenderer('setFill'),
-  // The stroke's paint row inside its object leaf; the other fields render
-  // from the schema. Keyed at the child path so the object rows survive.
-  'data.stroke.paint': wdPaintRenderer('setStroke'),
-};
-
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
-
-/**
- * The color chip on a layer row. Every node kind keeps its paint in
- * `data.fill`, text included.
- *
- * `resolveTextStyle` is the same function the renderer resolves through, so
- * an unpainted text node reports the black it actually paints rather than
- * nothing. Non-solid paints (gradient, pattern) have no single color to show
- * and return undefined until the row can draw a real preview.
- */
-function LayerSwatch({ color }: { color: string | undefined }): ReactElement | null {
-  if (color === undefined) return null;
-  // A custom property rather than a class: the chip's color is the node's data.
-  return <span className="wd-layer-swatch" style={{ '--wd-swatch': color } as CSSProperties} aria-hidden="true" />;
-}
-
-function layerSwatch(data: WeaselDrawData): string | undefined {
-  if (data.fill != null) return paintChipColor(data.fill);
-  if (data.text === undefined) return undefined;
-  const { fill } = resolveTextStyle(data.style, { fill: data.fill });
-  return fill !== null && 'color' in fill ? fill.color : undefined;
-}
-
-/** One representative color for a `FillStyle`, for a chip too small to draw
- *  the real paint: a gradient shows its midpoint, which reads closer to the
- *  whole ramp than either end does, and a tile pattern shows the color it
- *  draws with. A pattern built from a raw `TextureHandle` has no color to
- *  report. */
-function paintChipColor(fill: FillStyle): string | undefined {
-  if (isGradientFill(fill)) return sampleGradientStops(fill.stops, 0.5);
-  if (fill.fill === undefined || fill.fill === 'solid') return fill.color;
-  if (fill.fill === 'pattern' && 'tile' in fill.pattern) return fill.pattern.color;
-  return undefined;
-}
-
-const PAPER_SIZE_OPTIONS: ReadonlyArray<PropertyOption<PaperSizeKey>> = [
-  { value: 'letter', label: 'Letter' },
-  { value: 'a4', label: 'A4' },
-  { value: 'legal', label: 'Legal' },
-];
-
-/** The `#rrggbb` a native color input accepts; non-hex colors fall back to black. */
-function opaqueHex(color: string): string {
-  const hex8 = toHex8(color);
-  return hex8.startsWith('#') && hex8.length >= 7 ? hex8.slice(0, 7) : '#000000';
-}
-
-interface RightSidebarProps {
-  scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
-  selection: ReturnType<typeof useSelection>;
-  filename: string;
-  setFilename: (v: string) => void;
-  backgroundColor: string;
-  setBackgroundColor: (v: string) => void;
-  paperSize: PaperSizeKey;
-  setPaperSize: (v: PaperSizeKey) => void;
-  docSelected: boolean;
-  setDocSelected: (v: boolean) => void;
-}
-
-function RightSidebar({
-  scene,
-  selection,
-  filename,
-  setFilename,
-  backgroundColor,
-  setBackgroundColor,
-  paperSize,
-  setPaperSize,
-  docSelected,
-  setDocSelected,
-}: RightSidebarProps): ReactElement {
-  const baseLayerListProps = useSceneLayerList({
-    scene,
-    selection,
-    itemFor: (node) => {
-      const data = node.data as WeaselDrawData;
-      return {
-        label: data.text ?? data.label ?? node.id,
-        leading: <LayerSwatch color={layerSwatch(data)} />,
-      };
-    },
-  });
-
-  // Augment the kit-derived layer items with a pinned, locked virtual
-  // "Background" row. Selecting it routes to the Document properties
-  // branch instead of the kit `SelectionApi` (the synthetic id is not a
-  // real NodeId and would corrupt scene queries).
-  const backgroundRow: LayerListItem = {
-    id: BACKGROUND_ROW_ID,
-    label: 'Background',
-    leading: <LayerSwatch color={backgroundColor} />,
-    locked: true,
-  };
-  const layerItems = [...baseLayerListProps.items, backgroundRow];
-  const layerSelectedIds = docSelected
-    ? [BACKGROUND_ROW_ID]
-    : baseLayerListProps.selectedIds;
-  const onLayerSelect = (ids: string[]): void => {
-    if (ids.includes(BACKGROUND_ROW_ID)) {
-      setDocSelected(true);
-      selection.set([]);
-    } else {
-      setDocSelected(false);
-      baseLayerListProps.onSelect(ids);
-    }
-  };
-  const layerListProps = {
-    ...baseLayerListProps,
-    items: layerItems,
-    selectedIds: layerSelectedIds,
-    onSelect: onLayerSelect,
-  };
-
-  const propertiesPanel = usePanel('properties');
-  const colorsPanel = usePanel('colors');
-  const layersPanel = usePanel('layers');
-  const historyPanel = usePanel('history');
-
-  return (
-    <>
-      {!propertiesPanel.hidden && (
-        <SidebarPanel
-          title={docSelected ? 'Document' : 'Properties'}
-          collapsed={propertiesPanel.collapsed}
-          onToggleCollapse={propertiesPanel.onToggleCollapse}
-          onHide={propertiesPanel.onHide}
-        >
-          {docSelected ? (
-            <PropertyList>
-              <PropertyField kind="string" label="File" value={filename} placeholder={DEFAULT_FILENAME} onChange={setFilename} />
-              <PropertyField<PaperSizeKey>
-                kind="enum"
-                label="Paper"
-                value={paperSize}
-                options={PAPER_SIZE_OPTIONS}
-                onChange={setPaperSize}
-              />
-              <PropertyField
-                kind="color"
-                label="Background"
-                value={opaqueHex(backgroundColor)}
-                onChange={(rgb) => setBackgroundColor(withAlpha01(rgb, getAlpha01(backgroundColor)))}
-                alpha={getAlpha01(backgroundColor)}
-                onAlphaChange={(a) => setBackgroundColor(withAlpha01(backgroundColor, a))}
-              />
-            </PropertyList>
-          ) : (
-            <SelectionPanel
-              scene={scene}
-              selection={selection}
-              // WeaselDraw's kinds come from the kit's inferred routing (`text` /
-              // `path` / `image` — no `data.kind` tag), so the panel classifies
-              // with the same entries SceneCanvas applies when `routing` is unset.
-              properties={inferredNodeProperties}
-              routing={inferredNodeRouting}
-              renderers={WD_RENDERERS}
-              emptyState={<em className="wd-no-selection">No selection</em>}
-            />
-          )}
-        </SidebarPanel>
-      )}
-      {!colorsPanel.hidden && <ColorsPanel chrome={colorsPanel} />}
-      {!layersPanel.hidden && (
-        <SidebarPanel
-          title="Layers"
-          collapsed={layersPanel.collapsed}
-          onToggleCollapse={layersPanel.onToggleCollapse}
-          onHide={layersPanel.onHide}
-        >
-          <LayerList {...layerListProps} empty="No nodes" />
-        </SidebarPanel>
-      )}
-      {!historyPanel.hidden && (
-        <SidebarPanel
-          title="History"
-          collapsed={historyPanel.collapsed}
-          onToggleCollapse={historyPanel.onToggleCollapse}
-          onHide={historyPanel.onHide}
-        >
-          <HistoryList
-            items={[
-              { id: '__initial__', label: 'Initial' },
-              ...scene.historyEntries().map((e) => ({ id: e.id, label: e.label })),
-            ]}
-            currentIndex={scene.historyIndex()}
-            onJump={(index) => scene.jumpToHistoryIndex(index)}
-          />
-        </SidebarPanel>
-      )}
-      {DispatchTracePanel && (
-        <Suspense fallback={null}>
-          <DispatchTracePanel />
-        </Suspense>
-      )}
-    </>
-  );
-}
-
-function ColorsPanel({ chrome }: { chrome: PanelChrome }): ReactElement {
-  const colors = useColorContext();
-  const edits = { fill: useOngoingAction('setFill'), stroke: useOngoingAction('setStroke') };
-  const other = colors.focused === 'fill' ? 'stroke' : 'fill';
-  // A click paints the focused slot, a shift- or right-click the other one;
-  // each lands on the active paint and on the selection.
-  const apply = (slot: 'fill' | 'stroke', v: string | null): void => {
-    const paint: ActivePaint = v === null ? { kind: 'none' } : { kind: 'solid', color: v };
-    if (slot === 'fill') colors.setFill(paint);
-    else colors.setStroke(paint);
-    edits[slot].commit(v === null ? { paint: null } : { color: v });
-  };
-  const focusedPaint = colors.focused === 'fill' ? colors.fill : colors.stroke;
-  return (
-    <SidebarPanel
-      title="Colors"
-      collapsed={chrome.collapsed}
-      onToggleCollapse={chrome.onToggleCollapse}
-      onHide={chrome.onHide}
-    >
-      <SwatchStrip
-        aria-label="Palette"
-        value={focusedPaint.kind === 'solid' ? focusedPaint.color : focusedPaint.kind === 'none' ? null : undefined}
-        columns={10}
-        onChange={(v) => apply(colors.focused, v)}
-        onAltChange={(v) => apply(other, v)}
-      />
-    </SidebarPanel>
-  );
-}
-
-
-interface ToolbarProps {
-  scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
-  selection: ReturnType<typeof useSelection>;
-  paperSize: PaperSizeKey;
-  setPaperSize: (k: PaperSizeKey) => void;
-  filename: string;
-  backgroundColor: string;
-  setBackgroundColor: (color: string) => void;
-  /** Called at the start of every explicit save/load so stale journal
-   *  caches don't survive across document boundaries. */
-  onClearJournalCache: () => void;
-}
-
-function Toolbar({
-  scene, selection,
-  paperSize, setPaperSize,
-  filename, backgroundColor, setBackgroundColor,
-  onClearJournalCache,
-}: ToolbarProps): ReactElement {
-  const adapter = useSceneAdapter(scene, {});
-  // Only its setter is read: a copy re-renders the bar so Paste re-evaluates.
-  const [, setClipboardEmpty] = useState(true);
-  // `snapshot.items` are adapter-shaped copies (`sceneAdapter.snapshotSelection`),
-  // not live scene nodes — but their `id`s are the ORIGINAL scene ids at copy
-  // time, and `produceFlavors` runs synchronously inside `clipboard.copy()`,
-  // so walking the live `scene` by those ids here is correct: nothing has
-  // had a chance to mutate the scene in between. Only the serialization
-  // waits, on paint kinds that load on demand; the walk has already run. (Verified: `sceneToSvgNodes`
-  // skips ids it can't resolve — `kindOf`/`objOf` both fall through to
-  // "not found" — rather than throwing, so no id-existence filter is needed
-  // even in the shouldn't-happen case.)
-  const produceFlavors = useCallback((snapshot: ClipboardSnapshot) => {
-    const json = buildWeaselClipboardText(snapshot.items, serializeReplacer);
-    const roots = clipboardSnapshotRootIds(
-      snapshot.items as Array<{ id: string; parent: string | null }>,
-    );
-    // The SVG flavors carry `json` embedded in <metadata> too: Chromium's
-    // DOM paste event exposes ONLY text/plain, so this is what preserves
-    // full fidelity (labels, typed data) on a draw→draw paste.
-    const svg = selectionToClipboardSvgString(scene, roots, json, DRAW_POSE_COMPOSITION);
-    return {
-      [WEASEL_CLIPBOARD_MIME]: json,
-      'image/svg+xml': svg,
-      // External design tools sniff text/plain for SVG markup (<metadata>
-      // is legal SVG 1.1, ignored by their parsers); the JSON also rides
-      // the custom MIME (and cross-tab clipboardData) for lossless paths.
-      'text/plain': svg,
-    };
-  }, [scene]);
-  const clipboard = useClipboardOps(adapter, {
-    getSelection: () => selection.current as NodeId[],
-    onPaste: (ids) => selection.set(ids.map(asNodeId)),
-    produceFlavors,
-    jsonReplacer: serializeReplacer,
-  });
-  // Published as the `clipboard` dep so Cmd+C / Cmd+X reach the same object
-  // the buttons do — `copy` is wrapped rather than passed raw so the Paste
-  // button's enabled state updates on the keyboard route too.
-  const clipboardDep = useMemo<ClipboardDep>(() => ({
-    copy: () => {
-      clipboard.copy();
-      setClipboardEmpty(clipboard.isEmpty());
-    },
-    paste: clipboard.paste,
-    isEmpty: clipboard.isEmpty,
-  }), [clipboard]);
-  useDepSource('clipboard', () => clipboardDep);
-
-  return (
-    <>
-      <CommandBar
-        onSaveSvg={() => {
-          onClearJournalCache();
-          const paper = PAPER_PRESETS[paperSize];
-          const safe = filename.trim() || DEFAULT_FILENAME;
-          void sceneToSvgString(scene, {
-            filename,
-            paperSize,
-            paperWidth: paper.width,
-            paperHeight: paper.height,
-            backgroundColor,
-            onWarn: (w) => console.warn('[svg export]', w),
-            poseComposition: DRAW_POSE_COMPOSITION,
-          }).then((svg) => downloadSvg(svg, /\.svg$/i.test(safe) ? safe : `${safe}.svg`));
-        }}
-        onOpenSvg={() => {
-          // Pop the file picker, parse the chosen SVG, lower its nodes back
-          // into the scene-graph. Leaves become `kind: 'leaf'`; SVG groups
-          // become `kind: 'container'` and members are reparented under them
-          // (nested groups supported — outer groups process after their
-          // inner groups are resolved).
-          void (async () => {
-            const text = await pickSvgFile();
-            if (text === null) return;
-            onClearJournalCache();
-            const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES });
-            for (const w of parsed.warnings) console.warn('[svg import]', w);
-            const docPatch = parsedToDoc(parsed);
-            if (docPatch.paperSize) setPaperSize(docPatch.paperSize);
-            if (docPatch.backgroundColor) setBackgroundColor(docPatch.backgroundColor);
-            let seq = 0;
-            const drafts = svgNodesToSceneDrafts(parsed, () => `svg-${++seq}`);
-            scene.batch('Import SVG', () => {
-              // Drafts arrive parent-before-child, so each draft's `parentId`
-              // (when set) has already been inserted and mapped. Map the
-              // draft's stable id → minted scene NodeId so children resolve
-              // their parent.
-              const idMap = new Map<string, ReturnType<typeof asNodeId>>();
-              for (const draft of drafts) {
-                const parent = draft.parentId != null ? idMap.get(draft.parentId) : undefined;
-                if (draft.kind === 'container') {
-                  // Container pose = AABB of descendants (computed by the
-                  // importer), matching the kit `group` action's convention.
-                  const sceneId = scene.add({
-                    kind: 'container',
-                    layer: 'default',
-                    pose: draft.pose,
-                    data: {},
-                    ...(parent != null ? { parent } : {}),
-                  });
-                  idMap.set(draft.id, sceneId);
-                  continue;
-                }
-                const sceneId = scene.add({
-                  kind: 'leaf',
-                  layer: 'default',
-                  ...leafOfObj(draft.obj),
-                  ...(parent != null ? { parent } : {}),
-                });
-                idMap.set(draft.id, sceneId);
-              }
-            });
-          })();
-        }}
-        onNew={(size) => {
-          setPaperSize(size);
-          // The batch is what names the entry and captures the prior selection.
-          scene.batch('New document', () => {
-            scene.removeMany([...scene.renderOrder()]);
-          });
-        }}
-      />
-    </>
-  );
-}
-
 // ─── Modality helpers ────────────────────────────────────────────────────────
-
-/** Subscribe to the mode registry and return the current mode id reactively. */
-function useModeId(machine: ModeMachine): string {
-  const [id, setId] = useState(machine.registry.current().id);
-  useEffect(() => {
-    return machine.registry.subscribe(() => setId(machine.registry.current().id));
-  }, [machine]);
-  return id;
-}
-
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-/** Restore the persisted scene (if any) from localStorage. Returns the
- *  initial node list shaped for `useScene`'s full-form call signature.
- *  Rebuilds the FULL tree (containers + parent links + layers) via
- *  `nodeSpecsFromSnapshot`, so Cmd+G groups and nesting survive a reload.
- *  Best-effort — any parse error yields a fresh starter scene with one
- *  example rectangle so the canvas isn't empty on first run. */
-function loadInitial(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>[] {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      const json = JSON.parse(raw) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
-      if (json && json.version === 1 && Array.isArray(json.nodes)) {
-        return nodeSpecsFromSnapshot(json);
-      }
-    }
-  } catch {
-    // fall through to starter
-  }
-  return [{
-    kind: 'leaf' as const,
-    layer: 'default' as WeaselDrawLayer,
-    pose: { x: 80, y: 80, width: 160, height: 100 },
-    data: {
-      path: rectPath(80, 80, 160, 100),
-      fill: solid('#7ab8d4'),
-      stroke: strokeOf('#0a3654', 2),
-      label: 'Welcome',
-    },
-    id: asNodeId('starter-1'),
-  }];
-}
-
-/** Read the persisted undo/redo history snapshot, reviving the typed arrays
- *  inside its serialized op payloads (poses/paths carry Float32Array coords).
- *  Best-effort — returns null on absent/corrupt data or a version mismatch,
- *  in which case the app starts with an empty undo stack. */
-function loadHistory(): SerializedHistory | null {
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    if (!raw) return null;
-    const snap = JSON.parse(raw) as SerializedHistory;
-    if (snap && snap.version === 1) return reviveSnapshot(snap);
-  } catch {
-    // fall through to no-history
-  }
-  return null;
-}
-
-const SCENE_HISTORY_KEY = 'weaseldraw:scene-history-v1';
-
-/** Read the persisted SCENE undo/redo snapshot (the scene's own history
- *  engine, distinct from the modality history above). Best-effort; on
- *  absent/corrupt/mismatched data returns null AND removes the key so a
- *  broken snapshot can't wedge every boot. */
-function loadSceneHistory(): SerializedHistory | null {
-  try {
-    const raw = localStorage.getItem(SCENE_HISTORY_KEY);
-    if (raw) {
-      const snap = JSON.parse(raw) as SerializedHistory;
-      if (snap && snap.version === 1) return reviveSnapshot(snap);
-    }
-  } catch {
-    // fall through to wipe
-  }
-  try { localStorage.removeItem(SCENE_HISTORY_KEY); } catch { /* best-effort */ }
-  return null;
-}
-
 // ─── Outer App: install the color context so swatches + actions resolve ─────
-
-/** Publishes a `BooleansAdapter` as a dep so the kit's Pathfinder
- *  descriptors can read selection and execute boolean ops on WeaselDraw nodes.
- *  Must live inside `<SceneCanvas>` since `useBooleansAdapter` calls
- *  `useDepSource`, which requires the surrounding `<DepRegistryProvider>`. */
-function BooleansAdapterPublisher({
-  scene,
-  selection,
-}: {
-  scene: DrawScene;
-  selection: ReturnType<typeof useSelection>;
-}): null {
-  const adapter = useMemo(
-    () => drawBooleansAdapter(scene, selection.adapterMethods),
-    [scene, selection],
-  );
-  useBooleansAdapter(adapter);
-  return null;
-}
-
-/** Publishes the adapter the kit's `createOutlines` action converts text
- *  through. A text wearing several paints becomes a group of paths. */
-function CreateOutlinesAdapterPublisher({
-  scene,
-  selection,
-}: {
-  scene: DrawScene;
-  selection: ReturnType<typeof useSelection>;
-}): null {
-  const idCounterRef = useRef(0);
-  const adapter = useMemo<CreateOutlinesAdapter>(() => {
-    const a: CreateOutlinesAdapter = {
-      ...defaultCommitAdapter(scene, selection.adapterMethods),
-      getTextSource: (id) => textSourceOf(scene, id),
-      createPathNode: (path, sourceId, { fill, stroke, parent }) => {
-        const b = boundsOfPath(path);
-        return {
-          id: `o-${Date.now().toString(36)}-${idCounterRef.current++}`,
-          kind: 'leaf',
-          layer: scene.get(sourceId)?.layer ?? 'default',
-          parent,
-          pose: { x: b.x, y: b.y, width: b.width, height: b.height },
-          data: { path, fill, ...(stroke !== undefined ? { stroke } : {}) },
-        } as { id: string };
-      },
-      // The kit `group` action's container: an envelope tracking its members.
-      createContainerNode: (sourceId, { parent, bounds }) => ({
-        id: `o-${Date.now().toString(36)}-${idCounterRef.current++}`,
-        kind: 'container',
-        layer: scene.get(sourceId)?.layer ?? 'default',
-        parent,
-        pose: bounds,
-        data: {},
-        dependsOn: 'children',
-        derivePose: scene.registry.derivePose?.[UNION_OF_CHILDREN] ?? unionOfChildren,
-      }) as { id: string },
-      applyOps: (ops, label) => {
-        scene.applyBatch(ops, label ?? 'Create Outlines', a);
-      },
-    };
-    return a;
-  }, [scene, selection]);
-  useCreateOutlinesAdapter(adapter);
-  return null;
-}
 
 export function App(): ReactElement {
   const [initialScene] = useState(loadInitial);
@@ -1422,50 +730,6 @@ function EditorWithSharedScene({
       <EditorStatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
     </div>
     </ActiveToolContextProvider>
-  );
-}
-
-function EditorStatusBar({
-  scene,
-  selection,
-  view,
-  machine,
-}: {
-  scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
-  selection: ReturnType<typeof useSelection>;
-  view: View;
-  machine: ModeMachine;
-}): ReactElement {
-  const modeId = useModeId(machine);
-  const activeTool = useActiveToolContext();
-  const colors = useColorContext();
-  const colorMode = useColorModeControl();
-  let groupCount = 0;
-  for (const id of scene.renderOrder()) {
-    const n = scene.get(id);
-    if (n && n.kind === 'container') groupCount++;
-  }
-  const paintLabel = (p: ActivePaint): string =>
-    p.kind === 'solid' ? p.color : p.kind;
-  const engaged = activeTool.hotkeyStack[activeTool.hotkeyStack.length - 1];
-  const toolLabel = engaged ? `${activeTool.active} → ${engaged}` : activeTool.active;
-  return (
-    <StatusBar ariaLabel="Editor status" className="wd-statusbar">
-      <ModeStatusIndicator mode={machine.registry.byId(modeId)} />
-      <StatusBarItem>tool: {toolLabel}</StatusBarItem>
-      <StatusBarItem>sel: {selection.current.length}</StatusBarItem>
-      <StatusBarItem>groups: {groupCount}</StatusBarItem>
-      <StatusBarItem>fill: {paintLabel(colors.fill)}</StatusBarItem>
-      <StatusBarItem>stroke: {paintLabel(colors.stroke)}</StatusBarItem>
-      <StatusBarSpacer />
-      <StatusBarItem>zoom: {qty(view.scale.x, zoom()).text}</StatusBarItem>
-      {colorMode && (
-        <StatusBarItem>
-          <ThemeSwitcher value={colorMode.preference} onChange={colorMode.setPreference} />
-        </StatusBarItem>
-      )}
-      <StatusBarItem muted title={buildTitle()}>{buildLabel()}</StatusBarItem>
-    </StatusBar>
   );
 }
 

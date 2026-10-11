@@ -43,7 +43,7 @@ import {
   type SceneSource,
   type WeaselDrawPaperSize,
 } from './svgInterop';
-import type { WeaselDrawData, WeaselDrawPose } from './App';
+import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
 import type { ImageObj, Obj, PathObj, TextObj } from './svgObj';
 
 const WHITE = /^#?fff(fff)?(ff)?$/i;

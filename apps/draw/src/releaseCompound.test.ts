@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { asNodeId, createScene, pathFromD } from '@weasel-js/core';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './App';
+import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { hasCompoundPath, releaseCompoundPaths } from './releaseCompound';
 
 const box = (x: number) => ({ x, y: 0, width: 10, height: 10 });

@@ -1,5 +1,5 @@
 import { asNodeId, boundsOfPath, PATH_M, pathInWorld, splitSubpaths, type NodeId, type Scene } from '@weasel-js/core';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './App';
+import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 
 type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
 

@@ -1,5 +1,5 @@
 import { solid } from '@weasel-js/core';
-import type { WeaselDrawData, WeaselDrawPose } from './App';
+import type { WeaselDrawData, WeaselDrawPose } from './drawDocument';
 import type { Obj } from './svgObj';
 
 /** The scene leaf an imported `Obj` becomes: its box as the pose, and the

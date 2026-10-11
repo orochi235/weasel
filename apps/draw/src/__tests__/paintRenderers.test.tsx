@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ActionsProvider, createDispatcher, useActionsRegistry, type Action } from '@weasel-js/core';
 import type { PropertyRenderContext } from '@weasel-js/ui';
-import { WD_RENDERERS } from '../App';
+import { WD_RENDERERS } from '../paintRenderers';
 
 /** The schema's own `data.stroke.paint` leaf: a `paint` leaf, so its default
  *  is a whole `FillStyle` and not a color string. */

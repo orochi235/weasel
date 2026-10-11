@@ -10,7 +10,7 @@ import {
   type SelectionApi,
   type TextNodeSource,
 } from '@weasel-js/core';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './App';
+import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 
 export type DrawScene = Scene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
 

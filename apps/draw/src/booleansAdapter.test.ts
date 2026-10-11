@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { applyBooleanOp, asNodeId, createScene, rectPath, type NodeId } from '@weasel-js/core';
-import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './App';
+import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { drawBooleansAdapter } from './booleansAdapter';
 
 function setup() {

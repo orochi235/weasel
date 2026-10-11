@@ -10,7 +10,7 @@ import {
   type FillStyle, type View,
 } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
-import { WD_RENDERERS } from '../App';
+import { WD_RENDERERS } from '../paintRenderers';
 import { useOpacityScrub } from './useOpacityScrub';
 
 type D = { fill?: FillStyle | null; text?: string };
