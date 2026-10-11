@@ -17,6 +17,7 @@ import { Dialog as RACDialog, Popover as RACPopover } from 'react-aria-component
 import { auto as autoValue } from '../config/auto';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
+import { isLeafEnabled, isLeafVisible } from '../config/visible';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
 import { clearable, MatrixCell } from './MatrixCell';
 import { MatrixEditor, type OpenCell } from './MatrixEditor';
@@ -110,11 +111,20 @@ export function ControlMatrix({
     return node && isPrefLeaf(node) ? node : undefined;
   };
 
-  const rowSpecs = rows.map((row) => {
-    const leaves = columns.map((column) => leafAt(`${column.key}.${row.key}`));
-    const named = leaves.find((leaf) => leaf !== undefined);
-    return { row, leaves, label: row.label ?? named?.name ?? row.key, about: named?.description };
-  });
+  // A row is named in `rows`, so a leaf's static `hidden` does not drop it; a `showIf` does.
+  const visible = (path: string): boolean => isLeafVisible(schema, path, config, true);
+  const rowSpecs = rows
+    .map((row) => {
+      const leaves = columns.map((column) => leafAt(`${column.key}.${row.key}`));
+      const named = leaves.find((leaf) => leaf !== undefined);
+      return { row, leaves, label: row.label ?? named?.name ?? row.key, about: named?.description };
+    })
+    // A setting no column shows has no row; one no column has keeps its row of dashes.
+    .filter(
+      ({ row, leaves }) =>
+        leaves.every((leaf) => leaf === undefined) ||
+        leaves.some((leaf, i) => leaf !== undefined && visible(`${columns[i]?.key}.${row.key}`)),
+    );
 
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
   // With a title row to sit in, the headers leave the table for it.
@@ -166,6 +176,9 @@ export function ControlMatrix({
                     </td>
                   );
                 }
+                if (!visible(path)) {
+                  return <td key={column.key} className="lk-control-matrix__cell" />;
+                }
                 const first = i === 0;
                 const inherited = !first && auto.has(path);
                 return (
@@ -182,6 +195,7 @@ export function ControlMatrix({
                       name={`${nameOf(column)} ${label}`}
                       hint={inherited ? hintFor(column) : undefined}
                       canUnpin={!first && !inherited}
+                      disabled={!isLeafEnabled(schema, path, config)}
                       setConfig={setConfig}
                       onOpen={(el) => {
                         triggerRef.current = el;
