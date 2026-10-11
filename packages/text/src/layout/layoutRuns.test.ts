@@ -88,6 +88,21 @@ describe('layoutRuns — single line', () => {
     expect(out.groups[0].quads).toHaveLength(2);
   });
 
+  it('keeps a gradient-filled run in one group, and two gradients apart', async () => {
+    await registerFixture('inter', [{}]);
+    const gradient = (): ResolvedRun['fill'] => ({
+      fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
+    });
+    const shared = gradient();
+    const opts: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
+    const one = layoutRuns([{ ...RUN_PLAIN('AB'), fill: shared }, { ...RUN_PLAIN('A'), fill: shared }], opts);
+    expect(one.groups).toHaveLength(1);
+    expect(one.groups[0].quads).toHaveLength(3);
+    const two = layoutRuns([{ ...RUN_PLAIN('AB'), fill: gradient() }, { ...RUN_PLAIN('A'), fill: gradient() }], opts);
+    expect(two.groups.map((g) => g.quads.length)).toEqual([2, 1]);
+  });
+
   it('emits one group per distinct (family, weight, style, synthetic, fill)', async () => {
     await registerFixture('inter', [{}, { weight: 700 }]);
     const out = layoutRuns(

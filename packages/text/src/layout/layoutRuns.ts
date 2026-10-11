@@ -64,6 +64,7 @@ import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
 import { analyzeParagraphs, restoreRemoved } from './bidiLines';
+import { refId } from './refId';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
 import { graphemeEnds } from '../measure/graphemes';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
@@ -356,10 +357,7 @@ interface LayoutContext {
 function fillKey(p: FillStyle | null): string {
   if (p === null) return 'none';
   if ('color' in p) return `s:${p.color}:${p.opacity ?? 1}`;
-  // Non-solid paints (gradients/patterns) defeat grouping in this slice —
-  // every occurrence gets its own group. Acceptable in v1 since per-run
-  // non-solid fills are rare; revisit if it bites perf.
-  return `nx:${Math.random()}`;
+  return `nx:${refId(p)}`;
 }
 
 /**
@@ -390,9 +388,7 @@ function strokePaints(s: Stroke | undefined): s is Stroke & { paint: FillStyle }
 /**
  * Draw state for a stroke, for grouping. Two runs stroked the same way share
  * a draw call; anything else has to split, since the group *is* the draw call
- * and one call paints one ribbon. Paint identity reuses `fillKey`, so a
- * gradient-stroked run gets its own group the same way a gradient-filled one
- * does.
+ * and one call paints one ribbon.
  */
 function strokeKey(s: Stroke | undefined): string {
   if (!strokePaints(s)) return '-';
