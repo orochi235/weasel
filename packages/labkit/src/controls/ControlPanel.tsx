@@ -1,5 +1,4 @@
 import {
-  isBuiltinPref,
   isPrefLeaf,
   prefAliasedLeaf,
   prefAliasTarget,
@@ -19,6 +18,7 @@ import {
   ListEditor,
   PrefActionButton,
   PrefControl,
+  type PrefFieldChoice,
   type PropertyAlign,
   type PropertyControlProps,
   type PropertyDensity,
@@ -146,6 +146,8 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
 }
 
 const NO_AUTO: ReadonlySet<string> = new Set();
+const NO_CHOICES: readonly PrefFieldChoice[] = [];
+const unwritten = (): void => {};
 
 /** Every leaf beneath a group, as its dotted path and its default. */
 function leavesUnder(group: PrefGroup, at: string): [string, unknown][] {
@@ -388,8 +390,9 @@ export function ControlPanel<TC extends Record<string, unknown>>({
       renderers?.[found.kind]
     )
       return undefined;
-    if (!isBuiltinPref(found)) return undefined;
-    if (found.kind === 'paint' || found.kind === 'object' || isSliderLeaf(found)) return undefined;
+    // A cell is one bare control, so a leaf with no one field keeps its row.
+    if (isSliderLeaf(found) || labField(found, undefined, unwritten, NO_CHOICES) === null)
+      return undefined;
     return { leaf: found, pair };
   };
 
@@ -614,26 +617,29 @@ function LeafRow<TC extends Record<string, unknown>>({
   // reads as a rendering bug. Pinning then keeps what you were looking at.
   const value = resolvedValue ?? pinned;
   const setAuto = (next: boolean): void => setRowAuto(path, next, value);
-  const onAutoChange = canAuto ? setAuto : undefined;
   // An auto row hides its control, so the word is all the row has to say.
   const autoReadout = isAutoRow ? 'auto' : undefined;
   // What the row would read as auto, pinned or not: the config resolved with
   // this path unpinned beside the ones that already are.
   const resolves = canAuto && autoResolverOf(leaf) !== undefined;
-  const wouldBe = useMemo(() => {
-    if (!resolves) return undefined;
-    if (isAutoRow) return valueAtPath(shown, path);
+  const unpinned = useMemo((): { value?: unknown; cycles?: true } => {
+    if (!resolves) return {};
+    if (isAutoRow) return { value: valueAtPath(shown, path) };
     try {
-      return valueAtPath(
-        resolveAutoConfig(resolved, config, new Set([...(auto ?? []), path])),
-        path,
-      );
+      return {
+        value: valueAtPath(
+          resolveAutoConfig(resolved, config, new Set([...(auto ?? []), path])),
+          path,
+        ),
+      };
     } catch {
-      // Unpinning this path would close a resolver cycle; the row has no auto value to quote.
-      return undefined;
+      // Unpinning this path would close a resolver cycle: the row has no auto
+      // value to quote, and going auto would throw out of the panel's render.
+      return { cycles: true };
     }
   }, [resolves, isAutoRow, shown, resolved, config, auto, path]);
-  const autoValue = wouldBe === undefined ? undefined : summarizeAuto(wouldBe);
+  const onAutoChange = canAuto && !unpinned.cycles ? setAuto : undefined;
+  const autoValue = unpinned.value === undefined ? undefined : summarizeAuto(unpinned.value);
   const autoProps = { auto: isAutoRow, onAutoChange, autoValue };
 
   // Most specific wins, and within a tier the lab's entry beats the
@@ -657,7 +663,8 @@ function LeafRow<TC extends Record<string, unknown>>({
 
   if (leaf.kind === 'action') {
     return (
-      <PropertyRow label={label} description={description} layout={layout}>
+      // Not a `<label>`: that would hand a click on its text to the button.
+      <PropertyRow group label={label} description={description} layout={layout}>
         <PrefActionButton pref={leaf as PrefAction} path={path} />
       </PropertyRow>
     );

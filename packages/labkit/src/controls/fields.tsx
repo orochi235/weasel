@@ -95,7 +95,6 @@ export function BareControl({
     extra<number>(leaf, 'debounceMs') ?? 150,
   );
   const field = labField(leaf, value, write, useFieldChoices());
-  // Unreachable for null: callers admit only kinds with a field.
   if (field === null) return null;
   switch (field.kind) {
     case 'string':
