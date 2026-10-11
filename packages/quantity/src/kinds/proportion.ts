@@ -1,4 +1,4 @@
-import { intlParts, numberPart, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
+import { escapeMarkup, intlParts, numberPart, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
 import { latinDigits, MINUS_SIGN, parseNumber, unsignedZero } from '../number';
 
 /** A share of one as a percentage: 0.25 shows `25%`. Typed text reads as
@@ -219,7 +219,7 @@ export const fractionKind: DisplayKind<FractionDisplay> = {
     const { negative, whole, num, den, constant } = fractionPieces(value, d);
     const counted = (n: number) => {
       if (!constant) return `<mn>${n}</mn>`;
-      const mi = `<mi>${constant.symbol}</mi>`;
+      const mi = `<mi>${escapeMarkup(constant.symbol)}</mi>`;
       return n === 1 ? mi : `<mn>${n}</mn>${mi}`;
     };
     const body = [

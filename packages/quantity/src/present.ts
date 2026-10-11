@@ -1,4 +1,4 @@
-import { textOf, type DisplayKind, type FormatContext, type Part } from './kind';
+import { escapeMarkup as escape, textOf, type DisplayKind, type FormatContext, type Part } from './kind';
 import { compactKind, decimalKind, integerKind } from './kinds/plain';
 import { fractionKind, multiplierKind, percentKind, ratioKind, zoomKind } from './kinds/proportion';
 import { bytesKind, currencyKind, durationKind, unitKind } from './kinds/measure';
@@ -64,11 +64,6 @@ const DEFAULT_DISPLAY: Display = { kind: 'decimal' };
 function contextOf(q: Quantity, options: PresentOptions | undefined): FormatContext {
   const unit = unitOf(q);
   return unit === undefined ? { locale: options?.locale ?? 'en-US' } : { locale: options?.locale ?? 'en-US', unit };
-}
-
-const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
-function escape(s: string): string {
-  return s.replace(/[&<>"]/g, (c) => ESCAPES[c]!);
 }
 
 /** Parts as the unstyled HTML fragment {@link Presentation.html} describes. */
