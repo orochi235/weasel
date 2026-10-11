@@ -24,6 +24,7 @@ type InsertedNode = {
 };
 
 function ctx(overrides: Partial<IngestCtx> = {}) {
+  let minted = 0;
   const batches: { ops: InsertedNode[]; label?: string }[] = [];
   const c = {
     point: null,
@@ -35,7 +36,7 @@ function ctx(overrides: Partial<IngestCtx> = {}) {
         label,
       });
     },
-    scene: { layers: [{ id: 'main' }] } as never,
+    scene: { layers: [{ id: 'main' }], mintId: () => `svg-${minted++}` } as never,
     selection: {} as never,
     deps: {},
     ...overrides,

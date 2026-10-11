@@ -17,7 +17,6 @@ import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescri
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { pathInWorld, worldEditToStorage, type PathInWorldPose } from 'features/paths/pathInWorld';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
-import { freshNodeId } from 'interactions/actions/defaults/freshNodeId';
 import { computeSliceOps, type SliceLeaf } from 'interactions/actions/defaults/sliceOps';
 import type { PoseComposition } from 'features/groups/composePose';
 
@@ -80,7 +79,7 @@ export function useSliceDepSource(
       const { ops, nextSelection } = computeSliceOps({
         leaves,
         cut,
-        nextId: freshNodeId,
+        nextId: () => sc.mintId(),
         selection: sel.get(),
         placePiece: (leaf, piece) => {
           const stored = storePiece(drawnAt.get(leaf.node.id)!, piece);

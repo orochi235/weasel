@@ -34,14 +34,6 @@ export interface SceneClipboardEnv<TData, TLayer extends string, TPose> {
   translate(pose: TPose, dx: number, dy: number, node?: unknown): TPose;
 }
 
-// The scene's own `generateId` isn't reachable from the adapter. The counter
-// is per-tab, so a cross-tab paste leans on the random suffix alone; a
-// collision makes `scene.add` throw rather than silently overwrite.
-let pasteIdCounter = 0;
-function pasteNodeId(): string {
-  return `paste-${(pasteIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 // Spread-level copy per the clipboard contract: mutating a snapshot's
 // pose/data/children must not touch the scene.
 function copyField<T>(value: T): T {
@@ -193,7 +185,7 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   const src = omitted.size === 0 ? all : all.filter((item) => !omitted.has(item.id));
 
   const idMap = new Map<string, NodeId>();
-  for (const item of src) idMap.set(item.id, asNodeId(pasteNodeId()));
+  for (const item of src) idMap.set(item.id, env.scene.mintId());
   // Items whose captured parent isn't part of the snapshot become roots
   // of the pasted cluster.
   const isRoot = (item: Node<TData, TLayer, TPose>): boolean =>

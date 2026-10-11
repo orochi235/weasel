@@ -57,6 +57,7 @@ const selectionOf = (ids: string[]) => ({ current: ids, set: vi.fn() }) as unkno
 const sceneWith = (get: (id: string) => unknown = () => undefined) =>
   ({
     layers: [{ id: 'default' }], get, renderOrderNodes: () => [], layoutOf: () => null, onReflow: () => () => {},
+    mintId: () => 'minted',
   }) as unknown as Scene<unknown, string, unknown>;
 
 describe('dep sources after an abandoned render', () => {
@@ -199,8 +200,8 @@ describe('dep sources after an abandoned render', () => {
   });
 
   it('textEdit reads the committed scene', () => {
-    const a = sceneWith(() => ({ data: { kind: 'text' } }));
-    const b = sceneWith(() => ({ data: { kind: 'rect' } }));
+    const a = sceneWith(() => ({ data: { text: 'hi' } }));
+    const b = sceneWith(() => ({ data: {} }));
     const reg = registryAfterAbandon(a, b, (s) => { useTextEditDepSource(s); });
     expect(dep(reg, 'textEdit').isTextNode('n')).toBe(true);
   });

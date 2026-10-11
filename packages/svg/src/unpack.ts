@@ -91,14 +91,6 @@ function readFileText(file: File): Promise<string> {
   });
 }
 
-/** Mint a fresh node id. Mirrors the scene's default `n{counter}-{random}`
- *  scheme (kept module-private by `core/scene/scene.ts`) — same approach as
- *  `groupAction` / `cloneAction`. */
-let svgIdCounter = 0;
-function freshSvgNodeId(): string {
-  return `n${(svgIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 /** Lower an `SvgPaint` onto the `kit:path` painter's `data.fill` — a
  *  `FillStyle`, or `null` for SVG's `fill="none"` (the painter skips the
  *  fill rather than falling back to its default). A solid paint keeps its
@@ -351,7 +343,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       const text = await readFileText(file);
       const parsed = parseSvg(text);
       for (const w of parsed.warnings) dwarn('ingest', `svg "${file.name}":`, w);
-      let drafts = svgNodesToKitDrafts(parsed, freshSvgNodeId);
+      let drafts = svgNodesToKitDrafts(parsed, () => ctx.scene.mintId());
       if (drafts.length === 0) {
         console.warn(`weasel ingest: svg "${file.name}" parsed to no drawable nodes`);
         continue;
@@ -361,7 +353,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       // file arrives as a single selectable unit.
       const roots = drafts.filter((d) => d.parentId === null);
       if (roots.length > 1) {
-        const wrapperId = freshSvgNodeId();
+        const wrapperId = ctx.scene.mintId();
         const union = unionAABB(roots.map((d) => d.pose))!;
         drafts = [
           { kind: 'container', id: wrapperId, parentId: null, pose: union },

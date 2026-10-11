@@ -1324,8 +1324,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   a snapshot whose `deserialize` or `migrateConfig` throws, and its record stays in storage,
   unwritten and undeleted. Nothing in the lab says a trial is missing, and nothing can discard its
   record, which stays for good. The call to make is whether the lab draws a failed tile with a way
-  to discard it. `setInstruments` still runs `migrateConfig` over the trials already held with no
-  guard, so an instrument registered after open whose migration throws rejects the whole call.
+  to discard it.
 
 - **(P2) labkit trial: the settings panel and the instrument write config through two `setConfig`s
   that disagree.** The chrome's (`packages/labkit/src/trial/TrialChrome.tsx`, used by the settings

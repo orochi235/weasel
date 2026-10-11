@@ -565,6 +565,11 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  layer id yields an empty array. */
   nodesOnLayer(layer: TLayer): readonly Node<TData, TLayer, TPose>[];
 
+  /** A fresh id from this scene's `generateId`, or the kit default: the id
+   *  `add` would give a spec with none. For code that has to name a node
+   *  before it exists, such as one building an insert op. */
+  mintId(): NodeId;
+
   // Mutations (all auto-undoable)
   add(spec: AddNodeSpec<TData, TLayer, TPose>): NodeId;
   /** Delete `id`, its **entire subtree**, and **everything that derives from**

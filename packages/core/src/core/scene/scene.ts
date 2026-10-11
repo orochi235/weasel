@@ -1299,6 +1299,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     renderOrderNodes: order.nodes,
     nodesOnLayer: order.nodesOnLayer,
 
+    mintId: generateId,
+
     add(spec) {
       const id = spec.id ?? generateId();
       if (state.nodes.has(id)) {

@@ -17,7 +17,6 @@ import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
-import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import {
@@ -98,18 +97,8 @@ export function useInsertDepSource(
       layer: () => layer,
       commit(bounds, extras): NodeId | null {
         const kind = extras.kind;
-        // Walk the seq counter forward until we land on an id that doesn't
-        // already exist in the scene. Handles two cases:
-        //   1. Fresh mount after localStorage rehydration — the scene starts
-        //      with `kit-${kind}-1` etc. already populated; bare ++seq would
-        //      collide on the first insert.
-        //   2. Hot-reload re-mounts the hook with a reset counter.
-        let seq = ++insertSeqRef.current;
-        let id = asNodeId(`kit-${kind}-${seq}`);
-        while (sc.get(id) !== undefined) {
-          seq = ++insertSeqRef.current;
-          id = asNodeId(`kit-${kind}-${seq}`);
-        }
+        const seq = ++insertSeqRef.current;
+        const id = sc.mintId();
         const painted = (as: string = kind): { fill?: FillStyle | null; stroke?: Stroke | null } => {
           const { fill, stroke } = paintRef.current(as, seq);
           return { ...(fill !== undefined ? { fill } : {}), ...(stroke !== undefined ? { stroke } : {}) };

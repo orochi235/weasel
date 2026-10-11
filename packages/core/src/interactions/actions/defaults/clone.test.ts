@@ -25,6 +25,7 @@ interface StubScene {
   renderOrder(): Iterable<NodeId>;
   get roots(): readonly NodeId[];
   childrenOf(id: NodeId): readonly NodeId[];
+  mintId(): NodeId;
   applyBatch(ops: Op[], label: string, adapter: unknown): void;
   overrides: ReturnType<typeof createPoseOverrides<unknown>>;
 }
@@ -46,6 +47,7 @@ function makeStubScene(
     poses,
     nodes,
     overrides: createPoseOverrides<unknown>(() => undefined),
+    mintId: () => `clone-${nextId++}` as NodeId,
     addLog,
     applyBatchLog,
     get(id: NodeId) {
@@ -56,7 +58,7 @@ function makeStubScene(
     setPose(id: NodeId, pose: unknown) { poses.set(id, pose); },
     add(spec) {
       addLog.push(spec);
-      const id = (spec.id ?? `clone-${nextId++}`) as NodeId;
+      const id = spec.id ?? scene.mintId();
       nodes.set(id as string, {
         pose: spec.pose,
         kind: spec.kind,

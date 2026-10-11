@@ -482,9 +482,8 @@ describe('clipboard seam', () => {
     const created = adapter.commitPaste!(snap, { dx: 12, dy: 12 }) as unknown as SnapItem[];
     expect(created).toHaveLength(3);
 
-    // Fresh ids: paste-prefixed, unique, disjoint from the originals.
+    // Fresh ids: unique, disjoint from the originals.
     const newIds = created.map((n) => n.id);
-    for (const id of newIds) expect(id).toMatch(/^paste-/);
     expect(new Set(newIds).size).toBe(3);
     for (const id of [p, c1, c2]) expect(newIds).not.toContain(id);
 
@@ -550,7 +549,6 @@ describe('clipboard seam', () => {
       pose: Record<string, number>;
     }>;
     expect(created).toHaveLength(1);
-    expect(created[0].id).toMatch(/^paste-/);
     // Exact equality: no x/y grafted onto a shape that has none, no NaN.
     expect(created[0].pose).toEqual({ cx: 17, cy: 18, r: 7 });
   });
@@ -601,18 +599,19 @@ describe('clipboard seam', () => {
 
     act(() => { result.current.copy(); });
     const nodeCountBefore = scene.nodes.size;
+    const idsBefore = new Set(scene.nodes.keys());
     const entriesBefore = scene.historyEntries().length;
     act(() => { result.current.paste(); });
 
     // The whole subtree exists as fresh nodes.
     expect(scene.nodes.size).toBe(nodeCountBefore + 3);
-    const newIds = [...scene.nodes.keys()].filter((id) => String(id).startsWith('paste-'));
+    const newIds = [...scene.nodes.keys()].filter((id) => !idsBefore.has(id));
     expect(newIds).toHaveLength(3);
     const newContainer = newIds.map((id) => scene.get(id)!).find((n) => n.kind === 'container')!;
     expect(newContainer).toBeDefined();
     expect(scene.childrenOf(newContainer.id)).toHaveLength(2);
     for (const cid of scene.childrenOf(newContainer.id)) {
-      expect(String(cid)).toMatch(/^paste-/);
+      expect(newIds).toContain(cid);
       expect(scene.get(cid)!.parent).toBe(newContainer.id);
     }
     // Originals untouched.

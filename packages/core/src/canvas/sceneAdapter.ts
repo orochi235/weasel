@@ -153,14 +153,6 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   poseComposition?: PoseComposition<TPose>;
 }
 
-// Fallback id generator for `commitInsert` when the consumer factory omits
-// `created.id`. Mirrors `scene.ts`'s `defaultGenerateId` shape; module-scoped
-// counter keeps ids unique across adapters in a session.
-let adapterFallbackIdCounter = 0;
-function adapterFallbackId(): string {
-  return `n${(adapterFallbackIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 /** Derive the adapter for a scene. Reads go straight to the scene; writes are
  *  ops applied through its history, so anything done through the adapter is
  *  undoable. */
@@ -406,7 +398,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             const created = options.commitInsert!(bounds);
             if (!created) return null;
             const layer = (options.insertLayer ?? ('default' as TLayer));
-            const id = asNodeId(created.id ?? adapterFallbackId());
+            const id = created.id === undefined ? scene.mintId() : asNodeId(created.id);
             return {
               kind: 'leaf',
               id,

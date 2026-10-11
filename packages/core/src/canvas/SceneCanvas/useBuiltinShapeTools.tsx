@@ -9,7 +9,7 @@
  * registers the ones requested via `defaultTools`.
  */
 import { useRef } from 'react';
-import { asNodeId, type Node as SceneNode, type NodeId, type Scene } from 'core/scene/types';
+import type { Node as SceneNode, NodeId, Scene } from 'core/scene/types';
 import { boundsOfPath, type Path, type PolygonPath } from '@weasel-js/geom';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 import { useEllipseTool } from 'tools/builtin/ellipse/useEllipseTool';
@@ -75,10 +75,6 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   // Per-canvas counter + fill cycler. Refs survive renders and stay
   // private to the SceneCanvas instance.
   const seqRef = useRef(0);
-  // The random suffix is what keeps an id unique: the counter restarts on
-  // every mount, and the scene outlives the canvas.
-  const freshId = (prefix: string) =>
-    asNodeId(`${prefix}-${(++seqRef.current).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
   const nextFill = () => cycleFill(seqRef.current);
 
   // First system-or-trivial layer is the default insertion layer. Falls back
@@ -129,7 +125,8 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   // enter anchor-edit mode (see `usePenTool`'s PenScratch docs).
   type PenCarrier = { path: PolygonPath; closed: boolean; bounds: { x: number; y: number; width: number; height: number } };
   const makePenLeaf = (carrier: PenCarrier): LeafNode => {
-    const id = freshId('pn');
+    seqRef.current += 1;
+    const id = scene.mintId();
     const color = nextFill();
     return makeLeaf(id, carrier.bounds, {
       path: carrier.path,

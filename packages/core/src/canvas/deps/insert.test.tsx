@@ -5,8 +5,10 @@ import { useInsertDepSource } from './insert';
 import type { Scene } from 'core/scene/types';
 
 function makeScene(): Scene<unknown, string, unknown> {
+  let minted = 0;
   return {
     layers: [{ id: 'default' }],
+    mintId: () => `srv-${minted++}`,
     renderOrder: () => [],
     get: () => undefined as never,
   } as unknown as Scene<unknown, string, unknown>;
@@ -19,7 +21,7 @@ function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
 }
 
 describe('useInsertDepSource', () => {
-  it('commits a rect via the adapter and returns a kit-prefixed id', () => {
+  it('commits a rect via the adapter and returns an id the scene minted', () => {
     const applyOps = vi.fn();
     let reg!: DepRegistry;
     function Wire() {
@@ -34,7 +36,7 @@ describe('useInsertDepSource', () => {
     );
     const dep = (reg.get as any)('insert');
     const id = dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' });
-    expect(id).toMatch(/^kit-rect-/);
+    expect(id).toBe('srv-0');
     expect(applyOps).toHaveBeenCalledTimes(1);
     const [ops, label] = applyOps.mock.calls[0];
     expect(label).toBe('Insert rect');
@@ -56,7 +58,7 @@ describe('useInsertDepSource', () => {
     );
     const dep = (reg.get as any)('insert');
     const id = dep.commit({ x: 2, y: 3, width: 40, height: 20 }, { kind: 'text' });
-    expect(id).toMatch(/^kit-text-/);
+    expect(id).toBe('srv-0');
     expect(applyOps).toHaveBeenCalledTimes(1);
     const [ops, label] = applyOps.mock.calls[0];
     expect(label).toBe('Insert text');

@@ -10,7 +10,6 @@ import { poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../resize/geometry';
 import { createTransformOp } from 'core/ops/transform';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import { freshNodeId } from './freshNodeId';
 import { requiresSelection } from './requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
@@ -91,16 +90,15 @@ export const groupAction: Action & { requires: string[] } = {
 
       // Build ops mirroring the old direct mutations, in the same order the
       // `scene.batch('Group', …)` body produced them:
-      //   1. insert the fresh container (the old `scene.add` minted a random
-      //      id; we pre-generate one so the insert op carries a full node —
-      //      the id was never observable, so behavior is preserved);
+      //   1. insert the fresh container, under an id minted first so the
+      //      insert op carries a whole node;
       //   2. reparent each selected id under the new container, in selection
       //      order, capturing each node's PRE-mutation parent as `from`
       //      (the op captures the sibling slot itself, on apply).
       // The container must exist before any child reparents into it, so the
       // insert op is emitted first. A member's pose then follows its reparent,
       // re-expressed in the container's frame so the member does not move.
-      const containerId = freshNodeId();
+      const containerId = scene.mintId();
       const ops: Op[] = [
         createInsertOp<Node<unknown, string, unknown>>({
           node: {
