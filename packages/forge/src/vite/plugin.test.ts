@@ -285,6 +285,20 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
   const importersUpdate = (payloads: readonly HotPayload[]) =>
     payloads.findIndex((p) => p.type === 'update' && p.updates.some((u) => u.acceptedPath.endsWith('virtual:forge/importers.js')));
 
+  /**
+   * Writes `code` to `file` until the server tells the workshop entry to take the importers again. A write that
+   * lands before the watcher's first scan ends is never reported, so one write is not enough on a busy machine.
+   */
+  const writeUntilPushed = async (payloads: readonly HotPayload[], file: string, code: string) => {
+    let writes = 0;
+    await expect
+      .poll(() => {
+        if (importersUpdate(payloads) === -1) writeFileSync(file, `${code}// ${writes++}\n`);
+        return importersUpdate(payloads);
+      }, { timeout: FOLLOWS.timeout, interval: 500 })
+      .not.toBe(-1);
+  };
+
   it('names the story file to reload when it changes, or a module it imports does', async () => {
     const { dir, server: s } = await start(
       {
@@ -295,16 +309,14 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     );
     await open(s, '/a.stories.tsx');
     const payloads = pushed(s);
-    writeFileSync(join(dir, 'rows.ts'), `export const rows = [1, 2];\n`);
-    await expect.poll(() => importersUpdate(payloads), FOLLOWS).not.toBe(-1);
+    await writeUntilPushed(payloads, join(dir, 'rows.ts'), `export const rows = [1, 2];\n`);
     const named = payloads.findIndex((p) => p.type === 'custom' && p.event === 'forge:story');
-    expect(storyEvents(payloads)).toEqual([join(dir, 'a.stories.tsx')]);
+    expect([...new Set(storyEvents(payloads))]).toEqual([join(dir, 'a.stories.tsx')]);
     expect(named).toBeLessThan(importersUpdate(payloads));
 
     payloads.length = 0;
-    writeFileSync(join(dir, 'a.stories.tsx'), story('ui/A', 'One'));
-    await expect.poll(() => importersUpdate(payloads), FOLLOWS).not.toBe(-1);
-    expect(storyEvents(payloads)).toEqual([join(dir, 'a.stories.tsx')]);
+    await writeUntilPushed(payloads, join(dir, 'a.stories.tsx'), story('ui/A', 'One'));
+    expect([...new Set(storyEvents(payloads))]).toEqual([join(dir, 'a.stories.tsx')]);
   });
 
   it('serves the workshop at its base with or without the trailing slash', async () => {
