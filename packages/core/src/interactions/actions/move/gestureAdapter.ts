@@ -6,7 +6,7 @@
  * `interactions → canvas → interactions` cycle). Carries exactly the methods
  * the move behaviors call (`getParent` / `getNodes` / `getNode`) plus the
  * mutators the committed ops apply through (`setPose` / `setParent` /
- * `setData` / `removeNode` / `insertNode` — `setData` carries the
+ * `setLayer` / `setData` / `removeNode` / `insertNode` — `setData` carries the
  * geometryProjection seam's data-sync op) and the sibling-order seam
  * (`getChildren` / `setChildOrder`) those ops read to restore a node's slot.
  */
@@ -23,6 +23,7 @@ export type MoveGestureAdapter<TPose> = MoveAdapter<Node<unknown, string, TPose>
   getParent(id: string): string | null;
   setParent(id: string, parentId: string | null): void;
   setData(id: string, data: unknown): void;
+  setLayer(id: string, layer: string): void;
   removeNode(id: string): void;
   insertNode(node: Node<unknown, string, TPose>, index?: number): void;
   getChildren(parentId: string | null): string[];
@@ -69,6 +70,7 @@ export function moveGestureAdapter<TPose>(
     setParent: (id, parentId) =>
       scene.move(asNodeId(id), parentId === null ? null : asNodeId(parentId)),
     setData: (id, data) => scene.update(asNodeId(id), { data } as never),
+    setLayer: (id, layer) => scene.setLayer(asNodeId(id), layer),
     removeNode: (id) => scene.remove(asNodeId(id)),
     insertNode: (node, index) =>
       scene.add({
