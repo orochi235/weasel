@@ -11,7 +11,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
 import { decimal, qty, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { SNAP_RADIUS_PX, snapToNearest } from '../../snap';
@@ -209,23 +209,24 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     const base = committed;
     const edges = unitEdges(base, sc, min, max);
     const startUnit = unitAt(e.clientX);
-    let latest: Band<T>[] | null = null;
+    const press = { clientX: e.clientX, clientY: e.clientY };
+    let dragging = false;
+    let latest = base;
     drag(
       e,
       (ev) => {
+        if (!dragging && !pastDragThreshold(press, ev)) return;
+        dragging = true;
         const shift = clampBandShift(edges, index, unitAt(ev.clientX) - startUnit);
-        latest = moveBandEdges(
-          base,
-          index,
-          fromUnit(edges[index] + shift),
-          fromUnit(edges[index + 1] + shift),
-        );
+        latest = shift === 0
+          ? base
+          : moveBandEdges(base, index, fromUnit(edges[index] + shift), fromUnit(edges[index + 1] + shift));
         const [from, to] = bandBounds(base, index, min, max);
         setDraft({ bands: latest, ghost: { from, to } });
         onInput?.(latest);
       },
       () => {
-        if (latest) onChange(latest);
+        if (latest !== base) onChange(latest);
       },
     );
   };

@@ -48,7 +48,7 @@ export function SeamHandle<T>(props: SeamHandleProps<T>): ReactElement {
         props.onInput(latest, committed[index + 1].from);
       },
       () => {
-        if (latest) props.onCommit(latest);
+        if (latest && latest !== committed) props.onCommit(latest);
       },
     );
   };

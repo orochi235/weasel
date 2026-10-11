@@ -137,6 +137,12 @@ describe('seam drag', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('does not commit a seam moved away and brought back to where it started', () => {
+    const { seams, onChange } = setup();
+    drag(seams()[0], 80, [120, 80]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('stops at the neighbouring seam instead of crossing it', () => {
     const { seams, onChange } = setup();
     drag(seams()[0], 80, [390]);
@@ -209,6 +215,20 @@ describe('band body drag', () => {
     const { bodies, onChange } = setup();
     drag(bodies()[1], 100, [-800]);
     expect(froms(onChange.mock.calls[0][0])).toEqual([0, 0, 40]);
+  });
+
+  it('treats a press that barely moves as a click, leaving the band where it is', () => {
+    const { bodies, onInput, onChange, onSelect } = setup();
+    drag(bodies()[1], 100, [101]);
+    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onInput).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('does not commit a band dragged away and back to where it started', () => {
+    const { bodies, onChange } = setup();
+    drag(bodies()[1], 100, [140, 100]);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('does nothing when the first band is dragged — its left edge is min', () => {
