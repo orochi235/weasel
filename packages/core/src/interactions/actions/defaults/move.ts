@@ -765,6 +765,9 @@ function applyReparent(
 ): void {
   const scene = scratch.scene;
   const poseAdapter = scenePoseAdapter(scene);
+  // Descendants no moved frame carries hold poses of their own, and follow
+  // the drag as they do in the translate commit.
+  const followerOps = translateCommitOps(scratch, scratch.cascadeIds, dx, dy);
 
   for (const id of scratch.ids) {
     if (!scratch.startPoses.has(id)) continue;
@@ -824,6 +827,7 @@ function applyReparent(
     scene.move(id, target.newParent, index);
     scene.setPose(id, newLocal as never);
   }
+  for (const op of followerOps) op.apply(scratch.adapter);
 }
 
 // ---------------------------------------------------------------------------
