@@ -14,7 +14,7 @@ import { aggregateAttributes, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { childrenOf, joinPath, keyFromName, keyOf, keyProblem, keysOf, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, uniqueKey, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { childrenOf, keyFromName, keyOf, keyProblem, keysOf, nodeAt, parentPath, setAttribute, takesDottedKey, uniqueKey, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
@@ -49,7 +49,8 @@ export interface AttributesPaneProps {
   onChange(next: SchemaRoot): void;
   /** The nodes to edit together; none is the root. */
   paths: readonly string[];
-  onRekey(from: string, to: string): void;
+  /** Put the node at `path` under `key`. The host does it, since what else names the node has to follow. */
+  onRename(path: string, key: string): void;
   /** The one node selected is not in the baseline, so nothing is stored under its key yet. */
   added?: boolean;
   /** The one selected node's attributes that differ from the baseline's, by name; `$key` for its key. Their rows are marked. */
@@ -65,7 +66,7 @@ export interface AttributesPaneProps {
   onNotice(text: string | null): void;
 }
 
-export function AttributesPane({ schema, onChange, paths, onRekey, added = false, changed = NONE, kinds, custom, types, actions, renderers, onNotice }: AttributesPaneProps) {
+export function AttributesPane({ schema, onChange, paths, onRename, added = false, changed = NONE, kinds, custom, types, actions, renderers, onNotice }: AttributesPaneProps) {
   const targets: ReadonlyArray<string | null> = useMemo(() => (paths.length === 0 ? [null] : paths), [paths]);
   const several = targets.length > 1;
   // The key, a key that follows the name, and a list's entry belong to one node.
@@ -120,8 +121,7 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
     const host = nodeAt(schema, parent)!;
     const problem = keyProblem(childrenOf(host) ?? {}, key, takesDottedKey(host, node));
     if (problem) { setKeyError(problem); return; }
-    onChange(renameKey(schema, path, key));
-    onRekey(path, joinPath(parent, key));
+    onRename(path, key);
   };
 
   // A key something may be stored under is left alone unless it was following the name already.
@@ -134,8 +134,7 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
     if (takesDottedKey(host, node) || next === '' || next === current) return;
     if (!added && current !== keyFromName(nameAtFocus.current)) return;
     const unique = uniqueKey(childrenOf(host) ?? {}, next);
-    onChange(renameKey(schema, path, unique));
-    onRekey(path, joinPath(parent, unique));
+    onRename(path, unique);
   };
 
   const drawn = { ...renderers, ...ATTR_RENDERERS };
