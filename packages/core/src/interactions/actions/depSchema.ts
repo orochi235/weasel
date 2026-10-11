@@ -375,6 +375,13 @@ export interface InsertDep {
   layer?(): string;
 }
 
+/** Holder for the insert gesture in flight in one input scope. `gesture` is
+ *  `insertAction`'s own state, opaque to everything else, and `null` between
+ *  gestures. A source must return the same object on every read. */
+export interface InsertLive {
+  gesture: unknown;
+}
+
 /**
  * Adapter dep for `resizeAction`.
  *
@@ -524,6 +531,10 @@ declare module '@weasel-js/routing' {
      * provide a typed node factory (e.g. with custom data payloads).
      */
     insert: InsertDep;
+    /** Where `insertAction` keeps its gesture in flight, so
+     *  `insert.adjustRotation` reaches the one in its own input scope.
+     *  Sourced by `<SceneCanvas>`; without it the rotation does nothing. */
+    insertLive?: InsertLive;
     /**
      * Snap dep — world-space point snapping (grid / guides).
      *

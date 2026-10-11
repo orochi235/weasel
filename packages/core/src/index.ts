@@ -206,6 +206,7 @@ export type {
   EditAnchorsDep,
   IngestionDep,
   InsertDep,
+  InsertLive,
   SnapDep,
   InsertExtras,
   LassoSelectDep,

@@ -139,12 +139,6 @@ interface InsertScratch {
   userRotation: number;
 }
 
-// Module-scoped pointer to the in-flight insert scratch. There is at most
-// one insert gesture at a time (single primary pointer) so a single ref
-// is sufficient. `insert.adjustRotation` reads this to mutate the live
-// scratch without needing handle-passing plumbing through the dispatcher.
-let liveInsertScratch: InsertScratch | null = null;
-
 /** Resolve the effective origin mode from the binding's nominal opt
  *  and live Alt state. Alt inverts: `corner` ⇄ `center`. Applies to
  *  every shape kind — radial shapes (polygon/star) included; the
@@ -367,7 +361,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
   label: 'Insert',
   group: 'insert',
   eligible: { capability: 'creates-shapes' },
-  requires: ['insert', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view'],
+  requires: ['insert', 'insertLive', 'selection', 'snap', 'textEdit', 'scene', 'applyOps', 'view'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -434,7 +428,8 @@ export const insertAction: Action & { requires: string[] } = inPlane({
         open: true,
         userRotation: 0,
       };
-      liveInsertScratch = scratch;
+      const live = ctx.deps.insertLive;
+      if (live) live.gesture = scratch;
 
       return {
         kind: 'insert',
@@ -491,7 +486,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           scratch.open = false;
-          if (liveInsertScratch === scratch) liveInsertScratch = null;
+          if (live?.gesture === scratch) live.gesture = null;
           if (reason === 'cancel') {
             runBehaviorCancel(scratch.behaviors, scratch.gestureCtx);
             if (scratch.priorSelection.length > 0) scratch.selection?.set(scratch.priorSelection);
@@ -614,12 +609,13 @@ export const insertRotateAction: Action = {
   eligible: { capability: 'creates-shapes' },
   invoker: {
     timing: 'immediate' as const,
-    run: (_deps, params) => {
-      const scratch = liveInsertScratch;
+    run: (deps, params) => {
+      const scratch = deps.insertLive?.gesture as InsertScratch | null | undefined;
       if (!scratch || !scratch.open) return;
       const deltaY = (params as { deltaY?: number } | undefined)?.deltaY ?? 0;
       if (deltaY === 0) return;
       scratch.userRotation += deltaY * ROTATION_SENSITIVITY;
     },
   },
+  requires: ['insertLive'],
 };

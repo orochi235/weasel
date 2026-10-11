@@ -15,7 +15,7 @@
 import { useRef } from 'react';
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
-import type { InsertDep, InsertExtras } from 'interactions/actions/depSchema';
+import type { InsertDep, InsertExtras, InsertLive } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -86,6 +86,8 @@ export function useInsertDepSource(
   const factoriesRef = useLatest(factories);
   const paintRef = useLatest(paint);
   const insertSeqRef = useRef(0);
+  const liveRef = useRef<InsertLive>({ gesture: null });
+  useDepSource('insertLive', () => liveRef.current);
 
   useDepSource('insert', (): InsertDep => {
     const sc = sceneRef.current;

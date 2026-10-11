@@ -240,11 +240,6 @@ Priority tags:
   moving frame carries" walk is the same decision `translateTargets` now makes for nudge and clone,
   and should become that call when the file is split.
 
-- **(P3) `liveInsertScratch` is module-global.** With two canvases in separate input scopes, an
-  insert drag live in one is rotated by `insert.adjustRotation` routed in the other
-  (`packages/core/src/interactions/actions/defaults/insert.ts`). Hold the live scratch on a dep in
-  the invocation's scope.
-
 - **(P3) `useDragHandle`: a drag canceled while the button is still down, then released over its
   source row, delivers a click to the row.** The click guard is removed on cancel so it cannot eat a
   later click; telling "canceled, release still to come" from "canceled, pointer already gone" needs
