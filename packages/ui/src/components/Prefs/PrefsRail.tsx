@@ -3,7 +3,6 @@ import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
 import { dropSlot, isDropPath } from './drop';
 import { prefRailParent, type PrefRailItem } from './schema';
-import { RAIL_ATTR } from './selection';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsRail}. */
@@ -103,7 +102,7 @@ export function PrefsRail(props: PrefsRailProps) {
             .join(' ')}
           aria-current={open ? 'page' : inView ? 'location' : undefined}
           data-rail-fold={foldable && nested ? item.path : undefined}
-          {...{ [RAIL_ATTR]: isDropPath(item.path) ? undefined : item.path }}
+          data-pref-rail={isDropPath(item.path) ? undefined : item.path}
           data-drop-placeholder={isDropPath(item.path) ? dropSlot(item.path) ?? '' : undefined}
           data-drop-rail={isDropPath(item.path) ? '' : undefined}
           data-drop={dropInto === item.path ? 'into' : undefined}
