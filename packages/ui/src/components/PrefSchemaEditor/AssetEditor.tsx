@@ -1,14 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { historyKey, useLatest } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { Badge } from '../Badge';
 import { CloseButton } from '../CloseButton';
-import { prefDropTargetAt, type PrefDrop } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
-import { conditionProblems } from './conditionMarks';
 import { setDefaults, type DefaultEdit } from './defaults';
-import { deadActionPaths, useEditorActions } from './editorActions';
+import { useEditorActions } from './editorActions';
 import { EditorBar } from './EditorBar';
 import { EditorPrefsButton, EditorPrefsProvider, useEditorPrefs, useEditorSize } from './editorPrefs';
 import type { DocumentCodec } from './document';
@@ -18,23 +15,20 @@ import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import type { PrefSchemaEditorProps } from './PrefSchemaEditor';
 import { NO_TYPES } from './types';
-import { aliasNodes, branchPaths, copyNodes, joinPath, keyClashes, keysOf, outermost, parentPath, pathOf, rebasePaths, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
-import { baselinePaths, changedAttributes, changedPaths, diffSchemas } from './schemaExport';
-import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
+import { aliasNodes, branchPaths, copyNodes, joinPath, outermost, parentPath, rebasePaths, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { changedAttributes, changedPaths, diffSchemas } from './schemaExport';
+import { drawsNode } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
-import { StructurePane, type DropOutside } from './StructurePane';
+import { usePreviewDropZone } from './usePreviewDropZone';
+import { useRowMarks } from './useRowMarks';
+import { StructurePane } from './StructurePane';
 import { useDocument } from './useDocument';
 import { useEditorSelection } from './useEditorSelection';
 import { assetOf, type Workspace } from './workspace';
 import { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './workspaceEdit';
 import s from './PrefSchemaEditor.module.css';
 
-const NO_PATHS: ReadonlySet<string> = new Set();
-
 const NO_KINDS: CustomKinds = {};
-
-/** How long a drag rests on a rail entry before the preview opens that page. */
-const RAIL_OPEN_MS = 500;
 
 /** What the editor says of a draft that did not open on the source it was saved against. */
 const DRAFT_NOTICE = {
@@ -85,9 +79,9 @@ export function AssetEditor(
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
 
   const latest = useLatest({ workspace, schema, paths: selection.paths });
-  // What was selected when a drag opened a rail page, which selects that page's group: a step back from the drop
-  // returns to this and not to the group.
-  const beforeOpening = useRef<readonly string[] | null>(null);
+  const { stage, drop, outside, dropping, beforeOpening } = usePreviewDropZone({
+    schema: () => latest.current.schema, selected: () => latest.current.paths, maxDepth, onOpen: (paths) => select(paths),
+  });
   const doc = useDocument<Workspace>({
     value: workspace, onChange, base, same, codec, opened, draftKey, draftStorage, taken,
     selection: {
@@ -118,27 +112,7 @@ export function AssetEditor(
   const changed = useMemo(() => changedPaths(changes), [changes]);
   const changedAttrs = useMemo(() => changedAttributes(changes, selection.lead), [changes, selection.lead]);
   const actionList = useEditorActions(actions);
-  // With no list there is no telling a dead key from a live one, so nothing is marked.
-  const dead = useMemo(
-    () => (actionList ? deadActionPaths(schema, new Set(actionList.map((a) => a.key)), joinPath) : NO_PATHS),
-    [actionList, schema],
-  );
-  const unsound = useMemo(() => conditionProblems(schema), [schema]);
-  const clashing = useMemo(() => keyClashes(schema), [schema]);
-  const treeMark = useMemo(() => {
-    if (!rowMark && dead.size === 0 && unsound.size === 0 && clashing.size === 0) return undefined;
-    const baseline = baselinePaths(changes);
-    return (path: string) => (
-      <>
-        {dead.has(path) && <Badge size="xs" status="danger" variant="subtle">no action</Badge>}
-        {clashing.has(path) && <Badge size="xs" status="danger" variant="subtle" tooltip={clashing.get(path)}>key taken</Badge>}
-        {unsound.has(path) && (
-          <Badge size="xs" status="danger" variant="subtle" tooltip={unsound.get(path)!.map((p) => p.problem).join('; ')}>bad condition</Badge>
-        )}
-        {rowMark?.(keysOf(baseline(path)).join('.'))}
-      </>
-    );
-  }, [rowMark, changes, dead, unsound, clashing]);
+  const treeMark = useRowMarks({ schema, changes, actions: actionList, rowMark });
   // `label` is a kind the form draws itself: text among the rows, with no attributes of its own.
   const custom = kinds;
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);
@@ -146,9 +120,7 @@ export function AssetEditor(
   const structureSize = useEditorSize('structureWidth', editorPrefs);
   const attributesSize = useEditorSize('attributesWidth', editorPrefs);
   const asideSize = useEditorSize('sidebarWidth', editorPrefs);
-  // Set while a drop into the live preview is being carried out, which every way of dropping there does in one task.
-  const intoPreview = useRef(false);
-  const keepsSelection = () => intoPreview.current && !editorPrefs.selectDropped;
+  const keepsSelection = () => dropping.current && !editorPrefs.selectDropped;
   const select = (paths: readonly string[]) => {
     if (keepsSelection()) return;
     selection.set(paths);
@@ -163,55 +135,6 @@ export function AssetEditor(
     if (keepsSelection()) return;
     selection.reveal(paths);
     setNotice(null);
-  };
-  // The live preview as a place to drop: the form says what is under the pointer, the schema whether it fits there.
-  const stage = useRef<HTMLDivElement | null>(null);
-  const [drop, setDrop] = useState<PrefDrop | null>(null);
-  const opening = useRef<{ path: string; timer: ReturnType<typeof setTimeout> } | null>(null);
-  const stopOpening = () => {
-    if (opening.current) clearTimeout(opening.current.timer);
-    opening.current = null;
-  };
-  const markAt = (nodes: readonly SchemaNode[], point: { x: number; y: number }) =>
-    previewMark((stage.current && prefDropTargetAt(stage.current, point.x, point.y)) || null, nodes);
-  const outside: DropOutside = {
-    over(nodes, paths, point) {
-      const mark = markAt(nodes, point);
-      const landing = mark && previewTarget(latest.current.schema, mark, nodes, paths, maxDepth) !== null ? previewDrop(mark, nodes, paths) : null;
-      const next = landing ?? heldDrop(latest.current.schema, nodes, paths);
-      setDrop((cur) => (sameDrop(cur, next) ? cur : next));
-      // Held on the middle of a rail entry, the drag opens that page, so a row on it can be aimed at.
-      if (next?.rail && next.where === 'into') {
-        if (opening.current?.path !== next.path) {
-          stopOpening();
-          const path = next.path;
-          opening.current = {
-            path,
-            timer: setTimeout(() => {
-              beforeOpening.current ??= latest.current.paths;
-              select(path === '' ? [] : [pathOf(path.split('.'))!]);
-            }, RAIL_OPEN_MS),
-          };
-        }
-      } else {
-        stopOpening();
-      }
-      return landing !== null;
-    },
-    target: (nodes, paths, point) => {
-      const target = previewTarget(latest.current.schema, markAt(nodes, point), nodes, paths, maxDepth);
-      if (target) {
-        intoPreview.current = true;
-        queueMicrotask(() => { intoPreview.current = false; });
-      }
-      return target;
-    },
-    end() {
-      stopOpening();
-      setDrop(null);
-      // A preview drag ends before its drop is committed, in the same task.
-      queueMicrotask(() => { beforeOpening.current = null; });
-    },
   };
   // `restore` is the selection to go back to where the drop keeps it: a drag begun in the preview selected its row on the press.
   const moveTo = (paths: readonly string[], target: SchemaTarget, restore?: readonly string[]) => {
