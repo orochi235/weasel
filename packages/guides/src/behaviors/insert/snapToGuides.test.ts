@@ -89,3 +89,25 @@ describe('insert/snapToGuides', () => {
     expect(b.onMove!(c, proposed({ x: 102, y: 50 }, { x: 110, y: 50 }))).toBeUndefined();
   });
 });
+
+// The poses are in a plane whose world is the camera's doubled and shifted:
+// plane = 2 * camera + 10 on x, 2 * camera on y.
+const plane = { scale: { x: 2, y: 2 }, offset: { x: 10, y: 0 } };
+
+describe('insert/snapToGuides on a parallax plane', () => {
+  const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }, { id: 'h', axis: 'y', offset: 40 }];
+
+  it('snaps the start and the live point to where the camera\'s guides lie in the plane', () => {
+    const b = snapToGuides<P>({ getGuides: () => guides, tolerance: 5 });
+    const c = { ...ctx({ x: 208, y: 300 }), plane };
+    b.onStart!(c);
+    expect(c.origin.get('gesture')).toEqual({ x: 210, y: 300 });
+    expect(b.onMove!(c, proposed({ x: 210, y: 300 }, { x: 400, y: 83 }))).toEqual({ current: { x: 400, y: 80 } });
+  });
+
+  it('does not snap to a guide\'s camera coordinate read as a plane one', () => {
+    const b = snapToGuides<P>({ getGuides: () => guides, tolerance: 5 });
+    const c = { ...ctx({ x: 0, y: 0 }), plane };
+    expect(b.onMove!(c, proposed({ x: 0, y: 0 }, { x: 101, y: 41 }))).toBeUndefined();
+  });
+});

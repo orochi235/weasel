@@ -56,3 +56,17 @@ describe('insert/snapToGrid', () => {
     expect(r).toBeUndefined();
   });
 });
+
+// The poses are in a plane whose world is the camera's doubled and shifted:
+// plane = 2 * camera + 10 on x, 2 * camera on y.
+const plane = { scale: { x: 2, y: 2 }, offset: { x: 10, y: 0 } };
+
+describe('insert/snapToGrid on a parallax plane', () => {
+  it('rounds the start and the live point to the camera\'s grid as it lies in the plane', () => {
+    const b = snapToGrid<P>({ spacing: 20 });
+    const c = { ...ctx({ x: 207, y: 84 }), plane };
+    b.onStart!(c);
+    expect(c.origin.get('gesture')).toEqual({ x: 210, y: 80 });
+    expect(b.onMove!(c, proposed({ x: 210, y: 80 }, { x: 255, y: 123 }))).toEqual({ current: { x: 250, y: 120 } });
+  });
+});

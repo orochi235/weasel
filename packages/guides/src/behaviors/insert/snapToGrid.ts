@@ -1,8 +1,10 @@
 import type {
+  GestureContext,
   InsertBehavior,
   InsertPoint,
   ModifierState,
 } from '@weasel-js/core';
+import { roundToGridOn } from '../../strategies/onPlane';
 
 type ModKey = keyof ModifierState;
 
@@ -14,18 +16,21 @@ export function snapToGrid<TPose>(args: {
   bypassKey?: ModKey;
 }): InsertBehavior<TPose> {
   const { spacing, bypassKey } = args;
-  const round = (v: number) => Math.round(v / spacing) * spacing;
+  const round = (p: InsertPoint, plane: GestureContext<unknown>['plane']): InsertPoint => ({
+    x: roundToGridOn(p.x, 'x', spacing, plane),
+    y: roundToGridOn(p.y, 'y', spacing, plane),
+  });
   return {
     onStart(ctx) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
       const id = ctx.draggedIds[0];
       const o = ctx.origin.get(id) as unknown as InsertPoint | undefined;
       if (!o) return;
-      ctx.origin.set(id, { x: round(o.x), y: round(o.y) } as unknown as TPose);
+      ctx.origin.set(id, round(o, ctx.plane) as unknown as TPose);
     },
     onMove(ctx, { current }) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
-      return { current: { x: round(current.x), y: round(current.y) } };
+      return { current: round(current, ctx.plane) };
     },
   };
 }

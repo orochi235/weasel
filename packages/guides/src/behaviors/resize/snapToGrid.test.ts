@@ -117,3 +117,19 @@ describe('resize/snapToGrid', () => {
     expect(r).toEqual({ pose: { x: 0, y: 0, width: 4.7, height: 5 } });
   });
 });
+
+// The poses are in a plane whose world is the camera's doubled and shifted:
+// plane = 2 * camera + 10 on x, 2 * camera on y.
+const plane = { scale: { x: 2, y: 2 }, offset: { x: 10, y: 0 } };
+
+describe('resize/snapToGrid on a parallax plane', () => {
+  it('rounds the moving edges to the camera\'s grid lines as they lie in the plane', () => {
+    const b = snapToGrid<P>({ spacing: 20 });
+    // Camera grid lines at 100 and 40 are plane 210 and 80.
+    const r = b.onMove!(
+      { ...ctx({ x: 10, y: 0, width: 50, height: 50 }), plane },
+      proposed({ x: 10, y: 0, width: 197, height: 84 }, { x: 'min', y: 'min' }),
+    );
+    expect(r).toEqual({ pose: { x: 10, y: 0, width: 200, height: 80 } });
+  });
+});

@@ -6,6 +6,7 @@ import {
 } from '@weasel-js/core';
 import type { Guide } from '../../guides/types';
 import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../strategies/guides';
+import { nearestGuideDelta } from '../../strategies/onPlane';
 
 type ModKey = keyof ModifierState;
 
@@ -50,19 +51,8 @@ export function snapToGuides<TPose extends Bounds>(
 
       // X-axis: snap the moving vertical edge to the nearest 'x' guide.
       if (anchor.x !== 'free') {
-        const movingX = anchor.x === 'min' ? x + width : x;
-        let bestD = 0;
-        let bestAbs = Infinity;
-        for (const g of guides) {
-          if (g.axis !== 'x') continue;
-          const d = g.offset - movingX;
-          const ad = Math.abs(d);
-          if (ad <= tol.x && ad < bestAbs) {
-            bestAbs = ad;
-            bestD = d;
-          }
-        }
-        if (bestAbs !== Infinity && bestD !== 0) {
+        const bestD = nearestGuideDelta(guides, 'x', anchor.x === 'min' ? x + width : x, tol.x, ctx.plane);
+        if (bestD !== null && bestD !== 0) {
           if (anchor.x === 'min') {
             // East edge moves; west (x) stays.
             width = width + bestD;
@@ -77,19 +67,8 @@ export function snapToGuides<TPose extends Bounds>(
 
       // Y-axis: snap the moving horizontal edge to the nearest 'y' guide.
       if (anchor.y !== 'free') {
-        const movingY = anchor.y === 'min' ? y + height : y;
-        let bestD = 0;
-        let bestAbs = Infinity;
-        for (const g of guides) {
-          if (g.axis !== 'y') continue;
-          const d = g.offset - movingY;
-          const ad = Math.abs(d);
-          if (ad <= tol.y && ad < bestAbs) {
-            bestAbs = ad;
-            bestD = d;
-          }
-        }
-        if (bestAbs !== Infinity && bestD !== 0) {
+        const bestD = nearestGuideDelta(guides, 'y', anchor.y === 'min' ? y + height : y, tol.y, ctx.plane);
+        if (bestD !== null && bestD !== 0) {
           if (anchor.y === 'min') {
             height = height + bestD;
           } else {

@@ -5,6 +5,7 @@ import {
   AUTO_ORIGIN_PROJECTION,
 } from '@weasel-js/core';
 import type { Guide } from '../guides/types';
+import { nearestGuideDelta } from './onPlane';
 
 /** Default snap tolerance (screen pixels). */
 export const DEFAULT_GUIDE_TOLERANCE_PX = 6;
@@ -67,40 +68,8 @@ export function guideSnapStrategy<TPose>(
       const tol = screenTolerance(tolerance, ctx);
 
       const o = proj.getOrigin(pose);
-
-      let bestDx = 0;
-      let bestAbsDx = Infinity;
-      let bestDy = 0;
-      let bestAbsDy = Infinity;
-
-      // Guides are drawn by the camera; on a plane each is carried into the
-      // pose's world, which on one axis is a scale and an offset.
-      const m = ctx.plane ?? null;
-      const at = (g: Guide) => (m === null ? g.offset
-        : g.axis === 'x' ? g.offset * m.scale.x + m.offset.x
-        : g.offset * m.scale.y + m.offset.y);
-
-      for (const g of guides) {
-        if (g.axis === 'x') {
-          const d = at(g) - o.x;
-          const ad = Math.abs(d);
-          if (ad <= tol.x && ad < bestAbsDx) {
-            bestAbsDx = ad;
-            bestDx = d;
-          }
-        } else {
-          const d = at(g) - o.y;
-          const ad = Math.abs(d);
-          if (ad <= tol.y && ad < bestAbsDy) {
-            bestAbsDy = ad;
-            bestDy = d;
-          }
-        }
-      }
-
-      if (bestAbsDx === Infinity && bestAbsDy === Infinity) return null;
-      const dx = bestAbsDx === Infinity ? 0 : bestDx;
-      const dy = bestAbsDy === Infinity ? 0 : bestDy;
+      const dx = nearestGuideDelta(guides, 'x', o.x, tol.x, ctx.plane) ?? 0;
+      const dy = nearestGuideDelta(guides, 'y', o.y, tol.y, ctx.plane) ?? 0;
       if (dx === 0 && dy === 0) return null;
       return proj.translate(pose, dx, dy);
     },

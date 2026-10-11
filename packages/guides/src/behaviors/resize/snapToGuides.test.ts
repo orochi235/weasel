@@ -123,3 +123,31 @@ describe('resize/snapToGuides', () => {
     expect(c).toBeUndefined();
   });
 });
+
+// The poses are in a plane whose world is the camera's doubled and shifted:
+// plane = 2 * camera + 10 on x, 2 * camera on y.
+const plane = { scale: { x: 2, y: 2 }, offset: { x: 10, y: 0 } };
+
+describe('resize/snapToGuides on a parallax plane', () => {
+  const guides: Guide[] = [{ id: 'g', axis: 'x', offset: 100 }, { id: 'h', axis: 'y', offset: 40 }];
+  const onPlane = (origin: P) => ({ ...ctx(origin), plane });
+
+  it('snaps the moving edge to where the camera\'s guide lies in the plane', () => {
+    const b = snapToGuides<P>({ getGuides: () => guides, tolerance: 5 });
+    // Camera x=100 is plane 210; camera y=40 is plane 80.
+    const r = b.onMove!(
+      onPlane({ x: 0, y: 0, width: 50, height: 50 }),
+      proposed({ x: 0, y: 0, width: 209, height: 82 }, { x: 'min', y: 'min' }),
+    );
+    expect(r).toEqual({ pose: { x: 0, y: 0, width: 210, height: 80 } });
+  });
+
+  it('does not snap to the guide\'s camera coordinate read as a plane one', () => {
+    const b = snapToGuides<P>({ getGuides: () => guides, tolerance: 5 });
+    const r = b.onMove!(
+      onPlane({ x: 0, y: 0, width: 50, height: 50 }),
+      proposed({ x: 0, y: 0, width: 101, height: 50 }, { x: 'min', y: 'free' }),
+    );
+    expect(r).toBeUndefined();
+  });
+});

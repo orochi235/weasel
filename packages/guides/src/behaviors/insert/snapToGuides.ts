@@ -1,4 +1,5 @@
 import {
+  type GestureContext,
   type InsertBehavior,
   type InsertPoint,
   type ModifierState,
@@ -6,6 +7,7 @@ import {
 } from '@weasel-js/core';
 import type { Guide } from '../../guides/types';
 import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../strategies/guides';
+import { nearestGuideDelta } from '../../strategies/onPlane';
 
 type ModKey = keyof ModifierState;
 
@@ -23,31 +25,10 @@ function snapPoint(
   p: InsertPoint,
   guides: readonly Guide[],
   tol: { x: number; y: number },
+  plane: GestureContext<unknown>['plane'],
 ): InsertPoint | null {
-  let bestDx = 0;
-  let bestAbsDx = Infinity;
-  let bestDy = 0;
-  let bestAbsDy = Infinity;
-  for (const g of guides) {
-    if (g.axis === 'x') {
-      const d = g.offset - p.x;
-      const ad = Math.abs(d);
-      if (ad <= tol.x && ad < bestAbsDx) {
-        bestAbsDx = ad;
-        bestDx = d;
-      }
-    } else {
-      const d = g.offset - p.y;
-      const ad = Math.abs(d);
-      if (ad <= tol.y && ad < bestAbsDy) {
-        bestAbsDy = ad;
-        bestDy = d;
-      }
-    }
-  }
-  if (bestAbsDx === Infinity && bestAbsDy === Infinity) return null;
-  const dx = bestAbsDx === Infinity ? 0 : bestDx;
-  const dy = bestAbsDy === Infinity ? 0 : bestDy;
+  const dx = nearestGuideDelta(guides, 'x', p.x, tol.x, plane) ?? 0;
+  const dy = nearestGuideDelta(guides, 'y', p.y, tol.y, plane) ?? 0;
   if (dx === 0 && dy === 0) return null;
   return { x: p.x + dx, y: p.y + dy };
 }
@@ -71,14 +52,14 @@ export function snapToGuides<TPose>(
       const id = ctx.draggedIds[0];
       const o = ctx.origin.get(id) as unknown as InsertPoint | undefined;
       if (!o) return;
-      const snapped = snapPoint(o, guides, screenTolerance(tolerance, ctx));
+      const snapped = snapPoint(o, guides, screenTolerance(tolerance, ctx), ctx.plane);
       if (snapped) ctx.origin.set(id, snapped as unknown as TPose);
     },
     onMove(ctx, { current }) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
       const guides = args.getGuides();
       if (guides.length === 0) return;
-      const snapped = snapPoint(current, guides, screenTolerance(tolerance, ctx));
+      const snapped = snapPoint(current, guides, screenTolerance(tolerance, ctx), ctx.plane);
       if (!snapped) return;
       return { current: snapped };
     },

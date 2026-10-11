@@ -1,14 +1,13 @@
 import {
   AUTO_ORIGIN_PROJECTION,
-  fromPlane,
   resolveUnit,
-  toPlane,
   type DebugSink,
   type OriginProjection,
   type SnapStrategy,
   type UnitSystem,
   type UnitValue,
 } from '@weasel-js/core';
+import { roundToGridOn } from './onPlane';
 
 /** Snap-strategy that rounds the pose's origin to the nearest multiple of
  *  `spacing` (resolved through `unitSystem`). For non-rect TPose pass an
@@ -52,12 +51,8 @@ export function gridSnapStrategy<TPose>(
   return {
     snap(pose, ctx) {
       const o = proj.getOrigin(pose);
-      // The grid is the camera's: on a plane, round where the origin lies in
-      // the camera's world and carry the lattice point back.
-      const m = ctx?.plane ?? null;
-      const w = m ? fromPlane(m, o) : o;
-      const cell = { x: Math.round(w.x / c) * c, y: Math.round(w.y / c) * c };
-      const { x: sx, y: sy } = m ? toPlane(m, cell) : cell;
+      const sx = roundToGridOn(o.x, 'x', c, ctx?.plane);
+      const sy = roundToGridOn(o.y, 'y', c, ctx?.plane);
       debug?.recordSnapCandidate({ x: sx, y: sy }, true);
       return proj.translate(pose, sx - o.x, sy - o.y);
     },

@@ -1,4 +1,5 @@
 import type { ModifierState, BoundsConstraint, Bounds } from '@weasel-js/core';
+import { roundToGridOn } from '../../strategies/onPlane';
 
 type ModKey = keyof ModifierState;
 
@@ -12,11 +13,11 @@ export function snapToGrid<TPose extends Bounds>(args: {
   suspendBelowDim?: boolean;
 }): BoundsConstraint<TPose> {
   const { spacing, bypassKey, suspendBelowDim = true } = args;
-  const round = (v: number) => Math.round(v / spacing) * spacing;
 
   return {
     onMove(ctx, { pose, anchor }) {
       if (bypassKey && ctx.modifiers[bypassKey]) return;
+      const round = (v: number, axis: 'x' | 'y') => roundToGridOn(v, axis, spacing, ctx.plane);
       const origin = ctx.origin.get(ctx.draggedIds[0])!;
       const subX = suspendBelowDim && origin.width < spacing;
       const subY = suspendBelowDim && origin.height < spacing;
@@ -27,12 +28,12 @@ export function snapToGrid<TPose extends Bounds>(args: {
       if (anchor.x !== 'free' && !subX) {
         if (anchor.x === 'min') {
           // East edge moves; west (x) stays.
-          const east = round(x + width);
+          const east = round(x + width, 'x');
           width = east - x;
         } else {
           // West edge moves; east (x+width) stays.
           const right = origin.x + origin.width;
-          const newX = round(x);
+          const newX = round(x, 'x');
           width = right - newX;
           x = newX;
         }
@@ -40,11 +41,11 @@ export function snapToGrid<TPose extends Bounds>(args: {
       }
       if (anchor.y !== 'free' && !subY) {
         if (anchor.y === 'min') {
-          const south = round(y + height);
+          const south = round(y + height, 'y');
           height = south - y;
         } else {
           const bottom = origin.y + origin.height;
-          const newY = round(y);
+          const newY = round(y, 'y');
           height = bottom - newY;
           y = newY;
         }
