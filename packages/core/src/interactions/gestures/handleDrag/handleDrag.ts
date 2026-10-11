@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { useLatest } from '@weasel-js/react';
 import { clientToCanvasRect } from '@weasel-js/routing';
 import { openPointerSession, type PointerSession, type PointerSessionCancelReason } from '@weasel-js/routing';
 
@@ -63,7 +64,9 @@ function defaultRectEl(target: HTMLElement | SVGElement): Element {
 export function useHandleDrag<T extends HTMLElement | SVGElement>(
   opts: UseHandleDragOptions<T>,
 ): UseHandleDragReturn<T> {
-  const { onMove, onStart, onEnd, onCancel, getRect } = opts;
+  // A drag outlives the render that saw its press, and its callbacks have to
+  // be the current ones: `onEnd` commonly closes over state `onMove` set.
+  const optsRef = useLatest(opts);
   const live = useRef<PointerSession | null>(null);
 
   useEffect(() => () => { live.current?.cancel(); }, []);
@@ -74,6 +77,7 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
       live.current?.cancel();
 
       const target = e.currentTarget;
+      const { getRect, onStart } = optsRef.current;
       const rectEl = getRect ? getRect(target) : defaultRectEl(target);
       const rect = rectEl.getBoundingClientRect();
       const localOf = (clientX: number, clientY: number): HandleDragPoint => {
@@ -85,21 +89,21 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
       live.current = openPointerSession(target, e, {
         onMove: (ev) => {
           moved = true;
-          onMove(localOf(ev.clientX, ev.clientY), ev);
+          optsRef.current.onMove(localOf(ev.clientX, ev.clientY), ev);
         },
         onEnd: (ev) => {
           live.current = null;
-          onEnd?.({ point: localOf(ev.clientX, ev.clientY), moved, event: ev });
+          optsRef.current.onEnd?.({ point: localOf(ev.clientX, ev.clientY), moved, event: ev });
         },
         onCancel: (reason) => {
           live.current = null;
-          onCancel?.(reason);
+          optsRef.current.onCancel?.(reason);
         },
       });
 
       onStart?.(localOf(e.clientX, e.clientY), e);
     },
-    [onMove, onStart, onEnd, onCancel, getRect],
+    [optsRef],
   );
 
   return { onPointerDown };

@@ -256,3 +256,23 @@ describe('useHandleDrag', () => {
     document.body.removeChild(target);
   });
 });
+
+describe('useHandleDrag — callbacks from a later render', () => {
+  it('ends the drag with the onEnd from the latest render, not the one that saw the press', () => {
+    const first = vi.fn();
+    const latest = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ onEnd }: { onEnd: () => void }) => useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd }),
+      { initialProps: { onEnd: first } },
+    );
+    const target = mount();
+    result.current.onPointerDown(press(target, 0, 0));
+    // What a consumer does when `onMove` sets state that `onEnd` closes over.
+    rerender({ onEnd: latest });
+    target.dispatchEvent(makePointerEvent('pointerup', { clientX: 5, clientY: 5 }));
+
+    expect(first).not.toHaveBeenCalled();
+    expect(latest).toHaveBeenCalledTimes(1);
+    target.remove();
+  });
+});
