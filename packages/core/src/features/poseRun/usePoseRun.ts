@@ -126,19 +126,22 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     const { previews } = state.current;
     const scene = optsRef.current.scene;
     let moved = 0;
-    if (previews.size > 0) {
-      scene.batch(optsRef.current.label ?? 'Layout', () => {
-        for (const [id, pose] of previews) {
-          if (scene.get(id) === undefined) continue;
-          scene.setPose(id, pose as TPose);
-          moved++;
-        }
-      });
+    try {
+      if (previews.size > 0) {
+        scene.batch(optsRef.current.label ?? 'Layout', () => {
+          for (const [id, pose] of previews) {
+            if (scene.get(id) === undefined || scene.isLocked(id)) continue;
+            scene.setPose(id, pose as TPose);
+            moved++;
+          }
+        });
+      }
+    } finally {
+      // After the ops land: dropping first leaves a window in which the scene
+      // answers with the pre-run pose.
+      dropPreviewOverrides(syncState());
+      previews.clear();
     }
-    // After the ops land: dropping first leaves a window in which the scene
-    // answers with the pre-run pose.
-    dropPreviewOverrides(syncState());
-    previews.clear();
     optsRef.current.onCommit?.(moved);
   };
 

@@ -106,6 +106,17 @@ describe('usePoseRun', () => {
     expect(scene.get(a)!.pose).toEqual(box(20, 0));
   });
 
+  it('drops its frames when the node it drove is locked by the time it settles', () => {
+    const { a, clock, run, scene, onCommit, drawnAt } = setup((ctx) => marching(a, 100)(ctx));
+    act(() => { run().start(); });
+    act(() => { clock.frames(2); });
+    act(() => { scene.setLayerLocked('main', true); });
+    act(() => { run().stop(); });
+    expect(scene.get(a)!.pose).toEqual(box(0, 0));
+    expect(drawnAt(a)).toEqual(box(0, 0));
+    expect(onCommit).toHaveBeenCalledWith(0);
+  });
+
   it('writes nothing when it is canceled', () => {
     const { a, clock, run, scene, drawnAt } = setup((ctx) => marching(a, 100)(ctx));
     act(() => { run().start(); });
