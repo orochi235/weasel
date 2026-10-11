@@ -67,11 +67,28 @@ export function RailLayout(props: PrefsFormProps & {
     props.onSectionChange?.(path);
   };
   const setOpen = (path: string): void => {
+    awaited.current = null;
     show(path);
     // Optional-called: jsdom's elements have no `scrollTo`, and neither does
     // a pane that is not the scrolling box in some consumer's layout.
     scrollRef.current?.scrollTo?.({ top: 0 });
   };
+
+  // A nested entry chosen on a page that is not open: scrolled to once its page has drawn.
+  const awaited = useRef<string | null>(null);
+  const reach = (path: string): void => {
+    const home = items.find((i) => i.path === path)?.section ?? open;
+    if (home === open) return spy.scrollTo(path);
+    awaited.current = path;
+    show(home);
+  };
+  const arrive = useRef(spy.scrollTo);
+  useEffect(() => { arrive.current = spy.scrollTo; });
+  useEffect(() => {
+    const path = awaited.current;
+    awaited.current = null;
+    if (path !== null && path.startsWith(`${open}.`)) arrive.current(path);
+  }, [open]);
 
   // The page holding the selection: the deepest rail entry it is or lies under, else the loose leaves.
   const selected = props.ctx.lead ?? null;
@@ -107,7 +124,7 @@ export function RailLayout(props: PrefsFormProps & {
         section={page}
         current={subPages ? null : spy.active}
         onOpen={setOpen}
-        onScrollTo={subPages ? setOpen : spy.scrollTo}
+        onScrollTo={subPages ? setOpen : reach}
         ariaLabel={schema.name}
         header={filterField}
         showCounts={query.trim() !== ''}

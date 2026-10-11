@@ -107,6 +107,7 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
     const root = rootRef.current;
     if (!root) return;
     const el = root.querySelector<HTMLElement>(`[data-spy-section="${CSS.escape(id)}"]`);
+    if (!el) return;
     heldRef.current = id;
     setActive(id);
     const release = (): void => {
@@ -121,7 +122,6 @@ export function useScrollSpy(options: UseScrollSpyOptions): ScrollSpy {
     releaseRef.current = release;
     timerRef.current = setTimeout(release, SETTLE_MS);
     root.addEventListener('scrollend', release);
-    if (!el) return;
     const top = el.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop;
     root.scrollTo?.({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }, [rootRef, measure]);

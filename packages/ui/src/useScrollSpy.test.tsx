@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { useRef } from 'react';
 import { pickActiveSection, useScrollSpy } from './useScrollSpy';
 
@@ -87,5 +87,27 @@ describe('useScrollSpy wiring (proxy assertions)', () => {
     expect(added).toContain('scroll');
     view.unmount();
     expect(removed).toContain('scroll');
+  });
+});
+
+describe('useScrollSpy scrollTo', () => {
+  function Probe() {
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const spy = useScrollSpy({ rootRef, ids: ['a'] });
+    return (
+      <div ref={rootRef}>
+        <section data-spy-section="a" />
+        <output>{spy.active ?? 'none'}</output>
+        <button type="button" onClick={() => spy.scrollTo('gone')}>go</button>
+      </div>
+    );
+  }
+
+  it('does not report a section it was asked for and could not find', () => {
+    const view = render(<Probe />);
+    const before = screen.getByRole('status').textContent;
+    act(() => screen.getByRole('button').click());
+    expect(screen.getByRole('status').textContent).toBe(before);
+    view.unmount();
   });
 });
