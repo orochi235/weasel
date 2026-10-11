@@ -5,7 +5,7 @@ import { useTextEditDepSource } from './textEdit';
 import type { Scene, NodeId } from 'core/scene/types';
 
 function makeScene(text: boolean): Scene<unknown, string, unknown> {
-  const node = { id: 'n', kind: 'leaf' as const, pose: {}, data: { kind: text ? 'text' : 'rect' } };
+  const node = { id: 'n', kind: 'leaf' as const, pose: {}, data: text ? { text: 'hi' } : { kind: 'rect' } };
   return {
     layers: [{ id: 'default' }],
     renderOrder: () => ['n'] as NodeId[],
@@ -20,7 +20,7 @@ function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
 }
 
 describe('useTextEditDepSource', () => {
-  it('registers a `textEdit` dep with stub startEdit and convention-based isTextNode', () => {
+  it('registers a `textEdit` dep with stub startEdit, and an isTextNode that knows a text node by its string `text`', () => {
     let reg!: DepRegistry;
     function Wire() {
       useTextEditDepSource(makeScene(true));

@@ -15,6 +15,7 @@ export type {
   UseTextEditOptions,
   UseTextEditReturn,
 } from './useTextEdit';
+export { isTextData } from './isTextData';
 export { useSceneTextEdit } from './useSceneTextEdit';
 export type { UseSceneTextEditOptions } from './useSceneTextEdit';
 export { styleAtRange, applyStyleToRange, patchRangeStyle } from './runs/rangeStyle';

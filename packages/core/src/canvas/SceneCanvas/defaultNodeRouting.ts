@@ -1,5 +1,6 @@
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
+import { isTextData } from 'features/text/isTextData';
 
 function isObj(d: unknown): d is Record<string, unknown> {
   return typeof d === 'object' && d !== null;
@@ -56,7 +57,7 @@ export const defaultNodeRouting: readonly NodeRoutingEntry[] = KIT_SHAPE_KINDS.m
  * `dispatchDoubleClickEntry`).
  */
 export const inferredNodeRouting: readonly NodeRoutingEntry[] = [
-  { name: 'text', matches: (d) => isObj(d) && typeof d.text === 'string' },
+  { name: 'text', matches: isTextData },
   { name: 'path', matches: (d) => isObj(d) && d.path != null },
   { name: 'image', matches: (d) => isObj(d) && d.image != null },
 ];

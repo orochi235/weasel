@@ -58,8 +58,8 @@
  *    { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit' }
  *    ```
  * 2. Register a `textEdit` dep sourced from the `useTextEdit` / `useSceneTextEdit`
- *    return value, plus an `isTextNode` predicate that checks `data.kind === 'text'`
- *    (or however the consumer identifies text nodes).
+ *    return value, plus an `isTextNode` predicate (`isTextData`, or however the
+ *    consumer identifies text nodes).
  * 3. The existing `hitExisting` gate in `useTextTool`'s click route becomes
  *    redundant — remove it in the same pass.
  */

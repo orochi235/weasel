@@ -1,8 +1,7 @@
 /**
  * `useTextEditDepSource` — wires the `textEdit` dep consumed by
  * `enterTextEditAction`. Kit-default implementation is a no-op stub for
- * `startEdit` plus a convention-based `isTextNode` predicate
- * (`data.kind === 'text'`). Consumers wanting real text editing override the
+ * `startEdit` plus an `isTextNode` that asks `isTextData`. Consumers wanting real text editing override the
  * dep via their own `useDepSource('textEdit', ...)` sourced from a
  * `useSceneTextEdit` instance.
  */
@@ -10,6 +9,7 @@ import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { TextEditDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
+import { isTextData } from 'features/text/isTextData';
 
 export function useTextEditDepSource(
   scene: Scene<unknown, string, unknown>,
@@ -28,8 +28,7 @@ export function useTextEditDepSource(
         }
       },
       isTextNode(id: string) {
-        const node = sc.get(id as NodeId);
-        return (node?.data as { kind?: string } | null | undefined)?.kind === 'text';
+        return isTextData(sc.get(id as NodeId)?.data);
       },
     };
   });
