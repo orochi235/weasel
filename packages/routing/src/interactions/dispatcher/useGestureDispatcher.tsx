@@ -606,9 +606,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       return result;
     };
 
-    // Held keys by physical key, mapped to the `key` they went down as: Shift
-    // pressed mid-hold makes the keyup of an 'o' press report 'O'.
-    const heldKeys = new Map<string, string>();
+    // Held keys by physical key, mapped to the `key` they went down as (Shift
+    // pressed mid-hold makes the keyup of an 'o' press report 'O') and the
+    // dispatcher that took the down, which hover may have routed away from.
+    const heldKeys = new Map<string, { key: string; on: Dispatcher }>();
     const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
 
     // Every pointer currently held on the canvas, one `openPointerSession`
@@ -783,10 +784,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
       };
-      const heldResult = dispatch(heldEv);
+      const heldOn = dispatcherNow();
+      const heldResult = dispatch(heldEv, heldOn);
 
       if (heldResult === 'handled') {
-        heldKeys.set(physicalKey(e), e.key);
+        heldKeys.set(physicalKey(e), { key: e.key, on: heldOn });
       }
 
       if (keyResult === 'handled' || heldResult === 'handled') {
@@ -796,19 +798,19 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     const onKeyUp = (e: KeyboardEvent) => {
       const physical = physicalKey(e);
-      const downKey = heldKeys.get(physical);
-      if (downKey === undefined) return;
+      const down = heldKeys.get(physical);
+      if (down === undefined) return;
       const ev: InputEvent = {
         kind: 'key-held',
-        key: downKey,
+        key: down.key,
         phase: 'up',
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
       };
-      dispatch(ev);
       heldKeys.delete(physical);
+      dispatch(ev, down.on);
     };
 
     // A window that loses focus never delivers the keyup, so without this every
@@ -818,7 +820,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const onWindowBlur = () => {
       endPinch();
       for (const p of [...held.values()]) p.session.cancel();
-      for (const key of heldKeys.values()) {
+      const releasing = [...heldKeys.values()];
+      heldKeys.clear();
+      for (const { key, on } of releasing) {
         const ev: InputEvent = {
           kind: 'key-held',
           key,
@@ -828,9 +832,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           metaKey: false,
           shiftKey: false,
         };
-        dispatch(ev);
+        dispatch(ev, on);
       }
-      heldKeys.clear();
     };
 
     // -----------------------------------------------------------------------
