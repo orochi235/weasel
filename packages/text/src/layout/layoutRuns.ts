@@ -848,10 +848,8 @@ export function layoutRuns(
     wrapped?: boolean;
   }
 
-  // An entry opening a line drops the kerning before it, and a space opening
-  // one is a slot, not an indent — it keeps its cell so every code point
-  // stays addressable, but takes no width.
-  const openingWidth = (e: Entry): number => (e.isSpace ? 0 : e.advance + e.tracking);
+  // An entry opening a line drops the kerning before it.
+  const openingWidth = (e: Entry): number => e.advance + e.tracking;
   /** `sum[k]`: width of entries `[0, k)` set end to end. */
   const sum = new Float64Array(entries.length + 1);
   for (let k = 0; k < entries.length; k++) {
@@ -874,9 +872,7 @@ export function layoutRuns(
     }
     for (let k = span.start; k < span.end; k++) {
       const e = entries[k];
-      const placed = k > span.start ? e
-        : e.isSpace ? { ...e, kerningBefore: 0, advance: 0, tracking: 0 }
-        : { ...e, kerningBefore: 0 };
+      const placed = k > span.start ? e : { ...e, kerningBefore: 0 };
       line.entries.push(placed);
       line.width += placed.kerningBefore + placed.advance + placed.tracking;
       line.height = Math.max(line.height, lineSize(e) * opts.lineHeight);

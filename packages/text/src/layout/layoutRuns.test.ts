@@ -1415,8 +1415,22 @@ describe('layoutRuns — one cell per code point', () => {
     const out = layoutRuns([RUN_PLAIN(' AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     const cells = out.lines[0].cells;
     expect(cells.map((c) => c.cp)).toEqual([32, 65, 66]);
-    // The leading space is a slot, not an indent: 'A' still starts the line.
-    expect(cells[1].x).toBeCloseTo(0, 10);
+    expect(cells[0].x).toBeCloseTo(0, 10);
+    expect(cells[1].x).toBeGreaterThan(0);
+    expect(cells[1].x).toBeCloseTo(cells[0].advance, 10);
+  });
+
+  it('indents by every leading space, at the width a space has mid-line', async () => {
+    await registerBareFixture();
+    const opts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' } as const;
+    const mid = layoutRuns([RUN_PLAIN('A B')], opts).lines[0].cells;
+    const space = mid[2].x - mid[1].x;
+    expect(space).toBeGreaterThan(0);
+    for (const n of [1, 2, 3]) {
+      const out = layoutRuns([RUN_PLAIN(' '.repeat(n) + 'AB')], opts);
+      expect(out.lines[0].cells[n].x).toBeCloseTo(n * space, 10);
+      expect(out.bounds.width).toBeCloseTo(n * space + layoutRuns([RUN_PLAIN('AB')], opts).bounds.width, 10);
+    }
   });
 
   it('keeps a cell for a space at the start of a line after a newline', async () => {
@@ -1424,7 +1438,8 @@ describe('layoutRuns — one cell per code point', () => {
     const out = layoutRuns([RUN_PLAIN('AB\n AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(out.lines).toHaveLength(2);
     expect(out.lines[1].cells.map((c) => c.cp)).toEqual([32, 65, 66]);
-    expect(out.lines[1].cells[1].x).toBeCloseTo(0, 10);
+    expect(out.lines[1].cells[1].x).toBeCloseTo(out.lines[1].cells[0].advance, 10);
+    expect(out.lines[1].cells[1].x).toBeGreaterThan(0);
   });
 
   it('reports which cells drew ink', async () => {

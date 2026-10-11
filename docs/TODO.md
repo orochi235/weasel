@@ -893,16 +893,6 @@ Core five + Crop shipped. Remaining:
   before glyph lookup and a color (RGBA) atlas page drawn untinted for clusters with emoji
   presentation. Shares the cluster work with the caret entry above.
 
-- **(P3) Text layout: only the first leading space of a line collapses.** `" AB"` draws `A` at x =
-  0, `"  AB"` one space in, `"   AB"` two (`openingWidth` and the `placed` copy in
-  `packages/text/src/layout/layoutRuns.ts` special-case the first entry only). The DOM edit overlay
-  uses `white-space: pre` / `pre-wrap`, which keeps every leading space, so indented text shifts
-  left by one space on commit; `layoutMarkdown`'s 2D path keeps the space at full width too. The
-  wrap never starts a wrapped line on a space, so the rule only fires at the start of the text or
-  after a hard break, which is where indentation lives. Decide between keeping leading spaces at
-  full width (matches the overlay) and zeroing the whole leading run; `layoutRuns.test.ts` pins the
-  single-space case.
-
 - **(P3) Outline fonts: a `.ttc` member that does not match by PostScript name is used silently.**
   `sfntFromCollection` (`packages/font/src/outline/sfnt.ts`) falls back to the collection's first
   member and returns `matched: false`, on purpose and with a test; `createOpenTypeParser`
