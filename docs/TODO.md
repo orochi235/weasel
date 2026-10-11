@@ -1196,14 +1196,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   label's attributes pane shows a read-only row `DEFAULT undefined`. A selected label row's
   outline touches the label of the row under it in the preview.
 
-- **(P3) `PropertyGroup` title rough edges, same pass.** With `twisty="folded"` the title moves
-  32px right when the hidden twisty takes focus. In light mode the rules either side of a title do
-  not show, where in dark they do.
-
-- **(P3) A field in a labkit `ControlPanel` panel box has not been checked against its box.** In
-  light mode a text field inside an `as: 'panel'` box was the box's own color and invisible in
-  `SelectionPanel` and in `PrefsForm`'s rail panel; both are fixed (`cb7fa4996`). Nobody has
-  looked at `ControlPanel`.
+- **(P3) Disabled and panel-box rough edges seen in headless Chromium, 2026-10-11.** A disabled
+  `Bar` action button draws at 0.4 where every other disabled cell draws at 0.5. A disabled text
+  area in a `Bar` keeps a full-strength, working "Notes" button that opens to a disabled text
+  area. labkit's "Pin" button on a disabled `ControlPanel` row still works. In light mode a panel
+  box's own 1px `--wzl-border` is invisible on its sunken fill in `PrefsForm` and `SelectionPanel`,
+  because light mode sets `--wzl-border` and `--wzl-surface-sunken` to the same gray; `MotifFrame`
+  got around the same collision by mixing its edge from its own surface (`25b22ee40`).
 
 - **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
   drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
