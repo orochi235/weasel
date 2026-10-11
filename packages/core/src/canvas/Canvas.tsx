@@ -1367,11 +1367,24 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     flattenTolerance,
   };
   const paintInputsRef = useLatest(paintInputs);
+  const controlledMovedRef = useRef(false);
   useInsertionEffect(() => {
-    if (controlledView) viewRef.current = controlledView;
+    if (controlledView) {
+      const was = viewRef.current;
+      controlledMovedRef.current ||= was.x !== controlledView.x || was.y !== controlledView.y
+        || was.scale.x !== controlledView.scale.x || was.scale.y !== controlledView.scale.y;
+      viewRef.current = controlledView;
+    }
     helpersForLayersRef.current = helpersForLayers;
     if (helpersRef) helpersRef.current = helpersForLayers;
     if (debugSinkRef) debugSinkRef.current = debugSink;
+  });
+  // A controlled view reaches the ref with no `setView`, so this is where its
+  // subscribers hear of it.
+  useLayoutEffect(() => {
+    if (!controlledMovedRef.current) return;
+    controlledMovedRef.current = false;
+    for (const fn of viewSubsRef.current) fn(viewRef.current);
   });
 
   const paint = useCallback((): boolean => {

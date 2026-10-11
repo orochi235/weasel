@@ -275,6 +275,23 @@ describe('imperative view', () => {
     expect(apiRef.current!.getView()).toEqual({ x: 7, y: 8, scale: { x: 1, y: 1 } });
   });
 
+  it('tells view subscribers when the controlled prop changes, and only then', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const moved = { x: 7, y: 8, scale: { x: 1, y: 1 } };
+    const { rerender } = render(
+      <Canvas ref={apiRef} width={100} height={80} layers={{}} view={IDENTITY} />,
+    );
+    const heard = vi.fn();
+    apiRef.current!.subscribeView(heard);
+
+    rerender(<Canvas ref={apiRef} width={100} height={80} layers={{}} view={{ ...IDENTITY }} />);
+    expect(heard).not.toHaveBeenCalled();
+
+    rerender(<Canvas ref={apiRef} width={100} height={80} layers={{}} view={moved} />);
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(heard).toHaveBeenCalledWith(moved);
+  });
+
   it('repaints with the prop view a controlled consumer hands down', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
     const draw = vi.fn();
