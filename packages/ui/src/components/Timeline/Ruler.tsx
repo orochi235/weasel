@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement, type WheelEvent as ReactWheelEvent } from 'react';
-import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
+import { openPointerSession, useLatest, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { createTimeScale, panWindow, TICK_SPACING_PX, tickTimes, toPercent, zoomWindow, type TimeWindow } from './timeScale';
 
@@ -65,15 +65,30 @@ export function Ruler(props: RulerProps): ReactElement {
     }, { capture: false });
   };
 
-  const onWheel = (e: ReactWheelEvent<HTMLDivElement>): void => {
+  const onWheel = useLatest((e: WheelEvent): void => {
     if (e.ctrlKey) {
+      e.preventDefault();
       onWindowChange(zoomWindow(win, msAt(e.clientX), Math.exp(e.deltaY * ZOOM_STEP), bounds));
-    } else {
-      const width = widthOf();
-      const perPx = width === 0 ? 0 : (win.to - win.from) / width;
-      onWindowChange(panWindow(win, e.deltaY * perPx, bounds));
+      return;
     }
-  };
+    const width = widthOf();
+    const perPx = width === 0 ? 0 : (win.to - win.from) / width;
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    const next = panWindow(win, delta * perPx, bounds);
+    // At either end the wheel goes back to scrolling the page.
+    if (next.from === win.from && next.to === win.to) return;
+    e.preventDefault();
+    onWindowChange(next);
+  });
+  // Not a React `onWheel`: React's wheel listeners are passive and cannot keep
+  // the page from zooming or scrolling under the ruler.
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const listener = (e: WheelEvent): void => onWheel.current(e);
+    el.addEventListener('wheel', listener, { passive: false });
+    return () => el.removeEventListener('wheel', listener);
+  }, [onWheel]);
 
   const ticks = tickTimes(win, width, TICK_SPACING_PX);
   const pct = (ms: number): string => toPercent(win, ms);
@@ -84,7 +99,6 @@ export function Ruler(props: RulerProps): ReactElement {
       ref={trackRef}
       data-testid="timeline-ruler"
       onPointerDown={onPointerDown}
-      onWheel={onWheel}
     >
       {ticks.map((t) => (
         <span
