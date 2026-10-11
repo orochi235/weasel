@@ -554,7 +554,9 @@ describe('useSceneTextEdit — a commit that changes nothing', () => {
     document.body.innerHTML = '';
   });
 
-  function mount<T extends { id: string }>(item: T) {
+  type Item = Omit<TextItem, 'text'> & { text?: string; runs?: { text: string; bold?: boolean }[] };
+
+  function mount(item: Item) {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const hook = renderHook(() => {
@@ -569,7 +571,7 @@ describe('useSceneTextEdit — a commit that changes nothing', () => {
     act(() => hook.result.current.edit.startEdit('box'));
     act(() => hook.result.current.edit.commit());
     const { scene } = hook.result.current;
-    expect('text' in (scene.get(asNodeId('box'))!.data as object)).toBe(false);
+    expect('text' in scene.get(asNodeId('box'))!.data).toBe(false);
     expect(scene.canUndo()).toBe(false);
   });
 
@@ -586,7 +588,7 @@ describe('useSceneTextEdit — a commit that changes nothing', () => {
     overlayOf(container).textContent = 'goodbye';
     act(() => hook.result.current.edit.commit());
     const { scene } = hook.result.current;
-    expect((scene.get(asNodeId('a'))!.data as TextItem).text).toBe('goodbye');
+    expect(scene.get(asNodeId('a'))!.data.text).toBe('goodbye');
     expect(scene.canUndo()).toBe(true);
   });
 });
