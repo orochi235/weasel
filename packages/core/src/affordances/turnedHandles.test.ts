@@ -17,7 +17,8 @@ import { asNodeId } from 'core/scene/types';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { Affordance } from './types';
 
-const B = { x: 10, y: 20, width: 40, height: 20, rotation: Math.PI / 5 };
+// Tall enough on screen that no corner gives up its inward half (see cornerOf).
+const B = { x: 10, y: 20, width: 40, height: 40, rotation: Math.PI / 5 };
 const VIEW = { x: 5, y: -3, scale: { x: 4, y: 1 } };
 const DIMS = { width: 800, height: 600 };
 const T = viewToTransform(VIEW);

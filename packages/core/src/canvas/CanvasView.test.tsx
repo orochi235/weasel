@@ -521,7 +521,8 @@ describe('<CanvasView> hit-testing', () => {
     b: { x: 40, y: 0, width: 10, height: 10 },
     // Big enough that the fine (8px) and coarse (14px) corner radii do not
     // overlap, so one point can distinguish them.
-    c: { x: 20, y: 20, width: 40, height: 40 },
+    // Over four coarse hit radii across, so its corners keep their whole hit square.
+    c: { x: 20, y: 20, width: 80, height: 80 },
   };
   /** Stands in for the surface's selection, which a view shares by default. */
   const SURFACE_SELECTION = {

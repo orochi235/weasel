@@ -173,17 +173,36 @@ function worldToLocal(xf: TargetTransform, wx: number, wy: number): { x: number;
 type PointShape = Extract<AffordanceRegion['shape'], { kind: 'point' }>;
 
 /** Where a point region's hit square sits: its center in world coords, its
- *  turn on screen, and its screen half-extent. Hit-test, paint, the debug
- *  hitbox and the slops overlay all read it from here. */
+ *  turn on screen, its screen half-extent, and the span of the square that
+ *  takes a press along each of its own axes (`[-half, half]` unless
+ *  `cornerOf` cuts it). Hit-test, paint, the debug hitbox and the slops
+ *  overlay all read it from here. */
 export function pointRegionFrame(
   shape: PointShape,
   xf: TargetTransform,
   view: View,
-): { x: number; y: number; angle: number; half: number } {
+): { x: number; y: number; angle: number; half: number; u: [number, number]; v: [number, number] } {
   const a = pointRegionAnchor(shape, xf, view);
   const angle = shape.turned ? screenAngleOf(angleOf(xf), view.scale) : 0;
-  return { x: a.x, y: a.y, angle, half: shape.hitRadiusPx };
+  const half = shape.hitRadiusPx;
+  const u: [number, number] = [-half, half];
+  const v: [number, number] = [-half, half];
+  const body = shape.cornerOf;
+  if (body) {
+    // The body in world units that spans four hit radii on screen, per axis.
+    const floor = pxExtent(SMALL_BODY_RADII * half, view.scale, angleOf(xf));
+    // `v` runs a quarter turn on from `u` on screen, which is the target's +y
+    // only while the view keeps its handedness.
+    const vOut = body.outward.y * Math.sign(view.scale.x * view.scale.y);
+    if (body.width < floor.x) u[body.outward.x > 0 ? 0 : 1] = 0;
+    if (body.height < floor.y) v[vOut > 0 ? 0 : 1] = 0;
+  }
+  return { x: a.x, y: a.y, angle, half, u, v };
 }
+
+/** A body under this many hit radii across gives up the inward half of each
+ *  corner's hit square, so there is somewhere on it that is not a handle. */
+const SMALL_BODY_RADII = 4;
 
 /** A point region's hit square as four screen-space corners, relative to its
  *  world center carried to the screen by `toScreen`. */
@@ -195,8 +214,8 @@ export function pointRegionScreenQuad(
 ): { x: number; y: number }[] {
   const f = pointRegionFrame(shape, xf, view);
   const [cx, cy] = toScreen(f.x, f.y);
-  const c = Math.cos(f.angle) * f.half, sn = Math.sin(f.angle) * f.half;
-  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => ({
+  const c = Math.cos(f.angle), sn = Math.sin(f.angle);
+  return [[f.u[0], f.v[0]], [f.u[1], f.v[0]], [f.u[1], f.v[1]], [f.u[0], f.v[1]]].map(([u, v]) => ({
     x: cx + c * u - sn * v,
     y: cy + sn * u + c * v,
   }));
@@ -265,7 +284,7 @@ function hitRegion(
     const d = scaleDelta(wx - f.x, wy - f.y, view.scale);
     const c = Math.cos(f.angle), sn = Math.sin(f.angle);
     const u = c * d.x + sn * d.y, v = -sn * d.x + c * d.y;
-    return Math.abs(u) <= f.half && Math.abs(v) <= f.half;
+    return u >= f.u[0] && u <= f.u[1] && v >= f.v[0] && v <= f.v[1];
   }
   if (region.shape.kind === 'annulus') {
     const s = region.shape;

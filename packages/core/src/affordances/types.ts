@@ -75,6 +75,13 @@ export interface AffordanceRegion<TScratch = unknown> {
         /** Turn the square to the target, at the angle the target's x axis
          *  lands on screen (`screenAngleOf`) — for handles painted turned. */
         turned?: boolean;
+        /** The body this point is a corner of: its target-local size, and
+         *  which way leads out of it on each axis. While the body spans under
+         *  four `hitRadiusPx` on an axis on screen, only the outward half of
+         *  the square on that axis takes a press, so a small body can still be
+         *  grabbed. The cut runs along the square's own axes: pair it with
+         *  `turned` on a target that can rotate. */
+        cornerOf?: { width: number; height: number; outward: { x: -1 | 1; y: -1 | 1 } };
       }
     | { kind: 'rect';    x: number; y: number; width: number; height: number }
     | {

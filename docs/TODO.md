@@ -174,16 +174,6 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
-- **(P2) Corner resize handles cover the whole body of a selection about 16 px across or smaller.**
-  Each corner's hit square is 16 px (`hitRadiusPx` 8 in
-  `packages/core/src/affordances/cornerResize.ts`), tested in screen space, so on a 12 x 12 px
-  selection every point of the body is inside a handle and a drag there resizes; the node cannot be
-  moved by its body. `hitAffordanceRegions` picks the nearest corner but nothing reserves the body.
-  Ruled 2026-10-11: the handles stay at every size, and when the target is under about four hit
-  radii on an axis only the outward half of each corner's hit square takes a press, which leaves the
-  body free to move by. That leaves narrowing the hit in `cornerResize.ts`. Not confirmed against
-  the dispatcher that a handle hit outranks the body binding.
-
 - **(P2) Pen tool: nodes are minted and committed beside the `insert` dep.** `usePenTool`
   (`packages/core/src/tools/builtin/pen/usePenTool.ts`) creates a path through
   `options.adapter.addNode(pose)` plus `wrapPath`, needs a third hook, `makeNode`, for the join

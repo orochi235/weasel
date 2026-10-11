@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createCornerResizeAffordance, type CornerResizeScratch } from './cornerResize';
 import { composeAffordanceLayer } from './composeAffordanceLayer';
+import { hitAffordanceRegions, pointRegionScreenQuad, transformOf } from './hitAffordanceRegions';
 import type { ChromeState } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
@@ -176,5 +177,45 @@ describe('corner-resize cursors', () => {
     // parity keyword is still a better answer than `default`.
     const c = cursorOf(stateRotated(Math.PI / 3), 'min-min');
     expect(c).toMatchObject({ fallback: 'nwse-resize' });
+  });
+});
+
+describe('corner handles on a small selection', () => {
+  const small = (): ChromeState => ({
+    ...stateWithSingle(),
+    boundsOf: () => ({ x: 100, y: 100, width: 12, height: 12 }),
+  });
+  const hitAt = (x: number, y: number, state: ChromeState, scale = 1): string | undefined =>
+    hitAffordanceRegions(
+      [createCornerResizeAffordance()], x, y, state, { x: 0, y: 0, scale: { x: scale, y: scale } },
+    )?.region.hitKind;
+
+  it('leaves the body of a 12 px selection free, and takes a press outside each corner', () => {
+    for (const [x, y] of [[106, 106], [101, 101], [111, 111], [101, 111]]) {
+      expect(hitAt(x, y, small())).toBeUndefined();
+    }
+    expect(hitAt(97, 97, small())).toBe('handle:top-left');
+    expect(hitAt(115, 97, small())).toBe('handle:top-right');
+    expect(hitAt(97, 115, small())).toBe('handle:bottom-left');
+    expect(hitAt(115, 115, small())).toBe('handle:bottom-right');
+  });
+
+  it('cuts each axis on its own: a narrow, tall selection keeps the full height of each square', () => {
+    const narrow: ChromeState = { ...stateWithSingle(), boundsOf: () => ({ x: 100, y: 100, width: 12, height: 200 }) };
+    expect(hitAt(97, 104, narrow)).toBe('handle:top-left');
+    expect(hitAt(103, 104, narrow)).toBeUndefined();
+  });
+
+  it('takes the whole square once the selection spans four hit radii on screen', () => {
+    // 12 world units at 4x is 48 px, over the 32 px floor.
+    expect(hitAt(101, 101, small(), 4)).toBe('handle:top-left');
+    expect(hitAt(101, 101, stateWithSingle())).toBe('handle:top-left');
+  });
+
+  it('records the narrowed square as the debug hitbox', () => {
+    const [topLeft] = createCornerResizeAffordance().regions(small());
+    if (topLeft.shape.kind !== 'point') throw new Error('expected a point region');
+    const quad = pointRegionScreenQuad(topLeft.shape, transformOf(small(), 'a'), VIEW, (x, y) => [x, y]);
+    expect(quad).toEqual([{ x: 92, y: 92 }, { x: 100, y: 92 }, { x: 100, y: 100 }, { x: 92, y: 100 }]);
   });
 });

@@ -28,7 +28,8 @@ function envelopeFor(bounds: Bounds) {
 function drawAt(
   layer: ReturnType<typeof layerFor>,
   scale: number,
-  bounds: Bounds = { x: 0, y: 0, width: 100, height: 100 },
+  // Large enough that no corner gives up its inward half at the smallest zoom here.
+  bounds: Bounds = { x: 0, y: 0, width: 1000, height: 1000 },
 ): readonly unknown[] {
   return layer.draw(envelopeFor(bounds), { x: 0, y: 0, scale: { x: scale, y: scale } } as never, {
     width: 800, height: 600,
