@@ -386,6 +386,51 @@ describe('createHistory — serialize / restore', () => {
     expect(snap.droppedEntries).toBe(1);
   });
 
+  it('cuts the snapshot at a nameless entry rather than keeping what lies beyond it', () => {
+    const nameless = (): Op => ({ apply: () => {}, invert: () => nameless() });
+    const step = (label: string) =>
+      createTransformOp<Pose>({ id: label, from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, label });
+    const h = createHistory(makeAdapter() as any);
+    h.apply(step('A'));
+    h.applyOps([nameless()], 'B');
+    h.apply(step('C'));
+    h.apply(step('D'));
+    h.applyOps([nameless()], 'E');
+    h.apply(step('F'));
+    h.goto(3);
+
+    const snap = h.serialize();
+    // A sits under B, and F past E: restoring either would step across a
+    // change the snapshot cannot replay.
+    expect(snap.undoStack.map((e) => e.label)).toEqual(['C']);
+    expect(snap.redoStack.map((e) => e.label)).toEqual(['D']);
+    expect(snap.droppedEntries).toBe(4);
+  });
+
+  it('drops a branch that forks from an entry the snapshot cut', () => {
+    const nameless = (): Op => ({ apply: () => {}, invert: () => nameless() });
+    const step = (label: string) =>
+      createTransformOp<Pose>({ id: label, from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, label });
+    const h = createHistory(makeAdapter() as any, { branching: true });
+    h.apply(step('A'));
+    h.undo();
+    h.apply(step('B')); // A is now a branch at the start
+    h.apply(step('C'));
+    h.undo();
+    h.apply(step('D')); // C is now a branch at B
+    h.undo();
+    h.undo();
+    h.applyOps([nameless()], 'E'); // [B, D] is now a branch at the start
+    h.apply(step('F'));
+    h.undo();
+    h.apply(step('G')); // F is now a branch at E
+
+    const snap = h.serialize();
+    expect(snap.undoStack.map((e) => e.label)).toEqual(['G']);
+    expect(snap.branches).toBeUndefined();
+    expect(snap.droppedEntries).toBe(6);
+  });
+
   it('reports droppedEntries === 0 when nothing was dropped', () => {
     const a = makeAdapter();
     const h = createHistory(a as any);

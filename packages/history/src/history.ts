@@ -69,10 +69,10 @@ export interface SerializedHistory {
   /** Futures kept by a branching history, each under the id of the entry it
    *  forks from (0 for the start), entries in time order. Absent when none. */
   branches?: { at: number; entries: SerializedHistoryEntry[] }[];
-  /** Entries dropped because at least one of their ops lacked a `name`
-   *  and therefore couldn't round-trip through the op-factory registry.
-   *  Always present (zero when nothing was dropped) so callers can detect
-   *  loss without parsing the debug log. */
+  /** Entries left out: those with an op lacking a `name`, which can't
+   *  round-trip through the op-factory registry, and those only reachable
+   *  across one. Always present (zero when nothing was dropped) so callers
+   *  can detect loss without parsing the debug log. */
   droppedEntries: number;
 }
 
@@ -182,10 +182,12 @@ export interface History {
    *  clear/coalesce. Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
   /** Snapshot the undo + redo stacks as `(name, args)` pairs — see
-   *  `SerializedHistory` for what that takes to store. Entries whose ops aren't all kit-registered (i.e. any op missing a
-   *  `name`) are dropped from the snapshot with a debug-level log — they
-   *  can't round-trip, so we omit them rather than emit a half-restorable
-   *  entry. The in-memory stacks aren't modified. */
+   *  `SerializedHistory` for what that takes to store. An entry with an op
+   *  missing a `name` can't round-trip, and neither can anything that is only
+   *  reached by stepping across it: the snapshot keeps the undo entries newer
+   *  than the last such entry, the redo entries nearer than the first, and
+   *  the branches forking from an entry it kept. The rest is counted in
+   *  `droppedEntries`. The in-memory stacks aren't modified. */
   serialize(): SerializedHistory;
   /** Replace the current undo + redo stacks with the deserialized contents
    *  of `snapshot`. Ops are rebuilt via the `rebuildOp` option when
@@ -691,24 +693,48 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       return () => { listeners.delete(listener); };
     },
     serialize(): SerializedHistory {
-      let dropped = 0;
-      const project = (e: Entry): SerializedHistoryEntry | null => {
-        const s = entryToSerial(e, logger);
-        if (s === null) dropped++;
-        return s;
+      let total = 0;
+      const project = (entries: readonly Entry[]): (SerializedHistoryEntry | null)[] => {
+        total += entries.length;
+        return entries.map((e) => entryToSerial(e, logger));
       };
+      // Both stacks keep the entries nearest the current state at their end,
+      // so what survives a nameless entry is whatever follows the last one.
+      const nearest = (stack: readonly Entry[]): SerializedHistoryEntry[] => {
+        const serial = project(stack);
+        return serial.slice(serial.lastIndexOf(null) + 1) as SerializedHistoryEntry[];
+      };
+      const undo = nearest(undoStack);
+      const redo = nearest(redoStack);
+
+      const reachable = new Set<number>([...undo, ...redo].map((e) => e.id));
+      if (undo.length === undoStack.length) reachable.add(0);
+      let pending = [...forks].flatMap(([at, kept]) => kept.map((b) => {
+        const serial = project(b);
+        const cut = serial.indexOf(null);
+        return { at, entries: (cut < 0 ? serial : serial.slice(0, cut)) as SerializedHistoryEntry[] };
+      })).filter((b) => b.entries.length > 0);
+      const branches: { at: number; entries: SerializedHistoryEntry[] }[] = [];
+      for (let grew = true; grew; ) {
+        grew = false;
+        const waiting: typeof pending = [];
+        for (const b of pending) {
+          if (!reachable.has(b.at)) { waiting.push(b); continue; }
+          branches.push(b);
+          for (const e of b.entries) reachable.add(e.id);
+          grew = true;
+        }
+        pending = waiting;
+      }
+
+      const carried = undo.length + redo.length + branches.reduce((n, b) => n + b.entries.length, 0);
       return {
         version: 1,
-        undoStack: undoStack.map(project).filter((e): e is SerializedHistoryEntry => e !== null),
-        redoStack: redoStack.map(project).filter((e): e is SerializedHistoryEntry => e !== null),
-        ...(forks.size > 0 ? {
-          branches: [...forks].flatMap(([at, kept]) => kept.map((b) => ({
-            at,
-            entries: b.map(project).filter((e): e is SerializedHistoryEntry => e !== null),
-          }))).filter((b) => b.entries.length > 0),
-        } : {}),
+        undoStack: undo,
+        redoStack: redo,
+        ...(branches.length > 0 ? { branches } : {}),
         nextEntryId,
-        droppedEntries: dropped,
+        droppedEntries: total - carried,
       };
     },
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {

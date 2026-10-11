@@ -987,21 +987,10 @@ Core five + Crop shipped. Remaining:
   (then a replace has to carry the selection across). `loadState` already drops ids the snapshot
   does not hold.
 
-- **(P3) History: `serialize()` drops an entry with a nameless op from the middle of the stack and
-  keeps the ones beneath it.** Entries `[A, B (nameless op), C]` serialize as `[A, C]`
-  (`packages/history/src/history.ts`, `entryToSerial`). After `restore`, undoing C then A inverts A
-  underneath B's change, which is still applied and no longer undoable (run as a test: state 10 at
-  depth 0 where the original reaches 0). A branch whose `at` names a dropped entry is orphaned the
-  same way. Options: cut the snapshot at the last unserializable entry, keeping only what is newer
-  on the undo side and nearer on the redo side, which keeps every surviving inverse sound and loses
-  the older history on reload; or keep today's behavior, which is harmless for the kit's absolute,
-  id-addressed ops and wrong for relative ones, and say so in the doc. In `apps/draw` the nameless
-  ops are the inverses listed in the next entry.
-
 - **(P3) Ops: three inverses have no name.** The inverses of `reorder` and `moveToIndex`
   (`packages/core/src/core/ops/reorder/index.ts`) and of a cascading `delete`
-  (`packages/core/src/core/ops/delete.ts`) carry no `name`, so an entry built from one is dropped
-  by `serialize()`. None is expressible through a factory that is registered today: the first two
+  (`packages/core/src/core/ops/delete.ts`) carry no `name`, so `serialize()` drops an entry built
+  from one and every undo entry older than it. None is expressible through a factory that is registered today: the first two
   write a whole sibling order back, which `moveToIndex` cannot state because it keeps the moved
   ids in their current relative order, and the third re-inserts several nodes. Naming them means
   registering new op kinds, which adds to the persisted history format.
