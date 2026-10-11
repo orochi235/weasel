@@ -169,6 +169,9 @@ interface OnTarget<T> {
   /** Any new animation passed the same cancelKey cancels the prior one in flight. Leave it off
    *  to let animations on one target add. */
   cancelKey?: string;
+  /** False joins whatever holds `cancelKey` without canceling it, so the key groups animations
+   *  that add. Default true. */
+  interrupt?: boolean;
   /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
   label?: string;
 }
@@ -330,9 +333,10 @@ export interface Animator {
    */
   timeline(opts: TimelineOptions): TimelineHandle;
   /** Per-node, per-channel color override registry, painted onto scene nodes
-   *  by `<SceneCanvas animator>` and read by `createPathLayer`. Used by `tweenVertexColors`,
-   *  `springVertexColors`, `cycleVertexColors`, `staggerVertexColors`. Cleared
-   *  automatically on animator unmount. */
+   *  by `<SceneCanvas animator>` and read by `createPathLayer`. `cycleVertexColors`
+   *  stores an override in it; `tweenVertexColors`, `springVertexColors`, and
+   *  `staggerVertexColors` move its per-node targets, which only this animator
+   *  can move. Cleared automatically on animator unmount. */
   colorOverrides: ColorOverrideRegistry;
   /**
    * Subscribe to a callback fired once per RAF frame while any animation is

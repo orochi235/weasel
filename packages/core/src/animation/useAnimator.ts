@@ -373,7 +373,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         return physics<T>({
           target: o.target, from: o.from, to: null, velocity: o.velocity,
           stiffness: 0, damping, mass: 1, restThreshold: o.threshold ?? 0.5,
-          onTick: o.onTick, onDone: o.onDone, cancelKey: o.cancelKey, label: o.label,
+          onTick: o.onTick, onDone: o.onDone, cancelKey: o.cancelKey, interrupt: o.interrupt, label: o.label,
         }, 'decay');
       }
       return physics<T>({

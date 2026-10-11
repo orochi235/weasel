@@ -1,4 +1,5 @@
 import { linear, resolveEasing } from '@weasel-js/geom';
+import type { ColorSpace } from '@weasel-js/paint';
 import type {
   AnimationHandle,
   Animator,
@@ -6,22 +7,7 @@ import type {
   SpringPresetName,
 } from './types';
 import type { VertexColorChannel } from './colorRegistry';
-import { lerpColorArray, type ColorSpace } from '@weasel-js/paint';
-import { hslToRgb } from '../renderer/math/color';
-
-/**
- * Color interpolator: receives two flat RGBA float arrays (values in
- * 0..1, the renderer's color space — same shape as
- * `stroke.vertexColors`) and a normalized progress `t` in 0..1.
- * Returns the same-length blended array, also in 0..1 floats. Override
- * the default per-channel lerp via `TweenVertexColorsOptions.interpolate`
- * when a custom color-space or shaping is needed.
- */
-export type ColorInterpolate = (
-  from: readonly number[],
-  to: readonly number[],
-  t: number,
-) => number[];
+import { resolveInterpolator, type ColorInterpolate } from './colorInterpolate';
 
 /** Options for `tweenVertexColors`. */
 export interface TweenVertexColorsOptions {
@@ -54,25 +40,47 @@ function validateLengths(from: readonly number[], to: readonly number[]): void {
   }
 }
 
-function resolveInterpolator(
-  opts: { interpolation?: ColorSpace; interpolate?: ColorInterpolate },
-): ColorInterpolate {
-  if (opts.interpolate) return opts.interpolate;
-  const space: ColorSpace = opts.interpolation ?? 'rgb';
-  return (a, b, t) => lerpColorArray(a, b, t, space);
-}
-
 const cancelKeyFor = (id: string, channel: VertexColorChannel): string =>
   `colors:${id}:${channel}`;
+
+/** Under a thousandth of full scale from `to`, and slower than that a second, a color spring is done. */
+const COLOR_REST = 0.001;
+
+/** What the from-to helpers share: the node's color target, moved by a path through `colorsAt`. */
+function tweenColors(
+  animator: Animator,
+  opts: { id: string; channel: VertexColorChannel; from: readonly number[]; to: readonly number[]; onDone?: () => void },
+  ms: number,
+  easing: EasingSpec | undefined,
+  colorsAt: (t: number) => number[],
+): AnimationHandle {
+  const { id, channel } = opts;
+  const registry = animator.colorOverrides;
+  return animator.tween<number[]>({
+    target: registry.target(id, channel, opts.from.length),
+    from: opts.from.slice(),
+    to: opts.to.slice(),
+    ms,
+    easing,
+    cancelKey: cancelKeyFor(id, channel),
+    interrupt: false,
+    interpolate: (_from, _to, t) => colorsAt(t),
+    onDone: () => {
+      registry.release(id, channel);
+      opts.onDone?.();
+    },
+  });
+}
 
 /**
  * Animate one node's per-anchor colors from `from` to `to` over `ms`.
  *
- * The colors are published to the animator's `colorOverrides` registry rather
- * than written into the scene, so nothing is recorded in history and the
- * node's own data is untouched; the override is dropped when the animation
- * finishes. Starting another color animation on the same node and channel
- * cancels this one.
+ * It moves the node's color target (`animator.colorOverrides.target`) rather
+ * than writing the scene, so nothing is recorded in history and the node's own
+ * data is untouched. Another tween or stagger on the same node and channel adds
+ * to this one; a spring interrupts it. What it painted is dropped when the last
+ * animation on the node and channel finishes, and held where it was if canceled
+ * until `animator.colorOverrides.clear`.
  */
 export function tweenVertexColors(
   animator: Animator,
@@ -80,22 +88,7 @@ export function tweenVertexColors(
 ): AnimationHandle {
   validateLengths(opts.from, opts.to);
   const interp = resolveInterpolator(opts);
-  const { id, channel } = opts;
-  return animator.tween<number>({
-    from: 0,
-    to: 1,
-    ms: opts.ms,
-    easing: opts.easing,
-    cancelKey: cancelKeyFor(id, channel),
-    interpolate: (a, b, t) => a + (b - a) * t,
-    onTick: (t) => {
-      animator.colorOverrides.set(id, channel, interp(opts.from, opts.to, t));
-    },
-    onDone: () => {
-      animator.colorOverrides.clear(id, channel);
-      opts.onDone?.();
-    },
-  });
+  return tweenColors(animator, opts, opts.ms, opts.easing, (t) => interp(opts.from, opts.to, t));
 }
 
 /** Options for `springVertexColors`. */
@@ -110,121 +103,39 @@ export interface SpringVertexColorsOptions {
   stiffness?: number;
   damping?: number;
   mass?: number;
-  interpolation?: ColorSpace;
-  interpolate?: ColorInterpolate;
   onDone?: () => void;
 }
 
-/** `tweenVertexColors` driven by a spring instead of a duration. Same override
- *  semantics. */
+/**
+ * `tweenVertexColors` driven by a spring instead of a duration. Each number
+ * springs on its own, so an underdamped spring overshoots `to` and the path is
+ * a straight line in RGB.
+ *
+ * It interrupts whatever is animating the node and channel, and starts at the
+ * velocity of the one it interrupts, so retargeting mid-flight does not stall.
+ */
 export function springVertexColors(
   animator: Animator,
   opts: SpringVertexColorsOptions,
 ): AnimationHandle {
   validateLengths(opts.from, opts.to);
-  const interp = resolveInterpolator(opts);
   const { id, channel } = opts;
-  return animator.spring<number>({
-    from: 0,
-    to: 1,
+  const registry = animator.colorOverrides;
+  return animator.spring<number[]>({
+    target: registry.target(id, channel, opts.from.length),
+    from: opts.from.slice(),
+    to: opts.to.slice(),
     preset: opts.preset,
     stiffness: opts.stiffness,
     damping: opts.damping,
     mass: opts.mass,
+    restThreshold: COLOR_REST,
     cancelKey: cancelKeyFor(id, channel),
-    interpolate: (a, b, t) => a + (b - a) * t,
-    onTick: (t) => {
-      const clamped = Math.max(0, Math.min(1, t));
-      animator.colorOverrides.set(id, channel, interp(opts.from, opts.to, clamped));
-    },
     onDone: () => {
-      animator.colorOverrides.clear(id, channel);
+      registry.release(id, channel);
       opts.onDone?.();
     },
   });
-}
-
-/** Options for `cycleVertexColors`. */
-export interface CycleVertexColorsOptions {
-  id: string;
-  channel: VertexColorChannel;
-  msPerCycle: number;
-  direction?: 1 | -1;
-  easing?: EasingSpec;
-  interpolation?: ColorSpace;
-  /** Custom interpolator. Receives two RGBA arrays in 0..1 floats and a
-   *  progress `t` in 0..1; returns the blended array in 0..1 floats. */
-  interpolate?: ColorInterpolate;
-}
-
-/** Removes an installed color cycle. Unlike the other color helpers this is
- *  not an `AnimationHandle`, because a cycle has no progress to pause or
- *  scale — it only ends. */
-export interface CycleHandle {
-  cancel(): void;
-}
-
-/** Register a function override that phase-rotates the base color array
- *  along the path index. Returns a handle whose `cancel()` removes the
- *  override.
- *
- *  The override computes its value purely from `performance.now()`, so
- *  there's no per-frame progress to register with the animator's tick
- *  loop. To keep the loop alive (so `<SceneCanvas animator>`'s onTick
- *  subscription continues firing redraws while the cycle is installed),
- *  cycleVertexColors holds an `animator.keepAlive()` entry for the
- *  lifetime of the cycle; `cancel()` releases it. */
-export function cycleVertexColors(
-  animator: Animator,
-  opts: CycleVertexColorsOptions,
-): CycleHandle {
-  const interp = resolveInterpolator(opts);
-  const { id, channel } = opts;
-  const direction = opts.direction ?? 1;
-  const easing = resolveEasing(opts.easing);
-
-  const override = (base: readonly number[], tMs: number): number[] => {
-    const n = base.length / 4;
-    if (n === 0) return base.slice();
-    const raw = (tMs / opts.msPerCycle) * n * direction;
-    const cycles = raw / n;
-    const cycleFrac = cycles - Math.floor(cycles);
-    const easedFrac = easing(cycleFrac);
-    const easedRaw = (Math.floor(cycles) + easedFrac) * n;
-    const phase = ((easedRaw % n) + n) % n;
-    const phaseInt = Math.floor(phase);
-    const phaseFrac = phase - phaseInt;
-
-    const out = new Array<number>(base.length);
-    for (let i = 0; i < n; i++) {
-      const aIdx = ((i + phaseInt) % n) * 4;
-      const bIdx = ((i + phaseInt + 1) % n) * 4;
-      const a = [base[aIdx], base[aIdx + 1], base[aIdx + 2], base[aIdx + 3]];
-      const b = [base[bIdx], base[bIdx + 1], base[bIdx + 2], base[bIdx + 3]];
-      const blended = interp(a, b, phaseFrac);
-      const k = i * 4;
-      out[k] = blended[0];
-      out[k + 1] = blended[1];
-      out[k + 2] = blended[2];
-      out[k + 3] = blended[3];
-    }
-    return out;
-  };
-
-  animator.colorOverrides.set(id, channel, override);
-  // Cycle's "value" is a function of wall-clock time, not a tween-style
-  // progress. We don't register a per-frame ticking animation, so without
-  // an explicit keep-alive entry the animator's RAF loop would idle and
-  // SceneCanvas's onTick redraw subscription would never fire. Keep the
-  // loop running until cancel().
-  const releaseKeepAlive = animator.keepAlive();
-
-  return {
-    cancel(): void {
-      animator.colorOverrides.clear(id, channel);
-      releaseKeepAlive();
-    },
-  };
 }
 
 /** Options for `staggerVertexColors`. `origin` picks which anchor the wave
@@ -247,15 +158,15 @@ export interface StaggerVertexColorsOptions {
 }
 
 /** Run the same color change across a node's anchors as a wave, each anchor
- *  starting later than the one before it. Same override semantics as
- *  `tweenVertexColors`. */
+ *  starting later than the one before it. It moves the same target as
+ *  `tweenVertexColors`, and adds to other animations the same way. */
 export function staggerVertexColors(
   animator: Animator,
   opts: StaggerVertexColorsOptions,
 ): AnimationHandle {
   validateLengths(opts.from, opts.to);
   const interp = resolveInterpolator(opts);
-  const { id, channel, from, to, anchorMs, perAnchorDelay } = opts;
+  const { from, to, anchorMs, perAnchorDelay } = opts;
   const n = from.length / 4;
   const easing = resolveEasing(opts.easing);
 
@@ -286,73 +197,5 @@ export function staggerVertexColors(
     return out;
   };
 
-  // A plain array, not a function override: painters call those with their
-  // own clock (`performance.now()`), not time since this stagger began.
-  animator.colorOverrides.set(id, channel, colorsAt(0));
-
-  return animator.tween<number>({
-    from: 0,
-    to: 1,
-    ms: totalMs,
-    easing: linear,
-    cancelKey: cancelKeyFor(id, channel),
-    interpolate: (a, b, t) => a + (b - a) * t,
-    onTick: (t) => {
-      animator.colorOverrides.set(id, channel, colorsAt(t * totalMs));
-    },
-    onDone: () => {
-      animator.colorOverrides.clear(id, channel);
-      opts.onDone?.();
-    },
-  });
-}
-
-// ─── Color-array constructors ───────────────────────────────────────
-//
-// Helpers that build the per-anchor RGBA arrays the tween/cycle/stagger
-// helpers above (and `stroke.vertexColors` on draw commands) consume.
-// Values are in the 0..1 range the renderer expects — emitting bytes
-// (0..255) clamps every channel to 1.0 on the GPU and renders white.
-
-/** Build an n-anchor rainbow RGBA array sweeping the hue wheel. The
- *  output is suitable to pass directly into `stroke.vertexColors`,
- *  `tweenVertexColors({ from: rainbowVertexColors(n) })`, or any
- *  other API that wants per-anchor color floats. */
-export function rainbowVertexColors(
-  n: number,
-  opts: { saturation?: number; lightness?: number; alpha?: number } = {},
-): number[] {
-  const saturation = opts.saturation ?? 0.8;
-  const lightness = opts.lightness ?? 0.6;
-  const alpha = opts.alpha ?? 1;
-  const out: number[] = [];
-  for (let i = 0; i < n; i++) {
-    const h = (i * 360) / Math.max(1, n);
-    const [r, g, b] = hslToRgbUnit(h, saturation, lightness);
-    out.push(r, g, b, alpha);
-  }
-  return out;
-}
-
-/** Build an n-anchor solid RGBA array. Shorthand for
- *  `[r, g, b, a, r, g, b, a, …]` — the array a `tweenVertexColors`
- *  `to`-target typically needs. */
-export function solidVertexColors(
-  n: number,
-  r: number,
-  g: number,
-  b: number,
-  a = 1,
-): number[] {
-  const out: number[] = [];
-  for (let i = 0; i < n; i++) out.push(r, g, b, a);
-  return out;
-}
-
-/** HSL → RGB in 0..1 (hue in degrees). Delegates to the single internal
- *  implementation in `renderer/math/color.ts` so there's only one HSL→RGB
- *  formula in the package. Kept local so consumers building hue-cycled
- *  color arrays via `huesweepVertexColors` don't have to roll their own. */
-function hslToRgbUnit(h: number, s: number, l: number): [number, number, number] {
-  return hslToRgb(h, s, l);
+  return tweenColors(animator, opts, totalMs, linear, (t) => colorsAt(t * totalMs));
 }

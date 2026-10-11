@@ -139,7 +139,24 @@ are built: blits' stepping and springs, pose overrides as a mix, and values comp
    animator that cued them, and a second animator cueing onto a moving target throws.
 2. **Pose.** Pose overrides fold offsets over entries; `tweenPose`, `springPose`, reflow, and
    momentum move onto targets, closing reflow's "velocity does not carry over".
-3. **Color and camera.** `ColorOverrideRegistry` and `useViewAnimation` rebuilt on targets.
+3. **Color and camera.** Built 2026-10-11.
+   - **Camera.** `useViewAnimationOn` makes one target for its view and exposes it as
+     `viewTarget`. The committed view lives in the hook while anything is in flight, and the
+     target's `show` writes the folded view through the channel, so `view.get()` stays live. The
+     hook's own animations still replace each other under its key. An outside write cancels the
+     hook's animation and drops the committed view, so anything else on the target carries on
+     over what the writer wrote, less the offset it was showing when the writer read the view.
+     `<SceneCanvas>` does not expose the target: its camera animator is private, and a target
+     is no use without the animator that moves it.
+   - **Color.** `ColorOverrideRegistry.target(id, channel, length)` is one target per node and
+     channel, with its committed colors held in the registry. `tweenVertexColors` and
+     `staggerVertexColors` share a key with `interrupt: false` and add; `springVertexColors`
+     interrupts and carries velocity, springing each number on its own. `resolve` answers the
+     target's colors where `set` stored nothing, and over a `set` override it adds only the
+     target's live offset. A finished animation releases its colors; a canceled one holds them
+     until `clear`.
+   - **`interrupt: false`** on a targeted animation joins its `cancelKey` without canceling the
+     holders.
 4. **Timeline.** Sampled tracks take a target and cue absolute voices; event tracks and booking
    read the mix's clock, so a sound cue cannot drift against the motion it belongs to.
 5. **Rig.** Clips as absolute voices on joint targets, and `blendPoses` replaced by a locus
