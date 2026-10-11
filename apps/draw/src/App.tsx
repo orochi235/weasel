@@ -273,8 +273,7 @@ function WdPaintLeaf({ ctx, actionId }: { ctx: PropertyRenderContext; actionId: 
 
   return (
     <PaintInput
-      // Per-kind switch memory is scratch for one selection.
-      key={ctx.selectionKey}
+      subject={ctx.selectionKey}
       value={value}
       mixed={ctx.mixed}
       unset={ctx.unset}

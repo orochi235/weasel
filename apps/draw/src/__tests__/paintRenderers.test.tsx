@@ -1,6 +1,7 @@
+import { useEffect, useState, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { ActionsProvider } from '@weasel-js/core';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { ActionsProvider, createDispatcher, useActionsRegistry, type Action } from '@weasel-js/core';
 import type { PropertyRenderContext } from '@weasel-js/ui';
 import { WD_RENDERERS } from '../App';
 
@@ -62,17 +63,45 @@ describe("WeaselDraw's data.stroke.paint renderer", () => {
 });
 
 describe("WeaselDraw's paint renderers across selections", () => {
-  // Proxy: PaintInput's per-kind memory lives in its own state, so a new
-  // selection has to mount a fresh one. Element identity is what shows it.
-  it('remount the paint control when the selection changes', () => {
-    const at = (key: string) => (
-      <ActionsProvider>{WD_RENDERERS['data.fill'](ctxWith(GRADIENT, key))}</ActionsProvider>
+  /** Registers a `setFill` that records each paint it is started with. */
+  function Recording({ seen, children }: { seen: unknown[]; children: ReactNode }) {
+    const registry = useActionsRegistry();
+    const [ready, setReady] = useState(false);
+    useEffect(() => {
+      if (!registry) return;
+      registry.register({
+        id: 'setFill',
+        label: 'setFill',
+        invoker: {
+          timing: 'ongoing',
+          start: (ctx) => {
+            seen.push(ctx.params?.paint);
+            return { onMove: () => {}, onEnd: () => {} };
+          },
+        },
+      } as Action);
+      registry.setDispatcher(createDispatcher({
+        getAction: (id: string) => registry.list().find((a) => a.id === id),
+      }));
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- renders children once the registrations this effect makes are in
+      setReady(true);
+    }, [registry, seen]);
+    return ready ? <>{children}</> : null;
+  }
+
+  it('do not offer a new selection the last one\'s gradient', () => {
+    const seen: unknown[] = [];
+    const at = (value: unknown, key: string) => (
+      <ActionsProvider>
+        <Recording seen={seen}>{WD_RENDERERS['data.fill'](ctxWith(value, key))}</Recording>
+      </ActionsProvider>
     );
-    const { rerender } = render(at('a'));
-    const before = screen.getByRole('radio', { name: 'Linear' });
-    rerender(at('a'));
-    expect(screen.getByRole('radio', { name: 'Linear' })).toBe(before);
-    rerender(at('b'));
-    expect(screen.getByRole('radio', { name: 'Linear' })).not.toBe(before);
+    const { rerender } = render(at(GRADIENT, 'a'));
+    rerender(at({ fill: 'solid', color: '#123456ff' }, 'b'));
+    fireEvent.click(screen.getByRole('radio', { name: 'Linear' }));
+
+    const paint = seen.at(-1) as typeof GRADIENT;
+    expect(paint.fill).toBe('linear-gradient');
+    expect(paint.stops[0].color).toBe('#123456ff');
   });
 });

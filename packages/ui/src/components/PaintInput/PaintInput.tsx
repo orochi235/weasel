@@ -76,6 +76,11 @@ export interface PaintInputProps {
    *  this?" and no-paint is one of the answers. Turn it off where the slot
    *  cannot express absence. */
   allowNone?: boolean;
+  /** What the control is pointed at: a selection key, a node id. Switching
+   *  kinds brings back the paint last seen for that kind, and that memory is
+   *  dropped when this changes, so one subject is never offered another's
+   *  paints. Leave it off for a control that only ever edits one thing. */
+  subject?: string | number;
   onInput?: (next: FillStyle | null) => void;
   onChange: (next: FillStyle | null) => void;
   /** Names the paint this control edits — `Fill`, `Color`. Carried by the
@@ -99,14 +104,17 @@ export interface PaintInputProps {
 export function PaintInput(props: PaintInputProps): ReactElement {
   const {
     value, mixed = false, unset = false, kinds, allowNone = true,
-    onInput, onChange, className,
+    subject, onInput, onChange, className,
   } = props;
   const ariaLabel = props['aria-label'];
 
   // Per-kind memory, so linear → solid → linear comes back with its stops.
-  // It lasts as long as the mount: a caller that points one control at a new
-  // selection gives it a `key`, or that selection is offered the last one's paints.
   const remembered = useRef(new Map<PaintKind, FillStyle>());
+  const subjectSeen = useRef(subject);
+  if (subjectSeen.current !== subject) {
+    subjectSeen.current = subject;
+    remembered.current.clear();
+  }
 
   const active = mixed ? null : kindOf(value);
   if (value != null && active !== null) remembered.current.set(active, value);

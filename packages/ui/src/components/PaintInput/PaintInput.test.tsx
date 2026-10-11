@@ -87,6 +87,26 @@ describe('PaintInput', () => {
     expect(onCommit).toHaveBeenLastCalledWith(LINEAR);
   });
 
+  it('forgets the last subject\'s paints when pointed at another', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(<PaintInput subject="a" value={LINEAR} onChange={onChange} />);
+    rerender(<PaintInput subject="b" value={SOLID} onChange={onChange} />);
+
+    clickKind('Linear');
+    const next = onChange.mock.calls.at(-1)?.[0] as GradientFill;
+    expect(next.fill).toBe('linear-gradient');
+    expect(next.stops[0].color).toBe('#336699ff');
+  });
+
+  it('keeps its memory while the subject stays the same', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(<PaintInput subject="a" value={LINEAR} onChange={onChange} />);
+    rerender(<PaintInput subject="a" value={SOLID} onChange={onChange} />);
+
+    clickKind('Linear');
+    expect(onChange).toHaveBeenLastCalledWith(LINEAR);
+  });
+
   it('seeds a kind it has not seen instead of remembering one', () => {
     const onCommit = vi.fn();
     render(<Host initial={SOLID} onCommit={onCommit} />);
