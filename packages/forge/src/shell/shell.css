@@ -40,8 +40,8 @@
 }
 
 .fg-story[data-pending] {
-  visibility: hidden;
   opacity: 0;
+  pointer-events: none;
 }
 
 .fg-story[data-fg-layout='centered'] {

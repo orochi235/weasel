@@ -712,11 +712,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   small module the rest compose from, and each component's rules beside the component, as
   `PropertyHelp.module.css` already is.
 
-- **(P3) `PropertyHelp` trips react-aria's "`<Focusable>` child must be focusable" warning.** Seen
-  in forge on 2026-10-10: the `ui/Properties/Rows/PropertyRow` story `AutoValue` logs it once per ⓘ
-  button on load, and a story with no ⓘ logs none. The child is a real `<button>`, and the tooltip
-  opens from the keyboard, so the check in `useFocusable.js` is failing on something other than
-  the element's kind. Cause not found.
+- **(P3) An isolated forge story may still log react-aria's "`<Focusable>` child must be
+  focusable".** The warning fires when a `Focusable` mounts under `visibility: hidden`, which is
+  how forge held a story until its first paint; a story in the workshop page is now held by
+  opacity instead. `.fg-frame-view[data-pending]` still hides an isolated story's iframe by
+  visibility, and whether that reaches the check inside the frame was not looked at.
 
 - **(P3) labkit's palette drag-drop runs its own pointer session.** A trial's
   pan, zoom, tap and loupe route through weasel's dispatcher (`CameraInput`),
