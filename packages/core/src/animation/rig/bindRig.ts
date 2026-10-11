@@ -2,6 +2,8 @@ import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId, PoseOverride, PoseOverrides } from '../../core/scene/types';
 import { AUTO_POSE_DESCRIPTOR } from '../../interactions/actions/resize/autoPoseDescriptor';
 import { mat3, type GlMat3 } from '../../renderer/math/mat3';
+import { createTarget, type Target } from '../target';
+import { poseAxes } from './poseAxes';
 import { resolveSkeleton } from './resolveSkeleton';
 import type { Pose, Skeleton } from './types';
 
@@ -50,20 +52,33 @@ export interface BindRigOptions<TPose> {
 export interface Rig {
   readonly skeleton: Skeleton;
   /**
-   * Resolve `pose` and move every bound node to it, through the scene's pose
-   * overrides — no history entry, no document write, no version bump — then
-   * commit them. The per-frame write. `root` places the rig in the world, and
-   * may mirror it.
+   * The rig's pose as a value an animator moves. Its committed value starts as `{}`, the bind
+   * pose, and each frame the rig is posed with what the target shows. A clip is a
+   * `SampledTrack<Pose>` given this as its `target`: clips on one rig crossfade by their
+   * `weight`s, weights short of 1 leave the rest to the committed pose, and a `spring` or
+   * `tween` on it adds on top. `animator.hold` shows a pose made elsewhere the same way, an
+   * IK solve included.
+   */
+  readonly target: Target<Pose>;
+  /**
+   * Commit `pose` and move every bound node to what the target now shows, which is `pose`
+   * unless something is animating the target; a hold on it weighs the new pose in when it is
+   * next read, at the animator's next frame or the hold's `touch()`. Writes go through the scene's pose overrides —
+   * no history entry, no document write, no version bump — and are committed. `root`, where
+   * given, replaces the placement, as {@link Rig.place}.
    */
   pose(pose: Pose, root?: GlMat3): void;
-  /** The joint world transforms the last `pose` resolved, root applied. */
+  /** Place the rig in the world by `root`, which may mirror it, and pose it there. It stays
+   *  until placed again; with no `root`, the rig goes back to where its skeleton puts it. */
+  place(root?: GlMat3): void;
+  /** The joint world transforms as the rig was last posed, root applied. */
   world(): ReadonlyMap<string, GlMat3>;
   /** Write the current frame into the bound nodes' document poses as one
    *  undo entry, and drop the overrides. Later frames stay relative to the
    *  bind-time rest, so baking does not compound. */
   bake(label?: string): void;
   /** Drop the overrides; the nodes show their document poses again until the
-   *  next `pose`. */
+   *  rig is next posed. */
   release(): void;
 }
 
@@ -136,25 +151,45 @@ export function bindRig<TPose>(options: BindRigOptions<TPose>): Rig {
     for (const b of bound) scene.overrides.clear(b.node);
   };
 
+  let root: GlMat3 | undefined;
+  const show = (pose: Pose): void => {
+    const local = resolveSkeleton(skeleton, pose);
+    if (root) for (const [name, m] of local) local.set(name, mat3.multiply(root, m));
+    world = local;
+    const fromRest = new Map<string, GlMat3>();
+    for (const b of bound) {
+      const w = local.get(b.joint)!;
+      let delta = fromRest.get(b.joint);
+      if (!delta) {
+        delta = mat3.multiply(w, b.restInverse);
+        fromRest.set(b.joint, delta);
+      }
+      b.entry.pose = apply(w, { joint: b.joint, node: b.node, rest: b.rest, restWorld: b.restWorld, fromRest: delta });
+      if (!installed) scene.overrides.set(b.node, b.entry);
+    }
+    installed = true;
+    scene.overrides.commit();
+  };
+
+  let committed: Pose = {};
+  const target = createTarget<Pose>({
+    get: () => committed,
+    set: (pose) => { committed = pose; },
+    axes: poseAxes(skeleton),
+    show,
+  });
+
   return {
     skeleton,
-    pose(pose, root) {
-      const local = resolveSkeleton(skeleton, pose);
-      if (root) for (const [name, m] of local) local.set(name, mat3.multiply(root, m));
-      world = local;
-      const fromRest = new Map<string, GlMat3>();
-      for (const b of bound) {
-        const w = local.get(b.joint)!;
-        let delta = fromRest.get(b.joint);
-        if (!delta) {
-          delta = mat3.multiply(w, b.restInverse);
-          fromRest.set(b.joint, delta);
-        }
-        b.entry.pose = apply(w, { joint: b.joint, node: b.node, rest: b.rest, restWorld: b.restWorld, fromRest: delta });
-        if (!installed) scene.overrides.set(b.node, b.entry);
-      }
-      installed = true;
-      scene.overrides.commit();
+    target,
+    pose(pose, at) {
+      committed = pose;
+      if (at) root = at;
+      show(target.read());
+    },
+    place(at) {
+      root = at;
+      show(target.read());
     },
     world: () => world,
     bake(label = 'Bake rig pose') {

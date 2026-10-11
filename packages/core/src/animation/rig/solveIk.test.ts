@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { mat3 } from '../../renderer/math/mat3';
-import { blendPoses } from './blendPoses';
+import { createTarget } from '../target';
+import { sampleTrack } from '../timeline/sampleTrack';
+import { poseAxes } from './poseAxes';
 import { resolveSkeleton } from './resolveSkeleton';
 import { solveIk, type SolveIkOptions } from './solveIk';
 import { IDENTITY_JOINT, type Pose, type Skeleton } from './types';
@@ -150,11 +152,15 @@ describe('solveIk', () => {
     const target = { x: 4, y: 15 };
     const solved = solveIk(ARM, start, { joints: ['shoulder', 'elbow'], tip: TIP, target }).pose;
 
-    expect(dist(tipOf(ARM, blendPoses([start, solved], [0, 1]), 'elbow'), target)).toBeLessThan(0.01);
+    const on = createTarget<Pose>({ get: () => start, set: () => {}, axes: poseAxes(ARM) });
+    const blend = (u: number): Pose =>
+      sampleTrack({ kind: 'sampled', keys: [{ t: 0, value: start }, { t: 1, value: solved }], target: on }, u)!;
+
+    expect(dist(tipOf(ARM, blend(1), 'elbow'), target)).toBeLessThan(0.01);
     const startTip = tipOf(ARM, start, 'elbow');
-    const half = tipOf(ARM, blendPoses([start, solved], [0.5, 0.5]), 'elbow');
+    const half = tipOf(ARM, blend(0.5), 'elbow');
     expect(dist(half, target)).toBeLessThan(dist(startTip, target));
-    expect(blendPoses([start, solved], [0.5, 0.5]).elbow.rotation).toBeCloseTo(
+    expect(blend(0.5).elbow.rotation).toBeCloseTo(
       (start.elbow.rotation! + solved.elbow.rotation!) / 2, 9,
     );
   });
