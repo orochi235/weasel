@@ -39,6 +39,20 @@ const rename = (to: string) => {
 };
 const keyField = () => attributes().getByRole('textbox', { name: 'Key' });
 
+describe('PrefSchemaEditor: the path under the key', () => {
+  it('shows the selected node\'s whole path, read-only, and follows a new key', () => {
+    render(<Live />);
+    select('snap');
+    const path = () => attributes().getByRole('textbox', { name: 'Path' });
+    expect(path()).toHaveValue('view.snap');
+    expect(path()).toHaveAttribute('readonly');
+    expect(keyField().compareDocumentPosition(path()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    select('gap');
+    rename('Line width');
+    expect(path()).toHaveValue('page.lineWidth');
+  });
+});
+
 describe('PrefSchemaEditor: the key follows the name', () => {
   it('sets the name above the key', () => {
     render(<Live />);

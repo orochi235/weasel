@@ -10,7 +10,7 @@ import { aggregateAttributes, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
 import { changeKind, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
-import { childrenOf, joinPath, keyFromName, keyOf, keyProblem, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, uniqueKey, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { childrenOf, joinPath, keyFromName, keyOf, keyProblem, keysOf, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, uniqueKey, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
 import { PaneHeader } from './PaneHeader';
@@ -18,6 +18,7 @@ import s from './PrefSchemaEditor.module.css';
 
 /** Form paths for the rows that are not attributes: the key, the kind, and the kind's own panel. */
 const KEY = '$key';
+const PATH = '$path';
 const KIND = '$kind';
 const OWN = '$own';
 const AUTO = '$auto';
@@ -31,6 +32,7 @@ const UNSET_AUTO_VALUE: ReadonlySet<string> = new Set([AUTO_VALUE]);
 const NONE: ReadonlySet<string> = new Set();
 /** Kinds drawn by this pane's own renderers. */
 const KEY_KIND = 'schema-key';
+const PATH_KIND = 'schema-path';
 const KIND_KIND = 'schema-kind';
 const NAME_KIND = 'schema-name';
 const ENTRY_KIND = 'schema-entry-kind';
@@ -137,6 +139,7 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
       <Input aria-label="Key" className={s.symbol} value={key} onChange={setKey} onBlur={commitKey}
         onKeyDown={(e) => { if (e.key === 'Enter') commitKey(); }} errorMessage={keyError ?? undefined} isInvalid={keyError !== null} />
     ),
+    [PATH_KIND]: () => <Input aria-label="Path" className={s.symbol} value={keysOf(path).join('.')} isReadOnly />,
     [KIND_KIND]: () => isPrefLeaf(node) && leaf && (
       <Select aria-label="Kind" selectedKey={choice} placeholder={MIXED_HINT}
         options={kindChoices(kinds, types, node)}
@@ -167,6 +170,7 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
     // First, so the key under it can follow it.
     ...(shared.name ? { name: { ...shared.name, kind: NAME_KIND } as PrefLeaf } : {}),
     ...(keyed ? { [KEY]: { kind: KEY_KIND, name: 'Key', description: 'The name its value is stored under.', default: '' } as PrefLeaf } : {}),
+    ...(keyed ? { [PATH]: { kind: PATH_KIND, name: 'Path', description: 'Where its value is stored now: its key under each group above it.', default: '' } as PrefLeaf } : {}),
     ...(leaf ? { [KIND]: { kind: KIND_KIND, name: 'Kind', description: 'The type of its value, which picks the control that draws it.', default: '' } as PrefLeaf } : {}),
     ...Object.fromEntries(Object.entries(shared).filter(([k]) => k !== 'name')),
     ...(Object.keys(own).length > 0 ? { [OWN]: { name: agg.kind === undefined ? 'group' : agg.kind ?? 'Common', children: own } } : {}),
