@@ -1,6 +1,6 @@
-import type { PrefLeaf, PrefNumberUnit } from '@weasel-js/prefs';
+import type { PrefCondition, PrefLeaf, PrefNumberUnit } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
-import { BaseNode } from './baseNode';
+import { BaseNode, conditioned } from './baseNode';
 import {
   ActionNode,
   AliasNode,
@@ -19,6 +19,7 @@ import type {
   ConfigBranch,
   ConfigEntry,
   ConfigOption,
+  ConfigPredicate,
   ConfigSchema,
   ConfigShape,
   InferConfig,
@@ -219,10 +220,16 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
     return this.with(this.annotations, { ...this.options, section: { label, ...opts } });
   }
 
-  /** Show this group only while the predicate holds. Presentational — every
-   *  value beneath it stays in config and the instrument still reads it. */
-  showIf(predicate: (config: Record<string, unknown>) => boolean): GroupNode<S> {
-    return this.with(this.annotations, { ...this.options, showIf: predicate });
+  /** Show this group only while `when` holds, a condition or a function as on
+   *  a leaf. Presentational — every value beneath it stays in config and the
+   *  instrument still reads it. */
+  showIf(when: PrefCondition | ConfigPredicate): GroupNode<S> {
+    return this.with(...conditioned(this.annotations, this.options, 'showIf', when));
+  }
+
+  /** Disable every row beneath this group while `when` does not hold. */
+  enableIf(when: PrefCondition | ConfigPredicate): GroupNode<S> {
+    return this.with(...conditioned(this.annotations, this.options, 'enableIf', when));
   }
 
   /** Put a button on the group's heading that returns every value beneath it

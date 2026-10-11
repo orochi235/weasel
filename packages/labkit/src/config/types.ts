@@ -1,5 +1,6 @@
 import type {
   PrefAction,
+  PrefCondition,
   PrefGroup,
   PrefGroupAs,
   PrefLeaf,
@@ -34,6 +35,10 @@ export interface Annotations {
   name?: string;
   description?: string;
   hidden?: boolean;
+  /** Draw the row only while this holds. Set by `.showIf` given a condition. */
+  showIf?: PrefCondition;
+  /** Disable the row while this does not hold. Set by `.enableIf` given a condition. */
+  enableIf?: PrefCondition;
   block?: boolean;
   pair?: PrefPair;
   /** Draw the control in the title row of the section or group holding it. */
@@ -122,14 +127,17 @@ export interface SectionSpec {
 }
 
 /** A schema resolved against a set of rules: the vocabulary weasel-ui renders,
- *  plus the three things labkit keeps on the side because `PrefLeaf` has no
- *  field for them. */
+ *  plus what labkit keeps on the side because a `PrefLeaf` cannot hold it. */
 export interface ResolvedConfig {
   /** The schema as a `PrefGroup` tree: an `f.group` is a nested group, so a
    *  leaf's dotted path within it is the path its value is written at. */
   group: PrefGroup;
   sections: readonly SectionSpec[];
-  showIf: ReadonlyMap<string, (config: Record<string, unknown>) => boolean>;
+  /** The `.showIf` predicates written as functions, keyed by path. One
+   *  written as a condition is on its node in `group`. */
+  showIf: ReadonlyMap<string, ConfigPredicate>;
+  /** The `.enableIf` predicates written as functions, as `showIf`. */
+  enableIf?: ReadonlyMap<string, ConfigPredicate>;
   /** Node-level `.render` overrides, keyed by path. */
   renderers: Readonly<Record<string, ControlRenderer>>;
   /** Node-level `.dialog` rows, keyed by path. */
@@ -186,12 +194,17 @@ export interface NodeOptions extends BranchOptions {
   manual?: boolean;
 }
 
+/** A `.showIf` or `.enableIf` written as code, for what a condition cannot say. */
+export type ConfigPredicate = (config: Record<string, unknown>) => boolean;
+
 /** What a branch can say about itself, beyond its children. */
 export interface BranchOptions {
   section?: SectionOption;
   /** Show this node only while the predicate holds. On a group it hides the
    *  whole subtree; the values stay in config either way. */
-  showIf?: (config: Record<string, unknown>) => boolean;
+  showIf?: ConfigPredicate;
+  /** Disable this node while the predicate does not hold; on a group, the whole subtree. */
+  enableIf?: ConfigPredicate;
   /** Put a button on this group's heading that returns every value beneath it
    *  to its default. Groups only. */
   resettable?: boolean;
@@ -202,6 +215,8 @@ export interface BranchAnnotations {
   name?: string;
   description?: string;
   as?: PrefGroupAs;
+  showIf?: PrefCondition;
+  enableIf?: PrefCondition;
 }
 
 /** The builder's leaf: a kind (or null, to be decided by rules), a default,

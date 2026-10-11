@@ -42,6 +42,7 @@ export type {
   ConfigOf,
   ConfigOption,
   ConfigPath,
+  ConfigPredicate,
   ConfigRule,
   ConfigRuleContext,
   ConfigSchema,
@@ -61,4 +62,4 @@ export type {
 } from './types';
 export { useConfigSchema } from './useConfigSchema';
 export { useResolvedConfig } from './useResolvedConfig';
-export { isLeafVisible } from './visible';
+export { isLeafEnabled, isLeafVisible } from './visible';

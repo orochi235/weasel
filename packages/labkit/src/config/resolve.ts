@@ -1,8 +1,9 @@
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import { checkPrefConditions, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { isConfigBranch } from './builder';
 import { applyRules, builtinRules, titleCase } from './rules';
 import type {
   ConfigEntry,
+  ConfigPredicate,
   ConfigRule,
   ConfigSchema,
   ConfigShape,
@@ -24,7 +25,8 @@ function defined(annotations: Record<string, unknown>): LeafPatch {
 /** What the walk collects on the side of the `PrefGroup` tree. */
 interface Sink {
   sections: SectionSpec[];
-  showIf: Map<string, (config: Record<string, unknown>) => boolean>;
+  showIf: Map<string, ConfigPredicate>;
+  enableIf: Map<string, ConfigPredicate>;
   renderers: Record<string, ControlRenderer>;
   dialogs: Record<string, DialogSpec>;
   resettable: Set<string>;
@@ -47,16 +49,21 @@ export function resolveConfigSchema<TC>(
   const sink: Sink = {
     sections: [],
     showIf: new Map(),
+    enableIf: new Map(),
     renderers: {},
     dialogs: {},
     resettable: new Set(),
     chain: [...rules, ...builtinRules],
   };
   const group = resolveShape(schema.nodes, '', '', sink);
+  for (const { field, at, problem } of checkPrefConditions(group)) {
+    console.warn(`[labkit] ${field} of "${at}": ${problem}`);
+  }
   return {
     group,
     sections: sink.sections,
     showIf: sink.showIf,
+    enableIf: sink.enableIf,
     renderers: sink.renderers,
     dialogs: sink.dialogs,
     resettable: sink.resettable,
@@ -74,7 +81,7 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
     const path = at === '' ? key : `${at}.${key}`;
     children[key] = resolveEntry(entry, key, path, sink);
 
-    const { section, showIf: predicate } = entry.options;
+    const { section, showIf: predicate, enableIf } = entry.options;
     if (section !== undefined) {
       let spec = sections.get(section.label);
       if (!spec) {
@@ -92,6 +99,7 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
       if (section.pack !== undefined && spec.pack === undefined) spec.pack = section.pack;
     }
     if (predicate) sink.showIf.set(path, predicate);
+    if (enableIf) sink.enableIf.set(path, enableIf);
     if (isConfigBranch(entry) && entry.options.resettable) sink.resettable.add(path);
     if (!isConfigBranch(entry) && entry.options.render) sink.renderers[path] = entry.options.render;
     if (!isConfigBranch(entry) && entry.options.dialog) sink.dialogs[path] = entry.options.dialog;
@@ -113,12 +121,8 @@ function resolveEntry(
       entry.annotations.name ?? titleCase(key),
       sink,
     );
-    const { description, as } = entry.annotations;
-    return {
-      ...group,
-      ...(description === undefined ? {} : { description }),
-      ...(as === undefined ? {} : { as }),
-    };
+    const { name: _name, ...said } = entry.annotations;
+    return { ...group, ...defined(said) } as PrefGroup;
   }
   if (entry.options.manual && entry.options.unpinned) {
     throw new Error(

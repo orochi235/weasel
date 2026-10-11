@@ -181,16 +181,18 @@ export const Described: Story = {
 
 const conditional = f.schema({
   showGrid: f.boolean(true),
-  cellSize: f
-    .number(20)
-    .range(5, 80)
-    .step(5)
-    .label('Grid spacing')
-    .showIf((c) => c.showGrid === true),
+  cellSize: f.number(20).range(5, 80).step(5).label('Grid spacing').showIf({ path: 'showGrid' }),
+  // What a condition cannot say stays a function: this one does arithmetic.
+  fineStep: f
+    .number(1)
+    .label('Fine step')
+    .showIf((c) => c.showGrid === true && (c.cellSize as number) % 10 === 0),
 });
 
 /** `showIf` hides the row while the value stays in config. Toggle the
- *  checkbox to watch the slider come and go. */
+ *  checkbox to watch the slider come and go: its condition is data,
+ *  `{ path: 'showGrid' }`, which the resolved schema carries. "Fine step"
+ *  takes a function, and shows only at a spacing that is a multiple of ten. */
 export const Conditional: Story = {
   render: () => {
     const schema = resolveConfigSchema(conditional, []);

@@ -1,13 +1,29 @@
-import type { PrefPair } from '@weasel-js/prefs';
+import type { PrefCondition, PrefPair } from '@weasel-js/prefs';
 import { type Auto, isAuto } from './auto';
 import type {
   Annotations,
   ConfigNode,
+  ConfigPredicate,
   ControlRenderer,
   InDialogOptions,
   NodeOptions,
   SectionOption,
 } from './types';
+
+/** `annotations` and `options` with `when` under `field` in the one that holds
+ *  its form, and nothing under it in the other. */
+export function conditioned<A extends object, O extends object>(
+  annotations: A,
+  options: O,
+  field: 'showIf' | 'enableIf',
+  when: PrefCondition | ConfigPredicate,
+): [A, O] {
+  const { [field]: _data, ...said } = annotations as A & { showIf?: unknown; enableIf?: unknown };
+  const { [field]: _code, ...rest } = options as O & { showIf?: unknown; enableIf?: unknown };
+  return typeof when === 'function'
+    ? [said as A, { ...rest, [field]: when } as O]
+    : [{ ...said, [field]: when } as A, rest as O];
+}
 
 /** Shared chaining surface. Every method clones, so a node can be reused as a
  *  base for several leaves without one bleeding into the next. */
@@ -83,10 +99,17 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
     return this.opt({ section: { label, ...opts } });
   }
 
-  /** Show this row only while the predicate holds. Presentational — the value
-   *  stays in config and the instrument still reads it. */
-  showIf(predicate: (config: Record<string, unknown>) => boolean): this {
-    return this.opt({ showIf: predicate });
+  /** Show this row only while `when` holds. Presentational — the value stays
+   *  in config and the instrument still reads it. A condition
+   *  (`{ path: 'mode', is: 'row' }`) is data: it rides the resolved leaf, so
+   *  it exports and can be edited. A function is for what one cannot say. */
+  showIf(when: PrefCondition | ConfigPredicate): this {
+    return this.with(...conditioned(this.annotations, this.options, 'showIf', when));
+  }
+
+  /** Disable this row while `when` does not hold; as `showIf`, a condition or a function. */
+  enableIf(when: PrefCondition | ConfigPredicate): this {
+    return this.with(...conditioned(this.annotations, this.options, 'enableIf', when));
   }
 
   /** Draw this one row yourself, keeping the kind, default and validation. */

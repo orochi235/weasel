@@ -232,6 +232,7 @@ export type {
   ConfigOf,
   ConfigOption,
   ConfigPath,
+  ConfigPredicate,
   ConfigRule,
   ConfigRuleContext,
   ConfigSchema,
@@ -250,7 +251,7 @@ export type {
 } from './config/types';
 export { useConfigSchema } from './config/useConfigSchema';
 export { useResolvedConfig } from './config/useResolvedConfig';
-export { isLeafVisible } from './config/visible';
+export { isLeafEnabled, isLeafVisible } from './config/visible';
 export {
   ControlMatrix,
   type ControlMatrixColumn,
