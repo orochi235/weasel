@@ -34,6 +34,14 @@ describe('createTiledLayer', () => {
     expect(out.map(offsetOf)).toEqual([[0, 0], [200, 0], [400, 0]]);
   });
 
+  it('draws no copies once the view holds more of them than could be told apart', () => {
+    const { layer, draw } = spyLayer();
+    const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: { x: 200, y: 200 } });
+    expect(l.draw(undefined, { x: 0, y: 0, scale: { x: 0.01, y: 0.01 } }, dims)).toEqual([]);
+    expect(l.draw(undefined, { x: 0, y: 0, scale: { x: 0, y: 0 } }, dims)).toEqual([]);
+    expect(draw).not.toHaveBeenCalled();
+  });
+
   it('shifts the view it hands each copy, so the source culls per copy', () => {
     const { layer, draw } = spyLayer();
     const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });

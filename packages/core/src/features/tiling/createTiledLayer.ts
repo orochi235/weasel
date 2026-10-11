@@ -37,6 +37,10 @@ export interface CreateTiledLayerOpts<TData> {
 
 interface Axes { x: number; y: number }
 
+/** Copies one draw will make. Past this the view is zoomed so far out that a
+ *  cell covers a pixel or two, and each copy still costs a full source draw. */
+const MAX_COPIES = 4096;
+
 function axes(v: TilePeriod | TileBleed | undefined, fallback: number): Axes {
   if (v === undefined) return { x: fallback, y: fallback };
   if (typeof v === 'number') return { x: v, y: fallback };
@@ -68,6 +72,9 @@ function translate(tx: number, ty: number): Float32Array {
  * `createParallaxLayer`: the parallax plane hands it the derived inner view,
  * the lattice resolves against that, and the copies ride the plane.
  *
+ * **Zoomed out until a draw would take more than a few thousand copies, the
+ * lattice draws none.** A cell is then a pixel or two across.
+ *
  * **A `space: 'screen'` source is drawn once, untiled** — it ignores the view
  * by definition, so every copy would land on top of the last. Same constraint
  * `createParallaxLayer` carries.
@@ -94,6 +101,8 @@ export function createTiledLayer<TData>(
         if ((layer.space ?? 'world') === 'screen') out.push(...layer.draw(data, view, dims));
       }
       const tiles = source.filter((layer) => (layer.space ?? 'world') !== 'screen');
+      // Written so a non-finite span, which a zero view scale gives, fails it too.
+      if (!((kx.to - kx.from + 1) * (ky.to - ky.from + 1) <= MAX_COPIES)) return out;
 
       for (let i = kx.from; i <= kx.to; i++) {
         for (let j = ky.from; j <= ky.to; j++) {
