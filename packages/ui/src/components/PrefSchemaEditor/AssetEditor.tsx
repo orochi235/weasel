@@ -96,10 +96,15 @@ export function AssetEditor(
     },
   });
   const submit: SubmitChanges | undefined = onSubmit && ((changes, literal) => doc.send(() => onSubmit(changes, literal)));
-  const commit = (next: SchemaRoot, coalesceKey?: string) => {
+  // A key names its asset, so the same path edited in two of them close together is two steps.
+  const coalesce = (key?: string) => (key === undefined ? undefined : `${assetId}:${key}`);
+  /** Whether there was anything to commit: an asset that takes no edit gives the workspace back. */
+  const commit = (next: SchemaRoot, coalesceKey?: string): boolean => {
     const ws = latest.current.workspace;
     const edited = editAsset(ws, assetId, next, NO_MOVES);
-    if (edited !== ws) doc.commit(edited, coalesceKey);
+    if (edited === ws) return false;
+    doc.commit(edited, coalesce(coalesceKey));
+    return true;
   };
   const step = (to: 'undo' | 'redo') => {
     const before = latest.current.schema;
@@ -224,7 +229,7 @@ export function AssetEditor(
   };
   const copyTo = (paths: readonly string[], target: SchemaTarget, restore?: readonly string[]) => {
     const copied = copyNodes(latest.current.schema, paths, target);
-    commit(copied.root);
+    if (!commit(copied.root)) return;
     if (keepsSelection() && restore !== undefined) selection.set(restore);
     reveal(copied.paths);
   };
@@ -232,7 +237,7 @@ export function AssetEditor(
     // `aliasNodes` reads tree paths as setting paths, which a layout's are not.
     if (assetOf(latest.current.workspace, assetId)?.kind === 'layout') { copyTo(paths, target, restore); return; }
     const made = aliasNodes(latest.current.schema, paths, target);
-    commit(made.root);
+    if (!commit(made.root)) return;
     if (keepsSelection() && restore !== undefined) selection.set(restore);
     reveal(made.paths);
   };
@@ -253,7 +258,8 @@ export function AssetEditor(
     if (paths.length === 0) return;
     const parent = parentPath(outermost(paths)[0]!);
     const next = removeInAsset(ws, assetId, paths);
-    if (next !== ws) doc.commit(next);
+    if (next === ws) return;
+    doc.commit(next);
     select(parent === null ? [] : [parent]);
   };
   const attrKey = `attr:${[...selection.paths].sort().join(',')}`;
@@ -261,7 +267,7 @@ export function AssetEditor(
     const ws = latest.current.workspace;
     const next = renameInAsset(ws, assetId, path, key);
     if (next === ws) return;
-    doc.commit(next, attrKey);
+    doc.commit(next, coalesce(attrKey));
     const to = joinPath(parentPath(path), key);
     setExpanded((e) => rebasePaths(e, [[path, to]]));
     selection.rebase([[path, to]]);
