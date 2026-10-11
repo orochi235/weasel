@@ -72,19 +72,23 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   },
   map: {},
   union: { tag: symbol('Tag', 'The field of the value that names its variant.') },
-  action: { label: text('Button', 'The button\'s text. Unset: the name.') },
+  action: {
+    action: symbol('Action', 'The key of a registered action to fire: its id, or id:variant. It fires this over any code the pref carries.'),
+    label: text('Button', 'The button\'s text. Unset: the name.'),
+    control: control(['button', 'icon']),
+  },
   alias: { of: { kind: 'field', name: 'Of', description: 'The pref this one shows: its control is drawn here too, over the one stored value.', default: '' } as PrefLeaf },
 };
 
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
-  as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, or a fragment: its rows among its neighbors\' with nothing drawn around them. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment']),
+  as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, or a bar: its prefs on one line in their bar forms. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment', 'bar']),
 };
 const SECTION_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
-  as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, or a fragment: its rows among its neighbors\' with nothing drawn around them. Unset: a heading.', ['tab', 'panel', 'section', 'fragment']),
+  as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, or a bar: its prefs on one line in their bar forms. Unset: a heading.', ['tab', 'panel', 'section', 'fragment', 'bar']),
 };
 
 const AUTO_FLAGS: KindAttrs = {
