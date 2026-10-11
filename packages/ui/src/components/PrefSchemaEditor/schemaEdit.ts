@@ -1,4 +1,3 @@
-import { isPlainObject } from '@weasel-js/core';
 import {
   isPrefLeaf,
   isPrefSection,
@@ -6,7 +5,6 @@ import {
   type PrefLeaf,
   type PrefSection,
 } from '@weasel-js/prefs';
-import { prefFieldChoices } from '../Prefs/schema';
 
 /** A schema the editor opens: a preferences schema, or a node's property schema. */
 export type SchemaRoot = PrefGroup | PrefSection;
@@ -363,43 +361,4 @@ export function rebasePaths(paths: Iterable<string>, moves: ReadonlyArray<readon
     out.add(hit ? hit[1] + p.slice(hit[0].length) : p);
   }
   return out;
-}
-
-/** A value stored under a dotted value path no leaf of the schema describes. */
-export interface UndescribedValue {
-  path: string;
-  value: unknown;
-}
-
-/**
- * Each value in `stored` that no leaf of `root` describes, by its dotted path, in stored order. A leaf's own path
- * and everything under it are described; a plain object anywhere else is walked rather than listed.
- */
-export function undescribedValues(root: SchemaRoot, stored: unknown): UndescribedValue[] {
-  const leaves = new Set(prefFieldChoices(root).map((f) => f.path));
-  const described = (path: string): boolean => {
-    for (let at = path; at !== ''; at = at.includes('.') ? at.slice(0, at.lastIndexOf('.')) : '') {
-      if (leaves.has(at)) return true;
-    }
-    return false;
-  };
-  const out: UndescribedValue[] = [];
-  const walk = (value: unknown, path: string): void => {
-    if (path !== '' && described(path)) return;
-    if (isPlainObject(value)) {
-      for (const [key, child] of Object.entries(value)) walk(child, path === '' ? key : `${path}.${key}`);
-    } else if (path !== '') {
-      out.push({ path, value });
-    }
-  };
-  walk(stored, '');
-  return out;
-}
-
-/** The built-in kind a stored value most likely has, or `undefined` when its shape says nothing. */
-export function kindOfValue(value: unknown): string | undefined {
-  if (typeof value === 'boolean') return 'boolean';
-  if (typeof value === 'number') return 'number';
-  if (typeof value === 'string') return /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value) ? 'color' : 'string';
-  return undefined;
 }

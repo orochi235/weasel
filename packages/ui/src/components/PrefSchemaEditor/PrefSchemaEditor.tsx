@@ -67,10 +67,10 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
   renderers?: Record<string, PrefRenderer>;
   /** Renderers for a node property schema's preview, as `SelectionPanel` takes them. */
   propertyRenderers?: Record<string, PropertyRenderer>;
-  /** The values the app stores under this schema: nested by group as a prefs form writes them, or a node for
-   *  a node's property schema. Given, the values no leaf describes are listed under the tree, each a way to
-   *  add the leaf that would. */
-  stored?: unknown;
+  /** Nodes that have no place in the schema yet, each whole already: its key, name, description and default. They
+   *  are listed under the structure tree, to be dragged into it or onto the live preview, and one leaves the list
+   *  once the schema holds a leaf of its key. Nested groups are drawn as branches and drag in whole. */
+  unplaced?: PrefGroup;
   /** A name to keep the edited schema under in this browser's `localStorage`, so a reload opens on the edits and
    *  not on `schema`, with the nearest steps still there to undo and redo. Code the schema holds is not stored: it is taken back from the baseline. Give each schema
    *  the editor opens a name of its own. */
@@ -107,7 +107,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, draftStorage, onSubmit, taken = false, bar, maxDepth = 2, rowMark, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, unplaced, draftKey, draftStorage, onSubmit, taken = false, bar, maxDepth = 2, rowMark, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
@@ -296,7 +296,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={history.canUndo()} canRedo={history.canRedo()} onStep={step}
         draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select(null); }} />
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
-        expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onRemove={remove}
+        expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onRemove={remove}
         toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} />
       <ResizeHandle className={s.structureHandle} value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
       <div className={s.middle}>

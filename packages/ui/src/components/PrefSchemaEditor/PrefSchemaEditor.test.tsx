@@ -498,24 +498,19 @@ describe('PrefSchemaEditor', () => {
     expect(screen.getByTestId('schema-literal').textContent).toMatch(/pair: \{\s*with: 'view\.snap',\s*label: 'Grid',\s*\}/);
   });
 
-  it('lists stored values no leaf describes, and adds the leaf for one where it lives', () => {
-    function WithStored() {
-      const [schema, setSchema] = useState(START);
-      return <PrefSchemaEditor schema={schema} onChange={setSchema} stored={{ view: { grid: true, zoomStep: 1.5 }, misc: { theme: 'dark' } }} />;
-    }
-    render(<WithStored />);
-    const list = screen.getByRole('list', { name: 'Stored values with no leaf' });
-    expect(within(list).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([
-      'Add a leaf for view.zoomStep', 'Add a leaf for misc.theme',
-    ]);
-    fireEvent.click(within(list).getByRole('button', { name: 'Add a leaf for misc.theme' }));
-    const dialog = screen.getByRole('dialog', { name: 'Add pref' });
-    expect(within(dialog).getByRole('textbox', { name: 'Name' })).toHaveValue('Theme');
-    expect(within(dialog).getByRole('textbox', { name: 'Id' })).toHaveValue('theme');
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
-    expect(within(structure()).getByRole('treeitem', { name: /^Theme \(theme\)/ })).toBeInTheDocument();
-    expect(screen.getByTestId('schema-literal').textContent).toMatch(/misc: \{[\s\S]*theme: \{[\s\S]*default: 'dark'/);
-    expect(within(list).queryByRole('button', { name: 'Add a leaf for misc.theme' })).toBeNull();
+  it('lists what the host says is unplaced as a tree of whole nodes, less what the schema holds already', () => {
+    const waiting: PrefGroup = { name: '', children: {
+      glow: { kind: 'boolean', name: 'Glow', description: 'Lights the edge.', default: false },
+      grid: { kind: 'boolean', name: 'Show grid', description: '', default: true },
+      motion: { name: 'Motion', children: { ease: { kind: 'number', name: 'Ease', description: '', default: 1 } } },
+    } };
+    render(<PrefSchemaEditor schema={START} onChange={() => {}} unplaced={waiting} />);
+    const tree = screen.getByRole('tree', { name: 'Unplaced' });
+    expect(within(tree).getAllByRole('treeitem').map((r) => r.getAttribute('aria-level'))).toEqual(['1', '1', '2']);
+    expect(within(tree).getByRole('treeitem', { name: /^Glow \(glow\)/ })).toBeInTheDocument();
+    expect(within(tree).getByRole('treeitem', { name: /^Ease \(ease\)/ })).toBeInTheDocument();
+    expect(within(tree).queryByRole('treeitem', { name: /\(grid\)/ })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Add pref' })).toBeNull();
   });
 
   it('exports a literal with the edit in it', () => {

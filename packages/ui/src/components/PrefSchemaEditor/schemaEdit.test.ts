@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { addNode, branchPaths, copyNodes, isValidKey, keyProblem, kindOfValue, undescribedValues, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
+import { addNode, branchPaths, copyNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
 
 const enc = { read: () => true, write: (on: boolean) => on };
 const ROOT: PrefGroup = {
@@ -147,33 +147,6 @@ describe('copyNodes', () => {
   });
 });
 
-describe('undescribedValues', () => {
-  const root: PrefGroup = { name: 'R', children: {
-    view: { name: 'View', children: { grid: { kind: 'boolean', name: 'Grid', description: '', default: true } } },
-    panels: { kind: 'data', name: 'Panels', description: '', default: {} } as PrefLeaf,
-  } };
-
-  it('lists stored values no leaf describes, walking objects that are not leaves', () => {
-    const stored = { view: { grid: false, zoom: 2 }, panels: { left: { open: true } }, theme: 'dark' };
-    expect(undescribedValues(root, stored)).toEqual([
-      { path: 'view.zoom', value: 2 },
-      { path: 'theme', value: 'dark' },
-    ]);
-  });
-
-  it('lists nothing when nothing is stored', () => {
-    expect(undescribedValues(root, undefined)).toEqual([]);
-  });
-});
-
-describe('kindOfValue', () => {
-  it('reads a kind off a stored value\'s shape', () => {
-    expect([true, 3, 'a', '#ff8800', '#ff880080', [1], null].map(kindOfValue)).toEqual(
-      ['boolean', 'number', 'string', 'color', 'color', undefined, undefined],
-    );
-  });
-});
-
 describe('a section root', () => {
   const NODE: PrefSection = {
     name: 'Properties',
@@ -218,7 +191,4 @@ describe('a section root', () => {
     expect(moveNodes(nested, ['layout', 'layout/pose.x'], { parentPath: 'more', index: 0 }).paths).toEqual(['more/layout']);
   });
 
-  it('lists the values of a stored node that no leaf describes, by node path', () => {
-    expect(undescribedValues(NODE, { pose: { x: 1, y: 2, width: 3 }, data: { text: 'a' } })).toEqual([{ path: 'pose.width', value: 3 }]);
-  });
 });

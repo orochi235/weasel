@@ -21,30 +21,28 @@ export interface AddNodeDialogProps {
   /** Whether the id may be a dotted path, as a pref's is where sections nest. */
   dottedKey?: boolean;
   kinds: readonly string[];
-  /** What the form opens filled with. */
-  initial?: Partial<NewNode>;
   onAdd(node: NewNode): void;
   onClose(): void;
 }
 
 /** Asks for the least a new pref, group or section needs before it exists: a name, the id it is keyed by, and a pref's kind.
  *  The id follows the name until it is typed into. */
-export function AddNodeDialog({ what, siblings, dottedKey, kinds, initial, onAdd, onClose }: AddNodeDialogProps) {
+export function AddNodeDialog({ what, siblings, dottedKey, kinds, onAdd, onClose }: AddNodeDialogProps) {
   return (
     <Dialog isOpen={what !== null} onOpenChange={(open) => { if (!open) onClose(); }}
       title={`Add ${what ?? 'pref'}`}>
       {what && (
-        <AddNodeForm key={`${what}:${initial?.key ?? ''}`} what={what} siblings={siblings} dottedKey={dottedKey} kinds={kinds} initial={initial}
+        <AddNodeForm key={what} what={what} siblings={siblings} dottedKey={dottedKey} kinds={kinds}
           onAdd={onAdd} onClose={onClose} />
       )}
     </Dialog>
   );
 }
 
-function AddNodeForm({ what, siblings, dottedKey, kinds, initial, onAdd, onClose }: Omit<AddNodeDialogProps, 'what'> & { what: 'pref' | 'group' | 'section' }) {
-  const [name, setName] = useState(initial?.name ?? '');
-  const [typedKey, setTypedKey] = useState<string | null>(initial?.key ?? null);
-  const [kind, setKind] = useState<string | null>(initial?.kind ?? null);
+function AddNodeForm({ what, siblings, dottedKey, kinds, onAdd, onClose }: Omit<AddNodeDialogProps, 'what'> & { what: 'pref' | 'group' | 'section' }) {
+  const [name, setName] = useState('');
+  const [typedKey, setTypedKey] = useState<string | null>(null);
+  const [kind, setKind] = useState<string | null>(null);
   const key = typedKey ?? keyFromName(name);
   const problem = keyProblem(siblings, key, dottedKey);
   const missing = what === 'pref' && (name.trim() === '' || kind === null);
