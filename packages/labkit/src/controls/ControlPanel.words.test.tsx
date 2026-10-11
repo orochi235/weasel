@@ -23,12 +23,16 @@ describe('<ControlPanel> label and separator', () => {
   });
 
   it('draws the label as its text and its note, once, and the separator as a rule, between the rows around them', () => {
-    const { container } = render(<ControlPanel schema={schema} config={{ size: 3, turn: 0 }} setConfig={vi.fn()} />);
+    const { container } = render(
+      <ControlPanel schema={schema} config={{ size: 3, turn: 0 }} setConfig={vi.fn()} />,
+    );
     expect(screen.getAllByText('Sizes are in world units.')).toHaveLength(1);
     expect(screen.getByText('Zoom does not change them.')).toBeInTheDocument();
     expect(screen.getByRole('separator').tagName).toBe('HR');
     expect(container.textContent).not.toMatch(/no renderer|unknown/i);
-    const order = [...container.querySelectorAll('input, hr')].map((el) => el.getAttribute('aria-label') ?? el.tagName);
+    const order = [...container.querySelectorAll('input, hr')].map(
+      (el) => el.getAttribute('aria-label') ?? el.tagName,
+    );
     expect(order).toEqual(['Size', 'HR', 'Turn']);
   });
 });

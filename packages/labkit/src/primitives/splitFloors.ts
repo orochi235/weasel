@@ -10,7 +10,12 @@ export interface SplitFloors {
  * The floors a strip `zone` pixels wide can hold. A zone too narrow for both gives way: the sidebar's floor shrinks
  * first, down to nothing, and only then the content's. `zone` is null before anything has measured it.
  */
-export function splitFloors(zone: number | null, hasSidebar: boolean, sidebar: number, content: number): SplitFloors {
+export function splitFloors(
+  zone: number | null,
+  hasSidebar: boolean,
+  sidebar: number,
+  content: number,
+): SplitFloors {
   if (zone === null) return { sidebar, content };
   const held = hasSidebar ? Math.max(0, Math.min(sidebar, zone - content)) : 0;
   return { sidebar: hasSidebar ? held : sidebar, content: Math.min(content, zone - held) };

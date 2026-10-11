@@ -96,7 +96,12 @@ describe('Split', () => {
     it('gives the sidebar its width back when the zone widens, with nothing reported as a resize', async () => {
       const onWidthChange = vi.fn();
       const sized = (w: number) => (
-        <Split viewport={{ w, h: 600 }} width={320} sidebar={<p>side</p>} onWidthChange={onWidthChange}>
+        <Split
+          viewport={{ w, h: 600 }}
+          width={320}
+          sidebar={<p>side</p>}
+          onWidthChange={onWidthChange}
+        >
           <p>main</p>
         </Split>
       );
@@ -118,7 +123,10 @@ describe('Split', () => {
             observed.push({
               el,
               report: (width) =>
-                this.callback([{ contentRect: { width, height: 600 } } as ResizeObserverEntry], this as unknown as ResizeObserver),
+                this.callback(
+                  [{ contentRect: { width, height: 600 } } as ResizeObserverEntry],
+                  this as unknown as ResizeObserver,
+                ),
             });
           }
           disconnect() {}

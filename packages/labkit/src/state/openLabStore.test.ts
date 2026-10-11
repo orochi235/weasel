@@ -520,7 +520,9 @@ describe('openLabStore — records it cannot use', () => {
 
     it('opens the rest of the lab, and never writes over or deletes the failed record', async () => {
       const backing = new Map<string, unknown>();
-      storeLab(backing, { trials: [trial('w1'), trial('w2', { state: { bad: true } }), trial('w3')] });
+      storeLab(backing, {
+        trials: [trial('w1'), trial('w2', { state: { bad: true } }), trial('w3')],
+      });
       const stored = structuredClone(backing.get(`${P}trial:w2`));
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -771,7 +773,10 @@ describe('openLabStore — folding the four pre-document keys', () => {
 
 describe('openLabStore — a stored lab read late', () => {
   /** A lab whose storage cannot be listed at open, and can from the next try on. */
-  async function openAway(backing: Map<string, unknown>, overrides: Partial<OpenLabStoreOptions> = {}) {
+  async function openAway(
+    backing: Map<string, unknown>,
+    overrides: Partial<OpenLabStoreOptions> = {},
+  ) {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const memory = createMemoryAdapter(backing);
     const storage: StorageAdapter = {
@@ -827,7 +832,13 @@ describe('openLabStore — a stored lab read late', () => {
 
   it('folds a version-3 document that arrives late, and deletes it once its records read back', async () => {
     const backing = new Map<string, unknown>();
-    storeV3(backing, { trials: [trial('old')], saves: [], layout: {}, undockedPanels: {}, mode: 'auto' });
+    storeV3(backing, {
+      trials: [trial('old')],
+      saves: [],
+      layout: {},
+      undockedPanels: {},
+      mode: 'auto',
+    });
     const opened = await openAway(backing);
     opened.store.getState().addTrial(trial('new'));
 

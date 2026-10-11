@@ -19,7 +19,11 @@ function hydratedConfig(
   return filledConfig(hydration, instrumentName, migratedConfig(hydration, instrumentName, config));
 }
 
-function migratedConfig(hydration: ConfigHydration, instrumentName: string, config: unknown): unknown {
+function migratedConfig(
+  hydration: ConfigHydration,
+  instrumentName: string,
+  config: unknown,
+): unknown {
   const migrate = hydration.configMigrations?.[instrumentName];
   return migrate ? migrate(config) : config;
 }

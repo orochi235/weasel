@@ -5,7 +5,7 @@
  *
  * Free of React so the routing can be tested without a DOM.
  */
-import { heldKeySpec, type Action } from '@weasel-js/core';
+import { type Action, heldKeySpec } from '@weasel-js/core';
 
 /** Canonical id of the hold-to-peek action. */
 export const LOUPE_PEEK_ID = 'loupe.peek';

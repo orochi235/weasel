@@ -39,7 +39,11 @@ function persistedFieldsDiffer(a: TrialRecord, b: TrialRecord): boolean {
 }
 
 /** Keep `store` and `records` in step, both ways. Returns the unbinding. */
-export function bindLabStore(store: LabStore, records: RecordCache, options: BindOptions): () => void {
+export function bindLabStore(
+  store: LabStore,
+  records: RecordCache,
+  options: BindOptions,
+): () => void {
   const orderOf = new Map(options.orders);
   let applyingRemote = false;
 

@@ -8,8 +8,8 @@ import {
   pairRowsOf,
   prefAliasedLeaf,
   prefAliasTarget,
-  prefLeafAt,
   prefIsCompound,
+  prefLeafAt,
 } from '@weasel-js/prefs';
 import {
   type CollapseProps,
@@ -18,9 +18,6 @@ import {
   ListEditor,
   PrefActionButton,
   PrefControl,
-  prefDrawsNoControl,
-  prefListIsText,
-  prefListTexts,
   type PrefFieldChoice,
   PrefWords,
   type PropertyAlign,
@@ -33,6 +30,9 @@ import {
   PropertyPanel,
   PropertyRow,
   type PropertyRowLayout,
+  prefDrawsNoControl,
+  prefListIsText,
+  prefListTexts,
   type StanceProps,
   Subpanel,
 } from '@weasel-js/ui';

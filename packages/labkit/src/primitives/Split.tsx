@@ -143,7 +143,12 @@ export function Split({
   // stretches its panes to the container's height and never reads `h`.
   const hasSidebar = sidebar !== null;
   const [contentEl, setContentEl] = useState<HTMLDivElement | null>(null);
-  const floors = splitFloors(useZoneWidth(contentEl, viewport?.w), hasSidebar, minWidth, contentMinWidth);
+  const floors = splitFloors(
+    useZoneWidth(contentEl, viewport?.w),
+    hasSidebar,
+    minWidth,
+    contentMinWidth,
+  );
   const storeRef = useRef<Store | null>(null);
   if (storeRef.current === null) {
     storeRef.current = createSplitStore({

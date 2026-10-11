@@ -134,7 +134,9 @@ describe('<CanvasStack> backing size', () => {
     expect([canvas?.width, canvas?.height]).toEqual([200, 100]);
 
     vi.stubGlobal('devicePixelRatio', 2);
-    act(() => [...listeners].forEach((fn) => fn()));
+    act(() => {
+      for (const fn of [...listeners]) fn();
+    });
     expect([canvas?.width, canvas?.height]).toEqual([400, 200]);
 
     vi.unstubAllGlobals();

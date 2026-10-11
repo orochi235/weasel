@@ -29,7 +29,11 @@ function stubDensityQuery(): { change: () => void } {
     addEventListener: (_: string, fn: () => void) => listeners.add(fn),
     removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
   }));
-  return { change: () => [...listeners].forEach((fn) => fn()) };
+  return {
+    change: () => {
+      for (const fn of [...listeners]) fn();
+    },
+  };
 }
 
 interface HarnessProps {

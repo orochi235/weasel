@@ -296,8 +296,12 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         return;
       }
       const s = get();
-      const trials = s.trials.map((w) => changed.has(w.instrumentName) ? rehydrated('trial', w, next) : w);
-      const savedSnapshots = s.savedSnapshots.map((sn) => changed.has(sn.instrumentName) ? rehydrated('snapshot', sn, next) : sn);
+      const trials = s.trials.map((w) =>
+        changed.has(w.instrumentName) ? rehydrated('trial', w, next) : w,
+      );
+      const savedSnapshots = s.savedSnapshots.map((sn) =>
+        changed.has(sn.instrumentName) ? rehydrated('snapshot', sn, next) : sn,
+      );
       hooks = next;
       set({ instruments, trials, savedSnapshots });
     },

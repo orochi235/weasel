@@ -19,6 +19,7 @@ import {
   runMigrations,
   sameStored,
 } from './document';
+import { hydrateSnapshots, hydrateTrials } from './hydrate';
 import {
   documentOfRecords,
   type LabMeta,
@@ -26,7 +27,6 @@ import {
   META_RECORD,
   recordsOfDocument,
 } from './labRecords';
-import { hydrateSnapshots, hydrateTrials } from './hydrate';
 import { createLabStore, type LabStore } from './store';
 import type { CreateLabStoreOptions, LabDocument, LabMode } from './types';
 
@@ -57,7 +57,10 @@ export interface OpenedLabStore {
  * open and merged into whatever was built meanwhile, which is then written.
  */
 export async function openLabStore(options: OpenLabStoreOptions): Promise<OpenedLabStore> {
-  const records = await openRecords({ storage: options.storage, prefix: labPrefix(options.storageKey) });
+  const records = await openRecords({
+    storage: options.storage,
+    prefix: labPrefix(options.storageKey),
+  });
   let unbind = (): void => {};
   let closed = false;
   let store: LabStore;

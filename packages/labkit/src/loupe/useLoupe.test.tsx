@@ -1,7 +1,7 @@
-import { act, fireEvent, screen, render } from '@testing-library/react';
-import { giveKeys } from '@weasel-js/react/testing/giveKeys';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { WeaselProvider } from '@weasel-js/core';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
+import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { type RefObject, StrictMode, useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { LoupeGestures } from './LoupeGestures';

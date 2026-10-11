@@ -80,7 +80,7 @@ describe('undo across targets', () => {
     expect(s.query({ target: 'left' })).toHaveLength(1);
   });
 
-  it('follows a redo driven from inside a pane, keeping another target\'s redo', () => {
+  it("follows a redo driven from inside a pane, keeping another target's redo", () => {
     const s = store();
     s.add({ ...MARK, target: 'left' });
     s.add({ ...MARK, target: 'right' });
