@@ -244,12 +244,6 @@ Priority tags:
   `snapToContainer.ts`). Either loop every dragged id, or return `undefined` for a multi-drag so the
   default translate runs; which one is a call about what these behaviors mean for a multi-selection.
 
-- **(P3) `cloneAction`: the copies are not selected after an Alt-drag.** `duplicateAction` selects
-  what it made; clone leaves the originals selected, so a second Alt-drag clones the originals again
-  rather than the copy. The action declares `creates-selection`. Selecting the copies is the
-  convention in other editors, but it changes what the user holds after the gesture, so it is a
-  decision. `packages/core/src/interactions/actions/defaults/clone.ts`.
-
 - **(P3) `cloneByAltDrag` and the `CloneBehavior` contract are unreachable.** `cloneAction.start`
   ignores `opts`, so no clone behavior ever runs, and the hook that consumed `CloneBehavior` is
   gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in

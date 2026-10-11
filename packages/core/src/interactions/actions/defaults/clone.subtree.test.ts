@@ -26,7 +26,7 @@ function ctxAt(scene: Scene<unknown, string, unknown>, selected: NodeId[], dx: n
     world: { x: dx, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: true, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => selected }, scene },
+    deps: { selection: { get: () => selected, set: () => {} }, scene },
     drag: { start: { x: 0, y: 0 }, current: { x: dx, y: 0 }, delta: { x: dx, y: 0 } },
   } as unknown as InvocationCtx;
 }

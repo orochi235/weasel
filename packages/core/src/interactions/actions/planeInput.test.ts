@@ -56,7 +56,7 @@ function ctxOf(
     world: current,
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => ['sun'], clear: () => {} } as unknown as SelectionApi,
+      selection: { get: () => ['sun'], clear: () => {}, set: () => {} } as unknown as SelectionApi,
       scene,
       view: viewDep(),
       ...extra.deps,
@@ -237,7 +237,7 @@ function twoPlaneScene(): S {
 }
 
 const selecting = (ids: string[]) => ({
-  selection: { get: () => ids, clear: () => {} } as unknown as SelectionApi,
+  selection: { get: () => ids, clear: () => {}, set: () => {} } as unknown as SelectionApi,
 });
 
 const centerOf = (p: RectPose) => ({ x: p.x + p.width / 2, y: p.y + p.height / 2 });

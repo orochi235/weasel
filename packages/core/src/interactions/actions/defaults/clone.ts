@@ -158,7 +158,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
             return;
           }
 
-          const { ops } = copySelection(
+          const { ops, copies } = copySelection(
             scratch.scene,
             scratch.ids,
             (id, node) => (scratch.originPoses.has(id) ? landed(id, dx, dy) : node.pose),
@@ -167,6 +167,7 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
           if (ops.length > 0) {
             if (scratch.applyOps) scratch.applyOps(ops, 'Clone');
             else scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selection.adapterMethods));
+            selection.set(copies);
           }
           scratch.previews.clear();
         },

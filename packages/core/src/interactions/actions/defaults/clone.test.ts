@@ -86,8 +86,9 @@ function makeStubScene(
   return scene;
 }
 
-function makeStubSelection(ids: string[]) {
-  return { get: () => ids as NodeId[] };
+function makeStubSelection(initial: string[]) {
+  let ids = initial as NodeId[];
+  return { get: () => ids, set: (next: readonly NodeId[]) => { ids = [...next]; } };
 }
 
 function makeCtx(
@@ -234,6 +235,40 @@ describe('cloneAction descriptor', () => {
     expect(scene.addLog).toHaveLength(2);
     expect(scene.applyBatchLog).toHaveLength(1);
     expect(scene.applyBatchLog[0].label).toBe('Clone');
+  });
+
+  it('onEnd("commit") selects the copies', () => {
+    const invoker = getOngoingInvoker(cloneAction);
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a', 'b'],
+      sceneNodes: {
+        a: { pose: { x: 0, y: 0, width: 10, height: 10 } },
+        b: { pose: { x: 20, y: 20, width: 10, height: 10 } },
+      },
+    });
+    const drag = { start: { x: 0, y: 0 }, current: { x: 5, y: 5 }, delta: { x: 5, y: 5 } };
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({ ...(ctx as InvocationCtx), drag });
+    handle.onEnd!({ ...(ctx as InvocationCtx), drag }, 'commit');
+
+    const copies = [...scene.nodes.keys()].filter((id) => id !== 'a' && id !== 'b');
+    expect(copies).toHaveLength(2);
+    expect((ctx.deps.selection as { get(): string[] }).get()).toEqual(copies);
+  });
+
+  it('a canceled or zero-delta clone leaves the selection alone', () => {
+    const invoker = getOngoingInvoker(cloneAction);
+    const { scene: _scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      sceneNodes: { a: { pose: { x: 0, y: 0, width: 10, height: 10 } } },
+    });
+    const drag = { start: { x: 0, y: 0 }, current: { x: 5, y: 5 }, delta: { x: 5, y: 5 } };
+    const canceled = invoker.start(ctx as InvocationCtx, undefined);
+    canceled.onMove!({ ...(ctx as InvocationCtx), drag });
+    canceled.onEnd!({ ...(ctx as InvocationCtx), drag }, 'cancel');
+    const still = invoker.start(ctx as InvocationCtx, undefined);
+    still.onEnd!(ctx as InvocationCtx, 'commit');
+    expect((ctx.deps.selection as { get(): string[] }).get()).toEqual(['a']);
   });
 
   it('routes commit through the consumer applyOps hook once with insert ops + "Clone" label', () => {

@@ -31,7 +31,7 @@ function ctxAt(
     screen: { x: 0, y: 0 },
     modifiers: { alt: true, ctrl: false, meta: false, shift: false },
     deps: {
-      selection: { get: () => selected },
+      selection: { get: () => selected, set: () => {} },
       scene,
       poseComposition: RIGID_POSE_COMPOSITION,
     },
