@@ -18,7 +18,7 @@ import { StoredList } from './StoredList';
 import { blankGroup, blankLeaf, blankSection } from './kindSchemas';
 import {
   addNode, branchUnder, childrenOf, fitsUnder, joinPath, keyOf, keysOf, kindOfValue, nodeAt, parentPath, pathOf,
-  undescribedValues, uniqueKey, type SchemaNode, type SchemaRoot, type SchemaTarget, type UndescribedValue,
+  undescribedValues, uniqueKey, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget, type UndescribedValue,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
 
@@ -66,6 +66,8 @@ export interface StructurePaneProps {
   outside?: DropOutside;
   /** `outside` is drawing what is dragged where it would land, so the palette draws no ghost of it. */
   outsideDraws?: boolean;
+  /** The most levels of groups the schema may nest; none when undefined. */
+  maxDepth?: number;
   /** Remove the selected node. */
   onRemove(): void;
   /** Move the nodes at `paths` to `target`, keeping them open and selected. */
@@ -92,7 +94,7 @@ const nameOfKey = (key: string): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, stored, outside, outsideDraws = false, onMove: move, onRemove }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, stored, outside, outsideDraws = false, onMove: move, onRemove, maxDepth }: StructurePaneProps) {
   const nodes = useMemo(() => {
     const all = toTreeNodes(schema, null, changed);
     const loose = new Set(generalKeys(schema));
@@ -196,7 +198,7 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
       {toolSlot && createPortal(
         <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
           <ToolButton icon={<Icon name="add" />} label="Add pref" onClick={() => setAdding('pref')} />
-          <ToolButton icon={<Icon name="add" />} label={`Add ${branch}`} onClick={() => setAdding('branch')} />
+          <ToolButton icon={<Icon name="add" />} label={`Add ${branch}`} disabled={!withinDepth(addTarget().parent, [blankGroup()], maxDepth)} onClick={() => setAdding('branch')} />
           <ToolButton icon={<Icon name="remove" />} label="Remove" disabled={selected === null} onClick={onRemove} />
         </Palette>,
         toolSlot,
@@ -243,7 +245,8 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         canDrop={(ids, t) => {
           // A place among the rows shown is not that place among all of them.
           if (sought !== '') return false;
-          if (ids.length === 0) return paletteDrag !== null && treeTakesNew(schema, paletteDrag.node, t.parentId);
+          if (ids.length === 0) return paletteDrag !== null && treeTakesNew(schema, paletteDrag.node, t.parentId, maxDepth);
+          if (!withinDepth(t.parentId === GENERAL ? null : t.parentId, nodesAt([...ids]), maxDepth)) return false;
           const general = generalAllows(schema, [...ids], t.parentId);
           if (general !== undefined) return general;
           const parent = nodeAt(schema, t.parentId)!;

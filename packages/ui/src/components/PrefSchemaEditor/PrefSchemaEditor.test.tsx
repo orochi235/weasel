@@ -177,6 +177,14 @@ describe('PrefSchemaEditor', () => {
     expect(within(changes()).getByText('No changes.')).toBeInTheDocument();
   });
 
+  it('offers no group inside one that already sits at the depth allowed', () => {
+    render(<PrefSchemaEditor schema={START} onChange={() => {}} maxDepth={1} />);
+    const add = screen.getByRole('button', { name: 'Add group' });
+    expect(add).toBeEnabled();
+    fireEvent.click(row('view'));
+    expect(add).toBeDisabled();
+  });
+
   it('undoes and redoes an edit, from its buttons and from the keyboard', () => {
     render(<Live />);
     fireEvent.click(row('grid'));

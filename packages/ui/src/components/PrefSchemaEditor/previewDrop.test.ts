@@ -1,7 +1,7 @@
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
 import { GENERAL } from './generalBranch';
-import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, railTakesInto, sameDrop, treeTakesNew } from './previewDrop';
+import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop, treeTakesNew } from './previewDrop';
 
 const leaf = (name: string): PrefLeaf => ({ kind: 'boolean', name, description: '', default: false });
 const ROOT: PrefGroup = {
@@ -42,11 +42,14 @@ describe('a drag over the preview', () => {
     expect(previewTarget(ROOT, edge, [PAGE], [])).toEqual({ parentPath: null, index: 1 });
   });
 
-  it('sets a page among the rail\'s entries and never inside one', () => {
-    expect(railTakesInto([PAGE])).toBe(false);
-    expect(railTakesInto([TAB])).toBe(true);
-    expect(railTakesInto([leaf('X')])).toBe(true);
-    expect(railTakesInto([TAB, PAGE])).toBe(false);
+  it('takes a page into a rail entry\'s group, and nothing that would nest past the depth allowed', () => {
+    const into = { path: 'canvas', where: 'into', rail: true } as const;
+    expect(previewTarget(ROOT, into, [PAGE], [])).toEqual({ parentPath: 'canvas', index: 3 });
+    expect(previewTarget(ROOT, into, [PAGE], [], 2)).toEqual({ parentPath: 'canvas', index: 3 });
+    expect(previewTarget(ROOT, into, [PAGE], [], 1)).toBeNull();
+    expect(previewTarget(ROOT, into, [leaf('X')], [], 1)).toEqual({ parentPath: 'canvas', index: 3 });
+    expect(treeTakesNew(ROOT, PAGE, 'canvas/box', 2)).toBe(false);
+    expect(treeTakesNew(ROOT, PAGE, 'canvas/box', 3)).toBe(true);
   });
 
   it('hands the form the nodes and the value paths they sit at', () => {
