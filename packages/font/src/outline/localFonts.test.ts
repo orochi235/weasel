@@ -31,6 +31,14 @@ describe('parseFontStyle', () => {
     expect(parseFontStyle('ExtraLight').weight).toBe(200);
   });
 
+  it('reads a two-word weight the same as its one-word spelling', () => {
+    expect(parseFontStyle('Demi Bold').weight).toBe(600);
+    expect(parseFontStyle('Semi-Bold').weight).toBe(600);
+    expect(parseFontStyle('Extra Bold Italic')).toEqual({ weight: 800, style: 'italic' });
+    expect(parseFontStyle('Ultra Light').weight).toBe(200);
+    expect(parseFontStyle('Condensed Extra_Black').weight).toBe(950);
+  });
+
   it('reads italic and oblique as the same slant', () => {
     expect(parseFontStyle('Italic')).toEqual({ weight: 400, style: 'italic' });
     expect(parseFontStyle('Bold Italic')).toEqual({ weight: 700, style: 'italic' });
@@ -79,6 +87,22 @@ describe('enableLocalFontOutlines', () => {
     // A machine can hold hundreds of faces and a .ttc runs to tens of MB;
     // reading them at enable time would be worse than not offering the tier.
     expect(blob).not.toHaveBeenCalled();
+  });
+
+  it('keeps a two-word weight in its own slot, and the plain face of that slot', async () => {
+    vi.stubGlobal('queryLocalFonts', vi.fn(async () => [
+      fontData('Avenir Next', 'Bold'),
+      fontData('Avenir Next', 'Condensed Demi Bold'),
+      fontData('Avenir Next', 'Demi Bold'),
+    ]));
+
+    const result = await enableLocalFontOutlines();
+
+    expect(result.faces).toBe(2);
+    expect(listFontOutlines()).toEqual([
+      { family: 'Avenir Next', weight: 600, style: 'normal', status: 'idle' },
+      { family: 'Avenir Next', weight: 700, style: 'normal', status: 'idle' },
+    ]);
   });
 
   it('honors a family filter', async () => {

@@ -71,6 +71,12 @@ const WEIGHT_WORDS: readonly (readonly [string, number])[] = [
   ['book', 400], ['regular', 400], ['normal', 400],
 ];
 
+/** Lowercased, with a split weight name closed up: "Demi Bold" and
+ *  "Semi-Bold" read as the single words the table above lists. */
+function joinWeightWords(style: string): string {
+  return style.toLowerCase().replace(/\b(extra|ultra|semi|demi)[\s_-]+/g, '$1');
+}
+
 /**
  * Parse a `FontData.style` string — "Regular", "Bold Italic", "Condensed
  * ExtraLight Oblique" — into the CSS variant the kit's registry is keyed by.
@@ -81,7 +87,7 @@ const WEIGHT_WORDS: readonly (readonly [string, number])[] = [
  * because resolution is an exact-match lookup that simply misses.
  */
 export function parseFontStyle(style: string): { weight: number; style: FontStyle } {
-  const s = style.toLowerCase();
+  const s = joinWeightWords(style);
   const italic = s.includes('italic') || s.includes('oblique');
   const weight = WEIGHT_WORDS.find(([word]) => s.includes(word))?.[1] ?? 400;
   return { weight, style: italic ? 'italic' : 'normal' };
@@ -93,7 +99,7 @@ export function parseFontStyle(style: string): { weight: number; style: FontStyl
  * member of its slot, and the one to keep when two faces collide.
  */
 function styleQualifierCount(style: string): number {
-  const words = style.toLowerCase().split(/[\s_-]+/).filter(Boolean);
+  const words = joinWeightWords(style).split(/[\s_-]+/).filter(Boolean);
   return words.filter((w) => w !== 'italic' && w !== 'oblique'
     && !WEIGHT_WORDS.some(([word]) => word === w)).length;
 }
