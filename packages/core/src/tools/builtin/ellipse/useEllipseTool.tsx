@@ -17,6 +17,7 @@ export function useEllipseTool(options: InsertToolOptions = {}): Tool<null> {
     () =>
       defineTool<null>({
         id: 'ellipse',
+        keybinding: { key: 'E' },
         capabilities: ['creates-shapes'],
         hookName: 'useEllipseTool',
         cursor: cursorFor('crosshairEllipse', { fallback: 'crosshair' }),

@@ -30,20 +30,6 @@ export interface UseKeybindingsOptions {
   isToolEligible?: (toolId: string) => boolean;
 }
 
-/** Key opts for every built-in tool whose activation key lives here rather
- *  than on the ToolDef. Consumed by the tool-select action-registration effect. */
-const BUILTIN_SELECT_KEYS: Record<string, { key: string }> = {
-  select: { key: 'V' },
-  rect: { key: 'R' },
-  ellipse: { key: 'E' },
-  line: { key: '\\' },
-  polygon: { key: 'G' },
-  pencil: { key: 'N' },
-  text: { key: 'T' },
-  hand: { key: 'H' },
-  pen: { key: 'P' },
-};
-
 /** Wire the single-key tool-activation shortcuts (V, P, T, …) and Escape to
  *  return to the default tool. Activation is gated on what the active mode
  *  allows, so a key cannot reach a tool the palette greys out. */
@@ -69,9 +55,7 @@ export function useKeybindings(
   // callers (palette, toolbar) reach the same effect via
   // `registry.trigger('tool.activate', { toolId })`.
   //
-  // Built-in tools with static keys come from BUILTIN_SELECT_KEYS; tools
-  // whose activation key is configurable via their ToolDef (e.g. useLassoTool)
-  // are picked up dynamically from the tools registry.
+  // Every key comes from a `ToolDef.keybinding` in the tools registry.
   const { disable = false } = options;
   useEffect(() => {
     if (disable) return;
@@ -81,15 +65,8 @@ export function useKeybindings(
 
     const specs: ToolActivateBindingSpec[] = [];
 
-    for (const [toolId, keyOpts] of Object.entries(BUILTIN_SELECT_KEYS)) {
-      if (toolsRef.current.has(toolId)) {
-        specs.push({ toolId, keyOpts });
-      }
-    }
-
     const allTools = toolsRef.current.registry;
     for (const toolId in allTools) {
-      if (toolId in BUILTIN_SELECT_KEYS) continue;
       const binding = allTools[toolId].keybinding;
       if (!binding) continue;
       // `KeyBinding.key` may be an array of aliases: one binding per key.

@@ -44,6 +44,7 @@ export function usePencilTool(options: InsertToolOptions = {}): Tool<null> {
     () =>
       defineTool<null>({
         id: 'pencil',
+        keybinding: { key: 'N' },
         capabilities: ['creates-paths'],
         hookName: 'usePencilTool',
         cursor: cursorFor('pencil', { fallback: 'crosshair' }),

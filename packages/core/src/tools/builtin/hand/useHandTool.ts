@@ -50,6 +50,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
     () =>
       Object.assign(defineTool<HandScratch>({
         id: 'hand',
+        keybinding: { key: 'H' },
         capabilities: ['navigation'],
         hotkey: 'space',
         hookName: 'useHandTool',

@@ -26,6 +26,7 @@ export function useTextTool(options: InsertToolOptions = {}): Tool<undefined> {
     () =>
       defineTool<undefined>({
         id: 'text',
+        keybinding: { key: 'T' },
         capabilities: ['creates-text'],
         hookName: 'useTextTool',
         cursor: 'text',

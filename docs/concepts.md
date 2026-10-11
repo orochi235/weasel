@@ -452,15 +452,13 @@ them:
   `[initial]` → `[engaged]` → `[initial]` lifecycle that drag uses. Build
   entries with `buildToolOffhandBindings(specs)`.
 
-Built-in activation keys come from `BUILTIN_SELECT_KEYS` in
-`packages/core/src/tools/useKeybindings.ts`. Held-key engagement is not wired
-there: a tool declares `hotkey` on its `ToolDef` — `'space'`, a modifier, or
+A tool's activation key is the `keybinding` on its `ToolDef`, the built-in tools'
+included; `useKeybindings` (`packages/core/src/tools/useKeybindings.ts`) appends an
+entry for each to the consolidated `tool.activate` action's bindings. Held-key
+engagement is not wired there: a tool declares `hotkey` on its `ToolDef` — `'space'`, a modifier, or
 any other key such as `'o'` — that becomes `eligibility.offhand`, and assembly
 registers the consolidated `tool.offhand` action from the declaration. A tool
-that is only ever held sets `presentation.hide` to stay off the palette. The `ToolKeybinding` field on `ToolDef` is reserved
-for tools whose activation key is set by the host caller (Lasso, Eyedropper);
-the `useKeybindings` effect picks those up and appends entries to the
-consolidated `tool.activate` action's bindings dynamically.
+that is only ever held sets `presentation.hide` to stay off the palette.
 
 A `key-held` binding is an edge — a press opens an invocation, the release
 closes it — and a key only reaches it if the binding wins the route. A game loop

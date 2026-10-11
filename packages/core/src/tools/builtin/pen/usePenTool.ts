@@ -633,6 +633,7 @@ export function usePenTool<TPose>(
   return useMemo(() => {
     return defineTool<PenScratch>({
       id: 'pen',
+      keybinding: { key: 'P' },
       capabilities: ['creates-paths'],
       hookName: 'usePenTool',
       // Reads the tool's own ref rather than a scratch handed in by a

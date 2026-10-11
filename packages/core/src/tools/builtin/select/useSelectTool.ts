@@ -333,6 +333,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     () => {
       const base = defineTool<null>({
         id: 'select',
+        keybinding: { key: 'V' },
         capabilities: ['creates-selection'],
         hookName: 'useSelectTool',
         // A plain string: the mid-gesture cursors this used to compute from

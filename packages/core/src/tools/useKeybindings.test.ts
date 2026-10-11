@@ -77,9 +77,38 @@ describe('useKeybindings', () => {
     expect(result.current.active).toBe('select');
   });
 
-  it('registers a single tool.activate action with one binding entry per built-in tool in BUILTIN_SELECT_KEYS', () => {
-    const select = defineTool({ id: 'select' });
+  it('honors the keybinding a tool declares, whatever its id', () => {
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'b' } });
+    const { result } = renderHook(() => {
+      const tools = useTools({ active: 'select', registry: { select, pen } });
+      useKeybindings(tools);
+      return tools;
+    }, { wrapper: makeWrapper('select', true) });
+
+    act(() => press('p'));
+    expect(result.current.active).toBe('select');
+    act(() => press('b'));
+    expect(result.current.active).toBe('pen');
+  });
+
+  it('gives a tool that declares no keybinding no activation key', () => {
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
     const pen    = defineTool({ id: 'pen' });
+    const { result } = renderHook(() => {
+      const tools = useTools({ active: 'select', registry: { select, pen } });
+      useKeybindings(tools);
+      return useActionsRegistry();
+    }, { wrapper: makeWrapper('select') });
+
+    const activate = result.current?.list().find((a) => a.id === 'tool.activate');
+    const bindings = (activate?.defaultBinding ?? []) as unknown as Array<{ opts: { params: { toolId: string } } }>;
+    expect(bindings.map((b) => b.opts.params.toolId)).toEqual(['select']);
+  });
+
+  it('registers a single tool.activate action with one binding entry per tool keybinding', () => {
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools);

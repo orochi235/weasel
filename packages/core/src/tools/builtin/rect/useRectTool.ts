@@ -24,6 +24,7 @@ export function useRectTool(options: InsertToolOptions = {}): Tool<null> {
     () =>
       defineTool<null>({
         id: 'rect',
+        keybinding: { key: 'R' },
         capabilities: ['creates-shapes'],
         hookName: 'useRectTool',
         cursor: cursorFor('crosshairRect', { fallback: 'crosshair' }),

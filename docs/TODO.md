@@ -202,12 +202,6 @@ Priority tags:
   `insert` with a path request and drop `adapter.addNode` / `makeNode`; this changes
   `UsePenToolOptions`.
 
-- **(P3) Tool activation keys are decided in two places.** `BUILTIN_SELECT_KEYS` in
-  `packages/core/src/tools/useKeybindings.ts` hard-codes the key for nine tool ids and the registry
-  walk skips any id in that table, so a `keybinding` declared on a tool with one of those ids is
-  ignored, while lasso, slice, and eyedropper declare theirs on the `ToolDef` and are honored. Put
-  the nine keys on their tool definitions and delete the table.
-
 - **(P3) `useHandTool` and `useLassoTool` carry dead surface.** `useHandTool` returns
   `Tool<HandScratch | null>` where `HandScratch`
   (`packages/core/src/tools/builtin/hand/useHandTool.ts`) is never populated; the tool is one

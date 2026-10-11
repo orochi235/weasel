@@ -69,7 +69,7 @@ interface ToolKeyCase {
   readonly label: string;
 }
 
-// Mirrors BUILTIN_SELECT_KEYS in src/tools/useKeybindings.ts. If a key
+// Mirrors the `keybinding` each built-in tool's definition declares. If a key
 // moves there, this row fails — that's the point.
 const TOOL_KEY_MATRIX: readonly ToolKeyCase[] = [
   { toolId: 'select',  key: 'V',  label: 'V → select' },

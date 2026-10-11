@@ -6,9 +6,8 @@ import type { CursorSpec } from '@weasel-js/cursor';
 import type { KernelOverlay } from '../index';
 
 /**
- * Configurable activation-key descriptor for tools that expose their
- * keybinding to the host (currently Lasso and Eyedropper). Captures
- * only the fields meaningful to a caller-supplied tool-select key —
+ * A tool's activation key, as `ToolDef.keybinding` declares it. Captures
+ * only the fields meaningful to a tool-select key —
  * dispatcher-internal fields (`skipInEditable`, `enabled`,
  * `preventDefault`) live on `KeyBinding` in keyHelpers.ts and are
  * not part of the configurable surface.
@@ -84,13 +83,10 @@ export type ToolBounds = Bounds;
  * actions, overlay, presentation — is inherited.
  */
 export interface Tool<TScratch = unknown, TOverlay = KernelOverlay> extends Contribution<TOverlay> {
-  /** Optional caller-supplied key. Most built-in tools have their activation
-   *  key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`; this field
-   *  is for tools that want their activation key to be configurable by the
-   *  host (currently Lasso and Eyedropper). The dynamic loop in
-   *  `useKeybindings.ts` picks this up and appends a binding entry to the
-   *  consolidated `tool.activate` action (with `opts.params.toolId` set so
-   *  the invoker knows which tool to switch to). */
+  /** The key that activates this tool. `useKeybindings` appends a binding
+   *  entry for it to the consolidated `tool.activate` action (with
+   *  `opts.params.toolId` set so the invoker knows which tool to switch to).
+   *  A tool with none has no activation key. */
   keybinding?: ToolKeybinding;
   initScratch?: () => TScratch;
   cursor?: CursorSpec | ((ctx: ToolCtx<TScratch>) => CursorSpec);
