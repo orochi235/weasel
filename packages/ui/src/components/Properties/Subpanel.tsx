@@ -3,7 +3,7 @@ import { Disclosure } from '../Disclosure';
 import { type StanceProps, useStance } from '../stance';
 import { type CollapseProps, foldTitle, twistyClass, useCollapse } from './collapse';
 import s from './Properties.module.css';
-import { type PropertyMetricProps, propertyMetricClass } from './PropertyPanel';
+import { type PropertyMetricProps, propertyMetricClass } from './metrics';
 
 /** Props for `<Subpanel>`. */
 export interface SubpanelProps extends PropertyMetricProps, StanceProps, CollapseProps {

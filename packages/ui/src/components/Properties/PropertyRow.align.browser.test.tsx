@@ -1,9 +1,11 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
+import { baselineOf } from '@weasel-js/react/testing/baselineOf';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { ListEditor } from '../ListEditor';
 import { PropertyField } from './PropertyField';
-import { PropertyList, PropertyRow } from './PropertyPanel';
+import { PropertyList } from './PropertyList';
+import { PropertyRow } from './PropertyRow';
 
 // Where an inline row puts its label is a layout question, so only a real
 // browser can answer it.
@@ -31,25 +33,6 @@ const rowOf = (control: Element) => {
   return el;
 };
 const labelOf = (control: Element) => rowOf(control).querySelector(':scope > [class*="rowLabel"]')!;
-
-/**
- * Where an element's first text sits, from a zero-height inline box set beside it. The box goes in a span wrapped
- * round the text: appended to a flex container it would be a flex item, off the line.
- */
-const baselineOf = (el: Element) => {
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, (n) =>
-    n.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
-  );
-  const text = walker.nextNode()!;
-  const wrap = document.createElement('span');
-  const probe = document.createElement('span');
-  probe.style.display = 'inline-block';
-  text.parentNode!.replaceChild(wrap, text);
-  wrap.append(text, probe);
-  const y = probe.getBoundingClientRect().bottom;
-  wrap.replaceWith(text);
-  return y;
-};
 
 /** Settles the ResizeObserver a row measures itself with. */
 const frames = () =>

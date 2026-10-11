@@ -45,6 +45,7 @@ import {
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { composeWorldPose, frameAtOrAbove, type PoseComposition } from 'features/groups/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
+import { scenePoseTarget } from '../animation/poseTarget';
 import { pasteSceneSnapshot, snapshotSceneSelection, type SceneClipboardEnv } from './sceneClipboard';
 
 /** Minimal selection contract `sceneToAdapter` needs to wire `getSelection` /
@@ -272,6 +273,11 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         }
       }
       scene.setPose(asNodeId(id), pose);
+    },
+    poseTarget(id, descriptor) {
+      // The cascade happens in `setPose`, so a cascading container stays on the write a frame.
+      if (options.cascadeContainerPose && scene.get(asNodeId(id))?.kind === 'container') return undefined;
+      return scenePoseTarget(scene, id, descriptor ?? d);
     },
     setParent(id, parentId) {
       scene.move(asNodeId(id), parentId === null ? null : asNodeId(parentId));

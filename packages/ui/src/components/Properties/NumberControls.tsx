@@ -14,7 +14,7 @@ import { UnitField } from '../NumberField';
 import { spinKey } from '../spin';
 import shared from '../range.module.css';
 import type { PropertyNumberFieldProps } from './fieldTypes';
-import { PropertyRow } from './PropertyPanel';
+import { PropertyRow } from './PropertyRow';
 import s from './Properties.module.css';
 
 /**

@@ -118,7 +118,7 @@ export type {
   PaintedCursorFrame,
   PaintedCursorState,
 } from '@weasel-js/cursor';
-export { createPaintedCursorLayer, PAINTED_CURSOR_LAYER_ID } from '../features/cursor/paintedCursorLayer';
+export { createPaintedCursorLayer, PAINTED_CURSOR_LAYER_ID } from '../canvas/paintedCursorLayer';
 export type {
   LayersMap,
   SceneSlotConfig,

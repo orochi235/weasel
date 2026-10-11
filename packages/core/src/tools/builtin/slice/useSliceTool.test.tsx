@@ -4,7 +4,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useSliceTool } from './useSliceTool';
 import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import type { RenderLayer } from 'core/layers/render';
-import { createPointerStore } from 'features/pointer/PointerContext';
+import { createPointerStore } from '@weasel-js/routing/react';
 import { SceneCanvas } from 'canvas/SceneCanvas';
 import { useSliceDep } from 'canvas/deps/slice';
 import { createScene } from 'core/scene/scene';

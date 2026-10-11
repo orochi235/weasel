@@ -1,7 +1,6 @@
-import type { Path } from '@weasel-js/geom';
+import { type Path, mat3, type GlMat3 } from '@weasel-js/geom';
 import { resolveScreenLength, type Stroke } from '@weasel-js/paint';
 import { SPRITE_STRIDE, type DrawCommand } from './DrawCommand';
-import { mat3, type GlMat3 } from './math/mat3';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { markerReach } from 'features/paths/markerCommands';
 

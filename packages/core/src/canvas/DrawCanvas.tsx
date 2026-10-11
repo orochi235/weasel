@@ -17,7 +17,7 @@ import { useFrameLoop } from './useFrameLoop';
 import { useLateContentRedraw } from './useLateContentRedraw';
 import { useRedrawOn } from './useRedrawOn';
 import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
-import { viewToMat3 } from '../renderer/math/viewToMat3';
+import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { RedrawSource } from '../core/layers/render';
 import { normalizeView, type View } from '../core/viewport/view';

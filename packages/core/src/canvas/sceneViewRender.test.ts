@@ -10,7 +10,7 @@ import { createScene } from 'core/scene/scene';
 import type { Scene, Node } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
-import { viewToMat3 } from '../renderer/math/viewToMat3';
+import { viewToMat3 } from '@weasel-js/geom';
 import {
   buildSceneViewCommands,
   renderSceneToCanvas,

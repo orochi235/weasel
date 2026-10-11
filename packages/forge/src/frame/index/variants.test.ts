@@ -36,6 +36,16 @@ describe('variantRows', () => {
     expect(variantRows(schema).map((row) => row.path)).toEqual(['mode']);
   });
 
+  it('skips a control, and a group, hidden at the defaults by a condition written as data', () => {
+    const schema = f.schema({
+      mode: f.enum('simple', ['simple', 'advanced']),
+      extra: f.boolean(false).showIf({ path: 'mode', is: 'advanced' }),
+      shown: f.boolean(false).showIf({ path: 'mode', is: 'simple' }),
+      more: f.group({ deep: f.boolean(false) }).showIf({ path: 'mode', is: 'advanced' }),
+    });
+    expect(variantRows(schema).map((row) => row.path)).toEqual(['mode', 'shown']);
+  });
+
   it('stops at six rows', () => {
     const shape = Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`flag${i}`, f.boolean(false)]));
     expect(variantRows(f.schema(shape))).toHaveLength(6);

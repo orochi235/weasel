@@ -201,6 +201,14 @@ export default meta({
 A custom page gets the list as `Dependencies`, and `gallery` says whether the
 component is one.
 
+Above the list the page says which release the component first shipped in and
+when its source file was created and last changed. All three come from git:
+the dates are the file's first and latest commits, followed back through
+renames, and the release is the nearest tag after the first, taken from the
+file's own package's tags (`@scope/pkg@1.2.0`) and unscoped ones (`v1.2.0`).
+A file not yet in a tagged release reads `Unreleased`, and a file git has
+never committed shows nothing. A custom page gets it as `History`.
+
 ## Galleries
 
 A story file that catalogs many components, or every permutation of one, tags

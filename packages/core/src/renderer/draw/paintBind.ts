@@ -3,7 +3,7 @@ import type { PaintBindContext, PaintResources } from 'core/paintKinds';
 import { createPaintResources } from '../paintResources';
 import { getTexture, type TextureHandle } from '../textures/registerTexture';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
-import { mat3, type GlMat3 } from '../math/mat3';
+import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { patternTileSpace } from '../math/patternSpace';
 import type { DrawContext } from './drawContext';
 import { setAlphaUniform, setColorMatrixUniforms, setProjAndModel } from './uniforms';

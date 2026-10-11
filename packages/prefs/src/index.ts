@@ -34,6 +34,7 @@ export {
 } from './condition';
 export {
   applyPrefConditions,
+  PREF_ENTRY,
   PREF_SCOPE,
   prefJudge,
   prefReader,
@@ -44,6 +45,7 @@ export {
   type PrefConditionsApplied,
   type PrefScope,
 } from './scope';
+export { prefShownReader, prefShownValue } from './shown';
 export { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 export type { PrefLabel, PrefSeparator } from './label';
 export { prefObjectBase, prefObjectWithField } from './object';

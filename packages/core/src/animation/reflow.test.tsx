@@ -60,11 +60,46 @@ describe('createReflowTransition', () => {
     frame(50);
     expect(where(a).x).toBeCloseTo(shown);
     frame(100);
-    // Halfway along the new leg: from (50, 0) toward (0, 80).
-    expect(where(a).x).toBeCloseTo(25);
+    // The first leg is done; the second has half of its own (100, -80) left.
+    expect(where(a).x).toBeCloseTo(50);
     expect(where(a).y).toBeCloseTo(40);
     frame(150);
     expect(where(a)).toMatchObject({ x: 0, y: 80 });
+  });
+
+  it('adds a timed retarget to the glide still running, under one key', () => {
+    const { animator, frame, scene, a, where } = setup();
+    const events: AnimatorEvent[] = [];
+    animator().watch((e) => events.push(e));
+    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    act(() => { reflow.glide(a, at(100)); });
+    frame(0);
+    frame(50);
+    act(() => { reflow.glide(a, at(200)); });
+    expect(animator().live().filter((r) => r.key === `reflow:${a}`)).toHaveLength(2);
+    expect(events.map((e) => e.type)).toEqual(['start', 'start']);
+    frame(75);
+    // 25 left of the first leg and 75 of the second.
+    expect(where(a).x).toBeCloseTo(200 - 25 - 75);
+    expect(reflow.poseOf(a)?.x).toBeCloseTo(100);
+  });
+
+  it('carries its velocity into a spring retarget', () => {
+    const { animator, frame, scene, a, where } = setup();
+    const reflow = createReflowTransition(scene, animator(), { spring: { stiffness: 1, damping: 1, mass: 1 } });
+    act(() => { reflow.glide(a, at(1000)); });
+    frame(0);
+    for (let t = 16; t <= 480; t += 16) frame(t);
+    const before = where(a).x;
+    frame(496);
+    const step = where(a).x - before;
+    expect(step).toBeGreaterThan(0.5);
+    // Sent straight down from where it is: a spring starting from rest would not move in x.
+    act(() => { reflow.glide(a, at(where(a).x, 50)); });
+    expect(animator().live().filter((r) => r.key === `reflow:${a}`)).toHaveLength(1);
+    const held = where(a).x;
+    frame(512);
+    expect(where(a).x - held).toBeGreaterThan(step * 0.8);
   });
 
   it('keeps its progress when handed the target it is already heading for', () => {
@@ -101,11 +136,11 @@ describe('createReflowTransition', () => {
     expect(where(a).x).toBe(0);
   });
 
-  it('claims one cancelKey per node, so a new target steals the running glide', () => {
+  it('claims one cancelKey per node, so a new spring target steals the running glide', () => {
     const { animator, frame, scene, a } = setup();
     const events: AnimatorEvent[] = [];
     animator().watch((e) => events.push(e));
-    const reflow = createReflowTransition(scene, animator(), TWEEN);
+    const reflow = createReflowTransition(scene, animator(), { spring: { preset: 'stiff' } });
     act(() => { reflow.glide(a, at(100)); });
     frame(0);
     act(() => { reflow.glide(a, at(200)); });
@@ -151,9 +186,10 @@ describe('createReflowTransition', () => {
     frame(50);
     scene.setPose(a, at(100));
     act(() => { reflow.settle(a); });
-    frame(100);
+    frame(75);
+    // Already heading there: the glide it is on finishes the job.
     expect(where(a).x).toBeCloseTo(75);
-    frame(150);
+    frame(100);
     expect(scene.overrides.has(a)).toBe(false);
     expect(where(a).x).toBe(100);
   });

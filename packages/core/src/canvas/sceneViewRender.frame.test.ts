@@ -13,7 +13,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { buildSceneViewCommands } from './sceneViewRender';
-import { mat3 } from '../renderer/math/mat3';
+import { mat3 } from '@weasel-js/geom';
 import {
   FRAME_FIXTURE_IDS,
   FRAME_FIXTURE_WORLD,

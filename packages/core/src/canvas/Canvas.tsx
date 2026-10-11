@@ -85,7 +85,7 @@ import { resolveCursorTier } from '@weasel-js/cursor';
 import type { ResolvedCursor } from '@weasel-js/cursor';
 import { createPaintedCursorState } from '@weasel-js/cursor';
 import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
-import { createPaintedCursorLayer } from '../features/cursor/paintedCursorLayer';
+import { createPaintedCursorLayer } from './paintedCursorLayer';
 import { commandFill } from '../features/patterns/commandPaint';
 
 import type { Bounds } from 'core/viewport/fitViewToBounds';

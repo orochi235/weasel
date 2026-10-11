@@ -55,7 +55,7 @@ export {
   withGradientKind,
   gradientGeometry,
   gradientForBounds,
-} from '../core/gradient';
+} from '@weasel-js/paint';
 export { fillInPoseFrame, fillToBoundsFrame } from '../core/fillInPoseFrame';
 export type { FillPoseBox } from '../core/fillInPoseFrame';
 // A node's paint resolved into what a draw command takes.
@@ -127,4 +127,4 @@ export {
   normalizeHex,
   hexToRgba,
   rgbaToHex,
-} from '../renderer/math/color';
+} from '@weasel-js/paint';

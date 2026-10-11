@@ -14,9 +14,7 @@ import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Tool } from '../../tools/overlayBinding';
 import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';
-import { PATH_C, PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
-import { anchorsToPath } from './anchors';
-import { circlePath } from './markers';
+import { PATH_C, PATH_L, PATH_M, type PolygonPath, anchorsToPath, circlePath } from '@weasel-js/geom';
 
 /** Appearance of the pen tool's in-progress path. */
 export interface PenPreviewStyle {

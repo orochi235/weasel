@@ -57,6 +57,24 @@ export {
 export { contrastLineColor } from './contrast';
 export { parseHexBytes, hexToRgbBytes } from './hex';
 export {
+  parseColor,
+  parseColorToRgba255,
+  resolveColor,
+  normalizeHex,
+  hexToRgba,
+  rgbaToHex,
+} from './color';
+export {
+  isGradientFill,
+  resolveGradientStops,
+  sampleResolvedStops,
+  sampleGradientStops,
+  withGradientKind,
+  gradientGeometry,
+  gradientForBounds,
+  type ResolvedGradientStop,
+} from './gradient';
+export {
   resolvePaletteColor,
   resolvePaletteColors,
   colorLiteralToHex,

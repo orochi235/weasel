@@ -9,8 +9,7 @@
  */
 
 import { useCallback, useInsertionEffect, useLayoutEffect, useRef } from 'react';
-import { useLatest } from '@weasel-js/react';
-import { useVisibleRaf, type VisibleRafTarget } from '../scheduling/useVisibleRaf';
+import { useLatest, useVisibleRaf, type VisibleRafTarget } from '@weasel-js/react';
 
 export interface FrameLoop {
   /** Mark the surface dirty and schedule a frame. Identity is stable for the

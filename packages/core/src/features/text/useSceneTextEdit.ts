@@ -32,10 +32,7 @@ import { clientToCanvas } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
-import { caretIndexAt, pointInTextPose } from './hitTest';
-import { isTextData } from './isTextData';
-import type { StyledRun } from '@weasel-js/text';
-import type { TextPaint, TextStyle, TextVerticalAlign } from '@weasel-js/text';
+import { caretIndexAt, pointInTextPose, isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import { useTextEdit, type TextEditClipRect, type UseTextEditReturn } from './useTextEdit';
 
 /** Shape the default projections expect `data` to satisfy. All fields

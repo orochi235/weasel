@@ -1,16 +1,23 @@
 import { useCallback, useEffect, useInsertionEffect, useMemo, useRef } from 'react';
-import { useLatest } from '@weasel-js/react';
-import { useVisibleRaf } from '../scheduling/useVisibleRaf';
-import { easeOut, SPRING_PRESETS, resolveEasing } from '@weasel-js/geom';
+import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import { createLoop, createTweenLoop } from './loop';
-import { stepSpring } from './engine/integrator';
-import { createCodec, type SpringReader } from './engine/codec';
-import { axesOf } from './engine/axes';
+import { createCodec } from './engine/codec';
+import type { ActiveAnimation, AnimationContext, AnimationSeed } from './engine/context';
+import type { TargetState } from './target';
+import { decayAsPhysics } from './engine/decay';
+import { startHold } from './engine/holdAnimation';
+import { openHold } from './engine/holds';
+import { createTargetBook } from './engine/offsets';
+import { startOffsetPhysics } from './engine/offsetPhysics';
+import { startOffsetTween } from './engine/offsetTween';
+import { startPhysics } from './engine/physicsAnimation';
+import { startTween } from './engine/tweenAnimation';
 import { createStagger } from './stagger';
 import { createTimeline } from './timeline/createTimeline';
+import { stateOf } from './target';
 import { ColorOverrideRegistry } from './colorRegistry';
 import { AnimatorEventHub } from './observe';
-import type { Supervisor, SupervisorOptions, WatchCompletion } from './supervisor';
+import { supervisors, type WatchCompletion } from './supervisor';
 import type {
   AnimationHandle,
   AnimationInfo,
@@ -21,44 +28,15 @@ import type {
   DecayOptions,
   PhysicsOptions,
   PhysicsHandle,
+  TargetDecayOptions,
+  TargetPhysicsOptions,
+  TargetSpringOptions,
+  TargetTweenOptions,
   UseAnimatorOptions,
   LiveAnimation,
 } from './types';
+import type { OpenTrackHold } from './timeline/trackHolds';
 import type { TimelineOptions } from './timeline/types';
-
-interface ActiveAnimation {
-  id: number;
-  kind: AnimationKind;
-  cancelKey?: string;
-  label?: string;
-  /** Built the first time something reports on this entry, then shared. */
-  info?: AnimationInfo;
-  /** 0–1 where the animation has an end to measure against. */
-  progress?(virtualNow: number): number;
-  /** Its `end` is reported, though the entry stays on the table until the
-   *  frame's ticks are done. */
-  ended?: boolean;
-  paused: boolean;
-  timeScale: number;
-  virtualNow: number;
-  lastRealNow: number | null;
-  /** Returns true when finished. Called once per frame with the current
-   *  virtual-ms timestamp and the effective scale it advanced at this frame. */
-  tick(virtualNow: number, scale: number): boolean;
-  /** Called when the animation is cancelled. Skips onDone. */
-  onCancel?(): void;
-  /** Called when its pause state or time scale is set, by handle or by key. */
-  onRate?(paused: boolean, timeScale: number): void;
-}
-
-function resolveSpringConstants(o: { preset?: string; stiffness?: number; damping?: number; mass?: number }) {
-  const preset = o.preset ? SPRING_PRESETS[o.preset as keyof typeof SPRING_PRESETS] : null;
-  return {
-    stiffness: o.stiffness ?? preset?.stiffness ?? 170,
-    damping: o.damping ?? preset?.damping ?? 26,
-    mass: o.mass ?? preset?.mass ?? 1,
-  };
-}
 
 /** Create the animator for a canvas. One rAF loop drives every animation it
  *  owns, and everything still running is cancelled on unmount. */
@@ -168,6 +146,9 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
 
     const hub = new AnimatorEventHub();
     const codec = createCodec();
+    const targets = createTargetBook((s) => {
+      for (const a of [...animations.current.values()]) if (a.target === s) retire(a.id);
+    });
     const infoOf = (a: ActiveAnimation): AnimationInfo => {
       if (!a.info) {
         const info: { -readonly [K in keyof AnimationInfo]: AnimationInfo[K] } = { id: a.id, kind: a.kind };
@@ -196,6 +177,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       a.onCancel?.();
       codec.stop(id);
       animations.current.delete(id);
+      // A target that came to rest is owed one more show, and no frame may be coming.
+      if (targets.resting) frameLoopRef.current.request();
       fireCompletion(id);
       if (!hub.watched || a.ended || error) return;
       hub.emit(by
@@ -203,18 +186,28 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         : { type: 'cancel', animation: infoOf(a) });
     };
 
+    /** Whether a frame is between reading the codec and showing its targets. */
+    let framing = false;
+    const reread = (): void => codec.refresh((on, queued) => targets.reread(on as TargetState, queued));
+    const awake = (): boolean => {
+      for (const a of animations.current.values()) if (!a.idle) return true;
+      return false;
+    };
+
     const tickAll = (t: number): void => {
       const finished: ActiveAnimation[] = [];
       const threw: [ActiveAnimation, unknown][] = [];
       const frameDt = codecFrameT.current == null ? 0 : Math.max(0, t - codecFrameT.current);
       codecFrameT.current = t;
+      framing = true;
       codec.frame(frameDt * (globalPaused.current ? 0 : globalTimeScale.current));
+      targets.settle();
       // A snapshot: an animation registered by this frame's ticks first ticks on the
       // next, or a zero-duration loop would chain inside one frame and never leave it.
       for (const anim of [...animations.current.values()]) {
         if (animations.current.get(anim.id) !== anim) continue;
         // `t` comes from the frame clock; `lastRealNow` is seeded at register()
-        // from `now()`. The two share a time origin in a browser, where the rAF
+        // from `now()` while the animator is idle. The two share a time origin in a browser, where the rAF
         // timestamp and `performance.now()` are both page-relative — but not
         // everywhere: jsdom starts them ~600ms apart, which made the first
         // frame's delta hugely negative and left `virtualNow` climbing back
@@ -262,14 +255,22 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       for (const cb of afterTicks.splice(0)) {
         try { cb(); } catch (err) { console.error('useAnimator: a staggered start threw', err); }
       }
+      reread();
+      framing = false;
+      targets.show();
       // Notify every onTick subscriber AFTER the tick batch so they
       // see the latest `colorOverrides` / pose values. Errors in one
       // subscriber don't suppress the others.
       for (const sub of tickSubscribers.current) {
         try { sub(); } catch (err) { console.error('useAnimator: onTick subscriber threw', err); }
       }
-      if (animations.current.size > 0) frameLoopRef.current.request();
-      else codecFrameT.current = null;
+      if (awake()) {
+        frameLoopRef.current.request();
+        return;
+      }
+      // As when the page was hidden: the time asleep is charged to nothing.
+      codecFrameT.current = null;
+      for (const anim of animations.current.values()) anim.lastRealNow = null;
     };
 
     const ensureLoop = (): void => {
@@ -285,14 +286,6 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       for (const id of ids) retire(id, by);
     };
 
-    type AnimationSeed =
-      Omit<ActiveAnimation, 'paused' | 'timeScale' | 'virtualNow' | 'lastRealNow'>
-      & {
-        /** Registers under an existing `cancelKey` without cancelling whoever
-         *  holds it. For an animation re-registering itself — a revived
-         *  timeline — which is not a new claim on the key. */
-        keepExisting?: boolean;
-      };
     /** Gives a codec subject the rate its own pause and time scale now ask for. */
     const rateOf = (a: ActiveAnimation): void => {
       if (codec.has(a.id)) codec.rate(a.id, a.paused ? 0 : a.timeScale);
@@ -305,11 +298,12 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       anim.paused = false;
       anim.timeScale = 1;
       anim.virtualNow = 0;
-      // Seed lastRealNow at registration so the first frame's realDt reflects
-      // the gap between register() and the first RAF callback: it places a
-      // tween's end, and gives spring/decay a non-zero first dt sample.
-      anim.lastRealNow = now();
+      // Seeded from the frame clock where it is running, as a voice cued now is: both then
+      // advance by the whole of their first frame. Idle, the first frame's realDt is the gap
+      // between register() and the first RAF callback.
+      anim.lastRealNow = codecFrameT.current ?? now();
       animations.current.set(anim.id, anim);
+      if (anim.target) targets.showNow(anim.target);
       if (hub.watched) hub.emit({ type: 'start', animation: infoOf(anim) });
       ensureLoop();
       return {
@@ -323,248 +317,60 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       };
     };
 
-    // Supervisor: a registered animation whose tick is a no-op (never
-    // finishes naturally) so loop/stagger can sit in the animator's id table
-    // and benefit from `cancel`/`cancelKey`/`isActive`. The owning composite
-    // (loop/stagger) installs an onCancel to actually tear down its children.
-    const createSupervisor = ({ kind, cancelKey, label }: SupervisorOptions): Supervisor => {
-      const id = nextId.current++;
-      let onCancelCb: (() => void) | undefined;
-      let onRateCb: ((paused: boolean, timeScale: number) => void) | undefined;
-      let onFrameCb: ((virtualNow: number) => void) | undefined;
-      const base = register({
-        id,
-        kind,
-        cancelKey,
-        label,
-        // tick is a no-op: the supervisor only ends when the owner calls
-        // `cancel()` (either via animator.cancel, animator.cancelKey, or the
-        // composite's natural-completion path which forwards to `cancel`).
-        tick: (virtualNow) => {
-          if (onFrameCb) afterTicks.push(() => onFrameCb?.(virtualNow));
-          return false;
-        },
-        onCancel: () => onCancelCb?.(),
-        onRate: (paused, timeScale) => onRateCb?.(paused, timeScale),
-      });
-      return {
-        id: base.id,
-        cancel: base.cancel,
-        pause: base.pause,
-        resume: base.resume,
-        setTimeScale: base.setTimeScale,
-        timeScale: base.timeScale,
-        isPaused: base.isPaused,
-        setOnCancel: (cb) => { onCancelCb = cb; },
-        setOnRate: (cb) => { onRateCb = cb; },
-        setOnFrame: (cb) => { onFrameCb = cb; },
-        finish: () => {
-          if (!animations.current.has(id)) return;
-          reportEnd(id);
-          animations.current.delete(id);
-          fireCompletion(id);
-        },
-        cancelKey,
-      };
+    const finish = (id: number): void => {
+      if (!animations.current.has(id)) return;
+      reportEnd(id);
+      animations.current.delete(id);
+      fireCompletion(id);
     };
 
-    const tween = <T,>(o: TweenOptions<T>): AnimationHandle => {
-      // blits blends in a straight line, which a caller's own function may not do.
-      const fromAxes = o.interpolate || o.interpolator ? null : axesOf(o.from);
-      const toAxes = fromAxes && axesOf(o.to);
-      const axes = fromAxes && toAxes && toAxes.shape === fromAxes.shape ? fromAxes : null;
-      // Refused here rather than on a tick, where a throw would stop every other animation.
-      if (!axes && !o.interpolate && !o.interpolator) {
-        throw new Error('tween: interpolate or interpolator is required for non-numeric T');
-      }
-      const id = nextId.current++;
-      const easing = resolveEasing(o.easing ?? easeOut);
-      // Precedence: factory > per-tick. Factory is built once at tween start so
-      // expensive setup (color space conversion etc.) doesn't repeat per frame.
-      const factoryFn = o.interpolator ? o.interpolator(o.from, o.to) : null;
-      let lastValueEmitted = false;
-      // Seeds the codec's clock where `register` seeds the call's, so both charge the same wait.
-      if (codecFrameT.current == null) codecFrameT.current = now();
-      // Started ahead of `register`, whose `start` listeners may already cancel it.
-      const reader = codec.tween({
-        id, ms: Math.max(o.ms, 1), ease: easing,
-        from: axes ? axes.to(o.from) : [0],
-        to: axes ? axes.to(o.to) : [1],
-      });
-      return register({
-        id,
-        kind: 'tween',
-        cancelKey: o.cancelKey,
-        label: o.label,
-        progress: (virtualNow) => (o.ms <= 0 ? 1 : Math.min(1, virtualNow / o.ms)),
-        // `nowMs` is the call's own virtual time, so it still decides when the tween ends; the codec
-        // supplies only the value in between.
-        tick(nowMs) {
-          if (tripwire()) { codec.stop(id); return true; }
-          const t = o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
-          let value: T;
-          if (axes) {
-            value = t >= 1 ? o.to : axes.from(reader.cols, reader.at);
-          } else {
-            const eased = t >= 1 ? easing(1) : reader.cols[reader.at]!;
-            value = factoryFn ? factoryFn(eased) : o.interpolate!(o.from, o.to, eased);
-          }
-          o.onTick(value);
-          if (t >= 1 && !lastValueEmitted) {
-            lastValueEmitted = true;
-            codec.stop(id);
-            // That last onTick may have cancelled us — deregistering the id.
-            // A cancelled tween never completes, whenever the cancel landed.
-            if (animations.current.has(id)) {
-              reportEnd(id);
-              o.onDone?.();
-            }
-            return true;
-          }
-          return false;
-        },
-      });
+    const createSupervisor = supervisors({
+      nextId: () => nextId.current++,
+      register,
+      finish,
+      afterTicks: (cb) => { afterTicks.push(cb); },
+    });
+
+    const ctx: AnimationContext = {
+      codec,
+      targets,
+      nextId: () => nextId.current++,
+      seedClock: () => { if (codecFrameT.current == null) codecFrameT.current = now(); },
+      register,
+      has: (id) => animations.current.has(id),
+      reportEnd,
+      finish,
+      touch: (target, at) => {
+        codec.touch(target);
+        if (framing && !at) return;
+        reread();
+        frameLoopRef.current.request();
+      },
+      tripwire,
+      interrupt: (key, by) => cancelByKey(key, by as ActiveAnimation),
+      velocityUnder: (key, target) => {
+        let sum: number[] | null = null;
+        for (const a of animations.current.values()) {
+          if (a.cancelKey !== key || a.target !== target) continue;
+          const v = codec.own(a.id)?.velocity;
+          if (v) sum = sum ? sum.map((x, i) => x + v[i]!) : v.slice();
+        }
+        return sum;
+      },
     };
 
-    const physics = <T,>(o: PhysicsOptions<T>, kind: AnimationKind = 'physics'): PhysicsHandle<T> => {
-      const id = nextId.current++;
-      const isNumeric = typeof o.from === 'number';
-      if (!isNumeric && (!o.add || !o.subtract || !o.scale || !o.magnitude)) {
-        throw new Error('physics: add/subtract/scale/magnitude are required for non-numeric T');
-      }
-      const add = o.add ?? ((a: T, b: T) => ((a as unknown as number) + (b as unknown as number)) as unknown as T);
-      const subtract = o.subtract ?? ((a: T, b: T) => ((a as unknown as number) - (b as unknown as number)) as unknown as T);
-      const scale = o.scale ?? ((v: T, k: number) => ((v as unknown as number) * k) as unknown as T);
-      const magnitude = o.magnitude ?? ((v: T) => Math.abs(v as unknown as number));
-      const { stiffness: kBase, damping, mass } = resolveSpringConstants(o);
-      const restThreshold = o.restThreshold ?? 0.01;
+    const tween = <T,>(o: TweenOptions<T> | TargetTweenOptions<T>): AnimationHandle =>
+      (o.target ? startOffsetTween(ctx, o) : startTween(ctx, o));
 
-      let target: T | null = o.to ?? null;
-      let value = o.from;
-      // Default to zero velocity: assumes scale(_, 0) returns the zero vector of T. Pass an explicit velocity for unusual T where this isn't true.
-      let velocity: T = o.velocity ?? scale(o.from, 0);
-      let lastTime: number | null = null;
+    const physics = <T,>(
+      o: PhysicsOptions<T> | TargetPhysicsOptions<T>,
+      kind: AnimationKind = 'physics',
+    ): PhysicsHandle<T> => (o.target ? startOffsetPhysics(ctx, o, kind) : startPhysics(ctx, o, kind));
 
-      // blits' closed forms need positive damping and mass, and a spring with a target needs
-      // stiffness; decay's handle never takes a target.
-      const solvable = damping > 0 && mass > 0 && (kBase > 0 || kind === 'decay');
-      const fromAxes = solvable ? axesOf(o.from) : null;
-      const sameShape = (v: T | null | undefined): boolean => v == null || axesOf(v)?.shape === fromAxes!.shape;
-      const axes = fromAxes && sameShape(o.to) && sameShape(o.velocity) ? fromAxes : null;
-      let reader: SpringReader | null = null;
-      if (axes) {
-        // Seeds the codec's clock where `register` seeds the call's, so both charge the same wait.
-        if (codecFrameT.current == null) codecFrameT.current = now();
-        // Started ahead of `register`, whose `start` listeners may already cancel it.
-        reader = codec.spring({
-          id, axes: axes.count,
-          from: axes.to(o.from),
-          to: o.to == null ? null : axes.to(o.to),
-          velocity: o.velocity == null ? new Array<number>(axes.count).fill(0) : axes.to(o.velocity),
-          stiffness: kBase, damping, mass,
-        });
-      }
+    const spring = <T,>(o: SpringOptions<T> | TargetSpringOptions<T>): AnimationHandle => physics<T>(o, 'spring');
 
-      const baseHandle = register({
-        id,
-        kind,
-        cancelKey: o.cancelKey,
-        label: o.label,
-        tick(nowMs) {
-          if (tripwire()) { codec.stop(id); return true; }
-          if (lastTime == null) {
-            lastTime = nowMs;
-            // Already-at-rest short-circuit: decay-mode (target == null)
-            // with starting velocity below threshold should complete
-            // immediately rather than emit a tick and wait a frame.
-            if (target == null && magnitude(velocity) < restThreshold) {
-              codec.stop(id);
-              reportEnd(id);
-              o.onDone?.();
-              return true;
-            }
-            // The codec's voice has run since registration, so only Euler starts its clock here.
-            if (!axes) {
-              o.onTick(value);
-              return false;
-            }
-          }
-          if (axes) {
-            const m = reader!.motion();
-            value = axes.from(m.value);
-            velocity = axes.from(m.velocity);
-          } else {
-            // Semi-implicit Euler, for a T blits cannot move as axes, or constants its closed forms can't solve.
-            const dt = Math.min(0.064, (nowMs - lastTime) / 1000);
-            const next = stepSpring({ add, subtract, scale }, value, velocity, target, kBase, damping, mass, dt);
-            value = next.value;
-            velocity = next.velocity;
-          }
-          lastTime = nowMs;
-          o.onTick(value);
-          const velRested = magnitude(velocity) < restThreshold;
-          const posRested = target == null
-            ? true
-            : magnitude(subtract(value, target)) < restThreshold;
-          if (velRested && posRested) {
-            if (target != null) o.onTick(target);
-            codec.stop(id);
-            // As for a tween: canceled from its own onTick, it never completes.
-            if (animations.current.has(id)) {
-              reportEnd(id);
-              o.onDone?.();
-            }
-            return true;
-          }
-          return false;
-        },
-      });
-
-      const checkShape = (v: T, what: string): void => {
-        if (!sameShape(v)) throw new Error(`physics: ${what} is not the same shape as \`from\``);
-      };
-      const handle: PhysicsHandle<T> = {
-        ...baseHandle,
-        setTarget: (newTo: T | null) => {
-          if (axes && newTo != null) checkShape(newTo, 'setTarget');
-          target = newTo;
-          if (axes && codec.has(id)) codec.retarget(id, newTo == null ? null : axes.to(newTo));
-        },
-        setVelocity: (v: T) => {
-          if (axes) checkShape(v, 'setVelocity');
-          velocity = v;
-          if (axes && codec.has(id)) codec.push(id, axes.to(v));
-        },
-      };
-      return handle;
-    };
-
-    const spring = <T,>(o: SpringOptions<T>): AnimationHandle => physics<T>(o, 'spring');
-
-    const decay = <T,>(o: DecayOptions<T>): AnimationHandle => {
-      const friction = o.friction ?? 0.95;
-      // Per-second friction v(t) = v0 * friction^t corresponds to
-      // m*dv/dt = -c*v with c = -ln(friction), m = 1, k = 0.
-      const damping = -Math.log(friction);
-      return physics<T>({
-        from: o.from,
-        to: null,
-        velocity: o.velocity,
-        stiffness: 0,
-        damping,
-        mass: 1,
-        restThreshold: o.threshold ?? 0.5,
-        add: o.add,
-        // DecayOptions doesn't carry subtract; derive from add+scale.
-        subtract: (a, b) => o.add(a, o.scale(b, -1)),
-        scale: o.scale,
-        magnitude: o.magnitude,
-        onTick: o.onTick,
-        onDone: o.onDone,
-        cancelKey: o.cancelKey,
-        label: o.label,
-      }, 'decay');
-    };
+    const decay = <T,>(o: DecayOptions<T> | TargetDecayOptions<T>): AnimationHandle =>
+      physics<T>(decayAsPhysics(o), 'decay');
 
     const cancelAll = (): void => {
       const retired: ActiveAnimation[] = [];
@@ -575,6 +381,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       }
       animations.current.clear();
       codecFrameT.current = null;
+      targets.show();
       for (const a of retired) fireCompletion(a.id);
       if (hub.watched) for (const a of retired) hub.emit({ type: 'cancel', animation: infoOf(a) });
       frameLoopRef.current.cancel();
@@ -584,6 +391,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       spring,
       decay,
       physics,
+      hold: (o) => startHold(ctx, o),
       cancel: (handle) => retire(handle.id),
       cancelKey: (key) => cancelByKey(key),
       cancelAll,
@@ -628,6 +436,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           const a = animations.current.get(id);
           return a && infoOf(a);
         };
+        const hold: OpenTrackHold = (target, value, weight) =>
+          openHold(ctx, { target: stateOf(target), value, weight });
         return createTimeline(register, id, o, {
           get watched() { return hub.watched; },
           fire: (track, path, event, lateBy) => {
@@ -638,7 +448,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
             const animation = info();
             if (animation) hub.emit({ type: 'lap', animation, lap });
           },
-        });
+        }, hold);
       },
       colorOverrides: colorOverrides.current,
       onTick: (cb) => {

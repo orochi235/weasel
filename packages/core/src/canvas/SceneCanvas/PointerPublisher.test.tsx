@@ -3,7 +3,7 @@ import { render, fireEvent, createEvent } from '@testing-library/react';
 import { useEffect } from 'react';
 import { SceneCanvas } from '../SceneCanvas';
 import { useScene } from 'core/scene/useScene';
-import { usePointerContext, type PointerContextValue } from 'features/pointer/PointerContext';
+import { usePointerContext, type PointerContextValue } from '@weasel-js/routing/react';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {

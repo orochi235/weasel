@@ -4,8 +4,8 @@ import {
   buildGradientRamp, GradientRampAtlas, RAMP_ATLAS_MAX_ROWS, RAMP_WIDTH,
 } from './GradientRampAtlas';
 import type { GradStop } from '@weasel-js/core';
-import { sampleGradientStops } from '../../core/gradient';
-import { parseColorToRgba255 } from '../math/color';
+import { sampleGradientStops } from '@weasel-js/paint';
+import { parseColorToRgba255 } from '@weasel-js/paint';
 
 const BLACK_WHITE: GradStop[] = [
   { offset: 0, color: '#000000' },

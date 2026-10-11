@@ -16,8 +16,8 @@ export {
   SelectionContextProviderIfRoot,
   useSelectionContext,
   usePublishSelection,
-} from '../features/selection';
-export type { SelectionContextValue } from '../features/selection';
+} from '@weasel-js/routing/react';
+export type { SelectionContextValue } from '@weasel-js/routing/react';
 
 // ─── Units: pluggable physical-unit system ──────────────────────────────────
 export {

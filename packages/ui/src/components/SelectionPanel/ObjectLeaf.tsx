@@ -10,7 +10,9 @@ import { pathWithin, selectionAttrs } from '../Prefs/selection';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { absentValue, MIXED, sharedValue } from './model';
-import { renderBuiltin, renderCells, type LeafCell, type PropertyRenderContext, type PropertyRenderer } from './renderLeaf';
+import { renderCells, type LeafCell } from './cells';
+import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
+import { renderBuiltin } from './renderLeaf';
 import { PanelMarksContext, PanelTabs } from './selection';
 import s from './SelectionPanel.module.css';
 
@@ -25,6 +27,8 @@ interface ObjectRow {
    *  label column and spans the block. One unlabeled field in an otherwise
    *  labeled pair would leave the row named after half of itself. */
   block: boolean;
+  /** Every field in the row is disabled. */
+  disabled: boolean;
   controls: ReactNode[];
 }
 
@@ -96,6 +100,8 @@ export function ObjectLeaf({
       selectionKey: ctx.selectionKey,
       update,
       setValue: (v) => update(() => v),
+      disabled: ctx.disabled === true || ctx.disabledAt?.(childPath) === true,
+      disabledAt: ctx.disabledAt,
     };
     const pair = pairs.get(childPath);
     return {
@@ -141,11 +147,12 @@ export function ObjectLeaf({
     // the cells it is handed.
     rows: (cells) => {
       const rows: ObjectRow[] = [];
-      for (const { key, leaf, block, content, pair } of renderCells(cells, renderers)) {
+      for (const { key, leaf, block, disabled, content, pair } of renderCells(cells, renderers)) {
         const prev = rows[rows.length - 1];
         if (pair !== undefined && prev?.pair === pair.key) {
           prev.controls.push(<Fragment key={key}>{content}</Fragment>);
           prev.block &&= block;
+          prev.disabled &&= disabled;
           continue;
         }
         rows.push({
@@ -154,6 +161,7 @@ export function ObjectLeaf({
           label: pair?.label ?? leaf.name,
           title: leaf.description,
           block,
+          disabled,
           controls: [<Fragment key={key}>{content}</Fragment>],
         });
       }
@@ -166,7 +174,7 @@ export function ObjectLeaf({
             {entry.controls}
           </div>
         ) : (
-          <div key={entry.key} className={s.row} {...attrs(entry)}>
+          <div key={entry.key} className={s.row} {...attrs(entry)} {...(entry.disabled ? { 'data-disabled': '' } : {})}>
             <span className={s.rowLabel} title={entry.title}>{entry.label}</span>
             <span className={s.rowControls}>{entry.controls}</span>
           </div>

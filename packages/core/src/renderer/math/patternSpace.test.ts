@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { composePatternTransform } from '@weasel-js/paint';
-import { mat3 } from './mat3';
+import { mat3 } from '@weasel-js/geom';
 import { patternTileSpace } from './patternSpace';
 
 describe('patternTileSpace', () => {

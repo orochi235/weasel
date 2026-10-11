@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
 import type { ColorOverrideRegistry } from './colorRegistry';
-import { tweenVertexColors, springVertexColors, cycleVertexColors, staggerVertexColors } from './colorHelpers';
+import { tweenVertexColors, springVertexColors, staggerVertexColors } from './colorHelpers';
+import { cycleVertexColors } from './colorCycle';
 
 function makeClock(start = 0) {
   let now = start;

@@ -1,4 +1,4 @@
-import type { PointerContextValue } from 'features/pointer/PointerContext';
+import type { PointerContextValue } from '@weasel-js/routing/react';
 
 /** A tool's subscription to the `pointer` dep, held only while it has
  *  something trailing to the pointer. */

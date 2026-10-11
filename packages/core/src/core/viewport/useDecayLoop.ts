@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
+import { useVisibleRaf } from '@weasel-js/react';
 
 /** Per-axis limits on a view's position. Any side may be left open. */
 export interface PanBounds {

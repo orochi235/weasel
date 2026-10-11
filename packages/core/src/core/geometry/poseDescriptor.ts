@@ -1,6 +1,7 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import { poseLinearOf } from 'core/geometry/poseFrame';
+import type { TargetAxes } from '../../animation/target';
 
 /** `Bounds` with a required rotation angle (radians). Pivot is the AABB
  *  center of the unrotated `{x, y, width, height}`. */
@@ -33,6 +34,10 @@ export interface PoseDescriptor<TPose, TNode = unknown> {
   /** Interpolate between two poses. Optional — animation helpers fall back to
    *  rect-shape lerp when omitted (which fails for non-rect poses). */
   lerp?(a: TPose, b: TPose, t: number): TPose;
+  /** How a pose of `like`'s kind maps to the flat numbers an animation moves, and which of them
+   *  are angles. `from` keeps the fields of `like` that are not axes. Null for a pose this
+   *  descriptor cannot map; absent, a pose animates by its flat numeric fields. */
+  axes?(like: TPose): TargetAxes<TPose> | null;
   /** Read the pose's rotation in radians. Pivot is the AABB center
    *  (`getBounds(pose)` center). Default 0 when omitted — descriptor
    *  declares "this pose has no rotation." When supplied and non-zero,
@@ -98,6 +103,20 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
     width: a.width + (b.width - a.width) * t,
     height: a.height + (b.height - a.height) * t,
   }),
+  axes: (like) => {
+    const flat = [like.x, like.y, like.width, like.height];
+    if (!flat.every((n) => typeof n === 'number')) return null;
+    return {
+      count: 5,
+      angles: [4],
+      to: (p) => [p.x, p.y, p.width, p.height, p.rotation ?? 0],
+      from: (a) => {
+        const pose = { ...like, x: a[0]!, y: a[1]!, width: a[2]!, height: a[3]! };
+        if (like.rotation !== undefined || a[4] !== 0) pose.rotation = a[4]!;
+        return pose;
+      },
+    };
+  },
   // `Bounds` carries an optional `rotation`, and `withRotation` writes into
   // it — so reading it back has to be the same channel, or a pose reports
   // itself unrotated to `useResize` and to port placement while painting
@@ -116,6 +135,7 @@ export const ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose> = {
   remapBounds: RECT_POSE_DESCRIPTOR.remapBounds as PoseDescriptor<RotatedPose>['remapBounds'],
   translate: RECT_POSE_DESCRIPTOR.translate as PoseDescriptor<RotatedPose>['translate'],
   lerp: RECT_POSE_DESCRIPTOR.lerp as PoseDescriptor<RotatedPose>['lerp'],
+  axes: RECT_POSE_DESCRIPTOR.axes as PoseDescriptor<RotatedPose>['axes'],
   fromBounds: (b) => ({ x: b.x, y: b.y, width: b.width, height: b.height, rotation: 0 }),
   getRotation: (p) => p.rotation,
   withRotation: (p, rotation) => ({ ...p, rotation }),

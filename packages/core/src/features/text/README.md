@@ -64,7 +64,7 @@ destroys the distance field.
 ## Measurement
 
 `measureText` (advance/metrics) and `measureTextBounds` (ink bounds) are
-distinct; `fitTextPose.ts` and `verticalAlign.ts` build on them for
+distinct; `fitTextPose.ts` and `verticalAlign.ts` (both in `@weasel-js/text`) build on them for
 fit-to-box and baseline placement. Every 2D-side width goes through
 `measuredWidth`, which adds tracking the way `layoutRuns` does, and
 `measureText` wraps through the same `wrapLines` as `layoutRuns`, so a box it
@@ -100,7 +100,7 @@ kit — is `@weasel-js/text`'s `layout/`. The atlas itself (`FontAtlas`,
 `useTextEdit` is the primitive; `useSceneTextEdit` is the scene-wired version.
 `domRuns.ts` bridges to a DOM editing surface (contenteditable) — text editing
 uses real DOM for IME, spellcheck, and accessibility rather than reimplementing
-a caret on canvas. `hitTest.ts` provides `pointInTextPose` and `caretIndexAt`
+a caret on canvas. `hitTest.ts` (in `@weasel-js/text`) provides `pointInTextPose` and `caretIndexAt`
 to map clicks back into the run model; the caret snaps to the advance cells
 `layoutTextPose` produced, so it cannot drift from the painted glyphs. The
 overlay is `white-space: pre-wrap` at the pose width when the style declares
@@ -127,7 +127,7 @@ a zoom other than 1.
 - `markdownText.ts` (in `@weasel-js/text`) — `createMarkdownRenderer` /
   `layoutMarkdown`, the richer layout path (`PositionedRun`, `LayoutLine`,
   `LayoutResult`).
-- `renderLabel.ts` — the small pill-with-text used for chrome labels, with a
+- `renderLabel.ts` (in `@weasel-js/text`) — the small pill-with-text used for chrome labels, with a
   pluggable `TextRenderer`. Unrelated to scene text nodes.
 - `textCommand.ts` — the draw-command builders. `textCommandFromPose` is the
   one for a text node; `textCommand` / `textCommandFromRuns` serve text with

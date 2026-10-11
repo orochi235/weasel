@@ -6,7 +6,7 @@ import { renderSceneToPixels, type RasterImage, type RenderSceneToPixelsArgs } f
 import { buildDebugOverlayCommands } from '../debug/createDebugOverlayLayer';
 import type { DebugConfig, DebugSnapshot } from '../debug/types';
 import type { View } from '../core/viewport/view';
-import { mat3 } from '../renderer/math/mat3';
+import { mat3 } from '@weasel-js/geom';
 
 /** The canvas to reproduce — its camera, its size, and what its debug overlay
  *  had recorded — plus how to rasterize the scene under it. */

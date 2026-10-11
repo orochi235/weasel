@@ -24,10 +24,10 @@ import { ActiveToolContextProvider, ActiveToolContextProviderIfRoot } from '@wea
 import {
   SelectionContextProvider,
   SelectionContextProviderIfRoot,
-} from './features/selection/SelectionContext';
+} from '@weasel-js/routing/react';
 import { DepRegistryProvider } from '@weasel-js/routing/react';
 import { ActionsProvider } from '@weasel-js/routing/react';
-import { PointerContextProvider } from './features/pointer/PointerContext';
+import { PointerContextProvider } from '@weasel-js/routing/react';
 
 type Wrapper = ComponentType<{ children: ReactNode }>;
 

@@ -1,11 +1,9 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
 import { PropertyField } from './PropertyField';
-import {
-  PropertyList,
-  PropertyPanel,
-  PropertyRow,
-} from './PropertyPanel';
+import { PropertyList } from './PropertyList';
+import { PropertyPanel } from './PropertyPanel';
+import { PropertyRow } from './PropertyRow';
 import { decimal } from '@weasel-js/quantity';
 
 // Titled "Gallery" so it sorts above PropertyPanel/PropertyList/Rows in the

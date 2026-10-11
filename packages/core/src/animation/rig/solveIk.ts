@@ -1,4 +1,4 @@
-import { mat3, type GlMat3 } from '../../renderer/math/mat3';
+import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { compose, resolveSkeleton, toMat3 } from './resolveSkeleton';
 import type { Joint, Pose, Skeleton } from './types';
 

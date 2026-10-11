@@ -1,4 +1,4 @@
-import { mat3 } from '../math/mat3';
+import { mat3 } from '@weasel-js/geom';
 import { BATCH_TEXTURE_SLOTS } from '../shaders/batchFill';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';

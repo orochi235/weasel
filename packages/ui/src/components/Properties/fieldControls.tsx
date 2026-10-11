@@ -378,15 +378,19 @@ function ColorControl(p: PropertyColorFieldProps) {
   );
 }
 
+/** Takes a subtree out of focus order, hit testing, and the accessibility tree. Set on the node: React 18 does not know the attribute. */
+const makeInert = (el: HTMLElement | null): void => {
+  el?.toggleAttribute('inert', true);
+};
+
 function PaintControl(p: PropertyPaintFieldProps) {
-  // A disabled paint is its swatch: the inline editor is all controls, and none of them would take input.
-  if (p.disabled) {
+  if (p.disabled && p.control !== 'inline') {
     return <PaintField className={p.className} value={p.value} mixed={p.mixed} unset={p.unset} disabled onChange={p.onChange} aria-label={p.name} />;
   }
   const Editor = p.control === 'inline' ? PaintInput : PaintField;
-  return (
+  const editor = (
     <Editor
-      className={p.className}
+      className={p.disabled ? undefined : p.className}
       value={p.value}
       mixed={p.mixed}
       unset={p.unset}
@@ -396,5 +400,15 @@ function PaintControl(p: PropertyPaintFieldProps) {
       onInput={p.onInput}
       aria-label={p.name}
     />
+  );
+  if (!p.disabled) return editor;
+  // The inline editor is a stack of controls, and a kind's editor may be a consumer's: drawn inert, it keeps
+  // the height it has enabled, so the rows under it do not move when a condition flips.
+  return (
+    <div className={p.className ? `${s.paintOff} ${p.className}` : s.paintOff} role="group" aria-label={p.name} aria-disabled="true">
+      <div ref={makeInert} className={s.paintOffBody}>
+        {editor}
+      </div>
+    </div>
   );
 }

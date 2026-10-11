@@ -157,3 +157,18 @@ test('a map or union leaf\'s editor runs under its label in the rail layout, at 
     if (path !== 'ramp') expect(control.width, name).toBeGreaterThan(300);
   }
 });
+
+test('a remove button sits beside its entry’s first row, not halfway down a tall entry', async () => {
+  await page.viewport(720, 800);
+  render(
+    <div style={{ width: 640 }}>
+      <PrefsForm schema={SCHEMA} values={{}} onChange={() => {}} />
+    </div>,
+  );
+  const mid = (r: DOMRect) => r.top + r.height / 2;
+  for (const name of ['Phase 1', 'Stop 1', 'Limit 1']) {
+    const remove = screen.getByRole('button', { name: `Remove ${name}` });
+    const first = remove.closest('li')!.querySelector('input')!;
+    expect(Math.abs(mid(remove.getBoundingClientRect()) - mid(first.getBoundingClientRect())), name).toBeLessThan(1.5);
+  }
+});

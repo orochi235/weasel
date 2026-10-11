@@ -1,6 +1,7 @@
 import type { ColorOverrideRegistry } from './colorRegistry';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions } from './timeline/types';
 import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
+import type { Target } from './target';
 
 export type { BezierEasing, EasingFn, EasingSpec, SpringPreset, SpringPresetName } from '@weasel-js/geom';
 
@@ -40,6 +41,8 @@ export interface AnimationHandle {
  *  easing curve. Reach for a spring instead when the motion should respond to
  *  where the value already is rather than restart from a fixed duration. */
 export interface TweenOptions<T> {
+  /** Absent: this form hands values to `onTick`. The `Target` form of these options moves a target. */
+  target?: undefined;
   from: T;
   to: T;
   ms: number;
@@ -64,6 +67,8 @@ export interface TweenOptions<T> {
  *  set duration, so it absorbs an initial velocity naturally. Non-numeric `T`
  *  needs the four vector helpers. */
 export interface SpringOptions<T> {
+  /** Absent: this form hands values to `onTick`. The `Target` form of these options moves a target. */
+  target?: undefined;
   from: T;
   to: T;
   /** Initial velocity in T-units per second. Default: zero (T-shape-aware). */
@@ -94,6 +99,8 @@ export interface SpringOptions<T> {
  *  with `to: null`, the value coasts on its velocity. Either can become the
  *  other mid-flight through the handle. */
 export interface PhysicsOptions<T> {
+  /** Absent: this form hands values to `onTick`. The `Target` form of these options moves a target. */
+  target?: undefined;
   from: T;
   /** Target. `null` ⇒ no spring force (decay-mode). */
   to?: T | null;
@@ -131,6 +138,8 @@ export interface PhysicsHandle<T = unknown> extends AnimationHandle {
 /** Momentum: coast from `from` at `velocity`, slowing by `friction` each
  *  second until below `threshold`. What a flick-to-pan leaves behind. */
 export interface DecayOptions<T> {
+  /** Absent: this form hands values to `onTick`. The `Target` form of these options moves a target. */
+  target?: undefined;
   from: T;
   velocity: T;
   /** Per-second velocity multiplier in (0, 1). Default 0.95. */
@@ -150,6 +159,102 @@ export interface DecayOptions<T> {
   label?: string;
 }
 
+/** What every animation on a {@link Target} takes. */
+interface OnTarget<T> {
+  /** The value to move. */
+  target: Target<T>;
+  /** Told this animation's own value each frame: its destination plus what it has left to travel. */
+  onTick?: (value: T) => void;
+  onDone?: () => void;
+  /** Any new animation passed the same cancelKey cancels the prior one in flight. Leave it off
+   *  to let animations on one target add. */
+  cancelKey?: string;
+  /** False to take `cancelKey` without canceling the animations holding it, so it adds to them
+   *  and `cancelKey`, `pauseKey`, and `isActive` reach them all. Default true. */
+  interrupt?: boolean;
+  /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
+}
+
+/** A tween on a {@link Target}. `to` is committed as it starts, and it contributes what is left
+ *  to travel, so it adds to whatever else is moving the target. */
+export interface TargetTweenOptions<T> extends OnTarget<T> {
+  to: T;
+  /** Where its own travel starts. Default: the target's committed value, so the value on screen
+   *  does not move as it starts. */
+  from?: T;
+  ms: number;
+  easing?: EasingSpec;
+  /** The path from `from` to `to`, where a straight line per axis is not it. */
+  interpolate?: Interpolate<T>;
+  /** As `interpolate`, built once at the start. Takes precedence. */
+  interpolator?: InterpolatorFactory<T>;
+}
+
+/** A spring on a {@link Target}. Needs positive stiffness, damping and mass. Interrupting an
+ *  animation on the same target under the same `cancelKey`, it starts at that one's velocity
+ *  unless given its own. */
+export interface TargetSpringOptions<T> extends OnTarget<T> {
+  to: T;
+  /** As {@link TargetTweenOptions.from}. */
+  from?: T;
+  /** Initial velocity in T-units per second. */
+  velocity?: T;
+  preset?: SpringPresetName;
+  stiffness?: number;
+  damping?: number;
+  mass?: number;
+  /** Distance from `to` and speed, both in axis units, under which it has come to rest. Default 0.01. */
+  restThreshold?: number;
+}
+
+/** Spring and coast as one animation on a {@link Target}. With `to: null` it coasts on its
+ *  velocity, committing where it is when it stops. */
+export interface TargetPhysicsOptions<T> extends Omit<TargetSpringOptions<T>, 'to'> {
+  to?: T | null;
+}
+
+/** What `animator.hold` takes. */
+export interface HoldOptions<T> {
+  /** The value to hold. */
+  target: Target<T>;
+  /** What to show in place of the committed value: a value, or a function read each frame. */
+  value: T | (() => T);
+  /** Its share among the target's holds, 0 to 1: a number, or a function read each frame.
+   *  Default 1. Holds on one target show their weighted average, and whatever their weights
+   *  leave short of 1 is the committed value's. */
+  weight?: number | (() => number);
+  /** Any new animation passed the same cancelKey cancels this one. */
+  cancelKey?: string;
+  /** Names this hold in {@link AnimatorEvent}s and `animator.live()`. */
+  label?: string;
+  /** With `false`, it takes its `cancelKey` without canceling whoever holds it. Default true. */
+  interrupt?: boolean;
+}
+
+/** What `animator.hold` returns. `cancel` commits what the hold was showing, as `release()`
+ *  does; pausing it or scaling its time changes nothing, since it has no clock. */
+export interface HoldHandle extends AnimationHandle {
+  /** Says a function-form `value` or `weight` changed outside a frame, so the target shows it
+   *  now rather than at the next frame the animator happens to run. */
+  touch(): void;
+  /** Ends the hold. By default it commits the value it was showing, so the target stays where
+   *  it is; with `commit: false` the committed value is left alone and the target falls back
+   *  to it. */
+  release(opts?: { commit?: boolean }): void;
+}
+
+/** A coast on a {@link Target}: it commits where it stops. */
+export interface TargetDecayOptions<T> extends OnTarget<T> {
+  /** As {@link TargetTweenOptions.from}. */
+  from?: T;
+  velocity: T;
+  /** Per-second velocity multiplier in (0, 1). Default 0.95. */
+  friction?: number;
+  /** Speed below which it stops. Default 0.5. */
+  threshold?: number;
+}
+
 /** Options for `useAnimator`. Everything here is an injection seam for tests;
  *  the defaults are the real clock and rAF. */
 export interface UseAnimatorOptions {
@@ -166,17 +271,21 @@ export interface UseAnimatorOptions {
  * composition — `loop`, `stagger` — and bulk control by handle, by cancel-key,
  * or over everything at once.
  *
- * An animator does not know about the scene: animations report values through
- * `onTick` and the caller decides what to do with them.
+ * An animator does not know about the scene. An animation either reports values
+ * through `onTick` and the caller decides what to do with them, or moves a
+ * {@link Target}, where several on one target add.
  */
 export interface Animator {
-  tween<T>(opts: TweenOptions<T>): AnimationHandle;
-  spring<T>(opts: SpringOptions<T>): AnimationHandle;
-  decay<T>(opts: DecayOptions<T>): AnimationHandle;
+  tween<T>(opts: TweenOptions<T> | TargetTweenOptions<T>): AnimationHandle;
+  spring<T>(opts: SpringOptions<T> | TargetSpringOptions<T>): AnimationHandle;
+  decay<T>(opts: DecayOptions<T> | TargetDecayOptions<T>): AnimationHandle;
   /** Unified spring/decay primitive. With `to` set, behaves as a spring;
    *  with `to: null`, behaves as a velocity-driven decay. Supports
    *  mid-flight retargeting via the returned handle's `setTarget`. */
-  physics<T>(opts: PhysicsOptions<T>): PhysicsHandle<T>;
+  physics<T>(opts: PhysicsOptions<T> | TargetPhysicsOptions<T>): PhysicsHandle<T>;
+  /** Shows a value on a {@link Target} in place of its committed one until canceled or released:
+   *  a drag preview, a pose driven from outside. Animations on the target add on top of it. */
+  hold<T>(opts: HoldOptions<T>): HoldHandle;
   /** Cancel a specific animation by handle. Pose stays at current value (no jump). */
   cancel(handle: AnimationHandle): void;
   /** Cancel every animation currently active under `key`. */
@@ -257,9 +366,10 @@ export interface Animator {
    */
   timeline(opts: TimelineOptions): TimelineHandle;
   /** Per-node, per-channel color override registry, painted onto scene nodes
-   *  by `<SceneCanvas animator>` and read by `createPathLayer`. Used by `tweenVertexColors`,
-   *  `springVertexColors`, `cycleVertexColors`, `staggerVertexColors`. Cleared
-   *  automatically on animator unmount. */
+   *  by `<SceneCanvas animator>` and read by `createPathLayer`. `cycleVertexColors`
+   *  stores an override in it; `tweenVertexColors`, `springVertexColors`, and
+   *  `staggerVertexColors` move its per-node targets, which only this animator
+   *  can move. Cleared automatically on animator unmount. */
   colorOverrides: ColorOverrideRegistry;
   /**
    * Subscribe to a callback fired once per RAF frame while any animation is
@@ -302,7 +412,7 @@ export interface Animator {
  *  frame loop open and animates nothing. */
 export type AnimationKind =
   | 'tween' | 'spring' | 'decay' | 'physics' | 'timeline'
-  | 'loop' | 'tweenLoop' | 'stagger' | 'keepAlive';
+  | 'loop' | 'tweenLoop' | 'stagger' | 'keepAlive' | 'hold';
 
 /** Who an {@link AnimatorEvent} is about. One object per registration, so the
  *  same animation's events share it by identity. */
@@ -445,7 +555,7 @@ export interface StaggerBuilder<TItem> {
    *  would collide on `"[object Object]"` and successive tweens would
    *  cancel each other. Throws on items that satisfy neither. */
   springPose<TPose>(
-    adapter: import('core/adapters/types').SceneAdapter<{ id: string }, TPose>,
+    adapter: import('./poseHelpers').PoseAnimationAdapter<TPose>,
     poseFn: (item: TItem, index: number) => TPose,
     opts?: StaggerSpringPoseOptions<TPose>,
   ): AnimationHandle;

@@ -12,7 +12,7 @@
  * the context itself is never lost.
  */
 import { WeaselRenderer, type RenderOptions } from '../renderer/WeaselRenderer';
-import { viewToMat3 } from '../renderer/math/viewToMat3';
+import { viewToMat3 } from '@weasel-js/geom';
 import type { ShaderProgramHandle } from '../renderer/shaders/registerProgram';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';

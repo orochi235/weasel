@@ -13,7 +13,7 @@
  * the fragment shader premultiplies.
  */
 
-import { resolveColor } from '../../renderer/math/color';
+import { resolveColor } from '@weasel-js/paint';
 import { lerpColorArray, type ColorSpace } from '@weasel-js/paint';
 import { evalPatch, isValidPatch, patchBounds, type MeshPatch } from './surface';
 

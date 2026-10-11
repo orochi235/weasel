@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
-import { mat3, type GlMat3 } from './math/mat3';
+import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
 import {
   pushClip, popClip, drawGroup, dispatch, tryStageFill, flushBatch, meshBatching, type DrawContext,

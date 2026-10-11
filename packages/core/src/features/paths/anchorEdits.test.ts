@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PathBuilder, cubicPointAt, PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
-import { pathToAnchors, anchorsToPath, nearestSegmentT } from './anchors';
+import { PathBuilder, cubicPointAt, PATH_L, PATH_M, PATH_Z, pathToAnchors, anchorsToPath, nearestSegmentT } from '@weasel-js/geom';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
 import {
   anchorAt,

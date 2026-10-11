@@ -13,7 +13,7 @@ import {
   pathExclude,
   pathDivide,
   pathCrop,
-} from 'features/paths/booleans';
+} from '@weasel-js/geom/booleans';
 import type { Path, PolygonPath } from '@weasel-js/geom';
 import { createInsertOp } from 'core/ops/create';
 import { createDeleteOp } from 'core/ops/delete';

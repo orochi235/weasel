@@ -1,9 +1,10 @@
 import { globSync, readFileSync, statSync } from 'node:fs';
 import { basename, relative, resolve, sep } from 'node:path';
 import type { EnvironmentModuleNode, Logger, Plugin, ViteDevServer } from 'vite';
-import type { IndexEntry } from '../story/types.ts';
+import type { DepGraph, IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
 import { createDepGraph, type DepGraphBuilder, type ResolveImport } from './depGraph.ts';
+import { createHistoryReader, type HistoryReader } from './history.ts';
 import { html } from './html.ts';
 import { foreignCallees } from './indexFile.ts';
 import { indexStory } from './indexStory.ts';
@@ -110,6 +111,19 @@ export function forge(options: ForgeOptions): Plugin[] {
     }
   };
   const depGraph = (): DepGraphBuilder => (deps ??= createDepGraph({ root, read: (file) => readFileSync(file, 'utf8') }));
+  let history: HistoryReader | null = null;
+
+  /** The component graph, each component with what git says of its source file. */
+  async function graphOf(resolveImport: ResolveImport): Promise<DepGraph> {
+    const graph = await depGraph().build(index(), resolveImport);
+    const sources = Object.values(graph).flatMap((entry) => (entry.source === null ? [] : [entry.source]));
+    const histories = await (history ??= createHistoryReader(root)).read(sources);
+    for (const entry of Object.values(graph)) {
+      const found = entry.source === null ? undefined : histories[entry.source];
+      if (found) entry.history = found;
+    }
+    return graph;
+  }
 
   /** The shell config's title as its source names it; undefined, and so the default, when it cannot be read. */
   const titleUnder = (at: string): string | undefined => {
@@ -196,7 +210,7 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
       (await server.environments.client.pluginContainer.resolveId(spec, importer))?.id ?? null;
     depsPending = Promise.resolve()
       .then(async () => {
-        const graph = await depGraph().build(index(), resolve);
+        const graph = await graphOf(resolve);
         const json = JSON.stringify(graph);
         if (json === depsSent) return;
         depsSent = json;
@@ -293,6 +307,7 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
         wrappersOf.clear();
         settledAll = null;
         deps = null;
+        history = null;
         depsSent = null;
       },
       resolveId(id) {
@@ -306,7 +321,7 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
           await settledAll;
         }
         if (name !== 'deps.js') return modules[name]?.();
-        const graph = await depGraph().build(index(), async (spec, importer) => (await this.resolve(spec, importer))?.id ?? null);
+        const graph = await graphOf(async (spec, importer) => (await this.resolve(spec, importer))?.id ?? null);
         depsSent = JSON.stringify(graph);
         return `export default ${depsSent};\n`;
       },

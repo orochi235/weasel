@@ -24,6 +24,20 @@ const envOf = (over: Partial<IndexEnv> = {}): IndexEnv => ({
 const DEPS: ComponentDeps = { source: 'ui/Dialog/Dialog.tsx', uses: ['ui/Badge', 'ui/Foundations/Button'], usedBy: [] };
 
 describe('IndexPage', () => {
+  it('says which release the component first shipped in and when its source was created and last changed', () => {
+    const history = { created: '2026-06-01T10:00:00Z', modified: '2026-10-01T10:00:00Z', introduced: '0.4.0' };
+    const { rerender } = render(<IndexPage env={envOf({ dependencies: { ...DEPS, history } })} render={null} />);
+    const list = screen.getByLabelText('History');
+    expect(within(list).getByText('Since').nextElementSibling).toHaveTextContent('0.4.0');
+    expect([...list.querySelectorAll('time')].map((time) => time.dateTime)).toEqual([history.created, history.modified]);
+
+    rerender(<IndexPage env={envOf({ dependencies: { ...DEPS, history: { ...history, introduced: null } } })} render={null} />);
+    expect(within(screen.getByLabelText('History')).getByText('Unreleased')).toBeInTheDocument();
+
+    rerender(<IndexPage env={envOf({ dependencies: DEPS })} render={null} />);
+    expect(screen.queryByLabelText('History')).toBeNull();
+  });
+
   it('lists what the component uses and what uses it, each linking to that component’s index page', () => {
     const env = envOf({ dependencies: { ...DEPS, usedBy: ['draw/CommandBar'] } });
     render(<IndexPage env={env} render={null} />);

@@ -4,7 +4,7 @@ import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
-import { PointerContextProvider, createPointerStore } from 'features/pointer/PointerContext';
+import { PointerContextProvider, createPointerStore } from '@weasel-js/routing/react';
 import type { BoundGesture } from '@weasel-js/routing';
 
 type P = { x: number; y: number; width: number; height: number };

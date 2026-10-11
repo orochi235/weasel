@@ -6,6 +6,12 @@ export * from '../features/text';
 // binding in core's bundle, and a consumer importing one of these through
 // `@weasel-js/core` fails to resolve it. Caught by `test:smoke:consumer`.
 export {
+  pointInTextPose,
+  caretIndexAt,
+  fitTextPose,
+  renderLabel,
+  defaultLabelTextRenderer,
+  isTextData,
   toRuns,
   runsToPlainText,
   runsToMarkdown,
@@ -45,6 +51,9 @@ export {
   layoutMarkdown,
 } from '@weasel-js/text';
 export type {
+  PointInTextPoseOpts,
+  FitTextPoseOptions,
+  LabelOptions,
   StyledRun,
   RunGrammar,
   RunMarker,

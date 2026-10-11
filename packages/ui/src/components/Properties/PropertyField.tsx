@@ -1,12 +1,8 @@
 import { type ReactNode, useId } from 'react';
 import { ControlBody, nameOf } from './fieldControls';
 import type { PropertyControlProps } from './fieldTypes';
-import {
-  type PropertyMetricProps,
-  PropertyRow,
-  type PropertyRowLayout,
-  type PropertyRowVariant,
-} from './PropertyPanel';
+import { PropertyRow, type PropertyRowLayout, type PropertyRowVariant } from './PropertyRow';
+import { type PropertyMetricProps } from './metrics';
 import { SliderCell, SliderRow } from './NumberControls';
 
 export type {

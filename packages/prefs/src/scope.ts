@@ -6,7 +6,10 @@
 import { prefConditionHolds, type PrefCondition } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefValueAtPath } from './helpers';
+import type { PrefList } from './list';
+import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
+import { prefShownReader } from './shown';
 import type { PrefUnion } from './union';
 
 /** Which of a node's two conditions a {@link PrefConditionJudge} is asked about. */
@@ -19,9 +22,14 @@ export type PrefConditionField = 'showIf' | 'enableIf';
  */
 export type PrefConditionJudge = (condition: PrefCondition, field: PrefConditionField) => boolean;
 
-/** A judge over one set of values, read by path. */
-export function prefJudge(read: (path: string) => unknown): PrefConditionJudge {
-  return (condition) => prefConditionHolds(condition, read);
+/**
+ * A judge over one set of values, read by path. A condition compares each
+ * value as the control over its leaf in `schema` shows it
+ * ({@link prefShownReader}), so `read` hands back what is stored.
+ */
+export function prefJudge(schema: PrefGroup | PrefSection, read: (path: string) => unknown): PrefConditionJudge {
+  const shown = prefShownReader(schema, read);
+  return (condition) => prefConditionHolds(condition, shown);
 }
 
 /**
@@ -51,6 +59,10 @@ export interface PrefScope {
   enabled: boolean;
 }
 
+/** The step that stands for any entry of a `list` or a `map` in a path: an item's conditions come to the same for
+ *  every entry, so `'phases.*.hold'` answers for that field of each. */
+export const PREF_ENTRY = '*';
+
 /** The scope a schema's root sits in. */
 export const PREF_SCOPE: PrefScope = Object.freeze({ shown: true, enabled: true });
 
@@ -73,8 +85,9 @@ export interface PrefConditionsApplied<T> {
   /**
    * The value path of every leaf that is disabled, a field of an `object` or
    * a `union` leaf included (`'stroke.width'`), and under a {@link PrefGroup}
-   * schema the path of every group that is. An entry of a `list` or a `map`
-   * is disabled with its leaf, and has no path here.
+   * schema the path of every group that is. A `list`'s or a `map`'s item is
+   * named once for every entry, with {@link PREF_ENTRY} as the entry's step:
+   * `'phases.*'`, and `'phases.*.hold'` for a field of it.
    */
   disabled: ReadonlySet<string>;
 }
@@ -83,8 +96,10 @@ export interface PrefConditionsApplied<T> {
  * `schema` as it is drawn while `holds` says which conditions hold. A node
  * whose `showIf` fails is dropped with everything under it, and so is a group
  * or a section that leaves with nothing to draw, unless `keepEmpty`. A node
- * whose `enableIf` fails is disabled with everything under it. Parts with
- * nothing dropped come back as the objects they were.
+ * whose `enableIf` fails is disabled with everything under it. The item of
+ * a `list` or a `map` is walked as its entries are drawn: its fields hide and
+ * disable by their conditions, and its own `enableIf` disables every entry.
+ * Parts with nothing dropped come back as the objects they were.
  */
 export function applyPrefConditions<T extends PrefGroup | PrefSection>(
   schema: T,
@@ -95,11 +110,23 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
 
   const leaf = (node: PrefLeaf, path: string, above: PrefScope): PrefLeaf | null => {
     const scope = prefScopeUnder(above, node, holds);
-    if (!scope.shown) return null;
+    return scope.shown ? inside(node, path, scope) : null;
+  };
+
+  /** `node`, whose scope is `scope`, without what its own value hides: a field, or part of a list's or a map's item. */
+  const inside = (node: PrefLeaf, path: string, scope: PrefScope): PrefLeaf => {
     if (!scope.enabled) disabled.add(path);
     if (node.kind === 'object') {
       const children = members((node as PrefObject).children, path, scope);
       return children === (node as PrefObject).children ? node : ({ ...node, children } as PrefLeaf);
+    }
+    if (node.kind === 'list' || node.kind === 'map') {
+      const { item } = node as Partial<PrefList | PrefMap>;
+      // A leaf an app's renderer draws under a built-in's kind may hold no item.
+      if (item === undefined) return node;
+      // An item is drawn with its entry, so its own `showIf` is not asked.
+      const entry = inside(item, under(path, PREF_ENTRY), prefScopeUnder(scope, { enableIf: item.enableIf }, holds));
+      return entry === item ? node : ({ ...node, item: entry } as PrefLeaf);
     }
     if (node.kind !== 'union') return node;
     const { variants } = node as PrefUnion;
@@ -173,6 +200,13 @@ function scopeAmong(
 /** The scope at `rest` inside `leaf`, whose own scope is `scope`: that of a field, or the leaf's where `rest` names none. */
 function scopeInside(leaf: PrefLeaf, rest: string, scope: PrefScope, holds: PrefConditionJudge): PrefScope {
   if (leaf.kind === 'object') return scopeAmong((leaf as PrefObject).children, rest, scope, holds) ?? scope;
+  if (leaf.kind === 'list' || leaf.kind === 'map') {
+    const { item } = leaf as Partial<PrefList | PrefMap>;
+    if (item === undefined) return scope;
+    const entry = prefScopeUnder(scope, { enableIf: item.enableIf }, holds);
+    const dot = rest.indexOf('.');
+    return dot < 0 ? entry : scopeInside(item, rest.slice(dot + 1), entry, holds);
+  }
   if (leaf.kind !== 'union') return scope;
   for (const variant of Object.values((leaf as PrefUnion).variants)) {
     const found = scopeAmong(variant.children, rest, scope, holds);
@@ -183,8 +217,9 @@ function scopeInside(leaf: PrefLeaf, rest: string, scope: PrefScope, holds: Pref
 
 /**
  * The scope of the node at `path` in a {@link PrefGroup} schema: a group, a
- * leaf, or a field of an `object` or a `union` leaf. A path that runs past
- * the schema answers for the last node it reaches.
+ * leaf, a field of an `object` or a `union` leaf, or an entry of a `list` or
+ * a `map`, whose step may be any key. A path that runs past the schema
+ * answers for the last node it reaches.
  */
 export function prefScopeAt(schema: PrefGroup, path: string, holds: PrefConditionJudge): PrefScope {
   let scope = prefScopeUnder(PREF_SCOPE, schema, holds);

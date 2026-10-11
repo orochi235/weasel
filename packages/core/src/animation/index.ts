@@ -22,9 +22,14 @@ export {
 } from '@weasel-js/geom';
 export type { BezierEasing, EasingSpec } from '@weasel-js/geom';
 export { useAnimator } from './useAnimator';
+export { createTarget, type Target, type TargetAxes, type TargetOptions } from './target';
+export {
+  createPoseTarget, poseAxes, scenePoseTarget,
+  type PoseTargetOptions, type PoseTargetScene,
+} from './poseTarget';
 export {
   tweenPose, springPose,
-  type TweenPoseOptions, type SpringPoseOptions,
+  type TweenPoseOptions, type SpringPoseOptions, type PoseAnimationAdapter,
 } from './poseHelpers';
 export * from './wrappers';
 export {
@@ -48,12 +53,12 @@ export {
   type ColorSpace, type OklchDeg, type ColorInterpolationSpace, type HueInterpolation,
 } from '@weasel-js/paint';
 export {
-  tweenVertexColors, springVertexColors, cycleVertexColors, staggerVertexColors,
-  rainbowVertexColors, solidVertexColors,
-  type TweenVertexColorsOptions, type SpringVertexColorsOptions,
-  type CycleVertexColorsOptions, type StaggerVertexColorsOptions,
-  type CycleHandle, type ColorInterpolate,
+  tweenVertexColors, springVertexColors, staggerVertexColors,
+  type TweenVertexColorsOptions, type SpringVertexColorsOptions, type StaggerVertexColorsOptions,
 } from './colorHelpers';
+export { cycleVertexColors, type CycleVertexColorsOptions, type CycleHandle } from './colorCycle';
+export { rainbowVertexColors, solidVertexColors } from './colorArrays';
+export type { ColorInterpolate } from './colorInterpolate';
 export { sampleTrack } from './timeline';
 export type {
   EventBooking,

@@ -44,7 +44,7 @@
  *   pixels are sampled exactly once, directly to the output grid.
  */
 import { WeaselRenderer } from '../renderer/WeaselRenderer';
-import { viewToMat3 } from '../renderer/math/viewToMat3';
+import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
 import type { Node, Scene } from 'core/scene/types';

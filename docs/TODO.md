@@ -614,21 +614,23 @@ Core five + Crop shipped. Remaining:
   makes sense as a package gets extracted, whatever its size. Read from the source, not from a
   trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
   for relative imports undercounts who uses what. In dependency order:
-  1. *Leaf math down.* `renderer/math/color.ts` and `core/gradient.ts` to `@weasel-js/paint`;
-     `mat3` and `viewToMat3` to `@weasel-js/geom`; `useVisibleRaf` to `@weasel-js/react`;
-     `poseFrame`, `pxExtent`, `mixed`, and `isPlainObject` down. Animation, text, paths, and the
-     renderer all reach into each other for these.
-  2. *Dissolve and rehome.* `features/groups`, `overlays`, `focus`, and `cursor` fold into the
-     core directories that use them. The pointer store and `SelectionContext` go to
-     `@weasel-js/routing/react`. The scene-free files in `features/text` (hit-testing, fitting,
-     range styles, `textToPath`) go to `@weasel-js/text`; path anchors and the paint-free
-     tessellate files go to geom.
+  1. *Leaf math down.* Done for the color parser, `gradient`, `mat3`, `viewToMat3`, and
+     `useVisibleRaf`. Left: `poseFrame`, `pxExtent`, `mixed`, and `isPlainObject`, which
+     `features/text/runs/rangeStyle.ts`, `textToPath.ts`, and the anchor-edit files wait on.
+     `poseFrame` should go before or after the move action's phase split, not during it.
+  2. *Dissolve and rehome.* Done for `focus`, `cursor`, the pointer store, `SelectionContext`,
+     text hit-testing and fitting, and path anchors. Left: `features/groups` folds into
+     `core/scene` and `features/overlays` into `core/viewport` after it (`core/` may not import
+     `features/`, and `overlays` needs `composeRectPose` from `groups`); `move.ts` imports
+     `groups`, so this waits on the phase split. `runs/effectiveRangeStyle.ts` and `flagRange.ts`
+     follow `rangeStyle.ts` into `@weasel-js/text`. The paint-free tessellate files (`dash`,
+     `vertexWidths`, `metric`, `insets`) go to geom or to the stroke package of step 3,
+     whichever that step settles.
   3. *A stroke package over geom and paint.* `features/paths/tessellate/stroke.ts`,
      `strokeToPath`, `markerSites`, and `core/strokeMarkers`, `strokeMarkerShapes`, `markerInset`.
      The renderer, `features/paths`, and core all import these today, which is the cycle.
-  4. *Simulation and DOM text editing, under core.* `features/simulation` (root entry free of
-     React: `packages/diagram` takes `createSimulation` from `@weasel-js/core/math`), and
-     `useTextEdit` with `domRuns` and `domOffsets`, which need React and no scene.
+  4. *DOM text editing, under core.* `useTextEdit` with `domRuns` and `domOffsets`, which need
+     React and no scene. (`@weasel-js/simulation` is out.)
   5. *The renderer, under core.* It imports `core/paintKinds` and the stroke code as well as
      `core/gradient`. Gather `paintKinds`, `fillInPoseFrame`, `features/patterns`, `images`,
      `meshPaint`, and `text/textCommand.ts` under `renderer/` first. `paintKinds.ts` subscribes a
@@ -648,6 +650,11 @@ Core five + Crop shipped. Remaining:
   Staying in core: `features/viewports` (`CanvasView` is built on it), `chrome-caps`
   (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 5,
   `selection/overlay.ts`, and the scene-bound text and path layers.
+
+- **(P3) geom's `Mat3` and `mat3` are different matrices.** `Mat3` and the free functions beside
+  it (`identity`, `multiply`, `invert`) are the six-number affine; `mat3` and `GlMat3`, which
+  moved in from core's renderer, are the nine-element column-major matrix a GL uniform takes.
+  Both are exported from `@weasel-js/geom`'s root, a capital letter apart.
 
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
@@ -858,9 +865,11 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   sampling compute in blits (step 3), at about 3× today's tween frame for 10k nodes, which Mike
   accepted on 2026-10-04, and 2.5–3.5× today's keyframe sampling, which Mike accepted on 2026-10-08
   (the rest of that gap is blits' read path).
-  Nothing combines yet: each animation still hands its value to `onTick`. Left: the five arcs in
-  the proposal's "The arcs", starting with animation targets
-  (`docs/superpowers/specs/2026-10-11-animation-targets-design.md`).
+  Animation targets are built (`createTarget`), and pose animation is on them: `tweenPose`,
+  `springPose`, reflow, and momentum move a node's pose target, so two moves on one node add.
+  Left: the color and camera, timeline, and rig arcs in the proposal's "The arcs". Also left
+  from the pose arc: `arrayAdapter` has no `poseTarget`, so moves over it still write each
+  frame and replace each other.
 
 ### Earlier deferrals
 
@@ -1161,16 +1170,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P2) Disable a pref by the values of others.** A condition is a structure over other leaves'
   paths (`PrefCondition` in `packages/prefs/src/condition.ts`; ruled 2026-10-11 over an expression
-  string), and a leaf, group, or section holds one as `showIf` or `enableIf`. Left: the hidden and
-  disabled row in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel`, an attribute
-  for each in `PrefSchemaEditor`, and forge's `variants.ts` skipping an entry a data condition
-  hides. Undecided: whether a bad condition throws or warns (the prefs store and
+  string). A leaf, group, or section holds one as `showIf` or `enableIf`; `packages/prefs/src/scope.ts`
+  applies them for `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel`, and
+  `PrefSchemaEditor` edits both. Left: labkit's `ControlMatrix` reads neither; a condition on a
+  list's or a map's `item` is not applied; the schema editor's live preview drops a node whose
+  `showIf` fails, so it cannot be picked there; a boolean with an `encoding` is compared as
+  stored, not as shown. Undecided: whether a bad condition throws or warns (the prefs store and
   `resolveConfigSchema` warn, where labkit's other schema mistakes throw); a path relative to a
   list item, since every path is from the schema root and a field cannot name its sibling in the
-  same item; whether an alias row uses its own conditions or its target's (`prefAliasedLeaf`
-  spreads the target, and labkit's `AliasNode` says its own `.showIf` places it); a form for "this
-  list is not empty", since a bare `{ path }` holds for an empty list; and what a condition reads
-  when the selected nodes in a `SelectionPanel` disagree.
+  same item; whether an alias row uses its own conditions or its target's (built: its own; labkit's
+  `AliasNode` says its own `.showIf` places it, and `prefAliasedLeaf` spreads the target); a form
+  for "this list is not empty", since a bare `{ path }` holds for an empty list; and what a
+  condition reads when the selected nodes in a `SelectionPanel` disagree (built, provisionally:
+  shown if it holds for any node, enabled only if it holds for all).
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
@@ -1184,14 +1196,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   label's attributes pane shows a read-only row `DEFAULT undefined`. A selected label row's
   outline touches the label of the row under it in the preview.
 
-- **(P3) `PropertyGroup` title rough edges, same pass.** With `twisty="folded"` the title moves
-  32px right when the hidden twisty takes focus. In light mode the rules either side of a title do
-  not show, where in dark they do.
-
-- **(P3) A field in a labkit `ControlPanel` panel box has not been checked against its box.** In
-  light mode a text field inside an `as: 'panel'` box was the box's own color and invisible in
-  `SelectionPanel` and in `PrefsForm`'s rail panel; both are fixed (`cb7fa4996`). Nobody has
-  looked at `ControlPanel`.
+- **(P3) Disabled and panel-box rough edges seen in headless Chromium, 2026-10-11.** A disabled
+  `Bar` action button draws at 0.4 where every other disabled cell draws at 0.5. A disabled text
+  area in a `Bar` keeps a full-strength, working "Notes" button that opens to a disabled text
+  area. labkit's "Pin" button on a disabled `ControlPanel` row still works. In light mode a panel
+  box's own 1px `--wzl-border` is invisible on its sunken fill in `PrefsForm` and `SelectionPanel`,
+  because light mode sets `--wzl-border` and `--wzl-surface-sunken` to the same gray; `MotifFrame`
+  got around the same collision by mixing its edge from its own surface (`25b22ee40`).
 
 - **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
   drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
@@ -1240,7 +1251,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   none of). In astv's settings every unit is an identity conversion carrying a suffix. Proposed,
   not agreed: a unit may be `{ suffix, accepts }` with the conversion implied, the function form
   staying for what data cannot say. `.showIf` had the same problem and takes a condition as data
-  now; setting one in `PrefSchemaEditor` is under "Disable a pref by the values of others".
+  now.
 
 - **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
   and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment

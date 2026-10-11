@@ -13,7 +13,7 @@
  */
 
 import type { ColorSpace, GradStop } from '@weasel-js/paint';
-import { resolveGradientStops, sampleResolvedStops } from '../../core/gradient';
+import { resolveGradientStops, sampleResolvedStops } from '@weasel-js/paint';
 
 /** Texels across one ramp — the resolution a gradient is sampled at. */
 export const RAMP_WIDTH = 256;

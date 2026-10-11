@@ -10,8 +10,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLatest } from '@weasel-js/react';
-import { useVisibleRaf } from '../../scheduling/useVisibleRaf';
+import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import {
   fontString, numericWeight, resolveTextStyle, scriptMetricsFor, smallCapsScaleFor,

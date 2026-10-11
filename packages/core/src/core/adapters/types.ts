@@ -1,6 +1,8 @@
 import type { Op } from '../ops/types';
 import type { ParallaxOpts } from '../viewport/parallax';
 import type { View } from '../viewport/view';
+import type { PoseDescriptor } from '../geometry/poseDescriptor';
+import type { Target } from '../../animation/target';
 
 /**
  * Opaque clipboard payload. `items` is `unknown[]` so each app's clipboard
@@ -93,6 +95,12 @@ export interface SceneAdapter<TNode extends { id: string }, TPose> {
   // fall back to a built-in dispatcher that applies each op against the
   // adapter directly. Apps with custom history integration override this.
   applyOps?(ops: Op[], label?: string): void;
+  /** Optional. The animation target of node `id`'s pose, the same one on
+   *  every call, so everything animating the node adds; `descriptor` supplies
+   *  its axes the first time. `tweenPose`, `springPose`, and `momentum` move
+   *  it where it is there, and write `setPose` each frame where it is not or
+   *  it answers `undefined`. A scene-backed adapter provides it. */
+  poseTarget?(id: string, descriptor?: PoseDescriptor<TPose>): Target<TPose> | undefined;
 }
 
 /**
@@ -125,6 +133,8 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
    *  nothing is recorded; `null` withdraws a node's preview. What a behavior
    *  that keeps moving nodes after the gesture ends writes each frame. */
   previewPoses?(poses: ReadonlyMap<string, TPose | null>): void;
+  /** Optional: see SceneAdapter.poseTarget. */
+  poseTarget?(id: string, descriptor?: PoseDescriptor<TPose>): Target<TPose> | undefined;
   findSnapTarget?(
     draggedId: string,
     worldX: number,

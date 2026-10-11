@@ -15,7 +15,7 @@ const on: PrefCondition = { path: 'snap.on' };
 const noop = (): void => {};
 
 /** The row a control sits in, found by the attribute a disabled row carries and not by a class. */
-const disabledRow = (el: HTMLElement): Element | null => el.closest('[data-disabled]');
+const disabledRow = (el: HTMLElement): Element | null => el.closest('[data-property-row][data-disabled]');
 
 describe('PrefsForm showIf', () => {
   const schema: PrefGroup = {

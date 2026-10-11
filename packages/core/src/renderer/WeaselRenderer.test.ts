@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
-import { mat3 } from './math/mat3';
+import { mat3 } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
 
 const MINIMAL_FRAG = `#version 300 es

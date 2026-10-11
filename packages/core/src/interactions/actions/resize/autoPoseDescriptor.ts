@@ -41,6 +41,7 @@ export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   translate: (p, dx, dy) => isPathLike(p)
     ? pathPoseDescriptor.translate!(p, dx, dy)
     : RECT_POSE_DESCRIPTOR.translate!(p as { x: number; y: number; width: number; height: number }, dx, dy),
+  axes: (p) => (isRectPose(p) ? RECT_POSE_DESCRIPTOR.axes!(p) as never : null),
   getRotation: (p) => {
     if (isPathLike(p)) return 0;
     const r = (p as { rotation?: unknown }).rotation;

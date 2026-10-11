@@ -10,7 +10,7 @@ import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
-import { mat3, type GlMat3 } from './math/mat3';
+import { mat3, type GlMat3 } from '@weasel-js/geom';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { meshBatching } from './draw';
 import { _resetOutlineMeshCacheForTests } from './cache/outlineMeshCache';

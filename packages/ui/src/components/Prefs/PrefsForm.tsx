@@ -161,7 +161,7 @@ export function PrefsForm(props: PrefsFormProps) {
   const applied = useMemo(() => {
     const keepEmpty = props.showEmpty === true;
     const visible = visiblePrefSubtree(schema, showHidden, keepEmpty);
-    return visible === null ? null : applyPrefConditions(visible, prefJudge(prefReader(schema, values)), keepEmpty);
+    return visible === null ? null : applyPrefConditions(visible, prefJudge(schema, prefReader(schema, values)), keepEmpty);
   }, [schema, showHidden, props.showEmpty, values]);
   const conditioned = applied?.shown ?? null;
   const root = useMemo(

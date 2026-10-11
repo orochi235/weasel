@@ -257,7 +257,8 @@ not routed by the dispatcher — you own the pointer events.
   halves, and `viewport.wheelPan` / `viewport.zoom` are the wired form.
 - `useViewAnimation(view, animator?)` — animated view changes, on the kit animator.
   `useViewAnimationOn(view, animator)` is the same on an animator you own, and
-  builds none of its own.
+  builds none of its own. Its `viewTarget` is the view as an animation target:
+  a shake run on it with that animator adds to the camera's own animation.
 - `useVelocityTracker()`, `useDecayLoop(config)` — inertial-pan building
   blocks.
 - `useGridCellHover(...)` — pointer→cell mapping (in `@weasel-js/guides`).

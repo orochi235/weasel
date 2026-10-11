@@ -57,6 +57,9 @@ export interface IndexContext {
   DefaultIndex: ComponentType;
   /** The listed components this one uses and those that use it, as the generated page shows them. */
   Dependencies: ComponentType;
+  /** The release the component first shipped in and when its source was created and last changed, as the generated
+   *  page shows them. */
+  History: ComponentType;
   /** Whether the meta is tagged `gallery`. */
   gallery: boolean;
   /** Shows story `id` in this page's trial in its place. */
@@ -136,6 +139,16 @@ export interface IndexEntry {
   tags?: string[];
 }
 
+/** When a component's source file was written and released, read from git. */
+export interface ComponentHistory {
+  /** When the file was first committed, as an ISO date. A rename does not reset it. */
+  created: string;
+  /** When the file was last committed, as an ISO date. */
+  modified: string;
+  /** The first release holding the file, from the nearest tag after it was added; null while no release does. */
+  introduced: string | null;
+}
+
 /** One component's place in the component graph. Every list holds story titles, sorted. */
 export interface ComponentDeps {
   /** The file declaring the component, relative to the vite root; null when forge could not find one. */
@@ -144,6 +157,8 @@ export interface ComponentDeps {
   uses: string[];
   /** The listed components whose own source imports it. */
   usedBy: string[];
+  /** Absent for a source file git has never committed, and outside a repository. */
+  history?: ComponentHistory;
 }
 
 /** The component graph the vite plugin derives from source, by story title. A gallery has no entry. */

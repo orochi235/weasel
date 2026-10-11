@@ -3,6 +3,7 @@ import {
   isPrefLeaf,
   isPrefSection,
   PREF_KINDS,
+  prefHoldsValue,
   type PrefEnum,
   type PrefField,
   type PrefGroup,
@@ -38,12 +39,19 @@ const strings = (name: string, description: string): PrefLeaf =>
 const symbol = (name: string, description: string): PrefLeaf => ({ kind: 'symbol', name, description, default: '' });
 const symbols = (name: string, description: string): PrefLeaf =>
   ({ kind: 'list', name, description, default: [], item: symbol('', '') }) as PrefLeaf;
+/** The attribute kind a `showIf` or an `enableIf` is edited as: a `PrefCondition` over the schema's other leaves. */
+export const CONDITION_KIND = 'condition';
+const condition = (name: string, description: string): PrefLeaf => ({ kind: CONDITION_KIND, name, description, default: undefined });
+const SHOW_IF = condition('Shown if', 'Drawn only while this holds of the other prefs\' values. None: always drawn.');
+const ENABLE_IF = condition('Enabled if', 'Takes input only while this holds of the other prefs\' values, and is drawn either way. None: always enabled.');
 const control = (values: readonly string[]) => choice('Control', 'Which control draws it. Unset: the kind\'s default.', values);
 
 const LEAF_BASE: KindAttrs = {
   name: text('Name', 'The label beside the control.'),
   description: text('Description', 'Help text for the tooltip or the line under the label.', true),
   hidden: flag('Hidden', 'Left out of a settings UI unless it shows hidden prefs.'),
+  showIf: SHOW_IF,
+  enableIf: ENABLE_IF,
   block: flag('Block', 'Full width with no label row, for a control with its own chrome.'),
   icon: symbol('Icon', 'Glyph name in the host\'s icon set.'),
   pair: { kind: 'pair', name: 'Pair', description: 'The fields that share this one\'s row in compact property UIs, and what the row reads.', default: undefined },
@@ -92,20 +100,21 @@ const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
   as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, or a bar: its prefs on one line in their bar forms. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment', 'bar']),
+  showIf: SHOW_IF,
+  enableIf: ENABLE_IF,
 };
 const SECTION_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
   as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, or a bar: its prefs on one line in their bar forms. Unset: a heading.', ['tab', 'panel', 'section', 'fragment', 'bar']),
+  showIf: SHOW_IF,
+  enableIf: ENABLE_IF,
 };
 
 const AUTO_FLAGS: KindAttrs = {
   manual: flag('Never auto', 'Cannot be left for its owner to decide: its row gets no way to unpin it.'),
   unpinned: flag('Starts auto', 'Begins unpinned, where it would begin at its default.'),
 };
-
-/** Kinds that hold no value, so have nothing to be auto. */
-const VALUELESS = new Set(['action', 'label', 'separator', 'alias']);
 
 /** Stored as given, falsy or not: `false` and `0` are values a leaf can read while auto. */
 const AS_GIVEN = new Set(['autoValue']);
@@ -117,7 +126,7 @@ const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag', 'o
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
 
 /** The fields a leaf made from a type sets where it is used; the rest are its type's. */
-const USE_SITE = new Set(['name', 'description', 'default', 'hidden', 'block', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned', 'autoValue']);
+const USE_SITE = new Set(['name', 'description', 'default', 'hidden', 'showIf', 'enableIf', 'block', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned', 'autoValue']);
 
 function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
@@ -164,7 +173,7 @@ function entryAttrs(item: PrefLeaf, custom: CustomKinds): KindAttrs {
 }
 
 function autoAttrs(leaf: PrefLeaf): KindAttrs {
-  if (VALUELESS.has(leaf.kind)) return {};
+  if (!prefHoldsValue(leaf)) return {};
   const value = valueAttr(leaf, { name: 'Auto value', description: 'What it reads while auto, where nothing computes it. It need not be the default.' });
   return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
 }
@@ -177,10 +186,10 @@ function actionChoice(attr: PrefLeaf, actions: ReadonlyArray<{ key: string; labe
 }
 
 /** The attributes a leaf of `kind` shares with every other, less the ones nothing draws for it: a label is its
- *  name and its description, and a separator neither. */
+ *  name and its description, and a separator neither, and neither has a control to enable. */
 function sharedAttrs(kind: string): KindAttrs {
-  if (kind === 'separator') return { hidden: LEAF_BASE.hidden! };
-  if (kind === 'label') return { name: LEAF_BASE.name!, description: LEAF_BASE.description!, hidden: LEAF_BASE.hidden! };
+  if (kind === 'separator') return { hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
+  if (kind === 'label') return { name: LEAF_BASE.name!, description: LEAF_BASE.description!, hidden: LEAF_BASE.hidden!, showIf: SHOW_IF };
   return { ...LEAF_BASE };
 }
 
@@ -224,7 +233,9 @@ export function attributeSchema(
   for (const k of Object.keys(entry)) if (containsCode((item as unknown as Record<string, unknown>)[k])) delete entry[k];
   // What a type holds beyond the fields its use sets is the type's to show, where it is declared.
   const undrawn = node.kind === 'separator' ? SEPARATOR_UNDRAWN : NO_ATTRS;
-  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => k !== 'kind' && !SLOTS.has(k) && !undrawn.has(k) && !(k in shared) && !(k in own) && !(k in auto));
+  // Every leaf carries a `default`, which says nothing of one that holds no value.
+  const listed = (k: string): boolean => k !== 'kind' && !SLOTS.has(k) && !undrawn.has(k) && !(k === 'default' && !prefHoldsValue(node));
+  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => listed(k) && !(k in shared) && !(k in own) && !(k in auto));
   return { shared, own, auto, entry, readOnly };
 }
 
@@ -275,7 +286,7 @@ export function blankSection(): PrefSection {
   return { name: 'New section', description: '', members: {} };
 }
 
-const SHARED = ['name', 'description', 'hidden', 'block', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned'];
+const SHARED = ['name', 'description', 'hidden', 'showIf', 'enableIf', 'block', 'icon', 'pair', 'short', 'absentIsDefault', 'manual', 'unpinned'];
 
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 

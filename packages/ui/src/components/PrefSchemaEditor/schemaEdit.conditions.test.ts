@@ -74,4 +74,23 @@ describe('conditions follow the values they read', () => {
     expect(nodeAt(next, 'pose')).toMatchObject({ enableIf: { not: { path: 'data.pinned' } } });
     expect(nodeAt(next, 'pose/pose.x')).toMatchObject({ showIf: { path: 'data.pinned', is: false } });
   });
+
+  it('carries a union variant\'s, and those of the fields inside it', () => {
+    const fill = { kind: 'union', name: 'Fill', description: '', default: { type: 'flat' }, tag: 'type', variants: {
+      flat: { kind: 'object', name: 'Flat', description: '', default: {}, children: {} },
+      ramp: { kind: 'object', name: 'Ramp', description: '', default: {}, showIf: { path: 'a.on' }, children: {
+        angle: num('Angle', { enableIf: { path: 'a.on', is: true } }),
+        more: { name: 'More', showIf: { path: 'a.on' }, members: { stops: num('Stops') } },
+      } },
+    } } as unknown as PrefLeaf;
+    const root: PrefGroup = { ...ROOT, children: { ...ROOT.children, fill } };
+    const next = renameKey(root, 'a/on', 'enabled');
+    expect(nodeAt(next, 'fill')).toMatchObject({ variants: { ramp: {
+      showIf: { path: 'a.enabled' },
+      children: { angle: { enableIf: { path: 'a.enabled', is: true } }, more: { showIf: { path: 'a.enabled' } } },
+    } } });
+    const flat = (node: unknown) => (node as { variants: { flat: unknown } }).variants.flat;
+    expect(flat(nodeAt(next, 'fill'))).toBe(flat(fill));
+    expect(nodeAt(renameKey(root, 'a/size', 'extent'), 'fill')).toBe(fill);
+  });
 });

@@ -19,8 +19,8 @@ output, and they are what gets left open for days.
 ## The rule
 
 Every frame loop in the kit runs behind `useVisibleRaf`
-(`packages/core/src/scheduling/useVisibleRaf.ts`), a public export of
-`@weasel-js/core`. Nothing runs while `document.hidden`; a loop that names an
+(`packages/react/src/useVisibleRaf.ts`), a public export of
+`@weasel-js/react` that `@weasel-js/core` re-exports. Nothing runs while `document.hidden`; a loop that names an
 element also stops while that element is outside the viewport. A request made
 while suspended is held rather than dropped, and re-armed on resume — so no
 loop polls visibility itself, and none has to be restarted by hand.

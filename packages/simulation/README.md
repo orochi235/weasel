@@ -1,0 +1,49 @@
+# @weasel-js/simulation
+
+Continuous N-body simulation — force-directed layout, physics-ish motion.
+
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
+scene-graph canvas kit for React. See the
+[API reference](https://orochi235.github.io/weasel/api/).
+
+```sh
+npm install @weasel-js/simulation
+```
+
+`createSimulation` is the root entry and needs no React or DOM. `useSimulation`
+is in `@weasel-js/simulation/react`.
+
+`createSimulation` is the velocity-Verlet integrator and nothing else: `tick()`
+is the only thing that moves a node, so a caller wanting the whole relaxation at
+once — a layout pass, a pre-warm — runs it to settle and reads the answer.
+`useSimulation` is that integrator on a frame loop.
+
+Forces are pluggable functions matching **d3-force's protocol**, so d3-force's
+bundled forces (`forceManyBody`, `forceLink`, `forceCenter`, …) work here
+without translation. That compatibility is deliberate — don't invent a parallel
+force signature.
+
+## The kit doesn't write to your scene
+
+`onTick(nodes)` fires after each integration step and **the consumer decides**
+how, and whether, to write through to scene ops. The simulation holds its own
+node array; it never touches the adapter.
+
+That matters for undo: a simulation running at 60fps would otherwise produce 60
+history entries per second. Typical wiring is to let the sim run free and commit
+a single op when it settles (or on user action), not per tick.
+
+## Alpha and settling
+
+The usual d3 convention: `alpha` decays each tick by `DEFAULT_ALPHA_DECAY`
+until it drops below `DEFAULT_ALPHA_MIN`, at which point the layout is
+considered settled and the loop can stop. `DEFAULT_VELOCITY_DECAY` is the
+per-tick friction.
+
+Reheating (bumping alpha back up) is how you restart motion after a user drags
+a node — otherwise a settled simulation stays settled.
+
+## Related
+
+`@weasel-js/d3` is the packaged integration if you want the d3 ecosystem wired
+up for you rather than assembling forces by hand.

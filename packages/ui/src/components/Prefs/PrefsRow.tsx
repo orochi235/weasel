@@ -15,12 +15,13 @@ import { PrefActionButton } from './PrefActionButton';
 import { PrefMixed } from './PrefMixed';
 import { prefDrawsNoControl, PrefWords } from './PrefWords';
 import { drawsRows } from './compound';
+import { entryConditions } from './entry';
 import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
 import { ObjectLeaf } from './ObjectLeaf';
 import { UnionPicker } from './UnionPicker';
 import { controlIsGroup, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
-import { PropertyRow } from '../Properties/PropertyPanel';
+import { PropertyRow } from '../Properties/PropertyRow';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
@@ -250,7 +251,10 @@ function renderBuiltin(
         onChange={setValue}
         disabled={ctx.disabled}
         renderValue={(held, set, name, key) =>
-          renderPrefControl({ ...ctx, path: `${ctx.path}.${key}`, pref: { ...map.item, name }, value: held, setValue: set }, renderers)
+          renderPrefControl(
+            { ...ctx, ...entryConditions(ctx, `${ctx.path}.${key}`), path: `${ctx.path}.${key}`, pref: { ...map.item, name }, value: held, setValue: set },
+            renderers,
+          )
         }
       />
     );

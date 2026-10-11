@@ -78,8 +78,8 @@ export {
   createPointerStore,
   usePointerContext,
   usePointerPosition,
-} from '../features/pointer/PointerContext';
-export type { PointerContextValue, PointerWorldPos } from '../features/pointer/PointerContext';
+} from '@weasel-js/routing/react';
+export type { PointerContextValue, PointerWorldPos } from '@weasel-js/routing/react';
 export { PointerProviderIfRoot } from '../canvas/SceneCanvas/PointerProviderIfRoot';
 export { ActionsProviderIfRoot } from '../canvas/SceneCanvas/ActionsProviderIfRoot';
 export { DepRegistryProviderIfRoot } from '../canvas/SceneCanvas/DepRegistryProviderIfRoot';

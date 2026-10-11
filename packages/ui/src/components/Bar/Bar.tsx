@@ -1,15 +1,12 @@
 import type { ReactNode } from 'react';
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { applyPrefConditions, isPrefLeaf, prefJudge, prefValueAtPath, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
-import { PropertyList, PropertyRow } from '../Properties/PropertyPanel';
+import { PropertyList } from '../Properties/PropertyList';
+import { PropertyRow } from '../Properties/PropertyRow';
 import { pairRows } from '../SelectionPanel/model';
-import {
-  renderBuiltin,
-  renderCells,
-  type LeafCell,
-  type PropertyRenderContext,
-  type PropertyRenderer,
-} from '../SelectionPanel/renderLeaf';
+import { renderCells, type LeafCell } from '../SelectionPanel/cells';
+import type { PropertyRenderContext, PropertyRenderer } from '../SelectionPanel/renderContext';
+import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { BarLayout, groupBarNodes, type BarCell, type BarLeafNode, type BarOrientation } from './BarLayout';
 import { withBarLabel, type LeafSurface } from './renderBarLeaf';
 import s from './Bar.module.css';
@@ -49,10 +46,11 @@ export interface BarProps {
 export function Bar(props: BarProps) {
   const { schema, values, onChange, mixed, renderers, orientation, label, framed, className } = props;
   const fields = prefFieldChoices(schema);
-  const draw: Draw = { values, mixed, renderers, onChange, fields };
+  const { shown, disabled } = applyPrefConditions(schema, prefJudge(schema, (path) => valueAt(values, path)));
+  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled };
   return (
     <BarLayout
-      nodes={groupBarNodes(schema, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />)}
+      nodes={shown === null ? [] : groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />)}
       orientation={orientation}
       label={label}
       framed={framed}
@@ -69,6 +67,18 @@ interface Draw {
   renderers: Record<string, PropertyRenderer> | undefined;
   onChange: ((path: string, value: unknown) => void) | undefined;
   fields: readonly PrefFieldChoice[];
+  /** Paths of the leaves and fields a failed `enableIf` disables. */
+  disabled: ReadonlySet<string>;
+}
+
+/** The value a condition reads at `path`: the entry there, else the part of an entry above it that the rest of the path names. */
+function valueAt(values: Readonly<Record<string, unknown>> | undefined, path: string): unknown {
+  if (values === undefined || Object.hasOwn(values, path)) return values?.[path];
+  for (let dot = path.lastIndexOf('.'); dot > 0; dot = path.lastIndexOf('.', dot - 1)) {
+    const head = path.slice(0, dot);
+    if (Object.hasOwn(values, head)) return prefValueAtPath(values[head], path.slice(dot + 1));
+  }
+  return undefined;
 }
 
 /** Neighboring leaves as cells, a run of paired flags fused into one. */
@@ -99,6 +109,8 @@ function leafCell({ path, leaf }: BarLeafNode, surface: LeafSurface, draw: Draw)
     update: (fn) => onChange?.(path, fn(isMixed ? undefined : values?.[path])),
     valueAt: (p) => ({ value: values?.[p], mixed: mixed?.has(p) === true }),
     fields,
+    disabled: draw.disabled.has(path),
+    disabledAt: (at) => draw.disabled.has(at),
   };
   return {
     key: path,
@@ -120,7 +132,7 @@ function leafRow(node: BarLeafNode, draw: Draw): ReactNode {
   const { leaf, path } = node;
   if (leaf.block) return <div key={path}>{control}</div>;
   return (
-    <PropertyRow key={path} label={leaf.name} description={leaf.description} group>
+    <PropertyRow key={path} label={leaf.name} description={leaf.description} group disabled={draw.disabled.has(path)}>
       {control}
     </PropertyRow>
   );

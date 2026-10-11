@@ -4,7 +4,7 @@ import { useClipboardOps } from './clipboardOps';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { InsertAdapter, Op } from '../../..';
 import { asNodeId } from 'core/scene/types';
-import { PointerContextProvider, usePointerContext } from 'features/pointer/PointerContext';
+import { PointerContextProvider, usePointerContext } from '@weasel-js/routing/react';
 import type { ReactNode } from 'react';
 import { WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, buildWeaselClipboardText } from './wireFormat';
 

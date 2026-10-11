@@ -5,8 +5,7 @@
  */
 
 import { scaleDelta, type Scale2 } from 'core/viewport/pxExtent';
-import { pathToAnchors, type PenAnchor } from './anchors';
-import type { PolygonPath } from '@weasel-js/geom';
+import { pathToAnchors, type PenAnchor, type PolygonPath } from '@weasel-js/geom';
 
 /** An existing anchor found near a point. */
 export interface PathAnchorHit {

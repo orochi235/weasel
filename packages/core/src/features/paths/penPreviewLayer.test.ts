@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createPenPreviewLayer } from './penPreviewLayer';
 import { usePenTool, type PenScratch } from 'tools/builtin/pen';
 import { renderHook } from '@testing-library/react';
-import type { PolygonPath } from '@weasel-js/geom';
-import { anchorsToPath } from './anchors';
+import { type PolygonPath, anchorsToPath } from '@weasel-js/geom';
 
 const DIMS = { width: 400, height: 400 };
 

@@ -70,6 +70,13 @@ export { verticalAlignOffset } from './measure/verticalAlign';
 export type { TextVerticalAlign } from './measure/verticalAlign';
 
 export type { TextPose } from './pose';
+export { pointInTextPose, caretIndexAt } from './hitTest';
+export type { PointInTextPoseOpts } from './hitTest';
+export { fitTextPose } from './fitTextPose';
+export type { FitTextPoseOptions } from './fitTextPose';
+export { renderLabel, defaultLabelTextRenderer } from './renderLabel';
+export type { LabelOptions } from './renderLabel';
+export { isTextData } from './isTextData';
 
 export { createMarkdownRenderer, layoutMarkdown } from './markdownText';
 export type {

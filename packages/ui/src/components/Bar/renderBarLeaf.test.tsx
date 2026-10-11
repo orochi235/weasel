@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { renderPrefControl, type PrefRenderContext } from '../Prefs/PrefsRow';
-import { renderBuiltin, type PropertyRenderContext } from '../SelectionPanel/renderLeaf';
+import type { PropertyRenderContext } from '../SelectionPanel/renderContext';
+import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { renderBarLeaf, withBarLabel } from './renderBarLeaf';
 
 const size: PrefLeaf = { kind: 'number', name: 'Size', description: 'Type size.', default: 12 };

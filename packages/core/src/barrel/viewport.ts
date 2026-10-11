@@ -7,7 +7,21 @@ export { VERSION } from '../version';
 export * from '../features/viewports';
 export * from '../features/parallax';
 export * from '../features/tiling';
-export * from '../features/simulation';
+export {
+  createSimulation,
+  DEFAULT_ALPHA_DECAY,
+  DEFAULT_ALPHA_MIN,
+  DEFAULT_VELOCITY_DECAY,
+} from '@weasel-js/simulation';
+export type {
+  Simulation,
+  SimulationCore,
+  SimulationForce,
+  SimulationNode,
+  SimulationOptions,
+  UseSimulationOptions,
+} from '@weasel-js/simulation';
+export { useSimulation } from '@weasel-js/simulation/react';
 export * from '../features/poseRun';
 export * from '../features/overlays';
 
@@ -52,8 +66,8 @@ export type { SceneNodeClientRectOpts, NodeClientRect } from '../core/viewport/s
 export * from '../core/viewport/useAutoCenter';
 
 // ─── Scheduling: the visibility gate every weasel frame loop runs behind ────
-export { useVisibleRaf } from '../scheduling/useVisibleRaf';
-export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from '../scheduling/useVisibleRaf';
+export { useVisibleRaf } from '@weasel-js/react';
+export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from '@weasel-js/react';
 
 // ─── Viewport: wheel / velocity / decay / pinch / camera animation ──────────
 export * from '../core/viewport/wheelHandler';
@@ -64,7 +78,7 @@ export type { VelocityTracker } from '../core/viewport/createVelocityTracker';
 export { useDecayLoop } from '../core/viewport/useDecayLoop';
 export type { DecayLoopConfig, PanBounds, InertiaConfig } from '../core/viewport/useDecayLoop';
 export { interpolateView } from '../core/viewport/interpolateView';
-export { useViewAnimation, useViewAnimationOn, VIEW_ANIMATION_KEY } from '../core/viewport/useViewAnimation';
+export { useViewAnimation, useViewAnimationOn, viewAxes, VIEW_ANIMATION_KEY } from '../core/viewport/useViewAnimation';
 
 // ─── Second view on an existing canvas ──────────────────────────────────────
 // `<CanvasView>` is a camera over a rect of a `<SceneCanvas>`'s surface, with
@@ -97,12 +111,7 @@ export {
 export type { MinimapContributionOptions, LinkedCursorOptions, CrosshairRect } from '../features/minimap';
 
 // ─── Canvas focus & visibility gating ───────────────────────────────────────
-export {
-  useCanvasFocus,
-  gateLayer,
-} from '../features/focus';
-export type {
-  UseCanvasFocusOptions,
-  CanvasFocusReturn,
-  GateLayerOptions,
-} from '../features/focus';
+export { gateLayer } from '../core/layers/gateLayer';
+export type { GateLayerOptions } from '../core/layers/gateLayer';
+export { useCanvasFocus } from '@weasel-js/react';
+export type { UseCanvasFocusOptions, CanvasFocusReturn } from '@weasel-js/react';

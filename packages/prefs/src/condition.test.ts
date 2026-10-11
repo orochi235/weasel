@@ -216,6 +216,15 @@ describe('checkPrefCondition', () => {
     expect(codes({ path: 'go' })).toEqual(['no-value']);
   });
 
+  it('reports an in with nothing in it, which never holds whatever the leaf', () => {
+    expect(checkPrefCondition({ path: 'mode', in: [] }, SCHEMA)).toEqual([
+      { code: 'never', path: 'mode', problem: '"mode" is one of nothing, which never holds' },
+    ]);
+    expect(codes({ path: 'widget', in: [] })).toEqual(['never']);
+    expect(codes({ path: 'nope', in: [] })).toEqual(['no-leaf', 'never']);
+    expect(codes({ any: [{ path: 'mode', in: ['row'] }, { not: { path: 'mode', in: [] } }] })).toEqual(['never']);
+  });
+
   it('reports a value the leaf cannot hold', () => {
     expect(codes({ path: 'mode', is: 'diagonal' })).toEqual(['value']);
     expect(codes({ path: 'mode', in: ['row', 'diagonal', 3] })).toEqual(['value', 'value']);
@@ -234,7 +243,7 @@ describe('checkPrefCondition', () => {
     expect(codes({ path: 'windows.count', above: 3, below: 9 })).toEqual([]);
   });
 
-  it('takes any value for a leaf whose stored form is its own', () => {
+  it('holds a leaf stored through an encoding to what its control shows', () => {
     const schema: PrefGroup = {
       name: '',
       children: {
@@ -242,7 +251,8 @@ describe('checkPrefCondition', () => {
         dash: pick(['solid', 'dashed'], { encoding: { read: () => 'solid', write: () => [] } }),
       },
     };
-    expect(codes({ all: [{ path: 'italic', is: 'italic' }, { path: 'dash', is: 4 }] }, schema)).toEqual([]);
+    expect(codes({ all: [{ path: 'italic', is: 'italic' }, { path: 'dash', is: 4 }] }, schema)).toEqual(['value', 'value']);
+    expect(codes({ all: [{ path: 'italic', is: true }, { path: 'dash', is: 'dashed' }] }, schema)).toEqual([]);
   });
 
   it('reads into an object leaf by its fields, through its sections', () => {

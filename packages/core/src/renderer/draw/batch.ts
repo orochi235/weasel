@@ -1,7 +1,7 @@
 import type { ColorSpace, GradStop } from '@weasel-js/paint';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { resolveColor } from '../math/color';
+import { resolveColor } from '@weasel-js/paint';
 import { BATCH_TEXTURE_SLOTS } from '../shaders/batchFill';
 import type { DrawContext } from './drawContext';
 import { sameValues } from './uniforms';

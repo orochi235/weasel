@@ -1,10 +1,5 @@
-export * from './renderLabel';
 export { createTextLayer } from './textLayer';
 export type { CreateTextLayerOpts } from './textLayer';
-export { pointInTextPose, caretIndexAt } from './hitTest';
-export type { PointInTextPoseOpts } from './hitTest';
-export { fitTextPose } from './fitTextPose';
-export type { FitTextPoseOptions } from './fitTextPose';
 export { useTextEdit, TEXT_EDIT_FONT_HOLD } from './useTextEdit';
 export type {
   TextEditScreenPose,
@@ -15,7 +10,6 @@ export type {
   UseTextEditOptions,
   UseTextEditReturn,
 } from './useTextEdit';
-export { isTextData } from './isTextData';
 export { useSceneTextEdit } from './useSceneTextEdit';
 export type { UseSceneTextEditOptions } from './useSceneTextEdit';
 export { styleAtRange, applyStyleToRange, patchRangeStyle } from './runs/rangeStyle';

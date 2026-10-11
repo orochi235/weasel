@@ -207,6 +207,36 @@ export const Conditional: Story = {
   },
 };
 
+const gated = f.schema({
+  snap: f.boolean(false).label('Snap'),
+  tolerance: f.number(6).range(1, 24).slider().label('Tolerance').enableIf({ path: 'snap' }),
+  target: f.enum('grid', ['grid', 'guides']).label('Snap to').enableIf({ path: 'snap' }),
+  guides: f
+    .group({
+      color: f.color('#3a86ff').label('Color'),
+      smart: f.boolean(true).label('Smart guides'),
+    })
+    .label('Guides')
+    .enableIf((c) => c.snap === true && c.target === 'guides'),
+});
+
+/** `enableIf` keeps a row drawn and disables its control. With Snap off,
+ *  Tolerance and Snap to take no input; the Guides group, whose condition is a
+ *  function, enables every row under it only while snapping to guides. */
+export const EnableIf: Story = {
+  render: () => {
+    const schema = resolveConfigSchema(gated, []);
+    const [config, setConfig] = useState<Record<string, unknown>>(gated.defaults());
+    return (
+      <ControlPanel
+        schema={schema}
+        config={config}
+        setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
+      />
+    );
+  },
+};
+
 const nested = f.schema({
   showGrid: f.boolean(true),
   grid: f

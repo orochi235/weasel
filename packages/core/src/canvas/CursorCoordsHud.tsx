@@ -10,8 +10,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { decimal, qty } from '@weasel-js/quantity';
-import { useLatest } from '@weasel-js/react';
-import { useVisibleRaf } from '../scheduling/useVisibleRaf';
+import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import s from './hud.module.css';
 import { useHostAnchor } from './useHostAnchor';
 import type { View } from 'core/viewport/view';

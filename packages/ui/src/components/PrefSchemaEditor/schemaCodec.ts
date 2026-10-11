@@ -1,7 +1,7 @@
 import type { DocumentCodec } from './document';
 import { dropDraft, openDraft, saveDraft } from './draft';
 import type { SchemaRoot } from './schemaEdit';
-import { afterTaken, packSent } from './sent';
+import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
 import type { PrefTypes } from './types';
 
 /** How a document keeps a pref schema whose leaves may be of `types`. */
@@ -15,5 +15,8 @@ export function schemaCodec<S extends SchemaRoot>(types: PrefTypes): DocumentCod
     dropDraft,
     packSent: (value, base) => packSent(value, base, types),
     afterTaken: (value, sent, base) => afterTaken(value, sent, base, types),
+    saveSent,
+    openSent,
+    dropSent,
   };
 }

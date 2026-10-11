@@ -39,6 +39,10 @@ const ENTRIES = [
     why: 'measurement, ranking, force and ports, for a server-side layout',
   },
   {
+    file: 'packages/simulation/dist/index.js',
+    why: 'the integrator; the frame-loop hook lives behind @weasel-js/simulation/react',
+  },
+  {
     file: 'packages/prefs/dist/index.js',
     why: 'the schema and the store; the hooks live behind @weasel-js/prefs/react',
   },

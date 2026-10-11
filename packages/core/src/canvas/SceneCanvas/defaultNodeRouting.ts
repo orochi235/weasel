@@ -1,6 +1,6 @@
 import { KIT_SHAPE_KINDS } from 'core/shapeKinds';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
-import { isTextData } from 'features/text/isTextData';
+import { isTextData } from '@weasel-js/text';
 
 function isObj(d: unknown): d is Record<string, unknown> {
   return typeof d === 'object' && d !== null;

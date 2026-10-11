@@ -74,8 +74,8 @@ describe('Tree — a ghost the caller draws', () => {
     expect(renderGhost).toHaveBeenLastCalledWith(['z'], { outside: true, effect: 'move' });
     const ghost = screen.getByText('stand-in for z').parentElement!;
     expect(screen.getAllByText('Zed')).toHaveLength(1);
-    // Its corner sits just off the pointer, at the width asked for.
-    expect([ghost.style.left, ghost.style.top, ghost.style.width]).toEqual(['410px', '70px', '300px']);
+    // Its corner sits beside the pointer and a row's height under it, at the width asked for.
+    expect([ghost.style.left, ghost.style.top, ghost.style.width]).toEqual(['410px', `${60 + ROW}px`, '300px']);
     release(60, 400);
     expect(screen.queryByText('stand-in for z')).toBeNull();
   });

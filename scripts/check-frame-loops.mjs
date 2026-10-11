@@ -18,7 +18,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /** Paths that may name `requestAnimationFrame` or `setInterval`, and why. `[why, uses]` covers more than one use. */
 const ALLOWED = new Map([
-  ['packages/core/src/scheduling/useVisibleRaf.ts', 'the gate itself'],
+  ['packages/react/src/useVisibleRaf.ts', 'the gate itself'],
   ['packages/forge/src/test/runStory.tsx', 'not a loop: a story test waits for one painted frame before checking faults'],
   ['packages/forge/src/shell/TrialHost.tsx', 'not a loop: an in-document story waits for one painted frame after its fonts settle before announcing it rendered'],
   ['packages/forge/src/frame/FrameController.tsx', 'not a loop: a story frame waits for one painted frame after its fonts settle before announcing it rendered'],
@@ -93,7 +93,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error(
       `check:frame-loops — ${offenders.length} bare requestAnimationFrame or setInterval use(s) in kit source:\n` +
         offenders.map((o) => `  ${o}`).join('\n') +
-        "\n\nRoute the loop through `useVisibleRaf` from @weasel-js/core. A loop that\n" +
+        "\n\nRoute the loop through `useVisibleRaf` from @weasel-js/react. A loop that\n" +
         'measures elapsed time also needs `onResume` to rebase its clock.\n' +
         'A file listed here is on the allowlist for fewer uses than it has.\n' +
         'See docs/proposals/2026-08-26-loops-stop-when-unseen.md.',

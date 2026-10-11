@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mat3 } from '../../renderer/math/mat3';
+import { mat3 } from '@weasel-js/geom';
 import { blendPoses } from './blendPoses';
 import { resolveSkeleton } from './resolveSkeleton';
 import { solveIk, type SolveIkOptions } from './solveIk';

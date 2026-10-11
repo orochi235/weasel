@@ -52,6 +52,11 @@
   opacity: 0.55;
 }
 
+/* As `Checkbox` dims the text beside a disabled box: the controls dim themselves. */
+.row[data-disabled] > .rowLabel {
+  opacity: 0.5;
+}
+
 .row {
   display: grid;
   grid-template-columns: 64px 1fr;
@@ -104,6 +109,11 @@
 .rowControls > * {
   flex: 1;
   min-inline-size: 0;
+}
+
+/* A checkbox is its box, not a share of the row. Its own `flex: none` only ties with the rule above. */
+.rowControls > input[type='checkbox'] {
+  flex: none;
 }
 
 /* Bars sharing a row split the leftover between them, so the gap stays fixed

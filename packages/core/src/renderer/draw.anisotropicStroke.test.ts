@@ -9,11 +9,10 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Path, Stroke } from '@weasel-js/core';
-import { linePath } from '@weasel-js/geom';
+import { linePath, mat3, type GlMat3 } from '@weasel-js/geom';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
-import { mat3, type GlMat3 } from './math/mat3';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { meshBatching } from './draw';
 import { _resetStrokeMeshCacheForTests } from './cache/strokeMeshCache';

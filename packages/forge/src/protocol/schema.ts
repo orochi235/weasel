@@ -1,6 +1,7 @@
 import {
   f,
   isConfigBranch,
+  isEntryShown,
   resolveConfigSchema,
   schemaNodeAtPath,
   type Annotations,
@@ -128,7 +129,7 @@ export function answerSchema(
   const walk = (shape: ConfigShape, at: string): void => {
     for (const [key, entry] of Object.entries(shape)) {
       const path = joinPath(at, key);
-      if (entry.options.showIf && !entry.options.showIf(record)) hidden.push(path);
+      if (!isEntryShown(entry, record)) hidden.push(path);
       if (isConfigBranch(entry)) {
         walk(entry.children, path);
         continue;

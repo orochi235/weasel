@@ -1,6 +1,6 @@
 import type { CommandFill, MarkerRef, CommandStroke } from '@weasel-js/paint';
 import type { PathDrawCommand } from './DrawCommand';
-import type { GlMat3 } from './math/mat3';
+import type { GlMat3 } from '@weasel-js/geom';
 import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import {
   strokeSpaceOf, type ScreenSpace, type StrokeSpaces,

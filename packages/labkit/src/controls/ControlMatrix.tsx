@@ -1,37 +1,26 @@
-import { getAlpha01, toHex8, withAlpha01 } from '@weasel-js/core';
-import { isBuiltinPref, isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
 import {
   Button,
   type CollapseProps,
   Focusable,
-  type PropertyControlProps,
-  PropertyField,
   PropertyHelp,
   PropertyList,
   PropertyPanel,
-  prefFieldProps,
   type StanceProps,
   Tooltip,
   TooltipTrigger,
   useCollapse,
   useOverlayPortal,
 } from '@weasel-js/ui';
-import {
-  type CSSProperties,
-  type DOMAttributes,
-  type MouseEvent,
-  type ReactElement,
-  type ReactNode,
-  useRef,
-  useState,
-} from 'react';
+import { type ReactElement, type ReactNode, useRef, useState } from 'react';
 import { Dialog as RACDialog, Popover as RACPopover } from 'react-aria-components';
 import { auto as autoValue } from '../config/auto';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
-import { ControlRow } from './ControlPanel';
-import { FieldChoicesContext, useFieldChoices, useFieldChoicesOf } from './fieldChoices';
-import { summarizeValue } from './inDialog';
+import { isLeafEnabled, isLeafVisible } from '../config/visible';
+import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
+import { clearable, MatrixCell } from './MatrixCell';
+import { MatrixEditor, type OpenCell } from './MatrixEditor';
 
 /** One column of a {@link ControlMatrix}: a config group, every one the same shape. */
 export interface ControlMatrixColumn {
@@ -82,15 +71,6 @@ export interface ControlMatrixProps extends StanceProps, CollapseProps {
 
 const nameOf = (column: ControlMatrixColumn): string => column.title ?? column.label;
 
-/** The open popover: which cell, and the element it hangs off. */
-interface OpenCell {
-  path: string;
-  leaf: PrefLeaf;
-  column: ControlMatrixColumn;
-  first: boolean;
-  label: string;
-}
-
 /**
  * One setting across several config groups of the same shape: settings down
  * the side, scopes across the top, a compact read-only cell at each crossing.
@@ -131,11 +111,20 @@ export function ControlMatrix({
     return node && isPrefLeaf(node) ? node : undefined;
   };
 
-  const rowSpecs = rows.map((row) => {
-    const leaves = columns.map((column) => leafAt(`${column.key}.${row.key}`));
-    const named = leaves.find((leaf) => leaf !== undefined);
-    return { row, leaves, label: row.label ?? named?.name ?? row.key, about: named?.description };
-  });
+  // A row is named in `rows`, so a leaf's static `hidden` does not drop it; a `showIf` does.
+  const visible = (path: string): boolean => isLeafVisible(schema, path, config, true);
+  const rowSpecs = rows
+    .map((row) => {
+      const leaves = columns.map((column) => leafAt(`${column.key}.${row.key}`));
+      const named = leaves.find((leaf) => leaf !== undefined);
+      return { row, leaves, label: row.label ?? named?.name ?? row.key, about: named?.description };
+    })
+    // A setting no column shows has no row; one no column has keeps its row of dashes.
+    .filter(
+      ({ row, leaves }) =>
+        leaves.every((leaf) => leaf === undefined) ||
+        leaves.some((leaf, i) => leaf !== undefined && visible(`${columns[i]?.key}.${row.key}`)),
+    );
 
   const fold = useCollapse({ collapsible, defaultCollapsed, collapsed, onCollapsedChange, twisty });
   // With a title row to sit in, the headers leave the table for it.
@@ -187,6 +176,9 @@ export function ControlMatrix({
                     </td>
                   );
                 }
+                if (!visible(path)) {
+                  return <td key={column.key} className="lk-control-matrix__cell" />;
+                }
                 const first = i === 0;
                 const inherited = !first && auto.has(path);
                 return (
@@ -196,13 +188,14 @@ export function ControlMatrix({
                       inherited ? 'lk-control-matrix__cell is-inherited' : 'lk-control-matrix__cell'
                     }
                   >
-                    <Cell
+                    <MatrixCell
                       path={path}
                       leaf={leaf}
                       value={valueAtPath(config, path)}
                       name={`${nameOf(column)} ${label}`}
                       hint={inherited ? hintFor(column) : undefined}
                       canUnpin={!first && !inherited}
+                      disabled={!isLeafEnabled(schema, path, config)}
                       setConfig={setConfig}
                       onOpen={(el) => {
                         triggerRef.current = el;
@@ -234,7 +227,7 @@ export function ControlMatrix({
               aria-label={`${nameOf(open.column)} ${open.label}`}
             >
               <PropertyList pack="one-up">
-                <Editor
+                <MatrixEditor
                   open={open}
                   schema={schema}
                   config={config}
@@ -294,59 +287,6 @@ export function ControlMatrix({
   return <FieldChoicesContext.Provider value={choices}>{panel}</FieldChoicesContext.Provider>;
 }
 
-/**
- * The control a cell opens. An enum lists its options outright, as radios: the
- * panel's dropdown would be a second popup opened from inside this one.
- * Choosing one is the whole edit, so it closes the popover.
- */
-function Editor({
-  open,
-  schema,
-  config,
-  setConfig,
-  close,
-}: {
-  open: OpenCell;
-  schema: ResolvedConfig;
-  config: Record<string, unknown>;
-  setConfig: (path: string, value: unknown) => void;
-  close: () => void;
-}) {
-  const { path, leaf } = open;
-  const choices = useFieldChoices();
-  const field = isBuiltinPref(leaf)
-    ? prefFieldProps(leaf, {
-        value: valueAtPath(config, path) ?? leaf.default,
-        setValue: (next) => setConfig(path, next),
-        fields: choices,
-      })
-    : null;
-  if (field?.kind === 'enum') {
-    return (
-      <PropertyField
-        {...field}
-        label={leaf.name}
-        control="radio"
-        onChange={(next: Parameters<typeof field.onChange>[0]) => {
-          field.onChange(next);
-          close();
-        }}
-      />
-    );
-  }
-  return (
-    <ControlRow
-      path={path}
-      leaf={leaf}
-      resolved={schema}
-      config={config}
-      shown={config}
-      setConfig={setConfig}
-      pack="one-up"
-    />
-  );
-}
-
 function ColumnHeader({
   column,
   onClick,
@@ -377,156 +317,6 @@ function ColumnHeader({
         </button>
       </Focusable>
       <Tooltip>{name}</Tooltip>
-    </TooltipTrigger>
-  );
-}
-
-/** A color leaf whose default is empty: unset is a value of its own, not black. */
-const clearable = (leaf: PrefLeaf): boolean => leaf.kind === 'color' && leaf.default === '';
-
-/** The number of decimals a step implies: `0.05` shows two, `1` none. */
-function decimalsOf(step: number | undefined): number {
-  if (step === undefined || !Number.isFinite(step) || step <= 0) return 0;
-  const text = String(step);
-  const exp = /e-(\d+)$/.exec(text);
-  if (exp) return Number(exp[1]);
-  const dot = text.indexOf('.');
-  return dot === -1 ? 0 : text.length - dot - 1;
-}
-
-/** What a cell shows of a value it opens a popover to edit. */
-function summaryOf(field: PropertyControlProps | null, value: unknown): ReactNode {
-  if (field?.kind === 'number') {
-    return typeof field.value === 'number' ? field.value.toFixed(decimalsOf(field.step)) : '—';
-  }
-  if (field?.kind === 'enum') {
-    const option = field.options.find((o) => o.value === field.value);
-    if (!option) return '—';
-    return typeof option.glyph === 'string' ? option.glyph : option.label;
-  }
-  if (field?.kind === 'string') return field.value || '—';
-  return summarizeValue(value);
-}
-
-function Cell({
-  path,
-  leaf,
-  value,
-  name,
-  hint,
-  canUnpin,
-  setConfig,
-  onOpen,
-}: {
-  path: string;
-  leaf: PrefLeaf;
-  value: unknown;
-  /** The cell's accessible name: column and row. */
-  name: string;
-  /** Present while the cell inherits: where from. */
-  hint?: string;
-  canUnpin: boolean;
-  setConfig: (path: string, value: unknown) => void;
-  onOpen: (el: HTMLElement) => void;
-}) {
-  const shown = value ?? leaf.default;
-  const write = (next: unknown): void => setConfig(path, next);
-  const choices = useFieldChoices();
-  const field = isBuiltinPref(leaf)
-    ? prefFieldProps(leaf, { value: shown, setValue: write, fields: choices })
-    : null;
-  const label = hint ? `${name}, ${hint}` : name;
-
-  // Option/Alt-click hands a pinned cell back to the fallback, and does nothing
-  // else on any cell — it must not also flip or open what it lands on.
-  const unpinned = (e: MouseEvent): boolean => {
-    if (!e.altKey) return false;
-    e.preventDefault();
-    if (canUnpin) setConfig(path, autoValue);
-    return true;
-  };
-
-  // The shape `Focusable` asks of the element it makes a tooltip trigger.
-  let control: ReactElement<DOMAttributes<HTMLElement>, string>;
-  if (field?.kind === 'boolean') {
-    const on = field.value === true;
-    control = (
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        aria-label={label}
-        className="lk-control-matrix__switch"
-        onClick={(e) => {
-          if (!unpinned(e)) field.onChange(!on);
-        }}
-      >
-        <span className="lk-control-matrix__track" aria-hidden="true">
-          <span className="lk-control-matrix__thumb" />
-        </span>
-      </button>
-    );
-  } else if (field?.kind === 'color' && !clearable(leaf)) {
-    const stored =
-      typeof field.value === 'string' && field.value !== '' ? toHex8(field.value) : '#000000ff';
-    control = (
-      <input
-        type="color"
-        aria-label={label}
-        className="lk-control-matrix__swatch"
-        value={stored.slice(0, 7)}
-        onClick={(e) => {
-          unpinned(e);
-        }}
-        onChange={(e) => {
-          const rgb = e.currentTarget.value;
-          field.onChange(field.alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb);
-        }}
-      />
-    );
-  } else if (field?.kind === 'color') {
-    // A color that may be unset opens the popover, which is the only place it can be cleared.
-    const set = typeof field.value === 'string' && field.value !== '';
-    control = (
-      <button
-        type="button"
-        aria-label={set ? label : `${label}, unset`}
-        aria-haspopup="dialog"
-        className="lk-control-matrix__value"
-        onClick={(e) => {
-          if (!unpinned(e)) onOpen(e.currentTarget);
-        }}
-      >
-        <span
-          className={set ? 'lk-control-matrix__chip' : 'lk-control-matrix__chip is-unset'}
-          style={set ? ({ '--lk-chip': field.value } as CSSProperties) : undefined}
-          aria-hidden="true"
-        />
-      </button>
-    );
-  } else {
-    const valueClass =
-      field?.kind === 'number' ? 'lk-control-matrix__value is-number' : 'lk-control-matrix__value';
-    control = (
-      <button
-        type="button"
-        aria-label={label}
-        aria-haspopup="dialog"
-        className={valueClass}
-        onClick={(e) => {
-          if (!unpinned(e)) onOpen(e.currentTarget);
-        }}
-      >
-        {summaryOf(field, shown)}
-      </button>
-    );
-  }
-
-  if (!hint) return control;
-  return (
-    <TooltipTrigger>
-      <Focusable>{control}</Focusable>
-      <Tooltip>{hint}</Tooltip>
     </TooltipTrigger>
   );
 }

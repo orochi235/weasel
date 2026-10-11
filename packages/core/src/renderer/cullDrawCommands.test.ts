@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from './DrawCommand';
 import { cullDrawCommands } from './cullDrawCommands';
-import { mat3 } from './math/mat3';
+import { mat3 } from '@weasel-js/geom';
 import { PATH_M, PATH_L, PATH_C } from '@weasel-js/core';
 
 const SCREEN = { x: 0, y: 0, width: 800, height: 600 };

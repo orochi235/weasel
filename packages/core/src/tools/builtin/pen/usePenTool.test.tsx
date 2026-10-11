@@ -12,17 +12,16 @@ import {
   type PolygonPath,
   pathFromD,
 } from '@weasel-js/geom';
-import { pathToAnchors } from 'features/paths/anchors';
+import { pathToAnchors } from '@weasel-js/geom';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
 import { resolveEditablePathOf, useEditAnchorsDepSource } from 'canvas/deps/editAnchors';
 import type { Scene } from 'core/scene/types';
-import { createPointerStore } from 'features/pointer/PointerContext';
+import { createPointerStore, DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { ModifierState } from 'core/modifierState';
 import type { Op } from 'core/ops/types';
-import { DepRegistryProvider, useDepRegistry, useDepSource, type DepRegistry } from '@weasel-js/routing/react';
 import { buildDepsFromRequires } from '@weasel-js/routing';
 import { useInsertDepSource } from 'canvas/deps/insert';
 import { createScene } from 'core/scene/scene';
