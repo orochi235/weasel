@@ -125,6 +125,126 @@ describe('writing', () => {
     warn.mockRestore();
   });
 
+  it('sends a rejected write again on a backoff, doubling up to the cap', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>();
+    const memory = createMemoryAdapter(backing);
+    let down = true;
+    const set = vi.fn(async (key: string, value: unknown) => {
+      if (down) throw new Error('server restarting');
+      await memory.set(key, value);
+    });
+    const cache = await openRecords({
+      storage: { ...memory, set },
+      prefix: PREFIX,
+      retryMs: 1000,
+      retryMaxMs: 3000,
+    });
+    cache.set('mode', 'light');
+    expect(await cache.flush()).toBe(false);
+    expect(set).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(999);
+    expect(set).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(set).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(set).toHaveBeenCalledTimes(3);
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(set).toHaveBeenCalledTimes(4);
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    down = false;
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(backing.get('lk:t:mode')).toBe('light');
+    expect(await cache.flush()).toBe(true);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(set).toHaveBeenCalledTimes(5);
+    warn.mockRestore();
+  });
+
+  it('sends a rejected delete again', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>([['lk:t:save:s', 1]]);
+    const memory = createMemoryAdapter(backing);
+    const flaky: StorageAdapter = {
+      ...memory,
+      delete: vi.fn(memory.delete).mockImplementationOnce(async () => {
+        throw new Error('server restarting');
+      }),
+    };
+    const cache = await openRecords({ storage: flaky, prefix: PREFIX });
+    cache.delete('save:s');
+    expect(await cache.flush()).toBe(false);
+    expect(backing.has('lk:t:save:s')).toBe(true);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(backing.has('lk:t:save:s')).toBe(false);
+    warn.mockRestore();
+  });
+
+  it('keeps a newer write over a rejected one it would otherwise queue again', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>();
+    const memory = createMemoryAdapter(backing);
+    let reject = (_: Error): void => {};
+    const flaky: StorageAdapter = {
+      ...memory,
+      set: vi.fn(memory.set).mockImplementationOnce(
+        () =>
+          new Promise<void>((_, no) => {
+            reject = no;
+          }),
+      ),
+    };
+    const cache = await openRecords({ storage: flaky, prefix: PREFIX });
+    cache.set('layout', { v: 1 });
+    const first = cache.flush();
+    cache.set('layout', { v: 2 });
+    reject(new Error('quota'));
+    expect(await first).toBe(false);
+    expect(await cache.flush()).toBe(true);
+    expect(backing.get('lk:t:layout')).toEqual({ v: 2 });
+    warn.mockRestore();
+  });
+
+  it('leaves a rejected write for the next flush with retrying off', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>();
+    const memory = createMemoryAdapter(backing);
+    const flaky: StorageAdapter = {
+      ...memory,
+      set: vi.fn(memory.set).mockImplementationOnce(async () => {
+        throw new Error('quota');
+      }),
+    };
+    const cache = await openRecords({ storage: flaky, prefix: PREFIX, retryMs: false });
+    cache.set('layout', { v: 1 });
+    expect(await cache.flush()).toBe(false);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(backing.has('lk:t:layout')).toBe(false);
+    expect(await cache.flush()).toBe(true);
+    expect(backing.get('lk:t:layout')).toEqual({ v: 1 });
+    warn.mockRestore();
+  });
+
+  it('stops sending a rejected write once closed, or once writing stops', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const set = vi.fn(async () => {
+      throw new Error('quota');
+    });
+    const open = () => openRecords({ storage: { ...createMemoryAdapter(), set }, prefix: PREFIX });
+    const closed = await open();
+    closed.set('layout', 1);
+    await closed.close();
+    const stopped = await open();
+    stopped.set('layout', 1);
+    await stopped.flush();
+    stopped.stopWriting();
+    const calls = set.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(set).toHaveBeenCalledTimes(calls);
+    warn.mockRestore();
+  });
+
   it('sends queued writes when the page hides', async () => {
     const backing = new Map<string, unknown>();
     const cache = await openRecords({ storage: createMemoryAdapter(backing), prefix: PREFIX });
@@ -225,6 +345,39 @@ describe('two writers', () => {
     await tick();
     expect(backing.get('lk:t:trial:x')).toEqual({ from: 'b' });
     expect(a.get('trial:x')).toEqual({ from: 'b' });
+  });
+
+  it('keeps its own write over a change that lands while that write is on its way', async () => {
+    const backing = new Map<string, unknown>();
+    const memory = createMemoryAdapter(backing);
+    let release = (): void => {};
+    const slow: StorageAdapter = {
+      ...memory,
+      set: async (key, value) => {
+        await new Promise<void>((yes) => {
+          release = yes;
+        });
+        await memory.set(key, value);
+      },
+    };
+    const a = await openRecords({ storage: slow, prefix: PREFIX });
+    const b = await openRecords({ storage: createMemoryAdapter(backing), prefix: PREFIX });
+    a.set('mode', 'light');
+    const sending = a.flush();
+    b.set('mode', 'auto');
+    await b.flush();
+    await tick();
+    expect(a.get('mode')).toBe('light');
+    release();
+    await sending;
+    await tick();
+    expect(backing.get('lk:t:mode')).toBe('light');
+    expect(b.get('mode')).toBe('light');
+
+    b.set('mode', 'dark');
+    await b.flush();
+    await tick();
+    expect(a.get('mode')).toBe('dark');
   });
 
   it("propagates another writer's delete", async () => {

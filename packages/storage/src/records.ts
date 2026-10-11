@@ -15,7 +15,8 @@ export interface RecordChange {
  *
  * Writes land in memory at once and reach storage on a debounce. The newest
  * write to a record wins: another writer's change to a record with a write
- * still queued here is ignored, since the queued write lands after it.
+ * still queued or on its way here is ignored, since that write lands after
+ * it. A write storage rejects stays queued and is sent again on a backoff.
  */
 export interface RecordCache {
   readonly prefix: string;
@@ -31,8 +32,8 @@ export interface RecordCache {
   delete(name: string): void;
   subscribe(listener: (changes: RecordChange[]) => void): () => void;
   /** Send queued writes now. Resolves true when every queued write landed or
-   *  none was queued; false when a write threw (its value stays in memory) or
-   *  writing is off and writes were queued. */
+   *  none was queued; false when a write threw (it stays queued) or writing
+   *  is off and writes were queued. */
   flush(): Promise<boolean>;
   /** Try a failed first read again now, ahead of the backoff. Resolves
    *  whether the records have been read. */
@@ -56,8 +57,9 @@ export interface RecordCacheOptions {
   debounceMs?: number;
   /** The longest a write waits under continuous change. Default 1000 ms. */
   maxWaitMs?: number;
-  /** The wait before a failed first read is tried again, doubling after each
-   *  failure. Default 1000 ms; `false` never tries again on its own. */
+  /** The wait before a failed first read, or a write storage rejected, is
+   *  tried again, doubling after each failure. Default 1000 ms; `false` never
+   *  tries again on its own, leaving a rejected write for the next flush. */
   retryMs?: number | false;
   /** The longest wait between those tries. Default 30000 ms. */
   retryMaxMs?: number;
@@ -88,6 +90,8 @@ function buildCache(
   const retryMaxMs = options.retryMaxMs ?? 30_000;
   const values = new Map<string, unknown>(options.initial ?? []);
   const queued = new Map<string, unknown>();
+  // How many writes to each name are on their way to storage.
+  const inFlight = new Map<string, number>();
   const listeners = new Set<(changes: RecordChange[]) => void>();
   // Two reasons writing is off. A read landing clears `unread`; nothing
   // clears `stopped`, which is the opener's choice.
@@ -98,9 +102,13 @@ function buildCache(
   let timer: ReturnType<typeof setTimeout> | null = null;
   let firstQueuedAt: number | null = null;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
-  let retryWait = retryMs === false ? 0 : retryMs;
+  const firstRetryWait = retryMs === false ? 0 : retryMs;
+  let retryWait = firstRetryWait;
   let reading: Promise<boolean> | null = null;
   let warned = false;
+  let writeRetryTimer: ReturnType<typeof setTimeout> | null = null;
+  let writeRetryWait = retryWait;
+  let writeWarned = false;
 
   const emit = (changes: RecordChange[]): void => {
     for (const listener of [...listeners]) listener(changes);
@@ -124,8 +132,10 @@ function buildCache(
     firstQueuedAt = null;
     if (queued.size === 0) return true;
     if (!writable()) return false;
+    stopRetryingWrites();
     const batch = [...queued];
     queued.clear();
+    for (const [name] of batch) inFlight.set(name, (inFlight.get(name) ?? 0) + 1);
     const landed = await Promise.all(
       batch.map(async ([name, value]) => {
         const key = prefix + name;
@@ -134,12 +144,42 @@ function buildCache(
           else await storage.set(key, value);
           return true;
         } catch (error) {
-          console.warn(`[storage] could not write "${key}"; keeping it in memory`, error);
+          if (!writeWarned) {
+            writeWarned = true;
+            console.warn(`[storage] could not write "${key}"; trying again`, error);
+          }
+          // A write queued since is newer, and stands.
+          if (!queued.has(name) && !stopped) queued.set(name, value);
           return false;
+        } finally {
+          const count = inFlight.get(name) ?? 1;
+          if (count > 1) inFlight.set(name, count - 1);
+          else inFlight.delete(name);
         }
       }),
     );
-    return landed.every(Boolean);
+    if (landed.every(Boolean)) {
+      writeWarned = false;
+      writeRetryWait = firstRetryWait;
+      return true;
+    }
+    retryWrites();
+    return false;
+  }
+
+  function stopRetryingWrites(): void {
+    if (writeRetryTimer) clearTimeout(writeRetryTimer);
+    writeRetryTimer = null;
+  }
+
+  function retryWrites(): void {
+    stopRetryingWrites();
+    if (retryMs === false || closed || stopped || queued.size === 0) return;
+    writeRetryTimer = setTimeout(() => {
+      writeRetryTimer = null;
+      void flush();
+    }, writeRetryWait);
+    writeRetryWait = Math.min(writeRetryWait * 2, retryMaxMs);
   }
 
   const applyRemote = (changes: StorageChange[]): void => {
@@ -147,7 +187,7 @@ function buildCache(
     for (const [key, value] of changes) {
       if (!key.startsWith(prefix)) continue;
       const name = key.slice(prefix.length);
-      if (queued.has(name)) continue;
+      if (queued.has(name) || inFlight.has(name)) continue;
       if (value === undefined) {
         if (!values.has(name)) continue;
         values.delete(name);
@@ -262,6 +302,7 @@ function buildCache(
       stopRetrying();
       await flush();
       closed = true;
+      stopRetryingWrites();
       unsubscribe?.();
       if (typeof window !== 'undefined') {
         window.removeEventListener('pagehide', onPageHide);
@@ -277,6 +318,7 @@ function buildCache(
       if (timer) clearTimeout(timer);
       timer = null;
       stopRetrying();
+      stopRetryingWrites();
       unsubscribe?.();
     },
   };

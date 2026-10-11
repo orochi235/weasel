@@ -807,16 +807,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
 
-- **(P3) Escape cancels a reorder drag.** Neither `Tree`'s drag (`useTreeDrag`) nor
-  `useReorderDragList` listens for Escape, so a drag can only end by releasing somewhere.
-  `ThresholdDragHandle.cancel` already exists; both hooks need the key wired to it, and the
-  dragged rows must stay where they were.
-
-- **(P3) `Tree` can steal focus after a keyboard move that never re-renders.** An Alt+arrow move
-  records the node to refocus and waits for the next render. If the consumer's `onMove` is async
-  or doesn't update `nodes`, the next unrelated render moves focus to that node. Clear the pending
-  focus when the move doesn't land within a frame.
-
 - **(P3) `PrefSchemaEditor` exports enum options with empty or duplicate values.** The options
   editor adds a row as `{ value: '', label: '' }` and accepts repeats, and the exported literal
   carries them as-is — an enum that cannot round-trip. Flag the bad rows in the editor rather
@@ -902,30 +892,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P2) A record cache drops a write its adapter rejected.** `flush` in
-  `packages/storage/src/records.ts` empties `queued` before the writes resolve, and a write that
-  throws is warned about ("keeping it in memory") and never queued again. The page keeps showing
-  the new value, storage never gets it, the next `flush()` resolves true, and `writable` stays
-  true, so over a server adapter a pref changed while the server restarts reverts at the next
-  load. Read from the code here; reproduced against a fake async adapter in review of astv's
-  server-backed prefs, whose adapter resends refused writes itself to get around it. Wants the
-  failed names put back in `queued`, unless a newer write to the name is already there, and
-  flushed again on a backoff.
-
-- **(P2) A record cache takes a remote change over its own write in flight.** `applyRemote`
-  skips a name only while it is in `queued`, and `flush` clears `queued` before awaiting the
-  adapter. Page A sets `mode=light` and its flush is in flight; page B's `mode=auto` lands and is
-  announced; then A's write lands. A shows `auto` while storage holds `light`. Same provenance as
-  the entry above. Wants the names of an in-flight batch held alongside `queued`, so a remote
-  change to one is ignored until its write settles.
-
 - **(P3) Two callers still treat an unread record cache as final.** A cache whose first read
   failed now reads again and recovers, but labkit's lab store opts out (`retryMs: false` in
   `openLabStore.ts`): `readLab` answers an unwritable cache with an empty lab, so records landing
   later would skip its migrations and its fold of the old storage keys. And draw's
   `importLegacyPrefs` (`apps/draw/src/prefs.ts`) checks `writable` once at boot, so a store that
   recovers mid-session imports its legacy prefs only on the next load. Both want the same thing
-  the prefs entry below does: the open-time work rerun when the records arrive.
+  the prefs entry below does: the open-time work rerun when the records arrive. The lab store's
+  `retryMs: false` also turns off the timer that resends a write storage rejected, which then
+  waits for the next flush.
 
 - **(P3) Prefs migrate only at open, so an older version arriving later is never migrated.**
   `watchPrefsVersion` reacts to another writer's `$version` only when it is above this build's.
