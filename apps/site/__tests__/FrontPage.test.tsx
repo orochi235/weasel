@@ -1,9 +1,8 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import { FrontPage } from '../FrontPage/FrontPage';
 import { routeOf } from '../routes';
 
-beforeEach(() => window.localStorage.clear());
 afterEach(cleanup);
 
 const themed = () => document.querySelector('[data-wzl-theme]')!;
@@ -22,23 +21,11 @@ describe('the front page', () => {
     ]);
   });
 
-  it('switches palette from the toggle and remembers the choice', () => {
-    const first = render(<FrontPage />);
+  it('wears the project colors in dark mode, with no control to change them', () => {
+    render(<FrontPage />);
+    expect(themed().getAttribute('data-wzl-theme')).toBe('weasel-project');
     expect(themed().getAttribute('data-wzl-mode')).toBe('dark');
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Paper' }));
-    expect(themed().getAttribute('data-wzl-mode')).toBe('light');
-
-    first.unmount();
-    render(<FrontPage />);
-    expect(themed().getAttribute('data-wzl-mode')).toBe('light');
-  });
-
-  it('wears a different theme for the project palette', () => {
-    render(<FrontPage />);
-    const before = themed().getAttribute('data-wzl-theme');
-    fireEvent.click(screen.getByRole('radio', { name: 'Project' }));
-    expect(themed().getAttribute('data-wzl-theme')).not.toBe(before);
+    expect(screen.queryByRole('radio')).toBeNull();
   });
 });
 

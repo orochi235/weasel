@@ -81,9 +81,3 @@
   color: var(--wzl-fg-muted);
   font-size: var(--wzl-font-size-xs);
 }
-
-.palette {
-  position: absolute;
-  top: var(--wzl-space-lg);
-  right: var(--wzl-space-lg);
-}

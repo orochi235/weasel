@@ -1,12 +1,10 @@
-import { useState } from 'react';
 import { ThemeProvider } from '@weasel-js/theme/react';
-import { ToggleBar } from '@weasel-js/ui';
 import { DEMOS_ID, GET_STARTED_ID, RELEASES_ID } from '../routes';
-import { PALETTES, storePalette, storedPalette } from './palettes';
+import { projectTheme } from './projectTheme';
 import { Wordmark } from './Wordmark';
 import s from './FrontPage.module.css';
 
-const PALETTE_ITEMS = PALETTES.map((p) => ({ value: p.id, label: p.label }));
+const DARK = { mode: 'dark' } as const;
 
 const LINKS = [
   { href: `#${GET_STARTED_ID}`, title: 'Get started', note: 'Install, first scene' },
@@ -19,10 +17,8 @@ const LINKS = [
 
 /** The site's root: a pitch and a door to each section, with nothing else on screen. */
 export function FrontPage() {
-  const [palette, setPalette] = useState(storedPalette);
-
   return (
-    <ThemeProvider theme={palette.theme} selection={palette.selection} className={s.page}>
+    <ThemeProvider theme={projectTheme} selection={DARK} className={s.page}>
       <main className={s.pitch}>
         <h1 className={s.title}>
           <Wordmark />
@@ -38,19 +34,6 @@ export function FrontPage() {
           ))}
         </nav>
       </main>
-      <ToggleBar
-        className={s.palette}
-        ariaLabel="Color theme"
-        size="sm"
-        items={PALETTE_ITEMS}
-        value={palette.id}
-        onChange={(id) => {
-          const next = PALETTES.find((p) => p.id === id);
-          if (!next) return;
-          storePalette(next);
-          setPalette(next);
-        }}
-      />
     </ThemeProvider>
   );
 }
