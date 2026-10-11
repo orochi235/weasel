@@ -26,9 +26,9 @@ test('bodyClassName can replace every default the body sets', () => {
 test('a click outside closes the dialog only when isDismissable is set', async () => {
   const onOpenChange = vi.fn();
   const { rerender } = render(<Dialog isOpen onOpenChange={onOpenChange} title="Stay">body</Dialog>);
-  await userEvent.click(document.querySelector('[data-weasel-overlay]')!, { position: { x: 2, y: 2 } });
+  await userEvent.click(document.querySelector('[data-weasel-overlay]')!);
   expect(onOpenChange).not.toHaveBeenCalled();
   rerender(<Dialog isOpen isDismissable onOpenChange={onOpenChange} title="Stay">body</Dialog>);
-  await userEvent.click(document.querySelector('[data-weasel-overlay]')!, { position: { x: 2, y: 2 } });
+  await userEvent.click(document.querySelector('[data-weasel-overlay]')!);
   expect(onOpenChange).toHaveBeenCalledWith(false);
 });
