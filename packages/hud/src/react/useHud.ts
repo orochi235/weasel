@@ -45,11 +45,18 @@ export function useHud(
  *  record is what keeps HUD chrome in step with a mode switch. */
 function useAttachOptions(font: AttachHudOptions['font']): AttachHudOptions {
   const provided = useThemeOptional();
-  return useMemo(() => ({
-    theme: provided?.resolved ?? resolveTheme(weaselTheme),
-    ...(provided ? { tones: provided } : {}),
-    ...(font !== undefined ? { font } : {}),
-  }), [provided, font]);
+  // By value: an atlas written inline is a new object every render, and a new options object re-attaches the layer.
+  const family = typeof font === 'string' ? font : undefined;
+  const metricsUrl = typeof font === 'object' ? font.metricsUrl : undefined;
+  const atlasUrl = typeof font === 'object' ? font.atlasUrl : undefined;
+  return useMemo(() => {
+    const stable = family ?? (metricsUrl !== undefined && atlasUrl !== undefined ? { metricsUrl, atlasUrl } : undefined);
+    return {
+      theme: provided?.resolved ?? resolveTheme(weaselTheme),
+      ...(provided ? { tones: provided } : {}),
+      ...(stable !== undefined ? { font: stable } : {}),
+    };
+  }, [provided, family, metricsUrl, atlasUrl]);
 }
 
 /**

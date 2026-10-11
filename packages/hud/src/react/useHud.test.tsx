@@ -72,6 +72,26 @@ describe('useHud', () => {
     expect(result.current).toBe(first);
   });
 
+  it('stays attached across re-renders when the font is an object written inline', () => {
+    const api = makeApi();
+    const { rerender } = renderHook(() => {
+      const ref = useRef<CanvasExtensionApi>(api);
+      return useHud(ref, { font: { metricsUrl: '/inter.json', atlasUrl: '/inter.png' } });
+    });
+    act(() => { rerender(); });
+    expect(api.registerLayer).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps one contribution across re-renders when the font is an object written inline', () => {
+    const { result, rerender } = renderHook(() => {
+      const hud = useHud();
+      return useHudContribution(hud, { font: { metricsUrl: '/inter.json', atlasUrl: '/inter.png' } });
+    });
+    const first = result.current;
+    act(() => { rerender(); });
+    expect(result.current).toBe(first);
+  });
+
   it('attaches through its contribution when given no ref', () => {
     const api = makeApi();
     const { result } = renderHook(() => {
