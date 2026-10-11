@@ -1,10 +1,10 @@
 # The animator on blits
 
-**Status: the values are computed in blits, and targets exist; nothing in the tree uses one yet.** Built and merged: pose overrides
+**Status: the values are computed in blits, and pose animation is on targets.** Built and merged: pose overrides
 fold through a mix, tweens, springs, physics, decay, and keyframe sampling compute in blits ("What
 step 3 built"), on `@msb235/blits` 0.8.1, and a global pause holds the mix clock. Animation targets
-are built, so animations given one combine; nothing in the tree is on a target yet. Not built: the
-last four arcs under "The arcs", which are what make two animations on one value combine. Delete this
+are built, and the pose helpers, reflow, and momentum move them, so two moves on one node combine.
+Not built: the last three arcs under "The arcs" (color and camera, timeline, rig). Delete this
 once they are all built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
@@ -103,8 +103,8 @@ and hands its value to the caller's `onTick`, so the later writer still wins. Wh
 - **The camera keeps its destination to itself** and writes the folded view through `view.set`
   each frame, so `view.get()` and pointer math read the live view. Animations from one
   `useViewAnimation` instance go on replacing each other, since two anchored zooms do not add.
-- **The same `cancelKey` still replaces.** Whether `tweenPose` and its siblings keep a key that
-  replaces, or drop it so successive moves on one node blend, is for the pose arc to settle.
+- **The same `cancelKey` still replaces**, unless the animation passes `interrupt: false`.
+  `tweenPose` does, so successive moves on one node blend under one key.
 
 ## Decisions this needs
 
@@ -137,8 +137,23 @@ are built: blits' stepping and springs, pose overrides as a mix, and values comp
    on the target as its blits subject, so the codec's `pull` reads their sum. A coast has no
    destination, so it commits where it stops, not a landing point up front. Offsets live in the
    animator that cued them, and a second animator cueing onto a moving target throws.
-2. **Pose.** Pose overrides fold offsets over entries; `tweenPose`, `springPose`, reflow, and
-   momentum move onto targets, closing reflow's "velocity does not carry over".
+2. **Pose.** Built 2026-10-11. `createPoseTarget` (`packages/core/src/animation/poseTarget.ts`)
+   is a target whose `show` publishes the folded pose as the node's override entry while it
+   moves and clears it at rest; `scenePoseTarget` keeps one per scene node, and an adapter hands
+   it out through `poseTarget`. `tweenPose`, `springPose`, the two wrappers, reflow, and momentum
+   move it. Decided:
+   - A move commits its destination to the scene as it starts, unrecorded; the helper records
+     its one transform op first. Nothing writes `setPose` per frame.
+   - `tweenPose` keeps `pose:<id>` and takes it with `interrupt: false`, so successive moves
+     add. `springPose` interrupts under that key at the summed velocity of what it interrupts.
+   - A reflow glide's target commits the slot the layout wants, held by the reflow module, not
+     the document pose. A spring retarget carries velocity.
+   - A momentum coast is a targeted decay per node, from the release pose, and the flick is
+     recorded once every node has stopped.
+   - An adapter with no `poseTarget`, a pose with no axes, and a container under
+     `cascadeContainerPose` keep the write-a-frame path.
+   - Something else writing the node's pose mid-flight (an undo) moves the committed pose under
+     the running offsets, which then decay onto it. Nothing detects the write.
 3. **Color and camera.** Built 2026-10-11.
    - **Camera.** `useViewAnimationOn` makes one target for its view and exposes it as
      `viewTarget`. The committed view lives in the hook while anything is in flight, and the

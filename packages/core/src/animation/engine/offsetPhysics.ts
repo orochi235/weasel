@@ -28,12 +28,13 @@ export function startOffsetPhysics<T>(
   const zeros = (): number[] => new Array<number>(ax.count).fill(0);
 
   const id = ctx.nextId();
+  const interrupts = o.interrupt !== false;
   const seed = {
-    id, kind, cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: o.interrupt === false,
+    id, kind, cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: !interrupts,
   } as AnimationSeed;
-  if (o.cancelKey != null && !seed.keepExisting) {
-    // Read ahead of the interrupt, which stops the voice whose velocity this is.
-    velocity ??= ctx.holder(o.cancelKey, s as never)?.velocity.slice() ?? null;
+  if (o.cancelKey != null && interrupts) {
+    // Read ahead of the interrupt, which stops the voices whose velocity this is.
+    velocity ??= ctx.velocityUnder(o.cancelKey, s as never);
     ctx.interrupt(o.cancelKey, seed);
   }
   const committed = ax.to(s.get());
@@ -108,6 +109,7 @@ export function startOffsetPhysics<T>(
       dest = to;
       codec.recue(id, shifted, own.velocity, zeros());
       bump(s as never, minus(shifted, own.value), 1);
+      ctx.targets.showNow(s as never);
     },
     setVelocity(v) {
       if (left) return;

@@ -1,5 +1,6 @@
 import { tweenPose } from '../poseHelpers';
 import { setPoseInstant } from './instantPose';
+import { stateOf } from '../target';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
 import type { Animator, EasingSpec } from '../types';
@@ -35,9 +36,11 @@ export function animateLifecycle<TNode extends { id: string; pose?: TPose }, TPo
       if (!opts.enterFrom) return;
       const final = adapter.getPose(object.id);
       const start = opts.enterFrom(final);
-      setPoseInstant(adapter, object.id, start);
+      // A pose target shows the start pose itself; without one it has to be written.
+      if (!adapter.poseTarget?.(object.id, opts.geometry)) setPoseInstant(adapter, object.id, start);
       tweenPose(animator, adapter as never, {
         id: object.id,
+        from: start,
         to: final,
         ms,
         easing: opts.easing,
@@ -53,9 +56,14 @@ export function animateLifecycle<TNode extends { id: string; pose?: TPose }, TPo
       if (leaving.has(id)) return;
       leaving.add(id);
       let unwatch = (): void => {};
+      const target = adapter.poseTarget?.(id, opts.geometry);
+      const committed = target && stateOf(target);
+      const home = committed?.get();
       const remove = (): void => {
         if (!leaving.delete(id)) return;
         unwatch();
+        // The exit pose was only for show: the node is removed as it stood, so undo restores that.
+        if (committed) committed.set(home as TPose);
         adapter.removeNode(id);
       };
       const current = adapter.getPose(id);

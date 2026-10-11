@@ -1,6 +1,6 @@
 import type { AnimationHandle, AnimationInfo, AnimationKind } from '../types';
 import type { TargetState } from '../target';
-import type { Codec, Own } from './codec';
+import type { Codec } from './codec';
 import type { TargetBook } from './offsets';
 
 /** One row of the animator's table. */
@@ -63,6 +63,6 @@ export interface AnimationContext {
   tripwire(): boolean;
   /** Retires whoever holds `key` as interrupted by `by`, ahead of `by`'s own registration. */
   interrupt(key: string, by: AnimationSeed): void;
-  /** The motion of the animation holding `key` on `target`, where there is one. */
-  holder(key: string, target: TargetState): Own | undefined;
+  /** The summed velocity of the animations holding `key` on `target`; null where none does. */
+  velocityUnder(key: string, target: TargetState): number[] | null;
 }

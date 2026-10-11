@@ -175,6 +175,8 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       a.onCancel?.();
       codec.stop(id);
       animations.current.delete(id);
+      // A target that came to rest is owed one more show, and no frame may be coming.
+      if (targets.resting) frameLoopRef.current.request();
       fireCompletion(id);
       if (!hub.watched || a.ended || error) return;
       hub.emit(by
@@ -299,6 +301,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       // between register() and the first RAF callback.
       anim.lastRealNow = codecFrameT.current ?? now();
       animations.current.set(anim.id, anim);
+      if (anim.target) targets.showNow(anim.target);
       if (hub.watched) hub.emit({ type: 'start', animation: infoOf(anim) });
       ensureLoop();
       return {
@@ -343,11 +346,14 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       },
       tripwire,
       interrupt: (key, by) => cancelByKey(key, by as ActiveAnimation),
-      holder: (key, target) => {
+      velocityUnder: (key, target) => {
+        let sum: number[] | null = null;
         for (const a of animations.current.values()) {
-          if (a.cancelKey === key && a.target === target) return codec.own(a.id);
+          if (a.cancelKey !== key || a.target !== target) continue;
+          const v = codec.own(a.id)?.velocity;
+          if (v) sum = sum ? sum.map((x, i) => x + v[i]!) : v.slice();
         }
-        return undefined;
+        return sum;
       },
     };
 
@@ -373,6 +379,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       }
       animations.current.clear();
       codecFrameT.current = null;
+      targets.show();
       for (const a of retired) fireCompletion(a.id);
       if (hub.watched) for (const a of retired) hub.emit({ type: 'cancel', animation: infoOf(a) });
       frameLoopRef.current.cancel();
