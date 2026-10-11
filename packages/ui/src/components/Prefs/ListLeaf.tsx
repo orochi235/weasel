@@ -16,6 +16,11 @@ export function prefListTexts(value: unknown): string[] {
   return (Array.isArray(value) ? value : []).map((e) => (typeof e === 'string' ? e : ''));
 }
 
+/** What an entry of a list reads as: one holding nothing is the item's default, which is what a new entry starts as. */
+export function prefListEntry(pref: PrefList, entry: unknown): unknown {
+  return entry !== undefined ? entry : pref.item.default;
+}
+
 /** A `list` leaf: one control per entry, each drawn as the list's `item` leaf, and every edit commits the whole array. */
 export function ListLeaf({
   ctx,
@@ -45,7 +50,7 @@ export function ListLeaf({
         renderItem({
           path: `${ctx.path}.${i}`,
           pref: { ...item, name },
-          value: entry !== undefined ? entry : item.default,
+          value: prefListEntry(pref, entry),
           setValue: set,
           // An entry is not pinned on its own: it shares the state of its list.
           auto: ctx.auto,

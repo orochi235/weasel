@@ -1252,13 +1252,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `Prefs/` taking the per-surface parts as arguments (how a field's value and mixed state are
   read, how a row is framed).
 
-- **(P3) A list leaf's entries are drawn two ways.** `Prefs/ListLeaf.tsx` substitutes `item.default`
-  for an `undefined` entry, and `SelectionPanel/ListLeaf.tsx` marks it unset; which one a list
-  wants is not decided. Item renderers are looked up by kind only in both, and in labkit's
-  `ControlPanel`, though `SelectionPanel` looks up by path first everywhere else, and an entry has
-  no path of its own for a renderer to be keyed by. The plain-text shortcut is one predicate now
-  (`prefListIsText`), which all three ask.
-
 - **(P3) Which control a leaf gets is decided again in each params surface.** `prefFieldProps` is
   the shared half; each caller then overrides it: `Prefs/PrefsRow.tsx`,
   `SelectionPanel/renderLeaf.tsx` (`renderBuiltin`), labkit's `controls/fields.tsx` (`labField`) and

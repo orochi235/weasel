@@ -284,7 +284,7 @@ export function renderBuiltin(
         ctx={ctx}
         drawsStrings={renderers?.string !== undefined}
         renderItem={(item, name) => {
-          const custom = renderers?.[item.pref.kind];
+          const custom = renderers?.[item.path] ?? renderers?.[item.pref.kind];
           return custom ? custom(item) : renderBuiltin(item, name, renderers, within);
         }}
       />

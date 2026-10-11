@@ -11,7 +11,7 @@ export { PrefActionButton } from './PrefActionButton';
 export { PrefLabelLine, PrefRule, PrefWords, prefDrawsNoControl } from './PrefWords';
 export { useLeafAction, type LeafAction } from './useLeafAction';
 export { PrefControl, type PrefControlProps } from './PrefControl';
-export { prefListIsText, prefListTexts } from './ListLeaf';
+export { prefListEntry, prefListIsText, prefListTexts } from './ListLeaf';
 export { MapEditor, type MapEditorProps } from './MapEditor';
 export { UnionPicker, type UnionPickerProps } from './UnionPicker';
 export { PrefsRail, type PrefsRailProps } from './PrefsRail';

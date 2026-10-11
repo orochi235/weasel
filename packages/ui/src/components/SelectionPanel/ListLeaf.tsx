@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { PrefList } from '@weasel-js/prefs';
 import { ListEditor } from '../ListEditor';
-import { prefListIsText, prefListTexts } from '../Prefs/ListLeaf';
+import { prefListEntry, prefListIsText, prefListTexts } from '../Prefs/ListLeaf';
 import type { PropertyRenderContext } from './renderLeaf';
 import s from './SelectionPanel.module.css';
 
@@ -35,8 +35,9 @@ export function ListLeaf({
       {...shared}
       value={Array.isArray(ctx.value) ? (ctx.value as unknown[]) : []}
       newEntry={() => item.default}
-      renderEntry={(entry, set, name, i) =>
-        renderItem(
+      renderEntry={(held, set, name, i) => {
+        const entry = prefListEntry(pref, held);
+        return renderItem(
           {
             path: `${ctx.path}.${i}`,
             ...(ctx.fields ? { fields: ctx.fields } : {}),
@@ -51,8 +52,8 @@ export function ListLeaf({
             selectionKey: ctx.selectionKey,
           },
           name,
-        )
-      }
+        );
+      }}
     />
   );
 }
