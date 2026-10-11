@@ -110,7 +110,7 @@ export function CursorCoordsHud({ canvasRef, anchorRef, viewRef, toWorld, offset
     return () => {
       document.removeEventListener('pointermove', onMove);
     };
-  }, [canvasRef, viewRef]);
+  }, [canvasRef, viewRef, toWorldRef]);
 
   if (!anchorStyle) return null;
 

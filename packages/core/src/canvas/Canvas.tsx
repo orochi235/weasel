@@ -711,6 +711,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     return null;
   }, [getIsVisibleRef, layerOrderRef, layerVisibilityRef]);
 
+  const {
+    viewRef, controlledView, setView, getView, subscribeView,
+    adoptControlled, announceControlled, clearSubscribers,
+  } = useCanvasView({ view: viewProp, defaultView, onViewChange, viewBounds, dimsRef, requestRedraw });
+
   const hitTestExtras = useCallback((
     worldX: number,
     worldY: number,
@@ -721,12 +726,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     frame?.view ?? viewRef.current,
     frame?.dims ?? dimsRef.current,
     helpersForLayersRef.current,
-  ), [hitTestExtrasIn, dimsRef]);
-
-  const {
-    viewRef, controlledView, setView, getView, subscribeView,
-    adoptControlled, announceControlled, clearSubscribers,
-  } = useCanvasView({ view: viewProp, defaultView, onViewChange, viewBounds, dimsRef, requestRedraw });
+  ), [hitTestExtrasIn, dimsRef, viewRef]);
 
   useLayoutEffect(() => {
     const element = canvasRef.current;
@@ -879,7 +879,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const el = canvasRef.current;
     if (!el) return [clientX, clientY];
     return toWorld(el, clientX, clientY, viewRef.current, clientToWorldRef.current);
-  }, [clientToWorldRef]);
+  }, [clientToWorldRef, viewRef]);
   // Selection-driven action gestures (delete/nudge/undoRedo/duplicate) used
   // to be wired here via legacy hooks. They now go through the Actions
   // Registry / dispatcher path; consumers register them via the kit's
@@ -1044,7 +1044,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         ) !== null;
       },
     });
-  }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef]);
+  }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn, dimsRef, surfaceLayersRef, viewRef]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
@@ -1147,7 +1147,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (sink && spans) sink.recordFrame(frameStatsOf(spans, renderer.lastFrameStats(), performance.now() - paintT0));
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
-  }, [contentVersionRef, lease, paintInputsRef, paintRectRef, paintTargetRef, syncSceneLayers]);
+  }, [contentVersionRef, lease, paintInputsRef, paintRectRef, paintTargetRef, syncSceneLayers, viewRef]);
   useInsertionEffect(() => {
     paintRef.current = paint;
   });
@@ -1233,7 +1233,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (!layer.onUncapturedMove || !isLayerPainted(layer, visibility, layerOrderRef.current)) continue;
       layer.onUncapturedMove(worldX, worldY, e, view, dimsRef.current);
     }
-  }, [clientToWorldRef, dimsRef, layerOrderRef, layerVisibilityRef, layersForMoveRef]);
+  }, [clientToWorldRef, dimsRef, layerOrderRef, layerVisibilityRef, layersForMoveRef, viewRef]);
   const leave = useCallback((): void => {
     pointerDownRef.current = false;
     for (const layer of layersForMoveRef.current) layer.onUncapturedLeave?.();

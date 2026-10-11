@@ -1,4 +1,4 @@
-import { useCallback, useRef, type ReactElement } from 'react';
+import { useCallback, useState, type ReactElement } from 'react';
 import {
   getAlpha01,
   getPaintKind,
@@ -109,15 +109,16 @@ export function PaintInput(props: PaintInputProps): ReactElement {
   const ariaLabel = props['aria-label'];
 
   // Per-kind memory, so linear → solid → linear comes back with its stops.
-  const remembered = useRef(new Map<PaintKind, FillStyle>());
-  const subjectSeen = useRef(subject);
-  if (subjectSeen.current !== subject) {
-    subjectSeen.current = subject;
-    remembered.current.clear();
+  const [held, setHeld] = useState(() => ({ subject, kinds: new Map<PaintKind, FillStyle>() }));
+  let memory = held;
+  if (held.subject !== subject) {
+    memory = { subject, kinds: new Map() };
+    setHeld(memory);
   }
+  const remembered = memory.kinds;
 
   const active = mixed ? null : kindOf(value);
-  if (value != null && active !== null) remembered.current.set(active, value);
+  if (value != null && active !== null) remembered.set(active, value);
 
   const valueKind = usePaintKind(value?.fill);
   const entries = usePaintKinds().filter(
@@ -149,7 +150,7 @@ export function PaintInput(props: PaintInputProps): ReactElement {
       onChange(null);
       return;
     }
-    const seen = remembered.current.get(kind);
+    const seen = remembered.get(kind);
     if (seen !== undefined) {
       onChange(seen);
       return;

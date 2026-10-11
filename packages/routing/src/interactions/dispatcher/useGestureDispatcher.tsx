@@ -1162,6 +1162,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // Detach is unconditional: a channel turned off mid-life must still
       // have whatever it attached while it was on taken back off.
       canvas?.classList.remove(DROPOVER_CLASS);
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- a mirror of the registry prop, not a node: the one in use at teardown is the one holding the keys
       registryRef.current.dropKeys();
       clearHoverCursor();
       cancelAllLongPress();

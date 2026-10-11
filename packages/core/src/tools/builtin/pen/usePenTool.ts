@@ -266,7 +266,7 @@ export function usePenTool(
     if (!scene && !deps.applyOps) return false;
     if (!(cont ? deps.editAnchors?.editOps : deps.insert?.build)) return false;
     return cont?.id === hit.id || scene?.get(hit.id as never) !== undefined;
-  }, [optsRef]);
+  }, []);
 
   /** Finish the path onto `hit`, the endpoint its last anchor was just placed
    *  on: the other subpath's anchors follow on from it, turned around when

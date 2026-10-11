@@ -92,7 +92,7 @@ export function PickHud({ canvasRef, anchorRef, viewRef, toWorld, pickEvery, pic
     return () => {
       document.removeEventListener('pointermove', onMove);
     };
-  }, [canvasRef, viewRef, pickEvery, pickBest]);
+  }, [canvasRef, viewRef, pickEvery, pickBest, toWorldRef]);
 
   if (!style) return null;
 
