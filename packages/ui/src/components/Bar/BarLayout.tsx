@@ -13,11 +13,12 @@ export interface BarLeafNode {
 }
 
 /**
- * One thing a bar holds: a leaf, a run of things set off by dividers, or a
- * button that opens what no line holds.
+ * One thing a bar holds: a leaf, a cell a surface has already drawn, a run of
+ * things set off by dividers, or a button that opens what no line holds.
  */
 export type BarNode =
   | ({ kind: 'leaf' } & BarLeafNode)
+  | ({ kind: 'cell' } & BarCell)
   | { kind: 'run'; path: string; nodes: readonly BarNode[] }
   | { kind: 'opens'; path: string; name: string; body: () => ReactNode };
 
@@ -39,8 +40,13 @@ export interface BarLayoutProps {
   row: (leaf: BarLeafNode) => ReactNode;
   /** Attributes for the element drawn for the leaf or group at `path`. */
   attrs?: (path: string, leaf: boolean) => Record<string, string | undefined>;
+  /** Attributes for the bar's own element. */
+  rootAttrs?: Record<string, string | undefined>;
   /** Names the bar, and makes it a `toolbar`. Leave unset inside one. */
   label?: string;
+  /** Draw the strip the bar sits on, for a bar set among other things with
+   *  no strip of the host's under it. */
+  framed?: boolean;
   className?: string;
 }
 
@@ -56,7 +62,7 @@ type Item = { divider: true } | { divider?: false; path: string; leaf: boolean; 
  * leave the arrow keys to them, so it does not rove.
  */
 export function BarLayout(props: BarLayoutProps) {
-  const { nodes, orientation = 'horizontal', cells, row, attrs, label, className } = props;
+  const { nodes, orientation = 'horizontal', cells, row, attrs, rootAttrs, label, framed, className } = props;
   const vertical = orientation === 'vertical';
   const items: Item[] = [];
 
@@ -81,6 +87,10 @@ export function BarLayout(props: BarLayoutProps) {
         continue;
       }
       flush();
+      if (node.kind === 'cell') {
+        items.push({ path: node.path, leaf: true, content: node.content });
+        continue;
+      }
       if (node.kind === 'opens') {
         items.push({ path: node.path, leaf: false, content: <BarPopover label={node.name}>{node.body()}</BarPopover> });
         continue;
@@ -101,7 +111,8 @@ export function BarLayout(props: BarLayoutProps) {
 
   return (
     <div
-      className={[s.bar, className].filter(Boolean).join(' ')}
+      {...rootAttrs}
+      className={[s.bar, framed && s.framed, className].filter(Boolean).join(' ')}
       data-orientation={orientation}
       role={label === undefined ? undefined : 'toolbar'}
       aria-label={label}

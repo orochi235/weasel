@@ -12,6 +12,23 @@
   align-items: stretch;
 }
 
+/* The strip itself, where the host draws none. Too long for its room, it scrolls. */
+.framed {
+  margin-block: var(--wzl-space-3);
+  min-block-size: var(--wzl-tb-height);
+  padding: 0 var(--wzl-space-3);
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.framed[data-orientation='vertical'] {
+  padding: var(--wzl-space-3) 0;
+  overflow-x: visible;
+}
+
 .cell {
   display: flex;
   flex: none;

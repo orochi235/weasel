@@ -7,6 +7,8 @@ A group can be drawn as a bar. `PrefGroupAs` gains `'bar'`, and `Bar` draws one 
 
 `Bar` has no frame; the host gives it the strip it sits on. `BarLayout` is the line itself, for a surface with its own values and cells, and `groupBarNodes` reads a group into what it lays out.
 
+A group `as: 'bar'` draws as one line of bar forms, with no heading, in a `PrefsForm` page, in an `object` leaf of a `PrefsForm`, and as a `SelectionPanel` section. A section inside an object leaf in `SelectionPanel`, and labkit's `ControlPanel`, still draw one as a headed block of rows.
+
 `ToolOptionsBar` draws its schema with a `Bar`, so a nested group there is now a run between dividers, or a button for a `page`, `tab`, or `panel`, where its leaves used to join the line unmarked.
 
 The icon set gains `formBar`.

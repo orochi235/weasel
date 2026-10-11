@@ -71,11 +71,21 @@ export interface WalkCtx {
   drop?: PrefDrop | null;
 }
 
-export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
-  if (pref.kind !== 'alias' || ctx.renderers?.alias) return <LeafRow ctx={ctx} path={path} pref={pref} />;
+/**
+ * The leaf a form draws for `pref`, and where its value lives when that is not the leaf's own path: an alias is
+ * drawn as the leaf it points at. Null for an alias of nothing.
+ */
+export function shownLeaf(ctx: WalkCtx, pref: PrefLeaf): { pref: PrefLeaf; at?: string } | null {
+  if (pref.kind !== 'alias' || ctx.renderers?.alias) return { pref };
   const alias = pref as PrefAlias;
   const target = prefAliasTarget(alias, ctx.leafAt ?? (() => undefined));
-  if (target) return <LeafRow ctx={ctx} path={path} pref={prefAliasedLeaf(alias, target.leaf)} at={target.path} />;
+  return target ? { pref: prefAliasedLeaf(alias, target.leaf), at: target.path } : null;
+}
+
+export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
+  const shown = shownLeaf(ctx, pref);
+  if (shown) return <LeafRow ctx={ctx} path={path} pref={shown.pref} at={shown.at} />;
+  const alias = pref as PrefAlias;
   // An alias of nothing is a wiring fault, shown where it sits and not dropped from the form.
   return (
     <div className={s.rowSlot} {...selectionAttrs(path, ctx, true)}>
@@ -86,29 +96,39 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   );
 }
 
-/** One leaf's row. `at` is where its value lives when that is not the row's own `path`: the target of an alias. */
-function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pref: PrefLeaf; at?: string }) {
+/**
+ * What a leaf's renderer is given, read from the form's values, and whether the leaf's auto state can be toggled.
+ * `at` is where the value lives when that is not the leaf's `own` path: the target of an alias.
+ */
+export function prefRenderContext(
+  ctx: WalkCtx, own: string, pref: PrefLeaf, at?: string,
+): { renderCtx: PrefRenderContext; toggles: boolean } {
   const path = at ?? own;
   // A placeholder shows what its node shows where it was dragged from.
   const from = at ?? dropValuePath(ctx.drop, own);
   const stored = prefValueAtPath(ctx.values, from);
-  const inherited = ctx.auto?.has(from) ?? false;
   const mixed = ctx.mixed?.has(from) ?? false;
   const { onAutoChange } = ctx;
   const toggles = onAutoChange !== undefined && pref.manual !== true && (ctx.canInherit?.(path) ?? true);
-  const setAuto = (next: boolean): void => {
-    if (toggles) onAutoChange(path, next);
-  };
   const renderCtx: PrefRenderContext = {
     path,
     pref,
     value: mixed ? undefined : stored !== undefined ? stored : pref.default,
     mixed,
     setValue: (v) => ctx.onChange(path, v),
-    auto: inherited,
-    setAuto,
+    auto: ctx.auto?.has(from) ?? false,
+    setAuto: (next) => {
+      if (toggles) onAutoChange(path, next);
+    },
     ...(ctx.fields ? { fields: ctx.fields } : {}),
   };
+  return { renderCtx, toggles };
+}
+
+/** One leaf's row. `at` is where its value lives when that is not the row's own `path`: the target of an alias. */
+function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pref: PrefLeaf; at?: string }) {
+  const { renderCtx, toggles } = prefRenderContext(ctx, own, pref, at);
+  const { path, auto: inherited, setAuto } = renderCtx;
 
   const custom = ctx.renderers?.[pref.kind];
   // Text among the rows, holding no value: its name is the line and its description the note under it.
@@ -182,7 +202,7 @@ function renderBuiltin(
     });
   }
   const object = (of: PrefRenderContext): ReactNode => (
-    <ObjectLeaf ctx={of} renderField={(field, held) => renderPrefControl(field, renderers, held)} />
+    <ObjectLeaf ctx={of} renderField={(field, held, on) => renderPrefControl(field, renderers, held, on)} />
   );
   if (pref.kind === 'object') return object(ctx);
   if (pref.kind === 'list')

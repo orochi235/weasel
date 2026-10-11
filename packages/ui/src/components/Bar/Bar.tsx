@@ -36,6 +36,8 @@ export interface BarProps {
   orientation?: BarOrientation;
   /** Names the bar and makes it a `toolbar`. Leave unset inside one. */
   label?: string;
+  /** Draw the strip the bar sits on. Unset, the host's strip is under it. */
+  framed?: boolean;
   className?: string;
 }
 
@@ -45,7 +47,7 @@ export interface BarProps {
  * the host gives it the strip it sits on.
  */
 export function Bar(props: BarProps) {
-  const { schema, values, onChange, mixed, renderers, orientation, label, className } = props;
+  const { schema, values, onChange, mixed, renderers, orientation, label, framed, className } = props;
   const fields = prefFieldChoices(schema);
   const draw: Draw = { values, mixed, renderers, onChange, fields };
   return (
@@ -53,6 +55,7 @@ export function Bar(props: BarProps) {
       nodes={groupBarNodes(schema, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />)}
       orientation={orientation}
       label={label}
+      framed={framed}
       className={className}
       cells={(leaves) => barCells(leaves, draw)}
       row={(node) => <PropertyList>{leafRow(node, draw)}</PropertyList>}

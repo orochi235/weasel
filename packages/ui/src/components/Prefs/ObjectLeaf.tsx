@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
-import { isPrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
+import { BarLayout } from '../Bar/BarLayout';
+import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyRow } from '../Properties/PropertyPanel';
 import { drawsRows, drawsSeveral } from './compound';
 import { GroupTabs, type GroupTab } from './GroupTabs';
@@ -13,14 +15,28 @@ export function ObjectLeaf({
   renderField,
 }: {
   ctx: PrefRenderContext;
-  /** Draws one field. `siblings` is the object it is a field of. */
-  renderField: (ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined) => ReactNode;
+  /** Draws one field, for a row or for a bar. `siblings` is the object it is a field of. */
+  renderField: (ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined, surface?: LeafSurface) => ReactNode;
 }) {
   const pref = ctx.pref as PrefObject;
   const { value, setValue } = ctx;
   const held = typeof value === 'object' && value !== null
     ? (value as Record<string, unknown>)
     : undefined;
+  const fieldCtx = (key: string, child: PrefLeaf): PrefRenderContext => ({
+    path: `${ctx.path}.${key}`,
+    pref: child,
+    value: held?.[key],
+    setValue: (v) => {
+      const base = held ?? pref.fromScalar?.(value) ?? {};
+      setValue({ ...base, [key]: v });
+    },
+    // A field is not pinned on its own — it shares the state of
+    // the object leaf it hangs off.
+    auto: ctx.auto,
+    setAuto: ctx.setAuto,
+    ...(ctx.fields ? { fields: ctx.fields } : {}),
+  });
   const objectRows = (children: PrefObject['children']): ReactNode[] => {
     const out: ReactNode[] = [];
     // A run of neighboring `tab` sections, held until something else ends it.
@@ -31,6 +47,27 @@ export function ObjectLeaf({
     };
     for (const [key, child] of Object.entries(children)) {
       if (!isPrefLeaf(child)) {
+        if (child.as === 'bar') {
+          flushTabs();
+          // The section's fields on one line, each in its bar form.
+          const cells = prefSectionLeaves(child.members).flatMap(([field, leaf]) => {
+            const content = renderField(fieldCtx(field, leaf), held, 'bar');
+            return content == null ? [] : [{ kind: 'cell' as const, path: `${ctx.path}.${field}`, content }];
+          });
+          if (cells.length > 0) {
+            out.push(
+              <BarLayout
+                key={`bar:${key}`}
+                framed
+                label={child.name === '' ? undefined : child.name}
+                nodes={cells}
+                cells={() => []}
+                row={() => null}
+              />,
+            );
+          }
+          continue;
+        }
         const inner = objectRows(child.members);
         if (inner.length === 0) continue;
         if (child.as === 'tab') {
@@ -58,20 +95,7 @@ export function ObjectLeaf({
           className={stacked ? undefined : s.objectRow}
         >
           <span className={s.rowControl}>
-            {renderField({
-              path: `${ctx.path}.${key}`,
-              pref: child,
-              value: held?.[key],
-              setValue: (v) => {
-                const base = held ?? pref.fromScalar?.(value) ?? {};
-                setValue({ ...base, [key]: v });
-              },
-              // A field is not pinned on its own — it shares the state of
-              // the object leaf it hangs off.
-              auto: ctx.auto,
-              setAuto: ctx.setAuto,
-              ...(ctx.fields ? { fields: ctx.fields } : {}),
-            }, held)}
+            {renderField(fieldCtx(key, child), held)}
           </span>
         </PropertyRow>,
       );

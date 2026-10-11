@@ -1,7 +1,8 @@
 import { type ReactNode, type RefObject, useState } from 'react';
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { GroupTabs } from './GroupTabs';
-import { PrefRow, type WalkCtx } from './PrefsRow';
+import { BarLayout, groupBarNodes } from '../Bar/BarLayout';
+import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { selectionAttrs } from './selection';
 import s from './Prefs.module.css';
 
@@ -85,6 +86,8 @@ export function paneChildren(
           {paneChildren(ctx, Object.entries(child.children), p, depth, box)}
         </div>,
       );
+    } else if (child.as === 'bar') {
+      out.push(<PaneBar key={key} ctx={ctx} group={child} path={p} depth={depth} />);
     } else if (child.as === 'section') {
       out.push(<PaneSection key={key} ctx={ctx} group={child} path={p} depth={Math.max(depth, box ? 1 : 0)} box={box} />);
     } else if (box) {
@@ -127,6 +130,40 @@ function PaneSection({ ctx, group, path, depth, box }: {
       )}
       <div className={s.rows}>{paneChildren(ctx, Object.entries(group.children), path, depth + 1, box)}</div>
     </section>
+  );
+}
+
+/**
+ * A group drawn as a bar: its leaves in their bar forms on one line, with no
+ * heading. A page, tab, or panel inside it opens from a button, as the form
+ * would draw it.
+ */
+function PaneBar({ ctx, group, path, depth }: {
+  ctx: WalkCtx;
+  group: PrefGroup;
+  path: string;
+  depth: number;
+}) {
+  return (
+    <BarLayout
+      framed
+      rootAttrs={{ ...selectionAttrs(path, ctx), 'data-pref-bar': '' }}
+      label={group.name === '' ? undefined : group.name}
+      nodes={groupBarNodes(group, path, (inner, at) => (
+        <div className={s.rows}>{paneChildren(ctx, Object.entries(inner.children), at, depth + 1)}</div>
+      ))}
+      cells={(leaves) =>
+        leaves.flatMap(({ path: at, leaf }) => {
+          const shown = shownLeaf(ctx, leaf);
+          if (!shown) return [];
+          const { renderCtx } = prefRenderContext(ctx, at, shown.pref, shown.at);
+          const content = renderPrefControl(renderCtx, ctx.renderers, undefined, 'bar');
+          return content == null ? [] : [{ path: at, content }];
+        })
+      }
+      row={({ path: at, leaf }) => <PrefRow ctx={ctx} path={at} pref={leaf} />}
+      attrs={(at, leaf) => selectionAttrs(at, ctx, leaf)}
+    />
   );
 }
 

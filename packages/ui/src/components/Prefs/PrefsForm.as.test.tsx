@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PrefsForm } from './PrefsForm';
 import { prefRailItems } from './schema';
 
@@ -61,5 +61,32 @@ describe('a group\'s `as`', () => {
     expect(screen.getByText('Dim')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Light' }));
     expect(screen.getByText('Glow')).toBeInTheDocument();
+  });
+
+  it('draws a bar group as one line of bar forms with no heading, and writes through its path', () => {
+    const schema: PrefGroup = {
+      name: '',
+      children: {
+        canvas: { name: 'Canvas', children: {
+          tools: { name: 'Tools', as: 'bar', children: {
+            snap: flag('Snap'),
+            zoom: { kind: 'number', name: 'Zoom', description: '', default: 1 },
+            more: { name: 'More', as: 'panel', children: { ruler: flag('Ruler') } },
+          } },
+        } },
+      },
+    };
+    const onChange = vi.fn();
+    render(<PrefsForm layout="rail" schema={schema} onChange={onChange} defaultSection="canvas" />);
+    const bar = screen.getByRole('toolbar', { name: 'Tools' });
+    expect(screen.queryByRole('heading', { name: 'Tools' })).toBeNull();
+    // A flag is a button in a bar, where a row draws a checkbox.
+    fireEvent.click(within(bar).getByRole('button', { name: 'Snap' }));
+    expect(onChange).toHaveBeenCalledWith('canvas.tools.snap', true);
+    expect(bar.querySelector('[data-bar-label]')).toHaveTextContent('Zoom');
+    expect(bar.querySelector('[data-pref-path="canvas.tools.zoom"]')).not.toBeNull();
+    expect(screen.queryByText('Ruler')).toBeNull();
+    fireEvent.click(within(bar).getByRole('button', { name: 'More' }));
+    expect(screen.getByText('Ruler')).toBeInTheDocument();
   });
 });

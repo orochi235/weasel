@@ -1,9 +1,9 @@
 # A toolbar is a group drawn as a bar
 
-**Partly built.** Written 2026-10-10 on branch `toolbar-editor`, which holds the bar forms
-(`BarField`, `BarPopover`, `BarAction`, `renderBarLeaf`) and action leaves that fire by key
-(`useLeafAction`); everything else below is unbuilt. For whoever builds it. It says what has to change for `PrefSchemaEditor` to lay
-out toolbars as well as settings forms, and in what order.
+**Built, but for the editor.** Written 2026-10-10 on branch `toolbar-editor`, which holds the bar
+forms (`BarField`, `BarPopover`, `BarAction`), action leaves that fire by key (`useLeafAction`),
+and `Bar` with the `as: 'bar'` group form. What is unbuilt is under "Editor" and "Not yet drawn as
+a bar". For whoever builds it.
 
 ## What was decided
 
@@ -18,51 +18,37 @@ out toolbars as well as settings forms, and in what order.
 
 ## Where things stand
 
-| Piece | Today | Gap |
-|---|---|---|
-| Group forms | `PrefGroupAs` is `'page' \| 'tab' \| 'panel' \| 'section'` | No bar |
-| Drawing a schema on one line | `ToolOptionsBar` flattens a `PrefGroup` to its leaves; nested groups draw nothing | It is a whole component, not a form a group can take inside a page |
-| Bar-sized controls | `BarField` draws a field's bar form, `BarAction` an action's, and `BarPopover` what one line cannot hold | None |
-| Kind to control | Both `renderBuiltin`s take a surface, and for `'bar'` hand the leaf and its field props to `renderBarLeaf` in `Bar/renderBarLeaf.tsx` | Nothing but `ToolOptionsBar` asks for `'bar'` yet |
-| Action leaves | `PrefAction.action` names a registered action by key, and `useLeafAction` fires it | The editor cannot place one |
-| Registered actions | `ActionBar` draws every action in one `group` from the `ActionsRegistry`, pressed while `active` | Not placeable one at a time |
-| Editor preview | A `PrefsDialog` for a group root, a `SelectionPanel` for a section root | Nothing draws a bar, and drops are hit-tested as rows |
-
-## Schema
-
-In `@weasel-js/prefs`:
-
-```ts
-export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'bar';
-```
-
 A bar's children, by what they are:
 
 | Child of a bar | Drawn as |
 |---|---|
 | Leaf | Its bar form |
-| Group `as: 'section'`, or unset | Its children in a run, a divider on each side, no heading |
-| Group `as: 'bar'` | The same as a section |
-| Group `as: 'panel'`, `'tab'`, or `'page'` | A button reading the group's name, which opens the group in a popover, drawn in its own form |
+| Group `as: 'section'`, `'bar'`, or `'fragment'`, or unset | Its children in a run, a divider on each side, no heading |
+| Group `as: 'panel'`, `'tab'`, or `'page'` | A button reading the group's name, which opens the group in a popover |
 
 A bar's key is a segment of its leaves' paths, as any `PrefGroup`'s is, so moving a field into a
 bar moves where its value is stored. Showing one setting in two places needs a leaf that points at
 another, which this design leaves out.
 
-## `Bar`
+`Bar` draws a schema, and `ToolOptionsBar` is built on it. `PrefsPane`, a form's `ObjectLeaf`, and
+`SelectionPanel` draw a group `as: 'bar'` through `BarLayout` with their own cells.
 
-A schema-driven strip: `schema`, `values`, `onChange`, `mixed`, and `renderers`, as
-`ToolOptionsBar` takes them, plus `orientation`. It walks one bar group and draws the table under
-"Schema". In a vertical bar a field has no room beside it, so every leaf but an action draws as a
-`BarPopover`.
+## Not yet drawn as a bar
 
-- `ToolOptionsBar` becomes its reserved-height row, its context label, a `Bar`, and its children
-  slot.
-- `ActionBar` becomes a `Bar` over action leaves made from the registry's actions in one group.
-- `PrefsPane`'s `paneChildren`, `ObjectLeaf`, and `SelectionPanel` draw a group `as: 'bar'` with it.
+A group `as: 'bar'` falls back to a headed block of rows in these two places:
 
-Focus keeps plain tab order, for the reason `ToolOptionsBar` gives: a bar holding number boxes and
-selects has to leave the arrow keys to them.
+- **A section inside an object leaf in `SelectionPanel`.** Its `ObjectLeaf` builds each field's
+  context inline in `rowsOf`, in a 690-line `renderLeaf.tsx`. It wants splitting into its own file
+  first, with the field context as a function a bar section can call.
+- **labkit's `ControlPanel`**, which reads a group's `as` on its own.
+
+A group opened from a `Bar` draws as labeled rows under headings, whatever its `as`. Opened from a
+bar in a `PrefsForm`, it draws in its own form, since the form's own walker draws it.
+
+`ActionBar` is not built on `Bar`. It draws through `BarActionButton`, so the button has one
+definition, but its `icons` prop overrides an entry's icon with a `ReactNode`, which a leaf, being
+data, cannot carry. Building it on `Bar` needs that prop to become icon names, or `Bar` to take
+icon overrides by path.
 
 ## Editor
 
@@ -87,14 +73,7 @@ allow.
 
 ## forge
 
-- `ui/Bar/Bar`: fields and actions together, divided runs, a popover group, both orientations.
-- `ui/PrefSchemaEditor`: a toolbar story over a registry of sample actions.
-
-## Order
-
-1. **`Bar` and `as: 'bar'`.** The component, the schema value, and the surfaces that draw it;
-   `ToolOptionsBar` and `ActionBar` rebuilt on it.
-2. **Editor.** Palette, attributes, the Actions list, the bar preview, and drops along a bar.
+`ui/PrefSchemaEditor`: a toolbar story over a registry of sample actions.
 
 ## Left out
 
