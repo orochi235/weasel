@@ -176,9 +176,16 @@ describe('a group shared by several layers', () => {
     renderer.render(draw());
     recorder.reset();
     renderer.render(draw());
-    return recorder.calls.filter(
-      (c) => c.name === 'bindFramebuffer' && c.args[1] === null,
-    ).length;
+    // A return, not a bind: every frame opens by binding the default
+    // framebuffer, which leaves nothing.
+    let returns = 0;
+    let offscreen = false;
+    for (const c of recorder.calls) {
+      if (c.name !== 'bindFramebuffer') continue;
+      if (c.args[1] === null && offscreen) returns++;
+      offscreen = c.args[1] !== null;
+    }
+    return returns;
   }
 
   const plain = (id: string): RenderLayer<unknown> =>

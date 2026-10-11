@@ -66,6 +66,12 @@ export class EffectTargets {
     this.free.push(target);
   }
 
+  /** Take back every target still out on loan. A frame that threw inside a
+   *  group with effects never released the one it was drawing into. */
+  reclaim(): void {
+    if (this.free.length !== this.all.length) this.free = [...this.all];
+  }
+
   /** Drop every buffer. Called on dispose and on context loss, where the
    *  handles are already invalid and only the bookkeeping has to go. */
   releaseAll(): void {

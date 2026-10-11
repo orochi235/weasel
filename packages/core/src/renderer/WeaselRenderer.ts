@@ -603,7 +603,13 @@ export class WeaselRenderer {
     this.refreshPrograms();
     // New frame: refill the dynamic-glyph synchronous bake budget.
     resetBakeBudget(this.bakeBudget);
+    // A frame that threw part-way never unwound: its group stack, its staged
+    // vertices, the effect buffer it was drawing into, and whichever
+    // offscreen buffer it had bound are all still here.
     this.groupState.reset();
+    this.drawBatch.reset();
+    this.effectTargets.reclaim();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     this.applyGlState();
     this.applyTarget();
     // Ensure all stencil bits are cleared regardless of any mask left over
