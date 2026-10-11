@@ -269,4 +269,24 @@ describe('animator.tweenLoop', () => {
     // Final value after two reverse iterations should be near 0.
     expect(values[values.length - 1]).toBeLessThan(2);
   });
+
+  it('a zero-duration loop runs one iteration per frame', () => {
+    const { animator, advance } = mountAnimator();
+    let ticks = 0;
+    const handle = animator.tweenLoop({
+      from: 0,
+      to: 1,
+      ms: 0,
+      onTick: () => {
+        ticks += 1;
+        // Bounds the frame: an endless loop that never left it would hang the runner.
+        if (ticks > 50) throw new Error('zero-duration loop did not yield the frame');
+      },
+    });
+    advance(16);
+    expect(ticks).toBe(1);
+    advance(16);
+    expect(ticks).toBe(2);
+    handle.cancel();
+  });
 });

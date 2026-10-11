@@ -213,7 +213,10 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       const frameDt = codecFrameT.current == null ? 0 : Math.max(0, t - codecFrameT.current);
       codecFrameT.current = t;
       codec.frame(frameDt * (globalPaused.current ? 0 : globalTimeScale.current));
-      for (const anim of animations.current.values()) {
+      // A snapshot: an animation registered by this frame's ticks first ticks on the
+      // next, or a zero-duration loop would chain inside one frame and never leave it.
+      for (const anim of [...animations.current.values()]) {
+        if (animations.current.get(anim.id) !== anim) continue;
         // `t` comes from the frame clock; `lastRealNow` is seeded at register()
         // from `now()`. The two share a time origin in a browser, where the rAF
         // timestamp and `performance.now()` are both page-relative — but not
