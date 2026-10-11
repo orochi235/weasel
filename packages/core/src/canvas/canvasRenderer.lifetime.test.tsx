@@ -3,8 +3,8 @@
  * Real `WeaselRenderer` against the recording context: what it created must
  * all be deleted, handle for handle.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { act, render } from '@testing-library/react';
 import { StrictMode, type ReactElement } from 'react';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
@@ -12,6 +12,7 @@ import { makeGLRecorder, type GLRecorder } from '../renderer/test-utils/glRecord
 import { SceneViewCanvas } from './SceneViewCanvas';
 import { MinimapCanvas } from './MinimapCanvas';
 import { DrawCanvas } from './DrawCanvas';
+import { Canvas } from './Canvas';
 import { defaultDrawOne } from './defaultDrawOne';
 import { cachedCanvasRenderer, leaseCanvasRenderer } from './canvasRenderer';
 
@@ -20,10 +21,22 @@ let rec: GLRecorder;
 beforeEach(() => {
   rec = makeGLRecorder();
   Object.defineProperty(window, 'devicePixelRatio', { value: 1, configurable: true, writable: true });
+  // The recorder answers `canvas` with a function; a context names its element.
   HTMLCanvasElement.prototype.getContext = (function (this: HTMLCanvasElement, kind: string) {
-    return kind === 'webgl2' ? rec.gl : null;
+    if (kind !== 'webgl2') return null;
+    return new Proxy(rec.gl, { get: (gl, prop) => (prop === 'canvas' ? this : Reflect.get(gl, prop)) });
   }) as HTMLCanvasElement['getContext'];
 });
+
+const lose = (canvas: HTMLCanvasElement): Event => {
+  const event = new Event('webglcontextlost', { cancelable: true });
+  canvas.dispatchEvent(event);
+  return event;
+};
+const restore = (canvas: HTMLCanvasElement): void => {
+  canvas.dispatchEvent(new Event('webglcontextrestored'));
+};
+const clears = (): number => rec.calls.filter((c) => c.name === 'clear').length;
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -104,5 +117,61 @@ describe('leaseCanvasRenderer', () => {
     expect(cachedCanvasRenderer(b)).toBeDefined();
     lease.release();
     expect(cachedCanvasRenderer(b)).toBeUndefined();
+  });
+
+  const size = { width: 10, height: 10, dpr: 1 };
+  const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
+  it('asks the browser to restore a lost context from a tile of a shared canvas', () => {
+    const lease = leaseCanvasRenderer();
+    const canvas = document.createElement('canvas');
+    lease.bind(canvas, size, { tile: { x: 0, y: 0 } });
+    expect(lose(canvas).defaultPrevented).toBe(true);
+    lease.release();
+    expect(lose(canvas).defaultPrevented).toBe(false);
+  });
+
+  it('paints nothing while the context is lost, and tells subscribers when it is back', () => {
+    const lease = leaseCanvasRenderer();
+    const canvas = document.createElement('canvas');
+    const restored = vi.fn();
+    lease.subscribeRestored(restored);
+    expect(lease.paint(canvas, [], view, size)).toBe(true);
+
+    lose(canvas);
+    const before = clears();
+    expect(lease.paint(canvas, [], view, size)).toBe(false);
+    expect(clears()).toBe(before);
+    expect(restored).not.toHaveBeenCalled();
+
+    restore(canvas);
+    expect(restored).toHaveBeenCalledTimes(1);
+    expect(lease.paint(canvas, [], view, size)).toBe(true);
+    expect(clears()).toBe(before + 1);
+    lease.release();
+  });
+});
+
+describe('a canvas whose lost context comes back', () => {
+  const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+  it.each([
+    ['<DrawCanvas>', <DrawCanvas key="d" width={40} height={20} draw={[]} />],
+    ['<SceneViewCanvas>', (
+      <SceneViewCanvas
+        key="s" scene={makeScene()} view={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+        width={100} height={80} drawOne={defaultDrawOne}
+      />
+    )],
+    ['<Canvas>', <Canvas key="c" width={40} height={20} layers={{}} />],
+  ])('%s repaints with nothing else asking', async (_name, element) => {
+    const { container } = render(element);
+    await act(frame);
+    const canvas = container.querySelector('canvas')!;
+    lose(canvas);
+    restore(canvas);
+    const before = clears();
+    await act(frame);
+    expect(clears()).toBe(before + 1);
   });
 });

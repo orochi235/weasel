@@ -14,7 +14,7 @@ import type { FillStyle } from '@weasel-js/paint';
 import { useFrameLoop } from './useFrameLoop';
 import { useLateContentRedraw } from './useLateContentRedraw';
 import { useRedrawOn } from './useRedrawOn';
-import { useCanvasRenderer } from './useCanvasRenderer';
+import { useCanvasRenderer, useRedrawOnRestore } from './useCanvasRenderer';
 import { viewToMat3 } from '../renderer/math/viewToMat3';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { RedrawSource } from '../core/layers/render';
@@ -71,7 +71,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
     assignRef(canvasRef, el);
   }, [canvasRef]);
 
-  const { paint: paintCanvas } = useCanvasRenderer();
+  const lease = useCanvasRenderer();
   const paint = (): boolean => {
     const el = canvasElRef.current;
     if (!el) return false;
@@ -81,7 +81,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
       commands.push({ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width, height }, fill: background });
     }
     commands.push({ kind: 'group', transform: viewToMat3(view), children: [...content] });
-    return paintCanvas(el, commands, view, { width, height, dpr });
+    return lease.paint(el, commands, view, { width, height, dpr });
   };
   const paintRef = useLatest(paint);
   const { requestRedraw } = useFrameLoop(
@@ -99,6 +99,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
   });
 
   useLateContentRedraw(requestRedraw);
+  useRedrawOnRestore(lease, requestRedraw);
   useRedrawOn(redrawOn, requestRedraw);
 
   // `useCanvasRenderer` frees the renderer on unmount; a remount (StrictMode)

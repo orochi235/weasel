@@ -224,6 +224,9 @@ export class WeaselRenderer {
   private heightCss: number;
   private dpr: number;
   private canvas: HTMLCanvasElement | null = null;
+  /** Where context loss is announced: the context's own canvas, which the
+   *  renderer need not own the size of. */
+  private lossTarget: EventTarget | null = null;
   private target: RenderTarget | null = null;
   /** Offscreen buffers for group effects. Allocates nothing until a group
    *  with effects asks, so a canvas without them pays no memory. */
@@ -284,8 +287,12 @@ export class WeaselRenderer {
         this.canvas.style.width = `${opts.width}px`;
         this.canvas.style.height = `${opts.height}px`;
       }
-      this.canvas.addEventListener('webglcontextlost', this.boundOnLost);
-      this.canvas.addEventListener('webglcontextrestored', this.boundOnRestored);
+    }
+    const lossTarget: Partial<EventTarget> | null = this.canvas ?? this.gl.canvas ?? null;
+    if (lossTarget && typeof lossTarget.addEventListener === 'function') {
+      this.lossTarget = lossTarget as EventTarget;
+      this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
+      this.lossTarget.addEventListener('webglcontextrestored', this.boundOnRestored);
     }
 
     this.applyGlState();
@@ -527,8 +534,8 @@ export class WeaselRenderer {
     }
   }
 
-  /** Free every GL resource this renderer created and detach context-loss
-   *  listeners when a canvas was supplied. Idempotent.
+  /** Free every GL resource this renderer created and detach its
+   *  context-loss listeners. Idempotent.
    *
    *  That covers the built-in and consumer-registered programs (their shaders
    *  go with them), the shared quad geometry, the batch, the effect targets,
@@ -543,9 +550,9 @@ export class WeaselRenderer {
     if (this.disposed) return;
     this.disposed = true;
     const gl = this.gl;
-    if (this.canvas) {
-      this.canvas.removeEventListener('webglcontextlost', this.boundOnLost);
-      this.canvas.removeEventListener('webglcontextrestored', this.boundOnRestored);
+    if (this.lossTarget) {
+      this.lossTarget.removeEventListener('webglcontextlost', this.boundOnLost);
+      this.lossTarget.removeEventListener('webglcontextrestored', this.boundOnRestored);
     }
     this.meshCache.dispose();
     this.paintResources.release();

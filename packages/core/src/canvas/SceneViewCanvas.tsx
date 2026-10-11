@@ -37,7 +37,7 @@ import type { Ref } from 'react';
 import { assignRef, useLatest } from '@weasel-js/react';
 import { useFrameLoop } from './useFrameLoop';
 import { useLateContentRedraw } from './useLateContentRedraw';
-import { useCanvasRenderer } from './useCanvasRenderer';
+import { useCanvasRenderer, useRedrawOnRestore } from './useCanvasRenderer';
 import { sceneViewFrame } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
@@ -120,7 +120,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   // without a render. The thunk defers to `paintRef`, which every committed
   // render republishes from an insertion effect — ahead of the layout effect
   // below, and never from a render React abandoned.
-  const { paint: paintCanvas } = useCanvasRenderer();
+  const lease = useCanvasRenderer();
   const paint = (): boolean => {
     const canvas = localRef.current;
     if (!canvas) return false;
@@ -138,8 +138,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
       cull,
       paintBounds,
     });
-    paintCanvas(canvas, commands, view, { width, height });
-    return true;
+    return lease.paint(canvas, commands, view, { width, height });
   };
   const paintRef = useLatest(paint);
 
@@ -162,6 +161,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   useEffect(() => scene.overrides.subscribe(requestRedraw), [scene, requestRedraw]);
   useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
   useLateContentRedraw(requestRedraw);
+  useRedrawOnRestore(lease, requestRedraw);
 
   return (
     <canvas

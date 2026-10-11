@@ -56,7 +56,7 @@ import {
   type Dims, type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
 import { viewToMat3, cullDrawCommands, type DrawCommand, type ShaderProgramHandle } from '../renderer';
-import { useCanvasRenderer } from './useCanvasRenderer';
+import { useCanvasRenderer, useRedrawOnRestore } from './useCanvasRenderer';
 import { getProgramSource, programSourceRegistry } from '../renderer/shaders/registerProgram';
 import {
   type SelectionApi,
@@ -594,7 +594,6 @@ export type {
   CanvasHelpers,
 } from './useViewHelpers';
 
-// Walks every registered + ambient tool: resize/rotate will register as
 /**
  * Build the scene layer. Tool ghosts (in-flight drag/resize/rotate poses) are
  * published via the active tool's `previewPose`/`previewIds` and rendered on
@@ -1040,6 +1039,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // Created on the first paint, rebuilt when the paint target moves, and
   // freed on unmount.
   const lease = useCanvasRenderer();
+  useRedrawOnRestore(lease, requestRedraw);
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
 
   // Views registered on this surface — declared as `views` descriptors or
@@ -1396,7 +1396,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       flattenTolerance: paintFlattenTolerance,
       shaders: paintShaders,
     });
-    // jsdom or unsupported environment: no WebGL2, nothing to paint.
+    // No WebGL2 (jsdom), or a context that is lost for now: nothing to paint.
     if (!renderer) return false;
 
     const view = viewRef.current;

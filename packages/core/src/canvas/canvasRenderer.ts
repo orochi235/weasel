@@ -70,9 +70,14 @@ export interface CanvasRendererLease {
    *  first use, resized, and given this paint's tile, tolerance and shaders.
    *  Frees the previous renderer first if the surface moved to another
    *  element, or between owning it whole and painting a tile of it. `null`
-   *  where no WebGL2 context is available (jsdom, or a failed context
-   *  creation), so a caller can skip building a frame nobody will see. */
+   *  where no WebGL2 context is available (jsdom, a failed context creation,
+   *  or a context that is lost for now), so a caller can skip building a frame
+   *  nobody will see. */
   bind(canvas: HTMLCanvasElement, size: CanvasPaintSize, options?: CanvasPaintOptions): WeaselRenderer | null;
+  /** Run `fn` when the canvas gets a lost context back, after the renderer
+   *  has rebuilt itself on it. Nothing repaints a restored buffer on its own.
+   *  Returns an unsubscribe. */
+  subscribeRestored(fn: () => void): () => void;
   /** Free the held renderer and every GL object it owns. A later `paint`
    *  creates a fresh one. */
   release(): void;
@@ -82,6 +87,9 @@ interface Held {
   canvas: HTMLCanvasElement;
   renderer: WeaselRenderer;
   shared: boolean;
+  lost: boolean;
+  onLost: () => void;
+  onRestored: () => void;
   width: number;
   height: number;
   dpr: number;
@@ -108,6 +116,8 @@ function registerShaders(renderer: WeaselRenderer, shaders: readonly ShaderProgr
 function free(held: Held): void {
   const set = TENANTS.get(held.canvas);
   set?.delete(held.renderer);
+  held.canvas.removeEventListener('webglcontextlost', held.onLost);
+  held.canvas.removeEventListener('webglcontextrestored', held.onRestored);
   if (set && set.size === 0) TENANTS.delete(held.canvas);
   held.renderer.dispose();
 }
@@ -115,6 +125,7 @@ function free(held: Held): void {
 /** Hold the renderer of the canvas a surface paints into, until released. */
 export function leaseCanvasRenderer(): CanvasRendererLease {
   let held: Held | null = null;
+  const restoredSubs = new Set<() => void>();
   const bind = (canvas: HTMLCanvasElement, size: CanvasPaintSize, options: CanvasPaintOptions = {}): WeaselRenderer | null => {
     const { width, height } = size;
     const dpr = size.dpr ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
@@ -139,8 +150,20 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       } catch {
         return null;
       }
-      held = { canvas, renderer, shared, width, height, dpr, tileX: null, tileY: null,
-        flattenTolerance: options.flattenTolerance, shaderKey: '' };
+      // Added after the renderer's own listeners, so a subscriber runs against
+      // a renderer that has already recompiled.
+      const mine: Held = held = {
+        canvas, renderer, shared, width, height, dpr, tileX: null, tileY: null,
+        flattenTolerance: options.flattenTolerance, shaderKey: '',
+        lost: false,
+        onLost: () => { mine.lost = true; },
+        onRestored: () => {
+          mine.lost = false;
+          for (const fn of [...restoredSubs]) fn();
+        },
+      };
+      canvas.addEventListener('webglcontextlost', held.onLost);
+      canvas.addEventListener('webglcontextrestored', held.onRestored);
       let set = TENANTS.get(canvas);
       if (!set) { set = new Set(); TENANTS.set(canvas, set); }
       set.add(renderer);
@@ -157,6 +180,7 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       }
     }
 
+    if (held.lost) return null;
     const { renderer } = held;
     const shaderKey = shaderKeyOf(options.shaders);
     if (shaderKey !== held.shaderKey) {
@@ -179,6 +203,10 @@ export function leaseCanvasRenderer(): CanvasRendererLease {
       if (!renderer) return false;
       renderer.render(commands, viewToMat3(view), options?.render);
       return true;
+    },
+    subscribeRestored(fn) {
+      restoredSubs.add(fn);
+      return () => { restoredSubs.delete(fn); };
     },
     release() {
       if (held) free(held);

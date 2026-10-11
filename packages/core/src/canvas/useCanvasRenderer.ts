@@ -12,3 +12,8 @@ export function useCanvasRenderer(): CanvasRendererLease {
   useEffect(() => () => lease.release(), [lease]);
   return lease;
 }
+
+/** Repaint a surface when its canvas gets a lost GL context back. */
+export function useRedrawOnRestore(lease: CanvasRendererLease, requestRedraw: () => void): void {
+  useEffect(() => lease.subscribeRestored(requestRedraw), [lease, requestRedraw]);
+}

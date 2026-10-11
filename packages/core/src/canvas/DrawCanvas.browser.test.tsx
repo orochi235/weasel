@@ -35,6 +35,8 @@ function pixel(canvas: HTMLCanvasElement, x: number, y: number): number[] {
   return Array.from(out);
 }
 
+const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+
 const red: DrawCommand = {
   kind: 'path',
   path: { kind: 'rect', x: 0, y: 0, width: 5, height: 10 },
@@ -58,5 +60,24 @@ describe('<DrawCanvas> in a real browser', () => {
     });
     expect(pixel(canvas, 8, 5)).toEqual([255, 0, 0, 255]);
     expect(pixel(canvas, 12, 5)).toEqual([255, 255, 255, 255]);
+  });
+
+  it('repaints by itself once a lost context is restored', async () => {
+    const canvas = mount({
+      width: 20, height: 10, dpr: 1, draw: [red], background: { fill: 'solid', color: '#ffffff' },
+    });
+    const ext = canvas.getContext('webgl2')!.getExtension('WEBGL_lose_context')!;
+    const event = (name: string) => new Promise<void>((r) => canvas.addEventListener(name, () => r(), { once: true }));
+    const lost = event('webglcontextlost');
+    ext.loseContext();
+    await lost;
+    // Restoring is allowed only once the lost event has finished dispatching.
+    await new Promise((r) => setTimeout(r, 0));
+    const restored = event('webglcontextrestored');
+    ext.restoreContext();
+    await restored;
+    await frame();
+    await frame();
+    expect(pixel(canvas, 2, 5)).toEqual([255, 0, 0, 255]);
   });
 });
