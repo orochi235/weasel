@@ -31,10 +31,13 @@ function Submit({ changes, literal, onSubmit }: { changes: readonly SchemaChange
   );
 }
 
-/** The schema as a TypeScript literal beside the list of changes since the baseline. */
-export function ExportPanel({ schema, types, changes, onSubmit }: { schema: SchemaRoot; types?: PrefTypes; changes: readonly SchemaChange[]; onSubmit?: SubmitChanges }) {
+/**
+ * The schema as a TypeScript literal beside the list of changes since the baseline. `changesText` is the list where
+ * `changes` are not this schema's alone: an editor of several assets lists every one's, and submits them all.
+ */
+export function ExportPanel({ schema, types, changes, changesText, onSubmit }: { schema: SchemaRoot; types?: PrefTypes; changes: readonly SchemaChange[]; changesText?: string; onSubmit?: SubmitChanges }) {
   const literal = useMemo(() => printSchema(schema, types), [schema, types]);
-  const list = useMemo(() => formatChanges(changes) || 'No changes.', [changes]);
+  const list = useMemo(() => (changesText ?? formatChanges(changes)) || 'No changes.', [changes, changesText]);
   return (
     <div className={s.export}>
       <section className={s.exportPane} aria-label="Literal">

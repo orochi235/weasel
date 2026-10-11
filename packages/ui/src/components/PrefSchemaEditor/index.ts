@@ -6,3 +6,4 @@ export type { SubmitChanges } from './ExportPanel';
 export type { CustomKinds, KindAttr, KindAttrs } from './kindSchemas';
 export { diffSchemas, formatChanges, printSchema, type SchemaChange } from './schemaExport';
 export type { PrefTypes } from './types';
+export type { SentAsset, SubmitAssets } from './useAssetChanges';

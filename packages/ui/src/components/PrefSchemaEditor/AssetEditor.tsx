@@ -23,7 +23,7 @@ import { usePreviewDropZone } from './usePreviewDropZone';
 import { useRowMarks } from './useRowMarks';
 import { StructurePane } from './StructurePane';
 import { useDocument } from './useDocument';
-import { useAssetChanges } from './useAssetChanges';
+import { useAssetChanges, type SubmitAssets } from './useAssetChanges';
 import { useAssetView } from './useAssetView';
 import { assetOf, sameRoots, type Workspace } from './workspace';
 import { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './workspaceEdit';
@@ -53,7 +53,8 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   same?: (a: Workspace, b: Workspace) => boolean;
   /** List the assets in a pane at the editor's far edge, to pick the one shown. Left out, the editor shows the first. */
   list?: boolean;
-  onSubmit?: SubmitChanges;
+  /** Somewhere to send the changes: given, the Changes pane draws a Submit button that hands over every changed asset. */
+  onSubmit?: SubmitAssets;
 }
 
 /** The editor {@link PrefSchemaEditorProps} describes, over a workspace: it shows and edits one asset's root, and its history and draft are the workspace's. */
@@ -80,7 +81,6 @@ export function AssetEditor(
     value: workspace, onChange, base, same, codec, opened, draftKey, draftStorage, taken,
     selection: { get: () => view.recorded(beforeOpening.current ?? latest.current.paths), set: view.restore },
   });
-  const submit: SubmitChanges | undefined = onSubmit && ((changes, literal) => doc.send(() => onSubmit(changes, literal)));
   // A key names its asset, so the same path edited in two of them close together is two steps.
   const coalesce = (key?: string) => (key === undefined ? undefined : `${assetId}:${key}`);
   /** Whether there was anything to commit: an asset that takes no edit gives the workspace back. */
@@ -99,6 +99,8 @@ export function AssetEditor(
 
   const changedAssets = useAssetChanges(base, workspace, same);
   const changes = changedAssets.of(assetId);
+  // The document packs every asset as sent, so every changed one is handed over, whichever is shown.
+  const submit: SubmitChanges | undefined = onSubmit && (() => doc.send(() => onSubmit(changedAssets.sent(types))));
   const changed = useMemo(() => changedPaths(changes), [changes]);
   const changedAttrs = useMemo(() => changedAttributes(changes, selection.lead), [changes, selection.lead]);
   const actionList = useEditorActions(actions);
@@ -236,7 +238,7 @@ export function AssetEditor(
           if (how.toggle && path !== null) { selection.toggle(path); setNotice(null); }
           else reveal(path === null ? [] : [path]);
         }} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} />
-      <ExportPanel schema={schema} types={types} changes={changes} onSubmit={submit} />
+      <ExportPanel schema={schema} types={types} changes={changedAssets.all} changesText={changedAssets.text} onSubmit={submit} />
       {list && (
         <>
           <ResizeHandle className={s.asideHandle} invert {...asideSize} min={120} max={640} ariaLabel="Resize sidebar" />
