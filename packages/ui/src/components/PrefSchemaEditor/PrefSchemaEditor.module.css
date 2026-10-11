@@ -142,10 +142,10 @@
 
 /* How many nodes a drag carries, on the corner of the one it draws. */
 .ghostCount {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   position: absolute;
   top: -6px;
   right: -6px;
-  font-variant-numeric: tabular-nums;
 }
 
 /* A flagged option's message makes its cell taller than the row's other two. */

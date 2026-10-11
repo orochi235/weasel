@@ -169,6 +169,18 @@ export const TOKEN_HOOKS: readonly TokenHook[] = [
     description: 'Size of a Tree row’s text.',
   },
   {
+    name: 'tree-fold-size',
+    type: 'dimension',
+    value: '16px',
+    description: 'Size of the leading glyph a Tree folds a branch by, where its branches fold by their glyphs.',
+  },
+  {
+    name: 'tree-guide',
+    type: 'color',
+    value: 'var(--wzl-fg-subtle)',
+    description: 'Color of the bracket a Tree draws down a branch.',
+  },
+  {
     name: 'dialog-max-width',
     type: 'dimension',
     value: '900px',
