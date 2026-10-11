@@ -3,6 +3,7 @@ import type { BoundGesture } from './binding';
 import { resolveParams, type InvocationCtx, type BindingOpts } from './invoker';
 import type { ActiveToolContextValue } from './activeToolContext';
 import type { HotkeyTrigger } from '../../contributions/types';
+import type { KeyHeldSpec, ModSpec } from '@weasel-js/gestures';
 
 /** Canonical id of the consolidated tool-offhand action. One descriptor
  *  serves every tool; the matched binding supplies `params.toolId` to select
@@ -36,11 +37,18 @@ export function offhandKeyFor(trigger: HotkeyTrigger): string {
 export function buildToolOffhandBindings(
   specs: readonly ToolOffhandBindingSpec[],
 ): BoundGesture[] {
-  return specs.map(({ toolId, key }) => ({
-    spec: { kind: 'key-held', key } as never,
-    opts: { params: { toolId } },
-  }));
+  return specs.map(({ toolId, key }) => {
+    const spec: KeyHeldSpec = { kind: 'key-held', key };
+    if ([key].flat().some((k) => MODIFIER_KEYS.has(k))) spec.mods = ANY_MODS;
+    return { spec, opts: { params: { toolId } } };
+  });
 }
+
+const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Alt', 'Control', 'Meta', 'Shift']);
+
+// A modifier's own keydown reports its flag set, and which other modifiers are
+// already down when it lands is an accident of the order they were pressed in.
+const ANY_MODS: ModSpec = { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' };
 
 /** Build the consolidated `tool.offhand` action — "hold a key to engage a
  *  secondary tool" (e.g. Space-for-hand). `bindings` enumerates one
