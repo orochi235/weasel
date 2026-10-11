@@ -11,7 +11,6 @@ import {
   pairRowsOf,
 } from '@weasel-js/prefs';
 import {
-  Button,
   type CollapseProps,
   DialogRow,
   GroupTabs,
@@ -29,7 +28,6 @@ import {
   PropertyPanel,
   PropertyRow,
   type PropertyRowLayout,
-  ResetIcon,
   type StanceProps,
   Subpanel,
 } from '@weasel-js/ui';
@@ -40,10 +38,12 @@ import { fromConfigFields } from '../config/fromConfigField';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig, SectionSpec } from '../config/types';
 import { isLeafVisible } from '../config/visible';
+import { ControlBar } from './ControlBar';
 import { FieldChoicesContext, useFieldChoices, useFieldChoicesOf } from './fieldChoices';
 import { BareControl, extra, isSliderLeaf, labField, useDebouncedText } from './fields';
 import { headingLeaf } from './headingControl';
 import { inDialog, summarizeValue } from './inDialog';
+import { ResetGroup } from './ResetGroup';
 import type { ConfigField } from './types';
 
 /** Leaves whose value is made of other leaves' values: too much for a row, so the row opens them in a dialog. */
@@ -148,49 +148,6 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends S
 const NO_AUTO: ReadonlySet<string> = new Set();
 const NO_CHOICES: readonly PrefFieldChoice[] = [];
 const unwritten = (): void => {};
-
-/** Every leaf beneath a group, as its dotted path and its default. */
-function leavesUnder(group: PrefGroup, at: string): [string, unknown][] {
-  return Object.entries(group.children).flatMap(([key, child]) => {
-    const path = at === '' ? key : `${at}.${key}`;
-    return isPrefLeaf(child)
-      ? [[path, child.default] as [string, unknown]]
-      : leavesUnder(child, path);
-  });
-}
-
-/** The heading button of a `.resettable()` group: writes each changed leaf's
- *  default, and is disabled while nothing has changed. */
-function ResetGroup({
-  group,
-  path,
-  config,
-  setConfig,
-}: {
-  group: PrefGroup;
-  path: string;
-  config: Record<string, unknown>;
-  setConfig: (path: string, value: unknown) => void;
-}) {
-  const changed = leavesUnder(group, path).filter(
-    ([p, d]) => !Object.is(valueAtPath(config, p), d),
-  );
-  return (
-    <Button
-      iconOnly
-      variant="ghost"
-      size="sm"
-      ariaLabel={`Reset ${group.name}`}
-      tooltip={`Reset ${group.name} to defaults`}
-      disabled={changed.length === 0}
-      onClick={() => {
-        for (const [p, d] of changed) setConfig(p, d);
-      }}
-    >
-      <ResetIcon />
-    </Button>
-  );
-}
 
 /** Render an instrument's config schema as a stack of controls, each writing
  *  back through `setConfig`. Built on the property rows, so a lab's controls
@@ -317,6 +274,31 @@ export function ControlPanel<TC extends Record<string, unknown>>({
           layout={rows.layout}
           auto={auto}
           setRowAuto={setRowAuto}
+        />
+      );
+    }
+    if (found.as === 'bar') {
+      return (
+        <ControlBar
+          key={path}
+          group={found}
+          path={path}
+          visible={(p) => isLeafVisible(resolved, p, config as Record<string, unknown>, showHidden)}
+          value={(p, leaf) => valueAtPath(shown, p) ?? extra<unknown>(leaf, 'default')}
+          write={setConfig}
+          custom={(p, leaf) =>
+            (renderers?.[p] ?? resolved.renderers[p] ?? resolved.dialogs[p] ?? renderers?.[leaf.kind]) !== undefined
+          }
+          row={(p) => (
+            <PropertyList pack={rows.grid} density={density} align={align}>
+              {node(p, rows)}
+            </PropertyList>
+          )}
+          open={(inner, at) => (
+            <PropertyList pack={rows.grid} density={density} align={align}>
+              {body(inner, at, rows)}
+            </PropertyList>
+          )}
         />
       );
     }
