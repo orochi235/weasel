@@ -1,5 +1,5 @@
 import { act, render, waitFor } from '@testing-library/react';
-import { useState } from 'react';
+import { StrictMode, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { JobCapability, JobEvent, JobHandle } from './types';
 import { useJob } from './useJob';
@@ -206,5 +206,23 @@ describe('useJob', () => {
     );
     await new Promise((r) => setTimeout(r, 20));
     expect(seen.handle?.status).toBe('idle');
+  });
+
+  it('runs an auto job under StrictMode, whose rehearsal unmount aborts the first start', async () => {
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
+    render(
+      <StrictMode>
+        <Harness
+          capability={{ ...capability(), auto: true }}
+          config={{ n: 3 }}
+          onHandle={(h, s) => {
+            seen.handle = h;
+            seen.state = s;
+          }}
+        />
+      </StrictMode>,
+    );
+    await waitFor(() => expect(seen.handle?.status).toBe('done'));
+    expect(seen.state.items).toEqual([0, 1, 2]);
   });
 });

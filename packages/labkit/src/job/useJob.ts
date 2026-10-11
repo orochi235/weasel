@@ -123,6 +123,8 @@ export function useJob<TS, TC, TItem>({
       token.current += 1;
       abort.current?.abort();
       abort.current = null;
+      // StrictMode re-runs the effects after this; the auto start has to run again.
+      started.current = false;
     },
     [],
   );
