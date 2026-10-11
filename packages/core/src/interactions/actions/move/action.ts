@@ -53,10 +53,8 @@ import { asNodeId } from 'core/scene/types';
 import { moveSources } from '../selectionSubtree';
 import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Op } from 'core/ops/types';
-import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import { createReparentOp } from 'core/ops/reparent';
-import { geometryDataOp } from '../geometryProjection';
 import type { LayoutDep } from '../depSchema';
 import type {
   LayoutStrategy,
@@ -87,6 +85,7 @@ import { planeToPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { MoveLive, MoveSession, ReparentOnDrop } from './session';
 import type { LayoutPlacement } from './layout/types';
 import { draggedWorldPose, grabbedPoseAdapter, localDelta, planeDelta } from './delta';
+import { translateOps, unreleasedIds } from './translate';
 export type { ReparentOnDrop };
 
 // ---------------------------------------------------------------------------
@@ -429,64 +428,6 @@ function resolveLayoutExits(scratch: MoveScratch, ids: Iterable<NodeId>): Map<No
   return out;
 }
 
-/** The default translate commit: one transform op per id, plus the data-held
- *  geometry op when the `geometryProjection` seam is wired. */
-function translateCommitOps(
-  scratch: MoveScratch,
-  ids: Iterable<NodeId>,
-  dx: number,
-  dy: number,
-): Op[] {
-  const ops: Op[] = [];
-  for (const id of ids) {
-    if (!scratch.startPoses.has(id) || scratch.carried.has(id)) continue;
-    const node = scratch.scene.get(id);
-    if (!node) continue;
-    const l = localDelta(scratch, id, dx, dy);
-    const c = scratch.caught.get(id);
-    if (c) { l.dx += c.dx; l.dy += c.dy; }
-    const m: Mat3 = [1, 0, 0, 1, l.dx, l.dy];
-    // The authored pose, not the captured one: a derived node's captured pose
-    // is its derivation, and writing that back would lose the placeholder undo
-    // restores.
-    const authored = node.pose;
-    ops.push(createTransformOp<unknown>({
-      id: id as string,
-      from: authored,
-      to: translatePoseViaDescriptor(authored, l.dx, l.dy, scratch.descriptorOf(id)),
-      label: scratch.lifecycle.label,
-    }));
-    if (scratch.geometryProjection) {
-      const dataOp = geometryDataOp(
-        scratch.geometryProjection,
-        { id: id as string, data: node.data, pose: authored },
-        m,
-        scratch.lifecycle.label,
-      );
-      if (dataOp) ops.push(dataOp);
-    }
-  }
-  return ops;
-}
-
-/** Selected roots no source layout claimed on release, plus the descendants
- *  that follow them — the part of the selection the translate commit owns. */
-function unreleasedIds(scratch: MoveScratch, released: Set<NodeId>): NodeId[] {
-  const selected = new Set<NodeId>(scratch.ids);
-  const out: NodeId[] = scratch.ids.filter((id) => !released.has(id));
-  for (const id of scratch.cascadeIds) {
-    let cur = scratch.scene.get(id)?.parent ?? null;
-    let claimed = false;
-    while (cur) {
-      if (released.has(cur)) { claimed = true; break; }
-      if (selected.has(cur)) break;
-      cur = scratch.scene.get(cur)?.parent ?? null;
-    }
-    if (!claimed) out.push(id);
-  }
-  return out;
-}
-
 /** Where a dragged id was shown when the gesture ended: its stored pose then,
  *  the parent that pose was stored under, and the same pose in world. */
 interface Released {
@@ -627,7 +568,7 @@ function applyReparent(
   const poseAdapter = scenePoseAdapter(scene);
   // Descendants no moved frame carries hold poses of their own, and follow
   // the drag as they do in the translate commit.
-  const followerOps = translateCommitOps(scratch, scratch.cascadeIds, dx, dy);
+  const followerOps = translateOps(scratch, scratch.cascadeIds, { dx, dy });
 
   for (const id of scratch.ids) {
     if (!scratch.startPoses.has(id)) continue;
@@ -1064,11 +1005,10 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           const ops = [
             ...releasedOps,
             ...exitOps,
-            ...translateCommitOps(
+            ...translateOps(
               scratch,
               unreleasedIds(scratch, released).filter((id) => !exits.has(id)),
-              dx,
-              dy,
+              { dx, dy },
             ),
           ];
           if (ops.length > 0) commitOps(ops);
@@ -1109,7 +1049,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           // container's former location).
           // Translate the data-held geometry by the same (dx,dy). Opt-in via
           // the geometryProjection seam; a no-op when the dep is absent.
-          const ops = translateCommitOps(scratch, [...scratch.ids, ...scratch.cascadeIds], dx, dy);
+          const ops = translateOps(scratch, [...scratch.ids, ...scratch.cascadeIds], { dx, dy });
           if (ops.length > 0) commitOps(ops);
         }
         return committed;
