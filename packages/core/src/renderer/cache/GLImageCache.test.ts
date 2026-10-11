@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { makeGLRecorder } from '../test-utils/glRecorder';
 import { GLImageCache, maxImageTextureSide, releaseImageSource } from './GLImageCache';
 
@@ -155,5 +155,59 @@ describe('minification: mipmap', () => {
       (c) => c.name === 'texParameteri' && c.args[1] === rec.gl.TEXTURE_MIN_FILTER,
     );
     expect(minFilter?.args[2]).toBe(rec.gl.LINEAR);
+  });
+});
+
+describe('GLImageCache — a source the garbage collector reclaimed', () => {
+  /** Stands in for the engine: records what was registered and lets the test
+   *  play the collector. */
+  function stubFinalizers() {
+    const held = new Map<object, WebGLTexture>();
+    let collected: (tex: WebGLTexture) => void = () => {};
+    vi.stubGlobal('FinalizationRegistry', class {
+      constructor(cb: (tex: WebGLTexture) => void) { collected = cb; }
+      register(key: object, tex: WebGLTexture) { held.set(key, tex); }
+      unregister(key: object) { return held.delete(key); }
+    });
+    return {
+      held,
+      collect(key: object) {
+        const tex = held.get(key);
+        held.delete(key);
+        if (tex) collected(tex);
+      },
+    };
+  }
+
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('deletes the texture at the next drain', () => {
+    const gc = stubFinalizers();
+    const { gl, calls } = makeGLRecorder();
+    const cache = new GLImageCache(gl);
+    const tex = cache.upload(fakeImg1, fakeImgData);
+    cache.upload(fakeImg2, fakeImgData);
+
+    gc.collect(fakeImg1);
+    expect(calls.filter((c) => c.name === 'deleteTexture')).toHaveLength(0);
+    cache.drainPendingDeletes();
+    const deletes = calls.filter((c) => c.name === 'deleteTexture');
+    expect(deletes).toHaveLength(1);
+    expect(deletes[0].args[0]).toBe(tex);
+
+    cache.dispose();
+    expect(calls.filter((c) => c.name === 'deleteTexture')).toHaveLength(2);
+  });
+
+  it('stops watching a source released by hand', () => {
+    const gc = stubFinalizers();
+    const { gl, calls } = makeGLRecorder();
+    const cache = new GLImageCache(gl);
+    cache.upload(fakeImg1, fakeImgData);
+    cache.release(fakeImg1);
+    expect(gc.held.has(fakeImg1)).toBe(false);
+    cache.drainPendingDeletes();
+    expect(calls.filter((c) => c.name === 'deleteTexture')).toHaveLength(1);
+    cache.dispose();
   });
 });

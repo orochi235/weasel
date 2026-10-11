@@ -2,9 +2,11 @@
  * GL texture upload cache for ImageBitmap objects.
  *
  * Key: ImageBitmap (or pattern source object) identity (WeakMap) — lets GC
- * reclaim unreferenced bitmaps. The GL textures are NOT freed when the source
- * is gc'd; a source's owner that knows it will never be drawn again frees them
- * with {@link releaseImageSource}, and `dispose` frees them all.
+ * reclaim unreferenced bitmaps. A collected source's texture is queued and
+ * deleted at the renderer's next frame, the way `GLMeshCache` frees a mesh's
+ * buffers; GC timing is not prompt, so a source's owner that knows it will
+ * never be drawn again frees it at once with {@link releaseImageSource}, and
+ * `dispose` frees them all.
  *
  * Wrapping is set once at upload time per the `repetition` parameter:
  *   - undefined / 'no-repeat' → CLAMP_TO_EDGE
@@ -68,6 +70,8 @@ export class GLImageCache {
    * was redundant either way.
    */
   private readonly magFilters = new WeakMap<object, number>();
+  private readonly finalizer: FinalizationRegistry<WebGLTexture>;
+  private readonly pendingDeletes: WebGLTexture[] = [];
 
   /** `minification` selects the MIN_FILTER strategy for uploaded textures.
    *  `'linear'` (default) is the screen path's existing behavior. `'mipmap'`
@@ -83,7 +87,18 @@ export class GLImageCache {
     this.maxTextureSide = typeof reported === 'number' && reported > 0
       ? reported
       : DEFAULT_MAX_TEXTURE_SIDE;
+    this.finalizer = new FinalizationRegistry<WebGLTexture>((tex) => {
+      if (this.textures.delete(tex)) this.pendingDeletes.push(tex);
+    });
     live.add(this);
+  }
+
+  /** Delete the textures of sources collected since the last call. The
+   *  renderer calls this at the top of each `render()`. */
+  drainPendingDeletes(): void {
+    if (this.pendingDeletes.length === 0) return;
+    for (const tex of this.pendingDeletes) this.gl.deleteTexture(tex);
+    this.pendingDeletes.length = 0;
   }
 
   /** Delete `key`'s texture, if it has one. */
@@ -92,6 +107,7 @@ export class GLImageCache {
     if (!tex) return;
     this.gl.deleteTexture(tex);
     this.textures.delete(tex);
+    this.finalizer.unregister(key);
     this.map.delete(key);
     this.magFilters.delete(key);
   }
@@ -100,6 +116,7 @@ export class GLImageCache {
    *  {@link releaseImageSource} and {@link maxImageTextureSide}. Idempotent. */
   dispose(): void {
     for (const tex of this.textures) this.gl.deleteTexture(tex);
+    this.drainPendingDeletes();
     this.abandon();
   }
 
@@ -107,6 +124,7 @@ export class GLImageCache {
    *  its textures died with it. */
   abandon(): void {
     this.textures.clear();
+    this.pendingDeletes.length = 0;
     live.delete(this);
   }
 
@@ -140,6 +158,7 @@ export class GLImageCache {
 
     this.map.set(key, tex);
     this.textures.add(tex);
+    this.finalizer.register(key, tex, key);
     return tex;
   }
 
