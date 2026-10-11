@@ -53,14 +53,11 @@ Priority tags:
   time. Fine while `rect` / `text` / `image` are unconditionally decorative;
   revisit when a stateful-claims widget appears.
 
-- **(P3) apps/draw binds no mode-entry shortcut.** `modeShortcuts` (routing) binds a
-  mode's `entry` chord when the consumer passes `enter`, and draw passes only the
-  leaving roles. PATH_EDIT's Enter can't simply enter the machine's mode: the
-  anchor editing it exists for keys off the kit's `editAnchors.editingId`, which only
-  `enterPathEdit`'s double-click sets, so Enter would light the mode with no editable
-  anchors. Draw also still enters every mode from `SceneCanvas`'s `onDoubleClick`
-  observer rather than from `entry.trigger`, which nothing reads.
-
+- **(P3) apps/draw enters most modes by double-click only.** Path-edit's `Enter` is bound
+  (`apps/draw/src/modality/shortcuts.ts`); the other modes with an `entry` shortcut, free-transform
+  and crop, are not, since nothing says what target each would take from the selection. Draw also
+  still enters every mode from `SceneCanvas`'s `onDoubleClick` observer rather than from
+  `entry.trigger`, which nothing reads.
 - **(P3) A press on empty canvas can't be an ambient binding beside the select tool.**
   `select.pick` binds `pointerDown` on empty space at active scope, and active
   outranks ambient, so an ambient contribution's `pointerDown` never fires while

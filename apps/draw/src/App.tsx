@@ -1019,7 +1019,18 @@ function EditorWithSharedScene({
 
   // Leaving a mode rides the dispatcher: each mode's declared shortcuts,
   // gated on that mode.
-  const modalityKeys = useMemo(() => modalityShortcuts(modality.machine), [modality.machine]);
+  const pathEditEntry = useLatest({
+    pathToEdit: (): string | null => {
+      const [id, ...rest] = selection.get();
+      if (id === undefined || rest.length > 0) return null;
+      return (scene.get(id)?.data as { path?: unknown } | undefined)?.path != null ? id : null;
+    },
+    startPathEdit: (): void => { actionsReg?.trigger('enterPathEdit'); },
+  });
+  const modalityKeys = useMemo(() => modalityShortcuts(modality.machine, {
+    pathToEdit: () => pathEditEntry.current.pathToEdit(),
+    startPathEdit: () => pathEditEntry.current.startPathEdit(),
+  }), [modality.machine, pathEditEntry]);
 
   // ── Modality SceneCanvas callbacks ────────────────────────────────────────
   const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
