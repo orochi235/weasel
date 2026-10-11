@@ -287,6 +287,35 @@ describe('deleteAnchorsAt', () => {
     expect(anchorAt(set, 0)!.x).toBeCloseTo(50);
   });
 
+  it('deletes an anchor named twice once', () => {
+    const b = new PathBuilder();
+    b.moveTo(0, 0);
+    b.lineTo(10, 0);
+    b.lineTo(10, 10);
+    b.lineTo(0, 10);
+    b.lineTo(-5, 5);
+    const set = decode(b.build());
+    deleteAnchorsAt(set, [2, 2]);
+    expect(set.anchors[0].map((a) => [a.x, a.y])).toEqual([[0, 0], [10, 0], [0, 10], [-5, 5]]);
+  });
+
+  it('refits across the seam when a closed subpath loses its first anchor', () => {
+    const set: AnchorSet = {
+      anchors: [[
+        { x: 0, y: 0, inHandle: { x: -5, y: 5 }, outHandle: { x: 5, y: -5 } },
+        { x: 20, y: 0, inHandle: { x: 15, y: -5 }, outHandle: { x: 25, y: 5 } },
+        { x: 20, y: 20, inHandle: { x: 25, y: 15 }, outHandle: { x: 15, y: 25 } },
+        { x: 0, y: 20, inHandle: { x: 5, y: 25 }, outHandle: { x: -5, y: 15 } },
+      ]],
+      closed: [true],
+    };
+    deleteAnchorsAt(set, [0]);
+    const [first, , last] = set.anchors[0];
+    // The closing segment now runs last -> first; both of its handles are refit.
+    expect(last.outHandle).not.toEqual({ x: -5, y: 15 });
+    expect(first.inHandle).not.toEqual({ x: 15, y: -5 });
+  });
+
   it('returns false when nothing addressable was passed', () => {
     expect(deleteAnchorsAt(decode(triangle()), [99])).toBe(false);
     expect(deleteAnchorsAt(decode(triangle()), [])).toBe(false);
@@ -317,6 +346,33 @@ describe('openSubpathAt', () => {
     expect(set.closed[0]).toBe(false);
     expect(anchorAt(set, 0)!.x).toBeCloseTo(10);
     expect(anchorAt(set, 0)!.y).toBeCloseTo(0);
+  });
+
+  it('keeps every segment: the cut anchor ends the path as well as starting it', () => {
+    const set = decode(triangle());
+    openSubpathAt(set, 1);
+    expect(set.anchors[0]).toEqual([
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+    ]);
+  });
+
+  it('leaves the cut anchor\'s incoming handle on the end it now arrives at', () => {
+    const set: AnchorSet = {
+      anchors: [[
+        { x: 0, y: 0, inHandle: { x: -5, y: 5 }, outHandle: { x: 5, y: -5 } },
+        { x: 20, y: 0, inHandle: { x: 15, y: -5 }, outHandle: { x: 25, y: 5 } },
+        { x: 10, y: 20, inHandle: { x: 15, y: 20 }, outHandle: { x: 5, y: 20 } },
+      ]],
+      closed: [true],
+    };
+    openSubpathAt(set, 1);
+    const sub = set.anchors[0];
+    expect(sub).toHaveLength(4);
+    expect(sub[0]).toEqual({ x: 20, y: 0, outHandle: { x: 25, y: 5 } });
+    expect(sub[3]).toEqual({ x: 20, y: 0, inHandle: { x: 15, y: -5 } });
   });
 
   it('no-ops on an already-open subpath', () => {

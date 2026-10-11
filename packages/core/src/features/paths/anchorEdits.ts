@@ -262,9 +262,9 @@ function pointOnSegment(a: PenAnchor, b: PenAnchor, t: number): { x: number; y: 
 
 /**
  * Delete the anchors at `flatIndexes`. Where a deleted anchor had
- * neighbors on both sides, the surviving segment is refitted through the
- * gap (`fitCubicThroughDeletion`) so the path keeps its shape instead of
- * snapping to a straight line.
+ * neighbors on both sides — across the seam too, on a closed subpath — the
+ * surviving segment is refitted through the gap (`fitCubicThroughDeletion`)
+ * so the path keeps its shape instead of snapping to a straight line.
  *
  * Subpaths left with fewer than two anchors are dropped entirely — a
  * one-anchor subpath has no segments and would serialize to a stray `M`.
@@ -278,7 +278,7 @@ function pointOnSegment(a: PenAnchor, b: PenAnchor, t: number): { x: number; y: 
  */
 export function deleteAnchorsAt(set: AnchorSet, flatIndexes: Iterable<number>): boolean {
   const bySub = new Map<number, number[]>();
-  for (const flat of flatIndexes) {
+  for (const flat of new Set(flatIndexes)) {
     const loc = locateAnchor(set, flat);
     if (!loc) continue;
     const list = bySub.get(loc.sub);
@@ -302,8 +302,9 @@ export function deleteAnchorsAt(set: AnchorSet, flatIndexes: Iterable<number>): 
     // Descending so each splice leaves the not-yet-processed indices valid.
     indices.sort((a, b) => b - a);
     for (const i of indices) {
-      const prev = sub[i - 1];
-      const next = sub[i + 1];
+      const wraps = set.closed[s] && sub.length > 2;
+      const prev = wraps ? sub[(i - 1 + sub.length) % sub.length] : sub[i - 1];
+      const next = wraps ? sub[(i + 1) % sub.length] : sub[i + 1];
       if (prev && next) {
         const { c1, c2 } = fitCubicThroughDeletion(prev, next);
         prev.outHandle = c1;
@@ -324,8 +325,9 @@ export function deleteAnchorsAt(set: AnchorSet, flatIndexes: Iterable<number>): 
 }
 
 /**
- * Scissors: open a closed subpath at the given anchor, rotating the
- * anchor list so the cut point becomes the new start/end. No-ops on an
+ * Scissors: open a closed subpath at the given anchor. The anchor list is
+ * rotated to start there and a second anchor at the same point ends it, so
+ * every segment survives and the two ends can be pulled apart. No-ops on an
  * already-open subpath — there's nothing to cut.
  */
 export function openSubpathAt(set: AnchorSet, flatIndex: number): boolean {
@@ -334,7 +336,9 @@ export function openSubpathAt(set: AnchorSet, flatIndex: number): boolean {
   if (!set.closed[loc.sub]) return false;
   const sub = set.anchors[loc.sub];
   if (!sub) return false;
-  set.anchors[loc.sub] = [...sub.slice(loc.idx), ...sub.slice(0, loc.idx)];
+  const { inHandle, ...start } = sub[loc.idx];
+  const end: PenAnchor = { x: start.x, y: start.y, ...(inHandle ? { inHandle } : {}) };
+  set.anchors[loc.sub] = [start, ...sub.slice(loc.idx + 1), ...sub.slice(0, loc.idx), end];
   set.closed[loc.sub] = false;
   return true;
 }
