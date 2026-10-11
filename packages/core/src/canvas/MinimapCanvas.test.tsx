@@ -431,7 +431,7 @@ describe('<MinimapCanvas>', () => {
     expect(indicator.stroke?.paint).toEqual({ fill: 'solid', color: '#ff00aa' });
     // The command sits inside the fit view's transform, so its world-unit
     // numbers times the fit scale are what reaches the screen.
-    const scale = (root.transform as number[])[0];
+    const scale = root.transform![0];
     expect(scale).not.toBeCloseTo(1, 2);
     expect((indicator.stroke?.width as number) * scale).toBeCloseTo(3, 6);
     expect(indicator.stroke?.dash?.map((d) => d * scale)).toEqual([expect.closeTo(5, 6), expect.closeTo(2, 6)]);
