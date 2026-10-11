@@ -14,6 +14,7 @@
 import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core/math';
 import { expandGroupEdges, insetOf, type GroupInset } from './cluster';
 import { diagramEdgeOf } from './edge';
+import { nestGroups } from './groupTree';
 import type { Bounds } from './outline';
 import { diagramNodeOf, type DiagramNodeLike, type DiagramNodeReader } from './trait';
 
@@ -35,7 +36,7 @@ export interface GraphNode {
   bounds: Bounds;
   /** Layout must not move it. */
   pinned: boolean;
-  /** The group it belongs to, when it belongs to one. */
+  /** The innermost group it belongs to, when it belongs to one. */
   group?: string;
 }
 
@@ -43,10 +44,13 @@ export interface GraphNode {
  *  leaves room for. */
 export interface GraphGroup {
   id: string;
-  /** In source order. */
+  /** Every participant inside, through any group nested in this one, in
+   *  source order. */
   members: readonly string[];
-  /** Room the box keeps around its members, in world units. */
+  /** Room the box keeps around what it holds, in world units. */
   inset: GroupInset;
+  /** The group this one is directly inside. */
+  parent?: string;
 }
 
 /** One connection. `id` is the edge node's own id, so a caller can go back to
@@ -88,7 +92,7 @@ export interface BuildGraphOptions<TPose> {
  *
  * A node is an edge if it carries the edge trait and names exactly two
  * dependencies; a group if its trait carries `group`, with its dependencies as
- * its members; a participant if the reader hands back any other
+ * its members, which may be groups themselves (see `nestGroups`); a participant if the reader hands back any other
  * `DiagramNode`; and otherwise not in the diagram at all. An edge whose
  * endpoints are not both participants or groups is dropped — a dangling edge
  * should not be ranking anything — and an edge to a group ranks against its
@@ -132,18 +136,19 @@ export function buildGraph<TPose>(
     byId.set(entry.id, entry);
   }
 
-  // A member is one only once: a node a second group also names stays in the first.
-  const groups: GraphGroup[] = [];
-  const claimed = new Set<string>();
-  for (const g of groupNodes) {
-    const members = g.members.filter((id) => byId.has(id) && !claimed.has(id));
-    for (const id of members) {
-      claimed.add(id);
-      byId.get(id)!.group = g.id;
+  const insets = new Map(groupNodes.map((g) => [g.id, g.inset]));
+  const live: GraphGroup[] = nestGroups(groupNodes, (id) => byId.has(id)).map((g) => {
+    for (const id of g.direct) {
+      const node = byId.get(id);
+      if (node !== undefined) node.group = g.id;
     }
-    groups.push({ ...g, members });
-  }
-  const live = groups.filter((g) => g.members.length > 0);
+    return {
+      id: g.id,
+      members: g.members,
+      inset: insets.get(g.id)!,
+      ...(g.parent !== undefined ? { parent: g.parent } : {}),
+    };
+  });
   const known = (id: string) => byId.has(id) || live.some((g) => g.id === id);
   const edges = expandGroupEdges(candidates.filter((e) => known(e.from) && known(e.to)), live);
   const out = new Map<string, GraphEdge[]>();

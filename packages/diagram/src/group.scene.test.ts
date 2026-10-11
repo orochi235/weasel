@@ -114,3 +114,44 @@ describe('a group in a scene', () => {
     expect(specs.some((s) => s.id === 'G')).toBe(false);
   });
 });
+
+describe('a group inside a group, in a scene', () => {
+  const NESTED: DiagramData = {
+    nodes: [
+      { id: 'a', lines: ['a'] }, { id: 'b', lines: ['b'] }, { id: 'c', lines: ['c'] },
+      { id: 'x', lines: ['outside'] },
+    ],
+    edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c' }, { from: 'x', to: 'a' }],
+    groups: [
+      { id: 'Sys', members: ['Inner', 'c'], label: 'the system' },
+      { id: 'Inner', members: ['a', 'b'], label: 'the part' },
+    ],
+  };
+
+  it('draws the outer box around the inner box, and behind it', () => {
+    const { specs, pose } = load(NESTED);
+    expect(contains(pose('Inner'), pose('a'))).toBe(true);
+    expect(contains(pose('Sys'), pose('Inner'))).toBe(true);
+    expect(contains(pose('Sys'), pose('c'))).toBe(true);
+    expect(pose('Sys').width).toBeGreaterThan(pose('Inner').width);
+    expect(specs.findIndex((s) => s.id === 'Sys')).toBeLessThan(specs.findIndex((s) => s.id === 'Inner'));
+    expect(specs.find((s) => s.id === 'Sys')!.dependsOn).toEqual(['Inner', 'c']);
+  });
+
+  it('derives the same boxes the specs were built with', () => {
+    const { specs, pose } = load(NESTED);
+    expect(pose('Sys')).toEqual(specs.find((s) => s.id === 'Sys')!.pose);
+    expect(pose('Inner')).toEqual(specs.find((s) => s.id === 'Inner')!.pose);
+  });
+
+  it('keeps the outsider out of the outer box, and the outer title above the inner box', () => {
+    const { pose } = load(NESTED);
+    const sys = pose('Sys');
+    const x = pose('x');
+    const apart = x.x + x.width <= sys.x || sys.x + sys.width <= x.x
+      || x.y + x.height <= sys.y || sys.y + sys.height <= x.y;
+    expect(apart).toBe(true);
+    const title = pose('Sys/label');
+    expect(title.y + title.height).toBeLessThanOrEqual(pose('Inner').y);
+  });
+});

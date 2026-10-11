@@ -5,20 +5,26 @@
 import type { GroupInset } from './cluster';
 import type { DataGroup, DiagramSceneData, DiagramSpec, NodeStyle } from './fromData';
 import { ANCHOR_DERIVE_POSE, GROUP_DERIVE_POSE, type DiagramAnchor } from './group';
+import { nestGroups } from './groupTree';
 
 /** A group with its members settled and its inset worked out. */
 export interface ResolvedGroup {
   group: DataGroup;
+  /** The nodes and groups directly inside, which the box derives from. */
+  direct: readonly string[];
+  /** Every node inside, through any nested group. */
   members: readonly string[];
+  /** The group this one is directly inside. */
+  parent?: string;
   inset: GroupInset;
   pad: number;
   title: { width: number; height: number } | null;
 }
 
 /**
- * Settle each group's members: node ids only, and a node a later group also
- * names stays in the first. A group left with none is dropped. Throws on a
- * group id already in `ids`, and adds each group's id to it.
+ * Settle what each group holds (see `nestGroups`), outer groups ahead of the
+ * groups inside them. A group left with no node inside it is dropped. Throws
+ * on a group id already in `ids`, and adds each group's id to it.
  */
 export function resolveGroups(
   groups: readonly DataGroup[],
@@ -26,45 +32,73 @@ export function resolveGroups(
   nodeIds: ReadonlySet<string>,
   opts: { padding: number; title: (text: string) => { width: number; height: number } },
 ): ResolvedGroup[] {
-  const claimed = new Set<string>();
-  const out: ResolvedGroup[] = [];
   for (const group of groups) {
     if (ids.has(group.id)) throw new Error(`diagramScene: group id "${group.id}" is already a node or group id`);
     ids.add(group.id);
-    const members = group.members.filter((m) => nodeIds.has(m) && !claimed.has(m));
-    for (const m of members) claimed.add(m);
-    if (members.length === 0) continue;
+  }
+  const declared = new Map(groups.map((g) => [g.id, g]));
+  const nested = nestGroups(groups, (id) => nodeIds.has(id));
+  const depthOf = new Map<string, number>();
+  const byId = new Map(nested.map((g) => [g.id, g]));
+  const depth = (id: string): number => {
+    const parent = byId.get(id)!.parent;
+    let d = depthOf.get(id);
+    if (d === undefined) depthOf.set(id, (d = parent === undefined ? 0 : depth(parent) + 1));
+    return d;
+  };
+  // Stable, so groups at one depth keep the order they were declared in.
+  return nested.map((g, i) => ({ g, i })).sort((a, b) => depth(a.g.id) - depth(b.g.id) || a.i - b.i).map(({ g }) => {
+    const group = declared.get(g.id)!;
     const pad = group.padding ?? opts.padding;
     const title = group.label ? opts.title(group.label) : null;
-    // The label sits in the top inset, half a pad above the members.
+    // The label sits in the top inset, half a pad above what the box holds.
     const inset = { top: pad + (title ? title.height + pad / 2 : 0), right: pad, bottom: pad, left: pad };
-    out.push({ group, members, inset, pad, title });
-  }
-  return out;
+    return {
+      group, direct: g.direct, members: g.members, inset, pad, title,
+      ...(g.parent !== undefined ? { parent: g.parent } : {}),
+    };
+  });
 }
 
-/** Each group's box, and its label when it has one, around where its members were placed. */
+type Rect = { x: number; y: number; width: number; height: number };
+
+/**
+ * Each group's box, and its label when it has one, around where its members
+ * were placed. In the order given, so an outer box paints behind the boxes
+ * inside it.
+ */
 export function groupSpecs(
   groups: readonly ResolvedGroup[],
-  placedAt: ReadonlyMap<string, { x: number; y: number; width: number; height: number }>,
+  placedAt: ReadonlyMap<string, Rect>,
   styleOf: (group: DataGroup) => { style: NodeStyle; text: NonNullable<DiagramSceneData['style']> },
 ): DiagramSpec[] {
+  const byId = new Map(groups.map((g) => [g.group.id, g]));
+  const boxes = new Map<string, Rect>();
+  const boxOf = (id: string): Rect => {
+    const known = boxes.get(id);
+    if (known !== undefined) return known;
+    const g = byId.get(id)!;
+    const rs = g.direct.map((m) => (byId.has(m) ? boxOf(m) : placedAt.get(m)!));
+    const x = Math.min(...rs.map((r) => r.x)) - g.inset.left;
+    const y = Math.min(...rs.map((r) => r.y)) - g.inset.top;
+    const box = {
+      x,
+      y,
+      width: Math.max(...rs.map((r) => r.x + r.width)) + g.inset.right - x,
+      height: Math.max(...rs.map((r) => r.y + r.height)) + g.inset.bottom - y,
+    };
+    boxes.set(id, box);
+    return box;
+  };
   const specs: DiagramSpec[] = [];
   for (const g of groups) {
     const { style, text } = styleOf(g.group);
-    const rs = g.members.map((m) => placedAt.get(m)!);
-    const x = Math.min(...rs.map((r) => r.x)) - g.inset.left;
-    const y = Math.min(...rs.map((r) => r.y)) - g.inset.top;
+    const { x, y, width, height } = boxOf(g.group.id);
     specs.push({
       id: g.group.id as never,
       kind: 'leaf',
       layer: 'main',
-      pose: {
-        x,
-        y,
-        width: Math.max(...rs.map((r) => r.x + r.width)) + g.inset.right - x,
-        height: Math.max(...rs.map((r) => r.y + r.height)) + g.inset.bottom - y,
-      },
+      pose: { x, y, width, height },
       data: {
         diagram: { outline: 'rect', group: { inset: g.inset } },
         fill: { color: style.fill },
@@ -74,7 +108,7 @@ export function groupSpecs(
           ...(style.dash ? { dash: style.dash } : {}),
         },
       },
-      dependsOn: g.members as never[],
+      dependsOn: g.direct as never[],
       derivePose: GROUP_DERIVE_POSE as never,
     });
     if (g.title === null || !g.group.label) continue;

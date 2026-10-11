@@ -57,3 +57,27 @@ export function boxOf(at: Map<string, Rect>, members: readonly string[], inset: 
 
 export const overlaps = (a: Rect, b: Rect) =>
   a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+/** A group's box where its members may themselves be groups: the union of its
+ *  nodes and its inner groups' boxes, grown by the inset. */
+export function nestedBoxOf(
+  at: Map<string, Rect>,
+  groups: Readonly<Record<string, readonly string[]>>,
+  id: string,
+  inset: number,
+): Rect {
+  const rs = groups[id]!.map((m) => (m in groups ? nestedBoxOf(at, groups, m, inset) : at.get(m)!));
+  const x = Math.min(...rs.map((r) => r.x)) - inset;
+  const y = Math.min(...rs.map((r) => r.y)) - inset;
+  return {
+    x,
+    y,
+    width: Math.max(...rs.map((r) => r.x + r.width)) + inset - x,
+    height: Math.max(...rs.map((r) => r.y + r.height)) + inset - y,
+  };
+}
+
+/** Whether `inner` lies wholly within `outer`. */
+export const contains = (outer: Rect, inner: Rect) =>
+  inner.x >= outer.x && inner.y >= outer.y
+  && inner.x + inner.width <= outer.x + outer.width && inner.y + inner.height <= outer.y + outer.height;

@@ -71,8 +71,9 @@ export interface DataEdge {
 export interface DataGroup {
   /** Shares one namespace with node ids. */
   id: string;
-  /** Node ids. A node a later group also names stays in this one, and an id
-   *  that is not a node is ignored. */
+  /** Node ids, and the ids of groups nested in this one. A node or group a
+   *  later group also names stays in this one; an id that is neither is
+   *  ignored, and so is one that would put a group inside itself. */
   members: readonly string[];
   /** Drawn inside the box, above its members. */
   label?: string;
@@ -85,9 +86,9 @@ export interface DataGroup {
 export interface DiagramData {
   nodes: readonly DataNode[];
   edges: readonly DataEdge[];
-  /** Flat: a group is never a member of another. `layered` and `tree` keep
-   *  each group's members together; `force` and `'none'` ignore groups but
-   *  still draw them. */
+  /** A group may be a member of another. `layered`, `tree`, and `force` keep
+   *  each group's members together; `'none'` ignores groups but still draws
+   *  them. */
   groups?: readonly DataGroup[];
 }
 
@@ -250,9 +251,19 @@ export function diagramScene(data: DiagramData, opts: DiagramSceneOptions = {}):
     );
     return { id: n.id, bounds: pose, pinned: n.pinned === true };
   });
-  const graphGroups: GraphGroup[] = groups.map((g) => ({ id: g.group.id, members: g.members, inset: g.inset }));
+  const graphGroups: GraphGroup[] = groups.map((g) => ({
+    id: g.group.id,
+    members: g.members,
+    inset: g.inset,
+    ...(g.parent !== undefined ? { parent: g.parent } : {}),
+  }));
   const seedOf = new Map(seeds.map((n) => [n.id, n]));
-  for (const g of groups) for (const m of g.members) seedOf.get(m)!.group = g.group.id;
+  for (const g of groups) {
+    for (const m of g.direct) {
+      const seed = seedOf.get(m);
+      if (seed !== undefined) seed.group = g.group.id;
+    }
+  }
   const graph = graphOf(
     seeds,
     expandGroupEdges(edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })), graphGroups),

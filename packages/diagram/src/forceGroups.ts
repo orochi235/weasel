@@ -3,16 +3,19 @@
  * together, and its box kept clear of everything that is not in it.
  *
  * A group is its members and nothing else here — the box is recomputed from
- * where they are on every tick, the way the scene derives it. Groups do not
- * nest, so two groups never share a member.
+ * where they are on every tick, the way the scene derives it: around its own
+ * nodes and the boxes of the groups nested in it.
  */
 import type { SimulationForce } from '@weasel-js/core/math';
 import type { GraphGroup } from './graph';
 import type { ForceBody } from './force';
 
 interface GroupBodies {
+  /** Every body inside, through any nested group. */
   members: ForceBody[];
   group: GraphGroup;
+  parent?: GroupBodies;
+  children: GroupBodies[];
 }
 
 interface Box { x0: number; y0: number; x1: number; y1: number }
@@ -21,7 +24,14 @@ function resolve(groups: readonly GraphGroup[], byId: ReadonlyMap<string, ForceB
   const out: GroupBodies[] = [];
   for (const group of groups) {
     const members = group.members.map((id) => byId.get(id)).filter((b) => b !== undefined);
-    if (members.length > 0) out.push({ members, group });
+    if (members.length > 0) out.push({ members, group, children: [] });
+  }
+  const byGroup = new Map(out.map((g) => [g.group.id, g]));
+  for (const g of out) {
+    const parent = g.group.parent === undefined ? undefined : byGroup.get(g.group.parent);
+    if (parent === undefined) continue;
+    g.parent = parent;
+    parent.children.push(g);
   }
   return out;
 }
@@ -51,18 +61,27 @@ export function groupCohesion(
   };
 }
 
-function boxOf({ members, group }: GroupBodies): Box {
+/** The box of `g`: around its bodies and its nested groups' boxes, grown by
+ *  its inset. A body inside a nested group is covered by that group's box. */
+function boxOf(g: GroupBodies): Box {
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
   let y1 = -Infinity;
-  for (const m of members) {
+  for (const m of g.members) {
     x0 = Math.min(x0, m.x - m.hw);
     y0 = Math.min(y0, m.y - m.hh);
     x1 = Math.max(x1, m.x + m.hw);
     y1 = Math.max(y1, m.y + m.hh);
   }
-  const { inset } = group;
+  for (const child of g.children) {
+    const b = boxOf(child);
+    x0 = Math.min(x0, b.x0);
+    y0 = Math.min(y0, b.y0);
+    x1 = Math.max(x1, b.x1);
+    y1 = Math.max(y1, b.y1);
+  }
+  const { inset } = g.group;
   return { x0: x0 - inset.left, y0: y0 - inset.top, x1: x1 + inset.right, y1: y1 + inset.bottom };
 }
 
@@ -77,6 +96,14 @@ function clearance(a: Box, b: Box, padding: number): { x: number; y: number } | 
   return gapX < gapY
     ? { x: (Math.sign(dx) || 1) * gapX, y: 0 }
     : { x: 0, y: (Math.sign(dy) || 1) * gapY };
+}
+
+/** Whether `inner` is nested somewhere inside `outer`. */
+function holds(outer: GroupBodies, inner: GroupBodies): boolean {
+  for (let at = inner.parent; at !== undefined; at = at.parent) {
+    if (at === outer) return true;
+  }
+  return false;
 }
 
 function shove(bodies: readonly ForceBody[], x: number, y: number): void {
@@ -104,6 +131,7 @@ export function separateGroups(
     const boxes = resolved.map(boxOf);
     for (let i = 0; i < resolved.length; i++) {
       for (let j = i + 1; j < resolved.length; j++) {
+        if (holds(resolved[i]!, resolved[j]!) || holds(resolved[j]!, resolved[i]!)) continue;
         const push = clearance(boxes[i]!, boxes[j]!, padding);
         if (push === null) continue;
         shove(resolved[i]!.members, -push.x / 2, -push.y / 2);

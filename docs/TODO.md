@@ -757,12 +757,6 @@ intercepting the press that drags the body.
   `kit:setLayer`. Widening the pull to those means deciding what a derivation
   is allowed to read, not just how a pose is compared.
 
-- **(P2) Diagram groups do not nest.** `DiagramData.groups` draws a box around its members,
-  `layered`, `tree`, and `force` keep them together (`cluster.ts`, `forceGroups.ts`), and dragging
-  the box moves them. A group is never a member of another, so a subsystem inside a system has no
-  shape. The column packer would recurse: lay a group's members out as a block, then pack that
-  block as one item of its parent.
-
 - **(P3) `ForceGraphDemo` is a second force-graph pipeline.** It runs d3-force through
   `useSimulation` and paints with its own render layer, beside `@weasel-js/diagram`'s `force` layout
   and `DiagramView`. `force.ts` reserves that route for graphs too big for a scene node per edge,
