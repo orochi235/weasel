@@ -299,6 +299,21 @@ describe('kit:text painter — rich runs', () => {
   });
 });
 
+describe('kit:text painter — silhouette across a font load', () => {
+  it('measures again once the face has landed', async () => {
+    _resetFontRegistryForTests();
+    stubFontFetch();
+    const pose = { x: 0, y: 0, width: 400, height: 100 };
+    const n = { ...node({ text: 'AB', style: { fontSize: 20 } }), pose };
+    const pending = findShapeSilhouette(n, pose);
+    await registerFont('sans-serif', {}, '/f.json', '/f.png');
+    const landed = findShapeSilhouette(n, pose);
+    expect(landed).not.toBeNull();
+    expect(landed).not.toBe(pending);
+    expect(findShapeSilhouette(n, pose)).toBe(landed);
+  });
+});
+
 describe('kit:text painter — silhouette', () => {
   // FIXTURE_FONT covers 'A' and 'B' only, and registers under the default
   // family so `resolveTextStyle` finds it.

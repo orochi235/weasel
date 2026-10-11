@@ -49,6 +49,7 @@ import { textCommandFromPose } from 'features/text/textCommand';
 import type { TextPose, TextStyle } from '@weasel-js/text';
 import type { StyledRun, TextVerticalAlign } from '@weasel-js/text';
 import { textLineBoxes } from '@weasel-js/text';
+import { glyphGeneration } from '@weasel-js/font';
 import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { DEFAULT_SHAPE_FILL } from '../util/paint';
 import {
@@ -278,6 +279,7 @@ export function registerNodeShape<TData, TPose>(
 const PAINTER_SLOT = 'shape:painter';
 const PAINTER_SLOT_NONRECT = 'shape:painter:nonrect';
 const SILHOUETTE_SLOT = 'shape:silhouette';
+const TEXT_SILHOUETTE_SLOT = 'shape:silhouette:text';
 
 /**
  * Slot for a painter's memoized `paint` output.
@@ -354,6 +356,18 @@ export function findShapeSilhouette<TData, TPose>(
   // source answers `null` for every ordinary node, and treating that as a
   // reason to bypass would retire the memo for the whole scene.
   if (ctx?.derivedPath != null) return build();
+  // Line boxes follow font metrics, and a face landing changes those with no
+  // change to the node, so the text entry is checked against the glyph epoch.
+  if (findNodeShape(node) === (TEXT_PAINTER as NodeShapeEntry<unknown, unknown>)) {
+    const epoch = glyphGeneration();
+    const held = nodeMemo(node as { data?: unknown }, TEXT_SILHOUETTE_SLOT, pose,
+      (): { epoch: number; path: Path | null } => ({ epoch, path: build() }));
+    if (held.epoch !== epoch) {
+      held.epoch = epoch;
+      held.path = build();
+    }
+    return held.path;
+  }
   return nodeMemo(node as { data?: unknown }, SILHOUETTE_SLOT, pose, build);
 }
 
