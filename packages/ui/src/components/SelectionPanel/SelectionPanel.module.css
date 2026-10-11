@@ -111,6 +111,11 @@
   min-inline-size: 0;
 }
 
+/* A checkbox is its box, not a share of the row. Its own `flex: none` only ties with the rule above. */
+.rowControls > input[type='checkbox'] {
+  flex: none;
+}
+
 /* Bars sharing a row split the leftover between them, so the gap stays fixed
    and the width lands on the segments. A bar with the row to itself is sized
    by its segments instead — a third of 240px is a plate, not a button. */
