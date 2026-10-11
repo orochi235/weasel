@@ -5,6 +5,8 @@ import {
   DepRegistryProvider,
   useAction,
   useDepSource,
+  useDepRegistry,
+  type DepRegistry,
   type DepName,
   clipboardCutAction,
   clipboardCopyAction,
@@ -129,6 +131,35 @@ describe('ActionBar', () => {
     const button = () => screen.getByTestId('action-bar-item-gated') as HTMLButtonElement;
     expect(button().disabled).toBe(true);
     rerender(view(true));
+    expect(button().disabled).toBe(false);
+  });
+
+  it('follows a dep whose owner says it changed, with nothing re-rendering the bar', () => {
+    const action = makeAction({
+      id: 'gated',
+      requires: ['gate' as DepName],
+      enabled: (deps) => ((deps as Record<string, unknown> | undefined)?.gate ? true : 'not-applicable'),
+    });
+    // The gate lives outside React, as a selection held in a store does.
+    const gate = { open: false };
+    let registry!: DepRegistry;
+    function Gate() {
+      registry = useDepRegistry();
+      useDepSource('gate' as DepName, () => gate.open as never);
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <Register action={action} />
+          <Gate />
+          <ActionBar group="demo" />
+        </ActionsProvider>
+      </DepRegistryProvider>,
+    );
+    const button = () => screen.getByTestId('action-bar-item-gated') as HTMLButtonElement;
+    expect(button().disabled).toBe(true);
+    act(() => { gate.open = true; registry.changed!(); });
     expect(button().disabled).toBe(false);
   });
 

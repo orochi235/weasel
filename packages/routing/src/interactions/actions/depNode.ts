@@ -23,6 +23,15 @@ import { ScopeNode } from './scopeNode';
 export interface DepRegistry {
   register<K extends DepName>(name: K, source: () => DepSchema[K]): () => void;
   get<K extends DepName>(name: K): DepSchema[K] | undefined;
+  /** Hear that what the registry answers may have changed: a source was
+   *  registered or released anywhere in its tree, or an owner called
+   *  {@link DepRegistry.changed}. Returns the unsubscribe. A hand-built
+   *  registry whose answers never change leaves this and `changed` out. */
+  subscribe?(listener: () => void): () => void;
+  /** Say that a source's value changed. A source is a thunk read on demand,
+   *  so its owner is the only one who knows; chrome showing an action's
+   *  `enabled` or `active` state re-reads on this. */
+  changed?(): void;
 }
 
 /** One node of the dep tree: the sources registered at it, over its parent's.
@@ -38,6 +47,7 @@ export class DepNode extends ScopeNode<DepNode> {
       const stack = this.sources.get(key);
       if (stack) stack.push(entry);
       else this.sources.set(key, [entry]);
+      this.changed();
       let released = false;
       return () => {
         if (released) return;
@@ -50,6 +60,7 @@ export class DepNode extends ScopeNode<DepNode> {
         if (i === -1) return;
         cur.splice(i, 1);
         if (cur.length === 0) this.sources.delete(key);
+        this.changed();
       };
     },
     get: <K extends DepName>(name: K) => {
@@ -59,6 +70,11 @@ export class DepNode extends ScopeNode<DepNode> {
       }
       return undefined;
     },
+    subscribe: (listener: () => void) => {
+      this.tree.listeners.add(listener);
+      return () => { this.tree.listeners.delete(listener); };
+    },
+    changed: () => this.changed(),
   };
 
   constructor(parent: DepNode | null, descends: boolean) {

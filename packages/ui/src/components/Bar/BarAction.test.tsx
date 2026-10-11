@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import {
+  ActionsProvider, DepRegistryProvider, useAction, useDepRegistry, useDepSource,
+  type Action, type DepName, type DepRegistry,
+} from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
 import { BarAction } from './BarAction';
@@ -68,6 +71,31 @@ describe('BarAction', () => {
       </Host>,
     );
     expect(screen.getByRole('button', { name: 'Bold' })).toBeDisabled();
+  });
+
+  it('follows a dep whose owner says it changed', () => {
+    const gate = { open: false };
+    let registry!: DepRegistry;
+    function Gate() {
+      registry = useDepRegistry();
+      useDepSource('gate' as DepName, () => gate.open as never);
+      return null;
+    }
+    const bold = action('text.bold', {
+      requires: ['gate' as DepName],
+      enabled: (deps) => ((deps as Record<string, unknown> | undefined)?.gate ? true : 'selection-required'),
+    });
+    render(
+      <DepRegistryProvider>
+        <Host actions={[bold]}>
+          <Gate />
+          <BarAction leaf={leaf({ action: 'text.bold' })} path="bold" />
+        </Host>
+      </DepRegistryProvider>,
+    );
+    expect(screen.getByRole('button', { name: 'Bold' })).toBeDisabled();
+    act(() => { gate.open = true; registry.changed!(); });
+    expect(screen.getByRole('button', { name: 'Bold' })).toBeEnabled();
   });
 
   it('reads as held down while the action says it is active', () => {

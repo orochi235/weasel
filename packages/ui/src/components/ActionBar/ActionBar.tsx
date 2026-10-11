@@ -1,10 +1,6 @@
-import { useLayoutEffect, useReducer, useSyncExternalStore, type ReactNode } from 'react';
+import { useSyncExternalStore, type ReactNode } from 'react';
 import {
   useActionsRegistry,
-  useOptionalDepRegistry,
-  evaluateActive,
-  evaluateEnabled,
-  buildDepsFromRequires,
   actionItems,
   actionShortcuts,
   type Action,
@@ -12,6 +8,7 @@ import {
 } from '@weasel-js/core';
 import { BarActionButton } from '../Bar/BarAction';
 import { formatShortcut } from '../ToolPalette/formatShortcut';
+import { useActionStates } from './useActionStates';
 import s from './ActionBar.module.css';
 
 const EMPTY_LIST: readonly Action[] = Object.freeze([]);
@@ -65,28 +62,13 @@ function resolveIcon(item: ActionItem, override: ReactNode | undefined): ReactNo
 export function ActionBar(props: ActionBarProps) {
   const { group, orientation = 'horizontal', icons, labels, className } = props;
   const registry = useActionsRegistry();
-  const depReg = useOptionalDepRegistry();
   const all = useSyncExternalStore(
     registry ? registry.subscribe : noopSubscribe,
     registry ? registry.list : () => EMPTY_LIST,
     registry ? registry.list : () => EMPTY_LIST,
   );
   const items = all.filter((a) => a.group === group).flatMap(actionItems);
-  const read = (item: ActionItem): { enabled: boolean; active: boolean | undefined } => {
-    const deps = depReg ? buildDepsFromRequires(item.action, depReg) : undefined;
-    return { enabled: evaluateEnabled(item.action, deps).enabled, active: evaluateActive(item.action, deps) };
-  };
-  // Dep sources publish on commit, so a render reads the previous commit's
-  // deps. Once this one commits, re-render if what they say now differs.
-  const shown = items.map(read);
-  const [, recheck] = useReducer((n: number) => n + 1, 0);
-  useLayoutEffect(() => {
-    const stale = items.some((item, i) => {
-      const now = read(item);
-      return now.enabled !== shown[i]!.enabled || now.active !== shown[i]!.active;
-    });
-    if (stale) recheck();
-  });
+  const shown = useActionStates(items);
 
   const cls = [s.bar, orientation === 'vertical' && s.vertical, className]
     .filter(Boolean)

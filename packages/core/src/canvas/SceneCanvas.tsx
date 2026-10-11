@@ -105,6 +105,7 @@ import {
   useAreaSelectDepSource,
   useNodeAtPointDepSource,
   useDebugDepSource,
+  useDepChangeNotices,
   useInsertDepSource,
   useSliceDepSource,
   useSnapDepSource,
@@ -2895,6 +2896,7 @@ function StandardActionsRegistrar({
   useSliceDepSource(scene, selection, adapter, poseComposition, poseDescriptor);
   useSnapDepSource(snapPoint);
   useDebugDepSource(canvasApiRef);
+  useDepChangeNotices(scene, selection.current);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection, poseDescriptor, poseComposition, alphaOf);
   useTextEditDepSource(scene);

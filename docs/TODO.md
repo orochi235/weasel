@@ -1471,16 +1471,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   for its card, with `aria-level` restarting there. That leaves that markup in `Level`, and what a
   lone row among cards belongs to, since it has no card to be named for.
 
-- **(P2) ActionBar: a button's `enabled` / `active` state is re-read only when something else
-  re-renders the bar.** A "Delete" action enabled only while something is selected stays disabled
-  when the selection changes in a store the bar's parent does not render from:
-  `packages/ui/src/components/ActionBar/ActionBar.tsx` subscribes to `registry.subscribe`, which
-  fires on register and unregister only, and its layout effect compares render-time values with
-  commit-time values, which helps only on a render that already happened. The dep registry
-  (`depRegistry.tsx` in `packages/routing`) has no change subscription to listen to. The fix is a
-  subscribe/notify on the dep registry that the bar (and any other reader of
-  `buildDepsFromRequires`) listens to; that is new surface in `@weasel-js/routing`.
-
 - **(P3) SceneGradientHandles: unmounting mid-drag commits the half-finished drag.** Deselect the
   node (or anything else that unmounts the overlay) while a handle is held: the parent's
   `useOngoingAction` cleanup runs first and commits the value under the pointer, then `DragPoint`'s

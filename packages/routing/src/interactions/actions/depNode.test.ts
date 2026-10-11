@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { createDepRegistry } from '../../index';
+import { describe, it, expect, vi } from 'vitest';
+import { createDepRegistry, type DepName } from '../../index';
+import { DepNode } from './depNode';
 
 // The stock registry, from the React-free entry, for a dispatcher driven
 // without a provider tree.
@@ -30,5 +31,35 @@ describe('createDepRegistry', () => {
     const b = createDepRegistry();
     a.register('selection' as never, (() => 1) as never);
     expect(b.get('selection' as never)).toBeUndefined();
+  });
+});
+
+describe('dep registry change notices', () => {
+  it('tells subscribers when a source is registered, released, or said to have changed', () => {
+    const registry = createDepRegistry();
+    const heard = vi.fn();
+    const off = registry.subscribe!(heard);
+
+    const release = registry.register('gate' as DepName, () => true as never);
+    expect(heard).toHaveBeenCalledTimes(1);
+    registry.changed!();
+    expect(heard).toHaveBeenCalledTimes(2);
+    release();
+    expect(heard).toHaveBeenCalledTimes(3);
+    release();
+    expect(heard).toHaveBeenCalledTimes(3);
+
+    off();
+    registry.changed!();
+    expect(heard).toHaveBeenCalledTimes(3);
+  });
+
+  it('reaches a subscriber on another node of the same tree', () => {
+    const root = new DepNode(null, true);
+    const scope = new DepNode(root, false);
+    const heard = vi.fn();
+    root.registry.subscribe!(heard);
+    scope.registry.changed!();
+    expect(heard).toHaveBeenCalledTimes(1);
   });
 });
