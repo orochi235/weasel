@@ -2,8 +2,7 @@ import { createHistory, type History, type HistorySelection, type Journal, type 
 import type { Op } from 'core/ops/types';
 import type { ParallaxOpts } from 'core/viewport/parallax';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
-import { createArrangeOp, type ArrangeArgs, type ArrangedPose } from 'core/ops/arrange';
-import { SceneArrivalRefused } from './arrivals';
+import { createArrangeOp, type ArrangeArgs } from 'core/ops/arrange';
 import { dwarn } from 'debug/flag';
 import { createDependentsIndex, sameDependsOn } from './dependents';
 import { withKitRegistry } from './kitRegistry';
@@ -19,12 +18,12 @@ import {
 import { createPoseOverrides } from './poseOverrides';
 import { createRenderOrder } from './renderOrder';
 import { createLockGuard } from './lockGuard';
+import { createArrivalWindow } from './arrivalWindow';
 import { layerFromSerialized, serializeScene, specsFromSerialized } from './serialization';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
 import type { LayoutStrategy } from '../../layout/types';
 import {
   asNodeId,
-  type LayoutMove,
   type AddNodeSpec,
   type ContainerNode,
   type LayerRecord,
@@ -323,139 +322,24 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   let activeJournalAccessor: (() => Journal | null) | null =
     options.getActiveJournal ?? null;
 
-  // Container layout. `arrivals` is open (non-null) while a live edit is
-  // collecting the nodes that joined a container, and `changed` every
-  // container whose children or size it changed; whoever opened the window
-  // settles it before the edit closes. Undo, redo and journal replays never
-  // open it: they restore an arrangement that was already decided.
-  let arrivalHandler: SceneArrivalHandler<TPose> | null = null;
-  let arrivals: Map<NodeId, NodeId[]> | null = null;
-  let departures = new Map<NodeId, NodeId[]>();
-  let changed = new Set<NodeId>();
-  /** What the last settle wrote, reported to `onReflow` once its edit lands. */
-  let reflowDue: LayoutMove<TPose>[] | null = null;
-  const reflowListeners = new Set<(moves: readonly LayoutMove<TPose>[]) => void>();
+  const arrivalWindow = createArrivalWindow<TData, TLayer, TPose>({
+    nodes: state.nodes,
+    declared: () => (hasLayouts ? declaredLayouts : null),
+    recordsBareEdits: () => batchDepth === 0 && !suppressRecording,
+    writePose,
+  });
+  const {
+    noteArrival, noteDeparture, noteChange, bareLayoutEdit, open: openArrivals, emitReflow,
+    settle: settleArrivals, runEdit: runArrivalEdit,
+  } = arrivalWindow;
 
   /** The pass a scene runs over its declared layouts when nothing else is
    *  installed. */
   const declaredLayouts: SceneArrivalHandler<TPose> = (arrived, touched, departed) =>
     runLayoutPass(scene, layoutOfInternal, arrived, touched, layoutFrame, departed);
 
-  function activeHandler(): SceneArrivalHandler<TPose> | null {
-    return arrivalHandler ?? (hasLayouts ? declaredLayouts : null);
-  }
-
-  function noteArrival(id: NodeId, parent: NodeId | null, from: NodeId | null): void {
-    if (arrivals === null || parent === null || parent === from) return;
-    changed.add(parent);
-    const list = arrivals.get(parent);
-    if (list === undefined) arrivals.set(parent, [id]);
-    else if (!list.includes(id)) list.push(id);
-  }
-
-  function noteDeparture(id: NodeId, from: NodeId | null, to: NodeId | null): void {
-    if (arrivals === null || from === null || from === to) return;
-    changed.add(from);
-    // One that joined earlier in this edit was never there to leave.
-    if (arrivals.get(from)?.includes(id)) return;
-    const list = departures.get(from);
-    if (list === undefined) departures.set(from, [id]);
-    else if (!list.includes(id)) list.push(id);
-  }
-
-  /** A container's child set or order changed, or it changed size. */
-  function noteChange(id: NodeId | null): void {
-    if (arrivals !== null && id !== null) changed.add(id);
-  }
-
-  /** Whether a bare scene call has to run as a batch of its own, so the
-   *  layout pass it triggers lands in its undo step. */
-  function bareLayoutEdit(): boolean {
-    return activeHandler() !== null && arrivals === null && batchDepth === 0 && !suppressRecording;
-  }
-
-  /** Open the arrival window when a handler wants one — or `always`, for an
-   *  edit that may give the scene its first layout partway through — and no
-   *  enclosing edit holds it already; true when this caller now owns it. */
-  function openArrivals(always = false): boolean {
-    if (arrivals !== null || (!always && activeHandler() === null)) return false;
-    arrivals = new Map();
-    departures = new Map();
-    changed = new Set();
-    reflowDue = null;
-    return true;
-  }
-
-  /** Report what the settled edit wrote, now that it has landed. */
-  function emitReflow(): void {
-    const moves = reflowDue;
-    reflowDue = null;
-    if (moves === null || moves.length === 0) return;
-    for (const listener of [...reflowListeners]) listener(moves);
-  }
-
-  /** Close the window and ask the handler what the arrivals get. Throws
-   *  `SceneArrivalRefused` when it refuses, which reverts the edit. */
-  function settleArrivals(): ArrangedPose[] {
-    const pending = arrivals;
-    arrivals = null;
-    const handler = activeHandler();
-    if (pending === null || handler === null) return [];
-    // Only what is still there once the edit's other mutations have landed.
-    const landed = new Map<NodeId, NodeId[]>();
-    for (const [parent, ids] of pending) {
-      const still = ids.filter((id) => state.nodes.get(id)?.parent === parent);
-      if (still.length > 0 && state.nodes.has(parent)) landed.set(parent, still);
-    }
-    // Only what is gone from the container once the edit has landed: a child
-    // that left and came back did not depart.
-    const left = new Map<NodeId, NodeId[]>();
-    for (const [parent, ids] of departures) {
-      const gone = ids.filter((id) => state.nodes.get(id)?.parent !== parent);
-      if (gone.length > 0 && state.nodes.has(parent)) left.set(parent, gone);
-    }
-    departures = new Map();
-    const touched = new Set([...changed].filter((id) => state.nodes.get(id)?.kind === 'container'));
-    if (landed.size === 0 && touched.size === 0) return [];
-    const poses = handler(landed, touched, left);
-    if (poses === null) throw new SceneArrivalRefused(landed);
-    const out: ArrangedPose[] = [];
-    for (const [id, to] of poses) {
-      const node = state.nodes.get(id);
-      if (node) out.push({ id, from: node.pose, to });
-    }
-    reflowDue = out as LayoutMove<TPose>[];
-    return out;
-  }
-
   function writePose(id: string, pose: unknown): void {
     scene.setPose(asNodeId(id), pose as TPose);
-  }
-
-  /** `ops` plus the op that settles their arrivals, when this call owns the
-   *  window; `ops` unchanged otherwise. Opened even on a scene with no layout
-   *  yet: an edit's op list is fixed before it runs, and any op in it may give
-   *  the scene its first. The arrange op that settles nothing elides itself. */
-  function withArrivalOps(ops: Op[]): { ops: Op[]; owned: boolean } {
-    if (!openArrivals(true)) return { ops, owned: false };
-    return { ops: [...ops, createArrangeOp({}, settleArrivals, writePose)], owned: true };
-  }
-
-  /** Run an op-driven edit that may carry arrivals: a refusal reverts it and
-   *  is swallowed, the way a drop onto a full container is — nothing lands. */
-  function runArrivalEdit(ops: Op[], run: (ops: Op[]) => void): void {
-    const { ops: all, owned } = withArrivalOps(ops);
-    try {
-      run(all);
-      if (owned) emitReflow();
-    } catch (err) {
-      if (!(err instanceof SceneArrivalRefused)) throw err;
-    } finally {
-      if (owned) {
-        arrivals = null;
-        reflowDue = null;
-      }
-    }
   }
 
   function refuseUntracked(verb: string): void {
@@ -1589,21 +1473,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       runArrivalEdit(ops, (all) => applyBatchNow(all, label, adapter));
     },
 
-    setArrivalHandler(handler) {
-      arrivalHandler = handler;
-      return () => {
-        if (arrivalHandler === handler) arrivalHandler = null;
-      };
-    },
+    setArrivalHandler: arrivalWindow.setHandler,
 
     layoutOf(id) {
       return layoutOfInternal(id);
     },
 
-    onReflow(listener) {
-      reflowListeners.add(listener);
-      return () => { reflowListeners.delete(listener); };
-    },
+    onReflow: arrivalWindow.onReflow,
 
     overrides,
 
@@ -1699,10 +1575,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         }
       } finally {
         batchDepth--;
-        if (ownsArrivals) {
-          arrivals = null;
-          reflowDue = null;
-        }
+        if (ownsArrivals) arrivalWindow.abandon();
         if (batchDepth === 0) {
           if (currentBatch) {
             const finished = currentBatch;
@@ -1741,10 +1614,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         return result;
       } finally {
         batchDepth--;
-        if (ownsArrivals) {
-          arrivals = null;
-          reflowDue = null;
-        }
+        if (ownsArrivals) arrivalWindow.abandon();
         untrackedDepth--;
         suppressRecording = prevSuppress;
         if (version !== versionBefore) history.seal();
