@@ -67,16 +67,18 @@ export function Timeline(props: TimelineProps): ReactElement {
   } = props;
 
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
-  const [ownWindow, setOwnWindow] = useState<TimeWindow>({ from: 0, to: duration });
+  // Null until the user zooms in, so the window follows a duration that changes.
+  const [ownWindow, setOwnWindow] = useState<TimeWindow | null>(null);
   const [ownSelection, setOwnSelection] = useState<KeySelection | null>(null);
   const [segmentSelection, setSegmentSelection] = useState<KeySelection | null>(null);
 
-  const win = props.window ?? ownWindow;
-  const setWindow = props.onWindowChange ?? setOwnWindow;
+  const bounds: TimeWindow = { from: 0, to: duration };
+  const win = props.window ?? ownWindow ?? bounds;
+  const setWindow = props.onWindowChange
+    ?? ((w: TimeWindow): void => setOwnWindow(w.from <= 0 && w.to >= duration ? null : w));
   const selection = props.selection !== undefined ? props.selection : ownSelection;
   const setSelection = props.onSelect ?? setOwnSelection;
 
-  const bounds: TimeWindow = { from: 0, to: duration };
   const rows = useMemo(() => buildLanes(tracks, expanded), [tracks, expanded]);
 
   /** Every key time on every row — what a dragged key snaps to. */

@@ -96,6 +96,20 @@ describe('Timeline', () => {
     expect(onScrub).toHaveBeenCalledWith(500);
   });
 
+  it('fits its window to a duration that arrives after mount', () => {
+    const { rerender } = render(<Timeline {...base} tracks={tracks()} duration={0} />);
+    rerender(<Timeline {...base} tracks={tracks()} duration={2000} />);
+    expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('25%');
+  });
+
+  it('keeps a window the user zoomed when the duration changes', () => {
+    const { rerender } = render(<Timeline {...base} tracks={tracks()} />);
+    fireEvent.wheel(screen.getByTestId('timeline-ruler'), { ctrlKey: true, deltaY: -Math.log(2) / 0.0015, clientX: 0 });
+    expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('100%');
+    rerender(<Timeline {...base} tracks={tracks()} duration={2000} />);
+    expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('100%');
+  });
+
   it('deletes the selected key on Delete', () => {
     const onChange = vi.fn();
     render(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
