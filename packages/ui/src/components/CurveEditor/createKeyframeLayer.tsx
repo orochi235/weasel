@@ -378,7 +378,15 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
       const t = clampTo(k.t + dx * stepX, cfg.xClamp);
       const value = clampTo(k.value + dy * stepY, cfg.yClamp);
       if (t === k.t && value === k.value) return;
-      extra.commit({ ...state, ...moveKeyTo(state.keys, index, t, value), drag: null });
+      const moved = moveKeyTo(state.keys, index, t, value);
+      extra.commit({ ...state, ...moved, drag: null });
+      // Marks are keyed by index, so the one at the key's new index is the
+      // element that draws it after the re-sort.
+      if (moved.selectedKey !== index) {
+        keyEl.parentNode
+          ?.querySelector<SVGElement>(`[data-keyframe-index="${moved.selectedKey}"]`)
+          ?.focus();
+      }
       return;
     }
 

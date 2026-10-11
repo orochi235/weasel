@@ -239,6 +239,18 @@ describe('createKeyframeLayer — keyboard', () => {
     expect((onCommit.mock.calls[0][0] as KeyframeLayerState).keys[2].value).toBe(5.5);
   });
 
+  it('keeps focus on a key nudged past its neighbor, so the next press moves the same key', () => {
+    const onCommit = vi.fn();
+    const keys = [{ t: 400, value: 1 }, { t: 450, value: 2 }, { t: 1000, value: 3 }];
+    render(<Harness config={{ step: { x: 100 } }} initial={{ keys }} onCommit={onCommit} />);
+    (document.querySelector('[data-keyframe-index="0"]') as SVGElement).focus();
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+    const last = onCommit.mock.calls[1][0] as KeyframeLayerState;
+    expect(last.keys.map((k) => [k.t, k.value])).toEqual([[450, 2], [600, 1], [1000, 3]]);
+    expect(document.activeElement!.getAttribute('data-keyframe-index')).toBe('1');
+  });
+
   it('selects a focused segment with Enter', () => {
     const onCommit = vi.fn();
     render(<Harness onCommit={onCommit} />);
