@@ -13,3 +13,4 @@ export {
   useDeviceProfile,
   type DeviceProfileProviderProps,
 } from './useDeviceProfile';
+export { watchDevicePixelRatio } from './watchDevicePixelRatio';

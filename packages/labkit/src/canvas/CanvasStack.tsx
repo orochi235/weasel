@@ -1,5 +1,5 @@
 import type { Yoke } from '@weasel-js/core';
-import { useLatest } from '@weasel-js/core';
+import { useLatest, watchDevicePixelRatio } from '@weasel-js/core';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { Point, ViewTransform } from '../instrument/types';
 import { normalize2DView } from '../state/view';
@@ -85,10 +85,14 @@ export function CanvasStack({
       });
     };
     update();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
+    // A window moved to a display of another density keeps its CSS box, so no observer fires.
+    const unwatchDensity = watchDevicePixelRatio(update);
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    ro?.observe(el);
+    return () => {
+      unwatchDensity();
+      ro?.disconnect();
+    };
   }, []);
 
   const onResizeRef = useLatest(onResize);

@@ -1,4 +1,4 @@
-import { useLatest, useVisibleRaf } from '@weasel-js/core';
+import { useLatest, useVisibleRaf, watchDevicePixelRatio } from '@weasel-js/core';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { composeRects, rectsEqual } from './composeRects';
 import type { Box, Rect } from './rect';
@@ -308,6 +308,9 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
       frameLoop.cancel();
     };
   }, [schedule, frameLoop]);
+
+  // A window moved to a display of another density keeps its CSS box, so no observer fires.
+  useEffect(() => watchDevicePixelRatio(invalidateRects), [invalidateRects]);
 
   return useMemo(
     () => ({

@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasStack } from './CanvasStack';
 import type { CanvasLayerDescriptor } from './useLayerScheduler';
@@ -103,6 +103,41 @@ describe('<CanvasStack>', () => {
     // Origin is (400,300); the cursor is 100px right of it and 100px above it,
     // at zoom 2 with y running up.
     expect(onHitTest).toHaveBeenCalledWith({ x: 50, y: 50 });
+    vi.restoreAllMocks();
+  });
+});
+
+describe('<CanvasStack> backing size', () => {
+  // jsdom has no `matchMedia`, so the stand-in below is what fires; that a real display
+  // change fires the query is the browser's to prove.
+  it('resizes its canvases when the dpr changes and the box did not', () => {
+    const rect = { left: 0, top: 0, width: 200, height: 100, right: 200, bottom: 100 };
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(
+      rect as unknown as DOMRect,
+    );
+    const listeners = new Set<() => void>();
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      media: query,
+      matches: true,
+      addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+      removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+    }));
+    vi.stubGlobal('devicePixelRatio', 1);
+    const { container } = render(
+      <CanvasStack
+        layers={makeLayers(1)}
+        view={{ zoom: 1, pan: { x: 0, y: 0 } }}
+        onViewChange={vi.fn()}
+      />,
+    );
+    const canvas = container.querySelector('canvas');
+    expect([canvas?.width, canvas?.height]).toEqual([200, 100]);
+
+    vi.stubGlobal('devicePixelRatio', 2);
+    act(() => [...listeners].forEach((fn) => fn()));
+    expect([canvas?.width, canvas?.height]).toEqual([400, 200]);
+
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 });

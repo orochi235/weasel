@@ -20,6 +20,18 @@ function stubBox(el: HTMLElement, left: number, top: number, width: number, heig
   } as DOMRect);
 }
 
+/** A `matchMedia` whose resolution queries change when told to. */
+function stubDensityQuery(): { change: () => void } {
+  const listeners = new Set<() => void>();
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    media: query,
+    matches: true,
+    addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+    removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+  }));
+  return { change: () => [...listeners].forEach((fn) => fn()) };
+}
+
 interface HarnessProps {
   frames: SurfaceFrame[];
   onHandle: (h: SurfaceHandle) => void;
@@ -212,6 +224,24 @@ describe('useTiledSurface', () => {
 
     vi.stubGlobal('devicePixelRatio', 2);
     act(() => handle?.invalidateRects());
+    flushFrames();
+
+    expect([...(frames[0]?.dirty ?? [])].sort()).toEqual(['a', 'b']);
+    expect(frames[0]?.dpr).toBe(2);
+  });
+
+  // jsdom has no `matchMedia`, so the stand-in below is what fires; that a real display
+  // change fires the query is the browser's to prove.
+  it('repaints every tile when the dpr changes and nothing resized', () => {
+    vi.stubGlobal('devicePixelRatio', 1);
+    const density = stubDensityQuery();
+    const frames: SurfaceFrame[] = [];
+    render(<Harness frames={frames} onHandle={() => {}} />);
+    flushFrames();
+    frames.length = 0;
+
+    vi.stubGlobal('devicePixelRatio', 2);
+    act(() => density.change());
     flushFrames();
 
     expect([...(frames[0]?.dirty ?? [])].sort()).toEqual(['a', 'b']);

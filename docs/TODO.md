@@ -1385,16 +1385,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   short, given `seek` takes ms and the pass can be any length), or a clock-level notion of "end of
   pass n" that reports phase 1 without rolling over.
 
-- **(P3) labkit canvases: a device-pixel-ratio change with no resize is not noticed.**
-  `useTiledSurface` (`packages/labkit/src/surface/useTiledSurface.ts`) compares `devicePixelRatio`
-  only inside a frame something else scheduled, and `CanvasStack`
-  (`packages/labkit/src/canvas/CanvasStack.tsx`) reads it only from its `ResizeObserver`; a
-  content-box observer does not fire when a window moves to a display with a different ratio and its
-  CSS size stays the same. Read from the code, not reproduced: the shared buffer and the layer
-  canvases would keep the old backing size (blurry or oversampled) until something resizes. Wanted:
-  one `matchMedia('(resolution: <n>dppx)')` listener, re-armed on each change, that calls
-  `invalidateRects()` and the stack's size update, with a browser test that emulates the ratio
-  change.
+- **(P3) labkit canvases: a device-pixel-ratio change is tested only against a stand-in.**
+  `useTiledSurface` and `CanvasStack` now re-measure through core's `watchDevicePixelRatio`, and
+  their tests fire a stubbed `matchMedia`, which jsdom lacks. Unverified: that the shared buffer and
+  the layer canvases take the new backing size in a real browser when the ratio changes with no
+  resize. Wants a browser test that emulates the change (`Emulation.setDeviceMetricsOverride`).
 
 - **(P2) labkit trial: marks drawn in another tab never appear, and the next local mark erases
   them.** A trial builds its annotation store once from `record.annotations`
