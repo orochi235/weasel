@@ -1,4 +1,5 @@
 import { createMemoryAdapter, createRecordCache, localStorageAdapter } from '@weasel-js/storage';
+import { recordValue } from './stamp';
 import { describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from './groups';
 import { VERSION_RECORD } from './helpers';
@@ -36,6 +37,17 @@ describe('createPrefsStore', () => {
     expect(store.get('name')).toBe('doc');
   });
 
+  it('stores a value stamped with the version it was set at, and reads a stamped or a bare record alike', () => {
+    const cache = createRecordCache({ storage: createMemoryAdapter(), prefix: 'p.', initial: [['name', 'bare'], ['view.density', { $at: 3, value: 30 }]] });
+    const store = createPrefsStore(SCHEMA, cache, undefined, undefined, 3);
+    expect(store.get('name')).toBe('bare');
+    expect(store.get('view.density')).toBe(30);
+    expect(store.stored()).toMatchObject({ name: 'bare', view: { density: 30 } });
+    store.set('name', 'doc');
+    expect(cache.get('name')).toEqual({ $at: 3, value: 'doc' });
+    expect(store.get('name')).toBe('doc');
+  });
+
   it('sets a leaf, pinning it even at its default', () => {
     const { store } = make();
     store.set('view.grid', true);
@@ -48,7 +60,7 @@ describe('createPrefsStore', () => {
     const { cache, store } = make([], backing);
     store.set('view.density', 999);
     await cache.flush();
-    expect(backing.get('p.view.density')).toBe(999);
+    expect(recordValue(backing.get('p.view.density'))).toBe(999);
     expect(store.get('view.density')).toBe(288);
   });
 
@@ -182,7 +194,7 @@ describe('createPrefsStore', () => {
     const store = createPrefsStore(schema, cache);
     store.set('cap', Infinity);
     await cache.flush();
-    expect(backing.get('p.cap')).toBe('Infinity');
+    expect(recordValue(backing.get('p.cap'))).toBe('Infinity');
     expect(store.get('cap')).toBe(Infinity);
   });
 
@@ -211,7 +223,7 @@ describe('createPrefsStore', () => {
     const store = createPrefsStore(schema, cache);
     store.set('caps', [1, Infinity]);
     await cache.flush();
-    expect(backing.get('p.caps')).toEqual([1, 'Infinity']);
+    expect(recordValue(backing.get('p.caps'))).toEqual([1, 'Infinity']);
     expect(store.get('caps')).toEqual([1, Infinity]);
   });
 
@@ -240,7 +252,7 @@ describe('createPrefsStore', () => {
     const store = createPrefsStore(schema, cache);
     store.set('caps', { a: 1, b: Infinity });
     await cache.flush();
-    expect(backing.get('p.caps')).toEqual({ a: 1, b: 'Infinity' });
+    expect(recordValue(backing.get('p.caps'))).toEqual({ a: 1, b: 'Infinity' });
     expect(store.get('caps')).toEqual({ a: 1, b: Infinity });
   });
 
@@ -272,9 +284,9 @@ describe('createPrefsStore', () => {
     store.set('shape', { type: 'capped', cap: Infinity });
     store.set('rows', [{ cap: Infinity }]);
     await cache.flush();
-    expect(backing.get('p.limits')).toEqual({ cap: 'Infinity', other: 1 });
-    expect(backing.get('p.shape')).toEqual({ type: 'capped', cap: 'Infinity' });
-    expect(backing.get('p.rows')).toEqual([{ cap: 'Infinity' }]);
+    expect(recordValue(backing.get('p.limits'))).toEqual({ cap: 'Infinity', other: 1 });
+    expect(recordValue(backing.get('p.shape'))).toEqual({ type: 'capped', cap: 'Infinity' });
+    expect(recordValue(backing.get('p.rows'))).toEqual([{ cap: 'Infinity' }]);
     expect(store.get('limits')).toEqual({ cap: Infinity, other: 1 });
     expect(store.get('shape')).toEqual({ type: 'capped', cap: Infinity });
     expect(store.get('rows')).toEqual([{ cap: Infinity }]);

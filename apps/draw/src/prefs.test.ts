@@ -66,7 +66,7 @@ describe('openDrawPrefs', () => {
     const store = openDrawPrefs(createMemoryAdapter(backing));
     store.set('tools.pen.autoCommitOnClose', false);
     await store.flush();
-    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toBe(false);
+    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 0, value: false });
   });
 
   it('holds any tool id as the last tool', () => {
@@ -111,7 +111,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toBe(40);
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 0, value: 40 });
   });
 
   it('leaves the blob in place when the store cannot persist', async () => {
@@ -146,7 +146,7 @@ describe('importLegacyPrefs', () => {
     away = false;
     await store.read();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toBe(40);
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 0, value: 40 });
     await store.close();
     warn.mockRestore();
   });

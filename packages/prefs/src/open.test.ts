@@ -1,4 +1,5 @@
 import { createMemoryAdapter, localStorageAdapter, urlHashAdapter } from '@weasel-js/storage';
+import { recordValue } from './stamp';
 import { describe, expect, it, vi } from 'vitest';
 import { openPrefs, openPrefsSync } from './open';
 import type { PrefGroup } from './groups';
@@ -27,7 +28,7 @@ describe('openPrefs', () => {
     });
     expect(store.get('density')).toBe(40);
     await store.flush();
-    expect(backing.get(`p.${VERSION_RECORD}`)).toBe(1);
+    expect(recordValue(backing.get(`p.${VERSION_RECORD}`))).toBe(1);
   });
 
   it('applies validators', async () => {
@@ -47,15 +48,15 @@ describe('migrated records', () => {
   it('openPrefs persists them before resolving', async () => {
     const backing = new Map<string, unknown>([['p.density', 20]]);
     await openPrefs(SCHEMA, { storage: createMemoryAdapter(backing), prefix: 'p.', migrations });
-    expect(backing.get(`p.${VERSION_RECORD}`)).toBe(1);
-    expect(backing.get('p.density')).toBe(5);
+    expect(recordValue(backing.get(`p.${VERSION_RECORD}`))).toBe(1);
+    expect(recordValue(backing.get('p.density'))).toBe(5);
   });
 
   it('openPrefsSync starts persisting them at once', async () => {
     const backing = new Map<string, unknown>([['p.density', 20]]);
     openPrefsSync(SCHEMA, { storage: createMemoryAdapter(backing), prefix: 'p.', migrations });
     await Promise.resolve();
-    expect(backing.get(`p.${VERSION_RECORD}`)).toBe(1);
+    expect(recordValue(backing.get(`p.${VERSION_RECORD}`))).toBe(1);
   });
 });
 
@@ -161,7 +162,7 @@ describe('storage that is away at open', () => {
     expect(heard).toEqual([{ path: 'density', value: 20, origin: 'remote' }]);
     store.set('density', 30);
     expect(await store.flush()).toBe(true);
-    expect(backing.get('p.density')).toBe(30);
+    expect(recordValue(backing.get('p.density'))).toBe(30);
     await store.close();
     warn.mockRestore();
   });
@@ -174,7 +175,7 @@ describe('storage that is away at open', () => {
     await store.read();
     expect(store.get('density')).toBe(30);
     expect(await store.flush()).toBe(true);
-    expect(backing.get('p.density')).toBe(30);
+    expect(recordValue(backing.get('p.density'))).toBe(30);
     await store.close();
     warn.mockRestore();
   });
@@ -190,8 +191,8 @@ describe('storage that is away at open', () => {
     await store.read();
     expect(store.get('density')).toBe(20);
     expect(await store.flush()).toBe(true);
-    expect(backing.get('p.density')).toBe(20);
-    expect(backing.get('p.$version')).toBe(1);
+    expect(recordValue(backing.get('p.density'))).toBe(20);
+    expect(recordValue(backing.get('p.$version'))).toBe(1);
     await store.close();
     warn.mockRestore();
   });
@@ -214,8 +215,8 @@ describe('storage that is away at open', () => {
     await store.read();
     expect(store.get('density')).toBe(30);
     expect(await store.flush()).toBe(true);
-    expect(backing.get('p.density')).toBe(30);
-    expect(backing.get('p.legacy')).toBe(2);
+    expect(recordValue(backing.get('p.density'))).toBe(30);
+    expect(recordValue(backing.get('p.legacy'))).toBe(2);
     await store.close();
     warn.mockRestore();
   });
@@ -232,8 +233,8 @@ describe('storage that is away at open', () => {
     await store.read();
     await store.whenRead();
     expect(await store.flush()).toBe(true);
-    expect(backing.get('p.density')).toBe(30);
-    expect(backing.get('p.$version')).toBe(1);
+    expect(recordValue(backing.get('p.density'))).toBe(30);
+    expect(recordValue(backing.get('p.$version'))).toBe(1);
     await store.close();
     warn.mockRestore();
   });
@@ -253,7 +254,7 @@ describe('storage that is away at open', () => {
     await store.read();
     expect(store.writable).toBe(false);
     await store.flush();
-    expect(backing.get('p.density')).toBe(20);
+    expect(recordValue(backing.get('p.density'))).toBe(20);
     await store.close();
     warn.mockRestore();
   });
@@ -266,6 +267,8 @@ describe('openPrefsSync over localStorage', () => {
     localStorage.setItem('c.$version', '1');
     const store = openPrefsSync(SCHEMA, { storage: localStorageAdapter, prefix: 'c.', migrations: [() => {}] });
     expect(store.get('density')).toBe(20);
+    // The open stamped the record, and a write still on its way out is kept over a clear.
+    await store.flush();
     localStorage.clear();
     // What `clear()` in another tab fires here: no key, no values.
     window.dispatchEvent(new StorageEvent('storage', { key: null, storageArea: localStorage }));

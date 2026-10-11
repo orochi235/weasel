@@ -1,4 +1,5 @@
 import type { OwnedRecordCache } from '@weasel-js/storage';
+import { recordValue, stampRecord } from './stamp';
 import { assignPrefValueAtPath, prefHoldsValue, prefLeaves, prefSectionLeaves, setOwnPrefValue, VERSION_RECORD } from './helpers';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
@@ -87,6 +88,8 @@ export function createPrefsStore<S extends PrefGroup>(
   cache: OwnedRecordCache,
   validators?: Readonly<Record<string, PrefValidator>>,
   onClose?: () => void,
+  /** The schema version a value set here is in, stamped on its record. */
+  version = 0,
 ): PrefsStore<S> {
   const leaves = new Map([...prefLeaves(schema)].filter(([, leaf]) => prefHoldsValue(leaf)));
   let snapshot: Snapshot | null = null;
@@ -104,10 +107,11 @@ export function createPrefsStore<S extends PrefGroup>(
         value = leaf.default;
         unset.add(path);
       } else {
-        const stored = cache.get(path);
-        raw.set(path, stored);
+        const record = cache.get(path);
+        const stored = recordValue(record);
+        raw.set(path, record);
         value =
-          previous?.raw.has(path) && previous.raw.get(path) === stored
+          previous?.raw.has(path) && previous.raw.get(path) === record
             ? previous.byPath.get(path)
             : repairPrefValue(leaf, stored, validators);
       }
@@ -123,8 +127,9 @@ export function createPrefsStore<S extends PrefGroup>(
   const buildStored = (): Record<string, unknown> => {
     const tree: Record<string, unknown> = {};
     const branches = new WeakSet<object>([tree]);
-    for (const [name, value] of cache.entries()) {
+    for (const [name, record] of cache.entries()) {
       if (name === VERSION_RECORD) continue;
+      const value = recordValue(record);
       const parts = name.split('.');
       let cursor = tree;
       for (const part of parts.slice(0, -1)) {
@@ -167,7 +172,9 @@ export function createPrefsStore<S extends PrefGroup>(
         console.warn(`[prefs] no leaf at "${path}"; ignoring the write`);
         return;
       }
-      cache.set(path, encodeInfinity(leaf, value));
+      const stored = encodeInfinity(leaf, value);
+      // Unset is stored as nothing, which a stamp would turn into something.
+      cache.set(path, stored === undefined ? undefined : stampRecord(stored, version));
     },
     reset: (path) => {
       for (const p of leaves.keys()) {

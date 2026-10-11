@@ -1194,12 +1194,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P3) An older build's pref that lands after its `$version` is taken unmigrated.**
-  `watchPrefsVersion` migrates another writer's records when the version it wrote arrives, so a
-  record of that writer's delivered afterward is held in the older shape for the session. Read
-  from the code, not reproduced; an adapter that delivers a writer's batch out of order is what
-  it would take.
-
 - **(P3) A Windows 9x theme.** Gray 3D bevels, a navy-to-blue gradient title strip and the
   system's pixel faces, as a full theme beside Interstellar rather than a one-component skin. Its
   titled groups want a titlebar frame motif (a solid title strip across the top), which was left
@@ -1359,20 +1353,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `ControlRow`, `LeafRow`, and `PairedRow` into their own file, which `ControlMatrix` already
   imports from the panel; one file per control kind under `Properties/`, each with its CSS;
   `ObjectLeaf` out of `renderLeaf`.
-
-- **(P3) `watchPrefsVersion`: a same-version peer's record is migrated again when a lower `$version`
-  arrives later.** `packages/prefs/src/migrate.ts` adds every remotely changed record to `theirs`
-  and clears the set only after a migration runs. A peer tab on this build changes `view.density`;
-  later any writer sets a lower `$version` (an older tab's late write, a restore), and the
-  migrations run over `view.density` although it was already in this build's shape, so a doubling
-  migration doubles it. Clearing `theirs` when a batch arrives at the current version is not a fix:
-  an older build that writes its record first and its `$version` second produces the same two
-  events, and that case must migrate (`migrate.test.ts`, "migrates the records an older writer
-  leaves"). The two can only be told apart by knowing which version each record was written at.
-  Ruled 2026-10-11: each stored record is stamped with the version it was written at. That leaves
-  the change to the stored shape, a reading for a record that an already released build wrote with
-  no stamp, and migrating by the stamp in place of `theirs`. Shares its cause with "An older build's
-  pref that lands after its `$version` is taken unmigrated", the opposite ordering.
 
 - **(P3) `PrefSchemaEditor`: under a node property schema, two prefs can be given one value path.**
   A key is checked only against its siblings (`keyProblem`, `uniqueKey` in

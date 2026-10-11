@@ -31,7 +31,7 @@ export async function openPrefs<S extends PrefGroup>(
   const cache = await openRecords({ storage: options.storage, prefix: options.prefix });
   const stop = watch(cache, options);
   if (runPrefsMigrations(cache, options.migrations ?? [])) await cache.flush();
-  return createPrefsStore(schema, cache, options.validators, stop);
+  return createPrefsStore(schema, cache, options.validators, stop, options.migrations?.length ?? 0);
 }
 
 /** `openPrefs` for an adapter that reads synchronously: the store is ready
@@ -43,7 +43,7 @@ export function openPrefsSync<S extends PrefGroup>(
   const cache = openRecordsSync({ storage: options.storage, prefix: options.prefix });
   const stop = watch(cache, options);
   if (runPrefsMigrations(cache, options.migrations ?? [])) void cache.flush();
-  return createPrefsStore(schema, cache, options.validators, stop);
+  return createPrefsStore(schema, cache, options.validators, stop, options.migrations?.length ?? 0);
 }
 
 /** Attached before migrations run, so a peer's version bump during the open's
