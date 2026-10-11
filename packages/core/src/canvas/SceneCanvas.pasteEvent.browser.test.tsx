@@ -14,6 +14,7 @@ import type { Feature } from './SceneCanvas/features';
 import { createScene } from '../core/scene/scene';
 import type { Scene } from '../core/scene/types';
 import { buildWeaselClipboardText } from '../interactions/actions/clipboard/wireFormat';
+import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 
 type P = { x: number; y: number; width: number; height: number };
 type S = Scene<object, 'main', P>;
@@ -36,6 +37,9 @@ function mount(features: readonly Feature[]): S {
   flushSync(() => root!.render(
     createElement(SceneCanvas<object, 'main', P>, { features, scene, layers: {}, width: 64, height: 64 }),
   ));
+  // A paste goes only to the canvas holding the keys, so without this the two
+  // cases that expect nothing inserted would pass on a canvas never asked.
+  giveKeys(host.querySelector('canvas'));
   return scene;
 }
 
