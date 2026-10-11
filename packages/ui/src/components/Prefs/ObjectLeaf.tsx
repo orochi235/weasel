@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
-import { isPrefLeaf, prefObjectWithField, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
-import { BarLayout } from '../Bar/BarLayout';
+import { prefObjectWithField, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyRow } from '../Properties/PropertyPanel';
 import { drawsRows } from './compound';
-import { GroupTabs, type GroupTab } from './GroupTabs';
+import { objectRows, type ObjectLeafParts } from './objectRows';
 import type { PrefRenderContext } from './PrefsRow';
 import s from './Prefs.module.css';
 
@@ -37,73 +36,38 @@ export function ObjectLeaf({
     setAuto: ctx.setAuto,
     ...(ctx.fields ? { fields: ctx.fields } : {}),
   });
-  const objectRows = (children: PrefObject['children']): ReactNode[] => {
-    const out: ReactNode[] = [];
-    // A run of neighboring `tab` sections, held until something else ends it.
-    let tabs: GroupTab[] = [];
-    const flushTabs = (): void => {
-      if (tabs.length > 0) out.push(<GroupTabs key={`tabs:${tabs[0]!.id}`} tabs={tabs} />);
-      tabs = [];
-    };
-    for (const [key, child] of Object.entries(children)) {
-      if (!isPrefLeaf(child)) {
-        if (child.as === 'bar') {
-          flushTabs();
-          // The section's fields on one line, each in its bar form.
-          const cells = prefSectionLeaves(child.members).flatMap(([field, leaf]) => {
-            const content = renderField(fieldCtx(field, leaf), held, 'bar');
-            return content == null ? [] : [{ kind: 'cell' as const, path: `${ctx.path}.${field}`, content }];
-          });
-          if (cells.length > 0) {
-            out.push(
-              <BarLayout
-                key={`bar:${key}`}
-                framed
-                label={child.name === '' ? undefined : child.name}
-                nodes={cells}
-                cells={() => []}
-                row={() => null}
-              />,
-            );
-          }
-          continue;
-        }
-        const inner = objectRows(child.members);
-        if (inner.length === 0) continue;
-        const note = child.description ? [<p key={`desc:${key}`} className={s.paneDesc}>{child.description}</p>] : [];
-        if (child.as === 'tab') {
-          tabs.push({ id: key, name: child.name, content: [...note, ...inner] });
-          continue;
-        }
-        flushTabs();
-        if (child.as === 'fragment') {
-          out.push(...inner);
-          continue;
-        }
-        const heading = <h4 key={`group:${key}`} className={s.objectGroup}>{child.name}</h4>;
-        if (child.as === 'panel') out.push(<div key={`panel:${key}`} className={s.panePanel}>{heading}{note}{inner}</div>);
-        else out.push(heading, ...note, ...inner);
-        continue;
-      }
-      flushTabs();
+  const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: PrefRenderContext }> = {
+    path: ctx.path,
+    cell: (key, child) => ({ key, child, field: fieldCtx(key, child) }),
+    rows: (cells) => cells.map(({ key, child, field }) => {
       const stacked = drawsRows(child);
-      out.push(
+      return (
         <PropertyRow
           key={key}
           label={child.name}
           description={child.description}
           layout={stacked ? 'block' : 'inline'}
-          group={isGroup(fieldCtx(key, child), held)}
+          group={isGroup(field, held)}
           className={stacked ? undefined : s.objectRow}
         >
           <span className={s.rowControl}>
-            {renderField(fieldCtx(key, child), held)}
+            {renderField(field, held)}
           </span>
-        </PropertyRow>,
+        </PropertyRow>
       );
-    }
-    flushTabs();
-    return out;
+    }),
+    barCells: (cells) => cells.flatMap(({ key, field }) => {
+      const content = renderField(field, held, 'bar');
+      return content == null ? [] : [{ kind: 'cell' as const, path: `${ctx.path}.${key}`, content }];
+    }),
+    lead: (key, section) => (section.description ? [<p key={`desc:${key}`} className={s.paneDesc}>{section.description}</p>] : []),
+    frame: (key, section, inner, { labeled }) => {
+      if (section.as === 'fragment') return inner;
+      const note = parts.lead!(key, section);
+      const heading = labeled ? [<h4 key={`group:${key}`} className={s.objectGroup}>{section.name}</h4>] : [];
+      if (section.as === 'panel') return [<div key={`panel:${key}`} className={s.panePanel}>{heading}{note}{inner}</div>];
+      return [...heading, ...note, ...inner];
+    },
   };
-  return <div className={s.objectLeaf}>{objectRows(pref.children)}</div>;
+  return <div className={s.objectLeaf}>{objectRows(pref.children, parts)}</div>;
 }

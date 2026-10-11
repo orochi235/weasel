@@ -4,9 +4,8 @@
  */
 import { Fragment, type ReactNode } from 'react';
 import { isPrefLeaf, pairRowsOf, prefObjectBase, prefObjectWithField, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
-import { BarLayout, type BarNode } from '../Bar/BarLayout';
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
-import { GroupTabs, type GroupTab } from '../Prefs/GroupTabs';
+import { objectRows, type ObjectLeafParts } from '../Prefs/objectRows';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { absentValue, MIXED, sharedValue } from './model';
@@ -130,50 +129,23 @@ export function ObjectLeaf({
     };
   };
 
-  /** A section drawn as a bar: its fields on one line in their bar forms, a nested section as a run between dividers. */
-  const barNodes = (members: PrefObject['children']): BarNode[] => {
-    const out: BarNode[] = [];
-    // Neighbors are drawn together, so a run of paired flags fuses as it does in a row.
-    let pending: LeafCell[] = [];
-    const flush = (): void => {
-      for (const cell of renderCells(pending, renderers)) out.push({ kind: 'cell', path: cell.key, content: cell.content });
-      pending = [];
-    };
-    for (const [key, child] of Object.entries(members)) {
-      if (isPrefLeaf(child)) {
-        pending.push(cellOf(key, child, 'bar'));
-        continue;
-      }
-      flush();
-      out.push({ kind: 'run', path: `${ctx.path}.${key}`, nodes: barNodes(child.members) });
-    }
-    flush();
-    return out;
-  };
-
-  // `indent` is false when nothing visible sits above these rows: depth is
-  // drawn only where a label marks it.
-  const rowsOf = (
-    children: PrefObject['children'],
-    indent: boolean,
-  ): ReactNode[] => {
-    const out: (ReactNode | ObjectRow)[] = [];
-    const isRow = (v: ReactNode | ObjectRow): v is ObjectRow =>
-      typeof v === 'object' && v !== null && 'controls' in v;
-
-    // Cells accumulate unrendered so a run of adjacent same-`pair` flags can
-    // be seen as a run before any of them draws; a section heading between two
-    // fields ends the run, exactly as it ends a paired row.
-    let pending: LeafCell[] = [];
-    const flush = (): void => {
-      for (const { key, leaf, block, content, pair } of renderCells(pending, renderers)) {
-        const prev = out[out.length - 1];
-        if (pair !== undefined && isRow(prev) && prev.pair === pair.key) {
+  const parts: ObjectLeafParts<LeafCell> = {
+    path: ctx.path,
+    cell: cellOf,
+    // Neighbors are drawn together, so a run of paired flags fuses in a bar as it does in a row.
+    barCells: (cells) => renderCells(cells, renderers).map((cell) => ({ kind: 'cell', path: cell.key, content: cell.content })),
+    // A run of adjacent same-`pair` fields shares a row; a section between two fields ends the run, since it ends
+    // the cells it is handed.
+    rows: (cells) => {
+      const rows: ObjectRow[] = [];
+      for (const { key, leaf, block, content, pair } of renderCells(cells, renderers)) {
+        const prev = rows[rows.length - 1];
+        if (pair !== undefined && prev?.pair === pair.key) {
           prev.controls.push(<Fragment key={key}>{content}</Fragment>);
           prev.block &&= block;
           continue;
         }
-        out.push({
+        rows.push({
           key,
           ...(pair ? { pair: pair.key } : {}),
           label: pair?.label ?? leaf.name,
@@ -182,54 +154,7 @@ export function ObjectLeaf({
           controls: [<Fragment key={key}>{content}</Fragment>],
         });
       }
-      pending = [];
-    };
-
-    // A run of neighboring `tab` sections, held until something else ends it.
-    let tabs: GroupTab[] = [];
-    const flushTabs = (): void => {
-      if (tabs.length > 0) out.push(<GroupTabs key={`tabs:${tabs[0]!.id}`} tabs={tabs} />);
-      tabs = [];
-    };
-
-    for (const [key, child] of Object.entries(children)) {
-      if (!isPrefLeaf(child)) {
-        if (child.as === 'bar') {
-          const nodes = barNodes(child.members);
-          if (nodes.length === 0) continue;
-          flush();
-          flushTabs();
-          out.push(
-            <BarLayout key={`bar:${key}`} framed label={child.name === '' ? undefined : child.name}
-              nodes={nodes} cells={() => []} row={() => null} />,
-          );
-          continue;
-        }
-        const labeled = child.name !== '' && child.as !== 'fragment';
-        const inner = rowsOf(child.members, labeled && child.as !== 'tab');
-        if (inner.length === 0) continue;
-        flush();
-        if (child.as === 'tab') {
-          tabs.push({ id: key, name: child.name, content: inner });
-          continue;
-        }
-        flushTabs();
-        const cls = child.as === 'panel' ? s.objectPanel : labeled && indent ? s.objectGroup : undefined;
-        out.push(
-          <div key={`group:${key}`} className={cls}>
-            {labeled && <h5 className={s.sectionTitle}>{child.name}</h5>}
-            {inner}
-          </div>,
-        );
-        continue;
-      }
-      flushTabs();
-      pending.push(cellOf(key, child, 'row'));
-    }
-    flush();
-    flushTabs();
-    return out.map((entry) =>
-      typeof entry === 'object' && entry !== null && 'controls' in entry ? (
+      return rows.map((entry) =>
         entry.block ? (
           <div key={entry.key} className={`${s.rowControls} ${s.blockRow}`} title={entry.title}>
             {entry.controls}
@@ -239,14 +164,19 @@ export function ObjectLeaf({
             <span className={s.rowLabel} title={entry.title}>{entry.label}</span>
             <span className={s.rowControls}>{entry.controls}</span>
           </div>
-        )
-      ) : (
-        entry
-      ),
-    );
+        ),
+      );
+    },
+    // Depth is drawn only where a label marks it.
+    frame: (key, section, inner, { labeled, indent }) => [
+      <div key={`group:${key}`} className={section.as === 'panel' ? s.objectPanel : labeled && indent ? s.objectGroup : undefined}>
+        {labeled && <h5 className={s.sectionTitle}>{section.name}</h5>}
+        {inner}
+      </div>,
+    ],
   };
 
-  const rows = rowsOf(pref.children, !allGrouped);
+  const rows = objectRows(pref.children, parts, !allGrouped);
   if (rows.length === 0) return null;
   return (
     <div className={s.objectLeaf}>

@@ -1235,14 +1235,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   history, as the remote path already does for state history), remount the trial on a remote
   replacement, or merge mark by mark, which needs an answer for a mark both tabs edited.
 
-- **(P3) An object leaf is drawn by two implementations that disagree.**
-  `packages/ui/src/components/Prefs/ObjectLeaf.tsx` and `ObjectLeaf` in
-  `packages/ui/src/components/SelectionPanel/ObjectLeaf.tsx` each walk rows, sections, and tabs.
-  They write a field back by one rule now (`prefObjectWithField` in `@weasel-js/prefs`), and still
-  differ on `as: 'bar'`, on `pair` rows, and on heading levels. Home: one object-leaf walker in
-  `Prefs/` taking the per-surface parts as arguments (how a field's value and mixed state are
-  read, how a row is framed).
-
 - **(P3) Which control a leaf gets is decided again in each params surface.** `prefFieldProps` is
   the shared half; each caller then overrides it: `Prefs/PrefsRow.tsx`,
   `SelectionPanel/renderLeaf.tsx` (`renderBuiltin`), labkit's `controls/fields.tsx` (`labField`) and
