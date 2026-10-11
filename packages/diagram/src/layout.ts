@@ -152,6 +152,46 @@ export function settle(
 }
 
 /**
+ * Run `once` until a pass moves nothing, and answer with where that leaves
+ * each node.
+ *
+ * A layout that keeps groups together can move an outsider out of a group's
+ * column, which changes the order the next run would start from. Its answer
+ * has to be the arrangement a re-run keeps, so it re-runs here rather than
+ * leaving the second pass to the caller. `passes` bounds an arrangement that
+ * never comes to rest.
+ */
+export function untilSettled(
+  once: LayoutFn,
+  graph: Graph,
+  opts: LayoutOptions = {},
+  passes = 8,
+): LayoutResult {
+  const first = once(graph, opts);
+  if (first.size === 0) return first;
+  const at = new Map<string, Vec2>(first);
+  for (let pass = 1; pass < passes; pass++) {
+    const nodes = graph.nodes.map((node) => {
+      const to = at.get(node.id);
+      return to === undefined ? node : { ...node, bounds: { ...node.bounds, x: to.x, y: to.y } };
+    });
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    const next = once({ ...graph, nodes, node: (id) => byId.get(id) }, opts);
+    if (next.size === 0) break;
+    for (const [id, to] of next) at.set(id, to);
+  }
+  const tolerance = opts.tolerance ?? DEFAULT_TOLERANCE;
+  const out = new Map<string, Vec2>();
+  for (const node of graph.nodes) {
+    const to = at.get(node.id);
+    if (to === undefined) continue;
+    if (Math.abs(to.x - node.bounds.x) <= tolerance && Math.abs(to.y - node.bounds.y) <= tolerance) continue;
+    out.set(node.id, to);
+  }
+  return out;
+}
+
+/**
  * {@link settle}'s second half, for a layout that already works in world
  * coordinates — `force` does, since the integrator moves points around rather
  * than filling slots.

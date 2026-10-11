@@ -69,6 +69,7 @@ export {
   seededOrder,
   settle,
   translated,
+  untilSettled,
 } from './layout';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export type { Bounds, Outline } from './outline';

@@ -118,6 +118,7 @@ export {
   seededOrder,
   settle,
   translated,
+  untilSettled,
 } from './layout';
 export type {
   LayoutAxes,

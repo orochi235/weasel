@@ -29,6 +29,7 @@ import {
   packAcross,
   seededOrder,
   settle,
+  untilSettled,
   type LayoutFn,
   type Slot,
 } from './layout';
@@ -83,7 +84,14 @@ export function ranksOf(graph: Graph, back: ReadonlySet<string>): Map<string, nu
 /** The ranked layout: each edge points one rank further along `direction`.
  *  Within a rank, nodes keep their current cross-axis order, so a re-run
  *  moves nothing — except under `order: 'barycenter'`, which reorders them. */
-export const layered: LayoutFn = (graph, opts = {}) => {
+export const layered: LayoutFn = (graph, opts = {}) =>
+  // Barycenter ordering reorders on every run by design, so it has no
+  // arrangement to settle on.
+  ((graph.groups?.length ?? 0) > 0 && opts.order !== 'barycenter'
+    ? untilSettled(layeredOnce, graph, opts)
+    : layeredOnce(graph, opts));
+
+const layeredOnce: LayoutFn = (graph, opts = {}) => {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;

@@ -26,6 +26,7 @@ import {
   graphOrder,
   seededOrder,
   settle,
+  untilSettled,
   type LayoutFn,
   type Slot,
 } from './layout';
@@ -83,7 +84,10 @@ export function forestOf(graph: Graph, crossAxis: 'x' | 'y'): Forest {
 /** The hierarchy layout: each parent centered over its children's block, one
  *  rank per depth. A graph that is not a tree lays out as the forest
  *  {@link forestOf} reads from it. */
-export const tree: LayoutFn = (graph, opts = {}) => {
+export const tree: LayoutFn = (graph, opts = {}) =>
+  ((graph.groups?.length ?? 0) > 0 ? untilSettled(treeOnce, graph, opts) : treeOnce(graph, opts));
+
+const treeOnce: LayoutFn = (graph, opts = {}) => {
   const axes = axesFor(opts.direction);
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;

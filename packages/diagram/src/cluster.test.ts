@@ -37,6 +37,21 @@ describe.each([
     expect(fn(again).size).toBe(0);
   });
 
+  it('moves nothing on a second run after pushing an outsider out of a column', () => {
+    // `mid` starts between the group's two members and has to leave, which
+    // changes the order the second run reads.
+    const make = () => graphOf(
+      ['in', 'a0', 'mid', 'a1', 'z'],
+      [['in', 'a0'], ['in', 'mid'], ['in', 'a1'], ['a0', 'z'], ['mid', 'z'], ['a1', 'z']],
+      { A: ['a0', 'a1'] },
+    );
+    const at = placed(make(), fn);
+    expect(overlaps(boxOf(at, ['a0', 'a1'], 12), at.get('mid')!)).toBe(false);
+    const again = make();
+    for (const n of again.nodes) n.bounds = at.get(n.id)!;
+    expect(fn(again).size).toBe(0);
+  });
+
   it('widens a rank gap too narrow for two stacked boxes', () => {
     const graph = graphOf(['a', 'b', 'c', 'd'], [['a', 'b'], ['b', 'c'], ['c', 'd']], { P: ['a', 'b'], Q: ['c', 'd'] });
     const moved = fn(graph, { rankGap: 10 });
