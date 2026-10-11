@@ -409,7 +409,16 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
         if (victim) teardown(victim);
       }
 
-      const source = starter.start(voice, scheduledWhen);
+      let source: SourceLike;
+      try {
+        source = starter.start(voice, scheduledWhen);
+      } catch (err) {
+        // Not back to the idle chains: whatever the starter built before it threw is still wired into this one.
+        voice.chain?.gain.disconnect();
+        voice.chain = null;
+        teardown(voice);
+        throw err;
+      }
       source.onended = () => { teardown(voice); common.onDone?.(); };
       voice.source = source;
     }, common.cancelKey);
