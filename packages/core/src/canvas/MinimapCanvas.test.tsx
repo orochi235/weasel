@@ -388,6 +388,29 @@ describe('<MinimapCanvas>', () => {
     expect(got.y).toBeCloseTo(expectedWorldY - 150, 6);
   });
 
+  it('recenters on a finite point when a custom fit returns a zero scale', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const onChange = vi.fn();
+    const { container } = render(
+      <MinimapCanvas
+        scene={makeScene()}
+        mainView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+        mainViewDims={{ width: 400, height: 300 }}
+        onMainViewChange={onChange}
+        width={100}
+        height={100}
+        drawOne={drawOne}
+        fit={() => ({ x: 0, y: 0, scale: { x: 0, y: 0 } })}
+      />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    canvas.setPointerCapture = vi.fn();
+    fireEvent(canvas, pointerEvent(canvas, 'pointerDown', { x: 50, y: 50 }));
+    const got = onChange.mock.calls[0][0] as View;
+    expect(Number.isFinite(got.x) && Number.isFinite(got.y)).toBe(true);
+    warn.mockRestore();
+  });
+
   it('draws the indicator at the styled width and dash in screen pixels, whatever the fit scale', () => {
     const scene = makeScene();
     render(

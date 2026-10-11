@@ -79,8 +79,9 @@ function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
 /**
  * Compute the AABB union of all leaf-node poses in the scene, via
  * `descriptor`. Container nodes are skipped — their effective bounds come
- * from their descendant leaves. Returns `null` when the scene has no
- * leaves.
+ * from their descendant leaves, and so is a leaf whose bounds are not finite,
+ * which would otherwise make the whole union non-finite. Returns `null` when
+ * the scene has no leaf with bounds.
  */
 function sceneLeafBounds<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -94,6 +95,7 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
   for (const node of scene.nodes.values()) {
     if (node.kind !== 'leaf') continue;
     const b = poseDescriptorForNode(descriptor, node).getBounds(documentPose(scene, node));
+    if (!Number.isFinite(b.x + b.y + b.width + b.height)) continue;
     if (b.x < minX) minX = b.x;
     if (b.y < minY) minY = b.y;
     const right = b.x + b.width;

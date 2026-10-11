@@ -249,6 +249,27 @@ describe('computeFitView — fit=function', () => {
   });
 });
 
+describe('computeFitView — a leaf with a non-finite pose', () => {
+  const dims = { width: 200, height: 100 };
+  const good = { x: 0, y: 0, width: 400, height: 200 };
+
+  it('fits the leaves that have bounds and ignores the one that does not', () => {
+    const alone = makeScene();
+    alone.add({ kind: 'leaf', layer: 'bg', pose: good, data: { label: 'a' } });
+    const mixed = makeScene();
+    mixed.add({ kind: 'leaf', layer: 'bg', pose: good, data: { label: 'a' } });
+    mixed.add({ kind: 'leaf', layer: 'bg', pose: { ...good, x: NaN, y: 5000 }, data: { label: 'b' } });
+    expect(computeFitView(mixed, dims, 'scene', identityPoseBounds))
+      .toEqual(computeFitView(alone, dims, 'scene', identityPoseBounds));
+  });
+
+  it('falls back when no leaf has finite bounds', () => {
+    const scene = makeScene();
+    scene.add({ kind: 'leaf', layer: 'bg', pose: { ...good, width: Infinity }, data: { label: 'a' } });
+    expect(computeFitView(scene, dims, 'scene', identityPoseBounds)).toEqual(FALLBACK_FIT_VIEW);
+  });
+});
+
 describe('computeIndicatorCommand', () => {
   // The indicator is emitted in WORLD coords. The caller wraps the command
   // list in a group transformed by the minimap's view, so the view→screen

@@ -159,7 +159,8 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   const descriptor = (poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
 
   const fitView = useMemo<View>(() => {
-    return computeFitView(scene, { width, height }, fit, descriptor);
+    // A `fit` function's result is the caller's; pointer math divides by its scale.
+    return normalizeView(computeFitView(scene, { width, height }, fit, descriptor));
     // `sceneVersion` participates so the memo re-evaluates after scene mutations.
     // `descriptor` is stable when the prop is omitted.
     // eslint-disable-next-line react-hooks/exhaustive-deps
