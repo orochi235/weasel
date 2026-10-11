@@ -192,6 +192,12 @@ export interface LaidOutCell {
    * read the quad or outline geometry for exact ink extents.
    */
   drawsInk: boolean;
+  /**
+   * Whether this code point closes a grapheme cluster. A caret stops only
+   * after a cell that does: never between a letter and its combining mark,
+   * inside a joined emoji, or before a variation selector.
+   */
+  clusterEnd: boolean;
 }
 
 /**
@@ -670,6 +676,8 @@ export function layoutRuns(
   // 1. Flatten all runs into entries with per-glyph data, computing
   //    kerning using the left glyph's atlas+scale across run boundaries.
   const entries: Entry[] = [];
+  /** Per entry, in step with `entries`: whether it closes a grapheme cluster. */
+  const closesCluster: boolean[] = [];
   /** Each run's own face, which places its rules. Kept per run rather than
    *  read off an entry, whose `resolved` may be a per-glyph fallback. */
   const runFaces = new Map<ResolvedRun, FaceMetrics | undefined>();
@@ -715,14 +723,16 @@ export function layoutRuns(
     // World units — deliberately not scaled by fontSize, so the same tracking
     // opens the same visual gap whatever size the run is set at.
     const runTracking = run.letterSpacing;
-    const clusterEnds = runTracking === 0 ? null : new Set(graphemeEnds(run.text));
+    const clusterEnds = new Set(graphemeEnds(run.text));
 
     for (const ch of [...run.text]) {
       const cp = ch.codePointAt(0)!;
       // Small caps sizes glyphs within the run, so the size is the glyph's.
       const fontSize = sizes ? sizes[at] : run.fontSize;
       const scale = fontSize / metrics.size;
-      const tracking = clusterEnds === null || clusterEnds.has(at + ch.length) ? runTracking : 0;
+      const clusterEnd = clusterEnds.has(at + ch.length);
+      closesCluster.push(clusterEnd);
+      const tracking = clusterEnd ? runTracking : 0;
       const isNewline = isHardLineBreak(cp);
       const isSpace = cp === 32;
       // A transformed run draws characters its source does not have; each
@@ -1121,6 +1131,7 @@ export function layoutRuns(
         srcIndex: e.srcIndex, srcEnd: e.srcEnd, cp: e.cp, x: penX,
         advance: step, level: levelOf(pos),
         drawsInk: e.drawsInk,
+        clusterEnd: closesCluster[e.flat],
       };
       cells[pos] = cell;
       const scale = e.fontSize / e.metrics.size;

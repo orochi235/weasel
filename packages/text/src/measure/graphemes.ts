@@ -7,6 +7,8 @@
 
 let segmenter: Intl.Segmenter | null | undefined;
 
+const NEEDS_SEGMENTING = /[\r\u0300-\uffff]/;
+
 function graphemeSegmenter(): Intl.Segmenter | null {
   if (segmenter === undefined) {
     segmenter = typeof Intl !== 'undefined' && 'Segmenter' in Intl
@@ -23,6 +25,12 @@ function graphemeSegmenter(): Intl.Segmenter | null {
  */
 export function graphemeEnds(text: string): number[] {
   const out: number[] = [];
+  // Nothing below U+0300 extends a cluster except the LF of a CRLF, so text
+  // made only of those is one cluster per code unit without asking.
+  if (!NEEDS_SEGMENTING.test(text)) {
+    for (let i = 1; i <= text.length; i++) out.push(i);
+    return out;
+  }
   const seg = graphemeSegmenter();
   if (seg) {
     for (const s of seg.segment(text)) out.push(s.index + s.segment.length);

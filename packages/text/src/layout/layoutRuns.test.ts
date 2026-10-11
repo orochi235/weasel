@@ -1490,6 +1490,34 @@ describe('layoutRuns — one cell per code point', () => {
   });
 });
 
+describe('layoutRuns — a cell says whether it closes a grapheme cluster', () => {
+  const OPTS: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
+  const closes = (text: string, more: Partial<ResolvedRun> = {}): boolean[] => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const out = layoutRuns([{ ...RUN_PLAIN(text), ...more }], OPTS);
+    warn.mockRestore();
+    return out.lines[0].cells.map((c) => c.clusterEnd);
+  };
+
+  it('closes one at every code point of plain text', async () => {
+    await registerFixture('inter', [{}]);
+    expect(closes('AB A')).toEqual([true, true, true, true]);
+  });
+
+  it('holds a combining mark open onto its base, tracked or not', async () => {
+    await registerFixture('inter', [{}]);
+    expect(closes('A\u0301B')).toEqual([false, true, true]);
+    expect(closes('A\u0301B', { letterSpacing: 2 })).toEqual([false, true, true]);
+  });
+
+  it('keeps a joined emoji and a flag as one cluster each', async () => {
+    await registerFixture('inter', [{}]);
+    // Man, ZWJ, woman: three code points. Two regional indicators: one flag.
+    expect(closes('\u{1F468}\u200D\u{1F469}A')).toEqual([false, false, true, true]);
+    expect(closes('\u{1F1E8}\u{1F1E6}')).toEqual([false, true]);
+  });
+});
+
 describe('layoutRuns — small caps', () => {
   const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' } as const;
   // The fixture atlas states no heights, so small caps takes the default.

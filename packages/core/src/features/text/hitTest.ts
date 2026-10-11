@@ -17,18 +17,23 @@ import { layoutTextPose } from '@weasel-js/text';
 import type { LaidOutCell, TextPose } from '@weasel-js/text';
 
 /**
- * Merge neighboring cells drawn from one source character — the two `S`s an
- * uppercased `ß` becomes — into one cell spanning both, so no caret stop falls
- * between them.
+ * Merge neighboring cells a caret cannot stop between into one cell spanning
+ * them: the cells of one grapheme cluster (a letter and its combining mark,
+ * the parts of a joined emoji), and cells drawn from one source character
+ * (the two `S`s an uppercased `ß` becomes).
  */
-function sourceClusters(cells: readonly LaidOutCell[]): LaidOutCell[] {
+function caretCells(cells: readonly LaidOutCell[]): LaidOutCell[] {
   const out: LaidOutCell[] = [];
   for (const c of cells) {
     const prev = out[out.length - 1];
-    if (prev && prev.srcIndex === c.srcIndex && prev.srcEnd === c.srcEnd) {
+    if (prev && (!prev.clusterEnd || (prev.srcIndex === c.srcIndex && prev.srcEnd === c.srcEnd))) {
       const x0 = Math.min(prev.x, c.x);
       const x1 = Math.max(prev.x + prev.advance, c.x + c.advance);
-      out[out.length - 1] = { ...prev, x: x0, advance: x1 - x0 };
+      out[out.length - 1] = {
+        ...prev, x: x0, advance: x1 - x0,
+        srcIndex: Math.min(prev.srcIndex, c.srcIndex), srcEnd: Math.max(prev.srcEnd, c.srcEnd),
+        clusterEnd: c.clusterEnd,
+      };
     } else {
       out.push(c);
     }
@@ -87,7 +92,7 @@ export function caretIndexAt(x: number, y: number, pose: TextPose): number {
   // sweep has to be in visual order and each cell's own extent is what it is
   // tested against — the next cell along is not its right edge.
   if (line.cells.length === 0) return line.srcEnd;
-  const cells = sourceClusters(line.cells);
+  const cells = caretCells(line.cells);
   const visual = cells.map((_, i) => i).sort((a, b) => cells[a].x - cells[b].x);
 
   for (const i of visual) {

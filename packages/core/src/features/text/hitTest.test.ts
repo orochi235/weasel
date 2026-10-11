@@ -201,4 +201,14 @@ describe('caretIndexAt', () => {
     expect(caretIndexAt(70, 5, p)).toBe(2);
     expect(caretIndexAt(80, 5, p)).toBe(3);
   });
+
+  it('never stops between a letter and the mark combined onto it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // `A` + U+0301 is one character to a reader. The mark's cell opens where
+    // `A`'s closes (23), so a click in `A`'s right half used to stop at 1.
+    const p = textPose({ text: 'A\u0301B' });
+    expect(caretIndexAt(5, 5, p)).toBe(0);
+    expect(caretIndexAt(20, 5, p)).toBe(2);
+    warn.mockRestore();
+  });
 });
