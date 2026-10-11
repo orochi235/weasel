@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
+import { isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
-import { filterTree, Tree, treeBranchIds, type TreeDragEffect, type TreeNode } from '../Tree';
-import { Badge } from '../Badge';
+import { filterTree, Tree, treeBranchIds, type TreeDragEffect } from '../Tree';
 import type { PrefRenderer } from '../Prefs';
-import { PrefKindBadge } from '../Prefs/PrefKindBadge';
 import { Button } from '../Button';
 import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
@@ -20,6 +18,7 @@ import { DraggedNodes, GHOST_WIDTH, ghostIsPage } from './NodeGhost';
 import { GROUP_ICON, Palette, type PaletteDrag } from './Palette';
 import { treeTakesNew } from './previewDrop';
 import { UnplacedTree } from './UnplacedTree';
+import { toTreeNodes } from './structureRows';
 import { stillUnplaced } from './unplaced';
 import { blankGroup, blankSection, leafOf, type CustomKinds } from './kindSchemas';
 import { kindChoices, type PrefTypes } from './types';
@@ -28,35 +27,6 @@ import {
   uniqueKey, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
-
-/** How many leaves `nodes` come to, counting those under each at any depth. */
-function leafCount(nodes: readonly SchemaNode[]): number {
-  return nodes.reduce((n, node) => n + (isPrefLeaf(node) ? 1 : leafCount(Object.values(childrenOf(node) ?? {}))), 0);
-}
-
-const countBadge = (n: number) => <Badge size="xs" status="muted" variant="subtle" className={s.treeCount}>{n}</Badge>;
-
-function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet<string>, mark?: (path: string) => ReactNode): TreeNode[] {
-  return Object.entries(childrenOf(node) ?? {}).map(([key, child]) => {
-    const p = joinPath(path, key);
-    const kids = childrenOf(child);
-    const { name } = child;
-    const label = name ? <>{name} <span className={s.treeKey}>({key})</span></> : key;
-    return {
-      id: p,
-      label: changed.has(p) ? <span className={s.changed}>{label}</span> : label,
-      textValue: name ? `${name} ${key}` : key,
-      ...(child.description ? { tooltip: child.description } : {}),
-      // Unset, a group is drawn by its depth: a page under the root, a section below that.
-      ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
-      trailing: isPrefLeaf(child)
-        ? <>{mark?.(p)}<PrefKindBadge kind={child.type ?? child.kind} /></>
-        // Its glyph says how a group is drawn, so it carries no badge to say it again.
-        : <>{mark?.(p)}{countBadge(leafCount([child]))}</>,
-      ...(kids ? { children: toTreeNodes(child, p, changed, mark) } : {}),
-    };
-  });
-}
 
 export interface StructurePaneProps {
   schema: SchemaRoot;
