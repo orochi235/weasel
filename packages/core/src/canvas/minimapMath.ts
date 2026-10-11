@@ -160,12 +160,15 @@ export function computeFitView<TData, TLayer extends string, TPose>(
  * That world rect is then transformed into the minimap's screen
  * coordinates through `minimapView`.
  *
- * The returned command is a dashed-stroke `path` rect with no fill.
+ * The returned command is a dashed-stroke `path` rect with no fill. Pass the
+ * `minimapView` it will be drawn through, so the stroke width and dash come
+ * out in CSS px at any fit scale; without it they are in world units.
  */
 export function computeIndicatorCommand(
   mainView: View,
   mainViewDims: ViewportDims,
   style: IndicatorStyle = {},
+  minimapView?: View,
 ): PathDrawCommand {
   // World-space rect: returned as-is. The caller wraps the command list
   // (scene + extras) in a group transformed by the minimap's view, so the
@@ -176,13 +179,14 @@ export function computeIndicatorCommand(
   const y = mainView.y;
   const width = mainViewDims.width / mainView.scale.x;
   const height = mainViewDims.height / mainView.scale.y;
+  const px = minimapView ? 1 / Math.abs(minimapView.scale.x) : 1;
   return {
     kind: 'path',
     path: { kind: 'rect', x, y, width, height },
     stroke: {
       paint: { fill: 'solid', color: style.stroke ?? DEFAULT_INDICATOR_STROKE },
-      width: style.width ?? DEFAULT_INDICATOR_WIDTH,
-      dash: style.dash ?? [...DEFAULT_INDICATOR_DASH],
+      width: (style.width ?? DEFAULT_INDICATOR_WIDTH) * px,
+      dash: (style.dash ?? DEFAULT_INDICATOR_DASH).map((d) => d * px),
     },
   };
 }

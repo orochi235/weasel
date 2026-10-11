@@ -166,8 +166,8 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   }, [scene, sceneVersion, width, height, fit, descriptor]);
 
   const indicatorCmd = useMemo<DrawCommand>(() => {
-    return computeIndicatorCommand(mainView, mainViewDims, indicatorStyle);
-  }, [mainView, mainViewDims, indicatorStyle]);
+    return computeIndicatorCommand(mainView, mainViewDims, indicatorStyle, fitView);
+  }, [mainView, mainViewDims, indicatorStyle, fitView]);
 
   // -------------------------------------------------------------------------
   // Input

@@ -388,7 +388,7 @@ describe('<MinimapCanvas>', () => {
     expect(got.y).toBeCloseTo(expectedWorldY - 150, 6);
   });
 
-  it('uses the supplied indicatorStyle on the indicator command', () => {
+  it('draws the indicator at the styled width and dash in screen pixels, whatever the fit scale', () => {
     const scene = makeScene();
     render(
       <MinimapCanvas
@@ -406,8 +406,12 @@ describe('<MinimapCanvas>', () => {
     const root = lastCall[0] as GroupDrawCommand;
     const indicator = root.children[root.children.length - 1] as PathDrawCommand;
     expect(indicator.stroke?.paint).toEqual({ fill: 'solid', color: '#ff00aa' });
-    expect(indicator.stroke?.width).toBe(3);
-    expect(indicator.stroke?.dash).toEqual([5, 2]);
+    // The command sits inside the fit view's transform, so its world-unit
+    // numbers times the fit scale are what reaches the screen.
+    const scale = (root.transform as number[])[0];
+    expect(scale).not.toBeCloseTo(1, 2);
+    expect((indicator.stroke?.width as number) * scale).toBeCloseTo(3, 6);
+    expect(indicator.stroke?.dash?.map((d) => d * scale)).toEqual([expect.closeTo(5, 6), expect.closeTo(2, 6)]);
   });
 });
 

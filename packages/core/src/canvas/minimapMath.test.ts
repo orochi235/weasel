@@ -313,6 +313,16 @@ describe('computeIndicatorCommand', () => {
     expect(cmd.stroke?.width).toBe(2.5);
     expect(cmd.stroke?.dash).toEqual([4, 1, 2, 1]);
   });
+
+  it('scales the stroke and dash so they are CSS px through the minimap view', () => {
+    const mainView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const cmd = computeIndicatorCommand(
+      mainView, { width: 800, height: 600 }, { width: 2, dash: [4, 6] },
+      { x: 0, y: 0, scale: { x: 0.05, y: 0.05 } },
+    );
+    expect(cmd.stroke?.width).toBeCloseTo(40, 6);
+    expect(cmd.stroke?.dash).toEqual([expect.closeTo(80, 6), expect.closeTo(120, 6)]);
+  });
 });
 
 it('frames circles through the descriptor', () => {
