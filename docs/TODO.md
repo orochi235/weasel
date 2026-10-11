@@ -348,15 +348,6 @@ Priority tags:
   native arrow. Return the `CursorSpec` from `inFlightCursor`, and give the painted state an
   explicit "suppressed" override for a CSS-tier hover cursor.
 
-- **(P3) Actions registry: re-registering an action moves it to the back of registration order.** In
-  `packages/routing/src/interactions/actions/ActionsProvider.tsx` a release deletes the id from the
-  `Map` when its stack empties and the next `register` re-inserts it last. `useAction` releases and
-  registers whenever its action object changes, so of two ambient actions tied on a key, the winner
-  flips after the first one re-renders with a new object. It only shows where a tie exists, which
-  the route-conflict check already warns about. Keeping the slot needs a rule for when an id that
-  really left gives it up (an empty stack kept until the end of the tick, or a separate order
-  index).
-
 - **(P3) `ActionsRegistry.trigger` returns `true` when it ran nothing, and does not ask `enabled`.**
   `trigger('move')`, an ongoing action, returns `true` and does nothing; `trigger('delete')` runs
   while `delete.enabled()` reports a disabled reason, which the dispatcher honors for the same

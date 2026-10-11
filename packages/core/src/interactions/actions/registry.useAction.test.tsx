@@ -48,6 +48,41 @@ describe('useAction', () => {
     expect(result.current!.list()[0].label).toBe('V2');
   });
 
+  it('keeps its place in registration order when its action object changes', () => {
+    const make = (id: string, label: string): Action => ({
+      id, label, invoker: { timing: 'immediate' as const, run: vi.fn() },
+    });
+    let first = make('first', 'V1');
+    const second = make('second', 'Second');
+    const { result, rerender } = renderHook(
+      () => {
+        useAction(first);
+        useAction(second);
+        return useActionsRegistry();
+      },
+      { wrapper: wrap },
+    );
+    expect(result.current!.list().map((a) => a.id)).toEqual(['first', 'second']);
+    first = make('first', 'V2');
+    rerender();
+    expect(result.current!.list().map((a) => a.label)).toEqual(['V2', 'Second']);
+  });
+
+  it('gives up its place once it has really left', async () => {
+    const make = (id: string): Action => ({
+      id, label: id, invoker: { timing: 'immediate' as const, run: vi.fn() },
+    });
+    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
+    const reg = result.current!;
+    const release = reg.register(make('first'));
+    reg.register(make('second'));
+    release();
+    expect(reg.list().map((a) => a.id)).toEqual(['second']);
+    await Promise.resolve();
+    reg.register(make('first'));
+    expect(reg.list().map((a) => a.id)).toEqual(['second', 'first']);
+  });
+
   it('cleanup of unmounted useAction does not clobber a later registrant for the same id', () => {
     function HostA() { useAction({ id: 'foo', label: 'A', invoker: { timing: 'immediate' as const, run: vi.fn() } }); return null; }
     function HostB() { useAction({ id: 'foo', label: 'B', invoker: { timing: 'immediate' as const, run: vi.fn() } }); return null; }

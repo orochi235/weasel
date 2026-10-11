@@ -131,7 +131,14 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
         const i = cur.lastIndexOf(action);
         if (i === -1) return;
         cur.splice(i, 1);
-        if (cur.length === 0) this.actions.delete(action.id);
+        // An emptied stack holds the id's place in registration order until
+        // the tick ends, so a release followed at once by a register — what
+        // `useAction` does when its action object changes — keeps its slot.
+        if (cur.length === 0) {
+          queueMicrotask(() => {
+            if (cur.length === 0 && this.actions.get(action.id) === cur) this.actions.delete(action.id);
+          });
+        }
         this.changed();
       };
     },
