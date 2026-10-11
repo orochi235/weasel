@@ -106,6 +106,37 @@ describe('localStorageAdapter', () => {
   });
 });
 
+describe('localStorageAdapter — another tab clearing the store', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('reports every record under the prefix as deleted', async () => {
+    await localStorageAdapter.set('lk:c:mine', 1);
+    await localStorageAdapter.set('lk:d:other', 2);
+    const heard: [string, unknown][] = [];
+    const off = localStorageAdapter.subscribe!('lk:c:', (changes) => heard.push(...changes));
+    try {
+      foreignWebStorage(localStorage).set('lk:c:theirs', 3);
+      await localStorageAdapter.set('lk:c:late', 4);
+      heard.length = 0;
+      localStorage.clear();
+      // What `clear()` in another tab fires here: no key, no values.
+      window.dispatchEvent(new StorageEvent('storage', { key: null, storageArea: localStorage }));
+      expect(new Map(heard)).toEqual(
+        new Map([
+          ['lk:c:mine', undefined],
+          ['lk:c:theirs', undefined],
+          ['lk:c:late', undefined],
+        ]),
+      );
+      heard.length = 0;
+      window.dispatchEvent(new StorageEvent('storage', { key: null, storageArea: localStorage }));
+      expect(heard).toEqual([]);
+    } finally {
+      off();
+    }
+  });
+});
+
 describe('noneAdapter', () => {
   it('stores nothing', async () => {
     await noneAdapter.set('k', 'v');

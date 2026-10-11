@@ -1,4 +1,4 @@
-import { createMemoryAdapter, urlHashAdapter } from '@weasel-js/storage';
+import { createMemoryAdapter, localStorageAdapter, urlHashAdapter } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import { openPrefs, openPrefsSync } from './open';
 import type { PrefGroup } from './groups';
@@ -256,5 +256,22 @@ describe('storage that is away at open', () => {
     expect(backing.get('p.density')).toBe(20);
     await store.close();
     warn.mockRestore();
+  });
+});
+
+describe('openPrefsSync over localStorage', () => {
+  it('drops its values and writes its version back when another tab clears the store', async () => {
+    localStorage.clear();
+    localStorage.setItem('c.density', '20');
+    localStorage.setItem('c.$version', '1');
+    const store = openPrefsSync(SCHEMA, { storage: localStorageAdapter, prefix: 'c.', migrations: [() => {}] });
+    expect(store.get('density')).toBe(20);
+    localStorage.clear();
+    // What `clear()` in another tab fires here: no key, no values.
+    window.dispatchEvent(new StorageEvent('storage', { key: null, storageArea: localStorage }));
+    expect(store.isSet('density')).toBe(false);
+    expect(await store.flush()).toBe(true);
+    expect(localStorage.getItem('c.$version')).toBe('1');
+    await store.close();
   });
 });
