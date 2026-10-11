@@ -234,6 +234,52 @@ describe('a section root', () => {
   });
 });
 
+describe('paths a leaf holds to another leaf', () => {
+  const num = (name: string, more: object = {}): PrefLeaf => ({ kind: 'number', name, description: '', default: 0, ...more });
+  const NODE: PrefSection = {
+    name: 'Properties',
+    members: {
+      pose: { name: 'Pose', members: {
+        'pose.x': num('X', { pair: { with: 'pose.y', label: 'Position' } }),
+        'pose.y': num('Y'),
+        'pose.w': num('W', { pair: { with: ['pose.h', 'pose.y'] } }),
+        'pose.h': num('H'),
+      } },
+      other: { name: 'Other', members: {
+        shown: { kind: 'alias', name: '', description: '', default: undefined, of: 'pose.x' },
+        anchor: { kind: 'field', name: 'Anchor', description: '', default: 'pose.y' },
+      } },
+    },
+  };
+
+  it('carries a pair and a field default along with a renamed leaf', () => {
+    const next = renameKey(NODE, 'pose/pose.y', 'pose.top');
+    expect(nodeAt(next, 'pose/pose.x')).toMatchObject({ pair: { with: 'pose.top', label: 'Position' } });
+    expect(nodeAt(next, 'pose/pose.w')).toMatchObject({ pair: { with: ['pose.h', 'pose.top'] } });
+    expect(nodeAt(next, 'other/anchor')).toMatchObject({ default: 'pose.top' });
+    expect(nodeAt(next, 'pose/pose.h')).toBe(nodeAt(NODE, 'pose/pose.h'));
+  });
+
+  it('carries a pair along with a leaf moved to another group', () => {
+    const root: PrefGroup = { name: 'Root', children: {
+      a: { name: 'A', children: { x: num('X', { pair: { with: 'a.y' } }), y: num('Y') } },
+      b: { name: 'B', children: {} },
+    } };
+    const moved = moveNodes(root, ['a/y'], { parentPath: 'b', index: 0 }).root;
+    expect(nodeAt(moved, 'a/x')).toMatchObject({ pair: { with: 'b.y' } });
+  });
+
+  it('leaves them alone when a section is renamed or moved: its key is no part of a value path', () => {
+    const renamed = renameKey(NODE, 'pose', 'position');
+    expect(nodeAt(renamed, 'other')).toBe(nodeAt(NODE, 'other'));
+    expect(nodeAt(renamed, 'position/pose.x')).toBe(nodeAt(NODE, 'pose/pose.x'));
+    const twice: PrefSection = { ...NODE, members: { ...NODE.members, more: { name: 'More', members: { pose: { name: 'Pose', members: {} } } } } };
+    const moved = moveNodes(twice, ['pose'], { parentPath: 'more', index: 0 });
+    expect(moved.paths).toEqual(['more/pose2']);
+    expect(nodeAt(moved.root, 'other')).toBe(nodeAt(twice, 'other'));
+  });
+});
+
 describe('several paths at once', () => {
   it('keeps only the paths with no ancestor among them', () => {
     expect(outermost(['a/x', 'b', 'b/x', 'a'])).toEqual(['b', 'a']);

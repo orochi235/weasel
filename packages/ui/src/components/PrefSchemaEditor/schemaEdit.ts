@@ -206,7 +206,7 @@ export function removeNodes<R extends SchemaRoot>(root: R, paths: readonly strin
 
 export function renameKey<R extends SchemaRoot>(root: R, path: string, next: string): R {
   const renamed = rekeyed(root, path, next);
-  return renamed === root ? root : rebaseAliases(renamed, [[valuePathOf(root, path), valuePathOf(root, joinPath(parentPath(path), next))]]);
+  return renamed === root ? root : rebaseValuePaths(renamed, [valueMove(root, path, joinPath(parentPath(path), next))]);
 }
 
 function rekeyed<R extends SchemaRoot>(root: R, path: string, next: string): R {
@@ -282,12 +282,20 @@ export function moveNodes<R extends SchemaRoot>(
   const from = moving.map((m) => m.path);
   const settled = Object.keys(childrenOf(nodeAt(next, dest) ?? next) ?? {});
   if (out.every((p, i) => p === from[i]) && settled.every((k, i) => k === destKeys[i])) return { root, from, paths: from };
-  return { root: rebaseAliases(next, from.map((f, i) => [valuePathOf(root, f), valuePathOf(root, out[i]!)])), from, paths: out };
+  return { root: rebaseValuePaths(next, from.map((f, i) => valueMove(root, f, out[i]!))), from, paths: out };
 }
 
 /** The path a leaf's value is read and written at, which is what an alias names: every key under a group root, the leaf's own under a section root. */
 export function valuePathOf(root: SchemaRoot, path: string): string {
   return isPrefSection(root) ? keyOf(path) : keysOf(path).join('.');
+}
+
+type ValueMove = readonly [from: string, to: string];
+
+/** The value paths a node going from tree path `from` to `to` takes along; `null` for a section, whose key is no part of one. */
+function valueMove(root: SchemaRoot, from: string, to: string): ValueMove | null {
+  const node = nodeAt(root, from);
+  return node && isPrefSection(node) ? null : [valuePathOf(root, from), valuePathOf(root, to)];
 }
 
 /** `root` with `fn` applied to every leaf, the same object where none changed. */
@@ -307,18 +315,30 @@ function mapLeaves<R extends SchemaRoot>(root: R, fn: (leaf: PrefLeaf) => PrefLe
   return go(root) as R;
 }
 
-/** `root` with every alias of a value path in `moves`, or of one under it, pointed at where that went. */
-function rebaseAliases<R extends SchemaRoot>(root: R, moves: ReadonlyArray<readonly [from: string, to: string]>): R {
-  const live = moves.filter(([from, to]) => from !== to);
+/** `path` where `moves` leave it: a moved value path, or one under it, goes where that went. */
+function rebased(path: string, moves: ReadonlyArray<readonly [from: string, to: string]>): string {
+  for (const [from, to] of moves) {
+    if (path === from) return to;
+    if (path.startsWith(`${from}.`)) return to + path.slice(from.length);
+  }
+  return path;
+}
+
+/** `root` with every value path a leaf holds to another one followed through `moves`: an alias's `of`, a pair's `with`, and a `field` leaf's default. */
+function rebaseValuePaths<R extends SchemaRoot>(root: R, moves: ReadonlyArray<ValueMove | null>): R {
+  const live = moves.filter((m): m is ValueMove => m !== null && m[0] !== m[1]);
   if (live.length === 0) return root;
   return mapLeaves(root, (leaf) => {
-    if (leaf.kind !== 'alias') return leaf;
-    const { of } = leaf as PrefAlias;
-    for (const [from, to] of live) {
-      if (of === from) return { ...leaf, of: to } as PrefLeaf;
-      if (of.startsWith(`${from}.`)) return { ...leaf, of: to + of.slice(from.length) } as PrefLeaf;
+    let next = leaf;
+    const held = leaf.kind === 'alias' ? 'of' : leaf.kind === 'field' ? 'default' : undefined;
+    const path = held === undefined ? undefined : (leaf as unknown as Record<string, unknown>)[held];
+    if (held !== undefined && typeof path === 'string' && rebased(path, live) !== path) next = { ...next, [held]: rebased(path, live) } as PrefLeaf;
+    const pair = leaf.pair;
+    if (pair !== undefined) {
+      const partners = typeof pair.with === 'string' ? rebased(pair.with, live) : pair.with.map((p) => rebased(p, live));
+      if (String(partners) !== String(pair.with)) next = { ...next, pair: { ...pair, with: partners } };
     }
-    return leaf;
+    return next;
   });
 }
 
