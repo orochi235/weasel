@@ -2,16 +2,16 @@
  *  only round-trips the 6-char form, so call-sites pad the saved alpha back on
  *  when the user picks via the native widget. */
 
-/** Expand `#rgb` / `#rrggbb` to `#rrggbbaa`. Pads `ff` when no alpha
+/** Expand `#rgb` / `#rgba` / `#rrggbb` to `#rrggbbaa`. Pads `ff` when no alpha
  *  channel is present. Non-hex inputs (named colors, `rgba(...)`) are
  *  returned unchanged — the kit's renderer accepts arbitrary CSS, and
  *  we only normalize the hex shapes we actually persist. */
 export function toHex8(color: string): string {
   if (!color.startsWith('#')) return color;
   const hex = color.slice(1);
-  if (hex.length === 3) {
-    const r = hex[0], g = hex[1], b = hex[2];
-    return `#${r}${r}${g}${g}${b}${b}ff`;
+  if (hex.length === 3 || hex.length === 4) {
+    const [r, g, b, a = 'f'] = hex.toLowerCase();
+    return `#${r}${r}${g}${g}${b}${b}${a}${a}`;
   }
   if (hex.length === 6) return `#${hex}ff`;
   if (hex.length === 8) return color.toLowerCase();

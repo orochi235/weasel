@@ -14,6 +14,11 @@ describe('toHex8', () => {
   it('passes through non-hex', () => {
     expect(toHex8('rgb(1,2,3)')).toBe('rgb(1,2,3)');
   });
+  it('expands #rgba to #rrggbbaa', () => {
+    expect(toHex8('#F008')).toBe('#ff000088');
+    expect(getAlpha01(toHex8('#f008'))).toBeCloseTo(0x88 / 255);
+    expect(withAlpha01('#f008', 1)).toBe('#ff0000ff');
+  });
 });
 
 describe('getAlpha01', () => {
