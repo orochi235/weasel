@@ -121,6 +121,8 @@ interface InsertScratch {
    *  `line` kind to 15° increments (the modifier the line tool documents).
    *  Captured per-onMove from `ctx.modifiers.shift`. */
   shiftHeld: boolean;
+  /** What was selected before the draw cleared it, to put back on cancel. */
+  priorSelection: string[];
   /** Cleared once `onEnd` runs so subsequent `overlay()` calls report no
    *  in-flight preview (mirrors the areaSelect/lasso convention). */
   open: boolean;
@@ -210,7 +212,7 @@ const GESTURE_KEY = 'gesture';
 
 /**
  * Shape the raw drag endpoints, in order: the line tool's Shift-constrain
- * (on raw coords, so the locked angle survives), the `snap` dep, then each
+ * (on the raw pointer, around the shaped start, so the locked angle survives), the `snap` dep, then each
  * behavior's `onMove`, each seeing the points the one before it returned.
  * Stored on `scratch.shaped`; `resolveEndpoints` reads it.
  */
@@ -221,7 +223,7 @@ function shapeEndpoints(scratch: InsertScratch, modifiers: GestureContext<unknow
   let start = gctx.origin.get(GESTURE_KEY) as InsertPoint;
   let current = { x: scratch.currentX, y: scratch.currentY };
   if (kind === 'line' && scratch.shiftHeld) {
-    current = snapTo15Degrees({ x: scratch.startX, y: scratch.startY }, current);
+    current = snapTo15Degrees(start, current);
   }
   current = scratch.snap(current);
 
@@ -387,7 +389,8 @@ export const insertAction: Action & { requires: string[] } = inPlane({
       // action via fall-through. The clear is unconditional: the user has
       // committed to "I'm making a new thing" by engaging a creation tool.
       const selection = ctx.deps.selection;
-      if (selection && selection.get().length > 0) {
+      const priorSelection = selection ? [...selection.get()] : [];
+      if (selection && priorSelection.length > 0) {
         selection.clear();
       }
 
@@ -435,6 +438,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
         points: ctx.drag?.points ?? null,
         altHeld: ctx.modifiers.alt,
         shiftHeld: ctx.modifiers.shift,
+        priorSelection,
         open: true,
         userRotation: 0,
       };
@@ -498,6 +502,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
           if (liveInsertScratch === scratch) liveInsertScratch = null;
           if (reason === 'cancel') {
             runBehaviorCancel(scratch.behaviors, scratch.gestureCtx);
+            if (scratch.priorSelection.length > 0) scratch.selection?.set(scratch.priorSelection);
             return;
           }
 
