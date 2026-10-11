@@ -5,6 +5,7 @@ import {
   formatPhaseAtom,
   formatRoute,
   getGestureDescriptor,
+  isApplePlatform,
   keyRouteToSpec,
   matchSpec,
   parseKeyRoute,
@@ -58,7 +59,7 @@ const SPECS: GestureSpec[] = [
 const specText = ({ kind, ...rest }: GestureSpec) =>
   `${kind} ${JSON.stringify(rest)}`.replace(/ \{\}$/, '');
 
-const IS_MAC = typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform);
+const IS_MAC = isApplePlatform();
 const SELF = 'pad';
 const MODIFIER_KEYS = new Set(['Shift', 'Alt', 'Control', 'Meta']);
 

@@ -2473,19 +2473,6 @@ one dead `const` and four stale disable directives.
   a second scheme in the same document from Cmd+G, Cmd+D, paste, an SVG drop, or a tool whose
   factory omits `id`. Expose the minter on the scene and have all five call it.
 
-- **(P2) `mod` is drawn as ⌘ on every platform by `formatShortcut`.**
-  `packages/ui/src/components/ToolPalette/formatShortcut.ts` pushes `⌘` for `mod` with no platform
-  read, so on Windows and Linux `ActionBar`, the prefs leaf actions, `PrefSchemaEditor`, and
-  labkit's `LabZoom` show `⌘,` for a binding the dispatcher matches on Ctrl; `Keycaps` in the same
-  package does detect the platform, so one app shows `Ctrl` in a keycap and `⌘` in a tooltip. Behind
-  it, what `mod` means and what it looks like are decided separately: routing's dispatcher tests
-  `/mac/i` on `navigator.platform || navigator.userAgent` (`useGestureDispatcher.tsx`),
-  `Keycaps/keySpecsFromMods.ts`'s `detectPlatform` reads `userAgentData.platform ?? userAgent`,
-  treats iPhone and iPad as macOS, and answers `'macos'` for anything unrecognized, and two demos
-  carry their own regexes that differ from each other (`GestureGrammarDemo.tsx`, `RoutingDemo.tsx`).
-  One `isApplePlatform()` in `@weasel-js/gestures`, beside `matchModifiers(e, mods, isMac)`, read by
-  all of them.
-
 - **(P3) The root `prepublishOnly` never fires, and CLAUDE.md says `check:bumps` runs there.** The
   root package is private and the release workflow does not call the script, so its chain
   (`check:bumps`, `check:test-projects`, `typecheck`, `lint`, `test`, the builds, and the smoke

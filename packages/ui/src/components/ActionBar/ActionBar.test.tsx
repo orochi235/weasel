@@ -294,7 +294,7 @@ describe('ActionBar', () => {
     const y = screen.getByTestId('action-bar-item-flip:y');
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => y.focus());
-    expect(screen.getByRole('tooltip').textContent).toBe('Flip Vertical (⇧V)');
+    expect(screen.getByRole('tooltip').textContent).toBe('Flip Vertical (Shift+V)');
   });
 });
 

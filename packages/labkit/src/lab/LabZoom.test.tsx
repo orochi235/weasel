@@ -8,6 +8,7 @@ import {
   useActionsRegistry,
   useGestureDispatcher,
 } from '@weasel-js/core';
+import { isApplePlatform } from '@weasel-js/gestures';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { type ReactNode, useEffect } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -59,9 +60,7 @@ const press = (name: string) =>
     fireEvent.click(zoomBar().getByRole('button', { name }));
   });
 
-const MOD = /mac/i.test(navigator.platform || navigator.userAgent)
-  ? { metaKey: true }
-  : { ctrlKey: true };
+const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 async function key(k: string): Promise<boolean> {
   let prevented = false;
   await act(async () => {

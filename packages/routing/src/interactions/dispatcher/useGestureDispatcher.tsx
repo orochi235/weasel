@@ -26,7 +26,7 @@ import type { Contribution } from '../../contributions/types';
 import {
   createDispatcher, pointerGestureId, publishLiveDispatch, type Dispatcher, type DispatcherContext,
 } from './dispatcher';
-import { isInControlWithin, pastDragThreshold } from '@weasel-js/gestures';
+import { isApplePlatform, isInControlWithin, pastDragThreshold } from '@weasel-js/gestures';
 import { openPointerSession, type PointerSession } from '../pointerSession';
 import { clientToCanvasRect } from '../../viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from '../../ingestion/ingestItems';
@@ -69,13 +69,7 @@ function stylusOf(e: PointerEvent): {
 // Platform detection — module-level constant so it's stable across renders.
 // ---------------------------------------------------------------------------
 
-const IS_MAC =
-  typeof navigator !== 'undefined' &&
-  /mac/i.test(
-    // `||`, not `??`: jsdom (and some embedders) report an empty-string
-    // platform, which is not nullish and would swallow the UA fallback.
-    (navigator as { platform?: string }).platform || navigator.userAgent,
-  );
+const IS_MAC = isApplePlatform();
 
 // ---------------------------------------------------------------------------
 // API

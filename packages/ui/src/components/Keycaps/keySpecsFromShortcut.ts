@@ -5,8 +5,8 @@ import { keySpecFromKey, keySpecsFromMods, type KeySpecsFromModsOptions, type Lo
 /**
  * A shortcut as `KeySequence` keys, one per key: mod, shift, alt, then the
  * key, each in the platform's own legend (`⌘` on macOS, `Ctrl` elsewhere).
- * The `KeySpec` counterpart of `formatShortcutParts`, which always prints
- * macOS glyphs. `shift: 'optional'` becomes an optional key; a key list
+ * `formatShortcutParts` is these labels as strings. `shift: 'optional'`
+ * becomes an optional key; a key list
  * renders its first key. Returns `undefined` for no shortcut.
  *
  * ```tsx

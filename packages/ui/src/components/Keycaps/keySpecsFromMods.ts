@@ -1,3 +1,4 @@
+import { isApplePlatform } from '@weasel-js/gestures';
 import type { KeySpec } from './Keycaps';
 
 /** Logical modifier name. Matches the kit's `ModifierKey` in shape — kept as a
@@ -31,9 +32,7 @@ export interface LogicalModSpec {
 
 /** Options for {@link keySpecsFromMods}. */
 export interface KeySpecsFromModsOptions {
-  /** Override OS detection. Defaults to the detected platform, or
-   *  `'macos'` when detection is unavailable (e.g. in tests, or when
-   *  `navigator` is missing). */
+  /** Override OS detection. Defaults to {@link detectPlatform}. */
   platform?: Platform;
   /** Defaults to `'auto'` (symbol on macOS, text everywhere else). Pass
    *  `'symbol'` or `'text'` to force a specific style regardless of
@@ -78,19 +77,18 @@ export const MODIFIER_LABELS: ReadonlySet<string> = new Set(
   ),
 );
 
-/** Detect the user's OS from the browser environment. UA sniffing — not
- *  100% reliable, but adequate for picking a modifier-glyph convention.
- *  Falls back to `'macos'` (matches the kit's docs convention) when
- *  `navigator` is unavailable. */
+/** The platform whose key legends to draw. Whether `mod` is ⌘ comes from
+ *  `isApplePlatform` in `@weasel-js/gestures`, the same read the dispatcher
+ *  matches `mod` with, so a keycap names the key that fires. With no
+ *  `navigator` (a server render) it answers `'macos'`, the kit's docs
+ *  convention; an unrecognized browser reads as `'linux'`. */
 export function detectPlatform(): Platform {
-  if (typeof navigator === 'undefined') return 'macos';
-  // Prefer the modern userAgentData when available (Chromium-only today).
-  const uaData = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData;
-  const raw = (uaData?.platform ?? navigator.userAgent ?? '').toLowerCase();
-  if (raw.includes('mac') || raw.includes('darwin') || raw.includes('iphone') || raw.includes('ipad')) return 'macos';
-  if (raw.includes('win')) return 'windows';
-  if (raw.includes('linux') || raw.includes('x11')) return 'linux';
-  return 'macos';
+  if (typeof navigator === 'undefined' || !navigator) return 'macos';
+  if (isApplePlatform()) return 'macos';
+  const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+  const raw = nav.userAgentData?.platform || nav.platform || nav.userAgent || '';
+  // `\b`: jsdom names its host OS in the user agent, and "darwin" ends in "win".
+  return /\bwin/i.test(raw) ? 'windows' : 'linux';
 }
 
 /**

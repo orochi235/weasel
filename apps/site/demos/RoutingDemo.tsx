@@ -1,4 +1,5 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { isApplePlatform } from '@weasel-js/gestures';
 import {
   ActionDisabledReason,
   DEFAULT_ALLOWED_CAPABILITIES,
@@ -31,7 +32,7 @@ const SIZE = 56;
 const COLORS = 4;
 const LOG_LINES = 6;
 const MODIFIER_KEYS = new Set(['Shift', 'Alt', 'Control', 'Meta']);
-const IS_MAC = typeof navigator !== 'undefined' && /Mac|iP(hone|ad)/.test(navigator.platform);
+const IS_MAC = isApplePlatform();
 
 const nodeId = (id: string) => id as NodeId;
 
