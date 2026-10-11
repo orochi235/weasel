@@ -96,6 +96,17 @@ describe('GradientHandles', () => {
     expect(onInput.mock.calls.at(-1)![0]).toMatchObject({ from: { x: 0, y: 0 } });
   });
 
+  it('says a drag was canceled, after putting the preview back', () => {
+    const calls: string[] = [];
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onInput={() => calls.push('input')} onChange={() => calls.push('change')} onCancel={() => calls.push('cancel')} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient start');
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 20, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 90, clientY: 120, pointerId: 1 });
+    fireEvent.pointerCancel(handle, { clientX: 90, clientY: 120, pointerId: 1 });
+    expect(calls.slice(-2)).toEqual(['input', 'cancel']);
+    expect(calls).not.toContain('change');
+  });
+
   it('moves a focused handle with the arrow keys', () => {
     const onChange = vi.fn();
     render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);

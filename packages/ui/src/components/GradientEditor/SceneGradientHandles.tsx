@@ -51,7 +51,7 @@ export interface SceneGradientHandlesProps<
  * Scene-aware paint handles: on-canvas geometry handles for the gradient in
  * one node's `fill` or `stroke` — `GradientHandles` for the three ramps,
  * `MeshHandles` for a mesh — committed through the `setFill` / `setStroke`
- * actions as a single undo entry per drag.
+ * actions as a single undo entry per drag. A canceled drag cancels the action.
  *
  * Renders nothing unless the targeted slot holds a gradient or a mesh. The
  * node stores its gradient in `units: 'bounds'` — fractions of its own box, so the paint
@@ -87,6 +87,7 @@ export function SceneGradientHandles<
     className,
     onInput: (next: FillStyle) => dispatch(next, 'input'),
     onChange: (next: FillStyle) => dispatch(next, 'commit'),
+    onCancel: () => edit.cancel(),
   };
 
   if (isGradientFill(paint)) {

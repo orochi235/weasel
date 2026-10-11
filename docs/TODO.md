@@ -1929,15 +1929,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   subscribe/notify on the dep registry that the bar (and any other reader of
   `buildDepsFromRequires`) listens to; that is new surface in `@weasel-js/routing`.
 
-- **(P2) SceneGradientHandles: a canceled handle drag leaves the `setFill` action open.**
-  `DragPoint` in `packages/ui/src/components/GradientEditor/handleOverlay.tsx` restores the preview
-  on cancel by calling `onDrag(start, 'input')`, which reaches `edit.input(...)` in
-  `SceneGradientHandles.tsx`; nothing calls `edit.cancel()`, so the ongoing action stays open and is
-  committed later, on unmount or when `actionId` changes, as an edit the user abandoned.
-  `GradientHandles` and `MeshHandles` expose only `onInput` / `onChange`, so there is no channel for
-  a cancel: they need an `onCancel` prop (new public surface on both) that `SceneGradientHandles`
-  wires to `edit.cancel()`. Check the unmount-mid-drag order while there: the parent's
-  `useOngoingAction` cleanup may commit before the child's cancel runs.
+- **(P3) SceneGradientHandles: unmounting mid-drag commits the half-finished drag.** Deselect the
+  node (or anything else that unmounts the overlay) while a handle is held: the parent's
+  `useOngoingAction` cleanup runs first and commits the value under the pointer, then `DragPoint`'s
+  own unmount cancel opens a second `setFill` at the starting value and cancels it, which changes
+  nothing (seen in jsdom: ends `commit`, `cancel`, in
+  `packages/ui/src/components/GradientEditor/SceneGradientHandles.tsx`). `useOngoingAction`
+  documents the commit on unmount as "what the user was looking at", which fits a slider left
+  mid-edit; whether a pointer drag cut short by an unmount should commit or cancel is the call. To
+  cancel, the overlay has to learn a drag is live before the parent's cleanup runs.
 
 - **(P2) DataGrid: rows can be reordered by pointer only, and the handler sits on the `<td>`.** With
   `onReorder`, the handle in `packages/ui/src/components/DataGrid/DataGrid.tsx` is a `<td>` holding

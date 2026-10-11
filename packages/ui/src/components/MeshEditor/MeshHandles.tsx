@@ -18,7 +18,7 @@ import {
 } from '../GradientEditor/handleOverlay';
 
 /** Props for {@link MeshHandles}. `onInput` fires throughout a drag and
- *  `onChange` once at its end. */
+ *  `onChange` once at its end, or `onCancel` if it is abandoned. */
 export interface MeshHandlesProps {
   /** The mesh whose points these handles move, in the space `toScreen`
    *  maps from. A `units: 'bounds'` mesh is resolved first with
@@ -34,6 +34,10 @@ export interface MeshHandlesProps {
   onInput?: (next: FillStyle) => void;
   /** Committed at drag end: one call per gesture. */
   onChange: (next: FillStyle) => void;
+  /** A drag was abandoned (the pointer was canceled). Its last `onInput` put
+   *  the value back where the drag began; an owner that opened an edit on
+   *  `onInput` ends it here without keeping it. */
+  onCancel?: () => void;
   /** Overlay size in CSS pixels. */
   width: number;
   height: number;
@@ -54,7 +58,7 @@ const CONTROL_RADIUS = handleHalf('--wzl-handle-size');
  * The overlay ignores pointer events except on the handles themselves.
  */
 export function MeshHandles(props: MeshHandlesProps): ReactElement {
-  const { value, toScreen, toLocal, onInput, onChange, width, height, className } = props;
+  const { value, toScreen, toLocal, onInput, onChange, onCancel, width, height, className } = props;
   const { edges, arms } = meshGuides(value);
   const handles = meshHandles(value);
 
@@ -72,7 +76,7 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
   ];
 
   return (
-    <HandleOverlay width={width} height={height} className={className}>
+    <HandleOverlay width={width} height={height} className={className} onCancel={onCancel}>
       {edges.map((edge, i) => (
         // Guides have no identity beyond their place in the walk.
         <Edge key={`e${i}`} points={[toScreen(edge[0]), toScreen(edge[1]), toScreen(edge[2]), toScreen(edge[3])]} />

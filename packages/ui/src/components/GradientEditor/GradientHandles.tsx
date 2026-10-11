@@ -5,7 +5,7 @@ import s from './handleOverlay.module.css';
 
 /**
  * Props for {@link GradientHandles}. `onInput` fires throughout a drag and
- * `onChange` once at its end.
+ * `onChange` once at its end, or `onCancel` if it is abandoned.
  */
 export interface GradientHandlesProps {
   /**
@@ -31,6 +31,10 @@ export interface GradientHandlesProps {
   onInput?: (next: GradientFill) => void;
   /** Committed at drag end: one call per gesture. */
   onChange: (next: GradientFill) => void;
+  /** A drag was abandoned (the pointer was canceled). Its last `onInput` put
+   *  the value back where the drag began; an owner that opened an edit on
+   *  `onInput` ends it here without keeping it. */
+  onCancel?: () => void;
   /** Overlay size in CSS pixels. */
   width: number;
   height: number;
@@ -50,10 +54,10 @@ export interface GradientHandlesProps {
  * it can sit over live canvas content without swallowing tool input.
  */
 export function GradientHandles(props: GradientHandlesProps): ReactElement {
-  const { value, toScreen, toLocal, onInput, onChange, width, height, className } = props;
+  const { value, toScreen, toLocal, onInput, onChange, onCancel, width, height, className } = props;
 
   return (
-    <HandleOverlay width={width} height={height} className={className}>
+    <HandleOverlay width={width} height={height} className={className} onCancel={onCancel}>
       {renderForKind(value, toScreen, toLocal, onInput, onChange)}
     </HandleOverlay>
   );

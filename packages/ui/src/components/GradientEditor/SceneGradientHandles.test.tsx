@@ -55,8 +55,8 @@ function sceneWith(pose: RectPose, data: Data): ReturnType<typeof createScene<Da
   return scene;
 }
 
-/** Records the params every ongoing invocation of `id` sees. */
-function recorder(id: string, seen: Record<string, unknown>[]): Action {
+/** Records the params every ongoing invocation of `id` sees, and into `ends` how each one ended. */
+function recorder(id: string, seen: Record<string, unknown>[], ends?: string[]): Action {
   return {
     id,
     label: id,
@@ -66,7 +66,7 @@ function recorder(id: string, seen: Record<string, unknown>[]): Action {
         seen.push({ action: id, phase: 'start', ...ctx.params });
         return {
           onMove: (move) => { seen.push({ action: id, phase: 'move', ...move.params }); },
-          onEnd: () => {},
+          onEnd: (_ctx, reason) => { ends?.push(reason); },
         };
       },
     },
@@ -75,19 +75,19 @@ function recorder(id: string, seen: Record<string, unknown>[]): Action {
 
 /** Registers stub `setFill` / `setStroke` actions and only then mounts the
  *  overlay — `begin` resolves against the registry at call time. */
-function Harness(props: { seen: Record<string, unknown>[]; children: ReactNode }): ReactElement | null {
+function Harness(props: { seen: Record<string, unknown>[]; ends?: string[]; children: ReactNode }): ReactElement | null {
   const registry = useActionsRegistry();
   const [ready, setReady] = useState(false);
   useEffect(() => {
     if (!registry) return;
-    registry.register(recorder('setFill', props.seen));
-    registry.register(recorder('setStroke', props.seen));
+    registry.register(recorder('setFill', props.seen, props.ends));
+    registry.register(recorder('setStroke', props.seen, props.ends));
     registry.setDispatcher(createDispatcher({
       getAction: (id: string) => registry.list().find((a) => a.id === id),
     }));
     // eslint-disable-next-line react-hooks/set-state-in-effect -- renders children once the registrations this effect makes are in
     setReady(true);
-  }, [registry, props.seen]);
+  }, [registry, props.seen, props.ends]);
   return ready ? <>{props.children}</> : null;
 }
 
@@ -95,12 +95,13 @@ function Overlay(props: {
   scene: ReturnType<typeof createScene<Data, Layer>>;
   slot: 'fill' | 'stroke';
   seen: Record<string, unknown>[];
+  ends?: string[];
 }): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   return (
     <ActionsProvider>
       <div ref={ref}>
-        <Harness seen={props.seen}>
+        <Harness seen={props.seen} ends={props.ends}>
           <SceneGradientHandles scene={props.scene} containerRef={ref} nodeId="a" slot={props.slot} />
         </Harness>
       </div>
@@ -171,6 +172,19 @@ describe('SceneGradientHandles', () => {
       action: 'setFill',
       paint: { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 0.5, y: 0.5 }, units: 'bounds' },
     });
+  });
+
+  it('cancels the action when a handle drag is canceled, and leaves nothing open to commit later', () => {
+    const ends: string[] = [];
+    const scene = sceneWith(BOX, { fill: BOUNDS_RAMP });
+    const { unmount } = render(<Overlay scene={scene} slot="fill" seen={[]} ends={ends} />);
+    const handle = screen.getByLabelText('Gradient end');
+    fireEvent.pointerDown(handle, { clientX: 200, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 100, clientY: 50, pointerId: 1 });
+    fireEvent.pointerCancel(handle, { clientX: 100, clientY: 50, pointerId: 1 });
+    expect(ends).toEqual(['cancel']);
+    unmount();
+    expect(ends).toEqual(['cancel']);
   });
 
   it('commits through setStroke when the slot is the stroke', () => {

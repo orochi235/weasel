@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
+import { createContext, useContext, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import { useHandleDrag } from '@weasel-js/core';
 import s from './handleOverlay.module.css';
 
@@ -14,12 +14,17 @@ export interface OverlayPoint {
  *  write that ends it. */
 export type EditPhase = 'input' | 'commit';
 
+/** What an overlay's points call when a drag on one of them is canceled. */
+const CancelContext = createContext<(() => void) | undefined>(undefined);
+
 /** The SVG overlay itself: covers its container, passes pointer input
  *  through everywhere but the handles. */
 export function HandleOverlay(props: {
   width: number;
   height: number;
   className?: string;
+  /** A drag on one of the overlay's points was canceled, after its preview was put back. */
+  onCancel?: () => void;
   children: ReactNode;
 }): ReactElement {
   return (
@@ -28,7 +33,7 @@ export function HandleOverlay(props: {
       width={props.width}
       height={props.height}
     >
-      {props.children}
+      <CancelContext.Provider value={props.onCancel}>{props.children}</CancelContext.Provider>
     </svg>
   );
 }
@@ -47,7 +52,7 @@ export function Edge({ points }: { points: readonly [OverlayPoint, OverlayPoint,
  * One draggable point. `onDrag` receives overlay pixels: where the point
  * goes, which trails the pointer by wherever on the handle it was grabbed. A
  * press that never moved writes nothing, and a canceled gesture puts the
- * preview back.
+ * preview back, then tells the overlay's `onCancel`.
  */
 export function DragPoint({
   at,
@@ -63,6 +68,7 @@ export function DragPoint({
   variant?: 'handle' | 'control';
   onDrag: (p: OverlayPoint, phase: EditPhase) => void;
 }): ReactElement {
+  const onCancel = useContext(CancelContext);
   const start = useRef<OverlayPoint>(at);
   // Where on the handle the press landed, so the point keeps that offset from the pointer.
   const grab = useRef<OverlayPoint>({ x: 0, y: 0 });
@@ -76,7 +82,10 @@ export function DragPoint({
     onEnd: ({ point, moved }) => {
       if (moved) onDrag(held(point), 'commit');
     },
-    onCancel: () => { onDrag(start.current, 'input'); },
+    onCancel: () => {
+      onDrag(start.current, 'input');
+      onCancel?.();
+    },
   });
   const onKeyDown = (e: ReactKeyboardEvent<SVGCircleElement>): void => {
     const amount = e.shiftKey ? KEY_STEP * 10 : KEY_STEP;
