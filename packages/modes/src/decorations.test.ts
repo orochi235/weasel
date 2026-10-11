@@ -24,6 +24,30 @@ describe('createModeDecorations', () => {
     expect(cmds.length).toBe(1);
   });
 
+  it('a released painter stops painting, and subscribers hear of it', () => {
+    const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const d = createModeDecorations({ registry });
+    const release = d.register('path-edit', () => [{ kind: 'path' } as never]);
+    const listener = vi.fn();
+    d.subscribe(listener);
+    const before = d.getVersion();
+
+    release();
+    expect(d.paint()).toEqual([]);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(d.getVersion()).toBeGreaterThan(before);
+  });
+
+  it('a release leaves the painter that replaced its own alone', () => {
+    const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const d = createModeDecorations({ registry });
+    const release = d.register('path-edit', () => []);
+    d.register('path-edit', () => [{ kind: 'path' } as never]);
+
+    release();
+    expect(d.paint()).toHaveLength(1);
+  });
+
   it('switching modes swaps which painter is invoked', () => {
     const registry = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
     const d = createModeDecorations({ registry });

@@ -18,12 +18,13 @@ export interface CreateModeDecorationsOptions {
  *  for as long as the mode is active and belong to the mode rather than to any
  *  tool — path-edit's anchor dots and handle lines are the motivating case. */
 export interface ModeDecorations {
-  /** Register (or replace) the painter for a mode id. */
-  register(modeId: string, painter: ModeDecorationPainter): void;
+  /** Register (or replace) the painter for a mode id. Returns a release that
+   *  removes it, and does nothing once another painter has replaced it. */
+  register(modeId: string, painter: ModeDecorationPainter): () => void;
   /** Paint the active mode's decorations. Returns an empty array if no
    *  painter is registered for the active mode. */
   paint(): ModeDrawCommand[];
-  /** Monotonic version. Bumps on mode change or painter registration. */
+  /** Monotonic version. Bumps on mode change, painter registration, or release. */
   getVersion(): number;
   /** Notified whenever `getVersion` bumps — what a canvas repaints on. */
   subscribe(listener: () => void): () => void;
@@ -36,12 +37,20 @@ export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeD
   const painters = new Map<string, ModeDecorationPainter>();
   const listeners = new Set<() => void>();
   let registrations = 0;
+  const changed = (): void => {
+    registrations++;
+    for (const l of [...listeners]) l();
+  };
 
   return {
-    register(modeId: string, painter: ModeDecorationPainter): void {
+    register(modeId: string, painter: ModeDecorationPainter): () => void {
       painters.set(modeId, painter);
-      registrations++;
-      for (const l of [...listeners]) l();
+      changed();
+      return () => {
+        if (painters.get(modeId) !== painter) return;
+        painters.delete(modeId);
+        changed();
+      };
     },
     paint(): ModeDrawCommand[] {
       const painter = painters.get(registry.current().id);

@@ -374,14 +374,6 @@ Priority tags:
   spec accepts. And `multiTouch` has no route gesture, so `entryFor` in `reflection/registry.ts`
   returns `null` and two `fingers: 2` bindings are never compared; give it a row.
 
-- **(P3) Mode registry accepts duplicate ids, and a decoration painter cannot be unregistered.**
-  `createModeRegistry({ modes: [a, a2] })` with one id (`packages/modes/src/registry.ts`): lookup by
-  id and `reflection` hold `a2`, `list()` returns both, and `modeShortcuts` builds two actions under
-  one action id. Throwing on a duplicate matches `mergeContributions`; keeping the last and
-  deduplicating `list()` is the other option. `ModeDecorations.register` in
-  `packages/modes/src/decorations.ts` returns nothing, so a painter registered from a component
-  outlives it and keeps painting from its closure; return a release.
-
 - **(P3) The two dispatcher files are about 1,700 lines each and mix owners.**
   `packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx` holds keyboard, wheel,
   WebKit pinch, pointer and multitouch synthesis, click and double-click, long-press, the

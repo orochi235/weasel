@@ -9,6 +9,11 @@ describe('createModeRegistry', () => {
     expect(r.current().id).toBe('normal');
   });
 
+  it('throws when two modes share an id', () => {
+    expect(() => createModeRegistry({ modes: [NORMAL, PATH_EDIT, { ...NORMAL }], initial: 'normal' }))
+      .toThrow(/duplicate mode id "normal"/);
+  });
+
   it('lists every registered mode in order', () => {
     const r = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
     expect(r.list().map((m) => m.id)).toEqual(DEFAULT_MODES.map((m) => m.id));

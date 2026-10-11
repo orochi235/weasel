@@ -26,10 +26,14 @@ export interface ModeRegistry {
   readonly reflection: Reflection<ModeDefinition>;
 }
 
-/** Build a mode registry. Throws if `initial` does not name one of `modes`. */
+/** Build a mode registry. Throws if two of `modes` share an id, or if
+ *  `initial` does not name one of them. */
 export function createModeRegistry(opts: CreateModeRegistryOptions): ModeRegistry {
   const modes = createReflectable<ModeDefinition>();
-  for (const m of opts.modes) modes.set(m.id, m);
+  for (const m of opts.modes) {
+    if (modes.get(m.id)) throw new Error(`createModeRegistry: duplicate mode id "${m.id}"`);
+    modes.set(m.id, m);
+  }
   const initial = modes.get(opts.initial);
   if (!initial) throw new Error(`Initial mode "${opts.initial}" not in modes list`);
 
