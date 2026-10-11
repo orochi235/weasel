@@ -45,6 +45,15 @@ export function formAttrs(drop: PrefDrop | null): Record<string, string | undefi
   return { [FORM_ATTR]: '', [DROPPING_ATTR]: drop && drop.where !== 'home' ? '' : undefined };
 }
 
+const GROUP = `[${PATH_ATTR}]:not([data-pref-leaf]), [data-pref-into]`;
+
+/** The group a row's neighbors are measured in: the nearest with a box, a fragment's rows lying among its parent's. */
+function ownerOf(row: Element): Element | null {
+  let at = row.parentElement?.closest(GROUP) ?? null;
+  while (at && getComputedStyle(at).display === 'contents') at = at.parentElement?.closest(GROUP) ?? null;
+  return at;
+}
+
 function measure(form: Element): Frame {
   const slide = slidesIn(form);
   /** Where `el` lies, whatever slide it is drawn part-way through. */
@@ -70,7 +79,7 @@ function measure(form: Element): Frame {
   const boxes = els.map((el): Box => {
     const rail = el.getAttribute(RAIL_ATTR);
     const leaf = el.hasAttribute('data-pref-leaf');
-    const owner = leaf ? el.parentElement?.closest(`[${PATH_ATTR}]:not([data-pref-leaf]), [data-pref-into]`) : null;
+    const owner = leaf ? ownerOf(el) : null;
     return {
       kind: rail !== null ? 'rail' : leaf ? 'row' : 'group',
       path: rail ?? el.getAttribute(PATH_ATTR) ?? el.getAttribute('data-pref-into')!,

@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
+import { prefDropTargetAt } from './dropTarget';
 import { PrefsForm } from './PrefsForm';
 
 // A fragment has no box (`display: contents`), so whether its rows take cells in the grid around them, and
@@ -82,4 +83,19 @@ test('a wide row inside a fragment spans both columns of a form two rows across'
   // Snap is alone on its line before it, and Guides starts the line after.
   expect(globs.top).toBeGreaterThan(box('Snap').bottom - 1);
   expect(box('Guides').top).toBeGreaterThan(globs.bottom - 1);
+});
+
+test('a drag over the gap between two rows of a fragment lands beside one of them', async () => {
+  await page.viewport(900, 500);
+  const { container } = render(
+    <div style={{ width: 820, height: 400 }}>
+      <PrefsForm layout="rail" schema={SCHEMA} values={{}} onChange={() => {}} />
+    </div>,
+  );
+  const snap = box('Snap');
+  const guides = box('Guides');
+  expect(guides.top - snap.bottom).toBeGreaterThan(2);
+  const mark = prefDropTargetAt(container, snap.left + 20, (snap.bottom + guides.top) / 2);
+  expect(['view.glue.snap', 'view.glue.guides']).toContain(mark?.path);
+  expect(mark?.where).not.toBe('into');
 });
