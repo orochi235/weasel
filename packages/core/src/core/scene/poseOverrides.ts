@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { kit, last, mix, mul, patch } from '@msb235/blits';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
 import type { NodeId, PoseOverride, PoseOverrides } from './types';
@@ -22,7 +23,7 @@ export function createPoseOverrides<TPose>(
   onInvalidate?: (id: NodeId) => void,
 ): PoseOverrides<TPose> {
   const entries = new Map<NodeId, PoseOverride<TPose>>();
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
   let generation = 0;
 
   const folded = mix<NodeId, PoseOverride<TPose>>(
@@ -53,7 +54,7 @@ export function createPoseOverrides<TPose>(
   function published(): void {
     generation++;
     folded.sync(++clock);
-    for (const listener of listeners) listener();
+    listeners.emit();
   }
 
   function forget(id: NodeId): void {
@@ -108,10 +109,7 @@ export function createPoseOverrides<TPose>(
       for (const id of entries.keys()) invalidate(id);
       published();
     },
-    subscribe(fn) {
-      listeners.add(fn);
-      return () => { listeners.delete(fn); };
-    },
+    subscribe: listeners.subscribe,
     getGeneration() {
       return generation;
     },

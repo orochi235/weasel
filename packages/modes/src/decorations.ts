@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { ModeRegistry } from './registry';
 
 /** Loose draw-command type — the kit's `DrawCommand` union shape is over in
@@ -35,11 +36,11 @@ export interface ModeDecorations {
 export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeDecorations {
   const { registry } = opts;
   const painters = new Map<string, ModeDecorationPainter>();
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
   let registrations = 0;
   const changed = (): void => {
     registrations++;
-    for (const l of [...listeners]) l();
+    listeners.emit();
   };
 
   return {
@@ -59,10 +60,10 @@ export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeD
     },
     getVersion: () => registry.getVersion() + registrations,
     subscribe(listener: () => void): () => void {
-      listeners.add(listener);
+      const off = listeners.subscribe(listener);
       const offMode = registry.subscribe(listener);
       return () => {
-        listeners.delete(listener);
+        off();
         offMode();
       };
     },

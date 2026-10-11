@@ -8,6 +8,7 @@
  * closes. Undo, redo and journal replays never open it: they restore an
  * arrangement that was already decided.
  */
+import { createEmitter } from '@weasel-js/registry';
 import type { Op } from 'core/ops/types';
 import { createArrangeOp, type ArrangedPose } from 'core/ops/arrange';
 import { SceneArrivalRefused } from './arrivals';
@@ -66,7 +67,7 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
   let changed = new Set<NodeId>();
   /** What the last settle wrote, reported to `onReflow` once its edit lands. */
   let reflowDue: LayoutMove<TPose>[] | null = null;
-  const reflowListeners = new Set<(moves: readonly LayoutMove<TPose>[]) => void>();
+  const reflowListeners = createEmitter<[moves: readonly LayoutMove<TPose>[]]>();
 
   function activeHandler(): SceneArrivalHandler<TPose> | null {
     return installed ?? env.declared();
@@ -85,7 +86,7 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
     const moves = reflowDue;
     reflowDue = null;
     if (moves === null || moves.length === 0) return;
-    for (const listener of [...reflowListeners]) listener(moves);
+    reflowListeners.emit(moves);
   }
 
   function settle(): ArrangedPose[] {
@@ -141,10 +142,7 @@ export function createArrivalWindow<TData, TLayer extends string, TPose>(
         if (installed === handler) installed = null;
       };
     },
-    onReflow(listener) {
-      reflowListeners.add(listener);
-      return () => { reflowListeners.delete(listener); };
-    },
+    onReflow: reflowListeners.subscribe,
     noteArrival(id, parent, from) {
       if (arrivals === null || parent === null || parent === from) return;
       changed.add(parent);

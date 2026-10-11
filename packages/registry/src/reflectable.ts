@@ -1,3 +1,5 @@
+import { createEmitter } from './emitter';
+
 /** One registrant of a key: its value and, when the registrant named one, where it came from. */
 export interface Registrant<V> {
   readonly value: V;
@@ -68,19 +70,13 @@ export interface Reflectable<V, K = string> extends Reflection<V, K> {
  */
 export function createReflectable<V, K = string>(): Reflectable<V, K> {
   const stacks = new Map<K, Registrant<V>[]>();
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
   let version = 0;
   let snapshot: { version: number; entries: readonly ReflectedEntry<V, K>[] } | null = null;
 
   function changed(): void {
     version++;
-    for (const listener of listeners) {
-      try {
-        listener();
-      } catch (err) {
-        console.error('weasel registry: subscriber threw', err);
-      }
-    }
+    listeners.emit();
   }
 
   const reflection: Reflection<V, K> = {
@@ -98,10 +94,7 @@ export function createReflectable<V, K = string>(): Reflectable<V, K> {
       snapshot = { version, entries: Object.freeze(entries) };
       return snapshot.entries;
     },
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => { listeners.delete(listener); };
-    },
+    subscribe: listeners.subscribe,
     getVersion: () => version,
   };
 

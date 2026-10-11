@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import { effectivePose } from './effectivePose';
 import type { Node, NodeId, Scene } from './types';
 
@@ -45,10 +46,8 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
   let seenGeneration = -1;
   let seenOverridden: readonly NodeId[] = EMPTY;
 
-  const listeners = new Set<() => void>();
-  const notify = () => {
-    for (const fn of listeners) fn();
-  };
+  const listeners = createEmitter();
+  const notify = listeners.emit;
   let unwire: (() => void) | null = null;
 
   const walk = (): {
@@ -89,7 +88,7 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
 
   return {
     subscribe(fn) {
-      listeners.add(fn);
+      const off = listeners.subscribe(fn);
       if (unwire === null) {
         const offScene = scene.subscribe(notify);
         const offOverrides = scene.overrides.subscribe(notify);
@@ -99,7 +98,7 @@ export function createPoseFeed<TData, TLayer extends string, TPose>(
         };
       }
       return () => {
-        listeners.delete(fn);
+        off();
         if (listeners.size === 0 && unwire !== null) {
           unwire();
           unwire = null;

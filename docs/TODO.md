@@ -2054,14 +2054,15 @@ one dead `const` and four stale disable directives.
   `paths` from each package's `exports` and build entries, and reject a subpath that is not
   exported.
 
-- **(P3) There is no shared subscribe/notify primitive, and the hand-rolled ones notify two ways.**
-  About 46 stores across 18 packages each keep their own listener `Set`. Some notify over a snapshot
-  (prefs, storage, modes, `keyState`, `PointerContext`), and others iterate the live set (the scene,
-  history and its journal, `select/store.ts`, the dispatcher, `poseFeed`, `poseOverrides`,
-  `imageCache`, `reflectable`, `createTimeline`), so a listener that subscribes during a notify is
-  called in the same pass on the second kind and not on the first. None isolates a throwing
-  listener. One `createEmitter()` with stated semantics in a leaf package every tier can reach
-  (`@weasel-js/registry`).
+- **(P3) Most stores still keep their own listener set.** `createEmitter()` in `@weasel-js/registry`
+  is the shared subscribe/notify primitive (a pass walks the listeners held when it began; a
+  throwing listener is logged and the rest run), and the reflectable registry, modes' scoping layer
+  and decorations, and core's pose overrides, pose feed, reflow, parallax plane, and key state use
+  it. Still hand-rolled, each a `Set` and a loop: the scene (four loops in `core/scene/scene.ts`),
+  `PointerContext`, `useSliceTool`, history and its journal, `select/store.ts`, prefs' store,
+  storage's records, routing's `longPressState`, loupe's `canvasSource`, ui's `recentColors`,
+  labkit's `panelHost`, `clockRegistry`, and `cameraRegistry`, and seven in forge. history, select,
+  prefs, storage, routing, and loupe do not depend on registry yet.
 
 - **(P3) Three drag-ghost implementations.** core's `pointerDrag` `defaultGhost` clones the source,
   ui's `DragGhost` portals to the themed host, and labkit's `dragdrop/DragGhost` is a third. They

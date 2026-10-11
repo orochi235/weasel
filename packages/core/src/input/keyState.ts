@@ -5,6 +5,7 @@
  * does not hide it from here.
  */
 
+import { createEmitter } from '@weasel-js/registry';
 import { isEditableTarget } from '@weasel-js/routing';
 
 /** Which modifier keys are held, on either side of the keyboard. */
@@ -78,11 +79,8 @@ export function createKeyState(): KeyState {
   const presses = new Set<string>();
   const mods: KeyModifiers = { shift: false, ctrl: false, alt: false, meta: false };
   let held: KeyModifiers = { ...mods };
-  const listeners = new Set<() => void>();
-
-  const notify = () => {
-    for (const l of [...listeners]) l();
-  };
+  const listeners = createEmitter();
+  const notify = listeners.emit;
 
   const remove = (code: string): boolean => {
     codeSet.delete(code);
@@ -132,10 +130,7 @@ export function createKeyState(): KeyState {
       }
       return held;
     },
-    subscribe: (listener) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    subscribe: listeners.subscribe,
     release,
     attach: (target, options = {}) => {
       const skipInEditable = options.skipInEditable ?? true;

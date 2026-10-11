@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { ModeRegistry } from './registry';
 
 /** Options for `createScopingDim`. */
@@ -35,7 +36,7 @@ export interface ScopingDim {
 export function createScopingDim(opts: CreateScopingDimOptions): ScopingDim {
   const { registry } = opts;
   const dim = opts.dimAlpha ?? 0.3;
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
   let invalidations = 0;
   return {
     alphaFor(id) {
@@ -50,14 +51,14 @@ export function createScopingDim(opts: CreateScopingDimOptions): ScopingDim {
     },
     invalidate() {
       invalidations++;
-      for (const l of [...listeners]) l();
+      listeners.emit();
     },
     getVersion: () => registry.getVersion() + invalidations,
     subscribe(listener) {
-      listeners.add(listener);
+      const off = listeners.subscribe(listener);
       const offMode = registry.subscribe(listener);
       return () => {
-        listeners.delete(listener);
+        off();
         offMode();
       };
     },

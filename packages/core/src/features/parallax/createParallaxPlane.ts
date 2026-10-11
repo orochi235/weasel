@@ -1,3 +1,4 @@
+import { createEmitter } from '@weasel-js/registry';
 import type { RedrawSource } from '../../core/layers/render';
 import type { ParallaxOpts } from '../../core/viewport/parallax';
 
@@ -18,17 +19,14 @@ export interface ParallaxPlane extends ParallaxSource {
  *  layer's `parallax` and write to it to move the plane. */
 export function createParallaxPlane(initial: ParallaxOpts): ParallaxPlane {
   let current: ParallaxOpts = { ...initial };
-  const listeners = new Set<() => void>();
+  const listeners = createEmitter();
   return {
     get: () => current,
     set(patch) {
       current = { ...current, ...patch };
-      for (const fn of [...listeners]) fn();
+      listeners.emit();
     },
-    subscribe(fn) {
-      listeners.add(fn);
-      return () => { listeners.delete(fn); };
-    },
+    subscribe: listeners.subscribe,
   };
 }
 
