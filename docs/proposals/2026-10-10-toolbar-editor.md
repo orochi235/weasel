@@ -1,9 +1,9 @@
 # A toolbar is a group drawn as a bar
 
-**Built, but for the editor.** Written 2026-10-10 on branch `toolbar-editor`, which holds the bar
-forms (`BarField`, `BarPopover`, `BarAction`), action leaves that fire by key (`useLeafAction`),
-and `Bar` with the `as: 'bar'` group form. What is unbuilt is under "Editor" and "Not yet drawn as
-a bar". For whoever builds it.
+**Partly built.** The bar forms (`BarField`, `BarPopover`, `BarAction`), action leaves that fire
+by key (`useLeafAction`), `Bar` with the `as: 'bar'` group form, and the schema editor's bar and
+Actions list are in. What is unbuilt is under "Not yet drawn as a bar" and the table under
+"Editor". For whoever builds it.
 
 ## What was decided
 

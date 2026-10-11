@@ -799,9 +799,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
 
-- **(P2) `PrefSchemaEditor` as a toolbar editor.** Designed, not built: a group drawn `as: 'bar'`,
-  a bar form for every leaf kind, action leaves that fire a registered action by key, and the
-  editor's list of actions to drag from. The design and its build order are in
+- **(P2) Finish the toolbar editor.** A group drawn `as: 'bar'`, its bar forms, action leaves,
+  and the schema editor's Actions list are built. Left: a drop placed along a bar's axis, drops
+  and click-to-select in the preview of a root drawn as a bar, and a bar section inside
+  `SelectionPanel`'s object leaf and labkit's `ControlPanel`. Each is listed with its files in
   `docs/proposals/2026-10-10-toolbar-editor.md`.
 
 - **(P3) `PrefSchemaEditor` clears required custom attributes.** Emptying an attribute removes
