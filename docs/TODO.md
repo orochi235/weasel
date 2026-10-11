@@ -1676,16 +1676,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   reader. `LabContextValue.trials` is public, so splitting it out (a separate context, or a selector
   hook over the store, with the commands in a value that does not change) is an API decision.
 
-- **(P3) labkit annotations: a redo run by a pane's own keymap clears the cross-target redo order.**
-  `MarkHistory.observe` (`packages/labkit/src/annotations/history.ts`) tells a redo from a new
-  change only by its own `replaying` flag, so `scene.redo()` called from anywhere else (the pane's
-  `edit` keymap, which gets the chord whenever the trial's chrome does not: a presented trial, or
-  `suppress={['undo', 'redo']}`) empties `redoable`, and the toolbar's Redo goes disabled while
-  another target's scene still has one. The pane-driven undo next to it is handled. Depth alone
-  cannot tell the two apart (both raise `historyIndex()` by one and can leave `canRedo()` false);
-  comparing the id of the entry that became current against the ids that were redoable can, which
-  needs `historyEntries()` on the exported `HistoryScene` interface.
-
 - **(P3) labkit transport: on a looping clock, End and a scrub to the far right land at the start of
   the next pass.** `transportControl.seek` (`packages/labkit/src/clock/transportControl.ts`) clamps
   to `[0, duration]` and seeks `passStart + duration`, which a looping clock reads as phase 0 of the

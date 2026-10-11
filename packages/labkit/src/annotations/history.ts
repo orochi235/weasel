@@ -1,7 +1,10 @@
 import type { Scene } from '@weasel-js/core';
 
-/** What the ordering needs of a scene: its history depth, and the two moves. */
+/** What the ordering needs of a scene: its history entries and depth, and the two moves. */
 export interface HistoryScene {
+  /** Every entry reachable from the present state, the applied ones first, each under an id that lasts as
+   *  long as the entry does. */
+  historyEntries(): readonly { id: string }[];
   historyIndex(): number;
   undo(): boolean;
   redo(): boolean;
@@ -23,24 +26,33 @@ export interface HistoryScene {
  */
 export class MarkHistory {
   private readonly depth = new Map<string, number>();
+  /** Per target, the ids of the entries its scene could redo when last seen. */
+  private readonly ahead = new Map<string, ReadonlySet<string>>();
   private undoable: string[] = [];
   private redoable: string[] = [];
-  /** Set while this class is driving, so a redo is not read as a new change. */
-  private replaying: 'undo' | 'redo' | null = null;
+
+  private see(target: string, scene: HistoryScene): { now: number; current: string | undefined } {
+    const now = scene.historyIndex();
+    const entries = scene.historyEntries();
+    this.depth.set(target, now);
+    this.ahead.set(target, new Set(entries.slice(now).map((e) => e.id)));
+    return { now, current: entries[now - 1]?.id };
+  }
 
   /** Start following `scene` under `target`. Idempotent per target. */
   track(target: string, scene: HistoryScene): void {
     if (this.depth.has(target)) return;
-    this.depth.set(target, scene.historyIndex());
+    this.see(target, scene);
   }
 
   /** Call on every notification from `target`'s scene. */
   observe(target: string, scene: HistoryScene): void {
-    const now = scene.historyIndex();
     const before = this.depth.get(target) ?? 0;
-    this.depth.set(target, now);
+    const redoable = this.ahead.get(target);
+    const { now, current } = this.see(target, scene);
     if (now > before) {
-      if (this.replaying === 'redo') {
+      // Depth cannot tell a redo from a change, whoever ran it: the entry that became current can.
+      if (current !== undefined && redoable?.has(current)) {
         drop(this.redoable, target);
       } else {
         // A change dropped whatever was redoable — weasel's own scene did the
@@ -81,25 +93,13 @@ export class MarkHistory {
   undo(at: (t: string) => HistoryScene | undefined): boolean {
     const target = this.next(this.undoable, (s) => s.canUndo(), at);
     const scene = target === null ? undefined : at(target);
-    if (!scene) return false;
-    this.replaying = 'undo';
-    try {
-      return scene.undo();
-    } finally {
-      this.replaying = null;
-    }
+    return scene ? scene.undo() : false;
   }
 
   redo(at: (t: string) => HistoryScene | undefined): boolean {
     const target = this.next(this.redoable, (s) => s.canRedo(), at);
     const scene = target === null ? undefined : at(target);
-    if (!scene) return false;
-    this.replaying = 'redo';
-    try {
-      return scene.redo();
-    } finally {
-      this.replaying = null;
-    }
+    return scene ? scene.redo() : false;
   }
 }
 

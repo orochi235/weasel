@@ -79,4 +79,29 @@ describe('undo across targets', () => {
     expect(s.redo()).toBe(true);
     expect(s.query({ target: 'left' })).toHaveLength(1);
   });
+
+  it('follows a redo driven from inside a pane, keeping another target\'s redo', () => {
+    const s = store();
+    s.add({ ...MARK, target: 'left' });
+    s.add({ ...MARK, target: 'right' });
+    s.undo();
+    s.undo();
+    s.sceneFor('left').redo();
+
+    expect(s.query({ target: 'left' })).toHaveLength(1);
+    expect(s.canRedo()).toBe(true);
+    expect(s.redo()).toBe(true);
+    expect(s.query({ target: 'right' })).toHaveLength(1);
+    expect(s.canRedo()).toBe(false);
+  });
+
+  it('still drops the redo order when a change lands at the depth a redo would reach', () => {
+    const s = store();
+    s.add({ ...MARK, target: 'left' });
+    s.add({ ...MARK, target: 'right' });
+    s.undo();
+    s.undo();
+    s.add({ ...MARK, target: 'left' });
+    expect(s.canRedo()).toBe(false);
+  });
 });
