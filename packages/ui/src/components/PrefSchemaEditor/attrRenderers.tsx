@@ -73,7 +73,7 @@ function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
     const kept = nextWith.filter((p) => p !== '');
     ctx.setValue(kept.length === 0 ? undefined : {
       with: kept.length === 1 ? kept[0]! : kept,
-      ...(nextLabel.trim() !== '' ? { label: nextLabel.trim() } : {}),
+      ...(nextLabel.trim() !== '' ? { label: nextLabel } : {}),
     });
   };
   const options = (ctx.fields ?? []).map((f) => ({ value: f.path, label: `${f.name} (${f.path})` }));
@@ -91,7 +91,8 @@ function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
         onSelectionChange={(k) => write([...partners, String(k)], label)} />
       {partners.length > 0 && (
         <Input aria-label="Row label" placeholder="Row label (default: this pref's name)" value={label}
-          onChange={(v) => write(partners, v)} />
+          // Kept as typed until the field is left: trimmed on each key, a space could never be typed.
+          onChange={(v) => write(partners, v)} onBlur={() => { if (label !== label.trim()) write(partners, label.trim()); }} />
       )}
     </div>
   );
