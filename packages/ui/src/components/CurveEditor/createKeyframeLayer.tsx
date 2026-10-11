@@ -81,36 +81,57 @@ function bezierOf(key: Keyframe<number> | undefined): Bezier | null {
   return typeof e === 'object' && e !== null && 'bezier' in e ? e.bezier : null;
 }
 
+/** Where the key at `index` sits after the key at `from` moved to `to`. */
+function indexAfterMove(index: number, from: number, to: number): number {
+  if (index === from) return to;
+  if (from < index && index <= to) return index - 1;
+  if (to <= index && index < from) return index + 1;
+  return index;
+}
+
+/** A segment is named by the key it runs into, so it follows that key; the first key has none. */
+function segmentAfterMove(segment: number | null, from: number, to: number): number | null {
+  if (segment === null) return null;
+  const next = indexAfterMove(segment, from, to);
+  return next < 1 ? null : next;
+}
+
 function moveKeyTo(
-  keys: readonly Keyframe<number>[], index: number, t: number, value: number,
-): { keys: Keyframe<number>[]; selectedKey: number } {
-  const moved = { ...keys[index], t, value };
-  const rest = keys.filter((_, i) => i !== index);
+  state: KeyframeLayerState, index: number, t: number, value: number,
+): KeyframeDragResult & { selectedKey: number } {
+  const moved = { ...state.keys[index], t, value };
+  const rest = state.keys.filter((_, i) => i !== index);
   const at = rest.findIndex((k) => k.t > t);
   const selectedKey = at === -1 ? rest.length : at;
   rest.splice(selectedKey, 0, moved);
-  return { keys: rest, selectedKey };
+  return { keys: rest, selectedKey, selectedSegment: segmentAfterMove(state.selectedSegment, index, selectedKey) };
+}
+
+/** What {@link applyKeyframeDrag} returns: the fields of a state a drag rewrites. */
+export interface KeyframeDragResult {
+  keys: readonly Keyframe<number>[];
+  selectedKey: number | null;
+  selectedSegment: number | null;
 }
 
 /**
  * The keys a state's drag would leave behind: a dragged key re-sorted into
  * place, or a dragged handle's control points written onto the key its
- * segment runs into. `selectedKey` follows a moved key to its new index; a
- * key dropped where it started returns the same `keys` array.
+ * segment runs into. `selectedKey` follows a moved key to its new index, and
+ * `selectedSegment` follows the key it runs into; a key dropped where it
+ * started returns the same `keys` array.
  */
-export function applyKeyframeDrag(
-  state: KeyframeLayerState,
-): { keys: readonly Keyframe<number>[]; selectedKey: number | null } {
-  const { drag, keys } = state;
-  if (!drag) return { keys, selectedKey: state.selectedKey };
+export function applyKeyframeDrag(state: KeyframeLayerState): KeyframeDragResult {
+  const { drag, keys, selectedSegment } = state;
+  if (!drag) return { keys, selectedKey: state.selectedKey, selectedSegment };
   if (drag.kind === 'key') {
     const k = keys[drag.index];
-    if (k && k.t === drag.t && k.value === drag.value) return { keys, selectedKey: drag.index };
-    return moveKeyTo(keys, drag.index, drag.t, drag.value);
+    if (k && k.t === drag.t && k.value === drag.value) return { keys, selectedKey: drag.index, selectedSegment };
+    return moveKeyTo(state, drag.index, drag.t, drag.value);
   }
   const next = keys.slice();
   next[drag.segment] = { ...keys[drag.segment], easing: { bezier: drag.bezier } };
-  return { keys: next, selectedKey: state.selectedKey };
+  return { keys: next, selectedKey: state.selectedKey, selectedSegment };
 }
 
 /**
@@ -171,10 +192,11 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
 
   // ── render ──────────────────────────────────────────────────────────
   function render(state: KeyframeLayerState, ctx: LayerRenderCtx): ReactNode {
-    const shown = state.drag?.kind === 'key' ? applyKeyframeDrag(state).keys : state.keys;
+    const preview = state.drag?.kind === 'key' ? applyKeyframeDrag(state) : state;
+    const shown = preview.keys;
     const segments = segmentSamples(state, shown, ctx);
     const curve = segments.flatMap((pts, i) => (i === 0 ? pts : pts.slice(1)));
-    const seg = state.selectedSegment;
+    const seg = preview.selectedSegment;
     const bezier = activeBezier(state);
     const dragIndex = state.drag?.kind === 'key' ? state.drag.index : null;
 
@@ -208,8 +230,10 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
         ))}
         {bezier ? (() => {
           const [h1, h2] = handlePoints(state, bezier, ctx);
-          const a = ctx.toPlot({ x: state.keys[seg! - 1].t, y: state.keys[seg! - 1].value });
-          const b = ctx.toPlot({ x: state.keys[seg!].t, y: state.keys[seg!].value });
+          const from = state.keys[state.selectedSegment! - 1];
+          const into = state.keys[state.selectedSegment!];
+          const a = ctx.toPlot({ x: from.t, y: from.value });
+          const b = ctx.toPlot({ x: into.t, y: into.value });
           return (
             <>
               <line className={s.handleStem} x1={a.x} y1={a.y} x2={h1.x} y2={h1.y} />
@@ -378,7 +402,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
       const t = clampTo(k.t + dx * stepX, cfg.xClamp);
       const value = clampTo(k.value + dy * stepY, cfg.yClamp);
       if (t === k.t && value === k.value) return;
-      const moved = moveKeyTo(state.keys, index, t, value);
+      const moved = moveKeyTo(state, index, t, value);
       extra.commit({ ...state, ...moved, drag: null });
       // Marks are keyed by index, so the one at the key's new index is the
       // element that draws it after the re-sort.

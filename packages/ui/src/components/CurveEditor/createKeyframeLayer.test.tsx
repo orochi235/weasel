@@ -117,6 +117,38 @@ describe('createKeyframeLayer — key drag', () => {
     expect(document.querySelector('[data-keyframe-ghost]')).toBeNull();
   });
 
+  it('keeps the selected segment on the key it runs into when a drag re-sorts the keys', () => {
+    const onCommit = vi.fn();
+    render(<Harness initial={{ selectedSegment: 2 }} onCommit={onCommit} />);
+    down(100, 0);
+    move(210, 20);
+    const band = document.querySelector('rect:not([data-keyframe-index]):not([data-keyframe-ghost])')!;
+    expect(Number(band.getAttribute('x'))).toBe(0);
+    expect(Number(band.getAttribute('width'))).toBe(200);
+    up(210, 20);
+    const next = onCommit.mock.calls[0][0] as KeyframeLayerState;
+    expect(next.keys.map((k) => k.t)).toEqual([0, 1000, 1050]);
+    expect(next.selectedSegment).toBe(1);
+  });
+
+  it('moves the selected segment with a key nudged past its neighbor', () => {
+    const onCommit = vi.fn();
+    render(<Harness config={{ step: { x: 600 } }} initial={{ selectedSegment: 1 }} onCommit={onCommit} />);
+    fireEvent.keyDown(document.querySelector('[data-keyframe-index="1"]')!, { key: 'ArrowRight' });
+    const next = onCommit.mock.calls[0][0] as KeyframeLayerState;
+    expect(next.keys.map((k) => k.t)).toEqual([0, 1000, 1100]);
+    expect(next.selectedSegment).toBe(2);
+  });
+
+  it('drops the selected segment when its key becomes the first', () => {
+    const onCommit = vi.fn();
+    render(<Harness initial={{ selectedSegment: 1 }} onCommit={onCommit} />);
+    down(0, 100);
+    move(150, 50);
+    up(150, 50);
+    expect((onCommit.mock.calls[0][0] as KeyframeLayerState).selectedSegment).toBeNull();
+  });
+
   it('commits the keys untouched when a key is pressed and released in place', () => {
     const onCommit = vi.fn();
     render(<Harness onCommit={onCommit} />);

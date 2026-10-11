@@ -22,6 +22,7 @@ export {
   keyframeLayerState,
   applyKeyframeDrag,
   type KeyframeDrag,
+  type KeyframeDragResult,
   type KeyframeLayerConfig,
   type KeyframeLayerState,
 } from './createKeyframeLayer';
