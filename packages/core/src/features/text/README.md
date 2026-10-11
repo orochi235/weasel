@@ -97,8 +97,8 @@ kit — is `@weasel-js/text`'s `layout/`. The atlas itself (`FontAtlas`,
 
 ## Editing
 
-`useTextEdit` is the primitive; `useSceneTextEdit` is the scene-wired version.
-`domRuns.ts` bridges to a DOM editing surface (contenteditable) — text editing
+`useTextEdit` is the primitive, in `@weasel-js/text-dom`; `useSceneTextEdit` here is the
+scene-wired version. `domRuns.ts`, beside the primitive, bridges to a DOM editing surface (contenteditable) — text editing
 uses real DOM for IME, spellcheck, and accessibility rather than reimplementing
 a caret on canvas. `hitTest.ts` (in `@weasel-js/text`) provides `pointInTextPose` and `caretIndexAt`
 to map clicks back into the run model; the caret snaps to the advance cells

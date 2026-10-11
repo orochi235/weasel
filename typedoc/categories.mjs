@@ -60,6 +60,7 @@ export const RULES = [
   ['packages/react/src', 'Extension points'],
   ['packages/registry/src', 'Extension points'],
   ['packages/text/src', 'Text'],
+  ['packages/text-dom/src', 'Text'],
 
   // Routing moved out of core; each part keeps the category its core directory had.
   ['packages/routing/src/interactions/actions', 'Selection & actions'],

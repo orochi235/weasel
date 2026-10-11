@@ -33,7 +33,7 @@ import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanva
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
 import { caretIndexAt, pointInTextPose, isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
-import { useTextEdit, type TextEditClipRect, type UseTextEditReturn } from './useTextEdit';
+import { useTextEdit, type TextEditClipRect, type UseTextEditReturn } from '@weasel-js/text-dom';
 
 /** Shape the default projections expect `data` to satisfy. All fields
  *  optional so any object satisfies the constraint — projections fill in
