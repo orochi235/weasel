@@ -150,6 +150,7 @@ import { drawBooleansAdapter, textSourceOf, type DrawScene } from './booleansAda
 import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
+import { DEFAULT_FILENAME, PAPER_PRESETS, loadDoc, saveDoc } from './docPersistence';
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
 import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
@@ -211,22 +212,9 @@ export interface WeaselDrawData {
 
 export type WeaselDrawLayer = 'default';
 
-/** Paper sizes — the canvas fills the workspace; the page is drawn as a
- *  world-space layer at `{0,0,paper.width,paper.height}` (see `paperLayer`
- *  below). Pan/zoom moves the page around within the striped workspace. */
-const PAPER_PRESETS: Record<PaperSizeKey, { width: number; height: number }> = {
-  letter: { width: 816, height: 1056 },
-  a4:     { width: 794, height: 1123 },
-  legal:  { width: 816, height: 1344 },
-};
-
 const LS_KEY = 'weaseldraw:scene-v1';
-const DOC_KEY = 'weaseldraw:doc-v1';
 const HISTORY_KEY = 'weaseldraw:history-v1';
 const RECENT_COLORS_KEY = 'weaseldraw:recent-colors';
-
-const DEFAULT_FILENAME = 'untitled.svg';
-const DEFAULT_BG_COLOR = '#ffffff';
 
 // Draw's full ingestion config: SVG unpack + clipboard revival.
 // OS-dropped / pasted SVG files import as real scene nodes (the kit's
@@ -244,25 +232,6 @@ const DRAW_INGESTION = { svg: { unpack: unpackSvgFiles }, clipboard: { reviver: 
  *  Selecting this row surfaces the Document properties branch in the
  *  Properties panel; clicking any real node clears it. */
 const BACKGROUND_ROW_ID = '__background__';
-
-interface PersistedDoc {
-  filename: string;
-  backgroundColor: string;
-}
-
-function loadDoc(): PersistedDoc {
-  try {
-    const raw = localStorage.getItem(DOC_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<PersistedDoc>;
-      return {
-        filename: typeof parsed.filename === 'string' && parsed.filename ? parsed.filename : DEFAULT_FILENAME,
-        backgroundColor: typeof parsed.backgroundColor === 'string' && parsed.backgroundColor ? parsed.backgroundColor : DEFAULT_BG_COLOR,
-      };
-    }
-  } catch { /* fall through */ }
-  return { filename: DEFAULT_FILENAME, backgroundColor: DEFAULT_BG_COLOR };
-}
 
 /** Seed fill for a fresh document. Intentionally a friendly blue rather than
  *  the kit's white `DEFAULT_FILL_COLOR` — a new shape lands visible against
@@ -1045,7 +1014,8 @@ function EditorWithSharedScene({
   // side the swatches have focus on.
   const selectedIds = selection.get();
   const soleSelectedId = selectedIds.length === 1 ? selectedIds[0] : null;
-  const [paperSize, setPaperSize] = useState<PaperSizeKey>('letter');
+  const [initialDoc] = useState(loadDoc);
+  const [paperSize, setPaperSize] = useState<PaperSizeKey>(initialDoc.paperSize);
   const [gridVisible, setGridVisible] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
@@ -1085,10 +1055,8 @@ function EditorWithSharedScene({
     setDragWidth(null);
   }, [setPrefWidth]);
 
-  // Document-level state (filename + background color) persisted alongside
-  // the scene under a separate LS key so a doc-shape migration doesn't
-  // have to touch the scene snapshot.
-  const [initialDoc] = useState(loadDoc);
+  // Document-level state, persisted alongside the scene under a separate LS
+  // key so a doc-shape migration doesn't have to touch the scene snapshot.
   const [filename, setFilename] = useState<string>(initialDoc.filename);
   const [backgroundColor, setBackgroundColor] = useState<string>(initialDoc.backgroundColor);
   const [docSelected, setDocSelected] = useState<boolean>(false);
@@ -1098,15 +1066,11 @@ function EditorWithSharedScene({
   // so the Properties panel reverts to node properties.
   if (selection.current.length > 0 && docSelected) setDocSelected(false);
 
-  // Persist filename + bg color with the same 300ms debounce as the scene.
+  // Persist the document with the same 300ms debounce as the scene.
   useEffect(() => {
-    const id = setTimeout(() => {
-      try {
-        localStorage.setItem(DOC_KEY, JSON.stringify({ filename, backgroundColor }));
-      } catch { /* best-effort */ }
-    }, 300);
+    const id = setTimeout(() => saveDoc({ filename, backgroundColor, paperSize }), 300);
     return () => clearTimeout(id);
-  }, [filename, backgroundColor]);
+  }, [filename, backgroundColor, paperSize]);
 
   // ── Mode id + breadcrumb state ────────────────────────────────────────────
   const modeId = useModeId(modality.machine);
