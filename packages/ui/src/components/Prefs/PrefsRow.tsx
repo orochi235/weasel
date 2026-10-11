@@ -16,7 +16,7 @@ import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
 import { ObjectLeaf } from './ObjectLeaf';
 import { UnionPicker } from './UnionPicker';
-import { PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
+import { controlIsGroup, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyPanel';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
@@ -164,7 +164,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
       className={stacked ? `${s.row} ${s.rowStacked}` : s.row}
-      group={drawsSeveral(pref)}
+      group={rowIsGroup(renderCtx, ctx.renderers)}
       // The owner passes an inherited leaf's value already resolved, so the
       // control keeps drawing it; editing it pins, through `onChange`.
       auto={inherited}
@@ -209,7 +209,11 @@ function renderBuiltin(
     });
   }
   const object = (of: PrefRenderContext): ReactNode => (
-    <ObjectLeaf ctx={of} renderField={(field, held, on) => renderPrefControl(field, renderers, held, on)} />
+    <ObjectLeaf
+      ctx={of}
+      renderField={(field, held, on) => renderPrefControl(field, renderers, held, on)}
+      isGroup={(field, held) => rowIsGroup(field, renderers, held)}
+    />
   );
   if (pref.kind === 'object') return object(ctx);
   if (pref.kind === 'list')
@@ -245,6 +249,18 @@ function renderBuiltin(
     return <PropertyControl {...field} name={pref.name} steppers={field.accepts === undefined} />;
   }
   return <PropertyControl {...field} name={pref.name} />;
+}
+
+/** Whether a leaf's row is a group and not a `<label>`: its control is several, or one a label may not wrap. */
+function rowIsGroup(
+  ctx: PrefRenderContext,
+  renderers: Record<string, PrefRenderer> | undefined,
+  siblings?: Record<string, unknown>,
+): boolean {
+  if (drawsSeveral(ctx.pref)) return true;
+  if (renderers?.[ctx.pref.kind]) return false;
+  const field = leafField(ctx, siblings);
+  return field !== null && controlIsGroup(field);
 }
 
 /**

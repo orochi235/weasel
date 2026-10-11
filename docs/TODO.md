@@ -1799,18 +1799,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   values the way `SelectionPanel`'s `each` and `valueAt` do. A mixed list or map needs a drawn state
   as well; `SelectionPanel` draws the word `Mixed` in place of the editor.
 
-- **(P2) `PrefsForm`: a row decides between a `<label>` and a group by leaf kind alone, apart from
-  `PropertyField`'s own rule.** `drawsSeveral` in `packages/ui/src/components/Prefs/compound.ts`
-  looks only at `kind`, while `rowShape` in
-  `packages/ui/src/components/Properties/PropertyField.tsx` also reads `control`. So an enum leaf
-  with `control: 'radio'` is a `<label>` around every radio: clicking the row's name writes the
-  first option (`onChange('style', 'a')`, seen in jsdom), and each radio's accessible name carries
-  the row's label. `control: 'toggle'` and `'menu'` on an enum, `'switch'` and `'toggle'` on a
-  boolean, and a paint leaf are grouped by `rowShape` and not by `drawsSeveral`. Export one decision
-  from `PropertyField` (it needs the control's props, which `prefFieldProps` already builds) and
-  have `PrefsRow` and `ObjectLeaf` call it, keeping `compound.ts` for the kinds that are not one
-  control.
-
 - **(P3) `PrefsForm` rail layout: a page that opens without a rail click keeps the last page's row
   state.** `RailLayout` renders `PrefsPane` unkeyed and `paneChildren` keys rows by child key, not
   path, so a row with the same key on two pages (`general.name`, `export.name`) keeps its component

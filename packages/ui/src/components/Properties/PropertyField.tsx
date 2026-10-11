@@ -363,6 +363,12 @@ export function PropertyControl<T extends string = string>(typed: PropertyContro
   return <ControlBody {...props} />;
 }
 
+/** Whether a field's control is several controls, or one a `<label>` may not wrap: its row is then a group
+ *  (`PropertyRow`'s `group`). The one decision, for a surface that draws its own row around a {@link PropertyControl}. */
+export function controlIsGroup(control: PropertyControlProps<string>): boolean {
+  return rowShape(control).group;
+}
+
 /** How a row holds a field's control. */
 function rowShape(p: PropertyControlProps<string>): { variant: PropertyRowVariant; group: boolean } {
   switch (p.kind) {

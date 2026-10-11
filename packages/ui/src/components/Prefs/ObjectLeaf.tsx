@@ -3,7 +3,7 @@ import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@
 import { BarLayout } from '../Bar/BarLayout';
 import type { LeafSurface } from '../Bar/renderBarLeaf';
 import { PropertyRow } from '../Properties/PropertyPanel';
-import { drawsRows, drawsSeveral } from './compound';
+import { drawsRows } from './compound';
 import { GroupTabs, type GroupTab } from './GroupTabs';
 import type { PrefRenderContext } from './PrefsRow';
 import s from './Prefs.module.css';
@@ -13,10 +13,13 @@ import s from './Prefs.module.css';
 export function ObjectLeaf({
   ctx,
   renderField,
+  isGroup,
 }: {
   ctx: PrefRenderContext;
   /** Draws one field, for a row or for a bar. `siblings` is the object it is a field of. */
   renderField: (ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined, surface?: LeafSurface) => ReactNode;
+  /** Whether a field's row is a group and not a `<label>`. */
+  isGroup: (ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined) => boolean;
 }) {
   const pref = ctx.pref as PrefObject;
   const { value, setValue } = ctx;
@@ -94,7 +97,7 @@ export function ObjectLeaf({
           label={child.name}
           description={child.description}
           layout={stacked ? 'block' : 'inline'}
-          group={drawsSeveral(child)}
+          group={isGroup(fieldCtx(key, child), held)}
           className={stacked ? undefined : s.objectRow}
         >
           <span className={s.rowControl}>
