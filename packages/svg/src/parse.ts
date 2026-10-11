@@ -293,16 +293,17 @@ function clipFor(
   clips: ClipTable,
   onWarn: (m: string) => void,
 ): Path | undefined {
-  const attr = el.getAttribute('clip-path');
-  if (!attr || attr === 'none') return undefined;
-  const ref = /^url\(\s*#([^)\s]+)\s*\)$/.exec(attr.trim());
+  const raw = ownProp(el, 'clip-path');
+  if (raw == null) return undefined;
+  const ref = readProperty('clip-path', raw);
+  if (ref === 'none') return undefined;
   if (!ref) {
-    onWarn(`clip-path="${attr}" is not a url(#id) reference; the clip is dropped`);
+    onWarn(`clip-path="${raw}" is not a url(#id) reference; the clip is dropped`);
     return undefined;
   }
-  const path = clips.get(ref[1]);
+  const path = clips.get(ref.id);
   if (!path) {
-    onWarn(`clip-path references #${ref[1]}, which no <clipPath> in the document defines`);
+    onWarn(`clip-path references #${ref.id}, which no <clipPath> in the document defines`);
     return undefined;
   }
   return transformPath(path, ctm);
@@ -356,6 +357,10 @@ function parseElement(
       if (meta) image.meta = meta;
       return image;
     }
+  }
+  const clipRaw = tag === 'g' ? null : ownProp(el, 'clip-path');
+  if (clipRaw != null && readProperty('clip-path', clipRaw) !== 'none') {
+    onWarn(`clip-path on <${tag}> is not modeled; only a <g> clips, so it is drawn unclipped`);
   }
   if (tag === 'g') {
     const local = parseTransform(el.getAttribute('transform'), onWarn);

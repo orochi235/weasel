@@ -203,6 +203,14 @@ function readBaselineShift(
   return n === 0 ? {} : { baselineShift: n };
 }
 
+/** `none`, or the id a `url(#id)` names. Any other clip (a basic shape, a
+ *  reference into another file) is not one this parser can resolve. */
+function readClipRef(v: string): { id: string } | 'none' | undefined {
+  if (v === 'none') return 'none';
+  const ref = /^url\(\s*["']?#([^)\s"']+)["']?\s*\)$/.exec(v);
+  return ref ? { id: ref[1] } : undefined;
+}
+
 const inherited = <T>(read: PropertyDef<T>['read']): PropertyDef<T> & { inherits: true } => ({ inherits: true, read });
 const own = <T>(read: PropertyDef<T>['read']): PropertyDef<T> & { inherits: false } => ({ inherits: false, read });
 
@@ -236,6 +244,7 @@ export const PROPERTIES = {
   'stop-opacity': own(readRatio),
   'baseline-shift': own(readBaselineShift),
   'vector-effect': own(keyword('none', 'non-scaling-stroke')),
+  'clip-path': own(readClipRef),
   'display': own(keyword('none', 'inline')),
   'visibility': inherited(keyword('visible', 'hidden', 'collapse')),
 } as const satisfies Record<string, PropertyDef<unknown>>;
