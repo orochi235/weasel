@@ -1,9 +1,9 @@
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ThemeDefinition } from '@weasel-js/theme';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { serializeDefinition } from '../packages/theme/src/store';
 import { createThemeStore, type ThemeStore } from './theme-store';
 
@@ -29,6 +29,16 @@ afterEach(() => rmSync(root, { recursive: true, force: true }));
 describe('theme store', () => {
   it('lists every known definition, and which of them emit', () => {
     expect(store.list().map((t) => [t.name, t.emits])).toEqual([['weasel', true], ['interstellar', false]]);
+  });
+
+  it('keeps serving and saving the other themes beside a file that is not JSON', () => {
+    writeFileSync(at('themes/broken.json'), '{ "name": "broken", ');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(store.list().map((t) => t.name)).toEqual(['weasel', 'interstellar']);
+    const weasel = store.read('weasel')!;
+    expect(store.write('weasel', { ...weasel.definition, description: 'edited' }, weasel.hash)).toMatchObject({ status: 'saved', regenerated: true });
+    expect(warn.mock.calls.join('\n')).toContain(at('themes/broken.json'));
+    warn.mockRestore();
   });
 
   it('writes the definition and regenerates the token files', () => {

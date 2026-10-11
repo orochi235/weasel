@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 // Relative on purpose: vite loads its config in Node, where the aliases don't apply and the package's exports name a dist that may predate this code.
 import { enumerateSelections } from '../packages/theme/src/axes.ts';
@@ -15,6 +15,8 @@ export interface ThemeStoreOptions {
   /** Known definitions outside `themesDir`: saved, never emitted. */
   readonly extraFiles: readonly string[];
   readonly generatedDir: string;
+  /** Writes one file whole. Tests pass one that fails part-way. */
+  readonly writeFile?: (path: string, text: string) => void;
 }
 
 /** This repo's definitions: the emitting themes, and labkit's interstellar. */
@@ -37,7 +39,20 @@ interface Entry {
 
 const hashOf = (text: string) => createHash('sha256').update(text).digest('hex');
 
+/** Replace each file with its new text, or none of them: every text is written beside its file first, then moved over it. */
+function replaceFiles(files: readonly (readonly [path: string, text: string])[], writeFile: (path: string, text: string) => void): void {
+  const staged = files.map(([path, text]) => ({ path, text, temp: `${path}.${process.pid}.tmp` }));
+  try {
+    for (const { temp, text } of staged) writeFile(temp, text);
+    for (const { temp, path } of staged) renameSync(temp, path);
+  } finally {
+    for (const { temp } of staged) rmSync(temp, { force: true });
+  }
+}
+
 export function createThemeStore(options: ThemeStoreOptions): ThemeStore {
+  const writeFile = options.writeFile ?? ((path: string, text: string) => writeFileSync(path, text));
+
   const entries = (): Entry[] => {
     const files = [
       ...readdirSync(options.themesDir)
@@ -46,10 +61,16 @@ export function createThemeStore(options: ThemeStoreOptions): ThemeStore {
         .map((f) => ({ file: resolve(options.themesDir, f), emits: true })),
       ...options.extraFiles.filter((f) => existsSync(f)).map((file) => ({ file, emits: false })),
     ];
-    return files.map(({ file, emits }) => {
+    return files.flatMap(({ file, emits }): Entry[] => {
       const text = readFileSync(file, 'utf8');
-      const definition = JSON.parse(text) as ThemeDefinition;
-      return { file, theme: { name: definition.name, hash: hashOf(text), emits, definition } };
+      try {
+        const definition = JSON.parse(text) as ThemeDefinition;
+        return [{ file, theme: { name: definition.name, hash: hashOf(text), emits, definition } }];
+      } catch (e) {
+        // Every route reads every file, so one that does not parse is left out rather than failing them all.
+        console.warn(`theme store: skipping ${file}, which is not JSON: ${(e as Error).message}`);
+        return [];
+      }
     });
   };
 
@@ -58,10 +79,10 @@ export function createThemeStore(options: ThemeStoreOptions): ThemeStore {
       const result = generateTokens(emitting);
       if (!result.ok) return { regenerated: false, problems: [...result.problems] };
       mkdirSync(options.generatedDir, { recursive: true });
-      for (const [file, text] of Object.entries(result.files)) {
-        const path = resolve(options.generatedDir, file);
-        if (!existsSync(path) || readFileSync(path, 'utf8') !== text) writeFileSync(path, text);
-      }
+      const changed = Object.entries(result.files)
+        .map(([file, text]) => [resolve(options.generatedDir, file), text] as const)
+        .filter(([path, text]) => !existsSync(path) || readFileSync(path, 'utf8') !== text);
+      replaceFiles(changed, writeFile);
       return { regenerated: true, problems: [] };
     } catch (e) {
       return { regenerated: false, problems: [(e as Error).message] };
@@ -111,7 +132,7 @@ export function createThemeStore(options: ThemeStoreOptions): ThemeStore {
       }
 
       const text = serializeDefinition(definition);
-      writeFileSync(file, text);
+      replaceFiles([[file, text]], writeFile);
       const generated = emits ? regenerate(emitting) : { regenerated: false, problems: [] };
       return { status: 'saved', hash: hashOf(text), issues, ...generated };
     },
