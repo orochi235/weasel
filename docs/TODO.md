@@ -317,12 +317,12 @@ Priority tags:
   rejects. Left and right Shift also share one `key-held-Shift` gesture id, so releasing either ends
   the hold. Let a key spec name a `code` and match it before `key`.
 
-- **(P3) Route-conflict check: two kinds of real tie are never compared.** In
-  `packages/routing/src/tools/routing/reflection/conflicts.ts`, `ArrowLeft` with `shift: 'optional'`
-  and plain `ArrowLeft` land in different buckets (`canonicalModifiers` keeps `optional` distinct)
-  though both match an unshifted press at equal specificity; bucket by the set of modifier states a
-  spec accepts. And `multiTouch` has no route gesture, so `entryFor` in `reflection/registry.ts`
-  returns `null` and two `fingers: 2` bindings are never compared; give it a row.
+- **(P3) Route-conflict check: `mod` is never compared with the key it resolves to.** In
+  `packages/routing/src/tools/routing/reflection/conflicts.ts`, `mods: { mod: true }` and
+  `mods: { ctrl: true }` land in different buckets though both match Ctrl off a Mac at equal
+  specificity. Bucketing per platform finds it, and then reports `viewport.zoom` against itself:
+  its `mod` wheel binding and its `ctrl` one (the trackpad pinch) are a deliberate duplicate with
+  the same params. Needs a rule for when a same-action tie is not a conflict.
 
 - **(P3) The two dispatcher files are about 1,700 lines each and mix owners.**
   `packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx` holds keyboard, wheel,
@@ -1551,16 +1551,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   inside a copied section, has no other key to take (`copyNodes`), so the copy is refused outright
   or becomes an alias.
 
-- **(P2) `PrefSchemaEditor`: Add alias and an alias drag make an alias of a field inside an `object`
-  pref.** Extends the `alias` entry above, which covers the `Of` picker offering the same fields.
-  `canLand` in `StructurePane.tsx` allows any leaf that holds a value, and `aliasOf` names it by
-  `valuePathOf`, so under a group root the alias gets `obj.field`, which no reader resolves, and
-  under a section root it gets the bare field key (`cap` for `data.stroke.cap`), which is the wrong
-  path as well. Ruled 2026-10-11: a field inside an `object` pref cannot be aliased. That leaves
-  refusing the alias for a leaf whose parent is an `object` leaf, in the button, the tree drag, and
-  the preview drag (`usePreviewDrag`'s `aliasable`). `valuePathOf` is also wrong for anything under
-  a section inside an `object` leaf of a group root, where it counts the section's key as a step.
-
 - **(P2) `PrefsForm`: a mixed object, list, map, or union leaf draws as unset, and one edit
   overwrites every node's whole value.** `mixed={new Set(['appearance.stroke'])}` on an object leaf
   draws each field at its default, not mixed, because `ObjectLeaf`'s `fieldCtx`
@@ -2471,12 +2461,11 @@ one dead `const` and four stale disable directives.
   labkit's and core's `position: fixed` ghosts are offset inside a transformed ancestor (read from
   the CSS and the clone code, not rendered). labkit's should render ui's.
 
-- **(P3) Manifest and check-script loose ends.** `@weasel-js/labkit` lists `@weasel-js/kernel3d` in
-  `dependencies` and only `packages/labkit/examples/3d-lab/`, which is not published, imports it.
-  `@weasel-js/d3` declares a `react` peer and no source file imports React.
-  `check:frame-loops` reads only `requestAnimationFrame`: a `setInterval` loop passes, and its
-  allowlist is per file, so a new loop in an allowlisted file passes too. `check:spacing` and `check:controls` walk `packages/ui/src` `*.css`
-  only, not labkit's `.less` or the apps.
+- **(P3) `check:spacing` reads only `packages/ui/src`.** Walked over every package and app
+  stylesheet on 2026-10-11 it reports 300 spacing literals that have a rung: 220 in `apps/site`, 51
+  in `apps/theme-editor`, 18 in labkit's `.less`, 5 in core, 3 each in forge and `apps/draw`.
+  Widening the walk means moving those to tokens first, and each move wants a look at the page.
+  `check:controls` already walks all of them.
 
 - **(P3) Four more files past a thousand lines, each with a split along its owners.**
   `canvas/SceneCanvas.tsx` (2,973 lines): the props type, `SceneCanvasInner`, and five sibling

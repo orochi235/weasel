@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { frameLoopLines } from './check-frame-loops.mjs';
+import { frameLoopLines, offendingLines } from './check-frame-loops.mjs';
 
 describe('frameLoopLines', () => {
   it('catches a call on one line', () => {
@@ -30,5 +30,24 @@ describe('frameLoopLines', () => {
 
   it('reports the line of a use that follows a block comment', () => {
     expect(frameLoopLines('/*\n * a note\n */\nrequestAnimationFrame(tick);\n')).toEqual([4]);
+  });
+
+  it('catches a setInterval, which is a loop the gate never sees', () => {
+    expect(frameLoopLines('const id = setInterval(tick, 16);\nwindow.setInterval(tick, 16);\n')).toEqual([1, 2]);
+    expect(frameLoopLines('clearInterval(id);\n// setInterval would leak\n')).toEqual([]);
+  });
+});
+
+describe('offendingLines', () => {
+  it('reports every use in a file that is not allowlisted', () => {
+    expect(offendingLines([3, 9])).toEqual([3, 9]);
+  });
+
+  it('lets an allowlisted file keep the uses its entry covers', () => {
+    expect(offendingLines([3], 1)).toEqual([]);
+  });
+
+  it('reports an allowlisted file that gained a use', () => {
+    expect(offendingLines([3, 9], 1)).toEqual([3, 9]);
   });
 });

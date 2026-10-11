@@ -119,7 +119,8 @@ Do **not** write a tool that runs its own gesture (`useDragRect`) and commits wi
 ## Frame loops
 
 Every frame loop runs behind `useVisibleRaf` (`@weasel-js/core`), never a bare
-`requestAnimationFrame` — `npm run check:frame-loops` fails the build on one. A
+`requestAnimationFrame` or `setInterval` — `npm run check:frame-loops` fails the
+build on one, and on a second use in a file its allowlist names. A
 loop that measures elapsed time also needs `onResume` to rebase its clock, or an
 hour in a background tab arrives as one hour-long frame and it reports that as
 real. Full rule: `docs/proposals/2026-08-26-loops-stop-when-unseen.md`.

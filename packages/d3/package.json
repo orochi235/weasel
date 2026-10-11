@@ -16,7 +16,6 @@
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "react": ">=18",
     "@weasel-js/core": "1.9.3"
   },
   "peerDependenciesMeta": {

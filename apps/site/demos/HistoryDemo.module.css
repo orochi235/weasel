@@ -18,7 +18,7 @@
 
 .chip {
   width: 56px;
-  height: 24px;
+  height: 24px; /* the demo's subject, a colored chip: not-a-control */
   border: 2px solid transparent;
   border-radius: 12px;
   background: hsl(var(--hue) 55% 55%);

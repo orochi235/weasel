@@ -122,7 +122,6 @@
   },
   "dependencies": {
     "@weasel-js/geom": "1.9.3",
-    "@weasel-js/kernel3d": "1.9.3",
     "@weasel-js/loupe": "1.9.3",
     "@weasel-js/prefs": "1.9.3",
     "@weasel-js/quantity": "1.9.3",
@@ -141,6 +140,7 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@weasel-js/guides": "1.9.3",
     "@weasel-js/history": "1.9.3",
+    "@weasel-js/kernel3d": "1.9.3",
     "@weasel-js/modes": "1.9.3",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",

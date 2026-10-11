@@ -2,19 +2,21 @@
 /**
  * Every frame loop in the kit runs behind `useVisibleRaf`, so that "a weasel
  * loop does no work nobody can see" holds by construction rather than by each
- * loop's author remembering. A bare `requestAnimationFrame` in shipped source
- * is how that stops being true, so this fails the build on one.
+ * loop's author remembering. A bare `requestAnimationFrame` or `setInterval`
+ * in shipped source is how that stops being true, so this fails the build on
+ * one.
  *
  * Tests, stories and app code are out of scope: they are not the surface the
  * rule is about. To add a site to the allowlist, say in the entry why the loop
- * cannot go through the gate.
+ * cannot go through the gate. An entry covers one use: a second in the same
+ * file fails until the entry says how many it covers and why.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-/** Paths that may name `requestAnimationFrame`, and why. */
+/** Paths that may name `requestAnimationFrame` or `setInterval`, and why. `[why, uses]` covers more than one use. */
 const ALLOWED = new Map([
   ['packages/core/src/scheduling/useVisibleRaf.ts', 'the gate itself'],
   ['packages/forge/src/test/runStory.tsx', 'not a loop: a story test waits for one painted frame before checking faults'],
@@ -48,16 +50,22 @@ const withoutComments = (source) =>
     .replace(/(?<!:)\/\/.*$/gm, '');
 
 /**
- * The 1-based lines of `source` that name `requestAnimationFrame` outside a comment. Any use counts, not only a
- * call: an alias or a `.bind` is a loop one step removed, and a call can put its `(` on the next line.
+ * The 1-based lines of `source` that name `requestAnimationFrame` or `setInterval` outside a comment. Any use
+ * counts, not only a call: an alias or a `.bind` is a loop one step removed, and a call can put its `(` on the
+ * next line.
  */
 export function frameLoopLines(source) {
   const lines = new Set();
   const clean = withoutComments(source);
-  for (const match of clean.matchAll(/\brequestAnimationFrame\b/g)) {
+  for (const match of clean.matchAll(/\b(?:requestAnimationFrame|setInterval)\b/g)) {
     lines.add(clean.slice(0, match.index).split('\n').length);
   }
   return [...lines];
+}
+
+/** `lines` when a file has more uses than its allowlist entry covers, else none. */
+export function offendingLines(lines, allowedUses = 0) {
+  return lines.length > allowedUses ? lines : [];
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -74,17 +82,20 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     }
     for (const file of walk(src)) {
       const rel = relative(ROOT, file);
-      if (ALLOWED.has(rel)) continue;
-      for (const line of frameLoopLines(readFileSync(file, 'utf8'))) offenders.push(`${rel}:${line}`);
+      const entry = ALLOWED.get(rel);
+      const allowedUses = entry === undefined ? 0 : Array.isArray(entry) ? entry[1] : 1;
+      const lines = offendingLines(frameLoopLines(readFileSync(file, 'utf8')), allowedUses);
+      for (const line of lines) offenders.push(`${rel}:${line}`);
     }
   }
 
   if (offenders.length > 0) {
     console.error(
-      `check:frame-loops — ${offenders.length} bare requestAnimationFrame use(s) in kit source:\n` +
+      `check:frame-loops — ${offenders.length} bare requestAnimationFrame or setInterval use(s) in kit source:\n` +
         offenders.map((o) => `  ${o}`).join('\n') +
         "\n\nRoute the loop through `useVisibleRaf` from @weasel-js/core. A loop that\n" +
         'measures elapsed time also needs `onResume` to rebase its clock.\n' +
+        'A file listed here is on the allowlist for fewer uses than it has.\n' +
         'See docs/proposals/2026-08-26-loops-stop-when-unseen.md.',
     );
     process.exit(1);

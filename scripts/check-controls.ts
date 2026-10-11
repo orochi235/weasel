@@ -19,8 +19,9 @@
  * source, with no build first.
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { walk } from './lib/cssBlocks.ts';
 
 /** The control ranks and their value in the default density, from the generated tokens. */
 export function ranks(css: string): Map<number, string> {
@@ -89,21 +90,14 @@ export function offenders(files: readonly { path: string; source: string }[], ra
   return out;
 }
 
-function walk(dir: string, into: string[] = []): string[] {
-  for (const entry of readdirSync(dir)) {
-    const p = join(dir, entry);
-    if (statSync(p).isDirectory()) walk(p, into);
-    // Foundations is the token showcase: its literals are the subject, not a lapse.
-    else if (p.endsWith('.css') && !p.includes('.stories.') && !p.includes('/Foundations/')) into.push(p);
-  }
-  return into;
-}
+// Foundations is the token showcase: its literals are the subject, not a lapse.
+const isStylesheet = (p: string) => /\.(css|less)$/.test(p) && !p.includes('.stories.') && !p.includes('/Foundations/');
 
 if (process.argv[1]?.endsWith('check-controls.ts')) {
   const root = join(import.meta.dirname, '..');
   const rankOf = ranks(readFileSync(join(root, 'packages/theme/src/generated/tokens.css'), 'utf8'));
   if (rankOf.size === 0) throw new Error('no control ranks in the generated tokens; has the theme been built?');
-  const files = walk(join(root, 'packages/ui/src')).map((path) => ({
+  const files = [...walk(join(root, 'packages')), ...walk(join(root, 'apps'))].filter(isStylesheet).map((path) => ({
     path: relative(root, path),
     source: readFileSync(path, 'utf8'),
   }));
