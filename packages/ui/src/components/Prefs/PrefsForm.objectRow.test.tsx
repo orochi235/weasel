@@ -15,7 +15,7 @@ const SCHEMA: PrefGroup = {
       default: { on: false, width: 1 },
       children: {
         on: { kind: 'boolean', name: 'Visible', description: '', default: false },
-        width: { kind: 'number', name: 'Width', description: '', default: 1 },
+        width: { kind: 'number', name: 'Width', description: 'In pixels.', default: 1 },
       },
     },
   },
@@ -26,4 +26,11 @@ it('does not hand a click on an object leaf\'s name to its first field', () => {
   render(<PrefsForm layout="list" schema={SCHEMA} values={{}} onChange={onChange} />);
   fireEvent.click(screen.getByText('Stroke'));
   expect(onChange).not.toHaveBeenCalled();
+});
+
+it('offers an object leaf\'s field its description, as a row of its own has', () => {
+  render(<PrefsForm layout="list" schema={SCHEMA} values={{}} onChange={() => {}} />);
+  const cue = (name: string): Element | null => screen.getByText(name).closest('[data-property-row]')!.querySelector('[role="img"]');
+  expect(cue('Width')).toHaveTextContent('ⓘ');
+  expect(cue('Visible')).toBeNull();
 });

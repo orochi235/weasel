@@ -90,6 +90,7 @@ export function ObjectLeaf({
         <PropertyRow
           key={key}
           label={child.name}
+          description={child.description}
           layout={stacked ? 'block' : 'inline'}
           group={drawsSeveral(child)}
           className={stacked ? undefined : s.objectRow}
