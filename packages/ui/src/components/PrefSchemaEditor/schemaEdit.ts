@@ -247,7 +247,8 @@ export function renameKey<R extends SchemaRoot>(root: R, path: string, next: str
   return renamed === root ? root : rebaseValuePaths(renamed, [valueMove(root, path, joinPath(parentPath(path), next))]);
 }
 
-function rekeyed<R extends SchemaRoot>(root: R, path: string, next: string): R {
+/** `root` with the node at `path` under the key `next`, where it sat; no value path held anywhere follows it. */
+export function rekeyed<R extends SchemaRoot>(root: R, path: string, next: string): R {
   const key = keyOf(path);
   if (next === key) return root;
   const host = nodeAt(root, parentPath(path));
@@ -291,6 +292,15 @@ export function setAttribute<R extends SchemaRoot>(root: R, path: string | null,
 export function moveNodes<R extends SchemaRoot>(
   root: R, paths: readonly string[], target: SchemaTarget,
 ): { root: R; from: string[]; paths: string[] } {
+  const moved = shiftNodes(root, paths, target);
+  if (moved.root === root) return moved;
+  return { ...moved, root: rebaseValuePaths(moved.root, moved.from.map((f, i) => valueMove(root, f, moved.paths[i]!))) };
+}
+
+/** {@link moveNodes} as far as the tree goes: no value path held anywhere follows a moved node. */
+export function shiftNodes<R extends SchemaRoot>(
+  root: R, paths: readonly string[], target: SchemaTarget,
+): { root: R; from: string[]; paths: string[] } {
   const tops = outermost(paths);
   const dest = target.parentPath;
   if (dest !== null && tops.some((p) => dest === p || isUnder(dest, p))) {
@@ -324,7 +334,7 @@ export function moveNodes<R extends SchemaRoot>(
   const from = moving.map((m) => m.path);
   const settled = Object.keys(childrenOf(nodeAt(next, dest) ?? next) ?? {});
   if (out.every((p, i) => p === from[i]) && settled.every((k, i) => k === destKeys[i])) return { root, from, paths: from };
-  return { root: rebaseValuePaths(next, from.map((f, i) => valueMove(root, f, out[i]!))), from, paths: out };
+  return { root: next, from, paths: out };
 }
 
 /**
@@ -345,7 +355,7 @@ export function valuePathOf(root: SchemaRoot, path: string): string {
 export type ValueMove = readonly [from: string, to: string];
 
 /** The value paths a node going from tree path `from` to `to` takes along; `null` for a section, whose key is no part of one. */
-function valueMove(root: SchemaRoot, from: string, to: string): ValueMove | null {
+export function valueMove(root: SchemaRoot, from: string, to: string): ValueMove | null {
   const node = nodeAt(root, from);
   return node && isPrefSection(node) ? null : [valuePathOf(root, from), valuePathOf(root, to)];
 }
