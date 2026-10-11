@@ -2086,12 +2086,6 @@ one dead `const` and four stale disable directives.
   listener. One `createEmitter()` with stated semantics in a leaf package every tier can reach
   (`@weasel-js/registry`).
 
-- **(P3) `@weasel-js/loupe` peers on all of core for one function and one type.** Its model is
-  framework-free and `sideEffects: false`, and it imports `normalizeZoom` and the `View` type from
-  `@weasel-js/core`, which makes core, and React through it, a requirement of anything using the
-  model. The view math has no React in it and belongs in geom. Related: the kit's 2D point type
-  `Point2` is declared in `@weasel-js/routing`, and core's `Vec2` aliases it.
-
 - **(P3) Three drag-ghost implementations.** core's `pointerDrag` `defaultGhost` clones the source,
   ui's `DragGhost` portals to the themed host, and labkit's `dragdrop/DragGhost` is a third. They
   sit at three stacking levels, and only ui's corrects for a transformed containing block, so

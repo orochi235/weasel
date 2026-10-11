@@ -1,4 +1,4 @@
-import { normalizeZoom } from '@weasel-js/core';
+import { normalizeZoom } from '@weasel-js/geom';
 import { type LoupePoint, type LoupeRect, loupeSourcePoint } from './geometry';
 
 /** How a loupe magnifies. `'vector'` re-renders the source through a zoomed-in

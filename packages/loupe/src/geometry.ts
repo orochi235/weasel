@@ -1,4 +1,4 @@
-import type { View } from '@weasel-js/core';
+import type { View } from '@weasel-js/geom';
 
 /** A point on the magnified surface, in its own CSS pixels. */
 export interface LoupePoint {

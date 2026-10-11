@@ -1,3 +1,5 @@
+import { normalizeZoom as clampToFloor, ZOOM_FLOOR } from '@weasel-js/geom';
+
 /**
  * The kit's system-wide zoom clamp, in `View.scale` units (pixels per world
  * unit): `1` is 100%, `0.1` is 10%, `8` is 800%.
@@ -11,16 +13,7 @@ export const DEFAULT_MIN_ZOOM = 0.1;
 /** Upper end of the kit's default zoom clamp — 800%. See {@link DEFAULT_MIN_ZOOM}. */
 export const DEFAULT_MAX_ZOOM = 8;
 
-/**
- * The smallest zoom magnitude a view can hold, in `View.scale` units.
- *
- * A view's zoom is always finite and at least this far from 0. Nothing can be
- * drawn or picked through a zoom of 0, and every screen↔world conversion
- * divides by it, so it is ruled out where views are made rather than handled
- * by each conversion. This is validity, not an interaction limit: that is
- * {@link DEFAULT_MIN_ZOOM}, which a consumer may set far below.
- */
-export const ZOOM_FLOOR = 1e-9;
+export { ZOOM_FLOOR };
 
 /**
  * The one rule for a zoom magnitude: a finite number no smaller than
@@ -29,9 +22,9 @@ export const ZOOM_FLOOR = 1e-9;
  * positive zoom that merely undershoots the floor clamps silently.
  */
 export function normalizeZoom(zoom: number): number {
-  if (zoom >= ZOOM_FLOOR && zoom < Infinity) return zoom;
-  if (!(zoom > 0) || zoom === Infinity) warnInvalidView(`a zoom of ${zoom}`);
-  return ZOOM_FLOOR;
+  const held = clampToFloor(zoom);
+  if (held !== zoom && (!(zoom > 0) || zoom === Infinity)) warnInvalidView(`a zoom of ${zoom}`);
+  return held;
 }
 
 let warned = false;

@@ -17,25 +17,14 @@
  * spelled here.
  */
 
+import type { View } from '@weasel-js/geom';
 import type { SelectionExtendKey, SelectionMode } from '@weasel-js/select';
 export type { SelectionExtendKey, SelectionMode };
 
 /** An opaque scene-node identifier. Branded so a bare string cannot stand in. */
 export type NodeId = string & { readonly __brand: 'NodeId' };
 
-/**
- * Viewport state. `(view.x, view.y)` is the world point currently rendered at
- * the canvas top-left; `view.scale.x` / `view.scale.y` is pixels per world
- * unit on each axis.
- *
- * The one outright 2D dead end in the routing surface: a `View` names no
- * orientation, so a kernel with a camera cannot express its viewport as one.
- */
-export interface View {
-  x: number;
-  y: number;
-  scale: { x: number; y: number };
-}
+export type { View };
 
 /**
  * Axis-aligned rectangle in world space. The optional `rotation` (radians,

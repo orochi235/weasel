@@ -28,7 +28,10 @@
   "engines": {
     "node": ">=22"
   },
-  "peerDependencies": {
+  "dependencies": {
+    "@weasel-js/geom": "1.9.3"
+  },
+  "devDependencies": {
     "@weasel-js/core": "1.9.3"
   },
   "files": [
