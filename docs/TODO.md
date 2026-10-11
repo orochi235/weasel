@@ -284,14 +284,6 @@ Priority tags:
   onGestureEnd(false) only"), while `gestureLifecycle.ts` enforces the opposite contract for
   actions: `end` only after `start`, at most once each. Pick one contract for both.
 
-- **(P3) Two scene-backed commit adapters.**
-  `packages/core/src/interactions/actions/move/gestureAdapter.ts` and `defaultCommitAdapter.ts`
-  implement the same methods and have drifted: `setChildOrder` batches in one and not the other, and
-  `getSelection`, `setSelection`, `setLayer`, `setLayout`, and `getRemovalClosure` exist in one
-  only. `rotateAction` hands behaviors the first and commits their ops through the second;
-  `moveAction` uses the first for both, so a behavior's delete op captures its removal closure under
-  rotate and not under move.
-
 - **(P3) Shift-extend of a hit list into the selection is written three times.**
   `defaults/areaSelect.ts`, `defaults/lassoSelect.ts`, and `selectFromLasso.ts` each merge hits into
   the current selection.
@@ -792,7 +784,8 @@ Core five + Crop shipped. Remaining:
   and stroke painters, text, the scratch-paint pass, and image and sprite staging. Two state leaks
   fixed this month (the stencil test left on for effect passes, a texture unit clobbered by a
   uniform upload) were contracts between sections of this one file. Split along those owners,
-  leaving `dispatch` in `draw.ts`.
+  leaving `dispatch` in `draw.ts`; the fill and stroke sections move together, since the
+  bind-half/draw-half rule in CLAUDE.md spans them.
 
 - **(P3) Renderer: `PathDrawCommand` accepts `FillStyle` shapes the renderer cannot draw.** A
   hand-built command with `fill: { fill: 'pattern', pattern: { tile: 'hatch', color: '#000' } }`
@@ -1171,7 +1164,10 @@ Core five + Crop shipped. Remaining:
   `interactions/actions/move/gestureAdapter.ts` each restate `insertNode`, `setParent`,
   `getChildren`, and `setChildOrder` over a `Scene`, and have drifted: `getPose` is `effectivePose`
   in one and `documentPose` in two, `getNodes` filters hidden layers in one, `setChildOrder` opens a
-  `scene.batch` in two, and only one cascades container poses. The copies exist to avoid an
+  `scene.batch` in two, and only one cascades container poses. `rotateAction` hands behaviors the
+  gesture adapter and commits their ops through the default one, while `moveAction` uses the gesture
+  adapter for both, so a behavior's delete op captures its removal closure under rotate and not
+  under move. The copies exist to avoid an
   `interactions → canvas → interactions` import cycle; moving the mutators into `core/scene`, below
   both, removes the reason.
 
@@ -1692,10 +1688,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   unless the kind's entry declares one. A type made with `prefType` has no such gap, carrying its
   own default.
 
-- **(P3) `PrefSchemaEditor` layout rough edges.** The preview's scratch values are keyed by path,
-  so after a rename or move they fall back to defaults. The always-mounted notice row adds one
-  grid gap above the attributes pane, and the Key/Kind rows are wider than the attribute form
-  under them. Seen on `#/dev/prefs` at 1440×900.
+- **(P3) `PrefSchemaEditor` layout rough edges.** The always-mounted notice row adds one grid gap
+  above the attributes pane, and the Key/Kind rows are wider than the attribute form under them.
+  Seen on `#/dev/prefs` at 1440×900.
 
 - **(P3) `PrefsForm` two across: a spanning leaf's rows line up with neither column.** Seen
   2026-10-11 in headless Chromium, rail layout, `rowsAcross={2}`, pane 443px wide. An object or
@@ -1944,15 +1939,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   undo step is unverified. Home: the same `surface` argument on `prefFieldProps`, returning props
   with the commit policy applied.
 
-- **(P2) `PrefsForm`: a mixed list, map, union, or object is drawn as empty, and editing it
-  overwrites every source.** `PrefsForm mixed={new Set(['phases'])}` with `phases` a list draws an
-  empty list editor, and Add writes a one-entry list over every source; a mixed union shows "Choose
-  option…", and a mixed object shows blank fields with no Mixed placeholder. `prefRenderContext` in
-  `Prefs/PrefsRow.tsx` sets `value: mixed ? undefined : …`, and `Prefs/ListLeaf.tsx`, `UnionPicker`,
-  and `Prefs/ObjectLeaf.tsx` read that as absent. `SelectionPanel/renderLeaf.tsx` has the three
-  answers (per field for an object, the word Mixed for a list or map, `split` for a union). Home:
-  the shared object, list, map, and union drawing, so the form gets the panel's handling.
-
 - **(P3) Collecting a run of `tab` groups, and what each other `as` draws, is written five times.**
   `Prefs/PrefsPane.tsx`, `Prefs/ObjectLeaf.tsx`, `SelectionPanel/SelectionPanel.tsx` (`drawn`),
   `SelectionPanel/renderLeaf.tsx` (`rowsOf`), and labkit's `ControlPanel.tsx` (`rowsFor`).
@@ -2066,7 +2052,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   calls `onChange('appearance.stroke', { width: 3 })`, which an owner writing to every node uses to
   drop each node's other fields. `renderBuiltin` in `PrefsRow.tsx` likewise never passes `mixed` to
   `UnionPicker`, and a mixed list or map reads as `None`, where `Add` writes a one-entry list over
-  all of them. Passing `mixed` down to the fields is the small half. The design call is the write:
+  all of them, and a mixed union shows "Choose option…". Passing `mixed` down to the fields is the
+  small half. The design call is the write:
   `PrefsForm` knows only that a path is mixed, not the values behind it, so a field edit cannot
   build a whole object. The options are to let `mixed` name field paths (`appearance.stroke.width`)
   and have a field edit call `onChange` at the field's own path, or to give the form the per-node
@@ -3192,16 +3179,10 @@ one dead `const` and four stale disable directives.
   allowlisted file passes too. `check:spacing` and `check:controls` walk `packages/ui/src` `*.css`
   only, not labkit's `.less` or the apps.
 
-- **(P3) Split the largest source files along their owners.** `canvas/SceneCanvas.tsx` (2,973
-  lines): the props type, `SceneCanvasInner`, and five sibling mounters and registrars, each of
-  which is a file in the existing `SceneCanvas/` directory. `renderer/draw.ts` (2,689): uniform
-  upload cache, group effects and render targets, clip and stencil, batch staging and ramps,
-  path-fill binding, strokes, text, and images; the fill and stroke sections move together, since
-  the bind-half/draw-half rule in CLAUDE.md spans them. `core/scene/scene.ts` (2,196): serialization
-  comes out without touching the `createScene` closure. `routing`'s `useGestureDispatcher.tsx`
-  (1,726) and `dispatcher.ts` (1,670): per-view dep assembly, stylus and multi-touch geometry,
-  platform detection, and trace recording. `canvas/Canvas.tsx` (1,615): types and the exported layer
-  builders. `apps/draw/src/App.tsx` (1,580) and `dev/RegistryDetail.tsx` (1,482): one file per named
-  component. `canvas/NodeShape.ts` (991): the painter registry, and one file per built-in painter,
-  keeping the load-time registration listed in core's `sideEffects`. `core/src/index.ts` (1,502):
-  per-area barrels re-exported by name.
+- **(P3) Four more files past a thousand lines, each with a split along its owners.**
+  `canvas/SceneCanvas.tsx` (2,973 lines): the props type, `SceneCanvasInner`, and five sibling
+  mounters and registrars, each of which is a file in the existing `SceneCanvas/` directory.
+  `apps/draw/src/dev/RegistryDetail.tsx` (1,482): one file per named component. `canvas/NodeShape.ts`
+  (991): the painter registry, and one file per built-in painter, keeping the registration at load.
+  `core/src/index.ts` (1,502): per-area barrels re-exported by name. `draw.ts`, `scene.ts`,
+  `Canvas.tsx`, the two dispatcher files, and draw's `App.tsx` have their own entries.
