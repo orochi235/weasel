@@ -282,3 +282,23 @@ function dep2(dep: unknown) {
 function depsWith(deps: Record<string, unknown>) {
   return deps as never;
 }
+
+describe('anchor click slop is in screen pixels', () => {
+  const viewAt = (scale: number) => ({ get: () => ({ x: 0, y: 0, scale: { x: scale, y: scale } }) });
+
+  it('zoomed in, a click 5 world units (40 px) from an anchor misses it', () => {
+    const { dep, commits } = depOverPath(triangle());
+    const deps = depsWith({ editAnchors: dep, view: viewAt(8) });
+    immediate(selectAnchorAction).run(deps, { worldX: 15, worldY: 0, additive: false });
+    expect([...dep.selectedAnchors]).toEqual([]);
+    immediate(cutPathAtAnchorAction).run(deps, { worldX: 15, worldY: 0 });
+    expect(commits).toHaveLength(0);
+  });
+
+  it('zoomed out, a click 50 world units (5 px) from an anchor hits it', () => {
+    const { dep } = depOverPath(triangle());
+    const deps = depsWith({ editAnchors: dep, view: viewAt(0.1) });
+    immediate(selectAnchorAction).run(deps, { worldX: 60, worldY: 0, additive: false });
+    expect([...dep.selectedAnchors]).toEqual([1]);
+  });
+});

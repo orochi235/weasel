@@ -43,6 +43,7 @@ import {
   type AnchorSet,
 } from 'features/paths/anchorEdits';
 import { pathToAnchors } from 'features/paths/anchors';
+import { pxExtent } from 'core/viewport/pxExtent';
 import type { PolygonPath } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from './editAnchors';
 import { inPlane, editingLayer } from '../planeInput';
@@ -55,10 +56,19 @@ import { inPlane, editingLayer } from '../planeInput';
 const SMALL_STEP = 1;
 const BIG_STEP = 10;
 
-/** World-unit radius for "this click landed on an anchor". Matches the
+/** Screen-pixel radius for "this click landed on an anchor". Matches the
  *  affordance hit radius closely enough that anything the user can see as
  *  an anchor marker is cuttable. */
-const ANCHOR_CLICK_SLOP = 10;
+const ANCHOR_CLICK_PX = 10;
+
+/** `ANCHOR_CLICK_PX` in world units through the view; with no view, one
+ *  pixel is one unit. */
+function anchorClickSlop(deps: ActionDeps | undefined): number {
+  const scale = deps?.view?.get().scale;
+  if (!scale) return ANCHOR_CLICK_PX;
+  const extent = pxExtent(ANCHOR_CLICK_PX, scale);
+  return Math.max(extent.x, extent.y);
+}
 
 function depOf(deps: ActionDeps | undefined): EditAnchorsDep | null {
   const dep = deps?.editAnchors;
@@ -138,7 +148,7 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
     { spec: { kind: 'click', mods: { shift: true } }, opts: { params: { additive: true } } },
   ],
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors'],
+  requires: ['editAnchors', 'view'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -150,7 +160,7 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
       const worldPath = worldPathOf(dep);
       if (!worldPath) return;
 
-      const hit = nearestAnchorIndex(worldPath, wx, wy, ANCHOR_CLICK_SLOP);
+      const hit = nearestAnchorIndex(worldPath, wx, wy, anchorClickSlop(deps));
       const additive = params?.additive === true;
       if (hit === -1) {
         // Missed every anchor. A bare click clears; a shift-click leaves
@@ -286,7 +296,7 @@ export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
   label: 'Cut path at anchor',
   defaultBinding: { kind: 'click', mods: { alt: true, shift: true } },
   eligible: { capability: 'edits-anchors' },
-  requires: ['editAnchors'],
+  requires: ['editAnchors', 'view'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
@@ -301,7 +311,7 @@ export const cutPathAtAnchorAction: Action & { requires: string[] } = inPlane({
       // Find the anchor under the click. Clicks carry no affordance (only
       // pointerdown does), so this resolves the hit itself — the same
       // approach insertPathAnchorAction takes for segments.
-      const nearest = nearestAnchorIndex(worldPath, wx, wy, ANCHOR_CLICK_SLOP);
+      const nearest = nearestAnchorIndex(worldPath, wx, wy, anchorClickSlop(deps));
       if (nearest === -1) return;
 
       const changed = commitAnchorEdit(dep, 'Cut path', (set) => openSubpathAt(set, nearest));
