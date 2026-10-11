@@ -297,8 +297,10 @@ export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds 
   return { leaf: next as unknown as PrefLeaf, dropped };
 }
 
-/** Change what the leaf at `path` is, by {@link convertLeaf}. */
+/** Change what the leaf at `path` is, by {@link convertLeaf}. `root` itself where no leaf is there: one of several changed together may have gone with its parent's children. */
 export function changeKind<R extends SchemaRoot>(root: R, path: string, choice: string, custom: CustomKinds = {}, types: PrefTypes = NO_TYPES): { root: R; dropped: string[] } {
-  const { leaf, dropped } = convertLeaf(nodeAt(root, path) as PrefLeaf, choice, custom, types);
+  const node = nodeAt(root, path);
+  if (!node || !isPrefLeaf(node)) return { root, dropped: [] };
+  const { leaf, dropped } = convertLeaf(node, choice, custom, types);
   return { root: replaceNode(root, path, () => leaf as SchemaNode), dropped };
 }

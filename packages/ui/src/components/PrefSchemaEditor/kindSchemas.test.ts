@@ -77,6 +77,16 @@ describe('kindSchemas', () => {
     expect(convertLeaf(toggle, 'enum')).toMatchObject({ leaf: { control: 'toggle' }, dropped: ['default'] });
   });
 
+  it('changes an object pref and one of its own fields in one go, the field going with the object\'s children', () => {
+    const root: PrefGroup = { name: 'R', children: {
+      obj: { kind: 'object', name: 'O', description: '', default: {}, children: { x: num } } as PrefLeaf,
+    } };
+    const made = ['obj', 'obj/x'].reduce((at, path) => changeKind(at, path, 'string').root, root);
+    expect(nodeAt(made, 'obj')).toMatchObject({ kind: 'string', name: 'O' });
+    expect(nodeAt(made, 'obj')).not.toHaveProperty('children');
+    expect(changeKind(root, 'obj/gone', 'string')).toEqual({ root, dropped: [] });
+  });
+
   it('carries a default only between compatible kinds', () => {
     const root = (leaf: object): PrefGroup => ({ name: 'R', children: { n: { name: 'N', description: '', ...leaf } as PrefLeaf } });
     const to = (leaf: object, kind: string) => {
