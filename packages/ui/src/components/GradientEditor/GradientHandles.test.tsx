@@ -24,7 +24,8 @@ beforeAll(() => {
 
 function drag(label: string, to: { x: number; y: number }): void {
   const handle = screen.getByLabelText(label);
-  fireEvent.pointerDown(handle, { clientX: 0, clientY: 0, pointerId: 1 });
+  const at = { clientX: Number(handle.getAttribute('cx')), clientY: Number(handle.getAttribute('cy')) };
+  fireEvent.pointerDown(handle, { ...at, pointerId: 1 });
   fireEvent.pointerMove(handle, { clientX: to.x, clientY: to.y, pointerId: 1 });
   fireEvent.pointerUp(handle, { clientX: to.x, clientY: to.y, pointerId: 1 });
 }
@@ -56,6 +57,19 @@ describe('GradientHandles', () => {
       to: { x: 100, y: 50 },
       units: 'local',
     });
+  });
+
+  it('moves a handle by how far the pointer moved, wherever on the handle it was grabbed', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onInput={onInput} onChange={onChange} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient start');
+    // The start handle is centered on overlay (10, 20); this press is 5px right of center.
+    fireEvent.pointerDown(handle, { clientX: 15, clientY: 20, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 17, clientY: 20, pointerId: 1 });
+    expect(onInput.mock.calls[0][0]).toMatchObject({ from: { x: 1, y: 0 } });
+    fireEvent.pointerUp(handle, { clientX: 17, clientY: 20, pointerId: 1 });
+    expect(onChange.mock.calls[0][0]).toMatchObject({ from: { x: 1, y: 0 } });
   });
 
   it('writes nothing when a handle is pressed and released without moving', () => {
@@ -98,7 +112,7 @@ describe('GradientHandles', () => {
     const onChange = vi.fn();
     render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onInput={onInput} onChange={onChange} width={400} height={300} />);
     const handle = screen.getByLabelText('Gradient start');
-    fireEvent.pointerDown(handle, { clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 20, pointerId: 1 });
     fireEvent.pointerMove(handle, { clientX: 30, clientY: 40, pointerId: 1 });
     fireEvent.pointerMove(handle, { clientX: 50, clientY: 60, pointerId: 1 });
     expect(onInput).toHaveBeenCalledTimes(2);

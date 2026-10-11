@@ -44,8 +44,10 @@ export function Edge({ points }: { points: readonly [OverlayPoint, OverlayPoint,
 }
 
 /**
- * One draggable point. `onDrag` receives overlay pixels; a press that never
- * moved writes nothing, and a canceled gesture puts the preview back.
+ * One draggable point. `onDrag` receives overlay pixels: where the point
+ * goes, which trails the pointer by wherever on the handle it was grabbed. A
+ * press that never moved writes nothing, and a canceled gesture puts the
+ * preview back.
  */
 export function DragPoint({
   at,
@@ -62,11 +64,17 @@ export function DragPoint({
   onDrag: (p: OverlayPoint, phase: EditPhase) => void;
 }): ReactElement {
   const start = useRef<OverlayPoint>(at);
+  // Where on the handle the press landed, so the point keeps that offset from the pointer.
+  const grab = useRef<OverlayPoint>({ x: 0, y: 0 });
+  const held = (p: OverlayPoint): OverlayPoint => ({ x: p.x - grab.current.x, y: p.y - grab.current.y });
   const drag = useHandleDrag<SVGCircleElement>({
-    onStart: () => { start.current = at; },
-    onMove: (p) => { onDrag(p, 'input'); },
+    onStart: (p) => {
+      start.current = at;
+      grab.current = { x: p.x - at.x, y: p.y - at.y };
+    },
+    onMove: (p) => { onDrag(held(p), 'input'); },
     onEnd: ({ point, moved }) => {
-      if (moved) onDrag(point, 'commit');
+      if (moved) onDrag(held(point), 'commit');
     },
     onCancel: () => { onDrag(start.current, 'input'); },
   });

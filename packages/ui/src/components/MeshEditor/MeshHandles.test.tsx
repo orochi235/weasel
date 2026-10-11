@@ -27,7 +27,8 @@ function local(mesh: MeshGradientFill, size = 100): MeshGradientFill {
 
 function drag(label: string, to: { x: number; y: number }): void {
   const handle = screen.getByLabelText(label);
-  fireEvent.pointerDown(handle, { clientX: 0, clientY: 0, pointerId: 1 });
+  const at = { clientX: Number(handle.getAttribute('cx')), clientY: Number(handle.getAttribute('cy')) };
+  fireEvent.pointerDown(handle, { ...at, pointerId: 1 });
   fireEvent.pointerMove(handle, { clientX: to.x, clientY: to.y, pointerId: 1 });
   fireEvent.pointerUp(handle, { clientX: to.x, clientY: to.y, pointerId: 1 });
 }
