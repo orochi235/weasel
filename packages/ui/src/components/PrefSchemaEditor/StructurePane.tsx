@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react';
 import { createPortal } from 'react-dom';
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
-import { Button } from '../Button';
 import { Input } from '../Input';
 import { filterTree, Tree, treeBranchIds, type TreeNode } from '../Tree';
 import { Badge } from '../Badge';
 import { PrefKindBadge } from '../Prefs/PrefKindBadge';
+import { ToolButton } from '../ToolButton';
 import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
@@ -18,7 +18,7 @@ import { StoredList } from './StoredList';
 import { blankGroup, blankLeaf, blankSection } from './kindSchemas';
 import {
   addNode, branchUnder, childrenOf, fitsUnder, holdsFixed, isFixed, joinPath, keyOf, keysOf, kindOfValue, nodeAt, parentPath, pathOf,
-  undescribedValues, uniqueKey, type SchemaNode, type SchemaRoot, type SchemaTarget, type UndescribedValue,
+  undescribedValues, uniqueKey, withinDepth, type SchemaNode, type SchemaRoot, type SchemaTarget, type UndescribedValue,
 } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
 
@@ -34,16 +34,16 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
     const p = joinPath(path, key);
     const kids = childrenOf(child);
     const { name } = child;
+    const label = name ? <>{name} <span className={s.treeKey}>({key})</span></> : key;
     return {
       id: p,
-      label: name ? <>{name} <span className={s.treeKey}>({key})</span></> : key,
+      label: changed.has(p) ? <span className={s.changed}>{label}</span> : label,
       textValue: name ? `${name} ${key}` : key,
       // Unset, a group is drawn by its depth: a page under the root, a section below that.
       ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
       trailing: isPrefLeaf(child)
         ? <PrefKindBadge kind={child.kind} />
         : <>{countBadge(leafCount([child]))}<PrefKindBadge kind={child.as ?? (isPrefSection(child) ? 'section' : 'group')} /></>,
-      className: changed.has(p) ? s.changed : undefined,
       ...(kids ? { children: toTreeNodes(child, p, changed) } : {}),
     };
   });
@@ -66,6 +66,8 @@ export interface StructurePaneProps {
   outside?: DropOutside;
   /** `outside` is drawing what is dragged where it would land, so the palette draws no ghost of it. */
   outsideDraws?: boolean;
+  /** The most levels of groups the schema may nest; none when undefined. */
+  maxDepth?: number;
   /** Remove the selected node. */
   onRemove(): void;
   /** Move the nodes at `paths` to `target`, keeping them open and selected. */
@@ -92,7 +94,7 @@ const nameOfKey = (key: string): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
-export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, stored, outside, outsideDraws = false, onMove: move, onRemove }: StructurePaneProps) {
+export function StructurePane({ schema, onChange, selected, onSelect, changed, kinds, expanded, onExpandedChange, toolSlot, stored, outside, outsideDraws = false, onMove: move, onRemove, maxDepth }: StructurePaneProps) {
   const nodes = useMemo(() => {
     const all = toTreeNodes(schema, null, changed);
     const loose = new Set(generalKeys(schema));
@@ -200,12 +202,11 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         <Input value={query} onChange={setQuery} aria-label="Filter structure" placeholder="Filter" />
       </div>
       {toolSlot && createPortal(
-        <>
-          <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
-          <Button size="sm" onClick={() => setAdding('pref')}>Add pref</Button>
-          <Button size="sm" disabled={variants} onClick={() => setAdding('branch')}>Add {branch}</Button>
-          <Button size="sm" disabled={selected === null || isFixed(schema, selected)} onClick={onRemove}>Remove</Button>
-        </>,
+        <Palette sections={isPrefSection(schema)} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop}>
+          <ToolButton icon={<Icon name="add" />} label="Add pref" onClick={() => setAdding('pref')} />
+          <ToolButton icon={<Icon name="add" />} label={`Add ${branch}`} disabled={variants || !withinDepth(addTarget().parent, [blankGroup()], maxDepth)} onClick={() => setAdding('branch')} />
+          <ToolButton icon={<Icon name="remove" />} label="Remove" disabled={selected === null || isFixed(schema, selected)} onClick={onRemove} />
+        </Palette>,
         toolSlot,
       )}
       <AddNodeDialog what={adding === 'branch' ? branch : adding} kinds={variants && !fromStored ? ['object'] : kinds} onAdd={add}
@@ -250,8 +251,9 @@ export function StructurePane({ schema, onChange, selected, onSelect, changed, k
         canDrop={(ids, t) => {
           // A place among the rows shown is not that place among all of them.
           if (sought !== '') return false;
-          if (ids.length === 0) return paletteDrag !== null && treeTakesNew(schema, paletteDrag.node, t.parentId);
+          if (ids.length === 0) return paletteDrag !== null && treeTakesNew(schema, paletteDrag.node, t.parentId, maxDepth);
           if ([...ids].some((id) => isFixed(schema, id))) return false;
+          if (!withinDepth(t.parentId === GENERAL ? null : t.parentId, nodesAt([...ids]), maxDepth)) return false;
           const general = generalAllows(schema, [...ids], t.parentId);
           if (general !== undefined) return general;
           const parent = nodeAt(schema, t.parentId)!;

@@ -21,5 +21,5 @@ export {
   type PrefFieldChoice,
 } from './schema';
 export { type PrefDrop, type PrefDropMark } from './drop';
-export { prefDropTargetAt, type PrefDropTargetOptions } from './dropTarget';
+export { prefDropTargetAt } from './dropTarget';
 export { GroupTabs, type GroupTab, type GroupTabsProps } from './GroupTabs';

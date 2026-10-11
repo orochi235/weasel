@@ -160,14 +160,6 @@ it('drops beside a rail entry from its ends and into it from its middle', () => 
   expect(h.aim(x, r.top + r.height / 2)).toEqual({ path: 'io', where: 'into', rail: true });
 });
 
-it('drops beside a rail entry from either half when asked never to drop into one', () => {
-  const h = mount(2);
-  const { x, r } = center(h.box.querySelector('[data-pref-rail="io"]')!);
-  const beside = (y: number) => prefDropTargetAt(h.box, x, y, { railInto: false });
-  expect(beside(r.top + r.height / 2 - 2)).toEqual({ path: 'io', where: 'before', rail: true });
-  expect(beside(r.top + r.height / 2 + 2)).toEqual({ path: 'io', where: 'after', rail: true });
-});
-
 it('slides a row from where it was to where the drop puts it', () => {
   const h = mount(1, undefined, 420, false);
   const row = rowAt(h.box, 'canvas.b');

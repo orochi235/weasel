@@ -15,7 +15,7 @@ import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { branchPaths, isFixed, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { changedPaths, diffSchemas } from './schemaExport';
 import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
-import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, railTakesInto, sameDrop } from './previewDrop';
+import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
 import { StructurePane, type DropOutside } from './StructurePane';
 import s from './PrefSchemaEditor.module.css';
@@ -82,6 +82,9 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
   /** Nothing submitted is still waiting: what `onSubmit` last handed over is in `original` now. Once true, the
    *  editor drops those changes from its draft and keeps the edits made since. */
   taken?: boolean;
+  /** The most levels of groups the schema may nest: 1 keeps every group at the top. A drag, a palette drop, or
+   *  Add group that would nest deeper is refused. A schema already deeper is shown as it is. Default: no limit. */
+  maxDepth?: number;
   /** The host's own controls, set first in the bar across the editor's top. */
   bar?: ReactNode;
   className?: string;
@@ -98,7 +101,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, draftStorage, onSubmit, taken = false, bar, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, stored, draftKey, draftStorage, onSubmit, taken = false, bar, maxDepth, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
@@ -202,11 +205,11 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     opening.current = null;
   };
   const markAt = (nodes: readonly SchemaNode[], point: { x: number; y: number }) =>
-    previewMark((stage.current && prefDropTargetAt(stage.current, point.x, point.y, { railInto: railTakesInto(nodes) })) || null, nodes);
+    previewMark((stage.current && prefDropTargetAt(stage.current, point.x, point.y)) || null, nodes);
   const outside: DropOutside = {
     over(nodes, paths, point) {
       const mark = markAt(nodes, point);
-      const landing = mark && previewTarget(latest.current.schema, mark, nodes, paths) !== null ? previewDrop(mark, nodes, paths) : null;
+      const landing = mark && previewTarget(latest.current.schema, mark, nodes, paths, maxDepth) !== null ? previewDrop(mark, nodes, paths) : null;
       const next = landing ?? heldDrop(latest.current.schema, nodes, paths);
       setDrop((cur) => (sameDrop(cur, next) ? cur : next));
       // Held on the middle of a rail entry, the drag opens that page, so a row on it can be aimed at.
@@ -221,7 +224,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       }
       return landing !== null;
     },
-    target: (nodes, paths, point) => previewTarget(latest.current.schema, markAt(nodes, point), nodes, paths),
+    target: (nodes, paths, point) => previewTarget(latest.current.schema, markAt(nodes, point), nodes, paths, maxDepth),
     end() {
       stopOpening();
       setDrop(null);
@@ -271,7 +274,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
         draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select(null); }} />
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
         expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onRemove={remove}
-        toolSlot={toolSlot} />
+        toolSlot={toolSlot} maxDepth={maxDepth} />
       <ResizeHandle value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">
