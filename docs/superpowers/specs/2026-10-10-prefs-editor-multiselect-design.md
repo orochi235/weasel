@@ -1,7 +1,7 @@
 # Selecting several nodes in `PrefSchemaEditor`
 
-**Unbuilt.** Nothing here is implemented; branch `prefs-editor-multiselect` holds this file only.
-Delete it when the work merges.
+**Unbuilt.** Nothing here is implemented. The steps are in
+`../plans/2026-10-10-prefs-editor-multiselect.md`. Delete both when the work merges.
 
 For whoever builds this. It says what selecting several nodes in the schema editor has to mean in
 each pane, what is already in place, and what has to be written.
@@ -64,7 +64,7 @@ a single node is a selection of one.
 when every node has it with a deep-equal definition. Two leaves of one kind keep their kind's own
 panel; a number and an integer keep `min` and `max`; a leaf and a group keep `name`,
 `description`, and whatever else they share. The kind panel's heading is the kind when all agree,
-and "Common" otherwise.
+and "Common" otherwise; kinds with nothing of their own in common show no panel.
 
 | Row | With several selected |
 |---|---|
@@ -148,12 +148,3 @@ One `patch` changeset, saying in prose that `PrefsForm`'s `selected` and `onSele
 - Dragging several nodes out of the Unplaced tree or the palette. `onPaletteDrop` takes one node;
   that is its own change.
 - Select-all in the tree. `Tree` has no Mod+A; it belongs to `Tree`, not the editor.
-
-## Open questions
-
-1. **Does Name stay editable with several selected?** Proposed: yes, with the key left alone. The
-   other choice is to hide it with Key, since giving several nodes one name is rarely wanted.
-2. **Remove when one of the selection is fixed.** Proposed: disabled. The other choice removes the
-   rest and leaves the fixed ones.
-3. **Shift-click in the preview.** Proposed: nothing. The other choice ranges within one page in
-   reading order.
