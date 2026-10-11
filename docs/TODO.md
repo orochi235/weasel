@@ -2188,10 +2188,6 @@ only story runner in the repo.
   page under `@weasel-js/core` and another under `@weasel-js/gestures`, with the same text.
   TypeDoc's `packages` strategy converts each package on its own, so core's copy is a full
   declaration, not a pointer. Type references do cross: core's pages link into the sibling's.
-- **(P3) The front page still ships three palettes behind a toggle.** Three are in the tree:
-  charcoal, the project's maroon and lime, and paper. Ruled 2026-10-11: maroon and lime ships. That
-  leaves deleting the toggle and the other two from `apps/site/FrontPage/palettes.ts`. The page is
-  deliberately plain; a live canvas beside the pitch was drawn and set aside for later.
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
 - **(P2) draw: the swatches' active fill and stroke never reach a newly drawn shape.** With nothing

@@ -12,7 +12,7 @@ import { useLatest } from '@weasel-js/core';
 import { dlog } from '../../dlog';
 import { LockIcon } from '../../icons';
 import { intentOf, select, type SelectPolicy } from '@weasel-js/select';
-import { type PressModifiers, selectModifiers, useReorderDragList } from '../../useReorderDragList';
+import { LIST_KEYS, type PressModifiers, selectModifiers, useReorderDragList } from '../../useReorderDragList';
 import { CloseButton } from '../CloseButton';
 import { Disclosure } from '../Disclosure';
 import { DragGhost } from '../DragGhost';
@@ -65,8 +65,9 @@ export interface LayerListProps {
   items: LayerListItem[];
   /** Omit for a list the user cannot reorder. */
   onReorder?: (move: LayerMove) => void;
-  /** Giving both makes rows selectable: a click selects one, shift-click adds
-   *  or removes one, and dragging a selected row drags its selected siblings. */
+  /** Giving both makes rows selectable: a click selects one, Cmd/Ctrl-click adds
+   *  or removes one, shift-click selects every row from the last click to this
+   *  one, and dragging a selected row drags its selected siblings. */
   selectedIds?: readonly string[];
   onSelect?: (ids: string[]) => void;
   /** Adds a visibility checkbox to every unlocked layer. */
@@ -187,7 +188,7 @@ export function LayerList(props: LayerListProps) {
   // the closure did not see, so it reads the selection from here.
   const live = useLatest(props);
   // Locked rows never join a multi-selection: pressed, one is selected alone, and a range or a
-  // shift-press passes over them.
+  // toggle passes over them.
   const unlocked = () => {
     const locked = new Set(lockedIds(live.current.items));
     return (id: string) => !locked.has(id);
@@ -196,7 +197,7 @@ export function LayerList(props: LayerListProps) {
     const { selectedIds = [], onSelect } = live.current;
     if (!onSelect) return;
     const next = select({ ids: selectedIds, anchor: anchor.current }, item.id, intentOf(selectModifiers(mods), PRESS_POLICY), {
-      eligible: unlocked(),
+      order: order.current, eligible: unlocked(),
     });
     anchor.current = next.anchor;
     onSelect([...next.ids]);
@@ -221,6 +222,7 @@ export function LayerList(props: LayerListProps) {
     }
   };
   walk(items, null, 1);
+  const order = useLatest(visible.map((v) => v.item.id));
 
   const rowEls = useRef(new Map<string, HTMLElement>());
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -259,7 +261,7 @@ export function LayerList(props: LayerListProps) {
   };
   const selectRange = (to: string) => {
     const before = { ids: live.current.selectedIds ?? [], anchor: anchor.current };
-    const next = select(before, to, 'range', { order: visible.map((v) => v.item.id), eligible: unlocked() });
+    const next = select(before, to, 'range', { order: order.current, eligible: unlocked() });
     anchor.current = next.anchor;
     if (next !== before) live.current.onSelect?.([...next.ids]);
   };
@@ -371,8 +373,7 @@ export function LayerList(props: LayerListProps) {
   );
 }
 
-/** A layer panel follows the canvas: shift toggles a row in or out. */
-const PRESS_POLICY: SelectPolicy = { mode: 'multi', toggle: 'shift' };
+const PRESS_POLICY: SelectPolicy = { mode: 'multi', ...LIST_KEYS };
 
 function lockedIds(items: LayerListItem[]): string[] {
   const out: string[] = [];

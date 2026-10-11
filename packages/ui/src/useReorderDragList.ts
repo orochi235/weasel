@@ -44,6 +44,9 @@ export interface PressModifiers {
   altKey: boolean;
 }
 
+/** A list's convention: Cmd/Ctrl toggles a row, shift ranges from the anchor. */
+export const LIST_KEYS = { toggle: ['meta', 'ctrl'], range: 'shift' } as const;
+
 /** A press's modifiers as `@weasel-js/select` reads them. */
 export function selectModifiers(mods: PressModifiers): SelectModifiers {
   return { shift: mods.shiftKey, meta: mods.metaKey, ctrl: mods.ctrlKey };

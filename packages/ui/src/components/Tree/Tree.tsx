@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { intentOf, rangeOf, select as selectFrom, type SelectPolicy } from '@weasel-js/select';
 import type { TreeDropTarget } from '../../dropTarget';
-import { selectModifiers, type PressModifiers } from '../../useReorderDragList';
+import { LIST_KEYS, selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { DisclosureMark } from '../Disclosure';
 import { DragGhost } from '../DragGhost';
 import { Icon } from '../../icons';
@@ -128,8 +128,6 @@ interface Visible {
 }
 
 const TYPEAHEAD_MS = 500;
-/** A list's convention: Cmd/Ctrl toggles a row, shift ranges from the anchor. */
-const LIST_KEYS = { toggle: ['meta', 'ctrl'], range: 'shift' } as const;
 
 /**
  * A hierarchy of rows that expand and collapse: a file tree, a registry

@@ -44,7 +44,7 @@ function drag(label: string, toY: number, fromY = 0) {
   pointer(document, 'pointerup', { clientY: toY, buttons: 0 });
 }
 
-function click(label: string, init: { shiftKey?: boolean } = {}) {
+function click(label: string, init: { shiftKey?: boolean; metaKey?: boolean; ctrlKey?: boolean } = {}) {
   const row = screen.getByText(label);
   fireEvent.pointerDown(row, { pointerId: 1, isPrimary: true, buttons: 1, clientY: 0, ...init });
   pointer(document, 'pointerup', { clientY: 0, buttons: 0 });
@@ -103,33 +103,61 @@ describe('LayerList selection', () => {
     const committed = { selectedIds: ['a'], onSelect: vi.fn() };
     const abandoned = { selectedIds: ['c'], onSelect: vi.fn() };
     renderThenAbandon(committed, abandoned, (p) => <LayerList items={FLAT} {...p} />);
-    click('Beta', { shiftKey: true });
+    click('Beta', { metaKey: true });
     expect(abandoned.onSelect).not.toHaveBeenCalled();
     expect(committed.onSelect).toHaveBeenLastCalledWith(['a', 'b']);
   });
 
-  it('adds and removes a row on shift-click', () => {
+  it('adds and removes a row on Cmd-click and on Ctrl-click', () => {
     const onSelect = vi.fn();
     const { rerender } = list({ selectedIds: ['a'], onSelect });
-    click('Beta', { shiftKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['a', 'b']);
-    rerender(<LayerList items={FLAT} selectedIds={['a', 'b']} onSelect={onSelect} />);
-    click('Alpha', { shiftKey: true });
-    expect(onSelect).toHaveBeenLastCalledWith(['b']);
+    click('Gamma', { metaKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['a', 'c']);
+    rerender(<LayerList items={FLAT} selectedIds={['a', 'c']} onSelect={onSelect} />);
+    click('Alpha', { ctrlKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['c']);
   });
 
-  it('selects a locked row alone, even on shift-click', () => {
+  it('selects every row from the last click to a shift-click', () => {
+    const onSelect = vi.fn();
+    const { rerender } = list({ selectedIds: [], onSelect });
+    click('Alpha');
+    rerender(<LayerList items={FLAT} selectedIds={['a']} onSelect={onSelect} />);
+    click('Gamma', { shiftKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['a', 'b', 'c']);
+  });
+
+  it('ranges over the rows that are showing, not a collapsed branch\'s children', () => {
+    const onSelect = vi.fn();
+    const { rerender } = list({ items: TREE, collapsedIds: ['g'], selectedIds: [], onSelect });
+    click('Group');
+    rerender(<LayerList items={TREE} collapsedIds={['g']} selectedIds={['g']} onSelect={onSelect} />);
+    click('Beta', { shiftKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['g', 'b']);
+  });
+
+  it('selects a locked row alone, even on Cmd-click', () => {
     const onSelect = vi.fn();
     list({ items: [...FLAT, { id: 'bg', label: 'Background', locked: true }], selectedIds: ['a'], onSelect });
-    click('Background', { shiftKey: true });
+    click('Background', { metaKey: true });
     expect(onSelect).toHaveBeenLastCalledWith(['bg']);
   });
 
-  it('drops a locked row from the selection a shift-click builds on', () => {
+  it('drops a locked row from the selection a Cmd-click builds on', () => {
     const onSelect = vi.fn();
     list({ items: [...FLAT, { id: 'bg', label: 'Background', locked: true }], selectedIds: ['bg'], onSelect });
-    click('Beta', { shiftKey: true });
+    click('Beta', { metaKey: true });
     expect(onSelect).toHaveBeenLastCalledWith(['b']);
+  });
+
+  it('passes over a locked row inside a shift-click range', () => {
+    const onSelect = vi.fn();
+    const items = [FLAT[0]!, { id: 'bg', label: 'Background', locked: true }, FLAT[2]!];
+    const { rerender } = list({ items, selectedIds: [], onSelect });
+    click('Alpha');
+    rerender(<LayerList items={items} selectedIds={['a']} onSelect={onSelect} />);
+    click('Gamma', { shiftKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['a', 'c']);
   });
 
   it('marks the selected row', () => {
@@ -350,12 +378,12 @@ describe('LayerList keyboard', () => {
     expect(screen.getByText('One')).toBeInTheDocument();
   });
 
-  it('selects on Enter and Space, and adds with Shift', () => {
+  it('selects on Enter and Space, and adds with Cmd', () => {
     const onSelect = vi.fn();
     list({ selectedIds: ['a'], onSelect });
     fireEvent.keyDown(row('Beta'), { key: 'Enter' });
     expect(onSelect).toHaveBeenLastCalledWith(['b']);
-    fireEvent.keyDown(row('Gamma'), { key: ' ', shiftKey: true });
+    fireEvent.keyDown(row('Gamma'), { key: ' ', metaKey: true });
     expect(onSelect).toHaveBeenLastCalledWith(['a', 'c']);
   });
 

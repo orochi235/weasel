@@ -15,7 +15,7 @@ const swatch = (color: string) => (
   <span className={s.swatch} style={{ '--swatch': color } as CSSProperties} aria-hidden="true" />
 );
 
-/** A document's objects: click to select, shift-click to add, drag a selected
+/** A document's objects: click to select, Cmd/Ctrl-click to add, shift-click for a range, drag a selected
  *  row to move the whole selection. The locked Background row selects alone
  *  and walls off drops below it. */
 export const Selectable: Story = {
