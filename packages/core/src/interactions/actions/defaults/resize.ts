@@ -56,7 +56,7 @@ import type {
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ResizePolicy } from '../depSchema';
 import { DEFAULT_RESIZE_BEHAVIORS } from '../resize/behaviors';
-import { remapRotatedLeaf, translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
+import { remapRotatedLeaf, translatePoseViaDescriptor, visualBoundsViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { poseRotationOf } from 'core/geometry/poseRotation';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { isRectPose } from '../resize/autoPoseDescriptor';
@@ -68,7 +68,7 @@ import { boxToBox } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
-import { unionBounds } from 'core/geometry/unionBounds';
+import { unionAABB, unionBounds } from 'core/geometry/unionBounds';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorCancel, type GestureLifecycle } from '../gestureLifecycle';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
@@ -370,6 +370,7 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
       const startPoses = new Map<NodeId, unknown>();
       const startWorlds = new Map<NodeId, unknown>();
       const leafBounds: Bounds[] = [];
+      const drawnBounds: Bounds[] = [];
       for (const id of writeIds) {
         const node = scene.get(id);
         if (!node) continue;
@@ -377,14 +378,17 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
         const world = carryPose(geometry, frame.world(id), invertPlane(planeOf(view, node.layer)));
         startWorlds.set(id, world);
         leafBounds.push(geometry.getBounds(world));
+        drawnBounds.push(visualBoundsViaDescriptor(world, geometry));
       }
       if (startPoses.size === 0) return {};
 
       // `leafBounds` is non-empty here (startPoses.size === 0 guarded above),
-      // and the union branch only runs for length >= 2 → `!` is safe.
+      // and the union branches only run for length >= 2 → `!` is safe. A
+      // multi-selection's handles sit on the union of what is drawn, so that
+      // is the box its drag resizes.
       const originBounds = leafBounds.length === 1
         ? leafBounds[0]
-        : unionBounds(leafBounds)!;
+        : isGroupPath ? unionBounds(leafBounds)! : unionAABB(drawnBounds)!;
 
       // Rotation captured only for the single-write-id path; group-resize
       // takes the AABB-frame (unrotated) path even if leaves have rotation.
@@ -574,14 +578,15 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
           // Project bounds → pose. For the group path, each leaf is remapped
           // from its own startPose; for single, from the start pose directly.
           //
-          // A rotated leaf in a group needs its own frame: `src`/`dst` are
-          // world-frame here, unlike the single path where the drag delta was
-          // already projected into the leaf's frame, so the naive affine
+          // A rotated leaf resized with others needs its own frame: `src`/`dst`
+          // are world-frame there, unlike the single path where the drag delta
+          // was already projected into the leaf's frame, so the naive affine
           // scales the wrong pair of extents. See `remapRotatedLeaf`.
+          const sharedBox = isGroupPath || scratch.writeIds.length > 1;
           const computePose = (id: NodeId): unknown => {
             const sp = scratch.startWorlds.get(id);
             if (sp === undefined) return undefined;
-            if (isGroupPath && poseRotationOf(sp) !== null) {
+            if (sharedBox && poseRotationOf(sp) !== null) {
               return remapRotatedLeaf(
                 sp as RotatedPose, scratch.originBounds, proposedBounds,
               );
