@@ -751,6 +751,14 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
+- **(P3) Text edit: the kit asks "is this node text?" two ways.** `useTextEditDepSource`
+  (`packages/core/src/canvas/deps/textEdit.ts`) answers `TextEditDep.isTextNode` with
+  `data.kind === 'text'`, while `inferredNodeRouting`'s classifier and `useSceneTextEdit`'s `isText`
+  default both use `typeof data.text === 'string'`. A scene whose text nodes carry `text` and no
+  `kind` routes as text and opens on a double-click, and `enterTextEdit` through the stub dep
+  declines it. The stub's `startEdit` only warns, so nothing breaks until a consumer sources the dep
+  without its own `isTextNode`; `useSceneTextEdit` now returns one to pass.
+
 - **(P3) Text edit: `useTextEdit` commits an edit nothing changed, and strips a trailing newline the
   text really had.** `commit` always calls `setText`, and `trimCaretHolder` removes one trailing
   `\n` on the assumption the browser added it, so a node whose text is `"abc\n"` becomes `"abc"` on
