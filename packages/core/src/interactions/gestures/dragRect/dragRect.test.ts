@@ -75,13 +75,13 @@ describe('useDragRect', () => {
     expect(onGestureEnd).toHaveBeenCalledWith(false);
   });
 
-  it('end with no active gesture is a no-op except onGestureEnd(false)', () => {
+  it('end with no active gesture is a no-op', () => {
     const onEnd = vi.fn();
     const onGestureEnd = vi.fn();
     const { result } = renderHook(() => useDragRect({ onEnd, onGestureEnd }));
     act(() => result.current.end());
     expect(onEnd).not.toHaveBeenCalled();
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onGestureEnd).not.toHaveBeenCalled();
   });
 
   it('cancel calls onCancel with active ctx and onGestureEnd(false)', () => {
@@ -144,13 +144,13 @@ describe('useDragRect', () => {
     expect(result.current.overlay?.start).toEqual({ x: 50, y: 50 });
   });
 
-  it('cancel with no active gesture is a no-op except onGestureEnd(false)', () => {
+  it('cancel with no active gesture is a no-op', () => {
     const onCancel = vi.fn();
     const onGestureEnd = vi.fn();
     const { result } = renderHook(() => useDragRect({ onCancel, onGestureEnd }));
     act(() => result.current.cancel());
     expect(onCancel).not.toHaveBeenCalled();
-    expect(onGestureEnd).toHaveBeenCalledWith(false);
+    expect(onGestureEnd).not.toHaveBeenCalled();
   });
 
   it('setStart and setCurrent mid-gesture update bounds and overlay', () => {

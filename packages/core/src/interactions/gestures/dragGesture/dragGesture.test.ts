@@ -137,13 +137,23 @@ describe('useDragGesture', () => {
       expect(onGestureEnd).toHaveBeenCalledWith(false);
     });
 
-    it('end with no active gesture fires onGestureEnd(false) only', () => {
+    it('end with no active gesture fires nothing', () => {
       const onEnd = vi.fn();
       const onGestureEnd = vi.fn();
       const { result } = renderHook(() => useDragGesture({ onEnd, onGestureEnd }));
       act(() => result.current.end());
       expect(onEnd).not.toHaveBeenCalled();
-      expect(onGestureEnd).toHaveBeenCalledWith(false);
+      expect(onGestureEnd).not.toHaveBeenCalled();
+    });
+
+    it('a second end fires onGestureEnd once', () => {
+      const onGestureEnd = vi.fn();
+      const { result } = renderHook(() => useDragGesture({ onGestureEnd }));
+      act(() => result.current.start(P(0, 0), NO_MODS));
+      act(() => result.current.end());
+      act(() => result.current.end());
+      act(() => result.current.cancel());
+      expect(onGestureEnd).toHaveBeenCalledTimes(1);
     });
 
     it('phase resets to idle after end', () => {
@@ -195,18 +205,18 @@ describe('useDragGesture', () => {
       expect(onGestureEnd).toHaveBeenCalledWith(false);
     });
 
-    it('cancel with no active gesture fires only onGestureEnd(false)', () => {
+    it('cancel with no active gesture fires nothing', () => {
       const onCancel = vi.fn();
       const onGestureEnd = vi.fn();
       const { result } = renderHook(() => useDragGesture({ onCancel, onGestureEnd }));
       act(() => result.current.cancel());
       expect(onCancel).not.toHaveBeenCalled();
-      expect(onGestureEnd).toHaveBeenCalledWith(false);
+      expect(onGestureEnd).not.toHaveBeenCalled();
     });
   });
 
   describe('restart while active', () => {
-    it('silently replaces state — no onCancel, no onEnd, no prior onGestureEnd', () => {
+    it('replaces state as one gesture — no onCancel, no onEnd, one onGestureStart and onGestureEnd', () => {
       const onCancel = vi.fn();
       const onEnd = vi.fn();
       const onGestureEnd = vi.fn();
@@ -223,9 +233,11 @@ describe('useDragGesture', () => {
       expect(onEnd).not.toHaveBeenCalled();
       expect(onGestureEnd).not.toHaveBeenCalled();
       expect(onStart).toHaveBeenCalledTimes(2);
-      expect(onGestureStart).toHaveBeenCalledTimes(2);
+      expect(onGestureStart).toHaveBeenCalledTimes(1);
       const ctx = onStart.mock.calls[1][0] as DragGestureCtx;
       expect(ctx.start).toEqual(P(50, 50));
+      act(() => result.current.end());
+      expect(onGestureEnd).toHaveBeenCalledTimes(1);
     });
   });
 

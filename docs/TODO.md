@@ -249,12 +249,6 @@ Priority tags:
   gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in
   `cloneAction` the way move, rotate, and insert do, or remove the behavior and the type.
 
-- **(P3) `useDragGesture`: `end()` or `cancel()` while idle fires `onGestureEnd(false)` with no
-  matching `onGestureStart`, and a second `start()` fires `onGestureStart` twice.**
-  `dragGesture.test.ts` asserts the first on purpose ("end with no active gesture fires
-  onGestureEnd(false) only"), while `gestureLifecycle.ts` enforces the opposite contract for
-  actions: `end` only after `start`, at most once each. Pick one contract for both.
-
 - **(P3) Shift-extend of a hit list into the selection is written three times.**
   `defaults/areaSelect.ts`, `defaults/lassoSelect.ts`, and `selectFromLasso.ts` each merge hits into
   the current selection.
@@ -2084,15 +2078,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   options are to keep the root-wide shortcut, or to scope it to focus on a key mark or the lanes;
   scoping needs the keys to be selectable from the keyboard first.
 
-- **(P2) UnitField: text that ends unreadable keeps the last readable prefix it sent.** Type `25x`
-  over `10` in a field whose caller holds the live value (a property row with one callback,
-  `packages/ui/src/components/Properties/NumberControls.tsx`): `onInput(25)` went out at `25`, the
-  blur reads `25x` as nothing, and the model stays at 25 while the docstring says the field "reverts
-  on … text it cannot read" (`packages/ui/src/components/NumberField/UnitField.tsx`). Escape now
-  sends the starting value back; an unreadable blur does not, and `PropertyField.test.tsx` ("reports
-  every keystroke that reads…") pins that no further call follows. Either send the starting value
-  there too and change that test, or reword the docstring to say the last readable value stands. A
-  field that began at NaN (a mixed selection) cannot be given back either way, short of an
+- **(P3) UnitField: a field that began at NaN cannot give back what it sent while typing.** Typing
+  that ends in Escape or in unreadable text sends the value it began from through `onInput`
+  (`packages/ui/src/components/NumberField/UnitField.tsx`). A field showing a mixed selection began
+  at NaN, which is not a value to send, so a caller holding the live value keeps the last readable
+  keystroke. It needs a way to say "typing was abandoned" that carries no value, such as an
   `onCancel` callback.
 
 - **(P2) AnimatedTimeline: a resume made off the component does not start its playhead.** Call
