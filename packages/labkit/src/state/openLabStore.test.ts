@@ -768,3 +768,160 @@ describe('openLabStore — folding the four pre-document keys', () => {
     expect(again.store.getState().trials.map((t) => t.id)).toEqual(['sw']);
   });
 });
+
+describe('openLabStore — a stored lab read late', () => {
+  /** A lab whose storage cannot be listed at open, and can from the next try on. */
+  async function openAway(backing: Map<string, unknown>, overrides: Partial<OpenLabStoreOptions> = {}) {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const memory = createMemoryAdapter(backing);
+    const storage: StorageAdapter = {
+      ...memory,
+      list: vi.fn(memory.list).mockImplementationOnce(async () => {
+        throw new Error('storage is away');
+      }),
+    };
+    const opened = await openLabStore({ storageKey: 'test', storage, ...overrides });
+    /** The retry lands, and the lab it read is merged in. */
+    const arrive = async () => {
+      await opened.records.read();
+      await tick();
+    };
+    return { ...opened, arrive };
+  }
+  const ids = (opened: { store: { getState(): { trials: TrialRecord[] } } }) =>
+    opened.store.getState().trials.map((t) => t.id);
+
+  it('opens empty, then takes the stored trials ahead of the ones built while storage was away', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('s1', { state: { n: 1 } }), trial('s2')], mode: 'dark' });
+    const opened = await openAway(backing);
+    expect(ids(opened)).toEqual([]);
+    opened.store.getState().addTrial(trial('new', { state: { n: 9 } }));
+
+    await opened.arrive();
+    expect(ids(opened)).toEqual(['s1', 's2', 'new']);
+    expect(opened.store.getState().mode).toBe('dark');
+    await opened.close();
+
+    expect(backing.get(`${P}trial:new`)).toMatchObject({ state: { n: 9 }, order: 2 });
+    expect(backing.get(`${P}trial:s1`)).toMatchObject({ state: { n: 1 }, order: 0 });
+    expect(ids(await open(backing))).toEqual(['s1', 's2', 'new']);
+  });
+
+  it('migrates the stored lab whole before merging it: configs moved and filled, snapshots too', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('s1', { config: { gridSize: 7 } })], saves: [SNAPSHOT] });
+    const opened = await openAway(backing, {
+      configMigrations: {
+        T: (stored) => {
+          const { gridSize, ...rest } = stored as { gridSize?: number };
+          return gridSize === undefined ? rest : { ...rest, grid: gridSize };
+        },
+      },
+    });
+    await opened.arrive();
+    expect(opened.store.getState().trials[0]?.config).toEqual({ grid: 7 });
+    expect(opened.store.getState().savedSnapshots.map((s) => s.id)).toEqual(['s1']);
+    await opened.close();
+  });
+
+  it('folds a version-3 document that arrives late, and deletes it once its records read back', async () => {
+    const backing = new Map<string, unknown>();
+    storeV3(backing, { trials: [trial('old')], saves: [], layout: {}, undockedPanels: {}, mode: 'auto' });
+    const opened = await openAway(backing);
+    opened.store.getState().addTrial(trial('new'));
+
+    await opened.arrive();
+    expect(ids(opened)).toEqual(['old', 'new']);
+    await opened.close();
+    expect(backing.has(labDocumentKey('test'))).toBe(false);
+    expect(backing.has(`${P}trial:old`)).toBe(true);
+    expect(backing.has(`${P}trial:new`)).toBe(true);
+  });
+
+  it('gives a trial id both hold to the stored one, as it would to another writer', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('w1', { state: { from: 'storage' } })] });
+    const opened = await openAway(backing);
+    opened.store.getState().addTrial(trial('w1', { state: { from: 'away' } }));
+
+    await opened.arrive();
+    expect(opened.store.getState().trials.map((t) => t.state)).toEqual([{ from: 'storage' }]);
+    await opened.close();
+    expect(backing.get(`${P}trial:w1`)).toMatchObject({ state: { from: 'storage' } });
+  });
+
+  it('keeps and stores the lab built while away when nothing was stored', async () => {
+    const backing = new Map<string, unknown>();
+    const opened = await openAway(backing);
+    opened.store.getState().addTrial(trial('new'));
+    opened.store.getState().setMode('light');
+    opened.store.getState().setLayout({ new: { h: 2 } });
+
+    await opened.arrive();
+    expect(ids(opened)).toEqual(['new']);
+    expect(opened.store.getState().mode).toBe('light');
+    await opened.close();
+    const again = await open(backing);
+    expect(ids(again)).toEqual(['new']);
+    expect(again.store.getState().mode).toBe('light');
+    expect(again.store.getState().layout).toEqual({ new: { h: 2 } });
+  });
+
+  it('merges layout by trial, the stored entry winning', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('s1')], layout: { s1: { h: 1 } } });
+    const opened = await openAway(backing);
+    opened.store.getState().addTrial(trial('new'));
+    opened.store.getState().setLayout({ new: { h: 2 }, s1: { h: 9 } });
+
+    await opened.arrive();
+    expect(opened.store.getState().layout).toEqual({ new: { h: 2 }, s1: { h: 1 } });
+    await opened.close();
+    expect(backing.get(`${P}layout`)).toEqual({ new: { h: 2 }, s1: { h: 1 } });
+  });
+
+  it('persists what changes after the late lab is in', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('s1')] });
+    const opened = await openAway(backing);
+    await opened.arrive();
+    opened.store.getState().updateTrialState('s1', { n: 3 });
+    await opened.close();
+    expect(backing.get(`${P}trial:s1`)).toMatchObject({ state: { n: 3 } });
+  });
+
+  it('closes cleanly before the read ever lands', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, { trials: [trial('s1')] });
+    const before = new Map(backing);
+    const opened = await openAway(backing);
+    opened.store.getState().addTrial(trial('new'));
+    await opened.close();
+    expect(backing).toEqual(before);
+  });
+
+  it('sends a write storage rejected again on its own, without waiting for the next change', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>();
+    const memory = createMemoryAdapter(backing);
+    const storage: StorageAdapter = {
+      ...memory,
+      set: vi.fn(memory.set).mockImplementationOnce(async () => {
+        throw new Error('quota');
+      }),
+    };
+    const opened = await openLabStore({ storageKey: 'test', storage });
+    vi.useFakeTimers();
+    try {
+      opened.store.getState().addTrial(trial('w1'));
+      await opened.records.flush();
+      expect(backing.has(`${P}trial:w1`)).toBe(false);
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(backing.has(`${P}trial:w1`)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+    await opened.close();
+  });
+});

@@ -425,10 +425,7 @@ have shipped. What remains:
   therefore lost on import. Keeping them needs a `hidden` flag on `SvgNode` that `unpack` maps to
   the scene's own hidden state.
 
-- **(P3) svg and geom: two files hold several owners.** `packages/svg/src/parse.ts` is about 1,450
-  lines holding the document walk, shape lowering, text, images, clip paths, and marker ingestion;
-  text, image, and marker reading each split out cleanly (`placeBox.ts`, `lengths.ts`,
-  `tspanLines.ts`, and `metricScale.ts` are already their own modules).
+- **(P3) geom: `splitBySegment.ts` holds several owners.**
   `packages/geom/src/booleans/splitBySegment.ts` is 878 lines of crossing detection, loop tracing,
   and region assembly.
 
@@ -1243,16 +1240,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   warns about the repeat. The prefs rail `sectionTree` feeds to `PrefsForm` still draws that leaf
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
-
-- **(P3) labkit's lab store treats an unread record cache as final.** It opts out of the cache's
-  retries (`retryMs: false` in `openLabStore.ts`): `readLab` answers an unwritable cache with an
-  empty lab, so records landing later would skip its migrations and its fold of the old storage
-  keys. `whenRead()` on the cache now says when a late read lands, which is where that work would
-  rerun. Ruled 2026-10-11: a stored lab that arrives late is migrated whole, then merged trial by
-  trial into the lab built while storage was away. That leaves running `readLab`'s migrations and
-  fold on the late read, then applying the result by trial id, the way `bindLabStore` already
-  applies another writer's records. The opt-out also turns off the timer that resends a write
-  storage rejected, which then waits for the next flush.
 
 - **(P3) An older build's pref that lands after its `$version` is taken unmigrated.**
   `watchPrefsVersion` migrates another writer's records when the version it wrote arrives, so a
