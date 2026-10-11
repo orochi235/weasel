@@ -120,6 +120,37 @@ describe('camera input', () => {
     expect(lastOf(seen).zoom).toBeGreaterThan(2);
   });
 
+  it('keeps a zoom placed after mount when the next drag pans', () => {
+    const seen: ViewTransform[] = [];
+    let place: (v: ViewTransform) => void = () => {};
+    function Host() {
+      const [view, setView] = useState<ViewTransform>({ zoom: 1, pan: { x: 0, y: 0 } });
+      place = setView;
+      return (
+        <Stage
+          size={{ width: 100, height: 100 }}
+          view={view}
+          onViewChange={(v) => {
+            seen.push(v);
+            setView(v);
+          }}
+        >
+          <div />
+        </Stage>
+      );
+    }
+    const { container } = render(<Host />);
+    const host = container.querySelector('.lk-stage') as HTMLElement;
+    // A fit computed once the size is known, below the default floor of 0.1.
+    act(() => place({ zoom: 0.05, pan: { x: 0, y: 0 } }));
+    act(() => {
+      pointer(host, 'pointerdown', 50, 50);
+      pointer(host, 'pointermove', 80, 50);
+      pointer(host, 'pointerup', 80, 50, 0);
+    });
+    expect(lastOf(seen).zoom).toBe(0.05);
+  });
+
   it("publishes the pointer in the instrument's world as the stage", () => {
     const store = createPointerStore();
     const { container } = render(

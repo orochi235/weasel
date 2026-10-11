@@ -103,9 +103,10 @@ function isPositiveFinite(n: number): boolean {
 }
 
 /**
- * A labkit camera as a stable `ViewApi`. Its zoom range is widened to keep the
- * opening zoom reachable — captured once, so a zoom-out cannot shrink the
- * range and strand the opening view behind it.
+ * A labkit camera as a stable `ViewApi`. Its zoom range is widened to keep
+ * reachable every zoom it was handed from outside — the opening view, a fit
+ * placed once the size is known — and never by its own `set`, so a zoom-out
+ * cannot shrink the range and strand such a view behind it.
  */
 export function useCameraView({
   view,
@@ -121,11 +122,20 @@ export function useCameraView({
   useInsertionEffect(() => {
     live.current = { view: normalize2DView(view), onViewChange, frame };
   });
-  const initialZoom = useRef(isPositiveFinite(view.zoom) ? view.zoom : null);
-  const opening = initialZoom.current;
+  // A view `set` wrote is already in `live`; any other was placed from outside.
+  const placed = useRef<ZoomRange | null>(null);
+  if (
+    isPositiveFinite(view.zoom) &&
+    (placed.current === null || view.zoom !== live.current.view.zoom)
+  ) {
+    placed.current = {
+      min: Math.min(placed.current?.min ?? view.zoom, view.zoom),
+      max: Math.max(placed.current?.max ?? view.zoom, view.zoom),
+    };
+  }
   const bounds = useLatest({
-    min: opening == null ? minZoom : Math.min(minZoom, opening),
-    max: opening == null ? maxZoom : Math.max(maxZoom, opening),
+    min: Math.min(minZoom, placed.current?.min ?? minZoom),
+    max: Math.max(maxZoom, placed.current?.max ?? maxZoom),
   });
 
   return useMemo<CameraView>(() => {
@@ -196,7 +206,7 @@ function CameraDispatch({
 
   const actions = useMemo<Action[]>(() => {
     // Unclamped here: `camera.set` clamps, to a range widened around the
-    // opening zoom, and anchors the clamp where the wheel was.
+    // zooms it was placed at, and anchors the clamp where the wheel was.
     const unclamped = { min: 1e-9, max: Number.POSITIVE_INFINITY };
     const zoom = makeViewportZoomAction({ wheel: wheel || 'plain', ...unclamped });
     // The wheel and the trackpad's two pinch forms (ctrl+wheel, WebKit's
