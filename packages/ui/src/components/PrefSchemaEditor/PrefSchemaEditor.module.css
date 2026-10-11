@@ -38,7 +38,9 @@
 .treeFilter { margin-block-end: var(--wzl-space-2); }
 .middle { display: grid; align-content: start; gap: var(--wzl-space-2); min-height: 0; overflow: auto; }
 .pane { min-height: 0; overflow: auto; }
-.structurePane { display: flex; flex-direction: column; overflow: hidden; }
+/* The structure runs the editor's whole height under the bar, and everything else sits in what is left beside it. */
+.structurePane { grid-column: 1; grid-row: 2 / -1; display: flex; flex-direction: column; overflow: hidden; }
+.structureHandle { grid-column: 2; grid-row: 2 / -1; }
 /* The tree reads at the size of the fields in the pane beside it. */
 /* Each level sits further in than the tree's own gutter: a group's glyph leads its row, and a child one gutter in reads as beside it. */
 .treeArea { flex: 1; min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); --wzl-tree-indent: calc(13px + var(--wzl-space-5)); }
@@ -108,7 +110,8 @@
   font-size: var(--wzl-font-size-sm);
 }
 .export {
-  grid-column: 1 / -1;
+  grid-column: 3 / -1;
+  grid-row: 3;
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: var(--wzl-space-3);

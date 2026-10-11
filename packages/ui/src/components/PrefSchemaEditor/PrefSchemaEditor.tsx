@@ -275,7 +275,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
         expanded={expanded} onExpandedChange={setExpanded} stored={stored} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onRemove={remove}
         toolSlot={toolSlot} maxDepth={maxDepth} />
-      <ResizeHandle value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
+      <ResizeHandle className={s.structureHandle} value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">
           {notice && (
