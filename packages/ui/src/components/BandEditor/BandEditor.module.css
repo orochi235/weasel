@@ -140,8 +140,10 @@
   );
 }
 
+/* Clipped along the track only: the line is one em tall, and `hidden` cuts descenders to it. */
 .bandContent {
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: none;

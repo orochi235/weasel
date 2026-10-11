@@ -68,3 +68,21 @@ describe('BandEditor range-end ticks', () => {
     expect(shownTicks(container)).toEqual(['1', '50', '99']);
   });
 });
+
+describe('BandEditor band captions', () => {
+  test('clips a caption along the track only, so its descenders are drawn', () => {
+    const { container } = render(
+      <div style={{ width: 300 }}>
+        <BandEditor value={BANDS} min={0} max={100} scale="linear" onChange={() => {}} renderBand={() => 'gypsy'} />
+      </div>,
+    );
+    const band = container.querySelector<HTMLElement>('[data-band-index]')!;
+    const caption = band.firstElementChild as HTMLElement;
+    const text = document.createRange();
+    text.selectNodeContents(caption);
+    // The text's own box is taller than a line of leading 1; the caption must not cut it to that line.
+    expect(text.getBoundingClientRect().bottom).toBeGreaterThan(caption.getBoundingClientRect().bottom);
+    expect(getComputedStyle(caption).overflowY).toBe('visible');
+    expect(text.getBoundingClientRect().bottom).toBeLessThanOrEqual(band.getBoundingClientRect().bottom);
+  });
+});
