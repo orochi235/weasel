@@ -19,22 +19,24 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P2) A canvas's keyboard shortcuts claim keys page-wide.** The gesture dispatcher listens
-  on `window`, and a page with one canvas has it as the active scope, so held Space pans that
-  canvas from anywhere on the page — a read-only canvas in a side panel takes Space from a
-  page that wants it (the blits playground's space-to-play listens in the capture phase to
-  get there first). Keys aimed at an editable field, or Space/Enter on a focused button or
-  link (`activatesFocusedControl`), are already left alone, and `enableKeybindings={false}`
-  turns a canvas's keys off. Left: deciding when a canvas owns a key that reaches the body —
-  focus inside the canvas, the pointer over it, or the last canvas interacted with — without
-  breaking an app like WeaselDraw, whose shortcuts work from the body today.
+- **(P2) A canvas's keyboard shortcuts claim keys page-wide.** The gesture dispatcher listens on
+  `window`, and a page with one canvas has it as the active scope, so held Space pans that canvas
+  from anywhere on the page — a read-only canvas in a side panel takes Space from a page that wants
+  it (the blits playground's space-to-play listens in the capture phase to get there first). Keys
+  aimed at an editable field, or Space/Enter on a focused button or link
+  (`activatesFocusedControl`), are already left alone, and `enableKeybindings={false}` turns a
+  canvas's keys off. Ruled 2026-10-11: a key that reaches the body goes to the last canvas the user
+  clicked or scrolled, and to no canvas before the first such interaction. That leaves a lone canvas
+  becoming the active scope only on pointer interaction, the rule that already settles two canvases,
+  and WeaselDraw, whose shortcuts work from the body today before anything in it has been clicked.
 
-- **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior
-  presets (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source
-  directory bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a
-  "feature" too. The two are unrelated and both names stand for now, with the taxonomy saying so.
-  Left: one of them takes a new word. The prop is at 215 call sites and is consumer API; the
-  directory is one path, its imports, and a section of the taxonomy.
+- **(P2) `features` names two things.** The `<SceneCanvas features>` prop composes behavior presets
+  (`canvas/SceneCanvas/features.ts`); `packages/core/src/features/<name>/` is a source directory
+  bundling one domain's primitives, and `docs/taxonomy.md` calls each of those a "feature" too. The
+  two are unrelated and both names stand for now, with the taxonomy saying so. Ruled 2026-10-11: the
+  directory and the taxonomy's term take a new word, and the prop keeps `features`; the new word is
+  not chosen yet. That leaves choosing it, then renaming the one path, its imports, and the section
+  of the taxonomy.
 
 - **(P3) A canvas without `ingest` is still a drop target.** `SceneCanvas` attaches the
   dispatcher's drop listeners whatever `features` says, so an OS drag over a bare or `edit`-only
@@ -65,16 +67,16 @@ Priority tags:
   select is active. With no base tool it works: `CustomShaderDemo` spawns its
   ripple from an ambient binding on a bare canvas.
 
-- **(P3) `targetConsultsAffordance` still guesses from shape.** The kit's four
-  body predicates now carry `readsAffordance: false` and the filter honors it
-  (2026-08-12), so the counterexamples the kit itself ships are handled — which
-  they had to be, since `doubleclick` now carries an affordance and
-  `enterPathEdit`'s `kindOf: isBody` would otherwise have entered path-edit
-  mode on a double-click over HUD chrome. A *consumer* predicate that reads
-  only `bodyTarget` and declares nothing still survives a claim that should
-  bar it. The open question is whether the filter should infer at all: require
-  the declaration, or have `TargetSpec` carry the answer instead of the
-  predicate.
+- **(P3) `targetConsultsAffordance` still guesses from shape.** The kit's four body predicates now
+  carry `readsAffordance: false` and the filter honors it (2026-08-12), so the counterexamples the
+  kit itself ships are handled — which they had to be, since `doubleclick` now carries an affordance
+  and `enterPathEdit`'s `kindOf: isBody` would otherwise have entered path-edit mode on a
+  double-click over HUD chrome. A *consumer* predicate that reads only `bodyTarget` and declares
+  nothing still survives a claim that should bar it. Ruled 2026-10-11: the filter stops inferring,
+  and every target predicate must declare whether it reads the affordance hit. That leaves requiring
+  the declaration on the predicate type, which the kit's body predicates get from one helper in
+  `packages/routing/src/interactions/dispatcher/predicates.ts`, and deleting the guess in
+  `matcher.ts` beside it.
 
 - **(P3) SVG-file ingestion — follow-ups.** Shipped 2026-07-04: `kit:svg`
   content handler (`packages/core/src/features/ingestion/svgHandler.ts`, priority -90 —
@@ -188,9 +190,10 @@ Priority tags:
   `packages/core/src/affordances/cornerResize.ts`), tested in screen space, so on a 12 x 12 px
   selection every point of the body is inside a handle and a drag there resizes; the node cannot be
   moved by its body. `hitAffordanceRegions` picks the nearest corner but nothing reserves the body.
-  Options: shrink each hit square to its outward half when the target is under about four hit radii
-  on an axis, or hide the handles below that size through the `selection.resize-handles` chrome
-  rule. Not confirmed against the dispatcher that a handle hit outranks the body binding.
+  Ruled 2026-10-11: the handles stay at every size, and when the target is under about four hit
+  radii on an axis only the outward half of each corner's hit square takes a press, which leaves the
+  body free to move by. That leaves narrowing the hit in `cornerResize.ts`. Not confirmed against
+  the dispatcher that a handle hit outranks the body binding.
 
 - **(P2) Pen tool: nodes are minted and committed beside the `insert` dep.** `usePenTool`
   (`packages/core/src/tools/builtin/pen/usePenTool.ts`) creates a path through
@@ -235,8 +238,9 @@ Priority tags:
   one node is deleted and the other two spring back, because `onEnd` returns ops for
   `ctx.draggedIds[0]` alone and returning ops claims the whole commit
   (`packages/core/src/interactions/actions/move/behaviors/snapBackOrDelete.ts`,
-  `snapToContainer.ts`). Either loop every dragged id, or return `undefined` for a multi-drag so the
-  default translate runs; which one is a call about what these behaviors mean for a multi-selection.
+  `snapToContainer.ts`). Ruled 2026-10-11: snap-back, delete-on-release, and snap-into-a-slot each
+  act on every dragged node. That leaves `onEnd` in both returning ops for every dragged id, which
+  for `snapToContainer` means a slot per node.
 
 - **(P3) `cloneByAltDrag` and the `CloneBehavior` contract are unreachable.** `cloneAction.start`
   ignores `opts`, so no clone behavior ever runs, and the hook that consumed `CloneBehavior` is
@@ -283,9 +287,9 @@ Priority tags:
   Shift, then press Space: the hand tool is not pushed, because the `key-held` spec for `' '`
   forbids Shift (`packages/routing/src/interactions/actions/toolOffhand.ts`, matched by
   `matchModifiers` in `packages/gestures/src/ui/match.ts`). Shift-constrain-then-pan is a plausible
-  sequence mid-draw. The options: relax every offhand trigger to any modifier state, which also
-  makes a letter trigger such as `'o'` engage on Cmd+O and swallow the browser's shortcut; or relax
-  only Shift and Alt for non-modifier triggers; or keep it strict.
+  sequence mid-draw. Ruled 2026-10-11: a non-modifier trigger engages with Shift or Alt held and
+  still not with Cmd or Ctrl, so a letter trigger such as `'o'` leaves Cmd+O to the browser. That
+  leaves `heldKeySpec` in that file marking Shift and Alt optional for a non-modifier key.
 
 - **(P3) Long-press: a browser that sends its own `contextmenu` on a touch hold may fire the menu
   twice.** `useGestureDispatcher`
@@ -421,9 +425,10 @@ have shipped. What remains:
 - **(P3) Canvas hosts: the renderer writes inline `width` and `height` style on a `<canvas>` it
   owns.** `WeaselRenderer`'s constructor and `resize` set `canvas.style.width`/`height`, so a
   `<SceneViewCanvas className>` or `<DrawCanvas className>` that sizes the element (`width: 100%`)
-  loses to the inline style after the first paint. The docs now say so. The alternative is to drop
-  the style write and let hosts size the element by class, which needs every host checked for a
-  layout that depends on it.
+  loses to the inline style after the first paint. The docs now say so. Ruled 2026-10-11: the
+  renderer sets only the canvas's backing-store size, and every host sizes its element by class.
+  That leaves dropping both style writes, checking every host for a layout that depends on them, and
+  taking the caveat back out of the docs.
 
 - **(P3) `Canvas.tsx` is 1,610 lines and holds the scene-layer builders.** Its header says "Canvas
   owns NO scene-shaped state", and it exports `buildSceneLayer`/`buildSceneLayers`, which walk the
@@ -454,9 +459,9 @@ have shipped. What remains:
   keeps only its position, rotation, and uniform scale.** `applyOwnTransform`
   (`packages/svg/src/placeBox.ts`) warns and drops the rest, because `SvgTextNode` and
   `SvgImageNode` are a box plus a rotation. `<text transform="scale(4 1)">` imports at twice the
-  size instead of four times as wide. Holding the full matrix needs either a `transform` on the two
-  node types (and on the kit text and image poses they become) or lowering such text to outlines at
-  import; a mirrored rotation on an image could be a flip plus a rotation with no model change.
+  size instead of four times as wide. Ruled 2026-10-11: text and image nodes carry a full transform,
+  and such text stays editable text. That leaves a `transform` on the two node types and on the kit
+  text and image poses they become, honored wherever those poses are read.
 
 - **(P3) svg import: `em` and `ex` on a length are read as bare user units.** `<circle r="2em">`
   imports with r = 2, and the same holds for `stroke-width` and the root `width`. Each warns
@@ -648,8 +653,10 @@ Core five + Crop shipped. Remaining:
   draws nothing and warns `pattern TextureHandle "undefined" not registered`, because `bindPattern`
   (`packages/core/src/renderer/draw.ts`) casts `fill.pattern` to a `TextureHandle`. A gradient with
   `units: 'bounds'` is painted in screen space with no warning. The node painter resolves both
-  before the renderer; a consumer-built command skips that. Either resolve a tile spec and bounds
-  units in the renderer, or narrow the command's fill type to what the renderer takes.
+  before the renderer; a consumer-built command skips that. Ruled 2026-10-11: the command's fill
+  type narrows to what the renderer takes, a resolved pattern handle and world or local gradient
+  units, so a tile spec or `units: 'bounds'` on a command is a type error, not a blank draw. That
+  leaves the narrower type and whatever emit sites it turns up.
 
 - **(P3) Layers: `LayerGroup.alpha` without `effects` fades each member, not the group.** Its doc
   (`packages/core/src/core/layers/render.ts`) says the opacity applies "to the group's composited
@@ -708,15 +715,14 @@ Core five + Crop shipped. Remaining:
   not at all — WebKit picks a pixel either way. Measured 2026-10-07 on macOS
   (Playwright WebKit).
 
-- **(P3) The character strip has no "no fill" chip.** WeaselDraw's text
-  objects carry `fill: null` through its SVG export and import, and the
-  sidebar's Fill leaf already offers None for a text node. What is missing is
-  a None chip beside the strip's Color field, and it needs a decision first:
-  the strip is range-scoped, but a run cannot be unfilled (`StyledRun.fill`
-  is `FillStyle`, no `null`). Either the chip unfills the whole node (and has
-  to clear run fills, which reach text outside the selection), or runs gain
-  `fill: null` through `resolveRuns`, the DOM overlay, the range algebra and
-  `@weasel-js/svg`'s `<tspan>` output.
+- **(P3) The character strip has no "no fill" chip.** WeaselDraw's text objects carry `fill: null`
+  through its SVG export and import, and the sidebar's Fill leaf already offers None for a text
+  node. What is missing is a None chip beside the strip's Color field. The strip is range-scoped,
+  and a run cannot be unfilled today (`StyledRun.fill` is `FillStyle`, no `null`). Ruled 2026-10-11:
+  a run can carry no fill, so the chip unfills only the selected range. That leaves `fill: null` on
+  a run through `resolveRuns` (which reads a run's `null` as "inherit" today, `run.fill ??
+  style.fill`), the DOM overlay, the range algebra, and `@weasel-js/svg`'s `<tspan>` output, and
+  then the chip.
 
 - **(P3) At 12px with a script, the atlas tier's ink still sits ~0.55px off
   the overlay's at DPR 1, and the sign follows the sub-pixel phase.** `dx` is
@@ -746,10 +752,12 @@ Core five + Crop shipped. Remaining:
   text really had.** `commit` always calls `setText`, and `trimCaretHolder` removes one trailing
   `\n` on the assumption the browser added it, so a node whose text is `"abc\n"` becomes `"abc"` on
   open-and-close. `useSceneTextEdit` now skips a write that matches the node, which covers the no-op
-  case there; the raw hook and the newline are open. Fifteen tests in `useTextEdit.test.ts` commit
-  an untouched overlay and expect the write (one is named "an untouched edit commits the runs it
-  started with"), so skipping in the hook is a decision about its contract. Whether a browser adds a
-  holder to seeded text ending in `\n` has not been observed.
+  case there. Ruled 2026-10-11: the raw hook skips the write when the text and runs match what the
+  edit opened with. That leaves moving the skip into `useTextEdit`, so the rule has one home, and
+  rewriting the fifteen tests in `useTextEdit.test.ts` that commit an untouched overlay and expect
+  the write (one is named "an untouched edit commits the runs it started with"). An edit that did
+  change something still goes through `trimCaretHolder`; whether a browser adds a holder to seeded
+  text ending in `\n` has not been observed.
 
 - **(P3) Text edit: typed text is inserted by hand in `beforeinput`.** Every `insertText` is
   `preventDefault`-ed and inserted at the window selection
@@ -777,18 +785,17 @@ Core five + Crop shipped. Remaining:
   and nothing else. The console warning tells the consumer to "add it to the layout options", which
   a `<SceneCanvas>` consumer does not have. The engine itself is finished and conformance-tested,
   and `layoutRuns` now handles paragraphs, hanging spaces, and the cache key correctly when one is
-  passed, so what is left is the wiring, and it is a design call because
-  `packages/text/src/layout/bidiSeam.ts` says outright that text must not depend on
-  `@weasel-js/bidi`. Options: (a) one registration point in `@weasel-js/text`
-  (`registerBidi(engine)`, or a `bidi` dep) that `layoutRuns` falls back to when `opts.bidi` is
-  absent, which fixes every caller at once and keeps the tables out of bundles that never register;
-  (b) thread `bidi` and `direction` through `TextPoseLayoutInput` and `TextDrawCommand`, which needs
-  the same engine handed to painting, picking, and caret code or they disagree; (c) drop the seam
-  and have text depend on bidi. Whichever lands, pass `style.direction` through as `direction`,
-  reword the warning to name the real fix, and pick one default for an omitted `direction`: bidi
-  analysis uses `'auto'` (first strong character) while `start`/`end` alignment uses `'ltr'`, so
-  Hebrew with no `direction` gets a right-to-left paragraph aligned left. `docs/TODO.md`'s HarfBuzz
-  entry lists reordering as missing; it is implemented and unwired.
+  passed, so what is left is the wiring; `packages/text/src/layout/bidiSeam.ts` says outright that
+  text must not depend on `@weasel-js/bidi`. For an omitted `direction`, bidi analysis uses `'auto'`
+  (first strong character) while `start`/`end` alignment uses `'ltr'`, so Hebrew with no `direction`
+  gets a right-to-left paragraph aligned left. Ruled 2026-10-11: an omitted `direction` means auto
+  for both, so the first strong character sets the paragraph's direction and its alignment, and the
+  engine arrives through one registration point in `@weasel-js/text` (`registerBidi(engine)`, or a
+  `bidi` dep) that `layoutRuns` falls back to when `opts.bidi` is absent, which fixes every caller
+  at once and keeps the seam. That leaves the registration point, passing `style.direction` through
+  as `direction`, moving `resolveAlign`'s `'ltr'` fallback to auto, and rewording the warning to
+  name the real fix. `docs/TODO.md`'s HarfBuzz entry lists reordering as missing; it is implemented
+  and unwired.
 
 - **(P2) Text editing: caret stops fall inside grapheme clusters.** `layoutRuns` emits one
   `LaidOutCell` per code point and the cell contract says a caret stop is a cell's `x`, so
@@ -873,12 +880,10 @@ Core five + Crop shipped. Remaining:
   persisted history (`kit:remove`'s `detached[].index`, `kit:move`'s `fromIndex`) now refer to a
   different order. A single-layer document is unaffected. The order is a documented part of the
   format (`docs/scene-serialization.md`: "All nodes in render order"; pinned by "preserves
-  layer-major DFS preorder in nodes array" in `scene.test.ts`), so the fix is a format decision:
-  write nodes in tree preorder, which still puts parents before children but changes the documented
-  order for any reader that paints straight from `nodes`; or keep the order and write each node's
-  sibling `index`, with the loader sorting each sibling list by it after the last node is added
-  (inserting at `index` as nodes arrive is not enough: `[a (L3), b (L1), c (L2), d (L1)]` arrives as
-  `b, d, c, a` and lands `[a, b, d, c]`).
+  layer-major DFS preorder in nodes array" in `scene.test.ts`). Ruled 2026-10-11: `toJSON` writes
+  nodes in tree preorder, and the loader keeps appending as it does now. That leaves the walk in
+  `toJSON`, the pinned test, and the format doc, which has to say that parents still come before
+  children and that a reader painting straight from `nodes` now derives paint order from layers.
 
 - **(P3) Scene: the selection keeps ids of nodes a removal took.** After `scene.setSelection([z])`
   and `scene.remove(z)`, `scene.getSelection()` still returns `['z']`, so every reader guards
@@ -916,13 +921,14 @@ Core five + Crop shipped. Remaining:
   `dependsOn: 'children'` ("an id list would still name the originals"), so copying two nodes and
   the edge between them pastes the edge as a plain leaf with the original's zero-sized placeholder
   pose: it paints nothing, is selected with the rest, and one more accumulates per paste.
-  `commitPaste` already builds the old-to-new `idMap` a remap needs. The call to make: remap an id
-  list when every dependency is in the snapshot, and when one is not, either drop the edge or leave
-  it pointing at the original. Separately `layout` is not copied though `clipFromPose` is, so pasted
-  children stop being arranged. Both also need the wire format
-  (`interactions/actions/clipboard/wireFormat.ts`), which drops function-valued fields, to carry
-  registry keys the way scene serialization does. Not checked: whether duplicate and Alt-drag clone
-  go through these two functions.
+  `commitPaste` already builds the old-to-new `idMap` a remap needs. Ruled 2026-10-11: an edge is
+  pasted, with its id list remapped, only when every node it depends on was copied too; otherwise it
+  is dropped, and the paste reports what it left out and why, so an app can show it, which draw does
+  with a toast. That leaves the remap, the drop, the report from the paste, and draw's toast.
+  Separately `layout` is not copied though `clipFromPose` is, so pasted children stop being
+  arranged. Both also need the wire format (`interactions/actions/clipboard/wireFormat.ts`), which
+  drops function-valued fields, to carry registry keys the way scene serialization does. Not
+  checked: whether duplicate and Alt-drag clone go through these two functions.
 
 - **(P2) Container-pose cascade: a batch that poses a container and its descendants does not undo.**
   Through `sceneToAdapter(scene, { cascadeContainerPose: true })` (what `<SceneCanvas>` uses without
@@ -1018,12 +1024,12 @@ intercepting the press that drags the body.
     its derivation overwrites on the next read. Dragging it should move its members, and that is
     a move action reading the box's `dependsOn`.
 
-- **(P3) `ForceGraphDemo` is a second force-graph pipeline.** It runs d3-force
-  through `useSimulation` and paints with its own render layer, beside
-  `@weasel-js/diagram`'s `force` layout and `DiagramView`. `force.ts` reserves
-  that route for graphs too big for a scene node per edge, but the demo has 24
-  nodes. Decide whether it stays as the large-graph example (and says so, at a
-  size that shows why) or is rebuilt on `DiagramView`.
+- **(P3) `ForceGraphDemo` is a second force-graph pipeline.** It runs d3-force through
+  `useSimulation` and paints with its own render layer, beside `@weasel-js/diagram`'s `force` layout
+  and `DiagramView`. `force.ts` reserves that route for graphs too big for a scene node per edge,
+  but the demo has 24 nodes. Ruled 2026-10-11: it stays as its own example, of the simulation loop,
+  and is not rebuilt on `DiagramView`. That leaves a graph large enough to show why the route
+  exists, and a registry blurb that names the bypass.
 
 ### `useScene` follow-ups
 
@@ -1042,27 +1048,27 @@ intercepting the press that drags the body.
   edit fixes it and breaks coalescing: the appended arrange op stays in the entry when it does
   nothing, and `scene.test.ts`'s key-multiset test fails. Wants a no-op arrange op dropped
   from the recorded entry first.
-- **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
-  adapter-level configuration, two mutually exclusive ways:
-  `sceneToAdapter({ cascadeContainerPose: true })` translates every descendant
-  by a container's delta through the pose descriptor, and `poseComposition`
-  makes a container's pose a frame its children are relative to. `Scene.setPose`
-  itself still stores absolute poses. The deeper move is the scene owning one
-  of these natively, which needs a decision on where the descriptor or
-  composition is supplied to the `useScene` constructor.
+- **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is adapter-level
+  configuration, two mutually exclusive ways: `sceneToAdapter({ cascadeContainerPose: true })`
+  translates every descendant by a container's delta through the pose descriptor, and
+  `poseComposition` makes a container's pose a frame its children are relative to. `Scene.setPose`
+  itself still stores absolute poses. Ruled 2026-10-11: the scene owns composition: a child's pose
+  is relative to its container's frame, and moving a container writes one pose. That leaves building
+  it into the scene, deciding where the composition is supplied to the `useScene` constructor, and
+  settling what becomes of `cascadeContainerPose`.
 
 ### Container layout strategies
 
 - **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only), as does choosing the destination container (`<SceneCanvas layoutDropTarget>`, `LayoutStrategy.dropRegion`). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-- **(P3) Nothing scrolls a `'scroll'` tile grid.** `tileGrid({ overflow: 'scroll' })` places its overflow past the container's last visible line and reports the region through `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the container's bounds.
-  Undecided before building it: whether a container's scroll offset is document state or
-  view state. As document state, the layout pass lays the children out shifted by the
-  offset, and picking, dragging and selection chrome need nothing new — but every wheel
-  tick rewrites every child's stored pose and is an undo step. As view state, the offset
-  is part of the frame the container gives its children and the document never moves —
-  but an absolute-pose scene has no container frame today, so painting, picking,
-  selection chrome, move, resize and snapping each have to fold it in, the way the
-  readers that honor `poseComposition` do under a composing scene.
+- **(P3) Nothing scrolls a `'scroll'` tile grid.** `tileGrid({ overflow: 'scroll' })` places its
+  overflow past the container's last visible line and reports the region through
+  `LayoutStrategy.contentExtent`, but no kit host reads it: the overflow just sits past the
+  container's bounds. Ruled 2026-10-11: a container's scroll offset is view state, part of the frame
+  the container gives its children, and the document never moves. An absolute-pose scene has no
+  container frame today, so this waits on "Container-pose cascade as a scene-primitive semantic"
+  making composition the scene's own. That leaves the offset itself, folded in by painting, picking,
+  selection chrome, move, resize, and snapping with the rest of the frame, and a host that reads
+  `contentExtent` and scrolls.
 - **(P3) Stateful layout strategy factories.** All v1 strategies are pure. If profiling shows recompute pain (likely only quadtree-class), promote to a factory returning `(container) → { ... }` with cached state.
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.
@@ -1083,13 +1089,13 @@ intercepting the press that drags the body.
   (`packages/core/src/animation/wrappers/animateOnSetPose.ts`, the `animator.isActive('pose:' + id)`
   branch) and the running tween's next tick writes over it. The write-through is deliberate and
   pinned by the test "writes through directly when a tween is already in flight", which guards
-  against a tween being restarted on every frame by a caller outside the animator's tick. The
-  options: retarget (start a new `tweenPose` from the current pose, which records a second transform
-  op and has to stay cheap for a caller writing every frame), or keep the write-through and cancel
-  the running tween so B stands. Related, read but not run: in the order the site demo uses,
-  `animateLifecycle(animateOnSetPose(base))`, an insert's `adapter.setPose(id, start)` goes through
-  the animating wrapper, which records an `'animate'` transform op (final to start) before the entry
-  tween interrupts it, so every animated insert may leave a stray history entry.
+  against a tween being restarted on every frame by a caller outside the animator's tick. Ruled
+  2026-10-11: a second `setPose` cancels the running tween and writes the new pose at once, with no
+  console warning. That leaves the cancel in that branch, a test that B stands, and the wrapper's
+  doc saying a second write ends the glide. Related, read but not run: in the order the site demo
+  uses, `animateLifecycle(animateOnSetPose(base))`, an insert's `adapter.setPose(id, start)` goes
+  through the animating wrapper, which records an `'animate'` transform op (final to start) before
+  the entry tween interrupts it, so every animated insert may leave a stray history entry.
 
 - **(P2) `stagger`: delays run on wall-clock timers, so a hidden tab or a global pause collapses the
   cascade.** `CompositeHandle.schedule` (`packages/core/src/animation/stagger.ts`) uses `setTimeout`
@@ -1109,8 +1115,10 @@ intercepting the press that drags the body.
   `seek(0); resume()` replays without the `t = 0` event that the first play and every loop wrap do
   fire. And a frame long enough to skip whole laps fires every skipped lap's events under `loop: n`
   but none under `loop: true`, where `booking.ts` says crossings fire "nothing of the laps in
-  between". Each needs a decision about what a seek and a held first frame mean for an event sitting
-  on the playhead.
+  between". Ruled 2026-10-11: an event sitting under the playhead fires when playback next advances
+  from there, and never while paused. That leaves a paused first tick firing nothing, and `seek(t)`
+  no longer swallowing the event at `t` on resume. The skipped-laps difference was not part of the
+  ruling and is still open.
 
 - **(P3) `momentum`: a coast is not stopped by undo or by deleting its node.** A new drag of the
   coasting node now stops the coast, but an undo or a delete while it runs leaves the decay writing
@@ -1240,10 +1248,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   voice is dropped because the context is locked or the engine disposed, when it is stopped before
   it came due, when its sound is not ready, when it fails to start, when it is stolen before
   starting, or on the stale-backlog path after a resume. A consumer sequencing one sound after
-  another through it stalls silently on any of those. Either call it from every path that ends a
-  voice (then a dropped `play()` calls it before `play()` returns, or on a microtask, which has to
-  be chosen), or document it as "the source ended" and add a second signal for a voice that never
-  played.
+  another through it stalls silently on any of those. Ruled 2026-10-11: `onDone` means the source
+  ended, and a second signal reports a voice that never played. That leaves documenting `onDone`
+  that way and adding the second signal, raised from each of those paths.
 
 ---
 
@@ -1254,14 +1261,17 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   anchor. The order could be z-order, tree order, or a layer panel's row order handed across;
   which one is the open question, not the plumbing.
 
-- **(P3) Should `LayerList` toggle on shift, or range like `Tree`?** `LayerList` follows the
-  canvas convention (shift-press toggles a row), where `Tree`, Finder and most layer panels range
-  on shift and toggle on Cmd/Ctrl. Changing it is its `PRESS_POLICY`; the question is which
-  convention a layer panel beside a canvas should follow.
+- **(P3) `LayerList` toggles on shift where `Tree` ranges.** `LayerList` follows the canvas
+  convention (shift-press toggles a row), where `Tree`, Finder, and most layer panels range on shift
+  and toggle on Cmd/Ctrl. Ruled 2026-10-11: shift-click selects every row between the last click and
+  this one, and Cmd/Ctrl-click toggles one row, as in `Tree`. That leaves changing `PRESS_POLICY` in
+  `packages/ui/src/components/LayerList/LayerList.tsx`.
 
-- **(P3) Does disabled get its own signal, now that emphasis is an alpha?** Disabled is
-  `opacity: 0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled
-  control and a subtle label can read alike.
+- **(P3) Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
+  0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
+  subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
+  cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
+  disabled.
 
 - **(P3) apps/site never loads the kit's faces.** It imports no
   `@weasel-js/theme/faces.css` or `fonts.css`, so `--wzl-font-ui`'s Oswald and
@@ -1308,13 +1318,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   and `NumberField`.
 
 - **(P3) The site's chrome colors come from its own `--ckd-*` palette, not theme tokens.**
-  `canvas-kit-demo.css` declares `--ckd-*`, and it and the demos'
-  stylesheets read them directly, so the site ignores light mode and any theme a reader picks.
-  Its `:root` block already feeds most of them into `--wzl-*` (`--ckd-text` → `--wzl-fg`,
-  `--ckd-muted` → `--wzl-fg-muted`, …), but `--ckd-bg` and `--ckd-surface-2` have no
-  counterpart there, and `--ckd-accent` / `--ckd-accent-dim` split what `--wzl-accent` means.
-  Migrating means picking tokens for those and deciding whether the site keeps its fixed dark
-  look or follows mode.
+  `canvas-kit-demo.css` declares `--ckd-*`, and it and the demos' stylesheets read them directly, so
+  the site ignores light mode and any theme a reader picks. Its `:root` block already feeds most of
+  them into `--wzl-*` (`--ckd-text` → `--wzl-fg`, `--ckd-muted` → `--wzl-fg-muted`, …), but
+  `--ckd-bg` and `--ckd-surface-2` have no counterpart there, and `--ckd-accent` /
+  `--ckd-accent-dim` split what `--wzl-accent` means. Ruled 2026-10-11: the site follows the
+  reader's mode and theme through the theme tokens, and gives up its fixed dark look. That leaves
+  picking tokens for those four, moving the stylesheets off `--ckd-*`, and dropping the
+  `color-scheme: dark` that pins `canvas-kit-demo.css`.
 
 - **(P3) Overlays still set React Aria's deprecated `UNSTABLE_portalContainer`.**
   Its replacement, `UNSAFE_PortalProvider`, is exported by `react-aria` but not
@@ -1431,13 +1442,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   visual call that wants a browser.
 
 
-- **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a color of
-  its own.** Asked for: move the default treatment off "the aqua" and save it
-  for a theme that wants it. There is no ToggleBar color to move — every
-  surface in the ramp is `var(--wzl-accent)`, which seventeen components read,
-  and `Button.variant_primary` is the same drawing. The panel's bars already sit
-  outside it via the `flat` variant. Doing this generally is a theme decision
-  about the glass, not a component change.
+- **(P3) ToggleBar's selected segment is the Aqua glass ramp, not a color of its own.** Asked for:
+  move the default treatment off "the aqua" and save it for a theme that wants it. There is no
+  ToggleBar color to move — every surface in the ramp is `var(--wzl-accent)`, which seventeen
+  components read, and `Button.variant_primary` is the same drawing. The panel's bars already sit
+  outside it via the `flat` variant. Ruled 2026-10-11: the default theme draws selected and primary
+  controls flat everywhere, `Button`'s primary included, and the glass becomes something a theme
+  opts into. That leaves the flat default for everything drawn with the ramp, and a seat in the
+  theme that turns the glass on.
 
 - **(P2) Disable a pref by the values of others.** A leaf has no way to say "off while
   `snap.enabled` is false": nothing on `PrefLeaf` reads another leaf's value, and the forms have no
@@ -1464,13 +1476,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   row is drawn through `PrefsForm`'s own auto state (`AttributesPane.tsx` passes
   `auto={UNSET_AUTO_VALUE}` and substitutes the leaf's default as the value), so its label is a pin
   button, the words "not set" sit beside it, and the control under them shows the default at full
-  strength: `Auto value  not set  [8]`, or a ticked checkbox. Nothing says the 8 is the default and
+  strength: `Auto value not set [8]`, or a ticked checkbox. Nothing says the 8 is the default and
   not something stored, and the way to set or clear it is the label, which does not look like a
-  control. Whether it is set has to be a state the control itself shows. Open: a switch or a
-  "Set" button before the control with the control absent or disabled until it is on; an empty
-  control with the default as its placeholder, which a number or text can do and a checkbox or a
-  color cannot; or a two-way choice ("Same as default" / "Its own value") above the control. The
-  behavior is decided and the drawing is not.
+  control. Ruled 2026-10-11: a switch sits before the control on the same row, and the control is
+  disabled until the switch is on. That leaves drawing the row that way in `AttributesPane.tsx`, for
+  every kind, in place of the auto state.
 
 - **(P3) `PrefSchemaEditor` layout rough edges.** The always-mounted notice row adds one grid gap
   above the attributes pane, and the Key/Kind rows are wider than the attribute form under them.
@@ -1509,7 +1519,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s
   `selected`/`onSelect`. A section schema previews through `SelectionPanel`, which has neither.
 
-- **(P2) Two of a labkit schema's common attributes can only be code.** `.showIf` takes a
+- **(P1.5) Two of a labkit schema's common attributes can only be code.** `.showIf` takes a
   function and a number's `unit` is an object of `toDisplay`/`fromDisplay` functions, so neither
   can be written to JSON, set in `PrefSchemaEditor`, or kept in a draft (a draft holds code as a
   pointer into the source schema, which a new leaf has none of). In astv's settings nearly every
@@ -1540,10 +1550,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   retries (`retryMs: false` in `openLabStore.ts`): `readLab` answers an unwritable cache with an
   empty lab, so records landing later would skip its migrations and its fold of the old storage
   keys. `whenRead()` on the cache now says when a late read lands, which is where that work would
-  rerun; what is open is how a stored lab joins the one built while storage was away, since the
-  migrations run over a whole document and the two halves can be different versions. The opt-out
-  also turns off the timer that resends a write storage rejected, which then waits for the next
-  flush.
+  rerun. Ruled 2026-10-11: a stored lab that arrives late is migrated whole, then merged trial by
+  trial into the lab built while storage was away. That leaves running `readLab`'s migrations and
+  fold on the late read, then applying the result by trial id, the way `bindLabStore` already
+  applies another writer's records. The opt-out also turns off the timer that resends a write
+  storage rejected, which then waits for the next flush.
 
 - **(P3) An older build's pref that lands after its `$version` is taken unmigrated.**
   `watchPrefsVersion` migrates another writer's records when the version it wrote arrives, so a
@@ -1752,20 +1763,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   migration doubles it. Clearing `theirs` when a batch arrives at the current version is not a fix:
   an older build that writes its record first and its `$version` second produces the same two
   events, and that case must migrate (`migrate.test.ts`, "migrates the records an older writer
-  leaves"). The two can only be told apart by knowing which version each record was written at, so
-  the options are a version stamped per record (a change to the stored shape), or having writers
-  send a record and its `$version` in one batch so a record that arrives alone is known to be
-  current. Shares its cause with "An older build's pref that lands after its `$version` is taken
-  unmigrated", the opposite ordering.
+  leaves"). The two can only be told apart by knowing which version each record was written at.
+  Ruled 2026-10-11: each stored record is stamped with the version it was written at. That leaves
+  the change to the stored shape, a reading for a record that an already released build wrote with
+  no stamp, and migrating by the stamp in place of `theirs`. Shares its cause with "An older build's
+  pref that lands after its `$version` is taken unmigrated", the opposite ordering.
 
 - **(P3) A clearable enum whose `default` is not `undefined` cannot be cleared.** `store.set(path,
   undefined)` now unsets the leaf, which for a default of `undefined` is the cleared state. For a
   clearable enum with any other default, clearing in a `PrefsForm`
   (`packages/ui/src/components/Prefs/prefField.tsx`, `onClear`) puts the leaf back on its default,
-  so the lit segment moves to the default option instead of going dark. Storing "cleared" needs a
-  value a record can hold and `repairPrefValue` reads back as no option: `null` as the stored form
-  of a cleared enum is one choice; rejecting `clearable` on an enum whose default is not
-  `undefined`, in the schema type, is the other.
+  so the lit segment moves to the default option instead of going dark. Ruled 2026-10-11: a
+  clearable enum cannot have a default other than `undefined`, so a missing value stays the only
+  stored form of cleared. That leaves rejecting the pair in the schema type
+  (`packages/prefs/src/schema.ts`) and fixing any schema that declares it.
 
 - **(P3) `PrefSchemaEditor`: under a node property schema, two prefs can be given one value path.**
   A key is checked only against its siblings (`keyProblem`, `uniqueKey` in
@@ -1785,10 +1796,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `canLand` in `StructurePane.tsx` allows any leaf that holds a value, and `aliasOf` names it by
   `valuePathOf`, so under a group root the alias gets `obj.field`, which no reader resolves, and
   under a section root it gets the bare field key (`cap` for `data.stroke.cap`), which is the wrong
-  path as well. Either refuse the alias for a leaf whose parent is an `object` leaf, in the button,
-  the tree drag, and the preview drag (`usePreviewDrag`'s `aliasable`), or teach the readers to
-  resolve a path into an object. `valuePathOf` is also wrong for anything under a section inside an
-  `object` leaf of a group root, where it counts the section's key as a step.
+  path as well. Ruled 2026-10-11: a field inside an `object` pref cannot be aliased. That leaves
+  refusing the alias for a leaf whose parent is an `object` leaf, in the button, the tree drag, and
+  the preview drag (`usePreviewDrag`'s `aliasable`). `valuePathOf` is also wrong for anything under
+  a section inside an `object` leaf of a group root, where it counts the section's key as a step.
 
 - **(P2) `PrefsForm`: a mixed object, list, map, or union leaf draws as unset, and one edit
   overwrites every node's whole value.** `mixed={new Set(['appearance.stroke'])}` on an object leaf
@@ -1798,12 +1809,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   drop each node's other fields. `renderBuiltin` in `PrefsRow.tsx` likewise never passes `mixed` to
   `UnionPicker`, and a mixed list or map reads as `None`, where `Add` writes a one-entry list over
   all of them, and a mixed union shows "Choose option…". Passing `mixed` down to the fields is the
-  small half. The design call is the write:
-  `PrefsForm` knows only that a path is mixed, not the values behind it, so a field edit cannot
-  build a whole object. The options are to let `mixed` name field paths (`appearance.stroke.width`)
-  and have a field edit call `onChange` at the field's own path, or to give the form the per-node
-  values the way `SelectionPanel`'s `each` and `valueAt` do. A mixed list or map needs a drawn state
-  as well; `SelectionPanel` draws the word `Mixed` in place of the editor.
+  small half. The other half is the write: `PrefsForm` knows only that a path is mixed, not the
+  values behind it, so a field edit cannot build a whole object. Ruled 2026-10-11: `mixed` names
+  field paths (`appearance.stroke.width`), and a field edit calls `onChange` at the field's own
+  path, which leaves each node's other fields in the owner's hands. That leaves both halves, and a
+  drawn state for a mixed list or map; `SelectionPanel` draws the word `Mixed` in place of the
+  editor.
 
 - **(P3) `PrefsForm` rail layout: a page that opens without a rail click keeps the last page's row
   state.** `RailLayout` renders `PrefsPane` unkeyed and `paneChildren` keys rows by child key, not
@@ -1827,10 +1838,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   the same facing and both ends pick the same one; the router gets two coincident points and the
   path has no length. With two different named ports the `straight` router draws a chord through the
   node's interior instead. The layouts already handle self-loops, so the edge is meant to show.
-  Drawing it needs a loop shape, which is the open call: which two ports a portless self-edge leaves
-  and returns by (adjacent sides, or one side twice), how far the loop stands off the outline, and
-  whether each router (`straight`, `orthogonal`, `bezier`) draws its own loop or `edgeDerivePath`
-  hands them a waypoint outside the node.
+  Ruled 2026-10-11: one shared rule beside `resolveEnd` has a portless self-edge leave and return by
+  two adjacent sides and pass a point outside the node, and the routers (`straight`, `orthogonal`,
+  `bezier`) route through that point and draw no loop of their own. That leaves the rule, how far
+  the loop stands off the outline, and `edgeDerivePath` handing the routers the waypoint.
 
 - **(P2) guides: alignment snapping does not say which world its candidates are in on a parallax
   layer.** `alignMoveBehavior`, `alignInsertBehavior`, and `alignResizeBehavior`
@@ -1841,9 +1852,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   plane coordinates when the siblings share the dragged node's layer and camera coordinates when
   they do not (a page box, or nodes on another layer). The matched lines are also published through
   `setActiveGuides` to a layer the camera draws, so a plane-space match is drawn in the wrong place.
-  Options: declare candidates camera-space and have the caller carry sibling boxes out of their
-  planes (the behaviors then use `guideOffsetOn` and publish camera-space lines), or tag each
-  candidate with the layer it was derived from.
+  Ruled 2026-10-11: alignment candidates are always camera coordinates, and the caller carries
+  sibling boxes out of their planes. That leaves the three behaviors converting through
+  `guideOffsetOn` and publishing camera-space lines, the conversion for callers of
+  `deriveAlignmentGuides`, and the docs naming the space.
 
 - **(P3) hud loupe: pixel mode keeps a stale picture when the scene changes under a parked aim.**
   `createLoupe` (`packages/hud/src/loupe/createLoupe.ts`) re-reads the framebuffer only when the
@@ -1886,21 +1898,22 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   and never `onChange`, and a consumer that saves on `onChange` is not told the curve changed. The
   delete's guards (locked, pinned endpoint, `minPoints`) are also a second copy of the ones in
   `createFunctionLayer.tsx`, and the wrapper `div` with an inline `display: contents` exists only to
-  host the handler. Options for the delete: a `contextmenu` hook on `CurveLayer`, dispatched with
-  hit testing and history like `onPointerDown` (new public surface on the layer type), which also
-  retires the duplicate guards and the wrapper. Options for undo: have `restore` call
-  `onLayerCommit` too, which changes the documented contract ("undo fires `onLayerChange`") and
-  makes a consumer that builds ops from `onLayerCommit` record the undo as a new edit; or leave
-  commit alone and document that a consumer who persists on commit must turn `history` off.
+  host the handler. For the delete: a `contextmenu` hook on `CurveLayer`, dispatched with hit
+  testing and history like `onPointerDown` (new public surface on the layer type), which also
+  retires the duplicate guards and the wrapper. Ruled 2026-10-11: undo and redo report a finished
+  change the same way the end of a drag does, so `CurveEditor` emits `onChange` for them. That
+  leaves `restore` calling `onLayerCommit` too, and the documented contract ("undo fires
+  `onLayerChange`") reworded to say so and to tell a consumer that keeps its own undo, or builds ops
+  from `onLayerCommit`, to turn `history` off.
 
 - **(P2) LayerList: rows under a card are `role="row"` with no `treegrid` ancestor.** When a level
   holds any item with a body, `Level` in `packages/ui/src/components/LayerList/LayerList.tsx`
   renders it as a `PropertyList` with no role, and a nested level's container is `role="none"`, so
   the body-less rows in a mixed level and the child rows under a card carry `role="row"` and
-  `aria-level` with no grid above them. Flat lists are fine (each row now owns a `gridcell`).
-  Options: give a rows-only level under a card its own `treegrid` named for the card, with
-  `aria-level` restarting there, and decide what a lone row among cards is; or build the row levels
-  on `ItemList`, which already picks its roles by what the list can do.
+  `aria-level` with no grid above them. Flat lists are fine (each row now owns a `gridcell`). Ruled
+  2026-10-11: each level of plain rows under a card or among cards becomes its own `treegrid`, named
+  for its card, with `aria-level` restarting there. That leaves that markup in `Level`, and what a
+  lone row among cards belongs to, since it has no card to be named for.
 
 - **(P2) ActionBar: a button's `enabled` / `active` state is re-read only when something else
   re-renders the bar.** A "Delete" action enabled only while something is selected stays disabled
@@ -1952,9 +1965,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `allowsCustomValue`, typing an option's own label and pressing Enter with nothing highlighted
   calls `onCommit({ source: 'text' })` (`packages/ui/src/components/ComboBox/ComboBox.tsx`,
   `onKeyDownCapture`), though the prop's doc says a text commit is "text matching none of them".
-  Options: report it as `{ source: 'option', key }`, report nothing, or change the doc to say a text
-  commit is any Enter with no option highlighted. The children form has no option text to compare
-  against without reading the collection.
+  Ruled 2026-10-11: it stays a text commit, and the doc changes to say a text commit is any Enter
+  with no option highlighted. That leaves rewording the prop's doc.
 
 - **(P3) BandEditor: splitting a band has no keyboard path.** A band is split only by clicking the
   ruler (`onTrackPointerDown` in `packages/ui/src/components/BandEditor/BandEditor.tsx`); every
@@ -1965,9 +1977,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   screen reader hears "Stop 3 at 10%, Stop 1 at 50%"
   (`packages/ui/src/components/GradientEditor/GradientEditor.tsx`, the `aria-label` on each
   `ColorField`). The index is the stop's stable identity, which is why a drag can cross a neighbor
-  without the two swapping, and a test names a swatch that way on purpose. Naming by position reads
-  in order but renames a stop as it crosses another; naming by index is stable but out of order.
-  Pick one.
+  without the two swapping, and a test names a swatch that way on purpose. Ruled 2026-10-11: a
+  swatch is numbered by its position along the gradient, so the stops read in order and one is
+  renumbered as it crosses another. That leaves the `aria-label` taking its number from offset order
+  while the index stays the stop's identity, and the test that names a swatch by index.
 
 - **(P3) ui/routing: "is this key press aimed at a text field" is answered twice.** `isTextEntry`
   (`packages/ui/src/components/BandEditor/track.ts`) says yes for input, textarea, select, and
@@ -2034,9 +2047,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   with a linear gradient, then shape B with a solid, click "linear" on B, and B receives A's stops
   (`remembered` in `packages/ui/src/components/PaintInput/PaintInput.tsx`). `apps/draw` avoids it
   with `key={ctx.selectionKey}`; `PaintField` mounts it inside a popover, so its memory lasts only
-  while the popover is open. Either keep the `key` requirement (now stated in the code comment, not
-  in the props docs) or add a prop naming what the control is pointed at and clear the memory when
-  it changes.
+  while the popover is open. Ruled 2026-10-11: a new prop names what the control is pointed at, and
+  the memory clears when that changes. That leaves the prop, the reset of `remembered`, and
+  `apps/draw` passing the prop in place of the `key`.
 
 - **(P3) Tree: focus drops to the page when the focused node is removed.** A consumer's own Delete
   handler removes the focused row: the tab stop recomputes to the first selected or first row, but
@@ -2054,8 +2067,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) Timeline: nothing dismisses the easing picker.** Clicking a segment opens the
   `EasingPicker` under the lanes and it stays until an edit renumbers the track's keys; selecting a
   key, clicking empty lane, or Escape leave it open, and a key editor and the easing picker can both
-  show. Decide what closes it (selecting a key, Escape, a click on empty lane) and whether key and
-  segment selection are one selection.
+  show. Ruled 2026-10-11: a key and a segment are one selection, so selecting a key, clicking empty
+  lane, or pressing Escape closes the picker, and the two editors never show together. That leaves
+  those three ways out in `packages/ui/src/components/Timeline/Timeline.tsx`.
 
 ### WeaselDraw app follow-ups (defer)
 
@@ -2138,22 +2152,19 @@ only story runner in the repo.
   and `moveBefore` moves an iframe without reloading it), or has `Trial` keep
   the body at one tree position whether or not there is a stage.
 
-- **(P3) A trial tile narrower than 300px cuts off its content pane.** A trial's
-  `Split` (`packages/labkit/src/primitives/Split.tsx`) holds the sidebar at its
-  140px floor and the content at its 160px floor however narrow the tile gets,
-  so below 300px the content pane runs out past the tile. Measured in forge on
-  2026-09-28 with two trials beside the story sidebar and CSS Vars aside: at a
-  1000px viewport each tile is 176px and the content pane reaches 124px past
-  it, at 1100px 74px; at 1718px with default sidebar widths the tiles are 535px
-  and nothing overflows. The 2026-09-13 fit-check warning (`.lk-shell-body`
-  scrolls, a pane 68px past `lk-trial__panes`) was this, but every split zone
-  between the pane and the shell body now has `overflow: hidden`, so the lab
-  no longer scrolls and the fit check stays silent: the story is clipped with
-  no way to reach its right side. Needs a decision on who gives way — the
-  split relaxing its floors (sidebar first) when the zone cannot hold both, or
-  the workspace refusing tiles below the split's floor and reflowing them.
-  At the same 140px the forge Globals group's label/value columns overlap
-  ("MODE" over "Lab").
+- **(P3) A trial tile narrower than 300px cuts off its content pane.** A trial's `Split`
+  (`packages/labkit/src/primitives/Split.tsx`) holds the sidebar at its 140px floor and the content
+  at its 160px floor however narrow the tile gets, so below 300px the content pane runs out past the
+  tile. Measured in forge on 2026-09-28 with two trials beside the story sidebar and CSS Vars aside:
+  at a 1000px viewport each tile is 176px and the content pane reaches 124px past it, at 1100px
+  74px; at 1718px with default sidebar widths the tiles are 535px and nothing overflows. The
+  2026-09-13 fit-check warning (`.lk-shell-body` scrolls, a pane 68px past `lk-trial__panes`) was
+  this, but every split zone between the pane and the shell body now has `overflow: hidden`, so the
+  lab no longer scrolls and the fit check stays silent: the story is clipped with no way to reach
+  its right side. Ruled 2026-10-11: the split gives way: when the zone cannot hold both panes it
+  shrinks its sidebar below its floor first, then its content. That leaves relaxing the two floors
+  in `Split`. At the same 140px the forge Globals group's label/value columns overlap ("MODE" over
+  "Lab").
 
 - **(P3) windease lays out a node that was registered and never shown.** A
   strip gives a `mounted` node its room and a seam, while `Container` renders
@@ -2172,11 +2183,9 @@ only story runner in the repo.
   (`frame/capture.ts`, `shell/FrameView.tsx`, `shell/TrialHost.tsx`), the `size` report and the
   `ResizeObserver` each open story keeps alive to send it, `TrialFrames.hostRef` (whose map in
   `shell/trialFrames.ts` is never pruned), and a `vars` array `TrialHost` builds and drops. These
-  are what taking marks out of forge left behind. Two ways to settle it: delete all of it, with the
-  protocol messages and the `:root`-capture entry below, and correct the `play.ts` comment; or wire
-  `play` up, so opening a story in the workshop runs its play and shows the result, and keep
-  `capture`, `size`, and `hostRef` only if marks are coming back to use them. Whether the workshop
-  should run plays is the decision; the rest follows from it.
+  are what taking marks out of forge left behind. Ruled 2026-10-11: the workshop does not run a
+  story's play. That leaves deleting all of it, with the protocol messages and the `:root`-capture
+  entry below, and correcting the `play.ts` comment.
 
 - **(P2) forge: the static index and the runtime loaders disagree about what a story is and what it
   is titled.** Three cases, all in `packages/forge/src/vite/indexFile.ts` against `story/native.ts`
@@ -2215,9 +2224,9 @@ only story runner in the repo.
 - **(P3) forge: a frame config has nowhere to put CSS meant for frame documents only.** The workshop
   page imports the frame config too, so `apps/forge/forge.frame.tsx`'s `./frame.css`, whose one rule
   is `html, body { background: var(--wzl-surface); color: var(--wzl-fg) }`, styles the workshop
-  document as well as every frame. Either the rule moves to something only `frame-entry.js` loads (a
-  `frameCss` option on the plugin, or `@weasel-js/forge/frame.css` reading the two tokens), or the
-  workshop is meant to share it and the file is misnamed.
+  document as well as every frame. Ruled 2026-10-11: the workshop page does not take that rule, and
+  CSS meant for frames loads through the frame entry alone. That leaves moving the rule to something
+  only `frame-entry.js` loads; it already imports `@weasel-js/forge/frame.css`.
 
 - **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
   three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any
@@ -2272,10 +2281,10 @@ only story runner in the repo.
   page under `@weasel-js/core` and another under `@weasel-js/gestures`, with the same text.
   TypeDoc's `packages` strategy converts each package on its own, so core's copy is a full
   declaration, not a pointer. Type references do cross: core's pages link into the sibling's.
-- **(P3) The front page's palette is undecided.** It ships three behind a toggle (charcoal,
-  the project's maroon and lime, paper). Pick one, then delete the toggle and the other two from
-  `apps/site/FrontPage/palettes.ts`. The page is deliberately plain; a live canvas beside the
-  pitch was drawn and set aside for later.
+- **(P3) The front page still ships three palettes behind a toggle.** Three are in the tree:
+  charcoal, the project's maroon and lime, and paper. Ruled 2026-10-11: maroon and lime ships. That
+  leaves deleting the toggle and the other two from `apps/site/FrontPage/palettes.ts`. The page is
+  deliberately plain; a live canvas beside the pitch was drawn and set aside for later.
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
 
 - **(P2) draw: the swatches' active fill and stroke never reach a newly drawn shape.** With nothing
@@ -2716,13 +2725,12 @@ one dead `const` and four stale disable directives.
   `tests/perf/recorded/layer-dispatch-2026-10-07/` and
   `tests/perf/recorded/layer-dispatch-dirty-2026-10-07/`. One GPU and backend
   only.
-- **(P3) Whether the benchmarks gate CI.** Every benchmark lives in
-  `tests/perf/` and writes a result file per run; nothing gates anything. The
-  vitest microbenchmarks keep a committed baseline in `tests/perf/bench/`. `tests/perf/README.md` argues a hard
-  threshold on shared runners would have to be loose enough to miss real
-  regressions. The shape a gate could take instead: a PR job that runs the
-  benchmarks on both revisions and posts the `npm run perf:compare` table as a
-  comment without failing the build. Mike's call.
+- **(P3) No pull request runs the benchmarks.** Every benchmark lives in `tests/perf/` and writes a
+  result file per run; nothing gates anything. The vitest microbenchmarks keep a committed baseline
+  in `tests/perf/bench/`. `tests/perf/README.md` argues a hard threshold on shared runners would
+  have to be loose enough to miss real regressions. Ruled 2026-10-11: a pull request job runs the
+  benchmarks on both revisions and posts the `npm run perf:compare` table as a comment, and it never
+  fails the build. That leaves writing the job.
 
 - **(P2) A scene's `generateId` is honored by `scene.add` only.** `createScene({ generateId })`
   mints ids for `scene.add` (`core/scene/scene.ts`), and five other minters ignore it, each with its
