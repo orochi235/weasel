@@ -118,7 +118,7 @@
   font-size: var(--wzl-font-size-xs);
 }
 .changeList { overflow: auto; font-family: var(--wzl-font-mono); white-space: pre; }
-.changed { font-weight: var(--wzl-font-weight-bold); }
+.changed { color: var(--wzl-accent-fg); }
 /* Tool buttons dragged into the tree or the preview to add a node there. */
 .palette {
   inline-size: fit-content;
