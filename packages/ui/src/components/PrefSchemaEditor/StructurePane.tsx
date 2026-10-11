@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { isPrefLeaf, isPrefSection, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { filterTree, Tree, treeBranchIds, type TreeDragEffect, type TreeNode } from '../Tree';
@@ -200,6 +200,8 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
     else outside?.end();
   };
   const onPaletteDrop = (drag: PaletteDrag) => {
+    // The tree answers a drag from an effect, a render after the pointer moved; a drop is asked about where it was let go.
+    flushSync(() => setPaletteDrag(drag));
     const at = treeTarget.current;
     const target = at ? schemaTarget(schema, at.parentId, at.index) : outside?.target(carried(drag), [], drag) ?? null;
     if (!target) return;

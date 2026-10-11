@@ -1,10 +1,11 @@
 import '@weasel-js/theme/tokens.css';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeAll, expect, test } from 'vitest';
 import { page } from 'vitest/browser';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
+import { drag as dragTo } from './pointerDrag.fixture';
 
 // A drop into the live preview is hit-tested against the form's layout, which only a browser has.
 
@@ -29,23 +30,15 @@ const selectedRows = () => within(screen.getByRole('tree', { name: 'Schema struc
 const order = () => Object.keys((latest.children.view as PrefGroup).children);
 
 /** Drag the preview row reading `from` onto the top of the one reading `onto`. */
-async function drag(from: string, onto: string) {
+function drag(from: string, onto: string) {
   const a = preview().getByText(from).getBoundingClientRect();
   const b = preview().getByText(onto).getBoundingClientRect();
-  const [x0, y0, x1, y1] = [a.left + 4, a.top + a.height / 2, b.left + 4, b.top + 2];
-  const opts = (x: number, y: number) => ({ bubbles: true, pointerId: 1, button: 0, buttons: 1, clientX: x, clientY: y, isPrimary: true });
-  await act(async () => {
-    preview().getByText(from).dispatchEvent(new PointerEvent('pointerdown', opts(x0, y0)));
-    for (let i = 1; i <= 8; i++) document.dispatchEvent(new PointerEvent('pointermove', opts(x0 + ((x1 - x0) * i) / 8, y0 + ((y1 - y0) * i) / 8)));
-    await new Promise((r) => setTimeout(r, 50));
-    document.dispatchEvent(new PointerEvent('pointermove', opts(x1, y1)));
-    document.dispatchEvent(new PointerEvent('pointerup', opts(x1, y1)));
-  });
+  dragTo(preview().getByText(from), { x: b.left + 4, y: b.top + 2 }, { press: { x: a.left + 4, y: a.top + a.height / 2 } });
 }
 
-test('a row dropped in the live preview becomes the selection', async () => {
+test('a row dropped in the live preview becomes the selection', () => {
   render(<Live />);
-  await drag('Dock', 'Show grid');
+  drag('Dock', 'Show grid');
   expect(order()).not.toEqual(['grid', 'snap', 'dock']);
   expect(selectedRows().map((r) => r.textContent)).toEqual([expect.stringContaining('(dock)')]);
 });
@@ -58,7 +51,7 @@ test('with "Select what is dropped" off in the editor\'s preferences, the select
   // The dialog leaves on its exit animation, which a loaded fleet node has taken over a second to finish.
   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Schema editor preferences' })).toBeNull(), { timeout: 10_000 });
   fireEvent.click(within(screen.getByRole('tree', { name: 'Schema structure' })).getByText('(snap)'));
-  await drag('Dock', 'Show grid');
+  drag('Dock', 'Show grid');
   expect(order()).not.toEqual(['grid', 'snap', 'dock']);
   expect(selectedRows().map((r) => r.textContent)).toEqual([expect.stringContaining('(snap)')]);
 });
