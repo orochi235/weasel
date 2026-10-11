@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 import type { PrefList } from '@weasel-js/prefs';
 import { ListEditor } from '../ListEditor';
 import { prefListEntry, prefListIsText, prefListTexts } from '../Prefs/ListLeaf';
+import { PrefMixed } from '../Prefs/PrefMixed';
 import type { PropertyRenderContext } from './renderLeaf';
-import s from './SelectionPanel.module.css';
 
 /**
  * A `list` leaf across a selection: one control per entry, each drawn as the
@@ -22,7 +22,7 @@ export function ListLeaf({
 }) {
   const pref = ctx.pref as PrefList;
   const { item } = pref;
-  if (ctx.mixed) return <span className={s.unrenderable}>Mixed</span>;
+  if (ctx.mixed) return <PrefMixed />;
   const shared = {
     'aria-label': item.name || pref.name,
     onChange: ctx.setValue,

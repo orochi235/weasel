@@ -12,6 +12,7 @@ import {
 } from '@weasel-js/prefs';
 import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PrefActionButton } from './PrefActionButton';
+import { PrefMixed } from './PrefMixed';
 import { prefDrawsNoControl, PrefWords } from './PrefWords';
 import { drawsRows } from './compound';
 import { ListLeaf } from './ListLeaf';
@@ -37,6 +38,10 @@ export interface PrefRenderContext {
   /** The leaf stands for several values that disagree; `value` is undefined. */
   mixed?: boolean;
   setValue: (value: unknown) => void;
+  /** Whether a path at or under this leaf's is in the form's `mixed`; with `below`, whether it or any path under it is. */
+  mixedAt?: (path: string, below?: boolean) => boolean;
+  /** Writes at a path under this leaf's, where `setValue` writes the leaf whole. */
+  setValueAt?: (path: string, value: unknown) => void;
   /** Whether this leaf is currently auto — not pinned, computed by the owner. */
   auto: boolean;
   /** Toggle this leaf's auto state. */
@@ -121,6 +126,8 @@ export function prefRenderContext(
     value: mixed ? undefined : stored !== undefined ? stored : pref.default,
     mixed,
     setValue: (v) => ctx.onChange(path, v),
+    mixedAt: (at, below = false) => pathIsMixed(ctx.mixed, from + at.slice(path.length), below),
+    setValueAt: ctx.onChange,
     auto: ctx.auto?.has(from) ?? false,
     setAuto: (next) => {
       if (toggles) onAutoChange(path, next);
@@ -128,6 +135,14 @@ export function prefRenderContext(
     ...(ctx.fields ? { fields: ctx.fields } : {}),
   };
   return { renderCtx, toggles };
+}
+
+function pathIsMixed(mixed: ReadonlySet<string> | undefined, path: string, below: boolean): boolean {
+  if (mixed === undefined) return false;
+  if (mixed.has(path)) return true;
+  if (!below) return false;
+  for (const at of mixed) if (at.startsWith(`${path}.`)) return true;
+  return false;
 }
 
 /** One leaf's row. `at` is where its value lives when that is not the row's own `path`: the target of an alias. */
@@ -212,6 +227,7 @@ function renderBuiltin(
     />
   );
   if (pref.kind === 'object') return object(ctx);
+  if (ctx.mixed && (pref.kind === 'list' || pref.kind === 'map')) return <PrefMixed />;
   if (pref.kind === 'list')
     return <ListLeaf ctx={ctx} renderers={renderers} renderItem={(item) => renderPrefControl(item, renderers)} />;
   if (pref.kind === 'map') {
@@ -229,7 +245,7 @@ function renderBuiltin(
   }
   if (pref.kind === 'union') {
     return (
-      <UnionPicker pref={pref as PrefUnion} value={value} onChange={setValue}>
+      <UnionPicker pref={pref as PrefUnion} value={value} mixed={ctx.mixed} onChange={setValue}>
         {(variant) => object({ ...ctx, pref: variant })}
       </UnionPicker>
     );

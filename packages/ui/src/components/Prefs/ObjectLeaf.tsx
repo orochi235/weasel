@@ -7,8 +7,11 @@ import { objectRows, type ObjectLeafParts } from './objectRows';
 import type { PrefRenderContext } from './PrefsRow';
 import s from './Prefs.module.css';
 
-/** One value with its fields hanging off it: each field renders its own
- *  control and commits the parent object whole. */
+/**
+ * One value with its fields hanging off it: each field renders its own control and commits the parent object
+ * whole. Where the form's `mixed` names the object or anything under it, no one object stands for every value
+ * behind it, and a field is written at its own path.
+ */
 export function ObjectLeaf({
   ctx,
   renderField,
@@ -25,17 +28,26 @@ export function ObjectLeaf({
   const held = typeof value === 'object' && value !== null
     ? (value as Record<string, unknown>)
     : undefined;
-  const fieldCtx = (key: string, child: PrefLeaf): PrefRenderContext => ({
-    path: `${ctx.path}.${key}`,
-    pref: child,
-    value: held?.[key],
-    setValue: (v) => setValue(prefObjectWithField(pref, value, key, v)),
-    // A field is not pinned on its own — it shares the state of
-    // the object leaf it hangs off.
-    auto: ctx.auto,
-    setAuto: ctx.setAuto,
-    ...(ctx.fields ? { fields: ctx.fields } : {}),
-  });
+  const { mixedAt, setValueAt } = ctx;
+  const split = setValueAt !== undefined && (ctx.mixed === true || mixedAt?.(ctx.path, true) === true);
+  const fieldCtx = (key: string, child: PrefLeaf): PrefRenderContext => {
+    const path = `${ctx.path}.${key}`;
+    const mixed = ctx.mixed === true || mixedAt?.(path) === true;
+    return {
+      path,
+      pref: child,
+      value: mixed ? undefined : held?.[key],
+      mixed,
+      setValue: split ? (v) => setValueAt(path, v) : (v) => setValue(prefObjectWithField(pref, value, key, v)),
+      mixedAt,
+      setValueAt,
+      // A field is not pinned on its own — it shares the state of
+      // the object leaf it hangs off.
+      auto: ctx.auto,
+      setAuto: ctx.setAuto,
+      ...(ctx.fields ? { fields: ctx.fields } : {}),
+    };
+  };
   const parts: ObjectLeafParts<{ key: string; child: PrefLeaf; field: PrefRenderContext }> = {
     path: ctx.path,
     cell: (key, child) => ({ key, child, field: fieldCtx(key, child) }),

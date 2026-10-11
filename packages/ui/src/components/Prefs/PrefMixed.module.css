@@ -1,0 +1,5 @@
+.mixed {
+  font-size: var(--wzl-font-size-sm);
+  opacity: 0.5;
+  font-style: italic;
+}

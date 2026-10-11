@@ -84,9 +84,14 @@ export interface PrefsFormProps {
    *  dimmed, showing the value in `values` — pass it already resolved. Editing
    *  it calls `onChange` as usual, which is the owner's cue to pin it. */
   auto?: ReadonlySet<string>;
-  /** Dotted paths whose leaves stand for several values that disagree: each draws
-   *  its control in its mixed state, with no value. Editing one calls `onChange`
-   *  as usual, which is the owner's cue to write them all. */
+  /** Dotted paths whose values stand for several that disagree: a leaf's, or a
+   *  field's inside an `object` or a `union` leaf (`appearance.stroke.width`).
+   *  Each draws its control in its mixed state, with no value; a list or a map
+   *  draws the word `Mixed` in place of its editor. Editing one calls `onChange`
+   *  as usual, which is the owner's cue to write them all. While an object
+   *  leaf's path or any under it is named, each of its fields is written at the
+   *  field's own path and not as the whole object, so the owner keeps every
+   *  value's other fields. */
   mixed?: ReadonlySet<string>;
   /** Given, a leaf's label toggles whether it inherits: `next` true unpins it,
    *  false pins it at the value it shows. Leaves `canInherit` refuses keep a

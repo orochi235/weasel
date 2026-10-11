@@ -134,3 +134,59 @@ function BareControlStory() {
 export const BareControl: Story = {
   render: () => <BareControlStory />,
 };
+
+const SEVERAL: PrefGroup = {
+  name: 'Several marks',
+  children: {
+    stroke: {
+      kind: 'object',
+      name: 'Stroke',
+      description: '',
+      default: { width: 1, color: '#1d4ed8' },
+      children: {
+        width: { kind: 'number', name: 'Width', description: '', default: 1, min: 0 },
+        color: { kind: 'color', name: 'Color', description: '', default: '#888888' },
+      },
+    },
+    dash: { kind: 'list', name: 'Dash', description: '', default: [], item: { kind: 'number', name: 'Length', description: '', default: 1 } },
+    tags: { kind: 'map', name: 'Tags', description: '', default: {}, item: { kind: 'string', name: 'Tag', description: '', default: '' } },
+    end: {
+      kind: 'union',
+      name: 'End',
+      description: '',
+      tag: 'type',
+      default: { type: 'arrow', size: 4 },
+      variants: {
+        arrow: { kind: 'object', name: 'Arrow', description: '', default: { size: 4 }, children: { size: { kind: 'number', name: 'Size', description: '', default: 4 } } },
+        dot: { kind: 'object', name: 'Dot', description: '', default: { radius: 2 }, children: { radius: { kind: 'number', name: 'Radius', description: '', default: 2 } } },
+      },
+    },
+  },
+};
+
+const DIFFER: ReadonlySet<string> = new Set(['stroke.width', 'dash', 'tags', 'end']);
+
+function MixedStory() {
+  const [last, setLast] = useState('');
+  return (
+    <>
+      <PrefsForm schema={SEVERAL} layout="list" mixed={DIFFER} values={{ stroke: { width: 1, color: '#1d4ed8' } }}
+        onChange={(path, value) => setLast(`${path} = ${JSON.stringify(value)}`)} />
+      <output>{last}</output>
+    </>
+  );
+}
+
+/**
+ * A form standing for several values that disagree. `mixed` names a field inside an object leaf, and while it does
+ * each of that object's fields is written at its own path. A list or a map draws the word `Mixed`, and a union
+ * draws its choice as mixed with no variant's fields.
+ */
+export const Mixed: Story = {
+  render: () => <MixedStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getAllByText('Mixed').length).toBeGreaterThanOrEqual(2);
+    await expect(canvas.queryByRole('button', { name: 'Add' })).toBeNull();
+  },
+};

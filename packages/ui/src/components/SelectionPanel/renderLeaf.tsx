@@ -19,6 +19,7 @@ import {
 } from '@weasel-js/prefs';
 import { MapEditor } from '../Prefs/MapEditor';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
+import { PrefMixed } from '../Prefs/PrefMixed';
 import { prefDrawsNoControl, PrefWords } from '../Prefs/PrefWords';
 import { UnionPicker } from '../Prefs/UnionPicker';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
@@ -291,7 +292,7 @@ export function renderBuiltin(
     );
   }
   if (pref.kind === 'map') {
-    if (mixed) return <span className={s.unrenderable}>Mixed</span>;
+    if (mixed) return <PrefMixed />;
     const map = pref as PrefMap;
     return (
       <MapEditor
