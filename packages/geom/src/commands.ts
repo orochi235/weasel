@@ -61,6 +61,10 @@ export function pathCommandCoordCount(cmd: number): number {
  * returns it to the subpath's opening `M`, so a command following a `Z`
  * without an intervening `M` starts where SVG says it does.
  *
+ * Such a command opens a new subpath at the pen, as does a drawing command
+ * no `M` precedes at all. The visitor is told with `opensSubpath`, and has to
+ * start its contour at `(penX, penY)` then: there is no `M` to do it.
+ *
  * A code `PATH_COMMANDS` does not declare throws once the visitor has seen it,
  * since the walker cannot tell how many coords it consumes.
  */
@@ -73,14 +77,19 @@ export function forEachSegment(
     penX: number,
     penY: number,
     commandIndex: number,
+    opensSubpath: boolean,
   ) => void | boolean,
 ): void {
   let ci = 0;
   let px = 0, py = 0;
   let startX = 0, startY = 0;
+  let open = false;
   for (let i = 0; i < commands.length; i++) {
     const cmd = commands[i];
-    if (visit(cmd, ci, px, py, i) === false) return;
+    const opens = !open && cmd !== PATH_M && cmd !== PATH_Z;
+    if (opens) { startX = px; startY = py; }
+    open = cmd !== PATH_Z;
+    if (visit(cmd, ci, px, py, i, opens) === false) return;
     const len = pathCommandCoordCount(cmd);
     if (len === undefined) throw new Error(`forEachSegment: unknown command code ${cmd}`);
     if (len > 0) {

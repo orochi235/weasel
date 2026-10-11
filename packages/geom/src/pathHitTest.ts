@@ -54,7 +54,8 @@ function flatSubpaths(
   const open: number[][] = [];
   let sub: number[] = [];
 
-  forEachSegment(commands, coords, (cmd, ci, curX, curY) => {
+  forEachSegment(commands, coords, (cmd, ci, curX, curY, _i, opensSubpath) => {
+    if (opensSubpath) sub = [curX, curY];
     switch (cmd) {
       case PATH_M:
         if (sub.length >= 2) open.push(sub);

@@ -174,8 +174,9 @@ describe('extractPolylines pen bookkeeping', () => {
       coords: Float32Array.of(0, 0, 0, 100, 50, 0, 50, 0, 100, 0),
       fillRule: 'nonzero',
     };
+    // The curve opens a second subpath there, as SVG has it.
     const out = extractPolylines(p);
-    expect(out).toHaveLength(1);
-    expect(out[0].points).toEqual([0, 0, 0, 100, 100, 0]);
+    expect(out.map((l) => l.points)).toEqual([[0, 0, 0, 100], [0, 0, 100, 0]]);
+    expect(out.map((l) => l.closed)).toEqual([true, false]);
   });
 });

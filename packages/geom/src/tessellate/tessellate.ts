@@ -69,7 +69,16 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
     anchorT[lastIdx] = 0;
   };
 
-  forEachSegment(commands, coords, (cmd, coordIdx, prevX, prevY) => {
+  forEachSegment(commands, coords, (cmd, coordIdx, prevX, prevY, _i, opensSubpath) => {
+    if (opensSubpath) {
+      const anchor = Math.max(startAnchor, 0);
+      contourStarts.push(out.length / 2);
+      out.push(prevX, prevY);
+      anchorA.push(anchor);
+      anchorB.push(anchor);
+      anchorT.push(0);
+      prevAnchor = anchor;
+    }
     switch (cmd) {
       case PATH_M:
       case PATH_L: {

@@ -57,6 +57,8 @@ export function pathToMultiPolygon(
   const rings: Ring[] = [];
   let current: Ring | null = null;
   let cx = 0, cy = 0;
+  // Where `Z` returns the pen, and so where a command after it starts.
+  let startX = 0, startY = 0;
   let ci = 0;
   const { commands, coords } = path;
 
@@ -78,13 +80,15 @@ export function pathToMultiPolygon(
       case PATH_M: {
         finalizeCurrent();
         cx = coords[ci]; cy = coords[ci + 1];
+        startX = cx; startY = cy;
         current = [[cx, cy]];
         ci += 2;
         break;
       }
       case PATH_L: {
+        current ??= [[cx, cy]];
         cx = coords[ci]; cy = coords[ci + 1];
-        if (current) current.push([cx, cy]);
+        current.push([cx, cy]);
         ci += 2;
         break;
       }
@@ -94,7 +98,8 @@ export function pathToMultiPolygon(
         const x3 = coords[ci + 4], y3 = coords[ci + 5];
         const out: number[] = [];
         flattenCubic(cx, cy, x1, y1, x2, y2, x3, y3, tolerance, out);
-        if (current) for (let k = 0; k < out.length; k += 2) current.push([out[k], out[k + 1]]);
+        current ??= [[cx, cy]];
+        for (let k = 0; k < out.length; k += 2) current.push([out[k], out[k + 1]]);
         cx = x3; cy = y3;
         ci += 6;
         break;
@@ -105,13 +110,15 @@ export function pathToMultiPolygon(
         const [c1x, c1y, c2x, c2y] = elevateQuadraticToCubic(cx, cy, x1, y1, x2, y2);
         const out: number[] = [];
         flattenCubic(cx, cy, c1x, c1y, c2x, c2y, x2, y2, tolerance, out);
-        if (current) for (let k = 0; k < out.length; k += 2) current.push([out[k], out[k + 1]]);
+        current ??= [[cx, cy]];
+        for (let k = 0; k < out.length; k += 2) current.push([out[k], out[k + 1]]);
         cx = x2; cy = y2;
         ci += 4;
         break;
       }
       case PATH_Z: {
         finalizeCurrent();
+        cx = startX; cy = startY;
         break;
       }
       default:

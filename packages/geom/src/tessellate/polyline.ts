@@ -58,6 +58,8 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
   let current: Polyline | null = null;
 
   let prevAnchor = -1;
+  // The anchor a subpath opened by a bare drawing command starts from.
+  let startAnchor = 0;
 
   const beginContour = (): Polyline => {
     pts = [];
@@ -114,13 +116,23 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
     aT![lastIdx] = 0;
   };
 
-  forEachSegment(commands, coords, (cmd, coordIdx, prevX, prevY) => {
+  forEachSegment(commands, coords, (cmd, coordIdx, prevX, prevY, _i, opensSubpath) => {
+    if (opensSubpath) {
+      if (current) commit(current);
+      current = beginContour();
+      pts!.push(prevX, prevY);
+      aA!.push(startAnchor);
+      aB!.push(startAnchor);
+      aT!.push(0);
+      prevAnchor = startAnchor;
+    }
     switch (cmd) {
       case PATH_M:
       case PATH_L: {
         if (cmd === PATH_M) {
           if (current) commit(current);
           current = beginContour();
+          startAnchor = anchorCounter;
         }
         pts!.push(coords[coordIdx], coords[coordIdx + 1]);
         aA!.push(anchorCounter);
