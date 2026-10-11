@@ -235,3 +235,101 @@ describe('CssVarsPanel', () => {
     expect(vars().getByRole('button', { name: 'Save scales to theme' })).toBeInTheDocument();
   });
 });
+
+describe('CssVarsPanel history', () => {
+  const step = (name: 'Undo' | 'Redo') => vars().getByRole('button', { name });
+  /** The gray-50 row, which the panel shows on its own only once filtered to. */
+  const gray50 = () => {
+    fireEvent.change(vars().getByLabelText('Filter'), { target: { value: 'gray-50' } });
+    return row(vars(), '--wzl-gray-50');
+  };
+
+  it('takes a token edit back and puts it forward again, telling the frame each time', async () => {
+    location.hash = '#/x--a';
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { received } = await openTrial('A');
+    expect(step('Undo')).toBeDisabled();
+    const token = gray50();
+    fireEvent.change(token.getByRole('textbox'), { target: { value: '#123456' } });
+    await flush();
+    expect(step('Redo')).toBeDisabled();
+
+    fireEvent.click(step('Undo'));
+    await flush();
+    expect(setsOf(received).at(-1)).toEqual({ type: 'vars.set', name: '--wzl-gray-50', value: null });
+    expect(token.getByRole('textbox')).toHaveValue('#f5f5f6');
+    expect(step('Undo')).toBeDisabled();
+
+    fireEvent.click(step('Redo'));
+    await flush();
+    expect(setsOf(received).at(-1)).toEqual({ type: 'vars.set', name: '--wzl-gray-50', value: '#123456' });
+    expect(token.getByRole('textbox')).toHaveValue('#123456');
+  });
+
+  it('takes a scale edit back as one step, every token and the base with it', async () => {
+    location.hash = '#/x--a';
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { received } = await openTrial('A');
+    const font = await editFontBase(String(editedBase));
+    const before = setsOf(received).length;
+
+    fireEvent.click(step('Undo'));
+    await flush();
+    const undone = setsOf(received).slice(before) as VarsSet[];
+    expect(undone.map((m) => m.name).sort()).toEqual(fontSteps.map((s) => `--wzl-font-size-${s}`).sort());
+    expect(undone.every((m) => m.value === null)).toBe(true);
+    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue(String(fontBase));
+    expect(step('Undo')).toBeDisabled();
+
+    fireEvent.click(step('Redo'));
+    await flush();
+    expect(font.getByRole('textbox', { name: 'font base' })).toHaveValue(String(editedBase));
+  });
+
+  it('steps back on Mod+Z pressed in the panel, and leaves the filter’s own undo alone', async () => {
+    location.hash = '#/x--a';
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await openTrial('A');
+    const token = gray50();
+    fireEvent.change(token.getByRole('textbox'), { target: { value: '#123456' } });
+    await flush();
+
+    fireEvent.keyDown(vars().getByLabelText('Filter'), { key: 'z', metaKey: true, ctrlKey: true });
+    expect(token.getByRole('textbox')).toHaveValue('#123456');
+    fireEvent.keyDown(token.getByRole('textbox'), { key: 'z', metaKey: true, ctrlKey: true });
+    await flush();
+    expect(token.getByRole('textbox')).toHaveValue('#f5f5f6');
+  });
+
+  it('keeps the steps with the trial across a reload', async () => {
+    location.hash = '#/x--a';
+    const storage = createMemoryAdapter();
+    const first = render(<Workshop index={[a]} frameUrl="/frame.html" storage={storage} />);
+    await openTrial('A');
+    fireEvent.change(gray50().getByRole('textbox'), { target: { value: '#123456' } });
+    // labkit saves a trial's state a moment after it changes.
+    await waitFor(() => expect(JSON.stringify(storage.listSync?.(''))).toContain('fg.vars.swap'), { timeout: 5000 });
+    first.unmount();
+
+    history.replaceState(null, '', '/');
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={storage} />);
+    await openTrial('A');
+    const token = gray50();
+    expect(token.getByRole('textbox')).toHaveValue('#123456');
+    fireEvent.click(step('Undo'));
+    await flush();
+    expect(token.getByRole('textbox')).toHaveValue('#f5f5f6');
+  });
+
+  it('forgets the steps once a scale is saved into the theme', async () => {
+    stubStore({ status: 200, body: { hash: 'h2', regenerated: true, problems: [] } });
+    location.hash = '#/x--a';
+    render(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    await openTrial('A');
+    await editFontBase(String(editedBase));
+    expect(step('Undo')).toBeEnabled();
+    fireEvent.click(vars().getByRole('button', { name: 'Save scales to theme' }));
+    await waitFor(() => expect(vars().getByRole('status')).toHaveTextContent('Saved'));
+    expect(step('Undo')).toBeDisabled();
+  });
+});

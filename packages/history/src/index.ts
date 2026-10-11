@@ -13,4 +13,6 @@ export type {
   RecordEntryOptions,
 } from './history';
 export type { Op } from './op';
+export { swapOp } from './swapOp';
+export type { SwapArgs, SwapOpOptions } from './swapOp';
 export type { Journal, BeginJournalOptions } from './journal';

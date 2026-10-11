@@ -18,7 +18,8 @@ import {
 } from '@weasel-js/labkit';
 import { THEME_SOURCES, TOKEN_MANIFEST } from '@weasel-js/theme';
 import { scale as generateScale, httpThemeApi, type ThemeApi } from '@weasel-js/theme/engine';
-import { Button, SearchIcon } from '@weasel-js/ui';
+import { historyKey } from '@weasel-js/core';
+import { Button, Icon, SearchIcon } from '@weasel-js/ui';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import type { Globals } from '../../protocol/messages';
 import { effectiveGlobals, GLOBALS_KEY } from '../globals';
@@ -27,6 +28,7 @@ import { useTrialFrame } from '../trialFrames';
 import { useCssOverrides } from './overrides';
 import { applyScaleEdits, type ScaleEdit, selectionFor } from './saveScales';
 import { SectionJump } from './SectionJump';
+import { useVarsHistory, type VarsState } from './varsHistory';
 
 type Tab = 'theme' | 'story';
 
@@ -132,7 +134,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
     {},
     { scope: 'lab' },
   );
-  const [edited, setEdited] = usePersistedState<Record<string, TokenScale>>('fg-css-vars-scales', {}, { scope: 'lab' });
+  const [edited, setEdited] = usePersistedState<Readonly<Record<string, TokenScale>>>('fg-css-vars-scales', {}, { scope: 'trial' });
   const [tab, setTab] = useState<Tab>('theme');
   const [filter, setFilter] = useState('');
 
@@ -175,25 +177,28 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
   }, [tab, shown, overrides, edited]);
 
   const send = frame.send;
-  const write = useCallback(
-    (name: string, value: string | null) => {
-      setOverrides((prev) => {
-        const { [name]: _dropped, ...rest } = prev;
-        return value === null ? rest : { ...rest, [name]: value };
-      });
-      send?.({ type: 'vars.set', name, value });
-    },
-    [setOverrides, send],
-  );
-  const onScaleChange = useCallback(
-    (group: string, next: TokenScale) => {
-      const source = SCALE_SOURCES.find((sc) => sc.group === group);
-      if (!source) return;
-      setEdited((prev) => ({ ...prev, [group]: next }));
-      for (const [name, value] of scaleValues(source, next)) write(name, value);
-    },
-    [setEdited, write],
-  );
+  const state = useMemo<VarsState>(() => ({ overrides, scales: edited }), [overrides, edited]);
+  const history = useVarsHistory(state, (from, to) => {
+    setOverrides(to.overrides);
+    setEdited(to.scales);
+    for (const name of new Set([...Object.keys(from.overrides), ...Object.keys(to.overrides)])) {
+      if (from.overrides[name] !== to.overrides[name]) send?.({ type: 'vars.set', name, value: to.overrides[name] ?? null });
+    }
+  });
+  const write = (name: string, value: string | null) => {
+    const now = history.current();
+    const { [name]: _dropped, ...rest } = now.overrides;
+    history.commit({ ...now, overrides: value === null ? rest : { ...rest, [name]: value } }, `token:${name}`);
+  };
+  const onScaleChange = (group: string, next: TokenScale) => {
+    const source = SCALE_SOURCES.find((sc) => sc.group === group);
+    if (!source) return;
+    const now = history.current();
+    history.commit(
+      { overrides: { ...now.overrides, ...Object.fromEntries(scaleValues(source, next)) }, scales: { ...now.scales, [group]: next } },
+      `scale:${group}`,
+    );
+  };
 
   // A scale is saved only while every one of its steps still holds what its edit generated: a step edited by hand
   // after the scale is an override the definition has no place for.
@@ -239,9 +244,14 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
         setNotice({ tone: 'error', text: result.message });
         return;
       }
-      for (const { source } of unsaved) for (const name of source.tokens) write(name, null);
+      // What was saved is the theme's own now, so no step from before the save has a value to go back to.
+      const saved = new Set(unsaved.flatMap(({ source }) => source.tokens));
       const groups = new Set(unsaved.map(({ source }) => source.group));
-      setEdited((prev) => Object.fromEntries(Object.entries(prev).filter(([group]) => !groups.has(group))));
+      const now = history.current();
+      history.reset({
+        overrides: Object.fromEntries(Object.entries(now.overrides).filter(([name]) => !saved.has(name))),
+        scales: Object.fromEntries(Object.entries(now.scales).filter(([group]) => !groups.has(group))),
+      });
       setNotice(
         result.regenerated || result.problems.length === 0
           ? { tone: 'saved', text: `Saved to ${file}.` }
@@ -259,7 +269,17 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
   );
 
   return (
-    <div className="fg-css-vars">
+    // Capture: React Aria's fields stop a keydown from bubbling past them.
+    <div
+      className="fg-css-vars"
+      onKeyDownCapture={(e) => {
+        // The filter's text has its own undo.
+        const to = (e.target as HTMLElement).closest('.fg-css-vars__filter') ? null : historyKey(e);
+        if (!to) return;
+        e.preventDefault();
+        history.step(to);
+      }}
+    >
       <div className="fg-css-vars__controls">
         <div className="fg-css-vars__bar">
           <ToggleBar
@@ -280,6 +300,14 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
             onChange={setFilter}
             leadingAdornment={<SearchIcon size={12} />}
           />
+          <div className="fg-css-vars__steps" role="group" aria-label="History">
+            <Button iconOnly ariaLabel="Undo" variant="ghost" size="sm" disabled={!history.canUndo} onClick={() => history.step('undo')}>
+              <Icon name="undo" size={14} />
+            </Button>
+            <Button iconOnly ariaLabel="Redo" variant="ghost" size="sm" disabled={!history.canRedo} onClick={() => history.step('redo')}>
+              <Icon name="redo" size={14} />
+            </Button>
+          </div>
         </div>
         {tab === 'theme' && (unsaved.length > 0 || notice) ? (
           <div className="fg-css-vars__save">

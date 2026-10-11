@@ -55,7 +55,10 @@ export type {
   Op,
   Journal,
   BeginJournalOptions,
+  SwapArgs,
+  SwapOpOptions,
 } from '@weasel-js/history';
+export { swapOp } from '@weasel-js/history';
 
 // ─── Adapters: contract types + reference arrayAdapter ──────────────────────
 export * from '../core/adapters/types';

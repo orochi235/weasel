@@ -1,4 +1,4 @@
-import type { Op, SerializedHistory } from '@weasel-js/core';
+import { swapOp as swap, type Op, type SerializedHistory } from '@weasel-js/core';
 import { SWAP, type DraftStorage } from './draft';
 
 /** A draft as a document opens it. */
@@ -25,14 +25,5 @@ export interface DocumentCodec<V> {
 
 /** An edit as the swap of one whole value for another: values are immutable, so the snapshots cost nothing. */
 export function swapOp<V>(before: V, after: V, emit: (v: V) => void, coalesceKey?: string): Op {
-  const forward: Op = {
-    label: 'edit schema',
-    // Named, with what it swaps, so a draft can keep the step.
-    name: SWAP,
-    args: { before, after },
-    ...(coalesceKey !== undefined ? { coalesceKey } : {}),
-    apply: () => emit(after),
-    invert: () => ({ label: 'edit schema', apply: () => emit(before), invert: () => forward }),
-  };
-  return forward;
+  return swap({ name: SWAP, label: 'edit schema', before, after, emit, coalesceKey });
 }

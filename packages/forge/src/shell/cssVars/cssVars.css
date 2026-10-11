@@ -50,6 +50,11 @@
   --wzl-font-size: var(--wzl-font-size-sm);
 }
 
+.fg-css-vars__steps {
+  display: flex;
+  flex: none;
+}
+
 .fg-css-vars__save {
   display: flex;
   flex-direction: column;
