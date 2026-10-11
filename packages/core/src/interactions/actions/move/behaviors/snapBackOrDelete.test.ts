@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { snapBackOrDelete } from './snapBackOrDelete';
 import type { GestureContext } from '../../../gestures/types';
+import { moveEnd } from '../../testUtils';
 
 interface Pose { x: number; y: number }
 
@@ -24,20 +25,20 @@ describe('snapBackOrDelete', () => {
   it('returns null (snap-back) when within radius and policy is snap-back', () => {
     const b = snapBackOrDelete<Pose>({ radius: 1, onFreeRelease: 'snap-back' });
     const c = ctx({ x: 5, y: 5 }, { x: 5.5, y: 5.2 });
-    expect(b.onEnd!(c, { answered: false })).toBeNull();
+    expect(b.onEnd!(c, moveEnd())).toBeNull();
   });
 
   it('returns null when within radius and policy is delete', () => {
     const b = snapBackOrDelete<Pose>({ radius: 1, onFreeRelease: 'delete' });
     const c = ctx({ x: 5, y: 5 }, { x: 5.5, y: 5.2 });
-    expect(b.onEnd!(c, { answered: false })).toBeNull();
+    expect(b.onEnd!(c, moveEnd())).toBeNull();
   });
 
   it('returns [DeleteOp] when outside radius and policy is delete', () => {
     const b = snapBackOrDelete<Pose>({ radius: 1, onFreeRelease: 'delete' });
     const obj = { id: 'a', x: 0, y: 0 };
     const c = ctx({ x: 5, y: 5 }, { x: 50, y: 50 }, { a: obj });
-    const ops = b.onEnd!(c, { answered: false });
+    const ops = b.onEnd!(c, moveEnd());
     expect(Array.isArray(ops)).toBe(true);
     expect((ops as any[])[0].label).toMatch(/delete/i);
   });
@@ -53,20 +54,20 @@ describe('snapBackOrDelete', () => {
     }
     c.adapter = { getNode: (id: string) => nodes.find((n) => n.id === id), getNodes: () => nodes } as any;
     b.onStart!(c);
-    const ops = b.onEnd!(c, { answered: false }) as any[];
+    const ops = b.onEnd!(c, moveEnd()) as any[];
     expect(ops.map((op) => op.args.node.id)).toEqual(['c', 'b', 'a']);
   });
 
   it('aborts when outside radius and policy is snap-back', () => {
     const b = snapBackOrDelete<Pose>({ radius: 1, onFreeRelease: 'snap-back' });
     const c = ctx({ x: 5, y: 5 }, { x: 50, y: 50 });
-    expect(b.onEnd!(c, { answered: false })).toBeNull();
+    expect(b.onEnd!(c, moveEnd())).toBeNull();
   });
 
   it('defers (returns undefined) when a snap is active', () => {
     const b = snapBackOrDelete<Pose>({ radius: 1, onFreeRelease: 'delete' });
     const c = ctx({ x: 5, y: 5 }, { x: 50, y: 50 });
     c.snap = { parentId: 'box', slotPose: { x: 0, y: 0 } };
-    expect(b.onEnd!(c, { answered: false })).toBeUndefined();
+    expect(b.onEnd!(c, moveEnd())).toBeUndefined();
   });
 });

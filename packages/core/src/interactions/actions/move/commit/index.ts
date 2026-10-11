@@ -6,7 +6,7 @@ import { planeDelta } from '../delta';
 import { landedDescendantOps } from '../landedDescendants';
 import type { LayoutPass } from '../layout/types';
 import type { MoveSession, ReparentOnDrop } from '../session';
-import { translateOps } from '../translate';
+import { rootTranslateOps, translateOps } from '../translate';
 import { layoutDropOps } from './layoutDrop';
 import { layoutReleaseOps } from './layoutRelease';
 import { reparentOps, resolveDropTarget, type DropTarget } from './reparent';
@@ -33,7 +33,9 @@ function behaviorCommit(
       const own = planeDelta(session, id, dx, dy);
       gctx.current.set(id as string, translatePoseViaDescriptor(ori, own.dx, own.dy, session.descriptorOf(id)));
     }
-    const r = reduceBehaviorEnd(session.behaviors, gctx);
+    const r = reduceBehaviorEnd(session.behaviors, gctx, {
+      translateOps: (ids) => rootTranslateOps(session, ids, delta),
+    });
     if (r === null) return false;           // abort (e.g. snap-back)
     if (r !== undefined) {
       commitOps(r);

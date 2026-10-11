@@ -166,6 +166,7 @@ export type {
   PointSnapResult,
   PointSnapBehavior,
   BehaviorEnd,
+  MoveEnd,
 } from '../interactions/gestures/types';
 export type { ClipboardSnapshot, PasteCtx, PasteOmission } from '../interactions/actions/clipboard/types';
 

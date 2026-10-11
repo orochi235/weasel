@@ -42,6 +42,14 @@ export function translateOps(session: MoveSession, ids: Iterable<NodeId>, delta:
   return ops;
 }
 
+/** The default translate commit for the dragged roots among `roots` and the
+ *  descendants that follow them. Anything else in `roots` is ignored. */
+export function rootTranslateOps(session: MoveSession, roots: Iterable<string>, delta: { dx: number; dy: number }): Op[] {
+  const wanted = new Set<string>(roots);
+  const others = new Set<NodeId>(session.ids.filter((id) => !wanted.has(id)));
+  return translateOps(session, unreleasedIds(session, others), delta);
+}
+
 /** Selected roots no source layout claimed on release, plus the descendants
  *  that follow them — the part of the selection the translate commit owns. */
 export function unreleasedIds(session: MoveSession, released: Set<NodeId>): NodeId[] {

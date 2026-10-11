@@ -3,6 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { useAnimator } from '../useAnimator';
 import { momentum } from './momentum';
 import type { GestureContext } from 'interactions/gestures/types';
+import { moveEnd } from 'interactions/actions/testUtils';
 import type { Op } from 'core/ops/types';
 import { circle, CIRCLE_POSE_DESCRIPTOR, type CirclePose } from 'core/geometry/circlePose.fixture';
 
@@ -73,7 +74,7 @@ describe('momentum', () => {
     clock.advance(16);
     ctx.pointer = { worldX: 20, worldY: 0, clientX: 20, clientY: 0 };
     beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
-    const ops = beh.onEnd?.(ctx, { answered: false });
+    const ops = beh.onEnd?.(ctx, moveEnd());
     expect(ops).toBeNull(); // suppress default commit
     expect(decaySpy).toHaveBeenCalledTimes(1);
   });
@@ -87,7 +88,7 @@ describe('momentum', () => {
     const ctx = makeCtx({ x: 0, y: 0, width: 10, height: 10 }, setPose);
     beh.onStart?.(ctx);
     beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
-    const ops = beh.onEnd?.(ctx, { answered: false });
+    const ops = beh.onEnd?.(ctx, moveEnd());
     expect(ops).toBeUndefined();
     expect(decaySpy).not.toHaveBeenCalled();
   });
@@ -116,7 +117,7 @@ describe('momentum', () => {
     clock.advance(50);
     ctx.pointer = { worldX: 100, worldY: 0, clientX: 100, clientY: 0 };
     beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
-    const ops = beh.onEnd?.(ctx, { answered: false });
+    const ops = beh.onEnd?.(ctx, moveEnd());
     // onEnd should have suppressed the default commit (returned null) and
     // queued a decay that calls setPose ≥ once on its first tick.
     expect(ops).toBeNull();
@@ -147,7 +148,7 @@ describe('momentum — the committed flick', () => {
     ctx.pointer = { worldX: 20, worldY: 0, clientX: 20, clientY: 0 };
     beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
     ctx.current.set('a', { x: 20, y: 0, width: 10, height: 10 });
-    beh.onEnd?.(ctx, { answered: false });
+    beh.onEnd?.(ctx, moveEnd());
     return { clock, animator: result.current, beh, setPose, applyOps, ctx };
   }
 
@@ -207,7 +208,7 @@ describe('momentum — non-rect poses', () => {
     clock.advance(16);
     ctx.pointer = { worldX: 10, worldY: 0, clientX: 10, clientY: 0 };
     beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
-    beh.onEnd?.(ctx, { answered: false });
+    beh.onEnd?.(ctx, moveEnd());
     // The decay's first tick emits `from` unmoved — it only seeds the clock —
     // so the flick shows up from the second frame on.
     clock.advance(16);

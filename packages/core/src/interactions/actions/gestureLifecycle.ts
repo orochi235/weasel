@@ -98,17 +98,26 @@ export function commitGestureOps(
   else target.scene.applyBatch(ops, label, target.adapter);
 }
 
+/** The trailing argument of {@link reduceBehaviorEnd}: what `TEnd` adds to
+ *  `BehaviorEnd`, required exactly when it adds something. */
+type OwnEndFields<TEnd extends BehaviorEnd> = keyof Omit<TEnd, keyof BehaviorEnd> extends never
+  ? [own?: Omit<TEnd, keyof BehaviorEnd>]
+  : [own: Omit<TEnd, keyof BehaviorEnd>];
+
 /** Runs every behavior's `onEnd` in order; the first that answers decides the
  *  commit and later answers are ignored. `null` aborts, `Op[]` claims it (an
  *  empty array included), and `undefined` means every behavior deferred to the
- *  action's own commit. */
-export function reduceBehaviorEnd<TCtx>(
-  behaviors: readonly { onEnd?(ctx: TCtx, end: BehaviorEnd): Op[] | null | void }[],
+ *  action's own commit. An action whose behaviors take more than a plain
+ *  `BehaviorEnd` passes the rest as `own`; each `onEnd` gets it beside
+ *  `answered`. */
+export function reduceBehaviorEnd<TCtx, TEnd extends BehaviorEnd = BehaviorEnd>(
+  behaviors: readonly { onEnd?(ctx: TCtx, end: TEnd): Op[] | null | void }[],
   ctx: TCtx,
+  ...[own]: OwnEndFields<TEnd>
 ): Op[] | null | undefined {
   let answer: Op[] | null | undefined;
   for (const b of behaviors) {
-    const r = b.onEnd?.(ctx, { answered: answer !== undefined });
+    const r = b.onEnd?.(ctx, { ...own, answered: answer !== undefined } as TEnd);
     if (answer === undefined && r !== undefined) answer = r;
   }
   return answer;

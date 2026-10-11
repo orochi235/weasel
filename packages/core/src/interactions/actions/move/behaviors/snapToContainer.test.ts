@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { snapToContainer } from './snapToContainer';
 import type { GestureContext, GroupTransform } from '../../../gestures/types';
+import { moveEnd } from '../../testUtils';
 
 const tt = (dx: number, dy: number): GroupTransform => ({ kind: 'translate', dx, dy });
 import type { SnapTarget } from 'core/adapters/types';
@@ -76,7 +77,7 @@ describe('snapToContainer', () => {
     const ctx = makeCtx();
     b.onMove!(ctx, tt(1, 1));
     ctx.snap = target;
-    const ops = b.onEnd!(ctx, { answered: false });
+    const ops = b.onEnd!(ctx, moveEnd());
     expect(Array.isArray(ops)).toBe(true);
     expect(ops!.length).toBe(2);
     expect((ops![0] as any).label ?? '').toMatch(/move|Move/i);
@@ -88,7 +89,7 @@ describe('snapToContainer', () => {
     const ctx = makeCtx();
     b.onMove!(ctx, tt(1, 1));
     ctx.snap = target;
-    const ops = b.onEnd!(ctx, { answered: false });
+    const ops = b.onEnd!(ctx, moveEnd());
     expect(ops!.length).toBe(1);
   });
 
@@ -103,7 +104,7 @@ describe('snapToContainer', () => {
     ctx.current.set('p2', { x: 21, y: 1 }).set('p3', { x: 41, y: 1 });
     ctx.adapter = { getParent: (id: string) => (id === 'p2' ? 'box' : 'oldParent') } as any;
     b.onMove!(ctx, tt(1, 1));
-    const ops = b.onEnd!(ctx, { answered: false }) as any[];
+    const ops = b.onEnd!(ctx, moveEnd()) as any[];
     const moves = ops.filter((op) => op.name === 'transform').map((op) => [op.args.id, op.args.to]);
     // p3 has no slot of its own, so it lands where the preview showed it.
     expect(moves).toEqual([['p1', { x: 2, y: 3 }], ['p2', { x: 12, y: 3 }], ['p3', { x: 41, y: 1 }]]);
@@ -114,6 +115,6 @@ describe('snapToContainer', () => {
   it('onEnd defers (returns undefined) when no snap is active', () => {
     const b = snapToContainer<Pose>({ dwellMs: 0, findTarget: () => null });
     const ctx = makeCtx();
-    expect(b.onEnd!(ctx, { answered: false })).toBeUndefined();
+    expect(b.onEnd!(ctx, moveEnd())).toBeUndefined();
   });
 });

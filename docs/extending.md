@@ -280,11 +280,12 @@ on the binding that reaches it, or via the options `<SceneCanvas>` forwards
 (`selectTool.move.behaviors`, `selectTool.snap`, …):
 
 ```ts
-interface ActionBehavior<TPose, TProposed, TMoveResult> {
+interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends BehaviorEnd = BehaviorEnd> {
   defaultTransient?: boolean;
   onStart?(ctx: GestureContext<TPose>): void;
   onMove?(ctx: GestureContext<TPose>, proposed: TProposed): TMoveResult | void;
-  onEnd?(ctx: GestureContext<TPose>): Op[] | null | void;
+  onEnd?(ctx: GestureContext<TPose>, end: TEnd): Op[] | null | void;
+  onCancel?(ctx: GestureContext<TPose>): void;
 }
 ```
 
@@ -300,6 +301,10 @@ Each action pins the proposed/result shape; pick the matching alias
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
   or the action's default ops (move emits one `createTransformOp` per id).
+- A move behavior that claims the commit but places only some of the
+  dragged nodes returns `end.translateOps(ids)` beside its own ops: the
+  action's default translate for those dragged roots and the descendants
+  that follow them.
 - `ctx.scratch` is a per-gesture mutable map, wiped on every `start`.
   Namespace by behavior id to avoid collisions:
   `ctx.scratch['snapToContainer']`.

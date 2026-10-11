@@ -5,6 +5,7 @@ import { effectivePose } from '../../core/scene/effectivePose';
 import type { RectPose } from '../../core/scene/types';
 import { moveGestureAdapter } from '../../interactions/actions/move/gestureAdapter';
 import type { GestureContext } from 'interactions/gestures/types';
+import { moveEnd } from 'interactions/actions/testUtils';
 import { scenePoseTarget } from '../poseTarget';
 import { useAnimator } from '../useAnimator';
 import { momentum, type MomentumOptions } from './momentum';
@@ -49,7 +50,7 @@ function flick(opts: Partial<MomentumOptions> = {}, vx = 1250, vy = 0) {
   ctx.pointer = { worldX: vx * 0.016, worldY: vy * 0.016, clientX: 0, clientY: 0 };
   beh.onMove?.(ctx, { kind: 'translate', dx: 0, dy: 0 });
   const entries = scene.historyEntries().length;
-  const answer = beh.onEnd?.(ctx, { answered: false });
+  const answer = beh.onEnd?.(ctx, moveEnd());
   const shown = () => effectivePose(scene, scene.get(a)!);
   const settle = (): void => {
     for (let i = 0; i < 4000 && result.current.isActive(); i++) clock.advance(16);

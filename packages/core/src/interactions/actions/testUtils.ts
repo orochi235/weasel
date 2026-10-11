@@ -1,4 +1,5 @@
 import type { ActionDeps } from '@weasel-js/routing';
+import type { MoveEnd } from '../gestures/types';
 import type { EditAnchorsDep } from './depSchema';
 
 /**
@@ -8,6 +9,14 @@ import type { EditAnchorsDep } from './depSchema';
  */
 export function stubDeps(deps: Record<string, unknown>): ActionDeps {
   return deps as ActionDeps;
+}
+
+/**
+ * What a move behavior's `onEnd` is told, for a test calling it directly:
+ * unanswered, with a `translateOps` that emits nothing unless one is given.
+ */
+export function moveEnd(translateOps: MoveEnd['translateOps'] = () => []): MoveEnd {
+  return { answered: false, translateOps };
 }
 
 /**

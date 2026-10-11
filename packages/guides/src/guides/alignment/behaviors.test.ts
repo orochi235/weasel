@@ -7,6 +7,7 @@ import type {
   GroupTransform,
   InsertProposed,
   ModifierState,
+  MoveEnd,
   ResizeAnchor,
   Bounds,
 } from '@weasel-js/core';
@@ -33,6 +34,7 @@ function ctx(
 }
 
 const tt = (dx: number, dy: number): GroupTransform => ({ kind: 'translate', dx, dy });
+const END: MoveEnd = { answered: false, translateOps: () => [] };
 
 describe('alignMoveBehavior', () => {
   it('shapes the transform and publishes the active line on a hit', () => {
@@ -79,7 +81,7 @@ describe('alignMoveBehavior', () => {
       getCandidates: () => [],
       setActiveGuides: (g) => { active = g; },
     });
-    b.onEnd!(ctx(), { answered: false });
+    b.onEnd!(ctx(), END);
     expect(active).toEqual([]);
   });
 
@@ -267,7 +269,7 @@ describe('equal-spacing snaps', () => {
     expect(b.onMove!(ctx(), tt(0, 0))).toBeUndefined();
     expect(gaps).toEqual([]);
     b.onMove!(ctx(), tt(-18, 0));
-    b.onEnd!(ctx(), { answered: false });
+    b.onEnd!(ctx(), END);
     expect(gaps).toEqual([]);
   });
 
