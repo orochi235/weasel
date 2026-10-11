@@ -1,21 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useLassoTool } from './useLassoTool';
-import type { LassoSelectAdapter } from 'core/adapters/types';
 import { resolveParams } from '@weasel-js/routing';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import type { Tool } from '../../overlayBinding';
-
-function makeAdapter(hits: string[] = []): LassoSelectAdapter & { applyOps: ReturnType<typeof vi.fn> } {
-  const applyOps = vi.fn();
-  return {
-    hitTestLasso: () => hits,
-    hitTestArea: () => [],
-    getSelection: () => [],
-    setSelection: () => {},
-    applyOps,
-  };
-}
 
 describe('useLassoTool', () => {
   // Legacy `useLassoSelect` hook removed. Drag flows
@@ -25,27 +13,23 @@ describe('useLassoTool', () => {
   // exercised `tool.drag.onStart/onMove/onEnd` directly are also gone —
   // those paths are covered by `lassoSelectAction`'s own tests.
   it("declares id 'lasso' and keybinding { key: 'L' } by default", () => {
-    const adapter = makeAdapter();
-    const { result } = renderHook(() => useLassoTool(adapter));
+    const { result } = renderHook(() => useLassoTool());
     expect(result.current.id).toBe('lasso');
     expect(result.current.keybinding).toEqual({ key: 'L' });
   });
 
   it("keybinding override: passing keybinding: null omits it", () => {
-    const adapter = makeAdapter();
-    const { result } = renderHook(() => useLassoTool(adapter, { keybinding: null }));
+    const { result } = renderHook(() => useLassoTool({ keybinding: null }));
     expect(result.current.keybinding).toBeUndefined();
   });
 
   it("custom keybinding passes through", () => {
-    const adapter = makeAdapter();
-    const { result } = renderHook(() => useLassoTool(adapter, { keybinding: { key: 'L', shift: true } }));
+    const { result } = renderHook(() => useLassoTool({ keybinding: { key: 'L', shift: true } }));
     expect(result.current.keybinding).toEqual({ key: 'L', shift: true });
   });
 
   it('declares the dispatcher binding for lassoSelect', () => {
-    const adapter = makeAdapter();
-    const { result } = renderHook(() => useLassoTool(adapter));
+    const { result } = renderHook(() => useLassoTool());
     const bindings = result.current.bindings ?? [];
     expect(bindings.length).toBe(1);
     expect(bindings[0].actionId).toBe('lassoSelect');
@@ -53,9 +37,8 @@ describe('useLassoTool', () => {
   });
 
   it('hands its hit mode to the action through the binding params', () => {
-    const adapter = makeAdapter();
     const { result, rerender } = renderHook(
-      ({ mode }: { mode?: 'centers' | 'intersect' | 'enclosed' }) => useLassoTool(adapter, { mode }),
+      ({ mode }: { mode?: 'centers' | 'intersect' | 'enclosed' }) => useLassoTool({ mode }),
       { initialProps: {} },
     );
     const params = () => resolveParams(result.current.bindings![0].opts?.params);
@@ -65,9 +48,8 @@ describe('useLassoTool', () => {
   });
 
   it('hands its vertex spacing to the action through the binding params', () => {
-    const adapter = makeAdapter();
     const { result, rerender } = renderHook(
-      ({ minVertexSpacing }: { minVertexSpacing?: number }) => useLassoTool(adapter, { minVertexSpacing }),
+      ({ minVertexSpacing }: { minVertexSpacing?: number }) => useLassoTool({ minVertexSpacing }),
       { initialProps: {} },
     );
     const params = () => resolveParams(result.current.bindings![0].opts?.params);
@@ -77,19 +59,17 @@ describe('useLassoTool', () => {
   });
 
   it('hands its behaviors to the action through the binding, and none when given none', () => {
-    const adapter = makeAdapter();
     const behaviors = [{ onEnd: () => undefined }];
-    const withSome = renderHook(() => useLassoTool(adapter, { behaviors }));
+    const withSome = renderHook(() => useLassoTool({ behaviors }));
     expect(withSome.result.current.bindings![0].opts?.behaviors).toBe(behaviors);
-    const withNone = renderHook(() => useLassoTool(adapter));
+    const withNone = renderHook(() => useLassoTool());
     expect(withNone.result.current.bindings![0].opts?.behaviors).toBeUndefined();
   });
 
   it('the params thunk reads the committed mode, not an abandoned render\'s', () => {
-    const adapter = makeAdapter();
     let tool = null as Tool<undefined> | null;
     function Probe({ mode }: { mode: 'intersect' | 'enclosed' }) {
-      tool = useLassoTool(adapter, { mode });
+      tool = useLassoTool({ mode });
       return null;
     }
     renderThenAbandon<'intersect' | 'enclosed'>('intersect', 'enclosed', (mode) => <Probe mode={mode} />);

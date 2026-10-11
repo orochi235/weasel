@@ -1903,15 +1903,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   other edit has a key. It needs a key and a rule for where the split lands (the selected band's
   midpoint on the scale is the obvious one).
 
-- **(P3) GradientEditor: stop swatches are named by storage index and shown in offset order.** A
-  screen reader hears "Stop 3 at 10%, Stop 1 at 50%"
-  (`packages/ui/src/components/GradientEditor/GradientEditor.tsx`, the `aria-label` on each
-  `ColorField`). The index is the stop's stable identity, which is why a drag can cross a neighbor
-  without the two swapping, and a test names a swatch that way on purpose. Ruled 2026-10-11: a
-  swatch is numbered by its position along the gradient, so the stops read in order and one is
-  renumbered as it crosses another. That leaves the `aria-label` taking its number from offset order
-  while the index stays the stop's identity, and the test that names a swatch by index.
-
 - **(P3) ui/routing: "is this key press aimed at a text field" is answered twice.** `isTextEntry`
   (`packages/ui/src/components/BandEditor/track.ts`) says yes for input, textarea, select, and
   `isContentEditable`; `isEditableTarget` (`packages/routing/src/interactions/keyHelpers.ts`,

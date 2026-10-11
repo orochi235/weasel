@@ -153,7 +153,7 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
       setSelection: (ids) => adapter.setSelection(ids),
     },
   });
-  const lasso = useLassoTool(adapter, options?.lasso ?? {});
+  const lasso = useLassoTool(options?.lasso ?? {});
   const text = useTextTool(insert);
   return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text };
 }

@@ -4,7 +4,7 @@ import { defineTool } from '../../overlayBinding';
 import { LassoIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import type { UseLassoSelectOptions } from 'interactions/actions/lasso-select/options';
-import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
+import type { LassoHitMode } from 'core/adapters/types';
 import type { ToolKeybinding } from '@weasel-js/routing';
 
 /** Options for `useLassoTool` — the lasso-select action's options plus the
@@ -27,10 +27,7 @@ export interface UseLassoToolOptions extends UseLassoSelectOptions {
  *  The legacy `useLassoSelect` hook is removed — all gesture
  *  state, overlay rendering, and selection commit live in
  *  `lassoSelectAction` (see `src/interactions/actions/defaults/lassoSelect.ts`). */
-export function useLassoTool(
-  _adapter: LassoSelectAdapter,
-  options: UseLassoToolOptions = {},
-): Tool<undefined> {
+export function useLassoTool(options: UseLassoToolOptions = {}): Tool<undefined> {
   const paramsRef = useLatest<{ mode: LassoHitMode; minVertexSpacing?: number }>({
     mode: options.mode ?? 'intersect',
     ...(options.minVertexSpacing !== undefined ? { minVertexSpacing: options.minVertexSpacing } : {}),

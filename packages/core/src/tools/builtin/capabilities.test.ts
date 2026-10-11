@@ -15,7 +15,7 @@ describe('built-in tool capabilities', () => {
   const cases: Array<[string, () => { eligibility?: { capabilities?: readonly string[] } } | null, readonly string[]]> = [
     ['hand', () => builtins.useHandTool({}), ['navigation']],
     ['select', () => builtins.useSelectTool({} as never, {} as never), ['creates-selection']],
-    ['lasso', () => builtins.useLassoTool({} as never), ['creates-selection']],
+    ['lasso', () => builtins.useLassoTool(), ['creates-selection']],
     ['rect', () => builtins.useRectTool(), ['creates-shapes']],
     ['ellipse', () => builtins.useEllipseTool(), ['creates-shapes']],
     ['line', () => builtins.useLineTool(), ['creates-shapes']],
