@@ -8,6 +8,7 @@
  * browser breaks at LF alone, so the overlay has to stand one in for the rest.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { createElement, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
@@ -136,11 +137,16 @@ describe('edit overlay line breaks', () => {
       }
     });
 
-    it(`commits every hard break unchanged${runs ? ', seeded from runs' : ''}`, async () => {
+    // An edit that changes nothing commits nothing, so one character is typed,
+    // past the last break.
+    it(`commits every hard break unchanged around a typed character${runs ? ', seeded from runs' : ''}`, async () => {
       committed = [];
-      await openOverlay(c);
+      const at = c.text.indexOf('nine');
+      await openOverlay(c, at);
+      await userEvent.keyboard('X');
       flushSync(() => commitEdit());
-      expect(committed.map((t) => JSON.stringify(t))).toEqual([JSON.stringify(c.text)]);
+      const typed = `${c.text.slice(0, at)}X${c.text.slice(at)}`;
+      expect(committed.map((t) => JSON.stringify(t))).toEqual([JSON.stringify(typed)]);
     });
   }
 });
