@@ -12,26 +12,25 @@ import { subscribeToSources, type RenderLayer } from 'core/layers/render';
 
 /** Options for `gateLayer`. */
 export interface GateLayerOptions<TData> {
-  /** The wrapped layer. Its `id`, `label`, `defaultVisible`, `alwaysOn`,
-   *  `space` flow through unchanged. */
+  /** The wrapped layer. Everything but `draw`, `hitTest`, and `deps` flows
+   *  through unchanged. */
   layer: RenderLayer<TData>;
   /** Returns `true` to render the layer this frame, `false` to skip. */
   visible: () => boolean;
 }
 
-/** Wrap a render layer so it only draws while `visible()` is true. The
- *  predicate is consulted per frame, which is how chrome follows canvas focus
- *  without the layer knowing anything about focus. */
+/** Wrap a render layer so it only draws, and is only hit, while `visible()`
+ *  is true. The predicate is consulted per frame, which is how chrome follows
+ *  canvas focus without the layer knowing anything about focus. */
 export function gateLayer<TData>(opts: GateLayerOptions<TData>): RenderLayer<TData> {
   const { layer, visible } = opts;
   const wrapped: RenderLayer<TData> = {
-    id: layer.id,
-    label: layer.label,
+    ...layer,
     draw: (data, view, dims) => (visible() ? layer.draw(data, view, dims) : []),
   };
-  if (layer.defaultVisible !== undefined) wrapped.defaultVisible = layer.defaultVisible;
-  if (layer.alwaysOn !== undefined) wrapped.alwaysOn = layer.alwaysOn;
-  if (layer.space !== undefined) wrapped.space = layer.space;
+  const { deps, hitTest } = layer;
+  if (deps) wrapped.deps = (data, view, dims) => [visible(), ...deps(data, view, dims)];
+  if (hitTest) wrapped.hitTest = (...args) => (visible() ? hitTest(...args) : null);
   if (layer.subscribe) wrapped.subscribe = subscribeToSources([layer]);
   return wrapped;
 }

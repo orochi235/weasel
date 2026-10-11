@@ -69,4 +69,29 @@ describe('gateLayer', () => {
     expect(gated.alwaysOn).toBeUndefined();
     expect(gated.space).toBeUndefined();
   });
+
+  it('carries the wrapped layer\'s effects through', () => {
+    const effects = [{ kind: 'blur', radius: 4 }] as unknown as NonNullable<RenderLayer<undefined>['effects']>;
+    const gated = gateLayer({ layer: { ...makeLayer(), effects }, visible: () => true });
+    expect(gated.effects).toBe(effects);
+  });
+
+  it('hit-tests the wrapped layer only while it is visible', () => {
+    let visible = true;
+    const hit = { kind: 'handle', owner: 'inner' } as unknown as ReturnType<NonNullable<RenderLayer<undefined>['hitTest']>>;
+    const gated = gateLayer({ layer: { ...makeLayer(), hitTest: () => hit }, visible: () => visible });
+    expect(gated.hitTest!(0, 0, undefined, stubView, stubDims)).toBe(hit);
+    visible = false;
+    expect(gated.hitTest!(0, 0, undefined, stubView, stubDims)).toBeNull();
+  });
+
+  it('keys the wrapped layer\'s cache on visibility as well', () => {
+    let visible = true;
+    const gated = gateLayer({ layer: { ...makeLayer(), deps: () => ['a'] }, visible: () => visible });
+    const shown = gated.deps!(undefined, stubView, stubDims);
+    visible = false;
+    const hidden = gated.deps!(undefined, stubView, stubDims);
+    expect(shown).toHaveLength(hidden.length);
+    expect(shown.every((d, i) => Object.is(d, hidden[i]))).toBe(false);
+  });
 });
