@@ -201,7 +201,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   const getSelection = sel?.getSelection ?? sel?.get ?? (() => [] as string[]);
   const setSelection = sel?.setSelection ?? sel?.set ?? (() => {});
   const d = (options.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
-  const poseBounds = (p: TPose): Bounds => visualBoundsViaDescriptor(p, d);
+  const poseBounds = (p: TPose, node: unknown): Bounds =>
+    visualBoundsViaDescriptor(p, poseDescriptorForNode(d, node));
   const translate = (p: TPose, dx: number, dy: number, node?: unknown): TPose =>
     translatePoseViaDescriptor(
       p, dx, dy, node === undefined ? d : poseDescriptorForNode(d, node),
@@ -538,7 +539,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         let minY = Infinity;
         for (const item of src) {
           if (!isRoot(item)) continue;
-          const b = poseBounds(item.pose);
+          const b = poseBounds(item.pose, item);
           if (b.x < minX) minX = b.x;
           if (b.y < minY) minY = b.y;
         }
@@ -553,7 +554,7 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           id: idMap.get(item.id)!,
           layer: item.layer,
           parent: isRoot(item) ? null : idMap.get(item.parent as string)!,
-          pose: ridesPastedFrame(item) ? copyField(item.pose) : translate(copyField(item.pose), dx, dy),
+          pose: ridesPastedFrame(item) ? copyField(item.pose) : translate(copyField(item.pose), dx, dy, item),
           data: copyField(item.data),
           ...pickability(item),
         };
