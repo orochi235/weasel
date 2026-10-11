@@ -686,23 +686,31 @@ function ColorControl(p: PropertyColorFieldProps) {
 
   // `ColorField` holds alpha in the hex. One kept in a channel of its own goes
   // in with the color and comes back out of it, each half to its own callback.
+  // Which half the gesture in progress has moved. A caller following the live
+  // callbacks has already moved `value` by the time the gesture settles, so
+  // comparing against it then would find nothing to commit.
+  const moved = useRef({ rgb: false, alpha: false });
   const route =
-    (write: (hex: string) => void, own: ((a: number) => void) | undefined) => (hex: string) => {
+    (write: (hex: string) => void, own: ((a: number) => void) | undefined, settles: boolean) => (hex: string) => {
       if (!apart) {
         write(hex);
         return;
       }
       const next = splitAlpha(hex);
-      if (next.rgb !== split.rgb || !own) write(next.rgb);
       // Read back at the track's percent, which is all a hex byte can hold of it.
       const a = Math.round(next.alpha * 100) / 100;
-      if (a !== Math.round(alpha * 100) / 100) own?.(a);
+      const differs = { rgb: next.rgb !== split.rgb, alpha: a !== Math.round(alpha * 100) / 100 };
+      const gesture = { rgb: moved.current.rgb || differs.rgb, alpha: moved.current.alpha || differs.alpha };
+      moved.current = settles ? { rgb: false, alpha: false } : gesture;
+      const half = settles ? gesture : differs;
+      if (half.rgb || !own) write(next.rgb);
+      if (half.alpha) own?.(a);
     };
   // As a number does: one callback is the live one, and the commit at the end
   // of a gesture would only repeat its last call.
   const drafting = p.onInput !== undefined || p.onAlphaInput !== undefined;
-  const live = route(p.onInput ?? p.onChange, p.onAlphaInput ?? p.onAlphaChange);
-  const settled = drafting ? route(p.onChange, p.onAlphaChange) : ignore;
+  const live = route(p.onInput ?? p.onChange, p.onAlphaInput ?? p.onAlphaChange, false);
+  const settled = drafting ? route(p.onChange, p.onAlphaChange, true) : ignore;
   return (
     <ColorField
       id={p.id}

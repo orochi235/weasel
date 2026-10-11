@@ -202,6 +202,37 @@ describe('PropertyField color alpha', () => {
     expect(onAlphaChange).toHaveBeenLastCalledWith(0.25);
   });
 
+  it('commits each half of an apart alpha when its live callback already moved the value', () => {
+    const onChange = vi.fn();
+    const onAlphaChange = vi.fn();
+    function Followed() {
+      const [value, setValue] = useState('#336699');
+      const [alpha, setAlpha] = useState(0.5);
+      return (
+        <PropertyField
+          kind="color"
+          label="Tint"
+          value={value}
+          alpha={alpha}
+          onInput={setValue}
+          onChange={onChange}
+          onAlphaInput={setAlpha}
+          onAlphaChange={onAlphaChange}
+        />
+      );
+    }
+    render(<Followed />);
+    fireEvent.input(swatch(), { target: { value: '#00ff00' } });
+    act(() => { swatch().dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(onChange.mock.calls).toEqual([['#00ff00']]);
+    expect(onAlphaChange).not.toHaveBeenCalled();
+    const track = screen.getByRole('slider', { name: 'Tint opacity' });
+    fireEvent.input(track, { target: { value: '25' } });
+    fireEvent.pointerUp(track);
+    expect(onAlphaChange.mock.calls).toEqual([[0.25]]);
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it('draws a disabled alpha track inert', () => {
     render(<PropertyField kind="color" label="Tint" value="#336699" alpha={1} alphaDisabled onChange={() => {}} />);
     expect(screen.getByRole('slider', { name: 'Tint opacity' })).toBeDisabled();
