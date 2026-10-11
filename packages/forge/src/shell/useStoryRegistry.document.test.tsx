@@ -73,6 +73,24 @@ describe('useStoryRegistry in the document', () => {
     expect(abandoned['/x.stories.tsx']).not.toHaveBeenCalled();
   });
 
+  it('loads a story asked for before its importer arrived, once the importers hold its file', async () => {
+    const { result, rerender } = renderHook(({ imports }) => useStoryRegistry([a], { frameUrl: '/frame.html', importers: imports }), {
+      initialProps: { imports: {} as Record<string, () => Promise<Record<string, unknown>>> },
+    });
+    const view = render(<>{result.current.instruments[0]!.render(ctx)}</>);
+    await waitFor(() => {
+      view.rerender(<>{result.current.instruments[0]!.render(ctx)}</>);
+      expect(screen.getByText(/No importer for \/x\.stories\.tsx/)).toBeTruthy();
+    });
+
+    rerender({ imports: importers() });
+    await waitFor(() => {
+      view.rerender(<>{result.current.instruments[0]!.render(ctx)}</>);
+      expect(result.current.isReady('x--a')).toBe(true);
+    });
+    view.unmount();
+  });
+
   it('renders the fault in place of a story whose module fails to load', async () => {
     const imports = { '/x.stories.tsx': () => Promise.reject(new Error('syntax error in x')) };
     const { result } = renderHook(() => useStoryRegistry([a, b], { frameUrl: '/frame.html', importers: imports }));

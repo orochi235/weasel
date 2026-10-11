@@ -221,6 +221,8 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
     if (!own && through.length === 0) return false;
 
     const before = JSON.stringify(index());
+    const importable = () => JSON.stringify([...current].filter(([, entries]) => entries.length > 0).map(([path]) => path));
+    const importableBefore = importable();
     if (own && event === 'unlink') {
       current.delete(file);
       wrappersOf.delete(file);
@@ -240,6 +242,9 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
 
     invalidate(server, ['index.js', 'importers.js']);
     server.ws.send({ type: 'custom', event: 'forge:index', data: next });
+    // Nothing imports a file that was just added, so vite has no update of its own to hand the open page the importer.
+    const importers = server.environments.client.moduleGraph.getModuleById(`\0${PREFIX}importers.js`);
+    if (importers && importable() !== importableBefore) await server.environments.client.reloadModule(importers);
     return true;
   }
 

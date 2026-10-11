@@ -105,11 +105,14 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
   // One import per file, shared by every entry it holds; a reload drops the file's promise and asks again.
   const imports = useRef(new Map<string, Promise<Record<string, unknown>>>());
   const live = useLatest({ index, importers, setup, load });
+  // Files asked for before the importers held them: a story file added while the workshop runs lists first.
+  const missing = useRef(new Set<string>());
 
   const importOf = useCallback((file: string): Promise<Record<string, unknown>> => {
     let loading = imports.current.get(file);
     if (!loading) {
       const importer = live.current.importers?.[file];
+      if (!importer) missing.current.add(file);
       loading = importer ? importer() : Promise.reject(new Error(`No importer for ${file}`));
       imports.current.set(file, loading);
     }
@@ -195,6 +198,14 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
     },
     [live],
   );
+
+  useEffect(() => {
+    for (const file of [...missing.current]) {
+      if (!importers?.[file]) continue;
+      missing.current.delete(file);
+      reload(file);
+    }
+  }, [importers, reload]);
 
   const committed = useRef<Cache>({ built: new Map(), books: new Map(), list: [] });
 

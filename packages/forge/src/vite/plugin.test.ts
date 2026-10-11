@@ -319,6 +319,16 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     expect([...new Set(storyEvents(payloads))]).toEqual([join(dir, 'a.stories.tsx')]);
   });
 
+  it('hands the open workshop an importer for a story file added while it runs', async () => {
+    const { dir, server: s } = await start({ 'a.stories.tsx': story('ui/A', 'First') }, served());
+    await open(s);
+    const payloads = pushed(s);
+    // Written once: a second write would be a change to a file the first scan had already counted, not an add.
+    writeFileSync(join(dir, 'b.stories.tsx'), story('ui/B', 'Added'));
+    await expect.poll(() => importersUpdate(payloads), FOLLOWS).not.toBe(-1);
+    expect((await s.transformRequest('virtual:forge/importers.js'))?.code).toContain(join(dir, 'b.stories.tsx'));
+  });
+
   it('serves the workshop at its base with or without the trailing slash', async () => {
     const { server: s } = await start({}, { base: '/x/' });
     const listening = createHttpServer(s.middlewares);
