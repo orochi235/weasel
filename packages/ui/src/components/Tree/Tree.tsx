@@ -335,6 +335,7 @@ export const Tree = forwardRef(function Tree(
           aria-selected={selectable ? selected.has(node.id) : undefined}
           aria-disabled={node.disabled || undefined}
           aria-labelledby={trailingId ? `${labelId} ${trailingId}` : labelId}
+          data-tree-id={node.id}
           data-muted={node.muted ? 'true' : undefined}
           data-drop={drag.state.mark?.id === node.id ? drag.state.mark.where : undefined}
           data-dragging={!drag.state.copy && drag.state.dragging?.includes(node.id) ? 'true' : undefined}

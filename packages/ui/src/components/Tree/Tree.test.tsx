@@ -65,6 +65,11 @@ describe('Tree — semantics', () => {
     expect(screen.getByRole('tree')).not.toHaveAttribute('aria-multiselectable');
   });
 
+  it('marks each row with its node id', () => {
+    render(<Tree aria-label="Food" nodes={NODES} />);
+    expect(screen.getByText('Water').closest('[role="treeitem"]')).toHaveAttribute('data-tree-id', 'water');
+  });
+
   it('sets aria-multiselectable for multiple selection', () => {
     render(<Tree aria-label="Food" nodes={NODES} selectionMode="multiple" />);
     expect(screen.getByRole('tree')).toHaveAttribute('aria-multiselectable', 'true');
