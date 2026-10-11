@@ -8,11 +8,12 @@ import {
   type PrefLeaf,
   type PrefMap,
   type PrefUnion,
+  prefDrawsSeveral,
 } from '@weasel-js/prefs';
 import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PrefActionButton } from './PrefActionButton';
 import { prefDrawsNoControl, PrefWords } from './PrefWords';
-import { drawsRows, drawsSeveral } from './compound';
+import { drawsRows } from './compound';
 import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
 import { ObjectLeaf } from './ObjectLeaf';
@@ -252,7 +253,7 @@ function rowIsGroup(
   renderers: Record<string, PrefRenderer> | undefined,
   siblings?: Record<string, unknown>,
 ): boolean {
-  if (drawsSeveral(ctx.pref)) return true;
+  if (prefDrawsSeveral(ctx.pref)) return true;
   const custom = renderers?.[ctx.pref.kind];
   if (custom) return custom.group === true;
   const field = leafField(ctx, siblings);

@@ -1331,16 +1331,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   boolean there becomes a one-segment flag bar. Home: `pairRowsOf` in `@weasel-js/prefs` returning
   the rows, not only the lookup map.
 
-- **(P3) The compound leaf kinds are named in plain string sets a new kind compiles past.**
-  `SEVERAL` and `ROWS` in `Prefs/compound.ts`, `OPENS` in `Bar/renderBarLeaf.tsx`, `COMPOUND` in
-  labkit's `ControlPanel.tsx`, and a literal test in `Prefs/schema.ts` each list kinds as
-  `Set<string>`. A kind added to `PrefKind` compiles, then draws inline in a `<label>`, does not
-  open in a bar popover, and gets no dialog row in labkit. Home: one `Record<PrefKind, { compound:
-  boolean; several: boolean }>` in `@weasel-js/prefs`, which is a compile error to leave a kind out
-  of. Separately, `font-family` and `font-weight` are drawn as built-ins by ui and are absent from
-  `PREF_KINDS`, so the table's promise in `packages/prefs/src/schema.ts` does not cover them and
-  labkit declines them.
-
 - **(P3) The schema lab's `prefsToFields` re-derives what `@weasel-js/prefs` owns, and gets a unit's
   step wrong.** `packages/labkit/examples/schema-lab/prefsToFields.ts` converts `min` and `max` with
   the unit's `toDisplay` and passes `step` through unconverted, so a leaf stored in radians and

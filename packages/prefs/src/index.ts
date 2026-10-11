@@ -30,6 +30,7 @@ export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
 export { repairPrefValue, type PrefValidator } from './repair';
 export type { PrefChange, PrefsStore } from './store';
+export { PREF_KIND_TRAITS, prefDrawsSeveral, prefIsCompound, type PrefKindTraits } from './kinds';
 export {
   isBuiltinPref,
   PREF_KINDS,

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { PrefAction, PrefLeaf } from '@weasel-js/prefs';
+import { prefIsCompound, type PrefAction, type PrefLeaf } from '@weasel-js/prefs';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import type { PropertyControlProps } from '../Properties/PropertyField';
@@ -39,16 +39,13 @@ export function renderBarLeaf({ leaf, path, name, field, row }: BarLeaf): ReactN
   if (leaf.kind === 'action') return <BarAction leaf={leaf as PrefAction} path={path} />;
   if (leaf.kind === 'label') return <span className={s.words}>{leaf.name}</span>;
   const body = row();
-  if (body == null || !OPENS.has(leaf.kind)) return body;
+  if (body == null || !prefIsCompound(leaf)) return body;
   return (
     <BarPopover label={leaf.name} icon={glyphOf(leaf)}>
       {body}
     </BarPopover>
   );
 }
-
-/** The kinds whose value is made of other leaves, which no line holds. */
-const OPENS: ReadonlySet<string> = new Set(['object', 'list', 'map', 'union']);
 
 /**
  * A control with the words a bar sets before it, for one a renderer other

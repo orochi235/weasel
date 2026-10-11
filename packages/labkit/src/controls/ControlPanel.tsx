@@ -10,6 +10,7 @@ import {
   prefAliasedLeaf,
   prefAliasTarget,
   prefLeafAt,
+  prefIsCompound,
 } from '@weasel-js/prefs';
 import {
   type CollapseProps,
@@ -48,9 +49,6 @@ import { headingLeaf } from './headingControl';
 import { inDialog, summarizeValue } from './inDialog';
 import { ResetGroup } from './ResetGroup';
 import type { ConfigField } from './types';
-
-/** Leaves whose value is made of other leaves' values: too much for a row, so the row opens them in a dialog. */
-const COMPOUND = new Set(['list', 'object', 'map', 'union']);
 
 /** How a panel packs its rows into the two-column property grid.
  *   - `'auto'`: narrow controls (numbers, checkboxes, dropdowns, colors) sit
@@ -682,7 +680,8 @@ function LeafRow<TC extends Record<string, unknown>>({
     );
   }
 
-  if (COMPOUND.has(leaf.kind)) {
+  // Too much for a row, so the row opens it in a dialog.
+  if (prefIsCompound(leaf)) {
     const item = leaf.kind === 'list' ? (leaf as PrefList).item : undefined;
     // Plain text entries keep the list's own fields, and the placeholder only they have.
     const texts =
