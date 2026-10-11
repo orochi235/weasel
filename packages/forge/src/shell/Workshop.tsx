@@ -8,6 +8,7 @@ import {
 } from '@weasel-js/labkit';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ShellConfig } from '../config';
+import { DEFAULT_TITLE } from '../title';
 import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
 import { type Globals, stableStringify } from '../protocol/messages';
@@ -54,7 +55,6 @@ export interface WorkshopProps {
 }
 
 const NO_DECLARATIONS: GlobalDeclarations = {};
-const DEFAULT_TITLE = 'weaselforge';
 
 /**
  * Shows the story the route names when no trial shows it, once per route, so closing that trial sticks. It goes

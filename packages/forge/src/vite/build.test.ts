@@ -23,6 +23,12 @@ describe('forge build pages', () => {
     expect(readFileSync(input.frame!, 'utf8')).toContain('<script type="module" src="virtual:forge/frame-entry.js">');
   });
 
+  it('titles the documents it writes', () => {
+    root = realpathSync(mkdtempSync(join(tmpdir(), 'forge-build-')));
+    const input = writePages(root, 'Acme workshop');
+    expect(readFileSync(input.index!, 'utf8')).toContain('<title>Acme workshop</title>');
+  });
+
   it('moves the emitted documents to the output root and leaves every other file alone', () => {
     const bundle: Record<string, { type: string; fileName: string; source?: string }> = {
       'node_modules/.forge/index.html': { type: 'asset', fileName: 'node_modules/.forge/index.html', source: 'shell' },

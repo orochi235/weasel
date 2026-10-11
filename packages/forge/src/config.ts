@@ -8,7 +8,9 @@ import type { Library } from './story/library';
 
 /** A shell config module: what the workshop adds to the lab. Only the workshop page imports it. */
 export interface ShellConfig {
-  /** The workshop's name, in its header and as the document title. Default `weaselforge`. */
+  /** The workshop's name, in its header and as the document title. Default `weaselforge`. The served page reads
+   *  it from this module's source, so write it as a string or a `const` of this file; a computed one titles the
+   *  page only once the workshop has loaded. */
   title?: string;
   /** Whether the lab offers the CSS Vars panel. Default true. */
   cssVars?: boolean;

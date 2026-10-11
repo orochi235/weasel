@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { build, createLogger, createServer, type HotPayload, type InlineConfig, type Plugin, type ViteDevServer } from 'vite';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { IndexEntry } from '../story/types';
 import { forge } from './plugin';
 
@@ -360,7 +360,7 @@ describe('forge vite plugin, with a config module per realm', () => {
     root = realpathSync(mkdtempSync(join(tmpdir(), 'forge-config-')));
     writeFileSync(join(root, 'a.stories.tsx'), story('ui/A', 'First'));
     writeFileSync(join(root, 'forge.frame.ts'), `export default { parameters: { layout: 'centered' } };\n`);
-    writeFileSync(join(root, 'forge.shell.ts'), `export default { globals: {} };\n`);
+    writeFileSync(join(root, 'forge.shell.ts'), `export default { title: 'Acme workshop', globals: {} };\n`);
     server = await createServer({
       root,
       configFile: false,
@@ -384,7 +384,7 @@ describe('forge vite plugin, with a config module per realm', () => {
 
   it('serves each config module as its own virtual module', async () => {
     expect(await loadDefault('virtual:forge/frame-config.js')).toEqual({ parameters: { layout: 'centered' } });
-    expect(await loadDefault('virtual:forge/shell-config.js')).toEqual({ globals: {} });
+    expect(await loadDefault('virtual:forge/shell-config.js')).toEqual({ title: 'Acme workshop', globals: {} });
   });
 
   it('imports the shell config only from the workshop entry, and the frame config from both', async () => {
@@ -395,6 +395,15 @@ describe('forge vite plugin, with a config module per realm', () => {
     expect(shell).toContain('virtual:forge/importers.js');
     expect(frame).toContain('virtual:forge/frame-config.js');
     expect(frame).not.toContain('shell-config');
+  });
+
+  it("titles the served documents with the shell config's title, before any script has run", async () => {
+    const http = createHttpServer(server.middlewares);
+    await new Promise<void>((done) => http.listen(0, 'localhost', done));
+    const page = async (path: string) => (await fetch(`http://localhost:${(http.address() as AddressInfo).port}${path}`)).text();
+    onTestFinished(() => new Promise<void>((done) => void http.close(() => done())));
+    expect(await page('/')).toContain('<title>Acme workshop</title>');
+    expect(await page('/frame.html')).toContain('<title>Acme workshop</title>');
   });
 
   it('imports a frame stylesheet from the frame entry alone', async () => {

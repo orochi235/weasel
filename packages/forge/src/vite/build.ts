@@ -8,13 +8,13 @@ type Source = string | Uint8Array;
 const PAGES: Record<string, string> = { index: 'shell-entry.js', frame: 'frame-entry.js' };
 
 /** Writes a build document per forge page under `<root>/node_modules/.forge`, returning them as build inputs. */
-export function writePages(root: string): Record<string, string> {
+export function writePages(root: string, title?: string): Record<string, string> {
   const dir = join(root, DIR);
   mkdirSync(dir, { recursive: true });
   return Object.fromEntries(
     Object.entries(PAGES).map(([name, entry]) => {
       const file = join(dir, `${name}.html`);
-      writeFileSync(file, html(entry, 'build'));
+      writeFileSync(file, html(entry, 'build', title));
       return [name, file];
     }),
   );

@@ -8,6 +8,7 @@ import { html } from './html.ts';
 import { foreignCallees } from './indexFile.ts';
 import { indexStory } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
+import { shellTitle } from './shellTitle.ts';
 import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
 import { createWrapperResolver, sameResolution, type WrapperResolution } from './wrappers.ts';
@@ -109,6 +110,17 @@ export function forge(options: ForgeOptions): Plugin[] {
     }
   };
   const depGraph = (): DepGraphBuilder => (deps ??= createDepGraph({ root, read: (file) => readFileSync(file, 'utf8') }));
+
+  /** The shell config's title as its source names it; undefined, and so the default, when it cannot be read. */
+  const titleUnder = (at: string): string | undefined => {
+    if (!options.shellConfig) return undefined;
+    const file = resolve(at, options.shellConfig);
+    try {
+      return shellTitle(readFileSync(file, 'utf8'), file);
+    } catch {
+      return undefined;
+    }
+  };
 
   const configModule = (path: string | undefined) =>
     path ? `export { default } from ${JSON.stringify(resolve(root, path))};\n` : 'export default {};\n';
@@ -265,7 +277,7 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
         ];
         const optimizeDeps = { entries };
         if (command !== 'build') return { optimizeDeps };
-        return { optimizeDeps, build: { rolldownOptions: { input: writePages(at) } } };
+        return { optimizeDeps, build: { rolldownOptions: { input: writePages(at, titleUnder(at)) } } };
       },
       generateBundle: {
         order: 'post',
@@ -323,7 +335,7 @@ import.meta.hot?.accept('virtual:forge/importers.js', () => location.reload());
           const page = path === prefix ? '/' : path.startsWith(`${prefix}/`) ? path.slice(prefix.length) : null;
           const entry = req.method === 'GET' && page !== null ? PAGES[page] : undefined;
           if (!entry) return next();
-          server.transformIndexHtml(url, html(entry)).then(
+          server.transformIndexHtml(url, html(entry, 'serve', titleUnder(root))).then(
             (doc) => {
               res.statusCode = 200;
               res.setHeader('Content-Type', 'text/html');
