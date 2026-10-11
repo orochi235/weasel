@@ -797,9 +797,12 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  produced by `toJSON()`. Unlike `sceneFromJSON`, the existing Scene
    *  instance is preserved — holders such as `<SceneCanvas>` keep their
    *  reference. History (undo/redo) is cleared, matching `sceneFromJSON`.
-   *  Bumps `getVersion()` and notifies subscribers exactly once.
+   *  Bumps `getVersion()` and notifies subscribers exactly once. Selected
+   *  ids the snapshot does not hold leave the selection, and every pose
+   *  override is cleared.
    *
-   *  Throws on an unsupported version or unknown registry/layer ids; on a
+   *  Throws inside `batch` or `untracked`, which revert to a state this
+   *  replaces. Throws on an unsupported version or unknown registry/layer ids; on a
    *  malformed snapshot the scene is left empty or partially populated (callers should treat a
    *  `loadState` throw as fatal and reload). Snapshots from `toJSON()` are
    *  always well-formed. */

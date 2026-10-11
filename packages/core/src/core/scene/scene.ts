@@ -2005,8 +2005,14 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // Validate + map up front (throws before we touch live state on a bad
       // version or unknown registry key).
       const specs = specsFromSerialized(json, registry);
+      if (batchDepth > 0) {
+        throw new Error('Scene: cannot loadState inside batch() or untracked() — it replaces the state they would revert to');
+      }
+      // Ephemeral, and every id is a new node after this.
+      overrides.clearAll();
       // Reset node + layer state.
       dependents.clear();
+      childDerived.clear();
       state.nodes.clear();
       state.roots.length = 0;
       state.layers.length = 0;
@@ -2020,13 +2026,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         state.layers.push(layerFromSerialized(spec));
         state.layerIndex.set(spec.id, i);
       }
-      // Clear history + the transient batch and function-field caches.
       history.clear();
-      currentBatch = null;
-      batchDepth = 0;
-      batchDirty = false;
       // Rebuild nodes (bypass the log, exactly like construction).
       applyConstructionSpecs(specs);
+      selection = selection.filter((id) => state.nodes.has(id));
       notify();
     },
 
