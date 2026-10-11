@@ -1161,16 +1161,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P2) Disable a pref by the values of others.** A condition is a structure over other leaves'
   paths (`PrefCondition` in `packages/prefs/src/condition.ts`; ruled 2026-10-11 over an expression
-  string), and a leaf, group, or section holds one as `showIf` or `enableIf`. Left: the hidden and
-  disabled row in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel`, an attribute
-  for each in `PrefSchemaEditor`, and forge's `variants.ts` skipping an entry a data condition
-  hides. Undecided: whether a bad condition throws or warns (the prefs store and
+  string). A leaf, group, or section holds one as `showIf` or `enableIf`; `packages/prefs/src/scope.ts`
+  applies them for `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel`, and
+  `PrefSchemaEditor` edits both. Left: labkit's `ControlMatrix` reads neither; a condition on a
+  list's or a map's `item` is not applied; the schema editor's live preview drops a node whose
+  `showIf` fails, so it cannot be picked there; a boolean with an `encoding` is compared as
+  stored, not as shown. Undecided: whether a bad condition throws or warns (the prefs store and
   `resolveConfigSchema` warn, where labkit's other schema mistakes throw); a path relative to a
   list item, since every path is from the schema root and a field cannot name its sibling in the
-  same item; whether an alias row uses its own conditions or its target's (`prefAliasedLeaf`
-  spreads the target, and labkit's `AliasNode` says its own `.showIf` places it); a form for "this
-  list is not empty", since a bare `{ path }` holds for an empty list; and what a condition reads
-  when the selected nodes in a `SelectionPanel` disagree.
+  same item; whether an alias row uses its own conditions or its target's (built: its own; labkit's
+  `AliasNode` says its own `.showIf` places it, and `prefAliasedLeaf` spreads the target); a form
+  for "this list is not empty", since a bare `{ path }` holds for an empty list; and what a
+  condition reads when the selected nodes in a `SelectionPanel` disagree (built, provisionally:
+  shown if it holds for any node, enabled only if it holds for all).
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
@@ -1240,7 +1243,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   none of). In astv's settings every unit is an identity conversion carrying a suffix. Proposed,
   not agreed: a unit may be `{ suffix, accepts }` with the conversion implied, the function form
   staying for what data cannot say. `.showIf` had the same problem and takes a condition as data
-  now; setting one in `PrefSchemaEditor` is under "Disable a pref by the values of others".
+  now.
 
 - **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
   and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment
