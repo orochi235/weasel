@@ -1683,8 +1683,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   its target's row; `SelectionPanel` does not, and shows it as a kind with no renderer.
   In `PrefSchemaEditor`, removing a pref leaves its
   aliases pointing at nothing (each draws `(alias: no pref at …)` in the preview), where moving or
-  renaming it carries them along; and the `Of` picker offers every field, including the fields
-  inside an `object` leaf and other aliases, though an alias resolves only a whole leaf.
+  renaming it carries them along.
 
 - **(P3) `PrefSchemaEditor`: undoing a move made through a rail entry leaves the moved node out of
   sight.** Holding a drag over a rail entry opens that page by selecting its group, so the step

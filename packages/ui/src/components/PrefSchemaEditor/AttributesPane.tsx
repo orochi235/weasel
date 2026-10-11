@@ -6,6 +6,7 @@ import { Input } from '../Input';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
 import { prefFieldChoices } from '../Prefs/schema';
 import { Select } from '../Select';
+import { aliasChoices } from './aliasChoices';
 import { aggregateAttributes, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
@@ -77,7 +78,11 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
   );
   const nameAtFocus = useRef('');
   // The edited schema's fields, by its own path rule: what a reference in it names.
-  const fields = useMemo(() => prefFieldChoices(schema), [schema]);
+  const fields = useMemo(() => {
+    const all = prefFieldChoices(schema);
+    const aliases = nodes.filter((n): n is PrefLeaf => isPrefLeaf(n) && n.kind === 'alias');
+    return aliases.length > 0 && aliases.length === nodes.length ? aliasChoices(schema, aliases, all) : all;
+  }, [schema, nodes]);
   const [key, setKey] = useState(path === null ? '' : keyOf(path));
   const [keyError, setKeyError] = useState<string | null>(null);
   const [seen, setSeen] = useState(path);
