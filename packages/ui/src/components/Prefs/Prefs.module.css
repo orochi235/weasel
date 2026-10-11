@@ -338,6 +338,11 @@
   box-shadow: inset 2px 0 0 var(--wzl-accent);
 }
 
+/* Choosing it opens the first entry under it: it has no page of its own to show. */
+.railPasses .railName {
+  font-style: italic;
+}
+
 .railName {
   min-width: 0;
   overflow: hidden;

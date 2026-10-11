@@ -246,6 +246,30 @@ describe('PrefsForm rail layout with subPages', () => {
     expect(screen.getByRole('button', { name: /Size/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
   });
+
+  it('draws a nested section on its parent\'s page, and marks an entry that only leads to the ones under it', () => {
+    const cap: PrefGroup = { name: 'Size', children: { cap: { kind: 'number', name: 'Cap', description: '', default: 3 } } };
+    const paged: PrefGroup = { name: 'Prefs', children: { cards: { name: 'Cards', children: { size: cap } } } };
+    expect(prefRailItems(paged, true).map((i) => [i.path, i.passes ?? false])).toEqual([['cards', true], ['cards.size', false]]);
+    const sectioned: PrefGroup = { name: 'Prefs', children: { cards: { name: 'Cards', children: { size: { ...cap, as: 'section' } } } } };
+    expect(prefRailItems(sectioned, true).map((i) => [i.path, i.passes ?? false])).toEqual([['cards', false]]);
+    render(<PrefsForm schema={sectioned} onChange={() => {}} layout="rail" subPages />);
+    expect(screen.getByRole('button', { name: 'Cards' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
+  });
+
+  it('stays on the page above when the open entry\'s group becomes a section of it', () => {
+    const cap: PrefGroup = { name: 'Size', children: { cap: { kind: 'number', name: 'Cap', description: '', default: 3 } } };
+    const of = (size: PrefGroup): PrefGroup => ({
+      name: 'Prefs',
+      children: { io: { name: 'IO', children: { on: { kind: 'boolean', name: 'On', description: '', default: true } } }, cards: { name: 'Cards', children: { size } } },
+    });
+    const { rerender } = render(<PrefsForm schema={of(cap)} onChange={() => {}} layout="rail" subPages defaultSection="cards.size" />);
+    expect(screen.getByRole('button', { name: 'Size' })).toHaveAttribute('aria-current', 'page');
+    rerender(<PrefsForm schema={of({ ...cap, as: 'section' })} onChange={() => {}} layout="rail" subPages defaultSection="cards.size" />);
+    expect(screen.getByRole('button', { name: 'Cards' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('spinbutton', { name: 'Cap' })).toBeInTheDocument();
+  });
 });
 
 describe('PrefsForm rail layout, foldable', () => {

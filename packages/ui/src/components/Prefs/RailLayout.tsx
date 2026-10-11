@@ -39,9 +39,11 @@ export function RailLayout(props: PrefsFormProps & {
   // A filter can take the open group out of the rail entirely, and a section
   // the schema never had can arrive from a consumer's stale state. Either way
   // the first surviving entry is what the reader should be looking at.
-  let open = items.some((i) => i.path === requested && (i.depth === 0 || subPages))
-    ? requested
-    : (items.find((i) => i.depth === 0)?.path ?? '');
+  const opens = (path: string): boolean => items.some((i) => i.path === path && (i.depth === 0 || subPages));
+  // An entry that went while it was open, its group now drawn on the page above, leaves that page open.
+  let above: string | null = requested;
+  while (above !== null && above !== '' && !opens(above)) above = prefRailParent(above);
+  let open = above !== null && opens(above) ? above : (items.find((i) => i.depth === 0)?.path ?? '');
   // A page with nothing of its own opens the first entry under it.
   while (subPages && root !== null && open !== '' && !hasOwn(paneGroup(root, open, schema.name))) {
     const under = open;
@@ -151,7 +153,7 @@ function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup |
   return node ?? null;
 }
 
-const isOwn = (child: PrefLeaf | PrefGroup): boolean => isPrefLeaf(child) || !prefGroupNests(child);
+const isOwn = (child: PrefLeaf | PrefGroup): boolean => isPrefLeaf(child) || !prefGroupNests(child, true);
 
 /** Whether a group has anything a page of its own would draw: a leaf, or a group the rail gives no entry. */
 function hasOwn(group: PrefGroup | null): boolean {

@@ -62,11 +62,16 @@ export interface PrefRailItem {
   section: string;
   /** Leaves surviving the active filter, counted over the whole subtree. */
   matches: number;
+  /** Under `subPages`: its page would draw nothing, so choosing it opens the first entry nested in it. */
+  passes?: boolean;
 }
 
-/** Whether a group inside a page gets a rail entry. A tab or a panel is found on its page instead. */
-export function prefGroupNests(group: PrefGroup): boolean {
-  return group.as === undefined || group.as === 'section';
+/**
+ * Whether a group inside a page gets a rail entry. A tab or a panel is found on its page instead. Under `subPages`
+ * an entry is a page of its own, so only a group that is a page gets one, and a section is drawn on its parent's.
+ */
+export function prefGroupNests(group: PrefGroup, subPages = false): boolean {
+  return subPages ? prefGroupIsPage(group) : group.as === undefined || group.as === 'section';
 }
 
 /** Path of the rail entry the one at `path` nests under, or null for a depth-0 entry's. */
@@ -104,17 +109,21 @@ export function prefRailItems(root: PrefGroup, deep = false): PrefRailItem[] {
     const matches = loose.reduce((n, c) => n + countPrefLeaves(c), 0);
     items.push({ path: '', name: looseEntryName(root.name), depth: 0, section: '', matches });
   }
+  const passing = (group: PrefGroup): { passes?: true } => {
+    const kids = Object.values(group.children);
+    return deep && kids.length > 0 && kids.every((c) => !isPrefLeaf(c) && prefGroupNests(c, true)) ? { passes: true } : {};
+  };
   const nest = (group: PrefGroup, path: string, depth: number, section: string): void => {
     for (const [key, sub] of Object.entries(group.children)) {
-      if (isPrefLeaf(sub) || !prefGroupNests(sub)) continue;
+      if (isPrefLeaf(sub) || !prefGroupNests(sub, deep)) continue;
       const subPath = `${path}.${key}`;
-      items.push({ path: subPath, name: sub.name, depth, section, matches: countPrefLeaves(sub) });
+      items.push({ path: subPath, name: sub.name, depth, section, matches: countPrefLeaves(sub), ...passing(sub) });
       if (deep) nest(sub, subPath, depth + 1, section);
     }
   };
   for (const [key, child] of Object.entries(root.children)) {
     if (isPrefLeaf(child) || !prefGroupIsPage(child)) continue;
-    items.push({ path: key, name: child.name, depth: 0, section: key, matches: countPrefLeaves(child) });
+    items.push({ path: key, name: child.name, depth: 0, section: key, matches: countPrefLeaves(child), ...passing(child) });
     nest(child, key, 1, key);
   }
   return items;

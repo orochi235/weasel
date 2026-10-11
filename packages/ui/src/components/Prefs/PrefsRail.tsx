@@ -97,7 +97,7 @@ export function PrefsRail(props: PrefsRailProps) {
       const entry = (
         <button
           type="button"
-          className={[s.railItem, item.depth > 0 && s.railSub, open && s.railOpen, inView && s.railInView]
+          className={[s.railItem, item.depth > 0 && s.railSub, open && s.railOpen, inView && s.railInView, item.passes && s.railPasses]
             .filter(Boolean)
             .join(' ')}
           aria-current={open ? 'page' : inView ? 'location' : undefined}
