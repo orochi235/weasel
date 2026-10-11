@@ -5,7 +5,7 @@
  * by id; consumers can compose several to plot e.g. a primary function
  * and a derived (read-only) curve on the same chart.
  */
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { handleHalf } from '../../handles';
@@ -227,7 +227,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
             data-curve-element="fill"
             className={s.fill}
             d={fillD}
-            fill={cfg.fill ? cfg.fill.color : undefined}
+            style={cfg.fill && cfg.fill.color ? { '--curve-fill': cfg.fill.color } as CSSProperties : undefined}
           />
         )}
         {pathD && curveVisible && (
