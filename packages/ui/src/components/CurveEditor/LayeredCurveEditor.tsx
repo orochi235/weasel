@@ -19,6 +19,7 @@ import {
 } from '../Plot2D/geometry';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';
+import { sameFields } from './sameFields';
 import type {
   CurveLayer, LayerCtx, LayerGesture, LayerModifiers, ModelPoint, PlotPoint,
 } from './layerTypes';
@@ -227,7 +228,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     const ctx = makeCtx(readModifiers(e));
     const finalState = a.gesture.onCommit ? a.gesture.onCommit(current, ctx) : current;
     if (finalState !== current) onLayerChange(a.layerId, finalState);
-    if (historyEnabled) {
+    if (historyEnabled && !sameFields(finalState, a.startSelfState)) {
       pastRef.current.push(a.startStates);
       futureRef.current = [];
     }
