@@ -70,6 +70,7 @@ export function Timeline(props: TimelineProps): ReactElement {
   // Null until the user zooms in, so the window follows a duration that changes.
   const [ownWindow, setOwnWindow] = useState<TimeWindow | null>(null);
   const [ownSelection, setOwnSelection] = useState<KeySelection | null>(null);
+  // By key index, so an edit that renumbers a track's keys drops it.
   const [segmentSelection, setSegmentSelection] = useState<KeySelection | null>(null);
 
   const bounds: TimeWindow = { from: 0, to: duration };
@@ -98,17 +99,19 @@ export function Timeline(props: TimelineProps): ReactElement {
     });
   };
 
+  const selectedTrack = selection ? trackAtPath(tracks, selection.trackPath) : undefined;
+
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (e.defaultPrevented || isTextEntry(e.target)) return;
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selection) {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selection && selectedTrack?.kind === 'sampled') {
       e.preventDefault();
       const r = deleteKey(tracks, selection);
       onChange(r.tracks);
       setSelection(r.selection);
+      setSegmentSelection(null);
     }
   };
 
-  const selectedTrack = selection ? trackAtPath(tracks, selection.trackPath) : undefined;
   const selectedKey = selectedTrack?.kind === 'sampled'
     ? (selectedTrack as SampledTrack<unknown>).keys[selection!.keyIndex]
     : undefined;
@@ -185,6 +188,7 @@ export function Timeline(props: TimelineProps): ReactElement {
                 const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
                 onChange(r.tracks);
                 setSelection(r.selection);
+                if (r.selection?.keyIndex !== keyIndex) setSegmentSelection(null);
               }}
               onKeysInput={(keys) => onInput?.(setKeys(tracks, trackPath, keys))}
               onKeysCommit={(keys) => onChange(setKeys(tracks, trackPath, keys))}
@@ -192,6 +196,7 @@ export function Timeline(props: TimelineProps): ReactElement {
                 const r = insertKey(tracks, trackPath, atMs);
                 onChange(r.tracks);
                 setSelection(r.selection);
+                setSegmentSelection(null);
               }}
               selectedSegment={segmentSelection && samePath(segmentSelection.trackPath, trackPath) ? segmentSelection.keyIndex : null}
               onSelectSegment={(keyIndex) => setSegmentSelection({ trackPath, keyIndex })}

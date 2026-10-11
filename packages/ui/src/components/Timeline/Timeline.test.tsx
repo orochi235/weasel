@@ -177,6 +177,38 @@ describe('Timeline', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('does not report a change for Delete on an event mark, which it cannot remove', () => {
+    const onChange = vi.fn();
+    render(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    fireEvent.pointerDown(screen.getByTestId('timeline-event'), { clientX: 125, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 125 });
+    const notPrevented = fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(notPrevented).toBe(true);
+  });
+
+  it('drops the segment selection when a key is deleted or inserted on its track', () => {
+    function Host() {
+      const [value, setValue] = useState<Track[]>(() => [
+        { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 400, value: 5 }, { t: 800, value: 10 }], onTick: () => {} },
+      ] as Track[]);
+      return <Timeline {...base} tracks={value} onChange={setValue} />;
+    }
+    render(<Host />);
+    fireEvent.click(screen.getAllByTestId('timeline-segment')[1]);
+    expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 200, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 200 });
+    fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
+    expect(screen.getAllByTestId('timeline-key')).toHaveLength(2);
+    expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByTestId('timeline-segment')[0]);
+    expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
+    fireEvent.doubleClick(screen.getByTestId('timeline-lane-track'), { clientX: 100 });
+    expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+  });
+
   it('renders the consumer’s key editor for the selection', () => {
     render(
       <Timeline
