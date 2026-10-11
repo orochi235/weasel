@@ -1,8 +1,10 @@
 # The animator on blits
 
-**Status: steps 1–3 are built and merged into `main`.** Tweens, springs, physics, decay and
-keyframe sampling compute their values in blits ("What step 3 built"), on `@msb235/blits` 0.7.0.
-Steps 4–6 are not built. Delete this once it is all built or turned down.
+**Status: the values are computed in blits; nothing combines yet.** Built and merged: pose overrides
+fold through a mix, tweens, springs, physics, decay, and keyframe sampling compute in blits ("What
+step 3 built"), on `@msb235/blits` 0.8.1, and a global pause holds the mix clock. Not built: the
+five arcs under "The arcs", which are what make two animations on one value combine. Delete this
+once they are all built or turned down.
 
 For whoever picks up weasel's animation work. It answers: how weasel gets a model for combining
 several animations on one property, without keeping a second copy of the arithmetic that blits
@@ -79,24 +81,29 @@ Each of these is blits work.
   rows, `pull`, and starts and stops that invalidate only their own subject. What is left of the
   gap to today's animator is blits' own per-frame work ("What step 3 built").
 
-## What weasel has to design
+## How animations combine
 
-- **Interrupts with momentum.** A `cancelKey` interrupt today starts the new animation from the
-  live value and drops velocity. On blits it can carry velocity: fade the old voice out over zero
-  ms, and start the new spring segment from the old one's position and velocity. This is where the
-  velocity hand-off is designed; the reflow glide's known gap ("velocity does not carry over") is
-  its first user.
-- **Pausing fades.** Writing `rate = 0` pauses a voice's clock, but blits' fades run on the mix
-  clock, so a fade in progress keeps going while the voice is paused. A global pause means either
-  that blits fades follow voice time, or that the control layer holds the mix clock still and calls
-  `rebase()` on resume. The second needs no blits change.
-- **Events against mix time.** Event tracks and booking stay in weasel's timeline, but they must
-  read the same clock the mix was synced to, or a sound cue drifts against the motion it belongs
-  to. The timeline reads time from the mix's `sync` timestamp, not from its own.
-- **Channel kits for each target.** Pose: one channel per field, `sum` for translation and rotation
-  and `mul` for scale, matching how `resolveSkeleton.compose` already layers rig poses. Color
-  overrides are per-vertex arrays, which want a `vec` channel of the right length. Which blend rule
-  a vertex color takes is open.
+Decided 2026-10-11, Mike's calls. As built through step 3, every animation is its own blits subject
+and hands its value to the caller's `onTick`, so the later writer still wins. What changes that:
+
+- **A target** is one animatable value whose owner says how to read and set the committed value,
+  what shows when nothing is animating. `tween`, `spring`, `physics`, and `decay` take a `target`
+  in place of `onTick`. It is public engine surface; the pose, color, and camera helpers are
+  callers of it.
+- **Offset voices add.** An animation given a target commits its destination when it starts and
+  contributes only what is left to travel. Overlapping offsets sum, so an interrupt keeps its
+  speed and nothing cancels anything. A crossfade between absolute values was turned down: every
+  overlap would need a fade time, and speed would kink where the fade starts.
+- **Absolute voices stand in for the committed value**: a timeline's sampled track, a rig clip, a
+  held override such as a drag preview. Several crossfade through a blits locus. What is on
+  screen is the absolute value if there is one, else the committed value, plus every offset.
+- **Two shapes of target.** One its reader probes when it needs the value (pose, vertex colors),
+  and one that pushes its folded value to a setter once a frame (the camera, a consumer's own).
+- **The camera keeps its destination to itself** and writes the folded view through `view.set`
+  each frame, so `view.get()` and pointer math read the live view. Animations from one
+  `useViewAnimation` instance go on replacing each other, since two anchored zooms do not add.
+- **The same `cancelKey` still replaces.** Whether `tweenPose` and its siblings keep a key that
+  replaces, or drop it so successive moves on one node blend, is for the pose arc to settle.
 
 ## Decisions this needs
 
@@ -119,18 +126,21 @@ Each of these is blits work.
     from `blendPoses`' single weighted average once angles take the short way. Test against
     `blendPoses`' own cases before deleting it.
 
-## Order
+## The arcs
 
-1. blits: fixed-interval stepping, exact springs with velocity, publish. Done 2026-09-30.
-2. weasel: pose overrides as a mix, behind the existing `PoseOverrides` interface, with the reach
-   list supplied by the control layer. Benchmark the paint walk before going further. Done
-   2026-10-01; see "What step 2 built".
-3. weasel: tween, spring and keyframe sampling reimplemented on blits patches under the same
-   signatures. Tweens, springs, physics and decay done 2026-10-04; see "What step 3 built".
-   Keyframe sampling done 2026-10-08.
-4. weasel: `cancelKey` interrupts with momentum; global pause through the mix clock.
-5. weasel: color overrides and the camera as mixes.
-6. weasel: event tracks reading mix time.
+Each is its own spec, plan, and merge, in this order. The first three steps of the original order
+are built: blits' stepping and springs, pose overrides as a mix, and values computed on blits.
+
+1. **Targets.** The public target type; `target` on `tween`, `spring`, `physics`, and `decay`; the
+   codec cueing offset voices onto a target; same-key interrupts carrying velocity. Spec:
+   `docs/superpowers/specs/2026-10-11-animation-targets-design.md`.
+2. **Pose.** Pose overrides fold offsets over entries; `tweenPose`, `springPose`, reflow, and
+   momentum move onto targets, closing reflow's "velocity does not carry over".
+3. **Color and camera.** `ColorOverrideRegistry` and `useViewAnimation` rebuilt on targets.
+4. **Timeline.** Sampled tracks take a target and cue absolute voices; event tracks and booking
+   read the mix's clock, so a sound cue cannot drift against the motion it belongs to.
+5. **Rig.** Clips as absolute voices on joint targets, and `blendPoses` replaced by a locus
+   ("Decisions this needs").
 
 ## What step 3 built
 
@@ -323,7 +333,7 @@ holding an entry are the reach list; `read` never probes a node outside it.
 
 `PoseOverrides` gained `read(id)`, the folded value, and `get(id)` keeps returning the entry a
 writer stored, because writers check that by identity (`reflow.ts`). Everything that paints or
-picks reads `read`. Step 3 cues the animator's voices on the same mix, and `read` folds them in.
+picks reads `read`. The entries table is still this mix's only voice.
 
 `tests/perf/bench/pose-overrides.bench.ts` measures one animated frame: mutate every entry, commit,
 build the draw commands. Means in ms per frame, two runs each, alternated, on an Apple M2 Max
