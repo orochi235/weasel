@@ -6,7 +6,7 @@ import {
   type PropertyControlProps,
   prefFieldProps,
 } from '@weasel-js/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFieldChoices } from './fieldChoices';
 
 /** Whether this leaf draws as a slider, mirroring the condition the `number`
@@ -134,34 +134,44 @@ export function useDebouncedText(
   debounceMs: number,
 ): { local: string; type: (next: string) => void } {
   const [local, setLocal] = useState(value);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastExternal = useRef(value);
+  // The text typed since the last write, and the timer that will write it.
+  const pending = useRef<{ text: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const latestWrite = useRef(write);
+  useEffect(() => {
+    latestWrite.current = write;
+  });
+
+  const settle = useCallback((commit: boolean): void => {
+    const waiting = pending.current;
+    if (waiting === null) return;
+    pending.current = null;
+    clearTimeout(waiting.timer);
+    if (!commit) return;
+    lastExternal.current = waiting.text;
+    latestWrite.current(waiting.text);
+  }, []);
 
   useEffect(() => {
     if (value !== lastExternal.current) {
+      // Replaced from outside (a reset): text still waiting would overwrite it.
+      settle(false);
       lastExternal.current = value;
       setLocal(value);
     }
-  }, [value]);
+  }, [value, settle]);
 
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    [],
-  );
+  // A row that unmounts inside the debounce window (a closing popover, a tab
+  // switch) still owes its last keystrokes.
+  useEffect(() => () => settle(true), [settle]);
 
   return {
     local,
     type: (next) => {
       setLocal(next);
-      if (timer.current) clearTimeout(timer.current);
-      const commit = () => {
-        lastExternal.current = next;
-        write(next);
-      };
-      if (debounceMs === 0) commit();
-      else timer.current = setTimeout(commit, debounceMs);
+      settle(false);
+      pending.current = { text: next, timer: setTimeout(() => settle(true), debounceMs) };
+      if (debounceMs === 0) settle(true);
     },
   };
 }
