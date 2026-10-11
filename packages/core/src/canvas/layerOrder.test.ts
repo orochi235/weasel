@@ -185,7 +185,22 @@ describe('composeOrderedLayers', () => {
     expect(ids).toContain('scene');
     expect(ids.filter(id => id === 'a')).toHaveLength(1);
     expect(ids.filter(id => id === 'b')).toHaveLength(1);
-    expect(warn).toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('cycle'));
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('dangling'));
+    warn.mockRestore();
+  });
+
+  it('names the unresolved anchor for a layer chained onto a dangling one', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    composeOrderedLayers(
+      {
+        a: { layer: L('a'), after: 'b' },
+        b: { layer: L('b'), after: 'nowhere' },
+      },
+      { scene: L('scene') },
+    );
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('cycle'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('dangling reference "nowhere"'));
     warn.mockRestore();
   });
 

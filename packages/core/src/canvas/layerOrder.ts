@@ -18,8 +18,9 @@ const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
  *   `before` a slot can itself carry an `after` chain, and vice versa.
  * - Customs with neither `after` nor `before` go to a tail bucket emitted
  *   after all standard slots.
- * - Dangling references (target unresolvable) go to the tail with a
- *   `console.warn`. Cycles are detected and broken with a warning.
+ * - Dangling references (target unresolvable) and cycles go to the tail
+ *   with a `console.warn`.
+ * - An entry with both `after` and `before` is placed by `after`.
  *
  * Pure function — no side effects beyond `console.warn` on malformed input.
  */
@@ -63,11 +64,9 @@ export function composeOrderedLayers<TNode extends { id: string }, TPose>(
   const out: RenderLayer<unknown>[] = background ? [background] : [];
 
   function emitChild(child: { key: string; layer: RenderLayer<unknown> }) {
-    if (emitted.has(child.key)) {
-      // Cycle — already emitted via another path. Warn once.
-      console.warn(`composeOrderedLayers: cycle detected involving custom layer "${child.key}"`);
-      return;
-    }
+    // A custom has one anchor, so it is reached twice only when `sceneLayers`
+    // repeats a key.
+    if (emitted.has(child.key)) return;
     emitted.add(child.key);
     emitBefore(child.key);
     out.push(child.layer);
@@ -108,14 +107,29 @@ export function composeOrderedLayers<TNode extends { id: string }, TPose>(
     out.push(t.layer);
   }
 
-  // Orphans: customs that declared an `after`/`before` but never got emitted
-  // (target didn't resolve through any chain to a known standard slot or custom).
+  const anchorOf = (key: string): string | undefined => {
+    const value = layersMap[key];
+    return isCustomEntry(value) ? value.after ?? value.before : undefined;
+  };
+  const inCycle = (key: string): boolean => {
+    let at = anchorOf(key);
+    for (let hops = 0; at !== undefined && hops < allCustomKeys.size; hops++) {
+      if (at === key) return true;
+      at = anchorOf(at);
+    }
+    return false;
+  };
+
+  // Orphans: customs that declared an `after`/`before` but never got emitted,
+  // because the chain of anchors loops or ends on a key nothing defines.
   for (const key of allCustomKeys) {
     if (emitted.has(key)) continue;
     const value = layersMap[key];
     if (!isCustomEntry(value)) continue;
     const ref = value.after ?? value.before;
-    console.warn(`composeOrderedLayers: dangling reference "${ref}" from custom layer "${key}" — falling back to tail`);
+    console.warn(inCycle(key)
+      ? `composeOrderedLayers: cycle detected involving custom layer "${key}" — falling back to tail`
+      : `composeOrderedLayers: dangling reference "${ref}" from custom layer "${key}" — falling back to tail`);
     emitted.add(key);
     out.push(value.layer);
   }
