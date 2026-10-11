@@ -467,14 +467,6 @@ have shipped. What remains:
   the style write and let hosts size the element by class, which needs every host checked for a
   layout that depends on it.
 
-- **(P3) Frame loop: subscribers get a clock and no way to learn it was suspended.** `useFrameLoop`
-  (`packages/core/src/canvas/useFrameLoop.ts`) passes no `onResume` to `useVisibleRaf` and the ref
-  handle exposes no equivalent, so a `beforePaint` hook that advances by `time - last` gets one
-  hour-long step after an hour in a background tab. Add `subscribeResume` to `CanvasExtensionApi`,
-  fed by `onResume`. Related: under `syncPaint` the frame's time is `performance.now()` at the call
-  while a rAF frame carries the frame-start timestamp, so a sync paint made inside another rAF
-  callback can be followed by a frame with an earlier time.
-
 - **(P3) `Canvas.tsx` is 1,610 lines and holds the scene-layer builders.** Its header says "Canvas
   owns NO scene-shaped state", and it exports `buildSceneLayer`/`buildSceneLayers`, which walk the
   scene tree, apply `toPose`, cull, and record debug bounds. Move them beside

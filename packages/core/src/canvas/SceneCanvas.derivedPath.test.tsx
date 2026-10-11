@@ -60,6 +60,7 @@ vi.mock('./Canvas', async (importOriginal) => {
         requestRedraw: () => {},
         subscribeFrame: () => () => {},
         subscribeBeforePaint: () => () => {},
+        subscribeResume: () => () => {},
         getView: () => VIEW,
         setView: () => {},
         subscribeView: () => () => {},

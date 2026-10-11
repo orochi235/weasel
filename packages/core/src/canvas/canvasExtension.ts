@@ -81,6 +81,14 @@ export interface CanvasExtensionApi {
    * read, advanced once per frame. Returns an unsubscribe.
    */
   subscribeBeforePaint(fn: (time: number) => void): () => void;
+  /**
+   * Run `fn` when the frame loop resumes after being suspended (a hidden tab,
+   * a canvas scrolled out of the viewport), before the frame that follows. No
+   * frame runs while suspended, so a subscriber that advances by the time
+   * between frames rebases its clock here rather than taking the whole
+   * suspension as one step. Returns an unsubscribe.
+   */
+  subscribeResume(fn: () => void): () => void;
   /** The current view. Readable mid-frame — this is the value the next paint
    *  will use, not a value from the last React commit. */
   getView(): View;

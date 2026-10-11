@@ -18,6 +18,7 @@ function attached() {
     requestRedraw: vi.fn(),
     subscribeFrame: vi.fn(() => () => {}),
     subscribeBeforePaint: vi.fn(() => () => {}),
+    subscribeResume: vi.fn(() => () => {}),
     hitTestExtras: vi.fn(() => null),
     registerLayer: vi.fn((l: RenderLayer<unknown>) => { layer = l; return () => {}; }),
     getView: vi.fn(() => VIEW),

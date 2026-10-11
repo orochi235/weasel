@@ -16,6 +16,7 @@ function makeApi(): CanvasExtensionApi {
     requestRedraw: vi.fn(),
     subscribeFrame: vi.fn(() => () => {}),
     subscribeBeforePaint: vi.fn(() => () => {}),
+    subscribeResume: vi.fn(() => () => {}),
     hitTestExtras: vi.fn(() => null),
     registerLayer: vi.fn(() => () => {}),
     getView: vi.fn(() => IDENTITY_VIEW),

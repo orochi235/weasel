@@ -173,3 +173,54 @@ describe('useFrameLoop — before-paint subscribers', () => {
     expect(seen).not.toHaveBeenCalled();
   });
 });
+
+describe('useFrameLoop — suspension', () => {
+  const setHidden = (hidden: boolean) => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+    document.dispatchEvent(new Event('visibilitychange'));
+  };
+  afterEach(() => { delete (document as { hidden?: boolean }).hidden; });
+
+  it('tells resume subscribers when the loop leaves suspension', () => {
+    const loopRef = { current: null as FrameLoop | null };
+    render(<Host loopRef={loopRef} paint={() => true} />);
+    const loop = loopRef.current!;
+    const resumed = vi.fn();
+    const off = loop.subscribeResume(resumed);
+
+    act(() => { setHidden(true); });
+    expect(resumed).not.toHaveBeenCalled();
+    act(() => { setHidden(false); });
+    expect(resumed).toHaveBeenCalledTimes(1);
+
+    off();
+    act(() => { setHidden(true); });
+    act(() => { setHidden(false); });
+    expect(resumed).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useFrameLoop — frame time', () => {
+  it('never hands a frame an earlier time than the sync paint before it', async () => {
+    const loopRef = { current: null as FrameLoop | null };
+    const { rerender } = render(<Host loopRef={loopRef} paint={() => true} syncPaint />);
+    const loop = loopRef.current!;
+    const times: number[] = [];
+    loop.subscribeBeforePaint((t) => { times.push(t); });
+
+    // A sync paint made late in an animation frame reads a clock that is ahead
+    // of the timestamp the next rAF callback of that same frame carries.
+    const ahead = performance.now() + 1e9;
+    const now = vi.spyOn(performance, 'now').mockReturnValue(ahead);
+    try {
+      act(() => { loop.requestRedraw(); });
+    } finally {
+      now.mockRestore();
+    }
+    rerender(<Host loopRef={loopRef} paint={() => true} />);
+    await act(async () => { loop.requestRedraw(); await frame(); await frame(); });
+
+    expect(times).toHaveLength(2);
+    expect(times[1]).toBeGreaterThanOrEqual(times[0]);
+  });
+});

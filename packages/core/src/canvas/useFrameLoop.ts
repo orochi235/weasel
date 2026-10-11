@@ -22,6 +22,9 @@ export interface FrameLoop {
   /** Run `fn` on every frame just before its paint, with the frame's time.
    *  Returns an unsubscribe. */
   subscribeBeforePaint(fn: (time: number) => void): () => void;
+  /** Run `fn` when the loop leaves suspension, before the frame that follows.
+   *  Returns an unsubscribe. */
+  subscribeResume(fn: () => void): () => void;
 }
 
 export interface FrameLoopOptions {
@@ -46,6 +49,11 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   const syncRef = useLatest(options.syncPaint ?? false);
   const subsRef = useRef<Set<(time: number) => void>>(new Set());
   const beforeRef = useRef<Set<(time: number) => void>>(new Set());
+  const resumeRef = useRef<Set<() => void>>(new Set());
+  /** The last time handed to subscribers. A sync paint reads the clock at the
+   *  call and a rAF frame carries its frame's start, so within one animation
+   *  frame the second can be the earlier of the two. */
+  const lastTimeRef = useRef(-Infinity);
 
   /** Set while recovering from a paint that threw, so one bad frame is retried
    *  and a permanently throwing one still doesn't spin at frame rate. */
@@ -53,7 +61,9 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   /** `frame.request`, which doesn't exist until after `runPaint` is built. */
   const rearmRef = useRef<(() => void) | null>(null);
 
-  const runPaint = useCallback((time: number) => {
+  const runPaint = useCallback((at: number) => {
+    const time = Math.max(at, lastTimeRef.current);
+    lastTimeRef.current = time;
     dirtyRef.current = false;
     paintingRef.current = true;
     let landed = false;
@@ -90,7 +100,10 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
       if (!aliveRef.current || !dirtyRef.current) return;
       runPaint(time);
     }, [runPaint]),
-    { target: options.target },
+    {
+      target: options.target,
+      onResume: useCallback(() => { for (const fn of resumeRef.current) fn(); }, []),
+    },
   );
   useInsertionEffect(() => {
     rearmRef.current = () => { frame.request(); };
@@ -118,6 +131,11 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     return () => { beforeRef.current.delete(fn); };
   }, []);
 
+  const subscribeResume = useCallback((fn: () => void) => {
+    resumeRef.current.add(fn);
+    return () => { resumeRef.current.delete(fn); };
+  }, []);
+
   // `requestRedraw` outlives the component: `@weasel-js/hud` calls it from a
   // `.then()`, and `viewRegistry.attachSurface` hands it to the consumer.
   // Re-armed in setup because refs survive StrictMode's simulated remount, and
@@ -127,12 +145,14 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     aliveRef.current = true;
     const subs = subsRef.current;
     const before = beforeRef.current;
+    const resume = resumeRef.current;
     return () => {
       aliveRef.current = false;
       subs.clear();
       before.clear();
+      resume.clear();
     };
   }, []);
 
-  return { requestRedraw, subscribeFrame, subscribeBeforePaint };
+  return { requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume };
 }
