@@ -13,8 +13,9 @@
  * one under the pointer.
  */
 
-import { layoutTextPose } from '@weasel-js/text';
-import type { LaidOutCell, TextPose } from '@weasel-js/text';
+import type { LaidOutCell } from './layout/layoutRuns';
+import { layoutTextPose } from './layout/textPoseLayout';
+import type { TextPose } from './pose';
 
 /**
  * Merge neighboring cells a caret cannot stop between into one cell spanning

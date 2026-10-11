@@ -9,7 +9,7 @@ import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { TextEditDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
-import { isTextData } from 'features/text/isTextData';
+import { isTextData } from '@weasel-js/text';
 
 export function useTextEditDepSource(
   scene: Scene<unknown, string, unknown>,

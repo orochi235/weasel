@@ -13,9 +13,9 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
+import { _resetLayoutCacheForTests } from './test-seams';
 import { fitTextPose } from './fitTextPose';
-import type { TextPose } from '@weasel-js/text';
+import type { TextPose } from './pose';
 
 const SIZE = 32;
 const STYLE = { fontFamily: 'inter', fontSize: SIZE };

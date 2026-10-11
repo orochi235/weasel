@@ -20,8 +20,8 @@
  * `x` / `y` after calling.
  */
 
-import { layoutTextPose } from '@weasel-js/text';
-import type { TextPose } from '@weasel-js/text';
+import { layoutTextPose } from './layout/textPoseLayout';
+import type { TextPose } from './pose';
 
 /** Options for `fitTextPose`. */
 export interface FitTextPoseOptions {

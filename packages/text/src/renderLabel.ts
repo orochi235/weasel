@@ -1,4 +1,4 @@
-import type { TextRenderer } from '@weasel-js/text';
+import type { TextRenderer } from './markdownText';
 
 
 /** Visual options for `renderLabel`. */

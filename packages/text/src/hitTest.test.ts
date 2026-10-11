@@ -14,9 +14,9 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
-import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
+import { _resetLayoutCacheForTests } from './test-seams';
 import { caretIndexAt, pointInTextPose } from './hitTest';
-import type { TextPose } from '@weasel-js/text';
+import type { TextPose } from './pose';
 
 const pose: TextPose = { x: 10, y: 20, width: 100, height: 40, text: 'hi' };
 

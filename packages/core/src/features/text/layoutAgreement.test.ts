@@ -18,13 +18,11 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
-import { cachedLayoutRuns, resolveTextStyle, textLineBoxes } from '@weasel-js/text';
+import { cachedLayoutRuns, resolveTextStyle, textLineBoxes, type TextPose, caretIndexAt } from '@weasel-js/text';
 import type { DrawCommand, TextDrawCommand } from '../../renderer/DrawCommand';
 import type { Node } from 'core/scene/types';
 import { findNodeShape } from '../../canvas/NodeShape';
 import { createTextLayer } from './textLayer';
-import type { TextPose } from '@weasel-js/text';
-import { caretIndexAt } from './hitTest';
 import { textCommandFromRuns } from './textCommand';
 
 const SIZE = 32;
