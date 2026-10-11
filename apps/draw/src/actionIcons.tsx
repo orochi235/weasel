@@ -46,26 +46,6 @@ export function SettingsIcon() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Record — input-tooling control. Swaps to a filled red disc when active.
-// ──────────────────────────────────────────────────────────────────────────
-
-export function RecordIcon({ active = false }: { active?: boolean }) {
-  // Active state uses an explicit red fill so it reads as "armed/recording"
-  // regardless of the button's currentColor.
-  return (
-    <svg {...SVG_BASE}>
-      <circle
-        cx="10"
-        cy="10"
-        r="5"
-        fill={active ? '#d23a2a' : 'none'}
-        stroke={active ? '#d23a2a' : 'currentColor'}
-      />
-    </svg>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────────────
 // Property icons — pose, paint, and typography fields.
 // Style: same 20×20, currentColor strokes, filled regions for the
 // "highlighted" affordance (the bar being measured, the letter being

@@ -14,11 +14,6 @@ function props(over: Partial<CommandBarProps> = {}): CommandBarProps {
     canReleaseCompound: false,
     onReleaseCompound: vi.fn(),
     onOpenPrefs: vi.fn(),
-    recording: false,
-    onToggleRecord: vi.fn(),
-    recordingProfile: 'gesture-only',
-    onChangeRecordingProfile: vi.fn(),
-    onPlay: vi.fn(),
     ...over,
   };
 }
@@ -58,17 +53,10 @@ describe('CommandBar', () => {
     expect(p.onToggleGrid).not.toHaveBeenCalled();
   });
 
-  it('marks the record button pressed while recording and locks the profile', () => {
-    render(<CommandBar {...props({ recording: true })} />);
-    expect(screen.getByRole('button', { name: 'Record input' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: /Recording profile/ }).hasAttribute('disabled')).toBe(true);
-  });
-
-  it('changes the recording profile', () => {
-    const p = props();
-    render(<CommandBar {...p} />);
-    openMenu(/Recording profile/);
-    fireEvent.click(screen.getByRole('option', { name: 'Full fidelity' }));
-    expect(p.onChangeRecordingProfile).toHaveBeenCalledWith('full');
+  it('offers no control for recording or replay, which nothing drives yet', () => {
+    render(<CommandBar {...props()} />);
+    for (const name of [/Record input/, /Recording profile/, /Play recording/]) {
+      expect(screen.queryByRole('button', { name })).toBeNull();
+    }
   });
 });

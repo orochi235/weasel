@@ -18,7 +18,7 @@
  *   - `<ColorContextProvider>` holds the active fill/stroke; selection
  *     mutations go through `scene.update` so they're undoable.
  *   - `<CommandBar>` takes handlers only for draw's own buttons — file,
- *     view toggles, recording, preferences.
+ *     view toggles, preferences.
  *   - `<ActiveSwatches>` is the fill/stroke widget; clicks open a native
  *     color picker via the existing component implementation.
  *   - Local-storage round-trip: the scene and its undo stacks are saved 300 ms
@@ -158,7 +158,6 @@ import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
 import type { SceneCanvasHit } from '@weasel-js/core';
 import { sceneToSvgString, selectionToClipboardSvgString, clipboardSnapshotRootIds } from './svgExport';
-import type { RecordingProfile } from './recorder';
 
 import './app.css';
 
@@ -707,11 +706,6 @@ function Toolbar({
         canReleaseCompound={canReleaseCompound}
         onReleaseCompound={onReleaseCompound}
         onOpenPrefs={onOpenPrefs}
-        recording={false}
-        onToggleRecord={() => {/* v0: recording deferred */}}
-        recordingProfile={'gesture-only' as RecordingProfile}
-        onChangeRecordingProfile={() => {/* v0: recording deferred */}}
-        onPlay={() => {/* v0: recording deferred */}}
       />
     </>
   );

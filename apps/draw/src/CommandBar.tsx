@@ -4,16 +4,13 @@
  *  distribute, flip, booleans, create outlines) is a kit action, rendered by
  *  the kit's `<ActionBar group=…/>` from the registry `<SceneCanvas>` fills,
  *  glyphs included. The buttons built here are the app's own: file, view toggles,
- *  recording, preferences. */
-import { useRef } from 'react';
+ *  preferences. */
 import {
   ActionBar as KitActionBar,
   Button,
   ButtonBar,
   GridIcon,
   MenuButton,
-  PlayIcon,
-  Select,
   SnapIcon,
   ToggleBar,
   formatShortcut,
@@ -24,10 +21,7 @@ export type PaperSizeKey = 'letter' | 'a4' | 'legal';
 import {
   ReleaseCompoundIcon,
   SettingsIcon,
-  RecordIcon,
 } from './actionIcons';
-import type { Recording, RecordingProfile } from './recorder';
-import { deserializeRecording } from './recordingIO';
 
 export interface CommandBarProps {
   // File I/O — SVG round-trip via @weasel-js/svg.
@@ -46,15 +40,6 @@ export interface CommandBarProps {
   onReleaseCompound(): void;
   // Preferences modal
   onOpenPrefs(): void;
-  // Record / Replay — toggles capture of pointer/keyboard input, and
-  // loads a previously-recorded JSON file for replay.
-  recording: boolean;
-  onToggleRecord(): void;
-  /** Current sampling profile for the next recording. Changes are
-   *  disabled while a recording is in flight. */
-  recordingProfile: RecordingProfile;
-  onChangeRecordingProfile(p: RecordingProfile): void;
-  onPlay(rec: Recording): void;
 }
 
 const PAPER_ITEMS: ReadonlyArray<{ value: PaperSizeKey; label: string }> = [
@@ -73,12 +58,6 @@ const VIEW_TOGGLES = [
   { value: 'grid', label: <GridIcon />, ariaLabel: 'Show grid', shortcut: formatShortcut({ key: '3', shift: true }) },
   { value: 'snap', label: <SnapIcon />, ariaLabel: 'Snap to grid' },
 ] as const;
-
-const RECORDING_PROFILES: ReadonlyArray<{ value: RecordingProfile; label: string }> = [
-  { value: 'gesture-only', label: 'Gesture-only' },
-  { value: 'full', label: 'Full fidelity' },
-  { value: 'events-only', label: 'Events-only' },
-];
 
 /** The in-repo dev surfaces, hash-routed in main.tsx; each opens in a new tab. */
 const DEBUG_ROUTES: ReadonlyArray<{ value: string; label: string }> = [
@@ -135,28 +114,6 @@ export function CommandBar(p: CommandBarProps) {
       </Button>
       <div className="wd-commandbar-spacer" />
       <div className="wd-commandbar-group">
-        <Button
-          variant="ghost"
-          iconOnly
-          ariaLabel="Record input"
-          shortcut="F9"
-          pressed={p.recording}
-          onClick={p.onToggleRecord}
-        >
-          <RecordIcon active={p.recording} />
-        </Button>
-        {/* The profile is captured at `start()`, so it can't change mid-recording. */}
-        <Select
-          aria-label="Recording profile"
-          tooltip="Recording profile — how aggressively to sample pointermove"
-          width="fit"
-          variant="bare"
-          options={RECORDING_PROFILES}
-          selectedKey={p.recordingProfile}
-          onSelectionChange={p.onChangeRecordingProfile}
-          isDisabled={p.recording}
-        />
-        <PlayButton onPlay={p.onPlay} />
         <MenuButton label="Debug" tooltip="Debug surfaces" items={DEBUG_ROUTES} onAction={openDebugRoute} />
       </div>
       <Button
@@ -169,44 +126,5 @@ export function CommandBar(p: CommandBarProps) {
         <SettingsIcon />
       </Button>
     </div>
-  );
-}
-
-/** Wraps a hidden `<input type=file>` so clicking the play button opens a
- *  picker and parses the selected JSON into a `Recording`. */
-function PlayButton({ onPlay }: { onPlay: (rec: Recording) => void }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  return (
-    <>
-      <Button
-        variant="ghost"
-        iconOnly
-        ariaLabel="Play recording…"
-        tooltip="Play recording…"
-        onClick={() => inputRef.current?.click()}
-      >
-        <PlayIcon />
-      </Button>
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".json,.gz,.json.gz,application/json,application/gzip"
-        className="wd-hidden-input"
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          // Always clear so selecting the same file twice retriggers change.
-          e.target.value = '';
-          if (!file) return;
-          try {
-            // Accepts both raw .json and gzipped .json.gz — magic-byte
-            // sniffing in `deserializeRecording` picks the right path.
-            const rec = await deserializeRecording(file);
-            onPlay(rec);
-          } catch {
-            // Silent — bad JSON / file read error. The user can re-pick.
-          }
-        }}
-      />
-    </>
   );
 }

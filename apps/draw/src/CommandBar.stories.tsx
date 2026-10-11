@@ -37,11 +37,6 @@ const baseArgs: CommandBarProps = {
   canReleaseCompound: false,
   onReleaseCompound: noop,
   onOpenPrefs: noop,
-  recording: false,
-  onToggleRecord: noop,
-  recordingProfile: 'gesture-only',
-  onChangeRecordingProfile: noop,
-  onPlay: noop,
 };
 
 const withKit = (selected: number) => (Story: ComponentType) => (
@@ -78,7 +73,6 @@ export const WithSelection: Story = {
 function InteractiveCommandBar(args: CommandBarProps) {
   const [grid, setGrid] = useState(args.gridVisible);
   const [snap, setSnap] = useState(args.snapToGrid);
-  const [recording, setRecording] = useState(args.recording);
   return (
     <CommandBar
       {...args}
@@ -86,8 +80,6 @@ function InteractiveCommandBar(args: CommandBarProps) {
       onToggleGrid={() => setGrid((v) => !v)}
       snapToGrid={snap}
       onToggleSnap={() => setSnap((v) => !v)}
-      recording={recording}
-      onToggleRecord={() => setRecording((v) => !v)}
     />
   );
 }

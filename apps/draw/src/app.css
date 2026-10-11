@@ -38,12 +38,6 @@
   gap: var(--wzl-space-2);
 }
 
-/* Visually-hidden input used to host file pickers (Play recording, etc.).
-   The button next to it is the actual trigger. */
-.wd-hidden-input {
-  display: none;
-}
-
 /* --- Layer row color chip ------------------------------------------- */
 .wd-layer-swatch {
   flex: 0 0 auto;

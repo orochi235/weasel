@@ -2444,14 +2444,13 @@ only story runner in the repo.
   reset the background to white when the file names none) and a separate Import appends; or the
   button is renamed Import and stops adopting the file's paper size and background.
 
-- **(P2) draw: four shortcuts shown on command-bar buttons are bound to nothing.** Hover Show grid
-  (Shift+3), Release compound path (Shift+|), Record input (F9), or Preferences (Cmd+,) in
+- **(P2) draw: three shortcuts shown on command-bar buttons are bound to nothing.** Hover Show grid
+  (Shift+3), Release compound path (Shift+|), or Preferences (Cmd+,) in
   `apps/draw/src/CommandBar.tsx`, press the key, and nothing happens: each `shortcut=` is a
   `formatShortcut` label with no binding behind it. Each should be a registered action with a
   `defaultBinding` (an ambient `Contribution`, the way `colorContribution` carries the color keys)
   and the button should render from the registry as the `KitActionBar` groups do, so a label cannot
-  name a key nothing listens for. Record input has no behavior to bind yet; its label should go
-  until it does.
+  name a key nothing listens for.
 
 - **(P3) draw: turning the wheel during an opacity scrub can rewind an edit made while O was held.**
   `applyLive` in `apps/draw/src/opacityScrub/useOpacityScrub.ts` calls
@@ -2482,14 +2481,12 @@ only story runner in the repo.
   buttons call `scene.setPose` / `scene.add`, and per-node effects repaint through `redrawOn` /
   `requestRedraw`.
 
-- **(P2) draw: Record, the recording-profile select, and Play are live controls that do nothing.**
-  `apps/draw/src/App.tsx` passes no-op handlers for all three (`onToggleRecord`,
-  `onChangeRecordingProfile`, `onPlay`; Play even opens a file picker and parses the file first),
-  and the Record button advertises F9. `recorder.ts`, `recordingIO.ts`, and `replay.ts` are complete
-  and tested but reachable from nothing. Wiring them needs a `Recorder` on the canvas's pointer and
-  keyboard surface, which wants a `SurfaceContribution` with `attach` rather than a capture-phase
-  listener in the app. Until then the three controls should not be in the bar. (Moved from the
-  deleted `apps/draw/TODO.md`, whose other entries had shipped.)
+- **(P2) draw: the input recorder is reachable from nothing.** `recorder.ts`, `recordingIO.ts`, and
+  `replay.ts` are complete and tested, and no control starts a recording or plays one. Wiring them
+  needs a `Recorder` on the canvas's pointer and keyboard surface, which wants a
+  `SurfaceContribution` with `attach` rather than a capture-phase listener in the app. The command
+  bar's Record button, profile select, and Play button went with the no-op handlers behind them;
+  `git log -S'Record input' -- apps/draw/src/CommandBar.tsx` has them.
 
 - **(P3) draw: no command palette, no toast host, and no first-run notice.** The actions registry
   lists every action by stable id, so a palette is a port of `apps/site/CommandPalette`; save
