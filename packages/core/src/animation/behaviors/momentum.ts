@@ -1,12 +1,13 @@
-import { createTransformOp } from 'core/ops/transform';
 import type { Op } from 'core/ops/types';
 import type { MoveBehavior, GestureContext } from 'interactions/gestures/types';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import type { Target } from '../target';
 import type { Animator } from '../types';
+import type { Coast, CoastArgs } from './coast';
+import { coastByWrite } from './coastByWrite';
+import { coastOnTargets } from './coastOnTargets';
 
 /** Options for the `momentum` move behavior. */
 export interface MomentumOptions {
@@ -49,13 +50,6 @@ interface PointerSample {
   y: number;
 }
 
-interface RectLike { x: number; y: number }
-
-const sameBounds = (a: Bounds, b: Bounds): boolean =>
-  a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
-
-let nextCoast = 0;
-
 const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
 
 /**
@@ -65,9 +59,11 @@ const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
  *
  * Plugs into the move action rather than replacing it, so the drag itself is
  * unchanged — this only decides what happens after the release. The whole
- * flick, coast included, records as one undoable transform: under an adapter
- * with `previewPoses` the coast is shown without touching the document, and
- * the transform is written once it comes to rest. Dragging a node
+ * flick, coast included, records as one undoable transform, written once it
+ * comes to rest. Over an adapter with `poseTarget`, which a scene-backed one
+ * has, each node coasts on its own pose target, so anything else animating it
+ * adds; over one without, the coast is shown through `previewPoses`, or
+ * written through `setPose` each frame. Dragging a node
  * again while it coasts stops the coast and records it where it stands. A node
  * something else moves or deletes mid-coast, an undo included, drops out of
  * the coast where that left it, and nothing is recorded for it.
@@ -77,23 +73,7 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
   const threshold = opts.threshold ?? 200;
   const sampleMs = opts.velocitySampleMs ?? 80;
   const now = opts.now ?? (() => Date.now());
-  const bounds = opts.bounds;
-  const boundaryPolicy = opts.boundary ?? 'stop';
   const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
-
-  /** Apply bounds clamp to (sx + dx, sy + dy). Returns clamped (nx, ny) and
-   *  whether either axis was clamped (signalling boundary hit). */
-  const clampToBounds = (sx: number, sy: number, dx: number, dy: number): { nx: number; ny: number; hit: boolean } => {
-    let nx = sx + dx;
-    let ny = sy + dy;
-    if (!bounds) return { nx, ny, hit: false };
-    let hit = false;
-    if (nx < bounds.x) { nx = bounds.x; hit = true; }
-    else if (nx > bounds.x + bounds.width) { nx = bounds.x + bounds.width; hit = true; }
-    if (ny < bounds.y) { ny = bounds.y; hit = true; }
-    else if (ny > bounds.y + bounds.height) { ny = bounds.y + bounds.height; hit = true; }
-    return { nx, ny, hit };
-  };
 
   const recordSample = (ctx: GestureContext<TPose>): void => {
     let samples = getScratch(ctx.scratch, SAMPLES);
@@ -111,7 +91,21 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
     while (samples.length > 1 && samples[0].t < cutoff) samples.shift();
   };
 
-  const coasts = new Set<{ ids: readonly string[]; stop(): void }>();
+  const coasts = new Set<Coast>();
+
+  /** Every dragged node's pose target, or null where the adapter has none for one of them. */
+  const targetsOf = (ctx: GestureContext<TPose>): Map<string, Target<TPose>> | null => {
+    const { adapter } = ctx;
+    if (!adapter.poseTarget) return null;
+    const targets = new Map<string, Target<TPose>>();
+    for (const id of ctx.draggedIds) {
+      if (!ctx.current.has(id)) continue;
+      const target = adapter.getNode(id) && adapter.poseTarget(id, opts.poseDescriptor as PoseDescriptor<TPose> | undefined);
+      if (!target) return null;
+      targets.set(id, target);
+    }
+    return targets;
+  };
 
   return {
     onStart(ctx) {
@@ -139,121 +133,16 @@ export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
       if (dt <= 0) return undefined;
       const vx = (last.x - first.x) / dt;
       const vy = (last.y - first.y) / dt;
-      const speed = Math.hypot(vx, vy);
-      if (speed < threshold) return undefined;
+      if (Math.hypot(vx, vy) < threshold) return undefined;
 
-      // Suppress default commit and fire decay. We translate each dragged id
-      // by the per-frame delta and commit one transform op per id when done.
-      const startPoses = new Map<string, TPose>(ctx.current);
-      let lastValue = { x: 0, y: 0 };
-      const adapter = ctx.adapter;
-      const show = (poses: Map<string, TPose | null>): void => {
-        if (adapter.previewPoses) adapter.previewPoses(poses);
-        else for (const [id, pose] of poses) if (pose !== null) adapter.setPose(id, pose);
+      const args: CoastArgs<TPose> = {
+        animator: opts.animator, ctx, vx, vy, friction, d, coasts,
+        bounds: opts.bounds, boundary: opts.boundary ?? 'stop',
       };
-      // What the scene held for each node right after the coast last wrote it.
-      // A node that is gone, or reads back as anything else, has another
-      // writer now, an undo or a delete, and leaves the coast unrecorded.
-      const riding = new Set(ctx.draggedIds);
-      const lastSeen = new Map<string, Bounds>();
-      for (const id of riding) {
-        if (adapter.getNode(id)) lastSeen.set(id, d.getBounds(adapter.getPose(id)));
-      }
-      const stillOurs = (id: string): boolean => {
-        const seen = lastSeen.get(id);
-        return seen !== undefined && adapter.getNode(id) !== undefined
-          && sameBounds(d.getBounds(adapter.getPose(id)), seen);
-      };
-      // Track per-id final positions when bounds clamping is active — used
-      // by onDone to compute the correct final transform op (not just
-      // start + decay's last delta, which may overshoot the boundary).
-      const finalPositions = new Map<string, { x: number; y: number }>();
-      const cancelKey = `momentum:${nextCoast++}`;
-      const coast = {
-        ids: ctx.draggedIds.slice(),
-        stop: (): void => {
-          // Canceled from outside (cancelAll, unmount), it stopped long ago and somewhere else.
-          if (!opts.animator.isActive(cancelKey)) {
-            coasts.delete(coast);
-            return;
-          }
-          decayHandle.cancel();
-          commitFlick();
-        },
-      };
-      coasts.add(coast);
-      // Held from the release itself, so no frame paints the pre-drag pose
-      // between the drag's preview going away and the first coast frame.
-      show(new Map([...riding].flatMap((id) => {
-        const start = startPoses.get(id);
-        return start === undefined ? [] : [[id, start] as const];
-      })));
-      const decayHandle = opts.animator.decay<RectLike>({
-        from: { x: 0, y: 0 },
-        velocity: { x: vx, y: vy },
-        friction,
-        cancelKey,
-        add: (a, b) => ({ x: a.x + b.x, y: a.y + b.y }),
-        scale: (v, k) => ({ x: v.x * k, y: v.y * k }),
-        magnitude: (v) => Math.hypot(v.x, v.y),
-        onTick: (delta) => {
-          lastValue = delta;
-          let allHit = bounds !== undefined;
-          const frame = new Map<string, TPose | null>();
-          for (const id of [...riding]) {
-            if (!stillOurs(id)) {
-              riding.delete(id);
-              frame.set(id, null);
-              continue;
-            }
-            const start = startPoses.get(id);
-            if (!start) continue;
-            const o = d.getBounds(start);
-            const { nx, ny, hit } = clampToBounds(o.x, o.y, delta.x, delta.y);
-            if (!hit) allHit = false;
-            finalPositions.set(id, { x: nx, y: ny });
-            frame.set(id, translatePoseViaDescriptor(start, nx - o.x, ny - o.y, d));
-          }
-          show(frame);
-          for (const id of riding) lastSeen.set(id, d.getBounds(adapter.getPose(id)));
-          if (riding.size === 0) {
-            coasts.delete(coast);
-            decayHandle.cancel();
-            return;
-          }
-          // If 'stop' policy and every dragged id's clamped position hit
-          // the boundary, cancel the decay so the animation settles instantly
-          // instead of drifting along the edge as friction wears off.
-          if (boundaryPolicy === 'stop' && allHit) coast.stop();
-        },
-        onDone: () => {
-          commitFlick();
-        },
-      });
-
-      function commitFlick(): void {
-        if (!coasts.delete(coast)) return;
-        const ops: Op[] = [];
-        const shown = new Map<string, TPose | null>();
-        for (const id of riding) {
-          shown.set(id, null);
-          if (!stillOurs(id)) continue;
-          const start = startPoses.get(id);
-          if (!start) continue;
-          const o = d.getBounds(start);
-          const fp = finalPositions.get(id) ?? { x: o.x + lastValue.x, y: o.y + lastValue.y };
-          const finalPose = translatePoseViaDescriptor(start, fp.x - o.x, fp.y - o.y, d);
-          const from = ctx.origin.get(id) ?? start;
-          ops.push(createTransformOp<TPose>({ id, from, to: finalPose, label: 'flick' }));
-        }
-        // The document first, so the preview never gives way to the pre-drag pose.
-        if (ops.length > 0) {
-          if (adapter.applyOps) adapter.applyOps(ops, 'flick');
-          else if (adapter.previewPoses) for (const op of ops) op.apply(adapter);
-        }
-        adapter.previewPoses?.(shown);
-      }
-
+      const targets = targetsOf(ctx);
+      if (targets) coastOnTargets(args, targets);
+      else coastByWrite(args);
+      // The coast commits the flick itself, so the move action's own commit is suppressed.
       return null;
     },
   };

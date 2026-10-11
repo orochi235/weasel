@@ -1,0 +1,131 @@
+import { createTransformOp } from 'core/ops/transform';
+import type { Op } from 'core/ops/types';
+import { translatePoseViaDescriptor } from 'core/geometry/poseDescriptor';
+import { stateOf, type Target, type TargetState } from '../target';
+import type { AnimationHandle } from '../types';
+import { clampCorner, coastKey, sameBounds, type Coast, type CoastArgs } from './coast';
+
+interface Rider<TPose> {
+  id: string;
+  target: Target<TPose>;
+  state: TargetState<TPose>;
+  /** The committed pose as the coast last left it. Anything else there is another writer's. */
+  seen: TPose;
+  /** Null once this node has stopped. */
+  handle: AnimationHandle | null;
+  /** The corner and velocity its running decay started with. */
+  startX: number;
+  startY: number;
+  vx: number;
+  vy: number;
+}
+
+/**
+ * A coast on each node's own pose target: a decay per node, so anything else animating the
+ * node adds to it. The document keeps the pre-drag pose while the node travels, takes the
+ * pose it stops at, and the flick is recorded as one transform once every node has stopped.
+ */
+export function coastOnTargets<TPose>(a: CoastArgs<TPose>, targets: ReadonlyMap<string, Target<TPose>>): void {
+  const { animator, ctx, d, bounds, coasts } = a;
+  const adapter = ctx.adapter;
+  // Speed lost per unit traveled: an exponential coast's velocity is its first less this times
+  // how far it has gone, which is how a node stopped at an edge knows what speed it has left.
+  const drag = -Math.log(a.friction);
+  const cancelKey = coastKey();
+  const riders = new Map<string, Rider<TPose>>();
+
+  const ours = (r: Rider<TPose>): boolean =>
+    adapter.getNode(r.id) !== undefined && sameBounds(d.getBounds(r.state.get()), d.getBounds(r.seen));
+
+  const launch = (r: Rider<TPose>, from: TPose | undefined, vx: number, vy: number): void => {
+    const ax = r.state.axes;
+    const at = from ?? r.state.get();
+    const base = ax.to(at);
+    const alongX = ax.to(translatePoseViaDescriptor(at, 1, 0, d));
+    const alongY = ax.to(translatePoseViaDescriptor(at, 0, 1, d));
+    const velocity = ax.from(base.map((b, i) => vx * (alongX[i]! - b) + vy * (alongY[i]! - b)));
+    const corner = d.getBounds(at);
+    r.startX = corner.x;
+    r.startY = corner.y;
+    r.vx = vx;
+    r.vy = vy;
+    r.handle = animator.decay<TPose>({
+      target: r.target,
+      from,
+      velocity,
+      friction: a.friction,
+      cancelKey,
+      interrupt: false,
+      onTick: (own) => tick(r, own),
+      onDone: () => halted(r),
+    });
+  };
+
+  const halted = (r: Rider<TPose>): void => {
+    r.handle = null;
+    r.seen = r.state.get();
+    for (const other of riders.values()) if (other.handle) return;
+    commitFlick();
+  };
+
+  /** Takes `r` out of the coast where another writer left its node. */
+  const drop = (r: Rider<TPose>): void => {
+    const left = r.state.get();
+    riders.delete(r.id);
+    r.handle?.cancel();
+    r.state.set(left);
+    halted(r);
+  };
+
+  function tick(r: Rider<TPose>, own: TPose): void {
+    if (!ours(r)) { drop(r); return; }
+    const corner = d.getBounds(own);
+    const { nx, ny, hitX, hitY } = clampCorner(bounds, corner.x, corner.y);
+    if (!hitX && !hitY) return;
+    const vx = hitX ? 0 : r.vx - drag * (corner.x - r.startX);
+    const vy = hitY ? 0 : r.vy - drag * (corner.y - r.startY);
+    // Canceled, it commits the pose it reached; the edge is where it belongs.
+    r.handle?.cancel();
+    r.state.set(translatePoseViaDescriptor(r.state.get(), nx - corner.x, ny - corner.y, d));
+    r.seen = r.state.get();
+    if (a.boundary === 'continue' && Math.hypot(vx, vy) > 0) launch(r, undefined, vx, vy);
+    else halted(r);
+  }
+
+  const coast: Coast = {
+    ids: ctx.draggedIds.slice(),
+    stop: (): void => {
+      // Canceled from outside (cancelAll, unmount), it stopped long ago and somewhere else.
+      if (!animator.isActive(cancelKey)) {
+        coasts.delete(coast);
+        return;
+      }
+      for (const r of riders.values()) {
+        r.handle?.cancel();
+        r.handle = null;
+        r.seen = r.state.get();
+      }
+      commitFlick();
+    },
+  };
+  coasts.add(coast);
+
+  function commitFlick(): void {
+    if (!coasts.delete(coast)) return;
+    const ops: Op[] = [];
+    for (const r of riders.values()) {
+      if (!ours(r)) continue;
+      const from = ctx.origin.get(r.id) ?? r.seen;
+      ops.push(createTransformOp<TPose>({ id: r.id, from, to: r.state.get(), label: 'flick' }));
+    }
+    // The document already holds each pose; this is what makes the flick one undoable step.
+    if (ops.length > 0) adapter.applyOps?.(ops, 'flick');
+  }
+
+  for (const [id, target] of targets) {
+    const state = stateOf(target);
+    riders.set(id, { id, target, state, seen: state.get(), handle: null, startX: 0, startY: 0, vx: 0, vy: 0 });
+  }
+  // Each starts from its release pose, which the document does not hold: the drag was a preview.
+  for (const r of [...riders.values()]) launch(r, ctx.current.get(r.id), a.vx, a.vy);
+}
