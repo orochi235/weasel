@@ -157,22 +157,13 @@ function recordRegionHitbox(
     // against the affordance id and render the annulus themselves.
     const s = region.shape;
     const { rx, ry } = annulusSemiAxes(s, view, angleOf(xf));
-    const pts = [
-      localToWorld(xf, s.cx + rx, s.cy),
-      localToWorld(xf, s.cx - rx, s.cy),
-      localToWorld(xf, s.cx, s.cy + ry),
-      localToWorld(xf, s.cx, s.cy - ry),
-    ];
-    const minX = Math.min(...pts.map((p) => p.x));
-    const minY = Math.min(...pts.map((p) => p.y));
-    const maxX = Math.max(...pts.map((p) => p.x));
-    const maxY = Math.max(...pts.map((p) => p.y));
+    const c = localToWorld(xf, s.cx, s.cy);
     debug.recordHitbox(affordanceId, 'handle', {
       kind: 'rect',
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
+      x: c.x - rx,
+      y: c.y - ry,
+      width: 2 * rx,
+      height: 2 * ry,
       ...(xf.identity ? {} : { rotation: Math.atan2(xf.sin, xf.cos) }),
     });
     return;
@@ -362,22 +353,14 @@ function worldOf(region: AffordanceRegion, xf: TargetTransform, view: View): Cus
     return { x: w.x, y: w.y };
   }
   if (region.shape.kind === 'annulus') {
-    // Outer ellipse bounding box, in world coords. Map the four cardinal
-    // extrema through the target transform and AABB the result. (Rotated
-    // ellipses are still ellipses; their AABB needs all four points.)
+    // The outer ellipse's bounding box in world coords. Turned by θ, its
+    // half-extents are √(rx²cos²θ + ry²sin²θ) and √(rx²sin²θ + ry²cos²θ).
     const s = region.shape;
     const { rx, ry } = annulusSemiAxes(s, view, angleOf(xf));
-    const pts = [
-      localToWorld(xf, s.cx + rx, s.cy),
-      localToWorld(xf, s.cx - rx, s.cy),
-      localToWorld(xf, s.cx, s.cy + ry),
-      localToWorld(xf, s.cx, s.cy - ry),
-    ];
-    const minX = Math.min(...pts.map((p) => p.x));
-    const minY = Math.min(...pts.map((p) => p.y));
-    const maxX = Math.max(...pts.map((p) => p.x));
-    const maxY = Math.max(...pts.map((p) => p.y));
-    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+    const c = localToWorld(xf, s.cx, s.cy);
+    const hw = Math.hypot(rx * xf.cos, ry * xf.sin);
+    const hh = Math.hypot(rx * xf.sin, ry * xf.cos);
+    return { x: c.x - hw, y: c.y - hh, width: 2 * hw, height: 2 * hh };
   }
   // Rect: map the rect's origin and far corner; width/height under rotation
   // describe the AABB of the rotated rect, which is what custom-paint

@@ -320,3 +320,44 @@ describe('composeAffordanceLayer', () => {
     });
   });
 });
+
+describe('composeAffordanceLayer — bounds of a ring on a turned target', () => {
+  const bounds: Bounds = { x: 0, y: 0, width: 100, height: 100, rotation: Math.PI / 4 };
+  const ring = (paint?: AffordanceRegion['paint']): Affordance => ({
+    id: 'ring',
+    regions: () => [{
+      id: 'r',
+      targetId: 't',
+      shape: { kind: 'annulus', cx: 50, cy: 50, rx: 40, ry: 40, innerX: 30, innerY: 30, innerWidth: 40, innerHeight: 40 },
+      bind: () => ({}),
+      ...(paint ? { paint } : {}),
+    }],
+  });
+
+  it('hands a custom paint the box of the turned ellipse', () => {
+    let world: { x: number; y: number; width?: number; height?: number } | null = null;
+    const layer = composeAffordanceLayer('x', 'X', [
+      ring({ kind: 'custom', draw: (ctx) => { world = ctx.world; return []; } }),
+    ]);
+    layer.draw(makeState({ t: bounds }), VIEW, DIMS);
+    // A circle's bounding box does not change as it turns.
+    expect(world!.x).toBeCloseTo(10);
+    expect(world!.y).toBeCloseTo(10);
+    expect(world!.width).toBeCloseTo(80);
+    expect(world!.height).toBeCloseTo(80);
+  });
+
+  it('records the debug hitbox as the unturned box plus the rotation', () => {
+    const boxes: Array<Record<string, number>> = [];
+    const layer = composeAffordanceLayer('x', 'X', [ring()]);
+    layer.draw({
+      getChromeState: () => makeState({ t: bounds }),
+      getDebug: () => ({ recordHitbox: (_id: string, _role: string, box: Record<string, number>) => { boxes.push(box); } }),
+    } as never, VIEW, DIMS);
+    expect(boxes).toHaveLength(1);
+    expect(boxes[0]).toMatchObject({ kind: 'rect', rotation: Math.PI / 4 });
+    expect(boxes[0]!.x).toBeCloseTo(10);
+    expect(boxes[0]!.width).toBeCloseTo(80);
+    expect(boxes[0]!.height).toBeCloseTo(80);
+  });
+});
