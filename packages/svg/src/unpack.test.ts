@@ -382,6 +382,29 @@ describe('unpackSvgFiles', () => {
     expect((text.data.style as { fontSize: number }).fontSize).toBeCloseTo(40 * 0.18);
   });
 
+  it('fit-clamp scales stroke widths, dashes, and letter spacing with the art', async () => {
+    const big = `<svg xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="4000" height="1000" fill="#000"/>
+      <path d="M0 0 L4000 0" stroke="#000" stroke-width="4" stroke-dasharray="8 4"/>
+      <path d="M0 9 L4000 9" stroke="#000" stroke-width="4" vector-effect="non-scaling-stroke"/>
+      <text x="0" y="800" font-size="40" letter-spacing="10" stroke="#000" stroke-width="2">hello</text>
+    </svg>`;
+    const { c, batches } = ctx();
+    await unpackSvgFiles([asFile(big)], c);
+    // 4000-wide union clamps to 720 (800 * 0.9), i.e. scale 0.18.
+    const strokes = batches[0].ops
+      .map((n) => n.data.stroke as { width: unknown; dash?: number[] } | undefined)
+      .filter((st) => st !== undefined);
+    expect(strokes).toHaveLength(3);
+    expect(strokes[0].width).toBeCloseTo(0.72);
+    expect(strokes[0].dash![0]).toBeCloseTo(1.44);
+    expect(strokes[0].dash![1]).toBeCloseTo(0.72);
+    expect(strokes[1].width).toEqual({ px: 4 });
+    expect(strokes[2].width).toBeCloseTo(0.36);
+    const text = batches[0].ops.find((n) => typeof n.data.text === 'string')!;
+    expect((text.data.style as { letterSpacing: number }).letterSpacing).toBeCloseTo(1.8);
+  });
+
   it('unscaled imports leave text data untouched', async () => {
     const small = `<svg xmlns="http://www.w3.org/2000/svg">
       <text x="0" y="20" font-size="40" fill="#000">hello</text>

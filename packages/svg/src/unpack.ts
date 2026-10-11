@@ -15,8 +15,8 @@
  * Placement mirrors the image handler: the file's union AABB is fit-clamped
  * to 90% of the visible viewport and centered on the drop point (or the
  * viewport center), with multi-file batches cascading by a fixed offset.
- * Text takes the clamp through a scaled `fontSize` as well as its pose,
- * since glyph size is not derived from the pose the way path geometry is.
+ * Stroke widths, dashes, font sizes, and letter spacing take the clamp too:
+ * they live in data, and only geometry is derived from the pose.
  * Multi-root files are wrapped in one synthesized container so a dropped
  * file arrives as a single selectable unit; a single-root file inserts
  * as-is. Each file commits as one `applyOps` batch, so the whole import is
@@ -26,6 +26,7 @@
 import { parseSvg } from './parse';
 import type { ParseResult, SvgGroupNode, SvgNode, SvgPaint, SvgStroke } from './types';
 import type { SvgKitLeafData } from './fromKit';
+import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import {
   boundsOfPath,
   createInsertOp,
@@ -34,14 +35,12 @@ import {
   fillToBoundsFrame,
   getMarker,
   registerMarker,
-  resolveTextStyle,
   solid,
   unionAABB,
   type FillStyle,
   type ImageNodeData,
   type IngestCtx,
   type Op,
-  type ScreenLength,
   type Stroke,
   type StyledRun,
   type TextStyle,
@@ -316,36 +315,26 @@ function isNodeList(input: ParseResult | readonly SvgNode[]): input is readonly 
 
 
 /**
- * Apply the fit-clamp scale to a text leaf's `fontSize`, which lives in data
- * rather than in the pose and so is untouched by `place`. Glyph size is not
- * derived from the pose box the way a path's geometry is (`pathInPoseFrame`
- * rebases that), so a shrunk file would otherwise arrive with its text at
- * source size, overflowing every box around it.
+ * Apply the fit-clamp scale to the lengths a leaf holds in data rather than
+ * in its pose, which `place` does not reach: stroke width and dashes on any
+ * leaf, and a text leaf's font size and letter spacing. `pathInPoseFrame`
+ * rebases a path's geometry into the shrunk pose but nothing else, so a
+ * shrunk file would otherwise arrive with source-size strokes and text.
  *
- * Non-text data passes through, as does an unscaled import.
+ * An unscaled import passes through.
  */
-function scaleTextData(
+function scaleLeafData(
   data: Record<string, unknown>,
   scale: number,
 ): Record<string, unknown> {
-  if (scale === 1 || typeof data.text !== 'string') return data;
-  const style = (data.style ?? {}) as TextStyle;
-  // A run's own `fontSize` is absolute and overrides the node's, so it needs
-  // the same scale. `fontScale` is relative and rides the node's for free, and
-  // a `{ px }` size is pinned to the screen, so the fit clamp never touches it.
-  const scaleSize = (v: ScreenLength): ScreenLength => (typeof v === 'number' ? v * scale : v);
-  const runs = data.runs as StyledRun[] | undefined;
-  return {
-    ...data,
-    ...(runs
-      ? {
-        runs: runs.map((r) => (r.fontSize !== undefined
-          ? { ...r, fontSize: scaleSize(r.fontSize) }
-          : r)),
-      }
-      : {}),
-    style: { ...style, fontSize: scaleSize(style.fontSize ?? resolveTextStyle(style).fontSize) },
-  };
+  if (scale === 1) return data;
+  const out = { ...data };
+  if (out.stroke) out.stroke = scaleStroke(out.stroke as Stroke, scale);
+  if (typeof out.text === 'string') {
+    out.style = scaleTextStyle(out.style as TextStyle | undefined, scale);
+    if (out.runs) out.runs = scaleRuns(out.runs as StyledRun[], scale);
+  }
+  return out;
 }
 
 /**
@@ -411,7 +400,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
             kind: d.kind,
             layer,
             pose: place(d.pose),
-            data: d.kind === 'leaf' ? scaleTextData(d.data, scale) : {},
+            data: d.kind === 'leaf' ? scaleLeafData(d.data, scale) : {},
             parent: d.parentId,
           } as unknown as { id: string },
           label: 'Insert SVG',
