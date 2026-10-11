@@ -526,6 +526,48 @@ describe('useSceneTextEdit — a line longer than its box', () => {
   });
 });
 
+describe('useSceneTextEdit — a commit that changes nothing', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  function mount<T extends { id: string }>(item: T) {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const hook = renderHook(() => {
+      const scene = useScene({ items: [item] });
+      return { scene, edit: useSceneTextEdit(scene, container) };
+    });
+    return { hook, container };
+  }
+
+  it('writes no text onto a node that had none', () => {
+    const { hook } = mount({ id: 'box', x: 0, y: 0, width: 100, height: 100 });
+    act(() => hook.result.current.edit.startEdit('box'));
+    act(() => hook.result.current.edit.commit());
+    const { scene } = hook.result.current;
+    expect('text' in (scene.get(asNodeId('box'))!.data as object)).toBe(false);
+    expect(scene.canUndo()).toBe(false);
+  });
+
+  it('leaves no undo step behind an untouched text or its runs', () => {
+    const { hook } = mount({ ...NODE, runs: [{ text: 'hel', bold: true }, { text: 'lo' }] });
+    act(() => hook.result.current.edit.startEdit('a'));
+    act(() => hook.result.current.edit.commit());
+    expect(hook.result.current.scene.canUndo()).toBe(false);
+  });
+
+  it('still writes an edit that changed the text', () => {
+    const { hook, container } = mount(NODE);
+    act(() => hook.result.current.edit.startEdit('a'));
+    overlayOf(container).textContent = 'goodbye';
+    act(() => hook.result.current.edit.commit());
+    const { scene } = hook.result.current;
+    expect((scene.get(asNodeId('a'))!.data as TextItem).text).toBe('goodbye');
+    expect(scene.canUndo()).toBe(true);
+  });
+});
+
 describe('useSceneTextEdit — abandoned renders', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
@@ -549,6 +591,7 @@ describe('useSceneTextEdit — abandoned renders', () => {
     act(() => api!.startEdit('a'));
     act(() => { startTransition(() => abandon()); });
     const el = container.querySelector('div[contenteditable="true"]')!;
+    el.textContent = 'goodbye';
     await act(async () => {
       el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     });

@@ -21,7 +21,7 @@
  * Consumers with non-rect poses should drop down to raw `useTextEdit` and
  * supply their own `getScreenPose`.
  */
-import { useCallback, useRef, type MouseEvent } from 'react';
+import { useCallback, useMemo, useRef, type MouseEvent } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { asNodeId } from '../../core/scene/types';
 import { effectivePose } from '../../core/scene/effectivePose';
@@ -164,6 +164,17 @@ export function useSceneTextEdit<
     };
   };
 
+  const read = useMemo(() => ({
+    text: (data: TData): string =>
+      optsRef.current.getText ? optsRef.current.getText(data) : (data.text ?? ''),
+    style: (data: TData): TextStyle | undefined =>
+      optsRef.current.getStyle ? optsRef.current.getStyle(data) : data.style,
+    runs: (data: TData): readonly StyledRun[] | undefined =>
+      optsRef.current.getRuns ? optsRef.current.getRuns(data) : data.runs,
+    verticalAlign: (data: TData): TextVerticalAlign | undefined =>
+      optsRef.current.getVerticalAlign ? optsRef.current.getVerticalAlign(data) : data.verticalAlign,
+  }), [optsRef]);
+
   const edit = useTextEdit({
     container,
     isEditorChrome: (el) => optsRef.current.isEditorChrome?.(el) ?? false,
@@ -171,15 +182,11 @@ export function useSceneTextEdit<
     fontHold: options.fontHold,
     getText: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
-      if (!node) return '';
-      const get = optsRef.current.getText;
-      return get ? get(node.data) : (node.data.text ?? '');
+      return node ? read.text(node.data) : '';
     },
     getStyle: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
-      if (!node) return undefined;
-      const get = optsRef.current.getStyle;
-      return get ? get(node.data) : node.data.style;
+      return node ? read.style(node.data) : undefined;
     },
     getPaint: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
@@ -192,9 +199,7 @@ export function useSceneTextEdit<
       const node = scene.get(asNodeId(id));
       if (!node) return null;
       const pose = effectivePose(scene, node);
-      const style = optsRef.current.getStyle
-        ? optsRef.current.getStyle(node.data)
-        : node.data.style;
+      const style = read.style(node.data);
       const at = surface();
       const view = resolveView(optsRef.current.view) ?? at?.canvas.getView();
       const zoom = view ? view.scale.x : 1;
@@ -215,30 +220,26 @@ export function useSceneTextEdit<
           zoom,
         ),
         zoom,
-        verticalAlign: optsRef.current.getVerticalAlign
-          ? optsRef.current.getVerticalAlign(node.data)
-          : node.data.verticalAlign,
+        verticalAlign: read.verticalAlign(node.data),
       };
     },
     getClipRect: () => surface()?.box ?? null,
     setText: (id, text) => {
       const nid = asNodeId(id);
       const node = sceneRef.current.get(nid);
-      if (!node) return;
+      if (!node || read.text(node.data) === text) return;
       const setter = optsRef.current.setText;
       const data = setter ? setter(node.data, text) : { ...node.data, text };
       sceneRef.current.update(nid, { data });
     },
     getRuns: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
-      if (!node) return undefined;
-      const get = optsRef.current.getRuns;
-      return get ? get(node.data) : node.data.runs;
+      return node ? read.runs(node.data) : undefined;
     },
     setRuns: (id, runs) => {
       const nid = asNodeId(id);
       const node = sceneRef.current.get(nid);
-      if (!node) return;
+      if (!node || JSON.stringify(read.runs(node.data)) === JSON.stringify(runs)) return;
       const setter = optsRef.current.setRuns;
       const data = setter ? setter(node.data, runs) : { ...node.data, runs };
       sceneRef.current.update(nid, { data });
@@ -267,22 +268,13 @@ export function useSceneTextEdit<
       ?? (root ? findMountedCanvas(root, canvas)?.getView() : undefined);
     const cx = view ? canvasX / view.scale.x + view.x : canvasX;
     const cy = view ? canvasY / view.scale.y + view.y : canvasY;
-    const readText = (data: TData): string =>
-      optsRef.current.getText ? optsRef.current.getText(data) : (data.text ?? '');
-    const readStyle = (data: TData): TextStyle | undefined =>
-      optsRef.current.getStyle ? optsRef.current.getStyle(data) : data.style;
-    const readRuns = (data: TData): readonly StyledRun[] | undefined =>
-      optsRef.current.getRuns ? optsRef.current.getRuns(data) : data.runs;
-    const readVerticalAlign = (data: TData): TextVerticalAlign | undefined =>
-      optsRef.current.getVerticalAlign ? optsRef.current.getVerticalAlign(data) : data.verticalAlign;
-
     // Top-most-first hit test: renderOrder() is back-to-front, so iterate
     // in reverse and break on the first hit.
     const order = sceneRef.current.renderOrderNodes();
     for (let i = order.length - 1; i >= 0; i--) {
       const node = order[i];
       if (sceneRef.current.isLocked(node.id)) continue;
-      const text = readText(node.data);
+      const text = read.text(node.data);
       const at = effectivePose(sceneRef.current, node);
       const pose = {
         x: at.x,
@@ -290,9 +282,9 @@ export function useSceneTextEdit<
         width: at.width,
         height: at.height,
         text,
-        runs: readRuns(node.data) as StyledRun[] | undefined,
-        style: readStyle(node.data),
-        verticalAlign: readVerticalAlign(node.data),
+        runs: read.runs(node.data) as StyledRun[] | undefined,
+        style: read.style(node.data),
+        verticalAlign: read.verticalAlign(node.data),
       };
       if (!pointInTextPose(cx, cy, pose)) continue;
 
@@ -300,7 +292,7 @@ export function useSceneTextEdit<
       edit.startEdit(String(node.id), { caret: caretIndexAt(cx, cy, pose) });
       return;
     }
-  }, [edit, containerRef, optsRef, sceneRef]);
+  }, [edit, containerRef, optsRef, read, sceneRef]);
 
   return { ...edit, onDoubleClick };
 }
