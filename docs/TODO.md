@@ -217,10 +217,7 @@ Priority tags:
   `Tool<HandScratch | null>` where `HandScratch`
   (`packages/core/src/tools/builtin/hand/useHandTool.ts`) is never populated; the tool is one
   binding to `viewport.dragPan` and should be `Tool<null>`. `useLassoTool(adapter, …)` never reads
-  its required first argument. Both are signature changes. The first bullet of "Reference
-  implementations" in `CLAUDE.md` still describes the hand tool as "scratch, drag channel, view
-  mutation via `ctx.setView`", which no longer exists; point it at what the file is now, the
-  smallest declarative binding.
+  its required first argument. Both are signature changes.
 
 - **(P3) `createDebugOverlayLayer` is public and its options type is not.** The function is exported
   through `export * from './debug'`, while `CreateDebugOverlayLayerOpts`

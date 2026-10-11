@@ -108,7 +108,7 @@ npm is canonical: `package-lock.json` is the committed lockfile and `workspaces`
 
 When building new tools, read these first:
 
-- **`packages/core/src/tools/builtin/hand/useHandTool.ts`** — simplest possible tool structure: scratch, drag channel, view mutation via `ctx.setView`. No ops, no adapter. Start here.
+- **`packages/core/src/tools/builtin/hand/useHandTool.ts`** — the smallest declarative tool: one binding routing a drag to the `viewport.dragPan` action, with `axis` and `inertia` passed as thunked params. No ops, no adapter. Start here.
 - **`packages/core/src/tools/builtin/rect/useRectTool.ts`** — canonical pattern for tools that create scene objects. A tool is a *declarative shell*: it declares `bindings` (`{ kind: 'drag' } → actionId: 'insert'`) and nothing else. The dispatcher owns the gesture, `insertAction` owns the live preview and the commit, and the `insert` dep mints the node. Consumers wanting a custom node factory override the dep (`useDepSource('insert', …)` or `<SceneCanvas insertNodeFactories>`), **not** the tool.
 - **`packages/core/src/tools/builtin/polygon/usePolygonTool.tsx`** — the same, plus the two things a tool with its own state needs: thunked binding params (so mid-gesture changes reach both the preview and the commit) and `ToolDef.actions` for actions the tool owns. Declare those on the def; a tool hook must not call `useAction` itself, because it may run above the `<ActionsProvider>` and the registration will silently no-op.
 
