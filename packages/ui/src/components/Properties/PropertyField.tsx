@@ -109,6 +109,7 @@ export function PropertyField<T extends string = string>(props: PropertyFieldPro
     className: rowClassName,
     variant: shape.variant,
     group: shape.group,
+    disabled: control.disabled,
     // The font pickers take no id; any other single control is named by the
     // row's `<label>` through this one.
     htmlFor: shape.group || control.kind === 'font-family' || control.kind === 'font-weight'

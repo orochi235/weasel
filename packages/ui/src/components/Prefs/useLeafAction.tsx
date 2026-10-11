@@ -19,7 +19,7 @@ export interface LeafAction {
   icon: ReactNode;
   /** The keys that fire it, for a tooltip. */
   shortcut: string | undefined;
-  /** It cannot be pressed now: the action says so, or a `run` is still going. */
+  /** It cannot be pressed now: the action says so, a `run` is still going, or the leaf is disabled. */
   disabled: boolean;
   /** Held down. `undefined` for an action with no pressed state. */
   active: boolean | undefined;
@@ -39,9 +39,10 @@ const NO_ITEMS: readonly ActionItem[] = Object.freeze([]);
  * and takes the registered action's icon and shortcut where it has none of
  * its own. With no registry above, or a key the registry does not hold, the
  * button is dead and `missing` says which key. A leaf with only `run` calls
- * it, and is disabled while a promise it returned is pending.
+ * it, and is disabled while a promise it returned is pending. `disabled` is
+ * the leaf's own state on its surface: a failed `enableIf`.
  */
-export function useLeafAction(leaf: PrefAction, path: string): LeafAction {
+export function useLeafAction(leaf: PrefAction, path: string, disabled = false): LeafAction {
   const registry = useActionsRegistry();
   const all = useSyncExternalStore(
     registry ? registry.subscribe : noSubscribe,
@@ -73,7 +74,7 @@ export function useLeafAction(leaf: PrefAction, path: string): LeafAction {
       label,
       icon,
       shortcut: item ? (item.action.shortcut ?? formatShortcut(actionShortcuts(item.action, item.params)[0])) : undefined,
-      disabled: item !== undefined && !shown.enabled,
+      disabled: disabled || (item !== undefined && !shown.enabled),
       active: shown.active,
       missing: item ? undefined : key,
     };
@@ -91,7 +92,7 @@ export function useLeafAction(leaf: PrefAction, path: string): LeafAction {
     label,
     icon,
     shortcut: undefined,
-    disabled: pending,
+    disabled: disabled || pending,
     active: undefined,
     missing: undefined,
   };

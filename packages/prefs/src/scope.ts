@@ -5,7 +5,7 @@
 
 import { prefConditionHolds, type PrefCondition } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, isPrefSection } from './helpers';
+import { isPrefLeaf, isPrefSection, prefValueAtPath } from './helpers';
 import type { PrefLeaf, PrefObject } from './schema';
 import type { PrefUnion } from './union';
 
@@ -22,6 +22,27 @@ export type PrefConditionJudge = (condition: PrefCondition, field: PrefCondition
 /** A judge over one set of values, read by path. */
 export function prefJudge(read: (path: string) => unknown): PrefConditionJudge {
   return (condition) => prefConditionHolds(condition, read);
+}
+
+/**
+ * Reads a value by path the way a form over `schema` shows it: what `values`
+ * holds there, else the default of the leaf at that path, or the part of a
+ * leaf's default the rest of the path names.
+ */
+export function prefReader(schema: PrefGroup, values: unknown): (path: string) => unknown {
+  return (path) => {
+    const held = prefValueAtPath(values, path);
+    if (held !== undefined) return held;
+    const steps = path.split('.');
+    let node: PrefGroup = schema;
+    for (let i = 0; i < steps.length; i++) {
+      if (!Object.hasOwn(node.children, steps[i]!)) return undefined;
+      const child: PrefLeaf | PrefGroup = node.children[steps[i]!]!;
+      if (!isPrefLeaf(child)) node = child;
+      else return i === steps.length - 1 ? child.default : prefValueAtPath(child.default, steps.slice(i + 1).join('.'));
+    }
+    return undefined;
+  };
 }
 
 /** Whether a node is drawn and whether it takes input, with what is above it counted. */

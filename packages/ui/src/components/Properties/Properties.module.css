@@ -691,6 +691,15 @@
   color: var(--wzl-accent-fg);
 }
 
+/* As `Checkbox` dims the text beside a disabled box: the control dims itself. */
+.row[data-disabled] > .rowLabel {
+  opacity: 0.5;
+}
+
+.row[data-disabled] {
+  cursor: not-allowed;
+}
+
 .rowInline > .rowLabel,
 .rowColor:not(.rowBlock) > .rowLabel,
 .rowCheckbox:not(.rowBlock) > .rowLabel {

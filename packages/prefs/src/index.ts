@@ -36,6 +36,7 @@ export {
   applyPrefConditions,
   PREF_SCOPE,
   prefJudge,
+  prefReader,
   prefScopeAt,
   prefScopeUnder,
   type PrefConditionField,

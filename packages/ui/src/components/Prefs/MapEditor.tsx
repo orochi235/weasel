@@ -27,6 +27,8 @@ export interface MapEditorProps {
   onChange: (next: Record<string, unknown>) => void;
   /** Draws one entry's value as the map's `item` leaf, named `name` for assistive tech. */
   renderValue: (value: unknown, set: (next: unknown) => void, name: string, key: string) => ReactNode;
+  /** The map takes no input: no key is typed, and no entry is added or removed. `renderValue` disables what it draws. */
+  disabled?: boolean;
 }
 
 /**
@@ -34,7 +36,7 @@ export interface MapEditorProps {
  * button under them. An entry being typed keeps its row while its key is empty or repeats another, though the
  * record written holds neither.
  */
-export function MapEditor({ pref, value, onChange, renderValue }: MapEditorProps) {
+export function MapEditor({ pref, value, onChange, renderValue, disabled }: MapEditorProps) {
   const record = value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : NONE;
@@ -50,6 +52,7 @@ export function MapEditor({ pref, value, onChange, renderValue }: MapEditorProps
   return (
     <ListEditor<Pair>
       aria-label={label}
+      disabled={disabled}
       value={pairs}
       onChange={(next) => {
         setPairs(next);
@@ -58,7 +61,7 @@ export function MapEditor({ pref, value, onChange, renderValue }: MapEditorProps
       newEntry={() => ['', item.default]}
       renderEntry={([key, held], set, name) => (
         <div className={s.entry}>
-          <Input aria-label={`${name} key`} className={s.key} placeholder="Key" value={key} onChange={(next) => set([next, held])} />
+          <Input aria-label={`${name} key`} className={s.key} placeholder="Key" value={key} isDisabled={disabled} onChange={(next) => set([next, held])} />
           <div className={s.value}>
             {renderValue(held !== undefined ? held : item.default, (next) => set([key, next]), key === '' ? name : `${label} ${key}`, key)}
           </div>
