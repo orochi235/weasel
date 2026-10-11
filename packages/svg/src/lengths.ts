@@ -3,10 +3,12 @@
  *
  * A percentage resolves against the nearest `<svg>` ancestor's viewport, as
  * SVG has it, and an absolute CSS unit (`mm`, `pt`, …) converts at 96 per
- * inch. A font-relative unit is read as its bare number and reported.
+ * inch. An `em` or `ex` is of the element's computed font size.
  */
 
 import { ABSOLUTE_PX } from './absoluteUnits';
+import { emsPer, fontSizeOf } from './fontSize';
+import { styleAt } from './styleAt';
 
 const LENGTH = /^\s*([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)\s*([a-z%]*)\s*$/i;
 
@@ -62,6 +64,8 @@ export function resolveLength(
   if (unit === '') return n;
   const scale = ABSOLUTE_PX[unit];
   if (scale != null) return n * scale;
+  const ems = emsPer(unit);
+  if (ems != null) return n * ems * fontSizeOf(styleAt(el));
   const tag = el.tagName.toLowerCase();
   if (unit !== '%') {
     onWarn(`<${tag} ${name}="${raw}"> unit "${unit}" is not converted; read as ${n}`);

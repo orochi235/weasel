@@ -18,6 +18,7 @@ import {
   INHERITED_PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
 } from './properties';
 import { evaluateSupports } from './supports';
+import { computeFontRelative, fontSizeOf } from './fontSize';
 
 export { parseDeclarations, type Declaration };
 
@@ -383,7 +384,8 @@ export function ownProp(el: Element, prop: PropertyName): string | null {
 /**
  * Fold an element's own cascaded values ({@link ownProp}) onto the inherited cascade.
  * A property that is absent or literally `inherit` keeps the parent value;
- * any other own value overrides. Returns the parent unchanged (same object)
+ * any other own value overrides, and an `em` or `ex` in it is computed to user
+ * units here, where its font size is known. Returns the parent unchanged (same object)
  * when the element sets no inheritable property, avoiding a needless clone.
  */
 export function deriveStyle(parent: StyleContext, el: Element): StyleContext {
@@ -395,6 +397,7 @@ export function deriveStyle(parent: StyleContext, el: Element): StyleContext {
     if (!next) next = { ...parent };
     next[prop] = own;
   }
+  if (next) computeFontRelative(next, fontSizeOf(parent));
   return next ?? parent;
 }
 
@@ -411,8 +414,10 @@ export function resolveCurrentColor(raw: string | null, style: StyleContext): st
 }
 
 /** An element's own value of `prop`, read by the property's one reader. */
-export function ownValue<K extends PropertyName>(el: Element, prop: K, warn?: Warn): PropertyValue<K> | undefined {
-  return readProperty(prop, ownProp(el, prop), warn);
+export function ownValue<K extends PropertyName>(
+  el: Element, prop: K, warn?: Warn, fontSize?: number,
+): PropertyValue<K> | undefined {
+  return readProperty(prop, ownProp(el, prop), warn, fontSize);
 }
 
 /** The inherited value of `prop` in effect at `style`, read by the property's one reader. */

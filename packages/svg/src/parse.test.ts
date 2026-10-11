@@ -404,10 +404,13 @@ describe('values read through the property table', () => {
     expect(p.opacity).toBe(0.5);
     expect(p.fill).toMatchObject({ opacity: 0.25 });
   });
-  it('resolves a percentage font-size on <text> against the default, and says so', () => {
-    const { nodes, warnings } = parse('<text font-size="150%">hi</text>');
-    expect(nodes[0]).toMatchObject({ style: { fontSize: 24 } });
-    expect(warnings).toEqual(['font-size "150%" on <text> is resolved against the 16px default']);
+  it('resolves a percentage font-size on <text> against the parent\'s', () => {
+    const lone = parse('<text font-size="150%">hi</text>');
+    expect(lone.nodes[0]).toMatchObject({ style: { fontSize: 24 } });
+    expect(lone.warnings).toEqual([]);
+    const nested = parse('<g font-size="10"><text font-size="150%">hi</text></g>');
+    expect(nested.nodes[0]).toMatchObject({ children: [{ style: { fontSize: 15 } }] });
+    expect(nested.warnings).toEqual([]);
   });
   it('paints nothing for context-fill on a shape outside a marker', () => {
     const { nodes, warnings } = parse('<rect width="1" height="1" fill="context-fill"/>');

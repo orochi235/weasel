@@ -1062,15 +1062,15 @@ describe('letter-spacing / text-decoration', () => {
     expect(t.runs?.[0]?.underline).toBeUndefined();
   });
 
-  it('warns on a non-px letter-spacing unit (e.g. em) but still parses the numeric value', () => {
+  it('warns on a letter-spacing unit it cannot convert (e.g. vw) but still parses the numeric value', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
-      <text x="0" y="0"><tspan letter-spacing="0.1em">hi</tspan></text>
+      <text x="0" y="0"><tspan letter-spacing="0.1vw">hi</tspan></text>
     </svg>`;
     const { nodes, warnings } = parseSvg(svg);
     const t = nodes[0];
     if (t.kind !== 'text') throw new Error('expected text');
     expect(t.runs?.[0]?.letterSpacing).toBe(0.1);
-    expect(warnings.some((w) => /letter-spacing/.test(w) && /em/.test(w))).toBe(true);
+    expect(warnings.some((w) => /letter-spacing/.test(w) && /vw/.test(w))).toBe(true);
   });
 
   it('matches text-decoration tokens case-insensitively', () => {

@@ -66,12 +66,6 @@ describe('a CSS unit on a geometry attribute', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('reads a font-relative unit as its number and reports it', () => {
-    const { nodes, warnings } = parseSvg(`<svg ${NS}><circle r="5em"/></svg>`);
-    expect(boundsOfPath((nodes[0] as SvgPathNode).path).width).toBeCloseTo(10, 6);
-    expect(warnings).toEqual(['<circle r="5em"> unit "em" is not converted; read as 5']);
-  });
-
   it('converts an absolute unit on stroke-width, stroke-dasharray, and font-size', () => {
     const { nodes, warnings } = parseSvg(
       `<svg ${NS}><path d="M0 0h10" stroke="#000" stroke-width="1in" stroke-dasharray="1in 3pt"/>`
@@ -94,5 +88,80 @@ describe('a CSS unit on a geometry attribute', () => {
     const { nodes, warnings } = parseSvg(`<svg ${NS}><rect width="30px" height="2e1"/></svg>`);
     expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 30, height: 20 });
     expect(warnings).toEqual([]);
+  });
+});
+
+describe('a font-relative length', () => {
+  const radius = (body: string): number => {
+    const { nodes, warnings } = parseSvg(`<svg ${NS}>${body}</svg>`);
+    expect(warnings).toEqual([]);
+    const leaf = (n: unknown): SvgPathNode => ((n as { children?: unknown[] }).children
+      ? leaf((n as { children: unknown[] }).children[0]) : n as SvgPathNode);
+    return boundsOfPath(leaf(nodes[0]).path).width / 2;
+  };
+
+  it('takes an em against the 16px default', () => {
+    expect(radius('<circle r="2em"/>')).toBeCloseTo(32, 6);
+  });
+
+  it('takes an em against an inherited font-size', () => {
+    expect(radius('<g font-size="10"><circle r="2em"/></g>')).toBeCloseTo(20, 6);
+  });
+
+  it('takes an em against the element\'s own font-size', () => {
+    expect(radius('<circle r="2em" font-size="5"/>')).toBeCloseTo(10, 6);
+    expect(radius('<circle r="2em" style="font-size: 12pt"/>')).toBeCloseTo(32, 6);
+  });
+
+  it('resolves a relative font-size against the parent\'s', () => {
+    expect(radius('<g font-size="10"><g font-size="2em"><circle r="1em"/></g></g>')).toBeCloseTo(20, 6);
+    expect(radius('<g font-size="10"><g font-size="150%"><circle r="1em"/></g></g>')).toBeCloseTo(15, 6);
+    expect(radius('<g font-size="10"><g font-size="2ex"><circle r="1em"/></g></g>')).toBeCloseTo(10, 6);
+  });
+
+  it('takes an ex as half an em', () => {
+    expect(radius('<g font-size="10"><circle r="3ex"/></g>')).toBeCloseTo(15, 6);
+  });
+
+  it('converts stroke-width, stroke-dasharray, and letter-spacing', () => {
+    const { nodes, warnings } = parseSvg(
+      `<svg ${NS} font-size="10"><path d="M0 0h10" stroke="#000" stroke-width="1ex" stroke-dasharray="1em 2ex"/>`
+      + `<text x="0" y="20" letter-spacing="0.5em">Hi</text></svg>`,
+    );
+    expect((nodes[0] as SvgPathNode).stroke).toMatchObject({ width: 5, dash: [10, 10] });
+    expect((nodes[1] as SvgTextNode).style?.letterSpacing).toBe(5);
+    expect(warnings).toEqual([]);
+  });
+
+  it('inherits a stroke-width as the length it computed to where it was set', () => {
+    const { nodes } = parseSvg(
+      `<svg ${NS}><g font-size="10" stroke="#000" stroke-width="2em"><path d="M0 0h10" font-size="40"/></g></svg>`,
+    );
+    expect((nodes[0] as { children: SvgPathNode[] }).children[0].stroke).toMatchObject({ width: 20 });
+  });
+
+  it('sizes the root in ems of its own font-size', () => {
+    expect(parseSvg(`<svg ${NS} width="10em" height="4ex"/>`)).toMatchObject({ width: 160, height: 32, warnings: [] });
+    expect(parseSvg(`<svg ${NS} width="10em" font-size="10"/>`)).toMatchObject({ width: 100, warnings: [] });
+  });
+
+  it('sizes a text node by a relative font-size, and a run by its ratio', () => {
+    const { nodes, warnings } = parseSvg(
+      `<svg ${NS}><g font-size="10"><text font-size="2em" x="0" y="20">a<tspan font-size="0.5em" letter-spacing="1em">b</tspan></text></g></svg>`,
+    );
+    const text = (nodes[0] as { children: SvgTextNode[] }).children[0];
+    expect(text.style?.fontSize).toBe(20);
+    expect(text.runs?.[1]).toMatchObject({ fontScale: 0.5, letterSpacing: 10 });
+    const stroked = parseSvg(
+      `<svg ${NS}><text font-size="10" x="0" y="20"><tspan stroke="#000" stroke-width="1em">b</tspan></text></svg>`,
+    );
+    expect((stroked.nodes[0] as SvgTextNode).runs?.[0].stroke).toMatchObject({ width: 10 });
+    expect(warnings).toEqual([]);
+  });
+
+  it('reads a unit it cannot convert as its number and reports it', () => {
+    const { nodes, warnings } = parseSvg(`<svg ${NS}><circle r="5vw"/></svg>`);
+    expect(boundsOfPath((nodes[0] as SvgPathNode).path).width).toBeCloseTo(10, 6);
+    expect(warnings).toEqual(['<circle r="5vw"> unit "vw" is not converted; read as 5']);
   });
 });

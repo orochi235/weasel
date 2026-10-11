@@ -28,6 +28,8 @@ import { anchorOffset } from './textAnchor';
 import { placeNode } from './placeBox';
 import { ABSOLUTE_PX } from './absoluteUnits';
 import { readLength } from './lengths';
+import { emsPer, fontSizeOf } from './fontSize';
+import { styleAt } from './styleAt';
 import { joinLines, LineTracker, warnUnreadPositions } from './tspanLines';
 import { isNonUniform, paintThroughMatrix, strokeThroughMatrix, fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
@@ -102,9 +104,9 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   if (documentMeta) result.documentMeta = documentMeta;
   const viewBox = parseViewBoxAttr(root.getAttribute('viewBox'));
   if (viewBox) result.viewBox = viewBox;
-  const width = parseRootLength(root.getAttribute('width'), 'width', onWarn);
+  const width = parseRootLength(root.getAttribute('width'), 'width', fontSizeOf(rootStyle), onWarn);
   if (width != null) result.width = width;
-  const height = parseRootLength(root.getAttribute('height'), 'height', onWarn);
+  const height = parseRootLength(root.getAttribute('height'), 'height', fontSizeOf(rootStyle), onWarn);
   if (height != null) result.height = height;
   // First direct-child <title> wins. Per SVG spec only one is meaningful.
   for (let i = 0; i < root.children.length; i++) {
@@ -135,19 +137,21 @@ function parseViewBoxAttr(
 
 /**
  * Root `width` / `height` in user units, an absolute CSS unit converted at 96
- * per inch. A percentage or a font-relative unit is not converted — there is
- * no viewport to resolve it against — so the number is taken as-is and the
- * discarded unit is reported.
+ * per inch and an `em` or `ex` by the root's `fontSize`. A percentage is not
+ * converted — there is no viewport to resolve it against — so the number is
+ * taken as-is and the discarded unit is reported.
  */
 function parseRootLength(
-  raw: string | null, name: string, onWarn: (m: string) => void,
+  raw: string | null, name: string, fontSize: number, onWarn: (m: string) => void,
 ): number | undefined {
   if (raw == null) return undefined;
   const n = parseFloat(raw);
   if (!Number.isFinite(n)) return undefined;
-  const unit = /^\s*[-+]?[\d.eE+-]+\s*([a-z%]+)\s*$/i.exec(raw)?.[1];
+  const unit = /^\s*[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?\s*([a-z%]+)\s*$/i.exec(raw)?.[1];
   const scale = unit && ABSOLUTE_PX[unit.toLowerCase()];
   if (scale) return n * scale;
+  const ems = unit && emsPer(unit);
+  if (ems) return n * ems * fontSize;
   if (unit) onWarn(`<svg ${name}="${raw}"> unit "${unit}" is not converted; read as ${n}`);
   return n;
 }
@@ -644,11 +648,11 @@ function isNonScalingStroke(el: Element): boolean {
   return ownValue(el, 'vector-effect') === 'non-scaling-stroke';
 }
 
-function ownStrokeStyle(el: Element): StyleContext {
+function ownStrokeStyle(el: Element, computed: StyleContext): StyleContext {
   const out: Partial<Record<InheritedPropertyName, string>> = {};
   for (const k of STROKE_KEYS) {
     const v = ownProp(el, k);
-    if (v != null) out[k] = v;
+    if (v != null) out[k] = v === 'inherit' ? v : computed[k];
   }
   return out;
 }
@@ -1008,7 +1012,8 @@ function readTspanRun(
   const size = ownValue(el, 'font-size', onWarn);
   if (size?.fontSize != null) run.fontSize = size.fontSize;
   if (size?.fontScale != null) run.fontScale = size.fontScale;
-  const ls = ownValue(el, 'letter-spacing', onWarn);
+  const tspanStyle = deriveStyle(style, el);
+  const ls = ownValue(el, 'letter-spacing', onWarn, fontSizeOf(tspanStyle));
   if (ls != null) run.letterSpacing = ls;
   const shift = ownValue(el, 'baseline-shift', onWarn);
   if (shift?.script != null) run.script = shift.script;
@@ -1021,7 +1026,6 @@ function readTspanRun(
   if (transform) run.textTransform = transform;
   const variant = ownValue(el, 'font-variant', onWarn);
   if (variant) run.fontVariantCaps = variant;
-  const tspanStyle = deriveStyle(style, el);
   const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
   if (fillAttr) {
     const parsed = readProperty('fill', fillAttr);
@@ -1036,7 +1040,7 @@ function readTspanRun(
     }
   }
   // Own attributes only — see `ownStrokeStyle`.
-  const stroke = coreStroke(readStroke(ownStrokeStyle(el), gradients, onWarn, isNonScalingStroke(el)));
+  const stroke = coreStroke(readStroke(ownStrokeStyle(el, tspanStyle), gradients, onWarn, isNonScalingStroke(el)));
   if (stroke) run.stroke = stroke;
   return run;
 }
@@ -1048,12 +1052,6 @@ function readTextStyle(
   const out: TextStyle = {};
   const size = styleValue(style, 'font-size', onWarn);
   if (size?.fontSize != null) out.fontSize = size.fontSize;
-  else if (size?.fontScale != null) {
-    // The cascade carries raw values, so the parent size a percentage is
-    // relative to has already been overwritten by the time it is read here.
-    onWarn(`font-size "${style['font-size']}" on <text> is resolved against the 16px default`);
-    out.fontSize = 16 * size.fontScale;
-  }
   const ff = styleValue(style, 'font-family', onWarn);
   if (ff) out.fontFamily = ff;
   const fw = styleValue(style, 'font-weight', onWarn);
@@ -1237,14 +1235,6 @@ function markerInsetAttr(el: Element): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/** The cascade as it stands on `el`, walked down from the root. A marker's
- *  content inherits from the marker's own ancestors, never from the element
- *  that references it. */
-function styleAt(el: Element): StyleContext {
-  const chain: Element[] = [];
-  for (let e: Element | null = el; e; e = e.parentElement) chain.unshift(e);
-  return chain.reduce<StyleContext>((style, e) => deriveStyle(style, e), EMPTY_STYLE);
-}
 
 /** SVG 2's keyword forms of `refX` / `refY`, else a number. */
 function markerRef(raw: string | null, lo: number, span: number): number {
@@ -1377,6 +1367,8 @@ function markerEntryFrom(
       }
     }
   };
+  // The content inherits from the marker's own ancestors, never from the
+  // element that references it.
   collect(el, base, styleAt(el));
   if (parts.length === 0) {
     onWarn(`<marker id="${id}"> draws nothing this kit can read; dropped`);

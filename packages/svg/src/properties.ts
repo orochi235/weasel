@@ -13,14 +13,16 @@
 import type { FontVariantCaps, TextTransform } from '@weasel-js/core';
 import { ABSOLUTE_PX } from './absoluteUnits';
 import { parsePaintAttr, type ParsedColor } from './color';
+import { DEFAULT_FONT_SIZE, emsPer } from './fontSize';
 
 export type Warn = (message: string) => void;
 
 interface PropertyDef<T> {
   /** Folded into the inherited `StyleContext` rather than read off the element. */
   readonly inherits: boolean;
-  /** `value` arrives trimmed and never `inherit`. Keywords compare case-sensitively unless a reader folds case. */
-  readonly read: (value: string, warn: Warn, prop: string) => T | undefined;
+  /** `value` arrives trimmed and never `inherit`. Keywords compare case-sensitively unless a reader folds case.
+   *  `fontSize` is what an `em` or `ex` in it is of. */
+  readonly read: (value: string, warn: Warn, prop: string, fontSize: number) => T | undefined;
 }
 
 /** `text-transform` keywords the runs model carries. */
@@ -35,23 +37,31 @@ function dimension(v: string): { n: number; unit: string } | undefined {
 
 const clamp01 = (n: number): number => (n < 0 ? 0 : n > 1 ? 1 : n);
 
+/** What one of `unit` is in px, a font-relative unit taken against `fontSize`. */
+function pxPer(unit: string, fontSize: number): number | undefined {
+  if (unit === '') return 1;
+  const ems = emsPer(unit);
+  return ems != null ? ems * fontSize : ABSOLUTE_PX[unit];
+}
+
 /**
- * A bare number, or a length in one of `native` units. Where `px` is native,
- * an absolute CSS unit converts to it; any other unit is read as its number
- * and flagged.
+ * A bare number, or a length in the `native` unit. An absolute or font-relative
+ * CSS unit converts to px, and `ex` converts to em; any other unit is read as
+ * its number and flagged.
  */
-const length = (native: readonly string[], coercedAs: string) =>
-  (v: string, warn: Warn, prop: string): number | undefined => {
+const length = (native: 'px' | 'em', coercedAs: string) =>
+  (v: string, warn: Warn, prop: string, fontSize: number): number | undefined => {
     const d = dimension(v);
     if (!d) return undefined;
-    if (native.includes('px') && ABSOLUTE_PX[d.unit] != null) return d.n * ABSOLUTE_PX[d.unit];
-    if (d.unit && !native.includes(d.unit)) {
+    const scale = native === 'px' ? pxPer(d.unit, fontSize) : emsPer(d.unit);
+    if (scale != null) return d.n * scale;
+    if (d.unit) {
       warn(`${prop} "${v}" uses unit "${d.unit}", which is not converted; treated as ${d.n} ${coercedAs}`);
     }
     return d.n;
   };
 
-const worldLength = length(['px'], 'world units');
+const worldLength = length('px', 'world units');
 
 const keyword = <W extends string>(...words: W[]) => (v: string): W | undefined =>
   (words as string[]).includes(v) ? (v as W) : undefined;
@@ -105,12 +115,12 @@ function readLinejoin(v: string, warn: Warn): 'miter' | 'round' | 'bevel' | unde
 }
 
 /** `null` is `none`; an odd-length list is repeated to make the pattern even, as SVG says. */
-function readDashArray(v: string, warn: Warn): number[] | null | undefined {
+function readDashArray(v: string, warn: Warn, _prop: string, fontSize: number): number[] | null | undefined {
   if (v === 'none' || v === '') return null;
   const nums: number[] = [];
   for (const t of v.split(/[\s,]+/).filter(Boolean)) {
     const d = dimension(t);
-    const scale = d && (d.unit === '' ? 1 : ABSOLUTE_PX[d.unit]);
+    const scale = d && pxPer(d.unit, fontSize);
     if (!d || scale == null || d.n < 0) {
       warn(`unrecognized stroke-dasharray: ${v}`);
       return undefined;
@@ -132,11 +142,15 @@ function readColor(v: string): string | undefined {
   return isCurrentColor(v) || parsePaintAttr(v)?.kind === 'solid' ? v : undefined;
 }
 
-/** A percentage is relative to the parent's size (`fontScale`); anything else is an absolute `fontSize`. */
-function readFontSize(v: string, warn: Warn, prop: string): { fontSize?: number; fontScale?: number } | undefined {
+/** A percentage, `em`, or `ex` is relative to the parent's size (`fontScale`); anything else is an absolute `fontSize`. */
+function readFontSize(
+  v: string, warn: Warn, prop: string, fontSize: number,
+): { fontSize?: number; fontScale?: number } | undefined {
   const d = dimension(v);
   if (d?.unit === '%') return { fontScale: d.n / 100 };
-  const n = worldLength(v, warn, prop);
+  const ems = d && emsPer(d.unit);
+  if (d && ems != null) return { fontScale: d.n * ems };
+  const n = worldLength(v, warn, prop, fontSize);
   return n == null ? undefined : { fontSize: n };
 }
 
@@ -156,8 +170,8 @@ function readFontStyle(v: string, warn: Warn): 'normal' | 'italic' | undefined {
 }
 
 /** `null` is `normal`. */
-function readLetterSpacing(v: string, warn: Warn, prop: string): number | null | undefined {
-  return v === 'normal' ? null : worldLength(v, warn, prop);
+function readLetterSpacing(v: string, warn: Warn, prop: string, fontSize: number): number | null | undefined {
+  return v === 'normal' ? null : worldLength(v, warn, prop, fontSize);
 }
 
 export interface Decoration { underline?: boolean; strikethrough?: boolean; overline?: boolean }
@@ -190,7 +204,7 @@ function readTextTransform(v: string): TextTransform | undefined {
   return TEXT_TRANSFORMS.has(t) ? (t as TextTransform) : undefined;
 }
 
-const emLength = length(['em'], 'em');
+const emLength = length('em', 'em');
 
 /**
  * `super` and `sub` are the presets `script` names; a percentage resolves
@@ -205,7 +219,7 @@ function readBaselineShift(
   if (k === 'baseline') return {};
   const d = dimension(v);
   if (d?.unit === '%') return d.n === 0 ? {} : { baselineShift: d.n / 100 };
-  const n = emLength(v, warn, prop);
+  const n = emLength(v, warn, prop, DEFAULT_FONT_SIZE);
   if (n == null) return undefined;
   return n === 0 ? {} : { baselineShift: n };
 }
@@ -268,14 +282,15 @@ export const INHERITED_PROPERTIES = (Object.keys(PROPERTIES) as PropertyName[])
 
 const silent: Warn = () => {};
 
-/** Read a raw cascaded value of `prop`; `undefined` when absent or unreadable. */
+/** Read a raw cascaded value of `prop`; `undefined` when absent or unreadable.
+ *  `fontSize` is the size an `em` or `ex` in it is of. */
 export function readProperty<K extends PropertyName>(
-  prop: K, raw: string | null | undefined, warn: Warn = silent,
+  prop: K, raw: string | null | undefined, warn: Warn = silent, fontSize = DEFAULT_FONT_SIZE,
 ): PropertyValue<K> | undefined {
   if (raw == null) return undefined;
   const v = raw.trim();
   if (v === 'inherit') return undefined;
-  return PROPERTIES[prop].read(v, warn, prop) as PropertyValue<K> | undefined;
+  return PROPERTIES[prop].read(v, warn, prop, fontSize) as PropertyValue<K> | undefined;
 }
 
 function isPropertyName(prop: string): prop is PropertyName {
