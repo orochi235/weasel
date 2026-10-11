@@ -1,5 +1,4 @@
-import type { Path } from '@weasel-js/geom';
-import type { GlMat3 } from '../math/mat3';
+import type { Path, GlMat3 } from '@weasel-js/geom';
 import { axisAlignedClipRect, intersectClipRects, type ClipRect } from '../batchClip';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';

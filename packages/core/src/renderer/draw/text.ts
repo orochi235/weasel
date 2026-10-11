@@ -8,7 +8,7 @@ import {
 } from '@weasel-js/text';
 import type { TextDrawCommand } from '../DrawCommand';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
-import type { GlMat3 } from '../math/mat3';
+import type { GlMat3 } from '@weasel-js/geom';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import { resolveColor } from '@weasel-js/paint';
 import {

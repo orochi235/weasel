@@ -2,12 +2,11 @@
 // `src/index.ts` reexports `renderer/index.ts`, which reexports this module — so a
 // barrel import here forms a DrawCommand.ts → index.ts → renderer/index.ts → DrawCommand.ts
 // cycle that makes the dts bundler split them into mutually-dependent chunks and warn.
-import type { Path } from '@weasel-js/geom';
+import type { Path, GlMat3 } from '@weasel-js/geom';
 import type { CommandFill, CommandStroke } from '@weasel-js/paint';
 import type { TextAlign, TextDirection, TextStyle } from '@weasel-js/text';
 import type { ResolvedRun } from '@weasel-js/text';
 import type { TextVerticalAlign } from '@weasel-js/text';
-import type { GlMat3 } from './math/mat3';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 import type { Effect } from './effects/types';
 

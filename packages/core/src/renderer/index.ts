@@ -24,8 +24,7 @@ export type {
 export type { CommandFill, CommandStroke, CommandPaintUnits, PosedFill, SolidFill } from '@weasel-js/paint';
 export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';
-export { mat3, type GlMat3 } from './math/mat3';
-export { viewToMat3, type View as ViewLike } from './math/viewToMat3';
+export { mat3, viewToMat3, type GlMat3, type View as ViewLike } from '@weasel-js/geom';
 export { cullDrawCommands, type CullRect } from './cullDrawCommands';
 export { tessellate, type TessellateOptions } from '@weasel-js/geom/tessellate';
 export { tessellateStroke, type StrokeOptions } from 'features/paths/tessellate/stroke';

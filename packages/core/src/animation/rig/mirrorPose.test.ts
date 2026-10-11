@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mat3 } from '../../renderer/math/mat3';
+import { mat3 } from '@weasel-js/geom';
 import { mirrorPose } from './mirrorPose';
 import { resolveSkeleton } from './resolveSkeleton';
 import type { Pose, Skeleton } from './types';

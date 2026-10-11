@@ -12,7 +12,7 @@
  *                                              m10*x + m11*y + ty]`.
  */
 
-import { invert as invertAffine, type Mat3 as Affine } from '@weasel-js/geom';
+import { invert as invertAffine, type Mat3 as Affine } from './mat3';
 
 /**
  * A 2D affine transform as a column-major 9-element array, laid out as above.

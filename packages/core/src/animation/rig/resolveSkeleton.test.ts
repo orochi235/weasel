@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { resolveSkeleton } from './resolveSkeleton';
 import { IDENTITY_JOINT, type Skeleton } from './types';
-import { mat3 } from '../../renderer/math/mat3';
+import { mat3 } from '@weasel-js/geom';
 
 const j = (name: string, parent: string | null, x = 0, y = 0) => ({
   name, parent, bind: { ...IDENTITY_JOINT, x, y },

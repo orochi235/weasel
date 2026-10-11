@@ -21,7 +21,7 @@ import { bumpNodeMemoGeneration } from './scene/nodeMemo';
 import type { ComponentType } from 'react';
 import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
 import type { FillPoseBox } from './fillInPoseFrame';
-import type { GlMat3 } from '../renderer/math/mat3';
+import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from '../renderer/shaders/ShaderProgram';
 import { getProgramSource, registerProgram, type ProgramSource } from '../renderer/shaders/registerProgram';
 

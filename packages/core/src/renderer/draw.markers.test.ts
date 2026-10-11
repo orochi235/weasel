@@ -12,7 +12,7 @@ import type { PolygonPath, Stroke } from '@weasel-js/core';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
-import { mat3 } from './math/mat3';
+import { mat3 } from '@weasel-js/geom';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 import { _resetStrokeMeshCacheForTests } from './cache/strokeMeshCache';
 import { registerMarker } from '../core/strokeMarkers';

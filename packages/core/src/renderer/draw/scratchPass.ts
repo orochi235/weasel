@@ -1,7 +1,7 @@
 import type { FillStyle } from '@weasel-js/paint';
 import { getPaintKind, type PaintBindContext } from 'core/paintKinds';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
-import type { GlMat3 } from '../math/mat3';
+import type { GlMat3 } from '@weasel-js/geom';
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';

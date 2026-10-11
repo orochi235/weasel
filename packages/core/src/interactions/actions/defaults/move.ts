@@ -52,7 +52,7 @@ import { asNodeId } from 'core/scene/types';
 import { moveSources } from '../selectionSubtree';
 import { SceneArrivalRefused } from 'core/scene/arrivals';
 import type { Op } from 'core/ops/types';
-import type { Mat3 } from '@weasel-js/geom';
+import { type Mat3, pointInPath } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import { createReparentOp } from 'core/ops/reparent';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
@@ -65,7 +65,6 @@ import type {
   DropTarget as LayoutDropTarget,
   DropRegion,
 } from '../../../layout/types';
-import { pointInPath } from '@weasel-js/geom';
 import {
   poseDescriptorForNode,
   translatePoseViaDescriptor,

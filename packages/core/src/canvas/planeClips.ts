@@ -1,6 +1,5 @@
-import { type Path, transformPath } from '@weasel-js/geom';
+import { type Path, transformPath, mat3, type GlMat3 } from '@weasel-js/geom';
 import { planeMatrix, planeToPlane, type PlaneMap } from 'core/viewport/parallax';
-import { mat3, type GlMat3 } from '../renderer/math/mat3';
 
 /**
  * Carries a container's clip into the world a descendant is drawn or picked

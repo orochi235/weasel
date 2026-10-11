@@ -30,7 +30,7 @@
  */
 
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import type { GlMat3 } from './math/mat3';
+import type { GlMat3 } from '@weasel-js/geom';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { PAINT_MODE_PLAIN, WHITE_SLOT, packSlot } from './shaders/batchFill';
 import { clipConvexPolygon, type ClipRect } from './batchClip';

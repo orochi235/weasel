@@ -19,7 +19,7 @@
 import type { GradStop } from '@weasel-js/paint';
 import type { PaintBindContext, PaintKindEntry, PaintProgram, PaintResources } from '../../core/paintKinds';
 import { resolveColor, rgbaToHex } from '@weasel-js/paint';
-import { mat3 } from '../../renderer/math/mat3';
+import { mat3 } from '@weasel-js/geom';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, FillStyle, GradientUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../../core/fillInPoseFrame';

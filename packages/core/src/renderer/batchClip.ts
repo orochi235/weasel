@@ -14,8 +14,7 @@
  * covers the same pixel centers the stencil would have passed.
  */
 
-import type { Path } from '@weasel-js/geom';
-import type { GlMat3 } from './math/mat3';
+import type { Path, GlMat3 } from '@weasel-js/geom';
 
 /** In the space batch vertices are staged in: after the model transform,
  *  before the projection. */

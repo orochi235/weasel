@@ -1,5 +1,5 @@
 import type { DrawCommand, GroupDrawCommand } from './DrawCommand';
-import { mat3 } from './math/mat3';
+import { mat3 } from '@weasel-js/geom';
 import { getMesh } from './cache/cache';
 import type { EffectTargets } from './effects/EffectTargets';
 import { compositeProgramId } from './effects/composite';

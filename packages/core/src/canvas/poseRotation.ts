@@ -14,8 +14,7 @@
  */
 import type { DrawCommand } from '../renderer';
 import { poseFrameOf } from 'core/geometry/poseFrame';
-import { rotateAboutPoint } from '@weasel-js/geom';
-import { mat3, type GlMat3 } from '../renderer/math/mat3';
+import { rotateAboutPoint, mat3, type GlMat3 } from '@weasel-js/geom';
 
 /** Rotation by `rotation` about `(cx, cy)` as the render-tree's column-major
  *  3×3 affine. Composes on the kernel's `rotateAboutPoint` (single owner of the

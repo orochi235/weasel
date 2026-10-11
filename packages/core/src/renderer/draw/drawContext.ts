@@ -1,4 +1,4 @@
-import type { Path } from '@weasel-js/geom';
+import type { Path, GlMat3 } from '@weasel-js/geom';
 import type { PaintResources } from 'core/paintKinds';
 import type { GroupState } from '../state/GroupState';
 import type { GLMeshCache } from '../cache/GLMeshCache';
@@ -6,7 +6,6 @@ import type { GLTextureCache } from '../cache/GLTextureCache';
 import type { GLImageCache } from '../cache/GLImageCache';
 import type { GradientRampAtlas } from '../cache/GradientRampAtlas';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
-import type { GlMat3 } from '../math/mat3';
 import { DrawBatch } from '../drawBatch';
 import type { ClipRect } from '../batchClip';
 import type { EffectTarget, EffectTargets } from '../effects/EffectTargets';

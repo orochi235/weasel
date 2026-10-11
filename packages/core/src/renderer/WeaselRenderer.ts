@@ -50,7 +50,7 @@ import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
 import { GradientRampAtlas } from './cache/GradientRampAtlas';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
-import type { GlMat3 } from './math/mat3';
+import type { GlMat3 } from '@weasel-js/geom';
 import {
   dispatch, flushBatch, OUTLINE_MIN_SCREEN_PX, type DrawContext, type GlyphPaintKind,
 } from './draw';

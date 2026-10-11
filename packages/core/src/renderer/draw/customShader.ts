@@ -3,7 +3,7 @@ import { getTexture, type TextureHandle } from '../textures/registerTexture';
 import type { ShaderUniform } from '../shaders/registerProgram';
 import type { GLTextureCache } from '../cache/GLTextureCache';
 import type { ShaderProgram, UniformArray } from '../shaders/ShaderProgram';
-import { mat3 } from '../math/mat3';
+import { mat3 } from '@weasel-js/geom';
 import type { DrawContext } from './drawContext';
 import { drawTriangles } from './drawTriangles';
 import { applyClipTest } from './stencil';

@@ -43,6 +43,8 @@ export {
   type PointInPathOptions, type StrokeHitTestOptions,
 } from './pathHitTest';
 export { transformCoords } from './affine';
+export { mat3, type GlMat3 } from './glMat3';
+export { viewToMat3 } from './viewToMat3';
 export { placeRect, clampRectWithin, type Placement, type PlacementSide, type PlacementAlign, type PlaceRectOptions, type PlacedRect } from './place';
 export {
   linear, easeIn, easeOut, easeInOut,

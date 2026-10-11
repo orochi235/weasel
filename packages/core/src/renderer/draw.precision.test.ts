@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
-import { viewToMat3 } from './math/viewToMat3';
+import { viewToMat3 } from '@weasel-js/geom';
 import { FLOATS_PER_VERTEX } from './drawBatch';
 
 /**

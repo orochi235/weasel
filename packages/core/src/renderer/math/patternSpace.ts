@@ -1,5 +1,5 @@
 import type { PatternTransform } from '@weasel-js/paint';
-import { mat3, type GlMat3 } from './mat3';
+import { mat3, type GlMat3 } from '@weasel-js/geom';
 
 /**
  * Screen → tile-space matrix for a pattern fill: `spaceInverse` takes a screen

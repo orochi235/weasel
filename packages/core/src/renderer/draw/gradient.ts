@@ -1,5 +1,5 @@
 import type { ColorSpace, FillStyle, GradientUnits, GradStop } from '@weasel-js/paint';
-import { mat3, type GlMat3 } from '../math/mat3';
+import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { GradientUV } from '../drawBatch';
 import { PAINT_MODE_PLAIN, PAINT_MODE_RADIAL, PAINT_MODE_CONIC } from '../shaders/batchFill';
 import type { DrawContext } from './drawContext';

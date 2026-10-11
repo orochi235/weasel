@@ -1,4 +1,4 @@
-import { mat3, type GlMat3 } from '../../renderer/math/mat3';
+import { mat3, type GlMat3 } from '@weasel-js/geom';
 import type { JointTransform, Pose, Skeleton } from './types';
 
 /** bind + delta, field by field. Scale is multiplicative, the rest additive. */

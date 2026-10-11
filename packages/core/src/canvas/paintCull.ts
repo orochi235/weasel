@@ -2,8 +2,7 @@ import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseFrameOf } from 'core/geometry/poseFrame';
 import { boundsMissRect, type CullRect } from '../renderer/cullDrawCommands';
-import { mat3 } from '../renderer/math/mat3';
-import { viewToMat3 } from '../renderer/math/viewToMat3';
+import { mat3, viewToMat3 } from '@weasel-js/geom';
 
 /** Where a node's paint can reach, before its pose frame — the scene
  *  slot's `paintBounds`. `null` means unknown, and the node is painted. */

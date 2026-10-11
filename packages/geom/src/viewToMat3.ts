@@ -1,16 +1,5 @@
-/**
- * View → GlMat3 helper for layer `draw` implementations on world-space layers.
- *
- * `View` is `@weasel-js/routing`'s, the one every viewport action is typed
- * in. A type-only import emits no runtime edge, so there is no reason for the
- * renderer to hold a second structurally-identical declaration and put it in
- * the emitted `.d.ts` anonymously.
- */
-
-import type { View } from '@weasel-js/routing';
-import type { GlMat3 } from './mat3';
-
-export type { View };
+import type { GlMat3 } from './glMat3';
+import type { View } from './view';
 
 /**
  * Build the world→screen transform matrix for a `View`.

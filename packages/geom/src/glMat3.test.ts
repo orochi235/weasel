@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mat3 } from './mat3';
+import { mat3 } from './glMat3';
 
 describe('mat3', () => {
   it('identity is [1, 0, 0, 0, 1, 0, 0, 0, 1] (column-major)', () => {
