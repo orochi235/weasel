@@ -81,7 +81,7 @@ describe('cloneAction on a container', () => {
     const scene = makeScene();
     const handle = begin(scene, [G]);
     handle.onMove!(ctxAt(scene, [G], 100));
-    expect([...handle.previewIds!()].sort()).toEqual([A, B, G].sort());
+    expect([...(handle.previewIds!() ?? [])].sort()).toEqual([A, B, G].sort());
     expect(handle.previewPose!(B as string)).toEqual({ x: 140, y: 0, width: 20, height: 20 });
   });
 

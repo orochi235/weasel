@@ -67,6 +67,7 @@ import { commitGestureOps, readGestureLifecycle, reduceBehaviorEnd, runBehaviorC
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { TextEditDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
+import type { NodeId } from 'core/scene/types';
 import { shapeKindInfo } from 'core/shapeKinds';
 import type { KitInsertShape } from 'core/shapeKinds';
 import { inPlane, insertLayer } from '../planeInput';
@@ -113,7 +114,7 @@ interface InsertScratch {
    *  Captured per-onMove from `ctx.modifiers.shift`. */
   shiftHeld: boolean;
   /** What was selected before the draw cleared it, to put back on cancel. */
-  priorSelection: string[];
+  priorSelection: NodeId[];
   /** Cleared once `onEnd` runs so subsequent `overlay()` calls report no
    *  in-flight preview (mirrors the areaSelect/lasso convention). */
   open: boolean;
