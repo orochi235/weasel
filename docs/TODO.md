@@ -1174,10 +1174,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   list leaf spans both columns, and its inner rows start at about 60% of the pane, under neither
   column's labels nor its controls.
 
-- **(P3) `PrefSchemaEditor` layout by dragging: no test drives a pointer through the editor.**
-  `PrefsForm.drop.browser.test.tsx` checks the form's drop target and reflow in a real browser; no
-  test in the repo drives a pointer through the editor itself. Palette, row, rail, and tree drags
-  were driven through a headless browser on astv's page and on the editor's story on 2026-10-10.
+- **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
+  drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
+  drag. Not covered: a palette tool dropped on the tree, a drag held on a rail entry until its page
+  opens (the 500 ms `RAIL_OPEN_MS` timer), and a drag onto the Unplaced list.
+
+- **(P3) `Tree` reports an outside drag's target only from an effect.** `useTreeDrag.ts` writes the
+  target in a passive effect, a render behind the pointer, so a release in the same task as the
+  last move read the previous row's target or none. `PrefSchemaEditor`'s `onPaletteDrop` gets
+  around it with `flushSync`; any other caller dropping onto a `Tree` from outside has the same
+  race. To decide: whether `Tree` offers a synchronous "target at this point".
 
 - **(P3) `subPages` and `foldable` overlap a group's `as`.** `PrefsForm`'s form-wide `subPages`
   and `foldable` props decide what `as: 'page'` on a nested group and a folding panel should;
@@ -1769,13 +1775,6 @@ one dead `const` and four stale disable directives.
 ---
 
 ## Release-gate & build hygiene
-
-- **(P2) `PrefSchemaEditor.actions.browser.test.tsx` failed once on a loaded node.**
-  "an action dragged onto a group in the tree lands there as a pref that fires it" read
-  `tools.editUndo` as `undefined` in the full suite on msb-uai on 2026-10-11 (1 failure in 18,685
-  tests; the test took 2.5 s). The same file passed four runs out of four on one machine at the
-  same commit, `5d6a06a4a`. Its `drag` helper waits one animation frame after `pointerup` before
-  reading the schema; nothing has checked whether that wait is what lost the drop.
 
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
