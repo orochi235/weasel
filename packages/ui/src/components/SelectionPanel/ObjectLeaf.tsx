@@ -10,7 +10,9 @@ import { pathWithin, selectionAttrs } from '../Prefs/selection';
 import { Icon } from '../../icons/Icon';
 import { ICON_PATHS, type IconName } from '../../icons/paths';
 import { absentValue, MIXED, sharedValue } from './model';
-import { renderBuiltin, renderCells, type LeafCell, type PropertyRenderContext, type PropertyRenderer } from './renderLeaf';
+import { renderCells, type LeafCell } from './cells';
+import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
+import { renderBuiltin } from './renderLeaf';
 import { PanelMarksContext, PanelTabs } from './selection';
 import s from './SelectionPanel.module.css';
 

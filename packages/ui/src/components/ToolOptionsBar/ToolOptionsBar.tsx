@@ -1,6 +1,6 @@
 import { useRef, type ReactNode } from 'react';
 import type { PrefGroup } from '@weasel-js/prefs';
-import type { PropertyRenderer } from '../SelectionPanel/renderLeaf';
+import type { PropertyRenderer } from '../SelectionPanel/renderContext';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { Bar } from '../Bar/Bar';
 import s from './ToolOptionsBar.module.css';

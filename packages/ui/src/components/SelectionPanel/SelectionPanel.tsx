@@ -6,13 +6,9 @@ import {
   type Scene,
   type SelectionApi,
 } from '@weasel-js/core';
-import {
-  renderBuiltin,
-  renderCells,
-  type LeafCell,
-  type PropertyRenderContext,
-  type PropertyRenderer,
-} from './renderLeaf';
+import { renderCells, type LeafCell } from './cells';
+import type { PropertyRenderContext, PropertyRenderer } from './renderContext';
+import { renderBuiltin } from './renderLeaf';
 import {
   MIXED,
   absentValue,
@@ -35,7 +31,7 @@ import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PanelMarksContext, PanelTabs, panelShownPath, type PanelMarks } from './selection';
 import s from './SelectionPanel.module.css';
 
-export type { PropertyRenderContext, PropertyRenderer } from './renderLeaf';
+export type { PropertyRenderContext, PropertyRenderer } from './renderContext';
 
 /** Props for {@link SelectionPanel}. */
 export interface SelectionPanelProps<TData, TLayer extends string, TPose> {

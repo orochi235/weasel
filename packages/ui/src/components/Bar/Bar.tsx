@@ -3,13 +3,9 @@ import { applyPrefConditions, isPrefLeaf, prefJudge, prefValueAtPath, type PrefG
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { PropertyList, PropertyRow } from '../Properties/PropertyPanel';
 import { pairRows } from '../SelectionPanel/model';
-import {
-  renderBuiltin,
-  renderCells,
-  type LeafCell,
-  type PropertyRenderContext,
-  type PropertyRenderer,
-} from '../SelectionPanel/renderLeaf';
+import { renderCells, type LeafCell } from '../SelectionPanel/cells';
+import type { PropertyRenderContext, PropertyRenderer } from '../SelectionPanel/renderContext';
+import { renderBuiltin } from '../SelectionPanel/renderLeaf';
 import { BarLayout, groupBarNodes, type BarCell, type BarLeafNode, type BarOrientation } from './BarLayout';
 import { withBarLabel, type LeafSurface } from './renderBarLeaf';
 import s from './Bar.module.css';

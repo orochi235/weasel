@@ -3,7 +3,7 @@ import type { PrefList } from '@weasel-js/prefs';
 import { ListEditor } from '../ListEditor';
 import { prefListEntry, prefListIsText, prefListTexts } from '../Prefs/ListLeaf';
 import { PrefMixed } from '../Prefs/PrefMixed';
-import type { PropertyRenderContext } from './renderLeaf';
+import type { PropertyRenderContext } from './renderContext';
 
 /**
  * A `list` leaf across a selection: one control per entry, each drawn as the
