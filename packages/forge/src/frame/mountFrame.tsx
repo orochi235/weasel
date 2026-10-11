@@ -1,7 +1,7 @@
 import { openChannel } from '../protocol/channel';
 import { FRAME_HELLO, type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';
 import { indexId, isIndexId } from '../story/indexPages';
-import { libraryOf } from '../story/library';
+import { TITLE_LIBRARIES } from '../story/library';
 import { isGallery } from '../story/tags';
 import { indexRenderOf, loadStories } from '../story/load';
 import type { LoadedStory } from '../story/types';
@@ -103,7 +103,8 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
       startIndex({
         title,
         ...(entries[0]?.componentDescription === undefined ? {} : { description: entries[0].componentDescription }),
-        library: libraryOf({ file: entries[0]?.file ?? '', title }),
+        // The project's library table is the shell config's, which a frame document does not load.
+        library: TITLE_LIBRARIES.of({ file: entries[0]?.file ?? '', title }),
         gallery: entries.every(isGallery),
         galleries: entries.filter(isGallery).map((e) => e.id),
         stories,

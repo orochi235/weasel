@@ -1,6 +1,7 @@
 import { defineShellConfig, FOLLOW_APP } from '@weasel-js/forge';
 import { FORGE_LAB, LABS } from '../shared/labs';
 import { FONT_GLOBALS, fontTheme, loadWebFonts } from './fonts';
+import { LIBRARIES } from './libraries';
 import { chromeTheme, THEME_GLOBAL } from './themes';
 
 if (typeof document !== 'undefined') loadWebFonts(document);
@@ -8,6 +9,7 @@ if (typeof document !== 'undefined') loadWebFonts(document);
 export default defineShellConfig({
   pages: LABS,
   path: FORGE_LAB.href,
+  libraries: LIBRARIES,
   globals: {
     theme: THEME_GLOBAL,
     mode: {

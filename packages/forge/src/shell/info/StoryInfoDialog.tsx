@@ -1,6 +1,8 @@
 import { breadcrumb } from '../breadcrumb';
 import { useLabContext } from '@weasel-js/labkit';
 import { Dialog } from '@weasel-js/ui';
+import { useContext } from 'react';
+import { LibrariesContext } from '../../story/library';
 import type { IndexEntry } from '../../story/types';
 import { storyDossier } from './dossier';
 import { StoryDossier } from './StoryDossier';
@@ -19,11 +21,13 @@ export interface StoryInfoDialogProps {
  */
 export function StoryInfoDialog({ index, isReady, isOpen, onOpenChange }: StoryInfoDialogProps) {
   const { focusedTrialId, trials, instruments } = useLabContext();
+  const libraries = useContext(LibrariesContext);
   const trial = trials.find((record) => record.id === focusedTrialId);
   const entry = trial ? index.find((candidate) => candidate.id === trial.instrumentName) : undefined;
   if (!entry) return null;
   const dossier = storyDossier({
     entry,
+    libraries,
     instrument: instruments.find((candidate) => candidate.name === entry.id),
     config: trial?.config,
     ready: isReady(entry.id),

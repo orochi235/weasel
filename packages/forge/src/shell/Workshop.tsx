@@ -12,6 +12,7 @@ import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
 import { type Globals, stableStringify } from '../protocol/messages';
 import { indexEntries } from '../story/indexPages';
+import { LibrariesContext, librariesFrom } from '../story/library';
 import type { DepGraph, IndexEntry } from '../story/types';
 import { DependenciesContext } from './dependencies';
 import { InfoIcon } from '@weasel-js/ui';
@@ -130,9 +131,12 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
     };
   }, [frameUrl, framed]);
   const entries = useMemo(() => [...index, ...indexEntries(index)], [index]);
+  const table = config?.libraries;
+  const libraries = useMemo(() => librariesFrom(table), [table]);
   const registry = useStoryRegistry(entries, {
     frameUrl,
     globals: declarations,
+    libraries,
     ...(importers ? { importers } : {}),
     ...(setup ? { setup } : {}),
   });
@@ -182,6 +186,7 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
     );
   }
   return (
+    <LibrariesContext.Provider value={libraries}>
     <StoryGlobalsContext.Provider value={labValues}>
       <DependenciesContext.Provider value={dependencies ?? null}>
         <FramePoolContext.Provider value={pool}>
@@ -217,5 +222,6 @@ export function Workshop({ index, frameUrl, importers, setup, changes, config, s
         </FramePoolContext.Provider>
       </DependenciesContext.Provider>
     </StoryGlobalsContext.Provider>
+    </LibrariesContext.Provider>
   );
 }

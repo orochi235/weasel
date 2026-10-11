@@ -4,6 +4,7 @@ import type { ControlRenderer } from '@weasel-js/labkit/config';
 import type { FrameSetup } from './frame/FrameController';
 import type { Globals } from './protocol/messages';
 import type { GlobalDeclarations } from './shell/globals';
+import type { Library } from './story/library';
 
 /** A shell config module: what the workshop adds to the lab. Only the workshop page imports it. */
 export interface ShellConfig {
@@ -18,6 +19,9 @@ export interface ShellConfig {
   /** The theme the workshop's own chrome takes at the lab's current globals, so a global can restyle the workshop
    *  as well as the stories. Default: labkit's. */
   labTheme?: (globals: Globals) => Theme;
+  /** The project's libraries, each a stretch of file path and the label its stories carry in the tree's package
+   *  filter, on index pages, and in Get Info. A story under none of them takes its title's first segment. */
+  libraries?: readonly Library[];
   /** The project's other labs, offered in the workshop's title menu. */
   pages?: readonly LabPage[];
   /** Which of `pages` the workshop is, when the URL alone cannot say, as across dev servers on different ports. */

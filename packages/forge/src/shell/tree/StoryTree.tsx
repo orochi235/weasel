@@ -1,6 +1,6 @@
 import { type LabChromeContext, usePersistedState } from '@weasel-js/labkit';
 import { Checkbox, DisclosureMark, ToggleBar, type ToggleBarItem } from '@weasel-js/ui';
-import { type FocusEvent, type KeyboardEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type FocusEvent, type KeyboardEvent, type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { indexEntries } from '../../story/indexPages';
 import { isGallery } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
@@ -9,7 +9,7 @@ import { onRevealInTree } from '../treeReveal';
 import { useRoute } from '../useRoute';
 import { buildTree, filterTree, type TreeNode } from './buildTree';
 import { buildComponents, componentNodes, filterComponents, librariesIn } from './buildComponents';
-import { libraryOf } from '../../story/library';
+import { LibrariesContext } from '../../story/library';
 import { LibraryBadge as PackageBadge } from '../../frame/index/LibraryBadge';
 
 /** Which shape the sidebar lists the index in. */
@@ -64,7 +64,8 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const items = useRef(new Map<string, HTMLElement>());
 
-  const libraries = useMemo(() => librariesIn(index), [index]);
+  const table = useContext(LibrariesContext);
+  const libraries = useMemo(() => librariesIn(index, table), [index, table]);
   // A view is grayed out by what the project has, not by the package filter,
   // which would otherwise disable a view as a side effect of unticking a box.
   const views = useMemo(() => {
@@ -77,7 +78,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
   const view = [chosen, 'components' as const, 'gallery' as const].find(enabled) ?? chosen;
   // The package filter runs on the index, so it means the same thing in both
   // views rather than once per view's own grouping.
-  const kept = useMemo(() => index.filter((entry) => !hidden[libraryOf(entry)]), [index, hidden]);
+  const kept = useMemo(() => index.filter((entry) => !hidden[table.of(entry)]), [index, hidden, table]);
   // Galleries list only in their own view, grouped the way Components groups.
   const [galleryEntries, rest] = useMemo(() => {
     const yes: IndexEntry[] = [];
@@ -86,8 +87,8 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     return [yes, no];
   }, [kept]);
   const tree = useMemo(() => buildTree(rest), [rest]);
-  const components = useMemo(() => buildComponents(rest), [rest]);
-  const galleries = useMemo(() => buildComponents(galleryEntries), [galleryEntries]);
+  const components = useMemo(() => buildComponents(rest, table), [rest, table]);
+  const galleries = useMemo(() => buildComponents(galleryEntries, table), [galleryEntries, table]);
   const shown = useMemo(
     () =>
       view === 'tree'

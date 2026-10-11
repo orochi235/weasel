@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { libraryOf } from '../../story/library';
-import { buildComponents, componentNodes, filterComponents } from './buildComponents';
+import { librariesFrom } from '../../story/library';
+import { buildComponents as build, componentNodes, filterComponents } from './buildComponents';
 import type { TreeNode } from './buildTree';
 import type { IndexEntry } from '../../story/types';
 
@@ -15,18 +15,11 @@ const entry = (title: string, name: string, file: string): IndexEntry => ({
 const UI = '/repo/packages/ui/src/components/Button/Button.stories.tsx';
 const LABKIT = '/repo/packages/labkit/src/primitives/JobProgress.stories.tsx';
 
-describe('libraryOf', () => {
-  it('reads the package, not the title prefix', () => {
-    // The two title prefixes `packages/ui` actually ships.
-    expect(libraryOf(entry('ui/Foundations/Button', 'Default', UI))).toBe('ui');
-    expect(libraryOf(entry('Primitives/Checkbox', 'Default', UI))).toBe('ui');
-    expect(libraryOf(entry('labkit/Primitives/JobProgress', 'Default', LABKIT))).toBe('labkit');
-  });
-
-  it('falls back to the title prefix for a file under no known package', () => {
-    expect(libraryOf(entry('Notes/Scratch', 'Default', '/elsewhere/Scratch.stories.tsx'))).toBe('Notes');
-  });
-});
+const LIBRARIES = librariesFrom([
+  { path: '/packages/ui/', label: 'ui' },
+  { path: '/packages/labkit/', label: 'labkit' },
+]);
+const buildComponents = (index: readonly IndexEntry[]) => build(index, LIBRARIES);
 
 describe('buildComponents', () => {
   it('gives a row the tags all its stories carry, not its first story’s', () => {

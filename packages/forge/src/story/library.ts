@@ -1,23 +1,33 @@
-/**
- * Which library a story file belongs to, by the package it lives in rather
- * than by its title's first segment. The title prefix is authored per story
- * and disagrees with itself — `packages/ui` alone declares both `Primitives/`
- * and `ui/` — so the path is the answer that cannot drift.
- */
-const LIBRARIES: readonly (readonly [marker: string, label: string])[] = [
-  ['/packages/ui/', 'ui'],
-  ['/packages/labkit/', 'labkit'],
-  ['/packages/forge/', 'forge'],
-  ['/apps/draw/', 'draw'],
-  ['/apps/forge/', 'forge'],
-];
+import { createContext } from 'react';
 
-/** `entry`'s library, falling back to its title's first segment for a file
- *  under none of the known packages. */
-export function libraryOf(entry: { file: string; title: string }): string {
-  const file = entry.file.replaceAll('\\', '/');
-  for (const [marker, label] of LIBRARIES) {
-    if (file.includes(marker)) return label;
-  }
-  return entry.title.split('/')[0] ?? entry.title;
+/** One library of a project: the story files under `path` carry `label`. */
+export interface Library {
+  /** A stretch of path every story file of the library has, with forward slashes: `/packages/ui/`. */
+  path: string;
+  label: string;
+  /** The CSS color the library's badge is toned with. Default: the badge's own muted tone. */
+  tone?: string;
 }
+
+/** A project's libraries, as the tree's package filter, the index page header, and Get Info ask about them. */
+export interface Libraries {
+  /** The label of the first library whose `path` the story's file holds, else its title's first segment. */
+  of(entry: { file: string; title: string }): string;
+  toneOf(label: string): string | undefined;
+}
+
+export function librariesFrom(table: readonly Library[] = []): Libraries {
+  return {
+    of(entry) {
+      const file = entry.file.replaceAll('\\', '/');
+      return table.find((library) => file.includes(library.path))?.label ?? entry.title.split('/')[0] ?? entry.title;
+    },
+    toneOf: (label) => table.find((library) => library.label === label)?.tone,
+  };
+}
+
+/** No table: every story's library is its title's first segment. */
+export const TITLE_LIBRARIES = librariesFrom();
+
+/** The workshop's libraries, from `ShellConfig.libraries`. */
+export const LibrariesContext = createContext<Libraries>(TITLE_LIBRARIES);

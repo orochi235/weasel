@@ -1,5 +1,5 @@
 import { indexEntries } from '../../story/indexPages';
-import { libraryOf } from '../../story/library';
+import type { Libraries } from '../../story/library';
 import type { IndexEntry } from '../../story/types';
 import { foldGalleries, type TreeNode } from './buildTree';
 
@@ -20,7 +20,7 @@ export interface ComponentRow {
 
 /** Every component in the index as one flat, alphabetical list. Components
  *  sharing a name are kept apart by their library, then by their full title. */
-export function buildComponents(index: readonly IndexEntry[]): ComponentRow[] {
+export function buildComponents(index: readonly IndexEntry[], libraries: Libraries): ComponentRow[] {
   const byTitle = new Map<string, ComponentRow>();
   const pages = new Map(indexEntries(index).map((page) => [page.title, page]));
   for (const entry of index) {
@@ -30,7 +30,7 @@ export function buildComponents(index: readonly IndexEntry[]): ComponentRow[] {
       row = {
         path: entry.title,
         label: segments[segments.length - 1],
-        library: libraryOf(entry),
+        library: libraries.of(entry),
         index: pages.get(entry.title),
         entries: [],
       };
@@ -137,6 +137,6 @@ export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
 }
 
 /** Every library present in `index`, alphabetically. */
-export function librariesIn(index: readonly IndexEntry[]): string[] {
-  return [...new Set(index.map(libraryOf))].sort((a, b) => a.localeCompare(b));
+export function librariesIn(index: readonly IndexEntry[], libraries: Libraries): string[] {
+  return [...new Set(index.map(libraries.of))].sort((a, b) => a.localeCompare(b));
 }

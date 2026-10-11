@@ -42,6 +42,27 @@ describe('Workshop', () => {
     expect(container.querySelector('iframe')).toBeNull();
   });
 
+  it("labels a story's package from the shell config's libraries, and by its title with none", async () => {
+    const file = '/repo/packages/ui/src/X.stories.tsx';
+    const index = [{ ...a, file }];
+    const labels = async () => {
+      const packages = await screen.findByRole('group', { name: 'Packages' });
+      return Array.from(packages.querySelectorAll('.fg-tree__tag'), (tag) => tag.textContent);
+    };
+    const bare = render(<Workshop index={index} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    expect(await labels()).toEqual(['X']);
+    bare.unmount();
+    render(
+      <Workshop
+        index={index}
+        frameUrl="/frame.html"
+        storage={createMemoryAdapter()}
+        config={{ libraries: [{ path: '/packages/ui/', label: 'kit' }] }}
+      />,
+    );
+    expect(await labels()).toEqual(['kit']);
+  });
+
   it('opens the story the hash names', async () => {
     location.hash = '#/x--b';
     const { container } = render(<Workshop index={[a, b]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);

@@ -2062,13 +2062,6 @@ only story runner in the repo.
   result with a browser test like `useNearViewport.browser.test.tsx`, with the cell inside an
   `overflow: auto` box.
 
-- **(P3) forge: `@weasel-js/forge` names a story's library from this repo's directory layout.**
-  `libraryOf` (`packages/forge/src/story/library.ts`) maps `/packages/ui/`, `/packages/labkit/`,
-  `/apps/draw/`, and so on to badge labels, so another project with a `packages/ui/` gets weasel's
-  `ui` label and everything else falls back to the title's first segment. The tree's package filter
-  and the index page header both read it. The table is data about this repo and belongs in
-  `ShellConfig`, supplied by `apps/forge`, with the title-segment rule as the default.
-
 - **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
   three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any
   non-CSS file even when `fullReload` is off. The page's own stamp in `~/src/wake/src/client.ts` is

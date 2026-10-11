@@ -20,7 +20,14 @@ const entry: IndexEntry = {
 };
 
 function mount() {
-  return render(<Workshop index={[entry]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+  return render(
+    <Workshop
+      index={[entry]}
+      frameUrl="/frame.html"
+      storage={createMemoryAdapter()}
+      config={{ libraries: [{ path: '/packages/ui/', label: 'ui' }] }}
+    />,
+  );
 }
 
 const openInfo = async () => {

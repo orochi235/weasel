@@ -3,6 +3,7 @@ import { createMemoryAdapter, Lab, type LabContribution, type StorageAdapter } f
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { indexEntries, indexId } from '../../story/indexPages';
+import { LibrariesContext, librariesFrom } from '../../story/library';
 import type { IndexEntry } from '../../story/types';
 import { installResizeObserver } from '../labHarness';
 import { useStoryRegistry } from '../useStoryRegistry';
@@ -447,7 +448,7 @@ describe('StoryTree', () => {
     expect(item(treeEl, 'Slider')).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('tones each known package’s badge, and leaves an unknown one on the muted status', async () => {
+  it('tones the badge of a library the project gave a tone, and leaves any other on the muted status', async () => {
     const uiEntry = { ...entry('ui/Badge', 'Default'), file: '/repo/packages/ui/src/Badge.stories.tsx' };
     const tagged = [uiEntry, slider];
     const contribution: LabContribution[] = [
@@ -466,7 +467,12 @@ describe('StoryTree', () => {
         />
       );
     }
-    render(<Tagged />);
+    const libraries = librariesFrom([{ path: '/packages/ui/', label: 'ui', tone: 'var(--wzl-swatch-amber)' }]);
+    render(
+      <LibrariesContext.Provider value={libraries}>
+        <Tagged />
+      </LibrariesContext.Provider>,
+    );
     const packages = await screen.findByRole('group', { name: 'Packages' });
     const tags = Array.from(packages.querySelectorAll<HTMLElement>('.fg-tree__tag'));
     const tag = (label: string) => tags.find((t) => t.textContent === label) as HTMLElement;

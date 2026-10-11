@@ -1,24 +1,13 @@
 // The component's own entry, not the barrel: the barrel would bring every weasel-ui component into each frame.
 import { Badge } from '@weasel-js/ui/components/Badge';
+import { useContext } from 'react';
+import { LibrariesContext } from '../../story/library';
 
-/** `swatch` mixed toward the foreground, further in light mode: a bright swatch needs more of the dark foreground to
- *  hold 4.5:1 as small text on its own tint, and a dark swatch less of the light one. */
-const tone = (swatch: string, light: number, dark: number): string =>
-  `light-dark(color-mix(in oklab, var(--wzl-swatch-${swatch}), var(--wzl-fg) ${light}%), ` +
-  `color-mix(in oklab, var(--wzl-swatch-${swatch}), var(--wzl-fg) ${dark}%))`;
-
-/** Each package's peer tone. */
-const LIBRARY_TONES: Readonly<Record<string, string>> = {
-  ui: tone('amber', 55, 40),
-  labkit: tone('teal', 55, 45),
-  forge: tone('blue', 55, 35),
-  draw: tone('rose', 55, 35),
-};
-
-/** A component's package, as a badge toned per package. */
+/** A component's library, as a badge in the tone the project gave that library. */
 export function LibraryBadge({ library, className }: { library: string; className?: string }) {
+  const tone = useContext(LibrariesContext).toneOf(library);
   return (
-    <Badge status="muted" tone={LIBRARY_TONES[library]} variant="subtle" size="sm" {...(className ? { className } : {})}>
+    <Badge status="muted" {...(tone === undefined ? {} : { tone })} variant="subtle" size="sm" {...(className ? { className } : {})}>
       {library}
     </Badge>
   );

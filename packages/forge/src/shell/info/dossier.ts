@@ -1,7 +1,7 @@
 import type { Instrument } from '@weasel-js/labkit';
 import { type ConfigNode, type ConfigShape, isConfigBranch, valueAtPath } from '@weasel-js/labkit/config';
 import type { IndexEntry } from '../../story/types';
-import { libraryOf } from '../../story/library';
+import { type Libraries, TITLE_LIBRARIES } from '../../story/library';
 
 /** One prop of the story, as the dossier prints it. */
 export interface DossierArg {
@@ -60,11 +60,12 @@ function leaves(shape: ConfigShape, prefix = ''): { path: string; node: ConfigNo
  */
 export function storyDossier(input: {
   entry: IndexEntry;
+  libraries?: Libraries;
   instrument?: Instrument<unknown, unknown> | undefined;
   config?: unknown;
   ready?: boolean;
 }): Dossier {
-  const { entry, instrument, config, ready = true } = input;
+  const { entry, libraries = TITLE_LIBRARIES, instrument, config, ready = true } = input;
   const schema = ready ? instrument?.config : undefined;
   const args = schema
     ? leaves(schema.nodes).map(({ path, node }): DossierArg => {
@@ -87,7 +88,7 @@ export function storyDossier(input: {
     name: entry.name,
     exportName: entry.exportName,
     file: entry.file,
-    library: libraryOf(entry),
+    library: libraries.of(entry),
     ...(entry.componentName === undefined ? {} : { componentName: entry.componentName }),
     ...(entry.description === undefined ? {} : { description: entry.description }),
     ...(entry.componentDescription === undefined

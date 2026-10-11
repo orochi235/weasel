@@ -5,7 +5,7 @@ import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
 import { stableStringify } from '../protocol/messages';
 import { indexId, isIndexId } from '../story/indexPages';
-import { libraryOf } from '../story/library';
+import { type Libraries, TITLE_LIBRARIES } from '../story/library';
 import { isGallery } from '../story/tags';
 import { indexRenderOf, loadStories } from '../story/load';
 import type { IndexEntry, LoadedStory } from '../story/types';
@@ -36,6 +36,8 @@ export interface StoryRegistryOptions {
   importers?: FrameImporters;
   /** The frame config, applied to each story host in the document. */
   setup?: FrameSetup;
+  /** Names the library an index page's component ships in. Default: its title's first segment. */
+  libraries?: Libraries;
   load?: (mod: Record<string, unknown>, title: string, parameters?: Record<string, unknown>) => LoadedStory[];
 }
 
@@ -72,7 +74,7 @@ const toError = (error: unknown): Error => (error instanceof Error ? error : new
  * reach the stories through `StoryGlobalsContext`, not through here.
  */
 export function useStoryRegistry(index: readonly IndexEntry[], options: StoryRegistryOptions): StoryRegistry {
-  const { frameUrl, globals = NO_GLOBALS, importers, setup = NO_SETUP, load = loadStories } = options;
+  const { frameUrl, globals = NO_GLOBALS, importers, setup = NO_SETUP, libraries = TITLE_LIBRARIES, load = loadStories } = options;
   const [readies, setReadies] = useState<ReadonlyMap<string, Ready>>(() => new Map());
   const [loaded, setLoaded] = useState<ReadonlyMap<string, Loaded>>(() => new Map());
   const [faults, setFaults] = useState<ReadonlyMap<string, Error>>(() => new Map());
@@ -104,7 +106,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
 
   // One import per file, shared by every entry it holds; a reload drops the file's promise and asks again.
   const imports = useRef(new Map<string, Promise<Record<string, unknown>>>());
-  const live = useLatest({ index, importers, setup, load });
+  const live = useLatest({ index, importers, setup, load, libraries });
   // Files asked for before the importers held them: a story file added while the workshop runs lists first.
   const missing = useRef(new Set<string>());
 
@@ -153,7 +155,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
               kind: 'index',
               bundle: {
                 title: entry.title,
-                library: libraryOf(entry),
+                library: live.current.libraries.of(entry),
                 ...(entry.componentDescription === undefined ? {} : { description: entry.componentDescription }),
                 ...(entry.tags === undefined ? {} : { tags: entry.tags }),
                 galleries: entries.filter(isGallery).map((e) => e.id),

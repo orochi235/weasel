@@ -52,6 +52,10 @@ The vite plugin takes two optional config modules:
   renderers, and global declarations. Only the workshop page imports it.
   `title` names the workshop in its header and as the document title
   (default `weaselforge`), and `cssVars: false` leaves out the CSS Vars panel.
+  `libraries` names the project's libraries, each a stretch of file path, a
+  label and an optional badge tone: `{ path: '/packages/ui/', label: 'ui' }`.
+  The tree's package filter, index pages, and Get Info show the label; a
+  story under none of them takes its title's first segment.
 
 ```ts
 forge({ stories: ['src/**/*.stories.tsx'], frameConfig: 'forge.frame.tsx', shellConfig: 'forge.shell.tsx' });
