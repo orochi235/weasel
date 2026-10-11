@@ -98,10 +98,13 @@ describe('<Stage>', () => {
       );
     }
     const { container } = await renderSettled(<Host />);
+    const original = new WheelEvent('wheel', { deltaY: -200, cancelable: true });
     await act(async () => {
-      slot.current?.(new WheelEvent('wheel', { deltaY: -200, cancelable: true }));
+      slot.current?.(original);
     });
     expect(zoomOf(content(container))).toBeGreaterThan(1);
+    // The camera took it, so the page must not scroll or pinch-zoom as well.
+    expect(original.defaultPrevented).toBe(true);
   });
 
   it('listens for the wheel actively, so it can keep the page from scrolling', async () => {

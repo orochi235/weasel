@@ -277,7 +277,9 @@ function CameraDispatch({
   useEffect(() => {
     if (!wheelSlot) return;
     const forward = (e: WheelEvent): void => {
-      hostRef.current?.dispatchEvent(new WheelEvent('wheel', e));
+      // The dispatcher cancels the copy it takes; the page acts on the original.
+      const taken = hostRef.current?.dispatchEvent(new WheelEvent('wheel', e)) === false;
+      if (taken) e.preventDefault();
     };
     const claim = (): void => {
       if (registry.isActive()) wheelSlot.current = forward;
