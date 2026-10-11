@@ -40,6 +40,7 @@ export * from './components/Powerline';
 export * from './components/GestureRoute';
 export * from './components/FallthroughDiagram';
 export * from './components/Prefs';
+export * from './components/PrefConditionEditor';
 export * from './components/PrefSchemaEditor';
 export * from './components/Properties';
 // The factories' bare names (`rule`, `tab`, …) are too generic for the root barrel; they come

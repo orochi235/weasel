@@ -1,0 +1,3 @@
+/* The width of a properties column, where the editor mostly sits. */
+.frame { display: grid; gap: var(--wzl-space-3); inline-size: 26rem; max-inline-size: 100%; }
+.written { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--wzl-font-mono); font-size: var(--wzl-font-size-xs); color: var(--wzl-fg-muted); }

@@ -1,0 +1,51 @@
+.editor {
+  display: grid;
+  gap: var(--wzl-space-2);
+  min-inline-size: 0;
+  justify-items: stretch;
+}
+
+/* The controls, then the button that removes the row; what is wrong with it runs under both. */
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--wzl-space-1) var(--wzl-space-2);
+  align-items: start;
+}
+
+/* Wraps where the row is narrow: the pref on a line of its own, the comparison and its value under it. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  min-inline-size: 0;
+}
+
+.pref { flex: 2 1 12rem; min-inline-size: 0; }
+.comparison { flex: 1 1 7rem; min-inline-size: 0; }
+.value { flex: 1 1 6rem; min-inline-size: 0; }
+
+.choices {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-1) var(--wzl-space-3);
+}
+
+/* A path is what the code spells, beside the name a person reads. */
+.path {
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-xs);
+  color: var(--wzl-fg-muted);
+}
+
+.text { overflow-wrap: anywhere; align-self: center; }
+
+.problem {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-danger);
+  overflow-wrap: anywhere;
+}
