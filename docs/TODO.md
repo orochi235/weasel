@@ -1698,6 +1698,13 @@ one dead `const` and four stale disable directives.
 
 ## Release-gate & build hygiene
 
+- **(P2) `PrefSchemaEditor.actions.browser.test.tsx` failed once on a loaded node.**
+  "an action dragged onto a group in the tree lands there as a pref that fires it" read
+  `tools.editUndo` as `undefined` in the full suite on msb-uai on 2026-10-11 (1 failure in 18,685
+  tests; the test took 2.5 s). The same file passed four runs out of four on one machine at the
+  same commit, `5d6a06a4a`. Its `drag` helper waits one animation frame after `pointerup` before
+  reading the schema; nothing has checked whether that wait is what lost the drop.
+
 - **(P2) HUD vs DOM text: what the idle rerun left open.**
   `tests/perf/hud-vs-dom.spec.ts` now prices the HUD against plain DOM, a
   React overlay, and a DOM layer moved as one element, on an idle node
