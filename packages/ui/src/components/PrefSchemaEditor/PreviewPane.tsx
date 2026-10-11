@@ -35,16 +35,18 @@ export interface PreviewPaneProps {
   onStagePointerDown?(e: PointerEvent): void;
   /** What follows the pointer while something from the form is dragged. */
   ghost?: PreviewGhost | null;
+  /** The root files nothing onto pages, as a layout's does not: what sits directly under it is drawn, not left out as unplaced. */
+  pageless?: boolean;
 }
 
 /**
  * The schema drawn the way its reader draws it: a preferences form for a group, a properties panel for a section,
  * and a toolbar for a group drawn as a bar.
  */
-export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: PreviewPaneProps) {
+export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless }: PreviewPaneProps) {
   if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} />;
   if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
-  return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
+  return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} pageless={pageless} />;
 }
 
 /** A root drawn as a bar: the toolbar itself on a stage, run either way. */
@@ -78,6 +80,7 @@ interface GroupPreviewProps {
   drop?: PrefDrop | null;
   onStagePointerDown?(e: PointerEvent): void;
   ghost?: PreviewGhost | null;
+  pageless?: boolean;
 }
 
 /** What follows the pointer while the form draws the dragged node nowhere. */
@@ -88,12 +91,12 @@ function PreviewDragGhost({ ghost, stageRef, drop, renderers }: Pick<GroupPrevie
   );
 }
 
-function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: GroupPreviewProps) {
+function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost, pageless = false }: GroupPreviewProps) {
 
   const [showHidden, setShowHidden] = useState(true);
   const size = useEditorSize('previewWidth');
   // What sits on no page is listed as unplaced, and the form would file it under a page of its own.
-  const placed = useMemo(() => placedOnly(schema), [schema]);
+  const placed = useMemo(() => (pageless ? schema : placedOnly(schema)), [schema, pageless]);
   // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
   const marked = useMemo(() => selected.map((p) => keysOf(p).join('.')), [selected]);
   return (

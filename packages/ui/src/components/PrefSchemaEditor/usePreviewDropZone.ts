@@ -21,10 +21,14 @@ export interface PreviewDropZone {
 }
 
 /** The live preview as a place to drop: the form says what is under the pointer, the schema whether it fits there. */
-export function usePreviewDropZone({ schema, selected, maxDepth, onOpen }: {
+export function usePreviewDropZone({ schema, selected, maxDepth, pageless = false, locked = false, onOpen }: {
   schema(): SchemaRoot;
   selected(): readonly string[];
   maxDepth?: number;
+  /** `holdsPages`'s: the root's own rows are rows of it. */
+  pageless?: boolean;
+  /** Nothing lands: the schema takes no edit. */
+  locked?: boolean;
   /** A drag rested on a rail entry: select these, the group whose page it is, or nothing for the root's. */
   onOpen(paths: readonly string[]): void;
 }): PreviewDropZone {
@@ -42,7 +46,7 @@ export function usePreviewDropZone({ schema, selected, maxDepth, onOpen }: {
   const outside: DropOutside = {
     over(nodes, paths, point) {
       const mark = markAt(nodes, point);
-      const landing = mark && previewTarget(schema(), mark, nodes, paths, maxDepth) !== null ? previewDrop(mark, nodes, paths) : null;
+      const landing = !locked && mark && previewTarget(schema(), mark, nodes, paths, maxDepth, pageless) !== null ? previewDrop(mark, nodes, paths) : null;
       const next = landing ?? heldDrop(schema(), nodes, paths);
       setDrop((cur) => (sameDrop(cur, next) ? cur : next));
       // Held on the middle of a rail entry, the drag opens that page, so a row on it can be aimed at.
@@ -64,7 +68,7 @@ export function usePreviewDropZone({ schema, selected, maxDepth, onOpen }: {
       return landing !== null;
     },
     target: (nodes, paths, point) => {
-      const target = previewTarget(schema(), markAt(nodes, point), nodes, paths, maxDepth);
+      const target = locked ? null : previewTarget(schema(), markAt(nodes, point), nodes, paths, maxDepth, pageless);
       if (target) {
         dropping.current = true;
         queueMicrotask(() => { dropping.current = false; });

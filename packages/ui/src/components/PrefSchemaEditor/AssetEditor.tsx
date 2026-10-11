@@ -1,30 +1,31 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import { historyKey, useLatest } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { CloseButton } from '../CloseButton';
 import { ResizeHandle } from '../ResizeHandle';
+import { AssetList } from './AssetList';
 import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
 import { useEditorActions } from './editorActions';
 import { EditorBar } from './EditorBar';
 import { EditorPrefsButton, EditorPrefsProvider, useEditorPrefs, useEditorSize } from './editorPrefs';
 import type { DocumentCodec } from './document';
-import { openAfterStep, openFolds, saveFolds } from './folds';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import type { PrefSchemaEditorProps } from './PrefSchemaEditor';
 import { NO_TYPES } from './types';
-import { aliasNodes, branchPaths, copyNodes, joinPath, outermost, parentPath, rebasePaths, type SchemaRoot, type SchemaTarget } from './schemaEdit';
-import { changedAttributes, changedPaths, diffSchemas } from './schemaExport';
+import { aliasNodes, copyNodes, joinPath, outermost, parentPath, rebasePaths, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { changedAttributes, changedPaths } from './schemaExport';
 import { drawsNode } from './previewDrop';
 import { usePreviewDrag } from './usePreviewDrag';
 import { usePreviewDropZone } from './usePreviewDropZone';
 import { useRowMarks } from './useRowMarks';
 import { StructurePane } from './StructurePane';
 import { useDocument } from './useDocument';
-import { useEditorSelection } from './useEditorSelection';
-import { assetOf, type Workspace } from './workspace';
+import { useAssetChanges } from './useAssetChanges';
+import { useAssetView } from './useAssetView';
+import { assetOf, sameRoots, type Workspace } from './workspace';
 import { editAsset, moveInAsset, NO_MOVES, removeInAsset, renameInAsset } from './workspaceEdit';
 import s from './PrefSchemaEditor.module.css';
 
@@ -40,8 +41,6 @@ const DRAFT_NOTICE = {
 /** Where Delete and Backspace belong to the control and not to the selection. */
 const TEXT_ENTRY = 'input, textarea, select, [contenteditable]';
 
-const rootIn = (workspace: Workspace, id: string): SchemaRoot | undefined => assetOf(workspace, id)?.root;
-
 /** Props for {@link AssetEditor}: {@link PrefSchemaEditorProps} over a workspace in place of one schema. */
 export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>, 'schema' | 'onChange' | 'original' | 'onSubmit'> {
   workspace: Workspace;
@@ -49,45 +48,37 @@ export interface AssetEditorProps extends Omit<PrefSchemaEditorProps<PrefGroup>,
   /** Baseline for the change list. Default: the first `workspace` seen. */
   original?: Workspace;
   codec: DocumentCodec<Workspace>;
-  /** Whether two workspaces are one, for a host that makes its workspace anew from something else it holds. Default: `Object.is`. */
+  /** Whether two workspaces are one: the editor's own from a host's, and the baseline from an edit. Default: they hold the same
+   *  roots under the same ids, which is all a draft keeps, so a host may make its workspace anew each time it draws. */
   same?: (a: Workspace, b: Workspace) => boolean;
+  /** List the assets in a pane at the editor's far edge, to pick the one shown. Left out, the editor shows the first. */
+  list?: boolean;
   onSubmit?: SubmitChanges;
 }
 
 /** The editor {@link PrefSchemaEditorProps} describes, over a workspace: it shows and edits one asset's root, and its history and draft are the workspace's. */
 export function AssetEditor(
-  { workspace, onChange, original, codec, same, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
+  { workspace, onChange, original, codec, same = sameRoots, list = false, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: AssetEditorProps,
 ) {
   const [first] = useState(workspace);
   const base = original ?? first;
-  const [assetId] = useState(workspace.assets[0]!.id);
-  const schema = rootIn(workspace, assetId)!;
   const [opened] = useState(() => (draftKey === undefined ? null : codec.openDraft(draftKey, base, draftStorage)));
   const [notice, setNotice] = useState<string | null>(() => (opened ? DRAFT_NOTICE[opened.met] : null));
-  // Every row starts open but the ones the reader folded last time.
-  const [expanded, setExpanded] = useState(() => {
-    const folded = new Set(draftKey === undefined ? [] : openFolds(draftKey));
-    return new Set(branchPaths((opened && rootIn(opened.value, assetId)) ?? schema).filter((id) => !folded.has(id)));
-  });
-  useEffect(() => {
-    if (draftKey !== undefined) saveFolds(draftKey, branchPaths(schema).filter((id) => !expanded.has(id)));
-  }, [draftKey, schema, expanded]);
-  // The rows open under each schema shown, for a step back to one to open what it brings back.
-  const openAt = useRef(new WeakMap<SchemaRoot, ReadonlySet<string>>());
-  useEffect(() => { openAt.current.set(schema, expanded); }, [schema, expanded]);
-  const selection = useEditorSelection(schema, setExpanded);
+  const view = useAssetView(workspace, opened?.value, draftKey);
+  const { asset, expanded, setExpanded, selection } = view;
+  const assetId = asset.id;
+  const schema = asset.root;
+  const readOnly = asset.readOnly === true;
+  const pageless = asset.kind === 'layout';
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
 
   const latest = useLatest({ workspace, schema, paths: selection.paths });
   const { stage, drop, outside, dropping, beforeOpening } = usePreviewDropZone({
-    schema: () => latest.current.schema, selected: () => latest.current.paths, maxDepth, onOpen: (paths) => select(paths),
+    schema: () => latest.current.schema, selected: () => latest.current.paths, maxDepth, pageless, locked: readOnly, onOpen: (paths) => select(paths),
   });
   const doc = useDocument<Workspace>({
     value: workspace, onChange, base, same, codec, opened, draftKey, draftStorage, taken,
-    selection: {
-      get: () => [...(beforeOpening.current ?? latest.current.paths)],
-      set: (ids) => selection.set(ids),
-    },
+    selection: { get: () => view.recorded(beforeOpening.current ?? latest.current.paths), set: view.restore },
   });
   const submit: SubmitChanges | undefined = onSubmit && ((changes, literal) => doc.send(() => onSubmit(changes, literal)));
   // A key names its asset, so the same path edited in two of them close together is two steps.
@@ -101,14 +92,13 @@ export function AssetEditor(
     return true;
   };
   const step = (to: 'undo' | 'redo') => {
-    const before = latest.current.schema;
+    const before = doc.current();
     doc.step(to);
-    const now = rootIn(doc.current(), assetId);
-    setExpanded((open) => openAfterStep(open, before, now && openAt.current.get(now)));
+    view.stepped(before, doc.current());
   };
 
-  const baseRoot = rootIn(base, assetId) ?? schema;
-  const changes = useMemo(() => diffSchemas(baseRoot, schema), [baseRoot, schema]);
+  const changedAssets = useAssetChanges(base, workspace, same);
+  const changes = changedAssets.of(assetId);
   const changed = useMemo(() => changedPaths(changes), [changes]);
   const changedAttrs = useMemo(() => changedAttributes(changes, selection.lead), [changes, selection.lead]);
   const actionList = useEditorActions(actions);
@@ -201,7 +191,7 @@ export function AssetEditor(
   return (
     <EditorPrefsProvider value={editorPrefs}>
     {/* Capture: React Aria's fields and tree stop a keydown from bubbling past them. */}
-    <div className={[s.editor, className].filter(Boolean).join(' ')}
+    <div className={[s.editor, list && s.listed, className].filter(Boolean).join(' ')}
       style={{ '--structure-w': `${structureSize.value}px`, '--attributes-w': `${attributesSize.value}px`, '--aside-w': `${asideSize.value}px` } as CSSProperties}
       onKeyDownCapture={(e) => {
       // A key pressed in a dialog of the editor's reaches here through React's tree, and is the dialog's.
@@ -222,7 +212,7 @@ export function AssetEditor(
         draftSavedAt={doc.draftSavedAt} onDiscard={() => { doc.commit(base); select([]); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
       <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} custom={custom} renderers={renderers} types={types}
         expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} actions={actionList ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
-        toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} />
+        toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} readOnly={readOnly} pageless={pageless} />
       <ResizeHandle className={s.structureHandle} {...structureSize} min={180} max={640} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">
@@ -237,7 +227,7 @@ export function AssetEditor(
           onChange={(next) => commit(next, attrKey)}
           added={selection.paths.length === 1 && changes.some((c) => c.op === 'add' && c.path === selection.lead)}
           changed={selection.paths.length > 1 ? undefined : changedAttrs}
-          kinds={kindList} custom={custom} types={types} renderers={renderers} actions={actionList ?? undefined} onNotice={setNotice} />
+          kinds={kindList} custom={custom} types={types} renderers={renderers} actions={actionList ?? undefined} readOnly={readOnly} onNotice={setNotice} />
       </div>
       <ResizeHandle {...attributesSize} min={220} max={720} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}
@@ -245,10 +235,16 @@ export function AssetEditor(
           // The root's own entry names no node to add to a selection.
           if (how.toggle && path !== null) { selection.toggle(path); setNotice(null); }
           else reveal(path === null ? [] : [path]);
-        }} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} />
+        }} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} pageless={pageless} />
       <ExportPanel schema={schema} types={types} changes={changes} onSubmit={submit} />
-      <ResizeHandle className={s.asideHandle} invert {...asideSize} min={120} max={640} ariaLabel="Resize sidebar" />
-      <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar" />
+      {list && (
+        <>
+          <ResizeHandle className={s.asideHandle} invert {...asideSize} min={120} max={640} ariaLabel="Resize sidebar" />
+          <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar">
+            <AssetList assets={workspace.assets} selected={assetId} changed={changedAssets.ids} onSelect={(id) => { view.show(id); setNotice(null); }} />
+          </aside>
+        </>
+      )}
     </div>
     </EditorPrefsProvider>
   );

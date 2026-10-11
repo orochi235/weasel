@@ -7,9 +7,10 @@ import { childrenOf, fitsUnder, isUnder, keyOf, keysOf, nodeAt, parentPath, path
  * Where a drop on the live preview lands in the schema: `mark` is what the form says is under the pointer, `nodes`
  * are what is being dropped, and `paths` are where those already sit, none for a node not in the schema yet. Null
  * when the preview has nothing there to drop on, or the schema would not hold the nodes there, by kind or by `maxDepth`.
+ * `pageless` is `holdsPages`'s.
  */
 export function previewTarget(
-  schema: SchemaRoot, mark: PrefDropMark | null, nodes: readonly SchemaNode[], paths: readonly string[], maxDepth?: number,
+  schema: SchemaRoot, mark: PrefDropMark | null, nodes: readonly SchemaNode[], paths: readonly string[], maxDepth?: number, pageless = false,
 ): SchemaTarget | null {
   // A section root previews as a properties panel, which has no drop marks.
   if (mark === null || isPrefSection(schema)) return null;
@@ -25,7 +26,7 @@ export function previewTarget(
   if (!host || !kids) return null;
   if (!nodes.every((n) => fitsUnder(host, n)) || !withinDepth(dest, nodes, maxDepth)) return null;
   // The root takes pages alone: anything else dropped there would be on none.
-  if (dest === null && holdsPages(schema) && nodes.some(isLoose)) return null;
+  if (dest === null && holdsPages(schema, pageless) && nodes.some(isLoose)) return null;
   if (dest !== null && paths.some((p) => dest === p || isUnder(dest, p))) return null;
   const keys = Object.keys(kids);
   return { parentPath: dest, index: into ? keys.length : keys.indexOf(keyOf(at!)) + (mark.where === 'after' ? 1 : 0) };
@@ -76,10 +77,10 @@ export function sameDrop(a: PrefDrop | null, b: PrefDrop | null): boolean {
 }
 
 /** Whether a node not in the schema yet may be dropped under tree row `parentId`. */
-export function treeTakesNew(schema: SchemaRoot, node: SchemaNode, parentId: string | null, maxDepth?: number): boolean {
+export function treeTakesNew(schema: SchemaRoot, node: SchemaNode, parentId: string | null, maxDepth?: number, pageless = false): boolean {
   if (!withinDepth(parentId, [node], maxDepth)) return false;
   // Under a group root the top level holds the pages alone.
-  if (holdsPages(schema) && parentId === null) return !isLoose(node);
+  if (holdsPages(schema, pageless) && parentId === null) return !isLoose(node);
   const host = nodeAt(schema, parentId);
   return !!host && !isPrefLeaf(host) && !!childrenOf(host) && fitsUnder(host, node);
 }

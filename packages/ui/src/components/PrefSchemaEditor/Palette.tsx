@@ -72,11 +72,13 @@ export interface PaletteDrag {
  * Tool buttons to drag into the tree or the live preview, each making one new node where it is dropped. The drag is
  * the palette's own, and what it is over is the owner's to work out.
  */
-export function Palette({ sections = false, ghost = true, onDrag, onDrop, children }: {
+export function Palette({ sections = false, ghost = true, disabled = false, onDrag, onDrop, children }: {
   /** The schema's root is a section, so what it makes are sections. */
   sections?: boolean;
   /** Draw the dragged node beside the pointer. Off while something else draws it where it would land. */
   ghost?: boolean;
+  /** Nothing can be added: no tool is picked up. */
+  disabled?: boolean;
   /** The drag moved, or ended (`null`) without a drop. */
   onDrag(drag: PaletteDrag | null): void;
   onDrop(drag: PaletteDrag): void;
@@ -92,7 +94,7 @@ export function Palette({ sections = false, ghost = true, onDrag, onDrop, childr
     onDrag(next);
   };
   const press = (item: PaletteItem, e: PointerEvent) => {
-    if (e.button !== 0 || session.current || !root.current) return;
+    if (disabled || e.button !== 0 || session.current || !root.current) return;
     const node = item.make();
     const at = (ev: { clientX: number; clientY: number }): PaletteDrag => ({ item, node, x: ev.clientX, y: ev.clientY });
     session.current = startThresholdDrag(e, {
@@ -119,7 +121,7 @@ export function Palette({ sections = false, ghost = true, onDrag, onDrop, childr
         {(sections ? SECTION_PALETTE : PALETTE).map((item) => (
           // The drag rides on a wrapper: a ToolButton takes a press and nothing else.
           <span key={item.id} className={s.paletteTool} onPointerDown={(e) => press(item, e)}>
-            <ToolButton icon={<Icon name={item.icon} />} label={item.label} title={`Drag to add a ${item.label.toLowerCase()}`} onClick={() => {}} />
+            <ToolButton icon={<Icon name={item.icon} />} label={item.label} title={`Drag to add a ${item.label.toLowerCase()}`} disabled={disabled} onClick={() => {}} />
           </span>
         ))}
       </ToolGroup>

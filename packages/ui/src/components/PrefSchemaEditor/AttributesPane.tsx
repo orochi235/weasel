@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ReactElement } from 'react';
 import { isPrefLeaf, type PrefCondition, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
@@ -44,6 +44,11 @@ const AUTO_VALUE_KIND = 'schema-auto-value';
 const drawsMixed = (kind: string): boolean =>
   kind !== CONDITION_KIND && (kind in ATTR_RENDERERS ? MIXED_ATTR_KINDS.has(kind) : !WHOLE.has(kind));
 
+/** `children` with every control in it disabled while `locked`: the form has no read-only mode of its own. */
+function Lockable({ locked, children }: { locked: boolean; children: ReactElement }) {
+  return locked ? <fieldset className={s.lockedForm} disabled>{children}</fieldset> : children;
+}
+
 export interface AttributesPaneProps {
   schema: SchemaRoot;
   onChange(next: SchemaRoot): void;
@@ -63,10 +68,12 @@ export interface AttributesPaneProps {
   actions?: readonly EditorAction[];
   /** Renderers the consumer passes for its own kinds — a custom kind's `default` may need one. */
   renderers?: Record<string, PrefRenderer>;
+  /** The schema takes no edit: the form shows what the nodes hold, with every control disabled. */
+  readOnly?: boolean;
   onNotice(text: string | null): void;
 }
 
-export function AttributesPane({ schema, onChange, paths, onRename, added = false, changed = NONE, kinds, custom, types, actions, renderers, onNotice }: AttributesPaneProps) {
+export function AttributesPane({ schema, onChange, paths, onRename, added = false, changed = NONE, kinds, custom, types, actions, renderers, readOnly: locked = false, onNotice }: AttributesPaneProps) {
   const targets: ReadonlyArray<string | null> = useMemo(() => (paths.length === 0 ? [null] : paths), [paths]);
   const several = targets.length > 1;
   // The key, a key that follows the name, and a list's entry belong to one node.
@@ -226,6 +233,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
   return (
     <section className={s.pane} aria-label="Attributes">
       <PaneHeader title={several ? `${targets.length} selected` : 'Attributes'} />
+      <Lockable locked={locked}>
       <PrefsForm
         schema={{ name: 'Attributes', children }}
         layout="list"
@@ -246,6 +254,7 @@ export function AttributesPane({ schema, onChange, paths, onRename, added = fals
           writeAll(attr, normalizeAttr(attr, value, own[attr]));
         }}
       />
+      </Lockable>
       {readOnly.length + agg.apart.length > 0 && (
         <DetailList>
           {readOnly.map(([k, v]) => (

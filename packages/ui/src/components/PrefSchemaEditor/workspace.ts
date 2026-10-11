@@ -30,3 +30,8 @@ export interface Workspace {
 export function assetOf(workspace: Workspace, id: string): Asset | undefined {
   return workspace.assets.find((a) => a.id === id);
 }
+
+/** Whether two workspaces hold the same roots under the same ids, which is all a draft keeps of one. */
+export function sameRoots(a: Workspace, b: Workspace): boolean {
+  return a === b || (a.assets.length === b.assets.length && a.assets.every((asset, i) => asset.id === b.assets[i]!.id && asset.root === b.assets[i]!.root));
+}
