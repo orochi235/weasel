@@ -26,6 +26,21 @@ describe('generateTokens', () => {
     expect(result.problems.every((p) => p.includes('contrast-unmet'))).toBe(true);
   });
 
+  it('refuses an axis with no values, naming the axis', () => {
+    const result = generateTokens([{ ...weasel, axes: { ...weasel.axes, density: { default: 'comfortable', values: {} } } }]);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.problems.join('\n')).toMatch(/axes\.density.*no values/);
+  });
+
+  it('refuses an axis whose default is not one of its values, naming both', () => {
+    const mode = { default: 'dusk', values: weasel.axes!.mode.values };
+    const result = generateTokens([{ ...weasel, axes: { ...weasel.axes, mode } }]);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.problems.join('\n')).toMatch(/axes\.mode.*dusk/);
+  });
+
   it('throws unless exactly one definition extends nothing', () => {
     expect(() => generateTokens([weasel, { ...weasel, name: 'twin' }])).toThrow(/exactly one/);
   });

@@ -22,11 +22,13 @@ export function generateTokens(definitions: readonly ThemeDefinition[]): Generat
   if (roots.length !== 1) throw new Error(`themes/ needs exactly one theme that extends nothing; found ${roots.length}`);
   const ordered = [roots[0], ...definitions.filter((d) => d.extends)];
 
-  const problems = ordered.flatMap((def) =>
-    enumerateSelections(mergeChain(def, lookup).axes ?? {}).flatMap((sel) =>
+  const problems = ordered.flatMap((def) => {
+    const selections = enumerateSelections(mergeChain(def, lookup).axes ?? {});
+    // An axis with no values leaves nothing to enumerate; one derive still reports the axis.
+    return (selections.length > 0 ? selections : [{}]).flatMap((sel) =>
       derive(def, sel, lookup).issues.map((issue) => `${def.name} ${JSON.stringify(sel)}: ${JSON.stringify(issue)}`),
-    ),
-  );
+    );
+  });
   if (problems.length > 0) return { ok: false, problems };
 
   const themes = ordered.map((definition) => ({

@@ -52,6 +52,16 @@ describe('theme store', () => {
     expect(readFileSync(at('themes/weasel.json'), 'utf8')).toBe(before);
   });
 
+  it('leaves the generated files alone when an axis has no values', () => {
+    const weasel = store.read('weasel')!;
+    const axes = { ...weasel.definition.axes, density: { default: 'comfortable', values: {} } };
+    const result = store.write('weasel', { ...weasel.definition, axes }, weasel.hash);
+    if (result.status !== 'saved') throw new Error(result.status);
+    expect(result.regenerated).toBe(false);
+    expect(result.problems.join('\n')).toMatch(/axes\.density/);
+    expect(existsSync(at('generated/themes.ts'))).toBe(false);
+  });
+
   it('saves a definition with issues but leaves the generated files alone', () => {
     const weasel = store.read('weasel')!;
     const probe = { ramp: 'gray', contrast: { min: 30, against: ['surface'] } };

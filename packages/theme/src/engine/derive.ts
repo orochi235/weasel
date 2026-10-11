@@ -2,6 +2,7 @@ import { fullSelection, isByAxis, pick, type Selection, type Varying } from '../
 import type { PinObject, PinValue, ThemeDefinition } from '../definition.ts';
 import type { RawToken, TokenValue } from '../dtcg/types.ts';
 import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from './color/generate.ts';
+import { axisIssues } from './axisIssues.ts';
 import { mergeChain, type Lookup } from './merge.ts';
 import { categoricalRamp, lightnessRamp } from './ramps.ts';
 import { scale } from './scales.ts';
@@ -305,6 +306,7 @@ function withoutUnsafeNames(def: ThemeDefinition, issues: Issue[]): ThemeDefinit
 export function derive(definition: ThemeDefinition, selection: Selection = {}, lookup?: Lookup): DeriveResult {
   const issues: Issue[] = [];
   const def = withoutUnsafeNames(mergeChain(definition, lookup), issues);
+  issues.push(...axisIssues(def.axes ?? {}));
   const sel = fullSelection(def.axes ?? {}, selection);
   const seeds: Record<string, number | string> = {};
   for (const [k, v] of Object.entries(def.seeds ?? {})) {
