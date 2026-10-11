@@ -3,11 +3,17 @@ import { nodeAt, parentPath, rebasePaths, type SchemaRoot } from './schemaEdit';
 
 const NONE: readonly string[] = [];
 
-/** The selection after the tree reports `ids`: what stayed keeps its order, and what is new goes last. */
+/**
+ * The selection after the tree reports `ids`, in the tree's order: what stayed keeps its order, and what is new
+ * goes last, ending on the row farthest from what stayed. A range taken upward is reported top to bottom, and the
+ * row it was taken to is its first.
+ */
 export function nextSelection(prev: readonly string[], ids: Iterable<string>): string[] {
-  const now = new Set(ids);
-  const kept = prev.filter((p) => now.has(p));
-  return [...kept, ...[...now].filter((p) => !kept.includes(p))];
+  const order = [...new Set(ids)];
+  const kept = prev.filter((p) => order.includes(p));
+  const fresh = order.filter((p) => !kept.includes(p));
+  const above = kept.length > 0 && fresh.length > 0 && kept.every((p) => order.indexOf(p) > order.indexOf(fresh.at(-1)!));
+  return [...kept, ...(above ? fresh.reverse() : fresh)];
 }
 
 export function toggled(prev: readonly string[], path: string): string[] {

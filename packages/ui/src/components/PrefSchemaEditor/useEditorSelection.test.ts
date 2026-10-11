@@ -16,6 +16,13 @@ describe('the editor selection', () => {
     expect(nextSelection(['b', 'a'], new Set(['a', 'b', 'a/x']))).toEqual(['b', 'a', 'a/x']);
   });
 
+  it('leads with the far end of a range, whichever way it was taken', () => {
+    // The tree reports a range top to bottom. Taken downward from `p`, its far end is the last row.
+    expect(nextSelection(['p'], new Set(['p', 'q', 'r'])).at(-1)).toBe('r');
+    // Taken upward from `r`, it is the first.
+    expect(nextSelection(['r'], new Set(['p', 'q', 'r']))).toEqual(['r', 'q', 'p']);
+  });
+
   it('keeps the order it had when a path leaves', () => {
     expect(nextSelection(['b', 'a', 'a/x'], new Set(['a/x', 'b']))).toEqual(['b', 'a/x']);
   });
