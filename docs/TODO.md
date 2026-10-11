@@ -1199,9 +1199,21 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
   selection there; a range has no clear meaning across pages, and what it should take is not decided.
 
-- **(P3) `PrefSchemaEditor`'s properties-panel preview ignores the selection.** For a group
-  schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s
-  `selected`/`onSelect`. A section schema previews through `SelectionPanel`, which has neither.
+- **(P3) `SelectionPanel`'s `selected` does not reach paired rows or sections.** `selected` and
+  `onSelect` cover single-leaf rows, object-leaf fields, and bar cells, and `PrefSchemaEditor`'s
+  section preview selects with its tree through them. A `pair` row and a section heading, tab, or
+  panel neither mark nor report, which with core's default node properties leaves Position, Size,
+  and the stroke's cap and join row dead in that preview. To decide: what a `pair` row stands for
+  (marked when any of its leaves is selected, and which leaf a press on its label reports; a mark
+  per control needs a wrapper that breaks the `.rowControls > *` sizing), and how a section is
+  named in `selected`, since its key is no part of any value path and can collide with a leaf's.
+
+- **(P3) Loose ends beside the selection mark, none checked further.** `valuePathOf` under a
+  section root returns only the last key, so an object-leaf field reads as `width` and not
+  `data.stroke.width`; no caller was checked for passing a field path. The fragment mark in
+  `Prefs.module.css` repeats the three declarations `Prefs/selection.css` now owns.
+  `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
+  react-aria tab also carries.
 
 - **(P1.5) Two of a labkit schema's common attributes can only be code.** `.showIf` takes a
   function and a number's `unit` is an object of `toDisplay`/`fromDisplay` functions, so neither
