@@ -20,6 +20,7 @@ import {
 import { createPoseOverrides } from './poseOverrides';
 import { treePreorder } from './treeOrder';
 import { createRenderOrder } from './renderOrder';
+import { createLockGuard } from './lockGuard';
 import { resized, resolveLayoutFrame, runLayoutPass } from './layoutPass';
 import type { LayoutStrategy } from '../../layout/types';
 import {
@@ -92,6 +93,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     layerIndex: new Map(),
   };
   const order = createRenderOrder(state);
+  const {
+    isLocked: isLockedInternal, refuse: refuseLocked, refuseLayer: refuseLockedLayer, reachable,
+    lifted: withLocksLifted,
+  } = createLockGuard(state);
   const invalidateOrder = order.invalidate;
 
   // The kit's own registry entries sit under the consumer's, so a snapshot
@@ -320,10 +325,6 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   /** Above zero inside `scene.untracked`, where the APIs that exist to
    *  record refuse rather than record. */
   let untrackedDepth = 0;
-  /** Above zero while the lock guard is lifted: `unlocked()`, `removeLayer`,
-   *  and every replay — undo, redo, a journal stepping, a rollback — which
-   *  restores a state that was legal when it was recorded. */
-  let lockBypass = 0;
   /** Every kit op applied since the innermost `atomically` opened, so a
    *  refused batch can revert what it already did. Null outside one. */
   let appliedLog: { kind: string; payload: unknown; reverted?: boolean }[] | null = null;
@@ -476,43 +477,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
   }
 
-  function isLockedInternal(id: NodeId): boolean {
-    if (!state.layers.some((l) => l.locked)) return false;
-    let cur = state.nodes.get(id);
-    while (cur !== undefined) {
-      if (state.layers[state.layerIndex.get(cur.layer) ?? -1]?.locked) return true;
-      cur = cur.parent === null ? undefined : state.nodes.get(cur.parent);
-    }
-    return false;
-  }
-
   function refuseUntracked(verb: string): void {
     if (untrackedDepth > 0) throw new Error(`Scene: cannot ${verb} inside untracked() — it records`);
-  }
-
-  function refuseLocked(id: NodeId, verb: string): void {
-    if (lockBypass > 0 || !isLockedInternal(id)) return;
-    throw new Error(`Scene: cannot ${verb} "${id}" — it is on a locked layer`);
-  }
-
-  function refuseLockedLayer(layer: TLayer, verb: string): void {
-    if (lockBypass > 0 || !state.layers[state.layerIndex.get(layer) ?? -1]?.locked) return;
-    throw new Error(`Scene: cannot ${verb} layer "${layer}" — it is locked`);
-  }
-
-  /** The scene's selection never holds a locked node, whoever writes it. */
-  function reachable(ids: readonly NodeId[]): readonly NodeId[] {
-    if (!state.layers.some((l) => l.locked)) return ids;
-    return ids.filter((id) => !isLockedInternal(id));
-  }
-
-  function withLocksLifted<T>(fn: () => T): T {
-    lockBypass++;
-    try {
-      return fn();
-    } finally {
-      lockBypass--;
-    }
   }
 
   /**
