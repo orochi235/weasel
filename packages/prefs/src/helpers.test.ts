@@ -118,6 +118,21 @@ describe('visiblePrefSubtree', () => {
     expect(visiblePrefSubtree(schema, false)).toBeNull();
     expect(visiblePrefSubtree(schema, true)).not.toBeNull();
   });
+
+  it('drops the hidden fields of an object leaf, and the sections they empty, keeping the leaf', () => {
+    const shown = { kind: 'number', name: 'Width', description: '', default: 1 } as const;
+    const hidden = { kind: 'number', name: 'Miter', description: '', default: 4, hidden: true } as const;
+    const stroke = {
+      kind: 'object', name: 'Stroke', description: '', default: {},
+      children: { width: shown, miter: hidden, more: { name: 'More', members: { dash: hidden } } },
+    } as const;
+    const schema: PrefGroup = { name: 'Root', children: { stroke, bare: { ...stroke, children: { miter: hidden } } } };
+    expect(visiblePrefSubtree(schema, false)).toEqual({
+      name: 'Root',
+      children: { stroke: { ...stroke, children: { width: shown } }, bare: { ...stroke, children: {} } },
+    });
+    expect(visiblePrefSubtree(schema, true)?.children.stroke).toBe(stroke);
+  });
 });
 
 describe('prefDisplayBounds', () => {

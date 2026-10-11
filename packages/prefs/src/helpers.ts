@@ -1,6 +1,6 @@
 import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 import type { PrefGroup, PrefSection } from './groups';
-import type { PrefLeaf, PrefNumber } from './schema';
+import type { PrefLeaf, PrefNumber, PrefObject } from './schema';
 
 /**
  * A number leaf's bounds in the unit it is displayed in.
@@ -79,8 +79,24 @@ export function prefValueAtPath(values: unknown, path: string): unknown {
   return cur;
 }
 
+/** An object leaf's fields without the `hidden` ones, and without the sections that leaves empty (unless `keepEmpty`). */
+function visibleFields(fields: PrefObject['children'], keepEmpty: boolean): PrefObject['children'] {
+  const out: PrefObject['children'] = {};
+  for (const [key, child] of Object.entries(fields)) {
+    if (isPrefLeaf(child)) {
+      const kept = visiblePrefSubtree(child, false, keepEmpty);
+      if (kept) out[key] = kept;
+      continue;
+    }
+    const members = visibleFields(child.members, keepEmpty);
+    if (Object.keys(members).length > 0 || keepEmpty) out[key] = { ...child, members };
+  }
+  return out;
+}
+
 /**
- * Recursively drop `hidden` leaves (unless `showHidden`), pruning groups
+ * Recursively drop `hidden` leaves (unless `showHidden`), an object leaf's
+ * hidden fields among them, pruning groups
  * that end up empty (unless `keepEmpty`). Returns null when the entire
  * subtree is pruned.
  */
@@ -89,7 +105,11 @@ export function visiblePrefSubtree<T extends PrefLeaf | PrefGroup>(
   showHidden: boolean,
   keepEmpty = false,
 ): T | null {
-  if (isPrefLeaf(node)) return node.hidden && !showHidden ? null : node;
+  if (isPrefLeaf(node)) {
+    if (node.hidden && !showHidden) return null;
+    if (showHidden || node.kind !== 'object') return node;
+    return { ...node, children: visibleFields((node as PrefObject).children, keepEmpty) };
+  }
   const group = node as PrefGroup;
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   for (const [key, child] of Object.entries(group.children)) {

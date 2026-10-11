@@ -2058,12 +2058,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk in schema order for every layout, wrapping each run of rows in `.rows`, makes them agree; it
   changes what existing rail forms look like, which is why it is a decision.
 
-- **(P3) `PrefsForm`: a field of an object leaf marked `hidden` is drawn regardless of
-  `showHidden`.** `visiblePrefSubtree` (`packages/prefs/src/helpers.ts`) walks groups only, and
-  `ObjectLeaf` draws every field. The filter belongs where the object's rows are built, which needs
-  `showHidden` to reach `ObjectLeaf` through `PrefRenderContext` or through the subtree walk pruning
-  an object's `children`. A section inside an object does not draw its `description` either:
-  `ObjectLeaf` gives it a heading and nothing under it.
+- **(P3) `PrefsForm`: a section inside an object leaf does not draw its `description`.**
+  `ObjectLeaf` (`packages/ui/src/components/Prefs/ObjectLeaf.tsx`) gives the section a heading and
+  nothing under it, where a group's description shows under its heading in the pane.
 
 - **(P2) diagram: a self-edge with no named ports draws nothing.** An edge whose `dependsOn` is `[a,
   a]` and whose ends name no `port` (what `fromData` produces for a self-loop) resolves both ends in
