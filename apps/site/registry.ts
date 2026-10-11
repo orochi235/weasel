@@ -239,6 +239,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/AnimationDemo.tsx',
   },
   {
+    id: 'pose-blend',
+    title: 'Overlapping moves',
+    category: 'Animation',
+    description: 'Two moves on one node combine. Each button calls `tweenPose` to send the block to a corner over 900 ms. The scene takes the destination at once, so one undo step covers the move, and the block on screen travels there through the scene\'s pose overrides. Press a second corner while it is still moving: the second move adds to the first, so the block curves toward the new corner without stopping. With spring ticked the buttons call `springPose`, which takes over from whatever is moving the block at the speed it had.',
+    hint: 'Press one corner, then another before the block arrives. Tick spring and do it again.',
+    load: () => import('./demos/PoseBlendDemo').then((m) => m.PoseBlendDemo),
+    path: 'apps/site/demos/PoseBlendDemo.tsx',
+  },
+  {
     id: 'vertex-color-animation',
     title: 'Vertex-color animation',
     category: 'Animation',

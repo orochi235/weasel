@@ -1,0 +1,45 @@
+import { useState } from 'react';
+import { SceneCanvas, asNodeId, springPose, tweenPose, useAnimator, useScene, useSceneAdapter } from '@weasel-js/core';
+import type { FillStyle } from '@weasel-js/core';
+
+interface Block { id: string; x: number; y: number; width: number; height: number; fill: FillStyle }
+
+const W = 400, H = 300, SIZE = 40, INSET = 30;
+const ID = asNodeId('block');
+const CORNERS = [
+  { name: 'top left', x: INSET, y: INSET },
+  { name: 'top right', x: W - INSET - SIZE, y: INSET },
+  { name: 'bottom left', x: INSET, y: H - INSET - SIZE },
+  { name: 'bottom right', x: W - INSET - SIZE, y: H - INSET - SIZE },
+];
+const START: Block = { id: ID, x: INSET, y: INSET, width: SIZE, height: SIZE, fill: { color: '#7ab8d4' } };
+
+export function PoseBlendDemo() {
+  const scene = useScene({ items: [START] });
+  const adapter = useSceneAdapter(scene);
+  const animator = useAnimator();
+  const [spring, setSpring] = useState(false);
+
+  // The scene holds the destination from the first frame; only the block on screen travels.
+  // A second tweenPose mid-move adds to the first, and a springPose takes over at its speed.
+  const send = (x: number, y: number) => {
+    const to = { ...scene.get(ID)!.pose, x, y };
+    if (spring) springPose(animator, adapter, { id: ID, to, preset: 'wobbly' });
+    else tweenPose(animator, adapter, { id: ID, to, ms: 900 });
+  };
+
+  return (
+    <div>
+      <div className="ckd-toolbar">
+        {CORNERS.map((c) => (
+          <button key={c.name} className="ckd-btn" onClick={() => send(c.x, c.y)}>{c.name}</button>
+        ))}
+        <label className="ckd-field">
+          <input type="checkbox" checked={spring} onChange={(e) => setSpring(e.target.checked)} />
+          spring
+        </label>
+      </div>
+      <SceneCanvas width={W} height={H} className="ckd-canvas" scene={scene} />
+    </div>
+  );
+}
