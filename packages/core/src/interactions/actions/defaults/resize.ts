@@ -59,6 +59,7 @@ import { DEFAULT_RESIZE_BEHAVIORS } from '../resize/behaviors';
 import { remapRotatedLeaf, translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { poseRotationOf } from 'core/geometry/poseRotation';
 import { poseDescriptorOf } from '../poseDescriptorDep';
+import { isRectPose } from '../resize/autoPoseDescriptor';
 import { fixedCornerOf } from '../resize/cornerHandles';
 import { rotatePoint } from '../rotate/geometry';
 import type { Op } from 'core/ops/types';
@@ -108,6 +109,12 @@ function resolveDeps(ctx: InvocationCtx): {
     geometry,
     policy: dep,
   };
+}
+
+/** `pose` as the bounds a constraint or a point snap reads. A pose that is
+ *  already a box goes through whole, so a `rotation` on it rides along. */
+function boundsForRules(geometry: PoseDescriptor<unknown>, pose: unknown): Bounds {
+  return isRectPose(pose) ? pose : geometry.getBounds(pose);
 }
 
 // ---------------------------------------------------------------------------
@@ -404,10 +411,11 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
       // legacy hook: the starting id (not the expanded leaf set).
       const readView = gestureViewReader(ctx.deps);
       const readPlane = gesturePlaneReader(ctx.deps);
+      const ruleOrigin = boundsForRules(geometry, originPose);
       const gestureCtx: GestureContext<unknown> = {
         draggedIds: ids as unknown as string[],
-        origin: new Map<string, unknown>([[ids[0] as string, originPose]]),
-        current: new Map<string, unknown>([[ids[0] as string, originPose]]),
+        origin: new Map<string, unknown>([[ids[0] as string, ruleOrigin]]),
+        current: new Map<string, unknown>([[ids[0] as string, ruleOrigin]]),
         snap: null,
         modifiers: { ...ctx.modifiers },
         pointer: { worldX: startWorld.x, worldY: startWorld.y, clientX: 0, clientY: 0 },
@@ -607,7 +615,8 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
 
             if (scratch.pointSnap.length > 0) {
               const rotation = scratch.originRotation;
-              const poseAsRect = proposedPose as Bounds;
+              const unsnapped = proposedPose;
+              const poseAsRect = boundsForRules(scratch.geometry, unsnapped);
               const psCtx = buildPointSnapContext(
                 poseAsRect,
                 rotation,
@@ -622,14 +631,19 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
                   ? pointSnapFromPlane(beh.onMove(pointSnapToCamera(psCtx, plane)), plane)
                   : beh.onMove(psCtx);
                 if (result) {
-                  proposedPose = applyPointSnap(poseAsRect, rotation, result, psCtx) as unknown;
+                  const snapped = applyPointSnap(poseAsRect, rotation, result, psCtx);
+                  proposedPose = isRectPose(unsnapped)
+                    ? snapped
+                    : scratch.geometry.remapBounds(unsnapped, poseAsRect, snapped);
                   break;
                 }
               }
             }
 
             scratch.previews.set(id, stored(id, proposedPose));
-            scratch.gestureCtx.current = new Map<string, unknown>([[id as string, proposedPose]]);
+            scratch.gestureCtx.current = new Map<string, unknown>([
+              [id as string, boundsForRules(scratch.geometry, proposedPose)],
+            ]);
           } else {
             // Group / multi path: remap each leaf and store.
             for (const id of scratch.writeIds) {
