@@ -28,6 +28,8 @@ export interface PrefRenderContext {
   pref: PrefLeaf;
   /** Current value — `values` at `path`, falling back to `pref.default`. */
   value: unknown;
+  /** The leaf stands for several values that disagree; `value` is undefined. */
+  mixed?: boolean;
   setValue: (value: unknown) => void;
   /** Whether this leaf is currently auto — not pinned, computed by the owner. */
   auto: boolean;
@@ -48,6 +50,7 @@ export interface WalkCtx {
   onChange: (path: string, value: unknown) => void;
   renderers?: Record<string, PrefRenderer>;
   auto?: ReadonlySet<string>;
+  mixed?: ReadonlySet<string>;
   onAutoChange?: (path: string, next: boolean) => void;
   inheritHint?: (path: string) => string | undefined;
   canInherit?: (path: string) => boolean;
@@ -63,6 +66,7 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   const from = dropValuePath(ctx.drop, path);
   const stored = prefValueAtPath(ctx.values, from);
   const inherited = ctx.auto?.has(from) ?? false;
+  const mixed = ctx.mixed?.has(from) ?? false;
   const { onAutoChange } = ctx;
   const toggles = onAutoChange !== undefined && pref.manual !== true && (ctx.canInherit?.(path) ?? true);
   const setAuto = (next: boolean): void => {
@@ -71,7 +75,8 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   const renderCtx: PrefRenderContext = {
     path,
     pref,
-    value: stored !== undefined ? stored : pref.default,
+    value: mixed ? undefined : stored !== undefined ? stored : pref.default,
+    mixed,
     setValue: (v) => ctx.onChange(path, v),
     auto: inherited,
     setAuto,
@@ -163,7 +168,7 @@ function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
-  const field = prefFieldProps(pref, { value, siblings, setValue, fields: ctx.fields });
+  const field = prefFieldProps(pref, { value, mixed: ctx.mixed, siblings, setValue, fields: ctx.fields });
   if (field === null) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a
     // crash — a missing wiring should be visible and recoverable.

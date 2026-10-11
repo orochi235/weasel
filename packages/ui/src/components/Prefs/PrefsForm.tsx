@@ -79,6 +79,10 @@ export interface PrefsFormProps {
    *  dimmed, showing the value in `values` — pass it already resolved. Editing
    *  it calls `onChange` as usual, which is the owner's cue to pin it. */
   auto?: ReadonlySet<string>;
+  /** Dotted paths whose leaves stand for several values that disagree: each draws
+   *  its control in its mixed state, with no value. Editing one calls `onChange`
+   *  as usual, which is the owner's cue to write them all. */
+  mixed?: ReadonlySet<string>;
   /** Given, a leaf's label toggles whether it inherits: `next` true unpins it,
    *  false pins it at the value it shows. Leaves `canInherit` refuses keep a
    *  plain label. */
@@ -144,7 +148,7 @@ export function PrefsForm(props: PrefsFormProps) {
   const fields = props.fields ?? own;
   const shown = useMemo(() => shownPath(root, props.selected), [root, props.selected]);
   const selection = useSelectedRow(props.selected, shown, props.onSelect);
-  const ctx: WalkCtx = { values, onChange, renderers, auto, onAutoChange, canInherit, inheritHint, fields, selected: shown };
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, selected: shown };
   const field = filterable ? (
     <div className={s.filter}>
       <Input
