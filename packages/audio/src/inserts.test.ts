@@ -248,6 +248,42 @@ describe('insert chain transitions', () => {
     expect(settled).toBe(true);
   });
 
+  it('disposes an effect removed before it was ever routed', () => {
+    const h = harness();
+    const first = vi.fn();
+    const second = vi.fn();
+    h.chain.add({ ...h.fx('A'), dispose: first });
+    h.chain.add({ ...h.fx('B'), dispose: second });
+    h.chain.clear();
+    h.settle();
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(h.order()).toEqual([]);
+  });
+
+  it('disposes an effect once when it is removed while fading out for a move', () => {
+    const h = harness();
+    const dispose = vi.fn();
+    const a = h.chain.add(h.fx('A'));
+    const b = h.chain.add({ ...h.fx('B'), dispose });
+    h.settle();
+    a.moveTo(1);                 // B is the slot that leaves the graph to trade places
+    b.remove();
+    h.settle();
+    expect(dispose).toHaveBeenCalledTimes(1);
+    expect(h.order()).toEqual(['A']);
+  });
+
+  it('resolves settled() when the chain is disposed mid-transition', async () => {
+    const h = harness();
+    h.chain.add(h.fx('A'));
+    let settled = false;
+    const done = h.chain.settled().then(() => { settled = true; });
+    h.graph.dispose();
+    await done;
+    expect(settled).toBe(true);
+  });
+
   it('cancels a pending transition on dispose', () => {
     const h = harness();
     h.chain.add(h.fx('A'));

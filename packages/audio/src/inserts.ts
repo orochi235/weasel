@@ -105,6 +105,8 @@ export function createInsertChain(
   const live: Slot[] = [];
   const links: Link[] = [];
   let busy = false;
+  /** The slot a crossfade in flight is taking out of the graph, whose finish disposes it if removed. */
+  let leaving: Slot | null = null;
   let cancel: (() => void) | null = null;
   let disposed = false;
   let waiters: (() => void)[] = [];
@@ -210,9 +212,11 @@ export function createInsertChain(
     const from = find(outOf(s), inOf(next));
     const direct = link(outOf(prev), inOf(next), 0);
     live.splice(i, 1);
+    leaving = s;
     writeParam(ctx, from.gain.gain, 0, ms);
     writeParam(ctx, direct.gain.gain, 1, ms);
     return () => {
+      leaving = null;
       unlink(into);
       unlink(from);
       if (s.removed) {
@@ -271,6 +275,11 @@ export function createInsertChain(
         if (at < 0) return;
         order.splice(at, 1);
         s.removed = true;
+        // `plan` only finds a removed slot in the graph; one that is out of it has no later step to dispose it.
+        if (!live.includes(s) && leaving !== s) {
+          destroy(s);
+          s.effect.dispose?.();
+        }
         pump();
       },
       index: () => order.indexOf(s),
@@ -305,6 +314,9 @@ export function createInsertChain(
       disposed = true;
       cancel?.();
       cancel = null;
+      const done = waiters;
+      waiters = [];
+      for (const w of done) w();
     },
   };
 }
