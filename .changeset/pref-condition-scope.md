@@ -1,0 +1,5 @@
+---
+'@weasel-js/prefs': patch
+---
+
+Adds API: one answer for what a schema's conditions come to once nesting is counted, for every surface that draws one. A node is drawn only while it and every group or section above it is shown, and takes input only while it and everything above it is enabled. `applyPrefConditions(schema, holds)` takes a `PrefGroup` or a `PrefSection` schema and returns `shown`, the schema without the nodes whose `showIf` fails (and without a group or a section that leaves empty), and `disabled`, the value path of every leaf and field whose `enableIf`, or that of something above it, fails. It walks the fields of an `object` leaf and the variants of a `union`. `prefScopeAt(schema, path, holds)` answers for one path, and `prefScopeUnder` is the rule both are built on, for a walk of your own. Each takes a `PrefConditionJudge`, which says whether one condition holds: `prefJudge(read)` makes one from a function that reads a value by path, and a surface showing several values at once writes its own.

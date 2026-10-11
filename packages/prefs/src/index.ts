@@ -32,6 +32,17 @@ export {
   type PrefSchemaConditionProblem,
   type PrefTest,
 } from './condition';
+export {
+  applyPrefConditions,
+  PREF_SCOPE,
+  prefJudge,
+  prefScopeAt,
+  prefScopeUnder,
+  type PrefConditionField,
+  type PrefConditionJudge,
+  type PrefConditionsApplied,
+  type PrefScope,
+} from './scope';
 export { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 export type { PrefLabel, PrefSeparator } from './label';
 export { prefObjectBase, prefObjectWithField } from './object';
