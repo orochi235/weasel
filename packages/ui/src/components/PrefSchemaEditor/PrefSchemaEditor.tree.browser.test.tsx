@@ -17,10 +17,10 @@ const SCHEMA: PrefGroup = {
 const sizeOf = (el: Element) => parseFloat(getComputedStyle(el).fontSize);
 
 // Badge sizes its own text, so only the cascade a browser resolves says which rule won.
-test('a group\'s count is set at the size of its row\'s label, and a kind badge stays smaller', () => {
+test('a group\'s count is set 2px under its row\'s label, and a kind badge stays smaller than the label', () => {
   render(<PrefSchemaEditor schema={SCHEMA} onChange={() => {}} />);
   const tree = within(screen.getByRole('tree', { name: 'Schema structure' }));
   const label = sizeOf(tree.getByText('View'));
-  expect(sizeOf(tree.getByText('2'))).toBe(label);
+  expect(sizeOf(tree.getByText('2'))).toBe(label - 2);
   expect(sizeOf(tree.getAllByText('boolean')[0]!)).toBeLessThan(label);
 });
