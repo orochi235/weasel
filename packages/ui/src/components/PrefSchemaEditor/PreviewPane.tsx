@@ -8,6 +8,7 @@ import { ResizeHandle } from '../ResizeHandle';
 import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPanel';
 import { Switch } from '../Switch';
 import type { DefaultEdit } from './defaults';
+import { useEditorSize } from './editorPrefs';
 import { NodeGhost } from './NodeGhost';
 import { placedOnly } from './loose';
 import { drawsNode } from './previewDrop';
@@ -90,7 +91,7 @@ function PreviewDragGhost({ ghost, stageRef, drop, renderers }: Pick<GroupPrevie
 function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: GroupPreviewProps) {
 
   const [showHidden, setShowHidden] = useState(true);
-  const [width, setWidth] = useState(800);
+  const size = useEditorSize('previewWidth');
   // What sits on no page is listed as unplaced, and the form would file it under a page of its own.
   const placed = useMemo(() => placedOnly(schema), [schema]);
   // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
@@ -100,7 +101,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
       <PaneHeader title="Live preview">
         <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch>
       </PaneHeader>
-      <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown} style={{ '--preview-w': `${width}px` } as CSSProperties}>
+      <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown} style={{ '--preview-w': `${size.value}px` } as CSSProperties}>
       <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" subPages rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
         schema={placed} values={NO_VALUES} renderers={renderers} showHidden={showHidden}
         // An empty group is drawn too: it is somewhere to drop into.
@@ -109,7 +110,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
         selected={marked}
         onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
         onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
-      <ResizeHandle value={width} min={360} max={900} onInput={setWidth} ariaLabel="Resize preview" />
+      <ResizeHandle {...size} min={360} max={900} ariaLabel="Resize preview" />
       <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
       </div>
     </section>

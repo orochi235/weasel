@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react';
+import { createContext, useContext, useState, useSyncExternalStore } from 'react';
 import { prefValueAtPath, type PrefGroup, type PrefPath, type PrefsStore } from '@weasel-js/prefs';
 import { Icon } from '../../icons';
 import { ToolButton } from '../ToolButton';
@@ -18,6 +18,18 @@ export const PREF_SCHEMA_EDITOR_PREFS = {
           description: 'A node dropped into the live preview becomes the selection. Off, the selection stays where it was.',
           default: true,
         },
+      },
+    },
+    // What the reader has dragged each pane to, in pixels. Hidden: the handles are where they are set.
+    layout: {
+      name: 'Layout',
+      children: {
+        structureWidth: { kind: 'number', name: 'structureWidth', description: '', default: 300, hidden: true },
+        attributesWidth: { kind: 'number', name: 'attributesWidth', description: '', default: 320, hidden: true },
+        sidebarWidth: { kind: 'number', name: 'sidebarWidth', description: '', default: 240, hidden: true },
+        previewWidth: { kind: 'number', name: 'previewWidth', description: '', default: 800, hidden: true },
+        unplacedHeight: { kind: 'number', name: 'unplacedHeight', description: '', default: 180, hidden: true },
+        actionsHeight: { kind: 'number', name: 'actionsHeight', description: '', default: 160, hidden: true },
       },
     },
   },
@@ -49,6 +61,32 @@ export function useEditorPrefs(store: PrefSchemaEditorPrefs | undefined): Editor
       else setHeld((v) => setAtPath(v, path.split('.'), value) as Record<string, unknown>);
     },
     selectDropped: prefValueAtPath(values, 'preview.selectDropped') !== false,
+  };
+}
+
+const EditorPrefsContext = createContext<EditorPrefs | null>(null);
+
+/** Gives the editor's panes its settings. */
+export const EditorPrefsProvider = EditorPrefsContext.Provider;
+
+/** A pane size the editor keeps in its settings. */
+export type EditorSize = keyof typeof PREF_SCHEMA_EDITOR_PREFS.children.layout.children;
+
+/**
+ * One of the editor's sizes as a `ResizeHandle` takes it: it follows the drag, and is written to the settings once
+ * when the drag ends. The settings are `given`, or else the ones a provider above holds; with neither the size
+ * lasts as long as the pane is mounted.
+ */
+export function useEditorSize(key: EditorSize, given?: EditorPrefs): { value: number; onInput(next: number): void; onChange(next: number): void } {
+  const above = useContext(EditorPrefsContext);
+  const prefs = given ?? above;
+  const path = `layout.${key}`;
+  const kept = prefValueAtPath(prefs?.values, path);
+  const [live, setLive] = useState<number | null>(null);
+  return {
+    value: live ?? (typeof kept === 'number' ? kept : PREF_SCHEMA_EDITOR_PREFS.children.layout.children[key].default),
+    onInput: setLive,
+    onChange: (next) => prefs?.set(path, next),
   };
 }
 

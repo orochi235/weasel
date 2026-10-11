@@ -10,6 +10,7 @@ import { AddNodeDialog, type NewNode } from './AddNodeDialog';
 import { PaneHeader } from './PaneHeader';
 import { ResizeHandle } from '../ResizeHandle';
 import { ActionList } from './ActionList';
+import { useEditorSize } from './editorPrefs';
 import type { EditorAction } from './editorActions';
 import { holdsPages, looseKeys, looseTarget, mayUnplace, schemaTarget, topLevelAllows } from './loose';
 import { Icon } from '../../icons';
@@ -123,8 +124,8 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
     [nodes, sought],
   );
   const [adding, setAdding] = useState<'pref' | 'branch' | null>(null);
-  const [storedHeight, setStoredHeight] = useState(180);
-  const [actionsHeight, setActionsHeight] = useState(160);
+  const unplacedSize = useEditorSize('unplacedHeight');
+  const actionsSize = useEditorSize('actionsHeight');
   const treeArea = useRef<HTMLDivElement | null>(null);
   const unplacedArea = useRef<HTMLDivElement | null>(null);
   const [unplacing, setUnplacing] = useState(false);
@@ -285,9 +286,9 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
       </div>
       {(unplaced !== undefined || holdsPages(schema)) && (
         <>
-          <ResizeHandle orientation="horizontal" invert value={storedHeight} min={60} max={600}
-            onInput={setStoredHeight} ariaLabel="Resize unplaced" />
-          <div className={s.storedArea} ref={unplacedArea} data-drop={unplacing || undefined} style={{ '--stored-h': `${storedHeight}px` } as CSSProperties}>
+          <ResizeHandle orientation="horizontal" invert {...unplacedSize} min={60} max={600}
+            ariaLabel="Resize unplaced" />
+          <div className={s.storedArea} ref={unplacedArea} data-drop={unplacing || undefined} style={{ '--stored-h': `${unplacedSize.value}px` } as CSSProperties}>
             <PaneHeader title="Unplaced" />
             <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting} sought={sought}
               selected={selected} onSelect={(path) => onSelect([path])} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
@@ -296,9 +297,9 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
       )}
       {actions !== undefined && actions.length > 0 && (
         <>
-          <ResizeHandle orientation="horizontal" invert value={actionsHeight} min={60} max={600}
-            onInput={setActionsHeight} ariaLabel="Resize actions" />
-          <div className={s.storedArea} style={{ '--stored-h': `${actionsHeight}px` } as CSSProperties}>
+          <ResizeHandle orientation="horizontal" invert {...actionsSize} min={60} max={600}
+            ariaLabel="Resize actions" />
+          <div className={s.storedArea} style={{ '--stored-h': `${actionsSize.value}px` } as CSSProperties}>
             <PaneHeader title="Actions" />
             <ActionList actions={actions} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
           </div>

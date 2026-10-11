@@ -10,7 +10,7 @@ import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
 import { deadActionPaths, useEditorActions, type EditorAction } from './editorActions';
 import { EditorBar } from './EditorBar';
-import { EditorPrefsButton, useEditorPrefs, type PrefSchemaEditorPrefs } from './editorPrefs';
+import { EditorPrefsButton, EditorPrefsProvider, useEditorPrefs, useEditorSize, type PrefSchemaEditorPrefs } from './editorPrefs';
 import { dropDraft, openDraft, saveDraft, SWAP, type DraftStorage, type SwapArgs } from './draft';
 import { openAfterStep, openFolds, saveFolds } from './folds';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
@@ -144,9 +144,6 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const openAt = useRef(new WeakMap<SchemaRoot, ReadonlySet<string>>());
   useEffect(() => { openAt.current.set(schema, expanded); }, [schema, expanded]);
   const selection = useEditorSelection(schema, setExpanded);
-  const [structureWidth, setStructureWidth] = useState(300);
-  const [attributesWidth, setAttributesWidth] = useState(320);
-  const [asideWidth, setAsideWidth] = useState(240);
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
 
   const latest = useLatest({ schema, onChange, paths: selection.paths });
@@ -241,6 +238,9 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const custom = useMemo(() => ({ label: {}, ...kinds }), [kinds]);
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);
   const editorPrefs = useEditorPrefs(prefs);
+  const structureSize = useEditorSize('structureWidth', editorPrefs);
+  const attributesSize = useEditorSize('attributesWidth', editorPrefs);
+  const asideSize = useEditorSize('sidebarWidth', editorPrefs);
   // Set while a drop into the live preview is being carried out, which every way of dropping there does in one task.
   const intoPreview = useRef(false);
   const keepsSelection = () => intoPreview.current && !editorPrefs.selectDropped;
@@ -352,9 +352,10 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   };
 
   return (
-    // Capture: React Aria's fields and tree stop a keydown from bubbling past them.
+    <EditorPrefsProvider value={editorPrefs}>
+    {/* Capture: React Aria's fields and tree stop a keydown from bubbling past them. */}
     <div className={[s.editor, className].filter(Boolean).join(' ')}
-      style={{ '--structure-w': `${structureWidth}px`, '--attributes-w': `${attributesWidth}px`, '--aside-w': `${asideWidth}px` } as CSSProperties}
+      style={{ '--structure-w': `${structureSize.value}px`, '--attributes-w': `${attributesSize.value}px`, '--aside-w': `${asideSize.value}px` } as CSSProperties}
       onKeyDownCapture={(e) => {
       // A key pressed in a dialog of the editor's reaches here through React's tree, and is the dialog's.
       if (!e.currentTarget.contains(e.target as Node)) return;
@@ -375,7 +376,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} types={types}
         expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} actions={actionList ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
         toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} />
-      <ResizeHandle className={s.structureHandle} value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
+      <ResizeHandle className={s.structureHandle} {...structureSize} min={180} max={640} ariaLabel="Resize structure" />
       <div className={s.middle}>
         <div className={s.notice} role="status">
           {notice && (
@@ -391,7 +392,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           changed={selection.paths.length > 1 ? undefined : changedAttrs}
           kinds={kindList} custom={custom} types={types} renderers={renderers} actions={actionList ?? undefined} onNotice={setNotice} />
       </div>
-      <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
+      <ResizeHandle {...attributesSize} min={220} max={720} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}
         onSelect={(path, how) => {
           // The root's own entry names no node to add to a selection.
@@ -399,8 +400,9 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           else reveal(path === null ? [] : [path]);
         }} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} />
       <ExportPanel schema={schema} types={types} changes={changes} onSubmit={submit} />
-      <ResizeHandle className={s.asideHandle} invert value={asideWidth} min={120} max={640} onInput={setAsideWidth} ariaLabel="Resize sidebar" />
+      <ResizeHandle className={s.asideHandle} invert {...asideSize} min={120} max={640} ariaLabel="Resize sidebar" />
       <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar" />
     </div>
+    </EditorPrefsProvider>
   );
 }
