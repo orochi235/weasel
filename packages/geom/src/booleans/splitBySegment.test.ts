@@ -614,3 +614,25 @@ describe('snipPathByPolyline', () => {
     expect(pieces.every((q) => q.kind === 'polygon' && q.fillRule === 'evenodd')).toBe(true);
   });
 });
+
+describe('tolerances scale with the path', () => {
+  // A unit square and its cuts, drawn at `k` times the size.
+  const square = (k: number): Path => rectPath(0, 0, k, k);
+
+  it.each([1e-3, 1, 1e6])('halves a square %f across with one chord', (k) => {
+    const pieces = splitPathBySegment(square(k), { x: 0.5 * k, y: -k }, { x: 0.5 * k, y: 2 * k });
+    expect(pieces).toHaveLength(2);
+    for (const p of pieces!) expect(area(p) / (k * k)).toBeCloseTo(0.5, 6);
+  });
+
+  it.each([1e-3, 1, 1e6])('cuts a loop out of a square %f across', (k) => {
+    const loop = [[0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.2, 0.8], [0.2, 0.2]].map(([x, y]) => ({ x: x * k, y: y * k }));
+    const pieces = splitPathByPolyline(square(k), loop);
+    expect(pieces).toHaveLength(2);
+  });
+
+  it.each([1e-7, 1e-3, 1, 1e6])('snips the outline of a square %f across at both crossings', (k) => {
+    const runs = snipPathByPolyline(square(k), [{ x: 0.5 * k, y: -k }, { x: 0.5 * k, y: 2 * k }]);
+    expect(runs).toHaveLength(2);
+  });
+});

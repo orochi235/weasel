@@ -4,6 +4,7 @@ import type { Path, PolygonPath, PathFillRule } from '../path';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Point } from '../paths/cubicMath';
 import { pathUnion } from './ops';
+import { EPS } from '../scalar';
 
 export type { Point };
 
@@ -139,7 +140,8 @@ function knife(path: Path, cut: Point[], opts: SplitBySegmentOptions, budget: nu
 
   const traced = assembleRegions(loops, untouched.filter((c) => signedArea(c) < 0));
   const islands = untouched.filter((c) => signedArea(c) > 0);
-  const regions: Contour[][] = traced.filter((r) => Math.abs(regionArea(r)) > 1e-6);
+  const minArea = negligibleArea(boundaries);
+  const regions: Contour[][] = traced.filter((r) => Math.abs(regionArea(r)) > minArea);
   if (islands.length > 0) {
     const leftover = untouched.filter((c) => !traced.some((r) => r.includes(c)));
     regions.push(leftover);
@@ -216,7 +218,8 @@ function snipStations(sub: Subpath, cut: Point[]): Station[] {
   });
   raw.sort((x, y) => x.seg - y.seg || x.t - y.t);
 
-  const same = (p: Point, q: Point) => Math.abs(p.x - q.x) <= 1e-7 && Math.abs(p.y - q.y) <= 1e-7;
+  const tol = extentOf([sub.segs]) * 1e-9;
+  const same = (p: Point, q: Point) => Math.abs(p.x - q.x) <= tol && Math.abs(p.y - q.y) <= tol;
   const groups: Station[][] = [];
   for (const st of raw) {
     const g = groups[groups.length - 1];
@@ -372,10 +375,11 @@ function interiorLoops(cut: Point[], boundaries: Contour[]): Point[][] {
  */
 function cutOutLoops(regions: Contour[][], loops: Point[][]): boolean {
   let cut = false;
+  const minArea = negligibleArea(regions.flat());
   for (const loop of loops) {
     let ring: Contour = loop.map((p, i) => [p, loop[(i + 1) % loop.length]]);
     const a = signedArea(ring);
-    if (Math.abs(a) <= 1e-6) continue;
+    if (Math.abs(a) <= minArea) continue;
     if (a < 0) ring = reverseContour(ring);
     const probe = evalSeg(ring[0], 0.5);
     const at = regions.findIndex((r) => windingAt(probe, r) !== 0);
@@ -680,6 +684,22 @@ function windingAt(q: Point, contours: Contour[]): number {
   return w;
 }
 
+/** The diagonal of the box around every control point of `contours`. */
+function extentOf(contours: Contour[]): number {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const c of contours) for (const s of c) for (const p of s) {
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  }
+  return Math.hypot(maxX - minX, maxY - minY);
+}
+
+/** The area below which a region cut from `contours` is rounding, not a piece. */
+function negligibleArea(contours: Contour[]): number {
+  const extent = extentOf(contours);
+  return extent * extent * EPS * EPS;
+}
+
 /**
  * The contours that bound the fill, each turned so the fill lies on its left.
  * A contour with fill on both sides or neither (a same-direction inner ring
@@ -690,12 +710,7 @@ function orientBoundaries(contours: Contour[], fillRule: PathFillRule): Contour[
     const w = windingAt(q, contours);
     return fillRule === 'evenodd' ? (w & 1) !== 0 : w !== 0;
   };
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const c of contours) for (const s of c) for (const p of s) {
-    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
-    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
-  }
-  const eps = Math.max(Math.hypot(maxX - minX, maxY - minY) * 1e-6, 1e-9);
+  const eps = Math.max(extentOf(contours) * 1e-6, 1e-9);
 
   const out: Contour[] = [];
   for (const contour of contours) {

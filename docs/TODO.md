@@ -606,13 +606,6 @@ have shipped. What remains:
   `packages/geom/src/booleans/splitBySegment.ts` is 878 lines of crossing detection, loop tracing,
   and region assembly.
 
-- **(P3) geom booleans: `splitBySegment` compares coordinates against absolute tolerances.**
-  `packages/geom/src/booleans/splitBySegment.ts` uses literal `1e-7` (`same`), `1e-9`
-  (`properCrossing`), and `> 1e-6` on region area, against the relative-tolerance policy `scalar.ts`
-  states. A shape drawn in a 0..0.001 coordinate space has every cut piece filtered out by the area
-  test, and `knife` returns `[]` rather than `null`. Not reproduced with a test; scale the
-  tolerances by the operands' extent the way `mat3.invert` does.
-
 ### Pathfinder follow-ups (post-v1)
 
 Core five + Crop shipped. Remaining:
