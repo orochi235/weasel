@@ -42,64 +42,23 @@
  * This version has an advantage over both: it runs *before* anything parses,
  * so it is parser-agnostic and survives swapping opentype.js out.
  *
- * **Known gap: `.dfont`** (Datafork TrueType) is not unpacked — its sfnt
- * tables live inside a Macintosh resource map, which is a second container
- * format on top of the one above. `isDataForkFont` recognizes it and
- * `sfntFromCollection` throws by name, so the face degrades to the SDF tier
- * saying why; the registry's `warnOnce` carries the message. Not currently
- * reachable on macOS, whose system font directories are 204 `.ttf` / 128
- * `.ttc` / 38 `.otf` and no `.dfont`; it is a real format on older systems.
+ * `.dfont` (Datafork TrueType) is the other container: whole fonts inside a
+ * Macintosh resource map, read by `dataFork.ts` and selected here by the same
+ * PostScript name.
  */
+
+import { isDataForkFont, sfntResources } from './dataFork';
+import { tagAt } from './tag';
+
+export { isDataForkFont };
 
 const SFNT_HEADER_BYTES = 12;
 const TABLE_RECORD_BYTES = 16;
-
-function tagAt(view: DataView, offset: number): string {
-  return String.fromCharCode(
-    view.getUint8(offset), view.getUint8(offset + 1),
-    view.getUint8(offset + 2), view.getUint8(offset + 3),
-  );
-}
 
 /** Is `bytes` a font collection rather than a single font? */
 export function isFontCollection(bytes: ArrayBuffer): boolean {
   if (bytes.byteLength < 4) return false;
   return tagAt(new DataView(bytes), 0) === 'ttcf';
-}
-
-/** Every signature that opens a font file this tier can hand to a parser. */
-const FONT_SIGNATURES: ReadonlySet<string> = new Set([
-  '\x00\x01\x00\x00', 'true', 'typ1', 'OTTO', 'ttcf', 'wOFF', 'wOF2',
-]);
-
-const RESOURCE_HEADER_BYTES = 16;
-
-/**
- * Is `bytes` a Datafork TrueType file (`.dfont`)?
- *
- * A `.dfont` is a bare Macintosh resource fork written to the data fork, so
- * unlike every other font format it opens with no signature — just the
- * resource header's four big-endian offsets. It is recognized by those
- * adding up, which is why the signature check has to run first: an sfnt's
- * header bytes are numbers too, and nothing stops them from coincidentally
- * being consistent.
- *
- * Detection only. Reading the `sfnt` resources out of the map is the rest of
- * the job and is not implemented — the point is that the face declines the
- * outline tier by name instead of dying on an unrecognized-signature message
- * that never mentions the format.
- */
-export function isDataForkFont(bytes: ArrayBuffer): boolean {
-  if (bytes.byteLength < RESOURCE_HEADER_BYTES) return false;
-  const view = new DataView(bytes);
-  if (FONT_SIGNATURES.has(tagAt(view, 0))) return false;
-  const dataOffset = view.getUint32(0);
-  const mapOffset = view.getUint32(4);
-  const dataLength = view.getUint32(8);
-  const mapLength = view.getUint32(12);
-  return dataOffset >= RESOURCE_HEADER_BYTES
-    && dataOffset + dataLength === mapOffset
-    && mapOffset + mapLength <= bytes.byteLength;
 }
 
 interface TableRecord { tag: string; offset: number; length: number; checksum: number }
@@ -196,7 +155,7 @@ function extractFont(source: ArrayBuffer, view: DataView, dirOffset: number): Ar
 }
 
 /**
- * Standalone font bytes for one member of a collection.
+ * Standalone font bytes for one member of a collection or a `.dfont`.
  *
  * `postScriptName` selects the member; when it is absent or matches nothing,
  * the first member is returned. Falling back rather than failing is
@@ -213,10 +172,15 @@ export function sfntFromCollection(
   postScriptName?: string,
 ): { bytes: ArrayBuffer; matched: boolean } {
   if (isDataForkFont(bytes)) {
-    throw new Error(
-      'Datafork TrueType (.dfont) is not supported — the outline tier reads sfnt '
-      + 'tables and a .dfont holds them inside a Macintosh resource map.',
-    );
+    const fonts = sfntResources(bytes);
+    if (fonts.length === 0) throw new Error('Datafork TrueType (.dfont) holds no sfnt resource.');
+    const named = postScriptName
+      ? fonts.find((font) => {
+        const view = new DataView(font);
+        return postScriptNameAt(view, readTableDirectory(view, 0)) === postScriptName;
+      })
+      : undefined;
+    return { bytes: named ?? fonts[0], matched: named !== undefined || !postScriptName };
   }
   if (!isFontCollection(bytes)) return { bytes, matched: true };
 

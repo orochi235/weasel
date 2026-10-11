@@ -88,7 +88,7 @@ describe('dfont detection', () => {
     expect(isDataForkFont(synthesizeDataFork())).toBe(true);
   });
 
-  it('declines by name rather than reaching the parser', () => {
+  it('declines an empty one by name rather than reaching the parser', () => {
     expect(() => sfntFromCollection(synthesizeDataFork()))
       .toThrow(/\.dfont/);
   });
