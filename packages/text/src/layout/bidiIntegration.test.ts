@@ -110,6 +110,26 @@ describe('L4 — mirroring', () => {
     expect(bracket.cp).toBe(0x29);
   });
 
+  it('draws a mirror only the fallback tier has from the fallback tier\'s atlas', async () => {
+    // An atlas with `(` and no `)`: the mirrored bracket has to come from the
+    // dynamic tier, and its quad belongs with that tier's glyphs.
+    const half = {
+      ...FIXTURE_FONT,
+      chars: [...FIXTURE_FONT.chars, { id: 0x28, x: 50, y: 0, width: 8, height: 28, xoffset: 1, yoffset: 4, xadvance: 10, page: 0 }],
+    };
+    const prior = global.fetch;
+    global.fetch = vi.fn().mockImplementation((url: string) => (url.endsWith('.json')
+      ? Promise.resolve({ ok: true, json: () => Promise.resolve(half) })
+      : (prior as (u: string) => Promise<Response>)(url))) as typeof fetch;
+    await registerFont('half', {}, '/half.json', '/half.png');
+    global.fetch = prior;
+
+    const out = layoutRuns([{ ...RUN('א(ב'), fontFamily: 'half' }], OPTS);
+    expect(out.lines[0].cells[1].cp).toBe(0x29);
+    expect(out.groups.filter((g) => g.source === 'atlas')).toEqual([]);
+    expect(out.groups.find((g) => g.source === 'canvas')!.quads).toHaveLength(3);
+  });
+
   it('leaves a bracket alone in a left-to-right run', () => {
     const out = layoutRuns([RUN('A(B')], OPTS);
     expect(out.lines[0].cells[1].cp).toBe(0x28);

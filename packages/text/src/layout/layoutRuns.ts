@@ -499,6 +499,7 @@ function resolveGlyph(
   font: BmFont,
   resolved: ResolveResult,
   cp: number,
+  warn = true,
 ): GlyphHit | null {
   const direct = font.charMap.get(cp);
   if (direct) return { glyph: direct, font, resolved };
@@ -514,7 +515,7 @@ function resolveGlyph(
     }
   }
 
-  warnMissingGlyphOnce(resolved.resolved.family, cp);
+  if (warn) warnMissingGlyphOnce(resolved.resolved.family, cp);
   return null;
 }
 
@@ -1047,8 +1048,15 @@ export function layoutRuns(
         // The outline tier reads `cp` directly; the atlas tier needs the other
         // glyph looked up. A face without it keeps the unmirrored one.
         if (e.font !== null) {
-          const hit = resolveGlyph(e.run, e.font, e.resolved, m);
+          const hit = resolveGlyph(e.run, e.font, e.resolved, m, false);
           if (!hit) continue;
+          // The mirror may come from another tier, and then it samples that
+          // tier's atlas. The advance stays the one the wrap measured.
+          if (hit.font !== e.font) {
+            e.font = hit.font;
+            e.metrics = atlasMetrics(hit.font);
+            e.resolved = hit.resolved;
+          }
           e.glyph = hit.glyph;
         }
         e.cp = m;
