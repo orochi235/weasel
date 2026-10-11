@@ -407,7 +407,7 @@ describe('createHistory — serialize / restore', () => {
     expect(snap.droppedEntries).toBe(4);
   });
 
-  it('drops a branch that forks from an entry the snapshot cut', () => {
+  it('drops a branch that forks from beneath an entry the snapshot cut', () => {
     const nameless = (): Op => ({ apply: () => {}, invert: () => nameless() });
     const step = (label: string) =>
       createTransformOp<Pose>({ id: label, from: { x: 0, y: 0 }, to: { x: 1, y: 1 }, label });
@@ -427,8 +427,10 @@ describe('createHistory — serialize / restore', () => {
 
     const snap = h.serialize();
     expect(snap.undoStack.map((e) => e.label)).toEqual(['G']);
-    expect(snap.branches).toBeUndefined();
-    expect(snap.droppedEntries).toBe(6);
+    // F forks from the state E leaves, which is the snapshot's floor.
+    expect(snap.branches?.map((b) => b.entries.map((e) => e.label))).toEqual([['F']]);
+    expect(snap.floor).toBe(snap.branches![0]!.at);
+    expect(snap.droppedEntries).toBe(5);
   });
 
   it('reports droppedEntries === 0 when nothing was dropped', () => {

@@ -67,8 +67,13 @@ export interface SerializedHistory {
   redoStack: SerializedHistoryEntry[];
   nextEntryId: number;
   /** Futures kept by a branching history, each under the id of the entry it
-   *  forks from (0 for the start), entries in time order. Absent when none. */
+   *  forks from (`floor`'s for the oldest reachable state), entries in time
+   *  order. Absent when none. */
   branches?: { at: number; entries: SerializedHistoryEntry[] }[];
+  /** The id naming the state beneath the undo stack: that of the last undo
+   *  entry evicted or left out of the snapshot. Absent, and read as 0, when
+   *  the stack reaches back to the start. */
+  floor?: number;
   /** Entries left out: those with an op lacking a `name`, which can't
    *  round-trip through the op-factory registry, and those only reachable
    *  across one. Always present (zero when nothing was dropped) so callers
@@ -273,8 +278,9 @@ export interface CreateHistoryOptions {
   /** Keep the redo future when a push is made while there is one, as a branch
    *  `branches()` lists and `switchBranch` returns to, instead of dropping it.
    *  Undo and redo still walk one line, the current branch. An entry evicted by
-   *  `historyLimit` or `prune` takes the branches forking from it along.
-   *  Default `false`. */
+   *  `historyLimit` or `prune` takes along the branches forking from the state
+   *  before it, which nothing can return to; the ones forking from the state
+   *  it leaves stay, at the bottom of the undo stack. Default `false`. */
   branching?: boolean;
   /** Custom op rebuilder consulted by `restore()` before the global
    *  op-factory registry. Return `null` to fall through (global registry,
@@ -332,9 +338,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
   const onEvict = options.onEvict;
   const branching = options.branching ?? false;
-  /** Futures a push set aside, by the id of the entry they fork from (0 for
-   *  the start), each in time order. Only a branching history adds to it. */
+  /** Futures a push set aside, by the id of the entry they fork from (the
+   *  floor's for the oldest reachable state), each in time order. Only a
+   *  branching history adds to it. */
   const forks = new Map<number, Entry[][]>();
+  /** Names the state beneath the undo stack: 0 at the start, then the id of
+   *  the last undo entry evicted. */
+  let floorId = 0;
   const customRebuild = options.rebuildOp;
   const selection = options.selection;
   const logger = options.debug ?? SILENT;
@@ -378,9 +388,23 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     }
   }
 
-  /** The id of the entry the history stands on, 0 at the start. */
+  /** Evict `entries` off the bottom of the undo stack, oldest first. Each one
+   *  raises the floor to the state it leaves: the futures forking from the old
+   *  floor go with it, and the ones forking from the entry now fork from the
+   *  floor. */
+  function evictFloor(entries: Entry[]): void {
+    for (const e of entries) {
+      reportEvicted([e]);
+      const stranded = forks.get(floorId);
+      forks.delete(floorId);
+      floorId = e.id;
+      for (const branch of stranded ?? []) evict(branch);
+    }
+  }
+
+  /** The id of the entry the history stands on, the floor's beneath them all. */
   function forkPoint(): number {
-    return undoStack[undoStack.length - 1]?.id ?? 0;
+    return undoStack[undoStack.length - 1]?.id ?? floorId;
   }
 
   /** Clear the redo stack after a push forking from `at`: kept as a branch
@@ -397,7 +421,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   /** Evict the oldest undo entries past `historyLimit`, reporting each. */
   function enforceLimit(): void {
     while (undoStack.length > historyLimit) {
-      evict([undoStack.shift()!]);
+      evictFloor([undoStack.shift()!]);
     }
   }
 
@@ -606,6 +630,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       undoStack.length = 0;
       redoStack.length = 0;
       forks.clear();
+      floorId = 0;
       if (had) bump();
     },
     entries() {
@@ -662,7 +687,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       let k = 0;
       while (k < undoStack.length && undoStack[k]!.timestamp < t) k++;
       if (k === 0) return;
-      evict(undoStack.splice(0, k));
+      evictFloor(undoStack.splice(0, k));
       bump();
     },
     branches() {
@@ -707,8 +732,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       const undo = nearest(undoStack);
       const redo = nearest(redoStack);
 
-      const reachable = new Set<number>([...undo, ...redo].map((e) => e.id));
-      if (undo.length === undoStack.length) reachable.add(0);
+      // Cutting the undo stack raises the snapshot's floor to the last entry cut.
+      const floor = undo.length === undoStack.length ? floorId : undoStack[undoStack.length - undo.length - 1]!.id;
+      const reachable = new Set<number>([floor, ...[...undo, ...redo].map((e) => e.id)]);
       let pending = [...forks].flatMap(([at, kept]) => kept.map((b) => {
         const serial = project(b);
         const cut = serial.indexOf(null);
@@ -733,6 +759,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         undoStack: undo,
         redoStack: redo,
         ...(branches.length > 0 ? { branches } : {}),
+        ...(floor !== 0 ? { floor } : {}),
         nextEntryId,
         droppedEntries: total - carried,
       };
@@ -781,6 +808,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         redoStack.push(serialToEntry(se, customRebuild, logger));
       }
       forks.clear();
+      floorId = snapshot.floor ?? 0;
       for (const b of snapshot.branches ?? []) {
         const entries = b.entries.map((se) => serialToEntry(se, customRebuild, logger));
         const kept = forks.get(b.at);

@@ -129,26 +129,77 @@ describe('branching on', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
-  it('evicts the branches under an entry historyLimit evicts', () => {
+  it('evicts the branches forking from the state historyLimit leaves behind', () => {
     const onEvict = vi.fn();
     const { history, write } = setup({ historyLimit: 2, onEvict });
     write(1, 10);
+    history.undo();
+    write(2, 15); // 'to 1' kept as a branch at the start
+    write(3, 20);
+    write(4, 30); // overflows: 'to 2' evicted, and the start with it
+    expect(onEvict.mock.calls.map(([e]) => e.label).sort()).toEqual(['to 1', 'to 2']);
+    history.undo();
+    history.undo();
+    expect(history.branches().map((b) => b.label)).toEqual(['to 3']);
+  });
+
+  it('keeps the branches forking from the entry historyLimit evicts', () => {
+    const onEvict = vi.fn();
+    const { cell, history, write } = setup({ historyLimit: 2, onEvict });
+    write(1, 10);
     write(2, 20);
     history.undo();
-    write(3, 15); // 'to 2' kept as a branch under 'to 1'
-    write(4, 30); // overflows: 'to 1' evicted, and its branch with it
+    write(3, 15); // 'to 2' kept as a branch at 'to 1'
+    write(4, 30); // overflows: 'to 1' evicted, and the state after it is the floor
+    expect(onEvict.mock.calls.map(([e]) => e.label)).toEqual(['to 1']);
+    history.undo();
+    history.undo();
+    expect(history.branches().map((b) => [b.label, b.current])).toEqual([
+      ['to 2', false],
+      ['to 3', true],
+    ]);
+    history.switchBranch(history.branches()[0]!.id);
+    history.redo();
+    expect(cell.x).toBe(2);
+  });
+
+  it('files a future set aside at the floor where the floor can find it', () => {
+    const { history, write } = setup({ historyLimit: 1 });
+    write(1, 10);
+    write(2, 20); // 'to 1' evicted
+    history.undo();
+    write(3, 25); // 'to 2' kept as a branch at the floor
+    write(4, 30); // 'to 3' evicted: the floor moved, and 'to 2' went with the old one
+    history.undo();
+    expect(history.branches().map((b) => b.label)).toEqual(['to 4']);
+  });
+
+  it('evicts the branches forking from the state prune leaves behind', () => {
+    const onEvict = vi.fn();
+    const { history, write } = setup({ onEvict });
+    write(1, 10);
+    history.undo();
+    write(2, 11);
+    write(3, 20);
+    history.prune(12);
     expect(onEvict.mock.calls.map(([e]) => e.label).sort()).toEqual(['to 1', 'to 2']);
   });
 
-  it('evicts the branches under an entry prune evicts', () => {
-    const onEvict = vi.fn();
-    const { history, write } = setup({ onEvict });
+  it('round-trips the floor through serialize and restore', () => {
+    const { history, write } = setup({ historyLimit: 2 });
     write(1, 10);
     write(2, 20);
     history.undo();
     write(3, 15);
-    history.prune(12);
-    expect(onEvict.mock.calls.map(([e]) => e.label).sort()).toEqual(['to 1', 'to 2']);
+    write(4, 30);
+    history.undo();
+    history.undo();
+    const restored = createHistory(null, { branching: true, rebuildOp: () => ({ apply() {}, invert() { return this; } }) });
+    restored.restore(history.serialize());
+    expect(restored.branches().map((b) => [b.label, b.current])).toEqual([
+      ['to 2', false],
+      ['to 3', true],
+    ]);
   });
 
   it('keeps branches forked from the very start', () => {

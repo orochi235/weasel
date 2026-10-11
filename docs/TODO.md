@@ -941,19 +941,6 @@ Core five + Crop shipped. Remaining:
   (inserting at `index` as nodes arrive is not enough: `[a (L3), b (L1), c (L2), d (L1)]` arrives as
   `b, d, c, a` and lands `[a, b, d, c]`).
 
-- **(P3) History: a branching history with a limit offers a fork from a state that no longer
-  exists.** In `packages/history/src/history.ts`, `forkPoint()` answers 0 both for the start and for
-  the floor that eviction leaves, and `evict` drops the forks keyed by the evicted entry's own id
-  (the ones forking from the new floor, which is still reachable) rather than the ones keyed by the
-  point before it. With `branching: true, historyLimit: 2`: push A, undo, push B, C, D (B is
-  evicted), undo twice. `branches()` lists A, which forked from the start, and `switchBranch(A)`
-  then `redo()` applies A on top of B (run as a test: 11 where A alone gives 1). Nothing in the repo
-  sets `branching` today. A fix tracks the floor's id (the last evicted undo entry), answers it from
-  `forkPoint()` when the stack is empty, drops the forks at the old floor on each eviction, and
-  keeps the ones at the evicted entry's id; the floor id then has to ride in `SerializedHistory`,
-  which is a format addition, and the `branching` option's doc ("an entry evicted ... takes the
-  branches forking from it along") has to say which side it means.
-
 - **(P3) Scene: the selection keeps ids of nodes a removal took.** After `scene.setSelection([z])`
   and `scene.remove(z)`, `scene.getSelection()` still returns `['z']`, so every reader guards
   `scene.get(id)`. `kit:remove`'s apply in `packages/core/src/core/scene/scene.ts` could filter the
