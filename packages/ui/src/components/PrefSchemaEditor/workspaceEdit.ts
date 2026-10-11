@@ -1,19 +1,14 @@
 import { prefLeafAt } from '@weasel-js/prefs';
+import { moveLayoutNodes, removeLayoutNodes, renameLayoutKey } from './layoutEdit';
 import { pointersIn } from './pointers';
-import { joinPath, parentPath, rebaseValuePaths, removeNode, valueMove, type SchemaRoot, type ValueMove } from './schemaEdit';
-import { assetOf, type Workspace } from './workspace';
+import {
+  joinPath, moveNodes, outermost, parentPath, rebaseValuePaths, removeNode, removeNodes, renameKey, valueMove,
+  type SchemaRoot, type SchemaTarget, type ValueMove,
+} from './schemaEdit';
+import { assetOf, type Asset, type Workspace } from './workspace';
 
-const settled = (moves: ReadonlyArray<ValueMove | null>): ValueMove[] => moves.filter((m): m is ValueMove => m !== null && m[0] !== m[1]);
-
-/** The value moves of a `moveNodes` on `before` that took the nodes at `from` to `to`, its result's `from` and `paths`. */
-export function movesOfMove(before: SchemaRoot, from: readonly string[], to: readonly string[]): ValueMove[] {
-  return settled(from.map((f, i) => valueMove(before, f, to[i]!)));
-}
-
-/** The value moves of a `renameKey` on `before` that gave the node at `path` the key `nextKey`. */
-export function movesOfRename(before: SchemaRoot, path: string, nextKey: string): ValueMove[] {
-  return settled([valueMove(before, path, joinPath(parentPath(path), nextKey))]);
-}
+/** What an edit that renames and moves nothing passes {@link editAsset}: an attribute set, an add, a copy, a removal. */
+export const NO_MOVES: readonly ValueMove[] = [];
 
 /**
  * `layout` after its dialog went from `before` to `after`: its pointers follow `moves`, and one whose setting went
@@ -30,18 +25,19 @@ function following(layout: SchemaRoot, before: SchemaRoot, after: SchemaRoot, mo
 }
 
 /**
- * `workspace` with the asset `id` holding `next`; `workspace` itself when that asset is read-only.
+ * `workspace` with the asset `id` holding `next`; `workspace` itself when that asset is read-only. Every layout over
+ * an edited dialog follows, read-only ones included.
  *
- * `moves` must be every value move the edit to a dialog made, each from its path before the edit to its path after:
- * {@link movesOfMove} for a `moveNodes`, {@link movesOfRename} for a `renameKey`, and none for any other edit.
- * Nothing is worked out from the two roots, so a move left out leaves its pointers behind, to be dropped as naming
- * a setting that went. Every layout over an edited dialog follows, read-only ones included.
+ * A `next` in which a setting was renamed or moved must come with `moves`, each from the value path it had to the
+ * one it has, a `null` for a node that has none. Nothing is worked out from the two roots, so a pointer to a setting
+ * whose move is left out is dropped as naming one that went. {@link renameInAsset}, {@link moveInAsset}, and
+ * {@link removeInAsset} make those edits and pass what they moved; call this with {@link NO_MOVES} for the rest.
  */
-export function editAsset(workspace: Workspace, id: string, next: SchemaRoot, moves: readonly ValueMove[] = []): Workspace {
+export function editAsset(workspace: Workspace, id: string, next: SchemaRoot, moves: ReadonlyArray<ValueMove | null>): Workspace {
   const asset = assetOf(workspace, id);
   if (!asset || asset.readOnly || asset.root === next) return workspace;
   // The first move to match a path is the one it follows, and a setting's own outranks that of a group above it.
-  const ordered = [...moves].sort((a, b) => b[0].length - a[0].length);
+  const ordered = moves.filter((m) => m !== null).sort((a, b) => b[0].length - a[0].length);
   return {
     assets: workspace.assets.map((a) => {
       if (a.id === id) return { ...a, root: next };
@@ -50,4 +46,39 @@ export function editAsset(workspace: Workspace, id: string, next: SchemaRoot, mo
       return root === a.root ? a : { ...a, root };
     }),
   };
+}
+
+function editable(workspace: Workspace, id: string): Asset | undefined {
+  const asset = assetOf(workspace, id);
+  return asset?.readOnly ? undefined : asset;
+}
+
+/** `workspace` with the node at `path` in the asset `id` under the key `nextKey`; `workspace` itself for a read-only asset. */
+export function renameInAsset(workspace: Workspace, id: string, path: string, nextKey: string): Workspace {
+  const asset = editable(workspace, id);
+  if (!asset) return workspace;
+  if (asset.kind === 'layout') return editAsset(workspace, id, renameLayoutKey(asset.root, path, nextKey), NO_MOVES);
+  return editAsset(workspace, id, renameKey(asset.root, path, nextKey), [valueMove(asset.root, path, joinPath(parentPath(path), nextKey))]);
+}
+
+/**
+ * `workspace` with the nodes at `paths` in the asset `id` moved to `target`, and `from` and `paths` as `moveNodes`
+ * gives them. A read-only asset reads as a move that put nothing anywhere new.
+ */
+export function moveInAsset(
+  workspace: Workspace, id: string, paths: readonly string[], target: SchemaTarget,
+): { workspace: Workspace; from: string[]; paths: string[] } {
+  const asset = editable(workspace, id);
+  if (!asset) return { workspace, from: outermost(paths), paths: outermost(paths) };
+  const isLayout = asset.kind === 'layout';
+  const moved = isLayout ? moveLayoutNodes(asset.root, paths, target) : moveNodes(asset.root, paths, target);
+  const moves = isLayout ? NO_MOVES : moved.from.map((from, i) => valueMove(asset.root, from, moved.paths[i]!));
+  return { workspace: editAsset(workspace, id, moved.root, moves), from: moved.from, paths: moved.paths };
+}
+
+/** `workspace` without the nodes at `paths` in the asset `id`; `workspace` itself for a read-only asset. */
+export function removeInAsset(workspace: Workspace, id: string, paths: readonly string[]): Workspace {
+  const asset = editable(workspace, id);
+  if (!asset) return workspace;
+  return editAsset(workspace, id, asset.kind === 'layout' ? removeLayoutNodes(asset.root, paths) : removeNodes(asset.root, paths), NO_MOVES);
 }
