@@ -155,10 +155,12 @@ export function Callout(props: CalloutProps) {
   // Nudging RAC's own resize listener is the supported way to make it
   // recompute; there's no public updatePosition on Popover.
   const hasAnchorRect = anchorRect !== undefined;
+  // Only a controlled callout is known to be shut; RAC positions it afresh when it opens.
+  const knownClosed = rest.isOpen === false;
   useEffect(() => {
-    if (!hasAnchorRect || typeof window === 'undefined') return;
+    if (!hasAnchorRect || knownClosed || typeof window === 'undefined') return;
     window.dispatchEvent(new Event('resize'));
-  }, [hasAnchorRect, anchorRect?.x, anchorRect?.y, anchorRect?.width, anchorRect?.height]);
+  }, [hasAnchorRect, knownClosed, anchorRect?.x, anchorRect?.y, anchorRect?.width, anchorRect?.height]);
   // RAC's popover role-heuristic misses alertdialog; label the outer role
   // it stamps. Upstream: react-spectrum Popover.mjs querySelector('[role=dialog]').
   const popoverAriaLabelledby =

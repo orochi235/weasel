@@ -1376,11 +1376,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   history, as the remote path already does for state history), remount the trial on a remote
   replacement, or merge mark by mark, which needs an answer for a mark both tabs edited.
 
-- **(P3) A text node's `direction` reads as unset where the engine reads `auto`.** `TextStyle.direction`
-  defaults to `auto` (`DEFAULT_TEXT_STYLE`), and the Direction leaf in `defaultNodeProperties` offers
-  only `ltr` and `rtl` with a default of `ltr`, so it cannot carry `absentIsDefault` the way the rest
-  of the style's fields do, and a style with no direction lights neither segment.
-
 - **(P3) An object leaf is drawn by two implementations that disagree.**
   `packages/ui/src/components/Prefs/ObjectLeaf.tsx` and `ObjectLeaf` in
   `packages/ui/src/components/SelectionPanel/renderLeaf.tsx` each walk rows, sections, and tabs and
@@ -1630,10 +1625,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) Callout: re-anchoring dispatches a fake `resize` on `window`.** A callout tracking a scene
   node through a pan dispatches `new Event('resize')` on every `anchorRect` change
   (`packages/ui/src/components/Callout/Callout.tsx`), so every resize listener on the page runs once
-  per pan frame for as long as the callout is mounted with a rect, open or not. The comment says it
-  is deliberate for want of a public `updatePosition` on React Aria's Popover. Options: dispatch
-  only while open; or change the anchor span's size by a sub-pixel, which trips React Aria's own
-  `ResizeObserver` without touching `window`.
+  per pan frame while the callout is open (a callout held shut with `isOpen={false}` no longer
+  dispatches). The comment says it is deliberate for want of a public `updatePosition` on React
+  Aria's Popover. Left: changing the anchor span's size by a sub-pixel instead, which trips React
+  Aria's own `ResizeObserver` without touching `window`; whether that repositions needs a browser.
 
 - **(P3) ItemList: removing the focused row leaves focus on `<body>`.** A consumer's remove control
   in a row's `trailing` cell unmounts the row with focus inside it, and
@@ -2305,16 +2300,6 @@ one dead `const` and four stale disable directives.
   the comment and directory-compare scripts are tested, the workflow steps are not. Unmeasured: how
   long two full runs take on the one self-hosted machine (the job allows 100 minutes), and whether
   the base, measured first, reads differently from the head for that reason alone.
-
-- **(P2) A scene's `generateId` is honored by `scene.add` only.** `createScene({ generateId })`
-  mints ids for `scene.add` (`core/scene/scene.ts`), and five other minters ignore it, each with its
-  own module-level counter and a comment saying it mirrors the scene's private scheme:
-  `interactions/actions/defaults/freshNodeId.ts`, `defaults/group.ts`, `canvas/sceneAdapter.ts` (two
-  sites; one says "The scene's own `generateId` isn't reachable from the adapter"),
-  `packages/svg/src/unpack.ts`, and `core/adapters/arrayAdapter.ts` (which uses
-  `crypto.randomUUID()`, a third format). A consumer whose ids are server-assigned or sortable gets
-  a second scheme in the same document from Cmd+G, Cmd+D, paste, an SVG drop, or a tool whose
-  factory omits `id`. Expose the minter on the scene and have all five call it.
 
 - **(P3) Overlays sit on two unrelated z-index scales.** The theme defines `--wzl-z-toolbar`,
   `--wzl-z-overlay`, and `--wzl-z-modal` as 10, 20, and 30. `Dialog` (1000), `Toast` (1100),

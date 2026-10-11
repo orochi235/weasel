@@ -130,6 +130,18 @@ describe('Callout', () => {
     window.removeEventListener('resize', onResize);
   });
 
+  it('does not nudge for a re-anchor while it is closed', () => {
+    const onResize = vi.fn();
+    window.addEventListener('resize', onResize);
+    const { rerender } = render(
+      <Callout isOpen={false} anchorRect={{ x: 10, y: 10, width: 40, height: 20 }} title="Here">Anchored</Callout>,
+    );
+    onResize.mockClear();
+    rerender(<Callout isOpen={false} anchorRect={{ x: 90, y: 60, width: 40, height: 20 }} title="Here">Anchored</Callout>);
+    expect(onResize).not.toHaveBeenCalled();
+    window.removeEventListener('resize', onResize);
+  });
+
   it('carries a tone beside the popover’s own positioning', () => {
     render(
       <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} tone="#224a63" aria-label="Toned">
