@@ -4,7 +4,7 @@ import type { SchemaRoot } from './schemaEdit';
 import { afterTaken, packSent } from './sent';
 import type { PrefTypes } from './types';
 
-/** A schema as a document keeps it: packed against its source, with code named by where the source holds it. */
+/** How a document keeps a pref schema whose leaves may be of `types`. */
 export function schemaCodec<S extends SchemaRoot>(types: PrefTypes): DocumentCodec<S> {
   return {
     openDraft(key, base, storage) {

@@ -7,7 +7,8 @@ export interface OpenedDocument<V> {
   value: V;
   /** The steps around it, when they were kept and still read. */
   stacks: SerializedHistory | null;
-  /** How the draft met the baseline it opens on. See `OpenedDraft.met`. */
+  /** How the draft met the baseline it opens on: saved against this `same` one, `carried` onto it from another,
+   *  or of a baseline `unknown`. */
   met: 'same' | 'carried' | 'unknown';
 }
 
