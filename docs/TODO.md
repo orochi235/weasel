@@ -1157,14 +1157,18 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   opts into. That leaves the flat default for everything drawn with the ramp, and a seat in the
   theme that turns the glass on.
 
-- **(P2) Disable a pref by the values of others.** A leaf has no way to say "off while
-  `snap.enabled` is false": nothing on `PrefLeaf` reads another leaf's value, and the forms have no
-  disabled row. The condition has to be data, since a schema exports as a literal and survives a
-  draft, and not a function. Ruled 2026-10-11: the condition is a structure over other leaves'
-  paths (`{ path: 'snap.enabled' }`, `{ path: 'layout', in: ['plate', 'card'] }`,
-  `{ all: [...] }`), not an expression string, so CEL is out; one format serves this and `showIf`
-  below. Covers `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel`, and an
-  attribute for it in `PrefSchemaEditor`.
+- **(P2) Disable a pref by the values of others.** A condition is a structure over other leaves'
+  paths (`PrefCondition` in `packages/prefs/src/condition.ts`; ruled 2026-10-11 over an expression
+  string), and a leaf, group, or section holds one as `showIf` or `enableIf`. Left: the hidden and
+  disabled row in `PrefsForm`, `SelectionPanel`, `Bar`, and labkit's `ControlPanel`, an attribute
+  for each in `PrefSchemaEditor`, and forge's `variants.ts` skipping an entry a data condition
+  hides. Undecided: whether a bad condition throws or warns (the prefs store and
+  `resolveConfigSchema` warn, where labkit's other schema mistakes throw); a path relative to a
+  list item, since every path is from the schema root and a field cannot name its sibling in the
+  same item; whether an alias row uses its own conditions or its target's (`prefAliasedLeaf`
+  spreads the target, and labkit's `AliasNode` says its own `.showIf` places it); a form for "this
+  list is not empty", since a bare `{ path }` holds for an empty list; and what a condition reads
+  when the selected nodes in a `SelectionPanel` disagree.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
@@ -1222,15 +1226,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
   react-aria tab also carries.
 
-- **(P1.5) Two of a labkit schema's common attributes can only be code.** `.showIf` takes a
-  function and a number's `unit` is an object of `toDisplay`/`fromDisplay` functions, so neither
-  can be written to JSON, set in `PrefSchemaEditor`, or kept in a draft (a draft holds code as a
-  pointer into the source schema, which a new leaf has none of). In astv's settings nearly every
-  `showIf` is one comparison against another setting (`c.mode === 'commits'`,
-  `PLATED.has(c.layout)`), and every unit is an identity conversion carrying a suffix. Ruled
-  2026-10-11: `showIf` also takes a condition as data, in the structure the entry "Disable a pref
-  by the values of others" describes. Proposed, not agreed: a unit may be `{ suffix, accepts }`
-  with the conversion implied. The function forms stay for what data cannot say.
+- **(P1.5) A number's `unit` in a labkit schema can only be code.** It is an object of
+  `toDisplay`/`fromDisplay` functions, so it cannot be written to JSON, set in `PrefSchemaEditor`,
+  or kept in a draft (a draft holds code as a pointer into the source schema, which a new leaf has
+  none of). In astv's settings every unit is an identity conversion carrying a suffix. Proposed,
+  not agreed: a unit may be `{ suffix, accepts }` with the conversion implied, the function form
+  staying for what data cannot say. `.showIf` had the same problem and takes a condition as data
+  now; setting one in `PrefSchemaEditor` is under "Disable a pref by the values of others".
 
 - **(P3) A rail does not see through a fragment.** A page nested in an `as: 'fragment'` group gets no rail entry
   and is drawn as a section where the fragment sits, the same as a group nested in a tab or a panel. If a fragment
