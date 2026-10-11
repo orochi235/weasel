@@ -1131,10 +1131,8 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   fold both into `as`. `as: 'page'` means nothing where there is no rail (`ControlPanel`, the
   columns and list layouts, any `PrefSection`) and draws as the default there.
 
-- **(P3) `PrefSchemaEditor`: several nodes at once, what is left.** The Unplaced tree selects one row, and a
-  click there replaces a selection of several; a drag out of it or out of the palette carries one node
-  (`onPaletteDrop` takes one). Add alias and an alias drag act on one pref and are off with several selected.
-  Shift does nothing in the live preview, where a range across pages has no clear meaning.
+- **(P3) `PrefSchemaEditor`: shift does nothing in the live preview.** Cmd-click adds a row to the
+  selection there; a range has no clear meaning across pages, and what it should take is not decided.
 
 - **(P3) `PrefSchemaEditor`'s properties-panel preview ignores the selection.** For a group
   schema the tree and the live preview select and scroll to each other, through `PrefsForm`'s

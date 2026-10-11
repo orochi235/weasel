@@ -28,7 +28,7 @@ function toRows(group: PrefGroup, path: string): TreeNode[] {
  * what its host says it does not hold yet. Each is whole already, with its key, its name and its description, and
  * lands as it is wherever the structure tree or the live preview takes it. A group dragged brings what it holds.
  */
-export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onSelect, ghost, onDrag, onDrop }: {
+export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onPick, ghost, onDrag, onDrop }: {
   /** The rows of what the schema holds on no page, each by its tree path. */
   loose: readonly TreeNode[];
   /** The schema's node at a tree path. */
@@ -39,8 +39,8 @@ export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onSele
   sought: string;
   /** The tree paths selected in the editor, each marked here when it is one of these rows. */
   selected: readonly string[];
-  /** A row the schema holds was picked. */
-  onSelect(path: string): void;
+  /** The selection after a pick here, as tree paths: a row of the other tree stays in it through a Cmd-click. */
+  onPick(paths: readonly string[]): void;
   /** As `Tree`'s `ghost`. */
   ghost?: boolean;
   /** The drag left this tree and moved, or came back or ended (`null`). */
@@ -53,12 +53,17 @@ export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onSele
     [all, sought],
   );
   const open = useMemo(() => treeBranchIds(all), [all]);
-  const dragOf = (id: string, point: { x: number; y: number }): PaletteDrag | null => {
+  /** The drag of the rows at `ids`: every one of them where the schema holds them all, which a drop then moves,
+   *  and otherwise the first alone, since a node the schema does not hold lands as one new node. */
+  const dragOf = (ids: readonly string[], point: { x: number; y: number }): PaletteDrag | null => {
+    const id = ids[0];
+    if (id === undefined) return null;
     const held = !id.startsWith(NEW);
     const node = held ? looseAt(id) : waiting ? unplacedAt(waiting, id.slice(NEW.length).split(SEP)) : undefined;
     if (!node) return null;
     const key = held ? keyOf(id) : id.split(SEP).at(-1)!;
-    return { item: { id, label: node.name, icon: 'formLabel', key, make: () => node }, node, ...(held ? { from: id } : {}), ...point };
+    const from = ids.every((x) => !x.startsWith(NEW)) ? ids : [id];
+    return { item: { id, label: node.name, icon: 'formLabel', key, make: () => node }, node, ...(held ? { from } : {}), ...point };
   };
   return (
     <Tree
@@ -69,23 +74,23 @@ export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onSele
       foldBy="leading"
       guides
       defaultExpandedIds={open}
-      selectionMode="single"
+      selectionMode="multiple"
       selectedIds={selected}
-      // Only a row the schema holds has attributes to show.
+      // Only a row the schema holds has attributes to show, so a pick of one it does not hold changes nothing.
       onSelectionChange={(ids) => {
-        const id = [...ids][0];
-        if (id !== undefined && !id.startsWith(NEW)) onSelect(id);
+        const held = [...ids].filter((id) => !id.startsWith(NEW));
+        if (held.length > 0 || ids.size === 0) onPick(held);
       }}
       // Rows leave this tree and never move within it.
       onMove={() => {}}
       canDrop={() => false}
       onDragOutside={(ids, point) => {
-        const drag = point && ids[0] !== undefined ? dragOf(ids[0], point) : null;
+        const drag = point ? dragOf(ids, point) : null;
         onDrag(drag);
         return drag !== null;
       }}
       onDropOutside={(ids, point) => {
-        const drag = ids[0] !== undefined ? dragOf(ids[0], point) : null;
+        const drag = dragOf(ids, point);
         if (drag) onDrop(drag);
         onDrag(null);
       }}
