@@ -72,7 +72,10 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   // Per-canvas counter + fill cycler. Refs survive renders and stay
   // private to the SceneCanvas instance.
   const seqRef = useRef(0);
-  const freshId = (prefix: string) => asNodeId(`${prefix}-${++seqRef.current}`);
+  // The random suffix is what keeps an id unique: the counter restarts on
+  // every mount, and the scene outlives the canvas.
+  const freshId = (prefix: string) =>
+    asNodeId(`${prefix}-${(++seqRef.current).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
   const nextFill = () => cycleFill(seqRef.current);
 
   // First system-or-trivial layer is the default insertion layer. Falls back
