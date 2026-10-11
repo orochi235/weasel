@@ -119,6 +119,24 @@ describe('a font-relative length', () => {
     expect(radius('<g font-size="10"><g font-size="2ex"><circle r="1em"/></g></g>')).toBeCloseTo(10, 6);
   });
 
+  it('reads the font-size keywords', () => {
+    expect(radius('<g font-size="large"><circle r="1em"/></g>')).toBeCloseTo(18, 6);
+    expect(radius('<g style="font-size: X-Small"><circle r="1em"/></g>')).toBeCloseTo(10, 6);
+    expect(radius('<g font-size="10"><g font-size="larger"><circle r="1em"/></g></g>')).toBeCloseTo(12, 6);
+    expect(radius('<g font-size="12"><g font-size="smaller"><circle r="1em"/></g></g>')).toBeCloseTo(10, 6);
+  });
+
+  it('gives text a keyword font-size', () => {
+    const text = (inner: string): SvgTextNode => {
+      const { nodes, warnings } = parseSvg(`<svg ${NS} viewBox="0 0 100 100">${inner}</svg>`);
+      expect(warnings).toEqual([]);
+      return nodes[0] as SvgTextNode;
+    };
+    expect(text('<text font-size="x-large">a</text>').style.fontSize).toBe(24);
+    const nested = text('<g font-size="10"><text font-size="larger">a</text></g>') as unknown as { children: SvgTextNode[] };
+    expect(nested.children[0].style.fontSize).toBeCloseTo(12, 6);
+  });
+
   it('takes an ex as half an em', () => {
     expect(radius('<g font-size="10"><circle r="3ex"/></g>')).toBeCloseTo(15, 6);
   });

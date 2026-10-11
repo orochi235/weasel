@@ -13,7 +13,7 @@
 import type { FontVariantCaps, TextTransform } from '@weasel-js/core';
 import { ABSOLUTE_PX } from './absoluteUnits';
 import { parsePaintAttr, type ParsedColor } from './color';
-import { DEFAULT_FONT_SIZE, emsPer } from './fontSize';
+import { DEFAULT_FONT_SIZE, emsPer, fontSizeKeyword } from './fontSize';
 
 export type Warn = (message: string) => void;
 
@@ -142,10 +142,12 @@ function readColor(v: string): string | undefined {
   return isCurrentColor(v) || parsePaintAttr(v)?.kind === 'solid' ? v : undefined;
 }
 
-/** A percentage, `em`, or `ex` is relative to the parent's size (`fontScale`); anything else is an absolute `fontSize`. */
+/** A percentage, `em`, `ex`, `larger`, or `smaller` is relative to the parent's size (`fontScale`); anything else is an absolute `fontSize`. */
 function readFontSize(
   v: string, warn: Warn, prop: string, fontSize: number,
 ): { fontSize?: number; fontScale?: number } | undefined {
+  const word = fontSizeKeyword(v);
+  if (word) return 'size' in word ? { fontSize: word.size } : { fontScale: word.scale };
   const d = dimension(v);
   if (d?.unit === '%') return { fontScale: d.n / 100 };
   const ems = d && emsPer(d.unit);

@@ -17,6 +17,25 @@ export function emsPer(unit: string): number | undefined {
   return EMS[unit.toLowerCase()];
 }
 
+// CSS Fonts 4's table for a 16px `medium`, and its suggested step for the two relative keywords.
+const KEYWORD_PX: Readonly<Record<string, number>> = Object.assign(Object.create(null), {
+  'xx-small': 9, 'x-small': 10, small: 13, medium: DEFAULT_FONT_SIZE,
+  large: 18, 'x-large': 24, 'xx-large': 32, 'xxx-large': 48,
+});
+const KEYWORD_SCALE: Readonly<Record<string, number>> = Object.assign(Object.create(null), {
+  larger: 1.2, smaller: 1 / 1.2,
+});
+
+/** What a `font-size` keyword stands for: a size in user units, or a multiple
+ *  of the parent's size; `undefined` for anything else. */
+export function fontSizeKeyword(raw: string): { size: number } | { scale: number } | undefined {
+  const word = raw.trim().toLowerCase();
+  const size = KEYWORD_PX[word];
+  if (size != null) return { size };
+  const scale = KEYWORD_SCALE[word];
+  return scale == null ? undefined : { scale };
+}
+
 const NUMBER = '[-+]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[-+]?\\d+)?';
 const DIMENSION = new RegExp(`^\\s*(${NUMBER})\\s*([a-z%]*)\\s*$`, 'i');
 const FONT_RELATIVE = new RegExp(`(?<![\\w.])(${NUMBER})(em|ex)(?![\\w%])`, 'gi');
@@ -27,8 +46,10 @@ const LENGTH_PROPERTIES = ['stroke-width', 'stroke-dasharray', 'letter-spacing']
 type FontRelativeStyle = { [K in 'font-size' | (typeof LENGTH_PROPERTIES)[number]]?: string };
 
 /** A `font-size` value in user units, a relative one taken against
- *  `parentSize`; `undefined` for a keyword or a unit that is not converted. */
+ *  `parentSize`; `undefined` for a unit that is not converted. */
 function computedFontSize(raw: string, parentSize: number): number | undefined {
+  const word = fontSizeKeyword(raw);
+  if (word) return 'size' in word ? word.size : word.scale * parentSize;
   const m = DIMENSION.exec(raw);
   if (!m) return undefined;
   const n = Number(m[1]);
@@ -59,7 +80,7 @@ export function fontSizeOf(style: { readonly 'font-size'?: string }): number {
  */
 export function computeFontRelative(style: FontRelativeStyle, parentSize: number): void {
   const raw = style['font-size'];
-  if (raw != null && /(?:%|em|ex)\s*$/i.test(raw)) {
+  if (raw != null && (/(?:%|em|ex)\s*$/i.test(raw) || fontSizeKeyword(raw))) {
     const size = computedFontSize(raw, parentSize);
     if (size != null) style['font-size'] = String(size);
   }
