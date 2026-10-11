@@ -232,6 +232,39 @@ describe('imageCache — vector sources re-raster at their drawn size', () => {
     expect(requests[2].size).toEqual({ width: 200, height: 100 });
   });
 
+  it('settles on the larger raster when the source is drawn at two sizes', async () => {
+    const requests = manualLoader();
+    await primeNatural(requests, 100, 50);
+    // A main view and a minimap, each asking for its own size every frame.
+    for (let frame = 0; frame < 12; frame++) {
+      getImageBitmap(SVG, { width: 20, height: 10 });
+      getImageBitmap(SVG, { width: 800, height: 400 });
+      const open = requests[requests.length - 1];
+      open.d.resolve(sized(open.size?.width ?? 100, open.size?.height ?? 50));
+      await flush();
+    }
+    expect(requests.length).toBeLessThanOrEqual(5);
+    expect(getImageBitmap(SVG)).toMatchObject({ width: 800, height: 400 });
+  });
+
+  it('still shrinks a regrown raster down to the size that regrew it', async () => {
+    const requests = manualLoader();
+    await primeNatural(requests, 100, 50);
+    const draw = async (width: number, height: number): Promise<void> => {
+      const before = requests.length;
+      getImageBitmap(SVG, { width, height });
+      if (requests.length === before) return;
+      requests[before].d.resolve(sized(requests[before].size!.width, requests[before].size!.height));
+      await flush();
+    };
+    await draw(800, 400);
+    await draw(100, 50);
+    await draw(800, 400);
+    await draw(6400, 3200);
+    await draw(100, 50);
+    expect(getImageBitmap(SVG)).toMatchObject({ width: 800, height: 400 });
+  });
+
   it('keeps the old raster when a re-raster fails, and does not retry that bucket', async () => {
     const requests = manualLoader();
     const natural = await primeNatural(requests, 100, 50);

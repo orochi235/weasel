@@ -51,6 +51,12 @@ interface VectorRaster {
   scale: number;
   pending?: number;
   failed: Set<number>;
+  /** The scale the last shrink left, until something asks for more. */
+  shrunkTo?: number;
+  /** The largest scale a shrunk raster was asked to grow back to. One raster
+   *  serves every size a source is drawn at, so that request may be a second
+   *  consumer the shrink starved; shrinking below it again would loop. */
+  floor: number;
 }
 
 interface Entry {
@@ -148,7 +154,7 @@ function startLoad(src: string): void {
         status: 'ready',
         bitmap,
         ...(isVectorImageSrc(src)
-          ? { vector: { natural: { width: bitmap.width, height: bitmap.height }, scale: 1, failed: new Set<number>() } }
+          ? { vector: { natural: { width: bitmap.width, height: bitmap.height }, scale: 1, failed: new Set<number>(), floor: 0 } }
           : {}),
       });
       notify();
@@ -178,9 +184,11 @@ function rasterScaleFor(natural: ImageRasterSize, drawnAt: ImageRasterSize): num
 
 function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: ImageRasterSize): void {
   if (v.pending !== undefined) return;
-  const target = rasterScaleFor(v.natural, drawnAt);
-  if (target === undefined) return;
-  const grow = target > v.scale;
+  const wanted = rasterScaleFor(v.natural, drawnAt);
+  if (wanted === undefined) return;
+  const grow = wanted > v.scale;
+  if (grow && v.shrunkTo === v.scale) v.floor = Math.max(v.floor, wanted);
+  const target = grow ? wanted : Math.max(wanted, v.floor);
   if (!grow && target * SHRINK_SLACK > v.scale) return;
   for (const f of v.failed) if (target === f || (grow && f > v.scale && target >= f)) return;
 
@@ -195,6 +203,7 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
       v.pending = undefined;
       const old = entry.bitmap;
       entry.bitmap = bitmap;
+      v.shrunkTo = grow ? undefined : target;
       v.scale = target;
       if (old && old !== bitmap) releaseImageSource(old);
       notify();
