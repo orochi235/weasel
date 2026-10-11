@@ -8,6 +8,8 @@ import { NoMatches } from './NoMatches';
 import { filterPrefRoot, prefFieldChoices, type PrefFieldChoice } from './schema';
 import type { PrefRenderer, WalkCtx } from './PrefsRow';
 import { paneChildren } from './PrefsPane';
+import { BarRootLayout } from './BarRootLayout';
+import type { BarOrientation } from '../Bar/BarLayout';
 import { RailLayout } from './RailLayout';
 import { selectionAttrs, shownPath, useSelectedRow, type PrefSelectHow, type SelectionRoot } from './selection';
 import s from './Prefs.module.css';
@@ -19,7 +21,8 @@ export type PrefsLayout = 'columns' | 'rail' | 'list';
 
 /** Props for {@link PrefsForm}. */
 export interface PrefsFormProps {
-  /** Root of the schema tree. */
+  /** Root of the schema tree. A root drawn `as: 'bar'` is the form: one bar,
+   *  whatever `layout` says. */
   schema: PrefGroup;
   /** Nested value tree (shape mirrors the schema). Sparse is fine —
    *  missing leaves fall back to their schema `default`. */
@@ -47,6 +50,8 @@ export interface PrefsFormProps {
    * sub-panels — for a form that is already the whole of a pane.
    */
   layout?: PrefsLayout;
+  /** Which way a root drawn `as: 'bar'` runs. Default `'horizontal'`. */
+  orientation?: BarOrientation;
   /** Show a filter field that narrows the form to matching leaves. */
   filterable?: boolean;
   /** Rail layout: how many rows the pane sets side by side. At 2 a block leaf,
@@ -173,6 +178,13 @@ export function PrefsForm(props: PrefsFormProps) {
       />
     </div>
   ) : null;
+
+  if (root?.as === 'bar') {
+    return (
+      <BarRootLayout root={root} ctx={ctx} drop={props.drop} selection={selection} orientation={props.orientation}
+        filterField={field} className={className} />
+    );
+  }
 
   if (layout === 'rail') {
     return (

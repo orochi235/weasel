@@ -58,7 +58,7 @@
 .previewDialog { flex: 0 1 var(--preview-w); min-width: 0; min-height: 0; }
 .previewPanel { flex: 1; min-height: 0; overflow: auto; max-inline-size: 420px; }
 /* A bar is as wide or as tall as what it holds, so the stage leaves it at its own size in the corner. */
-.previewBar { flex: 1; min-height: 0; overflow: auto; display: flex; align-items: flex-start; justify-content: flex-start; }
+.previewBar { flex: 1; min-height: 0; overflow: auto; }
 .paneHeader {
   display: flex;
   flex-wrap: wrap;

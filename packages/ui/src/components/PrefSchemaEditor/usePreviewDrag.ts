@@ -20,7 +20,7 @@ export interface PreviewGhost {
 /**
  * Dragging what the live preview draws: a press on a row's label, on a group's heading, or on a group's entry in the
  * rail picks that node up, and it drops wherever `place` takes it — the preview itself. A press on a row's control is
- * the control's. With Alt held the node stays and a copy of it drops; with Alt and Cmd or Ctrl, an alias of a leaf.
+ * the control's, but for a button in a bar, which has no label beside it to press. With Alt held the node stays and a copy of it drops; with Alt and Cmd or Ctrl, an alias of a leaf.
  * A press on one of several selected nodes picks them all up, and one let go without a drag picks that node alone.
  */
 export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, selected, onPick }: {
@@ -46,13 +46,15 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, 
     // The entry for the root's own leaves has the empty path, and names no node to pick up.
     const entry = target.closest?.('[data-pref-rail]:not([data-pref-rail=""])');
     const el = entry ?? target.closest?.('[data-pref-path]');
-    // A rail entry is a button whose press is also the pick-up.
-    if (!box || !el || drag.current || e.button !== 0 || (!entry && isInControlWithin(target, el))) return;
+    const button = !entry && el?.closest('[data-pref-bar]') ? target.closest?.('button') : null;
+    // A rail entry, or a button in a bar, whose press is also the pick-up.
+    const pressed = entry ?? (button && el!.contains(button) ? button : null);
+    if (!box || !el || drag.current || e.button !== 0 || (!pressed && isInControlWithin(target, el))) return;
     // With Cmd or Ctrl alone the press adds the row to the selection or takes it out, and picks nothing up.
     if ((e.metaKey || e.ctrlKey) && !e.altKey) return;
     // A leaf's row is its label and then its control; only the label picks the row up.
     const row = el.firstElementChild;
-    if (el.hasAttribute('data-pref-leaf') && row && row.children.length > 1 && !row.firstElementChild!.contains(target)) return;
+    if (!pressed && el.hasAttribute('data-pref-leaf') && row && row.children.length > 1 && !row.firstElementChild!.contains(target)) return;
     // Under a group root every key is one step of the value path.
     const path = pathOf((el.getAttribute('data-pref-rail') ?? el.getAttribute('data-pref-path')!).split('.'))!;
     const node = nodeAt(schema(), path);
@@ -94,8 +96,8 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, 
       onClick: () => {
         end();
         if (several) onPick(path);
-        // The session holds the pointer, so the release is not a click on the entry.
-        (entry as HTMLElement | null)?.click();
+        // The session holds the pointer, so the release is not a click on what was pressed.
+        (pressed as HTMLElement | null)?.click();
       },
       onCancel: end,
     });

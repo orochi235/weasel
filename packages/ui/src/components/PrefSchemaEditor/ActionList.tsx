@@ -32,10 +32,12 @@ function toRows(actions: readonly EditorAction[]): TreeNode[] {
  * lands as a pref that fires it by key. An action stays listed however many prefs fire it: a toolbar and a menu
  * may both hold one.
  */
-export function ActionList({ actions, sought, onDrag, onDrop }: {
+export function ActionList({ actions, sought, ghost, onDrag, onDrop }: {
   actions: readonly EditorAction[];
   /** What the structure's filter holds, lowercased: only rows whose label or key has it are listed. Empty for all. */
   sought: string;
+  /** As `Tree`'s `ghost`. */
+  ghost?: boolean;
   /** The drag left this tree and moved, or came back or ended (`null`). */
   onDrag(drag: PaletteDrag | null): void;
   onDrop(drag: PaletteDrag): void;
@@ -55,6 +57,7 @@ export function ActionList({ actions, sought, onDrag, onDrop }: {
   return (
     <Tree
       aria-label="Actions"
+      ghost={ghost}
       nodes={rows}
       empty={<p className={s.storedEmpty}>{all.length === 0 ? 'No actions are registered.' : 'Nothing matches.'}</p>}
       defaultExpandedIds={open}

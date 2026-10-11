@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
-import { isPrefLeaf, isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
-import { Bar } from '../Bar';
 import { DragGhost } from '../DragGhost';
-import { PrefsDialog, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
+import { PrefsDialog, PrefsForm, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPanel';
 import { Switch } from '../Switch';
@@ -43,42 +42,32 @@ export interface PreviewPaneProps {
  */
 export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: PreviewPaneProps) {
   if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} onDefaults={onDefaults} />;
-  if (schema.as === 'bar') return <BarPreview schema={schema} renderers={propertyRenderers} onDefaults={onDefaults} />;
+  if (schema.as === 'bar') return <BarPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
   return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
 }
 
-/** Each leaf's default, by the dotted path a bar reads its value at. */
-function barDefaults(group: PrefGroup, prefix = '', out: Record<string, unknown> = {}): Record<string, unknown> {
-  for (const [key, child] of Object.entries(group.children)) {
-    const path = prefix === '' ? key : `${prefix}.${key}`;
-    if (isPrefLeaf(child)) out[path] = child.default;
-    else barDefaults(child, path, out);
-  }
-  return out;
-}
-
 /** A root drawn as a bar: the toolbar itself on a stage, run either way. */
-function BarPreview({ schema, renderers, onDefaults }: {
-  schema: PrefGroup;
-  renderers?: Record<string, PropertyRenderer>;
-  onDefaults(edits: readonly DefaultEdit[]): void;
-}) {
+function BarPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: GroupPreviewProps) {
   const [vertical, setVertical] = useState(false);
-  const values = useMemo(() => barDefaults(schema), [schema]);
+  // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
+  const marked = useMemo(() => selected.map((p) => keysOf(p).join('.')), [selected]);
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview">
         <Switch isSelected={vertical} onChange={setVertical}>Vertical</Switch>
       </PaneHeader>
-      <div className={s.previewBar}>
-        <Bar schema={schema} framed label={schema.name === '' ? 'Toolbar' : schema.name} orientation={vertical ? 'vertical' : 'horizontal'}
-          values={values} renderers={renderers} onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
+      <div className={s.previewStage} ref={stageRef} onPointerDown={onStagePointerDown}>
+        <PrefsForm className={s.previewBar} schema={schema} values={NO_VALUES} renderers={renderers} orientation={vertical ? 'vertical' : 'horizontal'}
+          showHidden showEmpty drop={drop} selected={marked}
+          onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
+          onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
+        <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
       </div>
     </section>
   );
 }
 
-function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: {
+interface GroupPreviewProps {
   schema: PrefGroup;
   renderers?: Record<string, PrefRenderer>;
   selected: readonly string[];
@@ -88,7 +77,18 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
   drop?: PrefDrop | null;
   onStagePointerDown?(e: PointerEvent): void;
   ghost?: PreviewGhost | null;
-}) {
+}
+
+/** What follows the pointer while the form draws the dragged node nowhere. */
+function PreviewDragGhost({ ghost, stageRef, drop, renderers }: Pick<GroupPreviewProps, 'ghost' | 'stageRef' | 'drop' | 'renderers'>) {
+  if (!ghost || !stageRef?.current || drawsNode(drop)) return null;
+  return (
+    <DragGhost at={ghost} from={stageRef.current}><NodeGhost node={ghost.node} topLevel={ghost.topLevel} renderers={renderers} />{ghost.count > 1 && <Badge size="xs" className={s.ghostCount}>{ghost.count}</Badge>}</DragGhost>
+  );
+}
+
+function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: GroupPreviewProps) {
+
   const [showHidden, setShowHidden] = useState(true);
   const [width, setWidth] = useState(800);
   // What sits on no page is listed as unplaced, and the form would file it under a page of its own.
@@ -110,9 +110,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
         onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
         onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
       <ResizeHandle value={width} min={360} max={900} onInput={setWidth} ariaLabel="Resize preview" />
-      {ghost && stageRef?.current && !drawsNode(drop) && (
-        <DragGhost at={ghost} from={stageRef.current}><NodeGhost node={ghost.node} topLevel={ghost.topLevel} renderers={renderers} />{ghost.count > 1 && <Badge size="xs" className={s.ghostCount}>{ghost.count}</Badge>}</DragGhost>
-      )}
+      <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} />
       </div>
     </section>
   );

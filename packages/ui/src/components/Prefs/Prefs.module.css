@@ -564,3 +564,11 @@
   font: inherit;
   font-size: var(--wzl-font-size-sm);
 }
+
+/* A root drawn as a bar: the bar at its own size, with the room around it the form's to take a drop in. */
+.barRoot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wzl-space-2);
+}

@@ -107,6 +107,9 @@ export interface TreeProps {
    */
   onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, effect: TreeDragEffect): boolean;
   onDropOutside?(ids: string[], point: { x: number; y: number }, effect: TreeDragEffect): void;
+  /** Draw the dragged rows beside the pointer. Turn off while something outside the
+   *  tree draws them where they would land. Default true. */
+  ghost?: boolean;
   /**
    * A drag begun outside the tree, at this client point. The tree marks where
    * it would land — asking `canDrop` with no ids — and reports the target
@@ -162,7 +165,7 @@ export const Tree = forwardRef(function Tree(
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty', guides = false,
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
-    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, externalDrag, onExternalTarget,
+    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, ghost = true, externalDrag, onExternalTarget,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
@@ -437,7 +440,7 @@ export const Tree = forwardRef(function Tree(
           <Tooltip triggerRef={{ current: rowTip.tip!.el }} placement="right">{tipNode.tooltip}</Tooltip>
         </TooltipTrigger>
       )}
-      {drag.state.ghost && treeEl.current && (
+      {ghost && drag.state.ghost && treeEl.current && (
         <DragGhost at={drag.state.ghost} from={treeEl.current}>
           {drag.state.ghost.ids.map((id) => {
             const v = visible[indexOf.get(id) ?? -1];

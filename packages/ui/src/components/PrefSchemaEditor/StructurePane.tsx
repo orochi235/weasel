@@ -79,7 +79,7 @@ export interface StructurePaneProps {
   actions?: readonly EditorAction[];
   /** Somewhere else a drag from this pane may end: the live preview. */
   outside?: DropOutside;
-  /** `outside` is drawing what is dragged where it would land, so the palette draws no ghost of it. */
+  /** `outside` is drawing what is dragged where it would land, so the palette and the trees draw no ghost of it. */
   outsideDraws?: boolean;
   /** The most levels of groups the schema may nest. */
   maxDepth?: number;
@@ -237,6 +237,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
       <div className={s.treeArea} ref={treeArea}>
       <Tree
         aria-label="Schema structure"
+        ghost={!outsideDraws}
         foldBy="leading"
         guides
         nodes={shown}
@@ -289,7 +290,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
           <div className={s.storedArea} ref={unplacedArea} data-drop={unplacing || undefined} style={{ '--stored-h': `${storedHeight}px` } as CSSProperties}>
             <PaneHeader title="Unplaced" />
             <UnplacedTree loose={looseNodes} looseAt={(path) => nodeAt(schema, path)} waiting={waiting} sought={sought}
-              selected={selected} onSelect={(path) => onSelect([path])} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+              selected={selected} onSelect={(path) => onSelect([path])} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
           </div>
         </>
       )}
@@ -299,7 +300,7 @@ export function StructurePane({ schema, onChange, selected, lead, onPick, onSele
             onInput={setActionsHeight} ariaLabel="Resize actions" />
           <div className={s.storedArea} style={{ '--stored-h': `${actionsHeight}px` } as CSSProperties}>
             <PaneHeader title="Actions" />
-            <ActionList actions={actions} sought={sought} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
+            <ActionList actions={actions} sought={sought} ghost={!outsideDraws} onDrag={onPaletteDrag} onDrop={onPaletteDrop} />
           </div>
         </>
       )}

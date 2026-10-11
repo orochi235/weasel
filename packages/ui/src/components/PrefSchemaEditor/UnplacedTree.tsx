@@ -28,7 +28,7 @@ function toRows(group: PrefGroup, path: string): TreeNode[] {
  * what its host says it does not hold yet. Each is whole already, with its key, its name and its description, and
  * lands as it is wherever the structure tree or the live preview takes it. A group dragged brings what it holds.
  */
-export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onSelect, onDrag, onDrop }: {
+export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onSelect, ghost, onDrag, onDrop }: {
   /** The rows of what the schema holds on no page, each by its tree path. */
   loose: readonly TreeNode[];
   /** The schema's node at a tree path. */
@@ -41,6 +41,8 @@ export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onSele
   selected: readonly string[];
   /** A row the schema holds was picked. */
   onSelect(path: string): void;
+  /** As `Tree`'s `ghost`. */
+  ghost?: boolean;
   /** The drag left this tree and moved, or came back or ended (`null`). */
   onDrag(drag: PaletteDrag | null): void;
   onDrop(drag: PaletteDrag): void;
@@ -61,6 +63,7 @@ export function UnplacedTree({ loose, looseAt, waiting, sought, selected, onSele
   return (
     <Tree
       aria-label="Unplaced"
+      ghost={ghost}
       nodes={rows}
       empty={<p className={s.storedEmpty}>{all.length === 0 ? 'Nothing is waiting for a place.' : 'Nothing matches.'}</p>}
       foldBy="leading"
