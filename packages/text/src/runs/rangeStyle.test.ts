@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { styleAtRange, applyStyleToRange, runsCarryStyling, patchRangeStyle, MIXED } from './rangeStyle';
-import type { StyledRun } from '@weasel-js/text';
+import type { StyledRun } from '../runs';
 
 const runs: StyledRun[] = [
   { text: 'Hello ' },

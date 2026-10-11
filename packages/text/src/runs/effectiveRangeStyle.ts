@@ -1,5 +1,6 @@
-import { isBoldWeight, numericWeight, resolveTextStyle } from '@weasel-js/text';
-import type { TextPaint, TextStyle } from '@weasel-js/text';
+import { resolveTextStyle } from '../textStyle';
+import type { TextPaint, TextStyle } from '../textStyle';
+import { isBoldWeight, numericWeight } from './resolveRuns';
 import { nodeHasFlag } from './flagRange';
 import { MIXED } from './rangeStyle';
 import type { Mixed, RangeStyle } from './rangeStyle';

@@ -88,3 +88,9 @@ export type {
   LayoutResult,
   TextRenderer,
 } from './markdownText';
+
+export { MIXED, styleAtRange, applyStyleToRange, patchRangeStyle, runsCarryStyling, supersededKey } from './runs/rangeStyle';
+export type { Mixed, RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
+export { effectiveRangeStyle, rangeWeight } from './runs/effectiveRangeStyle';
+export { setFlagOverRange, nodeHasFlag, unboldPatch } from './runs/flagRange';
+export type { FlagKey, SetFlagResult } from './runs/flagRange';

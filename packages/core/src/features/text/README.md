@@ -25,7 +25,7 @@ plus `resolveRuns` and `DEFAULT_TEXT_STYLE` / `resolveTextStyle` /
 `fontString` — are in `@weasel-js/text`, and re-exported from
 `@weasel-js/core` unchanged.
 
-`runs/rangeStyle.ts` stays here — it is the **public run algebra**: `styleAtRange` reports
+`runs/rangeStyle.ts`, also in `@weasel-js/text`, is the **public run algebra**: `styleAtRange` reports
 what a character range shares (`MIXED` where the runs disagree),
 `applyStyleToRange` patches one, splitting and re-coalescing around it. A
 caret addresses a range, not a path, which is why this is a separate surface

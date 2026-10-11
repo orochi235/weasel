@@ -4,8 +4,8 @@
 export * from '../core/ops';
 
 // ─── Mixed sentinel: cross-cutting "these values disagree" marker ──────────
-export { MIXED } from '../core/mixed';
-export type { Mixed } from '../core/mixed';
+export { MIXED } from '@weasel-js/registry';
+export type { Mixed } from '@weasel-js/registry';
 
 // ─── Group/parent composition: world pose, rebase, ordered groups ───────────
 export {

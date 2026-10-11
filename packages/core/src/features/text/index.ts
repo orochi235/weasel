@@ -12,11 +12,6 @@ export type {
 } from './useTextEdit';
 export { useSceneTextEdit } from './useSceneTextEdit';
 export type { UseSceneTextEditOptions } from './useSceneTextEdit';
-export { styleAtRange, applyStyleToRange, patchRangeStyle } from './runs/rangeStyle';
-export type { RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
-export { effectiveRangeStyle, rangeWeight } from './runs/effectiveRangeStyle';
-export { setFlagOverRange, nodeHasFlag, unboldPatch } from './runs/flagRange';
-export type { FlagKey, SetFlagResult } from './runs/flagRange';
 export { textCommand, textCommandFromRuns, textCommandFromPose } from './textCommand';
 export {
   runsToDom,

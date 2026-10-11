@@ -24,10 +24,11 @@ import {
   runsToDom, domToRuns, appendOverlayText, charOffsetToDomPosition, domPositionToCharOffset, normalizeSmallCaps,
   SMALL_CAPS_SCALE_PROPERTY, type OverlayRunBase,
 } from './domRuns';
-import { applyStyleToRange, patchRangeStyle, runsCarryStyling, styleAtRange, supersededKey } from './runs/rangeStyle';
-import { nodeHasFlag, setFlagOverRange, unboldPatch, type FlagKey } from './runs/flagRange';
-import { rangeWeight } from './runs/effectiveRangeStyle';
-import type { RangeStyle, RunStylePatch } from './runs/rangeStyle';
+import {
+  applyStyleToRange, nodeHasFlag, patchRangeStyle, rangeWeight, runsCarryStyling, setFlagOverRange,
+  styleAtRange, supersededKey, unboldPatch,
+} from '@weasel-js/text';
+import type { FlagKey, RangeStyle, RunStylePatch } from '@weasel-js/text';
 import { applyOverlayDirection, overlayAlignEdge } from './overlayDirection';
 
 /**
@@ -412,7 +413,7 @@ export interface UseTextEditOptions {
    * that edit is expressed by lowering the node flag and raising it on the
    * runs outside the selection — which needs somewhere to put the new node
    * style. Without this or `commit`, such a toggle is declined and nothing
-   * changes. See `runs/flagRange`.
+   * changes. See `flagRange` in `@weasel-js/text`.
    *
    * Called when the edit commits, never during it: the session holds the
    * rewritten style until then (see `UseTextEditReturn.nodeStyle`), so a

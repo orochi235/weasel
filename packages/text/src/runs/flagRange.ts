@@ -22,9 +22,9 @@
  * range and leaves the node and the rest of the text alone.
  */
 
-import { isBoldWeight } from '@weasel-js/text';
-import type { StyledRun } from '@weasel-js/text';
-import type { TextStyle } from '@weasel-js/text';
+import type { StyledRun } from '../runs';
+import type { TextStyle } from '../textStyle';
+import { isBoldWeight } from './resolveRuns';
 import { applyStyleToRange } from './rangeStyle';
 import type { RunStylePatch } from './rangeStyle';
 

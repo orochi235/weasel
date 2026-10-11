@@ -30,10 +30,9 @@
  * `styleAtRange` reports. Treat `fill` values as immutable.
  */
 
-import { isPlainObject } from 'core/isPlainObject';
-import { MIXED } from 'core/mixed';
-import type { Mixed } from 'core/mixed';
-import type { StyledRun } from '@weasel-js/text';
+import { MIXED, isPlainObject } from '@weasel-js/registry';
+import type { Mixed } from '@weasel-js/registry';
+import type { StyledRun } from '../runs';
 
 export { MIXED };
 export type { Mixed };

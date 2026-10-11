@@ -8,3 +8,5 @@ export type {
   Registrant,
   RegisterOptions,
 } from './reflectable';
+export { MIXED } from './mixed';
+export type { Mixed } from './mixed';

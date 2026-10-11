@@ -6,7 +6,7 @@ import { overlayTop, useTextEdit } from './useTextEdit';
 import type { UseTextEditOptions } from './useTextEdit';
 import { SMALL_CAPS_SCALE, type StyledRun } from '@weasel-js/text';
 import { resolveScreenLength } from '@weasel-js/paint';
-import { MIXED } from './runs/rangeStyle';
+import { MIXED } from '@weasel-js/text';
 import type { TextStyle } from '@weasel-js/text';
 
 function makeHarness(initial: Record<string, string>) {
