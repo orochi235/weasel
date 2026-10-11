@@ -87,6 +87,18 @@ export function parseBmFont(raw: unknown): BmFont {
 
   const info = r.info as BmFontInfo;
   const common = r.common as BmFontCommon;
+  // Every advance and quad divides by these, so a bad one is NaN geometry.
+  const positive: Array<[string, unknown]> = [
+    ['info.size', info.size], ['common.scaleW', common.scaleW], ['common.scaleH', common.scaleH],
+  ];
+  for (const [name, value] of positive) {
+    if (typeof value !== 'number' || !(value > 0) || !Number.isFinite(value)) {
+      throw new Error(`parseBmFont: ${name} must be a positive number`);
+    }
+  }
+  if (typeof common.base !== 'number' || !Number.isFinite(common.base)) {
+    throw new Error('parseBmFont: common.base must be a number');
+  }
   const chars = r.chars as BmFontChar[];
   const kernings: BmFontKerning[] = Array.isArray(r.kernings)
     ? (r.kernings as BmFontKerning[])

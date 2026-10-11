@@ -30,6 +30,13 @@ describe('parseBmFont', () => {
     expect(() => parseBmFont({ info: {}, common: {}, chars: 'not-array' })).toThrow();
   });
 
+  it('names a metric that is missing or not a usable number', () => {
+    expect(() => parseBmFont({ ...FIXTURE_FONT, info: {} })).toThrow(/info\.size/);
+    expect(() => parseBmFont({ ...FIXTURE_FONT, info: { ...FIXTURE_FONT.info, size: 0 } })).toThrow(/info\.size/);
+    expect(() => parseBmFont({ ...FIXTURE_FONT, common: { ...FIXTURE_FONT.common, scaleW: undefined } })).toThrow(/common\.scaleW/);
+    expect(() => parseBmFont({ ...FIXTURE_FONT, common: { ...FIXTURE_FONT.common, base: 'x' } })).toThrow(/common\.base/);
+  });
+
   it('reads the field range msdf-bmfont-xml records', () => {
     const font = parseBmFont({ ...FIXTURE_FONT, distanceField: { fieldType: 'msdf', distanceRange: 4 } });
     expect(font.distanceRange).toBe(4);
