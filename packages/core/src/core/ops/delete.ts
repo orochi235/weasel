@@ -17,11 +17,6 @@ interface DeleteAdapter<TNode> extends OrderedReader {
   getRemovalClosure?(ids: readonly string[]): readonly string[];
 }
 
-interface InsertAdapter<TNode> {
-  insertNode(node: TNode, index?: number): void;
-  getNode?(id: string): TNode | undefined;
-}
-
 /** A captured node plus its slot in its own parent's child list. */
 export interface PlacedNode<TNode> {
   node: TNode;
@@ -138,27 +133,12 @@ export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TN
       a.removeNode(node.id);
     },
     invert() {
-      const cascaded = captured;
-      const restoredSlot = slot;
       // The root's own placement keeps the anchor-bearing slot; the rest have
       // only an ordinal, which is all `getChildren` can observe of them.
-      const reinsertRoot = createInsertOp<TNode>({ node, label, slot: restoredSlot });
-      if (cascaded.length === 0) return reinsertRoot;
-      return {
-        label,
-        apply(adapter) {
-          const a = adapter as InsertAdapter<TNode>;
-          for (const entry of cascaded) {
-            // A flat adapter's removeNode doesn't cascade, so its children
-            // were never gone — re-inserting them would duplicate them.
-            if (a.getNode?.(entry.node.id)) continue;
-            if (entry.node.id === node.id) reinsertRoot.apply(adapter);
-            else a.insertNode(entry.node, entry.index);
-          }
-        },
-        invert: () =>
-          createDeleteOp<TNode>({ node, label, slot: restoredSlot, cascaded }),
-      };
+      return createInsertOp<TNode>({
+        node, label, slot,
+        ...(captured.length > 0 ? { cascaded: captured } : {}),
+      });
     },
   };
 }

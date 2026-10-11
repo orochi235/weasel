@@ -907,14 +907,6 @@ Core five + Crop shipped. Remaining:
   does not hold, but `setSelection` keeps an id no node has (`reachable` filters on locks only, and
   `scene.selection.test.ts` selects ids it never added), so today it is a set of ids.
 
-- **(P3) Ops: three inverses have no name.** The inverses of `reorder` and `moveToIndex`
-  (`packages/core/src/core/ops/reorder/index.ts`) and of a cascading `delete`
-  (`packages/core/src/core/ops/delete.ts`) carry no `name`, so `serialize()` drops an entry built
-  from one and every undo entry older than it. None is expressible through a factory that is registered today: the first two
-  write a whole sibling order back, which `moveToIndex` cannot state because it keeps the moved
-  ids in their current relative order, and the third re-inserts several nodes. Naming them means
-  registering new op kinds, which adds to the persisted history format.
-
 - **(P3) `packages/core/src/core/scene/scene.ts` is one 2,100-line closure holding seven jobs.**
   `createScene` contains the node store and kit op table, the layer stack, the arrival window and
   layout settle, the lock guard, the atomic-revert log, the `History` facade and journal wrapper,

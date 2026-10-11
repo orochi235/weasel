@@ -13,12 +13,15 @@ export { createSetLayoutOp, type SetLayoutArgs, type LayoutRef } from './setLayo
 export {
   createReorderOp,
   createMoveToIndexOp,
+  createSetChildOrderOp,
 } from './reorder';
 export type {
   ReorderDirection,
   ReorderArgs,
   MoveToIndexArgs,
   ReorderRestoreEntry,
+  ChildOrder,
+  SetChildOrderArgs,
 } from './reorder';
 export { createSetPathOp } from './setPath';
 export type { SetPathFields, SetPathArgs } from './setPath';

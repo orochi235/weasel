@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createHistory } from '../createHistory';
-import { createReorderOp, type ReorderDirection } from './index';
+import { createMoveToIndexOp, createReorderOp, type ReorderDirection } from './index';
 
 function adapter(initial = ['a', 'b', 'c', 'd']) {
   let order = initial.slice();
@@ -64,5 +64,27 @@ describe('reorder ops round-trip through History.serialize()', () => {
     const snap = h.serialize();
     expect(snap.droppedEntries).toBe(0);
     expect(snap.undoStack[0].forwardOps.map((o) => o.name)).toEqual(['reorder']);
+  });
+
+  it.each([
+    ['reorder', () => createReorderOp({ ids: ['a'], direction: 'front' })],
+    ['moveToIndex', () => createMoveToIndexOp({ ids: ['a'], parentId: null, index: 2 })],
+  ] as const)('an entry built from the inverse of a %s survives a restore', (_name, make) => {
+    const a = adapter();
+    const h = createHistory(a.self);
+    const op = make();
+    h.applyOps([op], 'Reorder');
+    const moved = a.order();
+    h.applyOps([op.invert()], 'Put back');
+    expect(a.order()).toEqual(['a', 'b', 'c', 'd']);
+
+    const snap = h.serialize();
+    expect(snap.droppedEntries).toBe(0);
+    const h2 = createHistory(a.self);
+    h2.restore(snap);
+    h2.undo();
+    expect(a.order()).toEqual(moved);
+    h2.redo();
+    expect(a.order()).toEqual(['a', 'b', 'c', 'd']);
   });
 });

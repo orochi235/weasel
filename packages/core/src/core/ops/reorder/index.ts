@@ -8,7 +8,10 @@ import {
   moveToIndex,
 } from './algorithms';
 
+import { createSetChildOrderOp } from './setChildOrder';
+
 export { canBringForward, canSendBackward } from './algorithms';
+export { createSetChildOrderOp, type ChildOrder, type SetChildOrderArgs } from './setChildOrder';
 
 interface ReorderAdapter {
   getParent?(id: string): string | null;
@@ -100,15 +103,10 @@ function createPartitionedReorderOp(args: {
     invert() {
       const captured = restore;
       return {
-        label,
-        apply(adapter) {
-          if (!captured) return;
-          const a = adapter as ReorderAdapter;
-          if (!a.setChildOrder) return;
-          for (const entry of captured) {
-            a.setChildOrder(entry.parentId, entry.before.slice());
-          }
-        },
+        ...createSetChildOrderOp({
+          orders: (captured ?? []).map((e) => ({ parentId: e.parentId, ids: e.before })),
+          label,
+        }),
         invert: () =>
           createPartitionedReorderOp({
             ids, direction, fn, label, prevOrders: captured ?? undefined,
@@ -199,12 +197,7 @@ export function createMoveToIndexOp(args: MoveToIndexArgs): Op {
     invert() {
       const captured = before;
       return {
-        label,
-        apply(adapter) {
-          if (!captured) return;
-          const a = adapter as ReorderAdapter;
-          a.setChildOrder?.(parentId, captured.slice());
-        },
+        ...createSetChildOrderOp({ orders: captured ? [{ parentId, ids: captured }] : [], label }),
         invert: () =>
           createMoveToIndexOp({
             ids, parentId, index, label, prevPositions: captured ?? undefined,

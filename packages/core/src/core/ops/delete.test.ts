@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createDeleteOp } from './delete';
+import { rebuildOp } from './registry';
 
 interface Obj { id: string; value: number; parent: string | null }
 
@@ -96,6 +97,21 @@ describe('createDeleteOp', () => {
     const rebuilt = createDeleteOp<Obj>(op.args as never);
     rebuilt.invert().apply(adapter as never);
     expect(adapter.getChildren('g')).toEqual(['c1']);
+  });
+
+  it('names the inverse of a cascading delete, so it rebuilds from its args', () => {
+    const adapter = makeAdapter([leaf('a', 0), leaf('g', 1), leaf('c1', 2, 'g'), leaf('c2', 3, 'g')]);
+    const op = createDeleteOp<Obj>({ node: adapter.getNode('g')!, index: 1 });
+    op.apply(adapter as never);
+    const inverse = op.invert();
+    expect(inverse.name).toBe('insert');
+
+    const rebuilt = rebuildOp(inverse.name!, JSON.parse(JSON.stringify(inverse.args)))!;
+    rebuilt.apply(adapter as never);
+    expect(adapter.getChildren(null)).toEqual(['a', 'g']);
+    expect(adapter.getChildren('g')).toEqual(['c1', 'c2']);
+    rebuilt.invert().apply(adapter as never);
+    expect([...adapter.nodes.keys()]).toEqual(['a']);
   });
 
   it('inverting the inverse gives back a delete of the whole subtree', () => {
