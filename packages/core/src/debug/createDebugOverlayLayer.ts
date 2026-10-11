@@ -17,8 +17,8 @@ import type {
 } from './types';
 import { DEFAULT_DEBUG_STROKES, DEFAULT_DEBUG_THEME } from './defaultTheme';
 
-/** @internal */
-interface CreateDebugOverlayLayerOpts {
+/** What `createDebugOverlayLayer` paints from: a sink to snapshot and the features to draw. */
+export interface CreateDebugOverlayLayerOpts {
   sink: { snapshot(): DebugSnapshot };
   config: DebugConfig;
 }

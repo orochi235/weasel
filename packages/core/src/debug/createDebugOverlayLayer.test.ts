@@ -2,14 +2,18 @@ import { describe, it, expect } from 'vitest';
 import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '../renderer';
 import { buildDebugOverlayCommands, createDebugOverlayLayer } from './createDebugOverlayLayer';
 import { createDebugSink } from './createDebugSink';
+import type { CreateDebugOverlayLayerOpts } from './index';
 
 const DIMS = { width: 800, height: 600 };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 describe('createDebugOverlayLayer', () => {
   it('is registered as a screen-space layer', () => {
-    const sink = createDebugSink({ bounds: true });
-    const layer = createDebugOverlayLayer({ sink, config: { bounds: true } });
+    const opts: CreateDebugOverlayLayerOpts = {
+      sink: createDebugSink({ bounds: true }),
+      config: { bounds: true },
+    };
+    const layer = createDebugOverlayLayer(opts);
     expect(layer.space).toBe('screen');
     expect(layer.id).toBe('debug-overlay');
   });

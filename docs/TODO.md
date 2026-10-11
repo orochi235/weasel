@@ -214,11 +214,6 @@ Priority tags:
   binding to `viewport.dragPan` and should be `Tool<null>`. `useLassoTool(adapter, …)` never reads
   its required first argument. Both are signature changes.
 
-- **(P3) `createDebugOverlayLayer` is public and its options type is not.** The function is exported
-  through `export * from './debug'`, while `CreateDebugOverlayLayerOpts`
-  (`packages/core/src/debug/createDebugOverlayLayer.ts`) is `@internal` and unexported, so a
-  consumer cannot name the argument. Export the type or mark the function internal.
-
 - **(P2) `resizeAction` / `rotateAction`: a selected group's children are not transformed.** With
   the default absolute poses, Cmd+G two rects and drag a resize or rotation handle on the group: one
   transform op is written for the container and the children stay put, and since the group's shown
