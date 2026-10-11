@@ -351,6 +351,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     <div className={[s.editor, className].filter(Boolean).join(' ')}
       style={{ '--structure-w': `${structureWidth}px`, '--attributes-w': `${attributesWidth}px`, '--aside-w': `${asideWidth}px` } as CSSProperties}
       onKeyDownCapture={(e) => {
+      // A key pressed in a dialog of the editor's reaches here through React's tree, and is the dialog's.
+      if (!e.currentTarget.contains(e.target as Node)) return;
       const to = historyKey(e);
       if (to) {
         e.preventDefault();
