@@ -1,5 +1,19 @@
 # @weasel-js/font
 
+## 1.9.4
+
+### Patch Changes
+
+- d99eb26: `parseBmFont` accepted metrics JSON with a missing `info.size`, `common.base`, `common.scaleW`, or `common.scaleH`, and every glyph then laid out at `NaN`. It now throws, naming the field, as its documentation says.
+- a7c9133: A `.dfont` (Datafork TrueType) face reaches the outline tier. `sfntFromCollection` reads the `sfnt` resources out of the file's resource map and selects one by PostScript name, as it does a `.ttc` member, where it used to throw and leave the face on the SDF tier.
+- c289df7: Every public export now carries a JSDoc block: the ones that had none are documented, among them audio's effect and envelope types, diagram's `DiagramData` family, and `SelectContext`. No behavior changes.
+- 2010b82: `enableLocalFontOutlines` filed a face whose style spells its weight as two words ("Demi Bold", "Ultra Light", "Extra Bold") under the second word's weight, so "Demi Bold" collided with "Bold" and no 600 face was registered. `parseFontStyle` now reads the two-word and hyphenated spellings as the one-word weight.
+- 747e03e: A family registered only through `registerFontOutlines` was laid out in the default family, with a "not registered" warning, for as long as its font bytes were loading, and then reflowed when they landed. `resolveFontVariant` now reports it as pending, the way it does a family whose atlas is still loading.
+- 611573e: `sfntFromCollection` unpacked a truncated `.ttc` into a well-formed font with zero-filled tables, which then parsed as a face with no usable glyphs. It now throws, naming the table that runs past the end of the file, so the outline registry reports the failure and the text stays on the SDF tier.
+- Updated dependencies [001aaae]
+- Updated dependencies [4d559ca]
+  - @weasel-js/registry@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

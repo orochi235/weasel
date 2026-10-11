@@ -1,5 +1,16 @@
 # @weasel-js/audio
 
+## 1.9.4
+
+### Patch Changes
+
+- b21f2fd: A voice whose node threw as it started, such as `engine.play(sound, { when: -1 })` or `engine.stream(el)` on an element another engine already routed, kept its pool slot and its place on the bus for the life of the engine: `activeVoices()` counted it and `handle.isPlaying()` stayed `true`. The voice is now torn down before the error is reported.
+- 0025718: An insert effect added and then removed while another slot's crossfade was still running, as `inserts.add(a); inserts.add(b); inserts.clear()` does in one task, never had its `dispose()` called. It is now disposed on removal. `inserts.settled()` also resolves when the engine is disposed mid-crossfade instead of staying pending.
+- 9ac30e3: `onDone` is now documented as what it is: a voice's source ended. A voice that never played reports through a new `onDrop(reason)` option on `play`, `playNote`, `playNoise`, and `stream`, raised when the context is locked, the engine is disposed, the voice is stopped before it comes due, its sound is not loaded, its node fails to start, or it came due during a suspension. `VoiceDropReason` is exported.
+- 6c98963: A voice played with `position` kept its full level through `handle.stop(fadeMs)` and then cut off with a click whenever `engine.setListener` or `handle.setPosition` ran during the fade, as it does every frame in a game that follows a camera. The fade now survives those calls, and so does a `handle.setGain(value, rampMs)` ramp, which carries on to the same end time at the new distance's level. `setGain` during a fade-out no longer cancels the fade either.
+- 1ffc451: `createAudioEngine`'s automatic unlock listened once for `pointerdown`, `keydown`, and `touchstart`. On a touch screen a tap grants audio at `pointerup`, `touchend`, and `click`, so the first tap used up the listeners without starting the context and every later `play()` was dropped. The engine now listens for `pointerdown`, `pointerup`, `touchend`, `click`, and `keydown`, and keeps listening until the context is running.
+- c289df7: Every public export now carries a JSDoc block: the ones that had none are documented, among them audio's effect and envelope types, diagram's `DiagramData` family, and `SelectContext`. No behavior changes.
+
 ## 1.9.3
 
 No changes in this release.

@@ -1,5 +1,16 @@
 # @weasel-js/quantity
 
+## 1.9.4
+
+### Patch Changes
+
+- 7905beb: The `fraction` kind wrote a custom constant's `symbol` into its MathML unescaped, so a symbol holding `<` or `&` produced malformed markup. It is escaped like the HTML form.
+- afbc295: A small negative value that rounds to zero showed as `−0`: a readout of −0.0004 at two places, `formatUnit(-0.001, 'in', IMPERIAL_INCHES)` as `-0in`, −0.1% as `−0%`. `formatNumber`, `formatCompact`, `formatUnit`, and every display kind now show the zero without a sign.
+- 9a6f7a5: Several display kinds could not read back the text they show. `currency` failed in any locale whose currency abbreviation ends in a period (`12,50 kr.` in `da-DK`, `12,50 лв.` in `bg-BG`) and in `ar-EG`, and dropped a typed magnitude suffix, so `$5k` read as 5. `percent` failed where the sign is `٪`, is wrapped in bidi marks (`ar`, `ar-EG`, `fa-IR`), or sits inside the minus (`−%50` in `tr-TR`). `multiplier({ symbol })` could not read its own symbol. `parseAs` now reads all of these.
+- 7908e8f: `formatCompact` and the `bytes` kind chose a magnitude before rounding, so a value just under one printed at the wrong width: `formatCompact(999.6)` gave `1000` instead of `1.00K`, and 999,999 bytes showed `1,000 kB` instead of `1 MB`. Both now choose from the rounded value.
+  
+  `parseNumber` read `0x10` as 16, `0b11` as 3, `0xb` as 233, and `1e400` as Infinity. Text that is not a decimal number, or is too large to be one, now reads as NaN.
+
 ## 1.9.3
 
 No changes in this release.

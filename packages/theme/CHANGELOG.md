@@ -1,5 +1,33 @@
 # @weasel-js/theme
 
+## 1.9.4
+
+### Patch Changes
+
+- 7b1da16: `applyTheme` returns a release, and a theme's rule lives as long as something holds it. The rule goes into the stylesheet of the document or shadow root the element is in, so a popout window fed by a portal and a shadow tree get their theme; it went into the global `document` only. A rule leaves the sheet when the last element holding it is released or given another theme, so a page that mints a theme name per instance no longer grows its stylesheet without bound; `<ThemeProvider>` releases on unmount. Two different themes sharing a name no longer overwrite each other: the second held at once is kept to its own elements by a `data-wzl-variant` attribute, matched inside `:where()` so specificity is unchanged.
+  
+  The release also takes the `data-wzl-*` attributes back off its element. Code that called `applyTheme` and ignored the result keeps working; applying to one element again replaces what it held.
+- a07e769: A range's track and thumb are easier to see in dark mode: both mix from `--wzl-accent-fg`, the bright accent there, and `--wzl-slider-track-mix` and `--wzl-slider-thumb-mix` are 40% and 100% in dark mode. Light mode keeps 18% and 70% of the same color it had.
+  
+  An off `Switch` has a muted gray track, a share of the text color, where its sunken fill disappeared on a dark surface.
+  
+  A `PrefsForm` row sets its control at the row's far edge, and a select's value at that edge inside it, so the values line up down a pane.
+  
+  A `PrefsForm` rail entry is set at `--wzl-font-size`, the size of a control's text in the pane beside it, up from `--wzl-font-size-sm`.
+- 5cd52f3: One hex color reader. `@weasel-js/paint` exports `parseHexBytes` (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa` to four 0–255 channels, `null` otherwise) and `hexToRgbBytes`, and core re-exports both; core's `parseColor` and `normalizeHex`, paint's `hexToOklchDeg`, `contrastLineColor`, and `hexToColorLiteral`, theme's `hexToRgb` and `withAlpha`, and ui's token panel all read through it. Fixed along the way: theme's `hexToRgb` (and `luminance`, `contrast`, `toLab` on top of it) read `#abc` as `#000abc` and shifted an eight-digit hex's alpha into blue; `contrastLineColor` did not read a four-digit background. Behavior change: `hexToOklchDeg`, `hexToRgb`, and `parseColor` now throw on a malformed hex where they computed from `NaN`.
+- 4d559ca: `isPlainObject` lives in `@weasel-js/registry` (core still exports it), and `@weasel-js/geom` exports a scalar `clamp(v, lo, hi)`. theme, prefs, labkit, and forge read plain objects through the one realm-safe test, so a `Date` or a `Map` no longer passes where they accept a record; ui's Slider and ResizeHandle, hud's loupe, and labkit's ZoomControl use geom's clamp. When its bounds cross, ResizeHandle now holds to `min` where it held to `max`. theme and prefs gain a dependency on registry, and ui's on geom moves from dev to runtime.
+- e30e47c: A theme that adds an axis value, such as a new density or mode through `defineTheme`, no longer makes `resolveTheme`, `applyTheme`, and `<ThemeProvider>` throw `Token "..." references "...", which is not defined`. A theme it extends that never declared the new value is read at its own default for that axis, which is what `tokens.css` already showed through the cascade. `resolveTheme`, `bake`, `emitCss`, and `emitThemes` now share that one rule, so the stylesheet and the resolved record agree.
+- 12a42f0: `generateTokens` reported success for a definition with an axis that has no values, writing an empty `:root` and a `themes.ts` that does not parse. An axis whose `default` is not one of its `values` failed with `Token "..." references "...", which is not defined`, naming neither the axis nor the default. `derive` now reports both as an `invalid` issue at `axes.<name>`, and `generateTokens` refuses the set with that issue.
+- 732f5c3: `emitCss` rounded the `alpha` of a token that references another to a whole percent, so a pin such as `{ value: '{fg}', alpha: 0.125 }` was 13% in `tokens.css` and `0.125` from `resolveTheme` and `applyTheme`. The stylesheet now keeps the same precision as the resolved record. The built-in theme's alphas are whole percents, so its `tokens.css` is unchanged.
+- 8411fa2: `--wzl-tree-fold-size` and `--wzl-tree-guide` are declared override hooks. `Tree` already read both, with fallbacks of 16px and `--wzl-fg-subtle`; they were missing from the token manifest, so nothing listed them as settable.
+- Updated dependencies [9ad839d]
+- Updated dependencies [001aaae]
+- Updated dependencies [a8d8efb]
+- Updated dependencies [5cd52f3]
+- Updated dependencies [4d559ca]
+  - @weasel-js/paint@1.9.4
+  - @weasel-js/registry@1.9.4
+
 ## 1.9.3
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @weasel-js/gestures
 
+## 1.9.4
+
+### Patch Changes
+
+- d8ba470: Documentation only. `ModSpec` said only `shift` accepts `'optional'`; every modifier does. `DoubleClickSpec` quoted 500 ms and 5 px; the dispatcher uses 600 ms and 8 px. `TargetPredicate` said `hit` is the DOM target for gestures other than drag; it is the affordance hit for every gesture. `ActionsRegistry.activate` said a dispatcher activates its scope on focus; it does so on pointerdown and wheel.
+- 7c2e054: A key binding can name the physical key. `KeySpec` and `KeyHeldSpec` take a `code` (`KeyboardEvent.code`, one or several), tried before `key`, with either one matching; key input events carry the code. Bring to Front and Send to Back on Cmd+Alt+] and Cmd+Alt+[ use it, so they fire on layouts where Option makes those keys type something other than the US glyphs. A held key is now tracked by its code, so with both Shift keys down, releasing one no longer ends a Shift hold.
+- 5a92802: `mod` is matched and drawn from one platform read. `@weasel-js/gestures` exports `isApplePlatform()`; the gesture dispatcher uses it for the `isMac` it matches with, and ui's `detectPlatform` uses it to pick key legends. `formatShortcut` and `formatShortcutParts` now follow the platform, taking an optional `{ platform }`: off macOS a `mod` shortcut reads `Ctrl+Z`, not `⌘Z`. Behavior changes: on iPhone and iPad the dispatcher now matches `mod` on Command where it matched Ctrl, and `detectPlatform` reads an unrecognized browser as Linux where it read macOS. ui gains a dependency on `@weasel-js/gestures`.
+- 7536ff8: Lifting one finger of a pinch committed every gesture in flight, so a drag started by another finger ended mid-drag and a held Space released its tool. A three-finger gesture whose fingers lifted one at a time was never ended at all, and neither was a pinch one of whose pointers was canceled. `useGestureDispatcher` now ends the multitouch gesture alone, on the first finger to lift (`'commit'`) or be canceled (`'cancel'`). `MultiTouchEvent` gains an optional `end` field, which is how the dispatcher is told.
+- 9842451: A `multiTouchTap` binding no longer fires after a long hold. Fingers that rest in place for as long as a long-press takes (500 ms, or the dispatcher's `longPress.duration`) and then lift are not a tap.
+- 62d3561: The route-conflict check compares two kinds of tie it used to miss. A binding with an optional modifier is now compared with one that forbids it, since both take the bare press at equal rank: `ArrowLeft` with `shift: 'optional'` against plain `ArrowLeft` is reported. And `multiTouch` is a route gesture, written `multiTouch(2)`, so two bindings on the same finger count are compared, `routesForSpec` prints one, and `routeToSpec` parses it.
+- 8d56051: A `kindOf` target predicate must now declare whether it reads the affordance hit: `TargetPredicate.readsAffordance` is required, and the exclusive-claim filter reads it and no longer guesses. Build one with the new `hitPredicate((hit, bodyTarget) => …)` or `bodyPredicate((bodyTarget) => …)`, exported from `@weasel-js/gestures` and `@weasel-js/core`. This is a breaking change: a bare function as `kindOf` is a type error, and one passed from untyped code counts as not reading the hit, so an exclusive claim bars its binding.
+
 ## 1.9.3
 
 No changes in this release.

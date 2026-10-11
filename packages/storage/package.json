@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/storage",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "description": "Keyed async storage behind one adapter interface — IndexedDB, localStorage, the URL hash, memory — and an in-memory record cache that writes behind and hears other tabs. No React, no weasel deps.",
   "license": "MIT",
   "type": "module",
