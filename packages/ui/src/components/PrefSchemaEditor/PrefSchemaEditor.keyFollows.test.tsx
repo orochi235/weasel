@@ -40,16 +40,17 @@ const rename = (to: string) => {
 const keyField = () => attributes().getByRole('textbox', { name: 'Key' });
 
 describe('PrefSchemaEditor: the path under the key', () => {
-  it('shows the selected node\'s whole path, read-only, and follows a new key', () => {
+  it('shows the selected node\'s whole path as plain text, not a field, and follows a new key', () => {
     render(<Live />);
     select('snap');
-    const path = () => attributes().getByRole('textbox', { name: 'Path' });
-    expect(path()).toHaveValue('view.snap');
-    expect(path()).toHaveAttribute('readonly');
+    const path = () => attributes().getByText(/^(view|page)\./);
+    expect(path()).toHaveTextContent('view.snap');
+    expect(attributes().queryByRole('textbox', { name: 'Path' })).toBeNull();
+    expect(path().closest('input, [role="textbox"]')).toBeNull();
     expect(keyField().compareDocumentPosition(path()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     select('gap');
     rename('Line width');
-    expect(path()).toHaveValue('page.lineWidth');
+    expect(path()).toHaveTextContent('page.lineWidth');
   });
 });
 

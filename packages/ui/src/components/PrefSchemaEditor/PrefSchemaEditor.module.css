@@ -7,6 +7,8 @@
 /* The stored value is code and the label is prose; the faces say which is which on every row. */
 /* A field holding what the code will spell: a key, an option's stored value, a tag, a glyph's name. */
 .symbol input { font-family: var(--wzl-font-mono); }
+/* Derived from the keys above it, so it is text to read and copy, not a field. */
+.pathText { overflow-wrap: anywhere; font-size: var(--wzl-font-size-sm); color: var(--wzl-fg-muted); user-select: text; -webkit-user-select: text; }
 .number { composes: numeric from '@weasel-js/theme/numeric.module.css'; }
 .number input { text-align: right; }
 /* A whole surface a host may mount anywhere, so it brings its face rather than inheriting the page's. */

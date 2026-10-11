@@ -139,7 +139,7 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
       <Input aria-label="Key" className={s.symbol} value={key} onChange={setKey} onBlur={commitKey}
         onKeyDown={(e) => { if (e.key === 'Enter') commitKey(); }} errorMessage={keyError ?? undefined} isInvalid={keyError !== null} />
     ),
-    [PATH_KIND]: () => <Input aria-label="Path" className={s.symbol} value={keysOf(path).join('.')} isReadOnly />,
+    [PATH_KIND]: () => <span className={s.pathText}>{keysOf(path).join('.')}</span>,
     [KIND_KIND]: () => isPrefLeaf(node) && leaf && (
       <Select aria-label="Kind" selectedKey={choice} placeholder={MIXED_HINT}
         options={kindChoices(kinds, types, node)}
