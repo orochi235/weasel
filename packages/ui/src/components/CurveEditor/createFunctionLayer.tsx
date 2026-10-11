@@ -360,7 +360,6 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     return {
       onMove(state, model, _e, ctx) { return moveAnchor(state, index, model, ctx); },
       onCommit(state) { return { ...state, activeIndex: null }; },
-      onCancel(state) { return { ...state, activeIndex: null }; },
     };
   }
 

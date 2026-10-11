@@ -66,8 +66,8 @@ export interface LayerGesture<S> {
    *  `next` value passed to `onLayerCommit`. Default: return state
    *  unchanged. */
   onCommit?(state: S, ctx: LayerCtx): S;
-  /** Pointercancel. Return the state to restore (usually the
-   *  pre-gesture snapshot). Default: return state unchanged. */
+  /** The gesture ended without a release. Return the state to restore.
+   *  Default: the layer's state from before the press that started it. */
   onCancel?(state: S, ctx: LayerCtx): S;
 }
 
