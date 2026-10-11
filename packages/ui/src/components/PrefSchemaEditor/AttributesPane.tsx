@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefCondition, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { Code } from '../Code';
 import { DetailList, DetailRow } from '../DetailList';
 import { Input } from '../Input';
+import { PrefConditionEditor } from '../PrefConditionEditor';
 import { PrefsForm, type PrefRenderer } from '../Prefs';
 import { renderPrefControl } from '../Prefs/PrefsRow';
 import { prefFieldChoices } from '../Prefs/schema';
@@ -12,7 +13,7 @@ import { aliasChoices } from './aliasChoices';
 import { aggregateAttributes, WHOLE } from './attrAggregate';
 import { ATTR_RENDERERS, MIXED_ATTR_KINDS, MIXED_HINT } from './attrRenderers';
 import type { EditorAction } from './editorActions';
-import { changeKind, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
+import { changeKind, CONDITION_KIND, convertLeaf, entryOf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { childrenOf, joinPath, keyFromName, keyOf, keyProblem, keysOf, nodeAt, parentPath, renameKey, setAttribute, takesDottedKey, uniqueKey, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { choiceOf, entryChoices, kindChoices, typeNamed, type PrefTypes } from './types';
 import { KEEP, STUB, containsCode, printValue } from './schemaExport';
@@ -40,7 +41,8 @@ const ENTRY_KIND = 'schema-entry-kind';
 const AUTO_VALUE_KIND = 'schema-auto-value';
 
 /** Whether an attribute kind's control can stand for several values that disagree. */
-const drawsMixed = (kind: string): boolean => (kind in ATTR_RENDERERS ? MIXED_ATTR_KINDS.has(kind) : !WHOLE.has(kind));
+const drawsMixed = (kind: string): boolean =>
+  kind !== CONDITION_KIND && (kind in ATTR_RENDERERS ? MIXED_ATTR_KINDS.has(kind) : !WHOLE.has(kind));
 
 export interface AttributesPaneProps {
   schema: SchemaRoot;
@@ -147,6 +149,9 @@ export function AttributesPane({ schema, onChange, paths, onRekey, added = false
           {renderPrefControl({ ...ctx, pref: auto.autoValue! }, drawn)}
         </fieldset>
       </span>
+    ), { group: true }),
+    [CONDITION_KIND]: Object.assign<PrefRenderer, { group: boolean }>(({ pref, value, setValue }) => (
+      <PrefConditionEditor aria-label={pref.name} schema={schema} value={value as PrefCondition | undefined} onChange={setValue} />
     ), { group: true }),
     [NAME_KIND]: ({ value, mixed, setValue }) => (
       <Input aria-label="Name" value={String(value ?? '')} placeholder={mixed ? MIXED_HINT : undefined} onChange={setValue}

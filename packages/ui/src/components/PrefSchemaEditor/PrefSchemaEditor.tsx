@@ -7,6 +7,7 @@ import { prefDropTargetAt, type PrefDrop, type PrefRenderer } from '../Prefs';
 import type { PropertyRenderer } from '../SelectionPanel';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
+import { conditionProblems } from './conditionMarks';
 import { setDefaults, type DefaultEdit } from './defaults';
 import { deadActionPaths, useEditorActions, type EditorAction } from './editorActions';
 import { EditorBar } from './EditorBar';
@@ -160,16 +161,20 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     () => (actionList ? deadActionPaths(schema, new Set(actionList.map((a) => a.key)), joinPath) : NO_PATHS),
     [actionList, schema],
   );
+  const unsound = useMemo(() => conditionProblems(schema), [schema]);
   const treeMark = useMemo(() => {
-    if (!rowMark && dead.size === 0) return undefined;
+    if (!rowMark && dead.size === 0 && unsound.size === 0) return undefined;
     const baseline = baselinePaths(changes);
     return (path: string) => (
       <>
         {dead.has(path) && <Badge size="xs" status="danger" variant="subtle">no action</Badge>}
+        {unsound.has(path) && (
+          <Badge size="xs" status="danger" variant="subtle" tooltip={unsound.get(path)!.map((p) => p.problem).join('; ')}>bad condition</Badge>
+        )}
         {rowMark?.(keysOf(baseline(path)).join('.'))}
       </>
     );
-  }, [rowMark, changes, dead]);
+  }, [rowMark, changes, dead, unsound]);
   // `label` is a kind the form draws itself: text among the rows, with no attributes of its own.
   const custom = kinds;
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);

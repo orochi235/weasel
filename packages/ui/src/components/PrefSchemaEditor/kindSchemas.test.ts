@@ -36,10 +36,10 @@ describe('kindSchemas', () => {
 
   it('describes a group and a section each with a name, a description and how it is drawn, a section with no page', () => {
     const { shared, own } = attributeSchema({ name: 'G', children: {} });
-    expect(Object.keys(shared)).toEqual(['name', 'description', 'as']);
+    expect(Object.keys(shared)).toEqual(['name', 'description', 'as', 'showIf', 'enableIf']);
     expect(own).toEqual({});
     const section = attributeSchema({ name: 'S', members: {} }).shared;
-    expect(Object.keys(section)).toEqual(['name', 'description', 'as']);
+    expect(Object.keys(section)).toEqual(['name', 'description', 'as', 'showIf', 'enableIf']);
     expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'fragment', 'bar']);
   });
 
@@ -76,11 +76,11 @@ describe('kindSchemas', () => {
     expect(blankLeaf('object')).toMatchObject({ children: {} });
   });
 
-  it('offers a label its name, its description, and Hidden, and a separator Hidden alone', () => {
+  it('offers a label its name, its description, and when it is drawn, and a separator only when it is drawn', () => {
     const label = attributeSchema(blankLeaf('label'));
-    expect([Object.keys(label.shared), Object.keys(label.own), Object.keys(label.auto)]).toEqual([['name', 'description', 'hidden'], [], []]);
+    expect([Object.keys(label.shared), Object.keys(label.own), Object.keys(label.auto)]).toEqual([['name', 'description', 'hidden', 'showIf'], [], []]);
     const rule = attributeSchema(blankLeaf('separator'));
-    expect([Object.keys(rule.shared), Object.keys(rule.own), Object.keys(rule.auto)]).toEqual([['hidden'], [], []]);
+    expect([Object.keys(rule.shared), Object.keys(rule.own), Object.keys(rule.auto)]).toEqual([['hidden', 'showIf'], [], []]);
     expect(rule.readOnly.map(([key]) => key)).toEqual(['default']);
   });
 
@@ -161,5 +161,37 @@ describe('kindSchemas', () => {
     const { own, readOnly } = attributeSchema(action);
     expect(Object.keys(own)).toEqual(['action', 'label', 'control']);
     expect(readOnly.map(([key]) => key)).not.toContain('action');
+  });
+});
+
+describe('the conditions a node is shown and enabled by', () => {
+  const when = { path: 'a.on', is: true };
+
+  it('gives a leaf both, each a condition attribute, and no read-only row for one it holds', () => {
+    const { shared, readOnly } = attributeSchema({ ...num, unit: undefined, showIf: when, enableIf: when } as PrefLeaf);
+    expect(shared.showIf).toMatchObject({ kind: 'condition', name: 'Shown if' });
+    expect(shared.enableIf).toMatchObject({ kind: 'condition', name: 'Enabled if' });
+    expect(readOnly.map(([key]) => key)).not.toEqual(expect.arrayContaining(['showIf', 'enableIf']));
+  });
+
+  it('lets a leaf made from a type set them, and keeps them off the control its default is edited with', () => {
+    const typed = { ...num, unit: undefined, type: 'Size', showIf: when, enableIf: when } as PrefLeaf;
+    const { shared, own } = attributeSchema(typed);
+    expect(Object.keys(shared)).toEqual(expect.arrayContaining(['showIf', 'enableIf']));
+    const custom = attributeSchema({ kind: 'swatch', name: 'S', description: '', default: 'x', type: 'Swatch', showIf: when, enableIf: when } as PrefLeaf);
+    expect(custom.own.default).toBeDefined();
+    expect(custom.own.default).not.toHaveProperty('showIf');
+    expect(custom.own.default).not.toHaveProperty('enableIf');
+    expect(own.default).not.toHaveProperty('showIf');
+  });
+
+  it('carries them to the kind a leaf is changed to', () => {
+    const { leaf, dropped } = convertLeaf({ ...num, unit: undefined, showIf: when, enableIf: when } as PrefLeaf, 'boolean');
+    expect(leaf).toMatchObject({ kind: 'boolean', showIf: when, enableIf: when });
+    expect(dropped).not.toEqual(expect.arrayContaining(['showIf', 'enableIf']));
+  });
+
+  it('removes one that is emptied', () => {
+    expect(normalizeAttr('showIf', undefined)).toBeUndefined();
   });
 });
