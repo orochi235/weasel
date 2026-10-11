@@ -28,6 +28,42 @@ export function calleeOf(node: t.Node | undefined, bindings: Bindings, depth = 0
   }
 }
 
+const LITERALS: ReadonlySet<string> = new Set([
+  'StringLiteral',
+  'NumericLiteral',
+  'BooleanLiteral',
+  'NullLiteral',
+  'BigIntLiteral',
+  'RegExpLiteral',
+  'TemplateLiteral',
+  'ArrayExpression',
+  'ArrowFunctionExpression',
+  'FunctionExpression',
+  'ClassExpression',
+  'JSXElement',
+  'JSXFragment',
+]);
+
+/** Whether `node` is written out as a value, through casts and top-level `const`s, so no call produced it. */
+export function isLiteralValue(node: t.Node | undefined, bindings: Bindings, depth = 0): boolean {
+  if (!node || depth > 16) return false;
+  switch (node.type) {
+    case 'TSSatisfiesExpression':
+    case 'TSAsExpression':
+    case 'TSTypeAssertion':
+    case 'TSNonNullExpression':
+    case 'ParenthesizedExpression':
+      return isLiteralValue(node.expression, bindings, depth + 1);
+    case 'Identifier':
+      return isLiteralValue(bindings.get(node.name), bindings, depth + 1);
+    case 'ObjectExpression':
+      // A spread can carry a story's brand into the copy.
+      return node.properties.every((p) => p.type !== 'SpreadElement');
+    default:
+      return LITERALS.has(node.type);
+  }
+}
+
 /** The value of a plain string literal or an expression-free template literal. */
 export function stringLiteral(node: t.Node): string | undefined {
   if (node.type === 'StringLiteral') return node.value;

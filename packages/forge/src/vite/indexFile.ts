@@ -7,6 +7,7 @@ import {
   calleeOf,
   docOf,
   exportedName,
+  isLiteralValue,
   isDefaultExport,
   objectOf,
   parseFile,
@@ -90,7 +91,9 @@ function indexProgram(program: t.Program, file: string, autoTitle: string, extra
 
   let metaNode: t.Node | undefined;
   let metaDoc: string | undefined;
-  const exported: { name: string; node: t.Node | undefined; doc: string | undefined }[] = [];
+  // `plain`: the export is written out as a value, so it cannot be what forge's `story` returned.
+  const exported: { name: string; node: t.Node | undefined; doc: string | undefined; plain: boolean }[] = [];
+  const plain = (node: t.Node | undefined) => isLiteralValue(node, bindings);
   for (const stmt of program.body) {
     if (stmt.type === 'ExportDefaultDeclaration') {
       metaNode = stmt.declaration;
@@ -101,10 +104,10 @@ function indexProgram(program: t.Program, file: string, autoTitle: string, extra
     const decl = stmt.declaration;
     if (decl?.type === 'VariableDeclaration') {
       for (const d of decl.declarations) {
-        if (d.id.type === 'Identifier') exported.push({ name: d.id.name, node: d.init ?? undefined, doc: docOf(d) ?? doc });
+        if (d.id.type === 'Identifier') exported.push({ name: d.id.name, node: d.init ?? undefined, doc: docOf(d) ?? doc, plain: plain(d.init ?? undefined) });
       }
     } else if (decl?.type === 'FunctionDeclaration' && decl.id) {
-      exported.push({ name: decl.id.name, node: undefined, doc });
+      exported.push({ name: decl.id.name, node: undefined, doc, plain: true });
     }
     for (const spec of stmt.specifiers) {
       if (spec.type !== 'ExportSpecifier' || spec.exportKind === 'type') continue;
@@ -113,7 +116,7 @@ function indexProgram(program: t.Program, file: string, autoTitle: string, extra
       if (name === 'default') {
         metaNode = node;
         metaDoc ??= doc;
-      } else exported.push({ name, node, doc });
+      } else exported.push({ name, node, doc, plain: plain(node) });
     }
   }
   if (!metaNode && !program.body.some(isDefaultExport)) return [];
@@ -131,6 +134,7 @@ function indexProgram(program: t.Program, file: string, autoTitle: string, extra
   return exported
     .filter(({ name }) => name !== '__namedExportsOrder')
     .filter(({ name }) => (!include || include(name)) && (!exclude || !exclude(name)))
+    .filter((e) => !(native && e.plain))
     .map(({ name, node, doc }) => {
       const spec = objectOf(node, bindings, wrappers);
       const isolate = isolateOf(spec, bindings, wrappers, name) ?? metaIsolate;

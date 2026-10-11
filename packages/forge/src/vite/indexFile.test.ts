@@ -19,6 +19,29 @@ export const WithName = story({ name: 'Custom name', render: () => null });
     ]);
   });
 
+  it('leaves out of a native file the exports that cannot be stories, which the loader skips', () => {
+    const code = `
+import { meta, story } from '@weasel-js/forge';
+import { Shared } from './shared.stories';
+export default meta({ title: 'ui/Slider' });
+export const rows = [1, 2, 3];
+const LIMIT = 4 as const;
+export { LIMIT, Shared };
+export function helper() { return null; }
+export const Basic = story({ render: () => null });
+export const Copy = { ...Basic, name: 'A copy' };
+export const Either = flag ? Basic : Copy;
+export { Other } from './other.stories';
+`;
+    expect(ids(code)).toEqual([
+      ['ui-slider--shared', 'Shared'],
+      ['ui-slider--basic', 'Basic'],
+      ['ui-slider--copy', 'A copy'],
+      ['ui-slider--either', 'Either'],
+      ['ui-slider--other', 'Other'],
+    ]);
+  });
+
   it('indexes CSF with a typed meta constant and call-built stories', () => {
     const csf = `
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -315,7 +338,6 @@ export const Plain = {};
     ]);
     expect(indexFile(code, FILE, 'ui/Auto', new Set(['defineMeta', 'story'])).map((e) => [e.id, e.name, e.componentName])).toEqual([
       ['ui-thing--basic', 'The basic one', 'Thing'],
-      ['ui-thing--plain', 'Plain', 'Thing'],
     ]);
   });
 

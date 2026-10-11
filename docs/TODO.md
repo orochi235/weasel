@@ -2454,10 +2454,11 @@ only story runner in the repo.
 
 - **(P2) forge: the static index and the runtime loaders disagree about what a story is and what it
   is titled.** Three cases, all in `packages/forge/src/vite/indexFile.ts` against `story/native.ts`
-  and `csf/loadCsfModule.tsx`. A native story file with `export const rows = [...]` beside its
-  stories lists a story "Rows" in the tree, because the index takes every exported `const`, and
+  and `csf/loadCsfModule.tsx`. A native story file with `export const rows = makeRows()` beside its
+  stories lists a story "Rows" in the tree, because the index takes every exported call, and
   opening it faults with `has no story export "rows"`, because the loader skips exports that are not
-  stories. A CSF meta whose `title` is an identifier or a template literal with an expression
+  stories (an export written out as a value, such as an array or a function, is already left out). A
+  CSF meta whose `title` is an identifier or a template literal with an expression
   indexes under the auto title while `loadCsfModule` uses the real one, so the loaded story's id
   differs from its entry's and the index page's Open button does nothing. And `forgeTest`
   (`vite/forgeTest.ts`) and `packages/forge/scripts/check-isolate.ts` call `indexFile` without the
