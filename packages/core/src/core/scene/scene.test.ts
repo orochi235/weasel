@@ -1292,6 +1292,38 @@ describe('coalescing (coalesceWindowMs)', () => {
     expect(cell).toEqual({ a: 2, b: 2 });
   });
 
+  it('a consumer op kind coalesces only through the key it declares', () => {
+    const s = timedScene();
+    const cell = { x: 0, y: 0 };
+    s.registerOp<{ id: string; dx: number }>('nudge', {
+      apply: (p) => { cell.x += p.dx; },
+      revert: (p) => { cell.x -= p.dx; },
+    });
+    s.registerOp<{ id: string; from: number; to: number }>('setY', {
+      apply: (p) => { cell.y = p.to; },
+      revert: (p) => { cell.y = p.from; },
+      coalesceKey: (p) => p.id,
+    });
+
+    s.recordOp({ kind: 'nudge', payload: { id: 'n', dx: 1 } });
+    vi.advanceTimersByTime(100);
+    s.recordOp({ kind: 'nudge', payload: { id: 'n', dx: 1 } });
+    expect(s.historyEntries()).toHaveLength(2);
+    s.undo();
+    s.undo();
+    expect(cell.x).toBe(0);
+
+    s.recordOp({ kind: 'setY', payload: { id: 'n', from: 0, to: 1 } });
+    vi.advanceTimersByTime(100);
+    s.recordOp({ kind: 'setY', payload: { id: 'n', from: 1, to: 2 } });
+    vi.advanceTimersByTime(100);
+    s.recordOp({ kind: 'setY', payload: { id: 'm', from: 2, to: 3 } });
+    expect(s.historyEntries()).toHaveLength(2);
+    s.undo();
+    s.undo();
+    expect(cell.y).toBe(0);
+  });
+
   it('sceneFromJSON forwards coalesceWindowMs', () => {
     const src = createScene<Data, Layer>({
       systemLayers: [

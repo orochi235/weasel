@@ -1032,19 +1032,21 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     };
   }
 
-  /** Best-effort coalesce-grouping token: node ops carry `payload.id`,
-   *  layer ops `payload.layer`. Payloads with neither get no key and never
-   *  coalesce (the engine treats a missing key on either side as
-   *  "new entry"). Keys only take effect when the scene opts in via
-   *  `UseSceneOptions.coalesceWindowMs` (default `0`, which disables
-   *  coalescing entirely). */
+  /** Coalesce-grouping key. Kit ops are keyed by the node or layer they
+   *  address; a consumer kind only by the `coalesceKey` it declares. Keys
+   *  take effect only under `UseSceneOptions.coalesceWindowMs`. */
   function coalesceKeyFor(kind: string, payload: unknown): string | undefined {
-    if (payload === null || typeof payload !== 'object') return undefined;
-    const p = payload as { id?: unknown; layer?: unknown };
-    const token =
-      typeof p.id === 'string' ? p.id
-      : typeof p.layer === 'string' ? p.layer
-      : undefined;
+    let token: string | undefined;
+    if (kind.startsWith('kit:')) {
+      if (payload === null || typeof payload !== 'object') return undefined;
+      const p = payload as { id?: unknown; layer?: unknown };
+      token =
+        typeof p.id === 'string' ? p.id
+        : typeof p.layer === 'string' ? p.layer
+        : undefined;
+    } else {
+      token = registered.get(kind)?.coalesceKey?.(payload);
+    }
     return token === undefined ? undefined : `${kind}:${token}`;
   }
 

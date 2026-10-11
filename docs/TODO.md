@@ -977,17 +977,6 @@ Core five + Crop shipped. Remaining:
   external ops already follow in `bindOpToHistoryAdapter`); or have `reconcileSpecs` clear history
   when it removes a node.
 
-- **(P2) Scene: a consumer `registerOp` kind whose payload is relative coalesces and then undoes
-  only its first step.** `coalesceKeyFor` in `packages/core/src/core/scene/scene.ts` gives a
-  coalesce key to every registered kind whose payload has a string `id` or `layer`, and coalescing
-  keeps the first payload for undo and the last for redo, which is only sound when a revert is
-  absolute. With `coalesceWindowMs` set, `registerOp('nudge', { apply: x += dx, revert: x -= dx })`
-  and two `recordOp({ kind: 'nudge', payload: { id, dx: 1 } })` calls inside the window make one
-  entry, and one undo leaves `x` at 1 with nothing left to undo (run as a test). Options: make the
-  key something a `RegisteredOp` declares (a `coalesceKey(payload)` field) so only kinds that state
-  their revert is absolute merge; or key only `kit:` kinds and never coalesce consumer kinds, which
-  stops consumer kinds with absolute payloads from merging as they do today.
-
 - **(P2) Scene: `toJSON` then `loadState` reorders siblings that sit on different layers.** `toJSON`
   in `packages/core/src/core/scene/scene.ts` writes nodes in layer-major order with no sibling
   index, and the loader appends in that order, so roots `[r1 (layer a), r2 (layer b), r3 (layer a)]`
