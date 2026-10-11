@@ -186,6 +186,12 @@ when `getRuns` returns a non-empty array the overlay renders styled
 `<span data-run>` elements instead of plain text. Returns `{ editingId,
 startEdit(id, opts?), cancelEdit, commit, isEditing }`.
 
+Nothing is written until the edit commits. Pass `commit(id, { text, runs?,
+style? })` in place of `setText` / `setRuns` / `setStyle` to take the whole
+edit in one call and make it one undo step; `useSceneTextEdit` does. `style`
+is there when the edit lowered a flag the node itself sets, and until the
+commit the returned `nodeStyle` holds it.
+
 The text layer should hide the node it's editing
 (`isHidden: (n) => n.id === editingId`) so the overlay isn't drawn twice.
 

@@ -78,6 +78,9 @@ export interface UseSceneTextEditOptions<TData> {
    * flag the node itself sets — the run algebra is additive, so that edit
    * lowers the node flag and raises it on the runs outside the range. See
    * `useTextEdit`'s `setStyle`.
+   *
+   * An edit's text, runs, and style are folded through these three and
+   * written as one `scene.update`, so a commit is one undo step.
    */
   setStyle?: (data: TData, style: TextStyle) => TData;
   /** Fallback fontSize when `style.fontSize` is unset. Default `16`. */
@@ -236,33 +239,22 @@ export function useSceneTextEdit<
       };
     },
     getClipRect: () => surface()?.box ?? null,
-    setText: (id, text) => {
-      const nid = asNodeId(id);
-      const node = sceneRef.current.get(nid);
-      if (!node || read.text(node.data) === text) return;
-      const setter = optsRef.current.setText;
-      const data = setter ? setter(node.data, text) : { ...node.data, text };
-      sceneRef.current.update(nid, { data });
-    },
     getRuns: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
       return node ? read.runs(node.data) : undefined;
     },
-    setRuns: (id, runs) => {
-      const nid = asNodeId(id);
-      const node = sceneRef.current.get(nid);
-      if (!node || JSON.stringify(read.runs(node.data)) === JSON.stringify(runs)) return;
-      const setter = optsRef.current.setRuns;
-      const data = setter ? setter(node.data, runs) : { ...node.data, runs };
-      sceneRef.current.update(nid, { data });
-    },
-    setStyle: (id, style) => {
+    commit: (id, { text, runs, style }) => {
       const nid = asNodeId(id);
       const node = sceneRef.current.get(nid);
       if (!node) return;
-      const setter = optsRef.current.setStyle;
-      const data = setter ? setter(node.data, style) : { ...node.data, style };
-      sceneRef.current.update(nid, { data });
+      const { setText, setRuns, setStyle } = optsRef.current;
+      let data = node.data;
+      if (read.text(data) !== text) data = setText ? setText(data, text) : { ...data, text };
+      if (runs && JSON.stringify(read.runs(node.data)) !== JSON.stringify(runs)) {
+        data = setRuns ? setRuns(data, runs) : { ...data, runs };
+      }
+      if (style) data = setStyle ? setStyle(data, style) : { ...data, style };
+      if (data !== node.data) sceneRef.current.update(nid, { data });
     },
   });
 

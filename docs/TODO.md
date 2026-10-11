@@ -759,17 +759,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
-- **(P2) Text edit: one styled commit is two or three undo steps, and a canceled edit can still
-  change the node.** `useTextEdit`'s `commit` calls `setText` then `setRuns`, and `useSceneTextEdit`
-  makes each its own `scene.update`; after one undo the node has the new `text` and the old `runs`,
-  which `createTextLayer` throws on ("TextPose invariant violated"). Separately, turning off a flag
-  the node itself sets (Cmd+I on a word in an italic node) calls `setStyle` at once, mid-edit, so
-  Escape with `escape: 'cancel'` leaves the whole node upright with an undo step the user did not
-  ask for. Both want one write per session: a single `commit(id, { text, runs?, style? })` on
-  `UseTextEditOptions`, implemented in `useSceneTextEdit` as one `scene.update`, with the rewritten
-  node style held in the session until then. A consumer that reads the node's style during an edit
-  (a character bar) then needs the session's style from the hook.
-
 - **(P3) Text edit: `useTextEdit` commits an edit nothing changed, and strips a trailing newline the
   text really had.** `commit` always calls `setText`, and `trimCaretHolder` removes one trailing
   `\n` on the assumption the browser added it, so a node whose text is `"abc\n"` becomes `"abc"` on

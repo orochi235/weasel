@@ -645,6 +645,89 @@ describe('useSceneTextEdit — a commit that changes nothing', () => {
   });
 });
 
+describe('useSceneTextEdit — one undo step per edit', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const ITALIC = {
+    id: 'a', x: 0, y: 0, width: 200, height: 40,
+    text: 'one two',
+    style: { fontSize: 16, fontStyle: 'italic' as const },
+    runs: [{ text: 'one two' }] as { text: string; italic?: boolean; bold?: boolean }[],
+  };
+
+  function mount(escape?: 'cancel' | 'commit') {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const hook = renderHook(() => {
+      const scene = useScene({ items: [ITALIC] });
+      return { scene, edit: useSceneTextEdit(scene, container, { escape }) };
+    });
+    act(() => hook.result.current.edit.startEdit('a'));
+    return { hook, overlay: overlayOf(container) };
+  }
+
+  async function press(overlay: HTMLElement, key: string, select?: [number, number]) {
+    await act(async () => {
+      if (select) {
+        const text = document.createTreeWalker(overlay, NodeFilter.SHOW_TEXT).nextNode() as Text;
+        const range = document.createRange();
+        range.setStart(text, select[0]);
+        range.setEnd(text, select[1]);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+        await new Promise((r) => setTimeout(r, 0));
+      }
+      overlay.dispatchEvent(new KeyboardEvent('keydown', {
+        key, metaKey: key.length === 1, bubbles: true, cancelable: true,
+      }));
+    });
+  }
+
+  it('undoes text, runs, and a rewritten node style together', async () => {
+    const { hook, overlay } = mount();
+    await press(overlay, 'i', [4, 7]);
+    act(() => hook.result.current.edit.commit());
+    const { scene } = hook.result.current;
+    const after = scene.get(asNodeId('a'))!.data;
+    expect(after.style).toEqual({ fontSize: 16, fontStyle: 'normal' });
+    expect(after.runs).toEqual([{ text: 'one ', italic: true }, { text: 'two' }]);
+
+    act(() => { scene.undo(); });
+    const back = hook.result.current.scene.get(asNodeId('a'))!.data;
+    expect(back.style).toEqual(ITALIC.style);
+    expect(back.runs).toEqual(ITALIC.runs);
+    expect(hook.result.current.scene.canUndo()).toBe(false);
+  });
+
+  it('undoes changed text and its runs in one step', () => {
+    const { hook, overlay } = mount();
+    overlay.querySelector('span[data-run]')!.textContent = 'three';
+    act(() => hook.result.current.edit.commit());
+    const { scene } = hook.result.current;
+    expect(scene.get(asNodeId('a'))!.data.text).toBe('three');
+    expect(scene.get(asNodeId('a'))!.data.runs).toEqual([{ text: 'three' }]);
+
+    act(() => { scene.undo(); });
+    const back = hook.result.current.scene.get(asNodeId('a'))!.data;
+    expect(back.text).toBe('one two');
+    expect(back.runs).toEqual(ITALIC.runs);
+    expect(hook.result.current.scene.canUndo()).toBe(false);
+  });
+
+  it('leaves the node alone when Escape cancels after a node flag was lowered', async () => {
+    const { hook, overlay } = mount('cancel');
+    await press(overlay, 'i', [4, 7]);
+    await press(overlay, 'Escape');
+    const { scene, edit } = hook.result.current;
+    expect(edit.editingId).toBeNull();
+    expect(scene.get(asNodeId('a'))!.data.style).toEqual(ITALIC.style);
+    expect(scene.canUndo()).toBe(false);
+  });
+});
+
 describe('useSceneTextEdit — abandoned renders', () => {
   beforeEach(() => {
     document.body.innerHTML = '';

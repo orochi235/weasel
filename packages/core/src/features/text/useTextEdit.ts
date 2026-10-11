@@ -384,6 +384,13 @@ export interface TextEditClipRect {
   height: number;
 }
 
+/** What one edit session changed, as `UseTextEditOptions.commit` receives it. */
+export interface TextEditCommit {
+  text: string;
+  runs?: StyledRun[];
+  style?: TextStyle;
+}
+
 /** Options for `useTextEdit`. */
 export interface UseTextEditOptions {
   /** Element the overlay is appended to. Must be `position: relative`/absolute. */
@@ -404,8 +411,12 @@ export interface UseTextEditOptions {
    * inside a node whose own `TextStyle` sets it. Run flags are additive, so
    * that edit is expressed by lowering the node flag and raising it on the
    * runs outside the selection — which needs somewhere to put the new node
-   * style. Without this, such a toggle is declined and nothing changes, as
-   * before. See `runs/flagRange`.
+   * style. Without this or `commit`, such a toggle is declined and nothing
+   * changes. See `runs/flagRange`.
+   *
+   * Called when the edit commits, never during it: the session holds the
+   * rewritten style until then (see `UseTextEditReturn.nodeStyle`), so a
+   * canceled edit writes nothing.
    */
   setStyle?: (id: string, style: TextStyle) => void;
   /** Read screen-space pose for `id`. Called per frame while editing. */
@@ -419,8 +430,16 @@ export interface UseTextEditOptions {
    * where it is; a scrollable container would drag the canvas after the caret.
    */
   getClipRect?: () => TextEditClipRect | null;
-  /** Commit text. Caller wraps in op/undo. */
-  setText: (id: string, text: string) => void;
+  /** Commit text. Caller wraps in op/undo. Required unless `commit` is given. */
+  setText?: (id: string, text: string) => void;
+  /**
+   * Take the whole edit in one call, so the caller can make it one write and
+   * one undo step. When given, it replaces `setText`, `setRuns`, and
+   * `setStyle`, none of which is called. `runs` is present when runs are in
+   * play (see `setRuns`), `style` when the edit rewrote the node's own style
+   * (see `setStyle`).
+   */
+  commit?: (id: string, edit: TextEditCommit) => void;
   /**
    * Optional: read the current rich-text runs for `id`. When provided AND
    * returns a non-empty array, the overlay renders the runs as styled
@@ -492,6 +511,14 @@ export interface UseTextEditReturn {
   cancelEdit: () => void;
   commit: () => void;
   isEditing: (id: string) => boolean;
+  /**
+   * The node-wide style this edit has rewritten and not yet written back, or
+   * `null` when it has rewritten none (the node's own style stands) or
+   * nothing is being edited. Lowering a flag the node sets rewrites it; the
+   * write waits for the commit. A control showing the node's style during an
+   * edit reads this first.
+   */
+  nodeStyle: TextStyle | null;
    /**
    * The caret's character range, or `null` when nothing is being edited. A
    * collapsed caret reports `{ start: n, end: n }`, so `null` and "caret at
@@ -564,6 +591,17 @@ export function useTextEdit(
   /** The editing node's resolved style, which run spans inheriting small caps
    *  are split by whenever the runs are rewritten. */
   const baseRef = useRef<OverlayRunBase>(resolveTextStyle(undefined));
+  const [nodeStyle, setNodeStyle] = useState<TextStyle | null>(null);
+  /** `nodeStyle`, read synchronously by the handlers that rewrite and commit it. */
+  const nodeStyleRef = useRef<TextStyle | null>(null);
+  const holdNodeStyle = useCallback((style: TextStyle | null) => {
+    nodeStyleRef.current = style;
+    setNodeStyle(style);
+  }, []);
+  const styleOf = useCallback(
+    (id: string): TextStyle | undefined => nodeStyleRef.current ?? optsRef.current.getStyle(id),
+    [optsRef],
+  );
   // The overlay-follow loop is built inside the editing effect; the gate's
   // frame callback reaches it through this ref.
   const tickRef = useRef<() => void>(() => {});
@@ -672,16 +710,25 @@ export function useTextEdit(
     // A plain-text edit of a plain-text node satisfies neither and commits
     // text alone, so a node that has no `runs` doesn't grow a single-run
     // array just for being edited.
-    const priorRuns = optsRef.current.getRuns?.(id);
-    const setRuns = optsRef.current.setRuns;
+    const { getRuns, setRuns, setText, setStyle, commit: commitAll } = optsRef.current;
+    const priorRuns = getRuns?.(id);
     const runs = trimCaretHolder(domToRuns(overlay));
     const hadRuns = priorRuns != null && priorRuns.length > 0;
+    const runsInPlay = hadRuns || runsCarryStyling(runs);
     // Read from the DOM, not `innerText`: a browser applies `text-transform`
     // to what that reports, and a break stand-in reads back as its `\n`.
-    optsRef.current.setText(id, runsToPlainText(runs));
-    if (setRuns && (hadRuns || runsCarryStyling(runs))) setRuns(id, runs);
+    const text = runsToPlainText(runs);
+    const style = nodeStyleRef.current;
+    holdNodeStyle(null);
+    if (commitAll) {
+      commitAll(id, { text, ...(runsInPlay ? { runs } : {}), ...(style ? { style } : {}) });
+    } else {
+      if (style) setStyle?.(id, style);
+      setText?.(id, text);
+      if (setRuns && runsInPlay) setRuns(id, runs);
+    }
     setEditingId(null);
-  }, [editingId, optsRef]);
+  }, [editingId, optsRef, holdNodeStyle]);
 
   const startEdit = useCallback((id: string, opts?: StartEditOptions) => {
     initialCaretRef.current = opts?.caret ?? 'all';
@@ -711,21 +758,20 @@ export function useTextEdit(
     // caret, and has to: "stop being bold from here on" is otherwise
     // unsayable in a bold node.
     const id = editingIdRef.current;
-    const setStyle = optsRef.current.setStyle;
+    const canWriteStyle = optsRef.current.setStyle !== undefined || optsRef.current.commit !== undefined;
     const runs = domToRuns(overlay);
     if (patch.bold === false && !('fontWeight' in patch) && id !== null) {
-      patch = { ...patch, ...unboldPatch(optsRef.current.getStyle(id) ?? {}) };
+      patch = { ...patch, ...unboldPatch(styleOf(id) ?? {}) };
     }
-    const unsetFlag = id !== null && setStyle
+    const unsetFlag = id !== null && canWriteStyle
       ? (Object.keys(patch) as FlagKey[]).find((key) =>
           key !== 'bold'
           && patch[key] === false
-          && nodeHasFlag(optsRef.current.getStyle(id) ?? {}, key))
+          && nodeHasFlag(styleOf(id) ?? {}, key))
       : undefined;
-    if (unsetFlag !== undefined && id !== null && setStyle) {
-      const nodeStyle = optsRef.current.getStyle(id) ?? {};
-      const r = setFlagOverRange(runs, nodeStyle, range.start, range.end, unsetFlag, false);
-      setStyle(id, r.style);
+    if (unsetFlag !== undefined && id !== null) {
+      const r = setFlagOverRange(runs, styleOf(id) ?? {}, range.start, range.end, unsetFlag, false);
+      holdNodeStyle(r.style);
       // The root's own decoration and slant reach every run by inheritance,
       // the range just cleared included.
       const resolved = resolveTextStyle(r.style, optsRef.current.getPaint?.(id));
@@ -764,7 +810,7 @@ export function useTextEdit(
     // when the patch came from chrome the selection is in that control, and
     // re-reading it would leave a consumer showing the pre-patch styling.
     publishRange(overlay, range);
-  }, [publishRange, armPending, editingIdRef, optsRef]);
+  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, holdNodeStyle]);
 
   const toggleStyle = useCallback((toggle: StyleToggle) => {
     const overlay = overlayRef.current;
@@ -773,7 +819,7 @@ export function useTextEdit(
     if (!range) return;
     const runs = domToRuns(overlay);
     const id = editingIdRef.current;
-    const nodeStyle = (id !== null ? optsRef.current.getStyle(id) : undefined) ?? {};
+    const nodeStyle = (id !== null ? styleOf(id) : undefined) ?? {};
     // At a collapsed caret the styling in play is what the caret sits in plus
     // whatever is already armed, so pressing Cmd+B twice disarms rather than
     // arming a second time.
@@ -781,12 +827,13 @@ export function useTextEdit(
       ? patchRangeStyle(styleAtCaret(runs, range.start), pendingRef.current)
       : styleAtRange(runs, range.start, range.end);
     applyStyleToSelection(patchForToggle(current, toggle, nodeStyle));
-  }, [applyStyleToSelection, editingIdRef, optsRef]);
+  }, [applyStyleToSelection, editingIdRef, styleOf]);
 
   useEffect(() => {
     if (editingId == null) return;
     const { container, getText, getStyle, getPaint } = optsRef.current;
     if (!container) return;
+    holdNodeStyle(null);
 
     const style = resolveTextStyle(getStyle(editingId), getPaint?.(editingId));
     const overlay = document.createElement('div');
@@ -992,13 +1039,14 @@ export function useTextEdit(
       clipBox.remove();
       styleEl?.remove();
       overlayRef.current = null;
+      holdNodeStyle(null);
       clearSelection();
     };
   }, [editingId, opts.container, optsRef, commit, cancelEdit, syncSelection, clearSelection,
-      frameLoop, toggleStyle, dropPending, publishRange]);
+      frameLoop, toggleStyle, dropPending, publishRange, holdNodeStyle]);
 
   return {
-    editingId, startEdit, cancelEdit, commit, isEditing,
+    editingId, startEdit, cancelEdit, commit, isEditing, nodeStyle,
     selection, rangeStyle, pendingStyle, applyStyleToSelection, toggleStyle,
   };
 }

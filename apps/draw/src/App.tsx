@@ -1234,7 +1234,7 @@ function EditorWithSharedScene({
     : undefined;
   const barStyle: RangeStyle = effectiveRangeStyle(
     patchRangeStyle(textEdit.rangeStyle ?? {}, textEdit.pendingStyle),
-    editingNode?.data.style,
+    textEdit.nodeStyle ?? editingNode?.data.style,
     { fill: editingNode?.data.fill, stroke: editingNode?.data.stroke },
   );
 

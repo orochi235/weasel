@@ -808,12 +808,115 @@ describe('useTextEdit — lowering a flag the node sets', () => {
 
     selectChars(overlay, 4, 7);
     act(() => { pressKey(overlay, 'u', { meta: true }); });
-    expect(styles.a.underline).toBeFalsy();
     expect(overlay.style.textDecoration).toBe('none');
 
     selectChars(overlay, 4, 7);
     act(() => { pressKey(overlay, 'i', { meta: true }); });
     expect(overlay.style.fontStyle).not.toBe('italic');
+  });
+});
+
+describe('useTextEdit — one write per session', () => {
+  function italicNode() {
+    const styles: Record<string, TextStyle> = { a: { fontSize: 16, fontStyle: 'italic' } };
+    const h = makeRichHarness({ a: { text: 'one two', runs: [{ text: 'one two' }] } });
+    const setStyle = vi.fn((id: string, style: TextStyle) => { styles[id] = style; });
+    h.opts.getStyle = (id) => styles[id];
+    h.opts.setStyle = setStyle;
+    return { h, styles, setStyle };
+  }
+
+  function unslantTwo(overlay: HTMLElement) {
+    selectChars(overlay, 4, 7);
+    act(() => { pressKey(overlay, 'i', { meta: true }); });
+  }
+
+  it('holds a rewritten node style until the commit', () => {
+    const { h, setStyle } = italicNode();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(result.current.nodeStyle).toBeNull();
+    unslantTwo(getOverlay(h.container)!);
+    expect(setStyle).not.toHaveBeenCalled();
+    expect(result.current.nodeStyle).toEqual({ fontSize: 16, fontStyle: 'normal' });
+
+    act(() => result.current.commit());
+    expect(setStyle).toHaveBeenCalledTimes(1);
+    expect(setStyle).toHaveBeenCalledWith('a', { fontSize: 16, fontStyle: 'normal' });
+    expect(h.runCommits[0].runs).toEqual([{ text: 'one ', italic: true }, { text: 'two' }]);
+    expect(result.current.nodeStyle).toBeNull();
+  });
+
+  it('writes nothing when an edit that rewrote the node style is canceled', () => {
+    const { h, styles, setStyle } = italicNode();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    unslantTwo(getOverlay(h.container)!);
+    act(() => result.current.cancelEdit());
+    expect(setStyle).not.toHaveBeenCalled();
+    expect(styles.a).toEqual({ fontSize: 16, fontStyle: 'italic' });
+    expect(h.textCommits).toEqual([]);
+    expect(h.runCommits).toEqual([]);
+
+    // The next session starts from the node, not from what the last one held.
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.fontStyle).toBe('italic');
+    expect(result.current.nodeStyle).toBeNull();
+  });
+
+  it('reads the held style for the next toggle in the same session', () => {
+    const { h, setStyle } = italicNode();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    unslantTwo(overlay);
+    // "two" is upright now, so the same key slants it again as a run flag.
+    unslantTwo(overlay);
+    act(() => result.current.commit());
+    expect(setStyle).toHaveBeenCalledTimes(1);
+    expect(h.runCommits[0].runs).toEqual([{ text: 'one two', italic: true }]);
+  });
+
+  it('hands the whole edit to a commit option in one call, and calls no other writer', () => {
+    const { h, setStyle } = italicNode();
+    const commit = vi.fn();
+    h.opts.commit = commit;
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    unslantTwo(overlay);
+    act(() => result.current.commit());
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(commit).toHaveBeenCalledWith('a', {
+      text: 'one two',
+      runs: [{ text: 'one ', italic: true }, { text: 'two' }],
+      style: { fontSize: 16, fontStyle: 'normal' },
+    });
+    expect(setStyle).not.toHaveBeenCalled();
+    expect(h.textCommits).toEqual([]);
+    expect(h.runCommits).toEqual([]);
+  });
+
+  it('lowers a node flag with a commit option and no setStyle', () => {
+    const { h } = italicNode();
+    delete h.opts.setStyle;
+    const commit = vi.fn();
+    h.opts.commit = commit;
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    unslantTwo(getOverlay(h.container)!);
+    act(() => result.current.commit());
+    expect(commit.mock.calls[0][1].style).toEqual({ fontSize: 16, fontStyle: 'normal' });
+  });
+
+  it('leaves runs and style out of a plain edit handed to a commit option', () => {
+    const h = makeRichHarness({ a: { text: 'abc' } });
+    const commit = vi.fn();
+    h.opts.commit = commit;
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.commit());
+    expect(commit).toHaveBeenCalledWith('a', { text: 'abc' });
   });
 });
 

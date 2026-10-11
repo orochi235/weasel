@@ -9,6 +9,7 @@ export { useTextEdit, TEXT_EDIT_FONT_HOLD } from './useTextEdit';
 export type {
   TextEditScreenPose,
   TextEditClipRect,
+  TextEditCommit,
   TextEditSelection,
   StartEditOptions,
   UseTextEditOptions,
