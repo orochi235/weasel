@@ -40,8 +40,9 @@ raster in flight per `src`, capped by the smallest live renderer's
 new one lands, then its GL texture is freed in every renderer. The SVG is
 decoded into an `<img>` once and each raster is a canvas `drawImage` of it.
 
-## Note
+## Lifetime
 
-The cache is process-global and unbounded — entries are keyed by `src` and
-never evicted. Fine for documents with a bounded image set; if you ever load
-images unboundedly (an infinite gallery), this needs an eviction policy first.
+The cache is process-global and never evicts on its own: an entry is keyed by
+`src` across every scene on the page, so nothing here knows when the last use
+is gone. `releaseImage(src)` drops an entry and its GL textures, and a later
+read loads it again. A failed load stays `'error'` until `retryImage(src)`.

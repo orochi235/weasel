@@ -239,6 +239,28 @@ export function imageStatus(src: string): ImageStatus {
   return cache.get(src)?.status ?? 'idle';
 }
 
+/**
+ * Forget `src`: drop its decoded bitmap, its decoded SVG, and the texture every
+ * live renderer holds for it, and abandon a load in flight. The cache is keyed
+ * by `src` across every scene on the page, so it cannot know when the last use
+ * is gone; whoever does know calls this. A later {@link getImageBitmap} for the
+ * same `src` loads it again.
+ */
+export function releaseImage(src: string): void {
+  const entry = cache.get(src);
+  cache.delete(src);
+  decodedVectors.delete(src);
+  if (entry?.bitmap) releaseImageSource(entry.bitmap);
+}
+
+/** Load a `src` whose last load failed again. Does nothing for a `src` in any
+ *  other state; one that failed otherwise stays `'error'` for the page's life. */
+export function retryImage(src: string): void {
+  if (cache.get(src)?.status !== 'error') return;
+  startLoad(src);
+  notify();
+}
+
 /** Subscribe to load-resolution events (fires after any `src` resolves or
  *  errors). Returns an unsubscribe. */
 export function subscribeImageReady(cb: () => void): () => void {

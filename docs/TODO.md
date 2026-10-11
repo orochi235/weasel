@@ -598,13 +598,12 @@ Core five + Crop shipped. Remaining:
   eight glyphs to this repo's icon standard is its own piece of work and was
   deferred out of the stroke-markers arc.
 
-- **(P3) Images: the image cache never releases a bitmap, and a failed load stays failed until
-  reload.** `packages/core/src/features/images/imageCache.ts` keeps every decoded `ImageBitmap`
-  keyed by its `src` (a multi-megabyte `data:` URI for a pasted image) for the life of the page, and
-  `decodedVectors` keeps each SVG's `HTMLImageElement`. An image whose first fetch fails is
-  `'error'` with no retry. It needs `releaseImage(src)` and `retryImage(src)` exports and an owner
-  to call release: the scene when the last node using a `src` passes the undo horizon, or a byte
-  bound on the cache.
+- **(P3) Images: nothing calls `releaseImage`.**
+  `packages/core/src/features/images/imageCache.ts` keeps every decoded `ImageBitmap` keyed by its
+  `src` (a multi-megabyte `data:` URI for a pasted image) until `releaseImage(src)` is called, and
+  the kit never calls it. It needs an owner: the scene when the last node using a `src` passes the
+  undo horizon, or a byte bound on the cache. A bound has to spare what the current frame draws: a
+  scene showing more than the bound would otherwise evict and reload on every paint.
 
 - **(P3) Patterns: `resolvePatternSpec` registers a GL texture per distinct spec and never frees
   one.** `packages/core/src/features/patterns/resolveSpec.ts` documents session lifetime, but a

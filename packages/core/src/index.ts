@@ -308,6 +308,8 @@ export {
   imageStatus,
   subscribeImageReady,
   isVectorImageSrc,
+  releaseImage,
+  retryImage,
 } from './features/images/imageCache';
 export type { ImageNodeData, ImageRasterSize, ImageStatus } from './features/images/imageCache';
 export { sceneToAdapter, useSceneAdapter } from './canvas/sceneAdapter';

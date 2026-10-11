@@ -4,6 +4,8 @@ import {
   imageStatus,
   subscribeImageReady,
   isVectorImageSrc,
+  releaseImage,
+  retryImage,
   __setImageLoaderForTests,
   _resetImageCacheForTests,
 } from './imageCache';
@@ -331,5 +333,70 @@ describe('imageCache — default vector loader', () => {
     expect(getImageBitmap(SVG)).toMatchObject({ width: 400, height: 200 });
     expect(decodes).toBe(1);
     expect(drawn).toEqual([[0, 0, 100, 50], [0, 0, 400, 200]]);
+  });
+});
+
+describe('imageCache — release and retry', () => {
+  beforeEach(() => _resetImageCacheForTests());
+
+  it('releaseImage forgets a src, frees its texture, and lets a later read load again', async () => {
+    const bmp = fakeBitmap();
+    let calls = 0;
+    __setImageLoaderForTests(() => { calls++; return Promise.resolve(bmp); });
+    getImageBitmap('a');
+    await flush();
+    const rec = makeGLRecorder();
+    const gl = new GLImageCache(rec.gl);
+    gl.upload(bmp, bmp);
+    rec.reset();
+
+    releaseImage('a');
+    expect(imageStatus('a')).toBe('idle');
+    expect(rec.calls.some((c) => c.name === 'deleteTexture')).toBe(true);
+
+    expect(getImageBitmap('a')).toBeUndefined();
+    expect(calls).toBe(2);
+    gl.dispose();
+  });
+
+  it('releaseImage drops a load in flight, whose result is then ignored', async () => {
+    const d = deferred<ImageBitmap>();
+    __setImageLoaderForTests(() => d.promise);
+    getImageBitmap('a');
+    releaseImage('a');
+    d.resolve(fakeBitmap());
+    await flush();
+    expect(imageStatus('a')).toBe('idle');
+  });
+
+  it('retryImage reloads a failed src and tells subscribers it is loading', async () => {
+    let fail = true;
+    const bmp = fakeBitmap();
+    __setImageLoaderForTests(() => (fail ? Promise.reject(new Error('offline')) : Promise.resolve(bmp)));
+    getImageBitmap('a');
+    await flush();
+    expect(imageStatus('a')).toBe('error');
+
+    let notified = 0;
+    subscribeImageReady(() => { notified++; });
+    fail = false;
+    retryImage('a');
+    expect(imageStatus('a')).toBe('loading');
+    expect(notified).toBe(1);
+    await flush();
+    expect(imageStatus('a')).toBe('ready');
+    expect(getImageBitmap('a')).toBe(bmp);
+  });
+
+  it('retryImage leaves a src that has not failed alone', async () => {
+    let calls = 0;
+    __setImageLoaderForTests(() => { calls++; return Promise.resolve(fakeBitmap()); });
+    retryImage('never-asked');
+    expect(imageStatus('never-asked')).toBe('idle');
+    getImageBitmap('a');
+    await flush();
+    retryImage('a');
+    expect(imageStatus('a')).toBe('ready');
+    expect(calls).toBe(1);
   });
 });
