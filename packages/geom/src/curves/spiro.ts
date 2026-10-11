@@ -5,6 +5,7 @@
 // Spiro in behind this same module surface.
 import type { CurveRepresentation, Discriminator, SharedAnchor } from './types';
 import { PATH_C, PATH_M } from '../commands';
+import { segmentAt } from './anchorHandles';
 import { cubicPointAt } from '../paths/cubicMath';
 
 const TANGENT_SCALE = 1 / 3;
@@ -64,15 +65,6 @@ function controlsFor(
       y: b.y - (outB.y / outBLen) * handleLen,
     },
   };
-}
-
-function segmentAt(anchors: SharedAnchor[], t: number): { segIdx: number; localT: number } {
-  if (anchors.length < 2) return { segIdx: 0, localT: 0 };
-  const segments = anchors.length - 1;
-  const scaled = Math.min(Math.max(t, 0), 1) * segments;
-  const segIdx = Math.min(Math.floor(scaled), segments - 1);
-  const localT = scaled - segIdx;
-  return { segIdx, localT };
 }
 
 /** Spiro (κ-curves): curvature-continuous through each anchor, so joins stay visually smooth without hand-tuned handles. Approximated as cubics when converted to a path. */

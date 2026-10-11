@@ -511,11 +511,6 @@ have shipped. What remains:
   rect's own box. Fold each pair into the geom function; the rect-reconstitution tests in
   `roundtrip.test.ts` are what would notice a tolerance change.
 
-- **(P3) geom: `bezierCubic.ts` and `bezierQuadratic.ts` share four copied functions.**
-  `smoothTangent`, `defaultOutHandle`, `defaultInHandle`, and `segmentAt` are identical in
-  `packages/geom/src/curves/bezierCubic.ts` and `bezierQuadratic.ts`. Move them to one module both
-  import.
-
 - **(P3) svg and geom: two files hold several owners.** `packages/svg/src/parse.ts` is about 1,450
   lines holding the document walk, shape lowering, text, images, clip paths, and marker ingestion;
   text, image, and marker reading each split out cleanly (`placeBox.ts`, `lengths.ts`,
