@@ -23,7 +23,7 @@
  * override table, which bypasses history entirely. That is what lets a node
  * deriving its geometry from a dragged one follow the drag — `sceneDepLookup`
  * and the pick source both read overrides, and neither can see this action's
- * scratch. Keeping the frame in scratch alone is why the edge used to stay
+ * own state. Keeping the frame there alone is why the edge used to stay
  * anchored to the old endpoint and jump on drop.
  *
  * The behavior pipeline (snap-to-grid, snap-back-or-delete, snap-to-container,
@@ -109,8 +109,10 @@ export const moveAction: Action & { requires: string[] } = inPlane({
             session.lifecycle.start(session.ids as unknown as string[]);
           }
           frame = nextFrame(session, readers, moveCtx);
+          publish.previews = frame.previews;
 
           // Layout reflow pass — no-op without a layout dep.
+          drop = null;
           drop = runDropPass(session, frame.delta, moveCtx.drag.current);
           const reflow = session.layout?.reflow;
           const targets = new Map<NodeId, unknown>();
@@ -121,7 +123,6 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           if (reflow) stepGlide(reflow, gliding, targets);
 
           // After the layout pass, so a reflowed sibling publishes too.
-          publish.previews = frame.previews;
           syncPreviewOverrides(publish);
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {

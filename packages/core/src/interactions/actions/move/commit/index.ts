@@ -5,7 +5,7 @@ import { translatePoseViaDescriptor } from '../../resize/geometry';
 import { planeDelta } from '../delta';
 import { landedDescendantOps } from '../landedDescendants';
 import type { LayoutPass } from '../layout/types';
-import type { MoveSession } from '../session';
+import type { MoveSession, ReparentOnDrop } from '../session';
 import { translateOps } from '../translate';
 import { layoutDropOps } from './layoutDrop';
 import { layoutReleaseOps } from './layoutRelease';
@@ -46,20 +46,33 @@ function behaviorCommit(
 function reparentCommit(
   session: MoveSession,
   dropTarget: DropTarget,
+  mode: ReparentOnDrop,
   delta: { dx: number; dy: number },
   commitOps: (ops: Op[]) => void,
 ): boolean {
   const { dx, dy } = delta;
-  const ops = reparentOps(session, dropTarget, { dx, dy });
+  const ops = reparentOps(session, dropTarget, mode, { dx, dy });
+  const before = rootPlacements(session);
   try {
     commitOps(ops);
   } catch (err) {
     // The transient path lets a refused arrival out; the recorded one reverts it inside the scene.
     if (!(err instanceof SceneArrivalRefused)) throw err;
   }
-  // Either way a refusal leaves the roots where they were.
-  return session.applyOps !== undefined
-    || session.ids.some((id) => session.scene.get(id)?.parent === dropTarget.newParent);
+  // A consumer's `applyOps` may keep the document elsewhere, so it is taken at its word.
+  if (session.applyOps !== undefined && !session.lifecycle.transient) return true;
+  // Either way a refusal leaves every root where it was.
+  return rootPlacements(session) !== before;
+}
+
+/** Where each dragged root sits: its parent, its layer, and its stored position. */
+function rootPlacements(session: MoveSession): string {
+  return session.ids.map((id) => {
+    const node = session.scene.get(id);
+    if (!node) return '';
+    const b = session.descriptorOf(id).getBounds(node.pose);
+    return `${node.parent}:${node.layer}:${b.x},${b.y}`;
+  }).join('|');
 }
 
 /** Commit the drag. Returns whether anything reached the document. */
@@ -114,11 +127,12 @@ export function commitMove(input: CommitInput): boolean {
   // visual position is preserved across the parent swap.
   // An end with no drag carries no pointer: the dispatcher's `cancelAll`
   // reports the world origin.
-  const dropTarget = session.reparentOnDrop() !== 'off'
+  const mode = session.reparentOnDrop();
+  const dropTarget = mode !== 'off'
     ? resolveDropTarget(session, at)
     : null;
   if (dropTarget) {
-    committed = reparentCommit(session, dropTarget, { dx, dy }, commitOps);
+    committed = reparentCommit(session, dropTarget, mode, { dx, dy }, commitOps);
   } else {
     // No reparent — translate-only commit, emitted as transform ops so
     // it routes through the consumer `applyOps` hook (consumer history)

@@ -37,6 +37,7 @@ function drop(
   scene: Scene<unknown, string, unknown>,
   params: Record<string, unknown>,
   deps: Record<string, unknown> = {},
+  ids: NodeId[] = [A],
 ): void {
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
@@ -44,7 +45,7 @@ function drop(
     {
       world: { x: 5, y: 5 },
       modifiers: MODS,
-      deps: { selection: { get: () => [A] as NodeId[] }, scene, nodeAtPoint: () => T, ...deps },
+      deps: { selection: { get: () => ids }, scene, nodeAtPoint: () => T, ...deps },
     } as unknown as InvocationCtx,
     { params: { reparentOnDrop: 'top', ...params } },
   );
@@ -86,6 +87,31 @@ describe('moveAction — reparentOnDrop commits as ops', () => {
     const onGestureEnd = vi.fn();
     drop(scene, { onGestureEnd, transient: true });
     expect(scene.get(A)!.parent).toBe(null);
+    expect(onGestureEnd).toHaveBeenCalledWith(false);
+  });
+
+  it('reports no commit for a refused transient move though a consumer applyOps is wired', () => {
+    const scene = makeScene(refusing);
+    const onGestureEnd = vi.fn();
+    drop(scene, { onGestureEnd, transient: true }, { applyOps: vi.fn() });
+    expect(scene.get(A)!.parent).toBe(null);
+    expect(onGestureEnd).toHaveBeenCalledWith(false);
+  });
+
+  it('reports no commit when a refusal reverts a root that was already in the container', () => {
+    const B = asNodeId('b');
+    const refusesB: LayoutStrategy<RectPose> = {
+      ...refusing,
+      arrive: (_container, _children, arrivals) => (arrivals.has('b') ? null : { poses: new Map() }),
+    };
+    const scene = makeScene(refusesB);
+    scene.move(A, T);
+    scene.add({ id: B, kind: 'leaf', layer: 'main', data: {}, pose: { x: 0, y: 20, width: 10, height: 10 } });
+    const before = scene.get(A)!.pose;
+    const onGestureEnd = vi.fn();
+    drop(scene, { onGestureEnd }, {}, [A, B]);
+    expect(scene.get(B)!.parent).toBe(null);
+    expect(scene.get(A)!.pose).toEqual(before);
     expect(onGestureEnd).toHaveBeenCalledWith(false);
   });
 });

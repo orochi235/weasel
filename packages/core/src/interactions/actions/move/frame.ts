@@ -60,7 +60,7 @@ function foldBehaviors(
 export function nextFrame(session: MoveSession, readers: MoveReaders, moveCtx: InvocationCtx): MoveFrame {
   const { dx, dy, posed } = foldBehaviors(session, readers, moveCtx, moveCtx.drag!.delta.x, moveCtx.drag!.delta.y);
 
-  // Track delta in scratch only — no scene writes, no history entries.
+  // The delta stays in the frame — no scene writes, no history entries.
   const delta = { dx, dy };
   // Refresh preview poses for every displaced id (roots + cascade).
   // The preview-ghost layer reads these via `previewIds`/`previewPose`.

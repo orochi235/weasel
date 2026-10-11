@@ -8,7 +8,7 @@ import { rebaseLocalPose } from 'features/groups/composePose';
 import { scenePoseAdapter } from 'features/groups/scenePoseAdapter';
 import { carryPose, planeOf } from '../../planeInput';
 import { draggedWorldPose } from '../delta';
-import type { MoveSession } from '../session';
+import type { MoveSession, ReparentOnDrop } from '../session';
 import { translateOps } from '../translate';
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
@@ -60,9 +60,9 @@ export function resolveDropTarget(
 export function reparentOps(
   session: MoveSession,
   target: DropTarget,
+  mode: ReparentOnDrop,
   delta: { dx: number; dy: number },
 ): Op[] {
-  const mode = session.reparentOnDrop();
   const { scene, pc, view } = session;
   const adapter = scenePoseAdapter(scene);
   const label = session.lifecycle.label;
