@@ -410,6 +410,10 @@ export function CanvasView(props: CanvasViewProps): null {
     return registry.register(registration);
   }, [registry, registration]);
 
+  // Apart from the registration, which is replaced whenever a prop it reads
+  // changes: only the view going away ends what is in flight over it.
+  useEffect(() => () => dispatcherRef.current?.cancelAll('cancel'), []);
+
   // A controlled camera change is invisible until the surface repaints; an
   // uncontrolled one asks for its repaint in `setView`.
   useEffect(() => {

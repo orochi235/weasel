@@ -338,13 +338,6 @@ Priority tags:
   device, since jsdom sends no native event. If real, drop the native event while a touch pointer
   whose long-press fired is still held.
 
-- **(P2) CanvasView: a view removed mid-gesture orphans its in-flight handles.**
-  `packages/core/src/canvas/CanvasView.tsx` creates one dispatcher per view and never calls
-  `cancelAll` on it at unmount, and `useGestureDispatcher`'s teardown only reaches views still
-  registered. Unmount a panel while a key is held or a drag is live over it and that handle's
-  `onEnd` never runs: a Space-held hand tool stays on the hotkey stack, a drag preview keeps its
-  scene overrides. Have the view call `dispatcher.cancelAll('cancel')` when it unregisters.
-
 - **(P2) Modes: "is this tool allowed in this mode" is answered three ways with two different
   rules.** `eligibleForMode` in `packages/modes/src/modeDefinition.ts` allows a tool when any of its
   capability tags is allowed and refuses a tool with no tags; `isToolEligible` in

@@ -147,6 +147,76 @@ describe('<CanvasView>', () => {
 
     expect(outer).toHaveBeenCalled();
   });
+
+  it('cancels a drag in flight over a view that unmounts', () => {
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const started = vi.fn();
+    const ended = vi.fn();
+    const actions = {
+      areaSelect: {
+        id: 'areaSelect',
+        label: 'Area Select',
+        defaultBinding: { kind: 'drag' as const },
+        enabled: () => true as const,
+        invoker: {
+          timing: 'ongoing' as const,
+          start: () => {
+            started();
+            return { onEnd: (_ctx: unknown, reason: 'commit' | 'cancel') => ended(reason) };
+          },
+        },
+      },
+    };
+    const { container, rerender } = render(
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200} actions={actions}>
+        <CanvasView id="panel" bounds={PANEL} />
+      </SceneCanvas>,
+    );
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      pointer(canvas, 'pointerdown', 1, 120);
+      pointer(canvas, 'pointermove', 1, 170);
+    });
+    expect(started).toHaveBeenCalledTimes(1);
+    expect(ended).not.toHaveBeenCalled();
+
+    rerender(
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200} actions={actions} />,
+    );
+
+    expect(ended).toHaveBeenCalledTimes(1);
+    expect(ended).toHaveBeenCalledWith('cancel');
+  });
+
+  it('keeps a drag in flight when the view re-renders with new props', () => {
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const ended = vi.fn();
+    const actions = {
+      areaSelect: {
+        id: 'areaSelect',
+        label: 'Area Select',
+        defaultBinding: { kind: 'drag' as const },
+        enabled: () => true as const,
+        invoker: {
+          timing: 'ongoing' as const,
+          start: () => ({ onEnd: (_ctx: unknown, reason: 'commit' | 'cancel') => ended(reason) }),
+        },
+      },
+    };
+    const ui = (order: number) => (
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={200} actions={actions}>
+        <CanvasView id="panel" bounds={PANEL} order={order} />
+      </SceneCanvas>
+    );
+    const { container, rerender } = render(ui(1));
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      pointer(canvas, 'pointerdown', 1, 120);
+      pointer(canvas, 'pointermove', 1, 170);
+    });
+    rerender(ui(2));
+    expect(ended).not.toHaveBeenCalled();
+  });
 });
 
 /** Drives the registry directly: a fake surface, one view, and the viewport
