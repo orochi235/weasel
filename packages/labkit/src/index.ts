@@ -251,7 +251,7 @@ export type {
 } from './config/types';
 export { useConfigSchema } from './config/useConfigSchema';
 export { useResolvedConfig } from './config/useResolvedConfig';
-export { isEntryShown, isLeafEnabled, isLeafVisible } from './config/visible';
+export { conditionedLeaf, isEntryShown, isLeafEnabled, isLeafVisible } from './config/visible';
 export {
   ControlMatrix,
   type ControlMatrixColumn,

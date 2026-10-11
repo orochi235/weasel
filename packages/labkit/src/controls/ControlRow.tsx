@@ -1,4 +1,5 @@
 import {
+  PREF_ENTRY,
   type PrefAction,
   type PrefAlias,
   type PrefLeaf,
@@ -25,6 +26,7 @@ import { useMemo } from 'react';
 import { autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
 import { valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
+import { conditionedLeaf } from '../config/visible';
 import type { ControlPack } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
 import { extra, labField } from './fields';
@@ -192,6 +194,7 @@ function LeafRow<TC extends Record<string, unknown>>({
     // Plain text entries keep the list's own fields, and the placeholder only they have.
     const texts =
       leaf.kind === 'list' && prefListIsText(leaf as PrefList, renderers?.string !== undefined);
+    const inside = conditionedLeaf(resolved, path, leaf, config);
     return (
       <DialogRow
         label={label}
@@ -211,15 +214,17 @@ function LeafRow<TC extends Record<string, unknown>>({
               minItems={(leaf as PrefList).minItems}
               maxItems={(leaf as PrefList).maxItems}
               placeholder={extra<string>(leaf, 'placeholder')}
+              disabled={inside.disabledAt(`${path}.${PREF_ENTRY}`)}
             />
           ) : (
             <PrefControl
-              pref={leaf}
+              pref={inside.leaf}
               path={path}
               value={value}
               onChange={write}
               renderers={renderers}
               fields={choices}
+              disabledAt={inside.disabledAt}
             />
           )
         }

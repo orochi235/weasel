@@ -34,6 +34,7 @@ export {
 } from './condition';
 export {
   applyPrefConditions,
+  PREF_ENTRY,
   PREF_SCOPE,
   prefJudge,
   prefReader,

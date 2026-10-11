@@ -17,6 +17,9 @@ export interface PrefControlProps {
   fields?: readonly PrefFieldChoice[];
   /** The control takes no input. */
   disabled?: boolean;
+  /** Whether a condition disables the field at a path under the leaf's. An entry of a list or a map is asked
+   *  about with `*` for its step (`'phases.*.hold'`), as `applyPrefConditions` names it. */
+  disabledAt?: (path: string) => boolean;
 }
 
 /**
@@ -24,7 +27,7 @@ export interface PrefControlProps {
  * surface that lays out its own rows and has a leaf whose value is made of
  * others' (an `object`, a `list`, a `map`, a `union`) to put in one.
  */
-export function PrefControl({ pref, path = '', value, onChange, renderers, fields, disabled }: PrefControlProps) {
+export function PrefControl({ pref, path = '', value, onChange, renderers, fields, disabled, disabledAt }: PrefControlProps) {
   return renderPrefControl(
     {
       path,
@@ -35,6 +38,7 @@ export function PrefControl({ pref, path = '', value, onChange, renderers, field
       setAuto: () => {},
       ...(fields ? { fields } : {}),
       disabled,
+      disabledAt,
     },
     renderers,
   );

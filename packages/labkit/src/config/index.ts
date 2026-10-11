@@ -62,4 +62,4 @@ export type {
 } from './types';
 export { useConfigSchema } from './useConfigSchema';
 export { useResolvedConfig } from './useResolvedConfig';
-export { isEntryShown, isLeafEnabled, isLeafVisible } from './visible';
+export { conditionedLeaf, isEntryShown, isLeafEnabled, isLeafVisible } from './visible';

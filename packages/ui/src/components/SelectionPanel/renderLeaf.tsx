@@ -6,6 +6,7 @@
  */
 import type { ReactNode } from 'react';
 import { type PrefAction, type PrefAlias, type PrefMap, type PrefUnion, prefVariantOf } from '@weasel-js/prefs';
+import { entryConditions } from '../Prefs/entry';
 import { MapEditor } from '../Prefs/MapEditor';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
 import { PrefMixed } from '../Prefs/PrefMixed';
@@ -78,6 +79,7 @@ export function renderBuiltin(
         renderValue={(held, set, name, key) => {
           const item: PropertyRenderContext = {
             ...ctx,
+            ...entryConditions(ctx, `${ctx.path}.${key}`),
             path: `${ctx.path}.${key}`,
             pref: map.item,
             value: held,
