@@ -53,14 +53,29 @@ describe('runsToDom', () => {
     expect(span.style.color).toBe('rgb(255, 0, 0)');
   });
 
+  it('carries a gradient or pattern fill through the overlay and back', () => {
+    const gradient = {
+      fill: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }],
+    };
+    runsToDom([{ text: 'a', fill: gradient }, { text: 'b' }], parent);
+    const back = domToRuns(parent);
+    expect(back).toEqual([{ text: 'a', fill: gradient }, { text: 'b' }]);
+    // A color set on the span afterward is an edit, and wins.
+    const span = parent.querySelector('span[data-run]') as HTMLSpanElement;
+    span.removeAttribute('data-fill');
+    span.style.color = 'rgb(0, 128, 0)';
+    expect(domToRuns(parent)[0].fill).toEqual({ fill: 'solid', color: 'rgb(0, 128, 0)' });
+  });
+
   it('carries an unfilled run through the overlay and back', () => {
     const runs = [{ text: 'a', fill: null }, { text: 'b' }, { text: 'c', fill: { fill: 'solid' as const, color: '#ff0000' } }];
     runsToDom(runs, parent);
     const [a, b] = [...parent.querySelectorAll('span[data-run]')] as HTMLSpanElement[];
-    expect(a.hasAttribute('data-no-fill')).toBe(true);
+    expect(a.getAttribute('data-fill')).toBe('null');
     // Drawn in black, as an unfilled node is: no CSS color leaves it legible.
     expect(a.style.color).toBe('rgb(0, 0, 0)');
-    expect(b.hasAttribute('data-no-fill')).toBe(false);
+    expect(b.hasAttribute('data-fill')).toBe(false);
     const back = domToRuns(parent);
     expect(back[0]).toEqual({ text: 'a', fill: null });
     expect(back[1]).toEqual({ text: 'b' });

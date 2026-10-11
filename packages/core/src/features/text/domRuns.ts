@@ -29,8 +29,9 @@ function solidColor(p: FillStyle | null | undefined): string | null {
   return null;
 }
 
-/** Marks a run span whose run is unfilled, which its CSS color cannot say. */
-const NO_FILL_ATTR = 'data-no-fill';
+/** Holds, as JSON, a run fill its span's CSS color cannot say: a gradient, a
+ *  pattern, or `null` for no fill. */
+const FILL_ATTR = 'data-fill';
 
 interface StyleState {
   bold: boolean;
@@ -41,7 +42,9 @@ interface StyleState {
   fontWeight?: number;
   fontSize?: number;
   fontFamily?: string;
-  color?: string | null;
+  color?: string;
+  /** `FILL_ATTR`'s value, which wins over `color`. */
+  fillJson?: string;
   letterSpacing?: number;
   script?: 'super' | 'sub';
   baselineShift?: number;
@@ -166,8 +169,14 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
     // The attribute holds the run's family; the CSS holds the face it maps to.
     const family = el.getAttribute('data-font-family') ?? el.style.fontFamily;
     if (family) next.fontFamily = family;
-    if (el.hasAttribute(NO_FILL_ATTR)) next.color = null;
-    else if (el.style.color) next.color = el.style.color;
+    const fillJson = el.getAttribute(FILL_ATTR);
+    if (fillJson != null) {
+      next.fillJson = fillJson;
+      next.color = undefined;
+    } else if (el.style.color) {
+      next.color = el.style.color;
+      next.fillJson = undefined;
+    }
     const ls = el.style.letterSpacing;
     if (ls === 'normal') {
       next.letterSpacing = undefined;
@@ -190,6 +199,7 @@ function styleEquals(a: StyleState, b: StyleState): boolean {
     a.fontSize === b.fontSize &&
     a.fontFamily === b.fontFamily &&
     a.color === b.color &&
+    a.fillJson === b.fillJson &&
     a.letterSpacing === b.letterSpacing &&
     a.script === b.script &&
     a.baselineShift === b.baselineShift &&
@@ -206,8 +216,8 @@ function toRun(text: string, style: StyleState): StyledRun {
   if (style.fontWeight != null) run.fontWeight = style.fontWeight;
   if (style.fontSize != null) run.fontSize = style.fontSize;
   if (style.fontFamily != null) run.fontFamily = style.fontFamily;
-  if (style.color === null) run.fill = null;
-  else if (style.color !== undefined) run.fill = { fill: 'solid', color: style.color };
+  if (style.fillJson !== undefined) run.fill = JSON.parse(style.fillJson) as FillStyle | null;
+  else if (style.color != null) run.fill = { fill: 'solid', color: style.color };
   // `letterSpacing: 0` is a meaningful override (it cancels node-level
   // tracking for this run), so test for presence, not truthiness.
   if (style.letterSpacing != null) run.letterSpacing = style.letterSpacing;
@@ -394,11 +404,9 @@ export function runsToDom(
     }
     const color = solidColor(run.fill);
     if (color != null) span.style.color = color;
-    if (run.fill === null) {
-      // Black, as an unfilled node edits in: no CSS color leaves it legible.
-      span.setAttribute(NO_FILL_ATTR, '');
-      span.style.color = '#000';
-    }
+    else if (run.fill !== undefined) span.setAttribute(FILL_ATTR, JSON.stringify(run.fill));
+    // Black, as an unfilled node edits in: no CSS color leaves it legible.
+    if (run.fill === null) span.style.color = '#000';
     // Decoration goes on the span as an inline style rather than `<u>`/`<s>`
     // wrappers: one representation for `domToRuns` to unwrap, and one element
     // per run so the caret-offset walkers stay flat.
