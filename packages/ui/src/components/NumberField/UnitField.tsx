@@ -11,7 +11,9 @@ export interface UnitFieldProps {
   /** The committed value, read and clamped, in the unit the field shows: on
    *  blur or Enter, and on every step. */
   onChange: (value: number) => void;
-  /** The live value: every keystroke that reads as a number, and every step. */
+  /** The live value: every keystroke that reads as a number, and every step.
+   *  Typing that ends in Escape sends the value it began from, so a caller
+   *  holding the live value gets it back. */
   onInput?: (value: number) => void;
   minValue?: number;
   maxValue?: number;
@@ -75,6 +77,8 @@ export function UnitField({
 }: UnitFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
   const canceled = useRef(false);
+  // The value typing began from, and whether any keystroke reached `onInput`.
+  const typing = useRef<{ from: number; sent: boolean } | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const known = !Number.isNaN(value);
   const text = known ? qty(value, display).text : '';
@@ -92,6 +96,7 @@ export function UnitField({
   };
   const stepTo = (next: number) => {
     setDraft(null);
+    typing.current = null;
     onInput?.(next);
     if (next !== value) onChange(next);
   };
@@ -190,20 +195,28 @@ export function UnitField({
           onChange={(e) => {
             const typed = e.target.value;
             setDraft(typed);
+            typing.current ??= { from: value, sent: false };
             const n = read(typed);
-            if (onInput && typed.trim() !== '' && !Number.isNaN(n)) onInput(clampToBounds(n, bounds));
+            if (onInput && typed.trim() !== '' && !Number.isNaN(n)) {
+              typing.current.sent = true;
+              onInput(clampToBounds(n, bounds));
+            }
           }}
           onFocus={() => {
             canceled.current = false;
           }}
           onBlur={() => {
-            if (draft !== null && !canceled.current) {
+            if (canceled.current) {
+              const typed = typing.current;
+              if (typed?.sent && !Number.isNaN(typed.from)) onInput?.(typed.from);
+            } else if (draft !== null) {
               const n = read(draft);
               if (!Number.isNaN(n)) {
                 const next = clampToBounds(n, bounds);
                 if (next !== value) onChange(next);
               }
             }
+            typing.current = null;
             setDraft(null);
           }}
           onKeyDown={(e) => {

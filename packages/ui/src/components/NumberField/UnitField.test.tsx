@@ -54,6 +54,26 @@ describe('UnitField', () => {
     expect(field).toHaveValue('5');
   });
 
+  it('takes back on Escape what it sent while typing', () => {
+    const onInput = vi.fn();
+    const { onChange, field } = setup({ onInput });
+    field.focus();
+    fireEvent.change(field, { target: { value: '9' } });
+    expect(onInput).toHaveBeenLastCalledWith(9);
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(onInput).toHaveBeenLastCalledWith(5);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('sends nothing on Escape when nothing was sent', () => {
+    const onInput = vi.fn();
+    const { field } = setup({ onInput });
+    field.focus();
+    fireEvent.change(field, { target: { value: 'x' } });
+    fireEvent.keyDown(field, { key: 'Escape' });
+    expect(onInput).not.toHaveBeenCalled();
+  });
+
   it('clamps to its bounds', () => {
     const { onChange, field } = setup({ minValue: 0, maxValue: 10 });
     fireEvent.change(field, { target: { value: '1m' } });
