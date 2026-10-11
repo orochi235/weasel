@@ -726,6 +726,10 @@ export function useTextEdit(
       const nodeStyle = optsRef.current.getStyle(id) ?? {};
       const r = setFlagOverRange(runs, nodeStyle, range.start, range.end, unsetFlag, false);
       setStyle(id, r.style);
+      // The root's own decoration and slant reach every run by inheritance,
+      // the range just cleared included.
+      baseRef.current = resolveTextStyle(r.style, optsRef.current.getPaint?.(id));
+      applyOverlayStyle(overlay, baseRef.current);
       writeRunsPreservingSelection(overlay, r.runs, range.start, range.end, baseRef.current);
       publishRange(overlay, range);
       // The rewrite raised the flag on every existing run, so a caret sitting
@@ -847,6 +851,9 @@ export function useTextEdit(
     syncSelection();
 
     const onKeyDown = (e: KeyboardEvent) => {
+      // The key belongs to the IME: Enter confirms a candidate, Escape dismisses
+      // them. Safari reports it after `compositionend`, as keyCode 229.
+      if (e.isComposing || e.keyCode === 229) return;
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         commit();
@@ -986,8 +993,8 @@ export function useTextEdit(
       overlayRef.current = null;
       clearSelection();
     };
-  }, [editingId, optsRef, commit, cancelEdit, syncSelection, clearSelection, frameLoop,
-      toggleStyle, dropPending, publishRange]);
+  }, [editingId, opts.container, optsRef, commit, cancelEdit, syncSelection, clearSelection,
+      frameLoop, toggleStyle, dropPending, publishRange]);
 
   return {
     editingId, startEdit, cancelEdit, commit, isEditing,

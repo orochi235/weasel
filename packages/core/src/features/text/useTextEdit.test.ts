@@ -206,6 +206,24 @@ describe('useTextEdit', () => {
     expect(h.commits).toEqual([{ id: 'a', text: 'edited' }]);
   });
 
+  it('leaves Enter and Escape to an open IME composition', () => {
+    const h = makeHarness({ a: 'hello' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    seedPlainOverlay(overlay, 'edited');
+    for (const key of ['Enter', 'Escape']) {
+      const composing = new KeyboardEvent('keydown', { key, isComposing: true, bubbles: true, cancelable: true });
+      // Safari reports the confirming key with `isComposing` already false.
+      const safari = new KeyboardEvent('keydown', { key, keyCode: 229, bubbles: true, cancelable: true });
+      act(() => { overlay.dispatchEvent(composing); overlay.dispatchEvent(safari); });
+      expect(composing.defaultPrevented).toBe(false);
+      expect(safari.defaultPrevented).toBe(false);
+    }
+    expect(h.commits).toEqual([]);
+    expect(result.current.editingId).toBe('a');
+  });
+
   it('Shift+Enter does not commit (handler ignores it)', () => {
     const h = makeHarness({ a: 'hello' });
     const { result } = renderHook(() => useTextEdit(h.opts));
@@ -455,6 +473,18 @@ describe('useTextEdit', () => {
     act(() => result.current.startEdit('a'));
     expect(getOverlay(document.body)).toBeNull();
     expect(result.current.editingId).toBe('a');
+  });
+
+  it('mounts the overlay when the container arrives after the edit started', () => {
+    const h = makeHarness({ a: 'hello' });
+    const { result, rerender } = renderHook(
+      ({ container }: { container: HTMLElement | null }) => useTextEdit({ ...h.opts, container }),
+      { initialProps: { container: null as HTMLElement | null } },
+    );
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)).toBeNull();
+    rerender({ container: h.container });
+    expect(getOverlay(h.container)?.textContent).toBe('hello');
   });
 });
 
@@ -759,6 +789,31 @@ describe('useTextEdit — pending style at a collapsed caret', () => {
     act(() => dispatchBeforeInput(overlay, 'c'));
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'ab' }, { text: 'c', fontWeight: 400 }]);
+  });
+});
+
+describe('useTextEdit — lowering a flag the node sets', () => {
+  it('takes the flag off the overlay root, where every run would inherit it', () => {
+    const styles: Record<string, TextStyle> = {
+      a: { fontSize: 16, underline: true, fontStyle: 'italic' },
+    };
+    const h = makeRichHarness({ a: { text: 'one two', runs: [{ text: 'one two' }] } });
+    h.opts.getStyle = (id) => styles[id];
+    h.opts.setStyle = (id, style) => { styles[id] = style; };
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.textDecoration).toBe('underline');
+    expect(overlay.style.fontStyle).toBe('italic');
+
+    selectChars(overlay, 4, 7);
+    act(() => { pressKey(overlay, 'u', { meta: true }); });
+    expect(styles.a.underline).toBeFalsy();
+    expect(overlay.style.textDecoration).toBe('none');
+
+    selectChars(overlay, 4, 7);
+    act(() => { pressKey(overlay, 'i', { meta: true }); });
+    expect(overlay.style.fontStyle).not.toBe('italic');
   });
 });
 
