@@ -19,9 +19,7 @@ import {
   formatShortcut,
 } from '@weasel-js/ui';
 
-/** Paper-size keys mirrored from App.tsx's `PAPER_PRESETS` map. Kept as a
- *  bare string union here so this component stays decoupled from the
- *  preset table (the parent picks the dimensions per key). */
+/** Paper-size keys; `PAPER_PRESETS` in `docPersistence.ts` holds the dimensions. */
 export type PaperSizeKey = 'letter' | 'a4' | 'legal';
 import {
   ReleaseCompoundIcon,
@@ -35,8 +33,8 @@ export interface CommandBarProps {
   // File I/O — SVG round-trip via @weasel-js/svg.
   onSaveSvg(): void;
   onOpenSvg(): void;
-  /** Start a fresh document at the picked paper size. Clears the scene,
-   *  resets undo history, and re-centers the view. */
+  /** Start a fresh document at the picked paper size. Removing the old nodes
+   *  is one undoable entry; the view refits only when the paper size changes. */
   onNew(size: PaperSizeKey): void;
   // View toggles
   gridVisible: boolean;

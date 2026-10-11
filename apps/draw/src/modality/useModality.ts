@@ -2,9 +2,6 @@
  * useModality — bootstraps the mode machine, decoration adapter, and scoping
  * dim for WeaselDraw. Wires them together and exposes the pieces that
  * App.tsx needs to plumb into <SceneCanvas>.
- *
- * No behavioral changes land here (mode stays 'normal'). This hook is
- * the foundation that Tasks 19–20 build on.
  */
 import { useEffect, useMemo } from 'react';
 import {

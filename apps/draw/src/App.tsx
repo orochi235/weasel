@@ -21,8 +21,8 @@
  *     view toggles, recording, preferences.
  *   - `<ActiveSwatches>` is the fill/stroke widget; clicks open a native
  *     color picker via the existing component implementation.
- *   - Local-storage round-trip: serialized scene + view persisted on every
- *     mutation (debounced inside SceneCanvas re-renders).
+ *   - Local-storage round-trip: the scene and its undo stacks are saved 300 ms
+ *     after each change by an effect in `App`.
  */
 import {
   Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState,
@@ -211,6 +211,9 @@ export interface WeaselDrawData {
 }
 
 export type WeaselDrawLayer = 'default';
+
+/** The grid's pitch in world units: what the grid layer draws and what snap rounds to. */
+const GRID_SPACING = 20;
 
 const LS_KEY = 'weaseldraw:scene-v1';
 const HISTORY_KEY = 'weaseldraw:history-v1';
@@ -1270,7 +1273,7 @@ function EditorWithSharedScene({
   }), [modality.machine, paper.width, paper.height]);
 
   const gridLayer = useMemo(() => createGridLayer({
-    spacing: 20,
+    spacing: GRID_SPACING,
     bounds: () => ({ x: 0, y: 0, width: paper.width, height: paper.height }),
     accentEvery: 5,
     style: {
@@ -1370,11 +1373,11 @@ function EditorWithSharedScene({
             pickHud
             modalityHud
             onToolsCreated={setTools}
-            selectTool={snapToGrid ? { snap: gridSnapStrategy<WeaselDrawPose>(20) } : undefined}
+            selectTool={snapToGrid ? { snap: gridSnapStrategy<WeaselDrawPose>(GRID_SPACING) } : undefined}
             toolOptions={snapToGrid ? {
               snapPoint: (p) => ({
-                x: Math.round(p.x / 20) * 20,
-                y: Math.round(p.y / 20) * 20,
+                x: Math.round(p.x / GRID_SPACING) * GRID_SPACING,
+                y: Math.round(p.y / GRID_SPACING) * GRID_SPACING,
               }),
             } : undefined}
             layers={{

@@ -18,11 +18,8 @@
  * with a redundant first node.
  */
 import {
-  type ImageNodeData,
   type PoseComposition,
   type Scene,
-  type Path,
-  type TextStyle,
   composeWorldPose,
   definesFrame,
   documentPose,
@@ -46,24 +43,8 @@ import {
   type SceneSource,
   type WeaselDrawPaperSize,
 } from './svgInterop';
-import type { FillStyle, Stroke, StyledRun, TextVerticalAlign } from '@weasel-js/core';
+import type { WeaselDrawData, WeaselDrawPose } from './App';
 import type { ImageObj, Obj, PathObj, TextObj } from './poseUpdate';
-
-interface WeaselDrawPose {
-  x: number; y: number; width: number; height: number; rotation?: number;
-}
-
-interface WeaselDrawData {
-  path?: Path;
-  text?: string;
-  /** Node-level typography, the same field `kit:text` paints from. */
-  style?: TextStyle;
-  runs?: StyledRun[];
-  fill?: FillStyle | null;
-  stroke?: Stroke | null;
-  verticalAlign?: TextVerticalAlign;
-  image?: ImageNodeData['image'];
-}
 
 const WHITE = /^#?fff(fff)?(ff)?$/i;
 

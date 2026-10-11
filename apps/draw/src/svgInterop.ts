@@ -3,7 +3,9 @@
  * TextObj | ImageObj`, discriminated by `tool`) and `@weasel-js/svg`'s
  * `SvgNode` discriminated union, layered over the package's own
  * `svgNodesFromKit` / `svgNodesToKitDrafts` walks. What it adds is the `wd:`
- * namespace.
+ * namespace. An `Obj` exists only in transit between a file and the scene:
+ * `leafToObj` in `svgExport.ts` makes one, `leafOfObj` in `svgImport.ts`
+ * unmakes one, and the scene never stores it.
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names
  * `tool`, `params-sides`, `params-points`, `params-ratio`. On import, a
