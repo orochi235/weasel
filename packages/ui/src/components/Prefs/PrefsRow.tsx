@@ -11,6 +11,7 @@ import {
 } from '@weasel-js/prefs';
 import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PrefActionButton } from './PrefActionButton';
+import { prefDrawsNoControl, PrefWords } from './PrefWords';
 import { drawsRows, drawsSeveral } from './compound';
 import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
@@ -134,19 +135,10 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
   const { path, auto: inherited, setAuto } = renderCtx;
 
   const custom = ctx.renderers?.[pref.kind];
-  // Text among the rows, holding no value: its name is the line and its description the note under it.
-  if (pref.kind === 'label' && !custom) {
-    return (
-      <div className={`${s.rowSlot} ${s.labelRow}`} data-wide="" {...selectionAttrs(own, ctx, true)}>
-        <span className={s.labelText}>{pref.name}</span>
-        {pref.description !== '' && <span className={s.paneDesc}>{pref.description}</span>}
-      </div>
-    );
-  }
-  if (pref.kind === 'separator' && !custom) {
+  if (prefDrawsNoControl(pref) && !custom) {
     return (
       <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>
-        <hr className={s.rule} />
+        <PrefWords pref={pref} />
       </div>
     );
   }

@@ -1143,11 +1143,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   list leaf spans both columns, and its inner rows start at about 60% of the pane, under neither
   column's labels nor its controls.
 
-- **(P2) `PrefSchemaEditor` layout by dragging, what is left.** A `label` and a `separator` are kinds only
-  `PrefsForm` and a bar draw: `SelectionPanel` and labkit's `ControlPanel` show each as an unknown
-  kind, `prefFieldChoices` offers each as a field, and `@weasel-js/prefs` does not know either kind.
-  The editor's attributes pane still offers a separator a description, which nothing draws, and a
-  name, which only the editor's own structure tree shows as the row's label.
+- **(P3) `PrefSchemaEditor` layout by dragging: no test drives a pointer through the editor.**
   `PrefsForm.drop.browser.test.tsx` checks the form's drop target and reflow in a real browser; no
   test in the repo drives a pointer through the editor itself. Palette, row, rail, and tree drags
   were driven through a headless browser on astv's page and on the editor's story on 2026-10-10.

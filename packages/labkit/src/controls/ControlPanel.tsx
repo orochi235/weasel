@@ -18,7 +18,9 @@ import {
   ListEditor,
   PrefActionButton,
   PrefControl,
+  prefDrawsNoControl,
   type PrefFieldChoice,
+  PrefWords,
   type PropertyAlign,
   type PropertyControlProps,
   type PropertyDensity,
@@ -564,8 +566,15 @@ function summarizeAuto(value: unknown): string {
  *  renders it are all the target's. */
 export function ControlRow<TC extends Record<string, unknown>>(props: ControlRowProps<TC>) {
   const { leaf, resolved, renderers } = props;
-  if (leaf.kind !== 'alias' || renderers?.[props.path] || resolved.renderers[props.path])
-    return <LeafRow {...props} />;
+  const drawn = (renderers?.[props.path] ?? resolved.renderers[props.path]) !== undefined;
+  if (prefDrawsNoControl(leaf) && !drawn && !renderers?.[leaf.kind]) {
+    return (
+      <div className="lk-control-words">
+        <PrefWords pref={leaf} />
+      </div>
+    );
+  }
+  if (leaf.kind !== 'alias' || drawn) return <LeafRow {...props} />;
   const alias = leaf as PrefAlias;
   const target = prefAliasTarget(alias, (path) => prefLeafAt(resolved.group, path));
   if (target)

@@ -7,6 +7,7 @@ import { formatUnit, unitScale } from '@weasel-js/quantity';
 import type { PrefAction } from './action';
 import type { PrefAlias } from './alias';
 import type { PrefSection } from './groups';
+import type { PrefLabel, PrefSeparator } from './label';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefUnion } from './union';
@@ -14,7 +15,7 @@ import type { Display, InfinityText, Unit, UnitEntry, UnitScale, UnitSystem } fr
 
 /** The value types a built-in pref leaf can hold. */
 export type PrefKind =
-  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object' | 'list' | 'map' | 'union' | 'field' | 'action' | 'alias';
+  | 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint' | 'object' | 'list' | 'map' | 'union' | 'field' | 'action' | 'alias' | 'label' | 'separator';
 
 /**
  * Leaves that share one row in a compact property UI (weasel-ui
@@ -337,7 +338,9 @@ export type BuiltinPref =
   | PrefUnion
   | PrefField
   | PrefAction
-  | PrefAlias;
+  | PrefAlias
+  | PrefLabel
+  | PrefSeparator;
 
 // Compile-time tie: every built-in leaf kind must appear in PrefKind
 // and vice versa (PrefBase's K is open for PrefCustom's sake, so
@@ -368,6 +371,8 @@ export const PREF_KINDS: Record<PrefKind, true> = {
   field: true,
   action: true,
   alias: true,
+  label: true,
+  separator: true,
 };
 
 /** Which row each pairing among `leaves` puts a path on: a `key` the row's

@@ -18,6 +18,7 @@ export {
 } from './helpers';
 export type { PrefAction, PrefActionContext, PrefActionControl } from './action';
 export { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
+export type { PrefLabel, PrefSeparator } from './label';
 export type { PrefList } from './list';
 export type { PrefMap } from './map';
 export { prefVariantDefault, prefVariantOf, type PrefUnion } from './union';

@@ -29,6 +29,16 @@ export class AliasNode extends BaseNode<undefined> {
   readonly kind = 'alias';
 }
 
+/** A line of text among the rows, built by `f.label`. Holds no value; `.describe` adds the note under it. */
+export class LabelNode extends BaseNode<undefined> {
+  readonly kind = 'label';
+}
+
+/** A rule between the rows, built by `f.separator`. Holds no value. */
+export class SeparatorNode extends BaseNode<undefined> {
+  readonly kind = 'separator';
+}
+
 /** A node as a leaf inside another's value: a list's or a map's item, an object's field, a union's variant.
  *  Named for `key` where it has one and no label of its own. */
 function itemLeaf(node: ConfigNode, key?: string): PrefLeaf {
@@ -122,4 +132,8 @@ export const compound = {
   action: (run: PrefAction['run']): ActionNode => new ActionNode(undefined, { run }),
   /** `of` is the path the shown leaf's value is written at, from the schema's root: `'view.grid'`. */
   alias: (of: string): AliasNode => new AliasNode(undefined, { of, name: '' }),
+  /** A line of text among the rows. */
+  label: (text: string): LabelNode => new LabelNode(undefined, { name: text }),
+  /** A rule between the rows. */
+  separator: (): SeparatorNode => new SeparatorNode(undefined, { name: '' }),
 };

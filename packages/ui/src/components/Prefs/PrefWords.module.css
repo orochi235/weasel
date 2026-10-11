@@ -1,0 +1,23 @@
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-1);
+}
+
+.labelText {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg);
+}
+
+.labelNote {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+  line-height: 1.35;
+}
+
+.rule {
+  inline-size: 100%;
+  margin: var(--wzl-space-1) 0;
+  border: 0;
+  border-top: 1px solid var(--wzl-border);
+}

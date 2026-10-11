@@ -83,6 +83,8 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
     label: text('Button', 'The button\'s text. Unset: the name.'),
     control: control(['button', 'icon']),
   },
+  label: {},
+  separator: {},
   alias: { of: { kind: 'field', name: 'Of', description: 'The pref this one shows: its control is drawn here too, over the one stored value.', default: '' } as PrefLeaf },
 };
 
@@ -174,6 +176,18 @@ function actionChoice(attr: PrefLeaf, actions: ReadonlyArray<{ key: string; labe
   return { kind: 'enum', name: attr.name, description: attr.description, default: undefined, clearable: true, options } as PrefLeaf;
 }
 
+/** The attributes a leaf of `kind` shares with every other, less the ones nothing draws for it: a label is its
+ *  name and its description, and a separator neither. */
+function sharedAttrs(kind: string): KindAttrs {
+  if (kind === 'separator') return { hidden: LEAF_BASE.hidden! };
+  if (kind === 'label') return { name: LEAF_BASE.name!, description: LEAF_BASE.description!, hidden: LEAF_BASE.hidden! };
+  return { ...LEAF_BASE };
+}
+
+/** What every leaf carries and nothing draws for a separator, so no row lists it. */
+const SEPARATOR_UNDRAWN: ReadonlySet<string> = new Set(['name', 'description']);
+const NO_ATTRS: ReadonlySet<string> = new Set();
+
 function kindAttrs(kind: string, custom: CustomKinds): KindAttrs {
   if (Object.hasOwn(KIND_ATTRS, kind)) return KIND_ATTRS[kind as PrefKind];
   return Object.hasOwn(custom, kind) ? custom[kind]! : {};
@@ -200,7 +214,7 @@ export function attributeSchema(
   const typed = node.type !== undefined;
   const def = defaultAttr(node);
   const item = entryOf(node);
-  const shared: KindAttrs = { ...LEAF_BASE };
+  const shared: KindAttrs = sharedAttrs(node.kind);
   const own: KindAttrs = { ...(def ? { default: def } : {}), ...(typed ? {} : kindAttrs(node.kind, custom)) };
   if (own.action && node.kind === 'action' && actions && actions.length > 0) own.action = actionChoice(own.action, actions, (node as { action?: string }).action);
   const auto = autoAttrs(node);
@@ -209,7 +223,8 @@ export function attributeSchema(
   for (const attrs of [shared, own, auto]) for (const k of Object.keys(attrs)) if (containsCode(fields[k])) delete attrs[k];
   for (const k of Object.keys(entry)) if (containsCode((item as unknown as Record<string, unknown>)[k])) delete entry[k];
   // What a type holds beyond the fields its use sets is the type's to show, where it is declared.
-  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => k !== 'kind' && !SLOTS.has(k) && !(k in shared) && !(k in own) && !(k in auto));
+  const undrawn = node.kind === 'separator' ? SEPARATOR_UNDRAWN : NO_ATTRS;
+  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => k !== 'kind' && !SLOTS.has(k) && !undrawn.has(k) && !(k in shared) && !(k in own) && !(k in auto));
   return { shared, own, auto, entry, readOnly };
 }
 
@@ -239,6 +254,9 @@ export function blankLeaf(kind: string, custom: CustomKinds = {}): PrefLeaf {
       variants: { a: { kind: 'object', name: 'A', description: '', default: {}, children: {} } },
     } as PrefLeaf;
     case 'action': return { ...base, default: undefined, run: STUB } as PrefLeaf;
+    case 'label': return { kind, name: 'Label', description: '', default: undefined } as PrefLeaf;
+    // A rule has no words: nothing draws a name or a description for one.
+    case 'separator': return { kind, name: '', description: '', default: undefined } as PrefLeaf;
     // Named for what it shows until it is given a name of its own.
     case 'alias': return { kind, name: '', description: '', default: undefined, of: '' } as PrefLeaf;
     default: {

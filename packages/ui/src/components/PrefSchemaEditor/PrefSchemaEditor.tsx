@@ -238,7 +238,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     );
   }, [rowMark, changes, dead]);
   // `label` is a kind the form draws itself: text among the rows, with no attributes of its own.
-  const custom = useMemo(() => ({ label: {}, ...kinds }), [kinds]);
+  const custom = kinds;
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);
   const editorPrefs = useEditorPrefs(prefs);
   const structureSize = useEditorSize('structureWidth', editorPrefs);

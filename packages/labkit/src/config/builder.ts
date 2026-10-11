@@ -5,9 +5,11 @@ import {
   ActionNode,
   AliasNode,
   compound,
+  LabelNode,
   ListNode,
   MapNode,
   ObjectNode,
+  SeparatorNode,
   UnionNode,
 } from './compound';
 import type {
@@ -24,7 +26,17 @@ import type {
   SectionOption,
 } from './types';
 
-export { ActionNode, AliasNode, BaseNode, ListNode, MapNode, ObjectNode, UnionNode };
+export {
+  ActionNode,
+  AliasNode,
+  BaseNode,
+  LabelNode,
+  ListNode,
+  MapNode,
+  ObjectNode,
+  SeparatorNode,
+  UnionNode,
+};
 
 /** Whether a schema entry is a branch rather than a leaf. */
 export function isConfigBranch(entry: ConfigEntry): entry is ConfigBranch {

@@ -8,6 +8,7 @@ export {
 export type { PrefSelectHow } from './selection';
 export { prefFieldProps, type PrefFieldState } from './prefField';
 export { PrefActionButton } from './PrefActionButton';
+export { PrefLabelLine, PrefRule, PrefWords, prefDrawsNoControl } from './PrefWords';
 export { useLeafAction, type LeafAction } from './useLeafAction';
 export { PrefControl, type PrefControlProps } from './PrefControl';
 export { MapEditor, type MapEditorProps } from './MapEditor';

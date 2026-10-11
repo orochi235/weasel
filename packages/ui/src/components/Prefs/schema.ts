@@ -1,3 +1,4 @@
+import { prefDrawsNoControl } from './PrefWords';
 import type { UnitTable } from '@weasel-js/quantity';
 import {
   filterPrefSubtree,
@@ -35,6 +36,7 @@ export interface PrefFieldChoice {
 export function prefFieldChoices(schema: PrefGroup | PrefSection): PrefFieldChoice[] {
   const out: PrefFieldChoice[] = [];
   const add = (path: string, leaf: PrefLeaf): void => {
+    if (prefDrawsNoControl(leaf)) return;
     out.push({ path, name: leaf.name, kind: leaf.kind });
     if (leaf.kind !== 'object') return;
     for (const [key, field] of prefSectionLeaves((leaf as PrefObject).children)) add(`${path}.${key}`, field);

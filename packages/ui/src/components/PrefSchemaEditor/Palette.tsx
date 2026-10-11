@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
-import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import { Icon, type IconName } from '../../icons';
 import { DragGhost } from '../DragGhost';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
+import { blankLeaf } from './kindSchemas';
 import { GHOST_WIDTH, NodeGhost, ghostIsPage } from './NodeGhost';
 import type { SchemaNode } from './schemaEdit';
 import s from './PrefSchemaEditor.module.css';
@@ -32,8 +33,8 @@ export const GROUP_ICON: Record<NonNullable<PrefGroup['as']>, IconName> = {
 const group = (name: string, as: PrefGroup['as']): PrefGroup => ({ name, description: '', as, children: {} });
 
 const section = (name: string, as: PrefSection['as']): PrefSection => ({ name, description: '', as, members: {} });
-const LABEL: PaletteItem = { id: 'label', label: 'Label', icon: 'formLabel', key: 'label', make: () => ({ kind: 'label', name: 'Label', description: '', default: undefined }) as PrefLeaf };
-const SEPARATOR: PaletteItem = { id: 'separator', label: 'Separator', icon: 'formSeparator', key: 'separator', make: () => ({ kind: 'separator', name: '', description: '', default: undefined }) as PrefLeaf };
+const LABEL: PaletteItem = { id: 'label', label: 'Label', icon: 'formLabel', key: 'label', make: () => blankLeaf('label') };
+const SEPARATOR: PaletteItem = { id: 'separator', label: 'Separator', icon: 'formSeparator', key: 'separator', make: () => blankLeaf('separator') };
 
 /** What a section root takes: the same, less the page, each a section. */
 export const SECTION_PALETTE: readonly PaletteItem[] = [

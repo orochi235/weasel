@@ -28,6 +28,7 @@ import {
   type PanelSection,
 } from './model';
 import { GroupTabs } from '../Prefs/GroupTabs';
+import { prefDrawsNoControl } from '../Prefs/PrefWords';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { BarLayout } from '../Bar/BarLayout';
 import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
@@ -203,9 +204,9 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
               // instead of sitting in a labeled row's control cell. Under a
               // headless section nothing else names it, so it heads itself;
               // an object leaf already renders its own heading.
-              row.leaves.length === 1 && row.leaves[0].leaf.block ? (
+              row.leaves.length === 1 && controls[0].block ? (
                 <div key={panelLeafKey(row.leaves[0])}>
-                  {section.name === '' && row.leaves[0].leaf.kind !== 'object' && (
+                  {section.name === '' && row.leaves[0].leaf.kind !== 'object' && !prefDrawsNoControl(row.leaves[0].leaf) && (
                     <h4 className={s.sectionTitle} title={row.leaves[0].leaf.description}>
                       {row.leaves[0].leaf.name}
                     </h4>

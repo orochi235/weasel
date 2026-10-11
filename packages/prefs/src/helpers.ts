@@ -32,9 +32,12 @@ export function isPrefLeaf(node: PrefLeaf | PrefGroup | PrefSection): node is Pr
   return 'kind' in node;
 }
 
-/** Whether a leaf has a value to store: an `action` is a button and holds none, and an `alias` shows another leaf's. */
+const VALUELESS: ReadonlySet<string> = new Set(['action', 'alias', 'label', 'separator']);
+
+/** Whether a leaf has a value to store: an `action` is a button and holds none, an `alias` shows another leaf's,
+ *  and a `label` and a `separator` are text and a rule. */
 export function prefHoldsValue(leaf: PrefLeaf): boolean {
-  return leaf.kind !== 'action' && leaf.kind !== 'alias';
+  return !VALUELESS.has(leaf.kind);
 }
 
 /** Distinguishes a section, whose key adds nothing to a path, from a group, whose key is a segment. */

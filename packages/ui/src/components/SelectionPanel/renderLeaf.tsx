@@ -19,6 +19,7 @@ import {
 } from '@weasel-js/prefs';
 import { MapEditor } from '../Prefs/MapEditor';
 import { PrefActionButton } from '../Prefs/PrefActionButton';
+import { prefDrawsNoControl, PrefWords } from '../Prefs/PrefWords';
 import { UnionPicker } from '../Prefs/UnionPicker';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PrefFieldChoice } from '../Prefs/schema';
@@ -170,7 +171,7 @@ export function renderCells(
     if (!isFlagCell(cell, renderers)) {
       const content = cell.render();
       if (content != null) {
-        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true, content, ...(cell.pair ? { pair: cell.pair } : {}) });
+        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true || prefDrawsNoControl(cell.leaf), content, ...(cell.pair ? { pair: cell.pair } : {}) });
       }
       i += 1;
       continue;
@@ -342,6 +343,7 @@ export function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
+  if (prefDrawsNoControl(pref)) return <PrefWords pref={pref} />;
   if (pref.kind === 'alias') {
     // The panel draws a resolved alias as its target, so one that reaches here points at nothing.
     const of = (pref as PrefAlias).of;

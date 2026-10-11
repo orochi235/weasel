@@ -16,6 +16,8 @@ const KIND_CLASS: Record<PrefKind, string | undefined> = {
   field: s.field,
   action: s.action,
   alias: undefined,
+  label: undefined,
+  separator: undefined,
 };
 
 /** Props for {@link PrefKindBadge}. */

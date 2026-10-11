@@ -66,7 +66,7 @@ describe('kindSchemas', () => {
   });
 
   it('makes blank leaves whose attributes are all described, bar the read-only ones', () => {
-    const intentional: Record<string, string[]> = { paint: ['default'], object: ['default'], map: ['default'], union: ['default'], action: ['default', 'run'], alias: ['default'] };
+    const intentional: Record<string, string[]> = { paint: ['default'], object: ['default'], map: ['default'], union: ['default'], action: ['default', 'run'], alias: ['default'], label: ['default'], separator: ['default'] };
     expect(blankLeaf('action')).toMatchObject({ run: STUB });
     for (const k of BUILTIN_KINDS) {
       const { readOnly } = attributeSchema(blankLeaf(k));
@@ -74,6 +74,14 @@ describe('kindSchemas', () => {
     }
     expect(blankLeaf('enum')).toMatchObject({ default: 'a', options: [{ value: 'a', label: 'A' }] });
     expect(blankLeaf('object')).toMatchObject({ children: {} });
+  });
+
+  it('offers a label its name, its description, and Hidden, and a separator Hidden alone', () => {
+    const label = attributeSchema(blankLeaf('label'));
+    expect([Object.keys(label.shared), Object.keys(label.own), Object.keys(label.auto)]).toEqual([['name', 'description', 'hidden'], [], []]);
+    const rule = attributeSchema(blankLeaf('separator'));
+    expect([Object.keys(rule.shared), Object.keys(rule.own), Object.keys(rule.auto)]).toEqual([['hidden'], [], []]);
+    expect(rule.readOnly.map(([key]) => key)).toEqual(['default']);
   });
 
   it('drops an attribute whose value the new kind\'s attribute of that name does not offer', () => {

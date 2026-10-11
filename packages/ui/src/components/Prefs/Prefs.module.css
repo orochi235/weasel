@@ -128,25 +128,6 @@
 }
 
 /* `kind: 'label'`: text among the rows. */
-.labelRow {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wzl-space-1);
-}
-
-.labelText {
-  font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-fg);
-}
-
-/* A `separator` leaf: a line across the rows. */
-.rule {
-  inline-size: 100%;
-  margin: var(--wzl-space-1) 0;
-  border: 0;
-  border-top: 1px solid var(--wzl-border);
-}
-
 /* Control slot — a share of the row rather than a fixed width, so a wide pane
  * widens the field instead of the gap before it. A long label still pushes it
  * narrower, down to the floor. Kit form controls are flex columns that fill it. */
