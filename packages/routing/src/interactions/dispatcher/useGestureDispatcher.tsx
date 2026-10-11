@@ -1644,7 +1644,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const onPaste = (e: ClipboardEvent) => {
       // Text-editing surfaces (inputs, the text-edit overlay) own their own
       // paste — never steal it for scene ingestion.
-      if (isEditableTarget(e.target)) return;
+      if (e.defaultPrevented || isEditableTarget(e.target)) return;
+      // Every dispatcher hears paste on window; only the active scope's acts.
+      if (!registryRef.current.isActive()) return;
       const cd = e.clipboardData;
       if (!cd) return;
       const items = itemsFromClipboardData(cd);
