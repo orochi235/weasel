@@ -299,3 +299,25 @@ describe('<SceneCanvas features>', () => {
     expect(JSON.stringify(scene.get(id)!.pose)).toBe(before);
   });
 });
+
+describe('<SceneCanvas insertPaint>', () => {
+  it('paints the shape the insert dep builds', () => {
+    let commit!: (bounds: unknown, extras: unknown) => NodeId | null;
+    function Grab() {
+      const deps = useDepRegistry();
+      useEffect(() => {
+        commit = (deps.get('insert') as { commit: typeof commit }).commit;
+      });
+      return null;
+    }
+    const scene = createScene<Record<string, unknown>, L, P>({ systemLayers: [{ id: 'main' }] });
+    render(
+      <SceneCanvas scene={scene} width={200} height={200} insertPaint={() => ({ fill: null })}>
+        <Grab />
+      </SceneCanvas>,
+    );
+    let id: NodeId | null = null;
+    act(() => { id = commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' }); });
+    expect(scene.get(id!)!.data.fill).toBeNull();
+  });
+});

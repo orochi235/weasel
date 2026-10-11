@@ -120,6 +120,7 @@ import {
   useGeometryProjection,
   useIngestionDepSource,
   type InsertNodeFactory,
+  type InsertPaint,
 } from './deps';
 import { useLayoutArrivals } from '../layout/arrivals';
 import {
@@ -536,6 +537,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  `text`) adds insert support the kit doesn't ship. The dep supplies id,
      *  layer, and the undoable op. Return `null` to reject an insert. */
     insertNodeFactories?: Record<string, InsertNodeFactory>;
+
+    /** The fill and stroke a kit-built shape is inserted with, by tool `kind`
+     *  and insert count; the kit keeps the geometry. Default
+     *  `paletteInsertPaint`, the kit palette in turn. A kind with a factory in
+     *  `insertNodeFactories` is not asked. */
+    insertPaint?: InsertPaint;
 
     /** External-content ingestion (OS drop / clipboard paste / picker).
      *  `handlers` are consumer content handlers registered for this canvas's
@@ -1013,6 +1020,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectTool: selectToolOpts,
     insertTool,
     insertNodeFactories,
+    insertPaint,
     ingestion,
     layouts,
     layoutDropTarget,
@@ -2292,6 +2300,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 reflowTransition={reflowTransition as ReflowTransition<unknown> | null | undefined}
                 poseComposition={poseComposition as SceneCanvasProps<unknown, string, unknown>['poseComposition']}
                 insertNodeFactories={insertNodeFactories}
+                insertPaint={insertPaint}
                 snapPoint={toolOptions?.snapPoint}
                 canvasRef={internalCanvasRef}
                 canvasApiRef={canvasApiRef}
@@ -2708,6 +2717,7 @@ function StandardActionsRegistrar({
   layoutDropTarget,
   reflowTransition,
   insertNodeFactories,
+  insertPaint,
   snapPoint,
   canvasRef,
   canvasApiRef,
@@ -2787,6 +2797,7 @@ function StandardActionsRegistrar({
   /** Forwarded from `SceneCanvasProps` so `useInsertDepSource` can wire the
    *  consumer's per-kind node factories into the `insert` dep. */
   insertNodeFactories?: Record<string, InsertNodeFactory>;
+  insertPaint?: InsertPaint;
   /** Forwarded from `SceneCanvasProps.toolOptions.snapPoint` so the `snap`
    *  dep source can expose grid snapping to `insertAction`. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
@@ -2872,7 +2883,7 @@ function StandardActionsRegistrar({
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, layouts, layoutDropTarget, reflowTransition);
   useLayoutArrivals(scene, { layouts, poseDescriptor, poseComposition });
-  useInsertDepSource(scene, adapter, insertNodeFactories);
+  useInsertDepSource(scene, adapter, insertNodeFactories, insertPaint);
   useSliceDepSource(scene, selection, adapter, poseComposition, poseDescriptor);
   useSnapDepSource(snapPoint);
   useDebugDepSource(canvasApiRef);

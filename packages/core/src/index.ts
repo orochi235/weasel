@@ -1469,7 +1469,8 @@ export type {
   BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,
 } from './core/shapeKinds';
 export type { BuiltinToolOptions } from './canvas/SceneCanvas/useBuiltinShapeTools';
-export type { InsertNodeFactory } from './canvas/deps';
+export type { InsertNodeFactory, InsertPaint } from './canvas/deps';
+export { paletteInsertPaint } from './canvas/deps';
 export type {
   SceneToAdapterOptions,
   SceneAdapterSelection,

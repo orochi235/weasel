@@ -2294,13 +2294,11 @@ only story runner in the repo.
 
 - **(P2) draw: the swatches' active fill and stroke never reach a newly drawn shape.** With nothing
   selected, pick red in the fill swatch and drag out a rectangle: it takes the kit's next palette
-  color (`cycleFill` in `packages/core/src/canvas/deps/insert.ts`), and `INITIAL_FILL_COLOR` in
-  `apps/draw/src/App.tsx` reaches no shape either. The only override the kit offers is `<SceneCanvas
-  insertNodeFactories>`, and a factory replaces the whole node for its kind, geometry included, so
-  draw would have to restate `rectPath` / `ellipsePath` / `regularPolygonPath` / `starPath` / the
-  pencil fit to change one color. The insert dep should take the paint as its own seam (a `paint:
-  (kind, seq) => { fill, stroke }` option beside `factories`, defaulting to the palette cycle), and
-  draw should feed it from `useColorContext()`, mapping `{ kind: 'none' }` to `null`.
+  color, and `INITIAL_FILL_COLOR` in `apps/draw/src/App.tsx` reaches no shape either. The seam is
+  there: `<SceneCanvas insertPaint>` takes `(kind, seq) => { fill?, stroke? }` and the kit keeps the
+  geometry. Draw has to feed it from `useColorContext()`, mapping `{ kind: 'none' }` to `null`, and
+  that needs two answers the color context does not hold: the width of a new stroke (the kit's
+  line and pencil use 2), and whether a line or a pencil trail takes the active fill.
 
 - **(P2) draw: Open adds the file to the current document instead of replacing it, and keeps the old
   filename.** Open an SVG into a non-empty document and both sets of shapes are on the page; the

@@ -30,6 +30,7 @@ import {
   schneiderFit,
 } from '@weasel-js/geom';
 import { insertPreviewExtent } from '../insertPreviewExtent';
+import type { FillStyle, Stroke } from '@weasel-js/paint';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 
 interface OpsApplier {
@@ -44,7 +45,8 @@ interface OpsApplier {
  *
  * A factory registered for a kit kind (`rect`, `line`, …) fully replaces the
  * kit's default `{ path, fill }` factory for that kind; a factory for a novel
- * kind adds support the kit doesn't ship (e.g. `text`). See
+ * kind adds support the kit doesn't ship (e.g. `text`). To change only the
+ * paint of a kit shape, pass an {@link InsertPaint}. See
  * `SceneCanvas`'s `insertNodeFactories` prop.
  */
 export type InsertNodeFactory = (
@@ -52,14 +54,37 @@ export type InsertNodeFactory = (
   extras: InsertExtras,
 ) => { data: unknown; pose?: unknown } | null;
 
+/**
+ * The paint a kit-built shape is inserted with. `kind` is the shape being
+ * built and `seq` counts this canvas's inserts from 1. A key left out stays
+ * off the node, so its painter's default applies; `null` is "none". A pencil
+ * trail too short to fit is built as a rect and asks as one.
+ *
+ * It paints only the shapes the kit builds: an `InsertNodeFactory` owns its
+ * node's whole `data`. See `SceneCanvas`'s `insertPaint` prop.
+ */
+export type InsertPaint = (kind: string, seq: number) => { fill?: FillStyle | null; stroke?: Stroke | null };
+
+/** The default {@link InsertPaint}: the next color of the kit palette, as a
+ *  fill on a closed shape, a fill and a stroke on a line, and a stroke alone
+ *  on a pencil trail. */
+export const paletteInsertPaint: InsertPaint = (kind, seq) => {
+  const color = cycleFill(seq);
+  if (kind === 'pencil') return { stroke: strokeOf(color, 2) };
+  if (kind === 'line') return { fill: solid(color), stroke: strokeOf(color, 2) };
+  return { fill: solid(color) };
+};
+
 export function useInsertDepSource(
   scene: Scene<unknown, string, unknown>,
   adapter: OpsApplier,
   factories?: Record<string, InsertNodeFactory>,
+  paint: InsertPaint = paletteInsertPaint,
 ): void {
   const sceneRef = useLatest(scene);
   const adapterRef = useLatest(adapter);
   const factoriesRef = useLatest(factories);
+  const paintRef = useLatest(paint);
   const insertSeqRef = useRef(0);
 
   useDepSource('insert', (): InsertDep => {
@@ -83,8 +108,10 @@ export function useInsertDepSource(
           seq = ++insertSeqRef.current;
           id = asNodeId(`kit-${kind}-${seq}`);
         }
-        const color = cycleFill(seq);
-        const fill = solid(color);
+        const painted = (as: string = kind): { fill?: FillStyle | null; stroke?: Stroke | null } => {
+          const { fill, stroke } = paintRef.current(as, seq);
+          return { ...(fill !== undefined ? { fill } : {}), ...(stroke !== undefined ? { stroke } : {}) };
+        };
 
         // The nascent node's extent — drag AABB reconciled with whatever
         // richer geometry `extras` carries.
@@ -110,28 +137,28 @@ export function useInsertDepSource(
 
         switch (geom.kind) {
           case 'line':
-            data = { path: linePath(geom.a, geom.b), fill, stroke: strokeOf(color, 2) };
+            data = { path: linePath(geom.a, geom.b), ...painted() };
             break;
           case 'polygon':
             data = {
               path: regularPolygonPath(geom.center, geom.radius, geom.sides, geom.rotation),
-              fill,
+              ...painted(),
             };
             break;
           case 'star':
             data = {
               path: starPath(geom.center, geom.outerRadius, geom.points, geom.innerRadius, geom.rotation),
-              fill,
+              ...painted(),
             };
             break;
           case 'pencil': {
             const samples = geom.samples as { x: number; y: number }[];
             if (samples.length >= 4) {
-              data = { path: schneiderFit(samples, 2.0), stroke: strokeOf(color, 2) };
+              data = { path: schneiderFit(samples, 2.0), ...painted() };
             } else if (samples.length >= 2) {
-              data = { path: polygonFromPoints(samples), stroke: strokeOf(color, 2) };
+              data = { path: polygonFromPoints(samples), ...painted() };
             } else {
-              data = { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), fill };
+              data = { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), ...painted('rect') };
             }
             break;
           }
@@ -143,10 +170,10 @@ export function useInsertDepSource(
                 // onto the pose box regardless of the stored coords, so origin vs.
                 // duplicated-pose-coords render identically — don't double-count
                 // the position. (#13)
-                data = { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), fill };
+                data = { path: rectPath(0, 0, extent.bounds.width, extent.bounds.height), ...painted() };
                 break;
               case 'ellipse':
-                data = { path: ellipsePath(extent.bounds), fill };
+                data = { path: ellipsePath(extent.bounds), ...painted() };
                 break;
               case 'text': {
                 // The built-in `useTextTool` drags an empty text box you then type

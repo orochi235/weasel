@@ -84,6 +84,55 @@ describe('useInsertDepSource', () => {
     expect(applyOps.mock.calls[0][0][0].args.node.data).toEqual({ text: 'hello' });
   });
 
+  it('paints a kit shape from the `paint` option, keeping the kit geometry', () => {
+    const applyOps = vi.fn();
+    let reg!: DepRegistry;
+    const paint = vi.fn((kind: string) =>
+      kind === 'line' ? { stroke: { paint: { color: '#00f' }, width: 3 } } : { fill: null, stroke: { paint: { color: '#f00' }, width: 1 } },
+    );
+    function Wire() {
+      useInsertDepSource(makeScene(), { applyOps }, undefined, paint);
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    const dep = (reg.get as any)('insert');
+    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' });
+    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'line' });
+    const data = (call: number) => applyOps.mock.calls[call][0][0].args.node.data;
+    expect(data(0)).toEqual({ path: expect.anything(), fill: null, stroke: { paint: { color: '#f00' }, width: 1 } });
+    expect(data(1)).toEqual({ path: expect.anything(), stroke: { paint: { color: '#00f' }, width: 3 } });
+    expect(paint.mock.calls.map(([kind, seq]) => [kind, seq])).toEqual([['rect', 1], ['line', 2]]);
+  });
+
+  it('cycles the palette when no `paint` is given: a fill on a shape, a stroke as well on a line, a stroke alone on a pencil trail', () => {
+    const applyOps = vi.fn();
+    let reg!: DepRegistry;
+    function Wire() {
+      useInsertDepSource(makeScene(), { applyOps });
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    const dep = (reg.get as any)('insert');
+    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' });
+    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'line' });
+    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'pencil', samples: [{ x: 0, y: 0 }, { x: 10, y: 10 }] });
+    const keys = (call: number) => Object.keys(applyOps.mock.calls[call][0][0].args.node.data).sort();
+    expect(keys(0)).toEqual(['fill', 'path']);
+    expect(keys(1)).toEqual(['fill', 'path', 'stroke']);
+    expect(keys(2)).toEqual(['path', 'stroke']);
+    expect(applyOps.mock.calls[1][0][0].args.node.data.stroke.width).toBe(2);
+  });
+
   it('returns null and warns when the kind has no factory', () => {
     const applyOps = vi.fn();
     let reg!: DepRegistry;
