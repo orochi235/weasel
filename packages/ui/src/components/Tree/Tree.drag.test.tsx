@@ -43,6 +43,16 @@ const press = (el: HTMLElement, y: number, x = 100) =>
 const move = (y: number, x = 100, altKey = false, metaKey = false) => fireEvent.pointerMove(document, { pointerId: 1, clientX: x, clientY: y, altKey, metaKey });
 const release = (y: number, x = 100, altKey = false, metaKey = false) => fireEvent.pointerUp(document, { pointerId: 1, clientX: x, clientY: y, altKey, metaKey });
 
+describe('Tree — drag ghost', () => {
+  it('names a carried row that is hidden in a collapsed branch by its label', () => {
+    const { row } = setup({ selectionMode: 'multiple', selectedIds: ['x', 'z'], defaultExpandedIds: [] });
+    press(row('Zed'), 30);
+    move(60);
+    expect(screen.getByText('Ex')).toBeInTheDocument();
+    release(60);
+  });
+});
+
 describe('Tree — drag to copy', () => {
   it('copies on a drag released with Alt held, and moves nothing', () => {
     const onCopy = vi.fn();

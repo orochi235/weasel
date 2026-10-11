@@ -327,6 +327,30 @@ describe('Tree — keyboard', () => {
     }
   });
 
+  it('reads a space as part of what is typed while a search is under way', () => {
+    const onAction = vi.fn();
+    const nodes: TreeNode[] = [
+      { id: 'new', label: 'New' },
+      { id: 'new-file', label: 'New file' },
+      { id: 'new-folder', label: 'New folder' },
+    ];
+    render(<Tree aria-label="Menu" nodes={nodes} onAction={onAction} />);
+    act(() => item('New').focus());
+    for (const k of ['n', 'e', 'w', ' ', 'f', 'o']) key(k);
+    expect(onAction).not.toHaveBeenCalled();
+    expect(focused()).toBe(item('New folder'));
+  });
+
+  it('Left on a disabled branch held open moves to its parent', () => {
+    const nodes: TreeNode[] = [
+      { id: 'root', label: 'Root', children: [{ id: 'locked', label: 'Locked', disabled: true, children: [{ id: 'leaf', label: 'Leaf' }] }] },
+    ];
+    render(<Tree aria-label="T" nodes={nodes} expandedIds={['root', 'locked']} />);
+    act(() => item('Locked').focus());
+    key('ArrowLeft');
+    expect(focused()).toBe(item('Root'));
+  });
+
   it('keeps the tab stop on the last focused row across rerenders', () => {
     function Harness() {
       const [n, setN] = useState(0);

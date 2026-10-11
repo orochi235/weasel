@@ -20,6 +20,7 @@ import { Icon } from '../../icons';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Tree.module.css';
 import { handleMoveKey } from './treeKeyboardMove';
+import { nodeById } from './treeMoves';
 import { modsOf, textOf, useControlledSet } from './treeUtils';
 import { useRowTip } from './useRowTip';
 import { useTreeDrag, type TreeDragEffect } from './useTreeDrag';
@@ -307,11 +308,18 @@ export const Tree = forwardRef(function Tree(
         return;
       case 'ArrowLeft':
         e.preventDefault();
-        if (open) toggle(node);
+        if (open && !node.disabled) toggle(node);
         else focus(v.parentId ?? undefined);
         return;
-      case 'Enter':
       case ' ':
+        // Mid-search a space is a typed character: "new f" must not activate at the space.
+        if (Date.now() - typed.current.at <= TYPEAHEAD_MS) {
+          e.preventDefault();
+          typeAhead(e, i);
+          return;
+        }
+      // falls through
+      case 'Enter':
         e.preventDefault();
         activate(node, modsOf(e));
         return;
@@ -443,11 +451,12 @@ export const Tree = forwardRef(function Tree(
       {ghost && drag.state.ghost && treeEl.current && (
         <DragGhost at={drag.state.ghost} from={treeEl.current}>
           {drag.state.ghost.ids.map((id) => {
-            const v = visible[indexOf.get(id) ?? -1];
+            // Not the shown rows: a drag also carries selected rows folded away in a closed branch.
+            const carried = nodeById(nodes, id);
             return (
               <div key={id} className={s.ghostRow}>
                 {drag.state.effect !== 'move' && <Icon name={drag.state.effect === 'link' ? 'link' : 'add'} size={14} className={s.ghostEffect} />}
-                {v?.node.label ?? id}
+                {carried?.label ?? id}
               </div>
             );
           })}

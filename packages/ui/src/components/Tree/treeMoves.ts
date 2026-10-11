@@ -14,6 +14,16 @@ export function parentsOf(nodes: readonly TreeNode[]): Map<string, string | null
   return out;
 }
 
+/** The node with `id`, wherever it sits, shown or folded away. */
+export function nodeById(nodes: readonly TreeNode[], id: string): TreeNode | undefined {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    const hit = n.children && nodeById(n.children, id);
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
 export function siblingsOf(nodes: readonly TreeNode[], parentId: string | null): readonly TreeNode[] {
   if (parentId === null) return nodes;
   const find = (list: readonly TreeNode[]): readonly TreeNode[] | undefined => {
