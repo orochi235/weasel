@@ -30,4 +30,20 @@ describe('attribute controls', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add option' }));
     expect(setValue).toHaveBeenLastCalledWith([{ value: 'a', label: 'A' }, { value: '', label: '' }]);
   });
+
+  it('enum-options flags a value that is empty or repeats an earlier one, and still takes the edit', () => {
+    const setValue = vi.fn();
+    const rows = [{ value: 'a', label: 'A' }, { value: '', label: '' }, { value: 'a', label: 'Again' }];
+    render(<>{ATTR_RENDERERS['enum-options'](ctx('enum-options', rows, setValue))}</>);
+    const value = (n: number) => screen.getByRole('textbox', { name: `Option ${n} value` });
+    expect(value(1)).not.toHaveAttribute('aria-invalid');
+    expect(value(2)).toHaveAttribute('aria-invalid', 'true');
+    expect(value(2)).toHaveAccessibleDescription('Value is empty');
+    expect(value(3)).toHaveAttribute('aria-invalid', 'true');
+    expect(value(3)).toHaveAccessibleDescription('Repeats an earlier value');
+    expect(screen.getByRole('textbox', { name: 'Option 2 label' })).not.toHaveAttribute('aria-invalid');
+    fireEvent.change(value(3), { target: { value: 'a' } });
+    fireEvent.change(value(3), { target: { value: 'ab' } });
+    expect(setValue).toHaveBeenLastCalledWith([rows[0], rows[1], { value: 'ab', label: 'Again' }]);
+  });
 });

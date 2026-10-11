@@ -30,6 +30,14 @@ export const MIXED_HINT = 'Mixed';
 
 interface Option { value: string; label: string }
 
+/** Why an option's stored value cannot round-trip through an enum, if it cannot. */
+function optionProblem(rows: readonly Option[], i: number): string | undefined {
+  const { value } = rows[i]!;
+  if (value === '') return 'Value is empty';
+  if (rows.findIndex((r) => r.value === value) < i) return 'Repeats an earlier value';
+  return undefined;
+}
+
 function EnumOptions({ ctx }: { ctx: PrefRenderContext }) {
   const rows = (ctx.value as Option[] | undefined) ?? [];
   const set = (i: number, patch: Partial<Option>) => ctx.setValue(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -44,7 +52,8 @@ function EnumOptions({ ctx }: { ctx: PrefRenderContext }) {
       )}
       {rows.map((r, i) => (
         <div key={i} className={s.optionRow}>
-          <Input className={s.symbol} placeholder="value" aria-label={`Option ${i + 1} value`} value={r.value} onChange={(v) => set(i, { value: v })} />
+          <Input className={s.symbol} placeholder="value" aria-label={`Option ${i + 1} value`} value={r.value} onChange={(v) => set(i, { value: v })}
+            isInvalid={optionProblem(rows, i) !== undefined} errorMessage={optionProblem(rows, i)} />
           <Input placeholder="Label" aria-label={`Option ${i + 1} label`} value={r.label} onChange={(v) => set(i, { label: v })} />
           <CloseButton ariaLabel={`Remove option ${i + 1}`} onClick={() => ctx.setValue(rows.filter((_, j) => j !== i))} />
         </div>

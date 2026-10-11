@@ -145,3 +145,6 @@
   right: -6px;
   font-variant-numeric: tabular-nums;
 }
+
+/* A flagged option's message makes its cell taller than the row's other two. */
+.optionRow:has([data-invalid]) { align-items: start; }
