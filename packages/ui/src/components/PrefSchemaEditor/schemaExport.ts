@@ -27,7 +27,7 @@ export function containsCode(v: unknown): boolean {
 }
 
 function quote(s: string): string {
-  return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n')}'`;
+  return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r')}'`;
 }
 
 function printKey(k: string): string {
@@ -174,11 +174,11 @@ export function diffSchemas(before: SchemaRoot, after: SchemaRoot): SchemaChange
   // Only keys present on both sides count, so a child arriving or leaving is not a reorder.
   const keysAt = (root: SchemaRoot, map: Map<string, SchemaNode>, path: string) =>
     Object.keys(childrenOf(path === '' ? root : map.get(path)!) ?? {});
-  for (const p of ['', ...[...a.keys()].filter((x) => b.has(x))]) {
-    const was = keysAt(before, a, p);
-    const now = keysAt(after, b, p);
+  for (const [from, to] of [['', ''] as [string, string], ...pairs]) {
+    const was = keysAt(before, a, from);
+    const now = keysAt(after, b, to);
     const shared = (list: string[], other: string[]) => list.filter((k) => other.includes(k)).join(',');
-    if (shared(was, now) !== shared(now, was)) out.push({ op: 'reorder', path: p });
+    if (shared(was, now) !== shared(now, was)) out.push({ op: 'reorder', path: to });
   }
   out.push(...attrChanges('', before, after));
   return out;

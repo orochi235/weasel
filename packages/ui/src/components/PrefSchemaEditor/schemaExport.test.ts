@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
-import { changedAttributes, changedPaths, diffSchemas, formatChanges, KEEP, printSchema } from './schemaExport';
+import { changedAttributes, changedPaths, diffSchemas, formatChanges, KEEP, printSchema, printValue } from './schemaExport';
 import { moveNodes, renameKey, setAttribute } from './schemaEdit';
 
 const ROOT: PrefGroup = {
@@ -54,6 +54,14 @@ describe('printSchema', () => {
   });
 });
 
+describe('printValue', () => {
+  it('prints a string that reads back as itself, line breaks of either kind included', () => {
+    for (const text of ['a\rb', 'a\r\nb', "it's \\ here", 'a\u2028b']) {
+      expect(new Function(`return ${printValue(text)};`)()).toBe(text);
+    }
+  });
+});
+
 describe('diffSchemas', () => {
   it('reports an attribute change, a rename as a move, and a reorder', () => {
     let next = setAttribute(ROOT, 'a/x', 'min', 5);
@@ -63,6 +71,13 @@ describe('diffSchemas', () => {
     expect(changes).toContainEqual({ op: 'attr', path: 'a/x', key: 'min', from: 0, to: 5 });
     expect(changes).toContainEqual({ op: 'move', from: 'a/e', to: 'a/mode' });
     expect(changes).toContainEqual({ op: 'reorder', path: '' });
+  });
+
+  it('reports a reorder inside a group that was also re-keyed', () => {
+    const next = moveNodes(renameKey(ROOT, 'a', 'b'), ['b/e'], { parentPath: 'b', index: 0 }).root;
+    const changes = diffSchemas(ROOT, next);
+    expect(changes).toContainEqual({ op: 'move', from: 'a', to: 'b' });
+    expect(changes).toContainEqual({ op: 'reorder', path: 'b' });
   });
 
   it('carries a moved group\'s children with it instead of reporting each', () => {
