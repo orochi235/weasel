@@ -501,13 +501,21 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const liveToolsRef = useRef<ReadonlySet<string>>(new Set());
   const prevActiveRef = useRef(activeTool.active);
   const entriesByIdRef = useLatest(entriesById);
+  const lifecycleScratchRef = useRef(new Map<string, unknown>());
   const fireLifecycle = useCallback((id: string, hook: 'onActivate' | 'onDeactivate'): void => {
+    const scratches = lifecycleScratchRef.current;
     const tool = entriesByIdRef.current.get(id);
-    if (!tool || !isTool(tool)) return;
+    if (!tool || !isTool(tool)) {
+      scratches.delete(id);
+      return;
+    }
+    if (hook === 'onActivate' || !scratches.has(id)) scratches.set(id, tool.initScratch?.());
+    const scratch = scratches.get(id);
+    if (hook === 'onDeactivate') scratches.delete(id);
     const fn = tool[hook];
     if (!fn) return;
     try {
-      fn({ scratch: tool.initScratch?.() });
+      fn({ scratch });
     } catch (err) {
       console.error(`weasel: tool "${id}".${hook} threw`, err);
     }
