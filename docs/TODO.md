@@ -2363,11 +2363,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   show. Decide what closes it (selecting a key, Escape, a click on empty lane) and whether key and
   segment selection are one selection.
 
-- **(P3) Slider: `SliderProps.endless` is typed with a name the package does not export.** `Endless`
-  is declared in `packages/ui/src/endless.ts` and appears on the public `SliderProps`, but neither
-  `packages/ui/src/components/Slider/index.ts` nor the root barrel exports it, so a consumer can
-  only write `SliderProps['endless']`. Export `type Endless` from `Slider/index.ts`.
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) Multi-page documents.**

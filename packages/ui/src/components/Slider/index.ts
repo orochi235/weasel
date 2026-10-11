@@ -8,3 +8,4 @@ export type {
   BoundsCtx,
   TrackCtx,
 } from './Slider';
+export type { Endless } from '../../endless';
