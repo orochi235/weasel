@@ -49,12 +49,12 @@ export {
   type ColorSpace, type OklchDeg, type ColorInterpolationSpace, type HueInterpolation,
 } from '@weasel-js/paint';
 export {
-  tweenVertexColors, springVertexColors, cycleVertexColors, staggerVertexColors,
-  rainbowVertexColors, solidVertexColors,
-  type TweenVertexColorsOptions, type SpringVertexColorsOptions,
-  type CycleVertexColorsOptions, type StaggerVertexColorsOptions,
-  type CycleHandle, type ColorInterpolate,
+  tweenVertexColors, springVertexColors, staggerVertexColors,
+  type TweenVertexColorsOptions, type SpringVertexColorsOptions, type StaggerVertexColorsOptions,
 } from './colorHelpers';
+export { cycleVertexColors, type CycleVertexColorsOptions, type CycleHandle } from './colorCycle';
+export { rainbowVertexColors, solidVertexColors } from './colorArrays';
+export type { ColorInterpolate } from './colorInterpolate';
 export { sampleTrack } from './timeline';
 export type {
   EventBooking,
