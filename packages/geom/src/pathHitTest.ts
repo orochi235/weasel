@@ -146,6 +146,8 @@ export function strokeHitTest(
     const [a, b, c, d] = slop.transform;
     const m: Linear2 = { a, b, c, d };
     const st = stretchOf(m);
+    // A view collapsed to a point shows nothing to hit, and a pixel there is no world length.
+    if (st.s1 === 0) return false;
     if (isSimilarity(st)) {
       return strokeHitTest(path, x, y, threshold + slop.px / st.s1, { tolerance: opts.tolerance });
     }
