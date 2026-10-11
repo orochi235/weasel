@@ -149,6 +149,7 @@ import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { leafOfObj } from './svgImport';
 import { releaseCompoundPaths } from './releaseCompound';
+import { writeSession } from './sessionStore';
 import { DEFAULT_FILENAME, PAPER_PRESETS, loadDoc, saveDoc } from './docPersistence';
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
@@ -918,20 +919,34 @@ export function App(): ReactElement {
   // Persist on every commit. The 300ms debounce coalesces drag bursts so
   // we hit localStorage at most a few times per second. Scene and history go
   // under separate keys (mirroring the doc key) so a shape migration of one
-  // never disturbs the other.
+  // never disturbs the other. A page going away mid-debounce writes at once.
+  const pendingSaveRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    const id = setTimeout(() => {
+    const save = (): void => {
+      pendingSaveRef.current = null;
       if (!restoredRef.current) return;
       try {
-        localStorage.setItem(LS_KEY, JSON.stringify(scene.toJSON(), serializeReplacer));
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(modality.history.serialize(), serializeReplacer));
-        localStorage.setItem(SCENE_HISTORY_KEY, JSON.stringify(scene.serializeHistory(), serializeReplacer));
+        writeSession(
+          localStorage,
+          [LS_KEY, JSON.stringify(scene.toJSON(), serializeReplacer)],
+          [
+            [HISTORY_KEY, JSON.stringify(modality.history.serialize(), serializeReplacer)],
+            [SCENE_HISTORY_KEY, JSON.stringify(scene.serializeHistory(), serializeReplacer)],
+          ],
+        );
       } catch {
         // Persistence is best-effort.
       }
-    }, 300);
+    };
+    pendingSaveRef.current = save;
+    const id = setTimeout(save, 300);
     return () => clearTimeout(id);
   });
+  useEffect(() => {
+    const flush = (): void => pendingSaveRef.current?.();
+    window.addEventListener('pagehide', flush);
+    return () => window.removeEventListener('pagehide', flush);
+  }, []);
 
   const [recentColors] = useState(() => createRecentColorsStore({ key: RECENT_COLORS_KEY }));
   const initialFill: ActivePaint = { kind: 'solid', color: INITIAL_FILL_COLOR };
