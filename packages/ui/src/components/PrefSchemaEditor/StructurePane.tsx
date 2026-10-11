@@ -39,6 +39,7 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
       id: p,
       label: changed.has(p) ? <span className={s.changed}>{label}</span> : label,
       textValue: name ? `${name} ${key}` : key,
+      ...(child.description ? { tooltip: child.description } : {}),
       // Unset, a group is drawn by its depth: a page under the root, a section below that.
       ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
       trailing: isPrefLeaf(child)

@@ -17,9 +17,11 @@ import { selectModifiers, type PressModifiers } from '../../useReorderDragList';
 import { DisclosureMark } from '../Disclosure';
 import { DragGhost } from '../DragGhost';
 import { Icon } from '../../icons';
+import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './Tree.module.css';
 import { handleMoveKey } from './treeKeyboardMove';
 import { modsOf, textOf, useControlledSet } from './treeUtils';
+import { useRowTip } from './useRowTip';
 import { useTreeDrag, type TreeDragHow } from './useTreeDrag';
 
 /** One node. A node with `children` is a branch, even when the array is empty. */
@@ -34,6 +36,9 @@ export interface TreeNode {
   /** Decoration after the label — a count badge. Not a control. Read as part
    *  of the row's accessible name. */
   trailing?: ReactNode;
+  /** Shown beside the row once the pointer, or keyboard focus, has rested on it. A string is also the row's
+   *  accessible description. */
+  tooltip?: ReactNode;
   children?: readonly TreeNode[];
   /** Present but not in effect. */
   muted?: boolean;
@@ -157,6 +162,7 @@ export const Tree = forwardRef(function Tree(
   const [expanded, setExpanded] = useControlledSet(expandedIds, defaultExpandedIds, onExpandedChange);
   const [selected, setSelected] = useControlledSet(selectedIds, defaultSelectedIds, onSelectionChange);
   const selectable = selectionMode !== 'none';
+  const rowTip = useRowTip();
   const baseId = useId();
 
   const visible = useMemo(() => {
@@ -302,6 +308,8 @@ export const Tree = forwardRef(function Tree(
     }
   };
 
+  const tipNode = rowTip.tip && !drag.state.dragging ? visible[indexOf.get(rowTip.tip.id) ?? -1]?.node : undefined;
+
   const onRowClick = (node: TreeNode) => (e: MouseEvent<HTMLDivElement>) => activate(node, modsOf(e));
 
   const onTwistyClick = (node: TreeNode) => (e: MouseEvent<HTMLSpanElement>) => {
@@ -335,17 +343,29 @@ export const Tree = forwardRef(function Tree(
           aria-selected={selectable ? selected.has(node.id) : undefined}
           aria-disabled={node.disabled || undefined}
           aria-labelledby={trailingId ? `${labelId} ${trailingId}` : labelId}
+          aria-description={typeof node.tooltip === 'string' ? node.tooltip : undefined}
           data-muted={node.muted ? 'true' : undefined}
           data-drop={drag.state.mark?.id === node.id ? drag.state.mark.where : undefined}
           data-dragging={!drag.state.copy && drag.state.dragging?.includes(node.id) ? 'true' : undefined}
           tabIndex={node.id === stopId ? 0 : -1}
           onKeyDown={onKeyDown({ node, parentId, level, index: pos })}
-          onFocus={(e) => { if (e.target === e.currentTarget) setFocusId(node.id); }}
+          onFocus={(e) => {
+            if (e.target !== e.currentTarget) return;
+            setFocusId(node.id);
+            // A press focuses the item too, and the pointer's own rest is what opens the tooltip then.
+            if (node.tooltip != null && e.currentTarget.matches(':focus-visible')) rowTip.rest(node.id, e.currentTarget.firstElementChild as HTMLElement);
+          }}
+          onBlur={(e) => { if (e.target === e.currentTarget) rowTip.clear(); }}
         >
           <div
             className={s.row}
             onClick={onRowClick(node)}
-            onPointerDown={onMove ? (e) => drag.onPointerDown(node.id, e) : undefined}
+            onPointerEnter={node.tooltip != null ? (e) => rowTip.rest(node.id, e.currentTarget) : undefined}
+            onPointerLeave={node.tooltip != null ? rowTip.clear : undefined}
+            onPointerDown={(e) => {
+              rowTip.clear();
+              if (onMove) drag.onPointerDown(node.id, e);
+            }}
           >
             {foldBy === 'twisty' && (
               <span className={s.twisty} aria-hidden="true" data-tree-twisty="" onClick={branch ? onTwistyClick(node) : undefined}>
@@ -380,6 +400,12 @@ export const Tree = forwardRef(function Tree(
       >
         {renderLevel(nodes, null, 1)}
       </ul>
+      {tipNode?.tooltip != null && (
+        // The trigger is the row, handed over by ref: the tooltip only reads its open state from the wrapper.
+        <TooltipTrigger isOpen>
+          <Tooltip triggerRef={{ current: rowTip.tip!.el }} placement="right">{tipNode.tooltip}</Tooltip>
+        </TooltipTrigger>
+      )}
       {drag.state.ghost && treeEl.current && (
         <DragGhost at={drag.state.ghost} from={treeEl.current}>
           {drag.state.ghost.ids.map((id) => {

@@ -15,10 +15,11 @@ const NEW = SEP;
 function toRows(group: PrefGroup, path: string): TreeNode[] {
   return Object.entries(group.children).map(([key, child]) => {
     const id = `${path}${path === NEW ? '' : SEP}${key}`;
-    const label = <span title={child.description || undefined}>{child.name || key} <span className={s.treeKey}>({key})</span></span>;
+    const label = <>{child.name || key} <span className={s.treeKey}>({key})</span></>;
+    const row = { id, label, textValue: `${child.name} ${key}`, ...(child.description ? { tooltip: child.description } : {}) };
     return isPrefLeaf(child)
-      ? { id, label, textValue: `${child.name} ${key}`, trailing: <PrefKindBadge kind={child.kind} /> }
-      : { id, label, textValue: `${child.name} ${key}`, leading: <Icon size={16} name={GROUP_ICON[child.as ?? 'section']} />, children: toRows(child, id) };
+      ? { ...row, trailing: <PrefKindBadge kind={child.kind} /> }
+      : { ...row, leading: <Icon size={16} name={GROUP_ICON[child.as ?? 'section']} />, children: toRows(child, id) };
   });
 }
 
