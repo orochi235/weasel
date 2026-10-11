@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState, type ReactElement } from 'react';
 import { useLatest, useVisibleRaf, type TimelineHandle, type Track } from '@weasel-js/core';
 import { Timeline, type TimelineProps } from './Timeline';
 
@@ -20,7 +20,12 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
   // `subscribe` fires on `edit` only, so the playhead comes from the frame loop.
-  useEffect(() => handle.subscribe(bump), [handle]);
+  const [edits, setEdits] = useState(0);
+  useEffect(() => handle.subscribe(() => setEdits((n) => n + 1)), [handle]);
+  // `<Timeline>` tells one track list from the next by identity, and the handle
+  // edits its array in place, so every edit hands over a fresh copy.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `edits` is the signal
+  const tracks = useMemo(() => handle.tracks().slice(), [handle, edits]);
 
   // `useVisibleRaf` returns a controller; a continuous loop re-requests from
   // inside its own frame, and nothing runs until something calls `request`.
@@ -49,7 +54,7 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
   return (
     <Timeline
       {...rest}
-      tracks={handle.tracks()}
+      tracks={tracks}
       duration={duration}
       playhead={playhead}
       onChange={onChange}

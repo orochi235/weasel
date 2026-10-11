@@ -26,6 +26,7 @@ function fakeHandle(over: Partial<TimelineHandle> = {}): TimelineHandle & { live
   let paused = true;
   let loop: boolean | number = false;
   let scale = 1;
+  const subscribers = new Set<() => void>();
   return {
     live,
     id: 1,
@@ -37,8 +38,8 @@ function fakeHandle(over: Partial<TimelineHandle> = {}): TimelineHandle & { live
     time: () => t,
     duration: () => 1000,
     tracks: () => live,
-    edit: vi.fn((fn: () => void) => { fn(); }),
-    subscribe: () => () => {},
+    edit: vi.fn((fn: () => void) => { fn(); for (const cb of subscribers) cb(); }),
+    subscribe: (cb: () => void) => { subscribers.add(cb); return () => { subscribers.delete(cb); }; },
     setLoop: vi.fn((next: boolean | number) => { loop = next; }),
     loop: () => loop,
     ...over,
@@ -60,6 +61,13 @@ describe('AnimatedTimeline', () => {
     expect(h.edit).toHaveBeenCalledTimes(1);
     expect(h.tracks()).toBe(before);
     expect((h.tracks()[0] as SampledTrack<number>).keys[1].t).toBe(800);
+  });
+
+  it('redraws a key where an edit left it', () => {
+    render(<AnimatedTimeline handle={fakeHandle()} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 400, clientY: 10 });
+    expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('80%');
   });
 
   it('scrubs through seek', () => {
