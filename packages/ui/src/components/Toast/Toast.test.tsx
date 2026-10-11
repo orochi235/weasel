@@ -117,6 +117,21 @@ describe('ToastRegion given a container', () => {
     expect(screen.queryByText('Held')).toBeNull();
   });
 
+  it('forgets a hover that ended with the last toast closing under the pointer', () => {
+    const { q } = setup();
+    act(() => q.add('info', 'First', { ttlMs: null }));
+    fireEvent.pointerEnter(screen.getByRole('region', { name: /notifications/i }));
+    fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
+    expect(screen.queryByRole('region', { name: /notifications/i })).toBeNull();
+
+    act(() => q.add('info', 'Second'));
+    // Focus passing through the stack re-reads the pause state.
+    act(() => screen.getByRole('button', { name: /dismiss/i }).focus());
+    act(() => screen.getByRole('button', { name: /dismiss/i }).blur());
+    act(() => vi.advanceTimersByTime(8100));
+    expect(screen.queryByText('Second')).toBeNull();
+  });
+
   it('returns focus to where it came from when the last toast closes', () => {
     const { q } = setup();
     const origin = document.body.appendChild(document.createElement('button'));

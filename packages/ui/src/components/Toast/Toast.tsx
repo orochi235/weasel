@@ -157,6 +157,8 @@ function ContainedRegion({ queue, container, className, children }: ContainedReg
   useEffect(() => {
     if (visibleToasts.length > 0) return;
     focused.current = false;
+    // The region unmounts under the pointer without a pointerleave.
+    hovered.current = false;
     if (lastFocused.current?.isConnected) lastFocused.current.focus();
     lastFocused.current = null;
   }, [visibleToasts.length]);
