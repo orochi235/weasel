@@ -799,6 +799,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   outside it via the `flat` variant. Doing this generally is a theme decision
   about the glass, not a component change.
 
+- **(P2) `PrefSchemaEditor` as a toolbar editor.** Designed, not built: a group drawn `as: 'bar'`,
+  a bar form for every leaf kind, action leaves that fire a registered action by key, and the
+  editor's list of actions to drag from. The design and its build order are in
+  `docs/proposals/2026-10-10-toolbar-editor.md`.
+
 - **(P3) `PrefSchemaEditor` clears required custom attributes.** Emptying an attribute removes
   it, which is right for optional built-in attributes but deletes a custom kind's required one —
   `registry-enum`'s `source` on WeaselDraw's `#/dev/prefs`. `CustomKinds` has no way to mark an
