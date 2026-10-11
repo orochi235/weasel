@@ -160,7 +160,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
     <div className={s.rowSlot} data-wide={pref.kind === 'object' || stacked || Array.isArray(pref.default) ? '' : undefined} {...selectionAttrs(own, ctx, true)}>
     <PropertyRow
       label={pref.name}
-      changed={ctx.changed?.has(own)}
+      changed={ctx.changed?.has(path)}
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
       className={stacked ? `${s.row} ${s.rowStacked}` : s.row}

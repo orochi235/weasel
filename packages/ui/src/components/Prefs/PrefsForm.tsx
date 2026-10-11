@@ -112,7 +112,8 @@ export interface PrefsFormProps {
    *  carry them all. */
   onSelect?: (path: string, how: PrefSelectHow) => void;
   /** Paths of the leaves whose rows are marked as changed, their labels in the accent color (`PropertyRow`'s `changed`): what differs
-   *  from a default, or from what was last saved. What counts as changed is the caller's to say. */
+   *  from a default, or from what was last saved. What counts as changed is the caller's to say. An alias row is marked when the leaf
+   *  it shows is named. */
   changed?: ReadonlySet<string>;
   /** A drag over the form. The form lays out as it would after the drop,
    *  with the dragged nodes drawn where they would land: `prefDropTargetAt`

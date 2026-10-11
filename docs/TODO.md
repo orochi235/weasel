@@ -1972,13 +1972,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   pane's contents by the open page fixes it; check that a drag which changes the open page
   (`useDropMotion`, `useDropFrame`) survives the remount.
 
-- **(P3) `PrefsForm`: an alias row reads `changed` at its own path and `auto` and `mixed` at its
-  target's.** In `packages/ui/src/components/Prefs/PrefsRow.tsx`, `prefRenderContext` reads `auto`
-  and `mixed` at `at ?? own` and `LeafRow` reads `ctx.changed?.has(own)`. An owner that computes
-  `changed` from stored values has no entry for an alias path, since an alias stores nothing, so the
-  alias row never shows as changed while its target's row does. Either read all three at the target,
-  or say in the `changed` prop's doc that an alias is marked at its own path.
-
 - **(P3) `PrefsForm` rail layout: the pane draws a group's leaves before its groups, where columns
   and list keep schema order.** `PrefsPane` (`packages/ui/src/components/Prefs/PrefsPane.tsx`)
   filters leaves and fragments out ahead of the groups, so children `{ light: tab, note: leaf, dark:

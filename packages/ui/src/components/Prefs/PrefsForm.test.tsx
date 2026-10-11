@@ -687,4 +687,13 @@ describe('PrefsForm changed rows', () => {
     expect(screen.getByRole('checkbox', { name: 'Beta' }).closest('[data-changed]')).not.toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Alpha' }).closest('[data-changed]')).toBeNull();
   });
+
+  it('marks an alias row when the leaf it shows is named, since an alias stores nothing of its own', () => {
+    const schema: PrefGroup = { name: 'Root', children: {
+      a: { kind: 'boolean', name: 'Alpha', description: '', default: false },
+      also: { kind: 'alias', name: 'Also alpha', description: '', default: undefined, of: 'a' },
+    } };
+    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} changed={new Set(['a'])} />);
+    expect(screen.getByRole('checkbox', { name: 'Also alpha' }).closest('[data-changed]')).not.toBeNull();
+  });
 });
