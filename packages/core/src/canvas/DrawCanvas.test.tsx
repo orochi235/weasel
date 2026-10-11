@@ -3,10 +3,11 @@
  * when it repaints, and that unmount frees the GL objects. Real pixels are
  * `DrawCanvas.browser.test.tsx`'s job.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { registerPaintKind, getPaintKind } from 'core/paintKinds';
 import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import { makeMatchMedia } from '../core/device/testing/matchMedia';
 import { DrawCanvas } from './DrawCanvas';
 
 const renderMock = vi.fn<(commands: DrawCommand[]) => void>();
@@ -111,6 +112,52 @@ describe('<DrawCanvas>', () => {
     rerender(<DrawCanvas width={80} height={20} draw={[]} />);
     await act(frame);
     expect(resizeMock).toHaveBeenCalledWith({ width: 80, height: 20, dpr: 2 });
+  });
+
+  describe('when devicePixelRatio changes', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    const moveToDensity = (h: ReturnType<typeof makeMatchMedia>, from: number, to: number) => {
+      Object.defineProperty(window, 'devicePixelRatio', { value: to, configurable: true, writable: true });
+      act(() => h.fire(`(resolution: ${from}dppx)`, false));
+    };
+
+    it('repaints at the new density', async () => {
+      const h = makeMatchMedia({ '(resolution: 2dppx)': true });
+      vi.stubGlobal('matchMedia', h.mm);
+      render(<DrawCanvas width={40} height={20} draw={[]} />);
+      await act(frame);
+
+      moveToDensity(h, 2, 1);
+      await act(frame);
+      expect(resizeMock).toHaveBeenLastCalledWith({ width: 40, height: 20, dpr: 1 });
+
+      // The query that fired is spent; the watcher has to arm one at the new density.
+      moveToDensity(h, 1, 3);
+      await act(frame);
+      expect(resizeMock).toHaveBeenLastCalledWith({ width: 40, height: 20, dpr: 3 });
+    });
+
+    it('does not repaint a canvas given its own dpr', async () => {
+      const h = makeMatchMedia({ '(resolution: 2dppx)': true });
+      vi.stubGlobal('matchMedia', h.mm);
+      render(<DrawCanvas width={40} height={20} dpr={2} draw={[]} />);
+      await act(frame);
+      const before = renderMock.mock.calls.length;
+
+      moveToDensity(h, 2, 1);
+      await act(frame);
+      expect(renderMock.mock.calls.length).toBe(before);
+    });
+
+    it('stops watching on unmount', () => {
+      const h = makeMatchMedia({ '(resolution: 2dppx)': true });
+      vi.stubGlobal('matchMedia', h.mm);
+      const { unmount } = render(<DrawCanvas width={40} height={20} draw={[]} />);
+      expect(h.listenerCount('(resolution: 2dppx)')).toBe(1);
+      unmount();
+      expect(h.listenerCount('(resolution: 2dppx)')).toBe(0);
+    });
   });
 
   it('frees its renderer on unmount', () => {

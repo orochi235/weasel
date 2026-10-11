@@ -39,7 +39,7 @@ import type { Ref } from 'react';
 import { assignRef, useLatest } from '@weasel-js/react';
 import { useFrameLoop } from './useFrameLoop';
 import { useLateContentRedraw } from './useLateContentRedraw';
-import { useCanvasRenderer, useRedrawOnRestore } from './useCanvasRenderer';
+import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
 import { sceneViewFrame } from './sceneViewRender';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
 import type { DrawCommand } from '../renderer/DrawCommand';
@@ -167,6 +167,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
   useLateContentRedraw(requestRedraw);
   useRedrawOnRestore(lease, requestRedraw);
+  useRedrawOnDensityChange(requestRedraw);
 
   // A remount (StrictMode) paints its first frame in place again.
   useEffect(() => () => { paintedRef.current = false; }, []);

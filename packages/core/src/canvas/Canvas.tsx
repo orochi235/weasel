@@ -56,7 +56,7 @@ import {
   type Dims, type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
 import { viewToMat3, cullDrawCommands, type DrawCommand, type ShaderProgramHandle } from '../renderer';
-import { useCanvasRenderer, useRedrawOnRestore } from './useCanvasRenderer';
+import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
 import { useSceneLayerList } from './useSceneLayerList';
 import { getProgramSource, programSourceRegistry } from '../renderer/shaders/registerProgram';
 import {
@@ -1041,6 +1041,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // freed on unmount.
   const lease = useCanvasRenderer();
   useRedrawOnRestore(lease, requestRedraw);
+  useRedrawOnDensityChange(requestRedraw, dprProp);
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
 
   // Views registered on this surface — declared as `views` descriptors or

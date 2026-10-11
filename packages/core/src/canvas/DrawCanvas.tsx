@@ -15,7 +15,7 @@ import type { FillStyle } from '@weasel-js/paint';
 import { useFrameLoop } from './useFrameLoop';
 import { useLateContentRedraw } from './useLateContentRedraw';
 import { useRedrawOn } from './useRedrawOn';
-import { useCanvasRenderer, useRedrawOnRestore } from './useCanvasRenderer';
+import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
 import { viewToMat3 } from '../renderer/math/viewToMat3';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { RedrawSource } from '../core/layers/render';
@@ -101,6 +101,7 @@ export function DrawCanvas(props: DrawCanvasProps) {
 
   useLateContentRedraw(requestRedraw);
   useRedrawOnRestore(lease, requestRedraw);
+  useRedrawOnDensityChange(requestRedraw, dpr);
   useRedrawOn(redrawOn, requestRedraw);
 
   // `useCanvasRenderer` frees the renderer on unmount; a remount (StrictMode)

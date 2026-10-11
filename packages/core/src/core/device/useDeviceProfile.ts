@@ -9,6 +9,7 @@ import {
 } from 'react';
 import type { DetectedDeviceFacts, DeviceProfile } from './types';
 import { DEFAULT_DEVICE_PROFILE, resolveDeviceProfile } from '@weasel-js/routing';
+import { watchDevicePixelRatio } from './watchDevicePixelRatio';
 
 const COARSE_QUERY = '(pointer: coarse)';
 const HOVER_QUERY = '(hover: hover)';
@@ -42,9 +43,7 @@ function detectOnce(): DetectedDeviceFacts {
  * Detect device facts and keep them live.
  *
  * Three subscriptions: pointer coarseness, hover capability, and pixel
- * density. The density one is special — `(resolution: Ndppx)` stops matching
- * as soon as density changes, so a single listener fires once and goes dead.
- * We re-arm a fresh query at the new density on every change.
+ * density.
  */
 function useDetectedFacts(): DetectedDeviceFacts {
   const [facts, setFacts] = useState<DetectedDeviceFacts>(detectOnce);
@@ -63,24 +62,8 @@ function useDetectedFacts(): DetectedDeviceFacts {
     coarseMq.addEventListener('change', onCoarse as EventListener);
     hoverMq.addEventListener('change', onHover as EventListener);
 
-    // Re-arming density watcher.
-    let disposed = false;
-    let densityMq: MediaQueryList | null = null;
-    const onDensity = () => {
-      if (disposed) return;
-      const next = window.devicePixelRatio || 1;
-      setFacts((f) => (f.dpr === next ? f : { ...f, dpr: next }));
-      arm();
-    };
-    function arm(): void {
-      if (disposed) return;
-      densityMq?.removeEventListener('change', onDensity as EventListener);
-      densityMq = window.matchMedia(
-        `(resolution: ${window.devicePixelRatio || 1}dppx)`,
-      );
-      densityMq.addEventListener('change', onDensity as EventListener);
-    }
-    arm();
+    const unwatchDensity = watchDevicePixelRatio((next) =>
+      setFacts((f) => (f.dpr === next ? f : { ...f, dpr: next })));
 
     // Re-sync once on mount: a query could have changed between the
     // useState initializer and the effect running.
@@ -92,10 +75,9 @@ function useDetectedFacts(): DetectedDeviceFacts {
     });
 
     return () => {
-      disposed = true;
+      unwatchDensity();
       coarseMq.removeEventListener('change', onCoarse as EventListener);
       hoverMq.removeEventListener('change', onHover as EventListener);
-      densityMq?.removeEventListener('change', onDensity as EventListener);
     };
   }, []);
 

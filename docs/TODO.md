@@ -474,15 +474,6 @@ have shipped. What remains:
   Composing would mean a view's camera derived from the view under its aim, and
   a resolver that descends rather than picking one rect.
 
-- **(P2) Canvas hosts: nothing repaints when `devicePixelRatio` changes.** Move a window to a
-  display of another density, or zoom the page: the renderer lease
-  (`packages/core/src/canvas/canvasRenderer.ts`) reads the ratio on its next paint, but nothing asks
-  for that paint, so a static `<DrawCanvas>`, `<SceneViewCanvas>`, or `<MinimapCanvas>` stays at the
-  old resolution and an interactive `<SceneCanvas>` stays blurry until the next redraw. The only
-  re-arming `(resolution: Ndppx)` watcher is inlined in `core/device/useDeviceProfile.ts`; lift it
-  into a shared subscription and have `useRedrawOnRestore`'s neighbor in
-  `canvas/useCanvasRenderer.ts` call `requestRedraw` from it when no `dpr` prop is given.
-
 - **(P2) `renderDebugSnapshot`: a y-up view throws.** A canvas with `view.scale.y < 0` (valid per
   `core/viewport/view.ts`) reaches `planPixelRender` with a negative `sourceRect.height` and
   `scale.y`, which throws "sourceRect.height must be a positive finite number"
