@@ -41,18 +41,19 @@ function finite8(
   return finite6(a, b, c, d, e, f) && Number.isFinite(g) && Number.isFinite(h);
 }
 
-/** Distance from point P to line AB (perpendicular). */
-function distPointToLine(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+/**
+ * Distance from point P to segment AB. To the segment, not the line through
+ * it: a control point on that line but past an end still pulls the curve out
+ * beyond the chord, and measures zero against the line.
+ */
+function distPointToSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
   const dx = bx - ax;
   const dy = by - ay;
   const len2 = dx * dx + dy * dy;
-  if (len2 === 0) {
-    const ex = px - ax;
-    const ey = py - ay;
-    return Math.sqrt(ex * ex + ey * ey);
-  }
-  const cross = (px - ax) * dy - (py - ay) * dx;
-  return Math.abs(cross) / Math.sqrt(len2);
+  const along = len2 === 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2;
+  if (along <= 0) return Math.hypot(px - ax, py - ay);
+  if (along >= 1) return Math.hypot(px - bx, py - by);
+  return Math.abs((px - ax) * dy - (py - ay) * dx) / Math.sqrt(len2);
 }
 
 /**
@@ -84,8 +85,8 @@ function flattenCubicRec(
   out: number[],
   depth: number,
 ): void {
-  const d1 = distPointToLine(x1, y1, x0, y0, x3, y3);
-  const d2 = distPointToLine(x2, y2, x0, y0, x3, y3);
+  const d1 = distPointToSegment(x1, y1, x0, y0, x3, y3);
+  const d2 = distPointToSegment(x2, y2, x0, y0, x3, y3);
   if (Math.max(d1, d2) <= tolerance || depth >= MAX_FLATTEN_DEPTH) {
     out.push(x3, y3);
     return;
@@ -124,7 +125,7 @@ function flattenQuadraticRec(
   out: number[],
   depth: number,
 ): void {
-  const d = distPointToLine(x1, y1, x0, y0, x2, y2);
+  const d = distPointToSegment(x1, y1, x0, y0, x2, y2);
   if (d <= tolerance || depth >= MAX_FLATTEN_DEPTH) {
     out.push(x2, y2);
     return;
@@ -176,8 +177,8 @@ function flattenCubicArcRec(
   accum: number,
   depth: number,
 ): number {
-  const d1 = distPointToLine(x1, y1, x0, y0, x3, y3);
-  const d2 = distPointToLine(x2, y2, x0, y0, x3, y3);
+  const d1 = distPointToSegment(x1, y1, x0, y0, x3, y3);
+  const d2 = distPointToSegment(x2, y2, x0, y0, x3, y3);
   if (Math.max(d1, d2) <= tolerance || depth >= MAX_FLATTEN_DEPTH) {
     const lastX = out.length >= 2 ? out[out.length - 2] : x0;
     const lastY = out.length >= 2 ? out[out.length - 1] : y0;
@@ -228,7 +229,7 @@ function flattenQuadraticArcRec(
   accum: number,
   depth: number,
 ): number {
-  const d = distPointToLine(x1, y1, x0, y0, x2, y2);
+  const d = distPointToSegment(x1, y1, x0, y0, x2, y2);
   if (d <= tolerance || depth >= MAX_FLATTEN_DEPTH) {
     const lastX = out.length >= 2 ? out[out.length - 2] : x0;
     const lastY = out.length >= 2 ? out[out.length - 1] : y0;
