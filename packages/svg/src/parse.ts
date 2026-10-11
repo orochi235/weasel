@@ -26,7 +26,8 @@ import { multiply, parseTransform, decomposeRotation, rebaseTransform, rotationC
 import { boundsOfPath, layoutRuns, resolveRuns, resolveScreenLength, resolveTextStyle } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
 import { anchorOffset } from './textAnchor';
-import { applyOwnTransform } from './placeBox';
+import { placeNode } from './placeBox';
+import { isNonUniform, paintThroughMatrix, strokeThroughMatrix, fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { collectGradients, WEASEL_NS, WEASEL_NS_PREFIX, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
@@ -405,6 +406,7 @@ function parseElement(
   let path = lowerLeaf(el, tag, ctm, onWarn);
   if (!path) return null;
   let rotation: number | undefined;
+  let baked = ctm;
   if (!isIdentity(localTransform)) {
     // `path` is already through `ctm`, so the element's own transform has to
     // be too before it is compared against these bounds.
@@ -420,6 +422,7 @@ function parseElement(
     } else {
       // Bake the matrix in — match legacy behavior.
       path = transformPath(path, worldLocal);
+      baked = multiply(ctm, localTransform);
       const rotComp = rotationComponent(worldLocal);
       if (Math.abs(rotComp) > 1e-4) {
         onWarn(`leaf transform has a rotational component that can't be cleanly stored as rotation; baked into geometry (may not round-trip identically)`);
@@ -427,8 +430,12 @@ function parseElement(
     }
   }
   const leafStyle = deriveStyle(style, el);
-  const fill = readPaint(leafStyle, 'fill', '#000000', gradients, onWarn);
-  const stroke = readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el));
+  const fill = paintThroughMatrix(readPaint(leafStyle, 'fill', '#000000', gradients, onWarn), baked);
+  const ownStroke = readStroke(leafStyle, gradients, onWarn, isNonScalingStroke(el));
+  const stroke = ownStroke && strokeThroughMatrix(ownStroke, baked);
+  if (stroke && typeof stroke.width === 'number' && isNonUniform(baked)) {
+    onWarn(`<${tag}> stroke sits under a skew or non-uniform scale; its width takes the uniform part only`);
+  }
   const opacity = ownValue(el, 'opacity');
   // `fill-rule` defaults to `nonzero`; only stamp when explicitly `evenodd`
   // and the lowered geometry is a PolygonPath (RectPath has no fillRule slot).
@@ -734,25 +741,11 @@ function imageNodeAt(
   const rawY = num(boxEl.getAttribute('y'), 0);
   const rawW = num(boxEl.getAttribute('width'), 0);
   const rawH = num(boxEl.getAttribute('height'), 0);
-  // Map both corners through the inherited CTM and take their AABB, so
-  // translate / scale / flip land on the box. A rotation in the *inherited*
-  // transform inflates it; the element's own transform is decomposed below.
-  const px = (x: number, y: number): [number, number] =>
-    [ctm[0] * x + ctm[2] * y + ctm[4], ctm[1] * x + ctm[3] * y + ctm[5]];
-  const [x0, y0] = px(rawX, rawY);
-  const [x1, y1] = px(rawX + rawW, rawY + rawH);
-  const node: SvgImageNode = {
-    kind: 'image',
-    href,
-    x: Math.min(x0, x1),
-    y: Math.min(y0, y1),
-    width: Math.abs(x1 - x0),
-    height: Math.abs(y1 - y0),
-  };
+  const node: SvgImageNode = { kind: 'image', href, x: rawX, y: rawY, width: rawW, height: rawH };
   const opacity = ownValue(ownerEl, 'opacity');
   if (opacity != null) node.opacity = opacity;
   const localTransform = parseTransform(ownerEl.getAttribute('transform'), onWarn);
-  applyOwnTransform(node, 'image', ctm, localTransform, true, onWarn);
+  placeNode(node, 'image', multiply(ctm, localTransform), true, onWarn);
   return node;
 }
 
@@ -859,6 +852,32 @@ function laidOutWidth(runs: readonly StyledRun[], style: TextStyle, plain: strin
   return longest * resolved.fontSize * ESTIMATED_GLYPH_ADVANCE_EM;
 }
 
+/** Take a text node built in its element's own coordinates through `m`,
+ *  along with the lengths and user-space paints inside its box. */
+function placeTextNode(node: SvgTextNode, m: Matrix, onWarn: (m: string) => void): void {
+  const cx = node.x + node.width / 2;
+  const cy = node.y + node.height / 2;
+  const scale = placeNode(node, 'text', m, false, onWarn);
+  // Where the box's own contents went: the rotation rides `node.rotation`.
+  const inBox: Matrix = [
+    scale, 0, 0, scale,
+    node.x + node.width / 2 - scale * cx, node.y + node.height / 2 - scale * cy,
+  ];
+  if (isIdentity(inBox)) return;
+  if (Math.abs(scale - 1) > 1e-9) {
+    node.style = scaleTextStyle(node.style, scale);
+    if (node.runs) node.runs = scaleRuns(node.runs, scale);
+    if (node.stroke) node.stroke = scaleStroke(node.stroke, scale);
+  }
+  if (node.fill) node.fill = fillThroughMatrix(node.fill, inBox);
+  if (node.stroke?.paint) {
+    node.stroke = { ...node.stroke, paint: fillThroughMatrix(node.stroke.paint, inBox) };
+  }
+  if (node.runs) {
+    node.runs = node.runs.map((r) => (r.fill ? { ...r, fill: fillThroughMatrix(r.fill, inBox) } : r));
+  }
+}
+
 function parseTextElement(
   el: Element,
   ctm: Matrix,
@@ -872,17 +891,10 @@ function parseTextElement(
     return Number.isFinite(n) ? n : fallback;
   };
   const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
-  // The inherited CTM alone positions the anchor; the element's own
-  // transform is applied to the finished box, by `applyOwnTransform`.
-  const m = ctm;
-
-  const rawX = num(el.getAttribute('x'), 0);
-  const rawY = num(el.getAttribute('y'), 0);
-  // Translate the anchor point through the accumulated transform. Skew /
-  // non-uniform scale on the text node lower the round-trip honestly but
-  // skew the box dimensions — the rare cases warn and lose styling.
-  const ax = m[0] * rawX + m[2] * rawY + m[4];
-  const ay = m[1] * rawX + m[3] * rawY + m[5];
+  // The box is built in the element's own coordinates and then taken through
+  // the whole transform at once, by `placeNode`.
+  const ax = num(el.getAttribute('x'), 0);
+  const ay = num(el.getAttribute('y'), 0);
 
   const leafStyle = deriveStyle(style, el);
   const textStyle = readTextStyle(leafStyle, onWarn);
@@ -967,12 +979,7 @@ function parseTextElement(
   if (textPaint.fill !== undefined) node.fill = textPaint.fill;
   if (textPaint.stroke != null) node.stroke = textPaint.stroke;
   if (opacity != null) node.opacity = opacity;
-  const scale = applyOwnTransform(node, 'text', ctm, localTransform, false, onWarn);
-  if (Math.abs(scale - 1) > 1e-9) {
-    node.style = scaleTextStyle(node.style, scale);
-    if (node.runs) node.runs = scaleRuns(node.runs, scale);
-    if (node.stroke) node.stroke = scaleStroke(node.stroke, scale);
-  }
+  placeTextNode(node, multiply(ctm, localTransform), onWarn);
   return node;
 }
 

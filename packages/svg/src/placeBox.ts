@@ -4,7 +4,8 @@
  * have a matrix baked into their geometry the way a path can.
  */
 import type { Matrix } from './types';
-import { applyMatrix, decomposeRotation, isIdentity, rebaseTransform } from './transform';
+import { invert } from '@weasel-js/geom';
+import { applyMatrix, decomposeRotation, isIdentity } from './transform';
 
 export interface Box {
   x: number;
@@ -67,33 +68,37 @@ export function placeBox(box: Box, m: Matrix, stretch: boolean): BoxPlacement {
 }
 
 /**
- * Apply an element's own `transform` to the box `node` already holds in the
- * frame of its inherited `ctm`: the box moves and scales, a rotation lands
- * on `node.rotation`, and what the node cannot hold is reported.
+ * Take the box `node` holds in its element's own coordinates through `m`,
+ * the element's whole transform (inherited and own): the box moves and
+ * scales, a rotation lands on `node.rotation`, and what the node cannot
+ * hold is reported.
  *
  * Returns the uniform scale the caller owes the lengths inside the box.
  */
-export function applyOwnTransform(
+export function placeNode(
   node: Box & { rotation?: number; flipX?: boolean; flipY?: boolean },
   tag: string,
-  ctm: Matrix,
-  local: Matrix,
+  m: Matrix,
   stretch: boolean,
   onWarn: (m: string) => void,
 ): number {
-  if (isIdentity(local)) return 1;
-  const worldLocal = rebaseTransform(ctm, local);
-  if (!worldLocal) {
-    onWarn(`<${tag}> transform sits under a singular parent transform; dropped`);
+  if (isIdentity(m)) return 1;
+  const cx = node.x + node.width / 2;
+  const cy = node.y + node.height / 2;
+  if (!invert(m)) {
+    onWarn(`<${tag}> sits under a singular transform; kept its size`);
+    const center = applyMatrix(m, cx, cy);
+    node.x = center.x - node.width / 2;
+    node.y = center.y - node.height / 2;
     return 1;
   }
   // The form `serialize.ts` writes: the box stays put, to the last bit.
-  const turn = decomposeRotation(worldLocal, node.x + node.width / 2, node.y + node.height / 2);
+  const turn = decomposeRotation(m, cx, cy);
   if (turn != null) {
     node.rotation = turn;
     return 1;
   }
-  const placed = placeBox(node, worldLocal, stretch);
+  const placed = placeBox(node, m, stretch);
   node.x = placed.x;
   node.y = placed.y;
   node.width = placed.width;
