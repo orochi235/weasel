@@ -138,6 +138,10 @@ interface LiveVoice {
   position?: Vec2;
   playing: boolean;
   cancelled: boolean;
+  /** `stop(fadeMs)` owns the chain gain from here until the source ends. */
+  fading: boolean;
+  /** Context time a `setGain` ramp on the chain gain ends at; 0 when none was asked for. */
+  rampEnd: number;
 }
 
 /**
@@ -289,7 +293,11 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     const s = spatialize(voice.position, listener, spatialOpts);
     voice.spatialGain = s.gain;
     voice.chain.panner.pan.value = s.pan;
-    writeParam(ctx, voice.chain.gain.gain, voice.baseGain * s.gain);
+    if (!voice.fading) {
+      // writeParam cancels what is scheduled, so a ramp still running is rescheduled to the same end.
+      const left = (voice.rampEnd - ctx.currentTime) * 1000;
+      writeParam(ctx, voice.chain.gain.gain, voice.baseGain * s.gain, left > 0 ? left : undefined);
+    }
     poolGain(voice);
   };
 
@@ -364,7 +372,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       baseGain, spatialGain: spatial.gain,
       rate: common.rate ?? 1, detune: common.detune ?? 0,
       position: common.position,
-      playing: true, cancelled: false,
+      playing: true, cancelled: false, fading: false, rampEnd: 0,
     };
     live.set(id, voice);
 
@@ -412,6 +420,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
           // it — which is the click `fadeMs` exists to avoid. `onended` does
           // the bookkeeping when the fade reaches the end.
           voice.cancelled = true;
+          voice.fading = true;
           writeParam(ctx, voice.chain.gain.gain, 0, fadeMs);
           try { voice.source.stop(ctx.currentTime + fadeMs / 1000); } catch { /* ended */ }
           return;
@@ -431,7 +440,8 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       },
       setGain(value, rampMs) {
         voice.baseGain = value;
-        if (!voice.chain) return;
+        if (!voice.chain || voice.fading) return;
+        voice.rampEnd = rampMs && rampMs > 0 ? ctx.currentTime + rampMs / 1000 : 0;
         writeParam(ctx, voice.chain.gain.gain, value * voice.spatialGain, rampMs);
         poolGain(voice);
       },
