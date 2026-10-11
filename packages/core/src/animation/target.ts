@@ -21,9 +21,13 @@ export interface TargetOptions<T> {
    *  fields are all numbers, read from `get()` when the target is made. */
   axes?: TargetAxes<T>;
   /** Called once a frame, after the frame's animations, with the value to show: on every frame
-   *  the target is moving, and once more as it comes to rest. Omit for a target whose reader
+   *  the target is moving, as an animation starts on it or is redirected, and once more as it
+   *  comes to rest. Omit for a target whose reader
    *  calls `read()` itself. */
   show?(value: T): void;
+  /** Called once a frame, after every target that was shown that frame: for a table that
+   *  publishes many targets at once. Targets passing the same function share one call. */
+  publish?(): void;
 }
 
 /**
@@ -45,6 +49,7 @@ export interface TargetState<T = unknown> {
   readonly get: () => T;
   readonly set: (value: T) => void;
   readonly show: ((value: T) => void) | undefined;
+  readonly publish: (() => void) | undefined;
   readonly axes: TargetAxes<T>;
   /** The animator moving it, by its own token; null while none is. */
   owner: object | null;
@@ -85,6 +90,7 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     get: opts.get,
     set: opts.set,
     show: opts.show,
+    publish: opts.publish,
     axes,
     owner: null,
     live: 0,

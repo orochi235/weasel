@@ -271,6 +271,92 @@ describe('a cancelKey on a target', () => {
   });
 });
 
+describe('interrupt: false on a target', () => {
+  it('shares the key with the animations holding it, and adds to them', () => {
+    const { animator, step } = setup();
+    const b = box(0);
+    act(() => { animator.tween({ target: b.target, to: 100, ms: 1000, easing: linear, cancelKey: 'k' }); });
+    step(0);
+    step(500);
+    act(() => { animator.tween({ target: b.target, to: 0, ms: 1000, easing: linear, cancelKey: 'k', interrupt: false }); });
+    expect(animator.live().filter((r) => r.key === 'k')).toHaveLength(2);
+    expect(b.target.read()).toBeCloseTo(50, 6);
+    step(250);
+    // The first has 25 left of its 100; the second has gone 25 of its 100 back.
+    expect(b.target.read()).toBeCloseTo(0 + 75 - 25, 6);
+    act(() => { animator.cancelKey('k'); });
+    expect(animator.isActive('k')).toBe(false);
+  });
+
+  it('starts a spring at the summed velocity of every animation it interrupts', () => {
+    const { animator, step } = setup();
+    const b = box(0);
+    act(() => { animator.tween({ target: b.target, to: 100, ms: 1000, easing: linear, cancelKey: 'k' }); });
+    act(() => { animator.tween({ target: b.target, to: 300, ms: 1000, easing: linear, cancelKey: 'k', interrupt: false }); });
+    step(0);
+    step(500);
+    const at = b.target.read();
+    expect(at).toBeCloseTo(150, 6);
+    act(() => { animator.spring({ target: b.target, to: at, cancelKey: 'k', stiffness: 1, damping: 1, mass: 1 }); });
+    expect(animator.live()).toHaveLength(1);
+    step(10);
+    // Both were moving, at 100 and 200 a second: a soft spring leaves that speed almost untouched.
+    expect(b.target.read() - at).toBeGreaterThan(2.5);
+  });
+});
+
+describe("a target's show and publish", () => {
+  it('is shown as an animation starts on it, ahead of the first frame', () => {
+    const { animator } = setup();
+    const b = box(0);
+    act(() => { animator.tween({ target: b.target, to: 100, ms: 1000, easing: linear }); });
+    expect(b.shown).toHaveLength(1);
+    expect(b.shown[0]).toBeCloseTo(0, 9);
+  });
+
+  it('is shown at rest after its last animation is canceled between frames', () => {
+    const { animator, step } = setup();
+    const b = box(0);
+    let h!: { cancel(): void };
+    act(() => { h = animator.tween({ target: b.target, to: 100, ms: 1000, easing: linear }); });
+    step(0);
+    step(400);
+    act(() => { h.cancel(); });
+    const before = b.shown.length;
+    step(16);
+    expect(b.shown.length).toBe(before + 1);
+    expect(b.shown.at(-1)).toBeCloseTo(40, 6);
+  });
+
+  it('is shown at rest when cancelAll stops the loop', () => {
+    const { animator, step } = setup();
+    const b = box(0);
+    act(() => { animator.tween({ target: b.target, to: 100, ms: 1000, easing: linear }); });
+    step(0);
+    step(400);
+    const before = b.shown.length;
+    act(() => { animator.cancelAll(); });
+    expect(b.shown.length).toBe(before + 1);
+    expect(b.shown.at(-1)).toBeCloseTo(40, 6);
+  });
+
+  it('calls a publish that several targets share once a frame', () => {
+    const { animator, step } = setup();
+    let published = 0;
+    const publish = (): void => { published += 1; };
+    const values = [0, 0];
+    const targets = values.map((_, i) => createTarget<number>({
+      get: () => values[i]!, set: (v) => { values[i] = v; }, show: () => {}, publish,
+    }));
+    act(() => { for (const target of targets) animator.tween({ target, to: 10, ms: 1000 }); });
+    published = 0;
+    step(0);
+    expect(published).toBe(1);
+    step(16);
+    expect(published).toBe(2);
+  });
+});
+
 describe('a spring on a target', () => {
   it('settles on its destination and reports done once', () => {
     const { animator, step } = setup();
