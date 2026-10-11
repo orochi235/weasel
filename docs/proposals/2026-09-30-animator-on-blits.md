@@ -140,8 +140,29 @@ are built: blits' stepping and springs, pose overrides as a mix, and values comp
 2. **Pose.** Pose overrides fold offsets over entries; `tweenPose`, `springPose`, reflow, and
    momentum move onto targets, closing reflow's "velocity does not carry over".
 3. **Color and camera.** `ColorOverrideRegistry` and `useViewAnimation` rebuilt on targets.
-4. **Timeline.** Sampled tracks take a target and cue absolute voices; event tracks and booking
-   read the mix's clock, so a sound cue cannot drift against the motion it belongs to.
+4. **Timeline.** Built 2026-10-11. An absolute voice is a *hold*: a voice on the target's own
+   subject, beside its offsets, answering the held value less the committed one, and cued into
+   one locus shared by every hold (`engine/holds.ts`). Holds on a target so fold as alternatives,
+   offsets add on top, and weights short of 1 leave the rest to the committed value.
+   `animator.hold({ target, value, weight? })` is the public form, for a drag preview or a value
+   driven from outside; a hold of plain values asks for no frames. A sampled track takes `target`
+   and `weight`, and is a hold while the playhead is within its keys
+   (`timeline/trackHolds.ts`). Decided along the way:
+   - A hold that leaves commits what keeps the screen still: its own value where it was alone
+     at full weight, and otherwise the committed value solved for against the holds that stay.
+     Where those cover the target outright, it commits its own value and the screen follows
+     them. `release({ commit: false })` falls back to the committed value instead.
+   - A track commits its last key once the playhead is past it, stepped over or not, and lets
+     the target go; before its first key it leaves the target alone.
+   - The timeline samples in its tick, after the frame's pull, so it touches the subject and the
+     animator reads touched subjects again before `show`. A seek or a loop seam shows that frame.
+     blits keeps a patch's answer while its clock stands still, so the codec touches every held
+     subject ahead of each pull too.
+   - An animation's clock is seeded from the frame clock where one is running, as its voice is,
+     so an event at time E and a tween of length E started between frames land on one frame.
+     Booking reads that same clock through the timeline's tick and needed no change.
+   - An offset canceled under a full-weight hold commits what it had left, but the hold stands
+     in front of the committed value, so the screen loses that much.
 5. **Rig.** Clips as absolute voices on joint targets, and `blendPoses` replaced by a locus
    ("Decisions this needs").
 
@@ -174,11 +195,9 @@ reads every subject with one `mix.pull` per mix a frame.
   two sharing a time, where blits would return the earlier and reach an interior key as
   `a + (b - a) * ease(1)`.
 
-  It cues no voice. The timeline keeps its own clock for seek, loops and nesting, and a voice
-  would have to be seeked to that playhead every frame; the codec pulls before the animator
-  ticks, so it would read a frame late on every seek and loop seam. Nor would a voice combine
-  anything while a track delivers through `onTick` rather than into a target mix. Revisit at
-  steps 4–5.
+  Sampling itself cues no voice: the timeline keeps its own clock for seek, loops and nesting,
+  and samples at its playhead. Since arc 4 a track given a `target` shows that sample through a
+  hold on the target, read again the same frame ("The arcs").
 
   `tests/perf/bench/timeline-sampling.bench.ts`, teitou (M5 Max, Node 26.10.0), blits 0.7.0,
   four-key tracks each sampled once a frame, mean ms per frame over three passes (the 1.04 is one
