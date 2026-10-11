@@ -169,6 +169,9 @@ interface OnTarget<T> {
   /** Any new animation passed the same cancelKey cancels the prior one in flight. Leave it off
    *  to let animations on one target add. */
   cancelKey?: string;
+  /** False joins whatever holds `cancelKey` without canceling it, so the key groups animations
+   *  that add. Default true. */
+  interrupt?: boolean;
   /** Names this animation in {@link AnimatorEvent}s and `animator.live()`. */
   label?: string;
 }

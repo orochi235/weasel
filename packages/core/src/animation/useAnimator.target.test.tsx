@@ -271,6 +271,36 @@ describe('a cancelKey on a target', () => {
   });
 });
 
+describe('a cancelKey that does not interrupt', () => {
+  it('lets two tweens under one key add, and the key still cancels both', () => {
+    const { animator, step } = setup();
+    const b = box(0);
+    act(() => { animator.tween({ target: b.target, to: 100, ms: 1000, easing: linear, cancelKey: 'k', interrupt: false }); });
+    step(0);
+    step(500);
+    act(() => { animator.tween({ target: b.target, to: 40, ms: 1000, easing: linear, cancelKey: 'k', interrupt: false }); });
+    expect(animator.live()).toHaveLength(2);
+    step(250);
+    expect(b.target.read()).toBeCloseTo(40 - 25 + 45, 6);
+    act(() => { animator.cancelKey('k'); });
+    expect(animator.live()).toHaveLength(0);
+    expect(b.committed).toBeCloseTo(60, 6);
+  });
+
+  it('lets a spring join a tween under one key from a standstill', () => {
+    const { animator, step } = setup();
+    const b = box(0);
+    act(() => { animator.tween({ target: b.target, to: 100, ms: 1000, easing: linear, cancelKey: 'k' }); });
+    step(0);
+    step(500);
+    act(() => { animator.spring({ target: b.target, to: 100, from: 100, cancelKey: 'k', interrupt: false }); });
+    expect(animator.live()).toHaveLength(2);
+    step(100);
+    // The spring has nowhere to go and took no velocity, so the tween alone moves it.
+    expect(b.target.read()).toBeCloseTo(60, 6);
+  });
+});
+
 describe('a spring on a target', () => {
   it('settles on its destination and reports done once', () => {
     const { animator, step } = setup();

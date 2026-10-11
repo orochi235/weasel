@@ -13,9 +13,11 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   const to = axesFor(ax, o.to, 'to');
   const given = o.from === undefined ? null : axesFor(ax, o.from, 'from');
   const id = ctx.nextId();
-  const seed = { id, kind: 'tween', cancelKey: o.cancelKey, label: o.label, target: s } as AnimationSeed;
+  const seed = {
+    id, kind: 'tween', cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: o.interrupt === false,
+  } as AnimationSeed;
   // Ahead of reading the committed value: an interrupted animation commits where it stopped.
-  if (o.cancelKey != null) ctx.interrupt(o.cancelKey, seed);
+  if (o.cancelKey != null && !seed.keepExisting) ctx.interrupt(o.cancelKey, seed);
   const from = o.from === undefined ? s.get() : o.from;
   const path = o.interpolator ? o.interpolator(from, o.to)
     : o.interpolate ? (u: number) => o.interpolate!(from, o.to, u)

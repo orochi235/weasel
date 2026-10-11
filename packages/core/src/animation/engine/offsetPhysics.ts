@@ -28,8 +28,10 @@ export function startOffsetPhysics<T>(
   const zeros = (): number[] => new Array<number>(ax.count).fill(0);
 
   const id = ctx.nextId();
-  const seed = { id, kind, cancelKey: o.cancelKey, label: o.label, target: s } as AnimationSeed;
-  if (o.cancelKey != null) {
+  const seed = {
+    id, kind, cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: o.interrupt === false,
+  } as AnimationSeed;
+  if (o.cancelKey != null && !seed.keepExisting) {
     // Read ahead of the interrupt, which stops the voice whose velocity this is.
     velocity ??= ctx.holder(o.cancelKey, s as never)?.velocity.slice() ?? null;
     ctx.interrupt(o.cancelKey, seed);
