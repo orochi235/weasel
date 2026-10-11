@@ -4,6 +4,7 @@ import { StarIcon } from '../../../icons';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import type { Action } from '@weasel-js/routing';
+import { useLatest } from '@weasel-js/react';
 import { cursorFor } from '@weasel-js/cursor';
 
 /** A point in world coordinates. */
@@ -16,9 +17,8 @@ export interface UseStarToolOptions extends InsertToolOptions {
    *  convention), adjustable mid-drag via ArrowUp/Down or wheel
    *  (range 3–32). */
   points?: number;
-  /** Inner-radius / outer-radius ratio. Default 0.5. Fixed for now;
-   *  consumers wanting per-instance ratios should override the `insert`
-   *  dep. */
+  /** Inner-radius / outer-radius ratio. Default 0.5. Consumers wanting
+   *  per-instance ratios should override the `insert` dep. */
   innerRatio?: number;
 }
 
@@ -40,11 +40,12 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
 ): Tool<null> {
   const {
     points: initialPoints = 5,
-    innerRatio: initialInnerRatio = 0.5,
+    innerRatio = 0.5,
+    label = 'Star',
     behaviors,
   } = options;
   const pointsRef = useRef(initialPoints);
-  const innerRatioRef = useRef(initialInnerRatio);
+  const innerRatioRef = useLatest(innerRatio);
   const [, setPointsTick] = useState(0);
   const bumpPoints = useCallback(() => setPointsTick((n) => n + 1), []);
 
@@ -88,7 +89,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
         // see `ToolDef.actions` for why the hook can't register it itself.
         actions: [adjustPointsAction],
         presentation: {
-          label: 'Star',
+          label,
           group: 'shape',
           icon: <StarIcon />,
         },
@@ -131,6 +132,6 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           },
         ],
       }),
-    [adjustPointsAction, behaviors],
+    [adjustPointsAction, behaviors, label, innerRatioRef],
   );
 }

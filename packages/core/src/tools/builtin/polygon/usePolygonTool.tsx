@@ -35,7 +35,7 @@ const MAX_SIDES = 32;
 export function usePolygonTool<TNode extends { id: string } = { id: string }>(
   options: UsePolygonToolOptions = {},
 ): Tool<null> {
-  const { sides: initialSides = 6, behaviors } = options;
+  const { sides: initialSides = 6, label = 'Polygon', behaviors } = options;
   // Side count in a ref so keyDown / wheel mutations are visible
   // synchronously to the insert binding's thunked params (re-resolved
   // every frame for the live preview and at commit time). A useState
@@ -92,7 +92,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
         // see `ToolDef.actions` for why the hook can't register it itself.
         actions: [adjustSidesAction],
         presentation: {
-          label: 'Polygon',
+          label,
           group: 'shape',
           icon: <PolygonIcon />,
         },
@@ -152,6 +152,6 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           },
         ],
       }),
-    [adjustSidesAction, behaviors],
+    [adjustSidesAction, behaviors, label],
   );
 }
