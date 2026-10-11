@@ -160,7 +160,7 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
       <ComboBoxFrame
         placeholder={placeholder}
         isLoading={isLoading}
-        onCommitText={onCommit && ((text) => onCommit({ source: 'text', text }))}
+        onCommitText={onCommit && rest.allowsCustomValue ? (text) => onCommit({ source: 'text', text }) : undefined}
       >
         {width === 'fit' && (
           <span className={s.sizer} aria-hidden="true">

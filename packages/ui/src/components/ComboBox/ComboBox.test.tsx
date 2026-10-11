@@ -115,6 +115,16 @@ describe('ComboBox keyboard navigation', () => {
     expect(onCommit).toHaveBeenCalledWith({ source: 'text', text: '3001' });
   });
 
+  it('commits no text when custom values are not allowed, since the input discards it', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn();
+    render(<ComboBox label="Part" options={OPTIONS} onCommit={onCommit} />);
+
+    await user.tab();
+    await user.keyboard('3001{Enter}');
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
   it('does not commit text as an option when one is highlighted', async () => {
     const user = userEvent.setup();
     const onCommit = vi.fn();
