@@ -325,6 +325,9 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
       disposed = true;
       renderer?.dispose();
       renderer = null;
+      // A browser caps live contexts per page and evicts the oldest, which is
+      // a canvas on screen; a dropped reference frees nothing until collected.
+      if (canvas && !options.createCanvas) gl?.getExtension('WEBGL_lose_context')?.loseContext();
       canvas = null;
       gl = undefined;
     },

@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'features/groups/composePose';
-import { createRasterSession, type RasterImage } from './renderSceneToPixels';
+import { createRasterSession, renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
 import type { DrawCommand } from '../renderer/DrawCommand';
 
 interface Box { color: string }
@@ -66,6 +66,30 @@ describe('raster session in a real browser', () => {
       expect(Array.from(again.data)).toEqual(Array.from(a.data));
     } finally {
       session.dispose();
+    }
+  });
+});
+
+describe('one-shot renders in a loop', () => {
+  // Chromium keeps 16 live contexts per page and loses the oldest for a 17th.
+  // Fourteen idle ones stand in for a longer loop, which compiles every
+  // program again on each pass.
+  it('do not push a canvas already on the page out of its context', () => {
+    const onPage = document.createElement('canvas');
+    document.body.appendChild(onPage);
+    const gl = onPage.getContext('webgl2')!;
+    const idle = Array.from({ length: 14 }, () => document.createElement('canvas').getContext('webgl2')!);
+    const scene = sceneOf([{ x: 0, y: 0, width: 4, height: 4, color: '#ff0000' }]);
+    try {
+      for (let i = 0; i < 3; i++) {
+        renderSceneToPixels({
+          scene, drawOne: drawOne as never, sourceRect: { x: 0, y: 0, width: 4, height: 4 }, scale: { x: 1, y: 1 },
+        });
+      }
+      expect(gl.isContextLost()).toBe(false);
+    } finally {
+      onPage.remove();
+      for (const ctx of idle) ctx.getExtension('WEBGL_lose_context')?.loseContext();
     }
   });
 });
