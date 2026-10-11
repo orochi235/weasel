@@ -213,16 +213,6 @@ have shipped. What remains:
   consumers who store the view by reference — one who normalizes or clamps it
   would have every frame of their own glide cancelled. Wants a real design.
 
-- [x] **Viewports as a first-class canvas concept — landed 2026-08-23.**
-  `<CanvasView>` (`c91e186d`) is a second camera on one canvas: `SceneCanvas`
-  takes `views?: readonly CanvasViewProps[]` and routes input through a
-  `ViewIdResolver` in `useGestureDispatcher`, with per-pointer gesture pinning.
-  You can drag a node inside a PiP. The four semantic questions this entry used
-  to list were each answered by a named commit — pinch and hover route to the
-  view under the pointer (`4ac9273b`), a view hit-tests its own chrome
-  (`726f85e0`), selection is per-view (`7c202d28`). Tests:
-  `packages/core/src/canvas/CanvasView.test.tsx`.
-
 - **(P3) Views do not nest.** A view paints and routes the surface's own stack,
   never another view, and a loupe magnifies the canvas's camera — aimed over a
   `<CanvasView>` panel it shows and edits the canvas's world, not the panel's.
@@ -450,7 +440,6 @@ intercepting the press that drags the body.
   arrival window on a layout-less scene only when it carries a `setLayout` op, so a
   custom op that calls `adapter.setLayout` itself does not arrange until the
   container's next change (inferred from the code, untested).
-- **(P3) Full tier unification** (collapse inline-props/explicit-adapter onto Scene). Same effort as the P2 "`arrayAdapter` as the default Canvas adapter — full unification" above — track there.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
   adapter-level configuration, two mutually exclusive ways:
   `sceneToAdapter({ cascadeContainerPose: true })` translates every descendant
