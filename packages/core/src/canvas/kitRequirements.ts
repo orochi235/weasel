@@ -5,7 +5,9 @@
  * The range grammar is npm's everyday subset — `^`, `~`, `>=`, `>`, `<=`, `<`,
  * `=`, bare and partial versions (`1.7`, `1.x`, `*`), space for AND and `||`
  * for OR. Hyphen ranges are not read. A prerelease orders below its release,
- * without npm's rule that a range must opt into prereleases by naming one.
+ * without npm's rule that a range must opt into prereleases by naming one —
+ * except at an exclusive upper bound, which also excludes that version's own
+ * prereleases, so `^1.4` does not admit `2.0.0-rc.1`.
  */
 import { VERSION } from '../version';
 
@@ -120,7 +122,7 @@ function holds(version: Version, c: Comparator): boolean {
     case '>=': return d >= 0;
     case '>': return d > 0;
     case '<=': return d <= 0;
-    case '<': return d < 0;
+    case '<': return c.v.pre.length > 0 ? d < 0 : compare(v(...version.triple), c.v) < 0;
   }
 }
 
@@ -136,7 +138,7 @@ export function satisfiesRange(version: string, range: string): boolean | null {
   for (const alt of alternatives) {
     if (alt === '') return null;
     const set: Comparator[] = [];
-    for (const token of alt.split(/\s+/)) {
+    for (const token of alt.replace(/(\^|~|>=|<=|>|<|=)\s+/g, '$1').split(/\s+/)) {
       const cs = parseComparator(token);
       if (!cs) return null;
       set.push(...cs);

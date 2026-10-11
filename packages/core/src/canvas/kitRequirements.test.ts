@@ -35,6 +35,15 @@ describe('satisfiesRange', () => {
     ['1.7.0-beta.1', '>=1.7.0', false],
     ['1.7.0-beta.1', '>=1.6.0', true],
     ['1.7.0+build.5', '1.7.0', true],
+    ['2.0.0-rc.1', '^1.4.0', false],
+    ['1.9.0-rc.1', '^1.4.0', true],
+    ['2.0.0-rc.1', '>=1.7 <2', false],
+    ['1.8.0-rc.1', '~1.7.2', false],
+    ['1.8.0-beta.1', '1.7.x', false],
+    ['2.0.0-rc.1', '<2.0.0-rc.2', true],
+    ['2.0.0-rc.3', '<2.0.0-rc.2', false],
+    ['1.8.0', '>= 1.7 < 2', true],
+    ['2.0.0', '>= 1.7 < 2', false],
   ];
   it.each(cases)('%s against %s is %s', (version, range, expected) => {
     expect(satisfiesRange(version, range)).toBe(expected);
