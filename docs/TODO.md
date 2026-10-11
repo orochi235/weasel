@@ -1535,11 +1535,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   the dragged index held in state and the thumb and track measured with a `ResizeObserver`, as
   `Ruler` does.
 
-- **(P3) Slider.tsx holds four jobs in one 740-line file.** The value and stop math (`attract`,
-  `stepStops`, `clampOrdered`, `useSpan`), the endless wrapper, the two drag gestures, and the
-  render share `packages/ui/src/components/Slider/Slider.tsx`. Move the pure math beside
-  `crossEnd.ts` and the drags into a hook; the render-context fix above then has somewhere to go.
-
 - **(P3) Tree: focus drops to the page when the focused node is removed.** A consumer's own Delete
   handler removes the focused row: the tab stop recomputes to the first selected or first row, but
   DOM focus falls to `<body>` and the next arrow key goes nowhere (`stopId` in

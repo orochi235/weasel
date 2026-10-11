@@ -7,5 +7,5 @@ export type {
   ThumbRenderCtx,
   BoundsCtx,
   TrackCtx,
-} from './Slider';
+} from './types';
 export type { Endless } from '../../endless';

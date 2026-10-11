@@ -1,0 +1,159 @@
+import { useCallback, useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { openPointerSession, type PointerSession } from '@weasel-js/core';
+import { snapToStep } from '../spin';
+import { clamp, clampOrdered, resolveBounds } from './stops';
+import type { SliderProps, Thumb } from './types';
+import type { useScale, useSpan } from './useSpan';
+
+/** A custom `ThumbShape.render` may put interactive content inside the thumb,
+ *  and capture would retarget pointerup and kill the click on it. */
+const NO_CAPTURE = { capture: false } as const;
+
+/** What the drags read: the slider's props, the span and scale they run over, and the rail they measure against. */
+export interface ThumbDragArgs<T extends Thumb> {
+  props: SliderProps<T>;
+  span: ReturnType<typeof useSpan>;
+  scale: ReturnType<typeof useScale>;
+  railRef: RefObject<HTMLDivElement | null>;
+}
+
+/** A slider's two pointer gestures: one thumb dragged along the rail, and every thumb moved together. */
+export function useThumbDrags<T extends Thumb>({ props, span, scale, railRef }: ThumbDragArgs<T>) {
+  const { thumbs, onInput, onChange, step, constraint } = props;
+  const { even, min, max } = span;
+  const { valueToFraction, fractionToValue, valueAt } = scale;
+  // In-flight thumb buffer during a drag; null when not dragging.
+  const dragBufferRef = useRef<T[] | null>(null);
+  const sessionRef = useRef<PointerSession | null>(null);
+
+  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
+
+  // `seed` replaces the thumb list the drag starts from. A track press moves a
+  // thumb before the drag begins, and without seeding, a release with no
+  // movement would commit the stale buffer and undo that move.
+  const beginThumbDrag = useCallback(
+    (origin: Element, down: ReactPointerEvent, index: number, seed?: readonly T[]) => {
+      sessionRef.current?.cancel();
+      const buf: T[] = (seed ?? thumbs).map(t => ({ ...t }));
+      dragBufferRef.current = buf;
+      let droppedOff = false;
+
+      const onMove = (ev: PointerEvent) => {
+        const rail = railRef.current;
+        const buffer = dragBufferRef.current;
+        if (!rail || !buffer) return;
+        const rect = rail.getBoundingClientRect();
+        let v = valueAt((ev.clientX - rect.left) / rect.width, rect.width);
+
+        const [bLo, bHi] = resolveBounds(buffer[index], { thumbs: buffer, index }, min, max);
+        v = clamp(v, bLo, bHi);
+
+        if (constraint === 'ordered') v = clampOrdered(v, buffer, index, min, max, step);
+
+        // Drop-off detection: pointer exits the track vertically by more than trackHeight.
+        const bandHeight = rect.height;
+        if (props.onRemoveThumb) {
+          if (ev.clientY < rect.top - bandHeight || ev.clientY > rect.bottom + bandHeight) {
+            droppedOff = true;
+          } else {
+            droppedOff = false;
+          }
+        }
+
+        buffer[index] = { ...buffer[index], value: v };
+        onInput(buffer.map(t => ({ ...t })));
+      };
+
+      // A drag that ends without a release — cancelled pointer, lost capture,
+      // an unmount — drops the buffer without committing.
+      const onCancel = () => {
+        sessionRef.current = null;
+        dragBufferRef.current = null;
+      };
+
+      const onEnd = () => {
+        sessionRef.current = null;
+        const buffer = dragBufferRef.current;
+        dragBufferRef.current = null;
+        if (!buffer) return;
+
+        if (droppedOff && props.onRemoveThumb) {
+          const accepted = props.onRemoveThumb(index);
+          if (accepted) {
+            const next = buffer.filter((_, i) => i !== index).map(t => ({ ...t })) as T[];
+            onInput(next);
+            onChange?.(next);
+            return;
+          }
+        }
+
+        onChange?.(buffer.map(t => ({ ...t })));
+      };
+
+      sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
+    },
+    [thumbs, onInput, onChange, valueAt, min, max, step, constraint, props, railRef],
+  );
+
+  const beginShiftAllDrag = useCallback(
+    (origin: Element, down: ReactPointerEvent, anchorX: number) => {
+      sessionRef.current?.cancel();
+      const buf: T[] = thumbs.map(t => ({ ...t }));
+      const startValues = buf.map(t => t.value);
+      dragBufferRef.current = buf;
+
+      const onMove = (ev: PointerEvent) => {
+        const rail = railRef.current;
+        const buffer = dragBufferRef.current;
+        if (!rail || !buffer) return;
+        const rect = rail.getBoundingClientRect();
+        const dxFraction = (ev.clientX - anchorX) / rect.width;
+        // Evenly spaced gaps span different amounts of value, so equal value
+        // offsets would pull the thumbs apart; move them by track distance.
+        if (even) {
+          const starts = startValues.map(valueToFraction);
+          const df = clamp(dxFraction, -Math.min(...starts), 1 - Math.max(...starts));
+          for (let i = 0; i < buffer.length; i++) {
+            buffer[i] = { ...buffer[i], value: fractionToValue(starts[i] + df) };
+          }
+          onInput(buffer.map(t => ({ ...t })));
+          return;
+        }
+        let dValue = dxFraction * (max - min);
+        dValue = snapToStep(dValue, step, 0);
+
+        // Clamp delta so no thumb leaves [min, max] (per-thumb bounds intentionally
+        // not enforced — matches the experiment's hue-band shift-translate semantics).
+        let allowedNeg = -Infinity;
+        let allowedPos = Infinity;
+        for (let i = 0; i < startValues.length; i++) {
+          allowedNeg = Math.max(allowedNeg, min - startValues[i]);
+          allowedPos = Math.min(allowedPos, max - startValues[i]);
+        }
+        dValue = clamp(dValue, allowedNeg, allowedPos);
+
+        for (let i = 0; i < buffer.length; i++) {
+          buffer[i] = { ...buffer[i], value: clamp(startValues[i] + dValue, min, max) };
+        }
+        onInput(buffer.map(t => ({ ...t })));
+      };
+
+      const onCancel = () => {
+        sessionRef.current = null;
+        dragBufferRef.current = null;
+      };
+
+      const onEnd = () => {
+        sessionRef.current = null;
+        const buffer = dragBufferRef.current;
+        dragBufferRef.current = null;
+        if (buffer) onChange?.(buffer.map(t => ({ ...t })));
+      };
+
+      sessionRef.current = openPointerSession(origin, down, { onMove, onEnd, onCancel }, NO_CAPTURE);
+    },
+    [thumbs, onInput, onChange, min, max, step, even, valueToFraction, fractionToValue, railRef],
+  );
+
+  return { beginThumbDrag, beginShiftAllDrag };
+}
