@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { isPrefLeaf, prefGroupIsPage, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { useScrollSpy } from '../../useScrollSpy';
@@ -66,19 +66,27 @@ export function RailLayout(props: PrefsFormProps & {
     if (props.section === undefined) setUncontrolled(path);
     props.onSectionChange?.(path);
   };
+  // Optional-called: jsdom's elements have no `scrollTo`, and neither does
+  // a pane that is not the scrolling box in some consumer's layout.
+  const toTop = (): void => {
+    scrollRef.current?.scrollTo?.({ top: 0 });
+  };
   const setOpen = (path: string): void => {
     awaited.current = null;
     show(path);
-    // Optional-called: jsdom's elements have no `scrollTo`, and neither does
-    // a pane that is not the scrolling box in some consumer's layout.
-    scrollRef.current?.scrollTo?.({ top: 0 });
+    toTop();
   };
+  // The pane's scrolling box outlives the page in it, and a page opens at its top however it came to open.
+  useLayoutEffect(toTop, [open]);
 
   // A nested entry chosen on a page that is not open: scrolled to once its page has drawn.
   const awaited = useRef<string | null>(null);
   const reach = (path: string): void => {
     const home = items.find((i) => i.path === path)?.section ?? open;
-    if (home === open) return spy.scrollTo(path);
+    if (home === open) {
+      spy.scrollTo(path);
+      return;
+    }
     awaited.current = path;
     show(home);
   };
