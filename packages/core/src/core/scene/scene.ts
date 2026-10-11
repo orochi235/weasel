@@ -147,9 +147,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    *  the hot path. */
   const childDerived = new Set<NodeId>();
 
-  /** Walks `id`'s whole subtree. Not required while `Scene` stores absolute
-   *  poses and the render walks compose nothing; it is here so `derivePath`'s
-   *  world-pose contract still holds if they ever do. */
+  /** Walks `id`'s whole subtree: under a composing pose strategy a container's
+   *  move carries every descendant, and whatever derives from one. */
   function invalidateDependents(id: NodeId): void {
     invalidateChildDerivedFrom(state.nodes.get(id)?.parent ?? null);
     if (dependents.isEmpty()) return;

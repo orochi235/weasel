@@ -25,7 +25,7 @@ import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { effectivePose } from 'core/scene/effectivePose';
-import { withDerivedPaths, resolveDerivedPath, sceneDepLookup } from './derivedPath';
+import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 import type { SceneViewDrawOne } from './NodeShape';
@@ -181,9 +181,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   // The scene is in scope here, so this is where the override's alpha and the
   // derived paths are applied on the headless path; `SceneCanvas` does the same
   // for the live one. `Canvas` itself never sees a scene, so it can't and doesn't.
-  const derivedOnly = withDerivedPaths(scene, drawOne);
+  const derivedOnly = withDerivedPaths(scene, drawOne, undefined, poseComposition);
   const derived = colorOverrides ? withColorOverrides(colorOverrides, derivedOnly) : derivedOnly;
-  const depLookup = sceneDepLookup(scene);
+  const derivedPathOf = sceneDerivedPathOf(scene, undefined, poseComposition);
   const wrappedDrawOne = (
     node: Node<TData, TLayer, TPose>,
     pose: TPose,
@@ -209,10 +209,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     wrappedDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
     view,
     undefined,
-    ((node: unknown) =>
-      resolveDerivedPath(
-        node as Node<TData, TLayer, TPose>, depLookup, (id) => scene.childrenOf(id),
-      )) as Parameters<typeof buildSceneTree>[4],
+    derivedPathOf as unknown as Parameters<typeof buildSceneTree>[4],
     culled as Parameters<typeof buildSceneTree>[5],
   );
   const children = cullRect ? cullDrawCommands(tree, viewToMat3(view), cullRect) : tree;

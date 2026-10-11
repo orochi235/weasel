@@ -1753,8 +1753,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       scene,
       alphaFor,
       animator?.colorOverrides,
+      poseComposition,
     );
-  }, [mergedLayers.scene, alphaFor, scene, animator]);
+  }, [mergedLayers.scene, alphaFor, scene, animator, poseComposition]);
 
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`, from whichever view's

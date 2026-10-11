@@ -12,6 +12,7 @@ import type { Node, NodeId, Scene } from 'core/scene/types';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '../animation/colorRegistry';
+import type { PoseComposition } from 'core/scene/composeFrame';
 
 /**
  * The alpha a view paints a node at: the view's own `alphaFor` times any
@@ -34,9 +35,12 @@ export function wireSceneSlotToScene<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   alphaFor?: (id: string) => number,
   colorOverrides?: ColorOverrideRegistry,
+  /** How the canvas folds a stored pose into its container's frame, so a
+   *  derived path is drawn between its dependencies' composed poses. */
+  poseComposition?: PoseComposition<TPose>,
 ): SceneSlotConfig<Node<TData, TLayer, TPose>, TPose> {
-  const derived = withDerivedPaths(scene, slot.drawOne, slot.toPose);
-  const derivedPathOf = sceneDerivedPathOf(scene, slot.toPose);
+  const derived = withDerivedPaths(scene, slot.drawOne, slot.toPose, poseComposition);
+  const derivedPathOf = sceneDerivedPathOf(scene, slot.toPose, poseComposition);
   return {
     ...slot,
     drawOne: colorOverrides ? withColorOverrides(colorOverrides, derived) : derived,

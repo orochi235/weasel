@@ -828,19 +828,6 @@ Core five + Crop shipped. Remaining:
   keyed by id while incarnations are keyed by object. Split along those owners, each closing over a
   small shared state record; the kit op table and the history facade are the cleanest first cuts.
 
-- **(P2) Derived paths: drawn from local poses under a composing pose strategy, picked from world
-  poses.** With `poseComposition` set, a container at (100, 100) holding two children and an edge
-  with `dependsOn: [a, b]` paints the children at their composed world poses, but `withDerivedPaths`
-  (`canvas/derivedPath.ts`, wired in `canvas/sceneSlotWiring.ts` and `canvas/sceneViewRender.ts`)
-  resolves the edge through `sceneDepLookup(scene)` → `effectivePose`, which composes nothing, so
-  the edge paints 100 units up and left of the nodes it connects. Picking (`scenePickSource` in
-  `canvas/pickWalk.ts`) derives the same edge from `adapter.getWorldPose`, so the clickable edge is
-  where it should have been drawn. Read from the code, not reproduced. The render walk's dep lookup
-  needs the same world-pose resolver the pick source uses, under its own memo slot (the two share
-  the default `kit:derivedPath` slot today and evict each other). The comments at
-  `canvas/derivedPath.ts` ("the render walks hand `getPose` straight to `drawOne`, composing
-  nothing") and `core/scene/scene.ts:149-151` predate frames and should go with the fix.
-
 - **(P2) Clipboard: a pasted derived edge is an invisible node, and a pasted layout container loses
   its layout.** `snapshotSelection` in `canvas/sceneAdapter.ts` keeps a derivation only for
   `dependsOn: 'children'` ("an id list would still name the originals"), so copying two nodes and

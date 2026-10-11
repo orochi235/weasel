@@ -8,31 +8,62 @@
  */
 import type { DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import type { Path } from '@weasel-js/geom';
-import { derivedDepOf } from 'core/scene/effectivePose';
+import { asNodeId } from 'core/scene/types';
+import { definesFrame, derivedDepOf, effectivePose } from 'core/scene/effectivePose';
+import { composeWorldPose, type PoseAdapter, type PoseComposition } from 'core/scene/composeFrame';
 import { resolveDerivedPath } from 'core/scene/derivedPath';
 import type { SceneViewDrawOne } from './NodeShape';
 
 export { resolveDerivedPath } from 'core/scene/derivedPath';
+
+const composes = <TPose>(composition: PoseComposition<TPose> | undefined): composition is PoseComposition<TPose> =>
+  composition !== undefined && composition.closure !== 'identity';
+
+/**
+ * `(node) => the pose it is painted at`: the slot's `toPose` if it has one,
+ * else the scene's effective pose, folded through the parent chain when
+ * `poseComposition` makes a stored pose local to its container.
+ */
+export function scenePaintedPoseOf<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
+  poseComposition?: PoseComposition<TPose>,
+): (node: Node<TData, TLayer, TPose>) => TPose {
+  const local = toPose ?? ((node: Node<TData, TLayer, TPose>) => effectivePose(scene, node));
+  if (!composes(poseComposition)) return local;
+  const chain: PoseAdapter<TPose> = {
+    getPose: (id) => {
+      const n = scene.get(asNodeId(id));
+      return n ? local(n) : (undefined as unknown as TPose);
+    },
+    getParent: (id) => scene.get(asNodeId(id))?.parent ?? null,
+    definesFrame: (id) => {
+      const n = scene.get(asNodeId(id));
+      return n === undefined || definesFrame(n);
+    },
+  };
+  return (node) => composeWorldPose(chain, node.id, poseComposition.compose);
+}
 
 /**
  * `(id) => that node, the pose it is painted at, and the path it derives` —
  * resolved against the scene, so a dependency that is itself derived resolves
  * before it is read.
  *
- * `Scene` stores absolute poses and the render walks hand `getPose` straight to
- * `drawOne`, composing nothing, so this has to read exactly what the render
- * adapters read: a derived edge is drawn from these coordinates and must meet
- * the nodes it connects. A slot's `toPose` replaces that read, so `toPose`
- * replaces it here too.
+ * A derived edge is drawn from these coordinates and must meet the nodes it
+ * connects, so this reads the pose each one is painted at: see
+ * {@link scenePaintedPoseOf}.
  */
 export function sceneDepLookup<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
+  poseComposition?: PoseComposition<TPose>,
 ): (id: NodeId) => DerivedDep<TPose> | undefined {
-  if (toPose === undefined) return (id) => derivedDepOf(scene, id);
+  const slot = memoSlotFor(toPose, poseComposition);
+  if (slot === undefined) return (id) => derivedDepOf(scene, id);
   const ctx: SlotLookup<TPose> = {
-    at: toPose as (node: unknown) => TPose,
-    slot: memoSlotFor(toPose),
+    at: scenePaintedPoseOf(scene, toPose, poseComposition) as (node: unknown) => TPose,
+    slot,
     childrenOf: (id: NodeId) => scene.childrenOf(id),
     lookup: (id: NodeId) => {
       const node = scene.get(id);
@@ -71,9 +102,10 @@ class SlotDep<TPose> implements DerivedDep<TPose> {
 export function sceneDerivedPathOf<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
+  poseComposition?: PoseComposition<TPose>,
 ): (node: Node<TData, TLayer, TPose>) => Path | null {
-  const depOf = sceneDepLookup(scene, toPose);
-  const slot = toPose === undefined ? undefined : memoSlotFor(toPose);
+  const depOf = sceneDepLookup(scene, toPose, poseComposition);
+  const slot = memoSlotFor(toPose, poseComposition);
   const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
   return (node) => resolveDerivedPath(node, depOf, childrenOf, slot);
 }
@@ -81,15 +113,21 @@ export function sceneDerivedPathOf<TData, TLayer extends string, TPose>(
 const toPoseSlots = new WeakMap<object, string>();
 let nextToPoseSlot = 0;
 
-/** One memo slot per `toPose`: two slots painting one scene at different
- *  poses must not serve each other's paths. */
-function memoSlotFor(toPose: object): string {
+/** The memo slot for one way of reading poses, or `undefined` for the scene's
+ *  own: two readers painting one scene at different poses must not serve each
+ *  other's paths. Every reader composing stored poses shares one slot. */
+function memoSlotFor<TPose>(
+  toPose: object | undefined,
+  poseComposition: PoseComposition<TPose> | undefined,
+): string | undefined {
+  const world = composes(poseComposition) ? ':world' : '';
+  if (toPose === undefined) return world === '' ? undefined : `kit:derivedPath${world}`;
   let slot = toPoseSlots.get(toPose);
   if (slot === undefined) {
     slot = `kit:derivedPath:toPose:${nextToPoseSlot++}`;
     toPoseSlots.set(toPose, slot);
   }
-  return slot;
+  return slot + world;
 }
 
 /**
@@ -105,8 +143,9 @@ export function withDerivedPaths<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>,
   toPose?: (node: Node<TData, TLayer, TPose>) => TPose,
+  poseComposition?: PoseComposition<TPose>,
 ): SceneViewDrawOne<TData, TLayer, TPose> {
-  const derivedPathOf = sceneDerivedPathOf(scene, toPose);
+  const derivedPathOf = sceneDerivedPathOf(scene, toPose, poseComposition);
   return (node, pose, view, ctx) => {
     if (node.dependsOn === undefined) return drawOne(node, pose, view, ctx);
     return drawOne(node, pose, view, { ...ctx, derivedPath: derivedPathOf(node) });

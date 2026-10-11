@@ -19,7 +19,6 @@ import { wrapWithPoseRotation } from '../poseRotation';
 import type { Dispatcher } from '@weasel-js/routing';
 import { previewSourcesFrom } from '../drawEnvelope';
 import { resolvePreviews, type PreviewNode } from 'interactions/actions/resolvePreviews';
-import { resolveDerivedPath, sceneDepLookup } from '../derivedPath';
 import { scenePlaneOf } from '../pickWalk';
 import { planeTransform } from '../planeClips';
 import { deriveParallaxView } from 'core/viewport/parallax';
@@ -68,10 +67,6 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       const roots = resolvePreviews(sources, sc);
       if (roots.length === 0) return [];
 
-      // Reads the same overrides an in-flight gesture publishes, so a derived
-      // container ghosts with the clip it will actually impose.
-      const depOf = sceneDepLookup(sc);
-
       // A node on a parallax layer ghosts where its plane draws it: through
       // the plane's view, inside a group carrying it into its parent's world.
       const planeOf = scenePlaneOf(sc.layers, view);
@@ -103,7 +98,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
           const clip = findShapeSilhouette(
             effNode as unknown as Node<unknown, string, TPose>,
             entry.pose,
-            { derivedPath: resolveDerivedPath(effNode, depOf, (nid) => sc.childrenOf(nid)) },
+            { derivedPath: slot.derivedPathOf?.(effNode, entry.pose) ?? null },
           );
           if (clip) group.clip = clip;
         }

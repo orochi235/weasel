@@ -25,9 +25,8 @@ import type { Path } from '@weasel-js/geom';
 import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { ClipFromPoseFn, DerivedDep, Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
-import { definesFrame, effectivePose } from 'core/scene/effectivePose';
-import { resolveDerivedPath } from './derivedPath';
-import { composeWorldPose, type PoseAdapter, type PoseComposition } from 'features/groups/composePose';
+import { resolveDerivedPath, sceneDerivedPathOf, scenePaintedPoseOf } from './derivedPath';
+import type { PoseComposition } from 'features/groups/composePose';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { clipCarrier } from './planeClips';
@@ -315,30 +314,13 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
       ? (faded ? (id: string) => (faded.has(id) ? 0 : 1) : undefined)
       : (id: string) => scene.overrides.read(asNodeId(id))?.alpha ?? 1);
 
-  // A composing strategy makes a node's own pose local, so picking has to fold
-  // the parent chain the same way the render walk does or it tests where the
-  // node is stored rather than where it is drawn.
+  // A composing strategy makes a node's own pose local, so picking folds the
+  // parent chain the same way the render walk does: one definition of both.
   const composition = opts.poseComposition;
-  const chain: PoseAdapter<TPose> | null =
-    composition !== undefined && composition.closure !== 'identity'
-      ? {
-          getPose: (id: string) => {
-            const n = scene.get(asNodeId(id));
-            return n ? effectivePose(scene, n) : (undefined as unknown as TPose);
-          },
-          getParent: (id: string) => scene.get(asNodeId(id))?.parent ?? null,
-          definesFrame: (id: string) => {
-            const n = scene.get(asNodeId(id));
-            return n === undefined || definesFrame(n);
-          },
-        }
-      : null;
-
+  const paintedPoseOf = scenePaintedPoseOf(scene, undefined, composition);
   const poseOf = getPose
     ? (node: PickCandidate<TPose>) => getPose(node.id)
-    : chain
-      ? (node: PickCandidate<TPose>) => composeWorldPose(chain, node.id, composition!.compose)
-      : (node: PickCandidate<TPose>) => effectivePose(scene, node as never);
+    : (node: PickCandidate<TPose>) => paintedPoseOf(node as never);
 
   // Through `poseOf`, not the document pose: a derived node has to be tested
   // where the renderer draws its dependencies, which is what an override says.
@@ -355,10 +337,11 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     };
   };
 
+  const sceneDerivedPath = getPose ? null : sceneDerivedPathOf(scene, undefined, composition);
   const derivedPathOf = (node: PickCandidate<TPose>): Path | null => {
     const n = node as unknown as Node<TData, TLayer, TPose>;
     if (n.dependsOn === undefined) return null;
-    return resolveDerivedPath(n, depOf, childrenOf);
+    return sceneDerivedPath ? sceneDerivedPath(n) : resolveDerivedPath(n, depOf, childrenOf);
   };
 
   const planeOf = opts.camera ? scenePlaneOf(scene.layers, opts.camera) : null;
