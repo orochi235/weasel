@@ -97,7 +97,7 @@ function markerOptions(): MarkerOptions {
 
 // An accessor: these schemas are built at module load, before a consumer can
 // have registered a marker, so the list is read from the registry when asked.
-function markerLeaf(leaf: Omit<PrefEnum, 'kind' | 'options' | 'default' | 'control' | 'encoding'>): PrefEnum {
+function markerLeaf(leaf: Omit<PrefEnum, 'kind' | 'options' | 'default' | 'control' | 'encoding' | 'clearable'>): PrefEnum {
   return {
     kind: 'enum', default: '', control: 'select', encoding: markerEncoding, ...leaf,
     get options() { return markerOptions(); },

@@ -12,6 +12,7 @@ import type {
   PrefKind,
   PrefColor,
   PrefCustom,
+  PrefEnum,
   PrefLeaf,
   PrefNumber,
   PrefPair,
@@ -58,6 +59,17 @@ describe('BuiltinPref schema additions', () => {
     const leaves: PrefLeaf[] = [fill, x, rotation, custom];
     expect(Object.keys(section.members)).toHaveLength(4);
     expect(leaves).toHaveLength(4);
+  });
+});
+
+describe('a clearable enum', () => {
+  it('cannot declare a default, since a missing value is how cleared is stored', () => {
+    const options = [{ value: 'a', label: 'A' }];
+    const cleared: PrefEnum = { kind: 'enum', name: 'E', description: '', default: undefined, clearable: true, options };
+    // @ts-expect-error a clearable enum's default is undefined
+    const pair: PrefEnum = { kind: 'enum', name: 'E', description: '', default: 'a', clearable: true, options };
+    const plain: PrefEnum = { kind: 'enum', name: 'E', description: '', default: 'a', options };
+    expect([cleared.default, pair.clearable, plain.default]).toEqual([undefined, true, 'a']);
   });
 });
 

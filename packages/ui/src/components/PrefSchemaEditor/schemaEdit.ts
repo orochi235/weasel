@@ -267,12 +267,16 @@ export function replaceNode<R extends SchemaRoot>(root: R, path: string | null, 
   });
 }
 
-/** Set one attribute; `undefined` removes it. Every other field keeps its value, functions included. */
+/**
+ * Set one attribute; `undefined` removes it. Every other field keeps its value, functions included, but for one:
+ * an enum made clearable gives up its default, which a clearable enum cannot have.
+ */
 export function setAttribute<R extends SchemaRoot>(root: R, path: string | null, key: string, value: unknown): R {
   return replaceNode(root, path, (node) => {
     const next: Record<string, unknown> = { ...node };
     if (value === undefined) delete next[key];
     else next[key] = value;
+    if (next.kind === 'enum' && next.clearable === true) next.default = undefined;
     return next as unknown as SchemaNode;
   });
 }

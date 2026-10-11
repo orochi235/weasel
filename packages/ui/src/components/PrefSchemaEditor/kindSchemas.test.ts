@@ -15,6 +15,14 @@ describe('kindSchemas', () => {
     expect(readOnly.map(([k]) => k)).toEqual(['unit']);
   });
 
+  it('offers no default for a clearable enum, whose default is always nothing', () => {
+    const plain = { kind: 'enum', name: 'E', description: '', default: 'a', options: [{ value: 'a', label: 'A' }] } as PrefLeaf;
+    expect(Object.keys(attributeSchema(plain).own)).toContain('default');
+    const clearable = { ...plain, default: undefined, clearable: true } as PrefLeaf;
+    expect(Object.keys(attributeSchema(clearable).own)).not.toContain('default');
+    expect(Object.keys(attributeSchema(clearable).own)).toContain('clearable');
+  });
+
   it('describes what a leaf with a value does when auto, and nothing for a group or an action', () => {
     const { auto, readOnly } = attributeSchema({ ...num, manual: true, autoValue: 4 } as PrefLeaf);
     expect(Object.keys(auto)).toEqual(['manual', 'unpinned', 'autoValue']);

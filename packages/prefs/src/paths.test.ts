@@ -33,7 +33,7 @@ const _schema = {
       kind: 'enum',
       name: 'Clear',
       description: '',
-      default: 'a',
+      default: undefined,
       clearable: true,
       options: [{ value: 'a', label: 'A' }],
     },

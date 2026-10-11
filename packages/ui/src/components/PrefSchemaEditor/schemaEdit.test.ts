@@ -61,6 +61,16 @@ describe('schemaEdit', () => {
     expect(setAttribute(ROOT, null, 'name', 'R').name).toBe('R');
   });
 
+  it('drops an enum\'s default when it is made clearable, since cleared is stored as nothing', () => {
+    const root: PrefGroup = { name: 'Root', children: {
+      e: { kind: 'enum', name: 'E', description: '', default: 'a', options: [{ value: 'a', label: 'A' }] },
+    } };
+    const cleared = nodeAt(setAttribute(root, 'e', 'clearable', true), 'e') as PrefLeaf;
+    expect(cleared).toMatchObject({ clearable: true });
+    expect(cleared.default).toBeUndefined();
+    expect(nodeAt(setAttribute(root, 'e', 'name', 'F'), 'e')).toMatchObject({ default: 'a' });
+  });
+
   it('moves across parents at a pre-move index and reports new paths', () => {
     const { root, paths } = moveNodes(ROOT, ['a/y'], { parentPath: null, index: 1 });
     expect(keys(root, null)).toEqual(['a', 'y', 'b', 'z']);

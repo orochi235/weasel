@@ -211,17 +211,9 @@ export interface PrefEnumEncoding<T extends string = string> {
   write: (option: T, siblings: Record<string, unknown> | undefined) => unknown;
 }
 
-/** A pref with a fixed set of labeled choices. `default` is `undefined` only
- *  for a {@link PrefEnum.clearable} leaf, whose absence is a value. */
-export interface PrefEnum<T extends string = string>
+/** What every enum leaf carries; {@link PrefEnum} adds `clearable`. */
+export interface PrefEnumBase<T extends string = string>
   extends PrefBase<'enum', T | undefined> {
-  /**
-   * The field may hold none of the options, and that absence is a state of
-   * its own rather than a missing value — a script that is neither super nor
-   * sub. A toggle control then lets the chosen segment be clicked off, which
-   * removes the field.
-   */
-  clearable?: boolean;
   /** `short` holds shorter forms of `label`, longest first, for a segmented
    *  control too narrow for the full one — down to a capital or two. `icon`
    *  names a glyph in the host UI's set (weasel-ui resolves it against
@@ -244,6 +236,21 @@ export interface PrefEnum<T extends string = string>
   control?: PrefEnumControl;
   encoding?: PrefEnumEncoding<T>;
 }
+
+/**
+ * A pref with a fixed set of labeled choices.
+ *
+ * `clearable` says the field may hold none of the options, and that absence
+ * is a state of its own rather than a missing value — a script that is
+ * neither super nor sub. A toggle control then lets the chosen segment be
+ * clicked off, which removes the field. Such a leaf's `default` is
+ * `undefined`: a missing value is the only stored form of cleared, so a
+ * default would bring an option back the moment the field was cleared.
+ */
+export type PrefEnum<T extends string = string> = PrefEnumBase<T> & (
+  | { clearable?: false }
+  | { clearable: true; default: undefined }
+);
 
 /** A single color, stored as a hex string. For a value that may also be a
  *  gradient or a pattern, use {@link PrefPaint} instead. */

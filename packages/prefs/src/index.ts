@@ -42,6 +42,7 @@ export {
   type PrefColor,
   type PrefCustom,
   type PrefEnum,
+  type PrefEnumBase,
   type PrefEnumControl,
   type PrefEnumEncoding,
   type PrefField,

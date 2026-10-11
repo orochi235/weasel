@@ -142,6 +142,7 @@ function ownControl(leaf: PrefLeaf, base: { name: string; description: string })
 }
 
 function defaultAttr(leaf: PrefLeaf, description = 'The value before anything is stored.'): PrefLeaf | null {
+  if (leaf.kind === 'enum' && (leaf as PrefEnum).clearable) return null;
   const base = { name: 'Default', description };
   return valueAttr(leaf, base) ?? (leaf.type !== undefined ? ownControl(leaf, base) : null);
 }

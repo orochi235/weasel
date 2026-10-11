@@ -1561,15 +1561,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   no stamp, and migrating by the stamp in place of `theirs`. Shares its cause with "An older build's
   pref that lands after its `$version` is taken unmigrated", the opposite ordering.
 
-- **(P3) A clearable enum whose `default` is not `undefined` cannot be cleared.** `store.set(path,
-  undefined)` now unsets the leaf, which for a default of `undefined` is the cleared state. For a
-  clearable enum with any other default, clearing in a `PrefsForm`
-  (`packages/ui/src/components/Prefs/prefField.tsx`, `onClear`) puts the leaf back on its default,
-  so the lit segment moves to the default option instead of going dark. Ruled 2026-10-11: a
-  clearable enum cannot have a default other than `undefined`, so a missing value stays the only
-  stored form of cleared. That leaves rejecting the pair in the schema type
-  (`packages/prefs/src/schema.ts`) and fixing any schema that declares it.
-
 - **(P3) `PrefSchemaEditor`: under a node property schema, two prefs can be given one value path.**
   A key is checked only against its siblings (`keyProblem`, `uniqueKey` in
   `packages/ui/src/components/PrefSchemaEditor/schemaEdit.ts`), but under a section root a leaf's
