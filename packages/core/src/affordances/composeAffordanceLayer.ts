@@ -4,7 +4,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import { pxExtent } from 'core/viewport/pxExtent';
+import { pxExtent } from '@weasel-js/geom';
 import type { DebugSink } from '../debug/types';
 import type { CommandFill, CommandStroke } from '@weasel-js/paint';
 import { PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';

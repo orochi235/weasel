@@ -16,7 +16,7 @@
  */
 
 import type { View } from 'core/viewport/view';
-import { pxExtent, scaleDelta, screenAngleOf, standoff } from 'core/viewport/pxExtent';
+import { pxExtent, scaleDelta, screenAngleOf, standoff } from '@weasel-js/geom';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import { poseRotationOf } from 'core/geometry/poseRotation';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';

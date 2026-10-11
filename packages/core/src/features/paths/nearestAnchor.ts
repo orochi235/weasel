@@ -4,7 +4,7 @@
  * pen's anchor snapping and its pick-up of an open path's endpoint.
  */
 
-import { scaleDelta, type Scale2 } from 'core/viewport/pxExtent';
+import { scaleDelta, type Scale2 } from '@weasel-js/geom';
 import { pathToAnchors, type PenAnchor, type PolygonPath } from '@weasel-js/geom';
 
 /** An existing anchor found near a point. */

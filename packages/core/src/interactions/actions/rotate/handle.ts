@@ -1,6 +1,6 @@
 import { aabbCenter, rotatePoint } from './geometry';
 import { ROTATION_HANDLE_BASE_PX } from 'core/device/targets';
-import { standoff, type Scale2 } from 'core/viewport/pxExtent';
+import { standoff, type Scale2 } from '@weasel-js/geom';
 
 /** Default world-space distance from the rect's top edge to the rotation
  *  handle's center. Matches the demo's visual default; consumers can

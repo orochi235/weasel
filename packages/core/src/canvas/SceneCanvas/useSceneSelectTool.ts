@@ -23,7 +23,7 @@ import { poseDescriptorForNode, type PoseDescriptor } from 'interactions/actions
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { poseContains, poseContainsRotated } from './poseGeometry';
 import { shapeCoversPoint, findShapeInk } from 'canvas/NodeShape';
-import { meanScale } from 'core/viewport/meanScale';
+import { meanScale } from '@weasel-js/geom';
 
 /**
  * Default grab slop around a shape's outline, in screen pixels.

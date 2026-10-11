@@ -5,7 +5,7 @@ import { pathContainsPoint } from '@weasel-js/geom';
 import { shapeCoversPoint } from 'canvas/NodeShape';
 import { pickWalk, adapterPickSource, ownClipOf, scenePlaneOf, type PickQuery } from 'canvas/pickWalk';
 import { toPlane } from 'core/viewport/parallax';
-import { meanScale } from 'core/viewport/meanScale';
+import { meanScale } from '@weasel-js/geom';
 import type { View } from 'core/viewport/view';
 import type { LayerEnumerableAdapter } from 'core/adapters/types';
 import type { Node } from 'core/scene/types';

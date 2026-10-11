@@ -1,6 +1,6 @@
 import type { View } from 'core/viewport/view';
 import type { PlaneMap } from 'core/viewport/parallax';
-import { pxExtent } from 'core/viewport/pxExtent';
+import { pxExtent } from '@weasel-js/geom';
 import type { GestureContext } from '../types';
 import type { ActionDeps } from '@weasel-js/routing';
 

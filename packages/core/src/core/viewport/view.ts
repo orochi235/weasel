@@ -1,6 +1,6 @@
 import type { ViewTransform } from './viewTransform';
 import type { View } from '@weasel-js/routing';
-import { meanScale } from './meanScale';
+import { meanScale } from '@weasel-js/geom';
 import { normalizeZoom, warnInvalidView } from './zoomBounds';
 
 /**

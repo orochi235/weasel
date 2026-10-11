@@ -9,7 +9,7 @@
  * image instead (`strokeHitTest`'s `slop`).
  */
 import { multiply, rotate, scale as scaleMat, type Mat3 } from '@weasel-js/geom';
-import type { Scale2 } from './pxExtent';
+import type { Scale2 } from '@weasel-js/geom';
 
 /** `px` screen pixels under a view whose per-axis scale is `scale`. */
 export interface ScreenSlop {

@@ -67,3 +67,5 @@ export {
   type EasingFn, type EasingName, type SpringPreset, type SpringPresetName,
 } from './easings';
 export { cubicBezierEasing, resolveEasing, type BezierEasing, type EasingSpec } from './easingSpec';
+export { meanScale } from './meanScale';
+export { pxExtent, scaleDelta, screenAngleOf, standoff, withinPxBox, withinPxRadius, type Scale2 } from './pxExtent';

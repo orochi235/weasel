@@ -100,7 +100,7 @@ do not build them again.
 and lets the mesh cache key see the resolved width. It resolves against the **accumulated**
 transform scale during traversal, not the view — groups nest and compose, so a path two groups deep
 is scaled by the product. Under a non-uniform transform one scalar is a known lie, the same one
-`core/viewport/pxExtent.ts` documents.
+`pxExtent.ts` in `@weasel-js/geom` documents.
 
 **Known defect.** `splitForDash` flushes a closed subpath's final run as its own open sub-polyline,
 so when the pattern does not divide evenly into the perimeter the last and first dashes meet as two

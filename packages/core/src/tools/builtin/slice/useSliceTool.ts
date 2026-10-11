@@ -8,7 +8,7 @@ import type { Action, ActionDeps, InvocationCtx, ToolKeybinding } from '@weasel-
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { createPointerFollower } from '../shared/pointerFollower';
 import { sliceAction } from 'interactions/actions/defaults/slice';
-import { withinPxRadius } from 'core/viewport/pxExtent';
+import { withinPxRadius } from '@weasel-js/geom';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { viewToTransform } from 'core/viewport/view';
 import { ellipsePath, polylineFromPoints } from '@weasel-js/geom';

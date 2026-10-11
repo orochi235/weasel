@@ -7,7 +7,7 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, InvocationCtx } from '@weasel-js/routing';
 import { asNodeId } from 'core/scene/types';
-import { pxExtent, withinPxRadius } from 'core/viewport/pxExtent';
+import { pxExtent, withinPxRadius } from '@weasel-js/geom';
 import { PenIcon } from '../../../icons';
 import { boundsOfPath, type PolygonPath, anchorsToPath, pathToAnchors } from '@weasel-js/geom';
 import { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from 'features/paths/nearestAnchor';

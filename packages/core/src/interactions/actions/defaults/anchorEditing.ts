@@ -43,7 +43,7 @@ import {
   type AnchorSet,
 } from 'features/paths/anchorEdits';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
-import { pxExtent } from 'core/viewport/pxExtent';
+import { pxExtent } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from './editAnchors';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
