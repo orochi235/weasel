@@ -54,7 +54,7 @@ export function CodeBlock({ code, language = 'tsx', lineNumbers = false, classNa
                 return (
                   <span key={i} {...lineProps} className={`${lineClass} ${s.line}`}>
                     {lineNumbers && <span className={s.lineNo} aria-hidden>{i + 1}</span>}
-                    <span className={s.lineText}>
+                    <span>
                       {line.map((token, j) => {
                         const { key: _token, style: _tokenStyle, ...tokenProps } = getTokenProps({ token });
                         return <span key={j} {...tokenProps} />;

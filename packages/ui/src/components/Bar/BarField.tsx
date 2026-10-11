@@ -33,7 +33,7 @@ export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
   switch (p.kind) {
     case 'number':
       return (
-        <span className={`${s.field} ${p.control === 'slider' ? s.slider : s.number}`}>
+        <span className={p.control === 'slider' ? s.field : `${s.field} ${s.number}`}>
           <BarLabel name={p.name} short={p.short} icon={icon} />
           <PropertyControl {...p} />
         </span>

@@ -54,3 +54,9 @@ test('a number box in a bar is narrower than a text box', () => {
   expect(width('number')).toBeLessThan(width('string'));
   expect(width('number')).toBeLessThan(80);
 });
+
+test('no bar cell carries a class its stylesheet does not define', () => {
+  const { getByTestId } = render(<Strip />);
+  const named = [...getByTestId('strip').querySelectorAll('[class]')].map((el) => el.getAttribute('class')!);
+  expect(named.filter((cls) => /\bundefined\b/.test(cls))).toEqual([]);
+});
