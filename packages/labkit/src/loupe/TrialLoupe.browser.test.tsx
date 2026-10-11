@@ -1,6 +1,7 @@
 import '@weasel-js/theme/tokens.css';
 import '../styles.less';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { useEffect, useRef, useState } from 'react';
 import { afterEach, expect, test } from 'vitest';
 import { SurfaceContext } from '../surface/SurfaceContext';
@@ -144,14 +145,20 @@ function lensMiddle(container: HTMLElement): number[] {
   return [...ctx.getImageData(lens.width / 2, lens.height / 2, 1, 1).data];
 }
 
-test('a source lens peeked over a still pointer opens under it', async () => {
+test('a source lens peeked over a still pointer opens under it, once its host has been pressed in', async () => {
   const colors: string[] = [];
   const { container } = render(
     <SourceScene enabled={false} onColorChange={(c) => colors.push(c)} />,
   );
   await frames(2);
-  // Inside the blue band, then the peek key with no move after it.
+  // Inside the blue band. A hover alone does not give the host the keys.
   move(container, 62, 25);
+  peek(true);
+  await frames(2);
+  expect(lensCenter(container)).toBeNull();
+  peek(false);
+  // A press, then the peek key with no move after it.
+  giveKeys(host(container));
   expect(lensCenter(container)).toBeNull();
   peek(true);
   await waitFor(() => expect(lensCenter(container)).toEqual({ x: 62, y: 25 }));
@@ -170,9 +177,13 @@ test('a source lens turned on under a still pointer opens under it', async () =>
   await waitFor(() => expect(lensMiddle(container)).toEqual([0, 255, 0, 255]));
 });
 
-test('a peek before the pointer ever reaches the host shows nothing until it does', async () => {
+test('a peek while the pointer is off the host shows nothing until it comes back', async () => {
   const { container } = render(<SourceScene enabled={false} />);
   await frames(2);
+  giveKeys(host(container));
+  act(() => {
+    fireEvent.pointerLeave(host(container));
+  });
   peek(true);
   await frames(2);
   expect(lensCenter(container)).toBeNull();
@@ -185,6 +196,7 @@ test('a render lens peeked over a still pointer opens under it', async () => {
   const { container } = render(<RenderScene enabled={false} />);
   await frames(2);
   move(container, 70, 20);
+  giveKeys(host(container));
   peek(true);
   await waitFor(() => expect(lensCenter(container)).toEqual({ x: 70, y: 20 }));
 });
