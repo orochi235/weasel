@@ -1190,11 +1190,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   room scrolls, with no overflow menu. A group a standalone `Bar` opens from a button draws as
   labeled rows whatever its `as`, where a bar in a `PrefsForm` opens it in its own form.
 
-- **(P3) `PrefSchemaEditor` rough edges seen in headless Chromium, 2026-10-11.** While a drag is
-  over the Unplaced list, its 2px inset outline covers the first letter of the heading, which
-  reads "JNPLACED". A row dragged onto a tree branch has its ghost drawn over the branch's name. A
-  label's attributes pane shows a read-only row `DEFAULT undefined`. A selected label row's
-  outline touches the label of the row under it in the preview.
+- **(P3) `Tree`'s row ghost takes the host page's font.** The ghost portals out of the tree, so
+  inside `PrefSchemaEditor`, whose `.editor` sets its own face, a dragged row draws in whatever the
+  page uses; in the browser tests, with no themed ancestor, that is the default serif.
 
 - **(P3) Disabled and panel-box rough edges seen in headless Chromium, 2026-10-11.** A disabled
   `Bar` action button draws at 0.4 where every other disabled cell draws at 0.5. A disabled text
@@ -1206,8 +1204,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) `PrefSchemaEditor` drags no browser test drives.** `PrefSchemaEditor.drag.browser.test.tsx`
   drives a pointer through a palette drag onto the preview, a row drag, a rail drag, and a tree
-  drag. Not covered: a palette tool dropped on the tree, a drag held on a rail entry until its page
-  opens (the 500 ms `RAIL_OPEN_MS` timer), and a drag onto the Unplaced list.
+  drag, and a tree row onto the Unplaced list as far as the hold. Not covered: that drop, a
+  palette tool dropped on the tree, and a drag held on a rail entry until its page opens (the
+  500 ms `RAIL_OPEN_MS` timer).
 
 - **(P3) `Tree` reports an outside drag's target only from an effect.** `useTreeDrag.ts` writes the
   target in a passive effect, a render behind the pointer, so a release in the same task as the
@@ -1238,9 +1237,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   per control needs a wrapper that breaks the `.rowControls > *` sizing), and how a section is
   named in `selected`, since its key is no part of any value path and can collide with a leaf's.
 
-- **(P3) Loose ends beside the selection mark, none checked further.** `valuePathOf` under a
-  section root returns only the last key, so an object-leaf field reads as `width` and not
-  `data.stroke.width`; no caller was checked for passing a field path. The fragment mark in
+- **(P3) Loose ends beside the selection mark, none checked further.** The fragment mark in
   `Prefs.module.css` repeats the three declarations `Prefs/selection.css` now owns.
   `PrefsForm.selection.test.tsx`'s `marked()` queries bare `[data-selected]`, which an open
   react-aria tab also carries.
@@ -1411,19 +1408,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `ControlRow`, `LeafRow`, and `PairedRow` into their own file, which `ControlMatrix` already
   imports from the panel; one file per control kind under `Properties/`, each with its CSS;
   `ObjectLeaf` out of `renderLeaf`.
-
-- **(P3) `PrefSchemaEditor`: under a node property schema, two prefs can be given one value path.**
-  A key is checked only against its siblings (`keyProblem`, `uniqueKey` in
-  `packages/ui/src/components/PrefSchemaEditor/schemaEdit.ts`), but under a section root a leaf's
-  key is the path its value lives at, whichever section holds it. Alt-drag `pose.x` from Layout into
-  Appearance and both sections hold a full leaf keyed `pose.x`; Add pref with Id `pose.x` in another
-  section is accepted the same way; a copy into the same section is numbered `pose.x2`, a path no
-  node has. No row says so, and `setDefaults`' `leafHolding` takes the first match, so a preview
-  edit of the second writes the first's default. To decide: refuse a key any leaf under the root
-  already holds (an `alias` is the way to show one value twice), or allow it and mark both rows.
-  Refusing also has to say what a copy does under a section root: a copied leaf, and every leaf
-  inside a copied section, has no other key to take (`copyNodes`), so the copy is refused outright
-  or becomes an alias.
 
 - **(P3) `PrefSchemaEditor`'s attributes pane lists a mixed object or union attribute read-only.**
   `aggregateAttributes` drops an object, list, map, or union attribute from the form when the
