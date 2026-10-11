@@ -11,8 +11,8 @@
  *
  * ## Behaviors / point-snap / expandIds — via the `resizePolicy` dep
  *
- * The `resizePolicy` dep carries the behavior options the legacy `useResize`
- * hook exposed (`behaviors`, `pointSnapBehaviors`, `expandIds`). When the dep
+ * The `resizePolicy` dep carries the behavior options (`constraints`,
+ * `pointSnap`, `expandIds`). When the dep
  * is registered, this invoker:
  *
  *  - Calls `expandIds([id])` at start. When the result expands beyond the
@@ -34,7 +34,6 @@
  * `AUTO_POSE_DESCRIPTOR`, which dispatches per call to `pathPoseDescriptor`
  * for Path-shaped poses and to `RECT_POSE_DESCRIPTOR` for everything else.
  *
- * @see useResize — the React hook this descriptor mirrors.
  * @see src/interactions/actions/resize/geometry.ts — `PoseDescriptor`.
  */
 
@@ -75,8 +74,7 @@ import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../pla
 import { fromPlane, toPlane, type PlaneMap } from 'core/viewport/parallax';
 
 // ---------------------------------------------------------------------------
-// Defaults applied when `resizePolicy` dep is absent. Mirrors the
-// destructuring defaults in `useResize`.
+// Defaults applied when `resizePolicy` dep is absent.
 // ---------------------------------------------------------------------------
 
 const IDENTITY_EXPAND = (ids: string[]) => ids;
@@ -118,7 +116,7 @@ function boundsForRules(geometry: PoseDescriptor<unknown>, pose: unknown): Bound
 }
 
 // ---------------------------------------------------------------------------
-// Point-snap math (lifted from `useResize`).
+// Point-snap math.
 // ---------------------------------------------------------------------------
 
 function buildPointSnapContext<TPose extends Bounds>(
@@ -430,7 +428,6 @@ export const resizeAction: Action & { requires: string[] } = inPlane({
         scratch: {},
       };
 
-      // Fire behavior onStart hooks (parity with `useResize`).
       const ctxAsRect = gestureCtx as unknown as GestureContext<Bounds>;
       for (const b of behaviors) b.onStart?.(ctxAsRect);
 

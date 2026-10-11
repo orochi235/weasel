@@ -131,8 +131,6 @@ interface LassoScratch {
  *
  * The invoker accumulates pointermove vertices via `InvocationCtx.drag.points`
  * (dispatcher extension) and commits a polygon hit-test at drag end.
- *
- * @see useLassoSelect — the React hook this descriptor mirrors for the default case.
  */
 export const lassoSelectAction: Action & { requires: string[] } = {
   id: 'lassoSelect',

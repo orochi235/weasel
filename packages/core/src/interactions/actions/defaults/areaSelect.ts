@@ -1,17 +1,13 @@
 /**
  * `areaSelectAction` — ongoing Action descriptor for marquee area selection.
  *
- * ## Status: REAL
- *
- * Implements the marquee selection logic from `useAreaSelect`:
+ * The marquee selection:
  *   - `start`: records the drag start world point and shift state.
  *   - `onMove`: tracks the current drag corner (no scene writes).
  *   - `onEnd('commit')`: derives the marquee bounds from start + current;
  *     calls `deps.areaSelect.hitTestArea(bounds)` to find overlapping nodes;
  *     calls `deps.areaSelect.setSelection(ids)` to update selection (extending
- *     with shift held). This is a **transient** write (no undo entry) matching
- *     `useAreaSelect`'s `defaultTransient: true` convention from
- *     `selectFromMarquee`.
+ *     with shift held). This is a **transient** write (no undo entry).
  *   - `onEnd('cancel')`: no-op.
  *
  * ## Dependencies
@@ -24,9 +20,8 @@
  * simple — consumers override it for custom hit-testing (contain-mode,
  * layer-aware filtering, etc.).
  *
- * ## What this does NOT wire (vs `useAreaSelect`)
+ * ## What this does not wire
  *
- * - Live marquee overlay rendering — deferred to Phase 7 overlay surface.
  * - `AreaSelectBehavior` pipeline — omitted; only the default replace/extend
  *   semantics are implemented.
  * - Debug sink recording — not available in the descriptor model.
@@ -69,8 +64,6 @@ interface AreaSelectScratch {
  * The invoker implements replace/extend marquee selection via the `areaSelect`
  * dep. Hit-testing and selection writes are delegated to the dep; the invoker
  * contains only the bounds-derivation and shift-extend logic.
- *
- * @see useAreaSelect — the React hook this descriptor mirrors for the default case.
  */
 export const areaSelectAction: Action & { requires: string[] } = {
   id: 'areaSelect',

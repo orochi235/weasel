@@ -1,7 +1,7 @@
 /**
  * `moveAction` — first `ongoing`-timing Action descriptor.
  *
- * Mirrors the per-frame translate semantics of the `useMove` hook:
+ * A per-frame translate of the selection:
  *   - `start`: capture origin poses for all selected nodes; record the
  *     current drag delta in scratch each frame.
  *   - `onMove`: update the in-scratch `currentDelta`, and publish the frame's
@@ -31,7 +31,7 @@
  * etc.) via `opts.behaviors` from `BindingOpts` IS wired: `start` builds a
  * `GestureContext` + scene-backed adapter (`moveGestureAdapter`), `onMove`
  * folds each behavior's proposed-transform result, and `onEnd` runs a
- * first-non-undefined-wins reducer (`Op[]` commits via `scene.applyBatch`,
+ * first-non-undefined-wins reducer (`Op[]` commits via `commitGestureOps`,
  * `null` aborts, all-`undefined` falls through to the default translate path).
  *
  * ## Pose generics
@@ -851,8 +851,6 @@ function applyReparent(
  *
  * The invoker is `ongoing` — it returns an `OngoingHandle` from `start` that
  * the dispatcher pumps via `onMove`/`onEnd` for the duration of the drag.
- *
- * @see useMove — the React hook this descriptor mirrors for the simple case.
  */
 export const moveAction: Action & { requires: string[] } = inPlane({
   id: 'move',
@@ -1398,8 +1396,8 @@ export const moveAction: Action & { requires: string[] } = inPlane({
    * `!== true` from `enabled()` as "this match is disabled — fall through
    * to the next-best one." Returning `ActionDisabledReason.SelectionRequired`
    * here caused every drag-on-selected-body to silently lose to lower
-   * specificity ambient bindings (notably `insertAction`'s bare drag),
-   * inserting phantom rects on every move attempt. The invoker self-guards
+   * specificity bindings (a shape tool's insert drag, inserting phantom
+   * rects on every move attempt). The invoker self-guards
    * on empty selection by returning `{}`, so a static `true` is correct
    * for the dispatcher gate; the command-palette enabled signal will need
    * a deps-aware predicate when that surface is wired up.

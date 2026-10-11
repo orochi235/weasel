@@ -1,9 +1,7 @@
 /**
  * `rotateAction` — ongoing Action descriptor for pointer-driven rotation.
  *
- * ## Status: REAL (unrotated-pivot path)
- *
- * Implements the core rotation math from `useRotate`:
+ * The rotation math:
  *   - `start`: captures origin poses + AABB centers; computes start pointer
  *     angle around the union center of selected nodes.
  *   - `onMove`: derives pointer angle delta from start, applies to each node's
@@ -16,14 +14,13 @@
  *     `scene.applyBatch` + `defaultCommitAdapter`.
  *   - `onEnd('cancel')`: no scene writes (scene never mutated during drag).
  *
- * ## Constraints vs `useRotate`
+ * ## Constraints
  *
  * - Reads and writes poses through the `poseDescriptor` dep; a pose whose
  *   descriptor has no `withRotation`, or reports `supportsRotation` false, is
  *   left alone.
  * - Behaviors (`opts.behaviors`) see the first rotated node's turned pose; a
  *   pose one returns from `onMove` sets the rotation for the whole selection.
- * - No overlay rendering — deferred to Phase 7 overlay surface.
  * - Shift-snap (15° quantum) is NOT wired in this phase — omitted deliberately
  *   to keep the invoker self-contained (would need to read shift from onMove ctx).
  *   TODO: thread shift from InvocationCtx.modifiers.shift into snap logic.
@@ -128,9 +125,6 @@ interface RotateScratch {
  *
  * Requires dep-schema entries: `selection`, `scene`.
  *
- * Implements the unrotated-pivot rotation path from `useRotate`.
- *
- * @see useRotate — the React hook this descriptor mirrors for the rect case.
  */
 export const rotateAction: Action & { requires: string[] } = inPlane({
   id: 'rotate',

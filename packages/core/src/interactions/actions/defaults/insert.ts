@@ -1,9 +1,7 @@
 /**
  * `insertAction` — ongoing Action descriptor for drag-to-insert.
  *
- * ## Status: REAL
- *
- * Implements the drag-rect insert logic from `useInsert`:
+ * The drag-rect insert:
  *   - `start`: validates the `insert` dep and records the drag start point.
  *   - `onMove`: tracks the live drag bounds (no scene writes).
  *   - `onEnd('commit')`: derives final bounds from drag.start + drag.current;
@@ -35,7 +33,7 @@
  * reads the result, so the live preview and the committed node can't
  * disagree.
  *
- * ## What this does NOT wire (vs `useInsert`)
+ * ## What this does not wire
  *
  * - `pointInsert` fallback for click / sub-threshold drags — not wired; a
  *   sub-threshold drag produces no insert.
@@ -54,13 +52,6 @@
  *
  * Consumer-defined insert kinds (kinds the kit doesn't know how to draw)
  * skip the preview but still commit normally on release.
- *
- * ## Relationship to `useInsert`
- *
- * `useInsert` calls `adapter.commitInsert(bounds)` which returns a node and
- * dispatches a `createInsertOp`. This descriptor delegates to `deps.insert.commit`
- * which encapsulates both factory + op dispatch in one call. This keeps the
- * dep contract thin and avoids importing `createInsertOp` into the descriptor.
  */
 
 import type { Action } from '@weasel-js/routing';
@@ -212,8 +203,8 @@ const GESTURE_KEY = 'gesture';
 
 /**
  * Shape the raw drag endpoints, in order: the line tool's Shift-constrain
- * (on the raw pointer, around the shaped start, so the locked angle survives), the `snap` dep, then each
- * behavior's `onMove`, each seeing the points the one before it returned.
+ * (on the raw pointer, around the shaped start, so the locked angle
+ * survives), the `snap` dep, then each behavior's `onMove`, each seeing the points the one before it returned.
  * Stored on `scratch.shaped`; `resolveEndpoints` reads it.
  */
 function shapeEndpoints(scratch: InsertScratch, modifiers: GestureContext<unknown>['modifiers']): void {
