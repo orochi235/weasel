@@ -22,8 +22,25 @@ export interface PlayOptions {
   when?: number;
   /** `stopKey(key)` stops every voice sharing this key. */
   cancelKey?: string;
+  /** The voice's source ended: it played out, or was stopped, faded, released
+   *  or stolen after it started. */
   onDone?: () => void;
+  /** The voice never got a source, so `onDone` will not be called. Called
+   *  after `play()` has returned, never from inside it. */
+  onDrop?: (reason: VoiceDropReason) => void;
 }
+
+/**
+ * Why a voice never played:
+ *
+ * - `locked` — the context was not running when it was played.
+ * - `disposed` — the engine was disposed, before the play or while it waited.
+ * - `stopped` — stopped, released or `stopKey`ed before it came due.
+ * - `unready` — its sound was not loaded in this engine when it came due.
+ * - `failed` — its node threw as it started.
+ * - `stale` — it came due while the context was suspended.
+ */
+export type VoiceDropReason = 'locked' | 'disposed' | 'stopped' | 'unready' | 'failed' | 'stale';
 
 /** Controls for one voice from `play()`. Safe to keep past the voice's end:
  *  every setter is then a no-op and `isPlaying()` is false. */

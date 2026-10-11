@@ -30,6 +30,11 @@ Browsers start an `AudioContext` suspended until a user gesture. The engine
 resumes on the first gesture automatically; `play()` before that drops the voice
 with a dev warning rather than queueing it.
 
+`onDone` is called when a voice's source ends: it played out, or was stopped,
+faded or stolen. A voice that never played calls `onDrop(reason)` instead, with
+`'locked'`, `'disposed'`, `'stopped'`, `'unready'`, `'failed'` or `'stale'`, so
+code chaining one sound after another hears about both.
+
 ## Notes and patterns
 
 `playNote` plays a synthesized voice — an `OscillatorNode` under an ADSR
@@ -124,7 +129,7 @@ bed.stop(800);
 ```
 
 It is a voice like the others: a `VoiceHandle`, the bus's inserts and voice
-pool, `cancelKey`, `onDone`, position and pan. What does not carry over:
+pool, `cancelKey`, `onDone`, `onDrop`, position and pan. What does not carry over:
 
 - **No `when`.** The element starts once it has buffered enough; the start is
   not sample-accurate and cannot be booked ahead on the audio clock.

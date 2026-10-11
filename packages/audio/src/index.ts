@@ -31,7 +31,7 @@ export {
 } from './patternPlayer';
 export { noiseSamples, partialPresets } from './synthVoice';
 export type {
-  AudioEngineOptions, PlayOptions, StreamOptions, VoiceHandle,
+  AudioEngineOptions, PlayOptions, StreamOptions, VoiceHandle, VoiceDropReason,
   NoteOptions, SynthPatch, Waveform, Glide, Inharmonic, SynthPartial, VoiceFilter,
   NoiseColor, NoiseOptions, NoisePatch,
 } from './types';

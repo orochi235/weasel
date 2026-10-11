@@ -782,11 +782,11 @@ Core five + Crop shipped. Remaining:
   Options: reject on a mismatch so the registry leaves the run on the SDF tier with its usual
   warning, or keep the fallback and warn once naming both spellings.
 
-- **(P3) Text layout: a tab has no layout of its own.** `layoutRuns` treats only U+0020 as a space,
-  so U+0009 goes to glyph lookup: an atlas has none, the canvas tier measures `'\t'` as whatever
-  canvas returns, and under the `'none'` policy it is zero-width with a "no glyph" warning. There
-  are no tab stops and a trailing tab does not hang. Wants a tab size on the layout options and an
-  advance to the next multiple of it.
+- **(P3) Text layout: only `layoutRuns` knows a tab, and nothing above it can set the tab size.**
+  `layoutRuns` runs a tab to the next stop (`LayoutRunsOpts.tabSize`, default 8 spaces, which is
+  also the edit overlay's CSS default). `TextStyle` has no `tabSize`, so every kit caller lays out
+  at 8, and the two other layouts that share `wrapLines`, `measureText` and `layoutMarkdown`, hang a
+  trailing tab but still measure one as a glyph.
 
 ---
 
@@ -1141,15 +1141,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   module, cross-thread messaging and a bundling story. Revisit if jank proves
   audible.
 
-- **(P3) audio: `onDone` fires for some endings of a voice and not others.** `PlayOptions.onDone`
-  (`packages/audio/src/types.ts`, undocumented) is called only from the source's `onended` in
-  `createAudioEngine.ts`, so it fires after a natural end, `stop()`, and a fade, and never when the
-  voice is dropped because the context is locked or the engine disposed, when it is stopped before
-  it came due, when its sound is not ready, when it fails to start, when it is stolen before
-  starting, or on the stale-backlog path after a resume. A consumer sequencing one sound after
-  another through it stalls silently on any of those. Ruled 2026-10-11: `onDone` means the source
-  ended, and a second signal reports a voice that never played. That leaves documenting `onDone`
-  that way and adding the second signal, raised from each of those paths.
+- **(P3) audio: a voice stolen or stopped inside the lookahead may report neither `onDone` nor
+  `onDrop`.** A voice gets its source up to a lookahead before the source sounds, and from then on
+  its ending is reported by the source's `onended` as `onDone`. Stolen or stopped in that window,
+  the source is stopped ahead of its own start time, and whether a browser raises `ended` for
+  that is read from the spec, not run. Needs a `*.browser.test.ts` that stops a source before its
+  start time; if `ended` does not come, teardown has to report those voices itself.
 
 ---
 

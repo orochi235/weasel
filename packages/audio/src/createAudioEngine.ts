@@ -13,8 +13,9 @@ import {
 } from './synthVoice';
 import type {
   AudioEngineOptions, Inharmonic, NoiseOptions, NoteOptions, PlayOptions, StreamOptions,
-  VoiceFilter, VoiceHandle, Waveform,
+  VoiceDropReason, VoiceFilter, VoiceHandle, Waveform,
 } from './types';
+import { createDropWarnings, reportDrop } from './voiceDrops';
 import { createVoicePool, type VoicePool } from './voicePool';
 
 /** A sound engine: named mix buses, a per-bus voice pool, lookahead
@@ -119,6 +120,7 @@ interface LiveVoice {
   slot: number | null;
   token: number;
   key?: string;
+  onDrop?: (reason: VoiceDropReason) => void;
   source: SourceLike | null;
   /** A synth voice's envelope gain, between its sources and the chain. */
   env: GainNode | null;
@@ -225,33 +227,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     return chain;
   };
 
-  let warnedLocked = false;
-  const warnLocked = (): void => {
-    if (warnedLocked) return;
-    warnedLocked = true;
-    console.warn(
-      '@weasel-js/audio: play() before the AudioContext was unlocked — the voice was dropped. ' +
-      'Browsers require a user gesture; call engine.unlock() from one, or wait for the ' +
-      'automatic gesture listener.',
-    );
-  };
-
-  let warnedDisposed = false;
-  const warnDisposed = (): void => {
-    if (warnedDisposed) return;
-    warnedDisposed = true;
-    console.warn('@weasel-js/audio: play() after dispose() — the voice was dropped.');
-  };
-
-  let warnedUnknownSound = false;
-  const warnUnknownSound = (id: string): void => {
-    if (warnedUnknownSound) return;
-    warnedUnknownSound = true;
-    console.warn(
-      `@weasel-js/audio: play() was handed sound "${id}", which this engine never loaded — ` +
-      'the voice was dropped. A handle belongs to the engine that produced it.',
-    );
-  };
+  const warn = createDropWarnings();
 
   // Resume on a user gesture, and keep listening until one takes. On touch a
   // tap grants activation at pointerup, touchend and click, not at pointerdown
@@ -281,7 +257,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       return;
     }
     suspendedSince = true;
-    warnedLocked = false;
+    warn.rearmLocked();
     armGestures();
   };
   ctx.addEventListener('statechange', onStateChange);
@@ -304,13 +280,14 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     poolGain(voice);
   };
 
-  const teardown = (voice: LiveVoice): void => {
+  const teardown = (voice: LiveVoice, reason: VoiceDropReason = 'stopped'): void => {
     // First, and never at a call site: teardown is what makes a voice dead, and
     // a queued callback that outlives it must find it cancelled. The steal path
     // has no other place to set this.
     voice.cancelled = true;
     if (!voice.playing && voice.source === null) return;
     voice.playing = false;
+    if (voice.source === null) reportDrop(voice.onDrop, reason);
     if (voice.source) {
       try { voice.source.stop(); } catch { /* already stopped */ }
       voice.source.disconnect();
@@ -334,6 +311,10 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     }
   };
 
+  const stopVoices = (reason: VoiceDropReason): void => {
+    for (const voice of [...live.values()]) teardown(voice, reason);
+  };
+
   const dropped = (id: number): VoiceHandle => ({
     id,
     stop: () => {}, release: () => {}, setGain: () => {}, setRate: () => {}, setDetune: () => {},
@@ -350,11 +331,13 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     const id = nextVoiceId++;
 
     if (disposed) {
-      warnDisposed();
+      warn.disposed();
+      reportDrop(common.onDrop, 'disposed');
       return dropped(id);
     }
     if (ctx.state !== 'running') {
-      warnLocked();
+      warn.locked();
+      reportDrop(common.onDrop, 'locked');
       return dropped(id);
     }
 
@@ -369,7 +352,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       : { gain: 1, pan: common.pan ?? 0 };
 
     const voice: LiveVoice = {
-      id, slots, slot: null, token: 0, key: common.cancelKey,
+      id, slots, slot: null, token: 0, key: common.cancelKey, onDrop: common.onDrop,
       source: null, env: null, retune: null, release: null, releasing: false,
       chain: takeChain(graph.input(busName), baseGain * spatial.gain, spatial.pan),
       baseGain, spatialGain: spatial.gain,
@@ -385,11 +368,11 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       // a backlog at once, which is what dropping a locked play avoids. A voice
       // played since the resume is no backlog, however early its `when`.
       if (bookedAt < staleFloor && scheduledWhen < staleFloor) {
-        teardown(voice);
+        teardown(voice, 'stale');
         return;
       }
       if (!starter.ready()) {
-        teardown(voice);
+        teardown(voice, 'unready');
         return;
       }
 
@@ -416,7 +399,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
         // Not back to the idle chains: whatever the starter built before it threw is still wired into this one.
         voice.chain?.gain.disconnect();
         voice.chain = null;
-        teardown(voice);
+        teardown(voice, 'failed');
         throw err;
       }
       source.onended = () => { teardown(voice); common.onDone?.(); };
@@ -605,7 +588,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       return launch(playOpts, {
         ready() {
           if (sounds.buffer(sound)) return true;
-          warnUnknownSound(sound.id);
+          warn.unknownSound(sound.id);
           return false;
         },
         start(voice, when) {
@@ -732,9 +715,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
         if (voice.key === key) teardown(voice);
       }
     },
-    stopAll() {
-      for (const voice of [...live.values()]) teardown(voice);
-    },
+    stopAll: () => stopVoices('stopped'),
     bus: graph.bus,
     busNames: graph.names,
     activeVoices(bus) {
@@ -765,7 +746,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     dispose() {
       if (disposed) return;
       disposed = true;
-      engine.stopAll();
+      stopVoices('disposed');
       idleChains.length = 0;
       scheduler.stop();
       scheduler.clear();
