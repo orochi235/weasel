@@ -227,14 +227,12 @@ Priority tags:
   the dragged node's landed pose minus its start pose, not the drag delta, so the fix is a pass over
   the committed ops rather than a call to `translateCommitOps`.
 
-- **(P2) `snapBackOrDelete` / `snapToContainer`: with several nodes dragged, only the first is acted
-  on.** Three nodes selected, `snapBackOrDelete({ onFreeRelease: 'delete' })`, drag far and release:
-  one node is deleted and the other two spring back, because `onEnd` returns ops for
-  `ctx.draggedIds[0]` alone and returning ops claims the whole commit
-  (`packages/core/src/interactions/actions/move/behaviors/snapBackOrDelete.ts`,
-  `snapToContainer.ts`). Ruled 2026-10-11: snap-back, delete-on-release, and snap-into-a-slot each
-  act on every dragged node. That leaves `onEnd` in both returning ops for every dragged id, which
-  for `snapToContainer` means a slot per node.
+- **(P3) `snapToContainer`: with several nodes dragged, the preview shows one slot.** The commit
+  gives each dragged node the slot `findTarget` answers for its id
+  (`packages/core/src/interactions/actions/move/behaviors/snapToContainer.ts`), but a move
+  behavior's `onMove` can return one pose, which `moveAction` turns into a translation of the whole
+  group. So the first node previews in its slot, and the others ride along at their offsets and
+  jump to their own slots on release. Needs `BehaviorResult` to carry a pose per dragged id.
 
 - **(P3) `cloneByAltDrag` and the `CloneBehavior` contract are unreachable.** `cloneAction.start`
   ignores `opts`, so no clone behavior ever runs, and the hook that consumed `CloneBehavior` is
@@ -1035,18 +1033,11 @@ intercepting the press that drags the body.
   makes `UseAnimatorOptions.setTimer` / `clearTimer` dead public options and replaces the pause
   bookkeeping in `CompositeHandle`.
 
-- **(P3) Timeline: events at the edges of a seek or a paused start fire inconsistently.** In
-  `packages/core/src/animation/timeline/createTimeline.ts`: a timeline created with `autoplay:
-  false` still fires a `t = 0` event on its first frame, because a paused entry is ticked at scale 0
-  and the first tick fires `(-Infinity, 0]`. After `seek(t)`, an event exactly at `t` never fires on
-  resume, since `seek` sets the previous playhead to `t` and the search is strictly after it, so
-  `seek(0); resume()` replays without the `t = 0` event that the first play and every loop wrap do
-  fire. And a frame long enough to skip whole laps fires every skipped lap's events under `loop: n`
-  but none under `loop: true`, where `booking.ts` says crossings fire "nothing of the laps in
-  between". Ruled 2026-10-11: an event sitting under the playhead fires when playback next advances
-  from there, and never while paused. That leaves a paused first tick firing nothing, and `seek(t)`
-  no longer swallowing the event at `t` on resume. The skipped-laps difference was not part of the
-  ruling and is still open.
+- **(P3) Timeline: a frame that skips whole laps fires them under `loop: n` and not under
+  `loop: true`.** In `packages/core/src/animation/timeline/createTimeline.ts`, a frame long enough
+  to skip whole laps fires every skipped lap's events under `loop: n` but none under `loop: true`,
+  where `booking.ts` says crossings fire "nothing of the laps in between". Which of the two is
+  meant is undecided.
 
 - **(P3) `momentum`: a coast is not stopped by undo or by deleting its node.** A new drag of the
   coasting node now stops the coast, but an undo or a delete while it runs leaves the decay writing

@@ -144,6 +144,15 @@ describe('event booking across transport changes', () => {
     ]);
   });
 
+  it('books the event a seek landed on', () => {
+    const r = withEvents({ duration: 1000 }, [0, 500]);
+    r.frame(0);
+    r.frame(600);
+    r.handle.seek(500);
+    r.frame(616);
+    expect(r.whens()).toEqual([START, START + 600, START + 616]);
+  });
+
   it('retracts on pause and rebooks against the clock on resume', () => {
     const r = withEvents({ duration: 1000 }, [80]);
     r.frame(0);

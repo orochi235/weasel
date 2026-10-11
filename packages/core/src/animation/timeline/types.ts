@@ -56,7 +56,9 @@ export interface TimelineEvent {
 }
 
 /** A track of edge crossings, in forward playback only — a `seek` neither
- *  fires nor books the span it skips. */
+ *  fires nor books the span it skips. An event the playhead is sitting on,
+ *  after a seek or at the start, fires when playback next advances from there
+ *  and never while paused. */
 export interface EventTrack {
   kind: 'event';
   label?: string;
@@ -116,7 +118,8 @@ export interface TimelineOptions extends NestedTimeline {
 
 /** What `animator.timeline` returns: playback control plus live editing. */
 export interface TimelineHandle extends AnimationHandle {
-  /** Move the playhead. Never fires event tracks, at any depth. */
+  /** Move the playhead. Fires nothing itself, at any depth; an event exactly
+   *  at `t` fires when playback next advances. */
   seek(t: number): void;
   /** Change the loop policy. `true` loops forever, `n` allows n more laps,
    *  `false` stops at `duration`. Sets policy only — a timeline already parked

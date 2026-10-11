@@ -1,5 +1,5 @@
 import type { AnimationHandle } from '../types';
-import { createBooker, firstAfter } from './booking';
+import { createBooker, firstAfter, firstAtOrAfter } from './booking';
 import { sampleTrack } from './sampleTrack';
 import type { EventTrack, SampledTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
@@ -67,6 +67,10 @@ export function createTimeline(
   let lastVirtual = 0;
   let playhead = 0;
   let prevPlayhead = -Infinity;
+  /** A seek leaves the event it landed on unfired, so the next span starts at it. */
+  let prevOpen = false;
+  /** A held playhead fires nothing: what it sits on waits for playback to move. */
+  let held = false;
   let done = false;
   let live = true;
   let cancelled = false;
@@ -112,12 +116,13 @@ export function createTimeline(
 
   // Track indexes from the root down to the track being fired, for `report`.
   const path: number[] = [];
-  const fireEvents = (tracks: Track[], from: number, to: number): void => {
+  const fireEvents = (tracks: Track[], from: number, to: number, fromOpen: boolean): void => {
     for (let k = 0; k < tracks.length; k += 1) {
       const track = tracks[k];
       if (track.kind === 'event') {
         const end = firstAfter(track.events, to);
-        for (let i = firstAfter(track.events, from); i < end; i += 1) {
+        const first = (fromOpen ? firstAtOrAfter : firstAfter)(track.events, from);
+        for (let i = first; i < end; i += 1) {
           const ev = track.events[i];
           ev.fire?.(to - ev.t);
           if (report?.watched) {
@@ -132,7 +137,7 @@ export function createTimeline(
         }
       } else if (track.kind === 'timeline') {
         path.push(k);
-        fireEvents(track.timeline.tracks, from - track.at, to - track.at);
+        fireEvents(track.timeline.tracks, from - track.at, to - track.at, fromOpen);
         path.pop();
       }
     }
@@ -141,14 +146,17 @@ export function createTimeline(
   // Flush the outgoing pass's tail before re-arming, or an event between the
   // last tick and `duration` is dropped whenever a frame straddles the seam.
   const onWrap = (): void => {
-    fireEvents(opts.tracks, prevPlayhead, duration);
+    if (!held) fireEvents(opts.tracks, prevPlayhead, duration, prevOpen);
     prevPlayhead = -Infinity;
+    prevOpen = false;
     if (report?.watched) report.lap(lap);
   };
 
   const tick = (virtualNow: number, scale?: number): boolean => {
     lastVirtual = virtualNow;
     playhead = virtualNow + offset;
+    const rate = scale ?? (base.isPaused() ? 0 : base.timeScale());
+    held = rate === 0;
 
     // A far seek can skip a billion laps of a short duration, so an endless
     // loop takes them in one modulo rather than one iteration each.
@@ -175,9 +183,12 @@ export function createTimeline(
 
     // Sampled before fired, so a handler reads the current frame's values.
     applySampled(opts.tracks, playhead);
-    fireEvents(opts.tracks, prevPlayhead, playhead);
-    prevPlayhead = playhead;
-    booker?.tick(virtualNow, scale ?? (base.isPaused() ? 0 : base.timeScale()));
+    if (!held) {
+      fireEvents(opts.tracks, prevPlayhead, playhead, prevOpen);
+      prevPlayhead = playhead;
+      prevOpen = false;
+    }
+    booker?.tick(virtualNow, rate);
 
     if (finished && !done) { done = true; opts.onDone?.(); }
     // Re-read: `onDone` may have seeked back or extended the duration, and
@@ -231,6 +242,7 @@ export function createTimeline(
       offset = t - lastVirtual;
       playhead = t;
       prevPlayhead = t;
+      prevOpen = true;
       booker?.seek();
       rearm();
     },

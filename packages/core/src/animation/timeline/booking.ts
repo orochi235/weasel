@@ -22,6 +22,13 @@ export function firstAfter(events: EventTrack['events'], t: number): number {
   return lo;
 }
 
+/** Index of the first event at or after `t`. */
+export function firstAtOrAfter(events: EventTrack['events'], t: number): number {
+  let i = firstAfter(events, t);
+  while (i > 0 && events[i - 1].t === t) i -= 1;
+  return i;
+}
+
 /** The timeline state a booker reads. `lap` counts wraps since creation and is
  *  never reset, so a (lap, root time) pair names one crossing for good. */
 export interface BookerHost {
@@ -47,8 +54,9 @@ export interface Booker {
   rearm(): void;
 }
 
-/** Every event at root time `<= r` in lap `lap` has been taken. */
-interface Cursor { lap: number; r: number }
+/** Every event at root time `<= r` in lap `lap` has been taken; with `open`,
+ *  only those before `r`, which is where a seek leaves the cursor. */
+interface Cursor { lap: number; r: number; open?: boolean }
 
 interface Booking {
   event: TimelineEvent;
@@ -106,7 +114,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     for (;;) {
       const lapStart = (c.lap - lap) * duration;
       if (lapStart > horizon) break;
-      const i = firstAfter(events, c.r - at);
+      const i = (c.open ? firstAtOrAfter : firstAfter)(events, c.r - at);
       if (i >= events.length || at + events[i].t > duration) {
         if (c.lap >= lastLap) break;
         // A frame that skipped whole laps books the outgoing lap's tail and
@@ -188,7 +196,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     seek() {
       bookings = [];
       cursors.clear();
-      start = playheadCursor();
+      start = { ...playheadCursor(), open: true };
     },
     rearm() {
       est = null;
