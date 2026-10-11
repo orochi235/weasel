@@ -56,11 +56,19 @@ export function ListEditor<T>({
   maxItems = Infinity,
 }: ListEditorProps<T>) {
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
-  const [focus, setFocus] = useState<number | null>(null);
+  const removes = useRef<(HTMLButtonElement | null)[]>([]);
+  const add = useRef<HTMLButtonElement | null>(null);
+  // `removed`: the entry that held focus is gone, so focus has to land somewhere.
+  const [focus, setFocus] = useState<{ at: number; removed: boolean } | null>(null);
 
   useEffect(() => {
     if (focus === null) return;
-    inputs.current[focus]?.focus();
+    const input = inputs.current[focus.at];
+    if (input) input.focus();
+    else if (focus.removed) {
+      const beside = removes.current[focus.at];
+      (beside && !beside.disabled ? beside : add.current)?.focus();
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- consumes a one-shot focus request once its input has committed
     setFocus(null);
   }, [focus]);
@@ -69,12 +77,12 @@ export function ListEditor<T>({
     if (value.length >= maxItems) return;
     // The overloads leave `newEntry` out only for a list of strings.
     onChange([...value.slice(0, at), newEntry ? newEntry() : ('' as T), ...value.slice(at)]);
-    setFocus(at);
+    setFocus({ at, removed: false });
   };
   const remove = (at: number): void => {
     if (value.length <= minItems) return;
     onChange(value.filter((_, i) => i !== at));
-    if (value.length > 1) setFocus(Math.max(0, at - 1));
+    setFocus({ at: Math.max(0, at - 1), removed: true });
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>, at: number): void => {
     if (e.key === 'Enter') {
@@ -114,6 +122,9 @@ export function ListEditor<T>({
                 />
               )}
               <CloseButton
+                ref={(el) => {
+                  removes.current[i] = el;
+                }}
                 ariaLabel={`Remove ${name(i)}`}
                 disabled={value.length <= minItems}
                 onClick={() => remove(i)}
@@ -123,7 +134,7 @@ export function ListEditor<T>({
         </ul>
       )}
       <div className={s.actions}>
-        <Button size="sm" disabled={value.length >= maxItems} onClick={() => insert(value.length)}>
+        <Button ref={add} size="sm" disabled={value.length >= maxItems} onClick={() => insert(value.length)}>
           {addLabel}
         </Button>
       </div>

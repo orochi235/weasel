@@ -76,4 +76,41 @@ describe('ListEditor', () => {
     expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Remove Glob 1' })).toBeDisabled();
   });
+
+  function Numbers({ initial }: { initial: number[] }) {
+    const [value, setValue] = useState(initial);
+    return (
+      <ListEditor<number>
+        aria-label="Phase"
+        value={value}
+        onChange={setValue}
+        newEntry={() => 0}
+        renderEntry={(entry, _set, name) => <output aria-label={name}>{entry}</output>}
+      />
+    );
+  }
+
+  const press = (name: string): void => {
+    const button = screen.getByRole('button', { name });
+    button.focus();
+    fireEvent.click(button);
+  };
+
+  it('moves focus to the entry before one removed from a list that draws its own entries', () => {
+    render(<Numbers initial={[1, 2]} />);
+    press('Remove Phase 2');
+    expect(screen.getByRole('button', { name: 'Remove Phase 1' })).toHaveFocus();
+  });
+
+  it('moves focus to the add button when the last entry is removed', () => {
+    render(<Controlled initial={['a']} />);
+    press('Remove Glob 1');
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
+  });
+
+  it('leaves focus on the add button after adding to a list that draws its own entries', () => {
+    render(<Numbers initial={[1]} />);
+    press('Add');
+    expect(screen.getByRole('button', { name: 'Add' })).toHaveFocus();
+  });
 });
