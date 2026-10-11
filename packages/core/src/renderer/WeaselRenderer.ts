@@ -45,6 +45,7 @@ import {
 import { PaintScratch } from './paintScratch';
 import { GLMeshCache } from './cache/GLMeshCache';
 import { GLTextureCache } from './cache/GLTextureCache';
+import { textureRegistry } from './textures/registerTexture';
 import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
 import { GradientRampAtlas } from './cache/GradientRampAtlas';
 import { GroupState } from './state/GroupState';
@@ -598,6 +599,7 @@ export class WeaselRenderer {
     // callback directly was racy and caused mid-draw crashes.
     this.meshCache.drainPendingDeletes();
     this.imageCache.drainPendingDeletes();
+    this.textureCache.sweep(textureRegistry);
     this.refreshPrograms();
     // New frame: refill the dynamic-glyph synchronous bake budget.
     resetBakeBudget(this.bakeBudget);

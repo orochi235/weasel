@@ -85,4 +85,53 @@ describe('GLTextureCache', () => {
     expect(cache.has('a')).toBe(false);
     expect(cache.has('b')).toBe(false);
   });
+
+  describe('a registered texture', () => {
+    const other = { width: 4, height: 4, data: new Uint8ClampedArray(64) } as ImageData;
+    const live = (ids: string[], version: number) => ({
+      getVersion: () => version,
+      has: (id: string) => ids.includes(id),
+    });
+
+    it('uploads its pixels again, into the same texture, when its source changes', () => {
+      const { gl, calls, reset } = makeGLRecorder();
+      const cache = new GLTextureCache(gl);
+      cache.uploadRegistered('tex_1', fakeImage, 'repeat');
+      reset();
+      cache.uploadRegistered('tex_1', fakeImage, 'repeat');
+      expect(calls.filter((c) => c.name === 'texImage2D').length).toBe(0);
+      cache.uploadRegistered('tex_1', other, 'repeat');
+      const uploads = calls.filter((c) => c.name === 'texImage2D');
+      expect(uploads.length).toBe(1);
+      expect(uploads[0].args.at(-1)).toBe(other);
+      expect(calls.filter((c) => c.name === 'createTexture' || c.name === 'deleteTexture').length).toBe(0);
+    });
+
+    it('is deleted by a sweep once the registry no longer has its id', () => {
+      const { gl, calls, reset } = makeGLRecorder();
+      const cache = new GLTextureCache(gl);
+      cache.uploadRegistered('tex_1', fakeImage);
+      cache.uploadRegistered('tex_2', fakeImage);
+      cache.upload('atlas', fakeImage);
+      const made = calls.filter((c) => c.name === 'createTexture').map((c) => c.result);
+      reset();
+      cache.sweep(live(['tex_2'], 1));
+      const deleted = calls.filter((c) => c.name === 'deleteTexture');
+      expect(deleted.map((c) => c.args[0])).toEqual([made[0]]);
+      expect(cache.has('tex_1')).toBe(false);
+      expect(cache.has('tex_2')).toBe(true);
+      // Never in the registry, so never the sweep's to judge.
+      expect(cache.has('atlas')).toBe(true);
+    });
+
+    it('is not walked again until the registry changes', () => {
+      const { gl } = makeGLRecorder();
+      const cache = new GLTextureCache(gl);
+      cache.uploadRegistered('tex_1', fakeImage);
+      cache.sweep(live(['tex_1'], 1));
+      let asked = 0;
+      cache.sweep({ getVersion: () => 1, has: () => { asked++; return true; } });
+      expect(asked).toBe(0);
+    });
+  });
 });

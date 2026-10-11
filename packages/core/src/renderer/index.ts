@@ -60,7 +60,9 @@ export {
   type ShaderProgramHandle,
   type ShaderUniform,
 } from './shaders/registerProgram';
-export { registerTexture, textureRegistry, type TextureEntry, type TextureHandle } from './textures/registerTexture';
+export {
+  registerTexture, unregisterTexture, textureRegistry, type TextureEntry, type TextureHandle,
+} from './textures/registerTexture';
 export { registerEffect, type Effect } from './effects/types';
 export { blur, vignette } from './effects/builtins';
 export { EFFECT_VERT_SRC, EFFECT_KIT_UNIFORMS } from './effects/effectPrelude';

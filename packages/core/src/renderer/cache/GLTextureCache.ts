@@ -18,9 +18,18 @@ type TexSource = HTMLImageElement | ImageBitmap | ImageData | HTMLCanvasElement;
  *  tile of any size tiles correctly. */
 export type TextureWrap = 'clamp' | 'repeat';
 
+/** The part of the texture registry a sweep reads. */
+export interface RegisteredTextureIds {
+  getVersion(): number;
+  has(id: string): boolean;
+}
+
 export class GLTextureCache {
   private readonly map = new Map<string, WebGLTexture>();
   private readonly wraps = new Map<string, TextureWrap>();
+  /** The source each registry-backed id was last uploaded from. */
+  private readonly registered = new Map<string, TexSource>();
+  private sweptVersion = -1;
 
   constructor(private readonly gl: WebGL2RenderingContext) {}
 
@@ -58,6 +67,38 @@ export class GLTextureCache {
     this.map.set(id, tex);
     this.wraps.set(id, wrap);
     return id;
+  }
+
+  /** `upload` for an id from the texture registry, whose image can be replaced
+   *  under the same id: a changed source sends its pixels again. */
+  uploadRegistered(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
+    const cached = this.map.get(id);
+    if (cached && this.registered.get(id) !== source) {
+      const gl = this.gl;
+      gl.bindTexture(gl.TEXTURE_2D, cached);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource);
+      gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+    this.registered.set(id, source);
+    return this.upload(id, source, wrap);
+  }
+
+  /**
+   * Delete the texture of every registry-backed id the registry has dropped.
+   * The renderer calls this at the top of `render()`, before any draw, so a
+   * texture is never deleted under a draw that has it bound.
+   */
+  sweep(registry: RegisteredTextureIds): void {
+    const version = registry.getVersion();
+    if (version === this.sweptVersion) return;
+    this.sweptVersion = version;
+    for (const id of this.registered.keys()) {
+      if (registry.has(id)) continue;
+      this.gl.deleteTexture(this.map.get(id) ?? null);
+      this.map.delete(id);
+      this.wraps.delete(id);
+      this.registered.delete(id);
+    }
   }
 
   private applyWrap(id: string, tex: WebGLTexture, wrap: TextureWrap): void {
@@ -124,5 +165,6 @@ export class GLTextureCache {
     }
     this.map.clear();
     this.wraps.clear();
+    this.registered.clear();
   }
 }

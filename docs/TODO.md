@@ -476,15 +476,6 @@ Core five + Crop shipped. Remaining:
   undo horizon, or a byte bound on the cache. A bound has to spare what the current frame draws: a
   scene showing more than the bound would otherwise evict and reload on every paint.
 
-- **(P3) Patterns: `resolvePatternSpec` registers a GL texture per distinct spec and never frees
-  one.** `packages/core/src/features/patterns/resolveSpec.ts` documents session lifetime, but a
-  color control scrubbing a hatch fill's `color` makes each intermediate color a new spec and a new
-  texture. Bounding the map (least recently used out, unregistering the evicted handle) is the
-  option; whether draw's pattern controls commit live or on release has not been checked. A bound
-  has to spare every handle a live draw command still holds: `registerTexture` has no unregister,
-  each renderer's `GLTextureCache` keeps its own copy by id, and a scene with more distinct specs
-  than the bound would draw the evicted ones blank ("pattern TextureHandle not registered").
-
 - **(P2) Renderer: a translucent `ImageBitmap` is multiplied by its alpha twice.** A
   half-transparent white bitmap drawn with an image command onto a cleared canvas reads back as
   `(64, 64, 64, 128)` in headless Chromium where `(128, 128, 128, 128)` is correct, whether the

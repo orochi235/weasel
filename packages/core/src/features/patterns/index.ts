@@ -14,6 +14,7 @@
 
 import { registerTexture } from '../../renderer/textures/registerTexture';
 import type { TextureHandle } from '../../renderer/textures/registerTexture';
+import { rasterizeTile } from './rasterizeTile';
 
 /** Options for `createTilePattern`. */
 export interface TilePatternOpts {
@@ -31,31 +32,6 @@ export interface TilePatternOpts {
  * semantics as the prior `CanvasPattern`-based implementation).
  */
 export function createTilePattern(opts: TilePatternOpts): TextureHandle | null {
-  // Prefer OffscreenCanvas; fall back to <canvas> for environments without it
-  // (tests in jsdom may need that fallback — try OffscreenCanvas first).
-  let off: OffscreenCanvas | HTMLCanvasElement;
-  try {
-    off = new OffscreenCanvas(opts.size, opts.size);
-  } catch {
-    if (typeof document === 'undefined') return null;
-    const c = document.createElement('canvas');
-    c.width = opts.size;
-    c.height = opts.size;
-    off = c;
-  }
-  const oc = off.getContext('2d') as CanvasRenderingContext2D | null;
-  if (!oc) return null;
-  opts.draw(oc, opts.size);
-
-  // Convert to ImageBitmap so registerTexture can store it.
-  // OffscreenCanvas.transferToImageBitmap() is the fast path; the
-  // synchronous path requires OffscreenCanvas. If we got here without it,
-  // the env doesn't support OffscreenCanvas — fail gracefully.
-  let bitmap: ImageBitmap;
-  if (typeof (off as OffscreenCanvas).transferToImageBitmap === 'function') {
-    bitmap = (off as OffscreenCanvas).transferToImageBitmap();
-  } else {
-    return null;
-  }
-  return registerTexture(bitmap);
+  const bitmap = rasterizeTile(opts);
+  return bitmap ? registerTexture(bitmap) : null;
 }

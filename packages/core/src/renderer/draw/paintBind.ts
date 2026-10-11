@@ -65,7 +65,7 @@ export function bindPattern(
   if (!inverse) return null;
   const tileSpace = patternTileSpace(inverse, fill.origin ?? { x: 0, y: 0 }, fill.transform);
   if (!tileSpace) return null;
-  ctx.textureCache.upload(tex.id, entry.source, 'repeat');
+  ctx.textureCache.uploadRegistered(tex.id, entry.source, 'repeat');
 
   // A path fill mesh carries a_position only, so the tile coordinate is
   // recovered per fragment from the screen position — the same route

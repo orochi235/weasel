@@ -3,6 +3,9 @@ import {
   registerTexture,
   textureRegistry,
   getTexture,
+  unregisterTexture,
+  registerTextureAs,
+  ownTextureIds,
   _resetTextureRegistryForTests,
 } from './registerTexture';
 
@@ -45,5 +48,50 @@ describe('registerTexture', () => {
   it('ids are stable — same handle object as returned', () => {
     const h = registerTexture(makeImageStub());
     expect(getTexture(h.id)).not.toBeNull();
+  });
+
+  it('unregisterTexture drops the entry and reports whether there was one', () => {
+    const h = registerTexture(makeImageStub());
+    expect(unregisterTexture(h)).toBe(true);
+    expect(getTexture(h.id)).toBeNull();
+    expect(textureRegistry.has(h.id)).toBe(false);
+    expect(unregisterTexture(h)).toBe(false);
+  });
+});
+
+describe('an owned texture id', () => {
+  beforeEach(() => _resetTextureRegistryForTests());
+
+  it('is rebuilt by its owner when looked up after being unregistered', () => {
+    const revived = makeImageStub();
+    const asked: string[] = [];
+    const release = ownTextureIds('owned-a:', {
+      revive: (id) => { asked.push(id); registerTextureAs(id, revived); },
+    });
+    const h = registerTextureAs('owned-a:1', makeImageStub());
+    unregisterTexture(h);
+    expect(getTexture(h.id)?.source).toBe(revived);
+    expect(asked).toEqual(['owned-a:1']);
+    expect(textureRegistry.has(h.id)).toBe(true);
+    release();
+  });
+
+  it('stays missing when its owner cannot rebuild it, and when nobody owns it', () => {
+    const release = ownTextureIds('owned-b:', { revive: () => {} });
+    expect(getTexture('owned-b:1')).toBeNull();
+    expect(getTexture('stranger:1')).toBeNull();
+    release();
+  });
+
+  it('tells its owner about every lookup that finds it', () => {
+    const touched: string[] = [];
+    const release = ownTextureIds('owned-c:', { revive: () => {}, touched: (id) => touched.push(id) });
+    registerTextureAs('owned-c:1', makeImageStub());
+    registerTexture(makeImageStub());
+    getTexture('owned-c:1');
+    getTexture('owned-c:1');
+    getTexture('tex_1');
+    expect(touched).toEqual(['owned-c:1', 'owned-c:1']);
+    release();
   });
 });

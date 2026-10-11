@@ -3,22 +3,36 @@
  * half of a pattern paint and the GL texture that paints it.
  *
  * Memoized on the spec's field values, so identical specs across nodes share
- * one texture and a re-render never re-rasterizes. Entries live for the
- * session, matching `registerTexture`'s own lifetime.
+ * one texture and a re-render never re-rasterizes. The memo keeps the
+ * `PATTERN_TILE_CACHE_LIMIT` tiles most recently resolved or drawn and
+ * unregisters the rest. A handle outliving its tile still draws: its id is
+ * the spec, and the texture registry asks this module to rebuild it.
  */
 
 import type { CommandFill, FillStyle, PosedFill, TilePatternSpec } from '@weasel-js/paint';
-import type { TextureHandle } from '../../renderer/textures/registerTexture';
-import { hatch, crosshatch, dots, chunks } from './patterns-builtin';
+import {
+  ownTextureIds, registerTextureAs, textureRegistry, unregisterTexture,
+  type TextureHandle,
+} from '../../renderer/textures/registerTexture';
+import { rasterizeTile } from './rasterizeTile';
+import { drawTileShapes, tileGeometry, tileSize } from './tileGeometry';
 
+/** How many built-in tiles stay rasterized at once. A scene drawing more
+ *  distinct specs than this in one frame rebuilds the overflow every frame. */
+export const PATTERN_TILE_CACHE_LIMIT = 256;
+
+const ID_PREFIX = 'pattern:';
+
+/** Texture id → handle, least recently used first. */
 const cache = new Map<string, TextureHandle | null>();
 
-/** Stable key across key order — specs arriving from JSON have no guaranteed
+/** Stable across key order — specs arriving from JSON have no guaranteed
  *  field order, and two orderings must not rasterize two tiles. */
-function specKey(spec: TilePatternSpec): string {
-  const keys = Object.keys(spec).sort();
+function specId(spec: TilePatternSpec): string {
   const bag = spec as unknown as Record<string, unknown>;
-  return keys.map((k) => `${k}=${String(bag[k])}`).join('&');
+  const sorted: Record<string, unknown> = {};
+  for (const k of Object.keys(bag).sort()) sorted[k] = bag[k];
+  return ID_PREFIX + JSON.stringify(sorted);
 }
 
 /** @internal Test helper — do not call from product code. */
@@ -31,33 +45,59 @@ export function _resetPatternSpecCacheForTests(): void {
  * can't be rasterized — no `OffscreenCanvas`, same as `createTilePattern`.
  */
 export function resolvePatternSpec(spec: TilePatternSpec): TextureHandle | null {
-  const key = specKey(spec);
-  const hit = cache.get(key);
-  if (hit !== undefined) return hit;
-
-  const built = buildTile(spec);
-  cache.set(key, built);
-  return built;
-}
-
-function buildTile(spec: TilePatternSpec): TextureHandle | null {
-  const { color, size } = spec;
-  switch (spec.tile) {
-    case 'hatch':
-      return hatch({ color, size, lineWidth: spec.lineWidth });
-    case 'crosshatch':
-      return crosshatch({ color, size, lineWidth: spec.lineWidth });
-    case 'dots':
-      return dots({ color, size, radius: spec.radius });
-    case 'chunks':
-      return chunks({
-        color, size, bg: spec.bg,
-        density: spec.density, chunkSize: spec.chunkSize, seed: spec.seed,
-      });
-    default:
-      return null;
+  const id = specId(spec);
+  const hit = cache.get(id);
+  if (hit !== undefined) {
+    markUsed(id);
+    return hit;
   }
+  return build(id, spec);
 }
+
+function markUsed(id: string): void {
+  const hit = cache.get(id);
+  if (hit === undefined) return;
+  cache.delete(id);
+  cache.set(id, hit);
+}
+
+function build(id: string, spec: TilePatternSpec): TextureHandle | null {
+  const bitmap = TILES.has(spec.tile)
+    ? rasterizeTile({
+      size: tileSize(spec),
+      draw: (oc) => drawTileShapes(oc, tileGeometry(spec)),
+    })
+    : null;
+  const handle = bitmap ? registerTextureAs(id, bitmap) : null;
+  cache.delete(id);
+  cache.set(id, handle);
+  while (cache.size > PATTERN_TILE_CACHE_LIMIT) evict(cache.keys().next().value!);
+  return handle;
+}
+
+const TILES: ReadonlySet<string> = new Set<TilePatternSpec['tile']>([
+  'hatch', 'crosshatch', 'dots', 'chunks',
+]);
+
+function evict(id: string): void {
+  cache.delete(id);
+  const source = textureRegistry.get(id)?.source;
+  unregisterTexture({ id });
+  if (source && 'close' in source) source.close();
+}
+
+function revive(id: string): void {
+  let spec: unknown;
+  try {
+    spec = JSON.parse(id.slice(ID_PREFIX.length));
+  } catch {
+    return;
+  }
+  if (typeof spec !== 'object' || spec === null || !('tile' in spec)) return;
+  build(id, spec as TilePatternSpec);
+}
+
+ownTextureIds(ID_PREFIX, { revive, touched: markUsed });
 
 /** Whether a pattern payload is a spec rather than an already-built handle. */
 export function isPatternSpec(
