@@ -331,6 +331,19 @@ describe('keyboard', () => {
     }
   });
 
+  it('moves focus to the band that absorbed a merged one', () => {
+    const { bodies, onSelect, rerender, onChange } = setup({ selectedIndex: 2 });
+    bodies()[2].focus();
+    onSelect.mockClear();
+    fireEvent.keyDown(bodies()[2], { key: 'x' });
+    expect(document.activeElement).toBe(bodies()[1]);
+    expect(onSelect.mock.calls).toEqual([[1]]);
+    rerender(
+      <BandEditor value={onChange.mock.calls[0][0]} min={MIN} max={MAX} scale="linear" onChange={onChange} selectedIndex={1} />,
+    );
+    expect(document.activeElement).toBe(bodies()[1]);
+  });
+
   it('leaves the merge key alone when it belongs to a control inside a band', () => {
     const { container, onChange } = setup({
       selectedIndex: 2,

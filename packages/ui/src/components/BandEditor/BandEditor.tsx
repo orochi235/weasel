@@ -291,8 +291,13 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     const next = mergeBand(committed, selectedIndex);
     if (next === committed) return;
     e.preventDefault();
+    const root = e.currentTarget;
+    const merged = root.querySelector(`[data-band-index="${selectedIndex}"]`);
+    const absorbing = root.querySelector<HTMLElement>(`[data-band-index="${selectedIndex - 1}"]`);
     onChange(next);
-    onSelect?.(selectedIndex - 1);
+    // Focusing a band selects it, so a merged band that held focus hands over both at once.
+    if (absorbing && merged?.contains(root.ownerDocument.activeElement)) absorbing.focus();
+    else onSelect?.(selectedIndex - 1);
   };
 
   return (
