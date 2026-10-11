@@ -342,7 +342,7 @@ export function valuePathOf(root: SchemaRoot, path: string): string {
   return keys.filter((_, i) => !isHeading(i)).join('.');
 }
 
-type ValueMove = readonly [from: string, to: string];
+export type ValueMove = readonly [from: string, to: string];
 
 /** The value paths a node going from tree path `from` to `to` takes along; `null` for a section, whose key is no part of one. */
 function valueMove(root: SchemaRoot, from: string, to: string): ValueMove | null {
@@ -377,7 +377,7 @@ function rebased(path: string, moves: ReadonlyArray<readonly [from: string, to: 
 }
 
 /** `root` with every value path a leaf holds to another one followed through `moves`: an alias's `of`, a pair's `with`, and a `field` leaf's default. */
-function rebaseValuePaths<R extends SchemaRoot>(root: R, moves: ReadonlyArray<ValueMove | null>): R {
+export function rebaseValuePaths<R extends SchemaRoot>(root: R, moves: ReadonlyArray<ValueMove | null>): R {
   const live = moves.filter((m): m is ValueMove => m !== null && m[0] !== m[1]);
   if (live.length === 0) return root;
   return mapLeaves(root, (leaf) => {
