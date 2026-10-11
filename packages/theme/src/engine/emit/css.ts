@@ -1,5 +1,6 @@
 import { enumerateSelections, fullSelection, pickAll, type AxisDefs, type Selection } from '../../axes.ts';
 import { tokenAt } from '../../chainTokens.ts';
+import { mixAlpha } from '../../dtcg/color.ts';
 import { resolveTokens } from '../../dtcg/resolve.ts';
 import type { RawToken } from '../../dtcg/types.ts';
 import type { BakedTheme } from '../bake.ts';
@@ -29,7 +30,7 @@ export function cssValue(name: string, token: RawToken): string {
   const target = refTarget(token);
   if (target === null) return resolveTokens({ [name]: token })[name];
   if (token.alpha === undefined) return `var(--wzl-${target})`;
-  return `color-mix(in srgb, var(--wzl-${target}) ${Math.round(token.alpha * 100)}%, transparent)`;
+  return mixAlpha(`var(--wzl-${target})`, token.alpha);
 }
 
 /** Non-empty subsets of the axes, in declaration order, smallest first. */

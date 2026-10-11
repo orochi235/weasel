@@ -300,3 +300,11 @@ describe('emitThemes', () => {
     expect(selection('mode=light')).toContain(`'--wzl-backdrop': "none"`);
   });
 });
+
+describe('cssValue', () => {
+  it('writes a referenced token\'s alpha at the precision the resolved record keeps', () => {
+    expect(cssValue('hairline', { type: 'color', value: '{fg}', alpha: 0.125 })).toBe('color-mix(in srgb, var(--wzl-fg) 12.5%, transparent)');
+    expect(cssValue('hairline', { type: 'color', value: '{fg}', alpha: 0.045 })).toBe('color-mix(in srgb, var(--wzl-fg) 4.5%, transparent)');
+    expect(cssValue('hairline', { type: 'color', value: '{fg}', alpha: 0.18 })).toBe('color-mix(in srgb, var(--wzl-fg) 18%, transparent)');
+  });
+});

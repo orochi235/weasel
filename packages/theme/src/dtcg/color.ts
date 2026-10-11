@@ -9,9 +9,14 @@
  */
 export function withAlpha(color: string, alpha: number): string {
   const rgba = parseRgba(color.trim());
-  if (!rgba) return `color-mix(in srgb, ${color.trim()} ${round(alpha * 100, 4)}%, transparent)`;
+  if (!rgba) return mixAlpha(color.trim(), alpha);
   const [r, g, b, a] = rgba;
   return `rgba(${r}, ${g}, ${b}, ${round(a * alpha, 3)})`;
+}
+
+/** `color` at `alpha` as a `color-mix()` with transparent, for a color only the browser can resolve. */
+export function mixAlpha(color: string, alpha: number): string {
+  return `color-mix(in srgb, ${color} ${round(alpha * 100, 4)}%, transparent)`;
 }
 
 /** A resolved color with its alpha replaced by `alpha`, as `rgb(from c r g b / alpha)` computes it. */
