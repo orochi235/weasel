@@ -146,15 +146,20 @@ function SectionPreview({ schema, renderers, onDefaults }: {
   renderers?: Record<string, PropertyRenderer>;
   onDefaults(edits: readonly DefaultEdit[]): void;
 }) {
-  const scene = useMemo(() => sceneOf(schema), [schema]);
+  // Each leaf's value as the node was seeded, which is no value for a key outside `pose` and `data`: only what an edit changed is a new default.
+  const [scene, seeded] = useMemo(() => {
+    const made = sceneOf(schema);
+    const node = made.get(NODE);
+    return [made, new Map(prefSectionLeaves(schema.members).map(([key]) => [key, JSON.stringify(prefValueAtPath(node, key))]))] as const;
+  }, [schema]);
   useEffect(() => scene.subscribe(() => {
     const node = scene.get(NODE);
-    const edits = prefSectionLeaves(schema.members).flatMap(([key, leaf]): DefaultEdit[] => {
+    const edits = [...seeded].flatMap(([key, was]): DefaultEdit[] => {
       const value = prefValueAtPath(node, key);
-      return JSON.stringify(value) === JSON.stringify(leaf.default) ? [] : [[key.split('.'), value]];
+      return JSON.stringify(value) === was ? [] : [[key.split('.'), value]];
     });
     if (edits.length > 0) onDefaults(edits);
-  }), [scene, schema, onDefaults]);
+  }), [scene, seeded, onDefaults]);
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview" />
