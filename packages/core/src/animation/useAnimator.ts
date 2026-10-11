@@ -47,6 +47,8 @@ interface ActiveAnimation {
   tick(virtualNow: number, scale: number): boolean;
   /** Called when the animation is cancelled. Skips onDone. */
   onCancel?(): void;
+  /** Called when its pause state or time scale is set, by handle or by key. */
+  onRate?(paused: boolean, timeScale: number): void;
 }
 
 function resolveSpringConstants(o: { preset?: string; stiffness?: number; damping?: number; mass?: number }) {
@@ -301,6 +303,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     /** Gives a codec subject the rate its own pause and time scale now ask for. */
     const rateOf = (a: ActiveAnimation): void => {
       if (codec.has(a.id)) codec.rate(a.id, a.paused ? 0 : a.timeScale);
+      a.onRate?.(a.paused, a.timeScale);
     };
 
     const register = (seed: AnimationSeed): AnimationHandle => {
@@ -334,6 +337,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     const createSupervisor = ({ kind, cancelKey, label }: SupervisorOptions): Supervisor => {
       const id = nextId.current++;
       let onCancelCb: (() => void) | undefined;
+      let onRateCb: ((paused: boolean, timeScale: number) => void) | undefined;
       const base = register({
         id,
         kind,
@@ -344,6 +348,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         // composite's natural-completion path which forwards to `cancel`).
         tick: () => false,
         onCancel: () => onCancelCb?.(),
+        onRate: (paused, timeScale) => onRateCb?.(paused, timeScale),
       });
       return {
         id: base.id,
@@ -354,6 +359,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
         timeScale: base.timeScale,
         isPaused: base.isPaused,
         setOnCancel: (cb) => { onCancelCb = cb; },
+        setOnRate: (cb) => { onRateCb = cb; },
         finish: () => {
           if (!animations.current.has(id)) return;
           reportEnd(id);

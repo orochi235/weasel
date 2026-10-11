@@ -11,8 +11,8 @@ import type {
  * Loop primitive. Repeatedly invokes `factory(i, next)` to produce a child
  * animation. The factory is responsible for wiring its returned handle's
  * `onDone` to call `next` — that's how the loop advances. Pause/resume/
- * setTimeScale delegate to the current child; cancel stops the in-flight
- * child and prevents future iterations.
+ * setTimeScale reach the current child and each later one; cancel stops the
+ * in-flight child and prevents future iterations.
  *
  * The loop is registered with the animator under a supervisor entry, so
  * `animator.cancel(handle)`, `animator.cancelKey(key)`, and
@@ -37,6 +37,14 @@ export function createLoop(
     current = null;
   });
 
+  const applyRate = (paused: boolean, timeScale: number): void => {
+    if (!current) return;
+    if (paused) current.pause();
+    else current.resume();
+    current.setTimeScale(timeScale);
+  };
+  supervisor.setOnRate(applyRate);
+
   const next = (): void => {
     if (cancelled) return;
     if (iteration >= max) {
@@ -50,6 +58,9 @@ export function createLoop(
     }
     const i = iteration++;
     current = factory(i, next);
+    if (supervisor.isPaused() || supervisor.timeScale() !== 1) {
+      applyRate(supervisor.isPaused(), supervisor.timeScale());
+    }
   };
 
   next();
@@ -57,18 +68,9 @@ export function createLoop(
   return {
     id: supervisor.id,
     cancel: () => supervisor.cancel(),
-    pause: () => {
-      supervisor.pause();
-      current?.pause();
-    },
-    resume: () => {
-      supervisor.resume();
-      current?.resume();
-    },
-    setTimeScale: (s) => {
-      supervisor.setTimeScale(s);
-      current?.setTimeScale(s);
-    },
+    pause: () => supervisor.pause(),
+    resume: () => supervisor.resume(),
+    setTimeScale: (s) => supervisor.setTimeScale(s),
     timeScale: () => supervisor.timeScale(),
     isPaused: () => supervisor.isPaused(),
   };

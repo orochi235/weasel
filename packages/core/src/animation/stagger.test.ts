@@ -213,4 +213,27 @@ describe('animator.stagger', () => {
     expect(animator.isActive()).toBe(false);
     handle.cancel();
   });
+
+  it('pauseKey holds back the items still waiting and freezes the ones running', () => {
+    const { animator, advance } = mountAnimator();
+    const started: number[] = [];
+    const samples: number[] = [];
+    animator.stagger([0, 1, 2], 100, (item) => {
+      started.push(item);
+      return animator.tween({
+        from: 0, to: 100, ms: 1000, easing: (t) => t,
+        onTick: (v) => { if (item === 0) samples.push(v); },
+      });
+    }, { cancelKey: 'cascade' });
+    advance(48);
+    animator.pauseKey('cascade');
+    const frozen = samples[samples.length - 1]!;
+    advance(400);
+    expect(started).toEqual([0]);
+    expect(samples[samples.length - 1]).toBeCloseTo(frozen, 1);
+    animator.resumeKey('cascade');
+    advance(400);
+    expect(started).toEqual([0, 1, 2]);
+    animator.cancelKey('cascade');
+  });
 });

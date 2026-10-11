@@ -203,6 +203,59 @@ describe('animator.loop', () => {
   });
 });
 
+describe('a loop paused or scaled by key', () => {
+  it('pauseKey freezes the running iteration and resumeKey thaws it', () => {
+    const { animator, advance } = mountAnimator();
+    const samples: number[] = [];
+    animator.tweenLoop({
+      from: 0, to: 100, ms: 1000, easing: (t) => t, cancelKey: 'pulse',
+      onTick: (v) => samples.push(v),
+    });
+    advance(0);
+    advance(200);
+    animator.pauseKey('pulse');
+    const frozen = samples[samples.length - 1]!;
+    for (let i = 0; i < 5; i++) advance(50);
+    expect(samples[samples.length - 1]).toBeCloseTo(frozen, 1);
+    animator.resumeKey('pulse');
+    for (let i = 0; i < 5; i++) advance(50);
+    expect(samples[samples.length - 1]).toBeGreaterThan(frozen);
+    animator.cancelKey('pulse');
+  });
+
+  it('setTimeScaleByKey slows the running iteration', () => {
+    const { animator, advance } = mountAnimator();
+    const samples: number[] = [];
+    animator.tweenLoop({
+      from: 0, to: 100, ms: 1000, easing: (t) => t, cancelKey: 'pulse',
+      onTick: (v) => samples.push(v),
+    });
+    advance(0);
+    animator.setTimeScaleByKey('pulse', 0.5);
+    advance(200);
+    expect(samples[samples.length - 1]).toBeCloseTo(10, 0);
+    animator.cancelKey('pulse');
+  });
+
+  it('a time scale set on the loop carries into the next iteration', () => {
+    const { animator, advance } = mountAnimator();
+    const samples: number[] = [];
+    const handle = animator.tweenLoop({
+      from: 0, to: 100, ms: 100, easing: (t) => t,
+      onTick: (v) => samples.push(v),
+    });
+    handle.setTimeScale(0.5);
+    advance(0);
+    advance(200);
+    expect(samples[samples.length - 1]).toBe(100);
+    // The second iteration starts on the next frame and then runs 100 ms at half speed.
+    advance(0);
+    advance(100);
+    expect(samples[samples.length - 1]).toBeCloseTo(50, 0);
+    handle.cancel();
+  });
+});
+
 describe('animator.tweenLoop', () => {
   it('direction=restart plays from→to each iteration', () => {
     const { animator, advance } = mountAnimator();

@@ -19,6 +19,9 @@ export interface Supervisor {
   timeScale(): number;
   isPaused(): boolean;
   setOnCancel(cb: () => void): void;
+  /** `cb` hears every pause, resume, and time scale set on the entry, by its
+   *  handle or by `cancelKey`, so the composite can pass it to its children. */
+  setOnRate(cb: (paused: boolean, timeScale: number) => void): void;
   /** Retire the entry because the composite completed on its own. Unlike
    *  `cancel`, skips the `setOnCancel` callback and reports an `end`. */
   finish(): void;

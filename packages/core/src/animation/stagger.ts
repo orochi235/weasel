@@ -63,6 +63,11 @@ class CompositeHandle implements AnimationHandle {
     this.id = supervisor.id;
     this.outstanding = totalItems;
     supervisor.setOnCancel(() => this.handleSupervisorCancel());
+    supervisor.setOnRate((paused, timeScale) => {
+      if (paused) this.applyPause();
+      else this.applyResume();
+      this.applyTimeScale(timeScale);
+    });
   }
 
   /** Invoked when the supervisor is cancelled externally (animator.cancel /
@@ -133,6 +138,18 @@ class CompositeHandle implements AnimationHandle {
   }
 
   pause(): void {
+    this.supervisor.pause();
+  }
+
+  resume(): void {
+    this.supervisor.resume();
+  }
+
+  setTimeScale(s: number): void {
+    this.supervisor.setTimeScale(s);
+  }
+
+  private applyPause(): void {
     if (this.paused_) return;
     this.paused_ = true;
     const now = this.timers.now();
@@ -147,7 +164,7 @@ class CompositeHandle implements AnimationHandle {
     for (const c of this.children) c.pause();
   }
 
-  resume(): void {
+  private applyResume(): void {
     if (!this.paused_) return;
     this.paused_ = false;
     const now = this.timers.now();
@@ -161,7 +178,8 @@ class CompositeHandle implements AnimationHandle {
     for (const c of this.children) c.resume();
   }
 
-  setTimeScale(s: number): void {
+  private applyTimeScale(s: number): void {
+    if (s === this.timeScale_) return;
     this.timeScale_ = s;
     for (const c of this.children) c.setTimeScale(s);
   }
