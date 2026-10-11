@@ -70,17 +70,31 @@ export function runPrefsMigrations(
  * persisting: this build would otherwise keep writing the old shape. A version
  * below it, from an older build or from records read after the open, runs the
  * migrations over the records other writers have changed, which leaves out
- * what this build set itself. Returns the unsubscribe.
+ * what this build set itself. A version record another writer deleted, a
+ * cleared store, is written back. Returns the unsubscribe.
  */
 export function watchPrefsVersion(
   cache: OwnedRecordCache,
   migrations: readonly PrefsMigration[],
 ): () => void {
   const target = migrations.length;
-  // A version record another writer deleted is a cleared store, whose
-  // remaining records are this build's shape, not version 0.
+  // Once this cache has held a version, the records it holds are this
+  // build's shape, and a missing version record is a cleared store.
   let versioned = cache.has(VERSION_RECORD);
   const theirs = new Set<string>();
+  let stopped = false;
+  const migrate = (): void => {
+    const cleared = versioned && !cache.has(VERSION_RECORD);
+    if (cleared) cache.set(VERSION_RECORD, target);
+    else if (!runPrefsMigrations(cache, migrations, theirs)) return;
+    else theirs.clear();
+    versioned = true;
+    void cache.flush();
+  };
+  // A late first read that finds nothing reports no change to migrate on.
+  void cache.whenRead().then(() => {
+    if (!stopped && cache.writable) migrate();
+  });
   const heard = (version: unknown): void => {
     if (!isVersion(version)) {
       console.warn(
@@ -104,15 +118,11 @@ export function watchPrefsVersion(
       if (change.name !== VERSION_RECORD) theirs.add(change.name);
       else if (change.value !== undefined) heard(change.value);
     }
-    const cleared = versioned && !cache.has(VERSION_RECORD);
+    if (remote.length > 0 && cache.writable) migrate();
     versioned ||= cache.has(VERSION_RECORD);
-    if (remote.length === 0 || cleared || !cache.writable) return;
-    if (runPrefsMigrations(cache, migrations, theirs)) {
-      theirs.clear();
-      void cache.flush();
-    }
   });
   return () => {
+    stopped = true;
     stopOverruled();
     stopChanges();
   };

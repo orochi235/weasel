@@ -41,6 +41,9 @@ export interface PrefsStore<S extends PrefGroup> {
   /** Try again now to read storage that could not be read at open, ahead of
    *  the store's own retries. Resolves whether storage has been read. */
   read(): Promise<boolean>;
+  /** Resolves once storage has been read: at once for a store that opened
+   *  with its values, and when a later read lands for one that could not. */
+  whenRead(): Promise<void>;
   /** Resolves true when every queued write reached storage. */
   flush(): Promise<boolean>;
   close(): Promise<void>;
@@ -173,6 +176,7 @@ export function createPrefsStore<S extends PrefGroup>(
       return cache.writable;
     },
     read: () => cache.read(),
+    whenRead: () => cache.whenRead(),
     flush: () => cache.flush(),
     close: async () => {
       onClose?.();

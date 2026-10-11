@@ -143,7 +143,7 @@ describe('watchPrefsVersion', () => {
     expect(backing.get('p.$version')).toBe(2);
   });
 
-  it('does not migrate again when another writer clears the store', async () => {
+  it('writes its version back, and migrates nothing, when another writer clears the store', async () => {
     const backing = new Map<string, unknown>();
     const cache = migrated(backing);
     const other = createMemoryAdapter(backing);
@@ -152,6 +152,8 @@ describe('watchPrefsVersion', () => {
     await new Promise((r) => setTimeout(r, 10));
     expect(cache.get('view.density')).toBe(20);
     expect(cache.get('view.gridOn')).toBe(true);
+    expect(await cache.flush()).toBe(true);
+    expect(backing.get('p.$version')).toBe(2);
   });
 
   it('stops listening once unsubscribed', async () => {

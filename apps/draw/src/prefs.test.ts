@@ -117,6 +117,31 @@ describe('importLegacyPrefs', () => {
     expect(store.isSet('view.gridDensity')).toBe(false);
   });
 
+  it('imports the blob when storage that was away at open comes back', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    window.localStorage.setItem(LEGACY_PREFS_KEY, JSON.stringify({ version: 2, view: { gridDensity: 40 } }));
+    const backing = new Map<string, unknown>();
+    const memory = createMemoryAdapter(backing);
+    let away = true;
+    const store = openDrawPrefs({
+      ...memory,
+      listSync: (prefix) => {
+        if (away) throw new Error('storage away');
+        return memory.listSync(prefix);
+      },
+      list: async (prefix) => memory.listSync(prefix),
+    });
+    expect(store.writable).toBe(false);
+    importLegacyPrefs(store, window.localStorage);
+    expect(store.isSet('view.gridDensity')).toBe(false);
+    away = false;
+    await store.read();
+    await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toBe(40);
+    await store.close();
+    warn.mockRestore();
+  });
+
   it('leaves the blob in place when the new records fail to write', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const blob = JSON.stringify({ version: 2, view: { gridDensity: 40 } });

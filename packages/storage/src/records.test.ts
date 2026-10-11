@@ -573,6 +573,28 @@ describe('a first read that fails', () => {
     await cache.close();
   });
 
+  it('says when the read has landed, at once for a cache that opened read', async () => {
+    const { storage } = awayAtFirst(new Map());
+    const cache = await openRecords({ storage, prefix: PREFIX });
+    let landed = false;
+    void cache.whenRead().then(() => {
+      landed = true;
+    });
+    await tick();
+    expect(landed).toBe(false);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(landed).toBe(true);
+    expect(cache.writable).toBe(true);
+
+    let ready = false;
+    const read = await openRecords({ storage: createMemoryAdapter(), prefix: PREFIX });
+    void read.whenRead().then(() => {
+      ready = true;
+    });
+    await tick();
+    expect(ready).toBe(true);
+  });
+
   it('stays read-only once its opener stops writing', async () => {
     const backing = new Map<string, unknown>([['lk:t:a', 1]]);
     const { storage, list } = awayAtFirst(backing);

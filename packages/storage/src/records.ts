@@ -38,6 +38,10 @@ export interface RecordCache {
   /** Try a failed first read again now, ahead of the backoff. Resolves
    *  whether the records have been read. */
   read(): Promise<boolean>;
+  /** Resolves once the records have been read: at once for a cache that
+   *  opened with them, and when a later read lands for one whose first read
+   *  failed. Never resolves for a cache closed or stopped before that. */
+  whenRead(): Promise<void>;
   /** Send queued writes, stop hearing other writers, and stop retrying. */
   close(): Promise<void>;
 }
@@ -114,6 +118,11 @@ function buildCache(
   let writeRetryTimer: ReturnType<typeof setTimeout> | null = null;
   let writeRetryWait = retryWait;
   let writeWarned = false;
+  let landed = (): void => {};
+  const hasRead = new Promise<void>((resolve) => {
+    if (startUnread) landed = resolve;
+    else resolve();
+  });
 
   const emit = (changes: RecordChange[]): void => {
     for (const listener of [...listeners]) listener(changes);
@@ -255,6 +264,7 @@ function buildCache(
     // Skips every name with a write queued while unread, so those win.
     applyRemote([...listed, ...early]);
     if (queued.size > 0) schedule();
+    landed();
     return true;
   }
 
@@ -307,6 +317,7 @@ function buildCache(
     },
     flush,
     read,
+    whenRead: () => hasRead,
     close: async () => {
       if (closed) return;
       stopRetrying();

@@ -200,12 +200,23 @@ export function drawPrefs(): PrefsStore<typeof PREFS> {
 
 /** Fold the pre-store blob into the store once, and delete it once the new
  *  records are on disk. A leaf the store already holds wins. A store that
- *  cannot persist, or a blob of another version, leaves the blob alone. */
+ *  cannot persist, or a blob of another version, leaves the blob alone; one
+ *  still waiting on its first read imports when that read lands. */
 export function importLegacyPrefs(
   target: PrefsStore<typeof PREFS>,
   storage: Pick<Storage, 'getItem' | 'removeItem'> | undefined = globalThis.localStorage,
 ): void {
-  if (!storage || !target.writable) return;
+  if (!storage) return;
+  if (target.writable) return foldLegacyPrefs(target, storage);
+  void target.whenRead().then(() => {
+    if (target.writable) foldLegacyPrefs(target, storage);
+  });
+}
+
+function foldLegacyPrefs(
+  target: PrefsStore<typeof PREFS>,
+  storage: Pick<Storage, 'getItem' | 'removeItem'>,
+): void {
   let raw: string | null;
   try {
     raw = storage.getItem(LEGACY_PREFS_KEY);

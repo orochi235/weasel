@@ -220,6 +220,24 @@ describe('storage that is away at open', () => {
     warn.mockRestore();
   });
 
+  it('records its version when the read that lands finds nothing', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>();
+    const store = openPrefsSync(SCHEMA, {
+      storage: awayAtFirst(backing),
+      prefix: 'p.',
+      migrations: [() => {}],
+    });
+    store.set('density', 30);
+    await store.read();
+    await store.whenRead();
+    expect(await store.flush()).toBe(true);
+    expect(backing.get('p.density')).toBe(30);
+    expect(backing.get('p.$version')).toBe(1);
+    await store.close();
+    warn.mockRestore();
+  });
+
   it('stays read-only when the records that land are from a newer build', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const backing = new Map<string, unknown>([

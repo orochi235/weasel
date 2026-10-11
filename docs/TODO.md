@@ -892,23 +892,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   as a row under a heading of the same name, and doesn't warn, because `PrefsForm` has no slot for
   a control in a rail item or subsection heading.
 
-- **(P3) Two callers still treat an unread record cache as final.** A cache whose first read
-  failed now reads again and recovers, but labkit's lab store opts out (`retryMs: false` in
-  `openLabStore.ts`): `readLab` answers an unwritable cache with an empty lab, so records landing
-  later would skip its migrations and its fold of the old storage keys. And draw's
-  `importLegacyPrefs` (`apps/draw/src/prefs.ts`) checks `writable` once at boot, so a store that
-  recovers mid-session imports its legacy prefs only on the next load. Both want the same thing
-  the prefs entry below does: the open-time work rerun when the records arrive. The lab store's
-  `retryMs: false` also turns off the timer that resends a write storage rejected, which then
-  waits for the next flush.
+- **(P3) labkit's lab store treats an unread record cache as final.** It opts out of the cache's
+  retries (`retryMs: false` in `openLabStore.ts`): `readLab` answers an unwritable cache with an
+  empty lab, so records landing later would skip its migrations and its fold of the old storage
+  keys. `whenRead()` on the cache now says when a late read lands, which is where that work would
+  rerun; what is open is how a stored lab joins the one built while storage was away, since the
+  migrations run over a whole document and the two halves can be different versions. The opt-out
+  also turns off the timer that resends a write storage rejected, which then waits for the next
+  flush.
 
-- **(P3) Three ways prefs still end up at the wrong version.** `watchPrefsVersion` now migrates
-  an older writer's records when its `$version` arrives, and a late first read's. Left, each read
-  from the code and not reproduced: a late first read that finds nothing reports no change, so
-  values set while the cache was unread persist with no `$version` and the next open migrates
-  them from 0; another writer deleting `$version` (a cleared store) leaves this tab writing
-  records with none, to the same end; and an older writer's record that arrives after its
-  `$version` is taken unmigrated, since migrating runs when the version lands.
+- **(P3) An older build's pref that lands after its `$version` is taken unmigrated.**
+  `watchPrefsVersion` migrates another writer's records when the version it wrote arrives, so a
+  record of that writer's delivered afterward is held in the older shape for the session. Read
+  from the code, not reproduced; an adapter that delivers a writer's batch out of order is what
+  it would take.
 
 - **(P3) A Windows 9x theme.** Gray 3D bevels, a navy-to-blue gradient title strip and the
   system's pixel faces, as a full theme beside Interstellar rather than a one-component skin. Its
