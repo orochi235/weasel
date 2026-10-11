@@ -50,23 +50,30 @@
 
 import type { Action, ActionSource } from '../actions/action';
 import { actionBindings } from '../actions/binding';
-import type { DepRegistry } from '../actions/depNode';
-import type { GestureBinding } from '../actions/binding';
-import type { GestureSpec } from '@weasel-js/gestures';
 import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSample, Point2 } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { buildDepsFromRequires } from '../actions/buildDeps';
-import type { Contribution } from '../../contributions/types';
 import { assembleEntries, scopeBindings } from '../../contributions/assemble';
 import type { InputEvent, BindingScope, MatchResult, ScopedBinding } from './matcher';
 import { matchSortedWithBarred, specificity } from './matcher';
-import { routesForSpec } from '../../tools/routing/reflection/registry';
-import type {
-  DispatchRecord, DroppedCandidate, PlacedBy, RankedCandidate, RecordCandidate, SpecificityPart,
-  WalkStep,
-} from './dispatchRecord';
-import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../eligibility';
+import type { DispatchRecord, WalkStep } from './dispatchRecord';
 import { resolveCursor, type CursorSpec } from '@weasel-js/cursor';
+import { buildDispatchRecord } from './buildDispatchRecord';
+import { DEV, recordTrace } from './dispatchTrace';
+import { modifiersOf, worldPointOf } from './inputFacts';
+import {
+  describeEligible, isEligible, liveInView, preferContextual, preferViewScoped, ruleCtxOf,
+  type Ranking, type Walked,
+} from './ranking';
+
+import type { Dispatcher, DispatcherContext, ResolveAllOptions, ResolveOnlyResult, ResolvedCandidate, UiOngoingControl } from './dispatcherApi';
+
+export type {
+  Dispatcher, DispatcherContext, ResolveAllOptions, ResolveOnlyResult, ResolvedCandidate, UiOngoingControl,
+} from './dispatcherApi';
+export { publishLiveDispatch, recordModeSwitch } from './dispatchTrace';
+export type { ModeSwitchLogEntry, TraceLogEntry } from './dispatchTrace';
+export { filterEligible, preferContextual } from './ranking';
 
 /**
  * The in-flight handle slot a pointer's gestures key into.
@@ -85,570 +92,10 @@ export function pointerGestureId(pointerId: number | undefined): string {
 }
 
 // ---------------------------------------------------------------------------
-// Dev-only instrumentation
-// ---------------------------------------------------------------------------
-
-/** True in dev builds; false in production. Tree-shakes the Proxy + trace
- *  log out of prod entirely. */
-const DEV: boolean = (() => {
-  try {
-    return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
-  } catch {
-    return false;
-  }
-})();
-
-/** One entry per "mode change" — a kit state transition that isn't a
- *  dispatched input event but is load-bearing for understanding why an
- *  input was (or wasn't) handled later. Pushed via `recordModeSwitch()`;
- *  consumers include the editAnchors dep (editingId changes), and
- *  could expand to active-tool / hotkey-stack / focus changes. */
-export interface ModeSwitchLogEntry {
-  kind: 'mode';
-  ts: number;
-  /** Logical mode name, e.g. `'editAnchors.editingId'`. */
-  mode: string;
-  from: string | null;
-  to: string | null;
-  /** Optional free-form context — `'enterPathEdit'`, `'exitPathEdit'`,
-   *  `'selection-dropped target'`, etc. */
-  detail?: string;
-}
-
-/** A trace entry: one {@link DispatchRecord} per resolved input, or a mode switch. */
-export type TraceLogEntry = DispatchRecord | ModeSwitchLogEntry;
-
-const TRACE_LIMIT = 200;
-
-// `traceLog` is the rolling buffer; in dev it IS `window.__weaselDispatchLog__`
-// so the ToolkitBuilder widget can poll it. Bind to the existing global if one
-// is already present rather than reassigning a fresh array: an HMR
-// re-evaluation of this module would otherwise create a new array and orphan
-// the long-lived Dispatcher (held in a SceneCanvas `useRef` that survives Fast
-// Refresh) whose `recordTrace` closure still pushes to the previous array — the
-// widget would then read an array nothing writes to. Reuse keeps every module
-// instance and the widget pointed at one shared array.
-//
-// `__weaselDispatchLog__` is the historical global; entries are a union of
-// dispatch + mode-switch records. Filter via `(e) => e.kind === 'dispatch'` if
-// you only want input routing.
-const traceLog: TraceLogEntry[] =
-  DEV && typeof window !== 'undefined'
-    ? ((window as unknown as { __weaselDispatchLog__?: TraceLogEntry[] }).__weaselDispatchLog__ ??=
-        [])
-    : [];
-
-function recordTrace(entry: TraceLogEntry): void {
-  if (!DEV) return;
-  traceLog.push(entry);
-  if (traceLog.length > TRACE_LIMIT) traceLog.shift();
-}
-
-/**
- * Dev only: offer the record for what a press at the pointer would do, as a
- * thunk on `window.__weaselDispatchLive__`. The hover pump offers one per move
- * and a reader builds the record only when it looks, so no record is built
- * while nothing is watching. `null` withdraws it when the pointer leaves.
- *
- * @internal
- */
-export function publishLiveDispatch(explain: (() => DispatchRecord) | null): void {
-  if (!DEV || typeof window === 'undefined') return;
-  (window as unknown as { __weaselDispatchLive__?: (() => DispatchRecord) | null })
-    .__weaselDispatchLive__ = explain;
-}
-
-/** Push a mode-switch record into the trace log. Safe to call from
- *  anywhere; no-ops outside DEV. */
-export function recordModeSwitch(
-  mode: string,
-  from: string | null,
-  to: string | null,
-  detail?: string,
-): void {
-  recordTrace({
-    kind: 'mode',
-    ts: Date.now(),
-    mode,
-    from,
-    to,
-    ...(detail !== undefined ? { detail } : {}),
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/** Everything the dispatcher must consult to route one input event: the
- *  registered actions and their deps, which tool is active, which hotkeys are
- *  held, and — optionally — the chrome state that action eligibility rules are
- *  evaluated against. Rebuilt per event rather than held, so the dispatcher
- *  itself stays stateless apart from in-flight gestures. */
-export interface DispatcherContext {
-  /** All registered actions; the dispatcher walks `.defaultBinding` for ambient bindings. */
-  actions: ActionSource;
-  /** Dep sources keyed by name. */
-  depRegistry: DepRegistry;
-  /** Active tool's id (from ActiveToolContext); `null` when none is. */
-  activeToolId: string | null;
-  /** Held-hotkey stack, top of stack last. */
-  hotkeyStack: readonly string[];
-  /** Every registered entry, tools and ambient contributions alike, by id. */
-  entriesById: ReadonlyMap<string, Contribution<unknown>>;
-  /** Platform flag for `mod` shorthand resolution. */
-  isMac: boolean;
-  /**
-   * Thunk returning a fresh `RuleCtx` for the current frame — the routed
-   * view's, when the surface hosts several. When it answers, the dispatcher
-   * filters matched candidates by their declared `Action.eligible` rule
-   * (omitted => always eligible). Absent, or answering `undefined`, applies
-   * no eligibility filtering.
-   */
-  getRuleCtx?: () => RuleCtx | undefined;
-  /**
-   * The view this input landed in — a view id, or `null` for the surface's
-   * own camera. Bindings whose `opts.views` omit it are not live, those naming
-   * it outrank the rest, and it reaches the invoker as `InvocationCtx.viewId`
-   * and rules as `RuleCtx.viewId`. Absent means the host routes no views, which
-   * reads as the root.
-   */
-  viewId?: string | null;
-}
-
-/** Whether `binding` is live for input routed to `view`. */
-function liveInView(binding: GestureBinding, view: string | null): boolean {
-  const views = binding.opts?.views;
-  return views === undefined || views.includes(view);
-}
-
-/** Stable partition: matches whose binding names `view` first. See
- *  `BindingOpts.views` for why naming the view outranks the scope tier. */
-function namesView(binding: GestureBinding, view: string | null): boolean {
-  return binding.opts?.views?.includes(view) ?? false;
-}
-
-function preferViewScoped<M extends { binding: GestureBinding }>(
-  matches: readonly M[],
-  view: string | null,
-): M[] {
-  const named: M[] = [];
-  const rest: M[] = [];
-  for (const m of matches) {
-    (namesView(m.binding, view) ? named : rest).push(m);
-  }
-  return named.length === 0 ? [...matches] : [...named, ...rest];
-}
-
-/** The routed view's rule context, carrying the view id. */
-function ruleCtxOf(ctx: DispatcherContext): RuleCtx | undefined {
-  const r = ctx.getRuleCtx?.();
-  return r ? { ...r, viewId: ctx.viewId ?? null } : undefined;
-}
-
-/**
- * Normalize an `Action.eligible` value to a raw `Rule`. Conditions are
- * callable functions carrying `.rule`; raw Rules are returned as-is.
- */
-function eligibleToRule(eligible: Rule | Condition): Rule {
-  return typeof eligible === 'function' ? (eligible as Condition).rule : eligible;
-}
-
-/** Does `action`'s declared eligibility rule pass against `ruleCtx`?
- *  An action with no `eligible` rule is always eligible. */
-function isEligible(action: Action, ruleCtx: RuleCtx): boolean {
-  if (!action.eligible) return true;
-  return evaluate(eligibleToRule(action.eligible), ruleCtx);
-}
-
-/** Render an `eligible` rule for display. `evaluate()` returns a bare
- *  boolean, so there is no reason string to carry — the rule itself is the
- *  most informative thing available. */
-function describeEligible(eligible: NonNullable<Action['eligible']>): string {
-  return describeRule(eligibleToRule(eligible));
-}
-
-/**
- * Filter `matches` to only those whose backing action has no `eligible`
- * rule, or whose rule evaluates true against `ruleCtx`. Exported for
- * unit testing.
- *
- * @internal
- */
-export function filterEligible<M extends { binding: { actionId: string } }>(
-  matches: readonly M[],
-  actionLookup: (id: string) => Action | undefined,
-  ruleCtx: RuleCtx,
-): M[] {
-  return matches.filter((m) => {
-    const action = actionLookup(m.binding.actionId);
-    if (!action) return true;
-    return isEligible(action, ruleCtx);
-  });
-}
-
-/**
- * Among matches tied on scope and specificity, put those whose action is
- * gated by an `eligible` rule that holds now ahead of those with no rule: a
- * binding that applies only in the current context — Escape while editing a
- * path — outranks one that applies everywhere. Otherwise stable.
- *
- * @internal
- */
-export function preferContextual<M extends { binding: GestureBinding; scope: string }>(
-  matches: readonly M[],
-  actionLookup: (id: string) => Action | undefined,
-  /** Whether a gated action's rule holds; skip re-asking where the matches
-   *  were already filtered by it. */
-  holds: (action: Action) => boolean,
-  /** The routed view: a binding naming it is never tied with one that does not. */
-  view: string | null,
-): M[] {
-  const out: M[] = [];
-  let run: M[] = [];
-  const flush = (): void => {
-    const gated = run.filter((m) => {
-      const action = actionLookup(m.binding.actionId);
-      return action?.eligible !== undefined && holds(action);
-    });
-    out.push(...gated, ...run.filter((m) => !gated.includes(m)));
-    run = [];
-  };
-  for (const m of matches) {
-    const head = run[0];
-    if (
-      head
-      && (head.scope !== m.scope
-        || namesView(head.binding, view) !== namesView(m.binding, view)
-        || !sameSpecificity(head.binding.spec, m.binding.spec))
-    ) flush();
-    run.push(m);
-  }
-  flush();
-  return out;
-}
-
-const SPECIFICITY_PARTS: readonly SpecificityPart[] = ['target', 'mods', 'phase', 'exact'];
-
-/** The ranking step that put `cur` directly below `prev`. `contextual` says
- *  `prev` is gated by a rule that holds and `cur` is not — the only thing the
- *  step after specificity looks at. */
-function placedBy(
-  prev: MatchResult,
-  cur: MatchResult,
-  view: string | null,
-  contextual: boolean,
-): PlacedBy {
-  if (namesView(prev.binding, view) !== namesView(cur.binding, view)) return { step: 'view' };
-  if (prev.scope !== cur.scope) return { step: 'tier' };
-  const sp = specificity(prev.binding.spec);
-  const sc = specificity(cur.binding.spec);
-  const i = sp.findIndex((v, k) => v !== sc[k]);
-  if (i >= 0) return { step: 'specificity', part: SPECIFICITY_PARTS[i]! };
-  return contextual ? { step: 'context' } : { step: 'order' };
-}
-
-function sameSpecificity(a: GestureSpec, b: GestureSpec): boolean {
-  const sa = specificity(a);
-  const sb = specificity(b);
-  return sa.every((v, i) => v === sb[i]);
-}
-
-/**
- * Handle returned by `Dispatcher.beginUiOngoing()` for driving an
- * ongoing invoker from a UI control (color picker, slider).
- *
- *  - `update(params)` rebuilds an `InvocationCtx` with the new params and
- *    calls the handle's `onMove`. Safe to call many times.
- *  - `end(reason)` calls `onEnd(ctx, reason)` once and removes the handle
- *    from the in-flight map. Idempotent — further calls are no-ops.
- *  - `active` is false once the handle has ended, whether through `end` or
- *    by the dispatcher (`cancelAll`, or a later `beginUiOngoing` for the same
- *    action). `update` and `end` do nothing from then on.
- */
-export interface UiOngoingControl {
-  readonly gestureId: string;
-  readonly active: boolean;
-  update(params?: Record<string, unknown>): void;
-  end(reason: 'commit' | 'cancel'): void;
-}
-
-/**
- * Successful `Dispatcher.resolveOnly` prediction: the binding + action that
- * would fire if `event` were dispatched for real. `action` is the resolved
- * descriptor so callers (the hover-cursor pump) can read metadata like
- * `Action.cursor` without a second registry lookup.
- */
-export interface ResolveOnlyResult {
-  actionId: string;
-  action: Action;
-  scope: BindingScope;
-  /** Tool id owning the winning binding; `null` for ambient action bindings. */
-  ownerId: string | null;
-}
-
-/**
- * One candidate from `Dispatcher.resolveAll` — a binding that matched the
- * event, with why it did or didn't get to fire.
- *
- * Verdicts:
- *  - `would-fire`  — eligible, `enabled()` passed, and nothing above it fired.
- *    At most one candidate per call carries this.
- *  - `ineligible`  — the action's `eligible` rule evaluated false against the
- *    live `RuleCtx`. `reason` is the rule, serialized.
- *  - `disabled`    — `enabled()` returned a disabled reason, carried verbatim.
- *  - `shadowed`    — never asked, for one of two reasons: something above it
- *    already fired, or it is a repeat binding of the action that itself won
- *    higher in the list (several bindings may point at one action, and the
- *    dispatcher runs each action at most once). A repeat of an action that was
- *    already judged `ineligible` or `disabled` is NOT shadowed — it inherits
- *    that action's verdict, since that is the reason it doesn't fire.
- */
-export interface ResolvedCandidate {
-  actionId: string;
-  action: Action;
-  binding: GestureBinding;
-  scope: BindingScope;
-  ownerId: string | null;
-  /** The tuple from `specificity(binding.spec)`, surfaced so a reader can see
-   *  why one candidate outranks another rather than inferring it. */
-  specificity: readonly [number, number, number, number];
-  verdict:
-    | { kind: 'would-fire' }
-    | { kind: 'ineligible'; reason: string }
-    | { kind: 'disabled'; reason: string }
-    | { kind: 'shadowed' };
-}
-
-/** Options for {@link Dispatcher.resolveAll}. */
-export interface ResolveAllOptions {
-  /**
-   * Evaluate eligibility and `enabled()` for candidates below the winner
-   * instead of short-circuiting them to `shadowed`.
-   *
-   * Off by default, and deliberately so: the default walk's early exit is what
-   * keeps `resolveOnly`'s `enabled()` call count identical to a real dispatch,
-   * and `enabled()` predicates are only contractually pure — not free.
-   *
-   * Turn it on for diagnostics, where "this one was outranked" is a less
-   * useful answer than "this one was outranked AND would have been disabled
-   * anyway". With it on, `shadowed` narrows to its precise meaning: this
-   * candidate would have fired, but something above it did.
-   */
-  evaluateShadowed?: boolean;
-}
-
-/**
- * Routes input events to actions.
- *
- * For each event it assembles the bindings in scope (hotkey, then active tool,
- * then ambient), matches them in specificity order, filters by eligibility and
- * each action's `enabled` gate, and invokes the first survivor. Ongoing
- * actions — anything that runs across a drag — are kept in flight here and
- * pumped with subsequent moves until the gesture ends.
- */
-export interface Dispatcher {
-  /**
-   * Route an input event through the binding pipeline. Returns `'handled'`
-   * when a binding matched and the action invoked successfully (whether it
-   * returned ops or not). Returns `'unhandled'` when no binding matched or
-   * the matched action's `enabled()` returned a disabled reason.
-   */
-  handleInput(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled';
-
-  /**
-   * Predict which action `event` would route to WITHOUT invoking it. Replays
-   * the same walk as `handleInput` — scope assembly, specificity-sorted
-   * match, eligibility filter, per-candidate `enabled()` gate — and returns
-   * the first candidate that would fire, or `null` when the event would go
-   * unhandled. Pure query: no invoker runs, no in-flight state changes, no
-   * trace-log entry.
-   *
-   * Known divergence from a real dispatch: an ongoing invoker that matches
-   * but returns an empty handle at `start()` (runtime bail) makes the real
-   * dispatch fall through to the next candidate; prediction cannot see that
-   * and reports the bailing action. Keep `enabled()` accurate on actions
-   * that rely on prediction (hover cursors).
-   */
-  resolveOnly(event: InputEvent, ctx: DispatcherContext): ResolveOnlyResult | null;
-
-  /**
-   * Every binding that matches `event`, in dispatch precedence order, each
-   * with a verdict explaining whether it would fire. Same walk as
-   * `resolveOnly` — scope assembly, specificity-sorted match, eligibility
-   * check, per-candidate `enabled()` gate — without stopping at the winner
-   * and without invoking anything. Nothing is dropped: candidates that
-   * `resolveOnly`'s walk would filter out are kept here and labelled
-   * `ineligible` instead. Pure query: no invoker runs, no in-flight state
-   * changes, no trace-log entry.
-   *
-   * `resolveOnly` is the first `would-fire` entry of this list.
-   *
-   * Shares `resolveOnly`'s known divergence from a real dispatch: an ongoing
-   * invoker that matches but returns an empty handle at `start()` makes the
-   * real dispatch fall through, and this cannot see that.
-   *
-   * By default everything below the winner is `shadowed` without being asked,
-   * which is what keeps this walk as cheap as the dispatch it replays. Pass
-   * `{ evaluateShadowed: true }` to keep evaluating past the winner, so a
-   * lower candidate that is ALSO ineligible or disabled says so — see
-   * {@link ResolveAllOptions.evaluateShadowed}.
-   */
-  resolveAll(
-    event: InputEvent,
-    ctx: DispatcherContext,
-    opts?: ResolveAllOptions,
-  ): ResolvedCandidate[];
-
-  /**
-   * The full {@link DispatchRecord} for `event` — what matched, what each
-   * filter dropped, how the rest ranked and why, and the walk — without
-   * invoking anything, so `predicted` is true and the winner is `would-fire`.
-   * It is the same computation `handleInput` and `resolveAll` run. Costs more
-   * than `resolveOnly`: it renders every candidate's routes and rule.
-   */
-  explain(event: InputEvent, ctx: DispatcherContext, opts?: ResolveAllOptions): DispatchRecord;
-
-  /**
-   * Synthesize an end-of-gesture for every in-flight ongoing handle.
-   * Used by tool-switch cancellation (Q2 decision).
-   */
-  cancelAll(reason: 'commit' | 'cancel'): void;
-
-  /**
-   * Read-only view of currently in-flight ongoing handles, keyed by gestureId.
-   * For debug/testing.
-   */
-  inFlight(): ReadonlyMap<string, OngoingHandle>;
-
-  /**
-   * Cursor for the gesture currently in flight, as declared, or `null` when nothing
-   * is. Reads `Action.activeCursor` (falling back to `Action.cursor`) off the
-   * action whose handle is open — the hover pump applies this instead of its
-   * prediction once a gesture starts, which is how `grab` becomes `grabbing`.
-   */
-  inFlightCursor(): CursorSpec | null;
-
-  /**
-   * Read-only iterator over currently in-flight `OngoingHandle` instances.
-   *
-   * Surface for the canvas's preview-ghost layer (`usePreviewGhostLayer`)
-   * to walk each handle's `previewIds()` / `previewPose(id)` and render
-   * dispatcher-driven gesture previews. Read-only by design:
-   * external consumers must not mutate the in-flight map.
-   */
-  getInFlightHandles(): Iterable<OngoingHandle>;
-
-  /**
-   * Subscribe to in-flight state changes. The callback fires after every
-   * mutation that affects what the preview-ghost / dispatcher-overlay
-   * layers read — handle start, every `onMove` pump, end, cancel,
-   * cancel-all — and after any other input handled while a gesture is in
-   * flight. Input that arrives with nothing in flight and starts nothing
-   * does not fire it. Consumers re-read `getInFlightHandles()` and re-render.
-   *
-   * Returns an unsubscribe function.
-   */
-  subscribe(fn: () => void): () => void;
-
-  /**
-   * Monotonic counter bumped on exactly the events {@link subscribe} fires
-   * on. The snapshot half of the `useSyncExternalStore` contract: pair it
-   * with `subscribe` to drive a render off in-flight gesture state without
-   * a `useReducer` force-rerender.
-   *
-   * Starts at 0 and only ever increases. Two reads returning the same number
-   * mean no gesture was in flight in between; it does **not** guarantee that
-   * a bump changed anything observable (input that matched no binding still
-   * counts while a gesture is in flight — see `subscribe`).
-   */
-  getVersion(): number;
-
-  /**
-   * Snapshot of the currently active action, for surfaces (chrome-caps
-   * visibility rules, debug HUDs) that need to react to "what action
-   * is in flight right now."
-   *
-   * - `kind` — the `OngoingHandle.kind` reported by the in-flight
-   *   handle (e.g. `'marquee'`, `'move'`). `null` when no action is
-   *   in flight OR the handle didn't declare a kind.
-   * - `id` — the dispatcher's internal `gestureId` (`pointer-1`,
-   *   `key-held-Space`, …) — the pointer/key channel the action rode
-   *   in on. `null` when no action is in flight.
-   *
-   * When multiple handles are in flight simultaneously (e.g. a key-held
-   * action overlapping a pointer action), the most-recently-started
-   * handle wins. This matches user intent: the latest interaction is
-   * the one consumers care about.
-   *
-   * That rule used to be near-vacuous on the pointer side, because every
-   * pointer shared one handle slot and two pointer drags could not coexist.
-   * With per-pointer keying they can — but only via paths that bypass the
-   * multi-pointer policy in `useGestureDispatcher` (which stops a second
-   * finger from opening a drag while a pinch is live), such as a mouse and
-   * a pen used together. Latest-start remains the right answer there.
-   */
-  getActiveAction(): { kind: string | null; id: string | null };
-
-  /**
-   * Start an ongoing action driven by UI (not a gesture). Builds an
-   * `InvocationCtx` with the given `deps` and `params`, calls
-   * `action.invoker.start(ctx, { params })`, and registers the returned
-   * handle in the in-flight map so `getInFlightHandles()` reports it —
-   * enabling preview rendering via `SceneCanvas`.
-   *
-   * Returns `null` if `actionId` is unknown, the action's invoker is not
-   * ongoing, or `start` returned an empty handle.
-   *
-   * If a UI-driven handle for the same `actionId` is already in flight,
-   * it is committed (`end('commit')`) before the new one starts.
-   */
-  beginUiOngoing(
-    actionId: string,
-    deps: ActionDeps,
-    params?: Record<string, unknown>,
-  ): UiOngoingControl | null;
-}
-
-// ---------------------------------------------------------------------------
 // createDispatcher
 // ---------------------------------------------------------------------------
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
-
-/**
- * Modifier flags as an immediate invoker sees them, in the kit's
- * `ModifierState` spelling rather than the DOM's `*Key` one.
- *
- * Ongoing invokers read modifiers off `InvocationCtx`; immediate ones get only
- * `(deps, params)`, so pointer-driven immediate actions need them merged into
- * params the same way wheel deltas already are. Most actions should still
- * express modifier semantics as separate bindings with `opts.params` — that is
- * what makes them visible to conflict detection and the inspector. This is for
- * the cases where the modifier is data rather than a route, e.g. select
- * forwarding the press's modifiers into `SelectionApi.applyClick`, which
- * resolves them against the host's configured extend key.
- */
-function modifiersOf(e: {
-  altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean;
-}): { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean } {
-  return { alt: e.altKey, ctrl: e.ctrlKey, meta: e.metaKey, shift: e.shiftKey };
-}
-
-/** The world point an event landed on, for `Action.enabled`'s position
- *  argument. Undefined for events with no position (keys, drops, pastes). */
-function worldPointOf(event: InputEvent): { x: number; y: number } | undefined {
-  switch (event.kind) {
-    case 'pointerdown':
-    case 'longpress':
-    case 'click':
-    case 'doubleclick':
-    case 'contextmenu':
-      return event.x !== undefined && event.y !== undefined ? { x: event.x, y: event.y } : undefined;
-    default:
-      return undefined;
-  }
-}
 
 /** Build a dispatcher. `getAction` overrides how action ids are resolved;
  *  by default the `DispatcherContext`'s registry is used. */
@@ -1046,7 +493,7 @@ export function createDispatcher(opts?: {
     const r = rank(event, ctx, DEV);
     const walked = walk(r, event, ctx, (match, action, deps) => invoke(event, match, action, deps), false);
     const outcome: 'handled' | 'unhandled' = walked.stop === 'fired' ? 'handled' : 'unhandled';
-    if (DEV) recordTrace(buildRecord(r, walked, event, ctx, false, outcome));
+    if (DEV) recordTrace(buildDispatchRecord(r, walked, event, ctx, false, outcome));
     return outcome;
   }
 
@@ -1211,20 +658,6 @@ export function createDispatcher(opts?: {
   // The walk — one computation behind dispatch, prediction and the record
   // -------------------------------------------------------------------------
 
-  /** One input's candidates, matched, filtered and ranked, before any is asked. */
-  interface Ranking {
-    /** Every match the claim admitted, best first — ineligible ones
-     *  included, in the place they would hold. */
-    ordered: MatchResult[];
-    /** Matches an exclusive claim barred; collected only when recording. */
-    barred: MatchResult[];
-    claimOwner?: string;
-    actionMap: Map<string, Action>;
-    ruleCtx: RuleCtx | undefined;
-    /** Whether a match survives the eligibility filter. */
-    eligible(m: MatchResult): boolean;
-  }
-
   function rank(event: InputEvent, ctx: DispatcherContext, collectBarred: boolean): Ranking {
     const view = ctx.viewId ?? null;
     const outcome = matchSortedWithBarred(
@@ -1258,15 +691,6 @@ export function createDispatcher(opts?: {
         return a === undefined || holds(a);
       },
     };
-  }
-
-  interface Walked {
-    /** Survivors of both filters, best first, each with what the walk did. */
-    steps: Array<{ match: MatchResult; step: WalkStep }>;
-    /** Why the walk ended: a candidate fired (or would), one was misbound, or
-     *  every candidate was exhausted. */
-    stop: 'fired' | 'misbound' | 'exhausted';
-    winner: { match: MatchResult; action: Action } | null;
   }
 
   /**
@@ -1323,78 +747,6 @@ export function createDispatcher(opts?: {
       winner = { match, action };
     }
     return { steps, stop, winner };
-  }
-
-  /** Project a ranking and its walk into a plain {@link DispatchRecord}. */
-  function buildRecord(
-    r: Ranking,
-    walked: Walked,
-    event: InputEvent,
-    ctx: DispatcherContext,
-    predicted: boolean,
-    outcome: 'handled' | 'unhandled',
-  ): DispatchRecord {
-    const view = ctx.viewId ?? null;
-    const candidates = new Map<MatchResult, RecordCandidate>();
-    const candidateOf = (m: MatchResult): RecordCandidate => {
-      let c = candidates.get(m);
-      if (!c) {
-        const eligible = r.actionMap.get(m.binding.actionId)?.eligible;
-        c = {
-          actionId: m.binding.actionId,
-          routes: routesForSpec(m.binding.spec),
-          scope: m.scope,
-          ownerId: m.ownerId,
-          namesView: namesView(m.binding, view),
-          specificity: specificity(m.binding.spec),
-          ...(eligible !== undefined ? { eligible: describeEligible(eligible) } : {}),
-        };
-        candidates.set(m, c);
-      }
-      return c;
-    };
-    const dropped: DroppedCandidate[] = [
-      ...r.barred.map((m): DroppedCandidate => ({
-        candidate: candidateOf(m),
-        filter: 'claim',
-        ...(r.claimOwner !== undefined ? { owner: r.claimOwner } : {}),
-      })),
-    ];
-    for (const m of r.ordered) {
-      if (r.eligible(m)) continue;
-      const c = candidateOf(m);
-      dropped.push({ candidate: c, filter: 'ineligible', rule: c.eligible ?? '' });
-    }
-    const gated = (m: MatchResult): boolean =>
-      r.actionMap.get(m.binding.actionId)?.eligible !== undefined;
-    const ranked: RankedCandidate[] = walked.steps.map(({ match, step }, i) => {
-      const prev = walked.steps[i - 1]?.match;
-      return {
-        candidate: candidateOf(match),
-        placedBy: prev ? placedBy(prev, match, view, r.ruleCtx !== undefined && gated(prev) && !gated(match)) : { step: 'first' },
-        walk: step,
-      };
-    });
-    const eventKey = event.kind === 'key' || event.kind === 'key-held' ? event.key : undefined;
-    const world = worldPointOf(event);
-    return {
-      kind: 'dispatch',
-      ts: Date.now(),
-      input: {
-        eventKind: event.kind,
-        ...(eventKey !== undefined ? { key: eventKey } : {}),
-        modifiers: modifiersOf(event),
-        viewId: view,
-        ...(world !== undefined ? { world } : {}),
-        ...(r.ruleCtx !== undefined ? { mode: r.ruleCtx.mode } : {}),
-      },
-      matched: [...r.ordered, ...r.barred].map(candidateOf),
-      dropped,
-      ranked,
-      predicted,
-      fired: walked.winner?.action.id ?? null,
-      outcome,
-    };
   }
 
   // -------------------------------------------------------------------------
@@ -1475,7 +827,7 @@ export function createDispatcher(opts?: {
   function explain(event: InputEvent, ctx: DispatcherContext, explainOpts?: ResolveAllOptions): DispatchRecord {
     const r = rank(event, ctx, true);
     const walked = walk(r, event, ctx, null, explainOpts?.evaluateShadowed ?? false);
-    return buildRecord(r, walked, event, ctx, true, walked.winner ? 'handled' : 'unhandled');
+    return buildDispatchRecord(r, walked, event, ctx, true, walked.winner ? 'handled' : 'unhandled');
   }
 
   // -------------------------------------------------------------------------
