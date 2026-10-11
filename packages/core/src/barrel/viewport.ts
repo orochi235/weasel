@@ -52,8 +52,8 @@ export type { SceneNodeClientRectOpts, NodeClientRect } from '../core/viewport/s
 export * from '../core/viewport/useAutoCenter';
 
 // ─── Scheduling: the visibility gate every weasel frame loop runs behind ────
-export { useVisibleRaf } from '../scheduling/useVisibleRaf';
-export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from '../scheduling/useVisibleRaf';
+export { useVisibleRaf } from '@weasel-js/react';
+export type { VisibleRaf, VisibleRafOptions, VisibleRafTarget } from '@weasel-js/react';
 
 // ─── Viewport: wheel / velocity / decay / pinch / camera animation ──────────
 export * from '../core/viewport/wheelHandler';

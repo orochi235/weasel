@@ -9,7 +9,7 @@
  */
 
 import { type RefObject, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { useLatest } from './useLatest';
 
 /** What a loop names as its element, resolved every time the gate is consulted
  *  so a ref filled in after mount still starts the observer. */

@@ -118,7 +118,7 @@ Do **not** write a tool that runs its own gesture (`useDragRect`) and commits wi
 
 ## Frame loops
 
-Every frame loop runs behind `useVisibleRaf` (`@weasel-js/core`), never a bare
+Every frame loop runs behind `useVisibleRaf` (`@weasel-js/react`), never a bare
 `requestAnimationFrame` or `setInterval` — `npm run check:frame-loops` fails the
 build on one, and on a second use in a file its allowlist names. A
 loop that measures elapsed time also needs `onResume` to rebase its clock, or an
