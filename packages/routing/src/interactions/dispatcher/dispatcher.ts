@@ -931,22 +931,42 @@ export function createDispatcher(opts?: {
   // handleInput
   // -------------------------------------------------------------------------
 
+  function runOnEnd(
+    gestureId: string,
+    handle: OngoingHandle,
+    endCtx: InvocationCtx,
+    reason: 'commit' | 'cancel',
+  ): void {
+    try {
+      handle.onEnd?.(endCtx, reason);
+    } catch (err) {
+      console.error(`weasel dispatcher: gesture "${gestureId}" threw on onEnd`, err);
+    }
+  }
+
+  /** End one in-flight gesture. It is out of flight before its `onEnd` runs,
+   *  so an `onEnd` that throws, or that reads the dispatcher, sees it gone. */
+  function endGesture(gestureId: string, event: InputEvent, reason: 'commit' | 'cancel'): boolean {
+    const handle = inFlightHandles.get(gestureId);
+    if (!handle) return false;
+    const endCtx = buildInvocationCtx(event, {}, gestureId);
+    inFlightHandles.delete(gestureId);
+    inFlightOwners.delete(gestureId);
+    inFlightActions.delete(gestureId);
+    dragOrigins.delete(gestureId);
+    dragPoints.delete(gestureId);
+    pinchStartSpreads.delete(gestureId);
+    runOnEnd(gestureId, handle, endCtx, reason);
+    return true;
+  }
+
   function handleInput(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled' {
     routedView = ctx.viewId;
     // --- Pump: check for key-held up-phase against in-flight handle ---
     if (event.kind === 'key-held' && event.phase === 'up') {
       const gestureId = gestureIdFor(event);
-      const handle = inFlightHandles.get(gestureId);
-      if (handle) {
-        const stubCtx = buildInvocationCtx(event, {}, gestureId);
-        handle.onEnd?.(stubCtx, 'commit');
-        inFlightHandles.delete(gestureId);
-        inFlightOwners.delete(gestureId);
-        inFlightActions.delete(gestureId);
-        dragOrigins.delete(gestureId);
-      }
       // Whether we had a handle or not, this is a follow-up event, not a new match.
-      return handle ? 'handled' : 'unhandled';
+      return endGesture(gestureId, event, 'commit') ? 'handled' : 'unhandled';
     }
 
     // --- Pump: key-held DOWN re-dispatch for an already-engaged key is a
@@ -992,33 +1012,13 @@ export function createDispatcher(opts?: {
     // --- Pump: pointerup → onEnd('commit') on the in-flight drag handle ---
     if (event.kind === 'pointerup') {
       const gestureId = gestureIdFor(event);
-      const handle = inFlightHandles.get(gestureId);
-      if (handle) {
-        const endCtx = buildInvocationCtx(event, {}, gestureId);
-        handle.onEnd?.(endCtx, 'commit');
-        inFlightHandles.delete(gestureId);
-        inFlightOwners.delete(gestureId);
-        inFlightActions.delete(gestureId);
-        dragOrigins.delete(gestureId);
-        dragPoints.delete(gestureId);
-      }
-      return handle ? 'handled' : 'unhandled';
+      return endGesture(gestureId, event, 'commit') ? 'handled' : 'unhandled';
     }
 
     // --- Pump: pointercancel → onEnd('cancel') on the in-flight drag handle ---
     if (event.kind === 'pointercancel') {
       const gestureId = gestureIdFor(event);
-      const handle = inFlightHandles.get(gestureId);
-      if (handle) {
-        const endCtx = buildInvocationCtx(event, {}, gestureId);
-        handle.onEnd?.(endCtx, 'cancel');
-        inFlightHandles.delete(gestureId);
-        inFlightOwners.delete(gestureId);
-        inFlightActions.delete(gestureId);
-        dragOrigins.delete(gestureId);
-        dragPoints.delete(gestureId);
-      }
-      return handle ? 'handled' : 'unhandled';
+      return endGesture(gestureId, event, 'cancel') ? 'handled' : 'unhandled';
     }
 
     // --- Pump: multitouch move → onMove on the in-flight multitouch handle ---
@@ -1039,13 +1039,8 @@ export function createDispatcher(opts?: {
       // the seam only ends multitouch when the count drops below two, so a
       // three-to-two transition left the three-finger handle in flight,
       // unpumped, until the final lift committed it alongside the real one.
-      for (const [id, other] of [...inFlightHandles]) {
-        if (!id.startsWith('multitouch-') || id === gestureId) continue;
-        other.onEnd?.(buildInvocationCtx(event, {}, id), 'cancel');
-        inFlightHandles.delete(id);
-        inFlightOwners.delete(id);
-        inFlightActions.delete(id);
-        pinchStartSpreads.delete(id);
+      for (const id of [...inFlightHandles.keys()]) {
+        if (id.startsWith('multitouch-') && id !== gestureId) endGesture(id, event, 'cancel');
       }
       // No in-flight handle → fall through to scope assembly + match below.
       // This allows the initial multitouch event (which carries centroid/spread)
@@ -1497,9 +1492,7 @@ export function createDispatcher(opts?: {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       deps: {},
     };
-    for (const handle of inFlightHandles.values()) {
-      handle.onEnd?.(stubCtx, reason);
-    }
+    const ending = [...inFlightHandles];
     inFlightHandles.clear();
     inFlightOwners.clear();
     inFlightActions.clear();
@@ -1507,6 +1500,7 @@ export function createDispatcher(opts?: {
     dragOrigins.clear();
     dragPoints.clear();
     pinchStartSpreads.clear();
+    for (const [gestureId, handle] of ending) runOnEnd(gestureId, handle, stubCtx, reason);
   }
 
   // -------------------------------------------------------------------------
@@ -1562,13 +1556,18 @@ export function createDispatcher(opts?: {
   // the boundary (not inside the match loop) so any mutation — start, pump,
   // end, no-op — fires exactly one notify per pump tick.
   const handleInputWithNotify: typeof handleInput = (event, ctx) => {
-    const out = handleInput(event, ctx);
-    notify();
-    return out;
+    try {
+      return handleInput(event, ctx);
+    } finally {
+      notify();
+    }
   };
   const cancelAllWithNotify: typeof cancelAll = (reason) => {
-    cancelAll(reason);
-    notify();
+    try {
+      cancelAll(reason);
+    } finally {
+      notify();
+    }
   };
 
   function beginUiOngoing(
