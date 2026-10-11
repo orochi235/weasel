@@ -1,3 +1,14 @@
+import { branchPaths, type SchemaRoot } from './schemaEdit';
+
+/**
+ * The open rows after an undo or redo from `before`: `open`, and each row the step brought back that was open
+ * when its schema was last shown (`was`). A re-keyed or moved group comes back under a path `open` has let go of.
+ */
+export function openAfterStep(open: ReadonlySet<string>, before: SchemaRoot, was: ReadonlySet<string> | undefined): Set<string> {
+  const had = new Set(branchPaths(before));
+  return new Set([...open, ...[...(was ?? [])].filter((path) => !had.has(path))]);
+}
+
 const foldsKey = (draftKey: string): string => `${draftKey}:folds`;
 
 /**

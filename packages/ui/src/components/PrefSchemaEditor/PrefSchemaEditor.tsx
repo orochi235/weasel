@@ -12,7 +12,7 @@ import { deadActionPaths, useEditorActions, type EditorAction } from './editorAc
 import { EditorBar } from './EditorBar';
 import { EditorPrefsButton, useEditorPrefs, type PrefSchemaEditorPrefs } from './editorPrefs';
 import { dropDraft, openDraft, saveDraft, SWAP, type DraftStorage, type SwapArgs } from './draft';
-import { openFolds, saveFolds } from './folds';
+import { openAfterStep, openFolds, saveFolds } from './folds';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
@@ -140,6 +140,9 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   useEffect(() => {
     if (draftKey !== undefined) saveFolds(draftKey, branchPaths(schema).filter((id) => !expanded.has(id)));
   }, [draftKey, schema, expanded]);
+  // The rows open under each schema shown, for a step back to one to open what it brings back.
+  const openAt = useRef(new WeakMap<SchemaRoot, ReadonlySet<string>>());
+  useEffect(() => { openAt.current.set(schema, expanded); }, [schema, expanded]);
   const selection = useEditorSelection(schema, setExpanded);
   const [structureWidth, setStructureWidth] = useState(300);
   const [attributesWidth, setAttributesWidth] = useState(320);
@@ -209,7 +212,9 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     keep();
   };
   const step = (to: 'undo' | 'redo') => {
+    const before = latest.current.schema;
     history[to]();
+    setExpanded((open) => openAfterStep(open, before, openAt.current.get(emitted.current)));
     keep();
   };
 
