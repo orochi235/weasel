@@ -47,7 +47,8 @@ export interface MoveSession {
   readonly geometryProjection?: GeometryProjection;
   readonly lifecycle: GestureLifecycle;
   readonly nodeAtPoint: NodeAtPointDep | undefined;
-  readonly reparentOnDrop: ReparentOnDrop;
+  /** Read at release: a binding's params may be a thunk. */
+  readonly reparentOnDrop: () => ReparentOnDrop;
   readonly dragThresholdPx: number;
 }
 

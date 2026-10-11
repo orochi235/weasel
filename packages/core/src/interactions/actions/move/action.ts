@@ -803,7 +803,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         lifecycle,
         nodeAtPoint: ctx.deps.nodeAtPoint,
         lastWorld: null,
-        reparentOnDrop: (params?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
+        reparentOnDrop: () => (resolveParams(opts?.params)?.['reparentOnDrop'] as ReparentOnDrop | undefined) ?? 'off',
         dragThresholdPx,
       };
 
@@ -1020,7 +1020,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
         // `<SceneCanvas>`) and reparents each moved root under it, then
         // writes the translated pose in the new parent's frame so the
         // visual position is preserved across the parent swap.
-        const reparentMode = scratch.reparentOnDrop;
+        const reparentMode = scratch.reparentOnDrop();
         const dropTarget = reparentMode !== 'off'
           ? resolveDropTarget(endCtx, scratch)
           : null;

@@ -6,7 +6,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
-import type { InvocationCtx } from '@weasel-js/routing';
+import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
 import type { NodeAtPointDep } from '../depSchema';
 import { moveAction } from './action';
 
@@ -21,7 +21,11 @@ function makeScene(): Scene<unknown, string, unknown> {
   return scene as unknown as Scene<unknown, string, unknown>;
 }
 
-function startAndMove(scene: Scene<unknown, string, unknown>, nodeAtPoint: NodeAtPointDep) {
+function startAndMove(
+  scene: Scene<unknown, string, unknown>,
+  nodeAtPoint: NodeAtPointDep,
+  params: BindingOpts['params'] = { reparentOnDrop: 'top' },
+) {
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const handle = invoker.start(
@@ -30,7 +34,7 @@ function startAndMove(scene: Scene<unknown, string, unknown>, nodeAtPoint: NodeA
       modifiers: MODS,
       deps: { selection: { get: () => [A] as NodeId[] }, scene, nodeAtPoint },
     } as unknown as InvocationCtx,
-    { params: { reparentOnDrop: 'top' } },
+    { params },
   );
   handle.onMove!({
     world: { x: 55, y: 5 },
@@ -64,6 +68,22 @@ describe('moveAction — reparentOnDrop as the dispatcher ends it', () => {
     handle.onEnd!({ world: { x: 0, y: 0 }, modifiers: MODS, deps: {} } as unknown as InvocationCtx, 'commit');
 
     expect(nodeAtPoint.mock.calls[0][0]).toEqual({ x: 55, y: 5 });
+    expect(scene.get(A)!.parent).toBe(T);
+  });
+
+  it('reads a thunked reparentOnDrop at release', () => {
+    const scene = makeScene();
+    const nodeAtPoint = vi.fn<NodeAtPointDep>(() => T);
+    let mode = 'off';
+    const handle = startAndMove(scene, nodeAtPoint, () => ({ reparentOnDrop: mode }));
+    mode = 'top';
+    handle.onEnd!({
+      world: { x: 60, y: 5 },
+      modifiers: MODS,
+      deps: {},
+      drag: { start: { x: 5, y: 5 }, current: { x: 60, y: 5 }, delta: { x: 55, y: 0 } },
+    } as unknown as InvocationCtx, 'commit');
+
     expect(scene.get(A)!.parent).toBe(T);
   });
 });
