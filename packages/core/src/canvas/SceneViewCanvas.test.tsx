@@ -467,3 +467,39 @@ describe('<SceneViewCanvas> — late content', () => {
     expect(renderMock.mock.calls.length).toBeGreaterThan(before);
   });
 });
+
+describe('<SceneViewCanvas> scrolled out of view', () => {
+  it('holds its repaint until the canvas is back on screen', async () => {
+    // An observer reports only on what it was told to watch.
+    const watching: Array<() => IntersectionObserverCallback | null> = [];
+    vi.stubGlobal('IntersectionObserver', class {
+      private observed = 0;
+      constructor(cb: IntersectionObserverCallback) { watching.push(() => (this.observed > 0 ? cb : null)); }
+      observe(): void { this.observed++; }
+      unobserve(): void { this.observed--; }
+      disconnect(): void { this.observed = 0; }
+    });
+    const setIntersecting = (isIntersecting: boolean): void => {
+      for (const get of watching) get()?.([{ isIntersecting } as IntersectionObserverEntry], null as never);
+    };
+    try {
+      const scene = makeScene();
+      render(<SceneViewCanvas scene={scene} view={identityView} width={100} height={80} drawOne={drawOne} />);
+      await act(frame);
+      const before = renderMock.mock.calls.length;
+
+      await act(async () => {
+        setIntersecting(false);
+        scene.add({ kind: 'leaf', data: { color: '#00f' }, layer: 'main', pose: { x: 1, y: 1, width: 2, height: 2 } });
+      });
+      await act(frame);
+      expect(renderMock.mock.calls.length).toBe(before);
+
+      act(() => setIntersecting(true));
+      await act(frame);
+      expect(renderMock.mock.calls.length).toBe(before + 1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});

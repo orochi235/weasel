@@ -13,7 +13,8 @@
  *     (prop change or version bump) and an override commit just mark the
  *     surface dirty and one `requestAnimationFrame` coalesces them. The mount
  *     paint is synchronous so the first frame the user sees is the scene, not
- *     a blank canvas,
+ *     a blank canvas, and nothing paints while the canvas is off screen or the
+ *     tab is hidden,
  *   - attaches **no** event listeners (consumers attach their own via
  *     `canvasRef`),
  *   - frees its renderer and every GL object it owns on unmount
@@ -22,9 +23,10 @@
  * Sizing follows `<SceneCanvas>`'s convention: the consumer passes `width` /
  * `height` in CSS pixels. The HTML `width` / `height` attributes of the
  * `<canvas>` (drawing-buffer size) are set to `width × dpr` and `height × dpr`
- * by the canvas renderer (via the underlying renderer's `resize`). The CSS
- * size — what the consumer sees on screen — is managed via the `className`
- * prop; no inline styles are emitted (per project rules).
+ * by the canvas renderer (via the underlying renderer's `resize`), which also
+ * writes the element's inline `width` and `height` style in CSS pixels. That
+ * beats a size set through `className`, so the class positions the canvas and
+ * the `width` / `height` props size it.
  */
 import {
   useCallback,
@@ -88,8 +90,8 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
    *  and paints its `colorOverrides`. Pass the main canvas's animator so both
    *  show the same colors. */
   animator?: Animator;
-  /** Optional CSS class for sizing / positioning the `<canvas>`. The kit
-   *  does not emit inline styles for layout — use a class. */
+  /** Optional CSS class for positioning the `<canvas>`. Its size is `width` ×
+   *  `height`, which the renderer writes as inline style. */
   className?: string;
   /** Forwarded ref to the underlying `<canvas>`. Consumers attach their own
    *  pointer listeners or call `toBlob` for snapshots through this. */
@@ -142,7 +144,10 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   };
   const paintRef = useLatest(paint);
 
-  const { requestRedraw } = useFrameLoop(useCallback(() => paintRef.current(), [paintRef]));
+  const { requestRedraw } = useFrameLoop(
+    useCallback(() => paintRef.current(), [paintRef]),
+    { target: localRef },
+  );
 
   // Every render — a prop change or a scene-version bump — marks the surface
   // dirty. No dependency array: the paint reads all of them.
@@ -162,6 +167,9 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   useEffect(() => animator?.onTick(requestRedraw), [animator, requestRedraw]);
   useLateContentRedraw(requestRedraw);
   useRedrawOnRestore(lease, requestRedraw);
+
+  // A remount (StrictMode) paints its first frame in place again.
+  useEffect(() => () => { paintedRef.current = false; }, []);
 
   return (
     <canvas
