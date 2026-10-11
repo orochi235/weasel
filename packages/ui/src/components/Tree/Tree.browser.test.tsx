@@ -66,6 +66,7 @@ test('folded by its leading glyphs, a branch and a leaf at one level start their
   expect(left('Group')).toBe(left('Zed'));
   expect(left('Ex')).toBe(left('Inner'));
   const step = left('Ex') - left('Group');
-  expect(step).toBe(16);
+  // The glyph's 16px and the 2px after it.
+  expect(step).toBe(18);
   expect(left('Why') - left('Inner')).toBe(step);
 });

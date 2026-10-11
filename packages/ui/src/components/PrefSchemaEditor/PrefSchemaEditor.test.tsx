@@ -119,7 +119,7 @@ describe('PrefSchemaEditor', () => {
   it('shows a row as its name with its key, and a nameless one as its key alone', () => {
     render(<Live start={{ name: 'Prefs', children: { bare: { name: '', children: {} }, view: START.children.view! } }} />);
     expect(within(structure()).getByRole('treeitem', { name: /^View \(view\)/ })).toBeInTheDocument();
-    expect(within(structure()).getByRole('treeitem', { name: /^bare 0 ?group/ })).toBeInTheDocument();
+    expect(within(structure()).getByRole('treeitem', { name: /^bare 0$/ })).toBeInTheDocument();
   });
 
   it('draws a group\'s row with the glyph of the palette tool that makes it, and a leaf\'s with none', () => {

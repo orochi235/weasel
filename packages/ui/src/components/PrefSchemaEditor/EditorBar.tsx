@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
-import { Button } from '../Button';
+import { Icon } from '../../icons';
+import { ToolButton } from '../ToolButton';
+import { ToolGroup } from '../ToolGroup';
 import s from './PrefSchemaEditor.module.css';
 
 const DRAFT_TIME = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
@@ -27,16 +29,16 @@ export function EditorBar({ lead, toolSlot, canUndo, canRedo, onStep, draftSaved
       <div className={s.barLead}>{lead}</div>
       <div className={s.barTools} ref={toolSlot} />
       <div className={s.barEnd}>
-        <Button size="sm" variant="ghost" disabled={!canUndo} onClick={() => onStep('undo')}>Undo</Button>
-        <Button size="sm" variant="ghost" disabled={!canRedo} onClick={() => onStep('redo')}>Redo</Button>
-        {prefs}
-        {draftSavedAt !== null && (
-          <>
-            <Button size="sm" variant="ghost" onClick={onDiscard}>Discard draft</Button>
-            {/* Last: the time changes, and nothing sits after it to be pushed about. */}
-            <span className={s.draftNote}>Draft saved {DRAFT_TIME.format(draftSavedAt)}</span>
-          </>
-        )}
+        <div className={s.palette}>
+          <ToolGroup orientation="horizontal" ariaLabel="History and settings">
+            <ToolButton icon={<Icon name="undo" />} label="Undo" disabled={!canUndo} onClick={() => onStep('undo')} />
+            <ToolButton icon={<Icon name="redo" />} label="Redo" disabled={!canRedo} onClick={() => onStep('redo')} />
+            {draftSavedAt !== null && <ToolButton icon={<Icon name="reset" />} label="Discard draft" title="Go back to the schema in source" onClick={onDiscard} />}
+            {prefs}
+          </ToolGroup>
+        </div>
+        {/* Last: the time changes, and nothing sits after it to be pushed about. */}
+        {draftSavedAt !== null && <span className={s.draftNote}>Draft saved {DRAFT_TIME.format(draftSavedAt)}</span>}
       </div>
     </div>
   );

@@ -134,6 +134,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   }, [draftKey, schema, expanded]);
   const [structureWidth, setStructureWidth] = useState(300);
   const [attributesWidth, setAttributesWidth] = useState(320);
+  const [asideWidth, setAsideWidth] = useState(240);
   const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
 
   const latest = useLatest({ schema, onChange, selected });
@@ -325,7 +326,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   return (
     // Capture: React Aria's fields and tree stop a keydown from bubbling past them.
     <div className={[s.editor, className].filter(Boolean).join(' ')}
-      style={{ '--structure-w': `${structureWidth}px`, '--attributes-w': `${attributesWidth}px` } as CSSProperties}
+      style={{ '--structure-w': `${structureWidth}px`, '--attributes-w': `${attributesWidth}px`, '--aside-w': `${asideWidth}px` } as CSSProperties}
       onKeyDownCapture={(e) => {
       const to = historyKey(e);
       if (to) {
@@ -361,6 +362,8 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.selected; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} />
       <ExportPanel schema={schema} types={types} changes={changes} onSubmit={submit} />
+      <ResizeHandle className={s.asideHandle} invert value={asideWidth} min={120} max={640} onInput={setAsideWidth} ariaLabel="Resize sidebar" />
+      <aside className={`${s.pane} ${s.aside}`} aria-label="Sidebar" />
     </div>
   );
 }

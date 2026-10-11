@@ -45,7 +45,8 @@ function toTreeNodes(node: SchemaNode, path: string | null, changed: ReadonlySet
       ...(isPrefLeaf(child) ? {} : { leading: <Icon size={16} name={GROUP_ICON[child.as ?? (path === null && !isPrefSection(child) ? 'page' : 'section')]} /> }),
       trailing: isPrefLeaf(child)
         ? <>{mark?.(p)}<PrefKindBadge kind={child.type ?? child.kind} /></>
-        : <>{mark?.(p)}{countBadge(leafCount([child]))}<PrefKindBadge kind={child.as ?? (isPrefSection(child) ? 'section' : 'group')} /></>,
+        // Its glyph says how a group is drawn, so it carries no badge to say it again.
+        : <>{mark?.(p)}{countBadge(leafCount([child]))}</>,
       ...(kids ? { children: toTreeNodes(child, p, changed, mark) } : {}),
     };
   });
