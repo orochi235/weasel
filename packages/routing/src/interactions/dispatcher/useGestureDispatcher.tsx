@@ -602,9 +602,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // CLOSES a gesture (e.g. pointerup-with-no-remaining-handles still needs
     // to clear the overlay).
     //
-    // `on` is for the one path that dispatches after its event has left the
-    // stack (drop, whose items materialize async) — by then the routed view
-    // is whatever moved under the cursor since.
+    // `on` is for an event that belongs to the dispatcher an earlier one ran
+    // on, whichever view is routed now: the release of a held key.
     const dispatch = (ev: InputEvent, on?: Dispatcher): 'handled' | 'unhandled' => {
       const d = on ?? dispatcherNow();
       const before = d.inFlight().size;
@@ -1648,7 +1647,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       if (!dt) return;
       e.preventDefault();
       routeAt(null, e.clientX, e.clientY);
-      const dropOn = target().dispatcher;
+      const dropView = routedId;
       const w = toWorld(e.clientX, e.clientY);
       // Real modifiers forwarded (Option-drag is a copy-drag on macOS); the
       // kit ingest binding declares all modifiers optional, so they can't
@@ -1659,11 +1658,19 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       void itemsFromDataTransfer(dt).then((items) => {
         if (disposed) return;
         if (items.length === 0) return;
-        dispatch({
-          kind: 'drop', items,
-          x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY,
-          ...base,
-        }, dropOn);
+        // The routed view is whatever moved under the cursor since; the drop
+        // runs on the one it landed in, dispatcher and context both.
+        const routedNow = routedId;
+        routedId = dropView;
+        try {
+          dispatch({
+            kind: 'drop', items,
+            x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY,
+            ...base,
+          });
+        } finally {
+          routedId = routedNow;
+        }
       });
     };
 
