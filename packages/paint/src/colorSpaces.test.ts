@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { srgbU8ToOklab, oklabToSrgbU8, lerpColorArray, mixOklab } from './colorSpaces';
+import { srgbU8ToOklab, oklabToSrgbU8, lerpColorArray, mixOklab, hexToOklchDeg } from './colorSpaces';
 
 describe('srgbU8 ↔ Oklab', () => {
   it('round-trips every byte triple within ±1 per channel', () => {
@@ -104,5 +104,17 @@ describe('mixOklab', () => {
     const got = u8(mixOklab(hex('#2e1f7a'), [0, 0, 0, 0], 0.3));
     [46, 30, 123].forEach((v, i) => expect(Math.abs(got[i] - v)).toBeLessThanOrEqual(1));
     expect(got[3]).toBeCloseTo(0.3);
+  });
+});
+
+describe('hexToOklchDeg', () => {
+  it('reads shorthand hex as the color it abbreviates', () => {
+    expect(hexToOklchDeg('#fff')).toEqual(hexToOklchDeg('#ffffff'));
+    expect(hexToOklchDeg('#f80')).toEqual(hexToOklchDeg('#ff8800'));
+    expect(hexToOklchDeg('#f808')).toEqual(hexToOklchDeg('#ff8800'));
+  });
+
+  it('ignores the alpha byte of an eight-digit hex', () => {
+    expect(hexToOklchDeg('#ff000080')).toEqual(hexToOklchDeg('#ff0000'));
   });
 });

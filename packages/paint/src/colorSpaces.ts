@@ -271,9 +271,12 @@ export function oklchDegToHex(L: number, C: number, hueDeg: number): string {
   return `#${hex2(r)}${hex2(g)}${hex2(bl)}`;
 }
 
-/** `#rrggbb` to OKLCh with the hue wrapped into 0..360. */
+/** A hex color (`#rgb`, `#rgba`, `#rrggbb`, or `#rrggbbaa`, alpha ignored) to
+ *  OKLCh with the hue wrapped into 0..360. */
 export function hexToOklchDeg(hex: string): OklchDeg {
-  const n = Number.parseInt(hex.slice(1), 16);
+  const digits = hex.slice(1);
+  const long = digits.length <= 4 ? digits.replace(/./g, '$&$&') : digits;
+  const n = Number.parseInt(long.slice(0, 6), 16);
   const [L, A, B] = srgbU8ToOklab((n >> 16) & 255, (n >> 8) & 255, n & 255);
   const [l, c, h] = oklabToOklch(L, A, B);
   return { L: l, C: c, H: ((((h * 180) / Math.PI) % 360) + 360) % 360 };
