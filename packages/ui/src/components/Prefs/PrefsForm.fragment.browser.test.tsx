@@ -33,7 +33,7 @@ test('a fragment\'s rows take cells among their neighbors\' in a form two rows a
   await page.viewport(900, 500);
   render(
     <div style={{ width: 820, height: 400 }}>
-      <PrefsForm layout="rail" rowsAcross={2} schema={SCHEMA} values={{}} selected="view.glue" onChange={() => {}} />
+      <PrefsForm layout="rail" rowsAcross={2} schema={SCHEMA} values={{}} selected={['view.glue']} onChange={() => {}} />
     </div>,
   );
   // Grid | Snap on the first line, Guides | Rulers on the second.

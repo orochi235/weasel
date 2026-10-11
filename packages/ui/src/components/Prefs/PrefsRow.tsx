@@ -55,8 +55,10 @@ export interface WalkCtx {
   inheritHint?: (path: string) => string | undefined;
   canInherit?: (path: string) => boolean;
   fields?: readonly PrefFieldChoice[];
-  /** Path of the row or group the form marks as selected. */
-  selected?: string | null;
+  /** Paths of the rows and groups the form marks as selected. */
+  selected?: readonly string[];
+  /** The one of `selected` the form brings into view and opens the page of. */
+  lead?: string | null;
   /** The drop the form is drawing. */
   drop?: PrefDrop | null;
 }

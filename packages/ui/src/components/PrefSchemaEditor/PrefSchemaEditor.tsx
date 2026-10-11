@@ -292,6 +292,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const beforePress = useRef<readonly string[]>([]);
   const previewDrag = usePreviewDrag({
     stage, schema: () => latest.current.schema, place: outside,
+    selected: () => latest.current.paths, onPick: (path) => reveal([path]),
     onMove: (paths, target) => moveTo(paths, target, beforePress.current),
     onCopy: (paths, target) => copyTo(paths, target, beforePress.current),
   });
@@ -348,7 +349,12 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           kinds={kindList} custom={custom} renderers={renderers} onNotice={setNotice} />
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
-      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.lead} onSelect={(path) => reveal(path === null ? [] : [path])} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} />
+      <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}
+        onSelect={(path, how) => {
+          // The root's own entry names no node to add to a selection.
+          if (how.toggle && path !== null) { selection.toggle(path); setNotice(null); }
+          else reveal(path === null ? [] : [path]);
+        }} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.paths; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} />
       <ExportPanel schema={schema} changes={changes} onSubmit={submit} />
     </div>
   );

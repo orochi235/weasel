@@ -38,19 +38,19 @@ describe('shownPath', () => {
 });
 
 describe('a selected path', () => {
-  it('marks the one row or group it names', () => {
-    const { container, rerender } = render(<PrefsForm schema={SCHEMA} onChange={() => {}} selected="canvas.showGrid" />);
+  it('marks the row or group it names', () => {
+    const { container, rerender } = render(<PrefsForm schema={SCHEMA} onChange={() => {}} selected={['canvas.showGrid']} />);
     expect(marked(container)).toEqual(['canvas.showGrid']);
-    rerender(<PrefsForm schema={SCHEMA} onChange={() => {}} selected="canvas.snapping" />);
+    rerender(<PrefsForm schema={SCHEMA} onChange={() => {}} selected={['canvas.snapping']} />);
     expect(marked(container)).toEqual(['canvas.snapping']);
-    rerender(<PrefsForm schema={SCHEMA} onChange={() => {}} selected="nowhere" />);
+    rerender(<PrefsForm schema={SCHEMA} onChange={() => {}} selected={['nowhere']} />);
     expect(marked(container)).toEqual([]);
   });
 
   it('opens the rail group that holds it, and leaves the reader free to open another afterward', () => {
     const { container, rerender } = render(<PrefsForm layout="rail" schema={SCHEMA} onChange={() => {}} />);
     expect(screen.queryByText('Author')).toBeNull();
-    rerender(<PrefsForm layout="rail" schema={SCHEMA} onChange={() => {}} selected="io.author" />);
+    rerender(<PrefsForm layout="rail" schema={SCHEMA} onChange={() => {}} selected={['io.author']} />);
     expect(screen.getByText('Author')).toBeInTheDocument();
     expect(marked(container)).toEqual(['io.author']);
     fireEvent.click(screen.getByRole('button', { name: /Canvas/ }));
@@ -64,12 +64,12 @@ describe('a selected path', () => {
     Element.prototype.scrollIntoView = function scrollIntoView(this: Element) { scrolled.push(this.getAttribute('data-pref-path')); };
     try {
       const onSelect = vi.fn();
-      const view = (selected?: string) => <PrefsForm schema={SCHEMA} onChange={() => {}} selected={selected} onSelect={onSelect} />;
+      const view = (selected?: string) => <PrefsForm schema={SCHEMA} onChange={() => {}} selected={selected === undefined ? undefined : [selected]} onSelect={onSelect} />;
       const { rerender } = render(view());
       rerender(view('io.author'));
       expect(scrolled).toEqual(['io.author']);
       fireEvent.pointerDown(screen.getByText('Show grid'));
-      expect(onSelect).toHaveBeenLastCalledWith('canvas.showGrid');
+      expect(onSelect).toHaveBeenLastCalledWith('canvas.showGrid', { toggle: false });
       rerender(view('canvas.showGrid'));
       expect(scrolled).toEqual(['io.author']);
     } finally {
@@ -83,16 +83,16 @@ describe('onSelect', () => {
     const onSelect = vi.fn();
     render(<PrefsForm layout="rail" schema={SCHEMA} onChange={() => {}} onSelect={onSelect} />);
     fireEvent.pointerDown(screen.getByText('Enabled'));
-    expect(onSelect).toHaveBeenLastCalledWith('canvas.snapping.enabled');
+    expect(onSelect).toHaveBeenLastCalledWith('canvas.snapping.enabled', { toggle: false });
     fireEvent.pointerDown(screen.getByRole('heading', { name: 'Snapping' }));
-    expect(onSelect).toHaveBeenLastCalledWith('canvas.snapping');
+    expect(onSelect).toHaveBeenLastCalledWith('canvas.snapping', { toggle: false });
   });
 
   it('reports the group whose rail entry is pressed', () => {
     const onSelect = vi.fn();
     render(<PrefsForm layout="rail" schema={SCHEMA} onChange={() => {}} onSelect={onSelect} />);
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Import / Export' }));
-    expect(onSelect).toHaveBeenLastCalledWith('io');
+    expect(onSelect).toHaveBeenLastCalledWith('io', { toggle: false });
   });
 
   it('reports the root, as the empty path, from the rail entry for its own leaves', () => {
@@ -101,8 +101,8 @@ describe('onSelect', () => {
       name: 'Preferences',
       children: { ...SCHEMA.children, loose: { kind: 'boolean', name: 'Loose', description: '', default: false } },
     };
-    render(<PrefsForm layout="rail" schema={schema} selected="io" onChange={() => {}} onSelect={onSelect} />);
+    render(<PrefsForm layout="rail" schema={schema} selected={['io']} onChange={() => {}} onSelect={onSelect} />);
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Preferences' }));
-    expect(onSelect).toHaveBeenLastCalledWith('');
+    expect(onSelect).toHaveBeenLastCalledWith('', { toggle: false });
   });
 });

@@ -74,7 +74,7 @@ export function RailLayout(props: PrefsFormProps & {
   };
 
   // The page holding the selection: the deepest rail entry it is or lies under, else the loose leaves.
-  const selected = props.ctx.selected ?? null;
+  const selected = props.ctx.lead ?? null;
   const home = selected === null ? null : items
     .filter((i) => (i.depth === 0 || subPages) && (selected === i.path || selected.startsWith(`${i.path}.`)))
     .reduce((best, i) => (i.path.length > best.length ? i.path : best), '');
@@ -83,7 +83,7 @@ export function RailLayout(props: PrefsFormProps & {
   useEffect(() => {
     const now = latest.current;
     if (now.home !== null && now.home !== now.open) now.show(now.home);
-  }, [props.selected]);
+  }, [selected]);
 
   // The form as the drop would leave it. `open` and `items` above are the form's own, which the drop leaves alone.
   const drop = useDropFrame(selection.ref, props.drop, root, open);

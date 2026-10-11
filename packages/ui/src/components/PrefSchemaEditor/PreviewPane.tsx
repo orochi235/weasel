@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
 import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { Badge } from '../Badge';
 import { DragGhost } from '../DragGhost';
-import { PrefsDialog, type PrefDrop, type PrefRenderer } from '../Prefs';
+import { PrefsDialog, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
 import { SelectionPanel, setAtPath, type PropertyRenderer } from '../SelectionPanel';
 import { Switch } from '../Switch';
@@ -20,9 +21,9 @@ export interface PreviewPaneProps {
   renderers?: Record<string, PrefRenderer>;
   propertyRenderers?: Record<string, PropertyRenderer>;
   /** Tree path of the node to mark and bring into view. */
-  selected?: string | null;
+  selected?: readonly string[];
   /** The reader picked a node in the preview; its tree path, or `null` for the root. */
-  onSelect?: (path: string | null) => void;
+  onSelect?: (path: string | null, how: PrefSelectHow) => void;
   /** The reader set values in the preview; each becomes its leaf's default. */
   onDefaults(edits: readonly DefaultEdit[]): void;
   /** Set to the element the preferences form is drawn in, for a drag to be hit-tested against. */
@@ -39,14 +40,14 @@ export interface PreviewPaneProps {
 export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: PreviewPaneProps) {
   return isPrefSection(schema)
     ? <SectionPreview schema={schema} renderers={propertyRenderers} onDefaults={onDefaults} />
-    : <GroupPreview schema={schema} renderers={renderers} selected={selected ?? null} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
+    : <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
 }
 
 function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: {
   schema: PrefGroup;
   renderers?: Record<string, PrefRenderer>;
-  selected: string | null;
-  onSelect?: (path: string | null) => void;
+  selected: readonly string[];
+  onSelect?: (path: string | null, how: PrefSelectHow) => void;
   onDefaults(edits: readonly DefaultEdit[]): void;
   stageRef?: RefObject<HTMLDivElement | null>;
   drop?: PrefDrop | null;
@@ -57,6 +58,8 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
   const [width, setWidth] = useState(800);
   // What sits on no page is listed as unplaced, and the form would file it under a page of its own.
   const placed = useMemo(() => placedOnly(schema), [schema]);
+  // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
+  const marked = useMemo(() => selected.map((p) => keysOf(p).join('.')), [selected]);
   return (
     <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
       <PaneHeader title="Live preview">
@@ -68,17 +71,19 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
         // An empty group is drawn too: it is somewhere to drop into.
         showEmpty drop={drop}
         // Under a group root every key is one step of the value path, so the two paths differ only in their separator.
-        selected={selected === null ? undefined : keysOf(selected).join('.')}
-        onSelect={onSelect && ((path) => onSelect(path === '' ? null : pathOf(path.split('.'))))}
+        selected={marked}
+        onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), how))}
         onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
       <ResizeHandle value={width} min={360} max={900} onInput={setWidth} ariaLabel="Resize preview" />
       {ghost && stageRef?.current && !drawsNode(drop) && (
-        <DragGhost at={ghost} from={stageRef.current}><NodeGhost node={ghost.node} topLevel={ghost.topLevel} renderers={renderers} /></DragGhost>
+        <DragGhost at={ghost} from={stageRef.current}><NodeGhost node={ghost.node} topLevel={ghost.topLevel} renderers={renderers} />{ghost.count > 1 && <Badge size="xs" className={s.ghostCount}>{ghost.count}</Badge>}</DragGhost>
       )}
       </div>
     </section>
   );
 }
+
+const NO_SELECTION: readonly string[] = [];
 
 /** The form holds no values of its own, so every row shows its default. */
 const NO_VALUES = {};

@@ -5,6 +5,7 @@ export {
   type PrefRenderer,
   type PrefRenderContext,
 } from './PrefsForm';
+export type { PrefSelectHow } from './selection';
 export { prefFieldProps, type PrefFieldState } from './prefField';
 export { PrefActionButton } from './PrefActionButton';
 export { PrefControl, type PrefControlProps } from './PrefControl';

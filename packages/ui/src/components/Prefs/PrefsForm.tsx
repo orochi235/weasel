@@ -9,7 +9,7 @@ import { prefFieldChoices, type PrefFieldChoice } from './schema';
 import type { PrefRenderer, WalkCtx } from './PrefsRow';
 import { paneChildren } from './PrefsPane';
 import { RailLayout } from './RailLayout';
-import { selectionAttrs, shownPath, useSelectedRow, type SelectionRoot } from './selection';
+import { selectionAttrs, shownPath, useSelectedRow, type PrefSelectHow, type SelectionRoot } from './selection';
 import s from './Prefs.module.css';
 
 export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
@@ -96,14 +96,16 @@ export interface PrefsFormProps {
   /** Small text after an inherited leaf's label, e.g. `() => 'from Defaults'`.
    *  Default: none. */
   inheritHint?: (path: string) => string | undefined;
-  /** Dotted path of a leaf or a group to mark. Each time it changes the form
-   *  brings it into view, and a rail opens the group that holds it. A path the
-   *  form does not draw marks nothing. */
-  selected?: string;
+  /** Dotted paths of the leaves and groups to mark. Each time the last one
+   *  changes the form brings it into view, and a rail opens the group that
+   *  holds it. A path the form does not draw marks nothing. */
+  selected?: readonly string[];
   /** The reader pressed or focused into a leaf's row, a group, or a group's
    *  entry in a rail. The empty path is the root, from the rail entry for its
-   *  own leaves. */
-  onSelect?: (path: string) => void;
+   *  own leaves. `how.toggle` is true when Cmd or Ctrl was held. A press on
+   *  one of several selected rows is reported on its click, so a drag can
+   *  carry them all. */
+  onSelect?: (path: string, how: PrefSelectHow) => void;
   /** A drag over the form. The form lays out as it would after the drop,
    *  with the dragged nodes drawn where they would land: `prefDropTargetAt`
    *  finds where that is from a pointer position. */
@@ -113,6 +115,8 @@ export interface PrefsFormProps {
   showEmpty?: boolean;
   className?: string;
 }
+
+const NO_SELECTION: readonly string[] = [];
 
 /**
  * Schema-driven preferences form. Leaves render as label + control rows;
@@ -146,9 +150,14 @@ export function PrefsForm(props: PrefsFormProps) {
   // Every field of the whole schema, not only the visible ones: a reference may name a hidden field.
   const own = useMemo(() => prefFieldChoices(schema), [schema]);
   const fields = props.fields ?? own;
-  const shown = useMemo(() => shownPath(root, props.selected), [root, props.selected]);
-  const selection = useSelectedRow(props.selected, shown, props.onSelect);
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, selected: shown };
+  const selected = props.selected ?? NO_SELECTION;
+  const shown = useMemo(
+    () => selected.map((p) => shownPath(root, p)).filter((p): p is string => p !== null),
+    [root, selected],
+  );
+  const lead = shown.at(-1) ?? null;
+  const selection = useSelectedRow(selected, lead, props.onSelect);
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, selected: shown, lead };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

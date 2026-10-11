@@ -102,6 +102,28 @@ describe('PrefSchemaEditor with several nodes selected', () => {
     expect(field('Name')).toHaveValue('Same');
   });
 
+  const preview = () => screen.getByRole('region', { name: 'Live preview' });
+  const previewRow = (label: string) => within(preview()).getByText(label).closest('[data-pref-path]')!;
+
+  it('marks every selected node in the preview', () => {
+    render(<Live />);
+    pickTwo();
+    expect(previewRow('Show grid')).toHaveAttribute('data-selected');
+    expect(previewRow('Snap')).toHaveAttribute('data-selected');
+    expect(previewRow('Zoom')).not.toHaveAttribute('data-selected');
+  });
+
+  it('adds a preview row to the selection with Cmd held, and takes it out again', () => {
+    render(<Live />);
+    fireEvent.click(row('grid'));
+    fireEvent.pointerDown(previewRow('Snap'), { metaKey: true });
+    expect(item('grid')).toHaveAttribute('aria-selected', 'true');
+    expect(item('snap')).toHaveAttribute('aria-selected', 'true');
+    fireEvent.pointerDown(previewRow('Show grid'), { metaKey: true });
+    expect(item('grid')).toHaveAttribute('aria-selected', 'false');
+    expect(item('snap')).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('offers only what every kind has when the kinds differ', () => {
     render(<Live />);
     fireEvent.click(row('zoom'));

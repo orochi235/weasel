@@ -59,7 +59,7 @@ function mount(across: 1 | 2, from?: string, height = 420, settle = true): Harne
     setSelected = pick;
     return (
       <div style={{ width: 720, height, display: 'grid' }}>
-        <PrefsForm layout="rail" rowsAcross={across} schema={SCHEMA} values={{}} onChange={() => {}} drop={drop} selected={selected} />
+        <PrefsForm layout="rail" rowsAcross={across} schema={SCHEMA} values={{}} onChange={() => {}} drop={drop} selected={selected === undefined ? undefined : [selected]} />
       </div>
     );
   }

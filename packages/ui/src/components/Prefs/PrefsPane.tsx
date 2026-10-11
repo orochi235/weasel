@@ -155,10 +155,10 @@ function PaneTabs({ ctx, tabs, depth, box }: {
 }) {
   const [picked, setPicked] = useState(tabs[0]![0]);
   // A selection inside another tab opens that tab once, when it arrives; the reader may then leave it.
-  const [seen, setSeen] = useState(ctx.selected);
-  if (seen !== ctx.selected) {
-    setSeen(ctx.selected);
-    const holder = tabs.find(([p]) => within(p, ctx.selected));
+  const [seen, setSeen] = useState(ctx.lead);
+  if (seen !== ctx.lead) {
+    setSeen(ctx.lead);
+    const holder = tabs.find(([p]) => within(p, ctx.lead));
     if (holder && holder[0] !== picked) setPicked(holder[0]);
   }
   const open = tabs.find(([p]) => p === picked)?.[0] ?? tabs[0]![0];

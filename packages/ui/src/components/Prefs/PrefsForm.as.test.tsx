@@ -55,7 +55,7 @@ describe('a group\'s `as`', () => {
   });
 
   it('opens the tab that holds a selection when it arrives', () => {
-    const view = (selected?: string) => <PrefsForm layout="rail" schema={SCHEMA} onChange={() => {}} defaultSection="canvas" selected={selected} />;
+    const view = (selected?: string) => <PrefsForm layout="rail" schema={SCHEMA} onChange={() => {}} defaultSection="canvas" selected={selected === undefined ? undefined : [selected]} />;
     const { rerender } = render(view());
     rerender(view('canvas.dark.dim'));
     expect(screen.getByText('Dim')).toBeInTheDocument();

@@ -56,11 +56,11 @@ describe('a fragment group', () => {
   it('is selectable by its path, and reports the row pressed inside it', () => {
     const onSelect = vi.fn();
     const { container } = render(
-      <PrefsForm layout="rail" schema={SCHEMA} values={{}} selected="view.glue" onChange={() => {}} onSelect={onSelect} />,
+      <PrefsForm layout="rail" schema={SCHEMA} values={{}} selected={['view.glue']} onChange={() => {}} onSelect={onSelect} />,
     );
     expect(container.querySelector('[data-pref-path="view.glue"]')).toHaveAttribute('data-selected');
     fireEvent.pointerDown(screen.getByText('Snap'));
-    expect(onSelect).toHaveBeenLastCalledWith('view.glue.snap');
+    expect(onSelect).toHaveBeenLastCalledWith('view.glue.snap', { toggle: false });
   });
 
   it('draws the same way in the columns layout', () => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type FocusEvent, type PointerEvent, type RefObject } from 'react';
+import { useEffect, useRef, type FocusEvent, type MouseEvent, type PointerEvent, type RefObject } from 'react';
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { prefersReducedMotion } from '../../reducedMotion';
 import { dropSlot, isDropPath } from './drop';
@@ -11,7 +11,13 @@ export const RAIL_ATTR = 'data-pref-rail';
 
 /** What a form marks while it draws: the selection. */
 export interface PrefMarks {
-  selected?: string | null;
+  selected?: readonly string[];
+}
+
+/** How a row was picked. */
+export interface PrefSelectHow {
+  /** Cmd or Ctrl was held: the row joins or leaves the selection. */
+  toggle: boolean;
 }
 
 /** The attributes of the element a form draws for the leaf (`leaf`) or the group at `path`. */
@@ -21,7 +27,7 @@ export function selectionAttrs(path: string, marks: PrefMarks, leaf = false): Re
   return {
     [PATH_ATTR]: path === '' ? undefined : path,
     'data-pref-leaf': leaf ? '' : undefined,
-    'data-selected': path !== '' && path === marks.selected ? '' : undefined,
+    'data-selected': path !== '' && marks.selected?.includes(path) ? '' : undefined,
   };
 }
 
@@ -47,25 +53,31 @@ export interface SelectionRoot {
   ref: RefObject<HTMLDivElement | null>;
   onPointerDown?: (e: PointerEvent) => void;
   onFocus?: (e: FocusEvent) => void;
+  onClick?: (e: MouseEvent) => void;
 }
 
 /**
- * Props for a form's root element: they scroll `shown` into view each time `selected` changes, and report the
- * row or group the reader presses or focuses into, a group's rail entry included.
+ * Props for a form's root element: they scroll `shown` into view each time the last of `selected` changes, and
+ * report the row or group the reader presses or focuses into, a group's rail entry included.
  */
 export function useSelectedRow(
-  selected: string | undefined,
+  selected: readonly string[],
   shown: string | null,
-  onSelect: ((path: string) => void) | undefined,
+  onSelect: ((path: string, how: PrefSelectHow) => void) | undefined,
 ): SelectionRoot {
   const ref = useRef<HTMLDivElement | null>(null);
   const pending = useRef(false);
   const reported = useRef<string | null>(null);
+  const lead = selected.at(-1);
   useEffect(() => {
     // A selection the reader made here is already under their pointer; scrolling it would move it mid-click.
-    pending.current = selected !== undefined && selected !== reported.current;
+    pending.current = lead !== undefined && lead !== reported.current;
     reported.current = null;
-  }, [selected]);
+  }, [lead]);
+  // A press on one of several selected rows waits for the click: it may be the start of a drag of them all.
+  const held = useRef<string | null>(null);
+  // The focus that follows a press is the same pick, not a second one.
+  const pressed = useRef<string | null>(null);
   // Every render, because the element may arrive a render late: a rail opens the group that holds it first.
   useEffect(() => {
     if (!pending.current || shown === null || ref.current === null) return;
@@ -78,13 +90,36 @@ export function useSelectedRow(
     el.scrollIntoView?.({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   });
   if (onSelect === undefined) return { ref };
-  const pick = (e: PointerEvent | FocusEvent): void => {
+  const pathAt = (e: { target: EventTarget }): string | null => {
     // A rail entry stands for its group as much as the group's heading in the pane does.
     const el = (e.target as Element).closest?.(`[${PATH_ATTR}], [${RAIL_ATTR}]`);
-    const path = el?.getAttribute(PATH_ATTR) ?? el?.getAttribute(RAIL_ATTR);
-    if (path == null || path === selected) return;
-    reported.current = path;
-    onSelect(path);
+    return el?.getAttribute(PATH_ATTR) ?? el?.getAttribute(RAIL_ATTR) ?? null;
   };
-  return { ref, onPointerDown: pick, onFocus: pick };
+  const report = (path: string, toggle: boolean): void => {
+    reported.current = path;
+    onSelect(path, { toggle });
+  };
+  return {
+    ref,
+    onPointerDown: (e) => {
+      const path = pathAt(e);
+      held.current = null;
+      pressed.current = path;
+      if (path === null) return;
+      if (e.metaKey || e.ctrlKey) report(path, true);
+      else if (!selected.includes(path)) report(path, false);
+      else if (selected.length > 1) held.current = path;
+    },
+    onClick: (e) => {
+      const path = held.current;
+      held.current = null;
+      pressed.current = null;
+      if (path !== null && pathAt(e) === path) report(path, false);
+    },
+    onFocus: (e) => {
+      const path = pathAt(e);
+      if (path === null || path === pressed.current || selected.includes(path)) return;
+      report(path, false);
+    },
+  };
 }

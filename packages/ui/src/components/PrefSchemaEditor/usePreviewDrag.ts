@@ -2,7 +2,7 @@ import { useRef, useState, type PointerEvent as ReactPointerEvent, type RefObjec
 import { isInControlWithin, startThresholdDrag, type ThresholdDragHandle } from '@weasel-js/core';
 import { swallowNextClick } from '../../useReorderDragList';
 import { GHOST_WIDTH, ghostIsPage } from './NodeGhost';
-import { nodeAt, parentPath, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { carried, isFixed, nodeAt, parentPath, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import type { DropOutside } from './StructurePane';
 
 export interface PreviewGhost {
@@ -12,19 +12,26 @@ export interface PreviewGhost {
   node: SchemaNode;
   /** The node sits directly under the root. */
   topLevel: boolean;
+  /** How many nodes the drag carries; the one drawn is the one pressed. */
+  count: number;
 }
 
 /**
  * Dragging what the live preview draws: a press on a row's label, on a group's heading, or on a group's entry in the
  * rail picks that node up, and it drops wherever `place` takes it — the preview itself. A press on a row's control is
- * the control's. With Alt held the node stays and a copy of it drops.
+ * the control's. With Alt held the node stays and a copy of it drops. A press on one of several selected nodes picks
+ * them all up, and one let go without a drag picks that node alone.
  */
-export function usePreviewDrag({ stage, schema, place, onMove, onCopy }: {
+export function usePreviewDrag({ stage, schema, place, onMove, onCopy, selected, onPick }: {
   stage: RefObject<HTMLDivElement | null>;
   schema(): SchemaRoot;
   place: DropOutside;
   onMove(paths: readonly string[], target: SchemaTarget): void;
   onCopy(paths: readonly string[], target: SchemaTarget): void;
+  /** The tree paths selected before the press. */
+  selected(): readonly string[];
+  /** One of several selected nodes was pressed and let go without a drag. */
+  onPick(path: string): void;
 }): { ghost: PreviewGhost | null; onPointerDown(e: ReactPointerEvent): void } {
   const [ghost, setGhost] = useState<PreviewGhost | null>(null);
   const drag = useRef<ThresholdDragHandle | null>(null);
@@ -37,6 +44,8 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy }: {
     const el = entry ?? target.closest?.('[data-pref-path]');
     // A rail entry is a button whose press is also the pick-up.
     if (!box || !el || drag.current || e.button !== 0 || (!entry && isInControlWithin(target, el))) return;
+    // With Cmd or Ctrl the press adds the row to the selection or takes it out, and picks nothing up.
+    if (e.metaKey || e.ctrlKey) return;
     // A leaf's row is its label and then its control; only the label picks the row up.
     const row = el.firstElementChild;
     if (el.hasAttribute('data-pref-leaf') && row && row.children.length > 1 && !row.firstElementChild!.contains(target)) return;
@@ -45,6 +54,11 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy }: {
     const node = nodeAt(schema(), path);
     if (!node) return;
     const topLevel = parentPath(path) === null;
+    const chosen = selected();
+    const several = chosen.length > 1 && chosen.includes(path);
+    const paths = several ? carried(schema(), chosen) : [path];
+    if (paths.some((p) => isFixed(schema(), p))) return;
+    const nodes = paths.map((p) => nodeAt(schema(), p)!);
 
     const end = () => {
       drag.current = null;
@@ -52,25 +66,26 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy }: {
       setGhost(null);
     };
     // A copy is new where it lands, so the place is asked about it with no path of its own.
-    const held = (ev: PointerEvent): string[] => (ev.altKey ? [] : [path]);
+    const held = (ev: PointerEvent): string[] => (ev.altKey ? [] : paths);
     const update = (ev: PointerEvent) => {
-      place.over([node], held(ev), { x: ev.clientX, y: ev.clientY });
+      place.over(nodes, held(ev), { x: ev.clientX, y: ev.clientY });
       // Offset from the pointer so what is under it stays visible.
-      setGhost({ left: ev.clientX + 10, top: ev.clientY + 10, width: GHOST_WIDTH[ghostIsPage(node, topLevel) ? 'page' : 'node'], node, topLevel });
+      setGhost({ left: ev.clientX + 10, top: ev.clientY + 10, width: GHOST_WIDTH[ghostIsPage(node, topLevel) ? 'page' : 'node'], node, topLevel, count: paths.length });
     };
     drag.current = startThresholdDrag(e, {
       origin: box,
       onActivate: update,
       onMove: update,
       onCommit: (ev) => {
-        const to = place.target([node], held(ev), { x: ev.clientX, y: ev.clientY });
+        const to = place.target(nodes, held(ev), { x: ev.clientX, y: ev.clientY });
         // The release would otherwise click the label it began on, and toggle its control.
         swallowNextClick(box);
         end();
-        if (to) (ev.altKey ? onCopy : onMove)([path], to);
+        if (to) (ev.altKey ? onCopy : onMove)(paths, to);
       },
       onClick: () => {
         end();
+        if (several) onPick(path);
         // The session holds the pointer, so the release is not a click on the entry.
         (entry as HTMLElement | null)?.click();
       },
