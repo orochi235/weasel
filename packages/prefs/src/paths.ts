@@ -2,7 +2,7 @@ type Join<A extends string, B extends string> = A extends '' ? B : `${A}.${B}`;
 
 /** Every value's dotted path in a `PrefGroup` schema, where a group's key is a
  *  segment; an `object` leaf is one path, its fields are not, and an `action`
- *  leaf, holding no value, has none. A `PrefSection`
+ *  or `alias` leaf, holding no value, has none. A `PrefSection`
  *  has no such paths: each of its leaves is addressed by its own key. */
 export type PrefPath<G, Prefix extends string = ''> =
   G extends { children: infer C }
@@ -10,7 +10,7 @@ export type PrefPath<G, Prefix extends string = ''> =
       ? Join<Prefix, string>
       : {
           [K in keyof C & string]: C[K] extends { kind: string }
-            ? C[K] extends { kind: 'action' } ? never : Join<Prefix, K>
+            ? C[K] extends { kind: 'action' | 'alias' } ? never : Join<Prefix, K>
             : C[K] extends { children: Record<string, unknown> }
               ? PrefPath<C[K], Join<Prefix, K>>
               : never;

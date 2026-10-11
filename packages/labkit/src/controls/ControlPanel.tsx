@@ -1,7 +1,11 @@
 import {
   isBuiltinPref,
   isPrefLeaf,
+  prefAliasedLeaf,
+  prefAliasTarget,
+  prefLeafAt,
   type PrefAction,
+  type PrefAlias,
   type PrefGroup,
   type PrefLeaf,
   type PrefList,
@@ -564,8 +568,24 @@ function summarizeAuto(value: unknown): string {
 }
 
 /** One leaf's row, as the panel draws it. Shared with `ControlMatrix`, whose
- *  popover edits one cell with exactly this row. */
-export function ControlRow<TC extends Record<string, unknown>>({
+ *  popover edits one cell with exactly this row. An alias draws the row of the
+ *  leaf it shows, at that leaf's path: its value, its auto state and whatever
+ *  renders it are all the target's. */
+export function ControlRow<TC extends Record<string, unknown>>(props: ControlRowProps<TC>) {
+  const { leaf, resolved, renderers } = props;
+  if (leaf.kind !== 'alias' || renderers?.[props.path] || resolved.renderers[props.path]) return <LeafRow {...props} />;
+  const alias = leaf as PrefAlias;
+  const target = prefAliasTarget(alias, (path) => prefLeafAt(resolved.group, path));
+  if (target) return <LeafRow {...props} path={target.path} leaf={prefAliasedLeaf(alias, target.leaf)} />;
+  // An alias of nothing is a wiring fault, shown where it sits and not dropped from the panel.
+  return (
+    <PropertyRow label={alias.name === '' ? 'Alias' : alias.name} description={alias.description} layout={props.layout}>
+      <span>(alias: no control at {alias.of === '' ? 'an empty path' : alias.of})</span>
+    </PropertyRow>
+  );
+}
+
+function LeafRow<TC extends Record<string, unknown>>({
   path,
   leaf,
   resolved,

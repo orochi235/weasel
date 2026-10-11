@@ -8,13 +8,17 @@ import { modsOf } from './treeUtils';
 
 const HOVER_EXPAND_MS = 600;
 
-/** What a drag would do with its rows where it lands. */
-export interface TreeDragHow {
-  /** Alt is held and the tree takes copies: the rows stay where they are, and copies of them land. */
-  copy: boolean;
-}
+/**
+ * What a drag would do with its rows where it lands. `copy`, with Alt held in a tree that takes copies, and
+ * `link`, with Alt and Cmd or Ctrl held in one that takes links, both leave the rows where they are.
+ */
+export type TreeDragEffect = 'move' | 'copy' | 'link';
 
-const MOVE: TreeDragHow = { copy: false };
+interface Modifiers {
+  altKey: boolean;
+  metaKey: boolean;
+  ctrlKey: boolean;
+}
 
 /** A visible row as `Tree` walks it. */
 export interface TreeDragRow {
@@ -32,11 +36,12 @@ export interface UseTreeDragOptions {
   selected: ReadonlySet<string>;
   container(): HTMLElement | null;
   rowEl(id: string): HTMLElement | undefined;
-  canDrop?(ids: readonly string[], target: TreeDropTarget, how: TreeDragHow): boolean;
+  canDrop?(ids: readonly string[], target: TreeDropTarget, effect: TreeDragEffect): boolean;
   onMove?(ids: string[], target: TreeDropTarget): void;
   onCopy?(ids: string[], target: TreeDropTarget): void;
-  onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, how: TreeDragHow): boolean;
-  onDropOutside?(ids: string[], point: { x: number; y: number }, how: TreeDragHow): void;
+  onLink?(ids: string[], target: TreeDropTarget): void;
+  onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, effect: TreeDragEffect): boolean;
+  onDropOutside?(ids: string[], point: { x: number; y: number }, effect: TreeDragEffect): void;
   externalDrag?: { x: number; y: number } | null;
   onExternalTarget?(target: TreeDropTarget | null): void;
   /** A press released without dragging — the row's activation. */
@@ -46,13 +51,13 @@ export interface UseTreeDragOptions {
 
 export interface TreeDragState {
   dragging: readonly string[] | null;
-  /** The drag in flight would copy its rows. */
-  copy: boolean;
+  /** What the drag in flight would do. */
+  effect: TreeDragEffect;
   mark: DropMark | null;
   ghost: ReorderGhost | null;
 }
 
-const IDLE: TreeDragState = { dragging: null, copy: false, mark: null, ghost: null };
+const IDLE: TreeDragState = { dragging: null, effect: 'move', mark: null, ghost: null };
 
 /** Pointer drag-to-reorder for `Tree`. Inert unless `enabled`. */
 export function useTreeDrag(opts: UseTreeDragOptions) {
@@ -68,7 +73,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
   useEffect(() => () => { drag.current?.cancel(); clearHover(); }, []);
 
 
-  const resolve = useCallback((ids: readonly string[], x: number, y: number, how: TreeDragHow = MOVE): ResolvedDrop | null => {
+  const resolve = useCallback((ids: readonly string[], x: number, y: number, effect: TreeDragEffect = 'move'): ResolvedDrop | null => {
     const { visible, expanded, rowEl, nodes, canDrop } = o.current;
     const rows: DropRow[] = [];
     for (const v of visible) {
@@ -89,20 +94,20 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       ? { originX: first.getBoundingClientRect().left, indent: deepEl.getBoundingClientRect().left - parentEl.getBoundingClientRect().left }
       : undefined;
     const hit = resolveDrop(rows, { x, y }, indent);
-    // A copy dropped where its original sits is a second one beside it, and not nothing.
-    if (landsInside(nodes, ids, hit.target) || (!how.copy && isNoopMove(nodes, ids, hit.target))) return null;
-    if (canDrop && !canDrop(ids, hit.target, how)) return null;
+    // A copy or a link dropped where its original sits is a second row beside it, and not nothing.
+    if (landsInside(nodes, ids, hit.target) || (effect === 'move' && isNoopMove(nodes, ids, hit.target))) return null;
+    if (canDrop && !canDrop(ids, hit.target, effect)) return null;
     return hit;
   }, [o]);
 
   // Whether something outside the tree has said it would take the drag in flight.
   const outside = useRef<readonly string[] | null>(null);
   const leaveOutside = useCallback(() => {
-    if (outside.current) o.current.onDragOutside?.(outside.current, null, MOVE);
+    if (outside.current) o.current.onDragOutside?.(outside.current, null, 'move');
     outside.current = null;
   }, [o]);
 
-  // Alt pressed or let go with the pointer still: the drag changes what it would do without moving.
+  // A modifier pressed or let go with the pointer still: the drag changes what it would do without moving.
   const unwatchAlt = useRef<(() => void) | null>(null);
 
   const reset = useCallback(() => {
@@ -142,10 +147,14 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
     let ids: string[] = [];
 
     let last = { clientX: e.clientX, clientY: e.clientY };
-    const howOf = (ev: { altKey: boolean }): TreeDragHow => ({ copy: ev.altKey && !!o.current.onCopy });
-    const update = (ev: { clientX: number; clientY: number; altKey: boolean }) => {
+    const effectOf = (ev: Modifiers): TreeDragEffect => {
+      if (!ev.altKey) return 'move';
+      if ((ev.metaKey || ev.ctrlKey) && o.current.onLink) return 'link';
+      return o.current.onCopy ? 'copy' : 'move';
+    };
+    const update = (ev: { clientX: number; clientY: number } & Modifiers) => {
       last = { clientX: ev.clientX, clientY: ev.clientY };
-      const how = howOf(ev);
+      const how = effectOf(ev);
       const r = box.getBoundingClientRect();
       const out = ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom;
       const taken = out && o.current.onDragOutside?.(ids, { x: ev.clientX, y: ev.clientY }, how) === true;
@@ -163,7 +172,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       }
       setState({
         dragging: ids,
-        copy: how.copy,
+        effect: how,
         mark: hit?.mark ?? null,
         ghost: { ids, left: ev.clientX - grab.x, top: ev.clientY - grab.y, width: rect.width },
       });
@@ -174,7 +183,10 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       onActivate: (ev) => {
         ids = draggedIdsFor(o.current.nodes, o.current.selected, id);
         update(ev);
-        const onKey = (k: KeyboardEvent) => { if (k.key === 'Alt') update({ ...last, altKey: k.type === 'keydown' }); };
+        // The event carries the modifiers as they stand once this key has changed.
+        const onKey = (k: KeyboardEvent) => {
+          if (k.key === 'Alt' || k.key === 'Meta' || k.key === 'Control') update({ ...last, altKey: k.altKey, metaKey: k.metaKey, ctrlKey: k.ctrlKey });
+        };
         window.addEventListener('keydown', onKey);
         window.addEventListener('keyup', onKey);
         unwatchAlt.current = () => {
@@ -184,12 +196,12 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
       },
       onMove: update,
       onCommit: (ev) => {
-        const how = howOf(ev);
+        const how = effectOf(ev);
         if (outside.current) {
           o.current.onDropOutside?.(ids, { x: ev.clientX, y: ev.clientY }, how);
         } else {
           const hit = resolve(ids, ev.clientX, ev.clientY, how);
-          if (hit) (how.copy ? o.current.onCopy : o.current.onMove)?.(ids, hit.target);
+          if (hit) o.current[how === 'link' ? 'onLink' : how === 'copy' ? 'onCopy' : 'onMove']?.(ids, hit.target);
         }
         reset();
       },

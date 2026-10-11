@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { defaultNodeProperties, solid } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import type { PrefGroup } from '@weasel-js/prefs';
+import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
 import s from './PrefSchemaEditor.stories.module.css';
 
@@ -80,6 +80,49 @@ export const Default: Story = {
     return (
       <div className={s.frame}>
         <PrefSchemaEditor schema={schema} onChange={setSchema} />
+      </div>
+    );
+  },
+};
+
+const GradientStop = prefType('GradientStop', {
+  kind: 'object',
+  name: 'Stop',
+  description: 'One color along a gradient.',
+  default: { at: 0.5, color: '#888888' },
+  children: {
+    at: { kind: 'number', name: 'At', description: 'Where along the gradient, from 0 to 1.', default: 0.5, min: 0, max: 1, step: 0.01 },
+    color: { kind: 'color', name: 'Color', description: 'The color there.', default: '#888888' },
+  },
+} satisfies PrefObject);
+
+const TYPED: PrefGroup = {
+  name: 'Preferences',
+  children: {
+    gradient: {
+      name: 'Gradient',
+      children: {
+        first: { ...GradientStop, name: 'First stop', default: { at: 0, color: '#5841b8' } },
+        stops: { kind: 'list', name: 'Stops', description: 'The colors between the ends.', default: [], item: GradientStop },
+        weights: {
+          kind: 'map', name: 'Weights', description: 'How strongly each named stop pulls.', default: {},
+          item: { kind: 'number', name: 'Weight', description: '', default: 1, min: 0 },
+        },
+      },
+    },
+  },
+};
+
+/**
+ * Types declared in code and handed to the editor: each is offered by name beside the kinds, for a pref and for
+ * the entry of a list or a map, shows as one row in the tree, and prints as its name in the literal.
+ */
+export const Types: Story = {
+  render: function TypesStory() {
+    const [schema, setSchema] = useState(TYPED);
+    return (
+      <div className={s.frame}>
+        <PrefSchemaEditor schema={schema} onChange={setSchema} types={[GradientStop]} />
       </div>
     );
   },

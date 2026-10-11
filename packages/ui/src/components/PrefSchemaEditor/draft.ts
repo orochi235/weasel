@@ -1,7 +1,9 @@
 import { isPlainObject, type SerializedHistory, type SerializedHistoryEntry, type SerializedOp } from '@weasel-js/core';
 import { carry } from './carry';
-import { childrenOf, ITEM, joinPath, nodeAt, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
-import { containsCode, STUB } from './schemaExport';
+import { isPrefLeaf, type PrefLeaf } from '@weasel-js/prefs';
+import { childrenOf, joinPath, nodeAt, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { containsCode, overridesOf, STUB } from './schemaExport';
+import { findType, NO_TYPES, type PrefTypes } from './types';
 
 /** A schema as storage can hold it, when it was saved, and the steps that led to it. */
 export interface StoredDraft {
@@ -62,13 +64,34 @@ const NEW = '$stub';
 /** Stands for a number JSON has no word for. */
 const NUM = '$num';
 
-type Origin = readonly [path: string | null, attribute: string];
+/** Stands for a leaf made from a registered type: the type's name, beside what the leaf sets over it. */
+const TYPE = '$type';
+/** The attributes such a leaf has removed that its type holds. */
+const UNSET = '$unset';
+
+/** Where the source keeps a value: a node's path, then the attribute, then the keys down into it. */
+type Origin = readonly [path: string | null, ...keys: string[]];
+
+interface Packing {
+  origins: Map<unknown, Origin>;
+  types: PrefTypes;
+}
+
+/** The leaf a list or a map holds in `item`, which packs as a leaf of its own. */
+const isEntry = (node: SchemaNode, key: string, value: unknown): value is PrefLeaf =>
+  key === 'item' && isPrefLeaf(node) && (node.kind === 'list' || node.kind === 'map') && isPlainObject(value);
 
 /** Every code-holding attribute of `root`, by the value it holds. */
 function codeOrigins(root: SchemaRoot): Map<unknown, Origin> {
   const out = new Map<unknown, Origin>();
+  const attrs = (node: SchemaNode, at: Origin): void => {
+    for (const [key, value] of Object.entries(node)) {
+      if (containsCode(value)) out.set(value, [...at, key]);
+      if (isEntry(node, key, value)) attrs(value, [...at, key]);
+    }
+  };
   const walk = (node: SchemaNode, path: string | null): void => {
-    for (const [key, value] of Object.entries(node)) if (containsCode(value)) out.set(value, [path, key]);
+    attrs(node, [path]);
     for (const [key, child] of Object.entries(childrenOf(node) ?? {})) walk(child, joinPath(path, key));
   };
   walk(root, null);
@@ -89,33 +112,48 @@ function pack(value: unknown, origins: Map<unknown, Origin>, at: Origin | null):
   return value;
 }
 
-function packNode(node: SchemaNode, path: string | null, origins: Map<unknown, Origin>): unknown {
+/** A node's own attributes, or a list's entry's: `at` is where the source would keep them. */
+function packAttrs(node: SchemaNode, at: Origin, ctx: Packing): Record<string, unknown> {
+  const type = isPrefLeaf(node) ? findType(ctx.types, node.type) : undefined;
+  const attr = (key: string, value: unknown): unknown =>
+    (isEntry(node, key, value) ? packAttrs(value, [...at, key], ctx) : pack(value, ctx.origins, [...at, key]));
+  if (!type) return Object.fromEntries(Object.entries(node).map(([key, value]) => [key, attr(key, value)]));
+  // The type's own code needs no place in the source: it comes back with the type.
+  const set = Object.entries(overridesOf(node as PrefLeaf, type));
+  const unset = set.filter(([, value]) => value === undefined).map(([key]) => key);
+  return {
+    [TYPE]: type.type,
+    kind: type.kind,
+    ...Object.fromEntries(set.filter(([, value]) => value !== undefined).map(([key, value]) => [key, attr(key, value)])),
+    ...(unset.length > 0 ? { [UNSET]: unset } : {}),
+  };
+}
+
+function packNode(node: SchemaNode, path: string | null, ctx: Packing): unknown {
   const kids = childrenOf(node);
-  const slot = slotOf(node);
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(node)) {
-    if (!kids || key !== slot) out[key] = pack(value, origins, [path, key]);
-    else if (slot === ITEM) out[key] = packNode(kids[ITEM]!, joinPath(path, ITEM), origins);
-    else out[key] = Object.fromEntries(Object.entries(kids).map(([k, child]) => [k, packNode(child, joinPath(path, k), origins)]));
-  }
+  const out = packAttrs(node, [path], ctx);
+  if (kids) out[slotOf(node)!] = Object.fromEntries(Object.entries(kids).map(([k, child]) => [k, packNode(child, joinPath(path, k), ctx)]));
   return out;
 }
 
-/** `schema` as JSON can hold it: an attribute holding code is written as where `source` keeps that value. */
-export function packDraft(schema: SchemaRoot, source: SchemaRoot): unknown {
-  return packNode(schema, null, codeOrigins(source));
+/**
+ * `schema` as JSON can hold it: an attribute holding code is written as where `source` keeps that value, and a
+ * leaf made from one of `types` as the type's name and what the leaf sets over it.
+ */
+export function packDraft(schema: SchemaRoot, source: SchemaRoot, types: PrefTypes = NO_TYPES): unknown {
+  return packNode(schema, null, { origins: codeOrigins(source), types });
 }
 
 /** The nearest `keep` steps each way of `stacks`, whose ops are all {@link SWAP}s, and the schema they stand on. */
-export function packSteps(stacks: SerializedHistory, current: SchemaRoot, source: SchemaRoot, keep = STEPS_KEPT): StoredSteps {
-  const origins = codeOrigins(source);
+export function packSteps(stacks: SerializedHistory, current: SchemaRoot, source: SchemaRoot, keep = STEPS_KEPT, types: PrefTypes = NO_TYPES): StoredSteps {
+  const ctx: Packing = { origins: codeOrigins(source), types };
   const schemas: unknown[] = [];
   const seen = new Map<SchemaRoot, number>();
   const index = (schema: SchemaRoot): number => {
     const known = seen.get(schema);
     if (known !== undefined) return known;
     seen.set(schema, schemas.length);
-    return schemas.push(schema === source ? null : packNode(schema, null, origins)) - 1;
+    return schemas.push(schema === source ? null : packNode(schema, null, ctx)) - 1;
   };
   const ops = (list: readonly SerializedOp[]): SerializedOp[] => list.map((op) => {
     const { before, after } = op.args as SwapArgs;
@@ -131,33 +169,41 @@ export function packSteps(stacks: SerializedHistory, current: SchemaRoot, source
   };
 }
 
-function unpack(value: unknown, source: SchemaRoot): unknown {
-  if (Array.isArray(value)) return value.map((v) => unpack(v, source));
+function unpack(value: unknown, source: SchemaRoot, types: PrefTypes): unknown {
+  if (Array.isArray(value)) return value.map((v) => unpack(v, source, types));
   if (!isPlainObject(value)) return value;
   if (NUM in value) return Number(value[NUM]);
   if (NEW in value) return STUB;
   if (FROM in value) {
-    const [path, attribute] = value[FROM] as Origin;
-    return (nodeAt(source, path) as Record<string, unknown> | undefined)?.[attribute];
+    const [path, ...keys] = value[FROM] as Origin;
+    let held: unknown = nodeAt(source, path);
+    for (const key of keys) held = (held as Record<string, unknown> | undefined)?.[key];
+    return held;
   }
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value)) {
-    const next = unpack(v, source);
+    if (k === TYPE || k === UNSET) continue;
+    const next = unpack(v, source, types);
     // Code the source no longer holds is dropped with its attribute, as an attribute never set.
     if (next !== undefined) out[k] = next;
   }
-  return out;
+  if (!(TYPE in value)) return out;
+  const name = value[TYPE] as string;
+  // A type the host no longer registers leaves a leaf of that name, holding only what the draft set on it.
+  const leaf: Record<string, unknown> = { name, description: '', default: undefined, ...findType(types, name), ...out, type: name };
+  for (const key of (value[UNSET] as string[] | undefined) ?? []) delete leaf[key];
+  return leaf;
 }
 
-/** The schema {@link packDraft} wrote, its code taken back from `source`. */
-export function unpackDraft<R extends SchemaRoot>(packed: unknown, source: R): R {
-  return unpack(packed, source) as R;
+/** The schema {@link packDraft} wrote, its code taken back from `source` and its typed leaves from `types`. */
+export function unpackDraft<R extends SchemaRoot>(packed: unknown, source: R, types: PrefTypes = NO_TYPES): R {
+  return unpack(packed, source, types) as R;
 }
 
 /** The steps {@link packSteps} wrote, each op holding its schemas again; `null` when they do not read as steps. */
-export function unpackSteps<R extends SchemaRoot>(stored: StoredSteps, source: R): { current: R; stacks: SerializedHistory } | null {
+export function unpackSteps<R extends SchemaRoot>(stored: StoredSteps, source: R, types: PrefTypes = NO_TYPES): { current: R; stacks: SerializedHistory } | null {
   try {
-    const schemas = stored.schemas.map((packed) => (packed === null ? source : unpackDraft(packed, source)));
+    const schemas = stored.schemas.map((packed) => (packed === null ? source : unpackDraft(packed, source, types)));
     const live = (i: unknown): R => {
       const schema = schemas[i as number];
       if (schema === undefined) throw new Error('no such schema');
@@ -194,10 +240,10 @@ function readDraft(key: string, storage?: DraftStorage): StoredDraft | null {
  * one, so only what the reader changed still differs from it. `null` when there is no draft, storage cannot be
  * read, or carrying it leaves nothing the source does not already say; that last one is removed.
  */
-export function openDraft<R extends SchemaRoot>(key: string, source: R, storage?: DraftStorage): OpenedDraft<R> | null {
+export function openDraft<R extends SchemaRoot>(key: string, source: R, storage?: DraftStorage, types: PrefTypes = NO_TYPES): OpenedDraft<R> | null {
   const draft = readDraft(key, storage);
   if (!draft) return null;
-  const now = JSON.parse(JSON.stringify(packDraft(source, source))) as unknown;
+  const now = JSON.parse(JSON.stringify(packDraft(source, source, types))) as unknown;
   const moved = draft.source !== undefined && JSON.stringify(draft.source) !== JSON.stringify(now);
   const onto = (packed: unknown): unknown => (moved ? carry(packed, draft.source, now) : packed);
   const schema = onto(draft.schema);
@@ -205,10 +251,10 @@ export function openDraft<R extends SchemaRoot>(key: string, source: R, storage?
     dropDraft(key, storage);
     return null;
   }
-  const steps = draft.steps && unpackSteps({ ...draft.steps, schemas: draft.steps.schemas?.map((packed) => (packed === null ? null : onto(packed))) }, source);
+  const steps = draft.steps && unpackSteps({ ...draft.steps, schemas: draft.steps.schemas?.map((packed) => (packed === null ? null : onto(packed))) }, source, types);
   return {
     savedAt: draft.savedAt,
-    schema: steps ? steps.current : unpackDraft(schema, source),
+    schema: steps ? steps.current : unpackDraft(schema, source, types),
     stacks: steps ? steps.stacks : null,
     met: moved ? 'carried' : draft.source === undefined ? 'unknown' : 'same',
   };
@@ -218,10 +264,10 @@ export function openDraft<R extends SchemaRoot>(key: string, source: R, storage?
  * Save `schema` under `key` with the steps around it. A browser short of room is asked again for half the steps,
  * down to the schema alone; one that refuses storage keeps nothing.
  */
-export function saveDraft(key: string, schema: SchemaRoot, source: SchemaRoot, stacks: SerializedHistory, savedAt: number, storage?: DraftStorage): void {
-  const packed = packDraft(schema, source);
+export function saveDraft(key: string, schema: SchemaRoot, source: SchemaRoot, stacks: SerializedHistory, savedAt: number, storage?: DraftStorage, types: PrefTypes = NO_TYPES): void {
+  const packed = packDraft(schema, source, types);
   for (let keep = STEPS_KEPT; ; keep >>= 1) {
-    const draft: StoredDraft = { savedAt, schema: packed, source: packDraft(source, source), ...(keep > 0 ? { steps: packSteps(stacks, schema, source, keep) } : {}) };
+    const draft: StoredDraft = { savedAt, schema: packed, source: packDraft(source, source, types), ...(keep > 0 ? { steps: packSteps(stacks, schema, source, keep, types) } : {}) };
     try {
       (storage ?? localStorage).setItem(key, JSON.stringify(draft));
       return;

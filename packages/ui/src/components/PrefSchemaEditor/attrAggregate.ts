@@ -68,6 +68,8 @@ export function aggregateAttributes(
     shared: common('shared'),
     own: common('own'),
     auto: common('auto'),
+    // What a list or a map holds is edited one node at a time.
+    entry: rest.length === 0 ? first!.entry : {},
     readOnly: first!.readOnly.filter(([k, v]) => rest.every((s) => s.readOnly.some(([k2, v2]) => k2 === k && sameValue(v2, v)))),
   };
   const kinds = nodes.map((n) => (isPrefLeaf(n) ? n.kind : undefined));

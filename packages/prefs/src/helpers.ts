@@ -31,9 +31,9 @@ export function isPrefLeaf(node: PrefLeaf | PrefGroup | PrefSection): node is Pr
   return 'kind' in node;
 }
 
-/** Whether a leaf has a value to store: an `action` is a button, and holds none. */
+/** Whether a leaf has a value to store: an `action` is a button and holds none, and an `alias` shows another leaf's. */
 export function prefHoldsValue(leaf: PrefLeaf): boolean {
-  return leaf.kind !== 'action';
+  return leaf.kind !== 'action' && leaf.kind !== 'alias';
 }
 
 /** Distinguishes a section, whose key adds nothing to a path, from a group, whose key is a segment. */
@@ -49,6 +49,22 @@ export function prefSectionLeaves(members: PrefSection['members']): [key: string
   return Object.entries(members).flatMap(([key, child]): [string, PrefLeaf][] =>
     isPrefLeaf(child) ? [[key, child]] : prefSectionLeaves(child.members),
   );
+}
+
+/**
+ * The leaf whose value lives at `path`, as the schema's own shape builds
+ * paths: a segment per key under a {@link PrefGroup}, the leaf's own key
+ * under a {@link PrefSection}. `undefined` for a path that names a group, a
+ * field inside an `object` leaf, or nothing.
+ */
+export function prefLeafAt(schema: PrefGroup | PrefSection, path: string): PrefLeaf | undefined {
+  if (isPrefSection(schema)) return prefSectionLeaves(schema.members).find(([key]) => key === path)?.[1];
+  let node: PrefLeaf | PrefGroup = schema;
+  for (const seg of path.split('.')) {
+    if (isPrefLeaf(node) || !Object.hasOwn(node.children, seg)) return undefined;
+    node = node.children[seg]!;
+  }
+  return isPrefLeaf(node) ? node : undefined;
 }
 
 /** Get the value at a dotted path inside a nested value tree. Returns

@@ -1,5 +1,5 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { filterPrefSubtree, visiblePrefSubtree, type PrefGroup } from '@weasel-js/prefs';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { filterPrefSubtree, prefLeafAt, visiblePrefSubtree, type PrefGroup } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
 import { useDropMotion } from './dropMotion';
@@ -106,6 +106,9 @@ export interface PrefsFormProps {
    *  one of several selected rows is reported on its click, so a drag can
    *  carry them all. */
   onSelect?: (path: string, how: PrefSelectHow) => void;
+  /** Paths of the leaves whose rows are marked as changed, their labels in the accent color (`PropertyRow`'s `changed`): what differs
+   *  from a default, or from what was last saved. What counts as changed is the caller's to say. */
+  changed?: ReadonlySet<string>;
   /** A drag over the form. The form lays out as it would after the drop,
    *  with the dragged nodes drawn where they would land: `prefDropTargetAt`
    *  finds where that is from a pointer position. */
@@ -157,7 +160,9 @@ export function PrefsForm(props: PrefsFormProps) {
   );
   const lead = shown.at(-1) ?? null;
   const selection = useSelectedRow(selected, lead, props.onSelect);
-  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, selected: shown, lead };
+  // Against the whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
+  const leafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
+  const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, leafAt, changed: props.changed, selected: shown, lead };
   const field = filterable ? (
     <div className={s.filter}>
       <Input

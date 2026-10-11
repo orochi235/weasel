@@ -200,6 +200,7 @@ export function prefFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyC
     case 'map':
     case 'union':
     case 'action':
+    case 'alias':
       return null;
     case 'field': {
       const choices = (state.fields ?? []).filter((f) => !leaf.kinds || leaf.kinds.includes(f.kind));

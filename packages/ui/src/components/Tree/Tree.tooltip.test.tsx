@@ -14,7 +14,7 @@ const NODES: readonly TreeNode[] = [
 ];
 
 const row = (name: string) => screen.getByRole('treeitem', { name }).firstElementChild!;
-const rest = () => act(() => { vi.advanceTimersByTime(600); });
+const rest = () => act(() => { vi.advanceTimersByTime(300); });
 
 describe('Tree row tooltips', () => {
   it('opens a row\'s tooltip once the pointer has rested on it, and closes it when the pointer leaves', () => {

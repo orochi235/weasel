@@ -667,3 +667,15 @@ describe('PrefsForm rows side by side', () => {
     expect(slot('Size')).not.toHaveAttribute('data-wide');
   });
 });
+
+describe('PrefsForm changed rows', () => {
+  it('marks the label of each row the caller names as changed, and no other', () => {
+    const schema: PrefGroup = { name: 'Root', children: {
+      a: { kind: 'boolean', name: 'Alpha', description: '', default: false },
+      b: { kind: 'boolean', name: 'Beta', description: '', default: false },
+    } };
+    render(<PrefsForm schema={schema} values={{}} onChange={() => {}} changed={new Set(['b'])} />);
+    expect(screen.getByRole('checkbox', { name: 'Beta' }).closest('[data-changed]')).not.toBeNull();
+    expect(screen.getByRole('checkbox', { name: 'Alpha' }).closest('[data-changed]')).toBeNull();
+  });
+});

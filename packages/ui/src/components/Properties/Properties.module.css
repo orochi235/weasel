@@ -687,6 +687,10 @@
 
 /* A label track, only where a row runs label-beside-control: a stacked row's
    label already spans the row, and a width there would narrow it instead. */
+.row[data-changed] > .rowLabel {
+  color: var(--wzl-accent-fg);
+}
+
 .rowInline > .rowLabel,
 .rowColor:not(.rowBlock) > .rowLabel,
 .rowCheckbox:not(.rowBlock) > .rowLabel {

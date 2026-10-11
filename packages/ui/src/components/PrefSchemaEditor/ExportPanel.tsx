@@ -3,6 +3,7 @@ import { Button } from '../Button';
 import { CodeBlock } from '../CodeBlock';
 import { PaneHeader } from './PaneHeader';
 import type { SchemaRoot } from './schemaEdit';
+import type { PrefTypes } from './types';
 import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
 import s from './PrefSchemaEditor.module.css';
 
@@ -31,8 +32,8 @@ function Submit({ changes, literal, onSubmit }: { changes: readonly SchemaChange
 }
 
 /** The schema as a TypeScript literal beside the list of changes since the baseline. */
-export function ExportPanel({ schema, changes, onSubmit }: { schema: SchemaRoot; changes: readonly SchemaChange[]; onSubmit?: SubmitChanges }) {
-  const literal = useMemo(() => printSchema(schema), [schema]);
+export function ExportPanel({ schema, types, changes, onSubmit }: { schema: SchemaRoot; types?: PrefTypes; changes: readonly SchemaChange[]; onSubmit?: SubmitChanges }) {
+  const literal = useMemo(() => printSchema(schema, types), [schema, types]);
   const list = useMemo(() => formatChanges(changes) || 'No changes.', [changes]);
   return (
     <div className={s.export}>

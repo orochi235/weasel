@@ -106,7 +106,8 @@ export function useSelectedRow(
       held.current = null;
       pressed.current = path;
       if (path === null) return;
-      if (e.metaKey || e.ctrlKey) report(path, true);
+      // With Alt as well the press is the start of an alias drag, not a toggle.
+      if ((e.metaKey || e.ctrlKey) && !e.altKey) report(path, true);
       else if (!selected.includes(path)) report(path, false);
       else if (selected.length > 1) held.current = path;
     },

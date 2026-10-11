@@ -1,7 +1,7 @@
 import type { PrefLeaf, PrefNumberUnit } from '@weasel-js/prefs';
 import type { Display, InfinityText } from '@weasel-js/quantity';
 import { BaseNode } from './baseNode';
-import { ActionNode, compound, ListNode, MapNode, ObjectNode, UnionNode } from './compound';
+import { ActionNode, AliasNode, compound, ListNode, MapNode, ObjectNode, UnionNode } from './compound';
 import type {
   Annotations,
   BranchAnnotations,
@@ -16,7 +16,7 @@ import type {
   SectionOption,
 } from './types';
 
-export { ActionNode, BaseNode, ListNode, MapNode, ObjectNode, UnionNode };
+export { ActionNode, AliasNode, BaseNode, ListNode, MapNode, ObjectNode, UnionNode };
 
 /** Whether a schema entry is a branch rather than a leaf. */
 export function isConfigBranch(entry: ConfigEntry): entry is ConfigBranch {

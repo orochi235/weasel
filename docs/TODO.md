@@ -826,6 +826,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   it, which is right for optional built-in attributes but deletes a custom kind's required one —
   `registry-enum`'s `source` on WeaselDraw's `#/dev/prefs`. `CustomKinds` has no way to mark an
   attribute required; it needs one, and `blankLeaf` should seed those attributes for a custom kind.
+  The same gap leaves a leaf switched to a custom kind with `default: undefined` and no Default row
+  unless the kind's entry declares one. A type made with `prefType` has no such gap, carrying its
+  own default.
 
 - **(P3) `PrefSchemaEditor` layout rough edges.** The preview's scratch values are keyed by path,
   so after a rename or move they fall back to defaults. The always-mounted notice row adds one
@@ -838,6 +841,14 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `PrefsForm.drop.browser.test.tsx` checks the form's drop target and reflow in a real browser; no
   test in the repo drives a pointer through the editor itself. Palette, row, rail, and tree drags
   were driven through a headless browser on astv's page and on the editor's story on 2026-10-10.
+
+- **(P2) An `alias` leaf, what is left.** `PrefsForm` and labkit's `ControlPanel` draw an alias as
+  its target's row; `SelectionPanel` does not, and shows it as a kind with no renderer.
+  `PrefsForm`'s filter matches an alias on its own name and description, so one left unnamed is
+  dropped by a query its target would match. In `PrefSchemaEditor`, removing a pref leaves its
+  aliases pointing at nothing (each draws `(alias: no pref at …)` in the preview), where moving or
+  renaming it carries them along; and the `Of` picker offers every field, including the fields
+  inside an `object` leaf and other aliases, though an alias resolves only a whole leaf.
 
 - **(P3) `PrefSchemaEditor`: undoing a move made through a rail entry leaves the moved node out of
   sight.** Holding a drag over a rail entry opens that page by selecting its group, so the step

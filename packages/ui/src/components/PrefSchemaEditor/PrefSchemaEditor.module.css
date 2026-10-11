@@ -42,8 +42,7 @@
 .structurePane { grid-column: 1; grid-row: 2 / -1; display: flex; flex-direction: column; overflow: hidden; }
 .structureHandle { grid-column: 2; grid-row: 2 / -1; }
 /* The tree reads at the size of the fields in the pane beside it. */
-/* Each level sits further in than the tree's own gutter: a group's glyph leads its row, and a child one gutter in reads as beside it. */
-.treeArea, .storedArea { min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); --wzl-tree-indent: calc(13px + var(--wzl-space-5)); }
+.treeArea, .storedArea { min-height: 0; overflow: auto; --wzl-tree-font-size: var(--wzl-font-size); }
 .treeArea { flex: 1; }
 /* A group's glyph folds it, and says it is open. */
 :is(.treeArea, .storedArea) [data-tree-twisty][data-open] { color: var(--wzl-secondary-fg); }

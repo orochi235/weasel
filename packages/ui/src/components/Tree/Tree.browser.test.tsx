@@ -51,3 +51,21 @@ test('below the last child, a pointer at the top level drops after the group', a
   await dragTo(rowOf('Ex'), group.left + 2, why.bottom - 2);
   expect(screen.getByRole('treeitem', { name: 'Ex' })).toHaveAttribute('aria-level', '1');
 });
+
+test('folded by its leading glyphs, a branch and a leaf at one level start their labels at one x, each level a step further in', () => {
+  const glyph = <span style={{ display: 'inline-block', width: 16, height: 16 }} />;
+  const nodes: TreeNode[] = [
+    { id: 'g', label: 'Group', leading: glyph, children: [
+      { id: 'x', label: 'Ex' },
+      { id: 'h', label: 'Inner', leading: glyph, children: [{ id: 'y', label: 'Why' }] },
+    ] },
+    { id: 'z', label: 'Zed' },
+  ];
+  render(<Tree aria-label="T" nodes={nodes} foldBy="leading" defaultExpandedIds={['g', 'h']} />);
+  const left = (name: string) => screen.getByRole('treeitem', { name }).querySelector('[id]')!.getBoundingClientRect().left;
+  expect(left('Group')).toBe(left('Zed'));
+  expect(left('Ex')).toBe(left('Inner'));
+  const step = left('Ex') - left('Group');
+  expect(step).toBe(16);
+  expect(left('Why') - left('Inner')).toBe(step);
+});

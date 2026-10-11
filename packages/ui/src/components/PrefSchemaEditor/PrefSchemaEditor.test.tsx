@@ -643,3 +643,30 @@ describe('PrefSchemaEditor', () => {
     });
   });
 });
+
+describe('PrefSchemaEditor changed fields and aliases', () => {
+  const attrs = () => screen.getByRole('region', { name: 'Attributes' });
+  const marked = (field: string) => within(attrs()).getByRole('textbox', { name: field }).closest('[data-changed]') !== null;
+
+  it('marks the attribute that was edited in the Attributes pane, and no other', () => {
+    render(<Live />);
+    fireEvent.click(row('grid'));
+    expect(marked('Description')).toBe(false);
+    fireEvent.change(within(attrs()).getByRole('textbox', { name: 'Description' }), { target: { value: 'Other.' } });
+    expect(marked('Description')).toBe(true);
+    expect(marked('Name')).toBe(false);
+  });
+
+  it('adds an alias of the selected pref after it from the bar, and offers none for a group', () => {
+    render(<Live />);
+    const add = () => screen.getByRole('button', { name: 'Add alias' });
+    expect(add()).toBeDisabled();
+    fireEvent.click(row('panels'));
+    expect(add()).toBeDisabled();
+    fireEvent.click(row('grid'));
+    fireEvent.click(add());
+    const keys = within(structure()).getAllByRole('treeitem').map((li) => li.firstElementChild!.textContent ?? '');
+    expect(keys.findIndex((r) => r.includes('grid2'))).toBe(keys.findIndex((r) => r.includes('(grid)')) + 1);
+    expect(within(attrs()).getByRole('button', { name: /Of/ })).toHaveTextContent('view.grid');
+  });
+});

@@ -30,7 +30,7 @@ test('the add and remove tools sit in the palette, past a rule after the drag to
   const palette = drag.parentElement!;
   const rule = within(palette).getByRole('separator');
   const acts = within(palette).getByRole('group', { name: 'Add or remove' });
-  expect(within(acts).getAllByRole('button').map((b) => b.textContent)).toEqual(['Add pref', 'Add group', 'Remove']);
+  expect(within(acts).getAllByRole('button').map((b) => b.textContent)).toEqual(['Add pref', 'Add group', 'Add alias', 'Remove']);
   const ruleBox = rule.getBoundingClientRect();
   expect(ruleBox.height).toBeGreaterThan(20);
   expect(ruleBox.left).toBeGreaterThan(drag.getBoundingClientRect().right);
