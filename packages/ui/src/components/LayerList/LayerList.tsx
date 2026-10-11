@@ -146,6 +146,8 @@ interface RowKeys {
   register: (id: string) => (el: HTMLElement | null) => void;
   onKeyDown: (item: LayerListItem, parentId: string | null) => (e: KeyboardEvent<HTMLElement>) => void;
   onFocus: (id: string) => void;
+  /** A row's own control is about to remove it. */
+  onRemoving: (id: string) => void;
 }
 
 interface VisibleRow {
@@ -231,6 +233,19 @@ export function LayerList(props: LayerListProps) {
     const el = rowEls.current.get(id);
     if (el && document.activeElement !== el) el.focus();
   });
+  // A row removed from inside itself takes focus with it; the row that takes its place gets it.
+  const removing = useRef<{ id: string; at: number } | null>(null);
+  useLayoutEffect(() => {
+    const gone = removing.current;
+    if (!gone) return;
+    if (visible.some((v) => v.item.id === gone.id)) {
+      if (!rowEls.current.get(gone.id)?.contains(document.activeElement)) removing.current = null;
+      return;
+    }
+    removing.current = null;
+    const next = visible[Math.min(gone.at, visible.length - 1)];
+    if (next) rowEls.current.get(next.item.id)?.focus();
+  });
 
   const selectedIds = props.selectedIds ?? [];
   const tabStop = visible.some((v) => v.item.id === focusId)
@@ -257,6 +272,10 @@ export function LayerList(props: LayerListProps) {
     onFocus: (id) => {
       setFocusId(id);
       anchor.current ??= id;
+    },
+    onRemoving: (id) => {
+      const at = visible.findIndex((v) => v.item.id === id);
+      if (at >= 0 && rowEls.current.get(id)?.contains(document.activeElement)) removing.current = { id, at };
     },
     onKeyDown: (item, parentId) => (e) => {
       // Keys on a control inside the row are the control's.
@@ -295,8 +314,11 @@ export function LayerList(props: LayerListProps) {
           break;
         case 'ArrowLeft':
           if (open) toggle(item.id);
-          else if (parentId !== null) go(visible.findIndex((v) => v.item.id === parentId));
-          else return;
+          else {
+            const parent = visible.findIndex((v) => v.item.id === parentId);
+            if (parent < 0) return;
+            go(parent);
+          }
           break;
         case 'Enter':
         case ' ':
@@ -566,8 +588,7 @@ function Handle({
   onPointerDown: ((e: React.PointerEvent) => void) | undefined;
   onNudge: (delta: -1 | 1) => void;
 }) {
-  if (item.locked) return <Grip item={item} reorder={reorder} />;
-  if (!reorder && item.badge === undefined) return undefined;
+  if (item.locked || !reorder) return <Grip item={item} reorder={reorder} />;
   return (
     <button
       type="button"
@@ -610,7 +631,13 @@ function Remove({ item, shared }: { item: LayerListItem; shared: Shared }) {
   if (!onRemove || item.locked) return null;
   return (
     <span className={s.stop} onPointerDown={stop}>
-      <CloseButton ariaLabel={`Remove ${item.label}`} onClick={() => onRemove(item.id)} />
+      <CloseButton
+        ariaLabel={`Remove ${item.label}`}
+        onClick={() => {
+          shared.keys.onRemoving(item.id);
+          onRemove(item.id);
+        }}
+      />
     </span>
   );
 }
