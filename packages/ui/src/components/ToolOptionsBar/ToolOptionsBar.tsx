@@ -8,7 +8,8 @@ import {
   type PropertyRenderer,
 } from '../SelectionPanel/renderLeaf';
 import { pairRows, type PanelLeaf, type PanelRow } from '../SelectionPanel/model';
-import { FitLabel, FitScope, labelForms, useFitScope } from '../FitLabel/FitLabel';
+import { FitScope, useFitScope } from '../FitLabel/FitLabel';
+import { withBarLabel } from '../Bar/renderBarLeaf';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import s from './ToolOptionsBar.module.css';
 
@@ -141,30 +142,11 @@ function BarRow({
     <>
       {renderCells(cells, renderers).map((cell) => (
         <span key={cell.key} className={s.cell}>
-          {needsLabel(cell.leaf) && (
-            <span className={s.cellLabel} aria-hidden="true">
-              <FitLabel forms={labelForms(cell.leaf.name, cell.leaf.short)} />
-            </span>
-          )}
           {cell.content}
         </span>
       ))}
     </>
   );
-}
-
-/**
- * Whether a control needs telling from its neighbours in words.
- *
- * Only a bare value box does: a number or a string is a box of characters,
- * and two of them side by side are indistinguishable. Everything else shows
- * what it is — a swatch is a color, a font picker names the family, a flag
- * run and a segmented control label their own segments — so a word in front
- * would repeat what the control already says. `name` stays the accessible
- * name either way, so this costs a screen reader nothing.
- */
-function needsLabel(leaf: PrefLeaf): boolean {
-  return leaf.kind === 'number' || leaf.kind === 'string';
 }
 
 function barCell(
@@ -198,7 +180,9 @@ function barCell(
     ariaLabel,
     render: () => {
       const custom = renderers?.[path] ?? renderers?.[leaf.kind];
-      return custom ? custom(ctx) : renderBuiltin(ctx, ariaLabel, renderers, path);
+      return custom
+        ? withBarLabel(leaf, custom(ctx))
+        : renderBuiltin(ctx, ariaLabel, renderers, { selectionKey: path, surface: 'bar' });
     },
   };
 }

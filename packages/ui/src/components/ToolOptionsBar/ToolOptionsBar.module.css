@@ -71,14 +71,6 @@
   flex: none;
 }
 
-.cellLabel {
-  flex: none;
-  margin-right: var(--wzl-space-2);
-  font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-fg-muted);
-  white-space: nowrap;
-}
-
 /* Fields are read beside their label on one line, so they carry only the
    digits they need rather than the panel's column width. */
 .controls {

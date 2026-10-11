@@ -155,6 +155,26 @@ describe('ToolOptionsBar labels', () => {
     expect(screen.queryByText('Style')).toBeNull();
   });
 
+  it('sets a number behind its name, and a select behind nothing', () => {
+    render(<ToolOptionsBar schema={optionsSchema} values={{}} onChange={vi.fn()} />);
+    expect(screen.getByText('Size')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryByText('Align')).toBeNull();
+  });
+
+  it('labels a number an app renderer drew, and drops one it drew as nothing', () => {
+    render(
+      <ToolOptionsBar
+        schema={optionsSchema}
+        values={{}}
+        onChange={vi.fn()}
+        renderers={{ size: () => <b>custom</b>, tracking: () => null }}
+      />,
+    );
+    expect(screen.getByText('custom')).toBeInTheDocument();
+    expect(screen.getByText('Size')).toBeInTheDocument();
+    expect(screen.queryByText('Tracking')).toBeNull();
+  });
+
   it('keeps the label out of the accessible name, which stays the full one', () => {
     render(<ToolOptionsBar schema={optionsSchema} values={{}} onChange={vi.fn()} />);
     expect(screen.getByLabelText('Tracking')).toBeInTheDocument();

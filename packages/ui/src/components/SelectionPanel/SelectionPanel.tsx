@@ -260,7 +260,7 @@ function leafCell(
     render: () => {
       const custom = renderers?.[path] ?? renderers?.[leaf.kind];
       if (custom) return custom(ctx);
-      return renderBuiltin(ctx, ariaLabel, renderers, selectionKey);
+      return renderBuiltin(ctx, ariaLabel, renderers, { selectionKey });
     },
   };
 }

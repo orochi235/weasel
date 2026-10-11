@@ -1,0 +1,7 @@
+.label {
+  flex: none;
+  margin-right: var(--wzl-space-2);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  white-space: nowrap;
+}

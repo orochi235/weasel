@@ -9,6 +9,7 @@ import {
   type PrefMap,
   type PrefUnion,
 } from '@weasel-js/prefs';
+import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PrefActionButton } from './PrefActionButton';
 import { drawsRows, drawsSeveral } from './compound';
 import { ListLeaf } from './ListLeaf';
@@ -155,9 +156,11 @@ export function renderPrefControl(
   ctx: PrefRenderContext,
   renderers: Record<string, PrefRenderer> | undefined,
   siblings?: Record<string, unknown>,
+  surface: LeafSurface = 'row',
 ): ReactNode {
   const custom = renderers?.[ctx.pref.kind];
-  return custom ? custom(ctx) : renderBuiltin(ctx, renderers, siblings);
+  if (!custom) return renderBuiltin(ctx, renderers, siblings, surface);
+  return surface === 'bar' ? withBarLabel(ctx.pref, custom(ctx)) : custom(ctx);
 }
 
 function renderBuiltin(
@@ -166,8 +169,10 @@ function renderBuiltin(
   // The object a nested leaf is a field of — what an enum `encoding` and a
   // font's weight and slant read against. Undefined for a top-level leaf.
   siblings?: Record<string, unknown>,
+  surface: LeafSurface = 'row',
 ): ReactNode {
   const { pref, value, setValue } = ctx;
+  if (surface === 'bar') return renderBarLeaf({ leaf: pref, row: () => renderBuiltin(ctx, renderers, siblings) });
   const object = (of: PrefRenderContext): ReactNode => (
     <ObjectLeaf ctx={of} renderField={(field, held) => renderPrefControl(field, renderers, held)} />
   );

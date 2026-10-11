@@ -26,6 +26,7 @@ import { PrefActionButton } from '../Prefs/PrefActionButton';
 import { UnionPicker } from '../Prefs/UnionPicker';
 import { prefFieldProps, type PrefFieldState } from '../Prefs/prefField';
 import type { PrefFieldChoice } from '../Prefs/schema';
+import { renderBarLeaf, type LeafSurface } from '../Bar/renderBarLeaf';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { PropertyControl, type PropertyBooleanFieldProps } from '../Properties/PropertyField';
 import { ToggleBar } from '../ToggleBar';
@@ -243,19 +244,32 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
   );
 }
 
+export interface RenderBuiltinOptions {
+  /** Identifies the current selection, so a control holding per-selection
+   *  scratch (the paint kind memory) is remounted rather than carried over. */
+  selectionKey?: string;
+  /** True for a field of an object leaf. Such a field writes itself into its
+   *  parent, so it can only hold values its parent's type permits — which is
+   *  what rules "none" out for a nested paint. */
+  nested?: boolean;
+  surface?: LeafSurface;
+}
+
 export function renderBuiltin(
   ctx: PropertyRenderContext,
   ariaLabel: string,
   renderers?: Record<string, PropertyRenderer>,
-  /** Identifies the current selection, so a control holding per-selection
-   *  scratch (the paint kind memory) is remounted rather than carried over. */
-  selectionKey = '',
-  /** True for a field of an object leaf. Such a field writes itself into its
-   *  parent, so it can only hold values its parent's type permits — which is
-   *  what rules "none" out for a nested paint. */
-  nested = false,
+  { selectionKey = '', nested = false, surface = 'row' }: RenderBuiltinOptions = {},
 ): ReactNode {
   const { pref, value, mixed, unset, setValue } = ctx;
+  if (surface === 'bar') {
+    return renderBarLeaf({
+      leaf: pref,
+      row: () => renderBuiltin(ctx, ariaLabel, renderers, { selectionKey, nested }),
+    });
+  }
+  // A leaf drawn inside this one's value is a field of it.
+  const within: RenderBuiltinOptions = { selectionKey, nested: true };
   if (pref.kind === 'object') {
     // One value with fields hanging off it. Each child writes the parent
     // whole, so a field is never set on a half-built object.
@@ -267,7 +281,7 @@ export function renderBuiltin(
         ctx={ctx}
         renderItem={(item, name) => {
           const custom = renderers?.[item.pref.kind];
-          return custom ? custom(item) : renderBuiltin(item, name, renderers, selectionKey, true);
+          return custom ? custom(item) : renderBuiltin(item, name, renderers, within);
         }}
       />
     );
@@ -295,7 +309,7 @@ export function renderBuiltin(
             update: (fn) => set(fn(held)),
           };
           const custom = renderers?.[map.item.kind];
-          return custom ? custom(item) : renderBuiltin(item, name, renderers, selectionKey, true);
+          return custom ? custom(item) : renderBuiltin(item, name, renderers, within);
         }}
       />
     );
@@ -605,7 +619,7 @@ function ObjectLeaf({
           const custom = renderers?.[childPath] ?? renderers?.[child.kind];
           const rendered = custom
             ? custom(childCtx)
-            : renderBuiltin(childCtx, child.name, renderers, selectionKey, true);
+            : renderBuiltin(childCtx, child.name, renderers, { selectionKey, nested: true });
           if (rendered == null) return null;
           // Neither a paired row nor a block one gives a field its own label
           // column, so the glyph is all that names it on screen. The control

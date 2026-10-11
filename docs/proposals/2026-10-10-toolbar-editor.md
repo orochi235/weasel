@@ -1,8 +1,8 @@
 # A toolbar is a group drawn as a bar
 
-**Unbuilt.** Written 2026-10-10 on branch `toolbar-editor`; nothing below exists yet. For whoever
-builds it. It says what has to change for `PrefSchemaEditor` to lay out toolbars as well as
-settings forms, and in what order.
+**Unbuilt, but for the dispatchers' surface argument.** Written 2026-10-10 on branch
+`toolbar-editor`. For whoever builds it. It says what has to change for `PrefSchemaEditor` to lay
+out toolbars as well as settings forms, and in what order.
 
 ## What was decided
 
@@ -22,7 +22,7 @@ settings forms, and in what order.
 | Group forms | `PrefGroupAs` is `'page' \| 'tab' \| 'panel' \| 'section'` | No bar |
 | Drawing a schema on one line | `ToolOptionsBar` flattens a `PrefGroup` to its leaves; nested groups draw nothing | It is a whole component, not a form a group can take inside a page |
 | Bar-sized controls | CSS in `ToolOptionsBar.module.css` narrows whatever `PropertyControl` drew (`5ch` number box, `64px` range) | No component owns the bar form of a kind, so nothing else can draw one |
-| Kind to control | Decided twice: `renderBuiltin` in `Prefs/PrefsRow.tsx` and in `SelectionPanel/renderLeaf.tsx`, both over `prefFieldProps` | Neither knows which surface it is drawing for |
+| Kind to control | Decided twice for a row: `renderBuiltin` in `Prefs/PrefsRow.tsx` and in `SelectionPanel/renderLeaf.tsx`. Both take a surface, and for `'bar'` hand the leaf to `renderBarLeaf` in `Bar/renderBarLeaf.tsx` | `renderBarLeaf` draws the row form behind a label, which is what `ToolOptionsBar` drew before it |
 | Action leaves | `PrefAction` holds a `run` closure; `PrefActionButton` draws it | Code, so it cannot be dragged in, drafted, or exported |
 | Registered actions | `ActionBar` draws every action in one `group` from the `ActionsRegistry` | Not placeable one at a time; `Action` has no pressed state |
 | Editor preview | A `PrefsDialog` for a group root, a `SelectionPanel` for a section root | Nothing draws a bar, and drops are hit-tested as rows |
@@ -89,10 +89,13 @@ paneled group inside a bar.
 
 ## One place decides a leaf's bar form
 
-Both `renderBuiltin`s take the surface they are drawing for. For `'bar'` they hand the leaf to one
-function, `renderBarLeaf`, which holds the table above. A bar inside a `PrefsForm` page and a bar
-inside a `SelectionPanel` then draw a kind the same way without either dispatcher copying the
-other.
+`renderBarLeaf` is where the table above goes. Today it is handed the leaf and its row form, and
+draws that. To draw a `BarField` it also needs the leaf's `prefFieldProps`, which each dispatcher
+builds from its own values and has to pass in. A bar inside a `PrefsForm` page and a bar inside a
+`SelectionPanel` then draw a kind the same way without either dispatcher copying the other.
+
+An app's own renderer for a kind still draws that kind in a bar. `withBarLabel` sets the bar's
+label before what it returns.
 
 ## `Bar`
 
@@ -162,14 +165,12 @@ height and they share a baseline.
 
 ## Order
 
-1. **Surface in the dispatchers.** `renderBarLeaf` and the surface argument, with today's
-   `ToolOptionsBar` output unchanged.
-2. **Bar forms.** `BarField`, `BarPopover`, and their stories. `ToolOptionsBar`'s CSS overrides go.
-3. **Actions by key.** `PrefAction.action`, `Action.active`, `useLeafAction`, `BarAction`.
-   Independent of the first two.
-4. **`Bar` and `as: 'bar'`.** The component, the schema value, and the surfaces that draw it;
+1. **Bar forms.** `BarField`, `BarPopover`, and their stories. `ToolOptionsBar`'s CSS overrides go.
+2. **Actions by key.** `PrefAction.action`, `Action.active`, `useLeafAction`, `BarAction`.
+   Independent of the bar forms.
+3. **`Bar` and `as: 'bar'`.** The component, the schema value, and the surfaces that draw it;
    `ToolOptionsBar` and `ActionBar` rebuilt on it.
-5. **Editor.** Palette, attributes, the Actions list, the bar preview, and drops along a bar.
+4. **Editor.** Palette, attributes, the Actions list, the bar preview, and drops along a bar.
 
 ## Left out
 
