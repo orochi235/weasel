@@ -16,19 +16,20 @@ export interface WrappedLine {
   wrapped: boolean;
 }
 
-const SPACE = 32;
+/** White space that hangs at a line's end and never opens a wrapped line. */
+const hangs = (cp: number): boolean => cp === 32 || cp === 9;
 
 /**
  * Greedy wrap of `cps` at its UAX #14 break opportunities. A line ends at
  * every hard break (CRLF counts once, and neither code point lands on a
  * line), and before any word — the text up to the next opportunity, spaces
  * after it included — whose ink would take the line past `maxWidth`. Only
- * ink has to fit: trailing spaces hang. A word wider than the line is never
+ * ink has to fit: trailing spaces and tabs hang. A word wider than the line is never
  * split. `Infinity` breaks at hard breaks alone.
  *
  * `widthOf(start, end)` is the width of code points `[start, end)` set on a
  * line of their own starting at `start`; `end` is always one past a
- * non-space.
+ * non-space, non-tab.
  */
 export function wrapLines(
   cps: ArrayLike<number>,
@@ -49,11 +50,11 @@ export function wrapLines(
       continue;
     }
     // A space here opens the text or follows a hard break: it never wraps.
-    if (cp === SPACE) { i++; continue; }
+    if (hangs(cp)) { i++; continue; }
     let j = i + 1;
     let ink = i + 1;
     while (j < n && !isHardLineBreak(cps[j]) && (!breaks || breaks[j] === NO_BREAK)) {
-      if (cps[j] !== SPACE) ink = j + 1;
+      if (!hangs(cps[j])) ink = j + 1;
       j++;
     }
     if (breaks && i > start && widthOf(start, ink) > maxWidth) {

@@ -69,6 +69,7 @@ import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorat
 import { graphemeEnds } from '../measure/graphemes';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
 import { wrapLines } from './lineBreak/wrapLines';
+import { DEFAULT_TAB_SIZE, tabAdvance, widthWithTabs, type TabStop } from './tabStops';
 
 /** One textured glyph quad, origin-relative — see the header. */
 export interface LaidOutQuad {
@@ -328,6 +329,12 @@ export interface LayoutRunsOpts {
    * consumer reading `getComputedStyle(box).direction` passes what it found.
    */
   direction?: TextDirection;
+  /**
+   * Distance between tab stops, in spaces of the tab's own run (its advance
+   * plus the run's tracking), as CSS `tab-size` counts it. A tab advances to
+   * the next stop from the start of its line. Default 8.
+   */
+  tabSize?: number;
   /**
    * World-space `fontSize` at or above which glyphs are emitted as outline
    * geometry, when the resolved face has outlines registered. Omit (the
@@ -609,6 +616,7 @@ export function layoutRuns(
   const ctx: LayoutContext = { groups: new Map() };
   const align = resolveAlign(opts.align, opts.direction ?? 'ltr');
   const justify = opts.justify === true || opts.align === 'justify';
+  const tabSize = opts.tabSize ?? DEFAULT_TAB_SIZE;
 
   // Per-glyph entry produced by walking runs codepoint-by-codepoint.
   // Position (x) is filled in during the line-fitting pass.
@@ -623,6 +631,8 @@ export function layoutRuns(
     tracking: number;        // run letterSpacing if this closes a cluster, else 0 (world units)
     kerningBefore: number;   // kerning gap consumed before this glyph
     isSpace: boolean;
+    /** Set on a tab, whose `advance` is filled in once its line is known. */
+    tab?: TabStop;
     isNewline: boolean;
     /** Whether this code point can put ink on the page — see `LaidOutCell`. */
     drawsInk: boolean;
@@ -732,7 +742,8 @@ export function layoutRuns(
         continue;
       }
 
-      if (isSpace) {
+      const isTab = cp === 9;
+      if (isSpace || isTab) {
         // Use atlas glyph if present; otherwise synthesize a zero-size entry
         // with a reasonable advance so spaces still participate in line-fitting.
         const spaceGlyph = resolved.dynamicFace ? resolved.dynamicFace.requestGlyph(32) : font?.charMap.get(32) ?? null;
@@ -740,6 +751,18 @@ export function layoutRuns(
         const advance = spaceAdvance !== null
           ? spaceAdvance * scale
           : fontSize * 0.25;
+        if (isTab) {
+          entries.push({
+            run, font, metrics,
+            glyph: { id: cp, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
+            cp, advance: 0, tracking: 0, kerningBefore: 0, isSpace: false, isNewline: false,
+            tab: { stop: tabSize * (advance + runTracking), min: advance / 2 },
+            drawsInk: false,
+            resolved, fontSize: fontSize, srcIndex: srcStart, srcEnd, flat: 0,
+          });
+          prevCp = undefined; prevMetrics = undefined; prevFontSize = undefined;
+          continue;
+        }
         let kerningBefore = 0;
         if (prevCp !== undefined && prevMetrics !== undefined && prevFontSize !== undefined) {
           kerningBefore = prevMetrics.kernOf(prevCp, cp) * (prevFontSize / prevMetrics.size);
@@ -856,8 +879,12 @@ export function layoutRuns(
     const e = entries[k];
     sum[k + 1] = sum[k] + e.kerningBefore + e.advance + e.tracking;
   }
-  const widthOf = (start: number, end: number): number =>
+  const flatWidth = (start: number, end: number): number =>
     openingWidth(entries[start]) + sum[end] - sum[start + 1];
+  const tabs: number[] = [];
+  entries.forEach((e, k) => { if (e.tab) tabs.push(k); });
+  const widthOf = tabs.length === 0 ? flatWidth : (start: number, end: number): number =>
+    widthWithTabs(start, end, tabs, (k) => entries[k].tab!, flatWidth);
 
   const lines: Line[] = [];
   for (const span of wrapLines(entries.map((e) => e.cp), opts.maxWidth, widthOf)) {
@@ -872,7 +899,10 @@ export function layoutRuns(
     }
     for (let k = span.start; k < span.end; k++) {
       const e = entries[k];
-      const placed = k > span.start ? e : { ...e, kerningBefore: 0 };
+      const opened = k > span.start ? e : { ...e, kerningBefore: 0 };
+      const placed = e.tab
+        ? { ...opened, advance: tabAdvance(line.width, e.tab.stop, e.tab.min) }
+        : opened;
       line.entries.push(placed);
       line.width += placed.kerningBefore + placed.advance + placed.tracking;
       line.height = Math.max(line.height, lineSize(e) * opts.lineHeight);
@@ -960,7 +990,7 @@ export function layoutRuns(
     let hung = 0;
     for (let k = line.entries.length - 1; k >= 0; k--) {
       const e = line.entries[k];
-      if (!e.isSpace) break;
+      if (!e.isSpace && !e.tab) break;
       hung += e.kerningBefore + e.advance + e.tracking;
     }
     const inkWidth = line.width - hung;

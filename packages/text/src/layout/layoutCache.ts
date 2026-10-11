@@ -26,7 +26,7 @@
  * second: an identity hit never pays for it.
  *
  * Under either, one entry per distinct `(maxWidth, alignWidth, lineHeight,
- * align, outline threshold, direction, bidi engine)`. Position is deliberately absent: `layoutRuns` emits
+ * align, outline threshold, direction, bidi engine, tab size)`. Position is deliberately absent: `layoutRuns` emits
  * origin-relative geometry and `drawText` translates at upload, so a text node
  * dragged across the page keeps hitting the same entry.
  *
@@ -108,7 +108,7 @@ function variantKey(runs: readonly ResolvedRun[], opts: LayoutRunsOpts): string 
   const alignWidth = opts.alignWidth ?? opts.maxWidth;
   const justify = opts.justify === true || opts.align === 'justify';
   return `${opts.maxWidth}|${alignWidth}|${opts.lineHeight}|${opts.align}|${justify ? 'j' : ''}|${outlineBucket(runs, opts.outlineMinSize)}`
-    + `|${opts.direction ?? ''}|${opts.bidi ? refId(opts.bidi) : ''}`;
+    + `|${opts.direction ?? ''}|${opts.bidi ? refId(opts.bidi) : ''}|${opts.tabSize ?? ''}`;
 }
 
 /**
