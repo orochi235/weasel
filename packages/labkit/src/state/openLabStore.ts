@@ -33,7 +33,8 @@ import {
   trialValuesPrefix,
   UNDOCK_RECORD,
 } from './labRecords';
-import { createLabStore, hydrateSnapshots, hydrateTrials, type LabStore } from './store';
+import { hydrateSnapshots, hydrateTrials } from './hydrate';
+import { createLabStore, type LabStore } from './store';
 import type {
   CreateLabStoreOptions,
   LabDocument,
