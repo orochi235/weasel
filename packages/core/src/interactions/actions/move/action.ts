@@ -74,8 +74,8 @@ import {
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
 import { isAnchorOrControl } from '@weasel-js/routing';
 import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
-import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
-import { landedDescendantOps } from '../move/landedDescendants';
+import { moveGestureAdapter, type MoveGestureAdapter } from './gestureAdapter';
+import { landedDescendantOps } from './landedDescendants';
 import {
   composeWorldPose,
   frameAtOrAbove,

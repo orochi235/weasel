@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { moveAction } from './move';
+import { moveAction } from './action';
 import type { InvocationCtx, BindingOpts } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';

@@ -14,7 +14,7 @@
  * Cascade: `Scene` stores absolute poses, so dragging a container has to
  * translate its descendants in the live overlay and again at commit. The move
  * action walks `scene.childrenOf` for both — see `cascadeIds` in
- * `interactions/actions/defaults/move.ts`.
+ * `interactions/actions/move/action.ts`.
  */
 import type { PolygonPath } from '@weasel-js/geom';
 import { getActiveModeFor } from '@weasel-js/modes';

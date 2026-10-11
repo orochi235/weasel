@@ -7,7 +7,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { InvocationCtx } from '@weasel-js/routing';
 import type { NodeAtPointDep } from '../depSchema';
-import { moveAction } from './move';
+import { moveAction } from './action';
 
 const G = asNodeId('g');
 const C = asNodeId('c');

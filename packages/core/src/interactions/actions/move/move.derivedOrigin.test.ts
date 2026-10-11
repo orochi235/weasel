@@ -7,7 +7,7 @@
  * the override wins over the derivation, so it jumps to placeholder + delta.
  */
 import { describe, it, expect } from 'vitest';
-import { moveAction } from './move';
+import { moveAction } from './action';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { effectivePose } from 'core/scene/effectivePose';

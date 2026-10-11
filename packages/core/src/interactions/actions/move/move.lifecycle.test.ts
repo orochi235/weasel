@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { BindingOpts, InvocationCtx } from '@weasel-js/routing';
-import { moveAction } from './move';
+import { moveAction } from './action';
 import { createScene } from 'core/scene/scene';
 import { createTransformOp } from 'core/ops/transform';
 import type { NodeId } from 'core/scene/types';
 import type { MoveBehavior } from '../../gestures/types';
-import { snapBackOrDelete } from '../move/behaviors/snapBackOrDelete';
+import { snapBackOrDelete } from './behaviors/snapBackOrDelete';
 import { momentum } from '../../../animation/behaviors/momentum';
 import type { Animator } from '../../../animation/types';
 

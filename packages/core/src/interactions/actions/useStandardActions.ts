@@ -47,7 +47,7 @@ import {
   pathfinderExcludeAction, pathfinderDivideAction, pathfinderCropAction,
 } from './defaults/booleans';
 import { createOutlinesAction } from './defaults/createOutlines';
-import { moveAction } from './defaults/move';
+import { moveAction } from './move/action';
 import { resizeAction } from './defaults/resize';
 import { rotateAction } from './defaults/rotate';
 import { areaSelectAction } from './defaults/areaSelect';

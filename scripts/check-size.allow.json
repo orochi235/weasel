@@ -156,7 +156,7 @@
     "lines": 621,
     "longestFunction": 194
   },
-  "packages/core/src/interactions/actions/defaults/move.ts": {
+  "packages/core/src/interactions/actions/move/action.ts": {
     "lines": 1426,
     "longestFunction": 528
   },

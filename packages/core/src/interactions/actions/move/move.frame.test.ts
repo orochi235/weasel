@@ -8,7 +8,7 @@
  * after the commit, against world poses derived by hand.
  */
 import { describe, expect, it } from 'vitest';
-import { moveAction } from './move';
+import { moveAction } from './action';
 import type { InvocationCtx, OngoingHandle, OngoingInvoker } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { unionOfChildren } from 'core/scene/kitRegistry';

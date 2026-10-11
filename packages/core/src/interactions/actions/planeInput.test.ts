@@ -12,7 +12,7 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
-import { moveAction } from './defaults/move';
+import { moveAction } from './move/action';
 import { resizeAction } from './defaults/resize';
 import { rotateAction } from './defaults/rotate';
 import { cloneAction } from './defaults/clone';

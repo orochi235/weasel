@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { moveAction } from './move';
+import { moveAction } from './action';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
 import { createTransformOp } from 'core/ops/transform';
