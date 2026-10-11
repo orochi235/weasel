@@ -572,6 +572,26 @@ describe('registerFont — lazy', () => {
     })();
   });
 
+  it('does not substitute another family while an outline-only family\'s bytes are on the way', async () => {
+    await registerFont('other', {}, '/o.json', '/o.png');
+    _resetFontOutlinesForTests();
+    registerFontOutlines('helvetica', {}, new ArrayBuffer(8), {
+      parser: () => new Promise(() => {}),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // Twice: the first call starts the load, the second finds it loading.
+    for (let i = 0; i < 2; i++) {
+      const r = resolveFontVariant('helvetica', 400, 'normal');
+      expect(r.entry).toBeNull();
+      expect(r.substituted).toBeUndefined();
+      expect(r.resolved.family).toBe('helvetica');
+    }
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+    _resetFontOutlinesForTests();
+  });
+
   it('is what a substitution falls back to when it is the first family registered', async () => {
     const landed = registerFont('inter', {}, '/i.json', '/i.png', { lazy: true });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

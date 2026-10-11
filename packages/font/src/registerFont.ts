@@ -501,6 +501,8 @@ function missResolveResult(
       source: 'outline',
     };
   }
+  // Its bytes are on their way, which outranks a stand-in as a pending atlas does.
+  if (fontPending(family, weight, style)) return pendingMiss(family, weight, style);
 
   const policy = getFontFallbackPolicy();
 
