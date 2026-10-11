@@ -299,6 +299,36 @@ describe('openLabStore — instruments set after opening', () => {
   });
 });
 
+describe('openLabStore — an instrument set after opening whose config migration throws', () => {
+  it('keeps the trial and the snapshot it throws on as stored, and migrates the rest', async () => {
+    const backing = new Map<string, unknown>();
+    storeLab(backing, {
+      trials: [trial('w1', { config: { size: 1 } }), trial('w2', { config: { old: true } })],
+      saves: [{ ...SNAPSHOT, config: { old: true } }],
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const opened = await open(backing);
+    const late: Instrument = {
+      name: 'T',
+      defaultConfig: () => ({}),
+      initialState: () => ({}),
+      render: () => null,
+      migrateConfig: (stored) => {
+        if ((stored as { old?: boolean }).old) throw new Error('no path from this shape');
+        return { ...(stored as object), moved: true };
+      },
+    };
+
+    opened.store.getState().setInstruments([late]);
+    const { trials, savedSnapshots } = opened.store.getState();
+    expect(trials.map((t) => t.config)).toEqual([{ size: 1, moved: true }, { old: true }]);
+    expect(savedSnapshots[0]?.config).toEqual({ old: true });
+    expect(warn).toHaveBeenCalledTimes(2);
+    await opened.close();
+    expect(backing.get(`${P}trial:w2`)).toMatchObject({ config: { old: true } });
+  });
+});
+
 describe('openLabStore — what a change writes', () => {
   function counting(backing: Map<string, unknown>) {
     const storage = createMemoryAdapter(backing);

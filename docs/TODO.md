@@ -1651,13 +1651,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   select after a choice is made, which is every bound key, modifier chords included
   (`useGestureDispatcher.tsx`).
 
-- **(P3) UnitField: a field that began at NaN cannot give back what it sent while typing.** Typing
-  that ends in Escape or in unreadable text sends the value it began from through `onInput`
-  (`packages/ui/src/components/NumberField/UnitField.tsx`). A field showing a mixed selection began
-  at NaN, which is not a value to send, so a caller holding the live value keeps the last readable
-  keystroke. It needs a way to say "typing was abandoned" that carries no value, such as an
-  `onCancel` callback.
-
 - **(P2) TokenPanel scale: dragging a step's thumb back to where it started reads one unit off.** On
   a `px` scale with a step at 16, drag its thumb to 20 and back in one drag: near the start the
   readout shows 17 (or 15 from below), and exactly at the start it stops updating. `Slider` keeps

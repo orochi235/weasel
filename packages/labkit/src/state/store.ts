@@ -298,16 +298,22 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
         return;
       }
       const s = get();
-      const trials = s.trials.map((w) =>
-        changed.has(w.instrumentName)
-          ? { ...w, config: hydratedConfig(next, w.instrumentName, w.config) }
-          : w,
-      );
-      const savedSnapshots = s.savedSnapshots.map((sn) =>
-        changed.has(sn.instrumentName)
-          ? { ...sn, config: hydratedConfig(next, sn.instrumentName, sn.config) }
-          : sn,
-      );
+      // One whose stored config the migration throws on stays as stored: left
+      // out of the state, its record would be deleted. A throwing default
+      // config is the instrument's fault for every trial, and rejects the call.
+      const rehydrated = <T extends { id: string; instrumentName: string; config: unknown }>(
+        what: string,
+        held: T,
+      ): T => {
+        if (!changed.has(held.instrumentName)) return held;
+        const [moved] = hydrated(what, held, () => [
+          { config: migratedConfig(next, held.instrumentName, held.config) },
+        ]);
+        if (!moved) return held;
+        return { ...held, config: filledConfig(next, held.instrumentName, moved.config) };
+      };
+      const trials = s.trials.map((w) => rehydrated('trial', w));
+      const savedSnapshots = s.savedSnapshots.map((sn) => rehydrated('snapshot', sn));
       hooks = next;
       set({ instruments, trials, savedSnapshots });
     },
@@ -352,8 +358,15 @@ function hydratedConfig(
   instrumentName: string,
   config: unknown,
 ): unknown {
+  return filledConfig(hydration, instrumentName, migratedConfig(hydration, instrumentName, config));
+}
+
+function migratedConfig(hydration: ConfigHydration, instrumentName: string, config: unknown): unknown {
   const migrate = hydration.configMigrations?.[instrumentName];
-  const moved = migrate ? migrate(config) : config;
+  return migrate ? migrate(config) : config;
+}
+
+function filledConfig(hydration: ConfigHydration, instrumentName: string, moved: unknown): unknown {
   const defaults = hydration.configDefaults?.[instrumentName];
   return defaults ? fillConfigDefaults(moved, defaults()) : moved;
 }
@@ -397,7 +410,7 @@ function hydrated<T>(
     return build();
   } catch (error) {
     console.warn(
-      `[labkit] ${what} "${stored.id}" (${stored.instrumentName}) failed to load; opening without it and leaving its record alone`,
+      `[labkit] ${what} "${stored.id}" (${stored.instrumentName}) failed to load; leaving its record alone`,
       error,
     );
     return [];
