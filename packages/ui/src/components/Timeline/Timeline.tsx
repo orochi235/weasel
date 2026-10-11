@@ -5,6 +5,7 @@ import { EasingPicker } from './EasingPicker';
 import { Lane } from './Lane';
 import { Ruler } from './Ruler';
 import { Transport, type TransportProps } from './Transport';
+import { isTextEntry } from '../BandEditor/track';
 import { buildLanes, trackAtPath } from './lanes';
 import { deleteKey, insertKey, moveKey, samePath, setKeyEasing, setKeys, setKeyValue, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
@@ -96,6 +97,7 @@ export function Timeline(props: TimelineProps): ReactElement {
   };
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (e.defaultPrevented || isTextEntry(e.target)) return;
     if ((e.key === 'Delete' || e.key === 'Backspace') && selection) {
       e.preventDefault();
       const r = deleteKey(tracks, selection);

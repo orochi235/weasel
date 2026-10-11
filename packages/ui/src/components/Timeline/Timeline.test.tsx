@@ -107,6 +107,44 @@ describe('Timeline', () => {
     expect((next[0] as SampledTrack<number>).keys).toHaveLength(1);
   });
 
+  it('leaves Backspace typed into the key editor to the editor', () => {
+    const onChange = vi.fn();
+    render(
+      <Timeline
+        {...base}
+        tracks={tracks()}
+        onChange={onChange}
+        renderKeyEditor={() => <input data-testid="key-value" defaultValue="10" />}
+      />,
+    );
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    onChange.mockClear();
+    const notPrevented = fireEvent.keyDown(screen.getByTestId('key-value'), { key: 'Backspace' });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(notPrevented).toBe(true);
+    expect(screen.getByTestId('key-value')).toBeInTheDocument();
+  });
+
+  it('leaves a Delete a child already handled alone', () => {
+    const onChange = vi.fn();
+    render(
+      <Timeline
+        {...base}
+        tracks={tracks()}
+        onChange={onChange}
+        renderKeyEditor={() => (
+          <div data-testid="key-list" tabIndex={0} onKeyDown={(e) => e.preventDefault()} />
+        )}
+      />,
+    );
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    onChange.mockClear();
+    fireEvent.keyDown(screen.getByTestId('key-list'), { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('renders the consumer’s key editor for the selection', () => {
     render(
       <Timeline
