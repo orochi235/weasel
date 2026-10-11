@@ -371,6 +371,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     ctx: LayerCtx,
     extra: EmptyDownArgs<FunctionLayerState>,
   ): LayerGesture<FunctionLayerState> | void {
+    if (e.button !== 0) return;
     if (hit.kind === 'anchor') {
       const { index } = hit.payload as { index: number };
       dlog('function-layer', 'anchor-down', { id, index, shift: ctx.modifiers.shift, button: e.button });
@@ -385,7 +386,6 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
         });
         return;
       }
-      if (e.button === 2) return;
       extra.commit({ ...state, activeIndex: index });
       return makeDragGesture(index);
     }
@@ -425,11 +425,11 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
   function onEmptyPointerDown(
     state: FunctionLayerState,
     model: ModelPoint,
-    _e: PointerEvent,
+    e: PointerEvent,
     ctx: LayerCtx,
     extra: EmptyDownArgs<FunctionLayerState>,
   ): LayerGesture<FunctionLayerState> | void {
-    if (!interactive) return;
+    if (!interactive || e.button !== 0) return;
     if (addPointMode !== 'click-empty') return;
     if (cfg.maxPoints !== undefined && state.points.length >= cfg.maxPoints) return;
 
