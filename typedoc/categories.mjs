@@ -67,6 +67,7 @@ export const RULES = [
   ['packages/routing/src/contributions', 'Extension points'],
   ['packages/routing/src/eligibility', 'Extension points'],
   ['packages/routing/src/ingestion', 'Extension points'],
+  ['packages/routing/src/dlog', 'Extension points'],
   ['packages/routing/src/index', 'Selection & actions'],
   ['packages/routing/src/vocabulary', 'Tools & gestures'],
 ];
