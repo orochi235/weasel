@@ -12,8 +12,8 @@ const BASE: PrefGroup = {
   name: 'Prefs',
   children: {
     view: { name: 'View', children: {
-      grid: { kind: 'boolean', name: 'Show grid', description: '', default: true, enableIf: () => true },
-      zoom: { kind: 'number', name: 'Zoom', description: '', default: 1, max: Infinity },
+      grid: { kind: 'boolean', name: 'Show grid', description: '', default: true },
+      zoom: { kind: 'number', name: 'Zoom', description: '', default: 1, max: Infinity, unit: { toDisplay: (stored) => stored, fromDisplay: (display) => display } },
     } },
   },
 };
