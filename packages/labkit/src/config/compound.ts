@@ -23,6 +23,12 @@ export class ActionNode extends BaseNode<undefined> {
   readonly kind = 'action';
 }
 
+/** A second row for another leaf, built by `f.alias`: it draws that leaf's control over that leaf's value, and
+ *  holds none of its own. Its own `.showIf` and `.section` place it; `.label` and `.describe` rename it here. */
+export class AliasNode extends BaseNode<undefined> {
+  readonly kind = 'alias';
+}
+
 /** A node as a leaf inside another's value: a list's or a map's item, an object's field, a union's variant.
  *  Named for `key` where it has one and no label of its own. */
 function itemLeaf(node: ConfigNode, key?: string): PrefLeaf {
@@ -114,4 +120,6 @@ export const compound = {
 
   /** A button among the rows, which calls `run`. Its label is the button's text. */
   action: (run: PrefAction['run']): ActionNode => new ActionNode(undefined, { run }),
+  /** `of` is the path the shown leaf's value is written at, from the schema's root: `'view.grid'`. */
+  alias: (of: string): AliasNode => new AliasNode(undefined, { of, name: '' }),
 };
