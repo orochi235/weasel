@@ -48,14 +48,15 @@ function stamp(entry: RouteEntry, hash: string): void {
 
 /**
  * Names story `id` in the URL; `inPlace` says it replaced the previous story in its trial. A different story starts
- * with no params, so one story's knobs never reach the next; naming the current story again keeps them.
+ * with `params`, the knobs of a trial already showing it, and with none otherwise, so one story's knobs never reach
+ * the next; naming the current story again keeps the params it has.
  */
-export function setRoute(id: string, options: { inPlace?: boolean } = {}): void {
+export function setRoute(id: string, options: { inPlace?: boolean; params?: Record<string, string> } = {}): void {
   if (readRoute() === id) {
     history.replaceState(history.state, '', formatRoute({ story: id, params: readRouteParams() }));
     return;
   }
-  const hash = formatRoute({ story: id, params: {} });
+  const hash = formatRoute({ story: id, params: options.params ?? {} });
   const from = readRouteEntry() ?? { step: 0, inPlace: false };
   stamp(from, location.hash);
   location.hash = hash;

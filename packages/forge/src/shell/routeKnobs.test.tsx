@@ -81,6 +81,37 @@ describe('knobs in the URL', () => {
     expect(location.hash).toBe('#/x--b');
   });
 
+  it('keeps the knobs of an open trial when its story is picked in the tree from a URL that names none', async () => {
+    const storage = createMemoryAdapter();
+    const workshop = () => <Workshop index={[a, b]} frameUrl="/frame.html" importers={importers()} storage={storage} />;
+    history.replaceState(null, '', '/#/x--a');
+    const first = render(workshop());
+    await shows('hi/4/false');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Label' }), { target: { value: 'Save' } });
+    await waitFor(() => expect(location.hash).toBe('#/x--a?label=Save'));
+    // labkit saves a trial's config a moment after it changes.
+    await waitFor(() => expect(JSON.stringify(storage.listSync?.(''))).toContain('Save'), { timeout: 5000 });
+    first.unmount();
+
+    history.replaceState(null, '', '/');
+    render(workshop());
+    await shows('Save/4/false');
+    fireEvent.click(screen.getByRole('radio', { name: 'Tree' }));
+    const folder = screen.getByRole('treeitem', { name: 'X' });
+    // The fold mark: the folder's own row would open its index page in the trial.
+    if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(folder.querySelector('.fg-tree__fold')!);
+    // Picking an open story scrolls its trial into view, which jsdom has no method for.
+    const proto = Element.prototype as { scrollIntoView?: () => void };
+    proto.scrollIntoView = () => {};
+    try {
+      fireEvent.click(screen.getByRole('treeitem', { name: 'A' }));
+      await waitFor(() => expect(location.hash).toBe('#/x--a?label=Save'));
+      await shows('Save/4/false');
+    } finally {
+      delete proto.scrollIntoView;
+    }
+  });
+
   it('applies knobs typed into the URL of the story already open', async () => {
     mount('#/x--a');
     await shows('hi/4/false');
