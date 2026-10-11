@@ -34,3 +34,9 @@ describe('a group named with the empty string', () => {
     expect(screen.getAllByRole('heading').map((h) => h.textContent)).toEqual(['Nested']);
   });
 });
+
+it.each(['columns', 'list'] as const)('says nothing about a filter when the %s layout has nothing to draw and no query', (layout) => {
+  render(<PrefsForm layout={layout} schema={{ name: 'Tool', children: {} }} onChange={() => {}} />);
+  expect(screen.queryByRole('button', { name: 'Clear filter' })).toBeNull();
+  expect(screen.queryByText(/No settings match/)).toBeNull();
+});

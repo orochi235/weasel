@@ -136,7 +136,7 @@ export function RailLayout(props: PrefsFormProps & {
       )}
       {group === null ? (
         <div className={s.pane} data-pref-into="" data-pref-scroll="">
-          {query.trim() !== '' && <NoMatches query={query} onClear={onClearFilter} />}
+          <NoMatches query={query} onClear={onClearFilter} />
         </div>
       ) : (
         <PrefsPane ctx={ctx} group={group} path={page} scrollRef={scrollRef} />
