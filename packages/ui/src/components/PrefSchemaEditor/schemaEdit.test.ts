@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { addNode, branchPaths, copyNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
+import { addNode, branchPaths, carried, copyNodes, outermost, removeNodes, isValidKey, keyProblem, moveNodes, rebasePaths, nodeAt, removeNode, renameKey, setAttribute, uniqueKey } from './schemaEdit';
 
 const enc = { read: () => true, write: (on: boolean) => on };
 const ROOT: PrefGroup = {
@@ -190,5 +190,25 @@ describe('a section root', () => {
     const nested = addNode(NODE, null, 'more', { name: 'More', members: {} });
     expect(moveNodes(nested, ['layout', 'layout/pose.x'], { parentPath: 'more', index: 0 }).paths).toEqual(['more/layout']);
   });
+});
 
+describe('several paths at once', () => {
+  it('keeps only the paths with no ancestor among them', () => {
+    expect(outermost(['a/x', 'b', 'b/x', 'a'])).toEqual(['b', 'a']);
+  });
+
+  it('lists what a drag of several carries in the schema\'s own order', () => {
+    expect(carried(ROOT, ['z', 'b/x', 'a/y', 'b'])).toEqual(['a/y', 'b', 'z']);
+  });
+
+  it('removes several nodes, a nested one going with its parent', () => {
+    const next = removeNodes(ROOT, ['a/x', 'b', 'b/x', 'z']);
+    expect(keys(next, null)).toEqual(['a']);
+    expect(keys(next, 'a')).toEqual(['y']);
+    expect(keys(ROOT, null)).toEqual(['a', 'b', 'z']);
+  });
+
+  it('removes nothing for no paths', () => {
+    expect(removeNodes(ROOT, [])).toBe(ROOT);
+  });
 });

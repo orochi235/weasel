@@ -145,6 +145,11 @@ export function isUnder(path: string, ancestor: string): boolean {
   return path.startsWith(`${ancestor}${SEP}`);
 }
 
+/** `paths` less any that lies beneath another of them. */
+export function outermost(paths: readonly string[]): string[] {
+  return paths.filter((p) => !paths.some((q) => isUnder(p, q)));
+}
+
 function ownChild(kids: ChildMap | undefined, key: string): SchemaNode | undefined {
   return kids && Object.hasOwn(kids, key) ? kids[key] : undefined;
 }
@@ -223,6 +228,11 @@ export function removeNode<R extends SchemaRoot>(root: R, path: string): R {
   });
 }
 
+/** `root` without the nodes at `paths`; one beneath another goes with it. */
+export function removeNodes<R extends SchemaRoot>(root: R, paths: readonly string[]): R {
+  return outermost(paths).reduce((next, p) => removeNode(next, p), root);
+}
+
 export function renameKey<R extends SchemaRoot>(root: R, path: string, next: string): R {
   const key = keyOf(path);
   if (next === key) return root;
@@ -272,7 +282,7 @@ export function setAttribute<R extends SchemaRoot>(root: R, path: string | null,
 export function moveNodes<R extends SchemaRoot>(
   root: R, paths: readonly string[], target: SchemaTarget,
 ): { root: R; from: string[]; paths: string[] } {
-  const tops = paths.filter((p) => !paths.some((q) => isUnder(p, q)));
+  const tops = outermost(paths);
   const dest = target.parentPath;
   if (dest !== null && tops.some((p) => dest === p || isUnder(dest, p))) {
     throw new Error('schemaEdit: cannot move a node into itself');
@@ -314,7 +324,7 @@ export function moveNodes<R extends SchemaRoot>(
  * copies' paths, in the order given, less any node already under another one copied.
  */
 export function copyNodes<R extends SchemaRoot>(root: R, paths: readonly string[], target: SchemaTarget): { root: R; paths: string[] } {
-  const tops = paths.filter((p) => !paths.some((q) => isUnder(p, q)));
+  const tops = outermost(paths);
   const dest = target.parentPath;
   const destNode = nodeAt(root, dest) ?? root;
   if (!childrenOf(destNode)) throw new Error(`schemaEdit: ${dest} cannot hold children`);
@@ -347,6 +357,21 @@ export function branchPaths(root: SchemaRoot): string[] {
       const p = joinPath(path, key);
       out.push(p);
       walk(child, p);
+    }
+  };
+  walk(root, null);
+  return out;
+}
+
+/** The outermost of `paths`, in the order the schema holds them. */
+export function carried(root: SchemaRoot, paths: readonly string[]): string[] {
+  const tops = new Set(outermost(paths));
+  const out: string[] = [];
+  const walk = (node: SchemaNode, path: string | null) => {
+    for (const [key, child] of Object.entries(childrenOf(node) ?? {})) {
+      const p = joinPath(path, key);
+      if (tops.has(p)) out.push(p);
+      else walk(child, p);
     }
   };
   walk(root, null);
