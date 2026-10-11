@@ -22,7 +22,7 @@ import s from './Tree.module.css';
 import { handleMoveKey } from './treeKeyboardMove';
 import { modsOf, textOf, useControlledSet } from './treeUtils';
 import { useRowTip } from './useRowTip';
-import { useTreeDrag, type TreeDragHow } from './useTreeDrag';
+import { useTreeDrag, type TreeDragEffect } from './useTreeDrag';
 
 /** One node. A node with `children` is a branch, even when the array is empty. */
 export interface TreeNode {
@@ -90,17 +90,20 @@ export interface TreeProps {
   /** A drag with Alt held copies: the rows stay put, and this is called with them and where the copies land.
    *  `Tree` makes no copy itself. Without it Alt changes nothing, and the drag moves. Needs `onMove`. */
   onCopy?(ids: string[], target: TreeDropTarget): void;
+  /** A drag with Alt and Cmd or Ctrl held links: the rows stay put, and this is called with them and where
+   *  something that stands for them should land. What that is, is the caller's to say. Needs `onMove`. */
+  onLink?(ids: string[], target: TreeDropTarget): void;
   /** Refuse a drop. A drop into a dragged node or beneath one is refused
    *  regardless. Default: allow. */
-  canDrop?(ids: readonly string[], target: TreeDropTarget, how: TreeDragHow): boolean;
+  canDrop?(ids: readonly string[], target: TreeDropTarget, effect: TreeDragEffect): boolean;
   /**
    * Asked while a drag begun in this tree is outside it: whether what is under
    * the client point would take the drop. While it answers true the tree marks
    * nothing, and a release there calls `onDropOutside` and not `onMove`.
    * Called with `null` when the drag comes back inside or ends.
    */
-  onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, how: TreeDragHow): boolean;
-  onDropOutside?(ids: string[], point: { x: number; y: number }, how: TreeDragHow): void;
+  onDragOutside?(ids: readonly string[], point: { x: number; y: number } | null, effect: TreeDragEffect): boolean;
+  onDropOutside?(ids: string[], point: { x: number; y: number }, effect: TreeDragEffect): void;
   /**
    * A drag begun outside the tree, at this client point. The tree marks where
    * it would land — asking `canDrop` with no ids — and reports the target
@@ -155,7 +158,7 @@ export const Tree = forwardRef(function Tree(
     'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy,
     expandedIds, defaultExpandedIds, onExpandedChange, foldBy = 'twisty',
     selectionMode = 'none', selectedIds, defaultSelectedIds, onSelectionChange,
-    onAction, onMove, onCopy, canDrop, onDragOutside, onDropOutside, externalDrag, onExternalTarget,
+    onAction, onMove, onCopy, onLink, canDrop, onDragOutside, onDropOutside, externalDrag, onExternalTarget,
   }: TreeProps,
   ref: Ref<HTMLUListElement>,
 ) {
@@ -233,7 +236,7 @@ export const Tree = forwardRef(function Tree(
     nodes, visible, expanded, selected,
     container: () => treeEl.current,
     rowEl: (id) => items.current.get(id)?.firstElementChild as HTMLElement | undefined,
-    canDrop, onMove, onCopy,
+    canDrop, onMove, onCopy, onLink,
     onPress: (id, mods) => { const v = visible[indexOf.get(id) ?? -1]; if (v) activate(v.node, mods); },
     expand: (id) => { if (!expanded.has(id)) setExpanded(new Set(expanded).add(id)); },
   });
@@ -346,7 +349,7 @@ export const Tree = forwardRef(function Tree(
           aria-description={typeof node.tooltip === 'string' ? node.tooltip : undefined}
           data-muted={node.muted ? 'true' : undefined}
           data-drop={drag.state.mark?.id === node.id ? drag.state.mark.where : undefined}
-          data-dragging={!drag.state.copy && drag.state.dragging?.includes(node.id) ? 'true' : undefined}
+          data-dragging={drag.state.effect === 'move' && drag.state.dragging?.includes(node.id) ? 'true' : undefined}
           tabIndex={node.id === stopId ? 0 : -1}
           onKeyDown={onKeyDown({ node, parentId, level, index: pos })}
           onFocus={(e) => {
@@ -396,7 +399,7 @@ export const Tree = forwardRef(function Tree(
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
         aria-multiselectable={selectionMode === 'multiple' || undefined}
-        data-copying={drag.state.copy ? '' : undefined}
+        data-drag-effect={drag.state.effect === 'move' ? undefined : drag.state.effect}
       >
         {renderLevel(nodes, null, 1)}
       </ul>
@@ -412,7 +415,7 @@ export const Tree = forwardRef(function Tree(
             const v = visible[indexOf.get(id) ?? -1];
             return (
               <div key={id} className={s.ghostRow}>
-                {drag.state.copy && <Icon name="add" size={14} className={s.ghostCopy} />}
+                {drag.state.effect !== 'move' && <Icon name={drag.state.effect === 'link' ? 'link' : 'add'} size={14} className={s.ghostEffect} />}
                 {v?.node.label ?? id}
               </div>
             );

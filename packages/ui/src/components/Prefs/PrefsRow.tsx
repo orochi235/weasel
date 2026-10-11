@@ -1,7 +1,10 @@
 import { type ReactNode } from 'react';
 import {
+  prefAliasedLeaf,
+  prefAliasTarget,
   prefValueAtPath,
   type PrefAction,
+  type PrefAlias,
   type PrefLeaf,
   type PrefMap,
   type PrefUnion,
@@ -52,6 +55,8 @@ export interface WalkCtx {
   inheritHint?: (path: string) => string | undefined;
   canInherit?: (path: string) => boolean;
   fields?: readonly PrefFieldChoice[];
+  /** The leaf whose value lives at a path, anywhere in the form's schema: what an alias is resolved against. */
+  leafAt?: (path: string) => PrefLeaf | undefined;
   /** Path of the row or group the form marks as selected. */
   selected?: string | null;
   /** The drop the form is drawing. */
@@ -59,8 +64,25 @@ export interface WalkCtx {
 }
 
 export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
+  if (pref.kind !== 'alias' || ctx.renderers?.alias) return <LeafRow ctx={ctx} path={path} pref={pref} />;
+  const alias = pref as PrefAlias;
+  const target = prefAliasTarget(alias, ctx.leafAt ?? (() => undefined));
+  if (target) return <LeafRow ctx={ctx} path={path} pref={prefAliasedLeaf(alias, target.leaf)} at={target.path} />;
+  // An alias of nothing is a wiring fault, shown where it sits and not dropped from the form.
+  return (
+    <div className={s.rowSlot} {...selectionAttrs(path, ctx, true)}>
+      <PropertyRow label={alias.name === '' ? 'Alias' : alias.name} description={alias.description} className={s.row}>
+        <span className={s.unrenderable}>(alias: no pref at {alias.of === '' ? 'an empty path' : alias.of})</span>
+      </PropertyRow>
+    </div>
+  );
+}
+
+/** One leaf's row. `at` is where its value lives when that is not the row's own `path`: the target of an alias. */
+function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pref: PrefLeaf; at?: string }) {
+  const path = at ?? own;
   // A placeholder shows what its node shows where it was dragged from.
-  const from = dropValuePath(ctx.drop, path);
+  const from = at ?? dropValuePath(ctx.drop, own);
   const stored = prefValueAtPath(ctx.values, from);
   const inherited = ctx.auto?.has(from) ?? false;
   const { onAutoChange } = ctx;
@@ -82,7 +104,7 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   // Text among the rows, holding no value: its name is the line and its description the note under it.
   if (pref.kind === 'label' && !custom) {
     return (
-      <div className={`${s.rowSlot} ${s.labelRow}`} data-wide="" {...selectionAttrs(path, ctx, true)}>
+      <div className={`${s.rowSlot} ${s.labelRow}`} data-wide="" {...selectionAttrs(own, ctx, true)}>
         <span className={s.labelText}>{pref.name}</span>
         {pref.description !== '' && <span className={s.paneDesc}>{pref.description}</span>}
       </div>
@@ -95,10 +117,10 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
 
   // `block` leaves own their chrome (embedded editors with their own
   // header) — no label/tooltip row.
-  if (pref.block) return <div className={s.rowSlot} data-wide="" {...selectionAttrs(path, ctx, true)}>{control}</div>;
+  if (pref.block) return <div className={s.rowSlot} data-wide="" {...selectionAttrs(own, ctx, true)}>{control}</div>;
 
   return (
-    <div className={s.rowSlot} data-wide={pref.kind === 'object' || stacked || Array.isArray(pref.default) ? '' : undefined} {...selectionAttrs(path, ctx, true)}>
+    <div className={s.rowSlot} data-wide={pref.kind === 'object' || stacked || Array.isArray(pref.default) ? '' : undefined} {...selectionAttrs(own, ctx, true)}>
     <PropertyRow
       label={pref.name}
       description={pref.description}

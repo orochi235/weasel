@@ -192,6 +192,7 @@ export { type Auto, auto, isAuto } from './config/auto';
 export { autoPathsOf, resolveAutoConfig } from './config/autoConfig';
 export {
   ActionNode,
+  AliasNode,
   BaseNode,
   BooleanNode,
   ColorNode,

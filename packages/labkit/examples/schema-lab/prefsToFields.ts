@@ -89,6 +89,7 @@ export function prefToField(path: string, leaf: PrefLeaf): ConfigField | null {
     case 'map':
     case 'union':
     case 'action':
+    case 'alias':
       // Declined: a `ConfigField` is a scalar control, and neither a paint
       // union, an object leaf nor a list survives being flattened into one.
       return null;

@@ -70,6 +70,8 @@ export interface Annotations {
   variants?: Record<string, PrefObject>;
   /** What an action leaf's button calls. */
   run?: PrefAction['run'];
+  /** The path of the leaf an alias shows. */
+  of?: string;
 }
 
 /** What a rule contributes. `kind` is honored only while it is still unset,

@@ -40,8 +40,8 @@ function setup(props: Partial<Parameters<typeof Tree>[0]> = {}) {
 
 const press = (el: HTMLElement, y: number, x = 100) =>
   fireEvent.pointerDown(el, { pointerId: 1, button: 0, clientX: x, clientY: y });
-const move = (y: number, x = 100, altKey = false) => fireEvent.pointerMove(document, { pointerId: 1, clientX: x, clientY: y, altKey });
-const release = (y: number, x = 100, altKey = false) => fireEvent.pointerUp(document, { pointerId: 1, clientX: x, clientY: y, altKey });
+const move = (y: number, x = 100, altKey = false, metaKey = false) => fireEvent.pointerMove(document, { pointerId: 1, clientX: x, clientY: y, altKey, metaKey });
+const release = (y: number, x = 100, altKey = false, metaKey = false) => fireEvent.pointerUp(document, { pointerId: 1, clientX: x, clientY: y, altKey, metaKey });
 
 describe('Tree — drag to copy', () => {
   it('copies on a drag released with Alt held, and moves nothing', () => {
@@ -49,7 +49,7 @@ describe('Tree — drag to copy', () => {
     const { onMove, row } = setup({ onCopy });
     press(row('Zed'), 80);
     move(30, 100, true);
-    expect(screen.getByRole('tree')).toHaveAttribute('data-copying');
+    expect(screen.getByRole('tree')).toHaveAttribute('data-drag-effect', 'copy');
     // The rows stay, so they are not drawn as lifted.
     expect(screen.getByRole('treeitem', { name: 'Zed' })).not.toHaveAttribute('data-dragging');
     release(30, 100, true);
@@ -73,10 +73,10 @@ describe('Tree — drag to copy', () => {
     const { onMove, row } = setup({ onCopy });
     press(row('Zed'), 80);
     move(30);
-    fireEvent.keyDown(window, { key: 'Alt' });
-    expect(screen.getByRole('tree')).toHaveAttribute('data-copying');
+    fireEvent.keyDown(window, { key: 'Alt', altKey: true });
+    expect(screen.getByRole('tree')).toHaveAttribute('data-drag-effect', 'copy');
     fireEvent.keyUp(window, { key: 'Alt' });
-    expect(screen.getByRole('tree')).not.toHaveAttribute('data-copying');
+    expect(screen.getByRole('tree')).not.toHaveAttribute('data-drag-effect');
     release(30);
     expect(onMove).toHaveBeenCalledWith(['z'], { parentId: 'g', index: 0 });
     expect(onCopy).not.toHaveBeenCalled();
@@ -86,9 +86,32 @@ describe('Tree — drag to copy', () => {
     const { onMove, row } = setup();
     press(row('Zed'), 80);
     move(30, 100, true);
-    expect(screen.getByRole('tree')).not.toHaveAttribute('data-copying');
+    expect(screen.getByRole('tree')).not.toHaveAttribute('data-drag-effect');
     release(30, 100, true);
     expect(onMove).toHaveBeenCalledWith(['z'], { parentId: 'g', index: 0 });
+  });
+
+  it('links on a drag released with Alt and Cmd held, in a tree that takes links', () => {
+    const onCopy = vi.fn();
+    const onLink = vi.fn();
+    const { onMove, row } = setup({ onCopy, onLink });
+    press(row('Zed'), 80);
+    move(30, 100, true, true);
+    expect(screen.getByRole('tree')).toHaveAttribute('data-drag-effect', 'link');
+    expect(screen.getByRole('treeitem', { name: 'Zed' })).not.toHaveAttribute('data-dragging');
+    release(30, 100, true, true);
+    expect(onLink).toHaveBeenCalledWith(['z'], { parentId: 'g', index: 0 });
+    expect(onCopy).not.toHaveBeenCalled();
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('copies under Alt and Cmd in a tree that takes copies and no links', () => {
+    const onCopy = vi.fn();
+    const { row } = setup({ onCopy });
+    press(row('Zed'), 80);
+    move(30, 100, true, true);
+    release(30, 100, true, true);
+    expect(onCopy).toHaveBeenCalledWith(['z'], { parentId: 'g', index: 0 });
   });
 
   it('tells canDrop the drag is a copy', () => {
@@ -96,7 +119,7 @@ describe('Tree — drag to copy', () => {
     const { row } = setup({ onCopy: vi.fn(), canDrop });
     press(row('Zed'), 80);
     move(30, 100, true);
-    expect(canDrop).toHaveBeenLastCalledWith(['z'], { parentId: 'g', index: 0 }, { copy: true });
+    expect(canDrop).toHaveBeenLastCalledWith(['z'], { parentId: 'g', index: 0 }, 'copy');
     release(30, 100, true);
   });
 });
@@ -144,7 +167,7 @@ describe('Tree — drag to reorder', () => {
     const { onMove, row } = setup({ canDrop });
     press(row('Zed'), 80);
     move(30);
-    expect(canDrop).toHaveBeenCalledWith(['z'], { parentId: 'g', index: 0 }, { copy: false });
+    expect(canDrop).toHaveBeenCalledWith(['z'], { parentId: 'g', index: 0 }, 'move');
     expect(screen.getByRole('treeitem', { name: 'Ex' })).not.toHaveAttribute('data-drop');
     release(30);
     expect(onMove).not.toHaveBeenCalled();
