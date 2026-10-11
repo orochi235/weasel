@@ -10,7 +10,7 @@ import { indexStory } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
 import { storyGlobOf } from './storyGlob.ts';
-import { createWrapperResolver, type WrapperResolution } from './wrappers.ts';
+import { createWrapperResolver, sameResolution, type WrapperResolution } from './wrappers.ts';
 
 /** Options for the `forge` vite plugin. */
 export interface ForgeOptions {
@@ -64,7 +64,7 @@ export function forge(options: ForgeOptions): Plugin[] {
     return !path.split('/').includes('node_modules') && storyGlobOf(path, options.stories) !== undefined;
   };
   const read = (file: string) =>
-    indexStory(readFileSync(file, 'utf8'), file, { root, stories: options.stories }, wrappersOf.get(file)?.wrappers);
+    indexStory(readFileSync(file, 'utf8'), file, { root, stories: options.stories }, wrappersOf.get(file));
   const logError = (err: unknown) => logger?.error(`[forge] ${err instanceof Error ? err.message : String(err)}`);
   /** A file that fails to parse stays in the map with no entries, so an edit that fixes it re-indexes it. */
   const files = (): Map<string, IndexEntry[]> => {
@@ -98,9 +98,9 @@ export function forge(options: ForgeOptions): Plugin[] {
         // `read` has already logged a file that fails to parse.
         continue;
       }
-      const before = wrappersOf.get(file)?.wrappers ?? new Set();
+      const before = wrappersOf.get(file);
       wrappersOf.set(file, next);
-      if (before.size === next.wrappers.size && [...before].every((name) => next.wrappers.has(name))) continue;
+      if (sameResolution(before, next)) continue;
       try {
         current.set(file, read(file));
       } catch (err) {

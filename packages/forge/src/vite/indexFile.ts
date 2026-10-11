@@ -15,15 +15,22 @@ import {
   stringOf,
   stringProp,
 } from './ast.ts';
-import { mayBeStory } from './nativeExports.ts';
+import { type Foreign, mayBeStory } from './nativeExports.ts';
 
 /**
  * The stories `code` declares, in source order, without running it. `file` is absolute; `autoTitle` titles a meta
- * that names none. `wrappers` adds locals known to be forge's `meta` or `story` though imported from elsewhere.
+ * that names none. `wrappers` adds locals known to be forge's `meta` or `story` though imported from elsewhere, and
+ * `foreign` says what a native file's other imports are, where something followed them.
  */
-export function indexFile(code: string, file: string, autoTitle: string, wrappers: ReadonlySet<string> = new Set()): IndexEntry[] {
+export function indexFile(
+  code: string,
+  file: string,
+  autoTitle: string,
+  wrappers: ReadonlySet<string> = new Set(),
+  foreign?: Foreign,
+): IndexEntry[] {
   try {
-    return indexProgram(parseFile(code, file), file, autoTitle, wrappers);
+    return indexProgram(parseFile(code, file), file, autoTitle, wrappers, foreign);
   } catch (err) {
     throw new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
   }
@@ -68,7 +75,7 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
 }
 
 /** The program's top-level bindings, and its locals that are forge's `meta` or `story`. */
-function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindings; wrappers: Set<string> } {
+export function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindings; wrappers: Set<string> } {
   const bindings: Bindings = new Map();
   const wrappers = new Set(extra);
   for (const stmt of program.body) {
@@ -89,12 +96,13 @@ function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindi
   return { bindings, wrappers };
 }
 
-function indexProgram(program: t.Program, file: string, autoTitle: string, extra: ReadonlySet<string>): IndexEntry[] {
+export function indexProgram(program: t.Program, file: string, autoTitle: string, extra: ReadonlySet<string>, foreign?: Foreign): IndexEntry[] {
   const { bindings, wrappers } = scan(program, extra);
 
   let metaNode: t.Node | undefined;
   let metaDoc: string | undefined;
-  const exported: { name: string; node: t.Node | undefined; doc: string | undefined }[] = [];
+  // `from`: re-exported from another module, so there is no node to read here.
+  const exported: { name: string; node: t.Node | undefined; doc: string | undefined; from?: boolean }[] = [];
   for (const stmt of program.body) {
     if (stmt.type === 'ExportDefaultDeclaration') {
       metaNode = stmt.declaration;
@@ -117,7 +125,9 @@ function indexProgram(program: t.Program, file: string, autoTitle: string, extra
       if (name === 'default') {
         metaNode = node;
         metaDoc ??= doc;
-      } else exported.push({ name, node, doc });
+      } else if (stmt.source) exported.push({ name, node, doc, from: true });
+      // An import exported as it stands is read as the identifier it is, which is what `foreign` is asked about.
+      else exported.push({ name, node: node ?? (spec.local.type === 'Identifier' ? spec.local : undefined), doc });
     }
   }
   if (!metaNode && !program.body.some(isDefaultExport)) return [];
@@ -135,7 +145,7 @@ function indexProgram(program: t.Program, file: string, autoTitle: string, extra
   return exported
     .filter(({ name }) => name !== '__namedExportsOrder')
     .filter(({ name }) => (!include || include(name)) && (!exclude || !exclude(name)))
-    .filter((e) => !native || mayBeStory(e.node, bindings, wrappers))
+    .filter((e) => !native || (e.from ? (foreign?.reexport(e.name) ?? true) : mayBeStory(e.node, { bindings, wrappers, foreign })))
     .map(({ name, node, doc }) => {
       const spec = objectOf(node, bindings, wrappers);
       const isolate = isolateOf(spec, bindings, wrappers, name) ?? metaIsolate;

@@ -15,8 +15,10 @@ readable there: a string, a template with no expression, or a `const` of the
 same file holding one. Any other title, such as an imported constant, is
 passed over for the title the file's path gives it. In a file whose meta is
 forge's `meta`, a story is an export that calls `story`, directly or through
-a function of that file that returns the call; any other exported call, such
-as `export const rows = makeRows()`, is not listed.
+a function that returns the call, and an import or a re-export is followed to
+its declaration to see whether it is one. Anything else the file exports, such
+as `export const rows = makeRows()` or a constant from another module, is not
+listed.
 
 ## Where a story renders
 

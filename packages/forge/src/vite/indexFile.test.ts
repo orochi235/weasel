@@ -19,6 +19,39 @@ export const WithName = story({ name: 'Custom name', render: () => null });
     ]);
   });
 
+  it('takes what it is told about a native file\'s imports over its own guess', () => {
+    const code = `
+import { meta } from '@weasel-js/forge';
+import { Shared, LIMIT, sized, rowsOf, Unknown } from './shared';
+export default meta({ title: 'ui/Slider' });
+export { Shared, LIMIT, Unknown };
+export const Small = sized(1);
+export const rows = rowsOf(3);
+export { Other, table } from './other';
+`;
+    const foreign = {
+      value: (name: string) => ({ Shared: true, LIMIT: false })[name],
+      call: (name: string) => ({ sized: true, rowsOf: false })[name],
+      reexport: (name: string) => ({ Other: true, table: false })[name],
+    };
+    expect(indexFile(code, FILE, 'ui/Auto', new Set(), foreign).map((e) => e.exportName)).toEqual(['Shared', 'Unknown', 'Small', 'Other']);
+  });
+
+  it('reads a native export that picks between values, or copies one, by what it picks from', () => {
+    const code = `
+import { meta, story } from '@weasel-js/forge';
+export default meta({ title: 'ui/Slider' });
+const Basic = story({ render: () => null });
+const options = { dense: true };
+export const Copy = { ...Basic, name: 'A copy' };
+export const settings = { ...options, wide: true };
+export const Either = flag ? Basic : Copy;
+export const limit = flag ? 4 : 8;
+export const Fallback = maybe ?? Basic;
+`;
+    expect(ids(code).map(([, name]) => name)).toEqual(['A copy', 'Either', 'Fallback']);
+  });
+
   it('leaves out of a native file the exports that cannot be stories, which the loader skips', () => {
     const code = `
 import { meta, story } from '@weasel-js/forge';

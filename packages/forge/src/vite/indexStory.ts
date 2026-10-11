@@ -3,6 +3,7 @@ import type { IndexEntry } from '../story/types.ts';
 import { autoTitle } from './autoTitle.ts';
 import type { ResolveImport } from './depGraph.ts';
 import { foreignCallees, indexFile } from './indexFile.ts';
+import { foreignFrom } from './nativeExports.ts';
 import { createWrapperResolver, type WrapperResolution } from './wrappers.ts';
 
 /** Where a project keeps its stories: the vite root, and the globs relative to it. */
@@ -12,11 +13,18 @@ export interface StorySource {
 }
 
 /**
- * The stories `file` declares, titled as its place under `source` titles it. `wrappers` are the callees already
- * known to be forge's `meta` or `story` though imported from elsewhere; `indexStoryResolved` finds them.
+ * The stories `file` declares, titled as its place under `source` titles it. `resolved` is what following the
+ * file's imports found, which `indexStoryResolved` works out: without it a `meta` or `story` reaching forge through
+ * another module is not recognized, and an import the file exports is taken for a story.
  */
-export function indexStory(code: string, file: string, source: StorySource, wrappers?: ReadonlySet<string>): IndexEntry[] {
-  return indexFile(code, file, autoTitle(file, source.root, source.stories), wrappers);
+export function indexStory(
+  code: string,
+  file: string,
+  source: StorySource,
+  resolved?: Pick<WrapperResolution, 'wrappers' | 'foreign'>,
+): IndexEntry[] {
+  const foreign = resolved ? foreignFrom(resolved.foreign) : undefined;
+  return indexFile(code, file, autoTitle(file, source.root, source.stories), resolved?.wrappers, foreign);
 }
 
 /**
@@ -32,5 +40,5 @@ export async function indexStoryResolved(
   decide = createWrapperResolver((path) => readFileSync(path, 'utf8')),
 ): Promise<{ entries: IndexEntry[]; resolution: WrapperResolution }> {
   const resolution = await decide(file, foreignCallees(code, file), resolve);
-  return { entries: indexStory(code, file, source, resolution.wrappers), resolution };
+  return { entries: indexStory(code, file, source, resolution), resolution };
 }
