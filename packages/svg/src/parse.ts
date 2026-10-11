@@ -26,6 +26,8 @@ import { multiply, parseTransform, decomposeRotation, rebaseTransform, rotationC
 import { boundsOfPath, layoutRuns, resolveRuns, resolveScreenLength, resolveTextStyle } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
 import { anchorOffset } from './textAnchor';
+import { applyOwnTransform } from './placeBox';
+import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import { collectGradients, WEASEL_NS, WEASEL_NS_PREFIX, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
 import { collectElementsByTag } from './elements';
@@ -750,22 +752,7 @@ function imageNodeAt(
   const opacity = ownValue(ownerEl, 'opacity');
   if (opacity != null) node.opacity = opacity;
   const localTransform = parseTransform(ownerEl.getAttribute('transform'), onWarn);
-  if (!isIdentity(localTransform)) {
-    const worldLocal = rebaseTransform(ctm, localTransform);
-    const cx = node.x + node.width / 2;
-    const cy = node.y + node.height / 2;
-    const angle = worldLocal && decomposeRotation(worldLocal, cx, cy);
-    if (!worldLocal) {
-      onWarn('<image> transform sits under a singular parent transform; dropped');
-    } else if (angle != null) {
-      node.rotation = angle;
-    } else {
-      const rotComp = rotationComponent(worldLocal);
-      if (Math.abs(rotComp) > 1e-4) {
-        onWarn('<image> transform has a rotational component that can\'t be cleanly stored as rotation; dropped (may not round-trip identically)');
-      }
-    }
-  }
+  applyOwnTransform(node, 'image', ctm, localTransform, true, onWarn);
   return node;
 }
 
@@ -885,10 +872,8 @@ function parseTextElement(
     return Number.isFinite(n) ? n : fallback;
   };
   const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
-  // Use only the inherited CTM to position the text's anchor; the
-  // element-local transform is decomposed below so a pure rotation about
-  // the text box's center is surfaced as `node.rotation` rather than
-  // baked into the anchor (and lost).
+  // The inherited CTM alone positions the anchor; the element's own
+  // transform is applied to the finished box, by `applyOwnTransform`.
   const m = ctm;
 
   const rawX = num(el.getAttribute('x'), 0);
@@ -982,25 +967,11 @@ function parseTextElement(
   if (textPaint.fill !== undefined) node.fill = textPaint.fill;
   if (textPaint.stroke != null) node.stroke = textPaint.stroke;
   if (opacity != null) node.opacity = opacity;
-  // Try to extract the element-local transform as a pure rotation about
-  // the text box's center. When it doesn't decompose cleanly but contains
-  // a rotational component, warn — the legacy code path baked the matrix
-  // into the anchor; here we drop it so the warning is mandatory.
-  if (!isIdentity(localTransform)) {
-    const worldLocal = rebaseTransform(ctm, localTransform);
-    const cx = node.x + node.width / 2;
-    const cy = node.y + node.height / 2;
-    const angle = worldLocal && decomposeRotation(worldLocal, cx, cy);
-    if (!worldLocal) {
-      onWarn('<text> transform sits under a singular parent transform; dropped');
-    } else if (angle != null) {
-      node.rotation = angle;
-    } else {
-      const rotComp = rotationComponent(worldLocal);
-      if (Math.abs(rotComp) > 1e-4) {
-        onWarn(`<text> transform has a rotational component that can't be cleanly stored as rotation; dropped (may not round-trip identically)`);
-      }
-    }
+  const scale = applyOwnTransform(node, 'text', ctm, localTransform, false, onWarn);
+  if (Math.abs(scale - 1) > 1e-9) {
+    node.style = scaleTextStyle(node.style, scale);
+    if (node.runs) node.runs = scaleRuns(node.runs, scale);
+    if (node.stroke) node.stroke = scaleStroke(node.stroke, scale);
   }
   return node;
 }
