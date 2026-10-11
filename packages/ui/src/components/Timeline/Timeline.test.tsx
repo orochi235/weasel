@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/react';
 import type { SampledTrack, TimelineTrack, Track } from '@weasel-js/core';
@@ -108,6 +109,23 @@ describe('Timeline', () => {
     expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('100%');
     rerender(<Timeline {...base} tracks={tracks()} duration={2000} />);
     expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('100%');
+  });
+
+  it('keeps focus on a key that an arrow key moves past its neighbor', () => {
+    function Host() {
+      const [value, setValue] = useState<Track[]>(() => [
+        { kind: 'sampled', label: 'x', keys: [{ t: 100, value: 0 }, { t: 105, value: 10 }], onTick: () => {} },
+      ] as Track[]);
+      return <Timeline {...base} tracks={value} onChange={setValue} />;
+    }
+    render(<Host />);
+    const first = screen.getAllByTestId('timeline-key')[0];
+    first.focus();
+    fireEvent.keyDown(first, { key: 'ArrowRight' });
+    const moved = screen.getAllByTestId('timeline-key')[1];
+    expect(moved).toHaveAccessibleName(/110\s*ms/);
+    expect(moved).toHaveAttribute('aria-current', 'true');
+    expect(document.activeElement).toBe(moved);
   });
 
   it('deletes the selected key on Delete', () => {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import { openPointerSession, type EventTrack, type Keyframe, type PointerSession, type SampledTrack, type TimelineTrack } from '@weasel-js/core';
+import { openPointerSession, pastDragThreshold, type EventTrack, type Keyframe, type PointerSession, type SampledTrack, type TimelineTrack } from '@weasel-js/core';
 import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
 import { createTimeScale, spanPercent, toPercent, type TimeWindow } from './timeScale';
@@ -87,6 +87,14 @@ export function Lane(props: LaneProps): ReactElement {
 
     setDrag({ keyIndex: i, t: times[i] });
 
+    // A press that never travels is a click: it selects and moves nothing.
+    const start = { clientX: e.clientX, clientY: e.clientY };
+    let dragging = false;
+    const travelled = (ev: PointerEvent): boolean => {
+      dragging ||= pastDragThreshold(start, ev);
+      return dragging;
+    };
+
     const end = (): void => {
       setDrag(null);
       sessionRef.current = null;
@@ -95,21 +103,37 @@ export function Lane(props: LaneProps): ReactElement {
     sessionRef.current?.cancel();
     sessionRef.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => {
+        if (!travelled(ev)) return;
         setDrag({ keyIndex: i, t: at(ev) });
         onKeyInput(i, at(ev));
       },
       onEnd: (ev) => {
-        onKeyCommit(i, at(ev));
+        if (travelled(ev)) onKeyCommit(i, at(ev));
         end();
       },
       onCancel: end,
     }, { capture: false });
   };
 
+  // A keyboard move can re-sort the key to another index; focus follows it there.
+  const keyEls = useRef<(HTMLDivElement | null)[]>([]);
+  const refocus = useRef(false);
+  useEffect(() => {
+    if (!refocus.current) return;
+    refocus.current = false;
+    if (selection !== null) keyEls.current[selection]?.focus();
+  });
+
   const onKeyDown = (i: number, t: number) => (e: ReactKeyboardEvent<HTMLDivElement>): void => {
     const step = KEY_STEP_MS * (e.shiftKey ? 10 : 1);
-    if (e.key === 'ArrowRight') { e.preventDefault(); onKeyCommit(i, t + step); }
-    if (e.key === 'ArrowLeft') { e.preventDefault(); onKeyCommit(i, Math.max(0, t - step)); }
+    const move = (toMs: number): void => {
+      e.preventDefault();
+      refocus.current = true;
+      onKeyCommit(i, toMs);
+    };
+    if (e.key === 'ArrowRight') move(t + step);
+    if (e.key === 'ArrowLeft') move(Math.max(0, t - step));
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(i); }
   };
 
   const times = entryTimes(row);
@@ -136,7 +160,11 @@ export function Lane(props: LaneProps): ReactElement {
         className={s.laneTrack}
         ref={trackRef}
         data-testid="timeline-lane-track"
-        onDoubleClick={(e) => { if (row.kind === 'sampled') onInsert(Math.max(0, msAt(e.clientX))); }}
+        onDoubleClick={(e) => {
+          if (row.kind !== 'sampled') return;
+          if ((e.target as Element).closest('[data-keyframe-index], [data-handle-index]')) return;
+          onInsert(Math.max(0, msAt(e.clientX)));
+        }}
       >
         {graph ? (
           <LaneGraph
@@ -181,6 +209,7 @@ export function Lane(props: LaneProps): ReactElement {
             {times.map((t, i) => (
               <div
                 key={i}
+                ref={(el) => { keyEls.current[i] = el; }}
                 role="button"
                 tabIndex={0}
                 aria-label={`${row.label} key at ${Math.round(t)} ms`}
@@ -190,6 +219,7 @@ export function Lane(props: LaneProps): ReactElement {
                 className={row.kind === 'event' ? s.eventMark : s.key}
                 style={{ left: pct(t) }}
                 onPointerDown={onKeyPointerDown(i)}
+                onDoubleClick={(e) => e.stopPropagation()}
                 onKeyDown={onKeyDown(i, t)}
               />
             ))}

@@ -109,6 +109,34 @@ describe('Lane', () => {
     expect(onInsert).toHaveBeenCalledWith(200);
   });
 
+  it('does not insert on a double-click that lands on a key', () => {
+    const onInsert = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onInsert={onInsert} />);
+    fireEvent.doubleClick(screen.getAllByTestId('timeline-key')[1], { clientX: 250 });
+    expect(onInsert).not.toHaveBeenCalled();
+  });
+
+  it('selects a key without committing a move when the press does not travel', () => {
+    const onSelect = vi.fn();
+    const onKeyInput = vi.fn();
+    const onKeyCommit = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} onKeyInput={onKeyInput} onKeyCommit={onKeyCommit} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 252, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 253, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 253, clientY: 10, altKey: true });
+    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onKeyInput).not.toHaveBeenCalled();
+    expect(onKeyCommit).not.toHaveBeenCalled();
+  });
+
+  it('selects a focused key on Enter or Space', () => {
+    const onSelect = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} />);
+    fireEvent.keyDown(screen.getAllByTestId('timeline-key')[1], { key: 'Enter' });
+    fireEvent.keyDown(screen.getAllByTestId('timeline-key')[0], { key: ' ' });
+    expect(onSelect.mock.calls).toEqual([[1], [0]]);
+  });
+
   it('moves a focused key with the arrow keys', () => {
     const onKeyCommit = vi.fn();
     render(<Lane {...base} row={laneOf(sampled)} selection={1} onKeyCommit={onKeyCommit} />);
@@ -150,6 +178,13 @@ describe('Lane in graph mode', () => {
     keys: [{ t: 0, value: 0 }, { t: 500, value: 10, easing: { bezier: [0.4, 0, 0.2, 1] } }],
     onTick: () => {},
   } as unknown as Track;
+
+  it('does not insert on a double-click that lands on a graphed key', () => {
+    const onInsert = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onInsert={onInsert} />);
+    fireEvent.doubleClick(graphKeys()[1], { clientX: 250 });
+    expect(onInsert).not.toHaveBeenCalled();
+  });
 
   it('draws a curve for a numeric sampled track', () => {
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
