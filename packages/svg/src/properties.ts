@@ -236,6 +236,8 @@ export const PROPERTIES = {
   'stop-opacity': own(readRatio),
   'baseline-shift': own(readBaselineShift),
   'vector-effect': own(keyword('none', 'non-scaling-stroke')),
+  'display': own(keyword('none', 'inline')),
+  'visibility': inherited(keyword('visible', 'hidden', 'collapse')),
 } as const satisfies Record<string, PropertyDef<unknown>>;
 
 export type PropertyName = keyof typeof PROPERTIES;

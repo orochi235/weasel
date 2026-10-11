@@ -21,6 +21,7 @@ describe('isDeclarationHonored', () => {
     ['vector-effect', 'non-scaling-stroke'],
     ['fill', 'inherit'], ['FILL', 'RED'],
     ['opacity', '50%'], ['fill-opacity', '25%'], ['font-size', '150%'], ['fill', 'context-stroke'],
+    ['display', 'none'], ['visibility', 'hidden'],
   ])('honors %s: %s', (prop, value) => {
     expect(isDeclarationHonored(prop, value)).toBe(true);
   });
@@ -32,7 +33,7 @@ describe('isDeclarationHonored', () => {
     ['opacity', '0.5x'], ['font-style', 'oblique'], ['stroke-linejoin', 'miter-clip'], ['letter-spacing', '0.1em'], ['font-size', '1em'], ['font-weight', 'lighter'],
     ['text-anchor', 'left'], ['direction', 'sideways'], ['text-transform', 'full-width'],
     ['marker-end', 'url(other.svg#m)'], ['vector-effect', 'non-scaling-size'],
-    ['display', 'none'], ['transform', 'rotate(10deg)'], ['clip-path', 'url(#c)'], ['--custom', 'x'],
+    ['display', 'grid'], ['visibility', 'invisible'], ['transform', 'rotate(10deg)'], ['clip-path', 'url(#c)'], ['--custom', 'x'],
     ['opacity', 'inherit'], ['fill', 'initial'],
   ])('does not honor %s: %s', (prop, value) => {
     expect(isDeclarationHonored(prop, value)).toBe(false);
@@ -102,6 +103,8 @@ describe('PROPERTIES is the parser\'s one pathway', () => {
     'color': shape('red', 'url(#g)', 'fill: currentColor;'),
     'opacity': shape('0.5', 'half'),
     'vector-effect': stroked('non-scaling-stroke', 'non-scaling-size'),
+    'display': shape('none', 'contents'),
+    'visibility': shape('hidden', 'invisible'),
     'font-size': text('20px', '2em'),
     'font-family': text('serif'),
     'font-weight': text('600', 'lighter'),

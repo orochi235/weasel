@@ -342,6 +342,11 @@ function parseElement(
 ): SvgNode | SvgNode[] | null {
   const tag = el.tagName.toLowerCase();
   if (IGNORED_TAGS.has(tag)) return null;
+  if (ownValue(el, 'display') === 'none') return null;
+  // Inherited, and a descendant may turn itself back on, so only a leaf can
+  // answer it: a hidden `<g>` still has to be walked.
+  const containers = tag === 'g' || SUPPORTED_GROUP_TAGS.has(tag);
+  if (!containers && isHidden(deriveStyle(style, el))) return null;
   if (tag === 'g' && el.hasAttribute('data-weasel-image')) {
     const image = parseCroppedImage(el, ctm, onWarn);
     if (image) {
@@ -454,6 +459,11 @@ function parseElement(
   const meta = collectElementMeta(el, uriToPrefix);
   if (meta) node.meta = meta;
   return node;
+}
+
+function isHidden(style: StyleContext): boolean {
+  const v = styleValue(style, 'visibility');
+  return v === 'hidden' || v === 'collapse';
 }
 
 function lowerLeaf(
