@@ -253,26 +253,29 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     );
   };
 
-  // Resume on the first user gesture, then stop listening.
-  const gestures = ['pointerdown', 'keydown', 'touchstart'] as const;
-  const onGesture = (): void => { void engine.unlock(); };
+  // Resume on a user gesture, and keep listening until one takes. On touch a
+  // tap grants activation at pointerup, touchend and click, not at pointerdown
+  // or touchstart, so the first events of a first tap resume nothing.
+  const gestures = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
+  const onGesture = (): void => { void engine.unlock().catch(() => undefined); };
   const armGestures = (): void => {
     if (typeof window === 'undefined') return;
-    for (const g of gestures) window.addEventListener(g, onGesture, { once: true, passive: true });
+    for (const g of gestures) window.addEventListener(g, onGesture, { passive: true });
   };
   const disarmGestures = (): void => {
     if (typeof window === 'undefined') return;
     for (const g of gestures) window.removeEventListener(g, onGesture);
   };
-  armGestures();
+  if (ctx.state !== 'running') armGestures();
 
-  // A browser suspends the context when the tab goes away, and the one-shot
-  // gesture listeners are long consumed by then. Without this the engine is
+  // A browser suspends the context when the tab goes away, and the gesture
+  // listeners are long removed by then. Without this the engine is
   // permanently silent afterwards, with no diagnostic — the drop warning is a
   // once-per-engine latch.
   const onStateChange = (): void => {
     if (disposed) return;
     if (ctx.state === 'running') {
+      disarmGestures();
       if (suspendedSince) staleFloor = now();
       suspendedSince = false;
       return;

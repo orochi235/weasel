@@ -51,7 +51,7 @@ describe('createAudioEngine disposal', () => {
     const { engine } = engineHarness();
     engine.dispose();
     expect(remove.mock.calls.map((c) => c[0]))
-      .toEqual(expect.arrayContaining(['pointerdown', 'keydown', 'touchstart']));
+      .toEqual(expect.arrayContaining(['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']));
     remove.mockRestore();
   });
 
@@ -108,10 +108,49 @@ describe('createAudioEngine disposal', () => {
   });
 });
 
+describe('createAudioEngine automatic unlock', () => {
+  it('keeps listening when a gesture did not start the context, and resumes on the one that does', async () => {
+    const { ctx, engine } = engineHarness();
+    const resume = ctx.resume.bind(ctx);
+    let allowed = false;
+    ctx.resume = async () => { if (allowed) await resume(); };
+
+    // What a first tap sends before the browser grants activation on touch.
+    window.dispatchEvent(new Event('pointerdown'));
+    await flush();
+    expect(ctx.state).toBe('suspended');
+
+    allowed = true;
+    window.dispatchEvent(new Event('pointerup'));
+    await flush();
+    expect(ctx.state).toBe('running');
+    engine.dispose();
+  });
+
+  it.each(['touchend', 'click', 'keydown'])('resumes on %s', async (type) => {
+    const { ctx, engine } = engineHarness();
+    window.dispatchEvent(new Event(type));
+    await flush();
+    expect(ctx.state).toBe('running');
+    engine.dispose();
+  });
+
+  it('stops listening once the context runs', async () => {
+    const { ctx, engine } = engineHarness();
+    await engine.unlock();
+    const resume = vi.spyOn(ctx, 'resume');
+    ctx.state = 'suspended';                           // no statechange: nothing re-arms
+    window.dispatchEvent(new Event('pointerup'));
+    await flush();
+    expect(resume).not.toHaveBeenCalled();
+    engine.dispose();
+  });
+});
+
 describe('createAudioEngine re-suspension', () => {
   it('re-arms the gesture listener after the context suspends again', async () => {
     const { ctx, engine } = engineHarness();
-    window.dispatchEvent(new Event('pointerdown'));   // consumes the one-shot arm
+    window.dispatchEvent(new Event('pointerdown'));
     await flush();
     expect(ctx.state).toBe('running');
 
