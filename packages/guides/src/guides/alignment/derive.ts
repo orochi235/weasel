@@ -3,6 +3,7 @@ import type { DeriveAlignmentGuidesOptions } from './types';
 import {
   type Bounds,
   type PoseDescriptor,
+  rectFromPlane,
   visualBoundsViaDescriptor,
   AUTO_POSE_DESCRIPTOR,
 } from '@weasel-js/core';
@@ -14,7 +15,9 @@ const EPS = 1e-3;
  *  edges and the center. Overlapping offsets collapse to one candidate, whose
  *  `span` covers every box that produced it.
  *  Poses go through the same descriptor `alignMoveBehavior` matches with, so
- *  a rotated sibling advertises its ink edges rather than its stored box. */
+ *  a rotated sibling advertises its ink edges rather than its stored box.
+ *  The lines are in the camera's world: a sibling on a parallax layer needs
+ *  `planeOf` to say which plane its pose is in. */
 export function deriveAlignmentGuides<TPose = Bounds>(
   targets: readonly TPose[],
   opts: DeriveAlignmentGuidesOptions<TPose> = {},
@@ -52,7 +55,11 @@ export function deriveAlignmentGuides<TPose = Bounds>(
     }
   };
 
-  for (const t of targets) emit(visualBoundsViaDescriptor(t, d));
+  targets.forEach((t, i) => {
+    const box = visualBoundsViaDescriptor(t, d);
+    const plane = opts.planeOf?.(t, i);
+    emit(plane ? rectFromPlane(plane, box) : box);
+  });
   if (opts.page) emit(opts.page);
 
   return [...seenX.values(), ...seenY.values()];

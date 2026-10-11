@@ -36,6 +36,7 @@ into view.
 | `match.ts` | `matchAlignment` — which candidate the dragged bounds is close enough to. `MOVE_ANCHORS`. Poses are read through the caller's `poseDescriptor`. A matched guide's `span` is stretched to reach the snapped box. |
 | `spacing.ts` | `measureGaps` / `matchSpacing` — equal spacing: snap a box so its gap to a neighbor in its row or column equals a gap already between two other boxes, or center it between its two neighbors. Returns the equal gaps as `SpacingGap`s to draw. |
 | `behaviors.ts` | `alignMoveBehavior` / `alignInsertBehavior` / `alignResizeBehavior` — plugs the above into the move / insert / resize gestures. Given `getSpacingTargets`, move and unrotated resize also snap to equal gaps, the nearer snap winning per axis, and publish them through `setActiveGaps`. |
+| `plane.ts` | `alignmentOnPlane` — what lets the behaviors run on a `parallax` layer. Candidate lines, spacing boxes, and everything published are in the camera's world; the behaviors carry them into the gesture's plane to match and back out to publish. A sibling on a parallax layer reaches `deriveAlignmentGuides` with `planeOf`, which carries its box out to the camera's world. |
 
 Because both halves produce `Guide`s, `createGuidesLayer` draws user-placed and
 derived guides through the same path — the user can't tell which is which, and

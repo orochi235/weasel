@@ -1,4 +1,4 @@
-import type { ModifierState, Bounds, PoseDescriptor } from '@weasel-js/core';
+import type { ModifierState, Bounds, PlaneMap, PoseDescriptor } from '@weasel-js/core';
 import type { Guide, SpacingGap } from '../types';
 
 /** Which feature of a box to test against candidates, per axis.
@@ -31,8 +31,14 @@ export interface SpacingMatchResult {
 /** Which candidate lines to derive from a set of poses — edges, centers, or
  *  both, and whether the page box contributes its own. */
 export interface DeriveAlignmentGuidesOptions<TPose = Bounds> {
-  /** Include the document/page box's edges + center as candidates. */
+  /** Include the document/page box's edges + center as candidates. It is in
+   *  the camera's world, as every line derived is. */
   page?: Bounds;
+  /** The parallax plane a target's pose is stored in, for a sibling on a
+   *  `parallax` layer (`view.planeOf(layer)`). Its box is carried out to the
+   *  camera's world, which is the world alignment candidates are in. Omit it,
+   *  or answer null, for a target already there. */
+  planeOf?: (target: TPose, index: number) => PlaneMap | null | undefined;
   /** Emit left/right (x) and top/bottom (y) edge guides. Default true. */
   edges?: boolean;
   /** Emit centerX (x) and centerY (y) guides. Default true. */
@@ -42,9 +48,17 @@ export interface DeriveAlignmentGuidesOptions<TPose = Bounds> {
   poseDescriptor?: PoseDescriptor<TPose>;
 }
 
-/** Common options shared by the three alignment behavior factories. */
+/** Common options shared by the three alignment behavior factories.
+ *
+ *  Everything crossing this interface is in the camera's world, whatever
+ *  layer the gesture edits: the candidate lines and spacing boxes handed in,
+ *  and the lines and gaps published, which a layer the camera draws shows.
+ *  A gesture on a `parallax` layer carries them into its plane to match. */
 export interface AlignmentBehaviorBase {
-  /** Live candidate lines — consumer derives from current siblings + page. */
+  /** Live candidate lines — consumer derives from current siblings + page.
+   *  A sibling on a parallax layer goes through `deriveAlignmentGuides`'
+   *  `planeOf`, or its lines land where its plane's numbers say, not where
+   *  it is drawn. */
   getCandidates: () => readonly Guide[];
   /** Publish the currently-matched line(s). Called every onMove; cleared
    *  (`[]`) on a miss and on onEnd. */

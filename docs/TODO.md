@@ -1481,20 +1481,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk in schema order for every layout, wrapping each run of rows in `.rows`, makes them agree; it
   changes what existing rail forms look like, which is why it is a decision.
 
-- **(P2) guides: alignment snapping does not say which world its candidates are in on a parallax
-  layer.** `alignMoveBehavior`, `alignInsertBehavior`, and `alignResizeBehavior`
-  (`packages/guides/src/guides/alignment/behaviors.ts`) compare the gesture's pose with
-  `getCandidates()` directly and never read `ctx.plane`. The guide and grid behaviors now carry the
-  camera's lines into the plane (`packages/guides/src/strategies/onPlane.ts`), but alignment
-  candidates come from the consumer, usually `deriveAlignmentGuides` over sibling poses, which are
-  plane coordinates when the siblings share the dragged node's layer and camera coordinates when
-  they do not (a page box, or nodes on another layer). The matched lines are also published through
-  `setActiveGuides` to a layer the camera draws, so a plane-space match is drawn in the wrong place.
-  Ruled 2026-10-11: alignment candidates are always camera coordinates, and the caller carries
-  sibling boxes out of their planes. That leaves the three behaviors converting through
-  `guideOffsetOn` and publishing camera-space lines, the conversion for callers of
-  `deriveAlignmentGuides`, and the docs naming the space.
-
 - **(P3) hud loupe: pixel mode keeps a stale picture when the scene changes under a parked aim.**
   `createLoupe` (`packages/hud/src/loupe/createLoupe.ts`) re-reads the framebuffer only when the
   aim, mode, factor, or window size changes (`scheduleRefresh` from `surface.changed` and

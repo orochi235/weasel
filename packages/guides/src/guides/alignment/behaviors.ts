@@ -20,6 +20,7 @@ import type {
 } from './types';
 import { MOVE_ANCHORS, matchAlignment, stretchSpan } from './match';
 import { applyEdges, matchSpacing } from './spacing';
+import { alignmentOnPlane } from './plane';
 
 /** Options for move and resize — adds the pose descriptor for non-rect poses. */
 export interface AlignMoveArgs<TPose> extends AlignmentBehaviorBase {
@@ -87,10 +88,11 @@ function worldTol(
  *  transform uniformly to every dragged id, so the selection shifts together
  *  and stays rigid. Single-select is the degenerate one-box union. Publishes
  *  the matched line(s); clears on miss, end and cancel. */
-export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavior<TPose> {
-  const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
+export function alignMoveBehavior<TPose>(given: AlignMoveArgs<TPose>): MoveBehavior<TPose> {
+  const d = (given.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   return {
     onMove(ctx, transform) {
+      const args = alignmentOnPlane(given, ctx.plane);
       if (args.bypassKey && ctx.modifiers[args.bypassKey]) { publish(args, null); return; }
       if (transform.kind !== 'translate') return;
       // Union of every dragged id's visual box at its proposed position.
@@ -110,17 +112,18 @@ export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavi
       if (r === null) return;
       return { transform: { kind: 'translate', dx: transform.dx + r.dx, dy: transform.dy + r.dy } };
     },
-    onEnd() { publish(args, null); },
-    onCancel() { publish(args, null); },
+    onEnd() { publish(given, null); },
+    onCancel() { publish(given, null); },
   };
 }
 
 /** Insert behavior: snap the live `current` point to candidates (treating it
  *  as a zero-size box). Publishes the matched line(s). */
-export function alignInsertBehavior<TPose>(args: AlignmentBehaviorBase): InsertBehavior<TPose> {
+export function alignInsertBehavior<TPose>(given: AlignmentBehaviorBase): InsertBehavior<TPose> {
   const pointAnchors: { x: readonly AlignAnchor[]; y: readonly AlignAnchor[] } = { x: ['min'], y: ['min'] };
   return {
     onMove(ctx, { current }) {
+      const args = alignmentOnPlane(given, ctx.plane);
       if (args.bypassKey && ctx.modifiers[args.bypassKey]) { args.setActiveGuides([]); return; }
       const box = { x: current.x, y: current.y, width: 0, height: 0 };
       const m = matchAlignment(box, args.getCandidates(), worldTol(args, ctx), pointAnchors);
@@ -128,8 +131,8 @@ export function alignInsertBehavior<TPose>(args: AlignmentBehaviorBase): InsertB
       args.setActiveGuides(activeList(m));
       return { current: { x: current.x + m.dx, y: current.y + m.dy } };
     },
-    onEnd() { args.setActiveGuides([]); },
-    onCancel() { args.setActiveGuides([]); },
+    onEnd() { given.setActiveGuides([]); },
+    onCancel() { given.setActiveGuides([]); },
   };
 }
 
@@ -141,11 +144,12 @@ export function alignInsertBehavior<TPose>(args: AlignmentBehaviorBase): InsertB
  *  `poseDescriptor` reads the origin pose's box and rotation, and must match
  *  the resize action's. Publishes the matched line(s). */
 export function alignResizeBehavior<TPose extends Bounds>(
-  args: AlignMoveArgs<TPose>,
+  given: AlignMoveArgs<TPose>,
 ): BoundsConstraint<TPose> {
-  const d = (args.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
+  const d = (given.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   return {
     onMove(ctx, { pose, anchor }) {
+      const args = alignmentOnPlane(given, ctx.plane);
       if (args.bypassKey && ctx.modifiers[args.bypassKey]) { publish(args, null); return; }
       const origin = ctx.origin.get(ctx.draggedIds[0]);
       const rotation = origin === undefined ? 0 : (d.getRotation?.(origin) ?? 0);
@@ -162,8 +166,8 @@ export function alignResizeBehavior<TPose extends Bounds>(
       publish(args, { dx: 0, dy: 0, guides: m.guides, gaps: m.gaps });
       return { pose: { ...pose, x, y, width, height } };
     },
-    onEnd() { publish(args, null); },
-    onCancel() { publish(args, null); },
+    onEnd() { publish(given, null); },
+    onCancel() { publish(given, null); },
   };
 }
 
