@@ -183,6 +183,289 @@ Priority tags:
   a screen rectangle at the pose's own depth (2026-09-13) rather than throwing.
   Whatever replaces `Mat3` here is the remaining piece of that family.
 
+- **(P2) Corner resize handles cover the whole body of a selection about 16 px across or smaller.**
+  Each corner's hit square is 16 px (`hitRadiusPx` 8 in
+  `packages/core/src/affordances/cornerResize.ts`), tested in screen space, so on a 12 x 12 px
+  selection every point of the body is inside a handle and a drag there resizes; the node cannot be
+  moved by its body. `hitAffordanceRegions` picks the nearest corner but nothing reserves the body.
+  Options: shrink each hit square to its outward half when the target is under about four hit radii
+  on an axis, or hide the handles below that size through the `selection.resize-handles` chrome
+  rule. Not confirmed against the dispatcher that a handle hit outranks the body binding.
+
+- **(P2) Pen tool: nodes are minted and committed beside the `insert` dep.** `usePenTool`
+  (`packages/core/src/tools/builtin/pen/usePenTool.ts`) creates a path through
+  `options.adapter.addNode(pose)` plus `wrapPath`, needs a third hook, `makeNode`, for the join
+  case, and there builds `createInsertOp` / `createDeleteOp` and applies them itself. A consumer who
+  overrides the `insert` dep to stamp its own node shape, the documented route for every other shape
+  tool, gets pen paths that ignore it, and a new path is committed and then selected by two separate
+  consumer calls, so whether that is one undo step is up to the consumer. Route the commit through
+  `insert` with a path request and drop `adapter.addNode` / `makeNode`; this changes
+  `UsePenToolOptions`.
+
+- **(P3) Test hook: `window.__weaselTest` keeps the first canvas's refs after a remount.**
+  `installTestHook` (`packages/core/src/test-hook/install.ts`) returns the existing global if one is
+  set, and the effect that installs it in `packages/core/src/canvas/SceneCanvas.tsx` has no cleanup.
+  Under `?test=1`, swapping one demo for another without a page load leaves `getScene()` and
+  `getActiveToolId()` answering for the unmounted canvas, with `ready` already resolved. The effect
+  should return a cleanup that deletes the global when it still points at this hook, and install
+  should rebind.
+
+- **(P3) Tool activation keys are decided in two places.** `BUILTIN_SELECT_KEYS` in
+  `packages/core/src/tools/useKeybindings.ts` hard-codes the key for nine tool ids and the registry
+  walk skips any id in that table, so a `keybinding` declared on a tool with one of those ids is
+  ignored, while lasso, slice, and eyedropper declare theirs on the `ToolDef` and are honored. Put
+  the nine keys on their tool definitions and delete the table.
+
+- **(P3) `useHandTool` and `useLassoTool` carry dead surface.** `useHandTool` returns
+  `Tool<HandScratch | null>` where `HandScratch`
+  (`packages/core/src/tools/builtin/hand/useHandTool.ts`) is never populated; the tool is one
+  binding to `viewport.dragPan` and should be `Tool<null>`. `useLassoTool(adapter, …)` never reads
+  its required first argument. Both are signature changes. The first bullet of "Reference
+  implementations" in `CLAUDE.md` still describes the hand tool as "scratch, drag channel, view
+  mutation via `ctx.setView`", which no longer exists; point it at what the file is now, the
+  smallest declarative binding.
+
+- **(P3) `createDebugOverlayLayer` is public and its options type is not.** The function is exported
+  through `export * from './debug'`, while `CreateDebugOverlayLayerOpts`
+  (`packages/core/src/debug/createDebugOverlayLayer.ts`) is `@internal` and unexported, so a
+  consumer cannot name the argument. Export the type or mark the function internal.
+
+- **(P2) `resizeAction` / `rotateAction`: a selected group's children are not transformed.** With
+  the default absolute poses, Cmd+G two rects and drag a resize or rotation handle on the group: one
+  transform op is written for the container and the children stay put, and since the group's shown
+  pose is derived from its children nothing changes on screen. `nudge`, `clone`, and `move` now take
+  their write set from `translateTargets`
+  (`packages/core/src/interactions/actions/selectionSubtree.ts`), but a resize has to remap each
+  leaf inside the group's box and a rotate has to orbit each leaf about the group's center, which a
+  translation helper cannot express. Resize already has that path behind `resizePolicy.expandIds`;
+  the options are to make the default `expandIds` (`packages/core/src/canvas/deps/resizePolicy.ts`)
+  expand a container to its leaves, or to have both actions expand containers themselves. `flip`,
+  `align`, and `distribute` have no descendant handling either and need the same read.
+
+- **(P2) `moveAction`: a layout drop or a behavior-claimed commit leaves a dragged container's
+  children behind.** Under absolute poses, drag a container with children into a layout container
+  (`tileGrid`), or with a behavior such as `snapToContainer` that answers `onEnd` with ops: the
+  container lands where the layout or behavior put it and each child keeps its old world pose,
+  though the preview showed the subtree moving. The reparent-on-drop branch is fixed; these two
+  return before the descendant translate in `commitMove`
+  (`packages/core/src/interactions/actions/defaults/move.ts`). The delta the children need there is
+  the dragged node's landed pose minus its start pose, not the drag delta, so the fix is a pass over
+  the committed ops rather than a call to `translateCommitOps`.
+
+- **(P2) `snapBackOrDelete` / `snapToContainer`: with several nodes dragged, only the first is acted
+  on.** Three nodes selected, `snapBackOrDelete({ onFreeRelease: 'delete' })`, drag far and release:
+  one node is deleted and the other two spring back, because `onEnd` returns ops for
+  `ctx.draggedIds[0]` alone and returning ops claims the whole commit
+  (`packages/core/src/interactions/actions/move/behaviors/snapBackOrDelete.ts`,
+  `snapToContainer.ts`). Either loop every dragged id, or return `undefined` for a multi-drag so the
+  default translate runs; which one is a call about what these behaviors mean for a multi-selection.
+
+- **(P2) `useSliceTool`: `slice.dragPoint` places its point through the deps of the end context,
+  which the dispatcher hands over empty.** `onEnd` calls `place(endCtx.deps, …)`
+  (`packages/core/src/tools/builtin/slice/useSliceTool.ts`), and the dispatcher builds every `onEnd`
+  context with `deps: {}` (`endGesture` in
+  `packages/routing/src/interactions/dispatcher/dispatcher.ts`). `moveAction` had the same mistake
+  for `nodeAtPoint` and now captures the dep at `start`. Not run in a browser; read from both sides.
+
+- **(P3) `cloneAction`: the copies are not selected after an Alt-drag.** `duplicateAction` selects
+  what it made; clone leaves the originals selected, so a second Alt-drag clones the originals again
+  rather than the copy. The action declares `creates-selection`. Selecting the copies is the
+  convention in other editors, but it changes what the user holds after the gesture, so it is a
+  decision. `packages/core/src/interactions/actions/defaults/clone.ts`.
+
+- **(P3) `cloneByAltDrag` and the `CloneBehavior` contract are unreachable.** `cloneAction.start`
+  ignores `opts`, so no clone behavior ever runs, and the hook that consumed `CloneBehavior` is
+  gone. `cloneByAltDrag` is still exported from `@weasel-js/core`. Either run behaviors in
+  `cloneAction` the way move, rotate, and insert do, or remove the behavior and the type.
+
+- **(P3) `useDragGesture`: `end()` or `cancel()` while idle fires `onGestureEnd(false)` with no
+  matching `onGestureStart`, and a second `start()` fires `onGestureStart` twice.**
+  `dragGesture.test.ts` asserts the first on purpose ("end with no active gesture fires
+  onGestureEnd(false) only"), while `gestureLifecycle.ts` enforces the opposite contract for
+  actions: `end` only after `start`, at most once each. Pick one contract for both.
+
+- **(P3) Two scene-backed commit adapters.**
+  `packages/core/src/interactions/actions/move/gestureAdapter.ts` and `defaultCommitAdapter.ts`
+  implement the same methods and have drifted: `setChildOrder` batches in one and not the other, and
+  `getSelection`, `setSelection`, `setLayer`, `setLayout`, and `getRemovalClosure` exist in one
+  only. `rotateAction` hands behaviors the first and commits their ops through the second;
+  `moveAction` uses the first for both, so a behavior's delete op captures its removal closure under
+  rotate and not under move.
+
+- **(P3) Shift-extend of a hit list into the selection is written three times.**
+  `defaults/areaSelect.ts`, `defaults/lassoSelect.ts`, and `selectFromLasso.ts` each merge hits into
+  the current selection.
+
+- **(P3) `moveAction` applies a second drag threshold.** The dispatcher buffers a press until
+  `DRAG_THRESHOLD_PX` before `start` runs, and `moveAction.onMove` checks `dragThresholdPx` again;
+  resize, rotate, and clone have only the first. With `dragThresholdPx` raised, a drag that never
+  engaged still runs its behaviors' `onEnd`, with `onGestureStart` and `onGestureEnd` never fired.
+
+- **(P3) `PoseDescriptor.forNode` is honored by some actions and not others.** `rotateAction`
+  measures with the per-node descriptor and writes with the unspecialized one; `moveAction`
+  specializes in its layout pass only; `resize`, `clone`, `nudge`, and `duplicate` never call
+  `poseDescriptorForNode`. With `@weasel-js/kernel3d`'s descriptor the selection chrome is drawn
+  from specialized bounds while resize anchors on the default box. Resolve the descriptor per node
+  once, where start poses are captured.
+
+- **(P3) `GestureContext.pointer.clientX` / `clientY` are always 0.** Every default action fills
+  them with a literal, so a behavior reading them gets a plausible wrong answer. Remove the fields
+  from `PointerState`, or carry the client point through `InvocationCtx`.
+
+- **(P3) `move.ts` is 1,400 lines doing four jobs.** The layout drop pass, reparent-on-drop, the
+  reflow-glide bookkeeping, and the translate gesture share one file, with `commitMove` a 250-line
+  closure branching across all of them. Its inline "selected roots plus descendants, less ids a
+  moving frame carries" walk is the same decision `translateTargets` now makes for nudge and clone,
+  and should become that call when the file is split.
+
+- **(P3) `liveInsertScratch` is module-global.** With two canvases in separate input scopes, an
+  insert drag live in one is rotated by `insert.adjustRotation` routed in the other
+  (`packages/core/src/interactions/actions/defaults/insert.ts`). Hold the live scratch on a dep in
+  the invocation's scope.
+
+- **(P3) `useDragHandle`: a drag canceled while the button is still down, then released over its
+  source row, delivers a click to the row.** The click guard is removed on cancel so it cannot eat a
+  later click; telling "canceled, release still to come" from "canceled, pointer already gone" needs
+  the pointer session to say which.
+
+- **(P3) labkit loupe: the peek key restates the modifier rule `buildToolOffhandBindings` now
+  owns.** `packages/labkit/src/loupe/loupeActions.ts` gives its `key-held` peek binding `mods: {
+  alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' }` because the default peek
+  key is Alt and a modifier's own keydown sets its flag. `@weasel-js/routing` now applies that rule
+  to modifier keys in `buildToolOffhandBindings`
+  (`packages/routing/src/interactions/actions/toolOffhand.ts`). Two copies of one decision: either
+  export the rule from routing as a helper that builds a held-key spec for any key and have the
+  loupe call it, or make the loupe's peek an `offhand` entry. Note the loupe relaxes modifiers for
+  every peek key, a letter included, where the offhand builder relaxes them for modifier keys only;
+  pick one answer when folding them.
+
+- **(P3) Offhand tools: a non-modifier trigger does not engage while a modifier is down.** Hold
+  Shift, then press Space: the hand tool is not pushed, because the `key-held` spec for `' '`
+  forbids Shift (`packages/routing/src/interactions/actions/toolOffhand.ts`, matched by
+  `matchModifiers` in `packages/gestures/src/ui/match.ts`). Shift-constrain-then-pan is a plausible
+  sequence mid-draw. The options: relax every offhand trigger to any modifier state, which also
+  makes a letter trigger such as `'o'` engage on Cmd+O and swallow the browser's shortcut; or relax
+  only Shift and Alt for non-modifier triggers; or keep it strict.
+
+- **(P3) Long-press: a browser that sends its own `contextmenu` on a touch hold may fire the menu
+  twice.** `useGestureDispatcher`
+  (`packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx`) synthesizes `longpress`
+  after 500 ms and falls back to dispatching `contextmenu`; its `onContextMenu` listener also
+  dispatches `contextmenu` for the native event. Android Chrome sends a native `contextmenu` on a
+  touch hold, so a `contextMenu` binding could run from both. Not reproduced: it needs a real touch
+  device, since jsdom sends no native event. If real, drop the native event while a touch pointer
+  whose long-press fired is still held.
+
+- **(P2) CanvasView: a view removed mid-gesture orphans its in-flight handles.**
+  `packages/core/src/canvas/CanvasView.tsx` creates one dispatcher per view and never calls
+  `cancelAll` on it at unmount, and `useGestureDispatcher`'s teardown only reaches views still
+  registered. Unmount a panel while a key is held or a drag is live over it and that handle's
+  `onEnd` never runs: a Space-held hand tool stays on the hotkey stack, a drag preview keeps its
+  scene overrides. Have the view call `dispatcher.cancelAll('cancel')` when it unregisters.
+
+- **(P2) Modes: "is this tool allowed in this mode" is answered three ways with two different
+  rules.** `eligibleForMode` in `packages/modes/src/modeDefinition.ts` allows a tool when any of its
+  capability tags is allowed and refuses a tool with no tags; `isToolEligible` in
+  `packages/core/src/canvas/SceneCanvas.tsx` is a hand copy of it; the dispatcher
+  (`assembleScopedBindings` in `packages/routing/src/interactions/dispatcher/dispatcher.ts`, with
+  `liveScope` in `packages/routing/src/contributions/eligibility.ts`) requires every tag to be
+  allowed and lets a tool with no tags through. So a tool tagged `['navigation', 'creates-shapes']`
+  in a mode without `creates-shapes` shows enabled in `ToolPalette`, activates, and then has all its
+  bindings dropped: active and dead. A tool with no `capabilities` is the reverse: grayed out and
+  unactivatable, but live if already active or ambient. Every built-in tool carries one tag, so only
+  a consumer tool hits it. Decide any-versus-every and the empty case once, as one predicate over
+  `(allowedCapabilities, tags)` in `@weasel-js/modes`, and have all three call it.
+
+- **(P3) Contributions: `ContributionsApi.scopedBindings()` is a second binding assembly the
+  dispatcher never calls.** `packages/routing/src/contributions/useContributions.ts` builds its own
+  snapshot: it walks hotkey-held entries oldest-first where the dispatcher walks newest-first,
+  passes no capability gate, and has neither the view filter nor the action bindings. Its only
+  caller is its own test, but `overlays()` reads the same snapshot, so with two tools held the
+  overlay order disagrees with routing, and a tool the mode bars keeps drawing its overlay after the
+  dispatcher dropped its bindings. `docs/taxonomy.md` ("Contribution registry") says "The dispatcher
+  matches against that, so one place decides eligibility", which is not true. Export one assembly
+  function from routing (order, capability gate, view filter) for the dispatcher and `overlays()`
+  both, delete `scopedBindings()` or make it that function, and correct the taxonomy paragraph.
+
+- **(P3) Multitouch tap: two fingers resting for any length of time still end as a tap.**
+  `useGestureDispatcher` (`packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx`)
+  synthesizes `multitouchtap` when no finger moved more than 8 px; it has no upper bound on how long
+  the fingers were down, so a ten-second two-finger hold fires a two-finger-tap binding on release.
+  Needs a maximum duration; the value is the decision (single-finger long-press fires at 500 ms,
+  which is the natural ceiling).
+
+- **(P3) `useOngoingAction`: a control ended by the dispatcher keeps swallowing input.**
+  `packages/routing/src/interactions/actions/useOngoingAction.ts` begins a UI-driven handle on the
+  first `input()` and holds its control until `commit()` or `cancel()`. If the dispatcher ends that
+  handle first (a second `useOngoingAction` for the same action commits, which auto-commits the
+  prior handle in `beginUiOngoing`; or a tool switch or Escape calls `cancelAll`), every later
+  `input()` reaches `update`, which returns early on a dead control, and is dropped until the caller
+  commits. A color picker that scrubs with `input()` and commits on close goes inert mid-edit.
+  `UiOngoingControl` exposes no liveness; add `active` to it and have `input`/`commit` begin afresh
+  when it is false.
+
+- **(P3) Painted cursors do not survive the hover-cursor pump.** Two latent cases, since no kit tool
+  or action uses a painted cursor yet. An action declaring `activeCursor: { glyph, worldRadius }`:
+  `inFlightCursor()` in `packages/routing/src/interactions/dispatcher/dispatcher.ts` returns
+  `resolveCursor(...)`, which is the string `'none'` for a painted spec, and the pump in
+  `useGestureDispatcher.tsx` treats `'none'` as a CSS cursor and clears the painted override, so
+  there is no cursor at all mid-gesture. And a painted base cursor with the pointer over a handle
+  whose cursor is CSS: the pump sets the CSS cursor and `setOverride(null)`, and
+  `PaintedCursorState.current()` is `override ?? base`, so the painted base keeps drawing under the
+  native arrow. Return the `CursorSpec` from `inFlightCursor`, and give the painted state an
+  explicit "suppressed" override for a CSS-tier hover cursor.
+
+- **(P3) Actions registry: re-registering an action moves it to the back of registration order.** In
+  `packages/routing/src/interactions/actions/ActionsProvider.tsx` a release deletes the id from the
+  `Map` when its stack empties and the next `register` re-inserts it last. `useAction` releases and
+  registers whenever its action object changes, so of two ambient actions tied on a key, the winner
+  flips after the first one re-renders with a new object. It only shows where a tie exists, which
+  the route-conflict check already warns about. Keeping the slot needs a rule for when an id that
+  really left gives it up (an empty stack kept until the end of the tick, or a separate order
+  index).
+
+- **(P3) `ActionsRegistry.trigger` returns `true` when it ran nothing, and does not ask `enabled`.**
+  `trigger('move')`, an ongoing action, returns `true` and does nothing; `trigger('delete')` runs
+  while `delete.enabled()` reports a disabled reason, which the dispatcher honors for the same
+  action on a key (`packages/routing/src/interactions/actions/ActionsProvider.tsx`). Whether a
+  palette or toolbar is expected to gate before calling is the design call: either `trigger` returns
+  `false` for a non-immediate invoker and gates on `evaluateEnabled`, or its contract says the
+  caller gates.
+
+- **(P3) Key bindings match `event.key` only, so they depend on the keyboard layout.** `matchKey` in
+  `packages/gestures/src/ui/match.ts` compares `event.key`, and `KeySpec` has no `code` form. `{
+  key: ']', mods: { mod: true, alt: true } }` cannot match on a US Mac, where Option turns `]` into
+  `‘`; core lists the glyph per binding (`key: [']', '‘']` in
+  `packages/core/src/interactions/actions/defaults/reorder.ts`), which is right for one layout. A
+  layout that types `[` with AltGr reports `ctrlKey` and `altKey`, which the strict modifier match
+  rejects. Left and right Shift also share one `key-held-Shift` gesture id, so releasing either ends
+  the hold. Let a key spec name a `code` and match it before `key`.
+
+- **(P3) Route-conflict check: two kinds of real tie are never compared.** In
+  `packages/routing/src/tools/routing/reflection/conflicts.ts`, `ArrowLeft` with `shift: 'optional'`
+  and plain `ArrowLeft` land in different buckets (`canonicalModifiers` keeps `optional` distinct)
+  though both match an unshifted press at equal specificity; bucket by the set of modifier states a
+  spec accepts. And `multiTouch` has no route gesture, so `entryFor` in `reflection/registry.ts`
+  returns `null` and two `fingers: 2` bindings are never compared; give it a row.
+
+- **(P3) Mode registry accepts duplicate ids, and a decoration painter cannot be unregistered.**
+  `createModeRegistry({ modes: [a, a2] })` with one id (`packages/modes/src/registry.ts`): lookup by
+  id and `reflection` hold `a2`, `list()` returns both, and `modeShortcuts` builds two actions under
+  one action id. Throwing on a duplicate matches `mergeContributions`; keeping the last and
+  deduplicating `list()` is the other option. `ModeDecorations.register` in
+  `packages/modes/src/decorations.ts` returns nothing, so a painter registered from a component
+  outlives it and keeps painting from its closure; return a release.
+
+- **(P3) The two dispatcher files are about 1,700 lines each and mix owners.**
+  `packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx` holds keyboard, wheel,
+  WebKit pinch, pointer and multitouch synthesis, click and double-click, long-press, the
+  hover-cursor pump, drop and paste, and tool lifecycle in one effect closure; `dispatcher.ts` holds
+  dev tracing, per-kind context building, ranking, the walk, the record projection, and UI-driven
+  handles. Several bugs fixed in these files came from state one channel keeps that another needs
+  (which gesture a lifting finger ends, which view a held key belongs to). Split into one module per
+  channel around a shared dispatch and routing core, and move tracing and record building out of
+  `dispatcher.ts`.
+
 ### Cursor package follow-ups
 
 All four arcs of `docs/superpowers/specs/2026-09-03-cursor-system-design.md`
@@ -219,11 +502,160 @@ have shipped. What remains:
   Composing would mean a view's camera derived from the view under its aim, and
   a resolver that descends rather than picking one rect.
 
+- **(P2) Canvas hosts: nothing repaints when `devicePixelRatio` changes.** Move a window to a
+  display of another density, or zoom the page: the renderer lease
+  (`packages/core/src/canvas/canvasRenderer.ts`) reads the ratio on its next paint, but nothing asks
+  for that paint, so a static `<DrawCanvas>`, `<SceneViewCanvas>`, or `<MinimapCanvas>` stays at the
+  old resolution and an interactive `<SceneCanvas>` stays blurry until the next redraw. The only
+  re-arming `(resolution: Ndppx)` watcher is inlined in `core/device/useDeviceProfile.ts`; lift it
+  into a shared subscription and have `useRedrawOnRestore`'s neighbor in
+  `canvas/useCanvasRenderer.ts` call `requestRedraw` from it when no `dpr` prop is given.
+
+- **(P2) `renderDebugSnapshot`: a y-up view throws.** A canvas with `view.scale.y < 0` (valid per
+  `core/viewport/view.ts`) reaches `planPixelRender` with a negative `sourceRect.height` and
+  `scale.y`, which throws "sourceRect.height must be a positive finite number"
+  (`packages/core/src/canvas/renderDebugSnapshot.ts`, `renderSceneToPixels.ts`). So a flipped scene
+  cannot be rasterized headlessly. Options: let `planPixelRender` take a signed scale (size from the
+  magnitude, the view keeps the sign and offsets its origin), which changes `renderSceneToPixels`'s
+  contract, or keep the limit and say so in both docs.
+
+- **(P2) Minimap fit: a rect with one zero axis gives up instead of fitting the other axis.** A
+  scene whose only leaf is a horizontal line 5000 long, or whose leaves share one y, takes
+  `fitRectInto`'s degenerate branch in `packages/core/src/canvas/minimapMath.ts`: scale 1, centered
+  on the rect's top-left, so the minimap shows the left end of the line. Fitting the positive axis
+  alone would show the whole line. Two tests in `minimapMath.test.ts` pin the current fallback
+  ("zero-width rect falls back to identity scale"), so this is a choice to make, not an oversight to
+  patch.
+
+- **(P3) Minimap indicator: two builders for one rect.** `computeIndicatorCommand`
+  (`packages/core/src/canvas/minimapMath.ts`) and `createIndicatorLayer`
+  (`packages/core/src/features/minimap/layers.ts`) each build the main camera's visible rect with
+  its own copy of the default stroke, width, dash, and screen-pixel scaling. The detached one drew
+  its stroke in world units until the two were compared. Have the layer call
+  `computeIndicatorCommand(view, size, style, minimapView)`.
+
+- **(P3) Canvas hosts: the renderer writes inline `width` and `height` style on a `<canvas>` it
+  owns.** `WeaselRenderer`'s constructor and `resize` set `canvas.style.width`/`height`, so a
+  `<SceneViewCanvas className>` or `<DrawCanvas className>` that sizes the element (`width: 100%`)
+  loses to the inline style after the first paint. The docs now say so. The alternative is to drop
+  the style write and let hosts size the element by class, which needs every host checked for a
+  layout that depends on it.
+
+- **(P3) Dev HUDs: `CursorCoordsHud` and `PickHud` ignore the canvas's `clientToWorld` prop.** With
+  a consumer-supplied `clientToWorld` (a CSS-transformed canvas, a 3D host), routing uses the
+  override while both HUDs convert through the canvas rect and view, so the readout meant for
+  diagnosing pointer drift disagrees with the picks it explains. `<Canvas>` should hand them a
+  `toWorld(clientX, clientY)` thunk built from its own `toWorld`
+  (`packages/core/src/canvas/Canvas.tsx`); both components are exported, so that is a new prop on
+  each.
+
+- **(P3) Frame loop: subscribers get a clock and no way to learn it was suspended.** `useFrameLoop`
+  (`packages/core/src/canvas/useFrameLoop.ts`) passes no `onResume` to `useVisibleRaf` and the ref
+  handle exposes no equivalent, so a `beforePaint` hook that advances by `time - last` gets one
+  hour-long step after an hour in a background tab. Add `subscribeResume` to `CanvasExtensionApi`,
+  fed by `onResume`. Related: under `syncPaint` the frame's time is `performance.now()` at the call
+  while a rAF frame carries the frame-start timestamp, so a sync paint made inside another rAF
+  callback can be followed by a frame with an earlier time.
+
+- **(P3) `Canvas.tsx` is 1,610 lines and holds the scene-layer builders.** Its header says "Canvas
+  owns NO scene-shaped state", and it exports `buildSceneLayer`/`buildSceneLayers`, which walk the
+  scene tree, apply `toPose`, cull, and record debug bounds. Move them beside
+  `packages/core/src/canvas/sceneLayerPaint.ts` (re-exported from `Canvas.tsx` until importers
+  move), and take the uncontrolled/controlled view state (`viewRef`, `setView`, `subscribeView`, the
+  controlled-prop notification) out as a hook.
+
+- **(P3) Scene layer list: `<Canvas>` learns of a layer change by polling at paint.**
+  `useSceneLayerList` (`packages/core/src/canvas/useSceneLayerList.ts`) re-reads
+  `adapter.getLayers()` on every paint and queues a render when the ids differ, because the adapter
+  contract has no layer-list subscription. That costs one skipped frame per change. If
+  `CanvasAdapter` gains a layer-list version or subscription, key the layer memo on that and drop
+  the poll.
+
+- **(P3) `WeaselRenderer.applyTarget`: adjacent tiles at a fractional DPR may overlap or gap by a
+  device pixel.** Unverified, from reading: it rounds a tile's origin and its size separately, so
+  two `<Canvas paintInto>` panes sharing an edge at DPR 1.25 or 1.5 can round to rects that do not
+  meet. Check with two tiles at a fractional DPR and a pixel probe on the seam.
+
+- **(P3) `useHostAnchor`: a host that moves without resizing is not followed.** Unverified, from
+  reading `packages/core/src/canvas/useHostAnchor.ts`: it recomputes on scroll, window resize, and a
+  size change of the host or panel, so a sibling collapsing beside the host shifts it with none of
+  those firing, and the dev HUDs stay where the host was. The doc says it tracks reflows.
+
 ---
 
 ## Paths & booleans
 
 - **(P3) `@container` in `@weasel-js/svg` stylesheets.** `packages/svg/src/cascade.ts` evaluates `@media`, `@supports` and `@layer`, but skips a `@container` block whole, so its rules never apply. That is deliberate for now: a static parse lays nothing out, so no element is a size container and no query can hold. Applying them needs container sizes from somewhere — the root's viewport as the one container, or boxes supplied by the caller.
+
+- **(P3) svg import: a skewed, non-uniformly scaled, or mirrored-and-rotated `<text>` or `<image>`
+  keeps only its position, rotation, and uniform scale.** `applyOwnTransform`
+  (`packages/svg/src/placeBox.ts`) warns and drops the rest, because `SvgTextNode` and
+  `SvgImageNode` are a box plus a rotation. `<text transform="scale(4 1)">` imports at twice the
+  size instead of four times as wide. Holding the full matrix needs either a `transform` on the two
+  node types (and on the kit text and image poses they become) or lowering such text to outlines at
+  import; a mirrored rotation on an image could be a flip plus a rotation with no model change.
+
+- **(P2) svg import: absolute CSS units are read as bare user units everywhere.** `<circle r="5mm">`
+  imports with r = 5 instead of 18.9, and the same holds for `stroke-width="1mm"`,
+  `font-size="12pt"`, and the root `width="210mm"`. Each now warns (`packages/svg/src/lengths.ts`,
+  `properties.ts`'s `length`, `parse.ts`'s `parseRootLength`), but none converts. Converting
+  `mm`/`cm`/`in`/`pt`/`pc` at 96 per inch is one rule to apply in all three readers at once;
+  `em`/`ex` on geometry need the element's font size and can keep warning.
+
+- **(P2) geom: whether an open subpath fills is answered three ways.** For `<polyline points="0,0
+  100,0 100,100" fill="red"/>` (no `Z`), `tessellate` (`packages/geom/src/tessellate/tessellate.ts`)
+  triangulates the closed triangle and `pathSignedArea` (`paths/winding.ts`) counts it as closed
+  "the way a fill closes it", while `pointInPath` (`pathHitTest.ts`, `flatSubpaths`) files the run
+  under `open` and returns false, and `path.ts` documents that open subpaths "don't contribute to
+  fills". So the triangle paints and cannot be clicked. The options are SVG's rule (a fill closes
+  every subpath implicitly), which means `flatSubpaths` treats an open run of three or more points
+  as closed for the fill test and `path.ts` says so; or the kit rule (open never fills), which means
+  `tessellate` skips open contours and `pathSignedArea` returns 0 for them, and SVG import has to
+  close filled open shapes itself.
+
+- **(P3) svg unpack: a clipped group arrives unclipped.** `parseSvg` puts a `<g clip-path>` on
+  `SvgGroupNode.clip`, but `svgNodesToKitDrafts` (`packages/svg/src/unpack.ts`) builds the container
+  draft without it and has no warning channel to say so, so a dropped file shows the whole group.
+  Either the container draft carries the clip into whatever the scene's containers use for clipping,
+  or `svgNodesToKitDrafts` gains a way to report what it dropped.
+
+- **(P3) svg import: `<tspan>` positioning beyond line breaks is not read.** A `<tspan>` with its
+  own `x` and a `dy` or new `y` now starts a line (`packages/svg/src/tspanLines.ts`), but the line
+  pitch the `dy` states is discarded in favor of the default 1.2 line height, and `dx`, `rotate`,
+  and list-valued per-glyph `x` / `y` are ignored (a list on `<text>` warns; one on a `<tspan>` does
+  not). Kerned text exported as one `<tspan>` per glyph run imports with the glyphs run together.
+
+- **(P3) svg import: hidden content is dropped, not imported hidden.** `display="none"` and
+  `visibility="hidden"` content is now left out of `parseSvg`'s result, matching what a renderer
+  shows and what `svgFromKit` does with a hidden node on export. A file's hidden layers are
+  therefore lost on import. Keeping them needs a `hidden` flag on `SvgNode` that `unpack` maps to
+  the scene's own hidden state.
+
+- **(P3) svg: `shapes.ts` re-implements geom's `transformPath`.** `packages/svg/src/shapes.ts` has
+  its own `transformPath` with a different axis-aligned test (`< 1e-9` against geom's `=== 0`) and
+  its own identity short-circuit, beside `packages/geom/src/paths/transformPath.ts`. `parse.ts`'s
+  `pathAabb` and `serialize.ts`'s `pathBounds` both wrap `boundsOfPath`, which already returns a
+  rect's own box. Fold each pair into the geom function; the rect-reconstitution tests in
+  `roundtrip.test.ts` are what would notice a tolerance change.
+
+- **(P3) geom: `bezierCubic.ts` and `bezierQuadratic.ts` share four copied functions.**
+  `smoothTangent`, `defaultOutHandle`, `defaultInHandle`, and `segmentAt` are identical in
+  `packages/geom/src/curves/bezierCubic.ts` and `bezierQuadratic.ts`. Move them to one module both
+  import.
+
+- **(P3) svg and geom: two files hold several owners.** `packages/svg/src/parse.ts` is about 1,450
+  lines holding the document walk, shape lowering, text, images, clip paths, and marker ingestion;
+  text, image, and marker reading each split out cleanly (`placeBox.ts`, `lengths.ts`,
+  `tspanLines.ts`, and `metricScale.ts` are already their own modules).
+  `packages/geom/src/booleans/splitBySegment.ts` is 878 lines of crossing detection, loop tracing,
+  and region assembly.
+
+- **(P3) geom booleans: `splitBySegment` compares coordinates against absolute tolerances.**
+  `packages/geom/src/booleans/splitBySegment.ts` uses literal `1e-7` (`same`), `1e-9`
+  (`properCrossing`), and `> 1e-6` on region area, against the relative-tolerance policy `scalar.ts`
+  states. A shape drawn in a 0..0.001 coordinate space has every cut piece filtered out by the area
+  test, and `knife` returns `[]` rather than `null`. Not reproduced with a test; scale the
+  tolerances by the operands' extent the way `mat3.invert` does.
 
 ### Pathfinder follow-ups (post-v1)
 
@@ -279,6 +711,103 @@ Core five + Crop shipped. Remaining:
   stroke enums (`cap`, `join`, `align`, `dash`) are icon toggles — authoring
   eight glyphs to this repo's icon standard is its own piece of work and was
   deferred out of the stroke-markers arc.
+
+- **(P3) Images: the image cache never releases a bitmap, and a failed load stays failed until
+  reload.** `packages/core/src/features/images/imageCache.ts` keeps every decoded `ImageBitmap`
+  keyed by its `src` (a multi-megabyte `data:` URI for a pasted image) for the life of the page, and
+  `decodedVectors` keeps each SVG's `HTMLImageElement`. An image whose first fetch fails is
+  `'error'` with no retry. It needs `releaseImage(src)` and `retryImage(src)` exports and an owner
+  to call release: the scene when the last node using a `src` passes the undo horizon, or a byte
+  bound on the cache.
+
+- **(P3) Patterns: `resolvePatternSpec` registers a GL texture per distinct spec and never frees
+  one.** `packages/core/src/features/patterns/resolveSpec.ts` documents session lifetime, but a
+  color control scrubbing a hatch fill's `color` makes each intermediate color a new spec and a new
+  texture. Bounding the map (least recently used out, unregistering the evicted handle) is the
+  option; whether draw's pattern controls commit live or on release has not been checked.
+
+- **(P3) Chrome caps: `useHoverTracking` never attaches if its canvas ref is empty on the first
+  effect run.** The effect in `packages/core/src/features/chrome-caps/useHoverTracking.ts` reads
+  `canvasRef.current` once and has no dependency that changes when the element arrives, so a canvas
+  mounted a render later is never tracked. Taking the element (or a callback ref) instead of a ref
+  object would fix it and changes the hook's arguments.
+
+- **(P2) Renderer: a translucent `ImageBitmap` is multiplied by its alpha twice.** A
+  half-transparent white bitmap drawn with an image command onto a cleared canvas reads back as
+  `(64, 64, 64, 128)` in headless Chromium where `(128, 128, 128, 128)` is correct, whether the
+  bitmap came from `ImageData`, a PNG blob, or a canvas. Every PNG with soft edges shows a dark
+  fringe. `createImageBitmap` with no options holds premultiplied pixels and `texImage2D` uploads
+  them as they are, while `GLImageCache` and the batch shader
+  (`packages/core/src/renderer/shaders/batchFill.ts`, `vec4(mapped.rgb * a, a)`) assume straight
+  texels. A pattern texture registered from an `ImageBitmap` goes through `GLTextureCache` the same
+  way, and an `HTMLImageElement` source uploads straight, so the two source types disagree. Two ways
+  out: create every kit bitmap with `{ premultiplyAlpha: 'none' }` (`features/images/imageCache.ts`,
+  `features/ingestion/imageHandler.ts`, the loupe) and document that requirement on
+  `ImageDrawCommand.image`, which leaves a consumer's default bitmap wrong; or make image textures
+  premultiplied by convention, set `UNPACK_PREMULTIPLY_ALPHA_WEBGL` for the non-bitmap sources, and
+  have the shader unpremultiply before the color matrix, which fixes every source and filters better
+  at edges.
+
+- **(P3) Pixel loupe: each refresh waits on the garbage collector to free its texture.**
+  `packages/hud/src/loupe/createLoupe.ts` mints a new `ImageBitmap` per refresh and closes the old
+  one without telling the renderer. `GLImageCache` now deletes a collected bitmap's texture on a
+  later frame, but collection is not prompt. The loupe should call `releaseImageSource(old)` where
+  it calls `pixels?.close()`, and `releaseImageSource` should be exported from
+  `packages/core/src/renderer/index.ts` so a consumer drawing video frames or canvas snapshots can
+  do the same.
+
+- **(P3) Renderer: the transform stack is single precision.** `mat3.create` returns a `Float32Array`
+  and `GroupState` composes in it, so at world x = 262,144 and 64x zoom the view translation is near
+  1.68e7, where a float32 step is 1 to 2 pixels. Batched geometry (corners computed in JS) would pan
+  in whole-pixel steps, and own-draw meshes (`u_model * a_position` in the shader) would round per
+  vertex, so a path's batched stroke could separate from its own-drawn fill. Not measured. Fix: keep
+  `GroupState` transforms in doubles and convert at the uniform upload, and fold the translation
+  into a camera-relative offset on the CPU for own-draw meshes.
+
+- **(P3) Renderer: mesh VAOs assume `a_position` is at the same location in every program.**
+  `GLMeshCache` builds its VAOs with `pathFill`'s `a_position` location, and `pathFillVColor`,
+  `gradFill`, `patternFill`, and every registered paint kind's program draw with them. None pins the
+  location, so a registered kind whose vertex shader declares another attribute first can link
+  `a_position` elsewhere and paint nothing with no error. `shaders/batchFill.ts` pins its attributes
+  for this reason. Pin `a_position` to 0 in the kit shaders and call `bindAttribLocation(program, 0,
+  'a_position')` before linking a registered program. Related: `drawPathFillVColor` enables
+  `a_vertexColor` on a persistent VAO and then deletes the buffer it points at, where its stroke
+  sibling takes a transient VAO.
+
+- **(P3) Renderer: a co-tenant's GL state leaks into a frame.** `WeaselRenderer.applyGlState` resets
+  blend, depth test, cull face, and clear color, and `render()` binds the default framebuffer. A
+  consumer drawing with the same `gl` between frames can still leave `colorMask` off (the frame
+  comes out blank), a VAO bound (`drawShader` and `drawFullscreenQuad` bind none and edit whatever
+  is current), or `UNPACK_FLIP_Y_WEBGL` on (every later texture upload is flipped). Reset those per
+  frame too, or state which of them a co-tenant must restore.
+
+- **(P3) Renderer: `imageFill` is compiled on every renderer and never drawn with.** Images go
+  through the batch program. `packages/core/src/renderer/shaders/imageFill.ts`, its two compile
+  sites in `WeaselRenderer.ts`, the `_imageFill()` accessor, and the `DrawContext.imageFill` field
+  (set in every renderer test that builds a context) can all go; `IMAGE_VOPACITY_*` has no importer.
+
+- **(P3) Renderer: `draw.ts` is about 2,700 lines with several owners.** It holds the per-frame
+  uniform cache, custom-shader uniform upload, group effects and the fullscreen quad, the clip stack
+  and its stencil helpers, batch staging and `flushBatch`, gradient coordinate math, the path fill
+  and stroke painters, text, the scratch-paint pass, and image and sprite staging. Two state leaks
+  fixed this month (the stencil test left on for effect passes, a texture unit clobbered by a
+  uniform upload) were contracts between sections of this one file. Split along those owners,
+  leaving `dispatch` in `draw.ts`.
+
+- **(P3) Renderer: `PathDrawCommand` accepts `FillStyle` shapes the renderer cannot draw.** A
+  hand-built command with `fill: { fill: 'pattern', pattern: { tile: 'hatch', color: '#000' } }`
+  draws nothing and warns `pattern TextureHandle "undefined" not registered`, because `bindPattern`
+  (`packages/core/src/renderer/draw.ts`) casts `fill.pattern` to a `TextureHandle`. A gradient with
+  `units: 'bounds'` is painted in screen space with no warning. The node painter resolves both
+  before the renderer; a consumer-built command skips that. Either resolve a tile spec and bounds
+  units in the renderer, or narrow the command's fill type to what the renderer takes.
+
+- **(P3) Layers: `LayerGroup.alpha` without `effects` fades each member, not the group.** Its doc
+  (`packages/core/src/core/layers/render.ts`) says the opacity applies "to the group's composited
+  result, not to each member", but `wrapGroup` emits a plain group command, whose alpha multiplies
+  into every child, so overlapping members show through each other. With `effects` set the group is
+  composited as one surface. Either route an alpha-only group through an isolated buffer or correct
+  the doc.
 
 ---
 
@@ -356,11 +885,302 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) `markdownToRuns` → AST.** Consider whether markdown markup (today `*`/`**`/`***` bold/italic toggles, parsed with flat boolean state in `packages/text/src/runs.ts`) should be promoted to a structured AST. The output is a flat `StyledRun[]`, not a tree. Defer to a future "rich text" pass — the current shape is sufficient for label/markdown rendering but limits reformatting / re-styling transforms.
 
+- **(P2) Text edit: double-clicking any node opens a text edit on it.** `useSceneTextEdit`'s
+  `onDoubleClick` (`packages/core/src/features/text/useSceneTextEdit.ts`) takes the topmost unlocked
+  node whose pose rect contains the point; `pointInTextPose` is a rect test and nothing asks whether
+  the node is text. In draw, double-clicking a rectangle mounts an empty editor over it and hides
+  the rectangle until the edit ends, and typing there writes `text` onto a path node. The hook's doc
+  says it hits "the top-most text node". The options: give the hook a text predicate (default
+  `data.text !== undefined`, or the `data.kind === 'text'` convention `useTextEditDepSource` uses
+  for `TextEditDep.isTextNode`) and use one predicate for both entry paths; or keep any-node as the
+  way to label a shape and make draw paint the result.
+
+- **(P2) Text edit: one styled commit is two or three undo steps, and a canceled edit can still
+  change the node.** `useTextEdit`'s `commit` calls `setText` then `setRuns`, and `useSceneTextEdit`
+  makes each its own `scene.update`; after one undo the node has the new `text` and the old `runs`,
+  which `createTextLayer` throws on ("TextPose invariant violated"). Separately, turning off a flag
+  the node itself sets (Cmd+I on a word in an italic node) calls `setStyle` at once, mid-edit, so
+  Escape with `escape: 'cancel'` leaves the whole node upright with an undo step the user did not
+  ask for. Both want one write per session: a single `commit(id, { text, runs?, style? })` on
+  `UseTextEditOptions`, implemented in `useSceneTextEdit` as one `scene.update`, with the rewritten
+  node style held in the session until then. A consumer that reads the node's style during an edit
+  (a character bar) then needs the session's style from the hook.
+
+- **(P3) Text edit: `useTextEdit` commits an edit nothing changed, and strips a trailing newline the
+  text really had.** `commit` always calls `setText`, and `trimCaretHolder` removes one trailing
+  `\n` on the assumption the browser added it, so a node whose text is `"abc\n"` becomes `"abc"` on
+  open-and-close. `useSceneTextEdit` now skips a write that matches the node, which covers the no-op
+  case there; the raw hook and the newline are open. Fifteen tests in `useTextEdit.test.ts` commit
+  an untouched overlay and expect the write (one is named "an untouched edit commits the runs it
+  started with"), so skipping in the hook is a decision about its contract. Whether a browser adds a
+  holder to seeded text ending in `\n` has not been observed.
+
+- **(P3) Text edit: typed text is inserted by hand in `beforeinput`.** Every `insertText` is
+  `preventDefault`-ed and inserted at the window selection
+  (`packages/core/src/features/text/useTextEdit.ts`, `onBeforeInput`). No `input` event follows, so
+  the `onInput` re-place that keeps a center- or bottom-aligned overlay from jumping a frame late
+  runs only for paste and delete. Two further effects are inferred and not observed in a browser:
+  input carrying its own target range (macOS double-space period, text replacement) would land at
+  the caret, and typing would not be on the native undo stack. The alternative is to intercept only
+  while a pending style is armed and normalize in `onInput` otherwise.
+
+- **(P3) Text edit: pasted rich text reads back with the wrong line breaks, and offsets drift after
+  it.** `domToRuns` (`packages/core/src/features/text/domRuns.ts`) adds a newline per `<br>` and per
+  non-first `<div>` and none for `<p>`, while the character-offset walkers count text nodes only, so
+  after such an element every caret offset is short by one per break. `useTextEdit` has no `paste`
+  handler; inserting `text/plain`, or sanitizing to run spans, would keep the overlay to what
+  `runsToDom` writes. Which elements each browser inserts on paste has not been observed.
+
+- **(P2) Text nodes: right-to-left text lays out reversed, because no kit entry point hands
+  `layoutRuns` a bidi engine.** A text node holding `שלום` paints, picks, and places its caret in
+  logical order. `layoutRuns` reorders only when `opts.bidi` is set, and none of its kit callers set
+  it: `drawText` (`packages/core/src/renderer/draw.ts`), `textPoseLayoutInput`
+  (`packages/text/src/layout/textPoseLayout.ts`), `measureTextBounds`
+  (`packages/text/src/measure/measureTextBounds.ts`), and `textToPath`
+  (`packages/core/src/features/text/textToPath.ts`). `TextStyle.direction` reaches `resolveAlign`
+  and nothing else. The console warning tells the consumer to "add it to the layout options", which
+  a `<SceneCanvas>` consumer does not have. The engine itself is finished and conformance-tested,
+  and `layoutRuns` now handles paragraphs, hanging spaces, and the cache key correctly when one is
+  passed, so what is left is the wiring, and it is a design call because
+  `packages/text/src/layout/bidiSeam.ts` says outright that text must not depend on
+  `@weasel-js/bidi`. Options: (a) one registration point in `@weasel-js/text`
+  (`registerBidi(engine)`, or a `bidi` dep) that `layoutRuns` falls back to when `opts.bidi` is
+  absent, which fixes every caller at once and keeps the tables out of bundles that never register;
+  (b) thread `bidi` and `direction` through `TextPoseLayoutInput` and `TextDrawCommand`, which needs
+  the same engine handed to painting, picking, and caret code or they disagree; (c) drop the seam
+  and have text depend on bidi. Whichever lands, pass `style.direction` through as `direction`,
+  reword the warning to name the real fix, and pick one default for an omitted `direction`: bidi
+  analysis uses `'auto'` (first strong character) while `start`/`end` alignment uses `'ltr'`, so
+  Hebrew with no `direction` gets a right-to-left paragraph aligned left. `docs/TODO.md`'s HarfBuzz
+  entry lists reordering as missing; it is implemented and unwired.
+
+- **(P2) Text editing: caret stops fall inside grapheme clusters.** `layoutRuns` emits one
+  `LaidOutCell` per code point and the cell contract says a caret stop is a cell's `x`, so
+  `caretIndexAt` (`packages/core/src/features/text/hitTest.ts`) can return an offset between a base
+  letter and its combining mark (`"éx"` written as `e` + U+0301: a click in the right half of `e`
+  returns offset 1), between the code points of `👨‍👩‍👧`, or before a variation selector or skin-tone
+  modifier. `sourceClusters` there merges only cells sharing a source span. The fix spans both
+  packages: mark cluster-closing cells in layout (`graphemeEnds` is already computed when tracking
+  is on; it would need computing always) and have every caret consumer stop only there. It adds a
+  field to the public `LaidOutCell`.
+
+- **(P2) Canvas font tier: a web font that loads after first use never replaces the fallback face it
+  was measured with.** `getDynamicFace` and `requestGlyph`
+  (`packages/font/src/dynamic/dynamicAtlas.ts`) cache face metrics and each glyph's bitmap and
+  advance on first request and never invalidate. If `registerCanvasFont('Roboto')` runs while Roboto
+  is a CSS web font still loading, canvas draws its fallback face, and the text keeps those shapes
+  and advances for the session; nothing in `packages/font` listens for `document.fonts`
+  `loadingdone`. This rests on canvas using a fallback for a not-yet-loaded face, which has not been
+  measured here: a `*.browser.test.ts` that registers a canvas font, lays out, adds the `FontFace`,
+  and compares advances would settle it. The fix (drop the affected faces on `loadingdone` and call
+  `notifyGlyphReady()`) depends on the eviction entry below, since dropped faces currently leave
+  their atlas rects allocated.
+
+- **(P2) Canvas font tier: a full dynamic atlas is permanent.** `ShelfPacker`
+  (`packages/font/src/dynamic/shelfPack.ts`) has no free, `bake` in `dynamicAtlas.ts` returns early
+  once the four 1024-pixel pages are full, and `unregisterCanvasFont` deletes faces but leaves their
+  rects allocated. A font picker previewing many canvas families, or CJK text through the canvas
+  tier, fills the pages; after that every new glyph in any canvas font, including single code points
+  escalated from an atlas font, is invisible until reload, with one console warning. Options: reset
+  the packer and every face's `charMap` wholesale when full and bump the glyph generation, so only
+  what is on screen re-bakes; or a real per-rect free list with eviction by last use.
+
+- **(P2) Text: emoji paint as flat silhouettes, and multi-code-point emoji paint as their parts.**
+  The canvas tier keeps only the alpha channel (`packages/font/src/dynamic/glyphRasterizer.ts`), and
+  `layoutRuns` looks glyphs up one code point at a time, so `👍🏽` is a thumb plus a swatch, `🇨🇦` is
+  two letters, and `👨‍👩‍👧` is three people, all in the run's fill color. Needs grapheme segmentation
+  before glyph lookup and a color (RGBA) atlas page drawn untinted for clusters with emoji
+  presentation. Shares the cluster work with the caret entry above.
+
+- **(P3) Text layout: only the first leading space of a line collapses.** `" AB"` draws `A` at x =
+  0, `"  AB"` one space in, `"   AB"` two (`openingWidth` and the `placed` copy in
+  `packages/text/src/layout/layoutRuns.ts` special-case the first entry only). The DOM edit overlay
+  uses `white-space: pre` / `pre-wrap`, which keeps every leading space, so indented text shifts
+  left by one space on commit; `layoutMarkdown`'s 2D path keeps the space at full width too. The
+  wrap never starts a wrapped line on a space, so the rule only fires at the start of the text or
+  after a hard break, which is where indentation lives. Decide between keeping leading spaces at
+  full width (matches the overlay) and zeroing the whole leading run; `layoutRuns.test.ts` pins the
+  single-space case.
+
+- **(P3) Outline fonts: a `.ttc` member that does not match by PostScript name is used silently.**
+  `sfntFromCollection` (`packages/font/src/outline/sfnt.ts`) falls back to the collection's first
+  member and returns `matched: false`, on purpose and with a test; `createOpenTypeParser`
+  (`opentypeParser.ts`) drops the flag. When `queryLocalFonts` reports a name the `name` table
+  spells differently, bold text tessellates the first member (usually Regular) above the outline
+  threshold while the canvas tier draws real bold below it, so the text gets lighter as you zoom in.
+  Options: reject on a mismatch so the registry leaves the run on the SDF tier with its usual
+  warning, or keep the fallback and warn once naming both spellings.
+
+- **(P3) Text layout: a tab has no layout of its own.** `layoutRuns` treats only U+0020 as a space,
+  so U+0009 goes to glyph lookup: an atlas has none, the canvas tier measures `'\t'` as whatever
+  canvas returns, and under the `'none'` policy it is zero-width with a "no glyph" warning. There
+  are no tab stops and a trailing tab does not hang. Wants a tab size on the layout options and an
+  advance to the next multiple of it.
+
 ---
 
 ## Scene, adapters & layout
 
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** The Canvas-level synthesis tier this entry used to describe is gone — `Canvas.tsx` no longer takes `items`/`setItems`/`createDefault`/`poseBounds`/`intersectsRect`, and only `toPose` survives as a layer-config override. `arrayAdapter`, `useArrayAdapter` and `sceneToAdapter` are still three separate wirings. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
+
+- **(P2) Scene history: an entry that names a node removed by an untracked edit can never be
+  undone.** `scene.add(n)`, `scene.setPose(n, p)`, then `scene.untracked(() => scene.remove(n))`,
+  which is what `reconcileSpecs` does when outside data drops a node
+  (`packages/core/src/core/scene/reconcileSpecs.ts`, called from
+  `packages/diagram/src/DiagramView.tsx`). `scene.undo()` throws `Scene: unknown node id "n"` and
+  the entry stays on top of the undo stack, so every later undo throws the same way and the entries
+  beneath it are unreachable. The stacks and the scene stay consistent; the stack is just stuck.
+  Options: have an untracked removal drop or neutralize the entries that touch the removed ids; have
+  kit ops whose target is gone report `'noop'` on replay instead of throwing (the policy restored
+  external ops already follow in `bindOpToHistoryAdapter`); or have `reconcileSpecs` clear history
+  when it removes a node.
+
+- **(P2) Scene: a consumer `registerOp` kind whose payload is relative coalesces and then undoes
+  only its first step.** `coalesceKeyFor` in `packages/core/src/core/scene/scene.ts` gives a
+  coalesce key to every registered kind whose payload has a string `id` or `layer`, and coalescing
+  keeps the first payload for undo and the last for redo, which is only sound when a revert is
+  absolute. With `coalesceWindowMs` set, `registerOp('nudge', { apply: x += dx, revert: x -= dx })`
+  and two `recordOp({ kind: 'nudge', payload: { id, dx: 1 } })` calls inside the window make one
+  entry, and one undo leaves `x` at 1 with nothing left to undo (run as a test). Options: make the
+  key something a `RegisteredOp` declares (a `coalesceKey(payload)` field) so only kinds that state
+  their revert is absolute merge; or key only `kit:` kinds and never coalesce consumer kinds, which
+  stops consumer kinds with absolute payloads from merging as they do today.
+
+- **(P2) Scene: `toJSON` then `loadState` reorders siblings that sit on different layers.** `toJSON`
+  in `packages/core/src/core/scene/scene.ts` writes nodes in layer-major order with no sibling
+  index, and the loader appends in that order, so roots `[r1 (layer a), r2 (layer b), r3 (layer a)]`
+  come back as `[r1, r3, r2]`. Paint order is unchanged, but `scene.roots` and `children` are not
+  what was saved: a layout strategy's `children`, `reorder`'s indices, and every sibling index in a
+  persisted history (`kit:remove`'s `detached[].index`, `kit:move`'s `fromIndex`) now refer to a
+  different order. A single-layer document is unaffected. The order is a documented part of the
+  format (`docs/scene-serialization.md`: "All nodes in render order"; pinned by "preserves
+  layer-major DFS preorder in nodes array" in `scene.test.ts`), so the fix is a format decision:
+  write nodes in tree preorder, which still puts parents before children but changes the documented
+  order for any reader that paints straight from `nodes`; or keep the order and write each node's
+  sibling `index`, with the loader sorting each sibling list by it after the last node is added
+  (inserting at `index` as nodes arrive is not enough: `[a (L3), b (L1), c (L2), d (L1)]` arrives as
+  `b, d, c, a` and lands `[a, b, d, c]`).
+
+- **(P3) History: a branching history with a limit offers a fork from a state that no longer
+  exists.** In `packages/history/src/history.ts`, `forkPoint()` answers 0 both for the start and for
+  the floor that eviction leaves, and `evict` drops the forks keyed by the evicted entry's own id
+  (the ones forking from the new floor, which is still reachable) rather than the ones keyed by the
+  point before it. With `branching: true, historyLimit: 2`: push A, undo, push B, C, D (B is
+  evicted), undo twice. `branches()` lists A, which forked from the start, and `switchBranch(A)`
+  then `redo()` applies A on top of B (run as a test: 11 where A alone gives 1). Nothing in the repo
+  sets `branching` today. A fix tracks the floor's id (the last evicted undo entry), answers it from
+  `forkPoint()` when the stack is empty, drops the forks at the old floor on each eviction, and
+  keeps the ones at the evicted entry's id; the floor id then has to ride in `SerializedHistory`,
+  which is a format addition, and the `branching` option's doc ("an entry evicted ... takes the
+  branches forking from it along") has to say which side it means.
+
+- **(P3) Scene: the selection keeps ids of nodes a removal took.** After `scene.setSelection([z])`
+  and `scene.remove(z)`, `scene.getSelection()` still returns `['z']`, so every reader guards
+  `scene.get(id)`. `kit:remove`'s apply in `packages/core/src/core/scene/scene.ts` could filter the
+  selection the way `kit:setLayerLocked` does, but `reconcileSpecs` replaces a node by removing and
+  re-adding its id, and filtering there would deselect a node the user sees as unchanged. The call
+  is whether selection is a set of ids (stale ids are the reader's problem) or a set of live nodes
+  (then a replace has to carry the selection across). `loadState` already drops ids the snapshot
+  does not hold.
+
+- **(P3) History: `serialize()` drops an entry with a nameless op from the middle of the stack and
+  keeps the ones beneath it.** Entries `[A, B (nameless op), C]` serialize as `[A, C]`
+  (`packages/history/src/history.ts`, `entryToSerial`). After `restore`, undoing C then A inverts A
+  underneath B's change, which is still applied and no longer undoable (run as a test: state 10 at
+  depth 0 where the original reaches 0). A branch whose `at` names a dropped entry is orphaned the
+  same way. Options: cut the snapshot at the last unserializable entry, keeping only what is newer
+  on the undo side and nearer on the redo side, which keeps every surviving inverse sound and loses
+  the older history on reload; or keep today's behavior, which is harmless for the kit's absolute,
+  id-addressed ops and wrong for relative ones, and say so in the doc. In `apps/draw` the nameless
+  ops are the inverses listed in the next entry.
+
+- **(P3) Ops: the inverse of a reorder cannot be inverted, and three inverses have no name.**
+  `createReorderOp(...).invert().invert()` in `packages/core/src/core/ops/reorder/index.ts` is `{
+  apply() {}, invert() { return this; } }`, a silent no-op, where `Op.invert` is documented as
+  producing the op that undoes it. The history engine stores forward ops, so it only double-inverts
+  when it unwinds a step that threw partway (`applyAllOrNothing` in
+  `packages/history/src/history.ts`), and there the no-op leaves that reorder inverted. The inverses
+  of `reorder`, `moveToIndex`, and a cascading `delete` (`packages/core/src/core/ops/delete.ts`)
+  also carry no `name`, so an entry built from one is dropped by `serialize()`. Have each inverse
+  return the original factory with its captured state, as `createDeleteOp`'s compound inverse
+  already does for its own `invert`.
+
+- **(P3) `packages/core/src/core/scene/scene.ts` is one 2,100-line closure holding seven jobs.**
+  `createScene` contains the node store and kit op table, the layer stack, the arrival window and
+  layout settle, the lock guard, the atomic-revert log, the `History` facade and journal wrapper,
+  the render-order walks with their cache, and serialization. Bugs fixed here were one of these
+  reaching into another's variables: `loadState` writing the batch depth, the function-field cache
+  keyed by id while incarnations are keyed by object. Split along those owners, each closing over a
+  small shared state record; the kit op table and the history facade are the cleanest first cuts.
+
+- **(P2) Commit adapters: `insertNode` drops `pickable`.**
+  `interactions/actions/defaultCommitAdapter.ts` and `interactions/actions/move/gestureAdapter.ts`
+  rebuild a node for `scene.add` from `kind`, `layer`, `pose`, `data`, `id`, `index`, `parent`,
+  `dependsOn`, and `fnFieldsOfNode(node)`, with no `pickable`. A label added with `pickable: false`
+  that is deleted and restored through either adapter comes back taking clicks.
+  `canvas/sceneAdapter.ts` had the same omission and now carries the flag; these two need the same
+  line, or better, one shared node-to-spec helper in `core/scene` so a new node field is added in
+  one place (see the three-adapters entry below).
+
+- **(P2) Derived paths: drawn from local poses under a composing pose strategy, picked from world
+  poses.** With `poseComposition` set, a container at (100, 100) holding two children and an edge
+  with `dependsOn: [a, b]` paints the children at their composed world poses, but `withDerivedPaths`
+  (`canvas/derivedPath.ts`, wired in `canvas/sceneSlotWiring.ts` and `canvas/sceneViewRender.ts`)
+  resolves the edge through `sceneDepLookup(scene)` → `effectivePose`, which composes nothing, so
+  the edge paints 100 units up and left of the nodes it connects. Picking (`scenePickSource` in
+  `canvas/pickWalk.ts`) derives the same edge from `adapter.getWorldPose`, so the clickable edge is
+  where it should have been drawn. Read from the code, not reproduced. The render walk's dep lookup
+  needs the same world-pose resolver the pick source uses, under its own memo slot (the two share
+  the default `kit:derivedPath` slot today and evict each other). The comments at
+  `canvas/derivedPath.ts` ("the render walks hand `getPose` straight to `drawOne`, composing
+  nothing") and `core/scene/scene.ts:149-151` predate frames and should go with the fix.
+
+- **(P2) Clipboard: a pasted derived edge is an invisible node, and a pasted layout container loses
+  its layout.** `snapshotSelection` in `canvas/sceneAdapter.ts` keeps a derivation only for
+  `dependsOn: 'children'` ("an id list would still name the originals"), so copying two nodes and
+  the edge between them pastes the edge as a plain leaf with the original's zero-sized placeholder
+  pose: it paints nothing, is selected with the rest, and one more accumulates per paste.
+  `commitPaste` already builds the old-to-new `idMap` a remap needs. The call to make: remap an id
+  list when every dependency is in the snapshot, and when one is not, either drop the edge or leave
+  it pointing at the original. Separately `layout` is not copied though `clipFromPose` is, so pasted
+  children stop being arranged. Both also need the wire format
+  (`interactions/actions/clipboard/wireFormat.ts`), which drops function-valued fields, to carry
+  registry keys the way scene serialization does. Not checked: whether duplicate and Alt-drag clone
+  go through these two functions.
+
+- **(P2) Container-pose cascade: a batch that poses a container and its descendants does not undo.**
+  Through `sceneToAdapter(scene, { cascadeContainerPose: true })` (what `<SceneCanvas>` uses without
+  a composing strategy), `adapter.applyOps([move(A), move(B), move(C)], 'Move')` with B inside A and
+  C inside B applies correctly, but `scene.undo()` runs the inverses in reverse and each container's
+  inverse cascades again: with A, B, and C at x = 0, 100, and 200 moved by 5, undo leaves them at 0,
+  95, and 190 (measured). The kit's own move action builds this shape of batch (roots plus
+  `cascadeIds`) but commits through `moveGestureAdapter`, which does not cascade, so only a consumer
+  routing `applyOps` to the canvas adapter hits it. Belongs with "Container-pose cascade as a
+  scene-primitive semantic": a cascade inside `setPose` cannot know what else the batch poses.
+
+- **(P3) Default node properties: the marker pickers never list a consumer's registered marker.**
+  `canvas/SceneCanvas/defaultNodeProperties.ts` builds `options: markerOptions()` inside
+  `shapeSchema`, which runs once when `defaultNodeProperties` and `inferredNodeProperties` are built
+  at module load, before any consumer code can call `registerMarker`. The comment above
+  `markerOptions` says the opposite. An enum's `options` in `packages/prefs/src/schema.ts` is a
+  static array, so this needs either options the schema resolves lazily or a schema rebuilt when the
+  marker registry changes.
+
+- **(P3) Scene adapters: three implementations of the same scene-backed mutators.**
+  `canvas/sceneAdapter.ts`, `interactions/actions/defaultCommitAdapter.ts`, and
+  `interactions/actions/move/gestureAdapter.ts` each restate `insertNode`, `setParent`,
+  `getChildren`, and `setChildOrder` over a `Scene`, and have drifted: `getPose` is `effectivePose`
+  in one and `documentPose` in two, `getNodes` filters hidden layers in one, `setChildOrder` opens a
+  `scene.batch` in two, and only one cascades container poses. The copies exist to avoid an
+  `interactions → canvas → interactions` import cycle; moving the mutators into `core/scene`, below
+  both, removes the reason.
+
+- **(P3) Derived paths: one memo slot per `toPose` identity is never released.**
+  `sceneDerivedPathOf(scene, toPose)` in `canvas/derivedPath.ts` mints `kit:derivedPath:toPose:<n>`
+  per function identity, and every derived node keeps a `PathMemo` under each name until a
+  pose-keyed drop or a memo generation bump. A scene slot whose `toPose` is an inline arrow gets a
+  new slot name each time the slot config changes identity. Not traced: how often that happens in
+  `<SceneCanvas>`.
 
 ### Derived geometry follow-ups
 
@@ -477,6 +1297,47 @@ intercepting the press that drags the body.
 ---
 
 ## Animation
+
+- **(P2) `animateOnSetPose`: a second `setPose` during its own tween is overwritten by the first
+  target.** With the default 200 ms tween, `setPose('a', A)` then `setPose('a', B)` 100 ms later
+  ends at A: the second call writes B straight through
+  (`packages/core/src/animation/wrappers/animateOnSetPose.ts`, the `animator.isActive('pose:' + id)`
+  branch) and the running tween's next tick writes over it. The write-through is deliberate and
+  pinned by the test "writes through directly when a tween is already in flight", which guards
+  against a tween being restarted on every frame by a caller outside the animator's tick. The
+  options: retarget (start a new `tweenPose` from the current pose, which records a second transform
+  op and has to stay cheap for a caller writing every frame), or keep the write-through and cancel
+  the running tween so B stands. Related, read but not run: in the order the site demo uses,
+  `animateLifecycle(animateOnSetPose(base))`, an insert's `adapter.setPose(id, start)` goes through
+  the animating wrapper, which records an `'animate'` transform op (final to start) before the entry
+  tween interrupts it, so every animated insert may leave a stray history entry.
+
+- **(P2) `stagger`: delays run on wall-clock timers, so a hidden tab or a global pause collapses the
+  cascade.** `CompositeHandle.schedule` (`packages/core/src/animation/stagger.ts`) uses `setTimeout`
+  through the animator's `setTimer` option. The timers keep firing while the frame loop is suspended
+  or the animator is paused, each factory registers a child that cannot tick, and on return every
+  remaining item starts on the same frame; `animator.setTimeScale(0.5)` halves the children and
+  leaves the delays alone. Only the stagger's own `pause()` (and now `pauseKey`) freezes them. The
+  fix is to count each delay in the supervisor entry's virtual time and fire from its tick, which
+  makes `UseAnimatorOptions.setTimer` / `clearTimer` dead public options and replaces the pause
+  bookkeeping in `CompositeHandle`.
+
+- **(P3) Timeline: events at the edges of a seek or a paused start fire inconsistently.** In
+  `packages/core/src/animation/timeline/createTimeline.ts`: a timeline created with `autoplay:
+  false` still fires a `t = 0` event on its first frame, because a paused entry is ticked at scale 0
+  and the first tick fires `(-Infinity, 0]`. After `seek(t)`, an event exactly at `t` never fires on
+  resume, since `seek` sets the previous playhead to `t` and the search is strictly after it, so
+  `seek(0); resume()` replays without the `t = 0` event that the first play and every loop wrap do
+  fire. And a frame long enough to skip whole laps fires every skipped lap's events under `loop: n`
+  but none under `loop: true`, where `booking.ts` says crossings fire "nothing of the laps in
+  between". Each needs a decision about what a seek and a held first frame mean for an event sitting
+  on the playhead.
+
+- **(P3) `momentum`: a coast is not stopped by undo or by deleting its node.** A new drag of the
+  coasting node now stops the coast, but an undo or a delete while it runs leaves the decay writing
+  poses each frame and committing a `'flick'` transform when it rests
+  (`packages/core/src/animation/behaviors/momentum.ts`). It needs a signal from the scene that the
+  node's pose was written by someone else.
 
 ### Timelines and rigging
 
@@ -597,6 +1458,17 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) AudioWorklet scheduling** — immune to main-thread jank; costs a worklet
   module, cross-thread messaging and a bundling story. Revisit if jank proves
   audible.
+
+- **(P3) audio: `onDone` fires for some endings of a voice and not others.** `PlayOptions.onDone`
+  (`packages/audio/src/types.ts`, undocumented) is called only from the source's `onended` in
+  `createAudioEngine.ts`, so it fires after a natural end, `stop()`, and a fade, and never when the
+  voice is dropped because the context is locked or the engine disposed, when it is stopped before
+  it came due, when its sound is not ready, when it fails to start, when it is stolen before
+  starting, or on the stale-backlog path after a resume. A consumer sequencing one sound after
+  another through it stalls silently on any of those. Either call it from every path that ends a
+  voice (then a dropped `play()` calls it before `play()` returns, or on a microtask, which has to
+  be chosen), or document it as "the source ended" and add a second signal for a voice that never
+  played.
 
 ---
 
@@ -928,6 +1800,589 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   context a `Palette` (or an `ExternalColors` resolver onto its ramps; `ThemeProvider` hands out tones
   only as a `ColorList` today) and resolving every one of those props through it.
 
+- **(P2) labkit stored lab: one trial whose state fails to hydrate takes the whole lab down.**
+  `deserializeTrials` (`packages/labkit/src/state/helpers.ts`) calls each instrument's `deserialize`
+  with no guard, and `hydrateTrials` runs `migrateConfig` the same way, so one stored trial that
+  either throws on rejects the whole `openLabStore`; the lab now shows that error through its error
+  boundary on every load, and the trials that were fine are unreachable. The document-level path
+  beside it quarantines and stops writing; the per-trial path does neither. Wanted: hydrate each
+  trial in its own try/catch, keep the raw record so it is not overwritten, and decide what the tile
+  shows (a failed tile with a way to discard it, or the lab minus that trial plus a warning). The
+  docstring's "returns an empty list rather than throwing on malformed input" is true only for a
+  non-array.
+
+- **(P2) labkit trial: the settings panel and the instrument write config through two `setConfig`s
+  that disagree.** The chrome's (`packages/labkit/src/trial/TrialChrome.tsx`, used by the settings
+  panel and by chrome contributions) calls the instrument's `onConfigChange` but takes no undo
+  snapshot; the instrument's own `ctx.setConfig` (`renderCtx` in
+  `packages/labkit/src/trial/Trial.tsx`) snapshots on `config.change` and `config.change:<path>` but
+  never calls `onConfigChange`. So an instrument declaring `undo: { snapshotOn: ['config.change'] }`
+  gets no undo entry for anything changed in the settings panel, and one declaring `onConfigChange`
+  gets no derived state for its own writes. Wanted: one `setConfig` owned by the trial runtime that
+  snapshots, writes, and runs `onConfigChange` against the stored record, handed to both contexts.
+  The open calls: whether a panel edit should snapshot per write or once per gesture (a slider drag
+  writes on every move), and whether an instrument's own write should run `onConfigChange`.
+
+- **(P3) labkit lab: every trial re-renders whenever any trial's record changes.** `LabContext`'s
+  value carries `trials` (`packages/labkit/src/lab/Lab.tsx`), and both `Trial` and `TrialChrome`
+  read that context, so a pan frame, a job item, a clock write, or a mark save in one trial
+  re-renders all of them. `CanvasStack` no longer repaints on it, but the React work remains, and
+  `as2DView` (`packages/labkit/src/state/view.ts`) still allocates a view per render for every other
+  reader. `LabContextValue.trials` is public, so splitting it out (a separate context, or a selector
+  hook over the store, with the commands in a value that does not change) is an API decision.
+
+- **(P3) labkit annotations: a redo run by a pane's own keymap clears the cross-target redo order.**
+  `MarkHistory.observe` (`packages/labkit/src/annotations/history.ts`) tells a redo from a new
+  change only by its own `replaying` flag, so `scene.redo()` called from anywhere else (the pane's
+  `edit` keymap, which gets the chord whenever the trial's chrome does not: a presented trial, or
+  `suppress={['undo', 'redo']}`) empties `redoable`, and the toolbar's Redo goes disabled while
+  another target's scene still has one. The pane-driven undo next to it is handled. Depth alone
+  cannot tell the two apart (both raise `historyIndex()` by one and can leave `canRedo()` false);
+  comparing the id of the entry that became current against the ids that were redoable can, which
+  needs `historyEntries()` on the exported `HistoryScene` interface.
+
+- **(P3) labkit transport: on a looping clock, End and a scrub to the far right land at the start of
+  the next pass.** `transportControl.seek` (`packages/labkit/src/clock/transportControl.ts`) clamps
+  to `[0, duration]` and seeks `passStart + duration`, which a looping clock reads as phase 0 of the
+  next pass, so the playhead shows at the left edge; with a counted loop (`loop: 3`), repeated End
+  presses walk through the passes and end the run. The last pass is right as it is. The call to make
+  is where "the end of a pass that another follows" sits: a fixed step short of `duration` (and how
+  short, given `seek` takes ms and the pass can be any length), or a clock-level notion of "end of
+  pass n" that reports phase 1 without rolling over.
+
+- **(P3) labkit canvases: a device-pixel-ratio change with no resize is not noticed.**
+  `useTiledSurface` (`packages/labkit/src/surface/useTiledSurface.ts`) compares `devicePixelRatio`
+  only inside a frame something else scheduled, and `CanvasStack`
+  (`packages/labkit/src/canvas/CanvasStack.tsx`) reads it only from its `ResizeObserver`; a
+  content-box observer does not fire when a window moves to a display with a different ratio and its
+  CSS size stays the same. Read from the code, not reproduced: the shared buffer and the layer
+  canvases would keep the old backing size (blurry or oversampled) until something resizes. Wanted:
+  one `matchMedia('(resolution: <n>dppx)')` listener, re-armed on each change, that calls
+  `invalidateRects()` and the stack's size update, with a browser test that emulates the ratio
+  change.
+
+- **(P2) labkit trial: marks drawn in another tab never appear, and the next local mark erases
+  them.** A trial builds its annotation store once from `record.annotations`
+  (`packages/labkit/src/trial/Trial.tsx`, "One store for the trial's lifetime") and never reads the
+  record again. When another tab's write replaces the record (`bindLabStore` in
+  `packages/labkit/src/state/openLabStore.ts`), this tab's state and config update on screen and its
+  marks do not; its next mark then saves `annotations.toJSON()` over the other tab's. Options:
+  rebuild the store when the record is replaced by a remote write (losing this tab's mark undo
+  history, as the remote path already does for state history), remount the trial on a remote
+  replacement, or merge mark by mark, which needs an answer for a mark both tabs edited.
+
+- **(P3) labkit trial: the per-trial event bus has no subscribers.** `Trial`
+  (`packages/labkit/src/trial/Trial.tsx`) creates a bus and emits to it at every state, config,
+  layer, and custom event, and nothing in `packages/labkit/src` calls `bus.on` outside
+  `undo/eventBus.test.ts`; undo snapshots are taken by the `snapshotIfNeeded` call beside each emit,
+  and the bus is not handed to the instrument or the chrome. `undo/eventBus.ts` describes itself as
+  the channel undo snapshotting listens on, which is not so. Either delete the bus and its emits, or
+  make it the one pathway (snapshotting subscribes, and it is exposed to instruments), and correct
+  the doc to match.
+
+- **(P2) `SelectionPanel`: a path a node does not hold draws blank even where absence means the
+  leaf's default.** A node whose pose has no `rotation` key shows an empty Rotation field, though
+  the leaf declares `default: 0` and the engine reads `pose.rotation ?? 0`; one such node selected
+  beside one holding `rotation: 0` reads as Mixed (`aggregateValue` in
+  `packages/ui/src/components/SelectionPanel/model.ts` compares the raw values). Substituting the
+  default everywhere is the behavior commit `cd9b75632` removed on purpose: a text node with no
+  `data.stroke` lit Cap, Join, and Align, and the next edit wrote that invention back. `PrefsForm`
+  does substitute (`stored !== undefined ? stored : default`), because a sparse prefs blob means
+  "use the default" and a scene node does not. So the two cases need telling apart in the schema.
+  Options: a per-leaf flag saying an absent value *is* the default (`pose.rotation`, and any field
+  the engine reads with `??`), which `aggregateValue` and `leafCell` apply before comparing and
+  before setting `unset`; or have the properties entry normalize the node on read. With the flag
+  nothing is written until the user edits, and an edit writes only the value typed, so no default is
+  invented in the node.
+
+- **(P3) An object leaf is drawn by two implementations that disagree.**
+  `packages/ui/src/components/Prefs/ObjectLeaf.tsx` and `ObjectLeaf` in
+  `packages/ui/src/components/SelectionPanel/renderLeaf.tsx` each walk rows, sections, and tabs and
+  each own a write-back rule. They differ on the base for a field write when no object is held
+  (`fromScalar ?? {}` against `fromScalar`, then a copy of `pref.default`, then `{}`; the panel's
+  comment says `{}` once crashed the painter), on a field written as `undefined` (the form keeps the
+  key holding `undefined`, the panel removes it, and an `encoding`'s contract in
+  `packages/prefs/src/schema.ts` says `undefined` removes the field), on `as: 'bar'`, on `pair`
+  rows, and on heading levels. Home: one object-leaf walker in `Prefs/` taking the per-surface parts
+  as arguments (how a field's value and mixed state are read, how a row is framed), with the
+  write-back rule as a pure function in `@weasel-js/prefs`.
+
+- **(P3) A list leaf is drawn in three places, and the plain-text shortcut has drifted.**
+  `Prefs/ListLeaf.tsx` keeps `ListEditor`'s own text fields when the item is a string with no
+  `string` renderer and is not a `textarea`; labkit's `ControlPanel.tsx` (`LeafRow`, the `COMPOUND`
+  branch) repeats the test without the `textarea` clause, so a list of textarea strings draws
+  one-line inputs there; `SelectionPanel/ListLeaf.tsx` has no shortcut, so Enter-to-add and
+  Backspace-to-remove are absent. The form substitutes `item.default` for an `undefined` entry and
+  the panel marks it unset. Item renderers are looked up by kind only in all three, though
+  `SelectionPanel` looks up by path first everywhere else. Home: `Prefs/ListLeaf`, with the shortcut
+  test exported as one predicate.
+
+- **(P3) Which control a leaf gets is decided again in each params surface.** `prefFieldProps` is
+  the shared half; each caller then overrides it: `Prefs/PrefsRow.tsx`,
+  `SelectionPanel/renderLeaf.tsx` (`renderBuiltin`), labkit's `controls/fields.tsx` (`labField`) and
+  `controls/ControlMatrix.tsx`, and `packages/labkit/examples/schema-lab/prefsToFields.ts`. The
+  answers differ: a boolean with no `control` is a checkbox in the form and labkit and a switch in
+  the panel; `control: 'toggle'` on a boolean is a checkbox in labkit; a `slider` number with no
+  bounds is a 0..100 slider in ui and a typed input in labkit (`isSliderLeaf` wants both bounds); an
+  enum's `radio` is segments in labkit and `menu` is a select; `font-family` and `font-weight` get
+  "no control for" in labkit because `labField` gates on `isBuiltinPref` before `prefFieldProps` can
+  answer; a stored value that is absent is the default in the form, unset in the panel, and `??
+  default` in labkit, where `null` also reads as absent. The icon lookup against `ICON_PATHS` is
+  written four times (`Prefs/prefField.tsx`, `Bar/renderBarLeaf.tsx`, `useLeafAction.tsx`,
+  `SelectionPanel/renderLeaf.tsx`). Home: a `surface` argument on `prefFieldProps` (`'form' |
+  'panel' | 'lab'`) carrying these defaults in one table. labkit's "radio means segments" and "a
+  slider needs bounds" are the two to decide on purpose.
+
+- **(P3) When an edit is written differs by params surface, with no one place saying so.** A typed
+  number writes on blur, Enter, or step in `PrefsForm` and `SelectionPanel`, and on every keystroke
+  in labkit's `ControlPanel`; a slider writes on release in the form and on every move in the other
+  two; text writes per keystroke in the form, on blur or Enter in the panel, and debounced 150 ms in
+  labkit; a color writes once per gesture in the form and panel and on every move in labkit. Each is
+  a no-op `onInput` passed or withheld, and `settledOnly` is declared twice (`Prefs/PrefsRow.tsx`,
+  `SelectionPanel/renderLeaf.tsx`). The panel's comment gives undo steps as the reason text and
+  color settle, yet a slider there writes per move; whether `scene.batch` coalesces those into one
+  undo step is unverified. Home: the same `surface` argument on `prefFieldProps`, returning props
+  with the commit policy applied.
+
+- **(P2) `PrefsForm`: a mixed list, map, union, or object is drawn as empty, and editing it
+  overwrites every source.** `PrefsForm mixed={new Set(['phases'])}` with `phases` a list draws an
+  empty list editor, and Add writes a one-entry list over every source; a mixed union shows "Choose
+  option…", and a mixed object shows blank fields with no Mixed placeholder. `prefRenderContext` in
+  `Prefs/PrefsRow.tsx` sets `value: mixed ? undefined : …`, and `Prefs/ListLeaf.tsx`, `UnionPicker`,
+  and `Prefs/ObjectLeaf.tsx` read that as absent. `SelectionPanel/renderLeaf.tsx` has the three
+  answers (per field for an object, the word Mixed for a list or map, `split` for a union). Home:
+  the shared object, list, map, and union drawing, so the form gets the panel's handling.
+
+- **(P3) Collecting a run of `tab` groups, and what each other `as` draws, is written five times.**
+  `Prefs/PrefsPane.tsx`, `Prefs/ObjectLeaf.tsx`, `SelectionPanel/SelectionPanel.tsx` (`drawn`),
+  `SelectionPanel/renderLeaf.tsx` (`rowsOf`), and labkit's `ControlPanel.tsx` (`rowsFor`).
+  `GroupTabs` is shared; the run logic is not, and it differs: `panel` is a bordered box in ui and a
+  plain `PropertyGroup` in labkit; `section` is a `Subpanel` in labkit and a heading elsewhere; a
+  group's `description` shows under a tab in `PrefsPane` and is dropped for tabs and sections in
+  labkit; `SelectionPanel`'s top level flattens nested sections (`flatten` in `model.ts`), so a
+  nested `tab` or `panel` loses its `as` while the object leaf beside it honors nesting; an empty
+  tab section neither joins nor ends the run in `renderLeaf`, a hidden one does not end it in
+  labkit, and `PrefsPane` has no emptiness check. Home: a pure "children as runs" helper in
+  `@weasel-js/prefs` (leaf, tab run, or group with its resolved `as`) that all five walk.
+
+- **(P3) Merging `pair`ed leaves into one row is written three times.** `pairRows` in
+  `SelectionPanel/model.ts`, `rowsOf` in `SelectionPanel/renderLeaf.tsx`, and `rowsFor` in labkit's
+  `ControlPanel.tsx`. `pairRows` drops `pair` from a row left with one leaf; the other two keep it,
+  so a lone paired leaf is labeled by the pair and loses its own name. `effectiveSections` filters
+  leaves after pairing and does not re-run that drop, so a multi-kind selection whose intersection
+  keeps half of a pair draws a row labeled for the pair holding one field, and a lone `toggle`
+  boolean there becomes a one-segment flag bar. Home: `pairRowsOf` in `@weasel-js/prefs` returning
+  the rows, not only the lookup map.
+
+- **(P3) The compound leaf kinds are named in plain string sets a new kind compiles past.**
+  `SEVERAL` and `ROWS` in `Prefs/compound.ts`, `OPENS` in `Bar/renderBarLeaf.tsx`, `COMPOUND` in
+  labkit's `ControlPanel.tsx`, and a literal test in `Prefs/schema.ts` each list kinds as
+  `Set<string>`. A kind added to `PrefKind` compiles, then draws inline in a `<label>`, does not
+  open in a bar popover, and gets no dialog row in labkit. Home: one `Record<PrefKind, { compound:
+  boolean; several: boolean }>` in `@weasel-js/prefs`, which is a compile error to leave a kind out
+  of. Separately, `font-family` and `font-weight` are drawn as built-ins by ui and are absent from
+  `PREF_KINDS`, so the table's promise in `packages/prefs/src/schema.ts` does not cover them and
+  labkit declines them.
+
+- **(P3) The schema lab's `prefsToFields` re-derives what `@weasel-js/prefs` owns, and gets a unit's
+  step wrong.** `packages/labkit/examples/schema-lab/prefsToFields.ts` converts `min` and `max` with
+  the unit's `toDisplay` and passes `step` through unconverted, so a leaf stored in radians and
+  shown in degrees with `step: 0.01` steps by 0.01 degrees; a decreasing conversion yields `min >
+  max`. `prefDisplayBounds` converts the step as a distance and swaps flipped ends.
+  `decodePrefValue` there applies an enum `encoding` and not a boolean one, and a `field` leaf
+  becomes free text. Not hit today, since the lab's schema is the rect's. The example exists to show
+  the API, and `ControlPanel`'s `fields` prop is marked deprecated in favor of `schema`: pass the
+  schema, which goes through `prefFieldProps`, and delete the file.
+
+- **(P3) Three params files hold several owners each.**
+  `packages/labkit/src/controls/ControlPanel.tsx` (about 810 lines: panel, auto state, reset, row
+  dispatch, paired rows, debounced text row),
+  `packages/ui/src/components/Properties/PropertyField.tsx` (about 740: the row component and every
+  kind's control), `packages/ui/src/components/SelectionPanel/renderLeaf.tsx` (about 690: cells,
+  flag bar, built-in dispatch, object leaf), and `Properties.module.css` (about 1,575). Split:
+  `ControlRow`, `LeafRow`, and `PairedRow` into their own file, which `ControlMatrix` already
+  imports from the panel; one file per control kind under `Properties/`, each with its CSS;
+  `ObjectLeaf` out of `renderLeaf`.
+
+- **(P3) `watchPrefsVersion`: a same-version peer's record is migrated again when a lower `$version`
+  arrives later.** `packages/prefs/src/migrate.ts` adds every remotely changed record to `theirs`
+  and clears the set only after a migration runs. A peer tab on this build changes `view.density`;
+  later any writer sets a lower `$version` (an older tab's late write, a restore), and the
+  migrations run over `view.density` although it was already in this build's shape, so a doubling
+  migration doubles it. Clearing `theirs` when a batch arrives at the current version is not a fix:
+  an older build that writes its record first and its `$version` second produces the same two
+  events, and that case must migrate (`migrate.test.ts`, "migrates the records an older writer
+  leaves"). The two can only be told apart by knowing which version each record was written at, so
+  the options are a version stamped per record (a change to the stored shape), or having writers
+  send a record and its `$version` in one batch so a record that arrives alone is known to be
+  current. Shares its cause with "An older build's pref that lands after its `$version` is taken
+  unmigrated", the opposite ordering.
+
+- **(P3) A clearable enum whose `default` is not `undefined` cannot be cleared.** `store.set(path,
+  undefined)` now unsets the leaf, which for a default of `undefined` is the cleared state. For a
+  clearable enum with any other default, clearing in a `PrefsForm`
+  (`packages/ui/src/components/Prefs/prefField.tsx`, `onClear`) puts the leaf back on its default,
+  so the lit segment moves to the default option instead of going dark. Storing "cleared" needs a
+  value a record can hold and `repairPrefValue` reads back as no option: `null` as the stored form
+  of a cleared enum is one choice; rejecting `clearable` on an enum whose default is not
+  `undefined`, in the schema type, is the other.
+
+- **(P3) `PrefSchemaEditor`: under a node property schema, two prefs can be given one value path.**
+  A key is checked only against its siblings (`keyProblem`, `uniqueKey` in
+  `packages/ui/src/components/PrefSchemaEditor/schemaEdit.ts`), but under a section root a leaf's
+  key is the path its value lives at, whichever section holds it. Alt-drag `pose.x` from Layout into
+  Appearance and both sections hold a full leaf keyed `pose.x`; Add pref with Id `pose.x` in another
+  section is accepted the same way; a copy into the same section is numbered `pose.x2`, a path no
+  node has. No row says so, and `setDefaults`' `leafHolding` takes the first match, so a preview
+  edit of the second writes the first's default. To decide: refuse a key any leaf under the root
+  already holds (an `alias` is the way to show one value twice), or allow it and mark both rows.
+
+- **(P2) `PrefSchemaEditor`: Add alias and an alias drag make an alias of a field inside an `object`
+  pref.** Extends the `alias` entry above, which covers the `Of` picker offering the same fields.
+  `canLand` in `StructurePane.tsx` allows any leaf that holds a value, and `aliasOf` names it by
+  `valuePathOf`, so under a group root the alias gets `obj.field`, which no reader resolves, and
+  under a section root it gets the bare field key (`cap` for `data.stroke.cap`), which is the wrong
+  path as well. Either refuse the alias for a leaf whose parent is an `object` leaf, in the button,
+  the tree drag, and the preview drag (`usePreviewDrag`'s `aliasable`), or teach the readers to
+  resolve a path into an object. `valuePathOf` is also wrong for anything under a section inside an
+  `object` leaf of a group root, where it counts the section's key as a step.
+
+- **(P3) `PrefSchemaEditor`: a drag out of the Actions list makes a new node on every pointer
+  move.** `dragOf` in `ActionList.tsx` calls `actionLeaf(action)` each time, so `sameDrop`
+  (`previewDrop.ts`) never finds the same node twice and `setDrop` re-renders the whole preview form
+  per pointer event; the palette and the Unplaced tree hold one node per drag. Keep one leaf per
+  action key for as long as `actions` is the same list. The cost has not been measured.
+
+- **(P3) `PrefSchemaEditor`: a rail-open timer started by a tree drag is not cleared when the editor
+  unmounts.** Holding a drag over a rail entry starts a 500 ms timer (`opening` in
+  `PrefSchemaEditor.tsx`) that selects that page. A drag begun in the preview now ends on unmount
+  and clears it; one begun in the structure tree or the palette ends only when `Tree` or `Palette`
+  reports it, and `Tree` has no unmount cancel. The late call sets state on an editor that is gone.
+
+- **(P2) `PrefsForm`: a mixed object, list, map, or union leaf draws as unset, and one edit
+  overwrites every node's whole value.** `mixed={new Set(['appearance.stroke'])}` on an object leaf
+  draws each field at its default, not mixed, because `ObjectLeaf`'s `fieldCtx`
+  (`packages/ui/src/components/Prefs/ObjectLeaf.tsx`) passes no `mixed` down; changing `width` then
+  calls `onChange('appearance.stroke', { width: 3 })`, which an owner writing to every node uses to
+  drop each node's other fields. `renderBuiltin` in `PrefsRow.tsx` likewise never passes `mixed` to
+  `UnionPicker`, and a mixed list or map reads as `None`, where `Add` writes a one-entry list over
+  all of them. Passing `mixed` down to the fields is the small half. The design call is the write:
+  `PrefsForm` knows only that a path is mixed, not the values behind it, so a field edit cannot
+  build a whole object. The options are to let `mixed` name field paths (`appearance.stroke.width`)
+  and have a field edit call `onChange` at the field's own path, or to give the form the per-node
+  values the way `SelectionPanel`'s `each` and `valueAt` do. A mixed list or map needs a drawn state
+  as well; `SelectionPanel` draws the word `Mixed` in place of the editor.
+
+- **(P2) `PrefsForm`: a row decides between a `<label>` and a group by leaf kind alone, apart from
+  `PropertyField`'s own rule.** `drawsSeveral` in `packages/ui/src/components/Prefs/compound.ts`
+  looks only at `kind`, while `rowShape` in
+  `packages/ui/src/components/Properties/PropertyField.tsx` also reads `control`. So an enum leaf
+  with `control: 'radio'` is a `<label>` around every radio: clicking the row's name writes the
+  first option (`onChange('style', 'a')`, seen in jsdom), and each radio's accessible name carries
+  the row's label. `control: 'toggle'` and `'menu'` on an enum, `'switch'` and `'toggle'` on a
+  boolean, and a paint leaf are grouped by `rowShape` and not by `drawsSeveral`. Export one decision
+  from `PropertyField` (it needs the control's props, which `prefFieldProps` already builds) and
+  have `PrefsRow` and `ObjectLeaf` call it, keeping `compound.ts` for the kinds that are not one
+  control.
+
+- **(P3) `PrefsForm` rail layout: a page that opens without a rail click keeps the last page's row
+  state.** `RailLayout` renders `PrefsPane` unkeyed and `paneChildren` keys rows by child key, not
+  path, so a row with the same key on two pages (`general.name`, `export.name`) keeps its component
+  state across the change: a tab strip's picked tab, a `MapEditor`'s half-typed entry. Keying the
+  pane's contents by the open page fixes it; check that a drag which changes the open page
+  (`useDropMotion`, `useDropFrame`) survives the remount.
+
+- **(P3) `PrefsForm`: an alias row reads `changed` at its own path and `auto` and `mixed` at its
+  target's.** In `packages/ui/src/components/Prefs/PrefsRow.tsx`, `prefRenderContext` reads `auto`
+  and `mixed` at `at ?? own` and `LeafRow` reads `ctx.changed?.has(own)`. An owner that computes
+  `changed` from stored values has no entry for an alias path, since an alias stores nothing, so the
+  alias row never shows as changed while its target's row does. Either read all three at the target,
+  or say in the `changed` prop's doc that an alias is marked at its own path.
+
+- **(P3) `PrefsForm` rail layout: the pane draws a group's leaves before its groups, where columns
+  and list keep schema order.** `PrefsPane` (`packages/ui/src/components/Prefs/PrefsPane.tsx`)
+  filters leaves and fragments out ahead of the groups, so children `{ light: tab, note: leaf, dark:
+  tab }` draw as the row and then one `Light | Dark` strip in the rail, and as a `Light` strip, the
+  row, and a `Dark` strip elsewhere; a drop placeholder between two sections is drawn up among the
+  leaves. `paneChildren`'s doc says "in schema order", which the pane's own call does not honor. One
+  walk in schema order for every layout, wrapping each run of rows in `.rows`, makes them agree; it
+  changes what existing rail forms look like, which is why it is a decision.
+
+- **(P3) `PrefsForm`: a field of an object leaf marked `hidden` is drawn regardless of
+  `showHidden`.** `visiblePrefSubtree` (`packages/prefs/src/helpers.ts`) walks groups only, and
+  `ObjectLeaf` draws every field. The filter belongs where the object's rows are built, which needs
+  `showHidden` to reach `ObjectLeaf` through `PrefRenderContext` or through the subtree walk pruning
+  an object's `children`. A section inside an object does not draw its `description` either:
+  `ObjectLeaf` gives it a heading and nothing under it.
+
+- **(P2) diagram: a self-edge with no named ports draws nothing.** An edge whose `dependsOn` is `[a,
+  a]` and whose ends name no `port` (what `fromData` produces for a self-loop) resolves both ends in
+  `resolveEnd` (`packages/diagram/src/edge.ts`) toward the node's own center, so every port scores
+  the same facing and both ends pick the same one; the router gets two coincident points and the
+  path has no length. With two different named ports the `straight` router draws a chord through the
+  node's interior instead. The layouts already handle self-loops, so the edge is meant to show.
+  Drawing it needs a loop shape, which is the open call: which two ports a portless self-edge leaves
+  and returns by (adjacent sides, or one side twice), how far the loop stands off the outline, and
+  whether each router (`straight`, `orthogonal`, `bezier`) draws its own loop or `edgeDerivePath`
+  hands them a waypoint outside the node.
+
+- **(P2) guides: alignment snapping does not say which world its candidates are in on a parallax
+  layer.** `alignMoveBehavior`, `alignInsertBehavior`, and `alignResizeBehavior`
+  (`packages/guides/src/guides/alignment/behaviors.ts`) compare the gesture's pose with
+  `getCandidates()` directly and never read `ctx.plane`. The guide and grid behaviors now carry the
+  camera's lines into the plane (`packages/guides/src/strategies/onPlane.ts`), but alignment
+  candidates come from the consumer, usually `deriveAlignmentGuides` over sibling poses, which are
+  plane coordinates when the siblings share the dragged node's layer and camera coordinates when
+  they do not (a page box, or nodes on another layer). The matched lines are also published through
+  `setActiveGuides` to a layer the camera draws, so a plane-space match is drawn in the wrong place.
+  Options: declare candidates camera-space and have the caller carry sibling boxes out of their
+  planes (the behaviors then use `guideOffsetOn` and publish camera-space lines), or tag each
+  candidate with the layer it was derived from.
+
+- **(P3) hud loupe: pixel mode keeps a stale picture when the scene changes under a parked aim.**
+  `createLoupe` (`packages/hud/src/loupe/createLoupe.ts`) re-reads the framebuffer only when the
+  aim, mode, factor, or window size changes (`scheduleRefresh` from `surface.changed` and
+  `onResize`). Park a pixel-mode loupe, then undo or nudge a node under it: vector mode follows,
+  pixel mode and `loupe.color` do not. `LoupeModel.resample()` exists for this and nothing in the
+  hud calls it. Refreshing on every landed frame would loop, since the new bitmap's own redraw lands
+  a frame, so it needs a scene-changed signal that the loupe's redraw does not raise (the painted
+  version from `CanvasExtensionApi.getPaintedVersion`, compared before and after the loupe's own
+  request, is one candidate), or a public `refresh()` on the handle that the consumer calls.
+
+- **(P3) theme: `applyTheme` publishes into the global `document` and never retires a rule.**
+  `packages/theme/src/applyTheme.ts` keeps one module-level sheet on the bare `document`, keyed by
+  theme name and selection. An element in another document (a `window.open` popout fed by a portal)
+  or in a shadow root gets its `data-wzl-*` attributes but no rule, so a theme that is not built
+  into `tokens.css` has no effect there, with no error. `emitted` only grows: every name ever
+  applied keeps a full token block for the life of the page, which is unbounded for a consumer that
+  mints a theme name per instance. Two different `Theme` objects sharing a name on two subtrees
+  overwrite each other's rule while each `<ThemeProvider>`'s `resolved` still reports its own
+  values. Fixing it means keying the sheet by `el.getRootNode()` and counting references from
+  `ThemeProvider`'s effect cleanup, which changes `applyTheme` from fire-and-forget to something
+  that returns a release, a public API change.
+
+- **(P3) theme-editor: discarding a draft that does not derive throws away every other unsaved
+  edit.** When a stored draft fails to derive, `ThemeWorkbench`
+  (`apps/theme-editor/src/ThemeWorkbench.tsx`) offers "Discard the draft and reload from disk" for a
+  saved theme, and "Discard this unsaved theme" for one with no file. The editor no longer stores a
+  draft that does not derive, so this screen is now reached only through a draft stored by an older
+  build or one that stopped deriving because the theme it extends changed. In that second case one
+  inherited reference is the whole problem and the user loses everything; the screen could open the
+  Pins layer on the last stored draft with the failing reference named, instead of offering only a
+  discard.
+
+- **(P2) Callout: `onDismiss` fires for an Escape that did not close the callout.** With a
+  `ComboBox` inside a `Callout` and its menu open, Escape closes the menu, the callout stays open,
+  and `onDismiss` has already fired; a consumer following the prop's doc retires a message that is
+  still on screen. Reproduced in jsdom with `userEvent` (ArrowDown to open the menu, then Escape).
+  The listener in `packages/ui/src/components/Callout/Callout.tsx` is a native `keydown` on the
+  dialog element that checks only the key. A React `onKeyDown` around the dialog does not fix it:
+  the combo box lets the event continue, and it is React Aria's overlay stack that declines to close
+  a popover that is not the topmost. So the signal has to be "the popover closed because of Escape":
+  set a flag in the key listener and fire `onDismiss` from the close. In `triggerRef` / `anchorRect`
+  mode that close is `onOpenChange(false)`, which React Aria calls even when the consumer pins
+  `isOpen`. Under `CalloutTrigger` the popover reads the trigger's state from context and never
+  calls its own `onOpenChange`, so either `Callout` takes over the popover's open state there (and a
+  consumer's `onOpenChange` starts firing in composed mode) or it watches
+  `OverlayTriggerStateContext` for the close. That choice is the open question.
+
+- **(P2) CurveEditor: a right-click delete skips the built-in undo, and undo never reaches
+  `onChange`.** Drag an anchor, right-click another to delete it, press Cmd+Z: one press reverts
+  both, because the delete in `packages/ui/src/components/CurveEditor/CurveEditor.tsx`
+  (`onContextMenu`) writes the points directly and never pushes onto `LayeredCurveEditor`'s history;
+  a delete that was the first edit cannot be undone at all. Separately, undo and redo in
+  `LayeredCurveEditor.tsx` (`restore`) call `onLayerChange` only, so `CurveEditor` emits `onInput`
+  and never `onChange`, and a consumer that saves on `onChange` is not told the curve changed. The
+  delete's guards (locked, pinned endpoint, `minPoints`) are also a second copy of the ones in
+  `createFunctionLayer.tsx`, and the wrapper `div` with an inline `display: contents` exists only to
+  host the handler. Options for the delete: a `contextmenu` hook on `CurveLayer`, dispatched with
+  hit testing and history like `onPointerDown` (new public surface on the layer type), which also
+  retires the duplicate guards and the wrapper. Options for undo: have `restore` call
+  `onLayerCommit` too, which changes the documented contract ("undo fires `onLayerChange`") and
+  makes a consumer that builds ops from `onLayerCommit` record the undo as a new edit; or leave
+  commit alone and document that a consumer who persists on commit must turn `history` off.
+
+- **(P2) LayerList: rows under a card are `role="row"` with no `treegrid` ancestor.** When a level
+  holds any item with a body, `Level` in `packages/ui/src/components/LayerList/LayerList.tsx`
+  renders it as a `PropertyList` with no role, and a nested level's container is `role="none"`, so
+  the body-less rows in a mixed level and the child rows under a card carry `role="row"` and
+  `aria-level` with no grid above them. Flat lists are fine (each row now owns a `gridcell`).
+  Options: give a rows-only level under a card its own `treegrid` named for the card, with
+  `aria-level` restarting there, and decide what a lone row among cards is; or build the row levels
+  on `ItemList`, which already picks its roles by what the list can do.
+
+- **(P2) ActionBar: a button's `enabled` / `active` state is re-read only when something else
+  re-renders the bar.** A "Delete" action enabled only while something is selected stays disabled
+  when the selection changes in a store the bar's parent does not render from:
+  `packages/ui/src/components/ActionBar/ActionBar.tsx` subscribes to `registry.subscribe`, which
+  fires on register and unregister only, and its layout effect compares render-time values with
+  commit-time values, which helps only on a render that already happened. The dep registry
+  (`depRegistry.tsx` in `packages/routing`) has no change subscription to listen to. The fix is a
+  subscribe/notify on the dep registry that the bar (and any other reader of
+  `buildDepsFromRequires`) listens to; that is new surface in `@weasel-js/routing`.
+
+- **(P2) SceneGradientHandles: a canceled handle drag leaves the `setFill` action open.**
+  `DragPoint` in `packages/ui/src/components/GradientEditor/handleOverlay.tsx` restores the preview
+  on cancel by calling `onDrag(start, 'input')`, which reaches `edit.input(...)` in
+  `SceneGradientHandles.tsx`; nothing calls `edit.cancel()`, so the ongoing action stays open and is
+  committed later, on unmount or when `actionId` changes, as an edit the user abandoned.
+  `GradientHandles` and `MeshHandles` expose only `onInput` / `onChange`, so there is no channel for
+  a cancel: they need an `onCancel` prop (new public surface on both) that `SceneGradientHandles`
+  wires to `edit.cancel()`. Check the unmount-mid-drag order while there: the parent's
+  `useOngoingAction` cleanup may commit before the child's cancel runs.
+
+- **(P2) DataGrid: rows can be reordered by pointer only, and the handler sits on the `<td>`.** With
+  `onReorder`, the handle in `packages/ui/src/components/DataGrid/DataGrid.tsx` is a `<td>` holding
+  an `aria-hidden` glyph with `onPointerDown` on the cell: not focusable, and no key moves a row.
+  `useReorderDragList` already returns `nudge`, which `LayerList` and `ItemList` bind to
+  Alt+ArrowUp/Down. The fix is a `<button>` filling the cell that takes the pointer handler and an
+  Alt+Arrow `onKeyDown` calling `drag.nudge`; it needs a name for each row (rows carry no label, so
+  a column or a `rowLabel` prop has to supply one) and a button style that fits the 14px handle
+  column, checked in a browser.
+
+- **(P3) Callout: re-anchoring dispatches a fake `resize` on `window`.** A callout tracking a scene
+  node through a pan dispatches `new Event('resize')` on every `anchorRect` change
+  (`packages/ui/src/components/Callout/Callout.tsx`), so every resize listener on the page runs once
+  per pan frame for as long as the callout is mounted with a rect, open or not. The comment says it
+  is deliberate for want of a public `updatePosition` on React Aria's Popover. Options: dispatch
+  only while open; or change the anchor span's size by a sub-pixel, which trips React Aria's own
+  `ResizeObserver` without touching `window`.
+
+- **(P3) ItemList: removing the focused row leaves focus on `<body>`.** A consumer's remove control
+  in a row's `trailing` cell unmounts the row with focus inside it, and
+  `packages/ui/src/components/ItemList/ItemList.tsx` computes a fallback tab stop for the vanished
+  `focusId` but never focuses it, so the next arrow key goes nowhere. `LayerList` now handles this
+  because it owns its remove button; `ItemList` does not own the control, so it has to infer "the
+  row that held focus is gone". That needs focus-within tracking that survives the removal, and
+  browsers differ on whether removing the focused element fires `blur`, so settle it in a
+  `*.browser.test.tsx`.
+
+- **(P3) ComboBox: Enter on text that exactly matches an option is reported as a text commit.** With
+  `allowsCustomValue`, typing an option's own label and pressing Enter with nothing highlighted
+  calls `onCommit({ source: 'text' })` (`packages/ui/src/components/ComboBox/ComboBox.tsx`,
+  `onKeyDownCapture`), though the prop's doc says a text commit is "text matching none of them".
+  Options: report it as `{ source: 'option', key }`, report nothing, or change the doc to say a text
+  commit is any Enter with no option highlighted. The children form has no option text to compare
+  against without reading the collection.
+
+- **(P3) LayeredCurveEditor: the built-in undo and redo stacks are unbounded.** `pastRef` and
+  `futureRef` in `packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx` hold a whole-state
+  snapshot per commit for the life of the component. Cap the depth, and decide the cap.
+
+- **(P3) BandEditor: splitting a band has no keyboard path.** A band is split only by clicking the
+  ruler (`onTrackPointerDown` in `packages/ui/src/components/BandEditor/BandEditor.tsx`); every
+  other edit has a key. It needs a key and a rule for where the split lands (the selected band's
+  midpoint on the scale is the obvious one).
+
+- **(P3) GradientEditor: stop swatches are named by storage index and shown in offset order.** A
+  screen reader hears "Stop 3 at 10%, Stop 1 at 50%"
+  (`packages/ui/src/components/GradientEditor/GradientEditor.tsx`, the `aria-label` on each
+  `ColorField`). The index is the stop's stable identity, which is why a drag can cross a neighbor
+  without the two swapping, and a test names a swatch that way on purpose. Naming by position reads
+  in order but renames a stop as it crosses another; naming by index is stable but out of order.
+  Pick one.
+
+- **(P3) ui/routing: "is this key press aimed at a text field" is answered twice.** `isTextEntry`
+  (`packages/ui/src/components/BandEditor/track.ts`) says yes for input, textarea, select, and
+  `isContentEditable`; `isEditableTarget` (`packages/routing/src/interactions/keyHelpers.ts`,
+  re-exported by core) says yes for input, textarea, and contenteditable but not select, and also
+  reads the `contenteditable` attribute. `BandEditor` and `Timeline` use the first, the gesture
+  dispatcher and `keyState` the second. Make one definition (deciding whether a `<select>` counts)
+  and have ui import it; `isTextEntry` also sits in a `BandEditor` module that `Timeline` now
+  reaches into.
+
+- **(P3) Timeline: Delete and Backspace remove the selected key from any non-text focus inside the
+  root.** With a key selected, pressing Delete while focus is on a transport button, the Loop
+  switch, or the rate slider deletes the key (`onRootKeyDown` in
+  `packages/ui/src/components/Timeline/Timeline.tsx`). Text fields and selects are now skipped. The
+  options are to keep the root-wide shortcut, or to scope it to focus on a key mark or the lanes;
+  scoping needs the keys to be selectable from the keyboard first.
+
+- **(P2) UnitField: text that ends unreadable keeps the last readable prefix it sent.** Type `25x`
+  over `10` in a field whose caller holds the live value (a property row with one callback,
+  `packages/ui/src/components/Properties/NumberControls.tsx`): `onInput(25)` went out at `25`, the
+  blur reads `25x` as nothing, and the model stays at 25 while the docstring says the field "reverts
+  on … text it cannot read" (`packages/ui/src/components/NumberField/UnitField.tsx`). Escape now
+  sends the starting value back; an unreadable blur does not, and `PropertyField.test.tsx` ("reports
+  every keystroke that reads…") pins that no further call follows. Either send the starting value
+  there too and change that test, or reword the docstring to say the last readable value stands. A
+  field that began at NaN (a mixed selection) cannot be given back either way, short of an
+  `onCancel` callback.
+
+- **(P2) AnimatedTimeline: a resume made off the component does not start its playhead.** Call
+  `handle.resume()` (or `seek` on a finished timeline) from the app's own button while
+  `<AnimatedTimeline>` shows the same handle: the animation runs, but the playhead and the
+  transport's Play button stay put until something else re-renders the component, because
+  `TimelineHandle.subscribe` (`packages/core/src/animation/timeline/createTimeline.ts`) fires on
+  `edit` only and the component's frame loop is started from its own Play button or a render. The
+  handle needs to report play-state changes (pause, resume, seek, finish) to subscribers, or expose
+  a second subscription for them; `AnimatedTimeline` then requests a frame from it.
+
+- **(P2) TokenPanel scale: dragging a step's thumb back to where it started reads one unit off.** On
+  a `px` scale with a step at 16, drag its thumb to 20 and back in one drag: near the start the
+  readout shows 17 (or 15 from below), and exactly at the start it stops updating. `Slider` keeps
+  calling the `onInput` it was given at pointerdown, so `commit` in
+  `packages/ui/src/components/TokenPanel/Scale.tsx` compares every move against the starting amount,
+  and its "an arrow key still moves a step by one unit" nudge fires for drags too. The nudge is only
+  right for a key press, and `Slider` gives its caller no way to tell one from a drag (both arrive
+  through `onInput`; a key press also calls `onChange`, but so does a drag's end). Options: `Slider`
+  passes the source of a change to `onInput`/`onChange`; or `Scale` owns the arrow keys for its
+  thumbs and `commit` never nudges.
+
+- **(P3) Slider: `ThumbShape.render` and `renderTrack` are told constants.** A custom thumb is
+  always handed `{ width: 14, height: 24, isActive: false }`
+  (`packages/ui/src/components/Slider/Slider.tsx`), so one that highlights while dragged never does
+  and one drawn under `density="slim"` or a custom `trackHeight` is given the wrong box;
+  `.thumbActive` in `Slider.module.css` is a rule nothing references. `renderTrack`'s `trackWidth`
+  is read from a ref during render, so it is 0 on the first render and stale after a resize. Needs
+  the dragged index held in state and the thumb and track measured with a `ResizeObserver`, as
+  `Ruler` does.
+
+- **(P3) Slider.tsx holds four jobs in one 740-line file.** The value and stop math (`attract`,
+  `stepStops`, `clampOrdered`, `useSpan`), the endless wrapper, the two drag gestures, and the
+  render share `packages/ui/src/components/Slider/Slider.tsx`. Move the pure math beside
+  `crossEnd.ts` and the drags into a hook; the render-context fix above then has somewhere to go.
+
+- **(P3) PaintInput: its per-kind memory follows the mount, not the selection.** A `PaintInput` left
+  mounted while the selection changes offers the new selection the last one's paints: select shape A
+  with a linear gradient, then shape B with a solid, click "linear" on B, and B receives A's stops
+  (`remembered` in `packages/ui/src/components/PaintInput/PaintInput.tsx`). `apps/draw` avoids it
+  with `key={ctx.selectionKey}`; `PaintField` mounts it inside a popover, so its memory lasts only
+  while the popover is open. Either keep the `key` requirement (now stated in the code comment, not
+  in the props docs) or add a prop naming what the control is pointed at and clear the memory when
+  it changes.
+
+- **(P3) ui/core: the debug flag is parsed in two places.** `packages/ui/src/dlog.ts` and
+  `packages/core/src/debug/flag.ts` each read and cache `weasel.debug` / `weaseldraw.debug` from
+  `localStorage` with the same code. ui already depends on core, but core's barrel does not export
+  `isDebugEnabled` or `dlog`. Export them from core and have ui's `dlog` call through; the comment
+  in core's `flag.ts` ("weasel-ui doesn't depend on the kit") is also out of date.
+
+- **(P3) Tree: focus drops to the page when the focused node is removed.** A consumer's own Delete
+  handler removes the focused row: the tab stop recomputes to the first selected or first row, but
+  DOM focus falls to `<body>` and the next arrow key goes nowhere (`stopId` in
+  `packages/ui/src/components/Tree/Tree.tsx`; only `pendingFocus`, set by keyboard moves, ever calls
+  `.focus()` after a render). When `focusId` leaves the tree while focus was inside it, focus should
+  move to a row; which one (the next sibling, the previous row, the parent) is the decision.
+
+- **(P3) Timeline: omitted `transport` and `onModeChange` leave controls that do nothing.** With
+  neither prop given, the bar still draws Play, Loop, Rate, and a Graph switch wired to no-ops
+  (`packages/ui/src/components/Timeline/Timeline.tsx`), and `mode` has no state of its own, unlike
+  `selection` and `window`, which are "held internally otherwise". Options: hold `mode` internally
+  when `onModeChange` is absent, and draw the transport only when one is given (today `false` hides
+  it and `undefined` draws a dead one).
+
+- **(P3) Timeline: nothing dismisses the easing picker.** Clicking a segment opens the
+  `EasingPicker` under the lanes and it stays until an edit renumbers the track's keys; selecting a
+  key, clicking empty lane, or Escape leave it open, and a key editor and the easing picker can both
+  show. Decide what closes it (selecting a key, Escape, a click on empty lane) and whether key and
+  segment selection are one selection.
+
+- **(P3) Slider: `SliderProps.endless` is typed with a name the package does not export.** `Endless`
+  is declared in `packages/ui/src/endless.ts` and appears on the public `SliderProps`, but neither
+  `packages/ui/src/components/Slider/index.ts` nor the root barrel exports it, so a consumer can
+  only write `SliderProps['endless']`. Export `type Endless` from `Slider/index.ts`.
+
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) Multi-page documents.**
@@ -1034,6 +2489,95 @@ only story runner in the repo.
   again (`createSplitStore`). The fix belongs in windease; the workaround goes
   when it lands.
 
+- **(P2) forge: a story's `play` never runs in the workshop, and the frame protocol still carries
+  the plumbing for it and three other things nothing reads.** `play` runs only under `forgeTest`: no
+  shell code sends `{ type: 'play' }`, and `FrameView` has no case for the frame's `played` answer
+  (`packages/forge/src/protocol/messages.ts`, `frame/FrameController.tsx`). The comment in
+  `packages/forge/src/test/play.ts` says a play is driven "by `forgeTest` under vitest or by the
+  workshop", which is false. Beside it, written and never read: `capture.run` / `TrialFrame.capture`
+  (`frame/capture.ts`, `shell/FrameView.tsx`, `shell/TrialHost.tsx`), the `size` report and the
+  `ResizeObserver` each open story keeps alive to send it, `TrialFrames.hostRef` (whose map in
+  `shell/trialFrames.ts` is never pruned), and a `vars` array `TrialHost` builds and drops. These
+  are what taking marks out of forge left behind. Two ways to settle it: delete all of it, with the
+  protocol messages and the `:root`-capture entry below, and correct the `play.ts` comment; or wire
+  `play` up, so opening a story in the workshop runs its play and shows the result, and keep
+  `capture`, `size`, and `hostRef` only if marks are coming back to use them. Whether the workshop
+  should run plays is the decision; the rest follows from it.
+
+- **(P2) forge: the static index and the runtime loaders disagree about what a story is and what it
+  is titled.** Three cases, all in `packages/forge/src/vite/indexFile.ts` against `story/native.ts`
+  and `csf/loadCsfModule.tsx`. A native story file with `export const rows = [...]` beside its
+  stories lists a story "Rows" in the tree, because the index takes every exported `const`, and
+  opening it faults with `has no story export "rows"`, because the loader skips exports that are not
+  stories. A CSF meta whose `title` is an identifier or a template literal with an expression
+  indexes under the auto title while `loadCsfModule` uses the real one, so the loaded story's id
+  differs from its entry's and the index page's Open button does nothing. And `forgeTest`
+  (`vite/forgeTest.ts`) and `packages/forge/scripts/check-isolate.ts` call `indexFile` without the
+  resolved wrappers, so a file whose `meta`/`story` come through a project helper is indexed
+  differently there, and `check:forge-isolate` does not count an `isolate` inside it. The fix is one
+  "index this file" function every caller shares, a native index that takes only exports whose
+  callee is a `story` wrapper, and a CSF loader that is handed the index's title the way the native
+  loader already is.
+
+- **(P3) forge: the index page mounts a cell only once it is on screen, not a viewport ahead.**
+  `packages/forge/src/frame/index/IndexPage.tsx` keeps a private `useNearViewport` that reads
+  `isIntersecting` against the implicit root with `rootMargin: '100%'`. In the workshop document an
+  index page sits in a scrolling pane, and a root margin does not widen an intermediate scroller's
+  clip, so the margin does nothing there (from the IntersectionObserver spec, not measured).
+  `frame/useNearViewport.ts` already solves this by position against `root: document`. Folding the
+  copy into it needs the shared hook to take its starting value: it starts `true`, and the index
+  page's starts `false` so a page of canvas stories never mounts every cell at once. Check the
+  result with a browser test like `useNearViewport.browser.test.tsx`, with the cell inside an
+  `overflow: auto` box.
+
+- **(P3) forge: `@weasel-js/forge` names a story's library from this repo's directory layout.**
+  `libraryOf` (`packages/forge/src/story/library.ts`) maps `/packages/ui/`, `/packages/labkit/`,
+  `/apps/draw/`, and so on to badge labels, so another project with a `packages/ui/` gets weasel's
+  `ui` label and everything else falls back to the title's first segment. The tree's package filter
+  and the index page header both read it. The table is data about this repo and belongs in
+  `ShellConfig`, supplied by `apps/forge`, with the title-segment rule as the default.
+
+- **(P3) forge: a frame config has nowhere to put CSS meant for frame documents only.** The workshop
+  page imports the frame config too, so `apps/forge/forge.frame.tsx`'s `./frame.css`, whose one rule
+  is `html, body { background: var(--wzl-surface); color: var(--wzl-fg) }`, styles the workshop
+  document as well as every frame. Either the rule moves to something only `frame-entry.js` loads (a
+  `frameCss` option on the plugin, or `@weasel-js/forge/frame.css` reading the two tokens), or the
+  workshop is meant to share it and the file is misnamed.
+
+- **(P3) forge: a tree row clicked before its restored story has loaded still resets that trial's
+  knobs.** Picking a story the focused trial already shows starts the route with the trial's knobs,
+  read against the story's schema (`packages/forge/src/shell/tree/StoryTree.tsx`, `activate`). Until
+  the story's module has loaded the schema is empty, so a click in that window writes a route with
+  no knobs and `KnobSync` (`shell/RouteKnobs.tsx`) then sets the restored config back to defaults.
+  Closing it means `KnobSync` knowing a route was written for a trial that already had a config,
+  rather than the tree computing params.
+
+- **(P2) wake (`~/src/wake`, not this repo): every hot update is followed by a full reload about
+  three seconds later.** `hotUpdate` in `~/src/wake/src/index.ts` sets `stamp = Date.now()` for any
+  non-CSS file even when `fullReload` is off. The page's own stamp in `~/src/wake/src/client.ts` is
+  a `const` read once from `<meta name="wake-build">`, so after a successful hot update the next
+  poll sees a newer server stamp, and after `GRACE_MS` the page reloads itself. Scenario: edit a
+  story in forge with wake loaded; forge reloads the story in place, then the tab reloads and
+  unpersisted trial state is lost. This hides forge's own hot-update path on this machine, which is
+  why `WAKE_PATH=/nonexistent` is needed to see it. The same client is injected into `/frame.html`,
+  so every isolated frame and both warm pool frames poll `/__wake`, draw their own `.wake-badge`,
+  and reload on their own. Fix in wake: adopt the server's stamp on `vite:afterUpdate` when
+  `fullReload` is off, and skip the client when `window.parent !== window`.
+
+- **(P3) wake (`~/src/wake`, not this repo): a server's exit-time release can drop another app's
+  registry entry.** `releaseSync` and `releaseExtraSync` in `~/src/wake/src/claim.ts` read the
+  registry and write it back without the lock `updateRegistry` (`~/src/wake/src/state.ts`) takes.
+  Scenario: server A exits while server B, another app, is inside `updateRegistry`; A reads, B
+  writes its entry, A writes back its earlier read with only its own holder cleared, and B's entry
+  is gone, so B's next start picks a port as though it had never run. Nothing synchronous can take
+  the port lock; either re-read and compare just before the write, or have the next `claim` treat a
+  dead holder as released and make the exit-time release a no-op.
+
+- **(P3) forge: a URL naming a story that does not exist keeps the last page in the stage.** Opening
+  `#/<an id no story has>` shows `No story <id>` over the story list, and the stage goes on showing
+  the component index or story that was open before, under that page's breadcrumb. Seen in headless
+  Chromium with `#/labkit-controls-controlpanel:nested`. The stage should say the story is missing.
+
 ---
 
 ## Demos & visual regression
@@ -1066,6 +2610,148 @@ only story runner in the repo.
   `apps/site/FrontPage/palettes.ts`. The page is deliberately plain; a live canvas beside the
   pitch was drawn and set aside for later.
 - **(P3) SVG export writes wrapped text as one line.** `data-weasel-wrap` round-trips `TextStyle.wrap` for weasel's own reader, but SVG `<text>` never wraps, so any other reader draws a wrapped node as its unbroken lines. Exporting the laid-out lines needs fonts at serialize time, which `@weasel-js/svg` does not have. A justified node is written at its start edge with `data-weasel-align="justify"` for the same reason: once lines are exported, its wrapped lines need per-word `x` placement too, since `text-anchor` has no justify.
+
+- **(P2) draw: the swatches' active fill and stroke never reach a newly drawn shape.** With nothing
+  selected, pick red in the fill swatch and drag out a rectangle: it takes the kit's next palette
+  color (`cycleFill` in `packages/core/src/canvas/deps/insert.ts`), and `INITIAL_FILL_COLOR` in
+  `apps/draw/src/App.tsx` reaches no shape either. The only override the kit offers is `<SceneCanvas
+  insertNodeFactories>`, and a factory replaces the whole node for its kind, geometry included, so
+  draw would have to restate `rectPath` / `ellipsePath` / `regularPolygonPath` / `starPath` / the
+  pencil fit to change one color. The insert dep should take the paint as its own seam (a `paint:
+  (kind, seq) => { fill, stroke }` option beside `factories`, defaulting to the palette cycle), and
+  draw should feed it from `useColorContext()`, mapping `{ kind: 'none' }` to `null`.
+
+- **(P2) draw: Open adds the file to the current document instead of replacing it, and keeps the old
+  filename.** Open an SVG into a non-empty document and both sets of shapes are on the page; the
+  undo entry is labeled "Import SVG" while the button says "Open". The filename stays the previous
+  document's (`parsedToDoc` returns `title`, `pickSvgFile` drops `file.name`, and `onOpenSvg` in
+  `apps/draw/src/App.tsx` reads neither), so the next Save downloads under the wrong name. Paper
+  size and background are already taken from the file, which only makes sense for a replace.
+  Options: Open replaces (clear the scene in the same batch, take the filename from the picked file,
+  reset the background to white when the file names none) and a separate Import appends; or the
+  button is renamed Import and stops adopting the file's paper size and background.
+
+- **(P3) draw: a boolean of shapes with fill None comes out filled.** `createPathNode` in
+  `apps/draw/src/booleansAdapter.ts` takes `template?.fill ?? DEFAULT_SHAPE_FILL`, so an explicit
+  `null` fill (None) on the source is treated like an unset one and the union of two stroke-only
+  outlines gains the default fill. Either `null` should carry through as it does everywhere else in
+  draw's data model, or a boolean result is deliberately an area and the comment should say so.
+
+- **(P2) draw: four shortcuts shown on command-bar buttons are bound to nothing.** Hover Show grid
+  (Shift+3), Release compound path (Shift+|), Record input (F9), or Preferences (Cmd+,) in
+  `apps/draw/src/CommandBar.tsx`, press the key, and nothing happens: each `shortcut=` is a
+  `formatShortcut` label with no binding behind it. Each should be a registered action with a
+  `defaultBinding` (an ambient `Contribution`, the way `colorContribution` carries the color keys)
+  and the button should render from the registry as the `KitActionBar` groups do, so a label cannot
+  name a key nothing listens for. Record input has no behavior to bind yet; its label should go
+  until it does.
+
+- **(P3) draw: turning the wheel during an opacity scrub can rewind an edit made while O was held.**
+  `applyLive` in `apps/draw/src/opacityScrub/useOpacityScrub.ts` calls
+  `jumpToHistoryIndex(session.startHistoryIndex)` on every tick, assuming nothing else pushed
+  history since the session opened; hold O, wheel, tap an arrow key to nudge, wheel again, and the
+  nudge is undone and cut off the redo stack. The scrub should be an ongoing action with a coalesce
+  key, as `setFill` is through `useOngoingAction`, so it owns one entry without rewinding the stack
+  by index.
+
+- **(P2) site: the source-file tabs and the Select demo's list cannot be operated from the
+  keyboard.** `apps/site/WeaselDemos.tsx` renders `role="tablist"` / `role="tab"` buttons with no
+  `tabpanel`, no `aria-controls`, no roving tabindex, and no arrow keys.
+  `apps/site/demos/SelectDemo.tsx` puts `role="option"` and `onClick` on bare `<li>`s inside a
+  `role="listbox"` with nothing focusable, so the demo of selection conventions takes no key at all.
+  The first should be the kit's `Tabs`; the second should be `ItemList` (or a focusable child
+  filling each `<li>`, with Space/Enter and arrows feeding the same `select()` reducer the click
+  does).
+
+- **(P3) AnimationDemo: the demo builds and mutates its own adapter because the animation wrappers
+  have no canvas seat.** `apps/site/demos/AnimationDemo.tsx` spreads `sceneToAdapter(scene, {
+  selection })`, overrides `insertNode` / `removeNode` / `snapshotSelection` by hand, wraps the
+  result in `animateOnSetPose` and `animateLifecycle` through two `as never` casts, hands that to
+  `useSelectTool` / `useTools`, and then calls `adapter.setPose` / `adapter.insertNode` from button
+  handlers, so those writes skip the op pipeline and undo. It also re-renders React once per
+  animator tick (`bumpTick`) to repaint per-card scale and alpha. `<SceneCanvas>` should take the
+  wrappers itself (an `animate={{ setPose, lifecycle }}` option, or a `SurfaceContribution` that
+  wraps the adapter the canvas already builds), so the demo keeps `features={['pick', 'move']}`, its
+  buttons call `scene.setPose` / `scene.add`, and per-node effects repaint through `redrawOn` /
+  `requestRedraw`.
+
+- **(P3) useSceneLayerList: the hook needs an adapter the caller has to build.** `LayerListDemo` and
+  draw's `RightSidebar` both call `useSceneAdapter(scene, …)` only to hand `useSceneLayerList`
+  something to dispatch its reorder against
+  (`packages/ui/src/components/LayerList/useSceneLayerList.ts`). The hook should default to the
+  scene's own commit adapter (`defaultCommitAdapter(scene, selection.adapterMethods)`) and keep
+  `adapter` as an override.
+
+- **(P2) draw: Record, the recording-profile select, and Play are live controls that do nothing.**
+  `apps/draw/src/App.tsx` passes no-op handlers for all three (`onToggleRecord`,
+  `onChangeRecordingProfile`, `onPlay`; Play even opens a file picker and parses the file first),
+  and the Record button advertises F9. `recorder.ts`, `recordingIO.ts`, and `replay.ts` are complete
+  and tested but reachable from nothing. Wiring them needs a `Recorder` on the canvas's pointer and
+  keyboard surface, which wants a `SurfaceContribution` with `attach` rather than a capture-phase
+  listener in the app. Until then the three controls should not be in the bar. (Moved from the
+  deleted `apps/draw/TODO.md`, whose other entries had shipped.)
+
+- **(P3) draw: no command palette, no toast host, and no first-run notice.** The actions registry
+  lists every action by stable id, so a palette is a port of `apps/site/CommandPalette`; save
+  failures and SVG import warnings currently go to `console.warn` (`onWarn` in
+  `apps/draw/src/App.tsx`) where a toast should carry them. (Moved from the deleted
+  `apps/draw/TODO.md`.)
+
+- **(P3) draw: two owners for "which mode is the editor in".** The kit holds `textEdit.editingId`
+  and `editAnchors.editingId`; the app holds a second mode machine
+  (`apps/draw/src/modality/machine.ts`) whose `text-edit` and `path-edit` modes say the same thing.
+  Two effects with `prev` refs in `apps/draw/src/App.tsx` reconcile text editing in each direction,
+  and their comments record two shipped bugs from the split; path editing has no reconciling effect
+  at all, and the kit papers over it by reading the mode
+  (`packages/core/src/canvas/SceneCanvas.tsx`, the `effectivePathEditingId` block). A double-click
+  is acted on by both the kit's `enterPathEdit` binding and the app's `onDoubleClick` observer. One
+  owner: either the machine's `enterMode` / `exitMode` are the only callers of `startEdit` /
+  `setEditingId`, or the kit's edit state drives the mode registry and the machine keeps only
+  journals.
+
+- **(P3) draw: `apps/draw/src/App.tsx` is about 1,450 lines holding seven jobs.** The document model
+  types, scene and history loading, the right sidebar (layers, properties, colors, history panels),
+  the toolbar with SVG open/save, two dep publishers, the editor shell, and the status bar. Each
+  wants its own module; `docPersistence.ts`, `sessionStore.ts`, `svgImport.ts`, and
+  `releaseCompound.ts` are the first pieces out. `apps/site/demos/RotatedResizeMathDemo.tsx` (713
+  lines) has the same shape: the four-panel ledger chrome and the resize math variants are
+  separable.
+
+- **(P3) draw: dead surface left in the tree.** `modality/backgroundClickPolicy.ts` has no caller
+  outside its test (a TODO in `App.tsx` names it); `PreferencesModal`'s `registryEnumSources` prop
+  is never passed, so every `registry-enum` pref renders as free text through `RegistrySelect`'s
+  fallback; `poseUpdate.ts` holds the `Obj` union and no pose update, and wants a name that says so
+  (`svgObj.ts`).
+
+- **(P3) draw: paper sizes and "no paint" are each defined more than once.** Paper sizes:
+  `PaperSizeKey` (`CommandBar.tsx`), `WeaselDrawPaperSize` (`svgInterop.ts`), `PAPER_PRESETS`
+  (`docPersistence.ts`), and two label lists that disagree: the New menu says "US Letter"
+  (`PAPER_ITEMS`), the document properties say "Letter" (`PAPER_SIZE_OPTIONS`). One table of `{ key,
+  label, width, height }` should feed all four; which label wins is a wording call. No paint: `{
+  kind: 'none' }` in the color context's `ActivePaint`, `null` in node data, with `toFillStyle` in
+  `ActiveSwatches.tsx` translating; `ActivePaint` could be `FillStyle | null` and the translation
+  would go.
+
+- **(P3) core: a comment in `SceneCanvas.tsx` describes an Escape listener draw does not have.** The
+  `effectivePathEditingId` block says "`apps/draw` handles Escape in a capture-phase listener and
+  calls `stopPropagation()`". draw's only capture listeners are in the unwired `recorder.ts`; Escape
+  reaches draw's modes through `modalityShortcuts` on the dispatcher.
+
+- **(P3) CustomShaderDemo: every frame re-renders React to move one uniform.**
+  `apps/site/demos/CustomShaderDemo.tsx` calls `setTime` from its `useVisibleRaf` loop, rebuilding
+  three uniform objects and re-rendering three `<SceneCanvas>` trees for a number only the shader
+  reads (a test pins this at one commit per frame, down from more). The demo should keep `time` in a
+  ref and ask for a repaint, which needs `<SceneCanvas>` to expose `requestRedraw` (or accept a
+  `redrawOn` source) to a custom layer's owner without the demo reaching for the canvas ref in three
+  places; a `useFrameUniforms(ref)` helper on the shader layer would absorb it.
+
+- **(P3) GesturesDemo: the demo hand-writes the pointer-to-controller glue the gesture hooks need.**
+  `apps/site/demos/GesturesDemo.tsx` feeds `useDragGesture` / `useDragRect` / `useDragRadial` from
+  raw `onPointerDown/Move/Up` with manual `setPointerCapture`, and its `ptOf` turns a `PointerEvent`
+  into the `{ clientX, clientY, worldX, worldY }` the controllers take. The blurb says the bypass is
+  the point, so the raw events stay, but the kit should ship that conversion (a `pointOf(event,
+  element, view?)` beside the hooks) and the demo's modifier footer should read `useKeyState`
+  instead of its own `window` key listener.
 
 ---
 
@@ -1381,3 +3067,130 @@ one dead `const` and four stale disable directives.
   regressions. The shape a gate could take instead: a PR job that runs the
   benchmarks on both revisions and posts the `npm run perf:compare` table as a
   comment without failing the build. Mike's call.
+
+- **(P2) A scene's `generateId` is honored by `scene.add` only.** `createScene({ generateId })`
+  mints ids for `scene.add` (`core/scene/scene.ts`), and five other minters ignore it, each with its
+  own module-level counter and a comment saying it mirrors the scene's private scheme:
+  `interactions/actions/defaults/freshNodeId.ts`, `defaults/group.ts`, `canvas/sceneAdapter.ts` (two
+  sites; one says "The scene's own `generateId` isn't reachable from the adapter"),
+  `packages/svg/src/unpack.ts`, and `core/adapters/arrayAdapter.ts` (which uses
+  `crypto.randomUUID()`, a third format). A consumer whose ids are server-assigned or sortable gets
+  a second scheme in the same document from Cmd+G, Cmd+D, paste, an SVG drop, or a tool whose
+  factory omits `id`. Expose the minter on the scene and have all five call it.
+
+- **(P2) `mod` is drawn as ⌘ on every platform by `formatShortcut`.**
+  `packages/ui/src/components/ToolPalette/formatShortcut.ts` pushes `⌘` for `mod` with no platform
+  read, so on Windows and Linux `ActionBar`, the prefs leaf actions, `PrefSchemaEditor`, and
+  labkit's `LabZoom` show `⌘,` for a binding the dispatcher matches on Ctrl; `Keycaps` in the same
+  package does detect the platform, so one app shows `Ctrl` in a keycap and `⌘` in a tooltip. Behind
+  it, what `mod` means and what it looks like are decided separately: routing's dispatcher tests
+  `/mac/i` on `navigator.platform || navigator.userAgent` (`useGestureDispatcher.tsx`),
+  `Keycaps/keySpecsFromMods.ts`'s `detectPlatform` reads `userAgentData.platform ?? userAgent`,
+  treats iPhone and iPad as macOS, and answers `'macos'` for anything unrecognized, and two demos
+  carry their own regexes that differ from each other (`GestureGrammarDemo.tsx`, `RoutingDemo.tsx`).
+  One `isApplePlatform()` in `@weasel-js/gestures`, beside `matchModifiers(e, mods, isMac)`, read by
+  all of them.
+
+- **(P2) CI runs neither the `site` nor the `smoke` vitest project.** `.github/workflows/ci.yml`
+  names `core`, `weasel-ui`, `draw`, `labkit`, `forge`, and `forge-node`; `npm test` and the fleet's
+  `.onto/tests` also run `site` (44 test files under `apps/site/`) and `smoke`
+  (`SceneCanvas.smoke.test.tsx`). `check:test-projects` validates the list in `package.json`'s
+  `test` script, which CI does not use, so it stays green. A break in either project is caught by
+  the fleet run after merge and never by CI. Also run nowhere: `check:spacing`, `check:controls`,
+  and `check:labels` (`docs/conventions.md` says each "fails on" a violation),
+  `check:forge-stories`, `audit:jsdoc`, and `lint:ref-writes`. The root `prepublishOnly` never fires
+  either, since the root package is private and the release workflow does not call it; CLAUDE.md's
+  "Releases" section says `check:bumps` runs there.
+
+- **(P3) Overlays sit on two unrelated z-index scales.** The theme defines `--wzl-z-toolbar`,
+  `--wzl-z-overlay`, and `--wzl-z-modal` as 10, 20, and 30. `Dialog` (1000), `Toast` (1100),
+  `Tooltip` and `Callout` (1200), core's debug HUDs (900), labkit's `DragGhost` (9999), and
+  `pointerDrag`'s cloned ghost (10000, set in script) are literals; ui's `DragGhost`, labkit's
+  `Lightbox`, `ViewportRegion`, `LabSwitcher`, and `LabShell`, and draw's HUDs read the tokens. So
+  the token named "modal" is below every real modal, a consumer retuning `--wzl-z-modal` moves the
+  lightbox and none of the dialogs, and ui's `DragGhost` (20) dragged out of a list inside a
+  `Dialog` (1000) can draw behind it. Extend the ladder to the layers that exist (hud, modal, toast,
+  popover, drag) and have every site read a token.
+
+- **(P3) labkit inlines siblings that own module state.** `packages/labkit/tsup.config.ts` bundles
+  every `@weasel-js/*` sibling except core and theme, and its own comment gives the reason those two
+  are external: a module-global registry inlined twice is two registries. The same holds for
+  `@weasel-js/quantity` (`registerDisplayKind` writes a module-level map, so a kind an app registers
+  is unknown to the copy inside labkit's `dist`, and `displayKindOf` falls back to decimal without a
+  warning), `@weasel-js/storage` (`memorySubscribers`), and `@weasel-js/ui` (`RecentColorsProvider`,
+  the overlay portal host). labkit also lists those siblings as `dependencies`, so a consumer
+  installs one copy and runs another. In the repo, aliases resolve both to one source, so no test
+  can see it.
+
+- **(P3) Dev aliases, tsconfig `paths`, and `exports` are three hand-kept maps that disagree.**
+  `scripts/vite-aliases.ts` sends `@weasel-js/<pkg>/<tail>` to `packages/<pkg>/src/<tail>` for any
+  tail. `@weasel-js/diagram/layout` is published from `src/layout.entry.ts` and the alias resolves
+  it to `src/layout.ts`, a different module with different exports; `@weasel-js/labkit/weasel-ui`
+  works only where a config overrides the alias by hand; and a subpath no `exports` map publishes
+  resolves in every dev server and test (`@weasel-js/labkit/styles.less` in seven app and demo
+  files, `@weasel-js/labkit/theme/interstellar` in `apps/forge/themes.ts`).
+  `packages/core/tsconfig.json` maps nine siblings to source and leaves `paint`, `text`, `font`,
+  `cursor`, `quantity`, and `prefs` to resolve to their built `dist`. Generate the aliases and the
+  `paths` from each package's `exports` and build entries, and reject a subpath that is not
+  exported.
+
+- **(P3) There is no shared subscribe/notify primitive, and the hand-rolled ones notify two ways.**
+  About 46 stores across 18 packages each keep their own listener `Set`. Some notify over a snapshot
+  (prefs, storage, modes, `keyState`, `PointerContext`), and others iterate the live set (the scene,
+  history and its journal, `select/store.ts`, the dispatcher, `poseFeed`, `poseOverrides`,
+  `imageCache`, `reflectable`, `createTimeline`), so a listener that subscribes during a notify is
+  called in the same pass on the second kind and not on the first. None isolates a throwing
+  listener. One `createEmitter()` with stated semantics in a leaf package every tier can reach
+  (`@weasel-js/registry`).
+
+- **(P3) Hex and CSS color parsing is implemented in six places that accept different inputs.**
+  core's `renderer/math/color.ts` `parseHex` takes 3, 4, 6, and 8 digits and throws otherwise.
+  `paint/src/colorSpaces.ts` `hexToOklchDeg` and `theme/src/engine/color/oklch.ts` `hexToRgb` run
+  `parseInt` on whatever follows the `#` with no length check, so `#abc` reads as `#000abc` and an
+  8-digit hex shifts its alpha byte into blue; `ui/src/color/ramp.ts` and
+  `theme/src/engine/semantics.ts` call those. `paint/src/palette.ts`, `theme/src/dtcg/color.ts`, and
+  `ui`'s `TokenPanel/color.ts` each have another. The complete parser lives in core, which paint and
+  theme sit below; move it to `@weasel-js/paint` and have the rest import it.
+
+- **(P3) `isPlainObject`, `shallowEqual`, and `clamp` have no home below core.** core's
+  `isPlainObject` is realm-safe; `prefs/src/repair.ts`, three files in `theme/src`,
+  `labkit/src/state/labRecords.ts`, `forge/src/shell/globals.ts`, and core's own
+  `features/text/runs/rangeStyle.ts` use `typeof v === 'object' && v !== null && !Array.isArray(v)`,
+  which accepts a `Date` or a `Map` (so `rangeStyle`'s `deepEqual` calls two different dates equal).
+  Scalar `clamp` is defined locally in ten places and `@weasel-js/geom` exports none. Put
+  `isPlainObject` in a leaf, re-export it from core, and add `clamp` to geom's scalars.
+
+- **(P3) `@weasel-js/loupe` peers on all of core for one function and one type.** Its model is
+  framework-free and `sideEffects: false`, and it imports `normalizeZoom` and the `View` type from
+  `@weasel-js/core`, which makes core, and React through it, a requirement of anything using the
+  model. The view math has no React in it and belongs in geom. Related: the kit's 2D point type
+  `Point2` is declared in `@weasel-js/routing`, and core's `Vec2` aliases it.
+
+- **(P3) Three drag-ghost implementations.** core's `pointerDrag` `defaultGhost` clones the source,
+  ui's `DragGhost` portals to the themed host, and labkit's `dragdrop/DragGhost` is a third. They
+  sit at three stacking levels, and only ui's corrects for a transformed containing block, so
+  labkit's and core's `position: fixed` ghosts are offset inside a transformed ancestor (read from
+  the CSS and the clone code, not rendered). labkit's should render ui's.
+
+- **(P3) Manifest and check-script loose ends.** `@weasel-js/labkit` lists `@weasel-js/kernel3d` in
+  `dependencies` and only `packages/labkit/examples/3d-lab/`, which is not published, imports it.
+  `@weasel-js/d3` declares a `react` peer and no source file imports React. Seven core source files
+  import core's own barrel by package name for a type that lives in `@weasel-js/geom`.
+  `check:frame-loops` matches `requestAnimationFrame(` on one line: an alias, a call split across
+  lines, or a `setInterval` loop passes, and its allowlist is per file, so a new loop in an
+  allowlisted file passes too. `check:spacing` and `check:controls` walk `packages/ui/src` `*.css`
+  only, not labkit's `.less` or the apps.
+
+- **(P3) Split the largest source files along their owners.** `canvas/SceneCanvas.tsx` (2,973
+  lines): the props type, `SceneCanvasInner`, and five sibling mounters and registrars, each of
+  which is a file in the existing `SceneCanvas/` directory. `renderer/draw.ts` (2,689): uniform
+  upload cache, group effects and render targets, clip and stencil, batch staging and ramps,
+  path-fill binding, strokes, text, and images; the fill and stroke sections move together, since
+  the bind-half/draw-half rule in CLAUDE.md spans them. `core/scene/scene.ts` (2,196): serialization
+  comes out without touching the `createScene` closure. `routing`'s `useGestureDispatcher.tsx`
+  (1,726) and `dispatcher.ts` (1,670): per-view dep assembly, stylus and multi-touch geometry,
+  platform detection, and trace recording. `canvas/Canvas.tsx` (1,615): types and the exported layer
+  builders. `apps/draw/src/App.tsx` (1,580) and `dev/RegistryDetail.tsx` (1,482): one file per named
+  component. `canvas/NodeShape.ts` (991): the painter registry, and one file per built-in painter,
+  keeping the load-time registration listed in core's `sideEffects`. `core/src/index.ts` (1,502):
+  per-area barrels re-exported by name.
