@@ -42,9 +42,8 @@ import {
   translateAnchorBy,
   type AnchorSet,
 } from 'features/paths/anchorEdits';
-import { pathToAnchors } from 'features/paths/anchors';
+import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { pxExtent } from 'core/viewport/pxExtent';
-import type { PolygonPath } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from './editAnchors';
 import { inPlane, editingLayer } from '../planeInput';
 import { NUDGE_KEY, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';

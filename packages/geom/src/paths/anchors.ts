@@ -9,19 +9,10 @@
  * uses it to validate the array length in dev builds.
  */
 
-import {
-  PATH_C,
-  PATH_L,
-  PATH_M,
-  PATH_Q,
-  PATH_Z,
-  type Path,
-  type PolygonPath,
-  forEachSegment,
-  nearestOnCubic,
-  nearestOnLine,
-  PathBuilder,
-} from '@weasel-js/geom';
+import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, forEachSegment } from '../commands';
+import { nearestOnCubic, nearestOnLine } from '../nearest';
+import type { Path, PolygonPath } from '../path';
+import { PathBuilder } from './builder';
 
 /** One anchor of an editable path: its on-curve point plus the two control
  *  handles that shape the segments either side of it. Handles are in the same

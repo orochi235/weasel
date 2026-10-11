@@ -23,11 +23,9 @@
 
 import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { type Path, type PolygonPath, linePath } from '@weasel-js/geom';
+import { type Path, type PolygonPath, linePath, pathToAnchors, circlePath, rectMarkerPath, squarePath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
 import { previewSourcesFrom, isVisibleFrom } from 'canvas/drawEnvelope';
-import { pathToAnchors } from './anchors';
-import { circlePath, rectMarkerPath, squarePath } from './markers';
 
 interface View { x: number; y: number; scale: { x: number; y: number } }
 

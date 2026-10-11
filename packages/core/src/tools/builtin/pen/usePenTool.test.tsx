@@ -12,7 +12,7 @@ import {
   type PolygonPath,
   pathFromD,
 } from '@weasel-js/geom';
-import { pathToAnchors } from 'features/paths/anchors';
+import { pathToAnchors } from '@weasel-js/geom';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
 import { resolveEditablePathOf, useEditAnchorsDepSource } from 'canvas/deps/editAnchors';
 import type { Scene } from 'core/scene/types';

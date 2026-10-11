@@ -77,8 +77,10 @@ export {
   type CurveRepresentation,
   type Discriminator,
 } from '@weasel-js/geom/curves';
-export { circlePath, squarePath, rectMarkerPath, roundRectPath } from './markers';
-export { countPathAnchors, pathToAnchors, anchorsToPath, isAnchorSmooth, nearestSegmentT, type PenAnchor } from './anchors';
+export {
+  circlePath, squarePath, rectMarkerPath, roundRectPath,
+  countPathAnchors, pathToAnchors, anchorsToPath, isAnchorSmooth, nearestSegmentT, type PenAnchor,
+} from '@weasel-js/geom';
 export {
   anchorAt,
   anchorCount,
@@ -121,5 +123,5 @@ export {
   pathExclude,
   pathDivide,
   trianglesToPath,
-} from './booleans';
+} from '@weasel-js/geom/booleans';
 export { strokeToPath, type StrokeToPathOptions } from './strokeToPath';

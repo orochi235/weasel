@@ -62,15 +62,12 @@ here.
 
 **Transform** — `pathInWorld.ts`, `poseDescriptor.ts`, `originProjection.ts`
 
-**Editing** — `anchors.ts` (`pathToAnchors` / `anchorsToPath`, `PenAnchor`,
-`nearestSegmentT`), `anchorEdits.ts` (the anchor-set mutations: translate,
+**Editing** — `anchorEdits.ts` (the anchor-set mutations: translate,
 handle-drag with smooth mirroring, insert-on-segment, delete-with-refit,
-scissors, rect select)
+scissors, rect select). The anchor model itself (`pathToAnchors` /
+`anchorsToPath`, `PenAnchor`, `nearestSegmentT`) is in `@weasel-js/geom`.
 
-**Booleans** — `booleans.ts` + `booleans.adapter.ts`, named re-exports of
-`@weasel-js/geom/booleans` (union / intersect / exclude / minus-front)
-
-**Rendering** — `pathLayer.ts`, `markers.ts`, `markerCommands.ts`,
+**Rendering** — `pathLayer.ts`, `markerCommands.ts`,
 `markerSites.ts`, `tessellate/stroke.ts` (stroke ribbons; stays in core because
 it reads `@weasel-js/paint`'s `Stroke`), plus `penPreviewLayer.ts` (the pen's
 in-progress path) and `pathEditingOverlayLayer.ts` (anchor-edit chrome)

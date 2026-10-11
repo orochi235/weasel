@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { PathBuilder, type PolygonPath } from '@weasel-js/geom';
-import { pathToAnchors } from 'features/paths/anchors';
+import { PathBuilder, type PolygonPath, pathToAnchors } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js/routing';
 import { makeEditAnchorsDep } from '../testUtils';
 import { areaSelectAction } from './areaSelect';

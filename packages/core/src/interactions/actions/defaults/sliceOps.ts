@@ -1,6 +1,5 @@
-import { boundsOfPath, type Path } from '@weasel-js/geom';
+import { boundsOfPath, type Path, pathToAnchors } from '@weasel-js/geom';
 import { splitPathByPolyline, snipPathByPolyline } from '@weasel-js/geom/booleans';
-import { pathToAnchors } from 'features/paths/anchors';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { createInsertOp } from 'core/ops/create';

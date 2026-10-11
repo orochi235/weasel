@@ -35,7 +35,7 @@ import {
   nearestSegmentT,
   segmentEnds,
   type PenAnchor,
-} from './anchors';
+} from '@weasel-js/geom';
 import { withinPxRadius, type Scale2 } from 'core/viewport/pxExtent';
 
 /** Subpath-major anchor model — the decoded form of a `PolygonPath`. */

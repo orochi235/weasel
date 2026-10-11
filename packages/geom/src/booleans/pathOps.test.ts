@@ -1,14 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { pathUnion } from './booleans';
-import {
-  pointInPath,
-  type RectPath,
-  type PolygonPath,
-  PATH_M,
-  PATH_L,
-  PATH_C,
-  PATH_Z,
-} from '@weasel-js/geom';
+import { pathUnion } from './index';
+import { PATH_M, PATH_L, PATH_C, PATH_Z } from '../commands';
+import type { RectPath, PolygonPath } from '../path';
+import { pointInPath } from '../pathHitTest';
 
 const r = (x: number, y: number, w: number, h: number): RectPath => ({
   kind: 'rect', x, y, width: w, height: h,
@@ -35,7 +29,7 @@ describe('pathUnion', () => {
   });
 });
 
-import { pathIntersect } from './booleans';
+import { pathIntersect } from './index';
 
 describe('pathIntersect', () => {
   it('returns only the overlapping region of two overlapping rects', () => {
@@ -56,7 +50,7 @@ describe('pathIntersect', () => {
   });
 });
 
-import { pathSubtract } from './booleans';
+import { pathSubtract } from './index';
 
 describe('pathSubtract', () => {
   it('returns `a` with `b` punched out where they overlap', () => {
@@ -85,7 +79,7 @@ describe('pathSubtract', () => {
   });
 });
 
-import { pathExclude } from './booleans';
+import { pathExclude } from './index';
 
 describe('pathExclude', () => {
   it('returns symmetric difference (in one or the other, not both)', () => {
@@ -98,7 +92,7 @@ describe('pathExclude', () => {
   });
 });
 
-import { pathDivide } from './booleans';
+import { pathDivide } from './index';
 
 describe('pathDivide', () => {
   it('two overlapping rects → three non-empty regions (A-only, B-only, A∩B)', () => {
@@ -148,7 +142,7 @@ describe('pathDivide', () => {
   });
 });
 
-import { pathCrop } from './booleans';
+import { pathCrop } from './index';
 
 describe('pathCrop', () => {
   it('clips each non-topmost path to the topmost (mask)', () => {
