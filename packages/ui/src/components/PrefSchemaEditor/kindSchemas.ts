@@ -256,6 +256,11 @@ function carriesDefault(v: unknown, blank: Record<string, unknown>): boolean {
   return options === undefined || options.some((o) => o.value === v);
 }
 
+/** Whether `attr`, a kind's attribute, can hold `v`: a choice holds only what it offers. Any other attribute, and a shared one (`undefined`), holds what it is given. */
+function offers(attr: PrefLeaf | undefined, v: unknown): boolean {
+  return attr?.kind !== 'enum' || (attr as PrefEnum).options.some((o) => o.value === v);
+}
+
 /** A new leaf of what a kind picker's `choice` names: a blank one of a kind, or a type as it was declared. */
 export function leafOf(choice: string, types: PrefTypes = NO_TYPES): PrefLeaf {
   const type = findType(types, typeNamed(choice));
@@ -269,7 +274,8 @@ export function leafOf(choice: string, types: PrefTypes = NO_TYPES): PrefLeaf {
 export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds = {}, types: PrefTypes = NO_TYPES): { leaf: PrefLeaf; dropped: string[] } {
   const typed = typeNamed(choice) !== undefined;
   const blank = leafOf(choice, types) as unknown as Record<string, unknown>;
-  const keep = new Set([...SHARED, ...(typed ? [] : Object.keys(kindAttrs(choice, custom)))]);
+  const attrs = kindAttrs(choice, custom);
+  const keep = new Set([...SHARED, ...(typed ? [] : Object.keys(attrs))]);
   const next: Record<string, unknown> = { ...blank };
   const dropped: string[] = [];
   for (const [k, v] of Object.entries(leaf)) {
@@ -285,7 +291,7 @@ export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds 
       else dropped.push(k);
       continue;
     }
-    if (keep.has(k)) next[k] = v;
+    if (keep.has(k) && (typed || offers(attrs[k], v))) next[k] = v;
     else dropped.push(k);
   }
   return { leaf: next as unknown as PrefLeaf, dropped };

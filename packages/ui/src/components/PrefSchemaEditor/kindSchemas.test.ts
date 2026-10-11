@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { BUILTIN_KINDS, attributeSchema, blankLeaf, changeKind, normalizeAttr } from './kindSchemas';
+import { BUILTIN_KINDS, attributeSchema, blankLeaf, changeKind, convertLeaf, normalizeAttr } from './kindSchemas';
 import { nodeAt } from './schemaEdit';
 import { STUB } from './schemaExport';
 
@@ -66,6 +66,15 @@ describe('kindSchemas', () => {
     }
     expect(blankLeaf('enum')).toMatchObject({ default: 'a', options: [{ value: 'a', label: 'A' }] });
     expect(blankLeaf('object')).toMatchObject({ children: {} });
+  });
+
+  it('drops an attribute whose value the new kind\'s attribute of that name does not offer', () => {
+    const slider = { ...num, control: 'slider' } as PrefLeaf;
+    const made = convertLeaf(slider, 'boolean');
+    expect(made.leaf).not.toHaveProperty('control');
+    expect(made.dropped).toContain('control');
+    const toggle = { kind: 'boolean', name: 'B', description: '', default: false, control: 'toggle' } as PrefLeaf;
+    expect(convertLeaf(toggle, 'enum')).toMatchObject({ leaf: { control: 'toggle' }, dropped: ['default'] });
   });
 
   it('carries a default only between compatible kinds', () => {
