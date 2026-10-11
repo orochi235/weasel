@@ -959,15 +959,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) `defaults/move.ts` is 1,426 lines doing four jobs.** Designed, not built:
-  `docs/superpowers/specs/2026-10-11-move-action-decomposition-design.md` splits it by phase into
-  `actions/move/`, adds what the behavior contract lacks, and makes a layout drop and
-  reparent-on-drop move behaviors. It also adds `check:size`.
+- **(P2) A layout drop is not a move behavior.** `actions/move/` is split by phase, with the layout
+  pass and reparent-on-drop as commit paths inside it.
+  `docs/superpowers/specs/2026-10-11-move-action-decomposition-design.md` is unbuilt: three
+  additions to the behavior contract, then both paths lifted out as `MoveBehavior`s.
 
 - **(P2) `resize.ts` (698) and `rotate.ts` (353) are built like `move.ts` was.** Each is a scratch
   interface every helper takes whole and a `commitX` closure inside `start()`. They take the split
-  the move spec describes: a readonly session captured at press, a frame replaced each move, and
-  commit paths that return ops. `resize.ts` also carries its point-snap helpers, and `insert.ts`
+  `actions/move/` now has: a readonly session captured at press (`session.ts`), a frame replaced
+  each move (`frame.ts`), and commit paths that return ops (`commit/`). `resize.ts` also carries its point-snap helpers, and `insert.ts`
   (621) holds two actions.
 
 - **(P3) Reparent-on-drop may misplace a node grabbed mid-glide.** Read, not reproduced. The
@@ -985,8 +985,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) An action's code has two homes.** `actions/defaults/<name>.ts` holds the action, and a
   sibling `actions/<name>/` (move, resize, rotate, flip, align, distribute, clone, clipboard,
   booleans, outlines, edit-anchors, lasso-select) holds its options, geometry, and gesture
-  adapter. One directory per action would hold both, and would give `move.ts`'s pieces somewhere
-  to land.
+  adapter. One directory per action would hold both. `move` is done; the rest follow it.
 
 - **(P3) Range selection on the canvas.** `@weasel-js/select` ranges over an `order` the caller
   supplies, and a canvas has none of its own, so core's `useSelection` never ranges and keeps no
