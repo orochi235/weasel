@@ -1,17 +1,17 @@
-import { isPrefLeaf, isPrefSection, type PrefAlias } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefAlias } from '@weasel-js/prefs';
 import { checkKey, keysTakenAt, takesDottedKey, uniqueKey } from './schemaKeys';
 import {
   checkFits, childrenOf, editChildren, insertAt, isUnder, joinPath, keyOf, nodeAt, outermost, parentPath,
   type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaTree';
-import { rebaseValuePaths, valueMove, valuePathOf } from './valuePaths';
+import { rebaseValuePaths, valueMove, valuePathsAt } from './valuePaths';
 
 export {
   branchUnder, childrenOf, fitsUnder, isUnder, joinPath, keyOf, keysOf, levelsOf, nodeAt, outermost, parentPath, pathOf,
   slotOf, withinDepth, type ChildMap, type SchemaNode, type SchemaRoot, type SchemaTarget,
 } from './schemaTree';
 export { isValidKey, keyClashes, keyFromName, keyProblem, keysTakenAt, takesDottedKey, undigit, uniqueKey } from './schemaKeys';
-export { rebaseValuePaths, valueMove, valuePathOf, type ValueMove } from './valuePaths';
+export { rebaseValuePaths, valueMove, valuePathOf, valuePathsAt, type ValueMove } from './valuePaths';
 export { aliasNodes, aliasOf, canAlias, copyNodes } from './schemaCopy';
 
 export function addNode<R extends SchemaRoot>(root: R, parent: string | null, key: string, node: SchemaNode, index?: number): R {
@@ -29,12 +29,6 @@ export function removeNode<R extends SchemaRoot>(root: R, path: string): R {
     const { [key]: _gone, ...rest } = kids;
     return rest;
   });
-}
-
-/** The value paths a node at tree path `path` holds: its own, which every path beneath it extends, or for a section each of its members'. */
-function valuePathsAt(root: SchemaRoot, path: string, node: SchemaNode): string[] {
-  if (!isPrefSection(node)) return [valuePathOf(root, path)];
-  return Object.entries(node.members).flatMap(([key, kid]) => valuePathsAt(root, joinPath(path, key), kid));
 }
 
 /** The tree paths of the aliases showing a value at or beneath one of `values`. */

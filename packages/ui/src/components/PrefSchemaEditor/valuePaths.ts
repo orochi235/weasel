@@ -1,12 +1,11 @@
 import { isPrefCondition, isPrefLeaf, isPrefSection, mapPrefConditionPaths, type PrefLeaf } from '@weasel-js/prefs';
-import { childrenOf, keyOf, keysOf, nodeAt, pathOf, withChildren, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
+import { childrenOf, joinPath, keysOf, nodeAt, pathOf, withChildren, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
 
 /**
- * The path a leaf's value is read and written at, which is what an alias names: the leaf's own key under a section
- * root, and under a group root every key down to it but a section's, which is a heading inside an `object` leaf.
+ * The path a leaf's value is read and written at, which is what an alias names: every key down to it but a
+ * section's, which is a heading. So under a section root it is the leaf's own key, and a field's after it.
  */
 export function valuePathOf(root: SchemaRoot, path: string): string {
-  if (isPrefSection(root)) return keyOf(path);
   const keys = keysOf(path);
   // A path a node is about to take has no node at its end yet.
   const isHeading = (i: number): boolean => {
@@ -14,6 +13,15 @@ export function valuePathOf(root: SchemaRoot, path: string): string {
     return node !== undefined && isPrefSection(node);
   };
   return keys.filter((_, i) => !isHeading(i)).join('.');
+}
+
+/**
+ * The value paths the node at tree path `path` holds: its own, which every path beneath it extends, or for a
+ * section, and for the root, each of its children's.
+ */
+export function valuePathsAt(root: SchemaRoot, path: string | null, node: SchemaNode): string[] {
+  if (path !== null && !isPrefSection(node)) return [valuePathOf(root, path)];
+  return Object.entries(childrenOf(node) ?? {}).flatMap(([key, kid]) => valuePathsAt(root, joinPath(path, key), kid));
 }
 
 export type ValueMove = readonly [from: string, to: string];
