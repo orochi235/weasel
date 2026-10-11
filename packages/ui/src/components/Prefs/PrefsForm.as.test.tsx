@@ -63,6 +63,22 @@ describe('a group\'s `as`', () => {
     expect(screen.getByText('Glow')).toBeInTheDocument();
   });
 
+  it('opens the tab that holds a selection the tabs first draw with', () => {
+    // The root's own page is open, so the selection is what opens Canvas and its tabs mount holding it.
+    const view = (selected?: string) => <PrefsForm layout="rail" schema={SCHEMA} onChange={() => {}} selected={selected === undefined ? undefined : [selected]} />;
+    const { rerender } = render(view());
+    expect(screen.queryByRole('tab')).toBeNull();
+    rerender(view('canvas.dark.dim'));
+    expect(screen.getByText('Dim')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Light' }));
+    expect(screen.getByText('Glow')).toBeInTheDocument();
+  });
+
+  it('opens the tab that holds a selection given on the first render', () => {
+    render(<PrefsForm layout="list" schema={SCHEMA.children.canvas as PrefGroup} onChange={() => {}} selected={['dark.dim']} />);
+    expect(screen.getByText('Dim')).toBeInTheDocument();
+  });
+
   it('draws a bar group as one line of bar forms with no heading, and writes through its path', () => {
     const schema: PrefGroup = {
       name: '',

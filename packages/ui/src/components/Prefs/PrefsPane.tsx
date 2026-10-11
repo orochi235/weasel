@@ -190,8 +190,8 @@ function PaneTabs({ ctx, tabs, depth, box }: {
   depth: number;
   box?: (key: string, group: PrefGroup, path: string) => ReactNode;
 }) {
-  const [picked, setPicked] = useState(tabs[0]![0]);
   // A selection inside another tab opens that tab once, when it arrives; the reader may then leave it.
+  const [picked, setPicked] = useState(() => (tabs.find(([p]) => within(p, ctx.lead)) ?? tabs[0]!)[0]);
   const [seen, setSeen] = useState(ctx.lead);
   if (seen !== ctx.lead) {
     setSeen(ctx.lead);
