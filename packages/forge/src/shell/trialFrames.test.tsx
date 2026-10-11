@@ -222,6 +222,27 @@ describe('A11yPanel', () => {
     expect(screen.getByText('No frame is connected.')).toBeTruthy();
   });
 
+  it('stays busy until the last audit it started has answered, when a reloaded story starts a second one', async () => {
+    const frames = createTrialFrames();
+    const answers: (() => void)[] = [];
+    const audit = () => () => new Promise<{ ok: true; report: A11yReport }>((resolve) => answers.push(() => resolve({ ok: true, report })));
+    frames.connect('t1', { send: vi.fn(), audit: audit(), capture: noCapture });
+    panel(frames);
+    await flush();
+    act(() => {
+      frames.connect('t1', { send: vi.fn(), audit: audit(), capture: noCapture });
+    });
+    await flush();
+    expect(answers).toHaveLength(2);
+
+    answers[0]!();
+    await flush();
+    expect(screen.getByRole('button', { name: 'Checking…' })).toHaveProperty('disabled', true);
+    answers[1]!();
+    await flush();
+    expect(screen.getByRole('button', { name: 'Re-check' })).toHaveProperty('disabled', false);
+  });
+
   it('runs once against a connected frame and lists what it found', async () => {
     const frames = createTrialFrames();
     const audit = vi.fn(async () => {

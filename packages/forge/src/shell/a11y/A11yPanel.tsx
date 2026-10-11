@@ -6,7 +6,7 @@ import {
   useTrialId,
 } from '@weasel-js/labkit';
 import num from '@weasel-js/theme/numeric.module.css';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { A11yFinding } from '../../protocol/messages';
 import { useTrialFrame } from '../trialFrames';
 
@@ -50,22 +50,25 @@ function Findings({ title, findings }: { title: string; findings: readonly A11yF
 export function A11yPanel() {
   const trialId = useTrialId();
   const frame = useTrialFrame(trialId);
-  const [running, setRunning] = useState(false);
+  const [inFlight, setInFlight] = useState(0);
+  const running = inFlight > 0;
   const audit = frame.audit;
   // One automatic run per connected frame, so opening the panel answers without being asked.
   const ran = useRef<typeof audit>(null);
 
+  const start = useCallback((run: NonNullable<typeof audit>) => {
+    setInFlight((n) => n + 1);
+    void run().finally(() => setInFlight((n) => n - 1));
+  }, []);
+
   useEffect(() => {
     if (!audit || ran.current === audit) return;
     ran.current = audit;
-    setRunning(true);
-    void audit().finally(() => setRunning(false));
-  }, [audit]);
+    start(audit);
+  }, [audit, start]);
 
   const rerun = () => {
-    if (!audit) return;
-    setRunning(true);
-    void audit().finally(() => setRunning(false));
+    if (audit) start(audit);
   };
 
   const outcome = frame.a11y;

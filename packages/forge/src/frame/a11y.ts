@@ -63,11 +63,17 @@ export interface RunAxeOptions {
   page?: boolean;
 }
 
-/** Runs axe over `element` and reduces its answer to what crosses the frame's channel. */
+// axe refuses a run while another is under way in the same document, and the workshop page holds every story.
+let last: Promise<unknown> = Promise.resolve();
+
+/** Runs axe over `element` and reduces its answer to what crosses the frame's channel. A run waits for the one before it. */
 export async function runAxe(element: Element, { page = true }: RunAxeOptions = {}): Promise<A11yReport> {
   const axe = await loadAxe();
   const rules = page ? undefined : Object.fromEntries(PAGE_RULES.map((id) => [id, { enabled: false }]));
-  const result = await axe.run(element, rules ? { rules } : undefined);
+  const run = () => axe.run(element, rules ? { rules } : undefined);
+  const running = last.then(run, run);
+  last = running;
+  const result = await running;
   return {
     violations: result.violations.map(finding),
     incomplete: result.incomplete.map(finding),

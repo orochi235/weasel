@@ -89,6 +89,21 @@ describe('runAxe', () => {
       host.remove();
     }
   }, 20_000);
+
+  it('answers two audits started at once, since every story in the workshop page shares one axe', async () => {
+    const one = document.createElement('div');
+    one.innerHTML = '<img src="cat.png">';
+    const two = document.createElement('div');
+    two.innerHTML = '<button type="button">Fine</button>';
+    document.body.append(one, two);
+    cleanups.push(() => {
+      one.remove();
+      two.remove();
+    });
+    const [first, second] = await Promise.all([runAxe(one, { page: false }), runAxe(two, { page: false })]);
+    expect(first.violations.map((v) => v.id)).toContain('image-alt');
+    expect(second.violations.map((v) => v.id)).not.toContain('image-alt');
+  }, 20_000);
 });
 
 describe('startFrame a11y.run', () => {
