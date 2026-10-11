@@ -299,4 +299,33 @@ describe('several paths at once', () => {
   it('removes nothing for no paths', () => {
     expect(removeNodes(ROOT, [])).toBe(ROOT);
   });
+
+  it('takes a removed pref\'s aliases with it, and an alias of one of those', () => {
+    const alias = (of: string): PrefLeaf => ({ kind: 'alias', name: '', description: '', default: undefined, of });
+    const root: PrefGroup = {
+      name: 'Root',
+      children: {
+        a: { name: 'A', children: { x: ROOT.children.a && (nodeAt(ROOT, 'a/x') as PrefLeaf), y: nodeAt(ROOT, 'a/y') as PrefLeaf } },
+        b: { name: 'B', children: { ax: alias('a.x'), ay: alias('a.y'), aax: alias('b.ax') } },
+      },
+    };
+    const next = removeNodes(root, ['a/x']);
+    expect(keys(next, 'a')).toEqual(['y']);
+    expect(keys(next, 'b')).toEqual(['ay']);
+    // A removed group takes the aliases of everything in it.
+    expect(keys(removeNodes(root, ['a']), 'b')).toEqual([]);
+  });
+
+  it('takes a removed property\'s aliases with it under a section root', () => {
+    const section: PrefSection = {
+      name: 'Props',
+      members: {
+        main: { name: 'Main', members: { 'data.fill': { kind: 'string', name: 'Fill', description: '', default: '' } } },
+        more: { name: 'More', members: { 'data.fillToo': { kind: 'alias', name: '', description: '', default: undefined, of: 'data.fill' } } },
+      },
+    };
+    const members = (root: PrefSection, key: string) => Object.keys((root.members[key] as PrefSection).members);
+    expect(members(removeNodes(section, ['main/data.fill']), 'more')).toEqual([]);
+    expect(members(removeNodes(section, ['main']), 'more')).toEqual([]);
+  });
 });

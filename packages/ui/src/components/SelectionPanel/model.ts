@@ -15,7 +15,17 @@ import {
   type NodeRoutingEntry,
   type SceneNode,
 } from '@weasel-js/core';
-import { isPrefLeaf, type PrefLeaf, type PrefSection, type PrefSectionAs, pairRowsOf, prefSectionLeaves } from '@weasel-js/prefs';
+import {
+  isPrefLeaf,
+  pairRowsOf,
+  prefAliasedLeaf,
+  prefAliasTarget,
+  prefSectionLeaves,
+  type PrefAlias,
+  type PrefLeaf,
+  type PrefSection,
+  type PrefSectionAs,
+} from '@weasel-js/prefs';
 
 // Re-exported under its existing public name here: the kit-wide "these
 // values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
@@ -30,10 +40,16 @@ export type AnyNode = SceneNode<unknown, string, unknown>;
  * node path it reads and writes.
  */
 export interface PanelLeaf {
-  /** Dotted node path — the leaf's key in the schema. */
+  /** Dotted node path the value is read and written at: the leaf's key in the schema, or for an alias its
+   *  target's. */
   path: string;
   leaf: PrefLeaf;
+  /** An alias's own key in the schema, where `path` is its target's. */
+  own?: string;
 }
+
+/** What tells one leaf of a panel from another: two aliases of one leaf share a `path`. */
+export const panelLeafKey = (leaf: PanelLeaf): string => leaf.own ?? leaf.path;
 
 /**
  * One labeled row of a panel section. Holds several leaves when the schema
@@ -73,16 +89,24 @@ export function classifyKind(
 }
 
 /** Flatten a schema to sections of leaves. Nested sections fold into their
- *  top-level section; top-level leaves get an untitled leading section. */
-function flatten(schema: PrefSection): PanelSection[] {
+ *  top-level section; top-level leaves get an untitled leading section. An
+ *  alias becomes the leaf it points at, as a form draws it, unless
+ *  `rawAliases` keeps it for a renderer of the kind; an alias of nothing
+ *  stays an alias either way. */
+function flatten(schema: PrefSection, rawAliases: boolean): PanelSection[] {
   const sections: PanelSection[] = [];
   const untitled: PanelLeaf[] = [];
+  const all = new Map(prefSectionLeaves(schema.members));
+  const shown = (key: string, leaf: PrefLeaf): PanelLeaf => {
+    const target = leaf.kind === 'alias' && !rawAliases ? prefAliasTarget(leaf as PrefAlias, (path) => all.get(path)) : undefined;
+    return target ? { path: target.path, leaf: prefAliasedLeaf(leaf as PrefAlias, target.leaf), own: key } : { path: key, leaf };
+  };
 
   for (const [key, child] of Object.entries(schema.members)) {
     if (isPrefLeaf(child)) {
-      untitled.push({ path: key, leaf: child });
+      untitled.push(shown(key, child));
     } else {
-      const leaves = prefSectionLeaves(child.members).map(([path, leaf]) => ({ path, leaf }));
+      const leaves = prefSectionLeaves(child.members).map(([path, leaf]) => shown(path, leaf));
       sections.push({ key, name: child.name, ...(child.as ? { as: child.as } : {}), rows: pairRows(leaves) });
     }
   }
@@ -95,10 +119,10 @@ function flatten(schema: PrefSection): PanelSection[] {
 /** Merge each leaf a `pair` names into the row of the leaf that names it,
  *  where they run consecutively, labeled as the pair says. */
 export function pairRows(leaves: readonly PanelLeaf[]): PanelRow[] {
-  const pairs = pairRowsOf(leaves.map(({ path, leaf }) => [path, leaf] as const));
+  const pairs = pairRowsOf(leaves.map((item) => [panelLeafKey(item), item.leaf] as const));
   const rows: PanelRow[] = [];
   for (const item of leaves) {
-    const pair = pairs.get(item.path);
+    const pair = pairs.get(panelLeafKey(item));
     const prev = rows[rows.length - 1];
     if (pair !== undefined && prev !== undefined && prev.pair === pair.key) {
       prev.leaves.push(item);
@@ -115,10 +139,13 @@ export function pairRows(leaves: readonly PanelLeaf[]): PanelRow[] {
  * schema; several → the intersection by (path, leaf kind), shaped by the
  * first kind's section/row layout. Kinds without a registered schema
  * contribute nothing, so their presence collapses the intersection.
+ * `rawAliases` leaves each alias leaf as it is written, for a caller that
+ * draws the kind itself.
  */
 export function effectiveSections(
   kinds: readonly string[],
   entries: readonly NodePropertiesEntry[],
+  rawAliases = false,
 ): PanelSection[] {
   const uniq = [...new Set(kinds)];
   if (uniq.length === 0) return [];
@@ -127,16 +154,16 @@ export function effectiveSections(
   if (schemas.some((s) => s === undefined)) return [];
   const [first, ...rest] = schemas as PrefSection[];
 
-  const flatFirst = flatten(first);
+  const flatFirst = flatten(first, rawAliases);
   if (rest.length === 0) return flatFirst;
 
   // '\0' delimiter: path and kind strings are unconstrained, so a
   // printable separator could collide with real content.
-  const leafKey = (l: PanelLeaf): string => `${l.path}\0${l.leaf.kind}`;
+  const leafKey = (l: PanelLeaf): string => `${panelLeafKey(l)}\0${l.leaf.kind}`;
   const restKeys = rest.map(
     (schema) =>
       new Set(
-        flatten(schema)
+        flatten(schema, rawAliases)
           .flatMap((s) => s.rows)
           .flatMap((r) => r.leaves)
           .map(leafKey),

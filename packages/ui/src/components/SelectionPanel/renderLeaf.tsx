@@ -10,6 +10,7 @@
 import type { ReactNode } from 'react';
 import {
   type PrefAction,
+  type PrefAlias,
   type PrefBoolean,
   type PrefLeaf,
   type PrefMap,
@@ -341,6 +342,11 @@ export function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
+  if (pref.kind === 'alias') {
+    // The panel draws a resolved alias as its target, so one that reaches here points at nothing.
+    const of = (pref as PrefAlias).of;
+    return <span className={s.unrenderable}>(alias: no pref at {of === '' ? 'an empty path' : of})</span>;
+  }
   const field = leafField(ctx, nested);
   if (field === null) {
     return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;

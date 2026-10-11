@@ -204,9 +204,41 @@ export function removeNode<R extends SchemaRoot>(root: R, path: string): R {
   });
 }
 
-/** `root` without the nodes at `paths`; one beneath another goes with it. */
+/** The value paths a node at tree path `path` holds: its own, which every path beneath it extends, or for a section each of its members'. */
+function valuePathsAt(root: SchemaRoot, path: string, node: SchemaNode): string[] {
+  if (!isPrefSection(node)) return [valuePathOf(root, path)];
+  return Object.entries(node.members).flatMap(([key, kid]) => valuePathsAt(root, joinPath(path, key), kid));
+}
+
+/** The tree paths of the aliases showing a value at or beneath one of `values`. */
+function aliasesOf(root: SchemaRoot, values: readonly string[]): string[] {
+  const out: string[] = [];
+  const walk = (node: SchemaNode, path: string | null): void => {
+    if (path !== null && isPrefLeaf(node) && node.kind === 'alias') {
+      const of = (node as PrefAlias).of;
+      if (values.some((v) => of === v || of.startsWith(`${v}.`))) out.push(path);
+    }
+    for (const [key, kid] of Object.entries(childrenOf(node) ?? {})) walk(kid, joinPath(path, key));
+  };
+  walk(root, null);
+  return out;
+}
+
+/**
+ * `root` without the nodes at `paths`; one beneath another goes with it. So does every alias of a removed pref,
+ * which would be left showing nothing, and any alias of one of those.
+ */
 export function removeNodes<R extends SchemaRoot>(root: R, paths: readonly string[]): R {
-  return outermost(paths).reduce((next, p) => removeNode(next, p), root);
+  let next = root;
+  for (let gone = outermost(paths); gone.length > 0;) {
+    const values = gone.flatMap((p) => {
+      const node = nodeAt(next, p);
+      return node ? valuePathsAt(next, p, node) : [];
+    });
+    next = gone.reduce((r, p) => removeNode(r, p), next);
+    gone = outermost(aliasesOf(next, values));
+  }
+  return next;
 }
 
 export function renameKey<R extends SchemaRoot>(root: R, path: string, next: string): R {

@@ -1523,12 +1523,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   test in the repo drives a pointer through the editor itself. Palette, row, rail, and tree drags
   were driven through a headless browser on astv's page and on the editor's story on 2026-10-10.
 
-- **(P2) An `alias` leaf, what is left.** `PrefsForm` and labkit's `ControlPanel` draw an alias as
-  its target's row; `SelectionPanel` does not, and shows it as a kind with no renderer.
-  In `PrefSchemaEditor`, removing a pref leaves its
-  aliases pointing at nothing (each draws `(alias: no pref at …)` in the preview), where moving or
-  renaming it carries them along.
-
 - **(P3) `subPages` and `foldable` overlap a group's `as`.** `PrefsForm`'s form-wide `subPages`
   and `foldable` props decide what `as: 'page'` on a nested group and a folding panel should;
   fold both into `as`. `as: 'page'` means nothing where there is no rail (`ControlPanel`, the

@@ -20,6 +20,7 @@ import {
   effectiveSections,
   kindBreakdown,
   nodeValueAt,
+  panelLeafKey,
   setAtPath,
   type AnyNode,
   type PanelLeaf,
@@ -89,7 +90,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
 
   const kinds = nodes.map((n) => classifyKind(n, routing));
   const selectionKey = nodes.map((n) => n.id).join(',');
-  const sections = effectiveSections(kinds, properties);
+  const sections = effectiveSections(kinds, properties, renderers?.alias !== undefined);
   const fields = prefFieldChoices({
     name: '',
     members: Object.fromEntries(
@@ -197,7 +198,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
               // headless section nothing else names it, so it heads itself;
               // an object leaf already renders its own heading.
               row.leaves.length === 1 && row.leaves[0].leaf.block ? (
-                <div key={row.leaves[0].path}>
+                <div key={panelLeafKey(row.leaves[0])}>
                   {section.name === '' && row.leaves[0].leaf.kind !== 'object' && (
                     <h4 className={s.sectionTitle} title={row.leaves[0].leaf.description}>
                       {row.leaves[0].leaf.name}
@@ -206,7 +207,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
                   {controls[0].content}
                 </div>
               ) : (
-              <div key={row.leaves[0].path} className={s.row}>
+              <div key={panelLeafKey(row.leaves[0])} className={s.row}>
                 <span className={s.rowLabel} title={row.leaves[0].leaf.description}>
                   {row.label}
                 </span>
@@ -279,7 +280,7 @@ function leafCell(
   };
 
   return {
-    key: path,
+    key: panelLeafKey(panelLeaf),
     leaf,
     ctx,
     ariaLabel,
