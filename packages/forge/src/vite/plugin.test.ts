@@ -329,6 +329,16 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     expect((await s.transformRequest('virtual:forge/importers.js'))?.code).toContain(join(dir, 'b.stories.tsx'));
   });
 
+  it('indexes a file added under a glob written with a leading ./', async () => {
+    const { dir, server: s } = await start(
+      { 'a.stories.tsx': story('ui/A', 'First') },
+      { plugins: [forge({ stories: ['./*.stories.tsx'] })] },
+    );
+    expect(await indexOf(s)).toEqual(['ui-a--first']);
+    writeFileSync(join(dir, 'b.stories.tsx'), story('ui/B', 'Added'));
+    await expect.poll(async () => indexOf(s), FOLLOWS).toContain('ui-b--added');
+  });
+
   it('serves the workshop at its base with or without the trailing slash', async () => {
     const { server: s } = await start({}, { base: '/x/' });
     const listening = createHttpServer(s.middlewares);

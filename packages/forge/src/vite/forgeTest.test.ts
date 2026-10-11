@@ -93,6 +93,11 @@ export const Edge = story({ isolate: 'asserts placement against the window edge'
     expect(run(source, `${ROOT}/apps/node_modules/x/Counter.stories.tsx`)).toBeUndefined();
   });
 
+  it('matches a glob written with a leading ./', () => {
+    const code = transformer({ stories: ['./apps/**/*.stories.tsx'] })(source, `${ROOT}/apps/x/Counter.stories.tsx`);
+    expect(code).toContain('__forge_test(');
+  });
+
   it('leaves a story file with no stories alone', () => {
     expect(transformer({ stories: ['*.stories.tsx'] })('export const x = 1;\n', `${ROOT}/a.stories.tsx`)).toBeUndefined();
   });

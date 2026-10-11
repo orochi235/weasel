@@ -1,9 +1,10 @@
-import { matchesGlob, relative, resolve, sep } from 'node:path';
+import { relative, resolve, sep } from 'node:path';
 import type { Plugin } from 'vite';
 import { autoTitle } from './autoTitle.ts';
 import { indexFile } from './indexFile.ts';
 import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
+import { storyGlobOf } from './storyGlob.ts';
 
 /** Options for the `forgeTest` vite plugin. */
 export interface ForgeTestOptions {
@@ -28,7 +29,7 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
     if (id.startsWith('\0') || id.includes('?')) return false;
     const path = relative(root, id).split(sep).join('/');
     if (path.startsWith('../') || path.split('/').includes('node_modules')) return false;
-    return options.stories.some((pattern) => matchesGlob(path, pattern));
+    return storyGlobOf(path, options.stories) !== undefined;
   };
 
   return [

@@ -1,4 +1,5 @@
-import { dirname, matchesGlob, relative, resolve, sep } from 'node:path';
+import { dirname, relative, resolve, sep } from 'node:path';
+import { storyGlobOf } from './storyGlob.ts';
 
 // A port of Storybook 10.4.0's auto-title (preview-api `userOrAutoTitle`, common `normalizeStoriesEntry`)
 // for string `stories` entries, which carry no title prefix. It must agree with Storybook or ids and links diverge.
@@ -37,10 +38,8 @@ const titleFrom = (importPath: string, directory: string): string =>
 export function autoTitle(file: string, root: string, stories: readonly string[]): string {
   const path = posix(relative(root, file));
   const importPath = dotted(path);
-  for (const pattern of stories) {
-    if (!matchesGlob(path, pattern.replace(/^\.\//, ''))) continue;
-    const directory = dotted(posix(relative(root, resolve(root, globDirectory(pattern))))).replace(/\/$/, '');
-    return titleFrom(importPath, directory);
-  }
-  return titleFrom(importPath, '.');
+  const pattern = storyGlobOf(path, stories);
+  if (pattern === undefined) return titleFrom(importPath, '.');
+  const directory = dotted(posix(relative(root, resolve(root, globDirectory(pattern))))).replace(/\/$/, '');
+  return titleFrom(importPath, directory);
 }

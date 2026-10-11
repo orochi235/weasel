@@ -1,5 +1,5 @@
 import { globSync, readFileSync, statSync } from 'node:fs';
-import { basename, matchesGlob, relative, resolve, sep } from 'node:path';
+import { basename, relative, resolve, sep } from 'node:path';
 import type { EnvironmentModuleNode, Logger, Plugin, ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types.ts';
 import { hoistPages, writePages } from './build.ts';
@@ -9,6 +9,7 @@ import { html } from './html.ts';
 import { foreignCallees, indexFile } from './indexFile.ts';
 import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
+import { storyGlobOf } from './storyGlob.ts';
 import { createWrapperResolver, type WrapperResolution } from './wrappers.ts';
 
 /** Options for the `forge` vite plugin. */
@@ -58,7 +59,7 @@ export function forge(options: ForgeOptions): Plugin[] {
   };
   const matches = (file: string): boolean => {
     const path = relative(root, file).split(sep).join('/');
-    return !path.split('/').includes('node_modules') && options.stories.some((pattern) => matchesGlob(path, pattern));
+    return !path.split('/').includes('node_modules') && storyGlobOf(path, options.stories) !== undefined;
   };
   const read = (file: string) =>
     indexFile(readFileSync(file, 'utf8'), file, autoTitle(file, root, options.stories), wrappersOf.get(file)?.wrappers);
