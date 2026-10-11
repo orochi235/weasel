@@ -276,7 +276,8 @@ describe('useLiveLayout', () => {
     act(() => { s.overrides.set(b, { pose: box(300, 300) }); });
     act(() => { clock.frames(1); });
     expect(s.overrides.ids()).not.toContain(label);
-    expect(s.overrides.ids()).not.toContain(b);
+    // The override on the box is the grabber's, and the run leaves it alone.
+    expect(s.overrides.get(b)?.pose).toEqual(box(300, 300));
   });
 
   it('commits a force run once its motion stops', () => {
