@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import { prefType, type PrefGroup, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
 import { packDraft, unpackDraft } from './draft';
-import { attributeSchema, blankLeaf, changeKind } from './kindSchemas';
-import {
-  addNode, branchPaths, childrenOf, fitsUnder, isFixed, moveNodes, nodeAt, removeNode, renameKey, setAttribute,
-} from './schemaEdit';
+import { attributeSchema, blankLeaf, changeKind, convertLeaf } from './kindSchemas';
+import { addNode, branchPaths, childrenOf, nodeAt, setAttribute } from './schemaEdit';
 import { diffSchemas, formatChanges, printSchema, STUB } from './schemaExport';
+import { entryChoices, kindChoices, typeChoice } from './types';
 
 const enc = { read: () => true, write: (on: boolean) => on };
+const lift = (value: unknown) => ({ at: value });
 const num = { kind: 'number', name: 'Phase', description: '', default: 0, min: 0 } as const;
 const circle = { kind: 'object', name: 'Circle', description: '', default: { r: 1 }, children: { r: { ...num, name: 'R' } } } as const;
+const Stop = prefType('GradientStop', {
+  kind: 'object', name: 'Stop', description: '', default: { at: 0.5 }, fromScalar: lift,
+  children: { at: { ...num, name: 'At' } },
+} as PrefObject);
+const TYPES = [Stop];
+
 const ROOT: PrefGroup = {
   name: 'Root',
   children: {
@@ -22,49 +28,48 @@ const ROOT: PrefGroup = {
       kind: 'union', name: 'Shape', description: '', tag: 'type', default: { type: 'circle', r: 1 },
       variants: { circle },
     },
+    plain: circle,
+    stop: { ...Stop, name: 'First stop' },
     loose: { kind: 'string', name: 'Loose', description: '', default: '' },
   },
 };
 
-describe('the nodes under a list, a map and a union', () => {
-  it('reaches a list\'s and a map\'s item under `item`, and a union\'s variants by key', () => {
-    expect(nodeAt(ROOT, 'phases/item')).toBe(num);
-    expect(nodeAt(ROOT, 'flags/item')).toMatchObject({ kind: 'boolean' });
-    expect(nodeAt(ROOT, 'shape/circle/r')).toMatchObject({ name: 'R' });
-    expect(Object.keys(childrenOf(nodeAt(ROOT, 'shape')!)!)).toEqual(['circle']);
-    expect(branchPaths(ROOT)).toEqual(['phases', 'flags', 'shape', 'shape/circle']);
+const at = (root: PrefGroup, path: string) => nodeAt(root, path) as unknown as Record<string, unknown>;
+const withEntry = (root: PrefGroup, path: string, edit: object) =>
+  setAttribute(root, path, 'item', { ...(at(root, path).item as object), ...edit });
+const roundTrip = (schema: PrefGroup, types = TYPES) => unpackDraft(JSON.parse(JSON.stringify(packDraft(schema, ROOT, types))), ROOT, types);
+
+describe('a list, a map, a union and a typed leaf in the tree', () => {
+  it('shows each as one row, and an object leaf with no type as a branch', () => {
+    for (const path of ['phases', 'flags', 'shape', 'stop']) expect(childrenOf(nodeAt(ROOT, path)!)).toBeUndefined();
+    expect(nodeAt(ROOT, 'phases/item')).toBeUndefined();
+    expect(nodeAt(ROOT, 'plain/r')).toMatchObject({ name: 'R' });
+    expect(branchPaths(ROOT)).toEqual(['plain']);
   });
 
-  it('edits an item in place, attribute or kind', () => {
-    const next = setAttribute(ROOT, 'phases/item', 'max', 9);
-    expect((nodeAt(next, 'phases') as unknown as { item: unknown }).item).toMatchObject({ kind: 'number', max: 9 });
-    const { root } = changeKind(ROOT, 'phases/item', 'boolean');
-    expect((nodeAt(root, 'phases') as unknown as { item: unknown }).item).toMatchObject({ kind: 'boolean', name: 'Phase', default: false });
+  it('takes nothing under a list or a typed leaf', () => {
+    expect(() => addNode(ROOT, 'phases', 'extra', num)).toThrow(/cannot hold children/);
+    expect(() => addNode(ROOT, 'stop', 'extra', num)).toThrow(/cannot hold children/);
+  });
+});
+
+describe('what a leaf and an entry may be', () => {
+  it('offers every kind but union, and each type by name', () => {
+    expect(kindChoices(['number', 'union', 'list'], TYPES)).toEqual([
+      { value: 'number', label: 'number' }, { value: 'list', label: 'list' }, { value: 'type:GradientStop', label: 'GradientStop' },
+    ]);
   });
 
-  it('holds an item fixed: it cannot be removed, renamed, moved, or joined', () => {
-    expect(isFixed(ROOT, 'phases/item')).toBe(true);
-    expect(isFixed(ROOT, 'shape/circle')).toBe(false);
-    expect(() => removeNode(ROOT, 'phases/item')).toThrow(/fixed/);
-    expect(() => renameKey(ROOT, 'phases/item', 'entry')).toThrow(/fixed/);
-    expect(() => moveNodes(ROOT, ['phases/item'], { parentPath: null, index: 0 })).toThrow(/fixed/);
-    expect(() => moveNodes(ROOT, ['loose'], { parentPath: 'phases', index: 0 })).toThrow(/only its item/);
-    expect(() => addNode(ROOT, 'flags', 'extra', num)).toThrow(/only its item/);
+  it('keeps what a leaf already is on the list', () => {
+    expect(kindChoices(['number'], [], nodeAt(ROOT, 'shape') as PrefLeaf).at(-1)).toEqual({ value: 'union', label: 'union' });
+    expect(kindChoices(['number'], [], nodeAt(ROOT, 'stop') as PrefLeaf).at(-1)).toEqual({ value: 'type:GradientStop', label: 'GradientStop (not registered)' });
   });
 
-  it('takes only object leaves as a union\'s variants', () => {
-    const shape = nodeAt(ROOT, 'shape')!;
-    expect(fitsUnder(shape, circle)).toBe(true);
-    expect(fitsUnder(shape, num)).toBe(false);
-    expect(() => addNode(ROOT, 'shape', 'n', num)).toThrow(/variant/);
-    const next = addNode(ROOT, 'shape', 'box', { ...circle, name: 'Box' });
-    expect(Object.keys((nodeAt(next, 'shape') as unknown as { variants: object }).variants)).toEqual(['circle', 'box']);
-  });
-
-  it('renames a variant in the union\'s default along with its key', () => {
-    const next = renameKey(ROOT, 'shape/circle', 'round');
-    expect(nodeAt(next, 'shape')).toMatchObject({ default: { type: 'round', r: 1 } });
-    expect(nodeAt(next, 'shape/round')).toBe(circle);
+  it('offers an entry the kinds one control edits, and the types', () => {
+    const values = entryChoices(TYPES).map((c) => c.value);
+    expect(values).toContain('number');
+    expect(values).toContain('type:GradientStop');
+    for (const kind of ['object', 'list', 'map', 'union', 'action']) expect(values).not.toContain(kind);
   });
 
   it('carries an item from a list to a map, and reports what a kind change drops', () => {
@@ -74,37 +79,116 @@ describe('the nodes under a list, a map and a union', () => {
     expect(changeKind(ROOT, 'phases', 'string').dropped.sort()).toEqual(['default', 'item']);
   });
 
-  it('leaves what is under a node out of its read-only attributes', () => {
+  it('makes a leaf a type, keeping its name and taking the type\'s default and fields', () => {
+    const { root, dropped } = changeKind(ROOT, 'loose', typeChoice('GradientStop'), {}, TYPES);
+    expect(nodeAt(root, 'loose')).toMatchObject({ type: 'GradientStop', kind: 'object', name: 'Loose', default: { at: 0.5 } });
+    expect(at(root, 'loose').children).toBe(Stop.children);
+    expect(dropped).toEqual(['default']);
+  });
+
+  it('makes a typed leaf a plain kind, leaving the type and its fields behind', () => {
+    const { leaf, dropped } = convertLeaf(nodeAt(ROOT, 'stop') as PrefLeaf, 'string', {}, TYPES);
+    expect(leaf).toEqual({ kind: 'string', name: 'First stop', description: '', default: '' });
+    expect(dropped.sort()).toEqual(['children', 'default', 'fromScalar']);
+  });
+});
+
+describe('the attributes of a list and of a typed leaf', () => {
+  it('lists an entry\'s name, its default, and its kind\'s own attributes', () => {
+    expect(Object.keys(attributeSchema(nodeAt(ROOT, 'phases')!).entry)).toEqual(['name', 'default', 'min', 'max', 'step', 'control', 'endless']);
+    expect(attributeSchema(nodeAt(ROOT, 'loose')!).entry).toEqual({});
+  });
+
+  it('lists only a typed entry\'s name and default, the default drawn by the type\'s own control', () => {
+    const { entry } = attributeSchema(nodeAt(withEntry(ROOT, 'phases', Stop), 'phases')!);
+    expect(Object.keys(entry)).toEqual(['name', 'default']);
+    expect(entry.default).toMatchObject({ kind: 'object', name: 'Default', children: Stop.children });
+  });
+
+  it('edits only what a typed leaf\'s use sets, and shows none of its type\'s fields', () => {
+    const { own, readOnly } = attributeSchema(nodeAt(ROOT, 'stop')!);
+    expect(Object.keys(own)).toEqual(['default']);
+    expect(readOnly).toEqual([]);
+  });
+
+  it('leaves what is inside a leaf out of its read-only attributes', () => {
     for (const path of ['phases', 'flags', 'shape']) {
       const keys = attributeSchema(nodeAt(ROOT, path)!).readOnly.map(([key]) => key);
       expect(keys.filter((key) => key === 'item' || key === 'variants')).toEqual([]);
     }
   });
+});
 
-  it('prints an item as one node and variants by key', () => {
+describe('the literal', () => {
+  it('prints an item as one node, with its code kept from the source', () => {
     const text = printSchema(ROOT);
     expect(text).toContain("item: {\n        kind: 'number',");
-    expect(text).not.toContain('item: {\n        item:');
-    expect(text).toContain("variants: {\n        circle: {");
+    expect(text).toContain('encoding: KEEP_FROM_SOURCE,');
   });
 
-  it('reports a change to an item at the item\'s path, once', () => {
-    const changes = diffSchemas(ROOT, setAttribute(ROOT, 'phases/item', 'default', 4));
-    expect(formatChanges(changes)).toBe('~ phases/item.default  0 → 4');
+  it('prints a typed leaf as its type\'s name under what the leaf sets', () => {
+    expect(printSchema(ROOT, TYPES)).toContain("stop: {\n      ...GradientStop,\n      name: 'First stop',\n    },");
   });
 
-  it('brings a draft back with its item, and the code the item held', () => {
-    const edited = setAttribute(ROOT, 'flags/item', 'name', 'On');
-    const back = unpackDraft(JSON.parse(JSON.stringify(packDraft(edited, ROOT))), ROOT);
-    const item = (nodeAt(back, 'flags') as unknown as { item: PrefLeaf & { encoding: unknown } }).item;
+  it('prints a typed leaf that sets nothing, and a typed entry, as the bare name', () => {
+    const text = printSchema(setAttribute(setAttribute(ROOT, 'stop', 'name', 'Stop'), 'phases', 'item', Stop), TYPES);
+    expect(text).toContain('stop: GradientStop,');
+    expect(text).toContain('item: GradientStop,');
+  });
+
+  it('prints an attribute a typed leaf removed as undefined', () => {
+    expect(printSchema(setAttribute(ROOT, 'stop', 'fromScalar', undefined), TYPES)).toContain('fromScalar: undefined,');
+  });
+
+  it('prints a leaf of a type nobody registered as its literal', () => {
+    expect(printSchema(ROOT)).toContain("type: 'GradientStop',");
+  });
+
+  it('reports a change to an entry as the list\'s item changed', () => {
+    const changes = diffSchemas(ROOT, withEntry(ROOT, 'phases', { default: 4 }));
+    expect(formatChanges(changes)).toMatch(/^~ phases\.item {2}\{.*default: 0.*\} → \{.*default: 4.*\}$/);
+  });
+});
+
+describe('a draft', () => {
+  it('comes back with an edited entry, and the code the entry held', () => {
+    const back = roundTrip(withEntry(ROOT, 'flags', { name: 'On' }));
+    const item = at(back, 'flags').item as Record<string, unknown>;
     expect(item).toMatchObject({ kind: 'boolean', name: 'On' });
     expect(item.encoding).toBe(enc);
   });
 
-  it('prints a new action\'s run as the stub it is, and brings it back from a draft', () => {
+  it('holds a typed leaf as its type\'s name and what the leaf sets', () => {
+    const next = addNode(ROOT, null, 'second', { ...Stop, name: 'Second stop' });
+    const packed = packDraft(next, ROOT, TYPES) as { children: Record<string, unknown> };
+    expect(packed.children.second).toEqual({ $type: 'GradientStop', kind: 'object', name: 'Second stop' });
+  });
+
+  it('brings a typed leaf the source never held back with its type\'s code', () => {
+    const back = roundTrip(addNode(ROOT, null, 'second', { ...Stop, name: 'Second stop' }));
+    expect(at(back, 'second')).toMatchObject({ type: 'GradientStop', name: 'Second stop', default: { at: 0.5 } });
+    expect(at(back, 'second').fromScalar).toBe(lift);
+  });
+
+  it('brings a typed entry back the same way', () => {
+    const back = roundTrip(withEntry(ROOT, 'phases', Stop));
+    expect((at(back, 'phases').item as Record<string, unknown>).fromScalar).toBe(lift);
+  });
+
+  it('keeps an attribute a typed leaf removed removed', () => {
+    const back = roundTrip(setAttribute(ROOT, 'stop', 'fromScalar', undefined));
+    expect('fromScalar' in at(back, 'stop')).toBe(false);
+  });
+
+  it('opens a leaf of a type no longer registered under the type\'s name, with what the draft set', () => {
+    const packed = JSON.parse(JSON.stringify(packDraft(ROOT, ROOT, TYPES))) as unknown;
+    const back = unpackDraft(packed, ROOT, []);
+    expect(at(back, 'stop')).toEqual({ kind: 'object', name: 'First stop', description: '', type: 'GradientStop' });
+  });
+
+  it('prints a new action\'s run as the stub it is, and brings it back', () => {
     const next = addNode(ROOT, null, 'wipe', blankLeaf('action'));
     expect(printSchema(next)).toContain('run: () => {},');
-    const back = unpackDraft(JSON.parse(JSON.stringify(packDraft(next, ROOT))), ROOT);
-    expect((nodeAt(back, 'wipe') as unknown as { run: unknown }).run).toBe(STUB);
+    expect(at(roundTrip(next), 'wipe').run).toBe(STUB);
   });
 });

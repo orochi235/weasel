@@ -66,6 +66,10 @@ export interface PrefBase<K extends string, Value> {
   /** What the leaf reads while it is auto, where its owner computes nothing
    *  for it. Unset, an auto leaf has no value. */
   autoValue?: Value;
+  /** The name of the type this leaf was made from, set by `prefType`. A
+   *  schema editor shows such a leaf as one closed thing and prints the name
+   *  in place of its literal. */
+  type?: string;
 }
 
 /** How a schema-driven UI should present a number pref. */

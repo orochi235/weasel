@@ -46,40 +46,21 @@ export function keyFromName(name: string): string {
   return /^\d/.test(key) ? `_${key}` : key;
 }
 
-/** The key a `list` or `map` leaf's one child, its `item`, sits under in the tree. */
-export const ITEM = 'item';
-
 /**
- * The attribute a node keeps the nodes under it in, or `undefined` for a node that holds none. A `list` or a `map`
- * holds exactly one, its `item`; the rest hold any number by key.
+ * The attribute a node keeps the nodes under it in, or `undefined` for a node the tree shows as one row: a leaf
+ * of any kind but `object`, and an `object` leaf made from a type, whose fields are its type's to say.
  */
-export function slotOf(node: SchemaNode): 'children' | 'members' | 'variants' | typeof ITEM | undefined {
+export function slotOf(node: SchemaNode): 'children' | 'members' | undefined {
   if (isPrefSection(node)) return 'members';
   if (!isPrefLeaf(node)) return 'children';
-  if (node.kind === 'object') return 'children';
-  if (node.kind === 'union') return 'variants';
-  return node.kind === 'list' || node.kind === 'map' ? ITEM : undefined;
+  return node.kind === 'object' && node.type === undefined ? 'children' : undefined;
 }
 
-/** The nodes under `node`, by key: a group's or an `object` leaf's children, a section's members, a `union`'s
- *  variants, or a `list`'s or `map`'s item under {@link ITEM}. `undefined` for anything that holds none. */
+/** The nodes under `node`, by key: a group's or an `object` leaf's children, or a section's members. `undefined`
+ *  for anything that holds none. */
 export function childrenOf(node: SchemaNode): ChildMap | undefined {
   const slot = slotOf(node);
-  if (slot === undefined) return undefined;
-  const held = (node as unknown as Record<string, unknown>)[slot];
-  return slot === ITEM ? { [ITEM]: held as SchemaNode } : (held as ChildMap);
-}
-
-/** Whether the nodes under `node` are fixed: none can be added, removed, renamed or moved, only edited in place. */
-export function holdsFixed(node: SchemaNode): boolean {
-  return slotOf(node) === ITEM;
-}
-
-/** Whether the node at `path` is one its parent holds fixed, as a list's item is. */
-export function isFixed(root: SchemaRoot, path: string | null): boolean {
-  if (path === null) return false;
-  const host = nodeAt(root, parentPath(path));
-  return !!host && holdsFixed(host);
+  return slot === undefined ? undefined : ((node as unknown as Record<string, unknown>)[slot] as ChildMap);
 }
 
 /** Which branch `parent` nests: a group holds groups, and an `object` leaf or a section holds sections. */
@@ -87,11 +68,8 @@ export function branchUnder(parent: SchemaNode): 'group' | 'section' {
   return isPrefLeaf(parent) || isPrefSection(parent) ? 'section' : 'group';
 }
 
-/** Whether `node` may be put directly under `parent`: any leaf, or the branch `parent` nests. A `union` takes only
- *  `object` leaves, its variants, and a `list` or a `map` takes nothing beside its item. */
+/** Whether `node` may be put directly under `parent`: any leaf, or the branch `parent` nests. */
 export function fitsUnder(parent: SchemaNode, node: SchemaNode): boolean {
-  if (holdsFixed(parent)) return false;
-  if (isPrefLeaf(parent) && parent.kind === 'union') return isPrefLeaf(node) && node.kind === 'object';
   return isPrefLeaf(node) || (isPrefSection(node) ? 'section' : 'group') === branchUnder(parent);
 }
 
@@ -108,13 +86,7 @@ export function withinDepth(parent: string | null, nodes: readonly SchemaNode[],
 
 function checkFits(parent: SchemaNode | undefined, node: SchemaNode): void {
   if (!parent || !childrenOf(parent) || fitsUnder(parent, node)) return;
-  if (holdsFixed(parent)) throw new Error('schemaEdit: a list or a map holds only its item');
-  if (isPrefLeaf(parent) && parent.kind === 'union') throw new Error('schemaEdit: only an object leaf is a variant');
   throw new Error(`schemaEdit: only a ${branchUnder(parent)} nests here`);
-}
-
-function checkLoose(root: SchemaRoot, path: string): void {
-  if (isFixed(root, path)) throw new Error(`schemaEdit: ${path} is fixed in its parent`);
 }
 
 export function parentPath(path: string): string | null {
@@ -163,8 +135,7 @@ export function uniqueKey(kids: ChildMap, base: string): string {
 }
 
 function withChildren(node: SchemaNode, kids: ChildMap): SchemaNode {
-  const slot = slotOf(node)!;
-  return { ...node, [slot]: slot === ITEM ? kids[ITEM] : kids } as SchemaNode;
+  return { ...node, [slotOf(node)!]: kids } as SchemaNode;
 }
 
 /** `root` with the children of the node at `parent` replaced by `edit` of them. */
@@ -215,7 +186,6 @@ export function addNode<R extends SchemaRoot>(root: R, parent: string | null, ke
 }
 
 export function removeNode<R extends SchemaRoot>(root: R, path: string): R {
-  checkLoose(root, path);
   const key = keyOf(path);
   return editChildren(root, parentPath(path), (kids) => {
     const { [key]: _gone, ...rest } = kids;
@@ -226,20 +196,11 @@ export function removeNode<R extends SchemaRoot>(root: R, path: string): R {
 export function renameKey<R extends SchemaRoot>(root: R, path: string, next: string): R {
   const key = keyOf(path);
   if (next === key) return root;
-  checkLoose(root, path);
   const host = nodeAt(root, parentPath(path));
   const node = nodeAt(root, path);
-  const renamed = editChildren(root, parentPath(path), (kids) => {
+  return editChildren(root, parentPath(path), (kids) => {
     checkKey(kids, next, !!host && !!node && takesDottedKey(host, node));
     return Object.fromEntries(Object.entries(kids).map(([k, v]) => [k === key ? next : k, v]));
-  });
-  if (!host || !isPrefLeaf(host) || host.kind !== 'union') return renamed;
-  // A variant's key is the tag its values carry, the union's own default among them.
-  const { tag } = host as unknown as { tag: string };
-  return replaceNode(renamed, parentPath(path), (union) => {
-    const held = (union as PrefLeaf).default;
-    if (held === null || typeof held !== 'object' || (held as Record<string, unknown>)[tag] !== key) return union;
-    return { ...union, default: { ...held, [tag]: next } } as SchemaNode;
   });
 }
 

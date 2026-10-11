@@ -15,7 +15,8 @@ import { GENERAL } from './generalBranch';
 import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
-import { branchPaths, copyNodes, isFixed, keysOf, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { NO_TYPES, type PrefTypes } from './types';
+import { branchPaths, copyNodes, keysOf, moveNodes, parentPath, pathOf, rebasePaths, removeNode, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { baselinePaths, changedPaths, diffSchemas } from './schemaExport';
 import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
 import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
@@ -64,6 +65,12 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
   original?: NoInfer<S>;
   /** Attribute schemas for custom kinds, by kind. A leaf of an unlisted custom kind edits its base fields only. */
   kinds?: CustomKinds;
+  /** The types the editor may place: leaves made with `prefType`. Each is offered by name beside the kinds, for a
+   *  pref and for the entry of a list or a map. A leaf made from one is a single row in the tree, edits only what
+   *  its use sets (its key, name, description, default, and flags), and prints as the type's name, which the
+   *  reader imports where the literal is pasted. An `object` leaf with no type keeps its editable children; a
+   *  `union` comes only from a type. */
+  types?: PrefTypes;
   /** Renderers for custom kinds, used by a preferences schema's preview and by a custom kind's attributes. */
   renderers?: Record<string, PrefRenderer>;
   /** Renderers for a node property schema's preview, as `SelectionPanel` takes them. */
@@ -111,12 +118,12 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, renderers, propertyRenderers, unplaced, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
   const [selected, setSelected] = useState<string | null>(null);
-  const [opened] = useState(() => (draftKey === undefined ? null : openDraft(draftKey, base, draftStorage)));
+  const [opened] = useState(() => (draftKey === undefined ? null : openDraft(draftKey, base, draftStorage, types)));
   const [notice, setNotice] = useState<string | null>(() => (opened ? DRAFT_NOTICE[opened.met] : null));
   // Every row starts open but the ones the reader folded last time.
   const [expanded, setExpanded] = useState(() => {
@@ -158,7 +165,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     if (draftKey === undefined) return;
     const savedAt = emitted.current === base ? null : Date.now();
     if (savedAt === null) dropDraft(draftKey, draftStorage);
-    else saveDraft(draftKey, emitted.current, base, history.serialize(), savedAt, draftStorage);
+    else saveDraft(draftKey, emitted.current, base, history.serialize(), savedAt, draftStorage, types);
     setDraftSavedAt(savedAt);
   };
   useEffect(() => {
@@ -166,14 +173,14 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     hand(opened.schema);
     if (opened.stacks) history.restore(opened.stacks);
     // Saved again as an edit of this source, so the next editor has nothing to carry.
-    if (opened.met === 'carried') saveDraft(draftKey, opened.schema, base, history.serialize(), opened.savedAt, draftStorage);
+    if (opened.met === 'carried') saveDraft(draftKey, opened.schema, base, history.serialize(), opened.savedAt, draftStorage, types);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a draft is opened once, by the editor that finds it
   }, []);
   const sent = useRef<unknown>(null);
   useEffect(() => {
     sent.current ??= draftKey === undefined ? null : openSent(draftKey, draftStorage);
     if (!taken || sent.current === null) return;
-    const next = afterTaken(emitted.current, sent.current, base);
+    const next = afterTaken(emitted.current, sent.current, base, types);
     sent.current = null;
     if (draftKey !== undefined) dropSent(draftKey, draftStorage);
     hand(next);
@@ -182,7 +189,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the host's word is the only thing that sets this off
   }, [taken]);
   const submit: SubmitChanges | undefined = onSubmit && (async (changes, literal) => {
-    const packed = packSent(emitted.current, base);
+    const packed = packSent(emitted.current, base, types);
     await onSubmit(changes, literal);
     sent.current = packed;
     if (draftKey !== undefined) saveSent(draftKey, packed, draftStorage);
@@ -299,7 +306,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     commit(setDefaults(latest.current.schema, edits), `default:${edits.map(([path]) => path.join('.')).join(',')}`);
   const remove = () => {
     const path = latest.current.selected;
-    if (path === null || isFixed(latest.current.schema, path)) return;
+    if (path === null) return;
     commit(removeNode(latest.current.schema, path));
     select(parentPath(path));
   };
@@ -327,7 +334,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
     }}>
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={history.canUndo()} canRedo={history.canRedo()} onStep={step}
         draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select(null); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
-      <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList}
+      <StructurePane schema={schema} onChange={commit} selected={selected} onSelect={select} changed={changed} kinds={kindList} types={types}
         expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onRemove={remove}
         toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} />
       <ResizeHandle className={s.structureHandle} value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
@@ -342,11 +349,11 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
         </div>
         <AttributesPane schema={schema} onChange={(next) => commit(next, `attr:${selected ?? ''}`)} path={selected} onRekey={rekey}
           added={changes.some((c) => c.op === 'add' && c.path === selected)}
-          kinds={kindList} custom={custom} renderers={renderers} onNotice={setNotice} />
+          kinds={kindList} custom={custom} types={types} renderers={renderers} onNotice={setNotice} />
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selected} onSelect={reveal} onDefaults={setDefaultsFrom} stageRef={stage} drop={drop} onStagePointerDown={(e) => { beforePress.current = latest.current.selected; previewDrag.onPointerDown(e); }} ghost={previewDrag.ghost} />
-      <ExportPanel schema={schema} changes={changes} onSubmit={submit} />
+      <ExportPanel schema={schema} types={types} changes={changes} onSubmit={submit} />
     </div>
   );
 }

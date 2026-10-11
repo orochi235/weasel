@@ -1,6 +1,7 @@
 import { isPlainObject } from '@weasel-js/core';
-import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
-import { childrenOf, isUnder, isValidKey, ITEM, joinPath, keysOf, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { isPrefLeaf, isPrefSection, type PrefLeaf } from '@weasel-js/prefs';
+import { childrenOf, isUnder, isValidKey, joinPath, keysOf, slotOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
+import { findType, NO_TYPES, type PrefTypes } from './types';
 
 /** What an attribute holding code prints as: an undeclared name, so the pasted literal fails typecheck until the
  *  original expression is put back. */
@@ -56,24 +57,49 @@ export function printValue(v: unknown, depth = 0): string {
   return `{\n${rows.join('\n')}\n${pad(depth)}}`;
 }
 
-function printNode(node: SchemaNode, depth: number): string {
+const same = (a: unknown, b: unknown) => a === b || (!containsCode(a) && !containsCode(b) && printValue(a) === printValue(b));
+
+/** What `leaf` sets over the `type` it was made from, by attribute; `undefined` for one the type has and it does not. */
+export function overridesOf(leaf: PrefLeaf, type: PrefLeaf): Record<string, unknown> {
+  const mine = leaf as unknown as Record<string, unknown>;
+  const theirs = type as unknown as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const k of new Set([...Object.keys(mine), ...Object.keys(theirs)])) {
+    if (k !== 'type' && !same(mine[k], theirs[k])) out[k] = mine[k];
+  }
+  return out;
+}
+
+/** The leaf a list or a map holds in `item`, which prints as a node of its own. */
+const isEntry = (node: SchemaNode, k: string, x: unknown): x is PrefLeaf =>
+  k === 'item' && isPrefLeaf(node) && (node.kind === 'list' || node.kind === 'map') && isPlain(x);
+
+function printNode(node: SchemaNode, depth: number, types: PrefTypes): string {
   const kids = childrenOf(node);
   const slot = slotOf(node);
-  const rows = Object.entries(node as unknown as Record<string, unknown>)
-    .filter(([k, x]) => x !== undefined && !(k === slot && kids))
-    .map(([k, x]) => `${pad(depth + 1)}${printKey(k)}: ${printValue(x, depth + 1)},`);
-  if (kids && slot === ITEM) {
-    rows.push(`${pad(depth + 1)}${ITEM}: ${printNode(kids[ITEM]!, depth + 1)},`);
-  } else if (kids) {
-    const inner = Object.entries(kids).map(([k, c]) => `${pad(depth + 2)}${printKey(k)}: ${printNode(c, depth + 2)},`);
+  // A leaf made from a registered type prints as the type's name and what it sets over it.
+  const type = isPrefLeaf(node) ? findType(types, node.type) : undefined;
+  const named = type && isValidKey(type.type!) ? type.type! : undefined;
+  const attrs = named ? overridesOf(node as PrefLeaf, type!) : (node as unknown as Record<string, unknown>);
+  const rows = Object.entries(attrs)
+    .filter(([k, x]) => (named !== undefined || x !== undefined) && !(k === slot && kids))
+    .map(([k, x]) => `${pad(depth + 1)}${printKey(k)}: ${isEntry(node, k, x) ? printNode(x, depth + 1, types) : printValue(x, depth + 1)},`);
+  if (named !== undefined) {
+    return rows.length ? `{\n${pad(depth + 1)}...${named},\n${rows.join('\n')}\n${pad(depth)}}` : named;
+  }
+  if (kids) {
+    const inner = Object.entries(kids).map(([k, c]) => `${pad(depth + 2)}${printKey(k)}: ${printNode(c, depth + 2, types)},`);
     rows.push(`${pad(depth + 1)}${slot}: ${inner.length ? `{\n${inner.join('\n')}\n${pad(depth + 1)}}` : '{}'},`);
   }
   return rows.length ? `{\n${rows.join('\n')}\n${pad(depth)}}` : '{}';
 }
 
-/** Code-bearing attributes print as {@link KEEP}; the tree around them prints in full. */
-export function printSchema(root: SchemaRoot): string {
-  return printNode(root, 0);
+/**
+ * Code-bearing attributes print as {@link KEEP}; the tree around them prints in full. A leaf made from one of
+ * `types` prints as that type's name, spread under what the leaf sets for itself, for the reader to import.
+ */
+export function printSchema(root: SchemaRoot, types: PrefTypes = NO_TYPES): string {
+  return printNode(root, 0, types);
 }
 
 /** One difference between two schemas. A path is a node's keys from the root down, joined by `/`. */
@@ -99,11 +125,10 @@ function flatten(root: SchemaRoot): Map<string, SchemaNode> {
   return out;
 }
 
-const same = (a: unknown, b: unknown) => a === b || (!containsCode(a) && !containsCode(b) && printValue(a) === printValue(b));
-
 function attrChanges(path: string, a: SchemaNode, b: SchemaNode): SchemaChange[] {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  for (const slot of ['children', 'members', 'variants', ITEM]) keys.delete(slot);
+  // The nodes under one are compared as nodes; what a closed leaf holds is an attribute like its others.
+  for (const slot of [slotOf(a), slotOf(b)]) if (slot) keys.delete(slot);
   const out: SchemaChange[] = [];
   for (const k of keys) {
     const from = (a as unknown as Record<string, unknown>)[k];

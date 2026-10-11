@@ -4,9 +4,10 @@ import { Dialog } from '../Dialog';
 import { Input } from '../Input';
 import { Select } from '../Select';
 import { keyFromName, keyProblem, type ChildMap } from './schemaEdit';
+import type { KindChoice } from './types';
 import s from './PrefSchemaEditor.module.css';
 
-/** What a new node is called, and for a pref, what kind it is. */
+/** What a new node is called, and for a pref, the kind picker's value for what it is. */
 export interface NewNode {
   key: string;
   name: string;
@@ -20,7 +21,8 @@ export interface AddNodeDialogProps {
   siblings: ChildMap;
   /** Whether the id may be a dotted path, as a pref's is where sections nest. */
   dottedKey?: boolean;
-  kinds: readonly string[];
+  /** What a new pref may be: each kind, and each type by name. */
+  kinds: readonly KindChoice[];
   onAdd(node: NewNode): void;
   onClose(): void;
 }
@@ -62,7 +64,7 @@ function AddNodeForm({ what, siblings, dottedKey, kinds, onAdd, onClose }: Omit<
         isInvalid={shownProblem !== null} errorMessage={shownProblem ?? undefined} />
       {what === 'pref' && (
         <Select label="Kind" placeholder="Choose a kind" selectedKey={kind} onSelectionChange={(k) => setKind(String(k))}
-          options={kinds.map((k) => ({ value: k, label: k }))} isRequired />
+          options={kinds} isRequired />
       )}
       <div className={s.addActions}>
         <Button variant="ghost" onClick={onClose}>Cancel</Button>

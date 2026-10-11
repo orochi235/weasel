@@ -14,6 +14,7 @@ import {
 } from '@weasel-js/prefs';
 import { replaceNode, nodeAt, type SchemaNode, type SchemaRoot } from './schemaEdit';
 import { containsCode, STUB } from './schemaExport';
+import { findType, NO_TYPES, typeNamed, type PrefTypes } from './types';
 
 export type KindAttrs = Record<string, PrefLeaf>;
 export type CustomKinds = Record<string, KindAttrs>;
@@ -99,8 +100,11 @@ const AS_GIVEN = new Set(['autoValue']);
 /** Written even when empty: a leaf without them is not a leaf. */
 const REQUIRED = new Set(['name', 'description', 'default', 'options', 'tag']);
 
-/** Where a node keeps the nodes under it, which the tree edits and the attributes pane leaves alone. */
+/** Where a node keeps the nodes and leaves inside it, which no attribute row lists. */
 const SLOTS = new Set(['children', 'members', 'variants', 'item']);
+
+/** The fields a leaf made from a type sets where it is used; the rest are its type's. */
+const USE_SITE = new Set(['name', 'description', 'default', 'hidden', 'block', 'icon', 'pair', 'short', 'manual', 'unpinned', 'autoValue']);
 
 function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf | null {
   switch (leaf.kind) {
@@ -121,7 +125,29 @@ function valueAttr(leaf: PrefLeaf, base: { name: string; description: string }):
   }
 }
 
-const defaultAttr = (leaf: PrefLeaf) => valueAttr(leaf, { name: 'Default', description: 'The value before anything is stored.' });
+/** A leaf made from a type edits its value with the control the type itself draws. */
+function ownControl(leaf: PrefLeaf, base: { name: string; description: string }): PrefLeaf {
+  const rest = Object.fromEntries(Object.entries(leaf).filter(([k]) => !USE_SITE.has(k)));
+  return { ...rest, ...base, default: leaf.default } as PrefLeaf;
+}
+
+function defaultAttr(leaf: PrefLeaf, description = 'The value before anything is stored.'): PrefLeaf | null {
+  const base = { name: 'Default', description };
+  return valueAttr(leaf, base) ?? (leaf.type !== undefined ? ownControl(leaf, base) : null);
+}
+
+/** The leaf a list or a map describes each of its entries by. */
+export const entryOf = (leaf: PrefLeaf): PrefLeaf | undefined => (leaf.kind === 'list' || leaf.kind === 'map' ? (leaf as PrefList).item : undefined);
+
+/** What a list or a map says about one entry: its name, what a new one starts as, and a plain kind's own attributes. */
+function entryAttrs(item: PrefLeaf, custom: CustomKinds): KindAttrs {
+  const def = defaultAttr(item, 'What a new entry starts as.');
+  return {
+    name: text('Name', 'What one entry is called.'),
+    ...(def ? { default: def } : {}),
+    ...(item.type === undefined ? kindAttrs(item.kind, custom) : {}),
+  };
+}
 
 function autoAttrs(leaf: PrefLeaf): KindAttrs {
   if (VALUELESS.has(leaf.kind)) return {};
@@ -141,21 +167,28 @@ export interface AttributeSchema {
   own: KindAttrs;
   /** Whether it can be auto, whether it starts so, and what it reads while it is; empty for a group and for a kind with no value. */
   auto: KindAttrs;
+  /** A list's or a map's entry; empty for any other node. */
+  entry: KindAttrs;
   /** Attributes shown but not edited: code, and anything the kind's schema does not describe. */
   readOnly: Array<[string, unknown]>;
 }
 
 /** Editable attributes, rendered with `PrefsForm` over the node itself as values. */
 export function attributeSchema(node: SchemaNode, custom: CustomKinds = {}): AttributeSchema {
-  if (!isPrefLeaf(node)) return { shared: { ...(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS) }, own: {}, auto: {}, readOnly: [] };
+  if (!isPrefLeaf(node)) return { shared: { ...(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS) }, own: {}, auto: {}, entry: {}, readOnly: [] };
+  const typed = node.type !== undefined;
   const def = defaultAttr(node);
+  const item = entryOf(node);
   const shared: KindAttrs = { ...LEAF_BASE };
-  const own: KindAttrs = { ...(def ? { default: def } : {}), ...kindAttrs(node.kind, custom) };
+  const own: KindAttrs = { ...(def ? { default: def } : {}), ...(typed ? {} : kindAttrs(node.kind, custom)) };
   const auto = autoAttrs(node);
+  const entry = item && !typed ? entryAttrs(item, custom) : {};
   const fields = node as unknown as Record<string, unknown>;
   for (const attrs of [shared, own, auto]) for (const k of Object.keys(attrs)) if (containsCode(fields[k])) delete attrs[k];
-  const readOnly = Object.entries(fields).filter(([k]) => k !== 'kind' && !SLOTS.has(k) && !(k in shared) && !(k in own) && !(k in auto));
-  return { shared, own, auto, readOnly };
+  for (const k of Object.keys(entry)) if (containsCode((item as unknown as Record<string, unknown>)[k])) delete entry[k];
+  // What a type holds beyond the fields its use sets is the type's to show, where it is declared.
+  const readOnly = typed ? [] : Object.entries(fields).filter(([k]) => k !== 'kind' && !SLOTS.has(k) && !(k in shared) && !(k in own) && !(k in auto));
+  return { shared, own, auto, entry, readOnly };
 }
 
 /** The value to store for an edited attribute: an optional one left empty is removed rather than written. */
@@ -206,28 +239,43 @@ function carriesDefault(v: unknown, blank: Record<string, unknown>): boolean {
   return options === undefined || options.some((o) => o.value === v);
 }
 
-/** Change a leaf's kind. Base fields carry over, as does a default of the same type; the rest is reported. */
-export function changeKind<R extends SchemaRoot>(root: R, path: string, kind: string, custom: CustomKinds = {}): { root: R; dropped: string[] } {
-  const old = nodeAt(root, path) as unknown as Record<string, unknown>;
-  const blank = blankLeaf(kind) as unknown as Record<string, unknown>;
-  const keep = new Set([...SHARED, ...Object.keys(kindAttrs(kind, custom))]);
+/** A new leaf of what a kind picker's `choice` names: a blank one of a kind, or a type as it was declared. */
+export function leafOf(choice: string, types: PrefTypes = NO_TYPES): PrefLeaf {
+  const type = findType(types, typeNamed(choice));
+  return type ? { ...type } : blankLeaf(choice);
+}
+
+/**
+ * `leaf` as what `choice` names. Base fields carry over, as does a default of the same type onto a kind; the rest
+ * is named in `dropped`. A type's own default stands, being a value of the type's shape.
+ */
+export function convertLeaf(leaf: PrefLeaf, choice: string, custom: CustomKinds = {}, types: PrefTypes = NO_TYPES): { leaf: PrefLeaf; dropped: string[] } {
+  const typed = typeNamed(choice) !== undefined;
+  const blank = leafOf(choice, types) as unknown as Record<string, unknown>;
+  const keep = new Set([...SHARED, ...(typed ? [] : Object.keys(kindAttrs(choice, custom)))]);
   const next: Record<string, unknown> = { ...blank };
   const dropped: string[] = [];
-  for (const [k, v] of Object.entries(old)) {
-    if (k === 'kind' || v === undefined) continue;
+  for (const [k, v] of Object.entries(leaf)) {
+    if (k === 'kind' || k === 'type' || v === undefined) continue;
     if (k === 'default') {
-      if (carriesDefault(v, blank)) next.default = v;
+      if (!typed && carriesDefault(v, blank)) next.default = v;
       else dropped.push('default');
       continue;
     }
     if (SLOTS.has(k)) {
-      // What is under a node goes with it to any kind that keeps its nodes the same way.
-      if (k in blank) next[k] = v;
+      // What is inside a leaf goes with it to any kind that keeps it the same way.
+      if (!typed && k in blank) next[k] = v;
       else dropped.push(k);
       continue;
     }
     if (keep.has(k)) next[k] = v;
     else dropped.push(k);
   }
-  return { root: replaceNode(root, path, () => next as unknown as SchemaNode), dropped };
+  return { leaf: next as unknown as PrefLeaf, dropped };
+}
+
+/** Change what the leaf at `path` is, by {@link convertLeaf}. */
+export function changeKind<R extends SchemaRoot>(root: R, path: string, choice: string, custom: CustomKinds = {}, types: PrefTypes = NO_TYPES): { root: R; dropped: string[] } {
+  const { leaf, dropped } = convertLeaf(nodeAt(root, path) as PrefLeaf, choice, custom, types);
+  return { root: replaceNode(root, path, () => leaf as SchemaNode), dropped };
 }

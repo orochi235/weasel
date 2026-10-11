@@ -826,6 +826,9 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   it, which is right for optional built-in attributes but deletes a custom kind's required one —
   `registry-enum`'s `source` on WeaselDraw's `#/dev/prefs`. `CustomKinds` has no way to mark an
   attribute required; it needs one, and `blankLeaf` should seed those attributes for a custom kind.
+  The same gap leaves a leaf switched to a custom kind with `default: undefined` and no Default row
+  unless the kind's entry declares one. A type made with `prefType` has no such gap, carrying its
+  own default.
 
 - **(P3) `PrefSchemaEditor` layout rough edges.** The preview's scratch values are keyed by path,
   so after a rename or move they fall back to defaults. The always-mounted notice row adds one
