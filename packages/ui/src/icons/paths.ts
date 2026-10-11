@@ -189,7 +189,7 @@ export const ICON_PATHS = {
   markLock: `<rect x="4.5" y="10" width="11" height="6.5" rx="1" fill="currentColor"/><path d="M6.5 10V7a3.5 3.5 0 0 1 7 0V10"/>`,
   markUp: `<path d="M10 16.5V3.5"/><path d="M4.5 9 10 3.5 15.5 9"/>`,
   markDown: `<path d="M10 3.5V16.5"/><path d="M4.5 11 10 16.5 15.5 11"/>`,
-  markReset: `<path d="M6.14 5.9A6 6 0 1 0 14.24 6.26" stroke-linecap="butt"/><path d="M16.5 4 10.7 2.72 11.98 8.52Z" fill="currentColor" stroke="none"/>`,
+  markReset: `<path d="M6.14 5.9A6 6 0 1 0 14.24 6.26"/><path d="M16.5 4 10.7 2.72 11.98 8.52Z" fill="currentColor" stroke="none"/>`,
   markSearch: `<circle cx="8.5" cy="8.5" r="4.5"/><path d="M12 12 16.5 16.5"/>`,
   markAlert: `<path d="M10 3.5v7.5"/><path d="M10 16.2v.01"/>`,
   markStar: `<path d="M10 4 8.3 8.15 3.82 8.49 7.24 11.4 6.18 15.76 10 13.4 13.82 15.76 12.76 11.4 16.18 8.49 11.7 8.15Z" fill="currentColor"/>`,

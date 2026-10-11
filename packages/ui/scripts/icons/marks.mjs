@@ -70,7 +70,7 @@ export const MARKS = {
   'mark-up': `<path d="M${C} ${C + REACH}V${C - REACH}"/><path d="${head(-1)}"/>`,
   'mark-down': `<path d="M${C} ${C - REACH}V${C + REACH}"/><path d="${head(1)}"/>`,
 
-  'mark-reset': `<path d="M${pt(RESET_FROM)}A${RESET_R} ${RESET_R} 0 1 0 ${pt(RESET_TO)}" stroke-linecap="butt"/><path d="M${resetHead.map(pt).join(' ')}Z" fill="currentColor" stroke="none"/>`,
+  'mark-reset': `<path d="M${pt(RESET_FROM)}A${RESET_R} ${RESET_R} 0 1 0 ${pt(RESET_TO)}"/><path d="M${resetHead.map(pt).join(' ')}Z" fill="currentColor" stroke="none"/>`,
 
   'mark-search': `<circle cx="8.5" cy="8.5" r="4.5"/><path d="M12 12 16.5 16.5"/>`,
 
