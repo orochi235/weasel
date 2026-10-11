@@ -1,6 +1,8 @@
-import type { MouseEvent, ReactNode } from 'react';
+import { useRef, type MouseEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Focusable } from 'react-aria-components';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
+import { useRowHelp } from './rowHelp';
 import s from './PropertyHelp.module.css';
 import row from './Properties.module.css';
 
@@ -12,32 +14,47 @@ export interface PropertyHelpProps {
   /** What the setting reads when it is auto; the tooltip's last line, after the word
    *  `auto` drawn as an auto row's readout draws it. */
   autoValue?: ReactNode;
-  /** Whether the tooltip is open, for an owner that also opens it itself. Unset, hover and focus alone do. */
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  /** Something else carries the help to a keyboard and a screen reader (a `<PropertyRow>` gives it to its
-   *  control), so the ⓘ is the pointer's alone: out of the tab order and hidden from assistive tech. */
-  carried?: boolean;
+  /**
+   * A selector for the ancestor that is the help's row (`'tr'`), with the control the help is about in it.
+   * Given, the ⓘ takes no focus, by Tab or by a click: the row's first control outside the ⓘ's own parent is
+   * described by the help's text, and the tooltip opens when the keyboard brings focus to a control in the
+   * row. Hovering the ⓘ opens it either way.
+   */
+  within?: string;
 }
 
 /** The ⓘ beside a row label that shows its `description` in a tooltip. Exported
- *  for surfaces that draw a params label outside a `<PropertyRow>`. A tooltip
- *  trigger has to be interactive to be keyboard-reachable, so this is a real
- *  button, and a tab stop unless the help is `carried` another way. */
-export function PropertyHelp({ label, description, autoValue, open, onOpenChange, carried = false }: PropertyHelpProps) {
+ *  for surfaces that draw a params label outside a `<PropertyRow>`. With no
+ *  `within` it stands alone: a tooltip trigger has to be interactive to be
+ *  keyboard-reachable, so it is a real button and a tab stop. */
+export function PropertyHelp({ label, description, autoValue, within }: PropertyHelpProps) {
   const name = typeof label === 'string' ? label : 'this setting';
+  const cue = useRef<HTMLElement | null>(null);
+  const help = useRowHelp(cue, within);
+  const inRow = within !== undefined;
   const stop = (e: MouseEvent): void => {
     // The wrapping <label> would otherwise actuate the row's control.
     e.preventDefault();
     e.stopPropagation();
   };
   return (
-    <TooltipTrigger isOpen={open} onOpenChange={onOpenChange}>
-      <Focusable excludeFromTabOrder={carried}>
-        {carried ? (
-          // Not a <button>: that is a labelable element, and as the first one in the row's <label> it would be
+    <TooltipTrigger {...(inRow ? { isOpen: help.open, onOpenChange: help.setOpen } : {})}>
+      <Focusable excludeFromTabOrder={inRow}>
+        {inRow ? (
+          // Not a <button>: that is a labelable element, and as the first one in a row's <label> it would be
           // the control the label names, in place of the row's own.
-          <span role="img" aria-hidden className={s.help} onClick={stop} onMouseDown={(e) => e.stopPropagation()}>
+          <span
+            ref={cue}
+            role="img"
+            aria-hidden
+            className={s.help}
+            onClick={stop}
+            onMouseDown={(e) => {
+              // A press would otherwise move focus here, off the control the reader was on.
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
             ⓘ
           </span>
         ) : (
@@ -52,6 +69,16 @@ export function PropertyHelp({ label, description, autoValue, open, onOpenChange
           </button>
         )}
       </Focusable>
+      {/* In the page's body: inside the row it would be part of a <label>'s text, and so of the control's name. */}
+      {inRow &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <span id={help.id} hidden>
+            {description}
+            {autoValue != null && <> auto {autoValue}</>}
+          </span>,
+          document.body,
+        )}
       <Tooltip>
         {description}
         {autoValue != null && (

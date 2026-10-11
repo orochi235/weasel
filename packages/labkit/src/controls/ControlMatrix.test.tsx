@@ -75,7 +75,9 @@ describe('<ControlMatrix>', () => {
         .getAllByRole('rowheader')
         .map((h) => h.textContent),
     ).toEqual(['Background', 'Fill', 'Glowⓘ', 'Shading']);
-    expect(screen.getByRole('button', { name: 'About Glow' })).toBeTruthy();
+    // The row's help takes no focus of its own: the row's first control carries it.
+    expect(screen.queryByRole('button', { name: 'About Glow' })).toBeNull();
+    expect(screen.getByText('ⓘ').closest('tr')?.querySelector('[aria-describedby]')).not.toBeNull();
   });
 
   it('shows numbers at their step precision and enums by label', () => {

@@ -149,15 +149,24 @@ describe('PropertyRow', () => {
     expect(screen.getByRole('textbox', { name: 'To' })).not.toHaveAttribute('aria-describedby');
   });
 
-  it('keeps the ⓘ a tab stop in a row with no control to carry the description', () => {
+  it('gives the ⓘ no tab stop in a row with no control either: hovering it is the way to its help', () => {
     render(
       <PropertyRow label="Opacity" description="How see-through the shape is.">
         <span>0.5</span>
       </PropertyRow>,
     );
-    const help = screen.getByRole('button', { name: 'About Opacity' });
-    expect(help).not.toHaveAttribute('aria-hidden');
-    expect(help).not.toHaveAttribute('tabindex', '-1');
+    expect(screen.queryByRole('button', { name: 'About Opacity' })).toBeNull();
+    expect(screen.getByText('ⓘ')).not.toHaveAttribute('tabindex', '0');
+  });
+
+  it('keeps focus where it is when the ⓘ is pressed', () => {
+    render(
+      <PropertyRow label="Opacity" description="How see-through the shape is.">
+        <input type="text" defaultValue="x" />
+      </PropertyRow>,
+    );
+    // The browser moves focus on mousedown unless the press is canceled, which is what there is to see here.
+    expect(fireEvent.mouseDown(screen.getByText('ⓘ'))).toBe(false);
   });
 
   it('opens the tooltip once focus has rested on the row\'s control, and closes it when focus leaves the row', () => {

@@ -1,83 +1,91 @@
-import { useEffect, useId, useRef, useState, type FocusEvent, type RefObject } from 'react';
+import { useEffect, useId, useState, type RefObject } from 'react';
 
 const CONTROLS = 'input, select, textarea, button, [tabindex]:not([tabindex="-1"])';
 
 /** How long keyboard focus rests on a row's control before its help opens: the tooltip's own hover delay. */
 const FOCUS_DELAY = 600;
 
-/** What {@link useRowHelp} hands a row. */
+/** What {@link useRowHelp} hands the help it serves. */
 export interface RowHelp {
   /** The id of the element holding the help's text, which the row's control is described by. */
   id: string;
-  /** Whether a control in the row carries the help. Until one does, the ⓘ keeps its place in the tab order. */
-  carried: boolean;
   open: boolean;
   setOpen: (open: boolean) => void;
-  onFocus: (e: FocusEvent) => void;
-  onBlur: (e: FocusEvent) => void;
-  onPointerDown: () => void;
-  onPointerUp: () => void;
 }
 
 /**
- * A row's help without a tab stop of its own. The row's first control is described by the help's text, so a
- * screen reader reads it with the control, and the tooltip opens when the keyboard brings focus to a control in
- * the row, so a sighted reader with no pointer sees it. `label` holds the controls that are the row's own (the ⓘ,
- * an auto toggle), which carry nothing.
+ * A row's help with no tab stop of its own. The row is the ancestor of `cue` that `within` selects, and what
+ * shares the cue's parent (the label, an auto toggle) is the row's own. The first control outside that is
+ * described by the help's text, so a screen reader reads it with the control, and the help opens when the
+ * keyboard brings focus to a control in the row, so a reader with no pointer sees it. With no `within` it does
+ * nothing.
  */
-export function useRowHelp(
-  row: RefObject<HTMLElement | null>,
-  label: RefObject<HTMLElement | null>,
-  has: boolean,
-): RowHelp {
+export function useRowHelp(cue: RefObject<HTMLElement | null>, within: string | undefined): RowHelp {
   const id = useId();
-  const [carried, setCarried] = useState(false);
   const [open, setOpen] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  // A press in the row is what brought the focus that follows it. `:focus-visible` cannot say so: a text field
-  // matches it however it was focused.
-  const pressed = useRef(false);
 
-  // Every render: the control is the row's children, which may arrive, leave or be replaced at any of them.
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- so no dependency list; `setCarried` settles on a value
   useEffect(() => {
-    const first = has
-      ? [...(row.current?.querySelectorAll(CONTROLS) ?? [])].find((el) => !label.current?.contains(el))
-      : undefined;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the DOM the row's children drew, which nothing reports
-    setCarried(first !== undefined);
-    if (first === undefined) return;
-    const others = (first.getAttribute('aria-describedby') ?? '').split(/\s+/).filter((x) => x !== '' && x !== id);
-    first.setAttribute('aria-describedby', [...others, id].join(' '));
-    return () => {
-      const rest = (first.getAttribute('aria-describedby') ?? '').split(/\s+/).filter((x) => x !== '' && x !== id);
-      if (rest.length > 0) first.setAttribute('aria-describedby', rest.join(' '));
-      else first.removeAttribute('aria-describedby');
+    const row = within === undefined ? null : cue.current?.closest(within);
+    if (!row) return;
+    const ids = (el: Element): string[] =>
+      (el.getAttribute('aria-describedby') ?? '').split(/\s+/).filter((x) => x !== '' && x !== id);
+    let described: Element | undefined;
+    const release = (): void => {
+      if (!described) return;
+      const rest = ids(described);
+      if (rest.length > 0) described.setAttribute('aria-describedby', rest.join(' '));
+      else described.removeAttribute('aria-describedby');
+      described = undefined;
     };
-  });
-  useEffect(() => () => clearTimeout(timer.current), []);
-
-  return {
-    id,
-    carried,
-    open,
-    setOpen,
-    onFocus: (e) => {
-      if (!carried || pressed.current || label.current?.contains(e.target)) return;
-      clearTimeout(timer.current);
-      timer.current = setTimeout(() => setOpen(true), FOCUS_DELAY);
-    },
-    onBlur: (e) => {
-      if (row.current?.contains(e.relatedTarget)) return;
-      pressed.current = false;
-      clearTimeout(timer.current);
+    const describe = (): void => {
+      const own = cue.current?.parentElement;
+      const first = [...row.querySelectorAll(CONTROLS)].find((el) => !own?.contains(el));
+      if (first !== described) release();
+      described = first;
+      if (first && !first.getAttribute('aria-describedby')?.split(/\s+/).includes(id)) {
+        first.setAttribute('aria-describedby', [...ids(first), id].join(' '));
+      }
+    };
+    describe();
+    // The control is the row's children: it may arrive, leave or be replaced, and one that sets its own
+    // description on a later render writes over this one.
+    const watch = new MutationObserver(describe);
+    watch.observe(row, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-describedby'] });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // A press in the row is what brought the focus that follows it. `:focus-visible` cannot say so: a text field
+    // matches it however it was focused.
+    let pressed = false;
+    const onFocus = (e: Event): void => {
+      if (pressed || cue.current?.parentElement?.contains(e.target as Node)) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => setOpen(true), FOCUS_DELAY);
+    };
+    const onBlur = (e: Event): void => {
+      if (row.contains((e as FocusEvent).relatedTarget as Node | null)) return;
+      pressed = false;
+      clearTimeout(timer);
       setOpen(false);
-    },
-    onPointerDown: () => {
-      pressed.current = true;
-    },
-    onPointerUp: () => {
-      pressed.current = false;
-    },
-  };
+    };
+    const onDown = (): void => {
+      pressed = true;
+    };
+    const onUp = (): void => {
+      pressed = false;
+    };
+    row.addEventListener('focusin', onFocus);
+    row.addEventListener('focusout', onBlur);
+    row.addEventListener('pointerdown', onDown);
+    row.addEventListener('pointerup', onUp);
+    return () => {
+      watch.disconnect();
+      release();
+      clearTimeout(timer);
+      row.removeEventListener('focusin', onFocus);
+      row.removeEventListener('focusout', onBlur);
+      row.removeEventListener('pointerdown', onDown);
+      row.removeEventListener('pointerup', onUp);
+    };
+  }, [cue, within, id]);
+
+  return { id, open, setOpen };
 }

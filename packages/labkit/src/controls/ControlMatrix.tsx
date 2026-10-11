@@ -175,7 +175,7 @@ export function ControlMatrix({
             <tr key={row.key}>
               <th scope="row" className="lk-control-matrix__label">
                 <span className="lk-control-matrix__label-text">{label}</span>
-                {about ? <PropertyHelp label={label} description={about} /> : null}
+                {about ? <PropertyHelp label={label} description={about} within="tr" /> : null}
               </th>
               {columns.map((column, i) => {
                 const path = `${column.key}.${row.key}`;

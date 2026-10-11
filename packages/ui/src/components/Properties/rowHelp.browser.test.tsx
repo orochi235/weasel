@@ -50,3 +50,11 @@ test('a click on a described row\'s control opens no help', async () => {
   await settle(900);
   expect(tip()).toBeNull();
 });
+
+test('a press on the ⓘ leaves focus on the control it was on', async () => {
+  render(<Rows />);
+  const author = screen.getByRole('textbox', { name: 'Author' });
+  await userEvent.click(author);
+  await userEvent.click(screen.getAllByText('ⓘ')[0]!);
+  expect(document.activeElement).toBe(author);
+});

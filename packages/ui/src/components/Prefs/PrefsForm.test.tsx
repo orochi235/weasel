@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import {
   PREF_KINDS,
   type PrefEnumEncoding,
@@ -88,7 +88,7 @@ const SCHEMA: PrefGroup = {
 };
 
 describe('PrefsForm', () => {
-  it('renders group titles and one control per visible leaf kind', () => {
+  it('renders group titles and one control per visible leaf kind', async () => {
     render(<PrefsForm schema={SCHEMA} onChange={() => {}} />);
     expect(screen.getByText('Canvas')).toBeTruthy();
     expect(screen.getByText('Import / Export')).toBeTruthy();
@@ -98,7 +98,8 @@ describe('PrefsForm', () => {
     expect(screen.getByRole('slider', { name: 'Opacity' })).toBeTruthy();
     // Select trigger's accessible name = "<selected label> <aria-label>".
     expect(screen.getByRole('button', { name: 'Dark Theme' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /Theme/ })).toHaveAccessibleDescription(/\S/); // the description, on the control
+    // The description, on the control. The select writes its own on a later render, and the row's comes back after it.
+    await waitFor(() => expect(screen.getByRole('button', { name: /Theme/ })).toHaveAccessibleDescription(/\S/));
     expect(screen.getByRole('textbox', { name: 'Author' })).toBeTruthy();
   });
 
