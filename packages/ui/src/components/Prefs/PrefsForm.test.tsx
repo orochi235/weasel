@@ -365,8 +365,7 @@ describe('PrefsForm — encoded enum leaves', () => {
   it('selects the option the stored value encodes, not the raw value', () => {
     renderDash({ appearance: { stroke: { width: 4, dash: [8, 8] } } });
     expect(screen.getByRole('radio', { name: 'Dashed' })).toBeChecked();
-    // The object row's `<label>` associates with the first radio, so Solid's
-    // accessible name picks up the group label twice.
+    // The Style row's `<label>` holds every radio, so Solid's accessible name picks up the row's label too.
     expect(screen.getByRole('radio', { name: /Solid/ })).not.toBeChecked();
   });
 

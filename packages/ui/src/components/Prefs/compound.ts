@@ -1,6 +1,6 @@
 import type { PrefLeaf, PrefList } from '@weasel-js/prefs';
 
-const SEVERAL = new Set(['list', 'map', 'union', 'action']);
+const SEVERAL = new Set(['object', 'list', 'map', 'union', 'action']);
 const ROWS = new Set(['object', 'list', 'map', 'union']);
 
 /** Whether a leaf's control is several controls or a button. A row drawn as a `<label>` would hand a click on its
