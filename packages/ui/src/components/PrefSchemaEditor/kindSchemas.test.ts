@@ -32,7 +32,7 @@ describe('kindSchemas', () => {
     expect(own).toEqual({});
     const section = attributeSchema({ name: 'S', members: {} }).shared;
     expect(Object.keys(section)).toEqual(['name', 'description', 'as']);
-    expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'fragment']);
+    expect((section.as as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['tab', 'panel', 'section', 'fragment', 'bar']);
   });
 
   it('uses a custom kind\'s attributes, and treats unknown attributes as read-only', () => {
@@ -89,5 +89,13 @@ describe('kindSchemas', () => {
     const leaf = { kind: 'constructor', name: 'C', description: '', default: 1 } as unknown as PrefLeaf;
     expect(attributeSchema(leaf).readOnly).toEqual([['default', 1]]);
     expect(Object.keys(attributeSchema(leaf).own)).not.toContain('min');
+  });
+
+  it('describes an action by the key it fires, its button text and its control', () => {
+    const action = { kind: 'action', name: 'Undo', description: '', default: undefined, action: 'edit.undo' } as PrefLeaf;
+    // The key is an attribute to edit, not something the schema fails to describe.
+    const { own, readOnly } = attributeSchema(action);
+    expect(Object.keys(own)).toEqual(['action', 'label', 'control']);
+    expect(readOnly.map(([key]) => key)).not.toContain('action');
   });
 });

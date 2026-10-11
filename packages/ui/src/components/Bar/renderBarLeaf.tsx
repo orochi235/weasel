@@ -1,0 +1,70 @@
+import type { ReactNode } from 'react';
+import type { PrefAction, PrefLeaf } from '@weasel-js/prefs';
+import { Icon } from '../../icons/Icon';
+import { ICON_PATHS, type IconName } from '../../icons/paths';
+import type { PropertyControlProps } from '../Properties/PropertyField';
+import { BarAction } from './BarAction';
+import { BarField, BarLabel, barLabels } from './BarField';
+import { BarPopover } from './BarPopover';
+import s from './Bar.module.css';
+
+/** What a leaf is being drawn into: a labeled row of a form or a panel, or a cell of a bar. */
+export type LeafSurface = 'row' | 'bar';
+
+/** A leaf to draw in a bar, as either dispatcher hands it over. */
+export interface BarLeaf {
+  leaf: PrefLeaf;
+  /** The path the leaf sits at, which an action is told. */
+  path: string;
+  /** The accessible name the leaf's control carries. */
+  name: string;
+  /** The leaf as one control's props, with the surface's own values and
+   *  writers. Null for a leaf that is not one control. */
+  field: PropertyControlProps | null;
+  /** The leaf's row form: what a popover holds for a leaf whose value is made
+   *  of others, and what a kind with no bar form draws. */
+  row: () => ReactNode;
+}
+
+/**
+ * A leaf's bar form: the one place a kind's control in a bar is decided, for
+ * a bar in a form and a bar over a selection alike.
+ */
+export function renderBarLeaf({ leaf, path, name, field, row }: BarLeaf): ReactNode {
+  if (field !== null) {
+    // A flag's icon is already its button's face.
+    const icon = field.kind === 'boolean' ? undefined : glyphOf(leaf);
+    return <BarField {...field} name={name} short={leaf.short} icon={icon} />;
+  }
+  if (leaf.kind === 'action') return <BarAction leaf={leaf as PrefAction} path={path} />;
+  if (leaf.kind === 'label') return <span className={s.words}>{leaf.name}</span>;
+  const body = row();
+  if (body == null || !OPENS.has(leaf.kind)) return body;
+  return (
+    <BarPopover label={leaf.name} icon={glyphOf(leaf)}>
+      {body}
+    </BarPopover>
+  );
+}
+
+/** The kinds whose value is made of other leaves, which no line holds. */
+const OPENS: ReadonlySet<string> = new Set(['object', 'list', 'map', 'union']);
+
+/**
+ * A control with the words a bar sets before it, for one a renderer other
+ * than {@link renderBarLeaf} drew. Null where the control is nothing.
+ */
+export function withBarLabel(leaf: PrefLeaf, control: ReactNode): ReactNode {
+  if (control == null) return null;
+  if (!barLabels(leaf.kind)) return control;
+  return (
+    <>
+      <BarLabel name={leaf.name} short={leaf.short} icon={glyphOf(leaf)} />
+      {control}
+    </>
+  );
+}
+
+function glyphOf(leaf: PrefLeaf): ReactNode {
+  return leaf.icon && leaf.icon in ICON_PATHS ? <Icon name={leaf.icon as IconName} size={14} /> : undefined;
+}

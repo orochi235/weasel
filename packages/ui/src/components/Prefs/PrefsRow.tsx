@@ -9,13 +9,14 @@ import {
   type PrefMap,
   type PrefUnion,
 } from '@weasel-js/prefs';
+import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PrefActionButton } from './PrefActionButton';
 import { drawsRows, drawsSeveral } from './compound';
 import { ListLeaf } from './ListLeaf';
 import { MapEditor } from './MapEditor';
 import { ObjectLeaf } from './ObjectLeaf';
 import { UnionPicker } from './UnionPicker';
-import { PropertyControl } from '../Properties/PropertyField';
+import { PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
 import { PropertyRow } from '../Properties/PropertyPanel';
 import { prefFieldProps } from './prefField';
 import type { PrefFieldChoice } from './schema';
@@ -70,11 +71,21 @@ export interface WalkCtx {
   drop?: PrefDrop | null;
 }
 
-export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
-  if (pref.kind !== 'alias' || ctx.renderers?.alias) return <LeafRow ctx={ctx} path={path} pref={pref} />;
+/**
+ * The leaf a form draws for `pref`, and where its value lives when that is not the leaf's own path: an alias is
+ * drawn as the leaf it points at. Null for an alias of nothing.
+ */
+export function shownLeaf(ctx: WalkCtx, pref: PrefLeaf): { pref: PrefLeaf; at?: string } | null {
+  if (pref.kind !== 'alias' || ctx.renderers?.alias) return { pref };
   const alias = pref as PrefAlias;
   const target = prefAliasTarget(alias, ctx.leafAt ?? (() => undefined));
-  if (target) return <LeafRow ctx={ctx} path={path} pref={prefAliasedLeaf(alias, target.leaf)} at={target.path} />;
+  return target ? { pref: prefAliasedLeaf(alias, target.leaf), at: target.path } : null;
+}
+
+export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
+  const shown = shownLeaf(ctx, pref);
+  if (shown) return <LeafRow ctx={ctx} path={path} pref={shown.pref} at={shown.at} />;
+  const alias = pref as PrefAlias;
   // An alias of nothing is a wiring fault, shown where it sits and not dropped from the form.
   return (
     <div className={s.rowSlot} {...selectionAttrs(path, ctx, true)}>
@@ -85,29 +96,39 @@ export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref:
   );
 }
 
-/** One leaf's row. `at` is where its value lives when that is not the row's own `path`: the target of an alias. */
-function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pref: PrefLeaf; at?: string }) {
+/**
+ * What a leaf's renderer is given, read from the form's values, and whether the leaf's auto state can be toggled.
+ * `at` is where the value lives when that is not the leaf's `own` path: the target of an alias.
+ */
+export function prefRenderContext(
+  ctx: WalkCtx, own: string, pref: PrefLeaf, at?: string,
+): { renderCtx: PrefRenderContext; toggles: boolean } {
   const path = at ?? own;
   // A placeholder shows what its node shows where it was dragged from.
   const from = at ?? dropValuePath(ctx.drop, own);
   const stored = prefValueAtPath(ctx.values, from);
-  const inherited = ctx.auto?.has(from) ?? false;
   const mixed = ctx.mixed?.has(from) ?? false;
   const { onAutoChange } = ctx;
   const toggles = onAutoChange !== undefined && pref.manual !== true && (ctx.canInherit?.(path) ?? true);
-  const setAuto = (next: boolean): void => {
-    if (toggles) onAutoChange(path, next);
-  };
   const renderCtx: PrefRenderContext = {
     path,
     pref,
     value: mixed ? undefined : stored !== undefined ? stored : pref.default,
     mixed,
     setValue: (v) => ctx.onChange(path, v),
-    auto: inherited,
-    setAuto,
+    auto: ctx.auto?.has(from) ?? false,
+    setAuto: (next) => {
+      if (toggles) onAutoChange(path, next);
+    },
     ...(ctx.fields ? { fields: ctx.fields } : {}),
   };
+  return { renderCtx, toggles };
+}
+
+/** One leaf's row. `at` is where its value lives when that is not the row's own `path`: the target of an alias. */
+function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pref: PrefLeaf; at?: string }) {
+  const { renderCtx, toggles } = prefRenderContext(ctx, own, pref, at);
+  const { path, auto: inherited, setAuto } = renderCtx;
 
   const custom = ctx.renderers?.[pref.kind];
   // Text among the rows, holding no value: its name is the line and its description the note under it.
@@ -155,9 +176,11 @@ export function renderPrefControl(
   ctx: PrefRenderContext,
   renderers: Record<string, PrefRenderer> | undefined,
   siblings?: Record<string, unknown>,
+  surface: LeafSurface = 'row',
 ): ReactNode {
   const custom = renderers?.[ctx.pref.kind];
-  return custom ? custom(ctx) : renderBuiltin(ctx, renderers, siblings);
+  if (!custom) return renderBuiltin(ctx, renderers, siblings, surface);
+  return surface === 'bar' ? withBarLabel(ctx.pref, custom(ctx)) : custom(ctx);
 }
 
 function renderBuiltin(
@@ -166,10 +189,20 @@ function renderBuiltin(
   // The object a nested leaf is a field of — what an enum `encoding` and a
   // font's weight and slant read against. Undefined for a top-level leaf.
   siblings?: Record<string, unknown>,
+  surface: LeafSurface = 'row',
 ): ReactNode {
   const { pref, value, setValue } = ctx;
+  if (surface === 'bar') {
+    return renderBarLeaf({
+      leaf: pref,
+      path: ctx.path,
+      name: pref.name,
+      field: leafField(ctx, siblings),
+      row: () => renderBuiltin(ctx, renderers, siblings),
+    });
+  }
   const object = (of: PrefRenderContext): ReactNode => (
-    <ObjectLeaf ctx={of} renderField={(field, held) => renderPrefControl(field, renderers, held)} />
+    <ObjectLeaf ctx={of} renderField={(field, held, on) => renderPrefControl(field, renderers, held, on)} />
   );
   if (pref.kind === 'object') return object(ctx);
   if (pref.kind === 'list')
@@ -195,29 +228,26 @@ function renderBuiltin(
     );
   }
   if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} />;
-  const field = prefFieldProps(pref, { value, mixed: ctx.mixed, siblings, setValue, fields: ctx.fields });
+  const field = leafField(ctx, siblings);
   if (field === null) {
     // App-defined kind with no `renderers` entry: labeled placeholder, not a
     // crash — a missing wiring should be visible and recoverable.
     return <span className={s.unrenderable}>({pref.kind}: no renderer)</span>;
   }
-  switch (field.kind) {
-    // A form stores what was settled on: a number once it is entered, a color
-    // once its gesture ends.
-    case 'number':
-      return (
-        <PropertyControl
-          {...field}
-          name={pref.name}
-          onInput={settledOnly}
-          steppers={field.accepts === undefined}
-        />
-      );
-    case 'color':
-      return <PropertyControl {...field} name={pref.name} onInput={settledOnly} />;
-    default:
-      return <PropertyControl {...field} name={pref.name} />;
+  if (field.kind === 'number') {
+    return <PropertyControl {...field} name={pref.name} steppers={field.accepts === undefined} />;
   }
+  return <PropertyControl {...field} name={pref.name} />;
+}
+
+/**
+ * A leaf as one control's props, writing the way a form stores: what was
+ * settled on, a number once it is entered and a color once its gesture ends.
+ * Null for a leaf that is not one control.
+ */
+function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | undefined): PropertyControlProps | null {
+  const field = prefFieldProps(ctx.pref, { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields });
+  return field?.kind === 'number' || field?.kind === 'color' ? { ...field, onInput: settledOnly } : field;
 }
 
 const settledOnly = (): void => {};

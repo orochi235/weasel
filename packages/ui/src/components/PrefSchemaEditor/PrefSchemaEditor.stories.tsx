@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { defaultNodeProperties, solid } from '@weasel-js/core';
+import { ActionsProvider, defaultNodeProperties, solid, useAction, type Action } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { prefType, type PrefGroup, type PrefObject } from '@weasel-js/prefs';
 import { PrefSchemaEditor } from './PrefSchemaEditor';
@@ -148,6 +148,60 @@ export const NodeProperties: Story = {
       <div className={s.frame}>
         <PrefSchemaEditor schema={schema} onChange={setSchema} />
       </div>
+    );
+  },
+};
+
+const TOOLBAR: PrefGroup = {
+  name: 'Text tools',
+  as: 'bar',
+  children: {
+    history: {
+      name: 'History',
+      as: 'section',
+      children: {
+        undo: { kind: 'action', name: 'Undo', description: '', default: undefined, icon: 'undo', action: 'edit.undo' },
+        redo: { kind: 'action', name: 'Redo', description: '', default: undefined, icon: 'redo', action: 'edit.redo' },
+      },
+    },
+    size: { kind: 'number', name: 'Size', description: 'Type size.', default: 12, min: 1 },
+    bold: { kind: 'boolean', name: 'Bold', description: 'Heavier weight.', short: ['B'], default: false },
+    color: { kind: 'color', name: 'Color', description: 'Text color.', default: '#7ec8e3' },
+    flatten: { kind: 'action', name: 'Flatten', description: '', default: undefined, action: 'layers.flatten' },
+  },
+};
+
+const run = (): void => {};
+const SAMPLE_ACTIONS: Action[] = [
+  { id: 'edit.undo', label: 'Undo', group: 'Edit', shortcut: '⌘Z', invoker: { timing: 'immediate', run } },
+  { id: 'edit.redo', label: 'Redo', group: 'Edit', shortcut: '⇧⌘Z', invoker: { timing: 'immediate', run } },
+  { id: 'view.snap', label: 'Snap', group: 'View', invoker: { timing: 'immediate', run }, active: () => true },
+  { id: 'view.zoomIn', label: 'Zoom in', group: 'View', invoker: { timing: 'immediate', run } },
+  { id: 'file.export', label: 'Export', invoker: { timing: 'immediate', run } },
+];
+
+function Register({ action }: { action: Action }) {
+  useAction(action);
+  return null;
+}
+
+/**
+ * A toolbar: a root drawn as a bar, previewed as the bar itself. The Actions list under the tree holds what the
+ * registry above the editor can fire, and one dragged into the tree lands as a pref that fires it. Flatten fires
+ * a key nothing registered answers to, so its row is marked and its button is dead.
+ */
+export const Toolbar: Story = {
+  render: function ToolbarStory() {
+    const [schema, setSchema] = useState(TOOLBAR);
+    return (
+      <ActionsProvider>
+        {SAMPLE_ACTIONS.map((action) => (
+          <Register key={action.id} action={action} />
+        ))}
+        <div className={s.frame}>
+          <PrefSchemaEditor schema={schema} onChange={setSchema} />
+        </div>
+      </ActionsProvider>
     );
   },
 };

@@ -64,3 +64,17 @@ export function evaluateEnabled(
     return { enabled: false, reason: ActionDisabledReason.PredicateThrew };
   }
 }
+
+/**
+ * @experimental
+ * Safely evaluate an action's `active` predicate. `undefined` for an action
+ * with no pressed state; a predicate that throws reads as not active.
+ */
+export function evaluateActive(action: Action, deps?: ActionDeps): boolean | undefined {
+  if (!action.active) return undefined;
+  try {
+    return action.active(deps) === true;
+  } catch {
+    return false;
+  }
+}

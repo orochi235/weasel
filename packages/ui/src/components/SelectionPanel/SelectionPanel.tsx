@@ -27,6 +27,8 @@ import {
 } from './model';
 import { GroupTabs } from '../Prefs/GroupTabs';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
+import { BarLayout } from '../Bar/BarLayout';
+import { withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import s from './SelectionPanel.module.css';
 
 export type { PropertyRenderContext, PropertyRenderer } from './renderLeaf';
@@ -136,6 +138,29 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
         )}
       </header>
       {drawn(sections.flatMap((section) => {
+        if (section.as === 'bar') {
+          // One line of bar forms, with no heading and no row labels.
+          const cells = section.rows.flatMap((row) =>
+            renderCells(
+              row.leaves.map((panelLeaf) => ({
+                ...leafCell(panelLeaf, panelLeaf.leaf.name, nodes, renderers, commit, selectionKey, fields, 'bar'),
+                ...(row.pair !== undefined ? { pair: { key: row.pair, label: row.label } } : {}),
+              })),
+              renderers,
+            ),
+          );
+          if (cells.length === 0) return [];
+          const bar = (
+            <BarLayout
+              framed
+              label={section.name === '' ? undefined : section.name}
+              nodes={cells.map((cell) => ({ kind: 'cell', path: cell.key, content: cell.content }))}
+              cells={() => []}
+              row={() => null}
+            />
+          );
+          return [{ section, content: bar }];
+        }
         // Render controls before emitting row chrome so a null-rendering
         // leaf (custom renderer opting out) collapses its cell — and the
         // whole row / section when nothing survives. PrefsForm precedent.
@@ -229,6 +254,7 @@ function leafCell(
   commit: (leaf: PanelLeaf, next: (prev: unknown) => unknown) => void,
   selectionKey: string,
   fields: readonly PrefFieldChoice[],
+  surface: LeafSurface = 'row',
 ): LeafCell {
   const { path, leaf } = panelLeaf;
   const aggregated = aggregateValue(nodes, path);
@@ -259,8 +285,8 @@ function leafCell(
     ariaLabel,
     render: () => {
       const custom = renderers?.[path] ?? renderers?.[leaf.kind];
-      if (custom) return custom(ctx);
-      return renderBuiltin(ctx, ariaLabel, renderers, selectionKey);
+      if (custom) return surface === 'bar' ? withBarLabel(leaf, custom(ctx)) : custom(ctx);
+      return renderBuiltin(ctx, ariaLabel, renderers, { selectionKey, surface });
     },
   };
 }

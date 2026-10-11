@@ -13,7 +13,7 @@ import type { PrefLeaf } from './schema';
  * as though they were written there. A fragment exists to hold things
  * together: one key for their values to nest under, one node to move.
  */
-export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'fragment';
+export type PrefGroupAs = 'page' | 'tab' | 'panel' | 'section' | 'fragment' | 'bar';
 
 /** How a {@link PrefSection} is drawn. */
 export type PrefSectionAs = Exclude<PrefGroupAs, 'page'>;

@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from 'react';
 import { createHistory, historyKey, useLatest, type Op } from '@weasel-js/core';
 import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
+import { Badge } from '../Badge';
 import { CloseButton } from '../CloseButton';
 import { prefDropTargetAt, type PrefDrop, type PrefRenderer } from '../Prefs';
 import type { PropertyRenderer } from '../SelectionPanel';
 import { ResizeHandle } from '../ResizeHandle';
 import { AttributesPane } from './AttributesPane';
 import { setDefaults, type DefaultEdit } from './defaults';
+import { deadActionPaths, useEditorActions, type EditorAction } from './editorActions';
 import { EditorBar } from './EditorBar';
 import { EditorPrefsButton, useEditorPrefs, type PrefSchemaEditorPrefs } from './editorPrefs';
 import { dropDraft, openDraft, saveDraft, SWAP, type DraftStorage, type SwapArgs } from './draft';
@@ -15,7 +17,7 @@ import { ExportPanel, type SubmitChanges } from './ExportPanel';
 import { PreviewPane } from './PreviewPane';
 import { BUILTIN_KINDS, type CustomKinds } from './kindSchemas';
 import { NO_TYPES, type PrefTypes } from './types';
-import { aliasNodes, branchPaths, copyNodes, keysOf, moveNodes, outermost, parentPath, pathOf, rebasePaths, removeNodes, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
+import { aliasNodes, branchPaths, copyNodes, joinPath, keysOf, moveNodes, outermost, parentPath, pathOf, rebasePaths, removeNodes, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import { baselinePaths, changedAttributes, changedPaths, diffSchemas } from './schemaExport';
 import { afterTaken, dropSent, openSent, packSent, saveSent } from './sent';
 import { drawsNode, heldDrop, previewDrop, previewMark, previewTarget, sameDrop } from './previewDrop';
@@ -23,6 +25,8 @@ import { usePreviewDrag } from './usePreviewDrag';
 import { StructurePane, type DropOutside } from './StructurePane';
 import { useEditorSelection } from './useEditorSelection';
 import s from './PrefSchemaEditor.module.css';
+
+const NO_PATHS: ReadonlySet<string> = new Set();
 
 const NO_KINDS: CustomKinds = {};
 
@@ -79,6 +83,10 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
    *  are listed under the structure tree, to be dragged into it or onto the live preview, and one leaves the list
    *  once the schema holds a leaf of its key. Nested groups are drawn as branches and drag in whole. */
   unplaced?: PrefGroup;
+  /** The actions a pref may fire, listed under the structure tree to be dragged in: each lands as an `action`
+   *  pref that fires it by key. Left out, the editor lists what the `ActionsRegistry` above it can fire from a
+   *  button, and with no registry it lists none. A pref firing a key not among them is marked in the tree. */
+  actions?: readonly EditorAction[];
   /** A name to keep the edited schema under in this browser's `localStorage`, so a reload opens on the edits and
    *  not on `schema`, with the nearest steps still there to undo and redo. Code the schema holds is not stored: it is taken back from the baseline. Give each schema
    *  the editor opens a name of its own. */
@@ -118,7 +126,7 @@ export interface PrefSchemaEditorProps<S extends PrefGroup | PrefSection = PrefG
  * fresh.
  */
 export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
-  { schema, onChange, original, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: PrefSchemaEditorProps<S>,
+  { schema, onChange, original, kinds = NO_KINDS, types = NO_TYPES, renderers, propertyRenderers, unplaced, actions, draftKey, draftStorage, onSubmit, taken = false, prefs, bar, maxDepth = 2, rowMark, className }: PrefSchemaEditorProps<S>,
 ) {
   const [first] = useState(schema);
   const base = original ?? first;
@@ -208,11 +216,22 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
   const changes = useMemo(() => diffSchemas(base, schema), [base, schema]);
   const changed = useMemo(() => changedPaths(changes), [changes]);
   const changedAttrs = useMemo(() => changedAttributes(changes, selection.lead), [changes, selection.lead]);
+  const actionList = useEditorActions(actions);
+  // With no list there is no telling a dead key from a live one, so nothing is marked.
+  const dead = useMemo(
+    () => (actionList ? deadActionPaths(schema, new Set(actionList.map((a) => a.key)), joinPath) : NO_PATHS),
+    [actionList, schema],
+  );
   const treeMark = useMemo(() => {
-    if (!rowMark) return undefined;
+    if (!rowMark && dead.size === 0) return undefined;
     const baseline = baselinePaths(changes);
-    return (path: string) => rowMark(keysOf(baseline(path)).join('.'));
-  }, [rowMark, changes]);
+    return (path: string) => (
+      <>
+        {dead.has(path) && <Badge size="xs" status="danger" variant="subtle">no action</Badge>}
+        {rowMark?.(keysOf(baseline(path)).join('.'))}
+      </>
+    );
+  }, [rowMark, changes, dead]);
   // `label` is a kind the form draws itself: text among the rows, with no attributes of its own.
   const custom = useMemo(() => ({ label: {}, ...kinds }), [kinds]);
   const kindList = useMemo(() => [...BUILTIN_KINDS, ...Object.keys(custom)], [custom]);
@@ -347,7 +366,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
       <EditorBar lead={bar} toolSlot={setToolSlot} canUndo={history.canUndo()} canRedo={history.canRedo()} onStep={step}
         draftSavedAt={draftSavedAt} onDiscard={() => { commit(base); select([]); }} prefs={<EditorPrefsButton prefs={editorPrefs} />} />
       <StructurePane schema={schema} onChange={commit} selected={selection.paths} lead={selection.lead} onPick={pick} onSelect={select} changed={changed} kinds={kindList} types={types}
-        expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
+        expanded={expanded} onExpandedChange={setExpanded} unplaced={unplaced} actions={actionList ?? undefined} outside={outside} outsideDraws={drawsNode(drop)} onMove={moveTo} onCopy={copyTo} onAlias={aliasTo} onRemove={remove}
         toolSlot={toolSlot} maxDepth={maxDepth} rowMark={treeMark} />
       <ResizeHandle className={s.structureHandle} value={structureWidth} min={180} max={640} onInput={setStructureWidth} ariaLabel="Resize structure" />
       <div className={s.middle}>
@@ -363,7 +382,7 @@ export function PrefSchemaEditor<S extends PrefGroup | PrefSection = PrefGroup>(
           onChange={(next) => commit(next, `attr:${[...selection.paths].sort().join(',')}`)}
           added={selection.paths.length === 1 && changes.some((c) => c.op === 'add' && c.path === selection.lead)}
           changed={selection.paths.length > 1 ? undefined : changedAttrs}
-          kinds={kindList} custom={custom} types={types} renderers={renderers} onNotice={setNotice} />
+          kinds={kindList} custom={custom} types={types} renderers={renderers} actions={actionList ?? undefined} onNotice={setNotice} />
       </div>
       <ResizeHandle value={attributesWidth} min={220} max={720} onInput={setAttributesWidth} ariaLabel="Resize attributes" />
       <PreviewPane schema={schema} renderers={renderers} propertyRenderers={propertyRenderers} selected={selection.paths}

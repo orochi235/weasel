@@ -1,0 +1,100 @@
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { useState } from 'react';
+import { ActionsProvider, useAction, type Action } from '@weasel-js/core';
+import type { PrefGroup } from '@weasel-js/prefs';
+import { actionLeaf, actionLeafKey } from './editorActions';
+import { PrefSchemaEditor, type PrefSchemaEditorProps } from './PrefSchemaEditor';
+
+const START: PrefGroup = {
+  name: 'Tools',
+  as: 'bar',
+  children: {
+    undo: { kind: 'action', name: 'Undo', description: '', default: undefined, action: 'edit.undo' },
+    flatten: { kind: 'action', name: 'Flatten', description: '', default: undefined, action: 'layers.flatten' },
+  },
+};
+
+const ACTIONS = [
+  { key: 'edit.undo', label: 'Undo', group: 'Edit', shortcut: '⌘Z' },
+  { key: 'edit.redo', label: 'Redo', group: 'Edit' },
+  { key: 'view.snap', label: 'Snap' },
+];
+
+function Live(props: Partial<PrefSchemaEditorProps<PrefGroup>>) {
+  const [schema, setSchema] = useState(START);
+  return <PrefSchemaEditor schema={schema} onChange={setSchema} {...props} />;
+}
+
+function Register({ action }: { action: Action }) {
+  useAction(action);
+  return null;
+}
+
+const actions = () => screen.getByRole('tree', { name: 'Actions' });
+const structure = () => screen.getByRole('tree', { name: 'Schema structure' });
+
+describe('PrefSchemaEditor actions', () => {
+  it('lists the actions it is given under their groups, each by label and key', () => {
+    render(<Live actions={ACTIONS} />);
+    expect(within(actions()).getByText('Edit')).toBeInTheDocument();
+    expect(within(actions()).getByText('(edit.redo)')).toBeInTheDocument();
+    expect(within(actions()).getByText('(view.snap)')).toBeInTheDocument();
+    expect(within(actions()).getByText('⌘Z')).toBeInTheDocument();
+  });
+
+  it('lists what the registry above it can fire from a button, when given none', () => {
+    render(
+      <ActionsProvider>
+        <Register action={{ id: 'file.save', label: 'Save', group: 'File', invoker: { timing: 'immediate', run: () => {} } }} />
+        <Live />
+      </ActionsProvider>,
+    );
+    expect(within(actions()).getByText('(file.save)')).toBeInTheDocument();
+  });
+
+  it('draws no list with no actions and no registry, and marks nothing', () => {
+    render(<Live />);
+    expect(screen.queryByRole('tree', { name: 'Actions' })).toBeNull();
+    expect(within(structure()).queryByText('no action')).toBeNull();
+  });
+
+  it('marks a pref that fires a key the list does not hold, and no other', () => {
+    render(<Live actions={ACTIONS} />);
+    const row = (key: string) => within(structure()).getByText(`(${key})`).closest('[role="treeitem"]') as HTMLElement;
+    expect(within(row('flatten')).getByText('no action')).toBeInTheDocument();
+    expect(within(row('undo')).queryByText('no action')).toBeNull();
+  });
+
+  it('filters the list with the structure’s filter', () => {
+    render(<Live actions={ACTIONS} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter structure' }), { target: { value: 'snap' } });
+    expect(within(actions()).getByText('(view.snap)')).toBeInTheDocument();
+    expect(within(actions()).queryByText('(edit.redo)')).toBeNull();
+  });
+
+  it('offers an action pref’s key as a choice among the list, with a key it does not hold kept', () => {
+    render(<Live actions={ACTIONS} />);
+    fireEvent.click(within(structure()).getByText('(flatten)'));
+    const attributes = screen.getByRole('region', { name: 'Attributes' });
+    fireEvent.click(within(attributes).getByRole('button', { name: /Action/ }));
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+      'layers.flatten (not registered)',
+      'Undo (edit.undo)',
+      'Redo (edit.redo)',
+      'Snap (view.snap)',
+    ]);
+  });
+});
+
+describe('an action as a pref', () => {
+  it('is plain data that fires the action by key', () => {
+    expect(actionLeaf(ACTIONS[0]!)).toEqual({ kind: 'action', name: 'Undo', description: '', default: undefined, action: 'edit.undo' });
+  });
+
+  it('takes a schema key from the action key, which may hold what a key may not', () => {
+    expect(actionLeafKey('edit.undo')).toBe('editUndo');
+    expect(actionLeafKey('align:left')).toBe('alignLeft');
+    expect(actionLeafKey('...')).toBe('action');
+  });
+});

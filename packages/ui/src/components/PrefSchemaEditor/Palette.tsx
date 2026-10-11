@@ -26,6 +26,7 @@ export const GROUP_ICON: Record<NonNullable<PrefGroup['as']>, IconName> = {
   panel: 'formPanel',
   section: 'formSection',
   fragment: 'code',
+  bar: 'formBar',
 };
 
 const group = (name: string, as: PrefGroup['as']): PrefGroup => ({ name, description: '', as, children: {} });
@@ -39,6 +40,7 @@ export const SECTION_PALETTE: readonly PaletteItem[] = [
   { id: 'panel', label: 'Panel', icon: GROUP_ICON.panel, key: 'panel', make: () => section('New panel', 'panel') },
   { id: 'section', label: 'Section', icon: GROUP_ICON.section, key: 'section', make: () => section('New section', 'section') },
   { id: 'fragment', label: 'Group', icon: GROUP_ICON.fragment, key: 'group', make: () => section('New group', 'fragment') },
+  { id: 'bar', label: 'Bar', icon: GROUP_ICON.bar, key: 'bar', make: () => section('New bar', 'bar') },
   LABEL,
 ];
 
@@ -48,6 +50,7 @@ export const PALETTE: readonly PaletteItem[] = [
   { id: 'panel', label: 'Panel', icon: GROUP_ICON.panel, key: 'panel', make: () => group('New panel', 'panel') },
   { id: 'section', label: 'Section', icon: GROUP_ICON.section, key: 'section', make: () => group('New section', 'section') },
   { id: 'fragment', label: 'Group', icon: GROUP_ICON.fragment, key: 'group', make: () => group('New group', 'fragment') },
+  { id: 'bar', label: 'Bar', icon: GROUP_ICON.bar, key: 'bar', make: () => group('New bar', 'bar') },
   LABEL,
 ];
 

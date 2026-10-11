@@ -58,7 +58,7 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   enum: {
     options: { kind: 'enum-options', name: 'Options', description: 'Values and their labels, in order.', default: [] },
     clearable: flag('Clearable', 'Can be set back to no value.'),
-    control: control(['select', 'radio', 'toggle']),
+    control: control(['select', 'radio', 'toggle', 'menu']),
   },
   color: { alpha: flag('Alpha', 'Offer an alpha channel.') },
   paint: { alpha: flag('Alpha', 'Offer an alpha channel.') },
@@ -72,19 +72,23 @@ const KIND_ATTRS: Record<PrefKind, KindAttrs> = {
   },
   map: {},
   union: { tag: symbol('Tag', 'The field of the value that names its variant.') },
-  action: { label: text('Button', 'The button\'s text. Unset: the name.') },
+  action: {
+    action: symbol('Action', 'The key of a registered action to fire: its id, or id:variant. It fires this over any code the pref carries.'),
+    label: text('Button', 'The button\'s text. Unset: the name.'),
+    control: control(['button', 'icon']),
+  },
   alias: { of: { kind: 'field', name: 'Of', description: 'The pref this one shows: its control is drawn here too, over the one stored value.', default: '' } as PrefLeaf },
 };
 
 const GROUP_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
-  as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, or a fragment: its rows among its neighbors\' with nothing drawn around them. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment']),
+  as: choice('Drawn as', 'A page of its own in the rail, a tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, or a bar: its prefs on one line in their bar forms. Unset: a page at the top level, a section inside another group.', ['page', 'tab', 'panel', 'section', 'fragment', 'bar']),
 };
 const SECTION_ATTRS: KindAttrs = {
   name: LEAF_BASE.name!,
   description: LEAF_BASE.description!,
-  as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, or a fragment: its rows among its neighbors\' with nothing drawn around them. Unset: a heading.', ['tab', 'panel', 'section', 'fragment']),
+  as: choice('Drawn as', 'A tab beside its neighbors, a bordered panel, a heading over its rows, a fragment: its rows among its neighbors\' with nothing drawn around them, or a bar: its prefs on one line in their bar forms. Unset: a heading.', ['tab', 'panel', 'section', 'fragment', 'bar']),
 };
 
 const AUTO_FLAGS: KindAttrs = {
@@ -156,6 +160,13 @@ function autoAttrs(leaf: PrefLeaf): KindAttrs {
   return { ...AUTO_FLAGS, ...(value ? { autoValue: value } : {}) };
 }
 
+/** The `action` attribute as a choice among the keys a host has, with the key the pref holds now if it is none of them. */
+function actionChoice(attr: PrefLeaf, actions: ReadonlyArray<{ key: string; label: string }>, held: string | undefined): PrefLeaf {
+  const options = actions.map((a) => ({ value: a.key, label: `${a.label} (${a.key})` }));
+  if (held !== undefined && held !== '' && !actions.some((a) => a.key === held)) options.unshift({ value: held, label: `${held} (not registered)` });
+  return { kind: 'enum', name: attr.name, description: attr.description, default: undefined, clearable: true, options } as PrefLeaf;
+}
+
 function kindAttrs(kind: string, custom: CustomKinds): KindAttrs {
   if (Object.hasOwn(KIND_ATTRS, kind)) return KIND_ATTRS[kind as PrefKind];
   return Object.hasOwn(custom, kind) ? custom[kind]! : {};
@@ -175,13 +186,16 @@ export interface AttributeSchema {
 }
 
 /** Editable attributes, rendered with `PrefsForm` over the node itself as values. */
-export function attributeSchema(node: SchemaNode, custom: CustomKinds = {}): AttributeSchema {
+export function attributeSchema(
+  node: SchemaNode, custom: CustomKinds = {}, actions?: ReadonlyArray<{ key: string; label: string }>,
+): AttributeSchema {
   if (!isPrefLeaf(node)) return { shared: { ...(isPrefSection(node) ? SECTION_ATTRS : GROUP_ATTRS) }, own: {}, auto: {}, entry: {}, readOnly: [] };
   const typed = node.type !== undefined;
   const def = defaultAttr(node);
   const item = entryOf(node);
   const shared: KindAttrs = { ...LEAF_BASE };
   const own: KindAttrs = { ...(def ? { default: def } : {}), ...(typed ? {} : kindAttrs(node.kind, custom)) };
+  if (own.action && node.kind === 'action' && actions && actions.length > 0) own.action = actionChoice(own.action, actions, (node as { action?: string }).action);
   const auto = autoAttrs(node);
   const entry = item && !typed ? entryAttrs(item, custom) : {};
   const fields = node as unknown as Record<string, unknown>;

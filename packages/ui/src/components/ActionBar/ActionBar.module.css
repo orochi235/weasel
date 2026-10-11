@@ -18,34 +18,3 @@
 .bar.vertical {
   flex-direction: column;
 }
-
-.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--wzl-tb-height);
-  height: var(--wzl-tb-height);
-  padding: 0;
-  background: transparent;
-  border: 0;
-  border-radius: var(--wzl-radius-sm);
-  color: var(--wzl-fg);
-  cursor: default;
-}
-
-.button:hover:not([disabled]) {
-  background: var(--wzl-border);
-}
-
-.button:active:not([disabled]) {
-  background: color-mix(in srgb, var(--wzl-border) 70%, transparent);
-}
-
-.button[disabled] {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.button > svg {
-  display: block;
-}

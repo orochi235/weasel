@@ -27,6 +27,7 @@ export * from './components/ThemeSwitcher';
 export * from './components/OptionsBar';
 export * from './components/ButtonBar';
 export * from './components/ToolOptionsBar';
+export * from './components/Bar';
 export * from './components/PaintInput';
 export * from './components/PaintField';
 export * from './components/FillStrokeSwatch';

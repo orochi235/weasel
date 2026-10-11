@@ -31,6 +31,7 @@ import f from '../field.module.css';
 import listbox from '../listbox.module.css';
 import s from './Select.module.css';
 import { TriggerTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
+import { Caret } from '../Caret';
 
 /** One option in a {@link Select}'s `options` list. */
 export type SelectOption = {
@@ -212,11 +213,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
               ))}
             </span>
           )}
-          {indicator === 'chevron' && (
-            <svg className={s.chevron} viewBox="0 0 10 10" aria-hidden="true">
-              <path d="M2 4 L5 7 L8 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
+          {indicator === 'chevron' && <Caret className={s.chevron} />}
         </RACButton>
       </TriggerTooltip>
       {description !== undefined && (

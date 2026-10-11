@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type CSSProperties, type PointerEvent, type RefObject } from 'react';
 import { asNodeId, createScene, type NodeRoutingEntry, type Scene } from '@weasel-js/core';
-import { isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { isPrefLeaf, isPrefSection, prefSectionLeaves, prefValueAtPath, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { Badge } from '../Badge';
+import { Bar } from '../Bar';
 import { DragGhost } from '../DragGhost';
 import { PrefsDialog, type PrefDrop, type PrefRenderer, type PrefSelectHow } from '../Prefs';
 import { ResizeHandle } from '../ResizeHandle';
@@ -36,11 +37,45 @@ export interface PreviewPaneProps {
   ghost?: PreviewGhost | null;
 }
 
-/** The schema drawn the way its reader draws it: a preferences form for a group, a properties panel for a section. */
+/**
+ * The schema drawn the way its reader draws it: a preferences form for a group, a properties panel for a section,
+ * and a toolbar for a group drawn as a bar.
+ */
 export function PreviewPane({ schema, renderers, propertyRenderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: PreviewPaneProps) {
-  return isPrefSection(schema)
-    ? <SectionPreview schema={schema} renderers={propertyRenderers} onDefaults={onDefaults} />
-    : <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
+  if (isPrefSection(schema)) return <SectionPreview schema={schema} renderers={propertyRenderers} onDefaults={onDefaults} />;
+  if (schema.as === 'bar') return <BarPreview schema={schema} renderers={propertyRenderers} onDefaults={onDefaults} />;
+  return <GroupPreview schema={schema} renderers={renderers} selected={selected ?? NO_SELECTION} onSelect={onSelect} onDefaults={onDefaults} stageRef={stageRef} drop={drop} onStagePointerDown={onStagePointerDown} ghost={ghost} />;
+}
+
+/** Each leaf's default, by the dotted path a bar reads its value at. */
+function barDefaults(group: PrefGroup, prefix = '', out: Record<string, unknown> = {}): Record<string, unknown> {
+  for (const [key, child] of Object.entries(group.children)) {
+    const path = prefix === '' ? key : `${prefix}.${key}`;
+    if (isPrefLeaf(child)) out[path] = child.default;
+    else barDefaults(child, path, out);
+  }
+  return out;
+}
+
+/** A root drawn as a bar: the toolbar itself on a stage, run either way. */
+function BarPreview({ schema, renderers, onDefaults }: {
+  schema: PrefGroup;
+  renderers?: Record<string, PropertyRenderer>;
+  onDefaults(edits: readonly DefaultEdit[]): void;
+}) {
+  const [vertical, setVertical] = useState(false);
+  const values = useMemo(() => barDefaults(schema), [schema]);
+  return (
+    <section className={`${s.pane} ${s.previewPane}`} aria-label="Live preview">
+      <PaneHeader title="Live preview">
+        <Switch isSelected={vertical} onChange={setVertical}>Vertical</Switch>
+      </PaneHeader>
+      <div className={s.previewBar}>
+        <Bar schema={schema} framed label={schema.name === '' ? 'Toolbar' : schema.name} orientation={vertical ? 'vertical' : 'horizontal'}
+          values={values} renderers={renderers} onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
+      </div>
+    </section>
+  );
 }
 
 function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stageRef, drop, onStagePointerDown, ghost }: {

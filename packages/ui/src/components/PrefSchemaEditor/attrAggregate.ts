@@ -42,8 +42,9 @@ export interface AttributeAggregate {
  */
 export function aggregateAttributes(
   nodes: readonly SchemaNode[], custom: CustomKinds = {}, drawsMixed: (kind: string) => boolean = (k) => !WHOLE.has(k),
+  actions?: ReadonlyArray<{ key: string; label: string }>,
 ): AttributeAggregate {
-  const [first, ...rest] = nodes.map((n) => attributeSchema(n, custom));
+  const [first, ...rest] = nodes.map((n) => attributeSchema(n, custom, actions));
   const held = nodes.map((n) => n as unknown as Record<string, unknown>);
   const values: Record<string, unknown> = {};
   const mixed = new Set<string>();
