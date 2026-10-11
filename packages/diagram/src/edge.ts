@@ -31,6 +31,7 @@ import { portCurvePoints } from '@weasel-js/geom';
 import { ANCHOR_DERIVE_POSE, DIAGRAM_ANCHOR, DIAGRAM_GROUP, GROUP_DERIVE_POSE } from './group';
 import { DIAGRAM_LABEL, LABEL_DERIVE_POSE } from './label';
 import { portOf, portsOf, type PortsOptions } from './ports';
+import { selfLoop } from './selfLoop';
 import type { Port } from './types';
 
 /** Where an edge attaches at one end. */
@@ -103,12 +104,17 @@ export const orthogonal: Router = (req) => {
       out.push(b);
       continue;
     }
+    // Splitting the leg at its midpoint starts back the way the route just
+    // came when the last stop overshot this one; turning at once does not.
+    const prev = out.length > 1 ? out[out.length - 2]! : null;
     if (leaveHorizontal) {
       const mid = (a.x + b.x) / 2;
-      out.push({ x: mid, y: a.y }, { x: mid, y: b.y }, b);
+      if (prev !== null && (mid - a.x) * (a.x - prev.x) < 0) out.push({ x: a.x, y: b.y }, b);
+      else out.push({ x: mid, y: a.y }, { x: mid, y: b.y }, b);
     } else {
       const mid = (a.y + b.y) / 2;
-      out.push({ x: a.x, y: mid }, { x: b.x, y: mid }, b);
+      if (prev !== null && (mid - a.y) * (a.y - prev.y) < 0) out.push({ x: b.x, y: a.y }, b);
+      else out.push({ x: a.x, y: mid }, { x: b.x, y: mid }, b);
     }
   }
   return out;
@@ -210,10 +216,17 @@ export function resolveEnd<TPose>(
 export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
   /** Routers by key. Defaults to {@link ROUTERS}. */
   routers?: Readonly<Record<string, Router>>;
+  /** How far outside its node a self-edge with no ports named turns, in
+   *  world units. Defaults to half the node's shorter side. */
+  selfLoopStandoff?: number;
 }
 
 /**
  * A `derivePath` that routes an edge between its two dependencies.
+ *
+ * An edge from a node to itself that names no ports leaves and returns by the
+ * sides {@link selfLoop} picks, and where the author set no waypoints the
+ * router is handed that rule's point outside the node as one.
  *
  * Returns `null` — nothing to draw — when the node is not an edge, when either
  * dependency is gone, or when an endpoint offers no ports at all. A dangling
@@ -232,21 +245,31 @@ export function edgeDerivePath<TPose>(
     return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
   };
 
+  const standoffOf = (d: DerivedDep<TPose>): number => {
+    const b = geometry.getBounds(d.pose);
+    return Math.min(b.width, b.height) / 2;
+  };
+
   return (node, deps) => {
     const edge = diagramEdgeOf(node);
     if (edge === null) return null;
     const [fromDep, toDep] = deps;
     if (fromDep === undefined || toDep === undefined) return null;
 
+    const loop = fromDep.node.id === toDep.node.id && edge.from.port === undefined && edge.to.port === undefined
+      ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep))
+      : null;
     // Each end aims at the other's center, which is stable while both are
     // being resolved — aiming at the other *port* would be circular.
-    const from = resolveEnd(edge.from, fromDep, centerOf(toDep), portOpts, allPorts);
-    const to = resolveEnd(edge.to, toDep, centerOf(fromDep), portOpts, allPorts);
+    const from = loop?.from ?? resolveEnd(edge.from, fromDep, centerOf(toDep), portOpts, allPorts);
+    const to = loop?.to ?? resolveEnd(edge.to, toDep, centerOf(fromDep), portOpts, allPorts);
     if (from === undefined || to === undefined) return null;
 
+    const authored = edge.waypoints ?? [];
+    const waypoints = loop !== null && authored.length === 0 ? [loop.via] : authored;
     const routers = opts.routers ?? ROUTERS;
     const router = (edge.router !== undefined && routers[edge.router]) || straight;
-    const points = router({ from, to, waypoints: edge.waypoints ?? [] });
+    const points = router({ from, to, waypoints });
     return points.length < 2 ? null : polylineFromPoints(points as { x: number; y: number }[]);
   };
 }

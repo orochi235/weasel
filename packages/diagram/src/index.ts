@@ -56,6 +56,8 @@ export {
   withDiagramRegistry,
 } from './edge';
 export type { DiagramEdge, EdgeEnd, EdgeRouteOptions, RouteRequest, Router } from './edge';
+export { selfLoop } from './selfLoop';
+export type { SelfLoop } from './selfLoop';
 export { buildGraph } from './graph';
 export type {
   BuildGraphOptions,

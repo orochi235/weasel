@@ -124,7 +124,7 @@ describe('edgeDerivePath', () => {
   const box = (x: number, y: number): RectPose => ({ x, y, width: 40, height: 40 });
   const dep = (pose: RectPose, data: unknown = { diagram: {} }): DerivedDep<RectPose> =>
     ({
-      node: { id: asNodeId('n'), kind: 'leaf', layer: 'main', parent: null, pose, data } as never,
+      node: { id: asNodeId(`n${pose.x},${pose.y}`), kind: 'leaf', layer: 'main', parent: null, pose, data } as never,
       pose,
       path: null,
     });

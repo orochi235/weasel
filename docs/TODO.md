@@ -557,16 +557,6 @@ Core five + Crop shipped. Remaining:
 
 ## Text
 
-- **(P3) `.dfont` machine faces still can't reach the outline tier.** The
-  *silence* closed 2026-08-16 — `isDataForkFont` recognizes a Macintosh
-  resource fork by its header offsets and `sfntFromCollection` throws by name,
-  so the face degrades to the SDF tier saying why. Actually reading the `sfnt`
-  resources out of the map is unwritten and unreachable on current macOS (204
-  `.ttf` / 128 `.ttc` / 38 `.otf`, no `.dfont`). Design record for the whole
-  tier: `docs/concepts.md` ("Font outlines"); the settled argument for
-  keeping container unpacking in `sfnt.ts` rather than upstreaming it or
-  adopting fontkit is in that file's own header.
-
 - **(P3) The edit overlay's text lands on whole CSS pixels; the canvas's does
   not.** Every tier now hangs its baseline where CSS does, so the overlay's
   measured `baselineDrop` is only rounding, but the overlay still cannot
@@ -1510,17 +1500,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   walk in schema order for every layout, wrapping each run of rows in `.rows`, makes them agree; it
   changes what existing rail forms look like, which is why it is a decision.
 
-- **(P2) diagram: a self-edge with no named ports draws nothing.** An edge whose `dependsOn` is `[a,
-  a]` and whose ends name no `port` (what `fromData` produces for a self-loop) resolves both ends in
-  `resolveEnd` (`packages/diagram/src/edge.ts`) toward the node's own center, so every port scores
-  the same facing and both ends pick the same one; the router gets two coincident points and the
-  path has no length. With two different named ports the `straight` router draws a chord through the
-  node's interior instead. The layouts already handle self-loops, so the edge is meant to show.
-  Ruled 2026-10-11: one shared rule beside `resolveEnd` has a portless self-edge leave and return by
-  two adjacent sides and pass a point outside the node, and the routers (`straight`, `orthogonal`,
-  `bezier`) route through that point and draw no loop of their own. That leaves the rule, how far
-  the loop stands off the outline, and `edgeDerivePath` handing the routers the waypoint.
-
 - **(P2) guides: alignment snapping does not say which world its candidates are in on a parallax
   layer.** `alignMoveBehavior`, `alignInsertBehavior`, and `alignResizeBehavior`
   (`packages/guides/src/guides/alignment/behaviors.ts`) compare the gesture's pose with
@@ -1762,14 +1741,6 @@ only story runner in the repo.
   2.0.0). `Split` works around it by showing its sidebar node and hiding it
   again (`createSplitStore`). The fix belongs in windease; the workaround goes
   when it lands.
-
-- **(P3) forge: a native story file's index still guesses at an export it cannot read.**
-  `mayBeStory` (`packages/forge/src/vite/nativeExports.ts`) keeps an export that is an import, a
-  re-export, a conditional, or a spread copy, since any of them may carry a story, so one that turns
-  out not to be a story is listed and faults with `has no story export` when opened. It drops an
-  export that calls a function imported from another module, so a story built by an imported
-  factory is not listed at all. Telling either apart means following the import, the way
-  `createWrapperResolver` (`vite/wrappers.ts`) already follows `meta` and `story`.
 
 - **(P3) forge: the index page mounts a cell only once it is on screen, not a viewport ahead.**
   `packages/forge/src/frame/index/IndexPage.tsx` keeps a private `useNearViewport` that reads
