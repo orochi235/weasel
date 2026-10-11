@@ -910,7 +910,11 @@ Core five + Crop shipped. Remaining:
   Options: have an untracked removal drop or neutralize the entries that touch the removed ids; have
   kit ops whose target is gone report `'noop'` on replay instead of throwing (the policy restored
   external ops already follow in `bindOpToHistoryAdapter`); or have `reconcileSpecs` clear history
-  when it removes a node.
+  when it removes a node. The second option alone does not cover a gesture's entry: a live external
+  op (`createTransformOp` bound by `bindOpToAdapter`) replays through `adapter.setPose` into
+  `scene.setPose`, which throws in `requireNode` before any kit op runs (read from the code, not
+  run). Nor does it cover the reverse case, an id that an untracked edit re-added: undoing an older
+  `kit:remove` of that id overwrites the live node and attaches it a second time.
 
 - **(P2) Scene: `toJSON` then `loadState` reorders siblings that sit on different layers.** `toJSON`
   in `packages/core/src/core/scene/scene.ts` writes nodes in layer-major order with no sibling
