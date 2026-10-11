@@ -711,12 +711,15 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     const fireLongPress = (pointerId: number, pointerType: string): void => {
-      const down = held.get(pointerId)?.down;
+      const rec = held.get(pointerId);
       clearPending(pointerId);
-      if (!down) return;
-      const evs = longPressEvents(down);
+      if (!rec) return;
+      const evs = longPressEvents(rec.down);
       let result = dispatch(evs.longpress);
       if (result === 'unhandled') result = dispatch(evs.contextmenu);
+      // The press is spent: dropping the buffer is what keeps its release
+      // from clicking and a later move from opening a drag.
+      if (result === 'handled') rec.buffered = null;
       if (result === 'handled' && longPressRef.current?.haptics !== false
           && (pointerType === 'touch' || pointerType === 'pen')
           && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
