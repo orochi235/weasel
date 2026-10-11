@@ -145,10 +145,12 @@ export function PrefsForm(props: PrefsFormProps) {
     className,
   } = props;
   const [query, setQuery] = useState('');
+  // Against the whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
+  const leafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
   const root = useMemo(() => {
     const visible = visiblePrefSubtree(schema, showHidden, props.showEmpty === true);
-    return visible === null ? null : filterPrefSubtree(visible, query);
-  }, [schema, showHidden, query, props.showEmpty]);
+    return visible === null ? null : filterPrefSubtree(visible, query, '', leafAt);
+  }, [schema, showHidden, query, props.showEmpty, leafAt]);
 
   // Every field of the whole schema, not only the visible ones: a reference may name a hidden field.
   const own = useMemo(() => prefFieldChoices(schema), [schema]);
@@ -160,8 +162,6 @@ export function PrefsForm(props: PrefsFormProps) {
   );
   const lead = shown.at(-1) ?? null;
   const selection = useSelectedRow(selected, lead, props.onSelect);
-  // Against the whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
-  const leafAt = useCallback((path: string) => prefLeafAt(schema, path), [schema]);
   const ctx: WalkCtx = { values, onChange, renderers, auto, mixed: props.mixed, onAutoChange, canInherit, inheritHint, fields, leafAt, changed: props.changed, selected: shown, lead };
   const field = filterable ? (
     <div className={s.filter}>

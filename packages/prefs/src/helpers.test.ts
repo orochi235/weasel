@@ -55,6 +55,31 @@ describe('filterPrefSubtree', () => {
     expect(Object.keys(canvas.children)).toEqual(['showGrid']);
   });
 
+  it('matches an alias left unnamed on the name and description of the leaf it shows', () => {
+    const schema: PrefGroup = {
+      name: 'Preferences',
+      children: {
+        ...SCHEMA.children,
+        quick: {
+          name: 'Quick',
+          children: {
+            grid: { kind: 'alias', name: '', description: '', default: undefined, of: 'canvas.showGrid' },
+            lost: { kind: 'alias', name: '', description: '', default: undefined, of: 'canvas.gone' },
+          },
+        },
+      },
+    };
+    const quick = (query: string) => Object.keys((filterPrefSubtree(schema, query)?.children.quick as PrefGroup | undefined)?.children ?? {});
+    expect(quick('show grid')).toEqual(['grid']);
+    expect(quick('alignment')).toEqual(['grid']);
+    expect(quick('author')).toEqual([]);
+
+    const hidden = { ...schema, children: { quick: schema.children.quick! } };
+    expect(filterPrefSubtree(hidden, 'alignment')).toBeNull();
+    const kept = filterPrefSubtree(hidden, 'alignment', '', (path) => (path === 'canvas.showGrid' ? ((SCHEMA.children.canvas as PrefGroup).children.showGrid as never) : undefined));
+    expect(Object.keys((kept?.children.quick as PrefGroup).children)).toEqual(['grid']);
+  });
+
   it('keeps every leaf of a group whose own name matches', () => {
     const filtered = filterPrefSubtree(SCHEMA, 'snapping');
     const canvas = filtered?.children.canvas as PrefGroup;

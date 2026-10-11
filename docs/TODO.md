@@ -438,8 +438,11 @@ intercepting the press that drags the body.
   composition is a scene property (see the cascade entry below); and whether the `layouts` prop, now a second way to name a container's layout, should
   be retired in favor of the node declaration. Also: an op-driven edit opens the
   arrival window on a layout-less scene only when it carries a `setLayout` op, so a
-  custom op that calls `adapter.setLayout` itself does not arrange until the
-  container's next change (inferred from the code, untested).
+  custom op that calls `adapter.setLayout` itself sets the layout and arranges nothing until
+  the container's next change (reproduced 2026-10-11). Opening the window for every op-driven
+  edit fixes it and breaks coalescing: the appended arrange op stays in the entry when it does
+  nothing, and `scene.test.ts`'s key-multiset test fails. Wants a no-op arrange op dropped
+  from the recorded entry first.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today it is
   adapter-level configuration, two mutually exclusive ways:
   `sceneToAdapter({ cascadeContainerPose: true })` translates every descendant
@@ -823,8 +826,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P2) An `alias` leaf, what is left.** `PrefsForm` and labkit's `ControlPanel` draw an alias as
   its target's row; `SelectionPanel` does not, and shows it as a kind with no renderer.
-  `PrefsForm`'s filter matches an alias on its own name and description, so one left unnamed is
-  dropped by a query its target would match. In `PrefSchemaEditor`, removing a pref leaves its
+  In `PrefSchemaEditor`, removing a pref leaves its
   aliases pointing at nothing (each draws `(alias: no pref at …)` in the preview), where moving or
   renaming it carries them along; and the `Of` picker offers every field, including the fields
   inside an `object` leaf and other aliases, though an alias resolves only a whole leaf.
@@ -952,12 +954,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) A forge plugin test times out waiting for a file watcher under load.**
-  `vite/plugin.test.ts`, "titles a native story by its meta when forge's meta reaches it
-  through a helper module, and re-decides when the helper changes", polls 5s for the index
-  to follow a rewritten helper file. It timed out once in a full fleet run on teitou
-  (2026-10-09) and passed in a labkit-and-forge-only run of the same tree minutes earlier.
-
 - **(P3) The served page is titled "weaselforge" until the shell config loads.**
   `ShellConfig.title` sets `document.title` at runtime, but the HTML the plugin
   serves and builds (`packages/forge/src/vite/html.ts`) hard-codes
@@ -1046,9 +1042,9 @@ only story runner in the repo.
   `docs/conventions.md` says `npx typedoc` reports none; that held while it read only core.
   Most are a documented export referencing a type its barrel does not export, each one a call
   between exporting the type and listing it under `intentionallyNotExported` in that package's
-  `typedoc.config.mjs`. The rest are `{@link}`s that resolve to nothing (`Field` in labkit,
-  `textCommand` in text, `Focusable` and `KEEP` in ui), a README image path in hud, and `xml`
-  code fences in svg's README that need `highlightLanguages`.
+  `typedoc.config.mjs`. 91 warnings remain as of 2026-10-11: 87 of that kind, `{@link Field}`
+  in ui's `Input` and `ComboBox` props (unresolved only where labkit re-exports them), and
+  `{@link KEEP}` in `PrefSchemaEditor/schemaExport.ts`.
 - **(P3) A symbol core re-exports from a sibling is documented twice.** `ClaimableGesture` has a
   page under `@weasel-js/core` and another under `@weasel-js/gestures`, with the same text.
   TypeDoc's `packages` strategy converts each package on its own, so core's copy is a full

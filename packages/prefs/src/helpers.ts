@@ -1,3 +1,4 @@
+import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 import type { PrefGroup, PrefSection } from './groups';
 import type { PrefLeaf, PrefNumber } from './schema';
 
@@ -159,20 +160,30 @@ function prefLeafMatches(pref: PrefLeaf, path: string, query: string): boolean {
  *
  * An empty or whitespace query matches everything, so a cleared field restores
  * the tree rather than emptying it.
+ *
+ * An alias answers as the row it draws: its target's name and description
+ * where it gives none. `leafAt` finds that target, and defaults to looking in
+ * `node`; pass one over the whole schema when `node` is a part of it.
  */
 export function filterPrefSubtree<T extends PrefLeaf | PrefGroup>(
   node: T,
   query: string,
   path = '',
+  leafAt?: (path: string) => PrefLeaf | undefined,
 ): T | null {
   const q = query.trim().toLowerCase();
   if (q === '') return node;
-  if (isPrefLeaf(node)) return prefLeafMatches(node, path, q) ? node : null;
+  const find = leafAt ?? ((p: string) => (isPrefLeaf(node) ? undefined : prefLeafAt(node as PrefGroup, p)));
+  if (isPrefLeaf(node)) {
+    const target = node.kind === 'alias' ? prefAliasTarget(node as PrefAlias, find) : undefined;
+    const drawn = target ? prefAliasedLeaf(node as PrefAlias, target.leaf) : node;
+    return prefLeafMatches(drawn, path, q) ? node : null;
+  }
   const group = node as PrefGroup;
   if (group.name.toLowerCase().includes(q)) return node;
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   for (const [key, child] of Object.entries(group.children)) {
-    const kept = filterPrefSubtree(child, q, path === '' ? key : `${path}.${key}`);
+    const kept = filterPrefSubtree(child, q, path === '' ? key : `${path}.${key}`, find);
     if (kept) children[key] = kept;
   }
   if (Object.keys(children).length === 0) return null;
