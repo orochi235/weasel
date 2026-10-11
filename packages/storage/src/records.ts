@@ -118,6 +118,7 @@ function buildCache(
   let writeRetryTimer: ReturnType<typeof setTimeout> | null = null;
   let writeRetryWait = retryWait;
   let writeWarned = false;
+  let sending: Promise<boolean> | null = null;
   let landed = (): void => {};
   const hasRead = new Promise<void>((resolve) => {
     if (startUnread) landed = resolve;
@@ -140,10 +141,23 @@ function buildCache(
     }, wait);
   };
 
-  async function flush(): Promise<boolean> {
+  // One batch is on its way at a time. A rejected write is back in the queue
+  // before the next batch is taken, so a newer write to its record stands.
+  function flush(): Promise<boolean> {
     if (timer) clearTimeout(timer);
     timer = null;
     firstQueuedAt = null;
+    // With nothing on its way the batch leaves in this tick, which a flush
+    // on `pagehide` depends on.
+    const mine = sending ? sending.then(send) : send();
+    sending = mine;
+    void mine.finally(() => {
+      if (sending === mine) sending = null;
+    });
+    return mine;
+  }
+
+  async function send(): Promise<boolean> {
     if (queued.size === 0) return true;
     if (!writable()) return false;
     stopRetryingWrites();

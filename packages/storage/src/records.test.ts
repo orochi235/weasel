@@ -206,6 +206,62 @@ describe('writing', () => {
     warn.mockRestore();
   });
 
+  it('keeps a newer write that was flushed while the rejected one was on its way', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const backing = new Map<string, unknown>();
+    const memory = createMemoryAdapter(backing);
+    let reject = (_: Error): void => {};
+    const flaky: StorageAdapter = {
+      ...memory,
+      set: vi.fn(memory.set).mockImplementationOnce(
+        () =>
+          new Promise<void>((_, no) => {
+            reject = no;
+          }),
+      ),
+    };
+    const cache = await openRecords({ storage: flaky, prefix: PREFIX });
+    cache.set('layout', { v: 1 });
+    const first = cache.flush();
+    cache.set('layout', { v: 2 });
+    const second = cache.flush();
+    await tick();
+    reject(new Error('quota'));
+    expect(await first).toBe(false);
+    await second;
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(backing.get('lk:t:layout')).toEqual({ v: 2 });
+    warn.mockRestore();
+  });
+
+  it('does not report a flush as landed while an earlier one is still on its way', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const memory = createMemoryAdapter(new Map());
+    let reject = (_: Error): void => {};
+    const flaky: StorageAdapter = {
+      ...memory,
+      set: () =>
+        new Promise<void>((_, no) => {
+          reject = no;
+        }),
+    };
+    const cache = await openRecords({ storage: flaky, prefix: PREFIX, retryMs: false });
+    cache.set('layout', { v: 1 });
+    void cache.flush();
+    let settled: boolean | null = null;
+    void cache.flush().then((ok) => {
+      settled = ok;
+    });
+    await tick();
+    expect(settled).toBe(null);
+    reject(new Error('quota'));
+    await tick();
+    reject(new Error('quota'));
+    await tick();
+    expect(settled).toBe(false);
+    warn.mockRestore();
+  });
+
   it('leaves a rejected write for the next flush with retrying off', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const backing = new Map<string, unknown>();
