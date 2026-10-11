@@ -263,8 +263,9 @@ describe('PropertyField number', () => {
     fireEvent.change(field, { target: { value: '15mm' } });
     fireEvent.change(field, { target: { value: '15x' } });
     expect(onChange.mock.calls).toEqual([[1], [1.5]]);
+    // Text that ends unreadable gives back the value typing began from.
     fireEvent.blur(field);
-    expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onChange.mock.calls).toEqual([[1], [1.5], [2]]);
   });
 
   it('splits live keystrokes from the value settled on blur', () => {

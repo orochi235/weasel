@@ -12,8 +12,8 @@ export interface UnitFieldProps {
    *  blur or Enter, and on every step. */
   onChange: (value: number) => void;
   /** The live value: every keystroke that reads as a number, and every step.
-   *  Typing that ends in Escape sends the value it began from, so a caller
-   *  holding the live value gets it back. */
+   *  Typing that ends in Escape, or in text the field cannot read, sends the
+   *  value it began from, so a caller holding the live value gets it back. */
   onInput?: (value: number) => void;
   minValue?: number;
   maxValue?: number;
@@ -214,15 +214,13 @@ export function UnitField({
             canceled.current = false;
           }}
           onBlur={() => {
-            if (canceled.current) {
+            const n = canceled.current || draft === null ? Number.NaN : read(draft);
+            if (!Number.isNaN(n)) {
+              const next = clampToBounds(n, bounds);
+              if (next !== value) onChange(next);
+            } else {
               const typed = typing.current;
               if (typed?.sent && !Number.isNaN(typed.from)) onInput?.(typed.from);
-            } else if (draft !== null) {
-              const n = read(draft);
-              if (!Number.isNaN(n)) {
-                const next = clampToBounds(n, bounds);
-                if (next !== value) onChange(next);
-              }
             }
             typing.current = null;
             setDraft(null);

@@ -66,6 +66,27 @@ describe('UnitField', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('takes back on blur what it sent before the text stopped reading', () => {
+    const onInput = vi.fn();
+    const { onChange, field } = setup({ onInput });
+    field.focus();
+    fireEvent.change(field, { target: { value: '9' } });
+    fireEvent.change(field, { target: { value: '9x' } });
+    expect(onInput).toHaveBeenLastCalledWith(9);
+    fireEvent.blur(field);
+    expect(onInput).toHaveBeenLastCalledWith(5);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(field).toHaveValue('5');
+  });
+
+  it('sends nothing on an unreadable blur when nothing was sent', () => {
+    const onInput = vi.fn();
+    const { field } = setup({ onInput });
+    fireEvent.change(field, { target: { value: 'x' } });
+    fireEvent.blur(field);
+    expect(onInput).not.toHaveBeenCalled();
+  });
+
   it('sends nothing on Escape when nothing was sent', () => {
     const onInput = vi.fn();
     const { field } = setup({ onInput });
