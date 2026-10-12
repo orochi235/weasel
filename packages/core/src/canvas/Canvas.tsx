@@ -34,6 +34,7 @@ import type { ToolsApi } from '../tools/overlayBinding';
 import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
+import { useSurfaceInput } from './useSurfaceInput';
 import { useCanvasView } from './useCanvasView';
 import { useOptionalViewRegistry } from './viewRegistry';
 import { useCanvasSurface } from './useCanvasSurface';
@@ -243,14 +244,22 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    */
   inputElement?: HTMLElement | null;
 
+  /** Class for the `<canvas>` this component renders. Under `paintInto` it
+   *  renders none, and the input element is the caller's to style. */
   className?: string;
+  /** Inline style for the `<canvas>` this component renders; a tool's cursor
+   *  is merged over it. Not applied under `paintInto`, where only that cursor
+   *  is written, onto the input element. */
   style?: React.CSSProperties;
+  /** Tab order of the `<canvas>` this component renders. Default 0, so the
+   *  canvas is focusable. Not applied under `paintInto`: whether the input
+   *  element can take focus is the caller's to decide. */
   tabIndex?: number;
-  /** Fired when the canvas element gains focus. The canvas is focusable by
-   *  default (`tabIndex` 0). */
-  onFocus?: React.FocusEventHandler<HTMLCanvasElement>;
-  /** Fired when the canvas element loses focus. */
-  onBlur?: React.FocusEventHandler<HTMLCanvasElement>;
+  /** Fired when the element input comes from gains focus: the canvas, or
+   *  under `paintInto` the `inputElement`. Called with the DOM event. */
+  onFocus?: (event: FocusEvent) => void;
+  /** Fired when that element loses focus. */
+  onBlur?: (event: FocusEvent) => void;
   /**
    * When `true` (default), the canvas element receives focus on `pointerdown` so keyboard
    * events are captured without a separate click-to-focus step. Set to `false` where
@@ -533,9 +542,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // Read by `hitTestExtras`, which is built once and must see live values.
   const helpersForLayersRef = useRef<CanvasHelpers<TPose> | null>(null);
   const dimsRef = useLatest({ width, height });
-  const getIsVisibleRef = useLatest(getIsVisible);
-  const layerVisibilityRef = useLatest(layerVisibility);
-  const layerOrderRef = useLatest(layerOrder);
+  // Which layers reach the screen, and which chrome within them: asked by the
+  // paint and by every hit-test.
+  const gateRef = useLatest({ getIsVisible, layerVisibility, layerOrder });
 
   // React does not drive the paint; the frame loop does. The thunk defers to
   // `paint` below, which needs inputs this render has not computed yet.
@@ -574,9 +583,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     only?: readonly RenderLayer<unknown>[],
   ) => {
     const layers = [...extrasRef.current].reverse();
-    const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
-    const visibility = layerVisibilityRef.current ?? NO_LAYER_VISIBILITY;
-    const order = layerOrderRef.current;
+    const gate = gateRef.current;
+    const isVisible = gate.getIsVisible?.() ?? alwaysVisible;
+    const visibility = gate.layerVisibility ?? NO_LAYER_VISIBILITY;
+    const order = gate.layerOrder;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
       if (only && !only.includes(layer)) continue;
@@ -585,7 +595,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (hit) return { layerId: layer.id, hit };
     }
     return null;
-  }, [getIsVisibleRef, layerOrderRef, layerVisibilityRef]);
+  }, [gateRef]);
 
   const {
     viewRef, controlledView, setView, getView, subscribeView,
@@ -764,18 +774,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     gestureSource,
     previewPoseExtra,
     previewIdsExtra,
-    getIsVisible: () => getIsVisibleRef.current?.() ?? alwaysVisible,
+    getIsVisible: () => gateRef.current.getIsVisible?.() ?? alwaysVisible,
   });
 
   const surfaceHelpers: CanvasSurfaceHelpers = {
     getDebug: () => debugSink,
   };
   const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, ...surfaceHelpers, viewId: null };
-
-  // The only thing `<Canvas>` needs to know about pointer state: `onUncapturedMove` means
-  // "hover", so it stands down while a button is held. Everything else about pointer input
-  // belongs to `useGestureDispatcher`, which attaches its own listeners to this same element.
-  const pointerDownRef = useRef(false);
 
   const backgroundLayer = useMemo(
     () => (backgroundFill ? createBackgroundFillLayer(backgroundFill) : undefined),
@@ -913,7 +918,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // ask for a sync paint.
   const paintInputs = {
     layers: layersWithDebug, width, height, debugSink, frameStats,
-    dpr: dprProp, layerVisibility, layerOrder, layerGroups, shaders,
+    dpr: dprProp, layerGroups, shaders,
     flattenTolerance,
   };
   const paintInputsRef = useLatest(paintInputs);
@@ -933,7 +938,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const rect = paintRectRef.current;
     const {
       layers: paintLayers, width: w, height: h, debugSink: sink, frameStats: timed,
-      dpr: dprIn, layerVisibility: vis, layerOrder: order,
+      dpr: dprIn,
       flattenTolerance: paintFlattenTolerance,
       layerGroups: groups, shaders: paintShaders,
     } = paintInputsRef.current;
@@ -949,6 +954,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     if (!renderer) return false;
 
     const view = viewRef.current;
+    const { layerVisibility: vis, layerOrder: order } = gateRef.current;
     const spans = debugFrame?.time();
     const commands = drawLayers(
       paintLayers,
@@ -966,7 +972,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     debugFrame?.end(renderer.lastFrameStats());
     paintedVersionRef.current = contentVersionRef.current?.() ?? 0;
     return true;
-  }, [contentVersionRef, lease, paintInputsRef, paintRectRef, paintTargetRef, viewRef]);
+  }, [contentVersionRef, gateRef, lease, paintInputsRef, paintRectRef, paintTargetRef, viewRef]);
   useInsertionEffect(() => {
     paintRef.current = paint;
   });
@@ -1021,51 +1027,24 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paintedCursor, toolsPaintedKey]);
 
-  // The four pointer handlers, for whichever element takes input: JSX props on
-  // the `<canvas>` this component renders, listeners on the caller's when
-  // detached.
-  const layersForMoveRef = useLatest(layersWithDebug);
-  const press = useCallback((el: HTMLElement): void => {
-    if (autoFocusOnPointerDown) el.focus();
-    pointerDownRef.current = true;
-  }, [autoFocusOnPointerDown]);
-  const release = useCallback((): void => { pointerDownRef.current = false; }, []);
-  const hover = useCallback((el: HTMLElement, e: PointerEvent): void => {
-    if (pointerDownRef.current) return;
-    const view = viewRef.current;
-    const [worldX, worldY] = toWorld(el, e.clientX, e.clientY, view, clientToWorldRef.current);
-    const visibility = layerVisibilityRef.current ?? NO_LAYER_VISIBILITY;
-    // Same gate as `hitTestExtrasIn`: a layer nobody can see takes no input.
-    for (const layer of layersForMoveRef.current) {
-      if (!layer.onUncapturedMove || !isLayerPainted(layer, visibility, layerOrderRef.current)) continue;
-      layer.onUncapturedMove(worldX, worldY, e, view, dimsRef.current);
-    }
-  }, [clientToWorldRef, dimsRef, layerOrderRef, layerVisibilityRef, layersForMoveRef, viewRef]);
-  const leave = useCallback((): void => {
-    pointerDownRef.current = false;
-    for (const layer of layersForMoveRef.current) layer.onUncapturedLeave?.();
-  }, [layersForMoveRef]);
-  useEffect(() => {
-    if (!detached || !inputElement) return;
-    const el = inputElement;
-    const onDown = (): void => press(el);
-    const onMove = (e: PointerEvent): void => hover(el, e);
-    const onUp = release;
-    const onLeave = leave;
-    const onMenu = (e: Event): void => e.preventDefault();
-    el.addEventListener('pointerdown', onDown);
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerup', onUp);
-    el.addEventListener('pointerleave', onLeave);
-    el.addEventListener('contextmenu', onMenu);
-    return () => {
-      el.removeEventListener('pointerdown', onDown);
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerup', onUp);
-      el.removeEventListener('pointerleave', onLeave);
-      el.removeEventListener('contextmenu', onMenu);
-    };
-  }, [detached, inputElement, press, hover, release, leave]);
+  useSurfaceInput(canvasRef, {
+    focusOnPress: autoFocusOnPointerDown,
+    onFocus,
+    onBlur,
+    onHover: (el, e) => {
+      const view = viewRef.current;
+      const [worldX, worldY] = toWorld(el, e.clientX, e.clientY, view, clientToWorld);
+      const visibility = layerVisibility ?? NO_LAYER_VISIBILITY;
+      // Same gate as `hitTestExtrasIn`: a layer nobody can see takes no input.
+      for (const layer of layersWithDebug) {
+        if (!layer.onUncapturedMove || !isLayerPainted(layer, visibility, layerOrder)) continue;
+        layer.onUncapturedMove(worldX, worldY, e, view, { width, height });
+      }
+    },
+    onLeave: () => {
+      for (const layer of layersWithDebug) layer.onUncapturedLeave?.();
+    },
+  });
 
   // The cursor is a tool's, but under `paintInto` it has no element of ours to
   // sit on. Written imperatively rather than by the caller, so a tool's cursor
@@ -1120,15 +1099,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         tabIndex={tabIndex}
         className={className}
         style={effectiveStyle}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        onPointerDown={(e) => press(e.currentTarget)}
-        onPointerMove={(e) => hover(e.currentTarget, e.nativeEvent)}
-        onPointerUp={release}
-        onPointerLeave={leave}
-        // Suppress the browser's default right-click menu: right-click is a gesture
-        // surface that tools may consume.
-        onContextMenu={(e) => e.preventDefault()}
       />
       {huds}
     </>
