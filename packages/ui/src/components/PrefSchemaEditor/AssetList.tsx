@@ -54,9 +54,9 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
               <Header className={s.heading}>{title}</Header>
               {held.map((row) => (
                 <ListBoxItem key={row.id} id={row.id} textValue={row.label} data-changed={changed.has(row.id) || undefined}
-                  className={({ isSelected }) => (isSelected ? `${s.row} ${s.selected}` : s.row)}>
+                  data-rail-mark={row.id === selected ? 'current' : undefined} className={s.row}>
                   <span className={changed.has(row.id) ? `${s.label} ${s.changed}` : s.label}>{row.label}</span>
-                  {row.readOnly && <Icon name="lock" size={16} label="Read-only" className={s.lock} />}
+                  {row.readOnly && <Icon name="bolt" size={16} label="Dynamic" className={s.dynamic} />}
                 </ListBoxItem>
               ))}
             </ListBoxSection>

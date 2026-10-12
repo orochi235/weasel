@@ -106,8 +106,8 @@ describe('AssetEditor asset list', () => {
   it('locks a read-only asset: no tool adds or removes, and no attribute takes an edit', () => {
     const onChange = vi.fn();
     render(<Live start={WITH_LOCKED} onChange={onChange} />);
-    expect(within(asset('Layout')).getByRole('img', { name: 'Read-only' })).toBeInTheDocument();
-    expect(within(asset('Code')).queryByRole('img', { name: 'Read-only' })).toBeNull();
+    expect(within(asset('Layout')).getByRole('img', { name: 'Dynamic' })).toBeInTheDocument();
+    expect(within(asset('Code')).queryByRole('img', { name: 'Dynamic' })).toBeNull();
     fireEvent.click(asset('Layout'));
     pickRow('rows');
     expect(row('rows')).toHaveAttribute('aria-selected', 'true');

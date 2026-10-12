@@ -91,6 +91,8 @@ export const PageIcon = (p: IconProps) => <Icon name="page" {...p} />;
 export const LockIcon = (p: IconProps) => <Icon name="lock" {...p} />;
 /** Unlock: an open padlock. */
 export const UnlockIcon = (p: IconProps) => <Icon name="unlock" {...p} />;
+/** Bolt: a lightning bolt, for what is worked out and not set by hand. */
+export const BoltIcon = (p: IconProps) => <Icon name="bolt" {...p} />;
 /** Visible: an eye. */
 export const VisibleIcon = (p: IconProps) => <Icon name="visible" {...p} />;
 /** Hidden: an eye struck through. */

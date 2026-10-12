@@ -58,6 +58,7 @@ export const ICON_PATHS = {
   // State
   lock: `<rect x="4.6" y="9" width="10.8" height="8" rx="1.6"/><path d="M7.2 9V6.6a2.8 2.8 0 0 1 5.6 0V9"/>`,
   unlock: `<rect x="4.6" y="9" width="10.8" height="8" rx="1.6"/><path d="M7.2 9V6.6a2.8 2.8 0 0 1 5.6 0"/>`,
+  bolt: `<path d="M11.4 2.8 4.8 11.2h4.6l-.8 6 6.6-8.4h-4.6z"/>`,
   visible: `<path d="M2.6 10C4.6 6.6 7.1 5 10 5s5.4 1.6 7.4 5c-2 3.4-4.5 5-7.4 5s-5.4-1.6-7.4-5z"/><circle cx="10" cy="10" r="2.2"/>`,
   hidden: `<path d="M2.6 10C4.6 6.6 7.1 5 10 5s5.4 1.6 7.4 5c-2 3.4-4.5 5-7.4 5s-5.4-1.6-7.4-5z"/><circle cx="10" cy="10" r="2.2"/><path d="M4.2 15.8 15.8 4.2"/>`,
   pin: `<path d="M8.2 3.4v5.2l-2 2.6h7.6l-2-2.6V3.4z"/><path d="M7 3.4h6"/><path d="M10 11.2v5.4"/>`,
@@ -532,6 +533,7 @@ export const ICON_GROUPS: readonly { label: string; names: readonly IconName[] }
     names: [
       'lock',
       'unlock',
+      'bolt',
       'visible',
       'hidden',
       'pin',
