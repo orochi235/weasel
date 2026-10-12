@@ -297,6 +297,7 @@ What is built on it:
 | Vertex colors | `colorOverrides.target(id, channel, length)` | `tweenVertexColors`, `springVertexColors`, `staggerVertexColors` |
 | A rig's pose | `rig.target` | clips: a `SampledTrack<Pose>` given `target` and `weight` |
 | Anything else | `createTarget({ get, set, axes?, show? })` | any of the above primitives |
+| Many like values | a row of `createTargetTable({ axes })` | any of the above primitives, on `table.target(row)` |
 
 A pose animation over a scene therefore writes the document once, at its start,
 and shows its travel through a pose override. An `arrayAdapter` has no overrides,
@@ -306,6 +307,21 @@ committed pose. The values are computed by blits
 public. blits clocks the voices and sums them; how a target's holds share it is
 folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
 cover some axes and turn an angle. A target is moved by one animator at a time.
+
+Thousands of like values go in a **target table**, where a target apiece would
+cost a read apiece:
+
+```ts
+const dots = createTargetTable({ axes: 2 });          // each row is [x, y]
+const row = dots.add([10, 20]);
+animator.tween({ target: dots.target(row), to: [300, 40], ms: 400 });
+// after each frame, every row's value on screen, back to back:
+upload(dots.shown);
+```
+
+A row is a target like any other. Its committed value lives in `table.committed`,
+and the animator fills `table.shown` for every moving row in one pass over flat
+arrays, about 3 ns a row.
 
 A reader of many targets that wants numbers calls `target.readInto(out, at)`, which
 writes the value's `axisCount` axes into a buffer and builds no value. Axes that

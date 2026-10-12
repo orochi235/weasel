@@ -27,6 +27,7 @@ export {
   createPoseTarget, poseAxes, scenePoseTarget,
   type PoseCascade, type PoseTargetOptions, type PoseTargetScene,
 } from './poseTarget';
+export { createTargetTable, type TargetTable, type TargetTableOptions } from './targetTable';
 export { createWrittenPoseTarget, type WrittenPoseTargetOptions } from './writtenPoseTarget';
 export {
   tweenPose, springPose, staggerSpringPose,

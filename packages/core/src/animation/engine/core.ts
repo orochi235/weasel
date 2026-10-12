@@ -32,7 +32,10 @@ export interface AnimatorCore {
 export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const clock: AnimatorClock = { frameT: null, timeScale: 1, paused: false };
   const hub = new AnimatorEventHub();
-  const codec = createCodec();
+  const codec = createCodec((on) => {
+    const { row } = on as TargetState;
+    return row ? { group: row.table, tag: row.index } : undefined;
+  });
   const afterTicks: (() => void)[] = [];
   const subscribers = new Set<() => void>();
   let nextId = 1;
@@ -55,6 +58,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       codec.touch(s);
       reread();
     },
+    columns: (table) => codec.columns(table),
   });
   const frame = createFrame({
     clock, table, codec, targets, hub, afterTicks, subscribers, reread, requestFrame: host.requestFrame,

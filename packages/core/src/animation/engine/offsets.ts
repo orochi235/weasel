@@ -1,4 +1,4 @@
-import { readTarget, type TargetAxes, type TargetOwner, type TargetState } from '../target';
+import { readTarget, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
 
 const TAU = Math.PI * 2;
 
@@ -33,6 +33,7 @@ export const norm = (a: readonly number[]): number => Math.hypot(...a);
 /** Counts `delta` into what `s` shows until the next frame reads its voices again. */
 export function bump(s: TargetState, delta: readonly number[], sign: 1 | -1): void {
   for (let i = 0; i < delta.length; i++) s.adjust[i] = s.adjust[i]! + sign * delta[i]!;
+  s.row?.table.mark(s.row.index);
 }
 
 /** Adds `delta` into the committed value. */
@@ -47,6 +48,7 @@ export function keep<T>(s: TargetState<T>, delta: readonly number[]): void {
   if (s.discard) return;
   if (s.held === 0) absorb(s, delta);
   else s.beside = s.beside ? plus(s.beside, delta) : delta.slice();
+  s.row?.table.mark(s.row.index);
 }
 
 /** The committed value's axes as an animation about to commit a destination finds them: with
@@ -81,6 +83,8 @@ export function createTargetBook(owner: TargetOwner): TargetBook {
   const live = new Set<TargetState>();
   const rested = new Set<TargetState>();
   const publishes = new Set<() => void>();
+  /** Each table with a row moving, and how many of its rows are. */
+  const tables = new Map<RowTable, number>();
   const shown = (s: TargetState, value: unknown): void => {
     s.show!(value);
     if (s.publish) publishes.add(s.publish);
@@ -98,9 +102,17 @@ export function createTargetBook(owner: TargetOwner): TargetBook {
       s.live += 1;
       live.add(s);
       rested.delete(s);
+      if (s.row) {
+        tables.set(s.row.table, (tables.get(s.row.table) ?? 0) + 1);
+        s.row.table.mark(s.row.index);
+      }
     },
     detach(s) {
       s.live -= 1;
+      if (s.row) {
+        tables.set(s.row.table, tables.get(s.row.table)! - 1);
+        s.row.table.mark(s.row.index);
+      }
       if (s.live > 0) return;
       s.owner = null;
       s.slot = null;
@@ -111,14 +123,20 @@ export function createTargetBook(owner: TargetOwner): TargetBook {
     },
     settle() {
       for (const s of live) s.adjust.fill(0);
+      for (const t of tables.keys()) t.settle();
     },
     reread(s, queued) {
       for (let i = 0; i < queued.length; i++) s.adjust[i] = queued[i]!;
+      s.row?.table.mark(s.row.index);
     },
     show() {
       for (const s of live) if (s.show) shown(s, readTarget(s));
       for (const s of rested) shown(s, s.get());
       rested.clear();
+      for (const [t, moving] of tables) {
+        t.fill(owner.columns(t));
+        if (moving === 0) tables.delete(t);
+      }
       publish();
     },
     showNow(s) {

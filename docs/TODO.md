@@ -823,34 +823,29 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 Animations combine through targets, described in `docs/concepts.md` ("Animation target") and
 built 2026-10-11. What that left:
 
-- **(P2) A target table: many like values as rows of flat arrays, read in one pass** — measured
-  2026-10-11, not built. A read of one moving target is bound by memory past a few thousand:
-  it reaches the target's state, slot, `adjust` array, axes, its owner's `get` closure, and the
-  committed value. A table keeps the committed values, where each row's offsets are, and its
-  adjustments in flat arrays, and fills every row's value on screen in one pass.
-  `node tests/perf/target-reads/run.mjs table 1000 10000 100000` on orochi, plain Node 26, ns a
-  row with every row moving:
-
-  | Rows | `readInto` per target | table reaching each state | table, flat |
-  |---:|---:|---:|---:|
-  |   1,000 |  44 | 8.8 | 5.6 |
-  |  10,000 |  90 | 9.7 | 5.5 |
-  | 100,000 | 233 | 66  | 5.7 |
-
-  So the table has to be flat all the way: one that still reaches each row's state falls back
-  to cache misses at 100k. The flat column is a ceiling. The script reads each row's place in
-  the codec's columns off its state once, where the engine would have to keep that current as
-  rows start and stop and as a lane compacts, and it takes adjustments as zero.
-  Shape, as put to Mike, who said to try it: `createTargetTable({ axes })`, `table.add(value)`
-  answering a row, `table.target(row)` for the animator, and `table.committed` and
-  `table.shown` as arrays. Single targets and scene poses stay as they are. Holds on rows need
-  the per-axis fold of `engine/holds.ts` to write into the same pass. Vertex colors are the
-  first candidate in the kit. Of a single `readInto`, about 37 ns is work
-  (`run.mjs read 10000 parts`: the owner's `get` 6.5 ns, `axes.write` 12, the slot 3, `adjust`
-  3; `axes.add` for `read()` 31) and the rest is misses; in a CPU profile 47% of its ticks sit
-  on the line that first loads `slot.cols` and `adjust`. For scale, 10k tweens storing through
-  `onTick` cost 0.53 ms a frame on teitou against 1.50 ms for 10k targets read after the frame
-  (`tests/perf/bench/animator-on-blits.bench.ts`, before `axes.add` and `readInto`).
+- **(P3) What `createTargetTable` leaves** — the table is built (2026-10-11;
+  `docs/concepts.md`, "Animation target"). Its pass over a table's rows costs 3 to 4 ns a row
+  at 10k and at 100k, where `readInto` on a target apiece costs about 140 and 230
+  (`node tests/perf/target-reads/run.mjs table 10000 table`, one case a process; orochi, plain
+  Node 26). Left:
+  - Nothing in the kit is on one. Vertex colors (`colorOverrides.target`) are the first
+    candidate: arrays of numbers a registry already holds.
+  - A row with a hold, or with an offset canceled under one, is read by itself each frame at
+    a single target's cost. Putting it in the pass needs `engine/holds.ts` to fold into the
+    table's arrays.
+  - `shown` is a `Float64Array`. A painter that uploads it wants `Float32Array`, and a copy a
+    frame is the caller's until the table can be asked for one.
+- **(P2) A frame of the animator costs about 90 ns an animation at 10k and 290 at 100k, read or
+  not** — the same script's `idle` case. With reads off the table's pass, this is what is
+  left of a frame of many values. In a CPU profile of 10k tweens: `tickEach` 15%, the target
+  book's `settle` 12 to 13%, which zeroes an `adjust` array per moving target every frame, and
+  the rest in blits' pull. Not investigated further.
+- **(P2) Stopping and starting an animation costs about 50 µs at 10k animations, and more as
+  there are more** — the same script's "rows restarted a frame" rows: 100 restarted a frame took
+  a 10k frame from about 1 ms to 6 to 8 ms, and 1,000 took a 100k frame from 29 ms to about
+  200, on a table or on targets alike. The profile under churn shows blits' `forget`,
+  `unindex`, and `prune`. `~/src/blits/NOTES-FROM-WEASEL.md` ("Churn, what is left") has the
+  earlier reading of the same cost, at one restart a frame.
 - **(P3) A tween or spring started on a target under a full-weight hold shows its whole travel
   on top of the hold** — it commits its destination, which the hold stands in front of, and its
   offset is added over the hold, so the value on screen jumps by the travel and settles back.

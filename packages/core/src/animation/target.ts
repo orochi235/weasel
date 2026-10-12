@@ -1,5 +1,5 @@
 import { axesOf } from './engine/axes';
-import type { Reader } from './engine/lanes';
+import type { LaneColumns, Reader } from './engine/lanes';
 
 /** How a target's value maps to the flat numbers an animation moves, and back. */
 export interface TargetAxes<T> {
@@ -73,6 +73,19 @@ export interface TargetOwner {
   stop(s: TargetState): void;
   /** Reads `s`'s voices again now, where what they read from outside has changed. */
   reread(s: TargetState): void;
+  /** The voices of `table`'s rows as the last frame read them; null where none is moving. */
+  columns(table: RowTable): LaneColumns | null;
+}
+
+/** What an animator needs of a table of targets, to show its rows in one pass. */
+export interface RowTable {
+  /** Says row `index` shows something the pass over the table's columns will not give: an
+   *  animation started, stopped, or was redirected since the last frame, or it has a hold. */
+  mark(index: number): void;
+  /** Called once a frame's voices are read: a mark that reading took in is dropped. */
+  settle(): void;
+  /** Fills every moving row's value on screen from `columns`. */
+  fill(columns: LaneColumns | null): void;
 }
 
 /** What an animator keeps on a target it is moving. */
@@ -95,6 +108,8 @@ export interface TargetState<T = unknown> {
    *  the committed value, so it waits here, on screen, until the holds go or an animation with
    *  a destination takes it up. */
   beside: number[] | null;
+  /** Its place in a table of targets, for a row of one. */
+  row: { readonly table: RowTable; readonly index: number } | null;
   /** How many animations are moving it. */
   live: number;
   /** The sum of their offsets as the last frame read it. */
@@ -180,6 +195,7 @@ export function createTarget<T>(opts: TargetOptions<T>): Target<T> {
     heldAt: null,
     held: 0,
     beside: null,
+    row: null,
     live: 0,
     slot: null,
     adjust: new Array<number>(axes.count).fill(0),
