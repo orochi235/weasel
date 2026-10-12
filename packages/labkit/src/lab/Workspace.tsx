@@ -270,7 +270,7 @@ export function Workspace({
         );
         if (!reorderable) return tile;
         return (
-          // No grip strip: the trial's own title bar is the drag surface.
+          // No grip strip: the tile's own `<TileGrip>` is the drag surface.
           <TrialDragContext.Provider value={{ nodeId: node.id }}>{tile}</TrialDragContext.Provider>
         );
       },

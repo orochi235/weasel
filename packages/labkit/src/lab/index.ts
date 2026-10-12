@@ -18,5 +18,6 @@ export {
   type PresentedTransportOptions,
   usePresentation,
 } from './presentation';
+export { TileGrip, type TileGripProps } from './TileGrip';
 export type { PanelDescriptor, TrialLayout, WorkspaceProps } from './Workspace';
 export { Workspace } from './Workspace';
