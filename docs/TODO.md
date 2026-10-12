@@ -620,7 +620,7 @@ Core five + Crop shipped. Remaining:
   1. *The renderer, under core.* Everything it draws with is gathered under `renderer/` now:
      `paintKinds`, `fillInPoseFrame`, `patterns`, `images`, `meshPaint`, `textCommand.ts`, and
      `markerCommands.ts`. What still ties it to core: `paintKinds.ts` bumps the scene's node
-     memo (`core/scene/nodeMemo`) and types an `Editor` slot with React; eight of its test files
+     memo (`core/scene/nodeMemo`) and types an `Editor` slot with React; some of its test files
      build a scene or call `canvas/renderSceneToPixels`, `canvas/NodeShape`, or
      `core/layers/render`, and would stay behind in core; `import-shims/renderer.ts` is a star
      export; `glRecorder` needs a testing subpath.
