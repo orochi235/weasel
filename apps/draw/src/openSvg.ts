@@ -2,6 +2,7 @@ import type { NodeId, Scene } from '@weasel-js/core';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
 import { DEFAULT_BG_COLOR } from './docPersistence';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import { reportSvgWarnings } from './fileNotices';
 import type { PaperSizeKey } from './paperSizes';
 import { leafOfObj } from './svgImport';
 import { parsedToDoc, pickSvgFileNamed, type SceneDraft, svgNodesToSceneDrafts, SWILL_NAMESPACES } from './svgInterop';
@@ -79,19 +80,30 @@ export interface OpenSvgTarget {
   onClearJournalCache(): void;
 }
 
-/** Pick an SVG file and open it as the document. A canceled picker changes nothing. */
-export async function openSvgFile(target: OpenSvgTarget, onWarn?: OnWarn): Promise<void> {
+/**
+ * Pick an SVG file and open it as the document, with a toast for what it
+ * could not read. A canceled picker changes nothing.
+ */
+export async function openSvgFile(target: OpenSvgTarget): Promise<void> {
   const picked = await pickSvgFileNamed();
   if (picked === null) return;
   target.onClearJournalCache();
-  const opened = openSvgText(target.scene, picked.text, picked.name, onWarn);
+  const warnings: string[] = [];
+  const opened = openSvgText(target.scene, picked.text, picked.name, (w) => warnings.push(w));
+  reportSvgWarnings('Opened', warnings);
   target.setFilename(opened.filename);
   if (opened.paperSize) target.setPaperSize(opened.paperSize);
   target.setBackgroundColor(opened.backgroundColor);
 }
 
-/** Pick an SVG file and add it to the document. A canceled picker changes nothing. */
-export async function importSvgFile(scene: DrawScene, onWarn?: OnWarn): Promise<void> {
+/**
+ * Pick an SVG file and add it to the document, with a toast for what it
+ * could not read. A canceled picker changes nothing.
+ */
+export async function importSvgFile(scene: DrawScene): Promise<void> {
   const picked = await pickSvgFileNamed();
-  if (picked !== null) importSvgText(scene, picked.text, onWarn);
+  if (picked === null) return;
+  const warnings: string[] = [];
+  importSvgText(scene, picked.text, (w) => warnings.push(w));
+  reportSvgWarnings('Imported', warnings);
 }

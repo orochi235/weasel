@@ -78,6 +78,7 @@ import { PreferencesModal } from './PreferencesModal';
 import { type AppCommands, appCommandsContribution } from './appCommands';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { loadDoc, PAPER_PRESETS, saveDoc } from './docPersistence';
+import { reportSessionSave } from './fileNotices';
 import { showFirstRunNotice } from './firstRunNotice';
 import { disableMachineFontOutlines, enableMachineFontOutlines } from './fonts';
 import { dispatchDoubleClickEntry, modalityShortcuts } from './modality';
@@ -204,16 +205,17 @@ export function App(): ReactElement {
       pendingSaveRef.current = null;
       if (!restoredRef.current) return;
       try {
-        writeSession(
+        reportSessionSave(writeSession(
           localStorage,
           [LS_KEY, JSON.stringify(scene.toJSON(), serializeReplacer)],
           [
             [HISTORY_KEY, JSON.stringify(modality.history.serialize(), serializeReplacer)],
             [SCENE_HISTORY_KEY, JSON.stringify(scene.serializeHistory(), serializeReplacer)],
           ],
-        );
+        ));
       } catch {
-        // Persistence is best-effort.
+        // No store at all, or a scene that will not serialize.
+        reportSessionSave(false);
       }
     };
     pendingSaveRef.current = save;

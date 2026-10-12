@@ -18,13 +18,12 @@ import {
   useState
 } from 'react';
 import { CommandBar, type PaperSizeKey } from './CommandBar';
-import { DEFAULT_FILENAME, PAPER_PRESETS } from './docPersistence';
 import { importSvgFile, openSvgFile } from './openSvg';
 import { type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { reportPasteOmissions } from './pasteOmissions';
 import { serializeReplacer } from './persistence';
-import { clipboardSnapshotRootIds, sceneToSvgString, selectionToClipboardSvgString } from './svgExport';
-import { downloadSvg } from './svgInterop';
+import { saveSvgFile } from './saveSvg';
+import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgExport';
 
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
 
@@ -103,26 +102,12 @@ export function Toolbar({
       <CommandBar
         onSaveSvg={() => {
           onClearJournalCache();
-          const paper = PAPER_PRESETS[paperSize];
-          const safe = filename.trim() || DEFAULT_FILENAME;
-          void sceneToSvgString(scene, {
-            filename,
-            paperSize,
-            paperWidth: paper.width,
-            paperHeight: paper.height,
-            backgroundColor,
-            onWarn: (w) => console.warn('[svg export]', w),
-          }).then((svg) => downloadSvg(svg, /\.svg$/i.test(safe) ? safe : `${safe}.svg`));
+          void saveSvgFile(scene, { filename, paperSize, backgroundColor });
         }}
         onOpenSvg={() => {
-          void openSvgFile(
-            { scene, setFilename, setPaperSize, setBackgroundColor, onClearJournalCache },
-            (w) => console.warn('[svg import]', w),
-          );
+          void openSvgFile({ scene, setFilename, setPaperSize, setBackgroundColor, onClearJournalCache });
         }}
-        onImportSvg={() => {
-          void importSvgFile(scene, (w) => console.warn('[svg import]', w));
-        }}
+        onImportSvg={() => { void importSvgFile(scene); }}
         onNew={(size) => {
           setPaperSize(size);
           // The batch is what names the entry and captures the prior selection.
