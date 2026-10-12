@@ -1119,10 +1119,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
   `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
   `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
-  own. `Properties.module.css` is one 1,597-line sheet. `PrefsForm` takes the schema its
-  aliases point into as `over`; `SelectionPanel`, `Bar`, and labkit's `ControlPanel` take none
-  and find an alias's leaf in their own schema, so a layout whose root is a `PrefSection` has no
-  surface that draws its aliases into a dialog. A condition on a node of the form's own schema
+  own. `Properties.module.css` is one 1,597-line sheet. Every surface takes the schema
+  its aliases point into as `over`, but `PrefSchemaEditor`'s preview of a properties layout seeds
+  its one node from the layout's own leaves and writes only under `pose` and `data`, so a row
+  aliased into a dialog's schema draws unset and an edit to it goes nowhere. labkit's
+  `ControlMatrix` takes no `over`: a cell's popover finds an alias's leaf in the matrix's own
+  schema. A condition on a node of the form's own schema
   reads `values` with that schema's leaves and defaults, so one that names a setting of `over`
   compares the stored value and finds no default. A vertical bar inside a
   `PrefsForm` names the popover of an alias left unnamed with the empty string, where `Bar`

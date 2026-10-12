@@ -1,10 +1,9 @@
 import { type ReactNode } from 'react';
 import {
-  prefAliasedLeaf,
-  prefAliasTarget,
   prefValueAtPath,
   type PrefAction,
   type PrefAlias,
+  type PrefAliasTargets,
   type PrefLeaf,
   type PrefMap,
   type PrefUnion,
@@ -27,7 +26,6 @@ import type { PrefFieldChoice } from './schema';
 import { dropValuePath, type PrefDrop } from './drop';
 import { HiddenBadge, marksHidden } from './hidden';
 import { selectionAttrs } from './selection';
-import type { AliasTargets } from './targets';
 import s from './Prefs.module.css';
 
 /** What a {@link PrefRenderer} is given for the leaf it is rendering. */
@@ -87,7 +85,7 @@ export interface WalkCtx {
   canInherit?: (path: string) => boolean;
   fields?: readonly PrefFieldChoice[];
   /** The schema the form's aliases point into, as its conditions leave it: what an alias row is drawn from. */
-  targets?: AliasTargets;
+  targets?: PrefAliasTargets;
   /** Paths of the rows whose labels are drawn as changed. */
   changed?: ReadonlySet<string>;
   /** Paths of the rows and groups the form marks as selected. */
@@ -110,9 +108,8 @@ export interface WalkCtx {
  */
 export function shownLeaf(ctx: WalkCtx, pref: PrefLeaf): { pref: PrefLeaf; at?: string } | null {
   if (pref.kind !== 'alias' || ctx.renderers?.alias) return { pref };
-  const alias = pref as PrefAlias;
-  const target = prefAliasTarget(alias, ctx.targets?.leafAt ?? (() => undefined));
-  return target ? { pref: prefAliasedLeaf(alias, target.leaf), at: target.path } : null;
+  const shown = ctx.targets?.shown(pref as PrefAlias);
+  return shown ? { pref: shown.leaf, at: shown.path } : null;
 }
 
 export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {

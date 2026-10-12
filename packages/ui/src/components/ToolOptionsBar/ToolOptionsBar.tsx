@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefGroup, PrefSection } from '@weasel-js/prefs';
 import type { PropertyRenderer } from '../SelectionPanel/renderContext';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
 import { Bar } from '../Bar/Bar';
@@ -36,6 +36,8 @@ export interface ToolOptionsBarProps {
   mixed?: ReadonlySet<string>;
   /** Control overrides, by dotted path or by leaf kind, as the panel takes. */
   renderers?: Record<string, PropertyRenderer>;
+  /** The schema `schema`'s `alias` leaves point into, handed to the `Bar`. Default: `schema` itself. */
+  over?: PrefGroup | PrefSection;
   children?: ReactNode;
   className?: string;
 }
@@ -58,7 +60,7 @@ export interface ToolOptionsBarProps {
  * plain DOM tab order and `useRovingTabIndex` documents this as its opt-out.
  */
 export function ToolOptionsBar(props: ToolOptionsBarProps) {
-  const { label, schema, values, onChange, mixed, renderers, children, className } = props;
+  const { label, schema, values, onChange, mixed, renderers, over, children, className } = props;
   const cls = [s.root, className].filter(Boolean).join(' ');
   // Every label on the line shortens together before the strip scrolls.
   const controls = useRef<HTMLDivElement>(null);
@@ -69,7 +71,7 @@ export function ToolOptionsBar(props: ToolOptionsBarProps) {
       <div className={s.controls} ref={controls}>
         <FitScope value={fit}>
           {schema !== undefined && (
-            <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} onChange={onChange} />
+            <Bar schema={schema} values={values} mixed={mixed} renderers={renderers} over={over} onChange={onChange} />
           )}
           {children}
         </FitScope>

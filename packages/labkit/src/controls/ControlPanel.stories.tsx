@@ -1,6 +1,6 @@
 import { ANGLE_RADIANS } from '@weasel-js/core';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { type PrefNumberUnit, prefUnit } from '@weasel-js/prefs';
+import { type PrefGroup, type PrefNumberUnit, prefUnit } from '@weasel-js/prefs';
 import { compact } from '@weasel-js/quantity';
 import { PropertyRow } from '@weasel-js/ui';
 import { useState } from 'react';
@@ -398,6 +398,47 @@ export const SidebarSliders: Story = {
           layout="inline"
           align="center"
           pack="pairs"
+        />
+      </div>
+    );
+  },
+};
+
+const dialogSchema: PrefGroup = {
+  name: 'Preferences',
+  children: {
+    view: {
+      name: 'View',
+      children: {
+        grid: { kind: 'boolean', name: 'Show grid', description: '', default: true },
+        spacing: {
+          kind: 'number',
+          name: 'Spacing',
+          description: '',
+          default: 8,
+          min: 1,
+          enableIf: { path: 'view.grid' },
+        },
+      },
+    },
+  },
+};
+const shortcuts = f.schema({ grid: f.alias('view.grid'), spacing: f.alias('view.spacing') });
+
+/** `over`: a panel of aliases into another schema, the one a preferences dialog is drawn from. Each row is that
+ *  schema's leaf, reads and writes its path in the config, and follows its conditions: Spacing is disabled
+ *  while Show grid is off. */
+export const AliasesIntoAnotherSchema: Story = {
+  render: () => {
+    const schema = resolveConfigSchema(shortcuts, []);
+    const [config, setConfig] = useState<Record<string, unknown>>({});
+    return (
+      <div style={{ width: 300 }}>
+        <ControlPanel
+          schema={schema}
+          over={dialogSchema}
+          config={config}
+          setConfig={(path, value) => setConfig((prev) => withValueAtPath(prev, path, value))}
         />
       </div>
     );

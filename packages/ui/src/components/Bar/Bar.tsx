@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { applyPrefConditions, isPrefLeaf, prefAliasedLeaf, prefAliasTarget, prefJudge, prefLeafAt, prefValueAtPath, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { applyPrefConditions, isPrefLeaf, prefAliasTargets, prefJudge, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import { entryApplier, type EntryAt } from '../Prefs/entry';
 import { prefFieldChoices, type PrefFieldChoice } from '../Prefs/schema';
 import { PropertyList } from '../Properties/PropertyList';
@@ -29,6 +29,10 @@ export interface BarProps {
   mixed?: ReadonlySet<string>;
   /** Control overrides, by dotted path or by leaf kind. */
   renderers?: Record<string, PropertyRenderer>;
+  /** The schema this one's `alias` leaves point into. Default: this schema itself. A bar drawn from a schema of
+   *  aliases into another passes that other: each alias is drawn as the leaf of it at the alias's path, reads and
+   *  writes `values` at that path, and is hidden and disabled by that leaf's conditions as well as its own. */
+  over?: PrefGroup | PrefSection;
   /** Which way the bar runs. A vertical bar has no room beside a field, so
    *  every leaf but an action opens from a button. Default `'horizontal'`. */
   orientation?: BarOrientation;
@@ -48,10 +52,11 @@ export function Bar(props: BarProps) {
   const { schema, values, onChange, mixed, renderers, orientation, label, framed, className } = props;
   const fields = prefFieldChoices(schema);
   const read = (path: string): unknown => valueAt(values, path);
-  const { shown, disabled } = applyPrefConditions(schema, prefJudge(schema, read));
+  const over = props.over ?? schema;
+  const targets = prefAliasTargets(over, (entry) => prefJudge(over, read, entry));
+  const { shown, disabled } = applyPrefConditions(schema, prefJudge(schema, read), { aliasOver: over, aliasHolds: targets.holds });
   const entryAt = entryApplier((entry) => prefJudge(schema, read, entry));
-  const leafAt = (path: string): PrefLeaf | undefined => (shown === null ? undefined : prefLeafAt(shown, path));
-  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, leafAt };
+  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, targets };
   return (
     <BarLayout
       nodes={shown === null ? [] : shownNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />), draw)}
@@ -75,16 +80,15 @@ interface Draw {
   disabled: ReadonlySet<string>;
   /** Answers the conditions that read an entry of a list or a map, for that entry. */
   entryAt: EntryAt;
-  /** The leaf at a path of the schema as its conditions leave it: what an alias is drawn as. */
-  leafAt: (path: string) => PrefLeaf | undefined;
+  /** The schema the bar's aliases point into, as its conditions leave it: what an alias is drawn from. */
+  targets: PrefAliasTargets;
 }
 
 /** `node` as the bar draws it: an alias as the leaf it shows, unless a renderer of the kind draws aliases itself. */
 function shownNode(node: BarLeafNode, draw: Draw): BarLeafNode {
   if (node.leaf.kind !== 'alias' || draw.renderers?.alias) return node;
-  const alias = node.leaf as PrefAlias;
-  const target = prefAliasTarget(alias, draw.leafAt);
-  return target ? { path: node.path, at: target.path, leaf: prefAliasedLeaf(alias, target.leaf) } : node;
+  const shown = draw.targets.shown(node.leaf as PrefAlias);
+  return shown ? { path: node.path, at: shown.path, leaf: shown.leaf } : node;
 }
 
 function shownNodes(nodes: readonly BarNode[], draw: Draw): BarNode[] {
@@ -134,8 +138,9 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, dr
     valueAt: (p) => ({ value: values?.[p], mixed: mixed?.has(p) === true }),
     fields,
     disabled: draw.disabled.has(own),
-    disabledAt: (under) => draw.disabled.has(under),
-    entryAt: draw.entryAt,
+    // The cell answers by the bar's own schema, at its own path; what is inside an alias's by its target's.
+    disabledAt: at === undefined ? (under) => draw.disabled.has(under) : draw.targets.disabledAt,
+    entryAt: at === undefined ? draw.entryAt : draw.targets.entryAt,
   };
   return {
     key: own,

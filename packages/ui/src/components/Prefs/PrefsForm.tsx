@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { applyPrefConditions, prefJudge, prefReader, visiblePrefSubtree, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
+import { applyPrefConditions, prefAliasTargets, prefJudge, prefReader, visiblePrefSubtree, type PrefGroup, type PrefSection } from '@weasel-js/prefs';
 import { Input } from '../Input';
 import { withDrop, type PrefDrop } from './drop';
 import { entryApplier } from './entry';
@@ -14,7 +14,6 @@ import { BarRootLayout } from './BarRootLayout';
 import type { BarOrientation } from '../Bar/BarLayout';
 import { RailLayout } from './RailLayout';
 import { selectionAttrs, shownPath, useSelectedRow, type PrefSelectHow, type SelectionRoot } from './selection';
-import { aliasTargets } from './targets';
 import s from './Prefs.module.css';
 
 export type { PrefRenderer, PrefRenderContext } from './PrefsRow';
@@ -162,7 +161,10 @@ export function PrefsForm(props: PrefsFormProps) {
   const [query, setQuery] = useState('');
   // The whole schema, as for `fields`: an alias may show a leaf the filter or `showHidden` left out.
   const over = props.over ?? schema;
-  const targets = useMemo(() => aliasTargets(over, values, { showHidden, markHidden }), [over, values, showHidden, markHidden]);
+  const targets = useMemo(
+    () => prefAliasTargets(over, (entry) => prefJudge(over, prefReader(over, values), entry), { showHidden, markHidden }),
+    [over, values, showHidden, markHidden],
+  );
   const keepEmpty = props.showEmpty === true;
   // Apart from the conditions, which a new `values` object asks again: what they hand back is this tree itself
   // while they drop nothing, and a drop in flight restarts whenever the tree it is drawn in is a new one.

@@ -57,6 +57,7 @@ export {
 } from './scope';
 export { prefShownReader, prefShownValue } from './shown';
 export { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
+export { prefAliasTargets, type PrefAliasTargets, type PrefAliasTargetsOptions } from './aliasTargets';
 export type { PrefLabel, PrefSeparator } from './label';
 export { prefObjectBase, prefObjectWithField } from './object';
 export type { PrefList } from './list';

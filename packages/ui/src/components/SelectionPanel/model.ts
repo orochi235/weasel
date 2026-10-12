@@ -18,10 +18,10 @@ import {
 import {
   isPrefLeaf,
   pairRowsOf,
-  prefAliasedLeaf,
-  prefAliasTarget,
+  prefAliasTargets,
   prefSectionLeaves,
   type PrefAlias,
+  type PrefAliasTargets,
   type PrefLeaf,
   type PrefSection,
   type PrefSectionAs,
@@ -88,18 +88,21 @@ export function classifyKind(
   return 'unknown';
 }
 
+const ALWAYS = (): boolean => true;
+
 /** Flatten a schema to sections of leaves. Nested sections fold into their
  *  top-level section; top-level leaves get an untitled leading section. An
- *  alias becomes the leaf it points at, as a form draws it, unless
- *  `rawAliases` keeps it for a renderer of the kind; an alias of nothing
- *  stays an alias either way. */
-function flatten(schema: PrefSection, rawAliases: boolean): PanelSection[] {
+ *  alias becomes the leaf of `targets` it points at, as a form draws it,
+ *  unless `rawAliases` keeps it for a renderer of the kind; an alias of
+ *  nothing stays an alias either way. Without `targets` an alias points
+ *  into `schema` itself. */
+function flatten(schema: PrefSection, rawAliases: boolean, targets?: PrefAliasTargets): PanelSection[] {
   const sections: PanelSection[] = [];
   const untitled: PanelLeaf[] = [];
-  const all = new Map(prefSectionLeaves(schema.members));
+  const into = targets ?? prefAliasTargets(schema, () => ALWAYS, { showHidden: true });
   const shown = (key: string, leaf: PrefLeaf): PanelLeaf => {
-    const target = leaf.kind === 'alias' && !rawAliases ? prefAliasTarget(leaf as PrefAlias, (path) => all.get(path)) : undefined;
-    return target ? { path: target.path, leaf: prefAliasedLeaf(leaf as PrefAlias, target.leaf), own: key } : { path: key, leaf };
+    const target = leaf.kind === 'alias' && !rawAliases ? into.shown(leaf as PrefAlias) : undefined;
+    return target ? { ...target, own: key } : { path: key, leaf };
   };
 
   for (const [key, child] of Object.entries(schema.members)) {
@@ -136,6 +139,14 @@ export function pairRows(leaves: readonly PanelLeaf[]): PanelRow[] {
 
 const NOTHING: PrefSection = { name: '', members: {} };
 
+/** One kind's schema as a panel draws it now. */
+export interface PanelShown {
+  /** The schema narrowed to what is drawn. Null is nothing. */
+  schema: PrefSection | null;
+  /** What the schema's aliases are drawn from. Default: the schema as handed back. */
+  targets?: PrefAliasTargets;
+}
+
 /**
  * The schema the panel shows for a set of kinds: one kind → its full
  * schema; several → the intersection by (path, leaf kind), shaped by the
@@ -143,31 +154,33 @@ const NOTHING: PrefSection = { name: '', members: {} };
  * contribute nothing, so their presence collapses the intersection.
  * `rawAliases` leaves each alias leaf as it is written, for a caller that
  * draws the kind itself. `shownOf` narrows each kind's schema before it is
- * read, to what that kind draws now; null is nothing.
+ * read, to what that kind draws now, and says where its aliases point.
  */
 export function effectiveSections(
   kinds: readonly string[],
   entries: readonly NodePropertiesEntry[],
   rawAliases = false,
-  shownOf?: (schema: PrefSection) => PrefSection | null,
+  shownOf?: (schema: PrefSection) => PanelShown,
 ): PanelSection[] {
   const uniq = [...new Set(kinds)];
   if (uniq.length === 0) return [];
   const byName = new Map(entries.map((e) => [e.name, e]));
   const schemas = uniq.map((k) => byName.get(k)?.schema);
   if (schemas.some((s) => s === undefined)) return [];
-  const [first, ...rest] = (schemas as PrefSection[]).map((schema) => (shownOf ? (shownOf(schema) ?? NOTHING) : schema));
+  const [flatFirst, ...rest] = (schemas as PrefSection[]).map((schema) => {
+    const shown: PanelShown = shownOf ? shownOf(schema) : { schema };
+    return flatten(shown.schema ?? NOTHING, rawAliases, shown.targets);
+  });
 
-  const flatFirst = flatten(first, rawAliases);
   if (rest.length === 0) return flatFirst;
 
   // '\0' delimiter: path and kind strings are unconstrained, so a
   // printable separator could collide with real content.
   const leafKey = (l: PanelLeaf): string => `${panelLeafKey(l)}\0${l.leaf.kind}`;
   const restKeys = rest.map(
-    (schema) =>
+    (flat) =>
       new Set(
-        flatten(schema, rawAliases)
+        flat
           .flatMap((s) => s.rows)
           .flatMap((r) => r.leaves)
           .map(leafKey),
