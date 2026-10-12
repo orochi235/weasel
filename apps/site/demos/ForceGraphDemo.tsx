@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { forceManyBody, forceLink, forceCollide, forceCenter } from 'd3-force';
 import {
   SceneCanvas,
   bodyPredicate,
@@ -18,63 +17,38 @@ import type {
   OngoingHandle,
   RenderLayer,
   Simulation,
-  SimulationNode,
   View,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import {
+  GRAPH_SIZES, graphForces, makeGraph, type GraphLink, type GraphNode, type GraphSize,
+} from './forceGraph/graph';
 import { bakeGraphPoses, syncGraphPoses } from './forceGraph/overrides';
 import s from './ForceGraphDemo.module.css';
 
 const W = 600, H = 400;
-const NODE_R = 8;
-const NODE_COUNT = 24;
-const LINK_COUNT = 30;
+const BOUNDS = { width: W, height: H };
 
 type LayerId = 'graph';
 interface NodeData { group: number }
 interface Pose { x: number; y: number; width: number; height: number }
 
-interface GraphNode extends SimulationNode {
-  id: string;
-  group: number;
-}
-interface GraphLink {
-  source: GraphNode | number | string;
-  target: GraphNode | number | string;
-}
-
 const GROUP_COLORS = ['#e25c4c', '#4ca7e2', '#5cc46e', '#e2b34c', '#9c6cd4'];
 
 const PAN_ON_DRAG = [dragPanContribution()];
 
-function makeInitial(): { nodes: GraphNode[]; links: GraphLink[] } {
-  const nodes: GraphNode[] = [];
-  for (let i = 0; i < NODE_COUNT; i++) {
-    nodes.push({
-      id: `n${i}`,
-      group: i % GROUP_COLORS.length,
-      x: W / 2 + (Math.random() - 0.5) * 200,
-      y: H / 2 + (Math.random() - 0.5) * 200,
-    });
-  }
-  const seen = new Set<string>();
-  const links: GraphLink[] = [];
-  while (links.length < LINK_COUNT) {
-    const a = Math.floor(Math.random() * NODE_COUNT);
-    const b = Math.floor(Math.random() * NODE_COUNT);
-    if (a === b) continue;
-    const key = a < b ? `${a}-${b}` : `${b}-${a}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    links.push({ source: nodes[a].id, target: nodes[b].id });
-  }
-  return { nodes, links };
-}
+const leafOf = (n: GraphNode, radius: number) => ({
+  id: n.id as never,
+  kind: 'leaf' as const,
+  layer: 'graph' as const,
+  pose: { x: n.x - radius, y: n.y - radius, width: radius * 2, height: radius * 2 },
+  data: { group: n.group },
+});
 
 /**
  * Edge layer: reads positions directly from the sim's nodes array (which the
  * forces mutate in place). Nodes themselves are rendered as scene leaves via
- * SceneCanvas's `scene` slot — so each sim tick that calls `scene.setPose`
+ * SceneCanvas's `scene` slot — so each sim tick that commits pose overrides
  * triggers the canvas to redraw, which re-runs this layer's `draw`.
  */
 function paintEdges(
@@ -171,7 +145,9 @@ function usePinTool(
 }
 
 export function ForceGraphDemo() {
-  const [initial] = useState(makeInitial);
+  const [size, setSize] = useState<GraphSize>(GRAPH_SIZES[0]);
+  const sizeRef = useRef(size);
+  const [initial] = useState(() => makeGraph(GRAPH_SIZES[0], BOUNDS));
   const nodesRef = useRef<GraphNode[]>(initial.nodes);
   const linksRef = useRef<GraphLink[]>(initial.links);
   const [settled, setSettled] = useState(false);
@@ -182,28 +158,11 @@ export function ForceGraphDemo() {
   // overrides and bakes the settled layout into the document once.
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'graph' }],
-    initial: initial.nodes.map((n) => ({
-      id: n.id as never,
-      kind: 'leaf' as const,
-      layer: 'graph',
-      pose: { x: n.x - NODE_R, y: n.y - NODE_R, width: NODE_R * 2, height: NODE_R * 2 },
-      data: { group: n.group },
-    })),
+    initial: initial.nodes.map((n) => leafOf(n, GRAPH_SIZES[0].radius)),
   });
   const selection = useSelection();
 
-  const forces = useMemo(
-    () => [
-      forceManyBody<GraphNode>().strength(-80),
-      forceLink<GraphNode, GraphLink>(linksRef.current)
-        .id((n) => n.id)
-        .distance(60)
-        .strength(0.5),
-      forceCollide<GraphNode>(NODE_R + 2),
-      forceCenter<GraphNode>(W / 2, H / 2),
-    ],
-    [],
-  );
+  const [forces] = useState(() => graphForces(GRAPH_SIZES[0], initial.links, BOUNDS));
 
   const sim = useSimulation<GraphNode>({
     nodes: nodesRef.current,
@@ -211,13 +170,29 @@ export function ForceGraphDemo() {
     onTick: () => {
       // Per-frame positions are presentation, not a document edit: they go in
       // as ephemeral overrides, so a settle records nothing.
-      syncGraphPoses(scene, nodesRef.current, NODE_R);
+      syncGraphPoses(scene, nodesRef.current, sizeRef.current.radius);
     },
     onEnd: () => {
-      bakeGraphPoses(scene, nodesRef.current, NODE_R);
+      bakeGraphPoses(scene, nodesRef.current, sizeRef.current.radius);
       setSettled(true);
     },
   });
+
+  /** Throw the graph away and settle a fresh one of `next` size. */
+  const regenerate = (next: GraphSize): void => {
+    const fresh = makeGraph(next, BOUNDS);
+    nodesRef.current = fresh.nodes;
+    linksRef.current = fresh.links;
+    sizeRef.current = next;
+    setSize(next);
+    scene.overrides.clearAll();
+    scene.removeMany([...scene.nodes.keys()]);
+    for (const n of fresh.nodes) scene.add(leafOf(n, next.radius));
+    sim.setNodes(fresh.nodes);
+    sim.setForces(graphForces(next, fresh.links, BOUNDS));
+    setSettled(false);
+    sim.alpha(1).restart();
+  };
 
   const unsettle = useCallback(() => setSettled(false), []);
   const pinTool = usePinTool(nodesRef, sim, unsettle);
@@ -229,55 +204,36 @@ export function ForceGraphDemo() {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div className={s.stack}>
+      <div className={s.controls}>
+        <label className={s.field}>
+          Nodes
+          <select
+            value={size.count}
+            onChange={(e) => regenerate(GRAPH_SIZES.find((g) => g.count === Number(e.currentTarget.value))!)}
+          >
+            {GRAPH_SIZES.map((g) => (
+              <option key={g.count} value={g.count}>{g.count.toLocaleString('en-US')}</option>
+            ))}
+          </select>
+        </label>
         <button onClick={() => { setSettled(false); sim.alpha(1).restart(); }}>
           Reheat
         </button>
-        <button onClick={() => {
-          const fresh = makeInitial();
-          nodesRef.current = fresh.nodes;
-          linksRef.current = fresh.links;
-          scene.overrides.clearAll();
-          // Rebuild scene leaves to mirror the new nodes.
-          for (const oldId of Array.from(scene.nodes.keys())) {
-            scene.remove(oldId);
-          }
-          for (const n of fresh.nodes) {
-            scene.add({
-              id: n.id as never,
-              kind: 'leaf',
-              layer: 'graph',
-              pose: { x: n.x - NODE_R, y: n.y - NODE_R, width: NODE_R * 2, height: NODE_R * 2 },
-              data: { group: n.group },
-            });
-          }
-          sim.setNodes(fresh.nodes);
-          sim.setForces([
-            forceManyBody<GraphNode>().strength(-80),
-            forceLink<GraphNode, GraphLink>(linksRef.current)
-              .id((n) => n.id)
-              .distance(60)
-              .strength(0.5),
-            forceCollide<GraphNode>(NODE_R + 2),
-            forceCenter<GraphNode>(W / 2, H / 2),
-          ]);
-          setSettled(false);
-          sim.alpha(1).restart();
-        }}>
+        <button onClick={() => regenerate(size)}>
           Regenerate
         </button>
         <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>
           Reset view
         </button>
-        <span className={s.zoom}>
-          zoom {view.scale.x.toFixed(2)}× {settled ? '· settled' : ''}
-        </span>
-        <span style={{ color: '#888' }}>
+        <span className={s.hint}>
           drag node to pin · drag empty canvas to pan · ctrl/⌘+wheel zoom · wheel pan · ⌘+0 reset
         </span>
+        <span className={s.readout}>
+          {size.links.toLocaleString('en-US')} edges · zoom {view.scale.x.toFixed(2)}×{settled ? ' · settled' : ''}
+        </span>
       </div>
-      <div style={{ display: 'inline-block' }}>
+      <div className={s.canvas}>
         <SceneCanvas features={['view']}
           width={W}
           height={H}
@@ -296,7 +252,7 @@ export function ForceGraphDemo() {
                 kind: 'path',
                 path: ellipsePath(p),
                 fill: { fill: 'solid', color: GROUP_COLORS[n.data.group] },
-                stroke: { paint: { color: '#fff' }, width: { px: 1.5 } },
+                stroke: { paint: { color: '#fff' }, width: { px: Math.min(1.5, p.width / 8) } },
               }],
             },
             edges: { layer: edgesLayer, before: 'scene' },

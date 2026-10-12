@@ -701,13 +701,6 @@ intercepting the press that drags the body.
   `kit:setLayer`. Widening the pull to those means deciding what a derivation
   is allowed to read, not just how a pose is compared.
 
-- **(P3) `ForceGraphDemo` is a second force-graph pipeline.** It runs d3-force through
-  `useSimulation` and paints with its own render layer, beside `@weasel-js/diagram`'s `force` layout
-  and `DiagramView`. `force.ts` reserves that route for graphs too big for a scene node per edge,
-  but the demo has 24 nodes. Ruled 2026-10-11: it stays as its own example, of the simulation loop,
-  and is not rebuilt on `DiagramView`. That leaves a graph large enough to show why the route
-  exists, and a registry blurb that names the bypass.
-
 ### `useScene` follow-ups
 
 - **(P3) Scene layout: what the first cut left.** A container declares its layout

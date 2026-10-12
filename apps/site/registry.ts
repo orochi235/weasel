@@ -371,7 +371,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'force-graph',
     title: 'Force-directed graph',
     category: 'Viewport',
-    description: '`useSimulation` runs a velocity-Verlet integrator with a d3-force-compatible force protocol. The kit owns the loop; the forces come from `d3-force` directly (`forceManyBody`, `forceLink`, `forceCollide`, `forceCenter`). Drag a node to pin it (sets `fx`/`fy` and reheats with `alphaTarget(0.3).restart()`); release to free it. Sim ticks call `scene.setPose` so SceneCanvas redraws on scene mutations — no React-state churn from a custom render-driver.',
+    description: '`useSimulation` runs a velocity-Verlet integrator with a d3-force-compatible force protocol. The kit owns the loop; the forces come from `d3-force` directly (`forceManyBody`, `forceLink`, `forceCollide`, `forceCenter`). Each node is a scene leaf, and each tick writes its position as an ephemeral pose override, so a settle records nothing until the layout is baked once at the end. The edges bypass the scene on purpose: one render layer reads the simulation and draws every edge, where the `force` layout in `@weasel-js/diagram` and `DiagramView` keep a scene node per edge. This is the route for a graph too big for that, which the Nodes control shows at 2,000 nodes and 2,500 edges. Drag a node to pin it (sets `fx`/`fy` and reheats with `alphaTarget(0.3).restart()`); release to free it.',
     hint: 'drag to pin · ctrl/⌘+wheel zoom · wheel pan · H drag to pan · ⌘+0 reset',
     load: () => import('./demos/ForceGraphDemo').then((m) => m.ForceGraphDemo),
     path: 'apps/site/demos/ForceGraphDemo.tsx',
