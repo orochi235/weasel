@@ -1,7 +1,7 @@
 import type { Stroke } from '@weasel-js/paint';
 import type { NodeInkCtx } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
+import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { strokeReachAt } from '../../renderer/cullDrawCommands';
 
 /** Whether a built-in painter can read this pose. A node that declares none

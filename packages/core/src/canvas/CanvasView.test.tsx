@@ -18,7 +18,7 @@ import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createSelectionOverlayLayer } from 'features/selection/overlay';
 import { ViewInputsProvider } from './viewInputs';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { DeviceProfileProvider } from 'core/device/useDeviceProfile';
 import type { DeviceProfile } from 'core/device/types';
 

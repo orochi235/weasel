@@ -1,7 +1,7 @@
 import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 
 /** Publish the pose descriptor every built-in action reads. */
 export function usePoseDescriptorDepSource(

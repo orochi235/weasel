@@ -18,7 +18,7 @@ import {
   visualBoundsViaDescriptor,
   type PoseDescriptor,
 } from 'interactions/actions/resize/geometry';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import {
   pickWalk,
   scenePickSource,

@@ -13,7 +13,7 @@ import type { Scene, NodeId, Node } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import type { Path } from '@weasel-js/geom';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { pathInWorld, worldEditToStorage, type PathInWorldPose } from '@weasel-js/geom';
 import { poseLinearOf } from '@weasel-js/geom';

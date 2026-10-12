@@ -104,7 +104,7 @@ export {
   poseFrameOf, poseFrameInverseOf, poseLinearOf, pathThroughPoseFrame, type PoseLinear,
 } from '@weasel-js/geom';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
-export { pathPoseDescriptor } from './poseDescriptor';
+export { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 export { pathOriginProjection } from './originProjection';
 export {
   createPenPreviewLayer,

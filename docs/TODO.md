@@ -613,31 +613,23 @@ Core five + Crop shipped. Remaining:
 - **(P2) Pull the standalone parts of core into their own packages.** Ruled 2026-10-11: whatever
   makes sense as a package gets extracted, whatever its size. Read from the source, not from a
   trial build. Core imports itself through bare aliases (`core/...`, `features/...`), so a search
-  for relative imports undercounts who uses what. In dependency order:
-  1. *Leaf math down.* Done for the color parser, `gradient`, `mat3`, `viewToMat3`,
-     `useVisibleRaf`, `pxExtent`, `meanScale`, `MIXED`, the pose frame and rotation math, and
-     with them the anchor edits, `pathInWorld`, and `textToPath`. Nothing is left here.
-  2. *Dissolve and rehome.* Done for `focus`, `cursor`, the pointer store, `SelectionContext`,
-     text hit-testing and fitting, path anchors, the run range-style algebra, the pose
-     composition half of `features/groups` (now `core/scene/composePose.ts`), and
-     `useNodeOverlayFrame` (now in `core/viewport`). Left: the rest of `features/groups`.
-     `nestedHit.ts` and `unionOfChildren.ts` import `interactions/actions/resize/` for the pose
-     descriptor geometry, which has to come down into `core/geometry` first, and `children.ts`
-     types its layer with the renderer's `DrawCommand`, so it follows the renderer.
-     (`@weasel-js/simulation`, `@weasel-js/stroke`, and `@weasel-js/text-dom` are out.)
-  3. *The renderer, under core.* It imports `core/paintKinds` as well as `@weasel-js/stroke`
+  for relative imports undercounts who uses what. The leaf math is down in geom, text, and
+  registry, `features/groups`, `overlays`, `focus`, and `cursor` are dissolved, and
+  `@weasel-js/simulation`, `@weasel-js/stroke`, and `@weasel-js/text-dom` are out. Left, in
+  dependency order:
+  1. *The renderer, under core.* It imports `core/paintKinds` as well as `@weasel-js/stroke`
      and `@weasel-js/paint`. Gather `paintKinds`, `fillInPoseFrame`, `features/patterns`,
      `images`, `meshPaint`, `text/textCommand.ts`, and `features/paths/markerCommands.ts` (marker
      heads as draw commands, the half of the marker code that needs `PathDrawCommand`) under
      `renderer/` first. `paintKinds.ts` subscribes a scene-memo bump and types an `Editor` slot
      with React; `import-shims/renderer.ts` is a star export; `glRecorder` needs a testing
      subpath.
-  4. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
+  2. *The animator, under core.* `canvas/SceneCanvas.tsx` and `useViewAnimation.ts` call
      `useAnimator`, so it cannot sit over core. It reaches the scene through `stagger.ts`'s
      `.springPose`, which has to be cut first. `poseHelpers.ts`, `wrappers/`,
      `behaviors/momentum.ts`, `reflow.ts`, `rig/bindRig.ts`, and `rig/useRig.ts` are scene-bound
      and stay.
-  5. *Over core, like `@weasel-js/kernel3d`.* `features/parallax` with `tiling` (the barrel has
+  3. *Over core, like `@weasel-js/kernel3d`.* `features/parallax` with `tiling` (the barrel has
      to export `core/viewport/parallax` directly first); `poseRun` (needs a public way to publish
      preview poses: `interactions/actions/previewOverrides.ts` is in no barrel); `minimap` with
      `canvas/MinimapCanvas.tsx` (needs a public home for `accentColorOf`); the image and SVG
@@ -647,7 +639,7 @@ Core five + Crop shipped. Remaining:
   release job cannot create one: `npm run check:first-publish` names any that are missing.
 
   Staying in core: `features/viewports` (`CanvasView` is built on it), `chrome-caps`
-  (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 3,
+  (`SceneCanvas` runs it), `modes`, `longPress`, `patterns`' fill resolution until step 1,
   `selection/overlay.ts`, and the scene-bound text and path layers.
 
 - **(P3) geom's `Mat3` and `mat3` are different matrices.** `Mat3` and the free functions beside

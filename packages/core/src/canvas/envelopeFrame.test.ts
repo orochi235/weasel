@@ -16,7 +16,7 @@ import { buildSceneTree } from 'canvas/buildSceneTree';
 import { pickWalk, scenePickSource } from 'canvas/pickWalk';
 import { scenePoseFrame } from 'interactions/actions/poseFrame';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '../renderer';
 import { RIGID_POSE_COMPOSITION } from 'core/scene/composePose';
 import { expectSamePose } from 'core/scene/frameFixture';
 

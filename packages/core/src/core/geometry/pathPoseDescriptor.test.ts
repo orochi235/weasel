@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pathPoseDescriptor } from './poseDescriptor';
+import { pathPoseDescriptor } from './pathPoseDescriptor';
 import { polygonFromPoints } from '@weasel-js/geom';
 
 describe('pathPoseDescriptor.lerp', () => {

@@ -1,6 +1,6 @@
 import { worldPoseLookup } from 'core/scene/composePose';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 
 /** @internal */
 interface HitAdapter<TNode extends { id: string }, TPose> {

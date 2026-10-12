@@ -3,7 +3,7 @@ import {
   poseDescriptorForNode,
   visualBoundsViaDescriptor,
   type PoseDescriptor,
-} from 'interactions/actions/resize/geometry';
+} from 'core/geometry/poseDescriptor';
 import type { DerivePoseFn } from 'core/scene/types';
 
 /**

@@ -5,7 +5,7 @@ import {
   transformPath,
   type Path,
 } from '@weasel-js/geom';
-import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
+import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 
 /**
  * `PoseDescriptor` for `Path` poses — wires `useResize` to operate

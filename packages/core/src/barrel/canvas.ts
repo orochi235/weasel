@@ -114,8 +114,8 @@ export type { WeaselProviderProps } from '../WeaselProvider';
 export * from '../core/layers/render';
 export { workspaceTintLayer, modeDecorationLayer } from '../features/modes/modeLayers';
 export type { WorkspaceTintLayerOptions } from '../features/modes/modeLayers';
-export { createChildrenLayer } from '../features/groups/children';
-export type { CreateChildrenLayerOpts } from '../features/groups/children';
+export { createChildrenLayer } from '../core/layers/children';
+export type { CreateChildrenLayerOpts } from '../core/layers/children';
 
 // ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
 export * from '../debug';

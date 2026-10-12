@@ -6,7 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { isPathLike, AUTO_POSE_DESCRIPTOR } from './autoPoseDescriptor';
-import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { pathPoseDescriptor } from 'core/geometry/pathPoseDescriptor';
 import {
   PATH_M,
   PATH_L,

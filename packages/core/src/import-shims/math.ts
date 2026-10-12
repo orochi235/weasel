@@ -50,5 +50,5 @@ export type {
   SimulationNode,
   SimulationOptions,
 } from '@weasel-js/simulation';
-export { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+export { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 export { rotatePoint } from 'interactions/actions/rotate/geometry';

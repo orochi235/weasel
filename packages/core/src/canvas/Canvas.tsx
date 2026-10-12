@@ -72,7 +72,7 @@ import {
   createSelectionOverlayLayer,
   type SelectionOverlayLayerOpts,
 } from 'features/selection/overlay';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { CanvasDebugSink, DebugConfig } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';

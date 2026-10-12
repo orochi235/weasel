@@ -3,7 +3,7 @@ import { useLatest } from '@weasel-js/react';
 import { runLayoutPass, type ResolvedLayoutFrame } from 'core/scene/layoutPass';
 import type { NodeId, Scene, SceneArrivalHandler } from 'core/scene/types';
 import { poseDescriptorForNode, type PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import type { LayoutStrategy } from './types';
 

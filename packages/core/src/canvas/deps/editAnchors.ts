@@ -34,7 +34,7 @@ import { useDepSource } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId, RectPose } from 'core/scene/types';
-import { isRectPose } from 'interactions/actions/resize/autoPoseDescriptor';
+import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Path, PolygonPath } from '@weasel-js/geom';
 import { pathInWorld, worldEditToStorage } from '@weasel-js/geom';

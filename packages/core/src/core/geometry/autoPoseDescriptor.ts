@@ -1,6 +1,6 @@
 import type { Path } from '@weasel-js/geom';
-import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
-import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './geometry';
+import { pathPoseDescriptor } from './pathPoseDescriptor';
+import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from './poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 
 /** True for Path-shaped poses (`{kind: 'polygon' | 'rect'}`). Useful for

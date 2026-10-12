@@ -58,7 +58,7 @@ import { DEFAULT_RESIZE_BEHAVIORS } from '../resize/behaviors';
 import { remapRotatedLeaf, translatePoseViaDescriptor, visualBoundsViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import { poseRotationOf } from '@weasel-js/geom';
 import { nodeDescriptors, poseDescriptorOf } from '../poseDescriptorDep';
-import { isRectPose } from '../resize/autoPoseDescriptor';
+import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { fixedCornerOf } from '../resize/cornerHandles';
 import { rotatePoint } from '../rotate/geometry';
 import type { Op } from 'core/ops/types';
