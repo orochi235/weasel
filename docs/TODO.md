@@ -1160,14 +1160,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   answers an outside drop's target at the drop; `onExternalTarget` still reports it from an
   effect, a render behind, and its docstring says so. Whether it should go is not decided.
 
-- **(P3) A rail of sections and pages: three things not decided.** A `PrefsForm` rail lists a page
-  at any depth, and a section only when it sits directly on a page. (1) A foldable rail unfolds an
-  entry only while the open page is it or under it, so a section holding pages of its own keeps
-  their entries shut while the reader scrolls through it. Whether the section in view should
-  unfold is open; it would move the rail under a reader who is scrolling. (2) A top-level group
-  that is not a page (`as: 'section'` beside the root's loose leaves) sits directly on the root's
-  own page and gets no entry, where a section directly on any other page gets one. (3) A
-  section's rail entry and a nested page's look the same until one is chosen.
+- **(P3) A rail of sections and pages: two things not decided.** A `PrefsForm` rail lists a page
+  at any depth, and a section only when it sits directly on a page, the root's own included. (1) A
+  foldable rail unfolds an entry only while the open page is it or under it, so a section holding
+  pages of its own keeps their entries shut while the reader scrolls through it. Whether the
+  section in view should unfold is open; it would move the rail under a reader who is scrolling.
+  (2) A section's rail entry and a nested page's look the same until one is chosen.
 
 - **(P3) A stuck section heading in a rail pane sits below the pane's top edge.** `.sectionTitle`
   is `position: sticky; top: 0`, and in Chromium its box rests the pane's `padding-top` below the

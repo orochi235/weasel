@@ -52,7 +52,10 @@ export interface PrefsRailProps {
 export function PrefsRail(props: PrefsRailProps) {
   const { items, section, current, onOpen, onScrollTo, ariaLabel, header, showCounts, dropInto } = props;
   const foldable = props.foldable === true;
-  const holds = (path: string): boolean => section === path || (path !== '' && section.startsWith(`${path}.`));
+  const holds = (path: string): boolean => {
+    for (let at: string | null = section; at !== null; at = prefRailAbove(items, at)) if (at === path) return true;
+    return false;
+  };
   // Folds the reader set by hand, by entry; any other entry is unfolded only while the open group is it or under it.
   const [folds, setFolds] = useState<ReadonlyMap<string, boolean>>(new Map());
   const [lastSection, setLastSection] = useState(section);
