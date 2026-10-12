@@ -282,8 +282,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
           const r = reduceBehaviorEnd(scratch.behaviors, scratch.gestureCtx);
           if (r === null) return false;
           if (r !== undefined) {
-            commitGestureOps(target, lifecycle, r);
-            return true;
+            return commitGestureOps(target, lifecycle, r);
           }
         }
         if (scratch.currentDelta === 0) return false;
@@ -303,8 +302,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
           }));
         }
         if (ops.length === 0) return false;
-        commitGestureOps(target, lifecycle, ops);
-        return true;
+        return commitGestureOps(target, lifecycle, ops);
       };
 
       const recomputePreviews = (delta: number) => {

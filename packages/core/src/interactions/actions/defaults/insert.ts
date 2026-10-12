@@ -475,18 +475,16 @@ function endInsert(scratch: InsertScratch, endCtx: InvocationCtx, reason: 'commi
     const r = reduceBehaviorEnd(scratch.behaviors, scratch.gestureCtx);
     if (r === null) return false;
     if (r !== undefined) {
-      if (scratch.scene) {
-        commitGestureOps(
-          {
-            scene: scratch.scene,
-            applyOps: scratch.applyOps,
-            adapter: defaultCommitAdapter(scratch.scene, scratch.selection?.adapterMethods),
-          },
-          readGestureLifecycle(resolved, 'Insert', scratch.behaviors),
-          r,
-        );
-      }
-      return scratch.scene !== undefined;
+      if (!scratch.scene) return false;
+      return commitGestureOps(
+        {
+          scene: scratch.scene,
+          applyOps: scratch.applyOps,
+          adapter: defaultCommitAdapter(scratch.scene, scratch.selection?.adapterMethods),
+        },
+        readGestureLifecycle(resolved, 'Insert', scratch.behaviors),
+        r,
+      );
     }
   }
 
