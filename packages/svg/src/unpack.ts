@@ -21,7 +21,6 @@
  * file arrives as a single selectable unit; a single-root file inserts
  * as-is. Each file commits as one `applyOps` batch, so the whole import is
  * a single undo step.
- *
  */
 import { parseSvg } from './parse';
 import type { ParseResult, SvgGroupNode, SvgNode, SvgPaint, SvgStroke } from './types';
@@ -64,11 +63,12 @@ type DraftPose = SvgDraftBounds & { rotation?: number; transform?: PoseLinear };
 /**
  * One node the unpack wants the scene to materialize, in parent-before-child
  * order (a draft's `parentId` always names an earlier draft, or `null` for
- * roots). Leaf `data` is kit-painter-native (see module doc).
+ * roots). Leaf `data` is kit-painter-native (see module doc). `hidden` is the
+ * source node's, for the caller to map onto whatever it hides a node with.
  */
 export type SvgSceneDraft<TData = Record<string, unknown>> =
-  | { kind: 'container'; id: string; parentId: string | null; pose: DraftPose }
-  | { kind: 'leaf'; id: string; parentId: string | null; pose: DraftPose; data: TData };
+  | { kind: 'container'; id: string; parentId: string | null; pose: DraftPose; hidden?: true }
+  | { kind: 'leaf'; id: string; parentId: string | null; pose: DraftPose; data: TData; hidden?: true };
 
 /** A leaf `SvgNode`: everything but a group. */
 export type SvgLeafNode = Exclude<SvgNode, SvgGroupNode>;
@@ -186,7 +186,6 @@ function strokeInBoxFrame(stroke: Stroke, box: SvgDraftBounds): Stroke {
   return paint === stroke.paint ? stroke : { ...stroke, paint };
 }
 
-
 /**
  * Walk an `SvgNode[]` tree and emit a flat, parent-before-child list of
  * {@link SvgSceneDraft}s. Each `<g>` becomes a container whose pose is the
@@ -217,7 +216,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     const id = nextId(source);
     const out = options.leaf ? options.leaf(id, { pose, data }, source) : (data as TData);
     if (out === null) return null;
-    drafts.push({ kind: 'leaf', id, parentId, pose, data: out });
+    drafts.push({ kind: 'leaf', id, parentId, pose, data: out, ...(source.hidden ? { hidden: true } : {}) });
     return pose;
   };
 
@@ -232,6 +231,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         id: nextId(n),
         parentId,
         pose: { x: 0, y: 0, width: 0, height: 0 },
+        ...(n.hidden ? { hidden: true } : {}),
       };
       drafts.push(draft);
       const acc = unionAABB(n.children.map((c) => visit(c, draft.id, k)));
@@ -307,7 +307,6 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
 function isNodeList(input: ParseResult | readonly SvgNode[]): input is readonly SvgNode[] {
   return Array.isArray(input);
 }
-
 
 /**
  * Apply the fit-clamp scale to the lengths a leaf holds in data rather than

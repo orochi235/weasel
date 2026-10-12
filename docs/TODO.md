@@ -348,11 +348,11 @@ have shipped. What remains:
   and list-valued per-glyph `x` / `y` are not applied; each now warns, on `<text>` and `<tspan>`
   alike. Kerned text exported as one `<tspan>` per glyph run imports with the glyphs run together.
 
-- **(P3) svg import: hidden content is dropped, not imported hidden.** `display="none"` and
-  `visibility="hidden"` content is now left out of `parseSvg`'s result, matching what a renderer
-  shows and what `svgFromKit` does with a hidden node on export. A file's hidden layers are
-  therefore lost on import. Keeping them needs a `hidden` flag on `SvgNode` that `unpack` maps to
-  the scene's own hidden state.
+- **(P3) svg import: a dropped file's hidden content is still left out.** `parseSvg(svg, {
+  keepHidden: true })` keeps `display="none"` and `visibility="hidden"` content, each node marked
+  `hidden`, and `svgNodesToKitDrafts` carries the flag onto its drafts. `unpackSvgFiles` does not
+  ask for it, because a scene node has no hidden state of its own to map it to: only a layer has
+  `visible`. With a per-node one, `unpackSvgFiles` passes `keepHidden` and writes the flag.
 
 ### Pathfinder follow-ups (post-v1)
 

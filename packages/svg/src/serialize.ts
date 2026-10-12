@@ -6,21 +6,19 @@
  */
 
 import { escapeAttr, escapeText } from './xmlEscape';
-import type { FontRequest, Path, Stroke, StrokeAlign } from '@weasel-js/core';
-import {
-  boundsOfPath, poseFrameOf, resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor,
-} from '@weasel-js/core';
+import type { FontRequest, Stroke, StrokeAlign } from '@weasel-js/core';
+import { resolveRunFace, resolveScreenLength, resolveTextStyle, scriptMetricsFor } from '@weasel-js/core';
 import type {
-  Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
+  NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
   ScreenLength,
 } from './types';
-import { IDENTITY_MATRIX } from './types';
 import { serializePathD } from './path-serializer';
-import { formatMatrix, multiply, trimNumber } from './transform';
+import { formatMatrix, trimNumber } from './transform';
 import { PaintServerRegistry, WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 import { anchorOffset, svgDirection } from './textAnchor';
 import { boxTransformAttr } from './placeBox';
+import { computeBounds, pathBounds } from './serializeBounds';
 
 /**
  * Walk the tree and produce an SVG document string. The root `<svg>`'s
@@ -180,6 +178,13 @@ function registerMarkers(stroke: Pick<Stroke, 'markerStart' | 'markerMid' | 'mar
 type Warn = (message: string) => void;
 
 function nodeXml(
+  node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
+): string {
+  const xml = kindXml(node, registry, namespaces, warn);
+  return node.hidden ? xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`) : xml;
+}
+
+function kindXml(
   node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
 ): string {
   if (node.kind === 'group') return groupXml(node, registry, namespaces, warn);
@@ -410,59 +415,6 @@ function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry, warn: 
 }
 
 /**
- * Tight bounding box around everything the tree draws, in the root's
- * coordinates — the fallback `viewBox` when the caller supplies none. A
- * node's `rotation` and a group's `transform` both move ink, so both are
- * applied here; a box taken from unrotated geometry crops the document.
- */
-function computeBounds(nodes: SvgNode[]): { x: number; y: number; width: number; height: number } {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  const visit = (n: SvgNode, ctm: Matrix): void => {
-    if (n.kind === 'group') {
-      const childCtm = n.transform ? multiply(ctm, n.transform) : ctm;
-      n.children.forEach((c) => visit(c, childCtm));
-      return;
-    }
-    const b = n.kind === 'text' || n.kind === 'image'
-      ? { minX: n.x, minY: n.y, maxX: n.x + n.width, maxY: n.y + n.height }
-      : pathBounds(n.path);
-    const frame = n.kind === 'path' ? null : poseFrameOf(n);
-    const local = frame ? multiply(ctm, frame)
-      : n.rotation ? rotateAboutCenter(ctm, b, n.rotation) : ctm;
-    for (const [x, y] of corners(b)) {
-      const px = local[0] * x + local[2] * y + local[4];
-      const py = local[1] * x + local[3] * y + local[5];
-      if (px < minX) minX = px;
-      if (py < minY) minY = py;
-      if (px > maxX) maxX = px;
-      if (py > maxY) maxY = py;
-    }
-  };
-  nodes.forEach((n) => visit(n, IDENTITY_MATRIX));
-  if (!Number.isFinite(minX)) {
-    return { x: 0, y: 0, width: 0, height: 0 };
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
-function corners(b: { minX: number; minY: number; maxX: number; maxY: number }): [number, number][] {
-  return [[b.minX, b.minY], [b.maxX, b.minY], [b.maxX, b.maxY], [b.minX, b.maxY]];
-}
-
-/** `ctm` composed with the same `rotate(angle cx cy)` the element emits. */
-function rotateAboutCenter(
-  ctm: Matrix,
-  b: { minX: number; minY: number; maxX: number; maxY: number },
-  angle: number,
-): Matrix {
-  const cx = (b.minX + b.maxX) / 2;
-  const cy = (b.minY + b.maxY) / 2;
-  const c = Math.cos(angle);
-  const s = Math.sin(angle);
-  return multiply(ctm, [c, s, -s, c, cx - cx * c + cy * s, cy - cx * s - cy * c]);
-}
-
-/**
  * Emit a `<text>` element. `x` is the `text-anchor` point, per the SVG spec:
  * the box's left edge, center or right edge as its alignment resolves. Uses
  * `dominant-baseline="text-before-edge"` so `y` matches weasel's top-of-box
@@ -649,9 +601,3 @@ function textDecorationValue(
   if (overline) tokens.push('overline');
   return tokens.length > 0 ? tokens.join(' ') : null;
 }
-
-function pathBounds(path: Path): { minX: number; minY: number; maxX: number; maxY: number } {
-  const b = boundsOfPath(path);
-  return { minX: b.x, minY: b.y, maxX: b.x + b.width, maxY: b.y + b.height };
-}
-
