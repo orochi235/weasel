@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
-import { layoutRuns, _resetBidiWarningForTests, type LayoutRunsOpts } from './layoutRuns';
+import { layoutRuns, type LayoutRunsOpts } from './layoutRuns';
 import { cachedLayoutRuns, _resetLayoutCacheForTests } from './layoutCache';
 import { layoutTextPose } from './textPoseLayout';
-import { registerBidi, paragraphDirection } from './bidiRegistry';
+import { registerBidi, paragraphDirection, _resetBidiWarningForTests } from './bidiRegistry';
 import type { BidiResolver } from './bidiSeam';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
@@ -69,6 +69,21 @@ describe('registerBidi', () => {
     unregister();
     expect(visual(layoutRuns([RUN(HEBREW)], OPTS))).toEqual([0, 1, 2]);
     expect(warn.mock.calls[0][0]).toContain('registerBidi');
+    warn.mockRestore();
+  });
+
+  it('says nothing about digits, which read left to right with or without an engine', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const digits = ['\u0661\u0662\u0663', '\u06f1\u06f2\u06f3', '\u{10d31}\u{10d32}', '\u{10e60}\u{10e61}', '\u0600\u066b\u066c'];
+    for (const text of digits) {
+      layoutRuns([RUN(text)], OPTS);
+      // The premise: an engine leaves them in the order they were written.
+      const levels = bidi.reorder(bidi.analyze([...text].map((c) => c.codePointAt(0)!), 'auto'), 0, [...text].length).levels;
+      expect(Array.from(levels).every((l) => l % 2 === 0), text).toBe(true);
+    }
+    expect(warn).not.toHaveBeenCalled();
+    layoutRuns([RUN('\u0627\u0661')], OPTS);
+    expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
 

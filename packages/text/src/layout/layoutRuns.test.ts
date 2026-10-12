@@ -16,7 +16,7 @@ import {
   __setGlyphRasterizerForTests,
   _resetFontOutlinesForTests,
 } from '@weasel-js/font/test-seams';
-import { layoutRuns, _resetNoMetricsWarningsForTests } from './layoutRuns';
+import { layoutRuns } from './layoutRuns';
 import type { LayoutRunsOpts } from './layoutRuns';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
 import { resolveTextStyle } from '../textStyle';
@@ -1783,7 +1783,6 @@ describe('layoutRuns — a family with no metrics at all', () => {
     _resetFallbackForTests();
     _resetDynamicFontsForTests();
     _resetFontOutlinesForTests();
-    _resetNoMetricsWarningsForTests();
   });
 
   it('warns rather than laying out nothing in silence', () => {
@@ -1814,6 +1813,18 @@ describe('layoutRuns — a family with no metrics at all', () => {
     layoutRuns([run('e', 'also-missing')], OPTS);
 
     expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it('leaves it at one warning when the registry already said the face cannot render', async () => {
+    // A family that is its own fallback and has no variant near the request.
+    await registerFixture('lonely', [{ weight: 700, style: 'italic' }]);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    layoutRuns([run('hello', 'lonely')], OPTS);
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('will not render at all');
     warn.mockRestore();
   });
 

@@ -35,14 +35,14 @@
 
 import { paintKey, strokeHasInk, strokeKey, type Paint, type Stroke, type Fill } from '@weasel-js/paint';
 import {
-  resolveFontVariant, resolveGlyph, metricsOf, glyphOutline, fontPending, faceMetricsOf,
+  resolveFontVariant, resolveGlyph, metricsOf, glyphOutline, warnNoMetrics, faceMetricsOf,
   type ResolveResult, type BmFontChar, type BmFont, type FontStyle, type FaceMetrics, type GlyphMetrics,
 } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign, type TextAlign, type TextDirection } from '../textStyle';
 import type { BidiResolver } from './bidiSeam';
 import { analyzeParagraphs, restoreRemoved } from './bidiLines';
-import { directionOfLevel, registeredBidi } from './bidiRegistry';
+import { directionOfLevel, registeredBidi, warnRtlWithoutEngine } from './bidiRegistry';
 import { DECORATION_KINDS, decorationRule, type DecorationKind } from './decorationMetrics';
 import { graphemeEnds } from '../measure/graphemes';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
@@ -347,61 +347,6 @@ function getOrCreateGroup(
 }
 
 /**
- * Code point blocks whose strong characters read right-to-left.
- *
- * A heuristic on purpose: the real answer is `Bidi_Class`, which lives in
- * `@weasel-js/bidi` and is exactly what the caller has not installed when this
- * matters. Every range here is wholly right-to-left, so it can miss a script
- * but never accuse a left-to-right one.
- */
-const RTL_BLOCKS: ReadonlyArray<readonly [number, number]> = [
-  [0x0590, 0x05ff], [0x0600, 0x07bf], [0x0860, 0x08ff],
-  [0xfb1d, 0xfdff], [0xfe70, 0xfeff],
-  [0x10800, 0x10fff], [0x1e800, 0x1efff],
-];
-
-let warnedLogicalRtl = false;
-
-function warnLogicalRtlOnce(): void {
-  if (warnedLogicalRtl) return;
-  warnedLogicalRtl = true;
-  console.warn(
-    // Naming the import in `from "<pkg>"` form would trip labkit's
-    // consumer smoke test, which greps dist for that exact shape.
-    'weasel layoutRuns: this text contains right-to-left characters but no ' +
-    '`bidi` engine is registered, so it is being laid out in logical order — ' +
-    'the glyphs will appear reversed. Import `bidi` out of the ' +
-    '`@weasel-js/bidi` package and call `registerBidi(bidi)` once at startup.',
-  );
-}
-
-/** @internal Test seam — the warning fires once per process otherwise. */
-export function _resetBidiWarningForTests(): void {
-  warnedLogicalRtl = false;
-}
-
-const warnedNoMetrics = new Set<string>();
-
-function warnNoMetricsOnce(family: string, weight: number, style: string): void {
-  const key = `${family}|${weight}|${style}`;
-  if (warnedNoMetrics.has(key)) return;
-  warnedNoMetrics.add(key);
-  console.warn(
-    `weasel layoutRuns: no metrics for "${family}" ${weight}/${style} — neither ` +
-    `an atlas nor an outline face resolved, so every run set in it lays out as ` +
-    `nothing. Register it with registerFont / registerCanvasFont / ` +
-    `registerFontOutlines. If you did, check for a duplicated @weasel-js/font in ` +
-    `node_modules — its registry is module state, so a second copy is a second, ` +
-    `empty one.`,
-  );
-}
-
-/** @internal Test seam — the warn-once keys are module state. */
-export function _resetNoMetricsWarningsForTests(): void {
-  warnedNoMetrics.clear();
-}
-
-/**
  * Lay out `runs` into draw groups, decoration rules and line boxes. Wrapping,
  * baselines, tracking and decorations follow the rules in this file's module doc.
  */
@@ -481,10 +426,7 @@ export function layoutRuns(
     if (!metrics) {
       // A run with no metrics lays out as nothing, which is indistinguishable
       // from empty text downstream — the only signal a consumer ever gets.
-      // A late face is not a missing one: the settle relayouts and asks again.
-      if (!fontPending(run.fontFamily, run.fontWeight, run.fontStyle)) {
-        warnNoMetricsOnce(run.fontFamily, run.fontWeight, run.fontStyle);
-      }
+      warnNoMetrics(run.fontFamily, run.fontWeight, run.fontStyle);
       // Skipped, but its characters still occupy source offsets — dropping
       // them here would shift every later run's caret indices left.
       srcIndex += run.srcMap?.length ?? run.text.length;
@@ -561,10 +503,7 @@ export function layoutRuns(
   const paragraphs = bidi
     ? analyzeParagraphs(bidi, entries.map((e) => e.cp), (i) => entries[i].isNewline, direction)
     : null;
-  if (!bidi
-      && entries.some((e) => RTL_BLOCKS.some(([lo, hi]) => e.cp >= lo && e.cp <= hi))) {
-    warnLogicalRtlOnce();
-  }
+  if (!bidi) warnRtlWithoutEngine(entries.map((e) => e.cp));
 
   // 2. Break the entries into lines — at hard breaks, and at UAX #14
   //    opportunities when `maxWidth` is finite — then fill each one.
