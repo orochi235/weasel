@@ -29,8 +29,9 @@ export {
 } from './poseTarget';
 export { createWrittenPoseTarget, type WrittenPoseTargetOptions } from './writtenPoseTarget';
 export {
-  tweenPose, springPose,
-  type TweenPoseOptions, type SpringPoseOptions, type PoseAnimationAdapter,
+  tweenPose, springPose, staggerSpringPose,
+  type TweenPoseOptions, type SpringPoseOptions, type StaggerSpringPoseOptions,
+  type PoseAnimationAdapter,
 } from './poseHelpers';
 export * from './wrappers';
 export {

@@ -1,7 +1,9 @@
 import { createTransformOp } from 'core/ops/transform';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { Op } from 'core/ops/types';
-import type { AnimationHandle, Animator, EasingSpec, SpringPresetName } from './types';
+import type {
+  AnimationHandle, Animator, EasingSpec, SpringPresetName, StaggerDelay, StaggerOptions,
+} from './types';
 import { stateOf, type Target } from './target';
 
 /** The part of an adapter `tweenPose` and `springPose` use. Any `SceneAdapter` is one, and so is
@@ -175,4 +177,56 @@ export function springPose<TPose>(
     onTick: (progress) => adapter.setPose(opts.id, lerp(from, opts.to, progress)),
     onDone: opts.onDone,
   });
+}
+
+/** Options for `staggerSpringPose`: the items and their delays, each item's destination, and
+ *  the spring tuning. `cancelKey` and `label` belong to the stagger as a whole; each item's
+ *  spring keeps its own `pose:<id>` key. */
+export interface StaggerSpringPoseOptions<TItem, TPose> extends StaggerOptions {
+  /** Each is a node id, or carries one in a string `id` field. */
+  items: readonly TItem[];
+  delay: StaggerDelay;
+  to: (item: TItem, index: number) => TPose;
+  preset?: SpringPresetName;
+  stiffness?: number;
+  damping?: number;
+  mass?: number;
+  geometry?: PoseDescriptor<TPose>;
+  recordOp?: boolean;
+  opLabel?: string;
+}
+
+function itemId(item: unknown): string {
+  if (item != null && typeof item === 'object' && 'id' in item) {
+    const id = (item as { id: unknown }).id;
+    if (typeof id === 'string') return id;
+  }
+  if (typeof item === 'string' || typeof item === 'number') return String(item);
+  throw new Error(
+    'staggerSpringPose: each item must either be a primitive (string/number) ' +
+      'or have a string `id` field. Otherwise pose ids would collide.',
+  );
+}
+
+/** `springPose` for each of `items`, started `delay` apart as `animator.stagger` counts it. */
+export function staggerSpringPose<TItem, TPose>(
+  animator: Animator,
+  adapter: PoseAnimationAdapter<TPose>,
+  opts: StaggerSpringPoseOptions<TItem, TPose>,
+): AnimationHandle {
+  return animator.stagger(opts.items, opts.delay).each(
+    (item, i) =>
+      springPose(animator, adapter, {
+        id: itemId(item),
+        to: opts.to(item, i),
+        preset: opts.preset,
+        stiffness: opts.stiffness,
+        damping: opts.damping,
+        mass: opts.mass,
+        geometry: opts.geometry,
+        recordOp: opts.recordOp,
+        opLabel: opts.opLabel,
+      }),
+    { cancelKey: opts.cancelKey, label: opts.label },
+  );
 }

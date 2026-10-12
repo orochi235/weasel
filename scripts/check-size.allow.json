@@ -23,7 +23,7 @@
     "longestFunction": 187
   },
   "packages/core/src/animation/types.ts": {
-    "lines": 491
+    "lines": 467
   },
   "packages/core/src/canvas/Canvas.tsx": {
     "lines": 1347,

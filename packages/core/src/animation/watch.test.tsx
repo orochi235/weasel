@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { useAnimator } from './useAnimator';
+import { staggerSpringPose } from './poseHelpers';
 import { AnimatorEventHub } from './observe';
 import type { AnimatorEvent, Animator } from './types';
 import type { EventTrack } from './timeline/types';
@@ -139,7 +140,7 @@ describe('animator.watch', () => {
     act(() => {
       animator().stagger([0], 0).each(() => tween(animator(), 'c1', { ms: 10 }), { label: 'each' });
       animator().stagger([0], 0).tween<number>({ from: 0, to: 1, ms: 10, easing: linear, onTick: () => {}, label: 'tw' });
-      animator().stagger([id], 0).springPose(adapter, () => ({ x: 0 }), { label: 'sp' });
+      staggerSpringPose(animator(), adapter, { items: [id], delay: 0, to: () => ({ x: 0 }), label: 'sp' });
     });
     const stagger = r.lines().filter((l) => l.includes(':stagger:'));
     expect(stagger.slice(0, 3)).toEqual(['start:stagger:each', 'start:stagger:tw', 'start:stagger:sp']);
