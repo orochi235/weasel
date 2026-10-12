@@ -12,43 +12,41 @@ const meta: Meta<typeof PropertyList> = {
 export default meta;
 type Story = StoryObj<typeof PropertyList>;
 
-function Mixed() {
-  const [opacity, setOpacity] = useState(0.5);
-  const [fill, setFill] = useState('#b08adb');
-  const [stroke, setStroke] = useState('#1a1428');
-  const [visible, setVisible] = useState(true);
-  return (
-    <div style={{ width: 320 }}>
-      <PropertyList>
-        <PropertyField
-          kind="number"
-          control="slider"
-          label="Opacity"
-          value={opacity}
-          min={0}
-          max={1}
-          step={0.01}
-          onChange={setOpacity}
-          display={decimal({ places: 2 })}
-        />
-        <PropertyField kind="color" label="Fill" value={fill} onChange={setFill} />
-        <PropertyField kind="color" label="Stroke" value={stroke} onChange={setStroke} />
-        <PropertyField kind="boolean" label="Visible" value={visible} onChange={setVisible} />
-      </PropertyList>
-    </div>
-  );
-}
-
 /** Standalone (no chrome) — drop into a sidebar or any container. */
 export const Standalone: Story = {
-  render: () => <Mixed />,
+  render: (args) => {
+    const [opacity, setOpacity] = useState(0.5);
+    const [fill, setFill] = useState('#b08adb');
+    const [stroke, setStroke] = useState('#1a1428');
+    const [visible, setVisible] = useState(true);
+    return (
+      <div style={{ width: 320 }}>
+        <PropertyList {...args}>
+          <PropertyField
+            kind="number"
+            control="slider"
+            label="Opacity"
+            value={opacity}
+            min={0}
+            max={1}
+            step={0.01}
+            onChange={setOpacity}
+            display={decimal({ places: 2 })}
+          />
+          <PropertyField kind="color" label="Fill" value={fill} onChange={setFill} />
+          <PropertyField kind="color" label="Stroke" value={stroke} onChange={setStroke} />
+          <PropertyField kind="boolean" label="Visible" value={visible} onChange={setVisible} />
+        </PropertyList>
+      </div>
+    );
+  },
 };
 
 /** Four ColorRows pack into two rows of two via the 2-col grid. */
 export const FourColors: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ width: 320 }}>
-      <PropertyList>
+      <PropertyList {...args}>
         <PropertyField kind="color" label="A" value="#b08adb" onChange={() => {}} />
         <PropertyField kind="color" label="B" value="#7fb069" onChange={() => {}} />
         <PropertyField kind="color" label="C" value="#e07a5f" onChange={() => {}} />
@@ -60,9 +58,9 @@ export const FourColors: Story = {
 
 /** An odd number of ColorRows leaves the trailing cell empty. */
 export const ThreeColors: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ width: 320 }}>
-      <PropertyList>
+      <PropertyList {...args}>
         <PropertyField kind="color" label="A" value="#b08adb" onChange={() => {}} />
         <PropertyField kind="color" label="B" value="#7fb069" onChange={() => {}} />
         <PropertyField kind="color" label="C" value="#e07a5f" onChange={() => {}} />
@@ -73,9 +71,9 @@ export const ThreeColors: Story = {
 
 /** A non-color row in the middle breaks color pairing — A pairs with the empty cell. */
 export const ColorPairingBrokenBySlider: Story = {
-  render: () => (
+  render: (args) => (
     <div style={{ width: 320 }}>
-      <PropertyList>
+      <PropertyList {...args}>
         <PropertyField kind="color" label="A" value="#b08adb" onChange={() => {}} />
         <PropertyRow label="Divider">
           <input type="text" defaultValue="full width row" />
