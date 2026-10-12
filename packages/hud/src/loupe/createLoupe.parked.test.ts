@@ -38,7 +38,7 @@ function bindHost(hud: Hud): { frame(loupe: LoupeHandle, view?: View): void; red
   return {
     frame(loupe, view = { x: 0, y: 0, scale: { x: 1, y: 1 } }) {
       const rect = loupe.window.contentRect;
-      loupe.window.content!({ data: null, view, dims, rect, defaultFont: 'D', toneAt: () => '#000000', tokens });
+      loupe.window.content!({ data: null, view, dims, rect, defaultFont: 'D', color: () => '#000000', tokens });
       for (const fn of [...subs]) fn();
     },
     redraws: () => redraws,
