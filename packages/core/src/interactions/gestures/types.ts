@@ -84,7 +84,8 @@ export interface ActionBehavior<TPose, TProposed, TMoveResult, TEnd extends Beha
    * the commit's ops have applied (or the cancel has run) and after the
    * gesture's preview overrides are dropped. `committed` is false when the
    * gesture was canceled, aborted by a behavior (`onEnd` returned `null`),
-   * or released with nothing to commit, and true otherwise: the action or
+   * released with nothing to commit, or refused by a container its ops
+   * dropped something into, and true otherwise: the action or
    * a behavior made the commit, a behavior claiming it with no ops
    * included. For move, resize, and rotate it is the value `onGestureEnd`
    * receives.

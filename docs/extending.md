@@ -317,8 +317,8 @@ Each action pins the proposed/result shape; pick the matching alias
 - `onSettled` runs once per gesture, after the commit's ops have applied (or
   the cancel has run) and the preview overrides are gone — the place to act
   on the pose the document now holds. `committed` is false when the gesture
-  was canceled, aborted by a behavior, or released with nothing to commit,
-  and true otherwise: the action or a behavior made the commit, a behavior
+  was canceled, aborted by a behavior, released with nothing to commit, or
+  refused by a container its ops dropped something into, and true otherwise: the action or a behavior made the commit, a behavior
   claiming it with no ops included. For move, resize, and rotate it is the
   value `onGestureEnd` receives. Move, resize, rotate, insert, and
   lasso-select call it, and every behavior's runs even if another's throws.
@@ -373,7 +373,7 @@ binding's param. They use the same hooks as any other behavior:
 | Hook | Layout drop | Reparent on drop |
 |---|---|---|
 | `onMove` | Picks the container, places each dragged node, and returns the displaced siblings as `poses` and `opaque`; with a reflow transition it glides them there | — |
-| `onEnd` | Returns the drop's ops, or the release and exit ops with `end.translateOps` for what no container claimed | Returns reparent, layer, and transform ops for the node under `end.pointer` |
+| `onEnd` | Returns the drop's ops, or the release and exit ops with the default translate for what no container claimed; aborts the commit when a drop or release it took has nothing to write | Returns reparent, layer, and transform ops for the node under `end.pointer` |
 | `onSettled` | Settles each glide onto the pose the document now holds | — |
 
 `end.pointer` is where the pointer was let go, in world coordinates; it is

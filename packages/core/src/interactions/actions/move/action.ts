@@ -32,6 +32,8 @@
  * folds each behavior's proposed-transform result, and `onEnd` runs a
  * first-non-undefined-wins reducer (`Op[]` commits via `commitGestureOps`,
  * `null` aborts, all-`undefined` falls through to the default translate path).
+ * `beginMove` appends the action's own two to the binding's: a layout drop and
+ * reparent-on-drop (`./behaviors/`).
  *
  * ## Pose generics
  *
