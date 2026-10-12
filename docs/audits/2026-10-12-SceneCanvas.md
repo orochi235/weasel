@@ -227,3 +227,29 @@ Adjacent, in `props.ts:164-168`: the `Omit` names `moveOptions`, `resizeOptions`
 - **The deselect divergence in A** is reasoned from the two masks, not reproduced.
 - **Unread files.** `Canvas.tsx` was read by targeted grep, not line by line. Of the `SceneCanvas/` siblings I did not read `usePreviewGhostLayer`, `useDispatcherOverlayLayer`, `contributionFrameHooks`, `defaultNodeProperties`, `poseGeometry`, or any tests.
 - **Greps covered this repo only.** Readers outside it of `__weaselCoordLog__`, `NodeAtPointHit.pose` and `.data`, `insertTool`, or `actionDefaults` are unknown.
+## From the Canvas.tsx pass (branch `long-file-audit`), to act on after it merges
+
+Reported by the session doing `Canvas.tsx`; not verified here.
+
+- **Item I is reversed.** Canvas's selection-overlay config branch is unreachable from production, so
+  SceneCanvas keeps its prebuild and Canvas's copy is deleted there. Do not do I.
+- **Item F.** `useCanvasView` now takes a dims thunk and serves Canvas and CanvasView. Its
+  `setViewFromInput(next)` does the controlled/uncontrolled fork with the `viewBounds` clamp;
+  `handleViewChange` in SceneCanvas forks by hand and skips the clamp when controlled. Drop the
+  `currentViewRef` mirror onto the hook once that branch is on main.
+- `SceneCanvasInner`'s `useLateContentRedraw` call is redundant: Canvas does it through
+  `useCanvasSurface`.
+- `GestureDispatcherMounter.tsx` (~226) has a second copy of the layer-claim conversion;
+  `layerAffordance` in `canvas/affordanceAt.ts` is the shared one.
+- `SceneCanvas/props.ts` may restate an old z-order. Verified there: `backgroundFill` sits beneath
+  everything including the grid; `decorationLayer` sits above every slot and custom layer and beneath
+  a tool's `'top'` overlays.
+- Canvas's `onFocus` / `onBlur` now receive the DOM `FocusEvent`, which reaches `SceneCanvasProps`
+  through the `Omit`.
+- Canvas findings 1, 2, 3, 4, and 8 (cursor resolution into routing; `buildSceneLayers`,
+  `useSceneLayerList`, and the preview-id hide set into SceneCanvas; the three dev HUDs; slot types to
+  `layerSlots.ts`) are that session's, on top of main after `scene-splits` merges.
+- **Pen overlay (item B).** The old tool design is being removed by that session: `Tool.initScratch`,
+  `ToolCtx`, and `Tool.previewPose` / `previewBounds` / `previewIds`. `penPreviewLayer.ts` reaches the
+  pen's state through `penTool.initScratch()`. When the pen overlay moves onto the pen tool it takes
+  the pen's state directly, and that session is told so it can delete `initScratch`.
