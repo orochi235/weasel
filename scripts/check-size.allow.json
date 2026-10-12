@@ -68,7 +68,7 @@
     "lines": 422
   },
   "packages/core/src/canvas/sceneAdapter.ts": {
-    "longestFunction": 188
+    "longestFunction": 187
   },
   "packages/core/src/canvas/useViewHelpers.ts": {
     "longestFunction": 154
@@ -86,11 +86,11 @@
     "longestFunction": 166
   },
   "packages/core/src/core/scene/scene.ts": {
-    "lines": 1133,
-    "longestFunction": 1033
+    "lines": 1100,
+    "longestFunction": 999
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 778
+    "lines": 737
   },
   "packages/core/src/debug/createDebugOverlayLayer.ts": {
     "lines": 440
@@ -254,8 +254,8 @@
     "longestFunction": 283
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "lines": 637,
-    "longestFunction": 310
+    "lines": 632,
+    "longestFunction": 298
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 160

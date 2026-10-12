@@ -68,6 +68,17 @@ describe('ColorOverrideRegistry.target', () => {
     expect(registry.target('a', 'fill', 8).read()).toHaveLength(8);
   });
 
+  it('kills a resting target when it is released, and hands out a new one', () => {
+    const r = new ColorOverrideRegistry();
+    const old = r.target('a', 'fill', 4);
+    r.release('a', 'fill');
+    expect(r.has('a')).toBe(false);
+    const other = r.target('b', 'fill', 4);
+    expect(() => old.commit(RED)).toThrow('was removed');
+    expect(other.read()).toEqual([0, 0, 0, 0]);
+    expect(r.target('a', 'fill', 4)).not.toBe(old);
+  });
+
   it('paints nothing of its own until something moves it', () => {
     const r = new ColorOverrideRegistry();
     r.target('a', 'fill', 4);

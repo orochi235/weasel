@@ -1,5 +1,5 @@
-import type { FillStyle } from '@weasel-js/core';
 import type { Track } from '@weasel-js/animator';
+import type { FillStyle } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import {
   Badge,

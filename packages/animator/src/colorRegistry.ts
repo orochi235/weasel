@@ -1,4 +1,5 @@
-import { createTarget, type Target } from './target';
+import type { Target } from './target';
+import { createTargetTable, type TargetTable } from './targetTable';
 
 /** Which of a node's two per-anchor color arrays an override applies to. */
 export type VertexColorChannel = 'fill' | 'stroke';
@@ -19,12 +20,19 @@ interface NodeOverrides {
   stroke?: ColorOverride;
 }
 
-/** One node and channel's {@link Target}, and the colors its animations add to. */
+/** One node and channel's row in the table of colors as long as its own. */
 interface ColorSlot {
-  readonly target: Target<number[]>;
+  readonly table: TargetTable;
+  readonly row: number;
   readonly length: number;
-  /** Null until an animation commits, and again once what it painted is dropped. */
-  committed: number[] | null;
+  /** False until an animation commits, and again once what it painted is dropped. */
+  painted: boolean;
+}
+
+/** Every slot of one length: a table whose rows are that many numbers, and who holds each row. */
+interface ColorTable {
+  readonly table: TargetTable;
+  readonly rows: (ColorSlot | undefined)[];
 }
 
 type NodeSlots = Partial<Record<VertexColorChannel, ColorSlot>>;
@@ -35,6 +43,7 @@ type NodeSlots = Partial<Record<VertexColorChannel, ColorSlot>>;
 export class ColorOverrideRegistry {
   private readonly map = new Map<string, NodeOverrides>();
   private readonly slots = new Map<string, NodeSlots>();
+  private readonly tables = new Map<number, ColorTable>();
   private _version = 0;
 
   set(id: string, channel: VertexColorChannel, override: ColorOverride): void {
@@ -73,7 +82,7 @@ export class ColorOverrideRegistry {
     const override = this.map.get(id)?.[channel];
     if (override !== undefined) return override;
     const slot = this.slots.get(id)?.[channel];
-    return slot?.committed ? slot.target.read() : undefined;
+    return slot?.painted ? shownOf(slot) : undefined;
   }
 
   /** Whether anything overrides `id`, on either channel. */
@@ -88,7 +97,8 @@ export class ColorOverrideRegistry {
    *
    * What it paints: with no override from `set`, its colors in place of the painter's own; over
    * one, only what its animations have left to travel, added on top. Ask again for each
-   * animation rather than keeping it, since {@link release} and {@link clear} forget a resting one.
+   * animation rather than keeping it: {@link release} and {@link clear} drop a resting one, and
+   * the target it had throws from then on.
    */
   target(id: string, channel: VertexColorChannel, length: number): Target<number[]> {
     if (!(length > 0) || length % 4 !== 0) {
@@ -96,30 +106,48 @@ export class ColorOverrideRegistry {
     }
     let node = this.slots.get(id);
     const held = node?.[channel];
-    if (held?.length === length) return held.target;
-    if (held?.target.active) {
-      throw new Error(`vertex colors: ${id}'s ${channel} is moving as ${held.length} numbers, not ${length}`);
+    if (held?.length === length) return held.table.target(held.row);
+    if (held) {
+      if (held.table.target(held.row).active) {
+        throw new Error(`vertex colors: ${id}'s ${channel} is moving as ${held.length} numbers, not ${length}`);
+      }
+      this.drop(held);
     }
-    const zeros = new Array<number>(length).fill(0);
-    const slot = { length, committed: null } as { -readonly [K in keyof ColorSlot]: ColorSlot[K] };
-    slot.target = createTarget<number[]>({
-      get: () => slot.committed ?? zeros,
-      set: (colors) => {
-        slot.committed = colors.slice();
-        // One released while resting comes back when it is moved again.
-        const at = this.slots.get(id) ?? {};
-        at[channel] ??= slot;
-        this.slots.set(id, at);
-        this._version++;
-      },
-      show: () => { this._version++; },
-    });
+    const at = this.tableOf(length);
+    const row = at.table.add(new Float64Array(length));
+    const slot: ColorSlot = { table: at.table, row, length, painted: false };
+    at.rows[row] = slot;
     if (!node) {
       node = {};
       this.slots.set(id, node);
     }
     node[channel] = slot;
-    return slot.target;
+    return at.table.target(row);
+  }
+
+  private tableOf(length: number): ColorTable {
+    const held = this.tables.get(length);
+    if (held) return held;
+    const rows: (ColorSlot | undefined)[] = [];
+    const table = createTargetTable({
+      axes: length,
+      set: (row) => {
+        const slot = rows[row];
+        if (slot) slot.painted = true;
+        this._version++;
+      },
+      show: () => { this._version++; },
+    });
+    const made = { table, rows };
+    this.tables.set(length, made);
+    return made;
+  }
+
+  private drop(slot: ColorSlot): void {
+    const at = this.tables.get(slot.length)!;
+    at.rows[slot.row] = undefined;
+    slot.table.remove(slot.row);
+    if (slot.table.size === 0) this.tables.delete(slot.length);
   }
 
   /** Drops the colors `id`'s {@link target} on `channel` left painted, unless an animation is
@@ -127,12 +155,11 @@ export class ColorOverrideRegistry {
   release(id: string, channel: VertexColorChannel): void {
     const node = this.slots.get(id);
     const slot = node?.[channel];
-    if (!node || !slot || slot.target.active) return;
+    if (!node || !slot || slot.table.target(slot.row).active) return;
     delete node[channel];
     if (!node.fill && !node.stroke) this.slots.delete(id);
-    if (!slot.committed) return;
-    slot.committed = null;
-    this._version++;
+    this.drop(slot);
+    if (slot.painted) this._version++;
   }
 
   /**
@@ -149,12 +176,12 @@ export class ColorOverrideRegistry {
   ): readonly number[] | undefined {
     const override = this.map.get(id)?.[channel];
     const slot = this.slots.get(id)?.[channel];
-    const committed = slot?.committed;
-    if (override === undefined) return committed ? slot!.target.read() : base;
+    if (override === undefined) return slot?.painted ? shownOf(slot) : base;
     const under = typeof override === 'function' ? this.apply(override, base, tMs) : override;
-    if (!committed || !slot!.target.active || under?.length !== committed.length) return under;
-    const shown = slot!.target.read();
-    return under.map((x, i) => x + shown[i]! - committed[i]!);
+    if (!slot?.painted || under?.length !== slot.length || !slot.table.target(slot.row).active) return under;
+    const { shown, committed } = slot.table;
+    const at = slot.row * slot.length;
+    return under.map((x, i) => x + shown[at + i]! - committed[at + i]!);
   }
 
   private apply(
@@ -170,4 +197,13 @@ export class ColorOverrideRegistry {
   version(): number {
     return this._version;
   }
+}
+
+/** The colors `slot`'s row shows now. */
+function shownOf(slot: ColorSlot): number[] {
+  const { shown } = slot.table;
+  const at = slot.row * slot.length;
+  const out = new Array<number>(slot.length);
+  for (let i = 0; i < out.length; i++) out[i] = shown[at + i]!;
+  return out;
 }

@@ -663,17 +663,6 @@ Core five + Crop shipped. Remaining:
   the call for a copy made inside the same scene, where the originals are still there to follow, is
   whether it does the same, keeps the list, or re-points the ids it can.
 
-- **(P2) Container-pose cascade: a restored history still undoes a mixed batch wrong.**
-  `sceneToAdapter(scene, { cascadeContainerPose: true }).applyOps(ops, label)` records the poses
-  each op changes, and the op's inverse restores them (`canvas/cascadeRecord.ts`), so a batch that
-  poses a container and its descendants undoes and redoes in a live session. Two paths never pass
-  through that record and still work the cascade out a second time on the way back: a history
-  restored with `restoreHistory`, whose rebuilt ops replay through the `setHistoryAdapter` adapter
-  (measured: A, B, and C at x = 0, 100, and 200 moved by 5, then restored and undone, land at 0,
-  95, and 190), and ops handed straight to `scene.applyBatch` with the cascading adapter. Neither
-  has a fix at the adapter, which sees pose writes and no op boundaries; both go with the cascade
-  itself under "Container-pose cascade as a scene-primitive semantic".
-
 ### Derived geometry follow-ups
 
 Left open by the derived-path and derived-pose arcs (`dependsOn` / `derivePath` /
@@ -811,8 +800,6 @@ built 2026-10-11. What that left:
   at 10k and at 100k, where `readInto` on a target apiece costs about 140 and 230
   (`node tests/perf/target-reads/run.mjs table 10000 table`, one case a process; orochi, plain
   Node 26). Left:
-  - Nothing in the kit is on one. Vertex colors (`colorOverrides.target`) are the first
-    candidate: arrays of numbers a registry already holds.
   - A row with a hold, or with an offset canceled under one, is read by itself each frame at
     a single target's cost. Putting it in the pass needs `engine/holds.ts` to fold into the
     table's arrays.
@@ -823,12 +810,15 @@ built 2026-10-11. What that left:
   left of a frame of many values. In a CPU profile of 10k tweens: `tickEach` 15%, the target
   book's `settle` 12 to 13%, which zeroes an `adjust` array per moving target every frame, and
   the rest in blits' pull. Not investigated further.
-- **(P2) Stopping and starting an animation costs about 50 µs at 10k animations, and more as
-  there are more** — the same script's "rows restarted a frame" rows: 100 restarted a frame took
-  a 10k frame from about 1 ms to 6 to 8 ms, and 1,000 took a 100k frame from 29 ms to about
-  200, on a table or on targets alike. The profile under churn shows blits' `forget`,
-  `unindex`, and `prune`. `~/src/blits/NOTES-FROM-WEASEL.md` ("Churn, what is left") has the
-  earlier reading of the same cost, at one restart a frame.
+- **(P2) Stopping and starting an animation costs more as more are running, and most of it is
+  in blits** — `node tests/perf/target-reads/run.mjs churn 1000 10000` times the parts (orochi,
+  plain Node 26, blits 0.10.0). With 100 restarted a frame: a cancel costs 5 µs with 1,000
+  running and 21 with 10,000, a start 1 and 2, and the frame after them 1.1 ms and 4.1 against
+  0.08 and 0.93 steady. The cancel is blits' `forget` walking every subject the mix holds, and
+  the slow frame is blits' first read of the new voices; the animator's own lane and codec
+  code is under 4% of the profile. `~/src/blits/NOTES-FROM-WEASEL.md` ("Stopping a subject's
+  voice") has the lines and a fix. What is the animator's is the entry above: its two walks
+  over every animation and every moving target read slower in a frame that follows restarts.
 - **(P3) A spring's offset goes behind a hold whole, so three cases still jump under one** —
   a coast given a destination with `setTarget`, a spring pushed where it stands and then given
   one, and a spring started with both a `from` away from the committed value and a destination
@@ -857,7 +847,8 @@ decomposition meant to absorb the first; it has not landed:
 ### labkit presentation mode
 
 `<Lab present>`, `?present` and `usePresentation()` show one trial without any
-chrome, for portfolio embeds, with a refit view, play controls and `gestures`;
+chrome, for portfolio embeds, with a refit view, play controls, `gestures`, a
+`still` for poster capture, and `postMessage` play and pause for a host page;
 README "Presenting a lab" and `packages/labkit/docs/AGENTS.md` cover it. What
 is left:
 
@@ -869,8 +860,10 @@ is left:
   that release before it can merge. agnew still plays from its own transport, because its
   three.js view advances the pen itself and holds a finished curve before redrawing it;
   moving it onto a lab clock is an agnew library change, and the owner's call.
-- **(P3) A still for poster capture, and `postMessage` play/pause** so a host
-  page's play control can reach a live lab.
+- **(P3) A still of a clock that is not seekable is taken where the clock
+  opens.** `<Lab still={1200}>` warns and leaves it there, because such an
+  instrument's state is built by running. Holding it at a time means running
+  it forward off screen, at a step the instrument would have to name.
 
 ### labkit's deprecated snapshot undo
 
@@ -1634,11 +1627,15 @@ only story runner in the repo.
   ("an expanded trial keeps its marks over it and takes new ones") hit the 15 s test timeout on
   teitou in two of four full runs on 2026-10-11, at `68e9d70bb` and `de222e61f`, and passed in
   the two between; alone on this machine at `de222e61f` it passed 3 of 3. `compoundRows` failed
-  twice the same evening on an assertion, and its wait was hardened in `de222e61f`. Outside the
+  twice the same evening on an assertion, and its wait was hardened in `de222e61f`; it then hit the
+  15 s test timeout once on msb-uai at `076c8ab87`, the only failure of that run. Outside the
   `browser` project, `forge/src/vite/plugin.test.ts` ("serves the component graph from source, and
   pushes it again when a component file changes") failed once on studio at `bff047e78`: the graph
   had not followed a rewritten file inside the 15 s it polls for. It passed on teitou at the commits
-  either side. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
+  either side. A second test in that file ("titles a native story by its meta when forge's meta
+  reaches it through a helper module, and re-decides when the helper changes") failed the same way
+  on teitou at `8f86cc034`, the only failure of that run: the index had not followed the rewritten
+  helper inside its poll. Not measured: whether the watcher missed the write or was slow to it. The suite runs the `browser` project beside eight
   others on one node. Since 2026-10-11 the `browser` project polls for 5 s, not the default 1 s, which
   three of these failures had outlasted (`PrefsRail.marks` twice, `compoundRows`); a 15 s test
   timeout or a stalled Playwright action is untouched by that. Not measured: whether the timeouts follow the node's load, and whether

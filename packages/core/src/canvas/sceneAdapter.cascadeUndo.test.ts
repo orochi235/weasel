@@ -123,3 +123,46 @@ describe('sceneToAdapter cascade — undo of a batch', () => {
     expect(xs()).toEqual([0, 100, 200, 300]);
   });
 });
+
+describe('sceneToAdapter cascade — undo outside adapter.applyOps', () => {
+  it('undoes and redoes a batch handed straight to scene.applyBatch', () => {
+    const { scene, adapter, a, b, c, xs, move } = fixture();
+    scene.applyBatch([move(a, 0, 5), move(b, 100, 105), move(c, 200, 205)], 'Move', adapter);
+    expect(xs()).toEqual([5, 105, 205, 305]);
+    scene.undo();
+    expect(xs()).toEqual([0, 100, 200, 300]);
+    scene.redo();
+    expect(xs()).toEqual([5, 105, 205, 305]);
+  });
+
+  it('undoes and redoes the batch after its history is serialized and restored', () => {
+    const { scene, adapter, a, b, c, xs, move } = fixture();
+    adapter.applyOps([move(a, 0, 5), move(b, 100, 105), move(c, 200, 205)], 'Move');
+    scene.setHistoryAdapter(() => adapter);
+    scene.restoreHistory(JSON.parse(JSON.stringify(scene.serializeHistory())));
+    scene.undo();
+    expect(xs()).toEqual([0, 100, 200, 300]);
+    scene.redo();
+    expect(xs()).toEqual([5, 105, 205, 305]);
+    scene.undo();
+    expect(xs()).toEqual([0, 100, 200, 300]);
+  });
+
+  it('redoes a restored batch that was undone before it was serialized', () => {
+    const { scene, adapter, a, b, xs, move } = fixture();
+    adapter.applyOps([move(a, 0, 5), move(b, 100, 110)], 'Move');
+    scene.undo();
+    scene.setHistoryAdapter(() => adapter);
+    scene.restoreHistory(JSON.parse(JSON.stringify(scene.serializeHistory())));
+    scene.redo();
+    expect(xs()).toEqual([5, 110, 210, 310]);
+    scene.undo();
+    expect(xs()).toEqual([0, 100, 200, 300]);
+  });
+
+  it('leaves an op that carried nothing serialized under its own name', () => {
+    const { scene, adapter, leaf, move } = fixture();
+    adapter.applyOps([move(leaf, 300, 305)], 'Move');
+    expect(scene.serializeHistory().undoStack.at(-1)!.forwardOps.map((op) => op.name)).toEqual(['transform']);
+  });
+});
