@@ -1,31 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createAudioEngine } from './createAudioEngine';
 import { createPatternPlayer } from './patternPlayer';
-import { createFakeAudioContext } from './testing/fakeAudioContext';
-
-async function harness() {
-  const ctx = createFakeAudioContext();
-  let pass: (() => void) | null = null;
-  const engine = createAudioEngine({
-    context: ctx as never,
-    setTimer: (cb) => { pass = cb; return 1; },
-    clearTimer: () => { pass = null; },
-    fetchFn: (async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) })) as never,
-  });
-  await engine.unlock();
-  const flush = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
-  /** Advance the audio clock in scheduler-sized passes. */
-  const run = async (ms: number) => {
-    await flush();
-    for (let t = 0; t < ms; t += 25) {
-      ctx._advance(25);
-      pass?.();
-      await flush();
-    }
-  };
-  const starts = () => ctx._oscillators.map((o) => Math.round(o.started[0] * 1000));
-  return { ctx, engine, run, flush, starts };
-}
+import { engineHarness as harness } from './testing/engineHarness';
 
 // 120 bpm in sixteenths: 125 ms a step.
 describe('createPatternPlayer', () => {
@@ -76,6 +51,42 @@ describe('createPatternPlayer', () => {
     await run(600);
     expect(seen).toEqual([0, 250, 500]);
     expect(player.tempo()).toBe(60);
+  });
+
+  it('starts a tempo set from inside onStep with the step after, on one sequence', async () => {
+    const { engine, run } = await harness();
+    const seen: number[] = [];
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 16,
+      onStep: (step, when) => {
+        seen.push(when);
+        if (step === 1) player.setTempo(60);
+      },
+    });
+    player.start(0);
+    await run(700);
+    expect(seen).toEqual([0, 125, 250, 500, 750]);
+  });
+
+  it('books nothing further when stopped from inside onStep', async () => {
+    const { engine, run } = await harness();
+    const seen: number[] = [];
+    let stopped = false;
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 16,
+      onStep: (step, when) => {
+        seen.push(when);
+        if (step === 1 && !stopped) {
+          stopped = true;
+          player.stop();
+        }
+      },
+    });
+    player.start(0);
+    await run(100);
+    player.start(1000);
+    await run(900);
+    expect(seen).toEqual([0, 125, 1000]);
   });
 
   it('reports the step within the pattern, wrapping at its length', async () => {
@@ -145,6 +156,57 @@ describe('createPatternPlayer', () => {
     ctx._advance(1000);
     await run(25);
     expect(starts()).toEqual([0, 1125]);
+  });
+
+  it('plays an event on a fractional step that far into the step', async () => {
+    const { engine, run, starts } = await harness();
+    createPatternPlayer(engine, {
+      tempo: 120, length: 4, loop: false,
+      events: [{ step: 0, pitch: 220 }, { step: 1.2, pitch: 220 }, { step: 2.5, pitch: 220 }],
+    }).start(0);
+    await run(600);
+    expect(starts()).toEqual([0, 150, 313]);
+  });
+
+  it('counts a fractional last step toward the default length by the step it sits in', async () => {
+    const { engine, run } = await harness();
+    const steps: number[] = [];
+    createPatternPlayer(engine, {
+      tempo: 120, events: [{ step: 3.9, pitch: 220 }], onStep: (s) => steps.push(s),
+    }).start(0);
+    await run(500);
+    expect(steps).toEqual([0, 1, 2, 3, 0]);
+  });
+
+  it('adds its detune to each event, a function of the event step', async () => {
+    const { ctx, engine, run } = await harness();
+    const kick = await engine.load('/kick.wav');
+    createPatternPlayer(engine, {
+      tempo: 120, length: 4, loop: false,
+      detune: (step) => step * 10,
+      events: [
+        { step: 0, pitch: 220, detune: 5 },
+        { step: 1.5, pitch: 220 },
+        { step: 2, sound: kick, detune: -3 },
+        { step: 3, noise: 'white' },
+      ],
+    }).start(0);
+    await run(600);
+    expect(ctx._oscillators.map((o) => o.detune.value)).toEqual([5, 15]);
+    expect(ctx._sources.map((s) => s.detune.value)).toEqual([17, 30]);
+  });
+
+  it('takes a constant detune, and a new one from the next step', async () => {
+    const { ctx, engine, run } = await harness();
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 2, detune: 7,
+      events: [{ step: 0, pitch: 220 }, { step: 1, pitch: 220 }],
+    });
+    player.start(0);
+    await run(0);
+    player.setDetune(-7);
+    await run(125);
+    expect(ctx._oscillators.map((o) => o.detune.value)).toEqual([7, -7]);
   });
 
   it('rejects a tempo that is not positive', async () => {

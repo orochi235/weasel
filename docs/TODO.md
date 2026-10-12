@@ -886,39 +886,36 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 - **(P3) The side-scroller's music bed as engine voices.** Its footsteps and
   landings are `playNoise` voices now; the bed is still hand-written PCM
   (`platformer/sfx.ts`, `bed`). Its struck metal is expressible as `{ partials }`
-  and its chugs and bass as harmonic partials with a `decay`, but the bed is an
-  arrangement as much as a timbre: every hit lands late by its own amount, the
-  whole loop drifts sharp and back, and the four bars are peak-normalized
-  together. `createPatternPlayer` has no per-event timing offset or pitch drift,
-  so a port needs those first, and a check that its busiest moments fit the
-  music bus's voice limit — a lid, a lead note and a drum each ring for five or
-  six sixteenths, and each metal hit is seven sources.
+  and its chugs and bass as harmonic partials with a `decay`. The arrangement
+  is expressible too: a hit that lands late is a fractional `step`, the loop's
+  drift sharp and back is the player's `detune` as a function of the step, and
+  `patternVoicePeaks` says whether its busiest moment fits the music bus's
+  voice limit. What is left is the port itself, and one thing with no engine
+  equivalent: the four bars are peak-normalized together, which as voices
+  becomes a bus gain chosen by ear, or a compressor insert.
 
-- **(P3) Trope-aware generative scoring.** Builds on `playNote` and `createPatternPlayer`.
-  Screen scoring for factual content — news packages, documentaries — runs on a
-  small, highly codified set of devices, and each one is reachable from a few
-  nearly-orthogonal parameters: mode, tempo, subdivision density, articulation
-  (sustained vs plucked), register spread, harmonic rhythm, and the consonance
-  of added intervals. Dread is sustained low tones a minor second or tritone
-  apart with no pulse; investigation is a minor ostinato that adds layers;
-  wonder is Lydian with open voicings and a soft attack; urgency is driving
-  sixteenths on stacked fourths and fifths. Because the parameters are few and
-  mostly independent, a consumer-facing surface could be two or three axes —
-  valence, tension, urgency — mapped onto them, with the score generated
-  continuously rather than selected from clips.
+- **(P3) Trope-aware generative scoring: unheard, and with no demo.** `createScore`
+  plays a mood on three axes (valence, tension, urgency) as bars written by
+  `scoreBar` from `scoreParams`, and names the cue in force through `state()`
+  and `onBar`. Every number in the mapping was chosen from the description of
+  the four cues and checked only as structure, on a fake audio context: the
+  thresholds between modes and harmonies, the tempo range, the envelopes, the
+  layer levels, and where each cue sits on the axes. Whether dread reads as
+  dread is a listening pass nobody has done. It also wants a demo that shows
+  the cue and its parameters beside the sliders, since the devices work by
+  bypassing the viewer's argument and the point of the surface is to let a
+  consumer see which one is being applied.
 
-  The mapping is tight enough to hit by accident: this demo's first music bed
-  was four pure sine tones with slow envelopes, written only to loop without
-  clicking, and it landed squarely on the dread cue — reported unprompted as
-  "creepy" (2026-08-22). That is the evidence the vocabulary is learnable.
-
-  Worth naming what it is: these devices work by bypassing the viewer's
-  argument, which is precisely their function in the genre. Anything built here
-  should let a consumer see which cue is being applied, not just hear it.
-
-- **(P3) AudioWorklet scheduling** — immune to main-thread jank; costs a worklet
-  module, cross-thread messaging and a bundling story. Revisit if jank proves
-  audible.
+- **(P3) AudioWorklet voices** — immune to main-thread jank. Moving only the
+  scheduler's timer into a worklet would change nothing: it already runs off
+  the main thread, in a Worker, and what a stall delays is the callback that
+  makes a voice's nodes, which has to run on the main thread. Immunity means
+  synthesizing the voices inside a worklet processor from events posted ahead
+  of time: a second implementation of the oscillator, partial, noise, filter,
+  and envelope voices, plus a worklet module, cross-thread messaging, and a
+  bundling story. The engine's `onLate` option reports every event a stall made
+  late, and by how many ms. Revisit when it fires in a real app whose
+  `lookahead` has already been raised.
 
 ---
 

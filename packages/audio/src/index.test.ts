@@ -34,6 +34,19 @@ describe('@weasel-js/audio public surface', () => {
     expect([hat.step, partial.ratio > 0]).toEqual([2, true]);
   });
 
+  it('exports the scoring layer, from a mood down to a bar of events', () => {
+    const mood: audio.ScoreMood = audio.scoreCues[0].mood;
+    const params: audio.ScoreParams = audio.scoreParams(mood);
+    const bar: audio.PatternEvent[] = audio.scoreBar(params, 0);
+    expect(bar.length).toBeGreaterThan(0);
+    expect(audio.readScoreCue(mood).name).toBe(audio.scoreCues[0].name);
+    expect(audio.scoreChord(params, 0)).toHaveLength(3);
+    expect(typeof audio.createScore).toBe('function');
+    const load: audio.PatternLoadOptions = { tempo: params.tempo, length: audio.SCORE_BAR_STEPS };
+    // Each bar's three tones are still releasing as the next bar's begin.
+    expect(audio.patternVoicePeaks(bar, load).sfx).toBe(6);
+  });
+
   it('exports the built-in insert effects', () => {
     expect(typeof audio.createFilterEffect).toBe('function');
     expect(typeof audio.createReverbEffect).toBe('function');
