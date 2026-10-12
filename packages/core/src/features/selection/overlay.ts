@@ -21,8 +21,8 @@
  * over the projected AABBs.
  */
 
-import type { DrawCommand } from '../../renderer';
-import { mat3, type GlMat3 } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
+import { mat3, type GlMat3 } from '@weasel-js/renderer';
 import type { NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
 import { unionAABB } from 'core/geometry/unionBounds';

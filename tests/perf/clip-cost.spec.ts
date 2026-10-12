@@ -109,7 +109,7 @@ test('clip cost: stencil versus batch break', async ({ page, browser, browserNam
       }).__clipReport;
 
       const { WeaselRenderer, registerTexture } = await import(
-        /* @vite-ignore */ `/weasel/@fs${root}/packages/core/src/renderer/index.ts`
+        /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`
       );
       const { makeKindBuilders, checkerBitmap } = await import(
         /* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/kinds.ts`

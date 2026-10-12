@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import { buildSceneViewCommands } from './sceneViewRender';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 type Layer = 'main';
 interface Data { label: string }

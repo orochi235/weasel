@@ -8,7 +8,7 @@ import type { Dims, RenderLayer } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { View } from 'core/viewport/view';
 import type { DebugSink } from '../debug/types';
-import { cullDrawCommands, viewToMat3, type DrawCommand } from '../renderer';
+import { cullDrawCommands, viewToMat3, type DrawCommand } from '@weasel-js/renderer';
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import type { NodePaintCtx } from './NodeShape';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';

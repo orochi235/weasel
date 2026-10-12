@@ -3,8 +3,8 @@ import type { NodeInk, NodePaintCtx } from 'canvas/NodeShape';
 import { countPathAnchors } from '@weasel-js/geom';
 import { markerReach } from '@weasel-js/stroke';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
-import type { DrawCommand, PathDrawCommand } from '../../renderer';
-import { paintDrawKindRegistry } from 'renderer/paintKinds';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
+import { paintDrawKindRegistry } from '@weasel-js/renderer';
 import { bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
 
 // The painters memoize a node's paint and resolve a fill's frame inside the

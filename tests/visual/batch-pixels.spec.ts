@@ -62,7 +62,7 @@ test('batched runs paint their own colors', async ({ page }) => {
     async ({ root, w, h }) => {
       const base = `/weasel/@fs${root}`;
       const { WeaselRenderer, registerFont } = await import(
-        /* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`
+        /* @vite-ignore */ `${base}/packages/renderer/src/index.ts`
       );
       // Awaited, unlike the site's own registration: a probe that renders
       // before the atlas lands reads an empty box and passes.
@@ -416,7 +416,7 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
   const result = await page.evaluate(async ({ root, w, h, tolerance: TOLERANCE_IN_PAGE }) => {
     const base = `/weasel/@fs${root}`;
     const { WeaselRenderer, registerFont } = await import(
-      /* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`
+      /* @vite-ignore */ `${base}/packages/renderer/src/index.ts`
     );
     const { PATH_M, PATH_L, PATH_Z } = await import(/* @vite-ignore */ `${base}/packages/geom/src/commands.ts`);
     await registerFont(

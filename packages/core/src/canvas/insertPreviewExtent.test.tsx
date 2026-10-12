@@ -9,7 +9,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, renderHook } from '@testing-library/react';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand, PathDrawCommand } from '../renderer';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import type { Dispatcher } from '@weasel-js/routing';
 import type { OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';

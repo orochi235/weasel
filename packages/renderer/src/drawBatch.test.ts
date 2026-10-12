@@ -1,0 +1,972 @@
+/**
+ * Batching of consecutive solid-fill geometry — rects, meshes, stroke ribbons —
+ * into one draw.
+ *
+ * Painter's order is the whole contract, so most of this file is about what
+ * *breaks* a run rather than what merges into one. A missing flush does not
+ * throw or drop pixels — it paints them in the wrong order, or under the wrong
+ * group state, which only a test like these or a visual diff catches.
+ */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
+import { makeGLRecorder, type GLCall } from './testing/glRecorder';
+import { WeaselRenderer } from './WeaselRenderer';
+import type { DrawCommand } from './DrawCommand';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z, type PolygonPath } from '@weasel-js/geom';
+
+/** A square no CPU cut can stand in for, so the clip goes through the stencil. */
+const squareClip = (size: number): PolygonPath => ({
+  kind: 'polygon',
+  commands: new Uint8Array([M, L, L, L, Z]),
+  coords: new Float32Array([0, 0, size, 0, size, size, 0, size]),
+  fillRule: 'nonzero',
+});
+import {
+  MAX_VERTICES_PER_BATCH, SOLID_LARGE_RING_SIZE, SOLID_RING_SIZE,
+  SOLID_RING_SLOT_VERTICES, FLOATS_PER_VERTEX, TEX_SLOT_OFFSET,
+} from './drawBatch';
+import { paintModeOf } from './shaders/batchFill';
+
+const ARRAY_BUFFER = 0x8892;
+const ELEMENT_ARRAY_BUFFER = 0x8893;
+const STENCIL_TEST = 0x0B90;
+
+describe('renderer — consecutive solid-fill batching', () => {
+  let recorder: ReturnType<typeof makeGLRecorder>;
+  let r: WeaselRenderer;
+
+  beforeEach(() => {
+    recorder = makeGLRecorder();
+    r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+  });
+
+  const rect = (x: number, color = '#ff0000', extra: object = {}): DrawCommand => ({
+    kind: 'path',
+    path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+    fill: { color },
+    ...extra,
+  } as DrawCommand);
+
+  const STOPS = [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }];
+
+  /** A paint no run can carry, and the one these tests break a run with. Every
+   *  gradient batches now; per-vertex colors are their own program and a color
+   *  VBO minted per draw, so they cannot join one. */
+  const vcolorRect = (x: number): DrawCommand => ({
+    kind: 'path',
+    path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+    fill: { fill: 'solid', color: '#ffffff' },
+    vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1],
+  } as DrawCommand);
+
+  const linearRect = (x: number): DrawCommand => ({
+    kind: 'path',
+    path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+    fill: {
+      fill: 'linear-gradient',
+      from: { x: 0, y: 0 }, to: { x: 10, y: 10 },
+      stops: STOPS,
+    },
+  } as DrawCommand);
+
+  /** Halves every channel and lifts red by a quarter. The bias is what these
+   *  tests read: `u_colorMatrix` is uploaded from a scratch array the recorder
+   *  captures by reference, so by assertion time it holds the last value sent. */
+  const tinted = ((): number[] => {
+    const cm = new Array(20).fill(0);
+    cm[0] = 0.5; cm[6] = 0.5; cm[12] = 0.5; cm[18] = 1;
+    cm[4] = 0.25;
+    return cm;
+  })();
+
+  /** Index count of every drawElements, in issue order. */
+  const draws = (): number[] =>
+    recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1] as number);
+
+  /** The program bound at each drawElements, in issue order. */
+  const drawPrograms = (): unknown[] => {
+    const out: unknown[] = [];
+    let bound: unknown = null;
+    for (const c of recorder.calls) {
+      if (c.name === 'useProgram') bound = c.args[0];
+      if (c.name === 'drawElements') out.push(bound);
+    }
+    return out;
+  };
+
+  it('merges a run of solid rects into one draw', () => {
+    r.render([rect(0), rect(20), rect(40)]);
+    expect(draws()).toEqual([18]); // 3 rects × 6 indices
+    expect(drawPrograms()).toEqual([r._batchFill().handle]);
+  });
+
+  it('merges across the no-op wrapper groups the scene emits', () => {
+    // `buildSceneTree` gives every node its own group with no transform,
+    // alpha, colorMatrix or clip. Nothing about a draw can differ across one,
+    // so the run has to survive it — this is the shape the app renders.
+    r.render([0, 20, 40].map(
+      (x) => ({ kind: 'group', children: [rect(x)] }) as unknown as DrawCommand,
+    ));
+    expect(draws()).toEqual([18]);
+  });
+
+  it('flushes a run under the state it was staged in, not the live one', () => {
+    r.render([
+      { kind: 'group', colorMatrix: tinted, children: [rect(0)] } as unknown as DrawCommand,
+      rect(40),
+    ]);
+    // The group's run is still staged when the group pops. What breaks it is
+    // the rect that follows, by which point the group's color matrix is off the
+    // stack — the flush has to use it anyway or the rect draws untinted.
+    const uBias = r._batchFill().uniform('u_colorBias');
+    const biasAtDraw: number[] = [];
+    let pending = 0;
+    for (const c of recorder.calls) {
+      if (c.name === 'uniform4f' && c.args[0] === uBias) pending = c.args[1] as number;
+      if (c.name === 'drawElements') biasAtDraw.push(pending);
+    }
+    expect(draws()).toEqual([6, 6]);
+    expect(biasAtDraw).toEqual([0.25, 0]);
+  });
+
+  it('puts each rect at its own corners in one interleaved upload', () => {
+    r.render([rect(0), rect(20)]);
+    const upload = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!;
+    const verts = upload.args[2] as Float32Array;
+    expect(upload.args[4]).toBe(2 * 4 * FLOATS_PER_VERTEX); // 2 rects × 4 verts
+    // First rect's four corners, position pairs only.
+    const positions = (rectIndex: number): number[] => {
+      const out: number[] = [];
+      for (let v = 0; v < 4; v++) {
+        const at = (rectIndex * 4 + v) * FLOATS_PER_VERTEX;
+        out.push(verts[at], verts[at + 1]);
+      }
+      return out;
+    };
+    expect(positions(0)).toEqual([0, 0, 10, 0, 10, 10, 0, 10]);
+    expect(positions(1)).toEqual([20, 0, 30, 0, 30, 10, 20, 10]);
+  });
+
+  it('carries per-rect color on the vertices, leaving u_color white', () => {
+    r.render([rect(0, '#ff0000'), rect(20, '#0000ff')]);
+    const verts = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    expect(Array.from(verts.slice(2, 6))).toEqual([1, 0, 0, 1]);
+    expect(Array.from(verts.slice(4 * FLOATS_PER_VERTEX + 2, 4 * FLOATS_PER_VERTEX + 6))).toEqual([0, 0, 1, 1]);
+    // Anything but white here would tint the whole batch.
+    const uColor = r._batchFill().uniform('u_color');
+    const sent = recorder.calls.filter((c) => c.name === 'uniform4f' && c.args[0] === uColor);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].args.slice(1)).toEqual([1, 1, 1, 1]);
+  });
+
+  it('folds fill opacity into the vertex alpha', () => {
+    r.render([{
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { color: '#ff0000', opacity: 0.25 },
+    } as DrawCommand]);
+    const verts = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    expect(verts[5]).toBeCloseTo(0.25, 6);
+  });
+
+  it('flushes for a fill kind it cannot express, keeping painter\'s order', () => {
+    r.render([rect(0), vcolorRect(20), rect(40)]);
+    const progs = drawPrograms();
+    expect(progs).toHaveLength(3);
+    expect(progs[0]).toBe(r._batchFill().handle);
+    expect(progs[1]).toBe(r._pathFillVColor().handle);
+    expect(progs[2]).toBe(r._batchFill().handle);
+    expect(draws()).toEqual([6, 6, 6]);
+  });
+
+  /**
+   * Drawing a mesh alone closes whatever run is open and switches program
+   * twice, so it pays to batch a far bigger mesh into an open run than to
+   * start one with it (`tests/perf/mesh-batch.spec.ts`).
+   */
+  describe('how big a mesh may be and still join a run', () => {
+    /** A convex `n`-gon: earcut keeps its points as the mesh's vertices. */
+    const ngon = (x: number, n: number): DrawCommand => {
+      const coords = new Float32Array(n * 2);
+      for (let j = 0; j < n; j++) {
+        coords[j * 2] = x + 10 * Math.cos((j * 2 * Math.PI) / n);
+        coords[j * 2 + 1] = 10 + 10 * Math.sin((j * 2 * Math.PI) / n);
+      }
+      const commands = new Uint8Array(n + 1).fill(L);
+      commands[0] = M;
+      commands[n] = Z;
+      return {
+        kind: 'path',
+        path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' },
+        fill: { color: '#00ff00' },
+      } as DrawCommand;
+    };
+
+    it('batches a small mesh with no run open', () => {
+      r.render([ngon(0, 64), ngon(40, 64)]);
+      expect(draws()).toHaveLength(1);
+    });
+
+    it('draws a mid-sized mesh alone when no run is open', () => {
+      r.render([ngon(0, 200), ngon(40, 200)]);
+      expect(draws()).toHaveLength(2);
+    });
+
+    it('lets a mid-sized mesh join a run a rect opened', () => {
+      r.render([rect(0), ngon(40, 500), rect(80)]);
+      expect(draws()).toHaveLength(1);
+    });
+
+    it('draws a large mesh alone even into an open run', () => {
+      r.render([rect(0), ngon(40, 2000), rect(80)]);
+      expect(draws()).toHaveLength(3);
+    });
+  });
+
+  describe('a linear gradient, which the ramp atlas lets join a run', () => {
+    /** Every vertex the first flush wrote, as [ramp position, atlas row v,
+     *  packed slot]. Bounded by the call's own length: `bufferSubData` records
+     *  the whole staging array, most of which is the part it did not upload. */
+    const rampVertices = (): number[][] => {
+      const call = recorder.calls.find(
+        (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+      )!;
+      const verts = call.args[2] as Float32Array;
+      const out: number[][] = [];
+      for (let i = 0; i < (call.args[4] as number); i += FLOATS_PER_VERTEX) {
+        out.push([verts[i + 6], verts[i + 7], verts[i + TEX_SLOT_OFFSET]]);
+      }
+      return out;
+    };
+
+    /** A rect at `x`, filled by a gradient running left to right over x 0..10 —
+     *  so the ramp position at a corner is just its x tenth. */
+    const acrossRect = (x: number): DrawCommand => ({
+      kind: 'path',
+      path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+      fill: {
+        fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS,
+      },
+    } as DrawCommand);
+
+    /** `n` gradients no two of which bake to the same row. */
+    const distinctLinears = (n: number): DrawCommand[] =>
+      Array.from({ length: n }, (_, i) => ({
+        kind: 'path',
+        path: { kind: 'rect', x: i * 2, y: 0, width: 1, height: 1 },
+        fill: {
+          fill: 'linear-gradient',
+          from: { x: 0, y: 0 }, to: { x: 10, y: 0 },
+          stops: [{ offset: 0, color: `rgb(${i}, 0, 0)` }, { offset: 1, color: '#fff' }],
+        },
+      } as DrawCommand));
+
+    it('joins a run of solids rather than breaking it', () => {
+      r.render([rect(0), linearRect(20), rect(40)]);
+      expect(draws()).toEqual([18]);
+      expect(drawPrograms()).toEqual([r._batchFill().handle]);
+    });
+
+    it('carries the ramp position on the corners and the row on the v', () => {
+      r.render([acrossRect(20)]);
+      const verts = rampVertices();
+      // The gradient spans x 0..10 and the rect sits at x 20..30.
+      expect(verts.map((v) => v[0])).toEqual([2, 3, 3, 2]);
+      // One ramp in a 16-row atlas: the center of row 0.
+      expect(new Set(verts.map((v) => v[1]))).toEqual(new Set([0.5 / 16]));
+      // Slot 1 at the plain paint mode — no mode of its own.
+      expect(new Set(verts.map((v) => v[2]))).toEqual(new Set([1]));
+    });
+
+    it('gives every gradient in a run the same slot and a row of its own', () => {
+      r.render(distinctLinears(4));
+      expect(draws()).toEqual([24]);
+      const verts = rampVertices();
+      expect(new Set(verts.map((v) => v[2]))).toEqual(new Set([1]));
+      expect(new Set(verts.map((v) => v[1])).size).toBe(4);
+      expect(verts.every((v) => paintModeOf(v[2]) === 0)).toBe(true);
+    });
+
+    // Growing the atlas moves every row's v, and the staged vertices name their
+    // row by where it sits — so the run has to be drawn before that happens or
+    // it paints with somebody else's gradient.
+    it('breaks the run rather than let the atlas grow under it', () => {
+      r.render(distinctLinears(16));
+      expect(draws()).toEqual([96]);
+
+      recorder.reset();
+      r.render(distinctLinears(17));
+      // 16 of them, then the one whose bake grew the atlas.
+      expect(draws()).toEqual([96, 6]);
+    });
+
+    it('shares the run with a bitmap, taking one slot beside it', () => {
+      const image = { width: 4, height: 4, close() {} } as unknown as ImageBitmap;
+      r.render([
+        linearRect(0),
+        { kind: 'image', image, x: 0, y: 0, w: 4, h: 4 } as DrawCommand,
+        linearRect(20),
+      ]);
+      expect(draws()).toEqual([18]);
+      expect(drawPrograms()).toEqual([r._batchFill().handle]);
+    });
+  });
+
+  it('stages a solid stroke into the run behind its own fill', () => {
+    r.render([
+      rect(0),
+      rect(20, '#ff0000', { stroke: { width: 2, paint: { color: '#000' } } }),
+      rect(40),
+    ]);
+    // Three fills (6 indices each) plus one stroke ribbon, all one draw. GL
+    // rasterizes a draw's primitives in index order, so staging the ribbon
+    // after its own fill is what puts it on top.
+    expect(draws()).toHaveLength(1);
+    expect(draws()[0]).toBeGreaterThan(18);
+    // Runs of like-colored vertices, in staging order: two red fills, the
+    // black ribbon, then the last fill.
+    const upload = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!;
+    const verts = upload.args[2] as Float32Array;
+    const runs: string[] = [];
+    for (let v = 0; v < (upload.args[4] as number) / FLOATS_PER_VERTEX; v++) {
+      const at = v * FLOATS_PER_VERTEX;
+      const color = `${verts[at + 2]},${verts[at + 3]},${verts[at + 4]}`;
+      if (runs[runs.length - 1] !== color) runs.push(color);
+    }
+    expect(runs).toEqual(['1,0,0', '0,0,0', '1,0,0']);
+  });
+
+  it('gives a stroke its own draw when the run cannot carry it', () => {
+    // Inner-aligned on a polygon needs the stencil two-pass.
+    r.render([
+      rect(0),
+      {
+        kind: 'path',
+        path: {
+          kind: 'polygon',
+          commands: new Uint8Array([0, 1, 1, 4]),
+          coords: new Float32Array([20, 0, 30, 0, 20, 10]),
+        },
+        fill: { color: '#ff0000' },
+        stroke: { width: 2, align: 'inner', paint: { color: '#000' } },
+      } as unknown as DrawCommand,
+      rect(40),
+    ]);
+    // The run flushes ahead of the stencil dance, which then draws twice.
+    expect(draws()).toHaveLength(4);
+  });
+
+  it('keeps a run open across a label, which now stages into it', () => {
+    r.render([rect(0), { kind: 'text', x: 0, y: 0, runs: [], maxWidth: Infinity, align: 'left', style: {} } as unknown as DrawCommand, rect(20)]);
+    expect(draws()).toEqual([12]);
+  });
+
+  it('merges across a group transform, placing corners itself', () => {
+    const shifted = new Float32Array([1, 0, 0, 0, 1, 0, 30, 40, 1]);
+    r.render([
+      rect(0),
+      { kind: 'group', transform: shifted, children: [rect(20)] } as unknown as DrawCommand,
+      rect(40),
+    ]);
+    expect(draws()).toEqual([18]);
+    const verts = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    // Middle rect: x 20 + tx 30, y 0 + ty 40.
+    expect(Array.from(verts.slice(4 * FLOATS_PER_VERTEX, 4 * FLOATS_PER_VERTEX + 2))).toEqual([50, 40]);
+    // ...and its neighbours are untransformed in the same buffer.
+    expect(Array.from(verts.slice(0, 2))).toEqual([0, 0]);
+    expect(Array.from(verts.slice(8 * FLOATS_PER_VERTEX, 8 * FLOATS_PER_VERTEX + 2))).toEqual([40, 0]);
+  });
+
+  it('rotates each corner rather than the batch', () => {
+    // Quarter turn: (x, y) → (-y, x). A rect maps to a parallelogram, which the
+    // two-triangle index pattern still covers.
+    const quarterTurn = new Float32Array([0, 1, 0, -1, 0, 0, 0, 0, 1]);
+    r.render([
+      { kind: 'group', transform: quarterTurn, children: [rect(0)] } as unknown as DrawCommand,
+    ]);
+    const verts = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    const corners: number[] = [];
+    for (let v = 0; v < 4; v++) {
+      corners.push(verts[v * FLOATS_PER_VERTEX], verts[v * FLOATS_PER_VERTEX + 1]);
+    }
+    expect(corners).toEqual([0, 0, 0, 10, -10, 10, -10, 0]);
+  });
+
+  describe('a rect clip, which cuts staged geometry instead of breaking the run', () => {
+    const clipped = (clip: object, children: DrawCommand[], extra: object = {}): DrawCommand => ({
+      kind: 'group', clip: { kind: 'rect', ...clip }, children, ...extra,
+    } as unknown as DrawCommand);
+    const firstUpload = (): { verts: Float32Array; floats: number } => {
+      const call = recorder.calls.find(
+        (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+      )!;
+      return { verts: call.args[2] as Float32Array, floats: call.args[4] as number };
+    };
+    const positions = (): number[] => {
+      const { verts, floats } = firstUpload();
+      const out: number[] = [];
+      for (let i = 0; i < floats; i += FLOATS_PER_VERTEX) out.push(verts[i], verts[i + 1]);
+      return out;
+    };
+    const clipBitWrites = () =>
+      recorder.calls.filter((c) => c.name === 'stencilMask' && c.args[0] === 0x02);
+
+    it('shares one draw with what surrounds it, and writes no stencil bit', () => {
+      r.render([rect(0), clipped({ x: 20, y: 0, width: 10, height: 10 }, [rect(20)]), rect(40)]);
+      expect(draws()).toEqual([18]);
+      expect(clipBitWrites()).toEqual([]);
+    });
+
+    it('cuts a rect that crosses it to the part inside', () => {
+      r.render([clipped({ x: 0, y: 2, width: 5, height: 20 }, [rect(0)])]);
+      expect(positions()).toEqual([0, 2, 5, 2, 5, 10, 0, 10]);
+      expect(draws()).toEqual([6]);
+    });
+
+    it('drops a rect wholly outside it', () => {
+      r.render([clipped({ x: 100, y: 0, width: 10, height: 10 }, [rect(0)]), rect(40)]);
+      expect(draws()).toEqual([6]);
+      expect(positions()).toEqual([40, 0, 50, 0, 50, 10, 40, 10]);
+    });
+
+    it('applies nested rect clips as their intersection', () => {
+      r.render([clipped({ x: 2, y: 0, width: 100, height: 100 }, [
+        clipped({ x: 0, y: 0, width: 7, height: 100 }, [rect(0)]),
+      ])]);
+      expect(positions()).toEqual([2, 0, 7, 0, 7, 10, 2, 10]);
+    });
+
+    it('carries the color matrix of a cut corner unchanged', () => {
+      r.render([clipped({ x: 0, y: 0, width: 5, height: 10 }, [rect(0, '#0000ff')])]);
+      const { verts, floats } = firstUpload();
+      for (let i = 0; i < floats; i += FLOATS_PER_VERTEX) {
+        expect(Array.from(verts.slice(i + 2, i + 6))).toEqual([0, 0, 1, 1]);
+      }
+    });
+
+    it('refuses to cut a turned rect, and clips it through the stencil instead', () => {
+      // Cutting a slanted edge moves its endpoint off the rasterizer's subpixel
+      // grid, so the shortened edge would cover different samples.
+      const c = Math.SQRT1_2;
+      const eighthTurn = new Float32Array([c, c, 0, -c, c, 0, 0, 0, 1]);
+      r.render([
+        rect(0, '#00ff00'),
+        clipped({ x: 0, y: -100, width: 100, height: 200 }, [
+          { kind: 'group', transform: eighthTurn, children: [rect(0)] } as unknown as DrawCommand,
+        ]),
+        rect(40, '#00ff00'),
+      ]);
+      expect(clipBitWrites().length).toBeGreaterThan(0);
+      // The diamond is staged whole, in a run of its own under the bit.
+      const uploads = recorder.calls.filter((c2) => c2.name === 'bufferSubData' && c2.args[0] === ARRAY_BUFFER);
+      expect(uploads.map((u) => u.args[4])).toEqual([4, 4, 4].map((n) => n * FLOATS_PER_VERTEX));
+      expect(drawPrograms().filter((p2) => p2 === r._batchFill().handle)).toHaveLength(3);
+    });
+
+    it('keeps a turned rect that lies wholly inside, in the run', () => {
+      const c = Math.SQRT1_2;
+      const eighthTurn = new Float32Array([c, c, 0, -c, c, 0, 50, 50, 1]);
+      r.render([
+        rect(0),
+        clipped({ x: 0, y: 0, width: 100, height: 100 }, [
+          { kind: 'group', transform: eighthTurn, children: [rect(0)] } as unknown as DrawCommand,
+        ]),
+      ]);
+      expect(draws()).toEqual([12]);
+      expect(clipBitWrites()).toEqual([]);
+    });
+
+    it('gives itself a stencil bit when a child draws for itself, and still lets the run cross it', () => {
+      r.render([
+        clipped({ x: 0, y: 0, width: 5, height: 10 }, [rect(0), vcolorRect(0), rect(0)]),
+        rect(40),
+      ]);
+      // The run before the per-vertex child, the clip's stencil write, the
+      // child, the stencil clear, then one run holding the third rect and the
+      // one after the group.
+      expect(draws()).toEqual([6, 6, 6, 6, 12]);
+      expect(clipBitWrites().length).toBeGreaterThan(0);
+      expect(drawPrograms()[2]).toBe(r._pathFillVColor().handle);
+      let seen = 0;
+      const vcolorAt = recorder.calls.findIndex((c) => c.name === 'drawElements' && seen++ === 2);
+      let func: unknown[] | null = null;
+      let on = false;
+      for (const c of recorder.calls.slice(0, vcolorAt)) {
+        if (c.name === 'stencilFunc') func = c.args as unknown[];
+        if (c.name === 'enable' && c.args[0] === STENCIL_TEST) on = true;
+        if (c.name === 'disable' && c.args[0] === STENCIL_TEST) on = false;
+      }
+      expect(on).toBe(true);
+      expect(func!.slice(1)).toEqual([0x02, 0x02]);
+    });
+
+    it('goes through the stencil when its transform turns it off the axes', () => {
+      const c = Math.SQRT1_2;
+      r.render([clipped({ x: 0, y: 0, width: 10, height: 10 }, [rect(0)], {
+        transform: new Float32Array([c, c, 0, -c, c, 0, 0, 0, 1]),
+      })]);
+      expect(clipBitWrites().length).toBeGreaterThan(0);
+    });
+
+    it('starts the next frame unclipped after a frame that threw inside it', () => {
+      let deep: DrawCommand = rect(0);
+      for (let i = 0; i < 8; i++) deep = clipped({ x: 0, y: 0, width: 1, height: 1 }, [deep]);
+      expect(() => r.render([deep])).toThrow(/clip nesting depth exceeded/);
+      recorder.reset();
+      r.render([rect(0)]);
+      expect(positions()).toEqual([0, 0, 10, 0, 10, 10, 0, 10]);
+    });
+  });
+
+  it('merges across a group alpha, folding it into the vertex alpha', () => {
+    r.render([
+      rect(0),
+      { kind: 'group', alpha: 0.5, children: [rect(20)] } as unknown as DrawCommand,
+      rect(40),
+    ]);
+    expect(draws()).toEqual([18]);
+    const verts = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    expect(verts[5]).toBe(1);
+    expect(verts[4 * FLOATS_PER_VERTEX + 5]).toBeCloseTo(0.5, 6);
+    expect(verts[8 * FLOATS_PER_VERTEX + 5]).toBe(1);
+    // Folded means the uniform must not apply it a second time.
+    const uAlpha = r._batchFill().uniform('u_alpha');
+    const sent = recorder.calls.filter((c) => c.name === 'uniform1f' && c.args[0] === uAlpha);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].args[1]).toBe(1);
+  });
+
+  it('keeps alpha a uniform, and a barrier, under a color matrix', () => {
+    // `a = clamp(CM * src + bias).a * u_alpha` — with a real matrix between
+    // them, an alpha pre-multiplied onto the vertex is a different number.
+    r.render([{
+      kind: 'group',
+      colorMatrix: tinted,
+      children: [
+        rect(0),
+        { kind: 'group', alpha: 0.5, children: [rect(20)] } as unknown as DrawCommand,
+      ],
+    } as unknown as DrawCommand]);
+    expect(draws()).toEqual([6, 6]);
+    const uAlpha = r._batchFill().uniform('u_alpha');
+    const sent = recorder.calls
+      .filter((c) => c.name === 'uniform1f' && c.args[0] === uAlpha)
+      .map((c) => c.args[1]);
+    expect(sent).toEqual([1, 0.5]);
+  });
+
+  it('does not merge across a group color matrix', () => {
+    r.render([
+      rect(0),
+      { kind: 'group', colorMatrix: tinted, children: [rect(20)] } as unknown as DrawCommand,
+      rect(40),
+    ]);
+    expect(draws()).toEqual([6, 6, 6]);
+  });
+
+  it('draws a stencil-clipped run under the clip, and the next run without it', () => {
+    r.render([
+      {
+        kind: 'group',
+        clip: squareClip(10),
+        children: [rect(0), rect(20)],
+      } as unknown as DrawCommand,
+      rect(40),
+    ]);
+    // Clipped children merge with each other but not with what follows the pop.
+    const batched = draws().filter((n) => n === 12);
+    expect(batched).toHaveLength(1);
+    // The batched draw must be issued while the clip stencil is live, or it
+    // spills past the group's clip rect.
+    const stencilStateAt = (i: number): boolean => {
+      let on = false;
+      for (let k = 0; k < i; k++) {
+        const c: GLCall = recorder.calls[k];
+        if (c.name === 'enable' && c.args[0] === STENCIL_TEST) on = true;
+        if (c.name === 'disable' && c.args[0] === STENCIL_TEST) on = false;
+      }
+      return on;
+    };
+    const at = recorder.calls.findIndex((c) => c.name === 'drawElements' && c.args[1] === 12);
+    expect(stencilStateAt(at)).toBe(true);
+  });
+
+  it('chunks a run longer than the per-flush cap', () => {
+    const rectsPerBatch = MAX_VERTICES_PER_BATCH / 4;
+    const many = Array.from({ length: rectsPerBatch + 1 }, (_, i) => rect(i));
+    r.render(many);
+    expect(draws()).toEqual([rectsPerBatch * 6, 6]);
+  });
+
+  describe('which buffers a flush writes', () => {
+    /** One flush each: a vertex-colored fill never joins the run, so it drains what is
+     *  staged before drawing itself. */
+    const alternating = (flushes: number): DrawCommand[] =>
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), vcolorRect(i * 20 + 10)]).flat();
+
+    /** The buffer bound at each solid-flush vertex upload, in issue order.
+     *  `drawImage` is the only other `bufferSubData(ARRAY_BUFFER)` writer and
+     *  no test here draws an image. */
+    const flushVbos = (): unknown[] => {
+      const out: unknown[] = [];
+      let bound: unknown = null;
+      for (const c of recorder.calls) {
+        if (c.name === 'bindBuffer' && c.args[0] === ARRAY_BUFFER) bound = c.args[1];
+        if (c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER) out.push(bound);
+      }
+      return out;
+    };
+
+    /** The vertex array bound at each solid-flush vertex upload. */
+    const flushVaos = (): unknown[] => {
+      const out: unknown[] = [];
+      let bound: unknown = null;
+      for (const c of recorder.calls) {
+        if (c.name === 'bindVertexArray') bound = c.args[0];
+        if (c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER) out.push(bound);
+      }
+      return out;
+    };
+
+    it('writes each flush to a buffer the one before it did not', () => {
+      r.render(alternating(4));
+      const vbos = flushVbos();
+      expect(vbos).toHaveLength(4);
+      expect(new Set(vbos).size).toBe(4);
+    });
+
+    it('reuses a buffer only after a full turn of the ring', () => {
+      r.render(alternating(SOLID_RING_SIZE + 2));
+      const vbos = flushVbos();
+      expect(vbos).toHaveLength(SOLID_RING_SIZE + 2);
+      expect(new Set(vbos).size).toBe(SOLID_RING_SIZE);
+      expect(vbos[SOLID_RING_SIZE]).toBe(vbos[0]);
+      expect(vbos[SOLID_RING_SIZE + 1]).toBe(vbos[1]);
+    });
+
+    it('keeps cycling across frames rather than restarting at slot 0', () => {
+      r.render(alternating(2));
+      const first = flushVbos();
+      recorder.reset();
+      r.render(alternating(2));
+      expect(flushVbos().some((b) => first.includes(b))).toBe(false);
+    });
+
+    it('draws from the vertex array that flush wrote', () => {
+      // Each slot's VAO names its own two buffers, so binding one and writing
+      // another paints the previous flush's geometry.
+      r.render(alternating(3));
+      const vaos = flushVaos();
+      expect(new Set(vaos).size).toBe(3);
+      const boundAtBatchDraw: unknown[] = [];
+      let vao: unknown = null;
+      let prog: unknown = null;
+      for (const c of recorder.calls) {
+        if (c.name === 'bindVertexArray') vao = c.args[0];
+        if (c.name === 'useProgram') prog = c.args[0];
+        if (c.name === 'drawElements' && prog === r._batchFill().handle) {
+          boundAtBatchDraw.push(vao);
+        }
+      }
+      expect(boundAtBatchDraw).toEqual(vaos);
+    });
+
+    it('writes the indices into the same set as the vertices', () => {
+      r.render(alternating(2));
+      // The element binding rides the VAO, so an index upload that lands in the
+      // wrong set draws the previous flush's triangles.
+      const perFlush: Array<[unknown, unknown]> = [];
+      let vao: unknown = null;
+      let pendingVao: unknown = null;
+      for (const c of recorder.calls) {
+        if (c.name === 'bindVertexArray') vao = c.args[0];
+        if (c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER) pendingVao = vao;
+        if (c.name === 'bufferSubData' && c.args[0] === ELEMENT_ARRAY_BUFFER) {
+          perFlush.push([pendingVao, vao]);
+        }
+      }
+      expect(perFlush).toHaveLength(2);
+      for (const [atVerts, atIdx] of perFlush) expect(atIdx).toBe(atVerts);
+    });
+
+    it('cycles flushes past a slot\'s capacity through buffers of their own', () => {
+      const perSlot = SOLID_RING_SLOT_VERTICES / 4;
+      const big = (n: number): DrawCommand[] => [
+        ...Array.from({ length: perSlot + 1 }, (_, i) => rect(n * 10000 + i)),
+        vcolorRect(0),
+      ];
+      const bigFlushes = SOLID_LARGE_RING_SIZE + 1;
+      r.render([
+        ...Array.from({ length: bigFlushes }, (_, n) => big(n)).flat(),
+        ...alternating(2),
+      ]);
+      const vbos = flushVbos();
+      expect(vbos).toHaveLength(bigFlushes + 2);
+      const large = vbos.slice(0, bigFlushes);
+      const small = vbos.slice(bigFlushes);
+      // Oversized flushes cycle a ring of their own, and share nothing with the
+      // slot-sized ones — a slot cannot hold what they carry.
+      expect(large[1]).not.toBe(large[0]);
+      expect(new Set(large).size).toBe(SOLID_LARGE_RING_SIZE);
+      expect(large[SOLID_LARGE_RING_SIZE]).toBe(large[0]);
+      for (const b of small) expect(large).not.toContain(b);
+    });
+
+    it('frees every buffer and vertex array it took', () => {
+      r.render(alternating(3));
+      r.render(Array.from({ length: SOLID_RING_SLOT_VERTICES / 4 + 1 }, (_, i) => rect(i)));
+      const used = new Set(flushVbos());
+      const vaos = new Set(flushVaos());
+      r.dispose();
+      const deleted = new Set(
+        recorder.calls.filter((c) => c.name === 'deleteBuffer').map((c) => c.args[0]),
+      );
+      const deletedVaos = new Set(
+        recorder.calls.filter((c) => c.name === 'deleteVertexArray').map((c) => c.args[0]),
+      );
+      for (const b of used) expect(deleted.has(b)).toBe(true);
+      for (const v of vaos) expect(deletedVaos.has(v)).toBe(true);
+    });
+  });
+
+  /**
+   * A run of rects has indices that are a pure function of the rect count, so a
+   * slot already holding that pattern needs no upload. Skipping one it did
+   * *not* hold draws the previous occupant's triangles out of the current
+   * vertices — pixels in the wrong place, never an error.
+   */
+  describe('which flushes re-upload their indices', () => {
+    const alternating = (flushes: number): DrawCommand[] =>
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), vcolorRect(i * 20 + 10)]).flat();
+
+    /** Solid-batch index uploads. Nothing else here writes indices this way:
+     *  the text and image paths respecify with `bufferData` instead. */
+    const indexUploads = (): GLCall[] =>
+      recorder.calls.filter(
+        (c) => c.name === 'bufferSubData' && c.args[0] === ELEMENT_ARRAY_BUFFER,
+      );
+
+    /** A solid-filled triangle, which stages through `pushMesh` rather than
+     *  `pushRect` and so carries indices no rect count describes. */
+    const triangle = (x: number): DrawCommand => ({
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([0, 1, 1, 4]),
+        coords: new Float32Array([x, 0, x + 10, 0, x, 10]),
+      },
+      fill: { color: '#00ff00' },
+    } as unknown as DrawCommand);
+
+    it('uploads once per slot while the ring is still filling', () => {
+      r.render(alternating(4));
+      expect(indexUploads()).toHaveLength(4);
+    });
+
+    it('skips the upload when a slot comes round holding that pattern already', () => {
+      // Flushes 65 and 66 land back on slots 0 and 1, both of which already
+      // hold the one-rect pattern.
+      r.render(alternating(SOLID_RING_SIZE + 2));
+      expect(indexUploads()).toHaveLength(SOLID_RING_SIZE);
+    });
+
+    it('serves any quad count from the pattern a slot already holds', () => {
+      // A slot is written to its capacity, not to the flush that first used
+      // it, and the pattern for N quads is a prefix of the pattern for any
+      // larger N — so slot 0 coming round with two rects needs nothing.
+      r.render([
+        ...alternating(SOLID_RING_SIZE),
+        rect(0), rect(20), vcolorRect(40),
+      ]);
+      expect(indexUploads()).toHaveLength(SOLID_RING_SIZE);
+    });
+
+    it('uploads for a flush carrying a mesh, whose indices no count describes', () => {
+      r.render([triangle(0), vcolorRect(20), triangle(40)]);
+      expect(indexUploads()).toHaveLength(2);
+    });
+
+    it('re-uploads into a slot a mesh flush left, rather than trusting the count', () => {
+      // A mesh poisons the slot it lands in: its indices are rebased onto the
+      // staged vertices, so a later rect run whose count happens to match is
+      // still a different pattern. One full turn puts a one-rect flush back on
+      // the mesh's slot.
+      r.render([
+        triangle(0), vcolorRect(10),
+        ...alternating(SOLID_RING_SIZE - 1),
+        rect(0), vcolorRect(30),
+      ]);
+      // Every one of the 65 flushes writes: 64 filling the ring, and the last
+      // because the slot it lands on held a mesh.
+      expect(indexUploads()).toHaveLength(SOLID_RING_SIZE + 1);
+    });
+  });
+
+  /**
+   * `u_color` and `u_alpha` are cached per program for the frame, so the batch
+   * stops re-sending the white it holds forever. A stale entry paints a later
+   * shape in an earlier one's color, which nothing here throws over.
+   */
+  describe('which uniform writes reach GL', () => {
+    const colorWrites = (prog: { uniform(n: string): unknown }): number[][] => {
+      const loc = prog.uniform('u_color');
+      return recorder.calls
+        .filter((c) => c.name === 'uniform4f' && c.args[0] === loc)
+        .map((c) => c.args.slice(1) as number[]);
+    };
+
+    it('sends the batch its white once a frame, not once a flush', () => {
+      const alternating = (flushes: number): DrawCommand[] =>
+        Array.from({ length: flushes }, (_, i) => [rect(i * 20), vcolorRect(i * 20 + 10)]).flat();
+      r.render(alternating(4));
+      expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
+    });
+
+    it('is the only writer of u_color on its own program', () => {
+      // What makes one write a frame safe. A per-anchor-colored stroke sends a
+      // real color, and it has to land on a different program — the same one
+      // would leave the batch's cache holding a white GL no longer has, and
+      // the next run would paint in the stroke's blue.
+      const vcolorStroke = {
+        kind: 'path',
+        path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
+        fill: { color: '#ff0000' },
+        stroke: {
+          width: 2,
+          paint: { color: '#0000ff' },
+          vertexColors: [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1],
+        },
+      } as unknown as DrawCommand;
+      r.render([rect(0), vcolorStroke, rect(40)]);
+      expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
+      expect(colorWrites(r._pathFillVColor()).length).toBeGreaterThan(0);
+    });
+
+    it('does not carry a cached color into the next frame', () => {
+      r.render([rect(0)]);
+      recorder.reset();
+      r.render([rect(0)]);
+      // GL state survives the frame, but the cache is keyed on a DrawContext
+      // built fresh per render, so it re-sends rather than assume.
+      expect(colorWrites(r._batchFill())).toEqual([[1, 1, 1, 1]]);
+    });
+  });
+});
+
+/**
+ * Text in the batch.
+ *
+ * A label used to break every run it sat in, because glyphs took the MSDF
+ * program and a run is one program. The batch shader now carries the glyph
+ * math behind a per-vertex paint mode, so a caption under a thumbnail, a
+ * badge over a card, and the rules under an underlined word all belong to the
+ * run around them.
+ */
+describe('renderer — text in the batch', () => {
+  let recorder: ReturnType<typeof makeGLRecorder>;
+  let r: WeaselRenderer;
+
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+      }
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+    await registerFont('inter', {}, '/fonts/inter.json', '/fonts/inter.png');
+
+    recorder = makeGLRecorder();
+    r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+  });
+
+  const rect = (x: number, color = '#ff0000'): DrawCommand => ({
+    kind: 'path',
+    path: { kind: 'rect', x, y: 0, width: 10, height: 10 },
+    fill: { color },
+  } as DrawCommand);
+
+  const label = (text: string, extra: object = {}): DrawCommand => ({
+    kind: 'text', x: 0, y: 0,
+    runs: [{
+      text, fontFamily: 'inter', fontSize: 16, fontWeight: 400,
+      fontStyle: 'normal', fill: { fill: 'solid', color: '#0000ff' },
+      letterSpacing: 0,
+      underline: false, strikethrough: false, overline: false, baselineShift: 0,
+      ...extra,
+    }],
+    maxWidth: Infinity, align: 'left', style: {},
+  } as unknown as DrawCommand);
+
+  const draws = (): number[] =>
+    recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1] as number);
+
+  /** The one staged vertex buffer a merged frame uploads. */
+  const staged = (): Float32Array =>
+    recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+
+  const vertex = (buf: Float32Array, i: number): number[] =>
+    Array.from(buf.slice(i * FLOATS_PER_VERTEX, (i + 1) * FLOATS_PER_VERTEX));
+
+  it('merges a label into the run around it', () => {
+    r.render([rect(0), label('A'), rect(20)]);
+    expect(draws()).toEqual([18]); // 2 rects + 1 glyph, 6 indices each
+  });
+
+  it('gives a glyph the text color on its vertices', () => {
+    r.render([label('A')]);
+    // Blue, opaque — where a solid rect carries its own fill.
+    expect(vertex(staged(), 0).slice(2, 6)).toEqual([0, 0, 1, 1]);
+  });
+
+  it('marks a glyph vertex with a paint mode a solid does not carry', () => {
+    r.render([rect(0), label('A')]);
+    const buf = staged();
+    expect(paintModeOf(vertex(buf, 0)[TEX_SLOT_OFFSET])).toBe(0);
+    expect(paintModeOf(vertex(buf, 4)[TEX_SLOT_OFFSET])).toBeGreaterThan(0);
+  });
+
+  it('breaks the run where a faked bold meets text that is not', () => {
+    // The SDF threshold is a uniform, not a vertex attribute — see
+    // `StagedBatchState.synthBold`. This is the break that buys back, and the
+    // face here registers only weight 400, so asking for 700 fakes it.
+    r.render([label('A'), label('B', { fontWeight: 700 })]);
+    expect(draws()).toEqual([6, 6]);
+  });
+
+  it('keeps one run across labels that agree about it', () => {
+    r.render([label('A'), label('B')]);
+    expect(draws()).toEqual([12]);
+  });
+
+  it('keeps an underline in the run with the glyphs it underlines', () => {
+    r.render([rect(0), label('A', { underline: true })]);
+    expect(draws()).toEqual([18]); // rect + glyph + rule
+  });
+});

@@ -11,7 +11,7 @@ import { useScene } from 'core/scene/useScene';
 import { defineTool, type useTools } from '../tools/overlayBinding';
 import type { Action } from '@weasel-js/routing';
 import type { View } from 'core/viewport/view';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type D = { color: string };
 type L = 'main';

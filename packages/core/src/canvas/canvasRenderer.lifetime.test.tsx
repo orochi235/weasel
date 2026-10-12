@@ -8,7 +8,7 @@ import { act, render } from '@testing-library/react';
 import { StrictMode, type ReactElement } from 'react';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
-import { makeGLRecorder, type GLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { SceneViewCanvas } from './SceneViewCanvas';
 import { MinimapCanvas } from './MinimapCanvas';
 import { DrawCanvas } from './DrawCanvas';

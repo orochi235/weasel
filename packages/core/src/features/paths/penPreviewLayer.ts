@@ -10,7 +10,7 @@
  * argument.
  */
 
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Tool } from '../../tools/overlayBinding';
 import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';

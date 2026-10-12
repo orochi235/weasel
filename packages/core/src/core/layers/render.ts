@@ -1,5 +1,5 @@
-import { viewToMat3, type DrawCommand } from '../../renderer';
-import type { Effect } from '../../renderer/effects/types';
+import { viewToMat3, type DrawCommand } from '@weasel-js/renderer';
+import type { Effect } from '@weasel-js/renderer';
 import type { View } from 'core/viewport/view';
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };

@@ -8,7 +8,7 @@ import type { RectPose } from 'core/scene/composePose';
 import { renderDebugSnapshot } from './renderDebugSnapshot';
 import { rasterToPng } from './rasterToPng';
 import { createDebugSink } from '../debug/createDebugSink';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RasterImage } from './renderSceneToPixels';
 
 function px(img: RasterImage, x: number, y: number): [number, number, number, number] {

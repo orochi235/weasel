@@ -13,14 +13,15 @@ import { useEffect, type ReactNode } from 'react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type Scene } from 'core/scene/types';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
-import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { SceneCanvas } from './SceneCanvas';
 
 const painted = vi.hoisted(() => new Map<unknown, readonly unknown[]>());
 
-vi.mock('../renderer/WeaselRenderer', () => ({
+vi.mock('@weasel-js/renderer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
   WeaselRenderer: class {
     private readonly target: unknown;
     constructor(opts: { canvas?: unknown }) { this.target = opts.canvas; }

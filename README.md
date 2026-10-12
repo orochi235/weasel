@@ -179,7 +179,7 @@ Every package is published under `@weasel-js` and released together at one versi
 
 | Package | What it is |
 |---|---|
-| `core` | the scene graph, `<SceneCanvas>`, actions, tools, and the WebGL2 renderer |
+| `core` | the scene graph, `<SceneCanvas>`, actions, and tools |
 | `geom` | pure 2D geometry — affine, box, curve, polyline; polygon booleans under `./booleans` |
 | `gestures` | the gesture taxonomy, route grammars and matchers; no React, no DOM |
 | `history` | undo/redo with scoped sub-histories; no React, no DOM |
@@ -189,6 +189,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `react` | generic React hooks the other packages share: `useLatest`, `useStableByContent`, `useVisibleRaf` |
 | `paint` | fills, strokes, gradients and dashes as plain data |
 | `stroke` | a stroke as geometry: the ribbon mesh, the marker registry, and a stroke outlined as a path |
+| `renderer` | the WebGL2 renderer: draw commands, batched fills and strokes, text, images, gradients, patterns, shader programs, and effects |
 | `text` | styled runs, kerned layout, wrapping and measurement |
 | `text-dom` | in-place text editing: a contenteditable overlay that reads and writes styled runs |
 | `bidi` | the Unicode Bidirectional Algorithm (UAX #9) |

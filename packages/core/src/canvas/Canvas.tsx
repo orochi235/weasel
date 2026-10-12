@@ -56,10 +56,10 @@ import {
   drawLayers, isLayerPainted,
   type Dims, type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RedrawSource, type RenderLayer,
 } from 'core/layers/render';
-import { viewToMat3, type ShaderProgramHandle } from '../renderer';
+import { viewToMat3, type ShaderProgramHandle } from '@weasel-js/renderer';
 import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
 import { useSceneLayerList } from './useSceneLayerList';
-import { getProgramSource, programSourceRegistry } from '../renderer/shaders/registerProgram';
+import { getProgramSource, programSourceRegistry } from '@weasel-js/renderer';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
@@ -86,7 +86,7 @@ import type { ResolvedCursor } from '@weasel-js/cursor';
 import { createPaintedCursorState } from '@weasel-js/cursor';
 import type { PaintedCursor, PaintedCursorState } from '@weasel-js/cursor';
 import { createPaintedCursorLayer } from './paintedCursorLayer';
-import { commandFill } from 'renderer/patterns/commandPaint';
+import { commandFill } from '@weasel-js/renderer';
 
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { CursorCoordsHud } from './CursorCoordsHud';

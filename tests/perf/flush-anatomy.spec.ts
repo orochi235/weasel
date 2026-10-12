@@ -107,7 +107,7 @@ test('flush anatomy: what a flush spends outside the draw', async ({ page, brows
       }).__flushReport;
 
       const { WeaselRenderer } = await import(
-        /* @vite-ignore */ `/weasel/@fs${root}/packages/core/src/renderer/index.ts`
+        /* @vite-ignore */ `/weasel/@fs${root}/packages/renderer/src/index.ts`
       );
       const { timeInterleaved } = await import(
         /* @vite-ignore */ `/weasel/@fs${root}/tests/perf/lib/frameTiming.ts`

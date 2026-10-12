@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer } from './render';
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 describe('drawLayers', () => {
   it('returns concatenated DrawCommands from each visible layer in order', () => {

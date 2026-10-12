@@ -40,7 +40,10 @@ const external = (id: string) =>
 // of core. The copy duplicates only stateless code, and must stay that way:
 // a second copy of a registry would register into nothing.
 const LAZY_KINDS = ['core/paint/meshKindLazy'];
-const REGISTRY_STATE = /packages\/registry\/|(renderer|core\/paint)\/paintKinds\.|shaders\/registerProgram\./;
+// Of the renderer's dist only `mesh.js` may be bundled: a shared chunk beside it
+// would be one the renderer's index also loads, registries included.
+const REGISTRY_STATE =
+  /packages\/registry\/|core\/paint\/paintKinds\.|packages\/renderer\/(src\/(paintKinds|shaders\/registerProgram)\.|dist\/(?!mesh\.))/;
 
 function selfContainedLazyKinds(): Plugin {
   return {

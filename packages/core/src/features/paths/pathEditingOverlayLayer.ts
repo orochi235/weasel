@@ -21,7 +21,7 @@
  * stay constant regardless of zoom.
  */
 
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { type Path, type PolygonPath, linePath, pathToAnchors, circlePath, rectMarkerPath, squarePath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';

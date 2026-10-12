@@ -6,7 +6,7 @@ import { defaultDrawOne } from './defaultDrawOne';
 import { wireSceneSlotToScene } from './sceneSlotWiring';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { solid, strokeOf } from '../util/paint';
-import type { DrawCommand, PathDrawCommand } from '../renderer';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const POSE = { x: 0, y: 0, width: 100, height: 40 };

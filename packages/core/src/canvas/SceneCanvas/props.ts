@@ -31,7 +31,7 @@ import type { DeviceProfile } from '../../core/device/types';
 import type { NodeRoutingEntry } from '../../core/scene/NodeRouting';
 import type { DebugConfig } from '../../debug/types';
 import type { LayoutDropTargetMode, ReflowTransition } from '../../layout/types';
-import type { DrawCommand, ShaderProgramHandle } from '../../renderer';
+import type { DrawCommand, ShaderProgramHandle } from '@weasel-js/renderer';
 import type { AnyTool } from '../../tools/overlayBinding';
 import type { ToolsApi } from '../../tools/overlayBinding';
 import type { CanvasProps, LayersMap, SceneSlotConfig } from '../Canvas';

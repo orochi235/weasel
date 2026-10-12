@@ -4,7 +4,7 @@ import type { Animator } from '../animation/types';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
 import { createScene } from 'core/scene/scene';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 const built = new Set<Animator>();
 

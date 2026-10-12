@@ -30,7 +30,7 @@ import type { SceneCanvasApi } from './canvasExtension';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 type D = { kind: 'rect' };
 type L = 'main';

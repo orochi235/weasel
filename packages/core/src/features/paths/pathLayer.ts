@@ -6,7 +6,7 @@
  * separate from the visual style record (the typical scene-graph layout).
  */
 
-import { type DrawCommand } from '../../renderer';
+import { type DrawCommand } from '@weasel-js/renderer';
 import { type CommandFill, type CommandStroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import { type Path, countPathAnchors } from '@weasel-js/geom';

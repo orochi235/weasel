@@ -12,7 +12,7 @@
  * renders) — and directly by `usePreviewGhostLayer.buildSubtree` (in-flight
  * preview), so every code path produces rotated geometry uniformly.
  */
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { poseFrameOf } from '@weasel-js/geom';
 import { rotateAboutPoint, mat3, type GlMat3 } from '@weasel-js/geom';
 

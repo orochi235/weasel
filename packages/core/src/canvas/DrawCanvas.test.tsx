@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { registerPaintKind, getPaintKind } from 'core/paint/paintKinds';
-import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { makeMatchMedia } from '../core/device/testing/matchMedia';
 import { DrawCanvas } from './DrawCanvas';
 
@@ -15,7 +15,8 @@ const resizeMock = vi.fn<(dims: { width: number; height: number; dpr: number }) 
 const ctorSpy = vi.fn<(opts: { width: number; height: number; dpr: number }) => void>();
 const disposeMock = vi.fn();
 
-vi.mock('../renderer/WeaselRenderer', () => ({
+vi.mock('@weasel-js/renderer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
   WeaselRenderer: class {
     constructor(opts: { width: number; height: number; dpr: number }) { ctorSpy(opts); }
     render(commands: DrawCommand[]): void { renderMock(commands); }

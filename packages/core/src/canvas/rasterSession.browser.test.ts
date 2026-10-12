@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/composePose';
 import { createRasterSession, renderSceneToPixels, type RasterImage } from './renderSceneToPixels';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 interface Box { color: string }
 

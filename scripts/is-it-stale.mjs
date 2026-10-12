@@ -2,7 +2,7 @@
  * Is the dev server serving your edit? — a three-layer staleness probe.
  *
  *   node scripts/is-it-stale.mjs <module-path> <needle> [origin]
- *   node scripts/is-it-stale.mjs packages/core/src/renderer/draw.ts u_tileOrigin
+ *   node scripts/is-it-stale.mjs packages/renderer/src/draw.ts u_tileOrigin
  *
  * "My change isn't taking effect" is three different failures wearing one
  * costume. This separates them:

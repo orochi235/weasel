@@ -16,6 +16,7 @@
       "@weasel-js/quantity",
       "@weasel-js/simulation",
       "@weasel-js/stroke",
+      "@weasel-js/renderer",
       "@weasel-js/storage",
       "@weasel-js/prefs",
       "@weasel-js/select",

@@ -827,7 +827,7 @@ Two distinct context shapes that appear at different layers:
 
 The kit renders exclusively via **WebGL2** through `WeaselRenderer`
 (`@weasel-js/gl` was a separate package until Step 10; its sources are now
-folded into `packages/core/src/renderer/`). The 2D canvas codepath was deleted in Step 10
+folded into `packages/renderer/src/`). The 2D canvas codepath was deleted in Step 10
 (2026-05-09). The `backend` prop existed temporarily during the soak period and is
 gone. WebGPU is a future option tracked in `docs/TODO.md`.
 

@@ -424,7 +424,7 @@ Core five + Crop shipped. Remaining:
   deferred out of the stroke-markers arc.
 
 - **(P3) Images: nothing calls `releaseImage`.**
-  `packages/core/src/renderer/images/imageCache.ts` keeps every decoded `ImageBitmap` keyed by its
+  `packages/renderer/src/images/imageCache.ts` keeps every decoded `ImageBitmap` keyed by its
   `src` (a multi-megabyte `data:` URI for a pasted image) until `releaseImage(src)` is called, and
   the kit never calls it. It needs an owner: the scene when the last node using a `src` passes the
   undo horizon, or a byte bound on the cache. A bound has to spare what the current frame draws: a
@@ -436,7 +436,7 @@ Core five + Crop shipped. Remaining:
   bitmap came from `ImageData`, a PNG blob, or a canvas. Every PNG with soft edges shows a dark
   fringe. `createImageBitmap` with no options holds premultiplied pixels and `texImage2D` uploads
   them as they are, while `GLImageCache` and the batch shader
-  (`packages/core/src/renderer/shaders/batchFill.ts`, `vec4(mapped.rgb * a, a)`) assume straight
+  (`packages/renderer/src/shaders/batchFill.ts`, `vec4(mapped.rgb * a, a)`) assume straight
   texels. A pattern texture registered from an `ImageBitmap` goes through `GLTextureCache` the same
   way, and an `HTMLImageElement` source uploads straight, so the two source types disagree. Two ways
   out: create every kit bitmap with `{ premultiplyAlpha: 'none' }` (`renderer/images/imageCache.ts`,
@@ -1905,7 +1905,7 @@ one dead `const` and four stale disable directives.
 - **(P3) The mesh batching caps are measured on one GPU.** A mesh joins a run
   up to `MAX_BATCHED_MESH_VERTICES_IN_RUN` (1,024) vertices when one is open,
   and up to `MAX_BATCHED_MESH_VERTICES` (96) when none is
-  (`packages/core/src/renderer/draw.ts`). `tests/perf/mesh-batch.spec.ts` times
+  (`packages/renderer/src/draw.ts`). `tests/perf/mesh-batch.spec.ts` times
   256 convex meshes a frame, batched against drawn alone:
 
   | Frame | Break-even, two passes (vertices) | At 256: alone less batched (us/mesh) |

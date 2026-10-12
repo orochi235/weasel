@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import type { FillStyle, GradStop } from '@weasel-js/paint';
-import type { PaintDrawKind } from 'renderer/paintKinds';
+import type { PaintDrawKind } from '@weasel-js/renderer';
 
 /**
  * `FillStyle`'s discriminant, open on the string the way `ChromeId` is: the

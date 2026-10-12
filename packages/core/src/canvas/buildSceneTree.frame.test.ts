@@ -21,7 +21,7 @@ import {
 } from 'core/scene/composePose';
 import type { RectPose, Node } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 

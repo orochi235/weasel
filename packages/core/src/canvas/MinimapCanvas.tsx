@@ -46,7 +46,7 @@ import {
 } from './minimapMath';
 import type { IndicatorStyle, MinimapFit } from './minimapMath';
 import type { SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { normalizeView, type View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 import type { PoseDescriptor } from '../core/geometry/poseDescriptor';

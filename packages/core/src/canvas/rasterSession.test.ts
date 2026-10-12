@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createRasterSession, renderSceneToPixels, type HeadlessCanvasLike } from './renderSceneToPixels';
-import { makeGLRecorder, type GLRecorder } from '../renderer/test-utils/glRecorder';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import { makeGLRecorder, type GLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { Node, Scene } from 'core/scene/types';
 import { createPoseOverrides } from 'core/scene/poseOverrides';
 

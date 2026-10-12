@@ -8,7 +8,7 @@ import type { DerivedDep, Node, RectPose } from 'core/scene/types';
 import { RECT_POSE_COMPOSITION } from 'core/scene/composePose';
 import { type Path, linePath } from '@weasel-js/geom';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const rect = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 });

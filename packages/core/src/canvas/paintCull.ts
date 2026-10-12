@@ -1,7 +1,7 @@
 import type { View } from 'core/viewport/view';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { poseFrameOf } from '@weasel-js/geom';
-import { boundsMissRect, type CullRect } from '../renderer/cullDrawCommands';
+import { boundsMissRect, type CullRect } from '@weasel-js/renderer';
 import { mat3, viewToMat3 } from '@weasel-js/geom';
 
 /** Where a node's paint can reach, before its pose frame — the scene

@@ -6,12 +6,13 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type Node, type Scene } from 'core/scene/types';
-import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { SceneCanvas } from './SceneCanvas';
 
 const painted = vi.hoisted(() => ({ commands: [] as readonly unknown[] }));
 
-vi.mock('../renderer/WeaselRenderer', () => ({
+vi.mock('@weasel-js/renderer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
   WeaselRenderer: class {
     render(commands: readonly unknown[]): void { painted.commands = commands; }
     resize(): void {}

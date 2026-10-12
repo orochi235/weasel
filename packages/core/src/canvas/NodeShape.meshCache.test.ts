@@ -20,9 +20,9 @@
 import { describe, expect, it, afterEach, beforeEach } from 'vitest';
 import { defaultDrawOne } from './defaultDrawOne';
 import { registerNodeShape, _resetShapePaintersForTests } from './NodeShape';
-import { getMesh, _resetCacheForTests } from '../renderer/cache/cache';
+import { getMesh, _resetCacheForTests } from '@weasel-js/renderer/test-seams';
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import type { PathDrawCommand } from '../renderer';
+import type { PathDrawCommand } from '@weasel-js/renderer';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { ellipsePath, regularPolygonPath, starPath } from '@weasel-js/geom';

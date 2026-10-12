@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PathDrawCommand } from '../../renderer';
+import type { PathDrawCommand } from '@weasel-js/renderer';
 import {
   composeSelectionPose,
   createSelectionOverlayLayer,

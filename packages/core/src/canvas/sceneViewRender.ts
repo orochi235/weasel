@@ -15,11 +15,11 @@
  * in sync by hand where it matters (DPR handling, viewToMat3 wrap).
  */
 
-import type { WeaselRenderer } from '../renderer/WeaselRenderer';
+import type { WeaselRenderer } from '@weasel-js/renderer';
 import { cachedCanvasRenderer, paintCanvas } from './canvasRenderer';
 import type { PoseComposition } from 'core/scene/composePose';
 import { viewToMat3 } from '@weasel-js/geom';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
@@ -30,7 +30,7 @@ import { withColorOverrides } from './colorOverrides';
 import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 import type { SceneViewDrawOne } from './NodeShape';
 import { paintedSceneLayers } from './sceneLayerPaint';
-import { cullDrawCommands } from '../renderer/cullDrawCommands';
+import { cullDrawCommands } from '@weasel-js/renderer';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { paintBoundsFor } from './defaultDrawOne';
 

@@ -31,7 +31,7 @@ const PROBES = ['asNodeId', 'unionBounds', 'screenToWorld', 'VERSION'];
 // leave it in a dynamic chunk, while importing from `@weasel-js/core/mesh` must
 // carry its registration, so an app using mesh code never draws a blank first
 // frame.
-const MESH_MODULE = /renderer\/meshPaint\/|core\/paint\/meshKind/;
+const MESH_MODULE = /renderer\/(dist\/mesh\.|src\/meshPaint\/)|core\/paint\/meshKind/;
 const MESH_REGISTRATION = /label:\s*(`Mesh`|"Mesh")/;
 
 const entryCode = (symbol, from) => `import { ${symbol} } from '${from}';\nconsole.log(${symbol});\n`;

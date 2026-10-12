@@ -147,13 +147,13 @@
   "packages/core/src/interactions/actions/depSchema.ts": {
     "lines": 716
   },
-  "packages/core/src/renderer/WeaselRenderer.ts": {
+  "packages/renderer/src/WeaselRenderer.ts": {
     "lines": 745
   },
-  "packages/core/src/renderer/drawBatch.ts": {
+  "packages/renderer/src/drawBatch.ts": {
     "lines": 663
   },
-  "packages/core/src/renderer/shaders/extractUniformNames.ts": {
+  "packages/renderer/src/shaders/extractUniformNames.ts": {
     "longestFunction": 144
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {

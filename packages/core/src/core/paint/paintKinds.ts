@@ -16,9 +16,8 @@ import type {
 } from '@weasel-js/paint';
 import { gradientForBounds, isGradientFill, withGradientKind } from '@weasel-js/paint';
 import { createReflectable, type ReflectedEntry, type Reflection } from '@weasel-js/registry';
-import {
-  _resetPaintDrawKindsForTests, getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader,
-} from 'renderer/paintKinds';
+import { getPaintDrawKind, registerPaintDrawKind, registerPaintDrawKindLoader } from '@weasel-js/renderer';
+import { _resetPaintDrawKindsForTests } from '@weasel-js/renderer/test-seams';
 import type { PaintKind, PaintKindEntry } from './paintKindEntry';
 
 const BUILTINS: readonly PaintKindEntry[] = [

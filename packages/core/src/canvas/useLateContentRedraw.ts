@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { subscribeGlyphReady } from '@weasel-js/font';
-import { subscribeImageReady } from 'renderer/images/imageCache';
+import { subscribeImageReady } from '@weasel-js/renderer';
 import { paintKindRegistry } from 'core/paint/paintKinds';
 
 /**

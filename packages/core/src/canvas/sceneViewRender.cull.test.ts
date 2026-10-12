@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
 

@@ -20,7 +20,7 @@ import type {
   DrawCommand,
   GroupDrawCommand,
   PathDrawCommand,
-} from '../renderer/DrawCommand';
+} from '@weasel-js/renderer';
 import { MinimapCanvas } from './MinimapCanvas';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { computeFitView } from './minimapMath';
@@ -41,8 +41,9 @@ const RED = [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1];
 const renderMock = vi.fn<(commands: DrawCommand[]) => void>();
 const resizeMock = vi.fn<(dims: { width: number; height: number; dpr: number }) => void>();
 
-vi.mock('../renderer/WeaselRenderer', () => {
+vi.mock('@weasel-js/renderer', async (importOriginal) => {
   return {
+    ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
     WeaselRenderer: class {
       constructor(_opts: unknown) {}
       render(commands: DrawCommand[]): void { renderMock(commands); }

@@ -1,11 +1,11 @@
-import type { DrawCommand, PathDrawCommand } from '../renderer';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { rotatePoint } from 'interactions/actions/rotate/geometry';
 import { PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
-import { textCommandFromRuns } from 'renderer/textCommand';
+import { textCommandFromRuns } from '@weasel-js/renderer';
 import type {
   DebugConfig,
   DebugSnapshot,

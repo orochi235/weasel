@@ -14,7 +14,7 @@ import type { Scene } from '../core/scene';
 import type { View } from '../core/viewport/view';
 import type { Bounds, ViewportDims } from '../core/viewport/fitViewToBounds';
 import { poseDescriptorForNode, type PoseDescriptor } from '../core/geometry/poseDescriptor';
-import type { PathDrawCommand } from '../renderer/DrawCommand';
+import type { PathDrawCommand } from '@weasel-js/renderer';
 
 /** Inset (CSS px) around the fit rect on each side. Matches the spec note. */
 const DEFAULT_FIT_PADDING = 8;

@@ -9,7 +9,7 @@
  * inline style, so `className` positions the element and cannot resize it.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
-import { commandFill } from 'renderer/patterns/commandPaint';
+import { commandFill } from '@weasel-js/renderer';
 import type { Ref } from 'react';
 import { assignRef, useLatest } from '@weasel-js/react';
 import type { FillStyle } from '@weasel-js/paint';
@@ -18,7 +18,7 @@ import { useLateContentRedraw } from './useLateContentRedraw';
 import { useRedrawOn } from './useRedrawOn';
 import { useCanvasRenderer, useRedrawOnDensityChange, useRedrawOnRestore } from './useCanvasRenderer';
 import { viewToMat3 } from '@weasel-js/geom';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RedrawSource } from '../core/layers/render';
 import { normalizeView, type View } from '../core/viewport/view';
 

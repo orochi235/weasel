@@ -1,7 +1,7 @@
 import type { FillStyle } from '@weasel-js/paint';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import type { RectPose } from 'core/scene/types';
-import { commandFill } from 'renderer/patterns/commandPaint';
+import { commandFill } from '@weasel-js/renderer';
 import { DEFAULT_SHAPE_FILL } from '../../util/paint';
 import { resolveNodeFill } from './nodePaint';
 import { paintsPose, poseBoxBounds } from './poseBox';

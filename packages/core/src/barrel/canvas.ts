@@ -44,8 +44,8 @@ export {
   isVectorImageSrc,
   releaseImage,
   retryImage,
-} from 'renderer/images/imageCache';
-export type { ImageNodeData, ImageRasterSize, ImageStatus } from 'renderer/images/imageCache';
+} from '@weasel-js/renderer';
+export type { ImageNodeData, ImageRasterSize, ImageStatus } from '@weasel-js/renderer';
 export { sceneToAdapter, useSceneAdapter } from '../canvas/sceneAdapter';
 export type { SceneCanvasAdapter } from '../canvas/sceneAdapter';
 export {

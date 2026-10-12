@@ -16,7 +16,7 @@ import { Canvas } from './Canvas';
 import type { SelectionApi } from '../core/selection/useSelection';
 import { asNodeId, type NodeId } from '../core/scene/types';
 import type { RenderLayer } from '../core/layers/render';
-import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 
 beforeAll(() => {
   const recorder = makeGLRecorder();

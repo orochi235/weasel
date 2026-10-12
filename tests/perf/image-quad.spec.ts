@@ -115,7 +115,7 @@ test('image quad: geometry cost per draw', async ({ page, browser, browserName }
 
       const base = `/weasel/@fs${root}`;
       const { WeaselRenderer, registerTexture, SPRITE_STRIDE } = await import(
-        /* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`
+        /* @vite-ignore */ `${base}/packages/renderer/src/index.ts`
       );
       const { checkerBitmap, imageBitmaps } = await import(
         /* @vite-ignore */ `${base}/tests/perf/lib/kinds.ts`

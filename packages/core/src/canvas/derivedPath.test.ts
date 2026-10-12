@@ -12,7 +12,7 @@ import { asNodeId, type DerivedDep, type Node, type NodeId, type RectPose } from
 import { type Path, linePath } from '@weasel-js/geom';
 import type { FillStyle } from '@weasel-js/paint';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 /** No node in these fixtures uses `dependsOn: 'children'`. */
 const NO_CHILDREN = (): readonly NodeId[] => [];

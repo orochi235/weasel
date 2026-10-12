@@ -1,7 +1,7 @@
 import type { FillStyle } from '@weasel-js/paint';
 import {
   meshDrawKind, meshFromStops, meshGradientXml, meshStops, seedMeshPatch, type MeshGradientFill,
-} from 'renderer/meshPaint/meshPaint';
+} from '@weasel-js/renderer/mesh';
 import type { PaintKindEntry } from './paintKindEntry';
 
 // `asPaint`'s cast both ways, kept local: this module must import nothing

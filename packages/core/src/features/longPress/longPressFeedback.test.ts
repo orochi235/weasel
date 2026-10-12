@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createLongPressStore, type PendingLongPress } from '@weasel-js/routing';
 import type { CanvasExtensionApi } from '../../canvas/canvasExtension';
 import type { RenderLayer } from '../../core/layers/render';
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { createLongPressFeedbackContribution, type LongPressFeedbackOptions } from './longPressFeedback';
 
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } } as never;

@@ -124,7 +124,7 @@ test('layer dispatch: unchanged layers submitted against composited', async ({ p
       // One import of the renderer barrel, so the font registry the renderer
       // reads is the one written here; `render.ts` reaches the same module.
       const base = `/weasel/@fs${root}`;
-      const { WeaselRenderer, registerFont, registerEffect } = await import(/* @vite-ignore */ `${base}/packages/core/src/renderer/index.ts`);
+      const { WeaselRenderer, registerFont, registerEffect } = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
       const { drawLayers } = await import(/* @vite-ignore */ `${base}/packages/core/src/core/layers/render.ts`);
       const { makeKindBuilders, imageBitmaps } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/kinds.ts`);
       const { timeInterleaved } = await import(/* @vite-ignore */ `${base}/tests/perf/lib/frameTiming.ts`);

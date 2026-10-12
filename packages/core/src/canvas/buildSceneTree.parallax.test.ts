@@ -7,7 +7,7 @@ import { deriveParallaxView } from 'core/viewport/parallax';
 import { viewToMat3, mat3, type GlMat3 } from '@weasel-js/geom';
 import { buildSceneViewCommands } from './sceneViewRender';
 import { asNodeId } from 'core/scene/types';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 type Pose = { x: number; y: number; width: number; height: number };
 const POSE: Pose = { x: 0, y: 0, width: 10, height: 10 };

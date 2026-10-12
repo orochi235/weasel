@@ -1,4 +1,4 @@
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { subscribeToSources, type Dims, type RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
 import { tiledProject } from './tiledProject';

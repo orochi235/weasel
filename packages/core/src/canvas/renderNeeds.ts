@@ -1,6 +1,6 @@
 import type { FillStyle } from '@weasel-js/paint';
 import type { FontRequest } from '@weasel-js/font';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 /** What drawing a command list loads on demand: the faces its text is set in
  *  and the paint kinds its fills and strokes name. */

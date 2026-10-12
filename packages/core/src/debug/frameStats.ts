@@ -1,5 +1,5 @@
 import type { LayerDrawSpan } from 'core/layers/render';
-import type { RenderStats } from '../renderer/WeaselRenderer';
+import type { RenderStats } from '@weasel-js/renderer';
 import type { FrameStats } from './types';
 
 /** One paint's {@link FrameStats}: each layer's build time from `drawLayers`

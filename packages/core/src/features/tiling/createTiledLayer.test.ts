@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createTiledLayer } from './createTiledLayer';
 import { createParallaxLayer } from '../parallax/createParallaxLayer';
-import type { DrawCommand } from '../../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
 

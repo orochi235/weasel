@@ -11,7 +11,7 @@ import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { visualBoundsViaDescriptor } from 'core/geometry/poseDescriptor';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import { poseOutline } from 'core/geometry/regionHit';
-import type { DrawCommand, GroupDrawCommand } from '../renderer';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { wrapWithPoseRotation } from './poseRotation';
 import { paintMissesView } from './paintCull';
 import { findNodeShape, findShapeSilhouette, shapeCoversPoint } from './NodeShape';

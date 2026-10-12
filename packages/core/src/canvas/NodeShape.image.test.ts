@@ -1,16 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { findNodeShape, findShapeSilhouette } from './NodeShape';
 import { defaultDrawOne } from './defaultDrawOne';
-import {
-  __setImageLoaderForTests,
-  _resetImageCacheForTests,
-  getImageBitmap,
-} from 'renderer/images/imageCache';
+import { getImageBitmap } from '@weasel-js/renderer';
+import { __setImageLoaderForTests, _resetImageCacheForTests } from '@weasel-js/renderer/test-seams';
 import type { Node } from 'core/scene/types';
-import type { ImageNodeData, ImageRasterSize } from 'renderer/images/imageCache';
-import { makeGLRecorder } from 'renderer/test-utils/glRecorder';
-import { WeaselRenderer } from 'renderer/WeaselRenderer';
-import { FLOATS_PER_VERTEX } from 'renderer/drawBatch';
+import type { ImageNodeData, ImageRasterSize } from '@weasel-js/renderer';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { WeaselRenderer } from '@weasel-js/renderer';
+import { FLOATS_PER_VERTEX } from '@weasel-js/renderer/test-seams';
 
 const fakeBitmap = (): ImageBitmap =>
   ({ width: 2, height: 2, close() {} } as unknown as ImageBitmap);

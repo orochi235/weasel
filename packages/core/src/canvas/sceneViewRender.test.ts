@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createScene } from 'core/scene/scene';
 import type { Scene, Node } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import {
   buildSceneViewCommands,
@@ -28,8 +28,9 @@ const renderMock = vi.fn<(commands: DrawCommand[]) => void>();
 const resizeMock = vi.fn<(dims: { width: number; height: number; dpr: number }) => void>();
 const ctorSpy = vi.fn<(opts: unknown) => void>();
 
-vi.mock('../renderer/WeaselRenderer', () => {
+vi.mock('@weasel-js/renderer', async (importOriginal) => {
   return {
+    ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
     // Sizes the buffer as the real one does: the lease reads it back.
     WeaselRenderer: class {
       private canvas: HTMLCanvasElement;

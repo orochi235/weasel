@@ -391,7 +391,7 @@ row's weight is exactly zero.
 
 ## Verifying
 
-- `npx vitest run --project=core packages/core/src/renderer/` — the batch's
+- `npx vitest run --project=weasel-ui packages/renderer/src/` — the batch's
   buffer-replay tests.
 - `npx playwright test --config=tests/visual/playwright.config.ts` — the 51
   baselines plus `batch-pixels`.

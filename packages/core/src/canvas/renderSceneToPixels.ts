@@ -43,16 +43,16 @@
  *   (`flattenTolerancePx`, default 0.25 output px). A bitmap node's source
  *   pixels are sampled exactly once, directly to the output grid.
  */
-import { WeaselRenderer } from '../renderer/WeaselRenderer';
+import { WeaselRenderer } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
-import type { DrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import type { Node, Scene } from 'core/scene/types';
 import { buildSceneViewCommands, type SceneViewDrawOne } from './sceneViewRender';
 import type { ColorOverrideRegistry } from '../animation/colorRegistry';
 import { defaultDrawOne } from './defaultDrawOne';
 import { warmFonts, type FontRequest } from '@weasel-js/font';
-import { isPaintKindKnown, warmPaintKinds } from 'renderer/paintKinds';
+import { isPaintKindKnown, warmPaintKinds } from '@weasel-js/renderer';
 import { renderNeeds } from './renderNeeds';
 
 /** Plain RGBA raster — structurally `ImageData`-compatible ({ width, height,

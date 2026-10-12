@@ -1,5 +1,5 @@
 import type { RenderLayer } from 'core/layers/render';
-import type { DrawCommand } from '../renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';

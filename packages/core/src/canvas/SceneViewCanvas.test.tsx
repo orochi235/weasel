@@ -14,7 +14,7 @@ import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { createScene } from 'core/scene/scene';
 import type { Node, Scene } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand, GroupDrawCommand } from '../renderer/DrawCommand';
+import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import { SceneViewCanvas } from './SceneViewCanvas';
 import { registerPaintKind, getPaintKind } from 'core/paint/paintKinds';
 
@@ -26,8 +26,9 @@ const renderMock = vi.fn<(commands: DrawCommand[]) => void>();
 const resizeMock = vi.fn<(dims: { width: number; height: number; dpr: number }) => void>();
 const ctorSpy = vi.fn<(opts: unknown) => void>();
 
-vi.mock('../renderer/WeaselRenderer', () => {
+vi.mock('@weasel-js/renderer', async (importOriginal) => {
   return {
+    ...(await importOriginal<typeof import('@weasel-js/renderer')>()),
     WeaselRenderer: class {
       constructor(opts: unknown) { ctorSpy(opts); }
       render(commands: DrawCommand[]): void { renderMock(commands); }

@@ -13,13 +13,13 @@ import {
   registerPaintKindLoader,
 } from './paintKinds';
 import { asPaint, type PaintKindEntry } from './paintKindEntry';
-import { warmPaintKinds } from 'renderer/paintKinds';
-import { fillInPoseFrame, fillToBoundsFrame } from 'renderer/fillInPoseFrame';
+import { warmPaintKinds } from '@weasel-js/renderer';
+import { fillInPoseFrame, fillToBoundsFrame } from '@weasel-js/renderer';
 import { findNodeShape } from 'canvas/NodeShape';
-import { getProgramSource, registerProgram } from 'renderer/shaders/registerProgram';
-import { makeGLRecorder } from 'renderer/test-utils/glRecorder';
-import { WeaselRenderer } from 'renderer/WeaselRenderer';
-import type { DrawCommand } from 'renderer/DrawCommand';
+import { getProgramSource, registerProgram } from '@weasel-js/renderer';
+import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
+import { WeaselRenderer } from '@weasel-js/renderer';
+import type { DrawCommand } from '@weasel-js/renderer';
 
 const M = 0, L = 1;
 
