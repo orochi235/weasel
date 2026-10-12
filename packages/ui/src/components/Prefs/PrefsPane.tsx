@@ -1,9 +1,10 @@
 import { Fragment, type ReactNode, type RefObject } from 'react';
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefLeaf, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { GroupTabs } from './GroupTabs';
 import { BarLayout, groupBarNodes, shownBarNodes, type BarLeafNode, type BarOrientation } from '../Bar/BarLayout';
 import { PrefRow, prefRenderContext, renderPrefControl, shownLeaf, type WalkCtx } from './PrefsRow';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
+import { aliasOfNothing } from './PrefWords';
 import { pathWithin, selectionAttrs, tabAttrs, useHeldTab } from './selection';
 import s from './Prefs.module.css';
 
@@ -181,7 +182,8 @@ export function PaneBar({ ctx, group, path, depth, orientation }: {
         leaves.flatMap(({ path: own, leaf, at }) => {
           // An alias still here shows nothing, or is a renderer's to draw.
           const drawn = at === undefined ? shownLeaf(ctx, leaf) : { pref: leaf, at };
-          if (!drawn) return [];
+          // A wiring fault, shown where it sits as a row shows it.
+          if (!drawn) return [{ path: own, content: <span className={s.unrenderable}>{aliasOfNothing(leaf as PrefAlias)}</span> }];
           const { renderCtx } = prefRenderContext(ctx, own, drawn.pref, drawn.at);
           const content = renderPrefControl(renderCtx, ctx.renderers, undefined, 'bar');
           return content == null ? [] : [{ path: own, content }];

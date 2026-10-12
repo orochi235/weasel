@@ -13,7 +13,7 @@ import {
 import { renderBarLeaf, withBarLabel, type LeafSurface } from '../Bar/renderBarLeaf';
 import { PrefActionButton } from './PrefActionButton';
 import { PrefMixed } from './PrefMixed';
-import { prefDrawsNoControl, PrefWords } from './PrefWords';
+import { aliasOfNothing, prefDrawsNoControl, PrefWords } from './PrefWords';
 import { rowWidthOf } from './compound';
 import { entryConditions, type EntryAt } from './entry';
 import { ListLeaf } from './ListLeaf';
@@ -123,7 +123,7 @@ export function PrefRow({ ctx, path, pref, at }: { ctx: WalkCtx; path: string; p
     <div className={s.rowSlot} {...selectionAttrs(path, ctx, true)}>
       <PropertyRow label={prefAliasName(alias)} description={alias.description} className={s.row}
         hint={marksHidden(ctx.hidden, path) ? <HiddenBadge /> : undefined}>
-        <span className={s.unrenderable}>(alias: no pref at {alias.of === '' ? 'an empty path' : alias.of})</span>
+        <span className={s.unrenderable}>{aliasOfNothing(alias)}</span>
       </PropertyRow>
     </div>
   );

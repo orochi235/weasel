@@ -1142,9 +1142,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Its drag ghost draws a pointer with no `over`, as an alias of nothing. (3) labkit's
   `ControlMatrix` takes no `over`, so a cell's popover finds an alias's leaf in the matrix's own
   schema, and a lab resolves its instrument's config schema with none (`useConfigSchema`), so
-  that schema cannot hold a condition on another's setting. (4) An alias of nothing in a bar
-  inside a `PrefsForm` draws no cell on a horizontal bar, where a `Bar` draws
-  `(alias: no pref at …)`.
+  that schema cannot hold a condition on another's setting.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
