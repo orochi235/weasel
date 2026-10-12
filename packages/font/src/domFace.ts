@@ -6,13 +6,9 @@
  * sans-serif` in the page resolves to Helvetica. Anything the DOM sets in
  * place of canvas text — the text edit overlay above all — asks here instead
  * of writing the name through. The answer names a private `FontFace` loaded
- * from the family's registered font file, with the family itself as fallback
- * while that loads.
- *
- * The font file is the one `registerFontOutlines` holds; that registry is the
- * kit's record of which faces have real bytes behind them. An atlas-only
- * family has none, so the DOM gets the browser's own face for the name and a
- * one-time warning says which registration would fix it.
+ * from the file `registerFontOutlines` holds, with the family itself as
+ * fallback while that loads. An atlas-only family has no file, so the DOM gets
+ * the browser's own face for the name.
  */
 
 import type { FontStyle } from './fontStyle';
@@ -92,15 +88,13 @@ function privateFamily(family: string, variant: FontVariant): {
  *   the `'canvas'` fallback policy) comes back unchanged: the DOM already
  *   resolves the name to the same face.
  * - A family drawn from a baked atlas or from outlines comes back as a private
- *   face built from its `registerFontOutlines` file — every registered weight
- *   and style of it, so the browser picks and synthesizes within the family
- *   the way the canvas does — followed by `family` as the fallback.
+ *   face built from its `registerFontOutlines` file, in every registered
+ *   weight and style, followed by `family` as the fallback.
  * - Under the `'substitute'` policy, the face is the substitute's.
  *
  * Starts loading the face on first call and never waits for it; ask
- * {@link cssFontFamilyLoading} for that. A face whose bytes arrived earlier —
- * passed to `registerFontOutlines` as an `ArrayBuffer`, or read for the canvas
- * — was built when they did. Outside a browser, `family` comes back unchanged.
+ * {@link cssFontFamilyLoading} for that. Outside a browser, `family` comes
+ * back unchanged.
  */
 export function cssFontFamily(family: string, variant: FontVariant = {}): string {
   const priv = privateFamily(family, variant);

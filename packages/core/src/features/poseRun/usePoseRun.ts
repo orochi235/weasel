@@ -1,14 +1,9 @@
 /**
  * A pose run: poses published per frame, committed once.
  *
- * The frames go to `scene.overrides` — the ephemeral table a drag publishes to,
- * which `effectivePose`, the derived-geometry lookup and the pick source
- * already read. So an edge follows a node the run is moving with nothing added,
- * and the whole run lands as one undo entry when it settles.
- *
- * It knows nothing about layout. Each frame it asks `step` for poses and
- * whether it is finished; a relaxation, an eased transition to a target, and a
- * scrubbed timeline are all the same shape to it.
+ * The frames go to `scene.overrides` — the ephemeral table a drag publishes
+ * to — so an edge follows a node the run is moving, and the whole run lands as
+ * one undo entry when it settles.
  *
  * **A node another gesture owns is pinned, not driven.** The run publishes
  * through a hold of its own, so an override it did not put there belongs to
@@ -33,8 +28,7 @@ export interface PoseRunCtx<TPose> {
 export interface PoseRunStep<TPose> {
   /** Where the nodes it drives are this frame — the whole picture, not a
    *  delta. An id the frame omits stops being published, which is how a node
-   *  leaves the run's hands: a producer that drops a grabbed box and its rows
-   *  from one frame has released them by the next. */
+   *  leaves the run's hands. */
   poses: Iterable<readonly [NodeId, TPose]>;
   /** Whether the run is finished. The frame is published either way, and a
    *  finished run commits. */
@@ -135,10 +129,6 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     const pinned = hold.others();
     const { poses, done } = optsRef.current.step({ pinned, frame: frame.current });
     frame.current++;
-    // Each frame replaces the last: an id this one omits — a node just
-    // grabbed, or a row under one — stops being published, rather than being
-    // held at a pose from before the press while the gesture carries it
-    // somewhere else.
     previews.current.clear();
     for (const [id, pose] of poses) {
       if (pinned.has(id)) continue;

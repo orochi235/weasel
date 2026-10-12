@@ -6,9 +6,6 @@
  * tiles are crisp, at the default radius they are not, and the HUD hairlines
  * drawn above the blurred layer are identical in both — which is what
  * separates a real pass from a CSS `filter` on the canvas.
- *
- * Determinism: the demo's tiles are a fixed literal and nothing animates, so
- * both frames are stable without a time freeze.
  */
 import { test } from '@playwright/test';
 import { resolve } from 'node:path';

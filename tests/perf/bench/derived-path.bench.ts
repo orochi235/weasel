@@ -1,16 +1,11 @@
 /**
- * What a frame of derived paths costs now that the resolver value-compares its
+ * What a frame of derived paths costs when the resolver value-compares its
  * dependencies.
  *
- * `resolveDerivedPath` re-resolves every dependency on a memo hit and compares
- * the poses against the ones the cached path was drawn from, so a dependency
- * that moved with nothing pushed behind it is still noticed. The first suite
- * is that frame: the steady state, where nothing moved and every node keeps
- * its path.
- *
- * The second is the floor the same pass could reach — it reads each pose
- * straight off the scene and compares four named fields, where the resolver
- * builds a `DerivedDep` per dependency and compares an opaque `TPose`
+ * The first suite is the steady state, where nothing moved and every node
+ * keeps its path. The second is the floor the same pass could reach — it reads
+ * each pose straight off the scene and compares four named fields, where the
+ * resolver builds a `DerivedDep` per dependency and compares an opaque `TPose`
  * structurally. The gap between them is what generality over the pose type
  * costs.
  */

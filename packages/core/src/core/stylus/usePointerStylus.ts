@@ -3,13 +3,11 @@ import { useLatest } from '@weasel-js/react';
 import { getStylusData, type StylusData } from './stylus';
 
 /** State exposed by `usePointerStylus` — the most recent stylus snapshot
- *  plus a `hovering` flag for the Pencil 2 / Pencil Pro "near-surface but
- *  not touching" event stream. */
+ *  plus a `hovering` flag. */
 export interface PointerStylusState extends StylusData {
   /** True between `pointerenter` and `pointerleave` events on the target
-   *  element. iPad Safari fires these for Apple Pencil hover (on iPad Pro
-   *  / Pencil Pro), so this lights up when the pen is detected near the
-   *  glass without contact. */
+   *  element. iPad Safari fires these for Apple Pencil hover, so this is
+   *  true while the pen is near the glass without contact. */
   hovering: boolean;
 }
 
@@ -31,9 +29,8 @@ export interface UsePointerStylusOptions {
    *  sample is always kept; intermediates are dropped. Default 60. Set to
    *  `Infinity` (or 0) to emit every move. */
   maxFps?: number;
-  /** When true, only emit updates while `pointerType === 'pen'`. Useful
-   *  for stylus-only UI that should freeze when the user reaches for a
-   *  mouse. Default false. */
+  /** When true, only emit updates while `pointerType === 'pen'`. Default
+   *  false. */
   stylusOnly?: boolean;
 }
 
@@ -41,15 +38,9 @@ export interface UsePointerStylusOptions {
  * Subscribe to pointer events on a target element (defaults to `window`)
  * and expose the most recent stylus snapshot.
  *
- * Reads pointer data via `pointermove` (button or no button) and tracks
- * `pointerenter` / `pointerleave` for the `hovering` flag. The hook does
- * NOT consume pointerdown / pointerup — leave gesture handling to the
- * Tool dispatcher.
- *
- * Re-renders are throttled by default to avoid storming the React scheduler
- * with 120–240Hz stylus updates. Consumers that need every sample (e.g.
- * recording for replay) should pass `maxFps: Infinity` and accept the
- * cost, or read a ref-backed snapshot in a `useFrame`-style loop instead.
+ * The hook does NOT consume pointerdown / pointerup — leave gesture handling
+ * to the dispatcher. Re-renders are throttled by default (`maxFps`); pass
+ * `maxFps: Infinity` to get every sample.
  */
 export function usePointerStylus(
   target?: RefObject<HTMLElement | null> | HTMLElement | null,

@@ -86,16 +86,13 @@ export type SliderStop = {
  * `snap: 'strict'` makes every stop a detent the thumb must rest on: drags and
  * track presses land on the nearest one, and `step` no longer applies.
  * `spacing: 'even'` places the stops at equal intervals, runs the track from
- * the first stop to the last, and maps values linearly within each gap — so a
- * geometric list (0.25/0.5/1/2/4) gets usable room for every stop instead of
- * four crowded into the first fifth. Both need stops; with fewer than two,
- * `'even'` falls back to linear.
+ * the first stop to the last, and maps values linearly within each gap. Both
+ * need stops; with fewer than two, `'even'` falls back to linear.
  *
  * `trackClick: 'move-nearest'` makes a press on bare track send the closest
  * thumb there, focus it, and continue as a drag. It is the default for a
- * single thumb. With several it defaults to `'none'`, because on a
- * multi-thumb editor a stray click would yank a stop the user was not aiming
- * at; `onAddThumb`, where it is set, keeps the track press.
+ * single thumb. With several it defaults to `'none'`; `onAddThumb`, where it
+ * is set, keeps the track press.
  *
  * `keyStep` takes over the arrow and Page keys, for a track whose values are
  * not what the user counts in (a logarithmic one, say): it returns where a
@@ -109,9 +106,8 @@ export type SliderStop = {
  *
  * `thumbFit: 'inside'`, the default, runs the value span half a thumb short of
  * each end of the track, so a thumb at `min` or `max` sits flush with the
- * track's edge instead of hanging half over it — the layout a native range
- * input has. `'overhang'` runs the span edge to edge and centers an end thumb
- * on the edge.
+ * track's edge. `'overhang'` runs the span edge to edge and centers an end
+ * thumb on the edge.
  */
 export type SliderProps<T extends Thumb = Thumb> = {
   thumbs: readonly T[];

@@ -11,9 +11,6 @@
  * `View.x` / `View.y` are world-space, so a pan delta — screen pixels, as the
  * DOM reports them — is divided by `View.scale` before it lands. The zoom
  * anchor is canvas-local: client coords minus the canvas's bounding rect.
- *
- * `viewport.wheelPan` and `viewport.zoom` are the wired form of these, and
- * call them rather than restating the math.
  */
 
 import type { View } from './view';

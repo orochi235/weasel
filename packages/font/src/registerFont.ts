@@ -1,10 +1,6 @@
 /**
- * FontRegistry and registerFont() public API.
- *
- * Variants are keyed by (family, weight, style). registerFont() takes a
- * FontVariant alongside the family and the two URLs; the registry stores
- * entries in a two-level Map so resolveFontVariant() can iterate a family's
- * variants for the fallback chain.
+ * The atlas font registry, keyed by (family, weight, style), and the fallback
+ * chain that resolves a request against it.
  */
 
 import { createReflectable, type Reflection } from '@weasel-js/registry';
@@ -104,8 +100,7 @@ export function getFont(
 /**
  * The decoration and script metrics of an exact `(family, weight, style)` —
  * the atlas's when one is registered, else a loaded outline face's. Like
- * {@link getFont}, it walks no fallback chain and enrolls no canvas font,
- * which suits a caller holding a CSS font name rather than a layout result.
+ * {@link getFont}, it walks no fallback chain and enrolls no canvas font.
  * An idle outline face starts loading, as it would for layout.
  * A run already resolved for layout reads `faceMetricsOf(result)` instead.
  */
@@ -126,9 +121,8 @@ export interface RegisteredFont {
 }
 
 /**
- * Enumerate the registry — what a font picker can honestly offer. Families
- * come back in registration order; variants sorted by weight, then style, so
- * the output is stable enough to assert against.
+ * Enumerate the registry. Families come back in registration order; variants
+ * sorted by weight, then style.
  */
 export function listFonts(): readonly RegisteredFont[] {
   const out: RegisteredFont[] = [];
@@ -151,10 +145,9 @@ export function listFonts(): readonly RegisteredFont[] {
 
 /**
  * The weights `family` has a real face for, on the atlas tier or the outline
- * tier, in either style — what a weight picker can honestly offer. Ascending
- * and deduplicated; empty for a family nothing registered. An outline face
- * whose load failed is left out. The canvas tier is not consulted: it
- * rasterizes whatever weight it is asked for, so it has no list to report.
+ * tier, in either style. Ascending and deduplicated; empty for a family
+ * nothing registered. An outline face whose load failed is left out. The
+ * canvas tier is not consulted: it rasterizes whatever weight it is asked for.
  */
 export function listFontWeights(family: string): readonly number[] {
   const weights = new Set<number>();
@@ -184,8 +177,7 @@ export interface RegisterFontOptions {
  * present is a no-op.
  *
  * Eager by default: both files are fetched now. With `{ lazy: true }` they are
- * fetched the first time text asks for the family, which keeps the atlas off
- * the critical path of anything that draws no text.
+ * fetched the first time text asks for the family.
  */
 export function registerFont(
   family: string,
@@ -326,11 +318,10 @@ export interface FontRequest {
  * would draw instead when the requested one has no atlas; and the variant's
  * outline face when one is registered.
  *
- * Starts each lazily declared variant and joins any fetch already running.
  * Resolves once they have all landed; a registered variant counts as loaded.
  * Rejects when a load fails, or for a family name `registerFont` never saw —
- * a request for such a family is not an error, since the canvas and outline
- * tiers serve families no atlas was registered for.
+ * a {@link FontRequest} for such a family is not an error, since the canvas
+ * and outline tiers serve families no atlas was registered for.
  */
 export function warmFonts(fonts?: readonly (string | FontRequest)[]): Promise<void> {
   const pending: Promise<unknown>[] = [];
@@ -388,10 +379,8 @@ function settle(family: string, token: object): void {
  * Could a registration that has not landed yet still serve this request?
  * True while any `registerFont` for the family is fetching — the within-family
  * chain may resolve to whichever variant it brings — or while an outline face
- * registered for this exact variant has not finished loading.
- *
- * A face that resolves to nothing right now is either missing or merely late;
- * this tells the two apart, so "not registered" is reported only when it is.
+ * registered for this exact variant has not finished loading. Tells a face
+ * that is missing from one that is merely late.
  */
 export function fontPending(family: string, weight = 400, style: FontStyle = 'normal'): boolean {
   if (atlasPending(family)) return true;
@@ -435,9 +424,8 @@ export interface ResolveResult {
    * including `family`, when the cross-family policy substituted a default.
    *
    * This is the atlas identity: pass all three to `getFont` /
-   * `textureCacheKey` and the lookup hits. Describing only weight and style
-   * here once let a caller key its draw on the *requested* family, which
-   * resolves to no atlas at all and paints nothing.
+   * `textureCacheKey` and the lookup hits. Keying a draw on the *requested*
+   * family resolves to no atlas at all and paints nothing.
    *
    * The synthetic flags describe the gap between requested and resolved for
    * shader-side compensation. When `entry` is null, these mirror the
@@ -458,9 +446,8 @@ export interface ResolveResult {
   outlineFace?: OutlineFace;
   /**
    * Set when the requested family was not registered and the fallback policy
-   * substituted a different one. Reported structurally so a UI can say
-   * "Inter — not loaded, showing Roboto" instead of leaving the user to
-   * wonder why the family control did nothing.
+   * substituted a different one, so a UI can say "Inter — not loaded, showing
+   * Roboto".
    */
   substituted?: { requested: string; resolved: string };
 }
@@ -468,14 +455,12 @@ export interface ResolveResult {
 function missResolveResult(
   family: string, weight: number, style: FontStyle, suppressWarn = false,
 ): ResolveResult {
-  // Canvas-dynamic tier: reached only when the fallback chain selected no
-  // baked variant, so any selected baked match always wins. Dynamic faces
-  // rasterize the real weight/style — no synthetic flags.
+  // Canvas-dynamic tier. Dynamic faces rasterize the real weight/style — no
+  // synthetic flags.
   //
   // Explicit enrollment only. A family the `'canvas'` policy enrolled for
   // itself must not keep routing here after the policy changes, or `'none'`
-  // could never restore the hard miss it documents once any family had been
-  // auto-enrolled.
+  // could never restore the hard miss it documents.
   if (isExplicitCanvasFont(family)) {
     return {
       entry: null,
@@ -487,10 +472,8 @@ function missResolveResult(
   }
 
   // Outline-only: a family with parsed font bytes and no atlas. Ranked above
-  // every fallback below because it is the *real* face — exact geometry and
-  // the font's own advances — where the alternatives are a resampled raster
-  // or a different typeface. Below explicit canvas enrollment, which is a
-  // consumer saying which tier it wants for this family.
+  // every fallback below because it is the *real* face, and below explicit
+  // canvas enrollment, which is a consumer saying which tier it wants.
   const face = outlineMetrics(family, weight, style === 'italic' ? 'italic' : 'normal');
   if (face) {
     return {
@@ -524,20 +507,15 @@ function missResolveResult(
     // Guard against recursing when the default family is itself unknown.
     // Canvas families never enter `registry`, so membership there alone would
     // reject `setDefaultFontFamily` pointed at one. `isCanvasFont` answers
-    // "served by the dynamic tier right now", which is the question here: a
-    // family the `'canvas'` policy auto-enrolled is not served under this
-    // policy, so substituting *to* it would report a swap that paints nothing.
+    // "served by the dynamic tier right now": a family the `'canvas'` policy
+    // auto-enrolled is not served under this policy.
     if (fallback !== null && fallback !== family) {
       if (registry.has(fallback) || isCanvasFont(fallback) || atlasPending(fallback)) {
-        // Probing whether the fallback family renders, not resolving a
-        // top-level request for it — suppress so this recursion can't also
-        // land in the `fallback === family` branch below (the fallback
-        // family's own default is itself) and double-warn for one miss.
-        // Whichever of `warnMissingFamilyOnce` / `warnUnusableDefaultOnce`
-        // fires below, based on this probe's result, is the single warning.
+        // A probe, not a top-level request: suppress, so this recursion can't
+        // land in the `fallback === family` branch below and double-warn.
         const result = resolveFontVariantInternal(fallback, weight, style, true);
         // Renderable, not baked: a fallback served by the dynamic tier reports
-        // `entry: null` with a dynamicFace, and testing entry alone threw it away.
+        // `entry: null` with a dynamicFace.
         if (result.entry !== null || result.dynamicFace !== undefined) {
           if (!suppressWarn) warnMissingFamilyOnce(family, weight, style, fallback);
           return { ...result, substituted: { requested: family, resolved: fallback } };
@@ -545,31 +523,18 @@ function missResolveResult(
         // Still loading: nothing to swap to yet, and nothing to warn about.
         if (atlasPending(fallback)) return pendingMiss(family, weight, style);
       }
-      // Substitution was supposed to happen and produced nothing. Falling
-      // through silently here is the invisible-text failure this whole policy
-      // exists to eliminate, so say which of the two families to fix.
+      // Substitution was supposed to happen and produced nothing: text is
+      // invisible, so say which of the two families to fix.
       if (!suppressWarn) warnUnusableDefaultOnce(family, weight, style, fallback);
     } else if (fallback === family && !suppressWarn) {
-      // `fallback === family` above exists to stop the request from
-      // substituting for itself — recursion into the same miss forever. But
-      // when the family that can't serve this variant *is* the effective
-      // default, that guard also throws away the one case it was most likely
-      // to hit: a default registered at the wrong variant. Nothing renders
-      // and, without this branch, nothing is logged either.
-      // `suppressWarn` keeps this from firing when a *different* top-level
-      // request's substitution probe happens to recurse into the default
-      // family and find it can't serve either — that miss is reported by the
-      // top-level caller via `warnUnusableDefaultOnce`, not from in here.
+      // The family that can't serve this variant *is* the effective default.
+      // Nothing renders and, without this branch, nothing is logged either.
       if (registry.has(family)) {
         warnSelfUnusableDefaultOnce(family, weight, style);
       } else {
-        // Unregistered, yet still the effective default: the default can only
-        // have been named explicitly, because the implicit one is the first
-        // *registered* family (and with nothing registered at all, `fallback`
-        // is null and never equals `family`). So this is a real
-        // misconfiguration — someone pointed setDefaultFontFamily at a family
-        // that does not exist — and not the deliberately-silent case of an app
-        // that simply hasn't loaded any fonts yet.
+        // Unregistered, yet still the effective default: it can only have been
+        // named explicitly, because the implicit one is the first *registered*
+        // family.
         warnUnregisteredDefaultOnce(family, weight, style);
       }
     }
@@ -602,17 +567,11 @@ function pendingMiss(family: string, weight: number, style: FontStyle): ResolveR
 }
 
 // Resolution runs per frame, so an unguarded warn would flood the console.
-// Keyed per (family, weight, style) variant, not per family: each variant is a
-// distinct thing the app asked for and failed to get. The claimed keys live in
-// fallback.ts so both reset seams clear them.
+// The claimed keys live in fallback.ts so both reset seams clear them.
 function warnMissingFamilyOnce(
   family: string, weight: number, style: FontStyle, resolved: string,
 ): void {
   if (!claimFallbackWarning(`substituted|${family}|${weight}|${style}`)) return;
-  // Two distinct failures land here. Saying "not registered" for a family
-  // that IS registered — just not in a variant the within-family chain can
-  // reach — sends the reader hunting for a registerFont call that already
-  // exists. Name the actual gap so the fix is the obvious one.
   const cause = registry.has(family)
     ? `has no variant matching ${weight}/${style}, and none of its registered ` +
       `variants are close enough for the within-family chain to substitute — ` +
@@ -628,10 +587,8 @@ function warnMissingFamilyOnce(
 }
 
 /**
- * The substitute policy engaged and still came up empty. Distinct from
- * `warnMissingFamilyOnce`, which reports a *successful* swap: here nothing
- * renders, and the fix is almost always in the fallback family rather than
- * the requested one — so name it, and say which way it was chosen.
+ * The substitute policy engaged and still came up empty: nothing renders, and
+ * the fix is almost always in the fallback family rather than the requested one.
  */
 function warnUnusableDefaultOnce(
   family: string, weight: number, style: FontStyle, fallback: string,
@@ -640,10 +597,8 @@ function warnUnusableDefaultOnce(
   const origin = getDefaultFontFamily() === fallback
     ? 'set via setDefaultFontFamily'
     : 'the first registered family, since setDefaultFontFamily was never called';
-  // Same policy-aware question as the substitution guard: a fallback the
-  // `'canvas'` policy auto-enrolled has nothing serving it under this policy,
-  // so "has no variant" would send the reader looking for a variant to bake
-  // when the family has no atlas at all.
+  // A fallback the `'canvas'` policy auto-enrolled has nothing serving it
+  // under this policy, so it counts as not registered.
   const gap = registry.has(fallback) || isCanvasFont(fallback)
     ? `has no variant that can serve ${weight}/${style}`
     : 'is not registered either';
@@ -657,13 +612,8 @@ function warnUnusableDefaultOnce(
 }
 
 /**
- * The requested family is also the effective default — there is nowhere left
- * to fall back to. Distinct from `warnUnusableDefaultOnce`, which names a
- * *different* fallback family to fix; here the requested and fallback
- * families are the same one, so repeating the name the way that message does
- * would read as nonsense ("X is not available, and the fallback X … ").
- * Named once, with both facts — registered-but-wrong-variant, and also the
- * fallback — folded into a single sentence.
+ * The requested family is registered and is also the effective default, so
+ * there is nowhere left to fall back to.
  */
 function warnSelfUnusableDefaultOnce(
   family: string, weight: number, style: FontStyle,
@@ -683,12 +633,7 @@ function warnSelfUnusableDefaultOnce(
 
 /**
  * The requested family is the explicitly set default, and that default names
- * a family that was never registered at all. Distinct from
- * `warnSelfUnusableDefaultOnce`, which reports a default that *is* registered
- * but not in a variant that can serve the request: there the fix is to bake a
- * variant, here the family has no atlas whatsoever, so pointing the reader at
- * a missing variant would send them looking for a `registerFont` call to
- * amend rather than one to write.
+ * a family that was never registered at all.
  */
 function warnUnregisteredDefaultOnce(
   family: string, weight: number, style: FontStyle,
@@ -726,23 +671,14 @@ export function resolveFontVariant(
  * Escalate a *single codepoint* to the dynamic tier when the atlas that
  * resolved for the run has no glyph for it.
  *
- * `resolveFontVariant` answers at family granularity: it picks one tier for a
- * whole run. But a baked MSDF atlas covers a fixed charset, so a run served by
- * a perfectly good atlas can still contain a character that atlas never baked
- * — an em dash, a curly quote, anything outside the subset. The dynamic tier
- * rasterizes on demand from installed fonts and can serve exactly those.
+ * A baked MSDF atlas covers a fixed charset, so a run it serves can still
+ * contain a character it never baked — an em dash, a curly quote. The dynamic
+ * tier rasterizes on demand from installed fonts and can serve those.
  *
  * Returns a canvas-tier `ResolveResult` whose `dynamicFace` the caller drives
- * with `requestGlyph(cp)`, or `null` when escalation isn't available:
- *
- *   - Policy `'none'` documents a miss as a *hard* miss. Quietly reaching for
- *     another tier per codepoint would undo that, so it doesn't.
- *   - No canvas to rasterize into (SSR, a jsdom test without one) makes the
- *     dynamic tier constructible-but-broken; `getDynamicFace` throws and this
- *     reports the miss instead of taking the caller down with it.
- *
- * Cheap to call per missing codepoint: faces are cached by variant and glyphs
- * by codepoint, so a repeat is two map lookups.
+ * with `requestGlyph(cp)`, or `null` when escalation isn't available: under
+ * policy `'none'`, which documents a miss as a *hard* miss, or with no canvas
+ * to rasterize into (SSR, a jsdom test without one).
  */
 export function resolveGlyphFallback(
   family: string,
@@ -768,11 +704,8 @@ export function resolveGlyphFallback(
 /**
  * `suppressWarn` is set only by the recursive substitution probe in
  * `missResolveResult`, which resolves the fallback family purely to check
- * whether it renders. That probe is not itself a request anything asked
- * for, so it must not emit — or claim the warn-once key for — a message
- * about a resolution the caller never made; the caller's own top-level
- * `missResolveResult` call decides, from the probe's result, which single
- * warning (if any) describes the overall miss.
+ * whether it renders. The probe must not emit — or claim the warn-once key
+ * for — a message about a resolution the caller never made.
  */
 function resolveFontVariantInternal(
   family: string,

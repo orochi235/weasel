@@ -2,14 +2,10 @@ import { registerProgram, type ShaderProgramHandle, type ShaderUniform } from '.
 import { EFFECT_VERT_SRC } from './effectPrelude';
 
 /**
- * One full-screen pass over what a group has already drawn.
+ * One full-screen pass over what a group has already drawn. A group's effects
+ * run in order, each reading the previous one's output through `u_source`.
  *
- * The renderer runs a group's effects in order, each reading the previous
- * one's output through `u_source` and writing a whole new buffer — so an
- * effect is free to read neighbouring pixels, which is the entire point and
- * the one thing `colorMatrix` can never do.
- *
- * `uniforms` are the effect's own; `u_source`, `u_resolution` and `u_texel`
+ * `uniforms` are the effect's own; `u_source`, `u_resolution`, and `u_texel`
  * come from the renderer and must not be passed here.
  */
 export interface Effect {
@@ -18,14 +14,12 @@ export interface Effect {
 }
 
 /**
- * Register a fragment shader as an effect. Sugar over `registerProgram` with
- * the effect vertex shader, and the reason a consumer never imports the
- * prelude: an effect that registers with the *custom-shader* vertex shader
- * compiles, runs, and samples its source upside down.
+ * Register a fragment shader as an effect. An effect registered through
+ * `registerProgram` with the *custom-shader* vertex shader compiles, runs, and
+ * samples its source upside down.
  *
- * The fragment shader reads `v_uv` and `u_source`, and may declare
- * `u_resolution` / `u_texel`. See `effectPrelude.ts` for the full contract,
- * including the premultiplied-alpha requirement.
+ * The fragment shader reads `v_uv` and `u_source`, may declare `u_resolution` /
+ * `u_texel`, and must write premultiplied alpha. See `effectPrelude.ts`.
  *
  * @experimental
  */

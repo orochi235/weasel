@@ -1,60 +1,3 @@
-/**
- * `insertAction` — ongoing Action descriptor for drag-to-insert.
- *
- * The drag-rect insert:
- *   - `start`: validates the `insert` dep and records the drag start point.
- *   - `onMove`: tracks the live drag bounds (no scene writes).
- *   - `onEnd('commit')`: derives final bounds from drag.start + drag.current;
- *     calls `deps.insert.commit(bounds, kind)` to materialise the new node.
- *     `kind` comes from `opts.params.kind` (set by the active tool's binding).
- *   - `onEnd('cancel')`: no-op.
- *
- * ## Dependencies
- *
- * Requires `insert` dep from DepSchema:
- *   `{ commit(bounds, kind): NodeId | null }`
- *
- * `<SceneCanvas>` / `<StandardActionsRegistrar>` should source this dep by
- * delegating to the scene's `add()` with a sensible default data payload for
- * the given `kind`. Override per-consumer for custom node factories.
- *
- * ## Modifiers and snapping
- *
- * Grid snapping comes from the optional `snap` dep, applied to the drag's
- * start and current point (never to freehand pencil samples). The `line`
- * kind additionally honors Shift (constrain to 15°) and reads Alt/center as
- * "mirror the start around the pointer" rather than "grow a symmetric AABB".
- * Behaviors from the binding's `opts.behaviors` (`InsertBehavior[]` — e.g.
- * `@weasel-js/guides`' `snapToGrid` and `alignInsertBehavior`) run over the two
- * points after those, the way `moveAction` runs its own: `onStart` on the
- * start point, `onMove` on each frame's proposal, `onEnd` on release, where
- * the first answer wins (`null` aborts, `Op[]` commits in place of the
- * insert). `nextFrame` folds them each pump event and `insertShape`
- * reads the result, so the live preview and the committed node can't
- * disagree.
- *
- * ## What this does not wire
- *
- * - `pointInsert` fallback for click / sub-threshold drags — not wired; a
- *   sub-threshold drag produces no insert.
- * - `clickOnly` mode — not applicable to the descriptor model.
- *
- * ## Live preview
- *
- * Insert produces a brand-new node that has no scene id until commit, so
- * the preview-ghost layer (`usePreviewGhostLayer`, keyed by node id) can't
- * paint a silhouette for it. Instead, the action exposes its in-flight
- * geometry via the `overlay()` surface with `kind: 'insertPreview'`. The
- * canvas's `useDispatcherOverlayLayer` rebuilds the shape using the same
- * path builders the commit-time factory uses (`rectPath`, `ellipsePath`,
- * `linePath`, `regularPolygonPath`, `starPath`, polyline / `polygonFromPoints`),
- * so the preview is geometry-faithful to the eventual node.
- *
- * Consumer-defined insert kinds (kinds the kit doesn't know how to draw)
- * skip the preview but still commit normally on release.
- */
-
-
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
@@ -70,12 +13,17 @@ import { insertKind, insertShape } from './shape';
 
 /**
  * @experimental
- * Static descriptor for the `insert` Action.
+ * Drag-to-insert. The node `kind` is read from `opts.params.kind`.
  *
- * Requires dep-schema entry: `insert`.
- * Node `kind` is read from `opts.params.kind`; defaults to `'rect'` when absent.
+ * Grid snapping comes from the optional `snap` dep, applied to the drag's
+ * start and current point (never to freehand pencil samples). Behaviors from
+ * the binding's `opts.behaviors` (`InsertBehavior[]`) run over the two points
+ * after that; on release the first answer wins (`null` aborts, `Op[]` commits
+ * in place of the insert).
  *
- * @see useInsert — the React hook this descriptor mirrors for the simple case.
+ * The new node has no scene id until commit, so the live preview is the
+ * `overlay()` surface with `kind: 'insertPreview'`. A consumer-defined kind
+ * the kit cannot draw skips the preview and still commits on release.
  */
 export const insertAction: Action & { requires: string[] } = inPlane({
   id: 'insert',
@@ -104,8 +52,6 @@ export const insertAction: Action & { requires: string[] } = inPlane({
           // Resolve params on every overlay() so thunked params (polygon
           // sides ticking via ArrowUp mid-drag) reflect in the live preview.
           const resolved = resolveParams(session.opts?.params);
-          // Consumer-defined kinds aren't renderable by the kit overlay —
-          // skip the preview rather than emit something half-faithful.
           if (!shapeKindInfo(insertKind(resolved))?.insertPreview) return null;
           const { bounds, extras, start } = insertShape(resolved, frame, frame.points, gesture.userRotation);
           return {
@@ -113,10 +59,8 @@ export const insertAction: Action & { requires: string[] } = inPlane({
             shape: extras.kind as KitInsertShape,
             bounds,
             extras,
-            // Anchor dot at the click point — chrome that sells "this
-            // is where the drag started." Useful for radial shapes
-            // (no vertex at click) and for center mode (dot marks the
-            // growth axis).
+            // Anchor dot at the click point: radial shapes have no vertex
+            // there, and in center mode it marks the growth axis.
             anchorPoint: { x: start.x, y: start.y },
           };
         },
@@ -134,12 +78,6 @@ export const insertAction: Action & { requires: string[] } = inPlane({
       };
     },
   },
-  /**
-   * Insert is always available — no selection required. Returns `true` so the
-   * dispatcher allows the action through on every drag-on-empty gesture.
-   *
-   * Fixed from the stale `ActionDisabledReason.SelectionRequired`
-   * placeholder that was silently blocking all dispatcher-routed inserts.
-   */
+  /** Insert needs no selection; anything but `true` blocks dispatcher-routed inserts. */
   enabled: () => true as const,
 }, insertLayer);

@@ -1,15 +1,11 @@
 /**
  * Area hit-testing against node count and query-rect size.
  *
- * There is no quadtree. `hitTestArea` — the marquee and lasso dep source —
- * is a linear scan over `scene.renderOrder()` with an AABB fast-reject, and
- * for path-shaped poses a per-node silhouette-vs-area polygon kernel that is
- * O(silhouette verts x area verts). So node count is the axis that matters
- * for rect poses, and query-rect size only matters through how many nodes
- * survive the fast-reject and reach the kernel.
- *
- * These numbers are the argument for or against building an index. They are
- * not a benchmark of one.
+ * `hitTestArea` is a linear scan with an AABB fast-reject, and for path-shaped
+ * poses a per-node silhouette-vs-area polygon kernel that is O(silhouette
+ * verts x area verts). So node count is the axis that matters for rect poses,
+ * and query-rect size only matters through how many nodes survive the
+ * fast-reject and reach the kernel.
  */
 import { group } from './group';
 import { hitTestArea } from 'canvas/deps/hitTestArea';
@@ -88,9 +84,8 @@ group('hitTestArea — 24-gon silhouettes, query-rect size (1000 nodes)', (bench
 
 group('aabbOfPose — the per-node fast-reject itself', (bench) => {
   // Why query-rect size barely moves the silhouette numbers above: the
-  // fast-reject calls `boundsOfPath`, which walks the whole command stream
-  // and allocates, for every node in the scene whether or not it can
-  // possibly intersect. A rejected path node costs its own vertex count.
+  // fast-reject walks a path pose's whole command stream, so a rejected
+  // path node costs its own vertex count.
   const rect = { x: 0, y: 0, width: 40, height: 40 };
   bench('rect pose', () => {
     aabbOfPose(rect);

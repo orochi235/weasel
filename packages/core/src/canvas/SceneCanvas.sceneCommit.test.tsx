@@ -3,8 +3,8 @@
  *
  * The pairing of the two assertions is the whole test. `commits` alone passes
  * vacuously against a SceneCanvas that dropped the subscription and never
- * repaints at all; `getPaintedVersion()` alone passes against today's code,
- * which repaints by way of a commit. Only both together describe the split.
+ * repaints at all; `getPaintedVersion()` alone passes against one that
+ * repaints by way of a commit.
  *
  * The GL recorder is load-bearing — without a `getContext('webgl2')` that
  * answers like WebGL2, every paint bails early and `getPaintedVersion()`
@@ -98,10 +98,8 @@ describe('SceneCanvas scene subscription', () => {
   });
 
   it('still commits for a selection change', async () => {
-    // Selection reaches the render body through `useSelection`'s own store
-    // subscription, not through the scene-content subscription this arc
-    // replaces. It has to keep committing: SceneCanvas publishes the selection
-    // (and its kind labels) into `<SelectionContextProvider>` during render.
+    // Selection has to keep committing: SceneCanvas publishes it (and its
+    // kind labels) into `<SelectionContextProvider>` during render.
     const scene = newScene();
     let commits = 0;
     render(

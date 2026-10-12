@@ -1,21 +1,12 @@
 /**
  * @experimental
- * SelectionContext — a tiny ambient context that publishes "what's currently
- * selected" so non-canvas UI (command palette, status bar, breadcrumbs,
- * undo-label generation) can read it without threading a selection prop
- * through the tree.
+ * SelectionContext — an ambient context that publishes "what's currently
+ * selected" so non-canvas UI (command palette, status bar) can read it without
+ * threading a selection prop through the tree.
  *
- * **Single-slot semantics (v1):** the context holds one selection array.
- * Whichever canvas (or other publisher) calls `publishSelection` most
- * recently owns the slot. For single-canvas pages — the typical case —
- * this Just Works. Multi-canvas pages get last-writer-wins, which is
- * approximately "most recently rendered." A v2 could become focus-aware
- * (canvas claims the slot on focus, releases on blur), but that's deferred
- * until a real multi-canvas use case lands.
- *
- * `<SceneCanvas>` calls `publishSelection` automatically when wrapped in a
- * `<SelectionContext>`. Bare-`<Canvas>` consumers opt in by calling
- * `useSelectionContext().publishSelection(ids)` themselves.
+ * **Single slot:** the context holds one selection array. Whichever publisher
+ * calls `publishSelection` most recently owns it, so a multi-canvas page gets
+ * last-writer-wins. `<SceneCanvas>` publishes automatically.
  */
 import {
   createContext,
@@ -35,17 +26,12 @@ export interface SelectionContextValue {
   /** The most-recently-published selection. Empty array when no canvas
    *  has published or when the active canvas's selection is empty. */
   readonly selection: readonly NodeId[];
-  /** Optional per-id kind label, parallel to `selection`. Publishers that
-   *  know their domain populate it (e.g. `'rectangle'`, `'path'`, `'group'`)
-   *  so consumers can render type-aware copy. Sparse entries (`undefined`)
-   *  are allowed; consumers should treat the kinds array as best-effort.
-   *
-   *  See `docs/TODO.md` (Tier 1.5 → "Typed scene-object references") for the
-   *  longer-term direction toward a proper id+kind value type. */
+  /** Optional per-id kind label, parallel to `selection` (e.g. `'rectangle'`,
+   *  `'path'`, `'group'`). Sparse entries (`undefined`) are allowed; treat it
+   *  as best-effort. */
   readonly kinds?: readonly (string | undefined)[];
-  /** Publish the calling canvas's selection. Idempotent — calling with
-   *  the same array (by content equality) does not trigger a re-render
-   *  of the consumer tree. */
+  /** Publish the calling canvas's selection. Calling with the same content
+   *  does not re-render the consumer tree. */
   publishSelection(ids: readonly NodeId[], kinds?: readonly (string | undefined)[]): void;
 }
 
@@ -67,9 +53,6 @@ export function SelectionContextProvider({ children }: { children: ReactNode }):
     ids: readonly NodeId[],
     kinds?: readonly (string | undefined)[],
   ): void => {
-    // Cheap content equality via JSON serialization over both ids and kinds.
-    // Selection arrays are typically small (≤ a few dozen entries); the cost
-    // is dwarfed by avoiding a re-render when nothing changed.
     const next = JSON.stringify([ids, kinds]);
     if (next === lastSerializedRef.current) return;
     lastSerializedRef.current = next;
@@ -90,9 +73,8 @@ export function SelectionContextProvider({ children }: { children: ReactNode }):
 
 /**
  * @experimental
- * Read the current selection-context value. Returns `null` when no
- * `<SelectionContextProvider>` is in scope; consumers should fall back
- * gracefully (e.g. command palette hides the "N selected" header).
+ * The current selection-context value, or `null` when no
+ * `<SelectionContextProvider>` is in scope.
  */
 export function useSelectionContext(): SelectionContextValue | null {
   return useContext(SelectionContext);
@@ -100,10 +82,8 @@ export function useSelectionContext(): SelectionContextValue | null {
 
 /**
  * @experimental
- * Conditional `<SelectionContextProvider>` wrapper. Mounts a provider only
- * when no parent provider is in scope — otherwise renders children unwrapped
- * so callers (e.g. `<WeaselProvider>`) defer to the host's existing scope.
- * Mirrors `ActionsProviderIfRoot` / `DepRegistryProviderIfRoot`.
+ * Mounts a `<SelectionContextProvider>` only when no parent provider is in
+ * scope; otherwise renders children unwrapped.
  */
 export function SelectionContextProviderIfRoot({
   children,
@@ -117,12 +97,9 @@ export function SelectionContextProviderIfRoot({
 
 /**
  * @experimental
- * Convenience hook for canvas components: publishes the supplied `ids`
- * into the surrounding `<SelectionContextProvider>` whenever the
- * content of `ids` changes. No-op when there's no provider in scope.
- *
- * Used by `<SceneCanvas>` internally to auto-publish; bare-Canvas
- * consumers call `useSelectionContext()` and `publishSelection` directly.
+ * Publishes `ids` into the surrounding `<SelectionContextProvider>` whenever
+ * their content changes, and clears the slot on unmount unless another
+ * publisher has written it since. No-op when there's no provider in scope.
  */
 export function usePublishSelection(
   ids: readonly NodeId[],

@@ -4,16 +4,12 @@
 //   npm run check:published -- --wait    poll anything missing for up to 60 minutes
 //   npm run check:published -- --wait=20 ... or for that many minutes
 //
-// `changeset publish` has twice printed packages under "Successfully published"
-// that never reached npm: 1.2.0 shipped without `gestures`, 1.4.3 without `hud`
-// and `labkit`. The CLI's progress counter stopped one short of its own summary
-// and no npm error appeared anywhere in the log. Re-dispatching the identical
-// workflow published the stragglers, so the tarballs and the auth were fine —
-// the report was wrong. So the release job asks the registry instead.
+// `changeset publish` can print a package under "Successfully published" that
+// never reached npm, with no error in the log, so the release job asks the
+// registry instead.
 //
 // The release job runs this with `--wait`: npm holds a fresh upload as staged,
-// invisible to every read (npm/cli#9889). 1.6.0 failed this check on four
-// packages that listed minutes later; 1.7.2's `hud` took 55 minutes to list.
+// invisible to every read (npm/cli#9889), for as long as 55 minutes.
 //
 // Not a pre-publish gate and not a CI check: between `chore: version packages`
 // merging and the publish finishing, the manifests legitimately hold versions

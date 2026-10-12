@@ -5,7 +5,7 @@
  * where a PNG is not. The demo's ruling patch is alternating single-pixel
  * rules, so magnifying a readback of it 8× at NEAREST holds each source
  * color flat for eight pixels before stepping; LINEAR ramps between them and
- * almost every neighbouring pair differs. The share of neighbouring pairs
+ * almost every neighboring pair differs. The share of neighboring pairs
  * that are byte-identical separates the two and depends on no rasterizer.
  *
  * Counting *distinct* colors does not: the ramp repeats with the pattern, so
@@ -20,7 +20,7 @@ const DEMO_ID = 'loupe';
  *  `{ x: 30, y: 48, w: 208, h: 170 }`. Sample a scanline well inside that. */
 const SCAN = { x: 40, w: 188, y: 130 };
 
-/** Share of neighbouring pixels along the scanline that are identical. */
+/** Share of neighboring pixels along the scanline that are identical. */
 async function flatnessAcrossLoupe(page: Page): Promise<number> {
   return page.evaluate((scan) => {
     const c = document.querySelector('canvas')!;

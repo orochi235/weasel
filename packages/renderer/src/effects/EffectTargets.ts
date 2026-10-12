@@ -1,21 +1,12 @@
 /**
- * Offscreen colour buffers for effect passes, pooled per renderer.
+ * Offscreen color buffers for effect passes, pooled per renderer. Nothing is
+ * allocated until a group with effects asks for one, and every target is the
+ * size of the drawing buffer.
  *
- * Nothing is allocated until a group with effects asks for one, so a canvas
- * with no effects pays nothing — which is the whole cost story for a feature
- * that would otherwise carry a device-resolution buffer per frame.
- *
- * Every target is the size of the drawing buffer. A group's effects run in
- * screen space, so a smaller buffer would have to reason about where the
- * group's content lands and how far a kernel reaches past it; that is a real
- * optimisation and not the first version of one.
- *
- * The stencil is the part that is easy to get wrong. Clips and even-odd fills
- * live in the stencil buffer, and an FBO does not inherit the default
- * framebuffer's — one without its own attachment renders even-odd paths with
- * their holes filled and clips that do not clip, with no GL error and nothing
- * in a call-sequence test to catch it. Every target here gets a
- * DEPTH24_STENCIL8 renderbuffer of its own.
+ * Clips and even-odd fills live in the stencil buffer, and an FBO does not
+ * inherit the default framebuffer's — one without its own attachment renders
+ * even-odd paths with their holes filled and clips that do not clip, with no
+ * GL error. Every target here gets a DEPTH24_STENCIL8 renderbuffer of its own.
  */
 
 export interface EffectTarget {
@@ -44,8 +35,7 @@ export class EffectTargets {
 
   /**
    * Borrow a target sized `width` × `height` device pixels. A size change
-   * drops every pooled buffer rather than resizing in place: a borrowed one
-   * cannot be resized under its holder, and a resize is not a per-frame event.
+   * drops every pooled buffer, borrowed ones included.
    */
   acquire(width: number, height: number): EffectTarget {
     if (width !== this.width || height !== this.height) {
@@ -92,9 +82,8 @@ export class EffectTargets {
     const texture = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    // LINEAR so an effect can sample between texels; CLAMP_TO_EDGE so a kernel
-    // reaching past the edge repeats the border instead of wrapping the
-    // opposite side of the screen into frame.
+    // CLAMP_TO_EDGE so a kernel reaching past the edge repeats the border
+    // instead of wrapping the opposite side of the screen into frame.
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);

@@ -1,17 +1,13 @@
 /**
- * Presentation-agnostic dropdown for registry-enum values: pick a string
- * from a live registry (tools, fonts, history entries, …). Reads the
- * source resolver from `RegistryEnumSourcesContext` so callers don't have
- * to thread option lists through props. Used by the Preferences modal
- * today; intended for property-panel rows and any other UI that picks
- * an id from a registry tomorrow.
+ * Dropdown for registry-enum values: pick a string from a live registry
+ * (tools, fonts, history entries, …), resolved through
+ * `RegistryEnumSourcesContext`.
  *
- * Graceful degradation:
- *   - No resolver registered for the source → render a text input so the
- *     stored value is still visible/editable while the wiring catches up.
- *   - Stored value not in the resolver's current options → surface it as
- *     a disabled "(not in registry)" option so renames and removals
- *     don't silently rewrite state.
+ *   - No resolver registered for the source → a text input, so the stored
+ *     value is still visible and editable.
+ *   - Stored value not in the resolver's current options → a disabled
+ *     "(not in registry)" option, so renames and removals don't silently
+ *     rewrite state.
  */
 import { createContext, useContext } from 'react';
 import { Input, Select, type SelectOption } from '@weasel-js/ui';
@@ -20,10 +16,7 @@ import type {
   RegistryEnumSources,
 } from './types';
 
-/** Sources keyed by `source` id. Wrap your subtree in
- *  `RegistryEnumSourcesContext.Provider` (or pass via the modal/component
- *  that owns the provider) so every `<RegistrySelect>` underneath can
- *  resolve. */
+/** Sources keyed by `source` id, for every `<RegistrySelect>` underneath. */
 export const RegistryEnumSourcesContext =
   createContext<RegistryEnumSources>({});
 
@@ -37,10 +30,8 @@ export interface RegistrySelectProps {
   /** Accessible name for the control. */
   'aria-label'?: string;
   /** Ordering of the rendered options. Defaults to `'label'` —
-   *  case-insensitive alphabetical by label — which makes long lists
-   *  scannable. Use `'value'` to sort by id, or `'source'` to preserve
-   *  whatever order the resolver returned (e.g. for inherently-ordered
-   *  registries like history entries). */
+   *  case-insensitive alphabetical by label. `'value'` sorts by id, and
+   *  `'source'` preserves whatever order the resolver returned. */
   sortBy?: 'label' | 'value' | 'source';
 }
 

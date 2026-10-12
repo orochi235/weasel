@@ -24,14 +24,14 @@ An unregistered family renders in the default family with a one-time warning:
 ```ts
 setFontFallbackPolicy('substitute');  // default — render in the default family
 setFontFallbackPolicy('canvas');      // rasterize the real typeface at runtime
-setFontFallbackPolicy('none');        // hard miss: render nothing (pre-0.7 behavior)
+setFontFallbackPolicy('none');        // hard miss: render nothing
 
 setDefaultFontFamily('Inter');        // defaults to the first registered family
 ```
 
 Substitution changes advance widths, so measurement and wrap differ from the
-requested font. `ResolveResult.substituted` reports it structurally so a UI can
-surface the swap rather than leaving it to the console.
+requested font. `ResolveResult.substituted` reports it so a UI can
+surface the swap.
 
 ## Generating an atlas
 

@@ -9,29 +9,21 @@ const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
  * Compose the final ordered layer list from a layersMap and the resolved
  * standard-slot layers.
  *
- * Semantics:
  * - Standard slots are emitted in `STANDARD_SLOTS` order.
- * - Each standard-slot layer is preceded by its `before` chain (deepest first)
- *   and followed by its `after` chain (ancestors first).
  * - `after: 'X'` / `before: 'X'` accept standard slot names OR other
- *   custom-layer keys, and chains may mix the two — a custom anchored
- *   `before` a slot can itself carry an `after` chain, and vice versa.
- * - Customs with neither `after` nor `before` go to a tail bucket emitted
- *   after all standard slots.
- * - Dangling references (target unresolvable) and cycles go to the tail
- *   with a `console.warn`.
+ *   custom-layer keys, and chains may mix the two.
+ * - Customs with neither `after` nor `before` are emitted after all standard
+ *   slots.
+ * - Dangling references and cycles go to the tail with a `console.warn`.
  * - An entry with both `after` and `before` is placed by `after`.
- *
- * Pure function — no side effects beyond `console.warn` on malformed input.
  */
 export function composeOrderedLayers<TNode extends { id: string }, TPose>(
   layersMap: Record<string, LayerSlotValue<TNode, TPose> | null | undefined>,
   standardLayers: Partial<Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>>,
-  /** When the `scene` slot is split into per-scene-layer canvas layers (keyed
-   *  `scene:<layerId>`), pass them here in render order. Each key becomes an
-   *  anchor point, so customs can target `before/after: 'scene:<layerId>'`.
-   *  `before/after: 'scene'` still works (before the first / after the last).
-   *  When omitted, the `scene` slot uses `standardLayers.scene` as before. */
+  /** The `scene` slot split into per-scene-layer canvas layers (keyed
+   *  `scene:<layerId>`), in render order. Each key becomes an anchor point;
+   *  `before/after: 'scene'` brackets the whole group. When omitted, the
+   *  `scene` slot uses `standardLayers.scene`. */
   sceneLayers?: ReadonlyArray<{ key: string; layer: RenderLayer<unknown> }>,
   /** Drawn beneath everything else, grid and customs anchored before the
    *  scene included — a fill that must never cover what is laid over it. */
@@ -83,8 +75,6 @@ export function composeOrderedLayers<TNode extends { id: string }, TPose>(
 
   for (const slot of STANDARD_SLOTS) {
     if (slot === 'scene' && sceneLayers) {
-      // Split scene slot: emit each per-scene-layer canvas layer in order, with
-      // its own anchor point. `before/after: 'scene'` brackets the whole group.
       emitBefore('scene');
       for (const sl of sceneLayers) {
         emitBefore(sl.key);
@@ -100,7 +90,6 @@ export function composeOrderedLayers<TNode extends { id: string }, TPose>(
     emitAfter(slot);
   }
 
-  // Tail customs (neither after nor before).
   for (const t of tail) {
     if (emitted.has(t.key)) continue;
     emitted.add(t.key);
@@ -139,11 +128,8 @@ export function composeOrderedLayers<TNode extends { id: string }, TPose>(
 
 /**
  * Splice a tool's positioned overlays into an already-composed layer list.
- *
- * `'top'` appends; the other two anchor on the selection-chrome layer's index
- * in `ordered`. With no selection chrome present the anchored overlays fall
- * back to the tail, keeping their relative order. Mutates and returns
- * `ordered`.
+ * With no selection chrome present the anchored overlays fall back to the
+ * tail, keeping their relative order. Mutates and returns `ordered`.
  */
 export function placeToolOverlays(
   ordered: RenderLayer<unknown>[],

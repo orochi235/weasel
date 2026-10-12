@@ -12,10 +12,6 @@ import { entries } from '../../entries';
  *   3. `src/import-shims/*.ts`     — what vite's wildcard alias
  *                                    (`@weasel-js/core/<x>` → `src/import-shims/<x>.ts`)
  *                                    resolves for the demo build
- *
- * We were bitten 2026-05-14 when `src/import-shims/routing.ts` was missing: the
- * publish build emitted `dist/routing.js` but the demo's vite build could not
- * resolve the import.
  */
 
 const REPO_ROOT = resolve(__dirname, '../..');

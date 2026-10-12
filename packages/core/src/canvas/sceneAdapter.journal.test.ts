@@ -1,15 +1,6 @@
 /**
  * Tests for UseSceneOptions.getActiveJournal — journal-aware routing in
  * scene.applyBatch (and by extension sceneToAdapter.applyOps which calls it).
- *
- * The three behaviours verified:
- *   1. Without a journal accessor, adapter.applyOps records to the scene's
- *      own undo history (scene.canUndo() becomes true).
- *   2. With an active journal, adapter.applyOps routes to the journal — the
- *      scene's undo stack gets no new entry; the journal's inner stack does.
- *      After journal.commit, the parent weasel-history History has one entry.
- *   3. After the journal closes (committed + accessor cleared), subsequent
- *      adapter.applyOps routes back to the scene's undo stack.
  */
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
@@ -71,9 +62,6 @@ describe('useScene journal routing via scene.applyBatch', () => {
     const scene = makeSceneWithJournal(() => activeJournal);
     const adapter = sceneToAdapter(scene);
 
-    // Create a weasel-history History backed by the same adapter, then open a
-    // journal. The journal's inner history will track ops; the scene's own
-    // undo stack should stay empty.
     const history = createHistory(adapter);
     activeJournal = history.beginJournal({ label: 'edit' });
 
@@ -121,9 +109,8 @@ describe('useScene journal routing via scene.applyBatch', () => {
   });
 
   it('setActiveJournalAccessor wires the accessor after construction', () => {
-    // Build the scene WITHOUT getActiveJournal in options. This mirrors the
-    // common pattern where the journal source (a mode machine) depends on
-    // the scene itself, creating a circular construction dependency.
+    // The journal source (a mode machine) commonly depends on the scene
+    // itself, so it cannot be passed at construction.
     const { result } = renderHook(() =>
       useScene<{ label: string }, 'default', Pose>({
         systemLayers: [{ id: 'default' }],

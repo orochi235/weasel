@@ -186,11 +186,8 @@ function prefLeafMatches(pref: PrefLeaf, path: string, query: string): boolean {
 
 /**
  * Drop every leaf that does not answer to `query`, pruning groups left empty.
- * A group whose own name matches keeps all of its leaves — a reader who typed
- * the group's name is asking for the group, not for leaves repeating it.
- *
- * An empty or whitespace query matches everything, so a cleared field restores
- * the tree rather than emptying it.
+ * A group whose own name matches keeps all of its leaves. An empty or
+ * whitespace query matches everything.
  *
  * An alias answers as the row it draws: its target's name and description
  * where it gives none. That target is looked for in `over`, and in `node`

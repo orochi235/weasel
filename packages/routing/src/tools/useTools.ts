@@ -36,8 +36,7 @@ export interface ToolsApi<TOverlay = KernelOverlay> {
   /** Set the active-slot tool, or `null` to clear it. The gesture dispatcher
    *  watches the active tool and cancels any in-flight handle itself. */
   setActive: (id: string | null) => void;
-  /** Currently hotkey-engaged tool id (or `null`). Derived as the top of
-   *  the hotkey stack for backwards compat with the pre-stack API. */
+  /** Currently hotkey-engaged tool id (or `null`): the top of the hotkey stack. */
   hotkeyEngaged: string | null;
   /** Engage a hotkey-slot tool by id. */
   engageHotkey: (id: string) => void;
@@ -49,18 +48,15 @@ export interface ToolsApi<TOverlay = KernelOverlay> {
   registry: Readonly<Record<string, AnyToolOf<TOverlay>>>;
   /** Returns true if a tool with the given id is in the registry or ambient list. */
   has(id: string): boolean;
-  /** All overlay layers from currently-engaged tools (active slot, hotkey
-   *  slot if engaged, all ambient slot tools) that declare `position`.
-   *  Filters out tools with no `overlay` field. Order: active, then hotkey
-   *  (if engaged), then ambient (registration order). */
+  /** Overlay layers from currently-engaged tools that declare `position`.
+   *  Order: active, then hotkey (if engaged), then ambient (registration order). */
   getActiveOverlays(position?: OverlayPosition): TOverlay[];
 }
 
 /** The slot a caller passed a tool in, restated as declared eligibility.
- *  `ToolDef.hotkey` becomes `offhand` — it is the same declaration, read off
- *  the authored form via the `def` reflection handle. A tool that already
- *  declares what its slot implies is returned as-is: `ToolsApi.registry`
- *  hands back the objects the caller passed, and consumers compare identity. */
+ *  A tool that already declares what its slot implies is returned as-is:
+ *  `ToolsApi.registry` hands back the objects the caller passed, and
+ *  consumers compare identity. */
 function declareSlot<T extends Contribution<unknown>>(tool: T, slot: 'focus' | 'always'): T {
   const hotkey = (tool.def as { hotkey?: HotkeyTrigger } | undefined)?.hotkey;
   const eligibility: Eligibility = {
@@ -99,21 +95,16 @@ function sameEligibility(a: Eligibility | undefined, b: Eligibility): boolean {
 }
 
 /**
- * Manages the active tool and hotkey slot.
- *
- * A thin shim over {@link useContributions}: the `registry` / `ambient`
- * arguments are restated as declared eligibility (`focus` / `always`), and
- * assembly happens in one place for tools and non-tool contributions alike.
+ * Manages the active tool and hotkey slot; a thin shim over
+ * {@link useContributions}.
  *
  * Requires `<ActiveToolContextProvider>` (or `<WeaselProvider>` /
  * `<SceneCanvas>`, which mount one internally) in scope: active/hotkey state
- * lives in the context so the gesture dispatcher and any sibling
- * `useTools` calls all read the same source of truth.
+ * lives in the context.
  *
- * **First-mount-wins semantics**: if the context's slot is unseeded (no
- * `initialActive`, nothing set yet) on first mount, `useTools` pushes
- * `opts.active` to the context. Subsequent mounts respect whatever the
- * context currently holds (the first caller wins).
+ * **First mount wins**: if the context's slot is unseeded on first mount,
+ * `useTools` pushes `opts.active` to the context. Subsequent mounts respect
+ * whatever the context currently holds.
  */
 export function useTools<TOverlay = KernelOverlay>(
   opts: UseToolsOptions<TOverlay>,
@@ -194,10 +185,8 @@ export function useTools<TOverlay = KernelOverlay>(
     [slotted],
   );
 
-  // Memoize the returned ToolsApi so consumers using `tools` as a dep (e.g.
-  // SceneCanvas's `onToolsCreated` useEffect) don't see identity churn on
-  // every render — which otherwise loops infinitely when the consumer
-  // setStates from inside `onToolsCreated`.
+  // Memoized: a consumer using `tools` as an effect dep loops infinitely on
+  // identity churn when it setStates from inside that effect.
   const active = contributions.focused;
   const getActiveOverlays = contributions.overlays;
   return useMemo(

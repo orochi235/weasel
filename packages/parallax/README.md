@@ -20,8 +20,7 @@ package holds the layer wrapper (`createParallaxLayer`), the live plane
 ## `deriveParallaxView(outer, opts)`
 
 Pure. Takes the camera `View` and per-plane factors, returns the plane's inner
-`View`. No state, no side effects — trivially testable, and reusable anywhere
-you need "a view that tracks the camera at a fraction."
+`View`.
 
 | Option | Meaning |
 | --- | --- |
@@ -30,10 +29,10 @@ you need "a view that tracks the camera at a fraction."
 | `anchor` | The camera position at which every plane lines up. Defaults to the origin. |
 
 Both `pan` and `zoom` take a scalar or `{x, y}`, so you can parallax one axis
-only — common for side-scrolling backdrops.
+only.
 
-**Identity holds:** `pan: 1, zoom: 1` returns a view equal to `outer`. That's
-the invariant to preserve if you touch the math; a plane at defaults must be
+**Identity holds:** `pan: 1, zoom: 1` returns a view equal to `outer`. Preserve
+that if you touch the math: a plane at defaults must be
 pixel-identical to no parallax at all.
 
 ## `planeMap(outer, opts)`

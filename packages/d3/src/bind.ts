@@ -81,8 +81,8 @@ export function d3Bind<
       // rebind as UPDATE, and still-absent ones exit afresh.
       for (const id of [...dataKeys, ...exitIds]) cancelPendingRemoval(scene, id);
 
-      // Snapshot prior poses for nodes that will be updated. Captured BEFORE the
-      // batch mutates them so `.transition()` can interpolate from prior → new.
+      // Captured BEFORE the batch mutates them so `.transition()` can
+      // interpolate from prior → new.
       const priorPoses = new Map<NodeId, TPose>();
       for (const i of updateIndices) {
         const id = dataKeys[i];
@@ -162,7 +162,7 @@ export function d3Bind<
   return binding;
 }
 
-/** @internal — exported for `selection.filter` reuse. */
+/** @internal */
 function createSelection<TData, TPose>(
   scene: Scene<unknown, string, TPose>,
   ids: readonly NodeId[],

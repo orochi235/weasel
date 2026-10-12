@@ -1,16 +1,4 @@
-/**
- * Integration tests for pinchZoomAction via the gesture dispatcher.
- *
- * Proves:
- *   - Two pointerdowns synthesize a multitouch event → pinchZoomAction.start fires
- *   - Subsequent pointermove synthesizes a multitouch pump → onMove fires, view scale changes
- *   - Pointer release commits (view retained); cancelAll commits too
- *
- * ## Provider tree
- *
- *   DepRegistryProvider > ActiveToolContextProvider
- *     > ActionsProvider > [MountDispatcher + RegisterViewDep + RegisterPinchZoom]
- */
+/** Integration tests for pinchZoomAction via the gesture dispatcher. */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -24,10 +12,6 @@ import { pinchZoomAction } from '../actions/defaults/pinchZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
 
-// ---------------------------------------------------------------------------
-// Canvas mock
-// ---------------------------------------------------------------------------
-
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
@@ -38,10 +22,6 @@ beforeAll(() => {
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
 });
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function makeViewApi(initial: View): ViewApi & { current: View } {
   const api = {
@@ -122,10 +102,6 @@ function firePointerUp(canvas: HTMLElement, opts: { pointerId: number; clientX: 
     }),
   );
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('pinchZoomAction integration', () => {
   it('two-finger spread-out zooms in (scale increases)', () => {

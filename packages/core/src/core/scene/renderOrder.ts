@@ -47,11 +47,9 @@ export function createRenderOrder<TData, TLayer extends string, TPose>(
 
   /**
    * Render order survives everything except a structural edit, so both walks
-   * are cached against a counter the structural writers bump: `attach` and
-   * `detach` (add / remove / reparent / reorder), `kit:setLayer` (which bucket
-   * a node lands in), `rebuildLayerIndex` (the layer list itself), and
-   * `loadState`. Pose and data edits leave order alone and must NOT invalidate
-   * — they fire per frame during a drag, which is exactly when the cache pays.
+   * are cached against a counter the structural writers bump. Pose and data
+   * edits leave order alone and must NOT invalidate — they fire per frame
+   * during a drag, which is exactly when the cache pays.
    *
    * A missed bump is a silent wrong answer: nodes painted in the wrong z-order,
    * or unpickable. `renderOrder.test.ts` walks each structural op and asserts

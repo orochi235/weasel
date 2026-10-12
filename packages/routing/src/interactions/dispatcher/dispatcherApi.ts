@@ -13,11 +13,9 @@ import type { ActionDeps, OngoingHandle } from '../actions/invoker';
 import type { DispatchRecord } from './dispatchRecord';
 import type { BindingScope, InputEvent } from './matcher';
 
-/** Everything the dispatcher must consult to route one input event: the
- *  registered actions and their deps, which tool is active, which hotkeys are
- *  held, and — optionally — the chrome state that action eligibility rules are
- *  evaluated against. Rebuilt per event rather than held, so the dispatcher
- *  itself stays stateless apart from in-flight gestures. */
+/** Everything the dispatcher must consult to route one input event. Rebuilt
+ *  per event rather than held, so the dispatcher itself stays stateless apart
+ *  from in-flight gestures. */
 export interface DispatcherContext {
   /** All registered actions; the dispatcher walks `.defaultBinding` for ambient bindings. */
   actions: ActionSource;
@@ -70,9 +68,7 @@ export interface UiOngoingControl {
 
 /**
  * Successful `Dispatcher.resolveOnly` prediction: the binding + action that
- * would fire if `event` were dispatched for real. `action` is the resolved
- * descriptor so callers (the hover-cursor pump) can read metadata like
- * `Action.cursor` without a second registry lookup.
+ * would fire if `event` were dispatched for real.
  */
 export interface ResolveOnlyResult {
   actionId: string;
@@ -121,14 +117,12 @@ export interface ResolveAllOptions {
    * Evaluate eligibility and `enabled()` for candidates below the winner
    * instead of short-circuiting them to `shadowed`.
    *
-   * Off by default, and deliberately so: the default walk's early exit is what
-   * keeps `resolveOnly`'s `enabled()` call count identical to a real dispatch,
-   * and `enabled()` predicates are only contractually pure — not free.
+   * Off by default: the default walk's early exit is what keeps
+   * `resolveOnly`'s `enabled()` call count identical to a real dispatch, and
+   * `enabled()` predicates are only contractually pure — not free.
    *
-   * Turn it on for diagnostics, where "this one was outranked" is a less
-   * useful answer than "this one was outranked AND would have been disabled
-   * anyway". With it on, `shadowed` narrows to its precise meaning: this
-   * candidate would have fired, but something above it did.
+   * With it on, `shadowed` narrows to its precise meaning: this candidate
+   * would have fired, but something above it did.
    */
   evaluateShadowed?: boolean;
 }
@@ -152,12 +146,10 @@ export interface Dispatcher {
   handleInput(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled';
 
   /**
-   * Predict which action `event` would route to WITHOUT invoking it. Replays
-   * the same walk as `handleInput` — scope assembly, specificity-sorted
-   * match, eligibility filter, per-candidate `enabled()` gate — and returns
-   * the first candidate that would fire, or `null` when the event would go
-   * unhandled. Pure query: no invoker runs, no in-flight state changes, no
-   * trace-log entry.
+   * Predict which action `event` would route to WITHOUT invoking it: the
+   * first candidate `handleInput`'s walk would fire, or `null` when the event
+   * would go unhandled. Pure query: no invoker runs, no in-flight state
+   * changes, no trace-log entry.
    *
    * Known divergence from a real dispatch: an ongoing invoker that matches
    * but returns an empty handle at `start()` (runtime bail) makes the real
@@ -169,25 +161,15 @@ export interface Dispatcher {
 
   /**
    * Every binding that matches `event`, in dispatch precedence order, each
-   * with a verdict explaining whether it would fire. Same walk as
-   * `resolveOnly` — scope assembly, specificity-sorted match, eligibility
-   * check, per-candidate `enabled()` gate — without stopping at the winner
-   * and without invoking anything. Nothing is dropped: candidates that
-   * `resolveOnly`'s walk would filter out are kept here and labelled
-   * `ineligible` instead. Pure query: no invoker runs, no in-flight state
-   * changes, no trace-log entry.
+   * with a verdict explaining whether it would fire. Nothing is dropped:
+   * candidates that `resolveOnly`'s walk would filter out are kept here and
+   * labeled `ineligible` instead. Pure query, and it shares `resolveOnly`'s
+   * known divergence from a real dispatch.
    *
    * `resolveOnly` is the first `would-fire` entry of this list.
    *
-   * Shares `resolveOnly`'s known divergence from a real dispatch: an ongoing
-   * invoker that matches but returns an empty handle at `start()` makes the
-   * real dispatch fall through, and this cannot see that.
-   *
-   * By default everything below the winner is `shadowed` without being asked,
-   * which is what keeps this walk as cheap as the dispatch it replays. Pass
-   * `{ evaluateShadowed: true }` to keep evaluating past the winner, so a
-   * lower candidate that is ALSO ineligible or disabled says so — see
-   * {@link ResolveAllOptions.evaluateShadowed}.
+   * By default everything below the winner is `shadowed` without being asked
+   * — see {@link ResolveAllOptions.evaluateShadowed}.
    */
   resolveAll(
     event: InputEvent,
@@ -206,7 +188,6 @@ export interface Dispatcher {
 
   /**
    * Synthesize an end-of-gesture for every in-flight ongoing handle.
-   * Used by tool-switch cancellation (Q2 decision).
    */
   cancelAll(reason: 'commit' | 'cancel'): void;
 
@@ -225,22 +206,17 @@ export interface Dispatcher {
   inFlightCursor(): CursorSpec | null;
 
   /**
-   * Read-only iterator over currently in-flight `OngoingHandle` instances.
-   *
-   * Surface for the canvas's preview-ghost layer (`usePreviewGhostLayer`)
-   * to walk each handle's `previewIds()` / `previewPose(id)` and render
-   * dispatcher-driven gesture previews. Read-only by design:
-   * external consumers must not mutate the in-flight map.
+   * Read-only iterator over currently in-flight `OngoingHandle` instances,
+   * for a preview layer to walk each handle's `previewIds()` /
+   * `previewPose(id)`.
    */
   getInFlightHandles(): Iterable<OngoingHandle>;
 
   /**
-   * Subscribe to in-flight state changes. The callback fires after every
-   * mutation that affects what the preview-ghost / dispatcher-overlay
-   * layers read — handle start, every `onMove` pump, end, cancel,
-   * cancel-all — and after any other input handled while a gesture is in
-   * flight. Input that arrives with nothing in flight and starts nothing
-   * does not fire it. Consumers re-read `getInFlightHandles()` and re-render.
+   * Subscribe to in-flight state changes. The callback fires after handle
+   * start, every `onMove` pump, end, cancel, and cancel-all, and after any
+   * other input handled while a gesture is in flight. Input that arrives
+   * with nothing in flight and starts nothing does not fire it.
    *
    * Returns an unsubscribe function.
    */
@@ -248,21 +224,16 @@ export interface Dispatcher {
 
   /**
    * Monotonic counter bumped on exactly the events {@link subscribe} fires
-   * on. The snapshot half of the `useSyncExternalStore` contract: pair it
-   * with `subscribe` to drive a render off in-flight gesture state without
-   * a `useReducer` force-rerender.
+   * on: the snapshot half of the `useSyncExternalStore` contract.
    *
-   * Starts at 0 and only ever increases. Two reads returning the same number
-   * mean no gesture was in flight in between; it does **not** guarantee that
-   * a bump changed anything observable (input that matched no binding still
-   * counts while a gesture is in flight — see `subscribe`).
+   * A bump does **not** guarantee that anything observable changed (input
+   * that matched no binding still counts while a gesture is in flight — see
+   * `subscribe`).
    */
   getVersion(): number;
 
   /**
-   * Snapshot of the currently active action, for surfaces (chrome-caps
-   * visibility rules, debug HUDs) that need to react to "what action
-   * is in flight right now."
+   * Snapshot of the currently active action.
    *
    * - `kind` — the `OngoingHandle.kind` reported by the in-flight
    *   handle (e.g. `'marquee'`, `'move'`). `null` when no action is
@@ -273,24 +244,13 @@ export interface Dispatcher {
    *
    * When multiple handles are in flight simultaneously (e.g. a key-held
    * action overlapping a pointer action), the most-recently-started
-   * handle wins. This matches user intent: the latest interaction is
-   * the one consumers care about.
-   *
-   * That rule used to be near-vacuous on the pointer side, because every
-   * pointer shared one handle slot and two pointer drags could not coexist.
-   * With per-pointer keying they can — but only via paths that bypass the
-   * multi-pointer policy in `useGestureDispatcher` (which stops a second
-   * finger from opening a drag while a pinch is live), such as a mouse and
-   * a pen used together. Latest-start remains the right answer there.
+   * handle wins.
    */
   getActiveAction(): { kind: string | null; id: string | null };
 
   /**
-   * Start an ongoing action driven by UI (not a gesture). Builds an
-   * `InvocationCtx` with the given `deps` and `params`, calls
-   * `action.invoker.start(ctx, { params })`, and registers the returned
-   * handle in the in-flight map so `getInFlightHandles()` reports it —
-   * enabling preview rendering via `SceneCanvas`.
+   * Start an ongoing action driven by UI (not a gesture), and register its
+   * handle in the in-flight map so `getInFlightHandles()` reports it.
    *
    * Returns `null` if `actionId` is unknown, the action's invoker is not
    * ongoing, or `start` returned an empty handle.

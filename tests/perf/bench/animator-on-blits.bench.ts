@@ -11,11 +11,11 @@
  * - **blits, voice per animation** — the literal port: each call cues its own
  *   voice, reaching its one node either by a `target` predicate or by naming
  *   it in `subjects`.
- * - **blits, one voice** — every node on one voice reading its own endpoints,
- *   the way step 2's override table is one voice. For tweens that is an `fn`
- *   patch, and, where blits has its `tween` motion form, also **one tween
- *   voice** carrying each node's endpoints as data. Where blits has
- *   `mix.pull`, each one-voice shape also reads every node in one call.
+ * - **blits, one voice** — every node on one voice reading its own endpoints.
+ *   For tweens that is an `fn` patch, and, where blits has its `tween` motion
+ *   form, also **one tween voice** carrying each node's endpoints as data.
+ *   Where blits has `mix.pull`, each one-voice shape also reads every node in
+ *   one call.
  *
  * Nothing finishes inside a run: tweens last far longer than any run, and
  * springs are undamped, so they oscillate for good.

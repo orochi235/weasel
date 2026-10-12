@@ -1,14 +1,8 @@
 /**
  * ts-morph based extractor that reads the @weasel-js/core kit source and
  * produces a TraitSchemaIndex describing shape kinds, op factories, actions,
- * gestures, and the SceneNode discriminated union.
- *
- * The extractor is intentionally read-only: it never invokes the type checker
- * on app code, only on the kit source under `${repoRoot}/packages/core/src`.
- * Paths stay repo-relative so the source refs it emits line up with the rest
- * of the inspector's citations. The Vite
- * plugin calls this once on first virtual-module load and again whenever the
- * watched files change.
+ * gestures, and the SceneNode discriminated union. The source refs it emits
+ * are repo-relative, like the rest of the inspector's citations.
  */
 import { Project, type Node, SyntaxKind, type SourceFile } from 'ts-morph';
 import { resolve, relative } from 'node:path';
@@ -51,9 +45,8 @@ export function extractTraitSchemas(repoRoot: string): TraitSchemaIndex {
     skipFileDependencyResolution: false,
   });
 
-  // Each surface lives in its own extractor module — they all share helpers
-  // from this file but the per-surface logic is kept separate so a failure
-  // in one (e.g. action-registry refactor) doesn't blow up the others.
+  // Each surface is extracted on its own so a failure in one doesn't blow up
+  // the others.
   const shapes = safe('shapes', () => extractShapes(project, repoRoot)) ?? {};
   const ops = safe('ops', () => extractOps(project, repoRoot)) ?? {};
   const actions = safe('actions', () => extractActions(project, repoRoot)) ?? {};

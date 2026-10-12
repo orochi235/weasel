@@ -4,9 +4,8 @@
  *
  * `onto test` ships whatever is on disk, so a run started from a checkout other
  * sessions are editing tests their half-finished files and blames the commit.
- * This checks the commit out into a throwaway worktree, runs `onto test` on
- * that, and removes it. The job is named for the branch: the one named, or the
- * one checked out when HEAD is tested.
+ * The job is named for the branch: the one named, or the one checked out when
+ * HEAD is tested.
  *
  *   npm run test:fleet                 # HEAD
  *   npm run test:fleet -- <commit>     # any commit

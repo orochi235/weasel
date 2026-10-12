@@ -15,10 +15,8 @@ import { SYNTHETIC_ITALIC_RADIANS } from '@weasel-js/text';
  * Merge a group's glyphs into one world-space mesh, or `null` when nothing in
  * it has area.
  *
- * Every glyph mesh here is `'nonzero'` (that is what `pathFromD` produces and
- * what a font outline means), so none of them sets `requiresStencil` and
- * concatenating their triangles is sound — an even-odd mesh would be a naive
- * per-contour fan that only resolves correctly through a stencil pass, and
+ * Every glyph mesh here is `'nonzero'`, so concatenating their triangles is
+ * sound — an even-odd mesh only resolves correctly through a stencil pass, and
  * merging one into a batch would fill its counters solid.
  */
 export function outlineGroupMesh(group: LaidOutGroup, dx: number, dy: number): Mesh | null {
@@ -27,23 +25,15 @@ export function outlineGroupMesh(group: LaidOutGroup, dx: number, dy: number): M
 
 /**
  * The same merge for the group's stroke: one ribbon per glyph, tessellated in
- * em space and batched into one buffer, so a stroked paragraph is one extra
- * draw call rather than one per glyph.
+ * em space.
  *
- * A world width crosses into em space by dividing by the glyph's `scale`,
- * which is world units per em — so `stroke.width` stays a world-unit measure
- * and does not grow with `fontSize`, matching every other stroke in the kit.
- * Dashes cross with it.
- *
- * A synthetic oblique shears a world-width ribbon along with the glyph. That
- * is a real (small) distortion — a sheared circle is an ellipse, so the
- * outline is marginally thicker across the lean than along it — and it is
- * deliberate: shearing the finished ribbon is what keeps the outline glued to
- * the glyph it outlines, which re-tessellating in sheared space would not.
+ * `stroke.width` is a world-unit measure and does not grow with `fontSize`;
+ * dashes likewise. A synthetic oblique shears a world-width ribbon along with
+ * the glyph, so the outline is marginally thicker across the lean than along
+ * it — deliberate, because it keeps the outline glued to the glyph.
  *
  * A `{ px }` ribbon is built in the stretch of the whole em-to-screen map,
- * shear included, as a path's is in its transform's (see `metric.ts`), so it
- * is that many pixels wide in every direction on every glyph.
+ * shear included, so it is that many pixels wide in every direction.
  */
 export function outlineGroupStrokeMesh(
   group: LaidOutGroup,
@@ -84,10 +74,9 @@ const shearOf = (group: LaidOutGroup): number =>
   group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
 
 /**
- * Transform each glyph's em-space mesh into world space and concatenate.
- * Shared by the fill and stroke paths, which differ only in which mesh they
- * ask for per glyph — the placement math must not fork, or an outline would
- * drift off the glyph it outlines.
+ * Transform each glyph's em-space mesh into world space and concatenate. The
+ * fill and stroke paths share the placement math: it must not fork, or an
+ * outline would drift off the glyph it outlines.
  */
 function mergeGlyphMeshes(
   group: LaidOutGroup,

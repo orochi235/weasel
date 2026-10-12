@@ -26,7 +26,7 @@ const adapter: MoveAdapter<Rect, Pose>
 The narrow shapes live in `packages/core/src/core/adapters/types.ts`.
 
 Selection-driven operations — delete, duplicate, nudge, group, reorder,
-undo/redo — no longer take adapters at all. They're **actions**, and they read
+undo/redo — take no adapter. They're **actions**, and they read
 what they need from the **dep registry** by name (`scene`, `selection`,
 `history`, `applyOps`, …). See [Deps, not adapters](#deps-not-adapters).
 
@@ -34,7 +34,7 @@ what they need from the **dep registry** by name (`scene`, `selection`,
 
 `arrayAdapter<TNode, TPose>(config)` synthesizes a multi-faceted adapter
 from a `useState`-backed array. It satisfies `MoveAdapter`, `ResizeAdapter`,
-`InsertAdapter`, and `AreaSelectAdapter` out of the box.
+`InsertAdapter`, and `AreaSelectAdapter`.
 
 ```ts
 import { arrayAdapter, useSelection } from '@weasel-js/core';
@@ -61,8 +61,7 @@ const adapter = {
 ```
 
 Spreading `selection.adapterMethods` wires `getSelection` / `setSelection`
-through the same `useSelection` instance the canvas uses, so action hooks
-and gestures stay in sync.
+through the same `useSelection` instance the canvas uses.
 
 Marquee and lasso take a node by its outline, the same test `sceneToAdapter`
 runs. A polygon pose is its own outline; any other pose is its rect, rotated
@@ -99,10 +98,7 @@ const adapter = {
 object — including your override of `insertNode` and the
 selection-backed `setSelection`. If you copy the method off
 (`const fn = adapter.applyOps`) you'll lose `this` and ops will dispatch
-against `undefined`. Don't do that.
-
-This shipped recently; older code may have worked around it with
-hand-rolled `applyOps` wrappers — those are no longer needed.
+against `undefined`.
 
 ## When to write a custom adapter
 
@@ -116,13 +112,12 @@ Reach for a custom adapter when:
 - Pose extraction is expensive and you want memoization beyond the per-id
   array scan `arrayAdapter` does.
 
-There's no base class; just implement the methods the gestures and actions
-you use require. Compose narrow types via intersection.
+There's no base class: implement the methods the gestures and actions
+you use require, and compose the narrow types by intersection.
 
 ## Adapter responsibilities by gesture
 
-Pointer-driven actions still do their math through an adapter. The shapes are
-in `packages/core/src/core/adapters/types.ts`.
+Pointer-driven actions do their math through an adapter.
 
 | Action | Required adapter shape |
 |---|---|
@@ -167,7 +162,7 @@ built-in action that touches a pose consults it. `<SceneCanvas poseDescriptor>`
 publishes it; absent, it is `AUTO_POSE_DESCRIPTOR`, which reads rect poses and
 `Path` poses.
 
-This is why there is no `DeleteAdapter` / `NudgeAdapter` / `UndoRedoAdapter` to
+So there is no `DeleteAdapter` / `NudgeAdapter` / `UndoRedoAdapter` to
 implement: `delete` declares `requires: ['scene', 'selection', 'applyOps']` and
 gets them.
 

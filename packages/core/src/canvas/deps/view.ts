@@ -1,16 +1,7 @@
 /**
- * `useViewDepSource` — builds a stable `ViewApi` that reads from
- * `currentViewRef`, writes via `onViewChange`, and (when a camera runner is
- * passed) exposes animation.
- *
- * NOTE: this hook does **not** itself call `useDepSource('view', ...)` because
- * `useStandardActions` already publishes the `view` dep when it is passed in
- * its options bag. Returning the `ViewApi` here lets the registrar hand the
- * same instance to `useStandardActions` (which then registers it) without
- * having to reconstruct it inline.
- *
- * Kept as a per-dep module so the construction logic (closure refresh, ref
- * stability, etc.) has a single home next to the other dep modules.
+ * Builds a stable `ViewApi` that reads from `currentViewRef` and writes via
+ * `onViewChange`. It does **not** call `useDepSource('view', ...)` itself:
+ * `useStandardActions` publishes the `view` dep it is handed.
  */
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';

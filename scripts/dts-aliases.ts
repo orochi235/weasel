@@ -4,14 +4,9 @@
  * from source.
  *
  * The counterpart to `weaselAliases()` in `vite-aliases.ts`, which maps the
- * same specifiers to SOURCE — right for vite and vitest, where the dev server
- * must see an edit without a rebuild, and wrong for `.d.ts` emission, where it
- * pulls some 1,900 files into one TypeScript program to re-derive declarations
- * the earlier build tiers have already emitted.
- *
- * The `types` condition in `exports` is each package's own statement of where
- * its public declarations live, so nothing here needs editing when a package
- * gains or loses an entry point.
+ * same specifiers to SOURCE — right for vite and vitest, and wrong for `.d.ts`
+ * emission, where it re-derives declarations the earlier build tiers have
+ * already emitted.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -128,7 +123,7 @@ export function weaselDtsAliases(
  * program treats as an EXTERNAL LIBRARY. Reached through node_modules, a
  * dependency's declarations are external, and the plugin answers that by
  * standing up a fresh TypeScript program per file. Mapped here they land in the
- * one program instead, which is most of the heap this build used to spend.
+ * one program instead.
  */
 export function weaselDtsPaths(
   repoRoot: string,

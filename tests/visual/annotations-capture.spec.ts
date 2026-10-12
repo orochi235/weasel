@@ -3,12 +3,6 @@
  * neither GL nor the browser's SVG rasterizer is byte-identical across
  * drivers, so this probes pixels and reads coordinates back out of the
  * exported document instead.
- *
- * The first test is also the repo's only viewport calibration for a *drawn*
- * mark. `insert.spec.ts` and `shape-tools.spec.ts` both defer a scripted-drag
- * insertion, and the annotation overlay's client→world path — a pane whose
- * input box is nowhere near the shared surface's origin — had no coverage at
- * all before this.
  */
 import { expect, test } from '@playwright/test';
 
@@ -106,22 +100,20 @@ test('a capture at scale 4 puts the mark on the feature it was drawn over', asyn
   }, await img.getAttribute('src'));
 
   expect(probe.size).toEqual([CONTENT.w * 4, CONTENT.h * 4]);
-  // The mark colour is `#e5484d`. Asserting closeness to it, not merely
-  // "reddish": the demo's quadrants are deliberately nowhere near it, and a
-  // loose predicate is one a bare base would satisfy with no mark drawn.
+  // The mark color is `#e5484d`. Asserting closeness to it, not merely
+  // "reddish", which a bare base could satisfy with no mark drawn.
   const near = (got: number[], want: [number, number, number]) =>
     want.every((v, i) => Math.abs((got[i] ?? -999) - v) <= 45);
   expect(near(probe.onEdge, [229, 72, 77]), `mark edge was rgb(${probe.onEdge.slice(0, 3)})`).toBe(
     true,
   );
-  // Inside the box, which is a stroke and not a fill: the base shows through,
-  // and it is not the mark colour. Without this an export that flooded the
-  // whole frame red would pass the assertion above.
+  // Without this an export that flooded the whole frame red would pass the
+  // assertion above.
   expect(near(probe.inside, [229, 72, 77])).toBe(false);
   expect(probe.inside[3]).toBe(255);
   expect(near(probe.farQuadrant, [229, 72, 77])).toBe(false);
   expect(probe.farQuadrant[3]).toBe(255);
-  // The base's black centre dot is still black, so the base was not rescaled.
+  // The base's black center dot is still black, so the base was not rescaled.
   expect(probe.centre.slice(0, 3).every((v) => v < 40)).toBe(true);
 });
 
@@ -129,7 +121,7 @@ test('the exported document carries the base and the mark together', async ({ pa
   await ready(page);
   await draw(page, 'Rectangle', [0.125, 0.1875], [0.375, 0.5625]);
   const svg = await captureSvg(page);
-  // The base's own centre dot, and the mark's stroke.
+  // The base's own center dot, and the mark's stroke.
   expect(svg).toContain('<circle');
   expect(svg.toLowerCase()).toContain('#e5484d');
   // Two nested documents inside the outer one: the base and the marks.

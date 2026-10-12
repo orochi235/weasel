@@ -1,9 +1,8 @@
 // Wait for a set of versions to list on the registry.
 //
-// npm holds a fresh upload as staged, invisible to every read, for up to about
-// fifteen minutes before listing it (npm/cli#9889): 1.6.1's `hud` was uploaded
-// at 17:30 UTC and listed at 17:44. A check run straight after the publish has
-// to wait out that window before a missing version means anything.
+// npm holds a fresh upload as staged, invisible to every read, before listing
+// it (npm/cli#9889). A check run straight after the publish has to wait out
+// that window before a missing version means anything.
 
 /** Seconds between attempts: doubling from 15s, capped at 2 minutes. */
 export const DEFAULT_DELAYS_MS = [15_000, 30_000, 60_000, 120_000];
@@ -32,8 +31,6 @@ const formatElapsed = (ms) => {
 /**
  * Check every package once, then keep re-checking the missing ones until they
  * all list or `budgetMs` is spent. `budgetMs: 0` is a single pass.
- *
- * Logs one line per package per attempt, so a long wait is visibly alive.
  *
  * @param {{ name: string, version: string }[]} packages
  * @param {{

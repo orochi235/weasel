@@ -1,13 +1,7 @@
 /**
- * registerTexture — accepts an image source, assigns an opaque id, stores in
- * a module-level registry. Actual GL upload happens lazily at draw time in
- * drawShader() via GLTextureCache.upload (which is idempotent).
- *
- * Lifecycle: a texture lives until `unregisterTexture`. Each renderer frees
- * its own GL copy at the top of its next frame.
- *
- * Convention §9: this registry stores image data only — no per-renderer state.
- * Each WeaselRenderer's GLTextureCache does its own dedup by id and source.
+ * A module-level registry of image sources by opaque id. It stores image data
+ * only — no per-renderer state; each renderer uploads to GL lazily at draw
+ * time. A texture lives until `unregisterTexture`.
  */
 
 import type { TextureHandle } from '@weasel-js/paint';
@@ -83,18 +77,14 @@ export function getTexture(id: string): TextureEntry | null {
 }
 
 /**
- * Register an image for use as a shader texture uniform.
- *
- * Returns a TextureHandle whose `id` can be passed as a ShaderUniform value.
- * The handle is valid for the lifetime of the renderer it will be used with.
+ * Register an image for use as a shader texture uniform. Returns a
+ * TextureHandle whose `id` can be passed as a ShaderUniform value.
  *
  * The texture holds premultiplied texels whichever source it came from, so a
  * shader sampling one reads `vec4(rgb * a, a)`, the form its own output takes.
  *
- * @param image  The image to register. HTMLImageElement must be fully loaded.
- *               An ImageBitmap must hold premultiplied pixels, the
- *               `createImageBitmap` default.
- * @returns      Opaque TextureHandle.
+ * @param image  HTMLImageElement must be fully loaded. An ImageBitmap must
+ *               hold premultiplied pixels, the `createImageBitmap` default.
  */
 export function registerTexture(
   image: HTMLImageElement | ImageBitmap,

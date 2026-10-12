@@ -2,10 +2,7 @@
  * A control box sized by a px literal that exactly matches a control rank.
  *
  * The ranks carry control height across density; a literal that happens to
- * equal one is a control that will not move when the density changes, which is
- * how `Button` sat at 24px in every density while its label grew. Matching the
- * rank's comfortable value is the tell: 24px where `--wzl-control-h` is 24px is
- * a frozen control, not a coincidence.
+ * equal one is a control that will not move when the density changes.
  *
  * Deliberately narrow. Only `height` / `min-height` / `block-size`, because a
  * width that equals a rank is usually a square icon well, and only exact rank
@@ -14,9 +11,6 @@
  *
  * A box that is rank-sized but is artwork — a fixed-aspect preview, a glyph —
  * carries `not-a-control` in a comment on the declaration or the line above.
- *
- * Runs under tsx so theme modules resolve through the root tsconfig's paths to
- * source, with no build first.
  */
 
 import { readFileSync } from 'node:fs';

@@ -1,8 +1,5 @@
 /**
  * The port affordance, composed into a layer and pointed at a scene.
- *
- * Two conveniences over {@link createPortAffordance}, both of which encode a
- * rule that is easy to get wrong rather than merely saving a line.
  */
 import {
   composeAffordanceLayer,
@@ -37,12 +34,9 @@ export interface ParticipantScene<TPose> {
  *
  * `effectivePose`, not `node.pose`: an override is what a gesture is currently
  * showing, and a port that answers from the document pose while its node is
- * mid-drag sits somewhere the user can see the node is not. Nodes that carry no
- * participant trait cost one reader call each and contribute no regions.
+ * mid-drag sits somewhere the user can see the node is not.
  *
- * One source answers both the ports and the graph — `GraphSource` is a
- * `ParticipantSource` that also carries `dependsOn`, which is where an edge's
- * two endpoints live.
+ * One source answers both the ports and the graph.
  */
 export function sceneParticipants<TPose>(
   scene: ParticipantScene<TPose>,
@@ -62,10 +56,6 @@ export function sceneParticipants<TPose>(
  * attach route that is hit-tested. Handing this to `SceneCanvas`'s `layers`
  * prop, or to a `Contribution.overlay`, paints the ports and makes none of them
  * grabbable.
- *
- * The cast is `composeAffordanceLayer` typing its data slot as `ChromeState`
- * while the layer registry takes `RenderLayer<unknown>`; both are handed the
- * same live `CanvasHelpers` envelope at runtime.
  */
 export function portLayer<TPose>(
   participants: ParticipantSource<TPose>,

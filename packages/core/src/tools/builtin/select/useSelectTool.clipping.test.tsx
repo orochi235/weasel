@@ -4,19 +4,11 @@
  * The default `pickEvery` walks the scene hierarchy and excludes nodes whose
  * world position does not fall within an ancestor container's clip. These
  * tests press at a world point through `select.pick` — the action the tool's
- * `pointerDown` binding routes to — and assert what ends up selected:
+ * `pointerDown` binding routes to — and assert what ends up selected.
  *
- * 1. A leaf outside an ancestor's clip is not selectable.
- * 2. A leaf inside an ancestor's clip is selectable.
- * 3. A container is selectable when the press is inside its clip.
- * 4. A container is NOT selectable when the press is outside its clip.
- * 5. A plain scene with no clips is unaffected (regression guard).
- *
- * These used to drive a real `<Canvas>` pointer sequence, which meant working
- * around jsdom: the canvas has no layout, so `clientToWorld` never ran and
- * every press landed at world (0,0) — all the geometry below had to be
- * arranged around that origin. Pressing the action directly lets each case
- * name its own world point.
+ * They press the action directly because a jsdom canvas has no layout: in a
+ * real pointer sequence `clientToWorld` never runs and every press lands at
+ * world (0,0).
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';

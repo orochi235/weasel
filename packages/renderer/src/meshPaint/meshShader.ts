@@ -1,19 +1,13 @@
 /**
  * GLSL ES 3.0 sources for the mesh-gradient paint.
  *
- * The vertex stage is the pattern/gradient one: a path fill mesh carries
- * `a_position` only, so paint-space coordinates come back per fragment from
- * the screen position through `u_worldInv`. The fragment stage is a clamped
- * texture read of the baked mesh, with everything outside the bake's box
- * transparent — a mesh covers the area its patches cover, not the whole shape
- * it is filling, and a clamped read would otherwise smear its border colors
- * across the rest.
+ * Everything outside the bake's box is transparent: a mesh covers the area its
+ * patches cover, not the whole shape it is filling, and a clamped read would
+ * otherwise smear its border colors across the rest.
  *
  * `u_meshOrigin` / `u_meshSize` are the bake's box in paint space, and the
  * bake maps that box onto texel *centers*, which is the half-texel the uv
- * rescale accounts for.
- *
- * Output convention §2: PREMULTIPLIED alpha.
+ * rescale accounts for. Output is PREMULTIPLIED alpha.
  */
 
 /** The id this program is registered under. */

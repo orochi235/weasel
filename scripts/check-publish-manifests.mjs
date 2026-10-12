@@ -1,37 +1,15 @@
 // Fail the build if a publishable package's `exports`/`main`/`types` map
 // advertises a file that `npm pack` would not actually put in the tarball.
 //
-// Why this exists: `@weasel-js/ui@0.5.0` and `@weasel-js/hud@0.5.0` shipped with
-// ZERO .d.ts files while their own `exports` maps pointed at `./dist/index.d.ts`.
-// Their build is `vite build && tsc -p tsconfig.build.json`; vite's `emptyOutDir`
-// deleted the declarations tsc had emitted on the previous run, but tsc's
-// `--incremental` state still recorded them as emitted, so every build after the
-// first quietly emitted nothing and exited 0. (Fixed at the source: those two
-// tsconfigs now set `"incremental": false`.)
-//
-// Nothing caught it. `npm run build` was green. The consumer smoke test packs
-// both packages, but Phase 3 bundles with esbuild — which strips types and never
-// looks for a .d.ts — and Phase 4's typecheck only type-imports from core, geom
-// and history. CI was green too, because a cold checkout only ever builds once,
-// so CI never reached the second build where the emit starts being skipped.
-//
-// This check is deliberately dumber and broader than any of those: it asks only
-// "does every path this manifest promises exist in the tarball?" It needs no
-// knowledge of what a package is for, so it covers packages added later, and it
-// catches the whole class — a renamed entry point, a `files` field that forgot a
-// directory, a subpath added to `exports` before the build emits it.
+// A build can exit 0 having emitted no declarations: a bundler's `emptyOutDir`
+// deletes them while tsc's `--incremental` state still records them as emitted.
+// CI does not see it, because a cold checkout only ever builds once.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
 
-/**
- * Every relative path a manifest promises a consumer can resolve.
- *
- * Wildcard subpaths (`"./*": "./dist/*.js"`) are skipped: they describe a
- * family of paths, so "does this exact file exist" is not a meaningful question
- * for them.
- */
+/** Every relative path a manifest promises a consumer can resolve. Wildcard subpaths are skipped. */
 function advertisedPaths(manifest) {
   const found = new Set();
   const add = (value) => {
@@ -69,17 +47,13 @@ function packedFiles(dir) {
     ['pack', '--dry-run', '--json', '--ignore-scripts', '--loglevel=error'],
     { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   );
-  // `npm pack --json` has changed shape across majors: npm 11 returned an array
-  // of reports, npm 12 returns an object keyed by package name. The release job
-  // deliberately runs a newer npm than most laptops have, so this has to read
-  // both — and it packs one directory per call either way.
+  // npm 11 returns an array of reports, npm 12 an object keyed by package name.
+  // The release job runs a newer npm than most laptops have, so read both.
   const parsed = JSON.parse(raw);
   const report = Array.isArray(parsed) ? parsed[0] : (parsed?.files ? parsed : Object.values(parsed)[0]);
 
-  // Never fall back to an empty set. A shape this function cannot read would
-  // otherwise look like a package that ships no files at all, and report every
-  // advertised path as missing — burying "npm changed its output" under 82
-  // plausible-looking failures.
+  // Never fall back to an empty set: an unreadable shape would report every
+  // advertised path as missing and bury "npm changed its output".
   if (!Array.isArray(report?.files)) {
     throw new Error(
       `could not read a file list out of \`npm pack --json\` in ${dir}. ` +
@@ -99,9 +73,8 @@ for (const { dir, manifest } of packages) {
   const promised = advertisedPaths(manifest);
   const missing = promised.filter((p) => !packed.has(p));
 
-  // npm drops a `files` entry matching nothing instead of erroring, so a package
-  // can publish without the LICENSE it claims to carry and every gate stays
-  // green. Directories and globs are npm's to expand; single files are checkable.
+  // npm drops a `files` entry matching nothing instead of erroring. Directories
+  // and globs are npm's to expand; single files are checkable.
   if (Array.isArray(manifest.files)) {
     const absent = manifest.files
       .filter((f) => typeof f === 'string' && !f.includes('*'))
@@ -111,9 +84,8 @@ for (const { dir, manifest } of packages) {
     if (absent.length > 0) fileListGaps.push({ name: manifest.name, absent });
   }
 
-  // A package whose manifest points at .d.ts files but whose tarball has none
-  // is the exact 0.5.0 failure. `missing` already covers it, but calling it out
-  // by name turns a list of paths into a diagnosis.
+  // `missing` already covers a tarball with no .d.ts at all; naming it turns a
+  // list of paths into a diagnosis.
   const promisesTypes = promised.some((p) => p.endsWith('.d.ts'));
   const shipsTypes = [...packed].some((p) => p.endsWith('.d.ts'));
 
@@ -157,10 +129,7 @@ if (failures.length > 0) {
 
 // Provenance is verified server-side against the manifest, so a package that
 // asks for an attestation without a `repository.url` is rejected at PUT — after
-// its siblings have already published. `@weasel-js/labkit@0.7.2` failed exactly
-// this way, alone, in a release whose other eleven packages went out fine. The
-// check is cheap and belongs beside the other "what will the registry think of
-// this tarball" questions.
+// its siblings have already published.
 const provenanceGaps = packages.filter(({ manifest }) => {
   if (manifest.publishConfig?.provenance !== true) return false;
   const url = typeof manifest.repository === 'string' ? manifest.repository : manifest.repository?.url;

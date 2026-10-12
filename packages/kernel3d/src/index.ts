@@ -1,14 +1,9 @@
 /**
- * `@weasel-js/kernel3d` — poses, an orbit camera, ray picking and
+ * `@weasel-js/kernel3d` — poses, an orbit camera, ray picking, and
  * screen-projected chrome over core's scene graph and dispatcher.
  *
  * It hosts a renderer rather than owning one: a consumer brings its own and
- * the kernel hands it poses. Nothing here touches WebGL, and nothing here
- * needs core to change — `Scene` is generic over its pose, the dispatcher
- * keeps passing two numbers, and each dep rebuilds the ray from the camera it
- * closes over.
- *
- * Direction: `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
+ * the kernel hands it poses. Nothing here touches WebGL.
  */
 
 export {

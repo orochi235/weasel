@@ -28,27 +28,17 @@ function validateId(id: string, kind: 'tool' | 'action'): void {
 }
 
 /**
- * Build a `Tool<TScratch>` from a declarative `ToolDef<TScratch>`.
- *
- * This used to be a translator: `ToolDef` carried `initial` / `engaged` phase
- * tables of hit-keyed route handlers, and `defineTool` compiled them into the
- * imperative `pointer` / `drag` / `keyboard` / `wheel` handlers the
- * tool-routing dispatcher called. Both ends of that are gone — tools declare
- * `bindings` and the gesture dispatcher routes them — so what remains is
- * identity plumbing plus the id check and the cursor resolver.
- *
- * It stays a function rather than becoming a spread because the id validation
- * and the `initScratch` / `cursor` defaults are worth applying uniformly, and
- * because `Tool.def` gives reflection a handle on the authored form.
+ * Build a `Tool<TScratch>` from a declarative `ToolDef<TScratch>`: validates
+ * the id, applies the `initScratch` / `cursor` defaults, and keeps the
+ * authored form on `Tool.def` for reflection.
  */
 export function defineTool<TScratch = void, TOverlay = KernelOverlay>(
   def: ToolDef<TScratch, TOverlay>,
 ): Tool<TScratch, TOverlay> {
   validateId(def.id, 'tool');
 
-  // Normalize `CursorSpec | ((ctx) => CursorSpec)` to the function form so
-  // callers have one shape to deal with. Returns '' (not undefined) so the
-  // signature satisfies `Tool.cursor: (ctx) => CursorSpec`.
+  // Returns '' (not undefined) so the signature satisfies
+  // `Tool.cursor: (ctx) => CursorSpec`.
   const resolveCursor = (ctx: ToolCtx<TScratch>): CursorSpec => {
     if (def.cursor == null) return '';
     return typeof def.cursor === 'function' ? def.cursor(ctx) : def.cursor;

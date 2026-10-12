@@ -33,12 +33,11 @@ export interface PropertyGroupProps extends PropertyMetricProps, StanceProps, Co
 
 /**
  * Visually-bordered group inside a PropertyList. Use to scope a set of
- * related rows under a heading (e.g. "Aqua", "Bevel", "Dome" sections
- * inside a fill effect's controls).
+ * related rows under a heading.
  *
  * A collapsible group keeps its rows mounted and hides them, so a control's
- * local state survives being folded away. It draws itself as a `<MotifFrame>`
- * in `motif`. `stance` and `tone` work as on `<PropertyPanel>`; in the default
+ * local state survives being folded away. `stance` and `tone` work as on
+ * `<PropertyPanel>`; in the default
  * `rule` motif a tone also draws the group's leading edge, which is how a list
  * of like groups — effects, tails — tells its members apart.
  * `leading` and `actions` put a handle and controls in the title row, and the

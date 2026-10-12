@@ -8,8 +8,7 @@
 // Requires resvg on PATH (`brew install resvg`).
 //
 // Everything drawn here comes from `bakeCursor`, so the sheet cannot disagree
-// with the asset that ships. The true-size cells embed the baked data URI
-// verbatim; the large cells inline its body so the geometry stays vector.
+// with the asset that ships.
 
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';

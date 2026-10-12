@@ -1,8 +1,6 @@
 /**
- * Minimal node interface for the simulation primitive. Matches d3-force's
- * node shape exactly so d3-force's bundled forces work without translation.
- *
- * Consumers extend this with arbitrary additional fields (id, label, etc.).
+ * Matches d3-force's node shape exactly so d3-force's bundled forces work
+ * without translation. Consumers extend this with additional fields.
  */
 export interface SimulationNode {
   x: number;
@@ -46,14 +44,10 @@ export interface UseSimulationOptions<TNode extends SimulationNode>
  *
  * Each tick applies every force and then integrates velocities, scaled by
  * `alpha` — a temperature that decays toward `alphaTarget` so the layout
- * settles instead of jittering forever. Raise `alphaTarget` to reheat it,
- * which is what a drag does.
+ * settles. Raise `alphaTarget` to reheat it.
  *
  * Nodes are mutated in place; the simulation holds the array, not a copy.
- *
- * Nothing here advances time. {@link Simulation} adds the frame loop; a caller
- * that wants the whole relaxation at once — a layout pass, a pre-warm, a test
- * — drives {@link SimulationCore.tick} itself.
+ * {@link Simulation} adds the frame loop.
  */
 export interface SimulationCore<TNode extends SimulationNode> {
   readonly nodes: TNode[];
@@ -72,10 +66,8 @@ export interface SimulationCore<TNode extends SimulationNode> {
   velocityDecay(): number;
   velocityDecay(value: number): this;
 
-  /**
-   * Run the tick body synchronously `iterations` times. Does NOT fire
-   * onTick or onEnd (matches d3-force). Used for offscreen pre-warm and tests.
-   */
+  /** Run the tick body synchronously `iterations` times. Does NOT fire
+   *  onTick or onEnd (matches d3-force). */
   tick(iterations?: number): this;
 
   isSettled(): boolean;

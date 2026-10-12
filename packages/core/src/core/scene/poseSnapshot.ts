@@ -2,16 +2,13 @@ import { isPlainObject, isPlainPrototype } from '../isPlainObject';
 /**
  * Comparing a pose against what it was, by value.
  *
- * For readers that cannot be told when a pose moved. A pose override mutates
- * its buffer in place, so holding the pose object and comparing references
- * sees nothing; holding a *copy* of its values and comparing those sees the
- * move without anyone pushing an invalidation.
+ * For readers that cannot be told when a pose moved: a pose override mutates
+ * its buffer in place, so comparing references sees nothing.
  *
- * `TPose` is opaque to the kit — a consumer's pose is whatever it declared —
- * so both sides walk plain objects, arrays and typed arrays, and fall back to
- * reference identity for anything else (a class instance, a `Map`). A pose of
- * that shape mutated in place still needs the scene's pushed invalidation,
- * which is unchanged either way.
+ * `TPose` is opaque to the kit, so both sides walk plain objects, arrays, and
+ * typed arrays, and fall back to reference identity for anything else (a
+ * class instance, a `Map`). A pose of that shape mutated in place still needs
+ * the scene's pushed invalidation.
  */
 
 /** How deep the walk goes before it stops copying and keeps the reference.

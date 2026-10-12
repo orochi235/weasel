@@ -1,28 +1,19 @@
 /**
  * The registry-keyed function fields a node can carry, as a table.
  *
- * `clipFromPose`, `derivePath` and `derivePose` are live functions on a node,
- * and a function travels through neither a serializable op payload nor a JSON
- * snapshot. Each one therefore needs the same five things: a function→key
- * reverse map, a side channel the `kit:add` redo path re-attaches from, a
- * name in the op payload, a name in the snapshot, and a registry lookup on
- * restore.
- *
- * The first two fields were written out twice, and `types.ts` said in a
- * comment that a third should be the point it stopped being copied per field.
- * This is that point.
+ * These fields are live functions on a node, and a function travels through
+ * neither a serializable op payload nor a JSON snapshot. Each one therefore
+ * needs the same things: a function→key reverse map, a name in the op
+ * payload, a name in the snapshot, and a registry lookup on restore.
  */
 import type { NodeId, SceneRegistry } from './types';
 
 /** A node's function field, opaque here: the table moves these around by
- *  reference and never calls one. Each field's real signature lives on `Node`.
- *  A container's `layout` is an object rather than a function, and rides the
- *  same table for the same reason — it travels by reference, not as data. */
+ *  reference and never calls one. A container's `layout` is an object rather
+ *  than a function, and rides the same table for the same reason. */
 export type NodeFn = ((...args: never[]) => unknown) | object;
 
-/** A node as this module reads it — a bag with the three fields on it. The
- *  full `Node` type would make the table generic in `TData`/`TLayer` for no
- *  gain; nothing here looks at either. */
+/** A node as this module reads it — a bag with the function fields on it. */
 export type FnBearingNode = { id: NodeId; kind: 'leaf' | 'container' } & {
   [K in NodeFnFieldName]?: NodeFn;
 };

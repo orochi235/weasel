@@ -1,18 +1,6 @@
 /**
  * End-to-end integration tests for viewportWheelPanAction and
  * viewportZoomAction via the gesture dispatcher.
- *
- * Proves:
- *   - plain wheel event → pan (viewportWheelPanAction fires, view.x/y updates)
- *   - Cmd+wheel event → zoom (viewportZoomAction fires, view.scale updates)
- *   - Cmd+= keydown → zoom in
- *   - Cmd+- keydown → zoom out
- *   - Cmd+0 keydown → zoom reset
- *
- * ## Provider tree
- *
- *   DepRegistryProvider > ActiveToolContextProvider
- *     > ActionsProvider > [MountDispatcher + RegisterViewDep + RegisterViewportActions]
  */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
@@ -29,10 +17,6 @@ import { viewportZoomAction } from '../actions/defaults/viewportZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
 
-// ---------------------------------------------------------------------------
-// Canvas mock (required for JSDOM which lacks canvas context)
-// ---------------------------------------------------------------------------
-
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
     getContext: (...args: unknown[]) => unknown;
@@ -44,16 +28,9 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-// ---------------------------------------------------------------------------
-// Platform detection: force non-mac so `mod` = ctrlKey in tests
-// ---------------------------------------------------------------------------
 // Tests fire ctrlKey: true to simulate Cmd/Ctrl on non-Mac. IS_MAC is derived
 // at module load time in useGestureDispatcher; tests run in jsdom which reports
 // a Linux user-agent, so mod → ctrlKey is the expected path.
-
-// ---------------------------------------------------------------------------
-// Test harness components
-// ---------------------------------------------------------------------------
 
 /** Simple mutable view API backed by a plain object. */
 function makeViewApi(initial: View): ViewApi & { current: View } {
@@ -141,10 +118,6 @@ function fireKey(
     }),
   );
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('viewportWheelPanAction integration', () => {
   it('plain wheel event pans the view by deltaX/deltaY / scale', () => {

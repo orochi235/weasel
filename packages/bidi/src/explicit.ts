@@ -1,13 +1,8 @@
 /**
  * X1–X8 — explicit embeddings, overrides and isolates.
  *
- * This is the pass that turns formatting codes into a level per character. It
- * is stack machinery rather than text analysis: nothing here looks at what the
- * characters *are* beyond their class, and the weak/neutral rules that follow
- * run over the levels this produces.
- *
- * Two asymmetries in the spec are easy to implement wrongly and are the reason
- * this file exists on its own:
+ * The pass that turns formatting codes into a level per character. Two
+ * asymmetries in the spec are easy to implement wrongly:
  *
  * - An embedding code (`RLE`/`LRE`/`RLO`/`LRO`/`PDF`) is *removed* by X9, while
  *   an isolate initiator and its `PDI` are kept and take the level of the text

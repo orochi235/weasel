@@ -1,30 +1,24 @@
 /**
  * Real-GL assertion for text antialiasing. Deliberately NO committed baseline:
- * this measures a *property* of glyph edges rather than their exact pixels, so
- * it survives the driver-to-driver rasterization differences that force
- * `text.spec.ts` up to a 5% tolerance — and that tolerance is precisely why a
- * golden image cannot catch this class of defect. A whole node's worth of text
+ * `text.spec.ts` runs at a 5% tolerance, and a whole node's worth of text
  * turning hard-edged stays under 5% of a 600×360 canvas.
  *
  * What it measures: at 16px, a correctly antialiased glyph spends *more*
- * pixels on partially-covered edges than on fully-covered interior. Stems are
- * one to two pixels wide, so edges dominate. If the shader's smoothstep band
- * collapses below a pixel, coverage quantizes to all-or-nothing and that ratio
- * inverts.
+ * pixels on partially-covered edges than on fully-covered interior. If the
+ * shader's smoothstep band collapses below a pixel, coverage quantizes to
+ * all-or-nothing and that ratio inverts.
  *
- * Measured on this scene (see the constants below for why the sample box is
- * where it is):
- *   fwidth()-derived band (correct)        partial/solid = 1.54
- *   constant 0.05 band (the 2026-07 bug)   partial/solid = 0.34
- * The 1.0 gate sits between them with room on both sides.
+ * Measured on this scene:
+ *   fwidth()-derived band (correct)   partial/solid = 1.54
+ *   constant 0.05 band                partial/solid = 0.34
+ * The 1.0 gate sits between them.
  */
 import { test, expect } from '@playwright/test';
 
 // Node `t1` from apps/site/demos/textDemoScene.ts: x 30, y 30, 240×80, a
-// single solid fill (#1c1c1c) at fontSize 16. Restricting the sample to one
-// node of one known color is what lets the thresholds below be absolute — the
-// demo's other nodes are blue, gray, and magenta, and their mid-luminance ink
-// would land in the "partial" bucket on coverage grounds alone.
+// single solid fill (#1c1c1c) at fontSize 16. One node of one known color
+// lets the thresholds below be absolute: the other nodes' mid-luminance ink
+// would land in the "partial" bucket whatever its coverage.
 const BOX = { x0: 30, y0: 30, x1: 270, y1: 110 };
 
 // #1c1c1c on white is ink 227 of 255. A pixel at full coverage sits at ~227,

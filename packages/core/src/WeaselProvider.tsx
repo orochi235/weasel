@@ -1,21 +1,3 @@
-/**
- * `<WeaselProvider>` — top-level convenience that mounts all five kit-root
- * contexts in a single wrap. By default each underlying provider uses its
- * `IfRoot` variant, so `<WeaselProvider>` is safely nestable: when a parent
- * `<WeaselProvider>` (or any of the individual providers) is already in
- * scope, the inner one renders its children unwrapped and defers to the
- * parent registry. `isolate` opts out of that.
- *
- * Use this at the harness / app root above any `useTools(...)` call so the
- * resulting `ToolsApi` is bound to the same `ActiveToolContext` the
- * surrounding `<SceneCanvas>` reads — otherwise keybinding-driven tool
- * switches update local state in the outer `useTools` but the dispatcher
- * (which reads the context) sees a stale active tool.
- *
- * Provider nesting order matches the order `<SceneCanvas>` mounts them
- * internally so swapping a manual SceneCanvas-wrapping setup for
- * `<WeaselProvider>` doesn't change effect ordering.
- */
 import type { ComponentType, ReactNode } from 'react';
 import { DepRegistryProviderIfRoot } from './canvas/SceneCanvas/DepRegistryProviderIfRoot';
 import { ActionsProviderIfRoot } from './canvas/SceneCanvas/ActionsProviderIfRoot';
@@ -39,22 +21,22 @@ export interface WeaselProviderProps {
    * in scope.
    *
    * An actions registry holds one dispatcher, so a second `<SceneCanvas>`
-   * joining a scope displaces the first and takes its input away. Two canvases
-   * on one page each want their own scope; wrap each in an isolated provider.
-   * The cost is that they share nothing — a toolbar outside both can drive
-   * neither.
+   * joining a scope displaces the first and takes its input away. Wrap each of
+   * two canvases on one page in an isolated provider. They then share
+   * nothing — a toolbar outside both can drive neither.
    */
   isolate?: boolean;
 }
 
 /**
  * Mounts every kit-wide provider at once — deps, actions, active tool,
- * selection and pointer — each only if one is not already in scope, or
+ * selection, and pointer — each only if one is not already in scope, or
  * unconditionally under `isolate`.
  *
  * `<SceneCanvas>` does this for itself, so this is for the case where kit
  * state has to be shared by things outside a canvas: a toolbar, a property
- * panel, or two canvases that should agree on the selection.
+ * panel, or two canvases that should agree on the selection. Mount it above
+ * any `useTools(...)` call, or the dispatcher sees a stale active tool.
  */
 export function WeaselProvider({ children, isolate = false }: WeaselProviderProps) {
   const Deps: Wrapper = isolate ? DepRegistryProvider : DepRegistryProviderIfRoot;

@@ -2,17 +2,11 @@
  * What a fragment shader's arithmetic costs, isolated from everything else.
  *
  * The other perf specs measure frames of many small commands, where the cost is
- * draw calls and buffer uploads and a fragment runs a handful of times per
- * command. That workload cannot see fill rate at all: adding `fwidth` and a
- * median to `batchFill` moved a 15,000-command wall by less than the same tree
- * moves between two runs an hour apart. This one goes the other way — a few
- * huge overlapping quads, so per-command overhead rounds to nothing and almost
- * all the time is fragments.
- *
- * It answers "can this shader afford another instruction", which is the
- * question every merge into the batch program raises. Variants are compiled in
- * one page and timed one frame a task, interleaved sample by sample, so drift
- * moves all of them.
+ * draw calls and buffer uploads, and cannot see fill rate at all. This one
+ * draws a few huge overlapping quads, so per-command overhead rounds to nothing
+ * and almost all the time is fragments. Variants are compiled in one page and
+ * timed one frame a task, interleaved sample by sample, so drift moves all of
+ * them.
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
@@ -29,11 +23,8 @@ const H = 900;
 
 /**
  * Full-viewport quads per frame. Sized so one frame is milliseconds of GPU
- * work rather than a fraction of one: at 40 layers a sample ran ~0.5 ms and
- * scattered +/-30%, which is the clock ramping, and no shader difference
- * survives that.
- *
- * The blend is on, so nothing is discarded early and every layer really runs.
+ * work rather than a fraction of one, where samples scatter more than any
+ * shader difference. The blend is on, so every layer really runs.
  */
 const LAYERS = 400;
 /** Single-frame samples per variant per run, interleaved (`lib/frameTiming.ts`). */
@@ -130,12 +121,8 @@ void main() {
       /**
        * The same again, plus the one thing the coordinate-carrying gradients
        * add to a fragment that is not one: the sample's coordinate stops being
-       * a varying and becomes a value the shader computed.
-       *
-       * The branch is never taken here — that is the point. What is being
-       * priced is not the `atan` inside it, which a non-gradient never runs,
-       * but whether a texture read the hardware can no longer schedule against
-       * a plain varying costs anything on its own.
+       * a varying and becomes a value the shader computed. The branch is never
+       * taken here: what is priced is the texture read, not the `atan`.
        */
       const WITH_GRADIENT_UV = `#version 300 es
 precision highp float;
@@ -167,11 +154,7 @@ void main() {
       /**
        * The same again with the sample split across the branch instead: the
        * gradient arm reads its computed coordinate, and every other fragment
-       * reads the varying it always did.
-       *
-       * The shipping shader is written this way. What it buys over
-       * `gradient-uv` is the whole difference between the two here — a texture
-       * read the hardware can schedule against a varying, and one it cannot.
+       * reads the varying it always did. The shipping shader is written this way.
        */
       const WITH_SPLIT_SAMPLE = `#version 300 es
 precision highp float;
@@ -296,9 +279,8 @@ void main() {
     byVariant.set(r.variant, list);
   }
 
-  // The minimum run, not the median: contention, scheduling and a cool clock can
-  // only make a run slower, so the fastest run of each variant is the one
-  // least contaminated by everything this spec is not trying to measure.
+  // The minimum run, not the median: contention, scheduling, and a cool clock
+  // can only make a run slower.
   const settled = (name: string) => byVariant.get(name)!.slice(WARMUP_RUNS);
   console.log(`  plain through finish ${finishMs.toFixed(3).padStart(7)} ms/frame, through a readPixels ${drainMs.toFixed(3)}`
     + '  (far apart means finish does not wait for the GPU)');

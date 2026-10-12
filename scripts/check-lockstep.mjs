@@ -2,17 +2,10 @@
  * Refuse a publishable workspace that is missing from the changesets `fixed`
  * group, and refuse a version that has drifted out of lockstep.
  *
- * Every published package moves together: one bump anywhere moves all of them.
- * That is not a property of the repo, it is a property of the one `fixed` array
- * in `.changeset/config.json`, and that array is a hand-written list of names.
- * A package added to `packages/` and not to the list keeps its own version
- * quietly and forever — `changeset version` has no reason to complain, and the
+ * The `fixed` array in `.changeset/config.json` is a hand-written list of
+ * names. A package added to `packages/` and not to the list keeps its own
+ * version quietly — `changeset version` has no reason to complain, and the
  * drift only shows up when a consumer installs two siblings that disagree.
- *
- * The version check is the same claim from the other side: if the group is
- * right and nobody hand-edited a `package.json`, every member already agrees.
- *
- * Run: node scripts/check-lockstep.mjs
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -45,8 +38,7 @@ const groups = config.fixed ?? [];
 const pkgs = publishable();
 const problems = [];
 
-// A second group would mean two independent version lines, which is a design
-// change rather than a mistake — say so rather than guessing which one is home.
+// A second group would mean two independent version lines: a design change, not a mistake.
 if (groups.length > 1) {
   problems.push(
     `\`fixed\` holds ${groups.length} groups; this check assumes one. Teach it the ` +

@@ -129,7 +129,7 @@ without a canvas. The layout defaults to `layered`, picked by name or passed as
 any `LayoutFn`; `layoutOptions` merge over `order: 'barycenter'`, and
 `'none'` leaves every node at its `at`.
 
-`DiagramView` is the front door for the whole package. The data owns the
+The data owns the
 diagram: a new `specs` array is reconciled into the scene the view already
 holds (`reconcileSpecs` in core), so the view, the pick and anything moved
 since survive it. Editing reports rather than writes —
@@ -157,7 +157,7 @@ readable; the rest is a pan away.
 
 ## Design notes
 
-Five decisions the code cannot explain on its own.
+Decisions the code cannot explain on its own.
 
 **`dependsOn: 'children'` is deliberately absent from the reverse dependents
 index.** Deleting a node deletes everything that names it in `dependsOn`, and a

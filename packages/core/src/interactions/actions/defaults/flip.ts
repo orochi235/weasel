@@ -56,24 +56,14 @@ function localMirror(
 }
 
 /**
- * Flip the current selection in `scene` along `axis`, using the
- * `poseDescriptor` dep. Called from `flipAction.invoker.run`.
- *
- * Builds one `createTransformOp` per selected node (from = pre-flip pose,
- * to = flipped pose) and routes the batch through the consumer commit hook.
- * Mirrors `moveAction`/`nudge`'s `commitOps` helper: when `deps.applyOps` is
- * present the ops route through the consumer's history (one undo entry there);
- * otherwise they apply straight to the scene's own history via
- * `scene.applyBatch` + `defaultCommitAdapter`. Either way the whole flip is a
- * single batch → one undo entry, preserving the old `scene.batch('Flip', …)`
- * semantics exactly.
+ * Flip the current selection in `scene` along `axis`, as one undo entry.
  *
  * Pivot: `'each'` (per-item own AABB) unless the caller passes `'union'`,
  * which mirrors every pose about the selection's *visual* union AABB — the
  * rotated ink extents — so items swap sides as well as reflect, or a
  * `SpatialReference`, which mirrors about the center of what it names. A rotated
  * member's own mirrored position needs no expansion: `axisAlignedBounds`
- * keeps the stored box's centre, so mirroring either box lands the same place.
+ * keeps the stored box's center, so mirroring either box lands the same place.
  */
 function flipSelection(
   selection: SelectionApi,
@@ -117,8 +107,6 @@ function flipSelection(
     if (sharedPivot === null) return;
   }
 
-  // Read poses BEFORE building ops so each op's `from` is the pre-flip value
-  // (the same value the old direct mutation captured implicitly).
   const ops: Op[] = [];
   for (const id of ids) {
     const node = scene.get(id);
@@ -134,10 +122,9 @@ function flipSelection(
       to: frame.local(id, flipped),
       label: 'Flip',
     }));
-    // Mirror the data-held geometry about the SAME pivot the pose flip uses,
-    // so a wired geometryProjection reflects the contents in lock-step with
-    // the frame. A pose-only flip of a bare-AABB pose is identity, so this
-    // data op is the only way an asymmetric shape actually mirrors.
+    // Mirror the data-held geometry about the SAME pivot the pose flip uses.
+    // A pose-only flip of a bare-AABB pose is identity, so this data op is
+    // the only way an asymmetric shape actually mirrors.
     const g = about ?? geom.getBounds(world);
     const dataOp = geometryDataOp(
       geometryProjection,
@@ -155,14 +142,9 @@ function flipSelection(
 
 /**
  * @experimental
- * Static descriptor for the unified `flip` Action.
- *
- * Collapses the old `flip.horizontal` and `flip.vertical` pair into one action
- * with two parametric gesture bindings. The axis (`'x'` | `'y'`) is carried in
- * `opts.params.axis` and forwarded to `invoker.run` by the dispatcher, as is
- * the optional `opts.params.pivot` (a `FlipPivot`, default `'each'`).
- *
- * Requires dep-schema entries: `selection`, `scene`.
+ * Flips the selection. `params.axis` (`'x'` | `'y'`, default `'x'`) picks the
+ * direction, and the optional `params.pivot` (a `FlipPivot`, default `'each'`)
+ * picks what it mirrors about.
  */
 export const flipAction: Action & { requires: string[] } = {
   id: 'flip',

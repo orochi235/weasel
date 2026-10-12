@@ -1,20 +1,16 @@
 /**
  * Where a text node's lines actually sit inside its pose box.
  *
- * A text pose is a layout box, not a bounding box: `"Away"` in a 309-unit-wide
- * box leaves most of the box empty, and anything that treats the pose as the
- * node's extent — picking, lasso, clipping, SVG export — claims that empty
- * space. `textLineBoxes` returns the per-line rectangles instead.
- *
- * The numbers come from `layoutTextPose`, the layout every painter of a text
- * pose draws, so the boxes cannot drift from what is painted — they wrap only
- * where the style declares `wrap`, and honor `align` and `verticalAlign`.
+ * A text pose is a layout box, not a bounding box, and anything that treats
+ * the pose as the node's extent — picking, lasso, clipping, SVG export —
+ * claims its empty space. The numbers come from `layoutTextPose`, the layout
+ * every painter of a text pose draws, so the boxes cannot drift from what is
+ * painted.
  *
  * These are line boxes, not ink boxes: each is `fontSize * lineHeight` tall
  * from the pen's line top. Ink can escape vertically at a `lineHeight` low
- * enough — see the `bounds` note at the end of `layoutRuns` — which is the
- * right trade for hit-testing, where a box that hugged the ink would make
- * an `x` harder to click than an `X`.
+ * enough, which is the right trade for hit-testing, where a box that hugged
+ * the ink would make an `x` harder to click than an `X`.
  */
 
 import type { Rect } from '@weasel-js/geom';

@@ -1,23 +1,7 @@
 /**
- * Default-keybindings matrix.
- *
- * Single happy-path proof that every kit-standard keystroke reaches the
- * action it's bound to under a default `<SceneCanvas>` mount. Each
- * individual binding has narrower coverage scattered across other suites
- * (useKeybindings registration tests, per-action behavior tests,
- * SceneCanvas.actions.behavior, etc.). What this file adds is one place
- * to look — break a default key, exactly one matrix row fails.
- *
- * Two halves:
- *
- * 1. **Tool-activation keys** (`tool.activate`) — mounted via
- *    `toolBundle="exhaustive"` so every built-in tool is in the registry.
- *    Spy the `tool.activate` invoker; assert each tool's key fires it
- *    with the right `toolId`.
- *
- * 2. **Action keys** (Cmd/Ctrl combos + bare Escape) — each shadowed
- *    with a spy `invoker.run` via the `actions` override prop; assert
- *    one dispatch per key.
+ * Default-keybindings matrix: every kit-standard keystroke reaches the action
+ * it's bound to under a default `<SceneCanvas>` mount. Break a default key and
+ * exactly one matrix row fails.
  *
  * jsdom isn't Mac, so `mod: true` in default bindings resolves to
  * `ctrlKey` — the tests fire `ctrlKey: true` accordingly.
@@ -85,11 +69,9 @@ const TOOL_KEY_MATRIX: readonly ToolKeyCase[] = [
 ];
 
 // `useKeybindings` registers `tool.activate` after the consumer-supplied
-// `actions` prop is processed, which makes a spy on `tool.activate`'s
-// invoker unreliable here. The observable end-state is what matters: the
-// active-tool context updates. We lift our own provider above SceneCanvas
-// (the `IfRoot` variant inside is a no-op when one is already present)
-// and peek at it from a sibling consumer.
+// `actions` prop is processed, which makes a spy on its invoker unreliable
+// here. So we lift our own active-tool provider above SceneCanvas and read
+// the context from a sibling.
 function ActiveTap({ tapRef }: { tapRef: { current: string | null } }) {
   const ctx = useActiveToolContext();
   tapRef.current = ctx.active;
@@ -101,9 +83,8 @@ describe('default keybindings: tool activation', () => {
     it(label, () => {
       const scene = makeScene();
       const tap: { current: string | null } = { current: null };
-      // Initial active starts at something OTHER than the target so the
-      // keystroke causes an observable transition (vs. confirming we
-      // started in the right state by coincidence).
+      // Start on something OTHER than the target so the keystroke causes an
+      // observable transition.
       const initial = toolId === 'select' ? 'hand' : 'select';
       render(
         <ActiveToolContextProvider initialActive={initial}>
@@ -159,9 +140,8 @@ describe('default keybindings: action shortcuts', () => {
           height={64}
           actions={{
             [actionId]: {
-              // `enabled: () => true` defeats any precondition gate the
-              // default action might have (e.g. requires non-empty
-              // selection). The matrix is checking dispatch, not gating.
+              // `enabled: () => true` defeats any precondition gate: the
+              // matrix is checking dispatch, not gating.
               invoker: { timing: 'immediate' as const, run: () => { run(); } },
               enabled: () => true,
             },

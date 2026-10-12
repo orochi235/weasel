@@ -5,26 +5,12 @@ import type { Rule } from '@weasel-js/routing';
  * Kit-shipped defaults. Merged with the consumer's `chromeVisibility` map
  * at resolve time; consumer entries take precedence per id.
  *
- * Written as literal Rule trees rather than fluent chains so the inputs
- * each rule depends on are immediately visible. The fluent atoms compile
- * to the same trees; either form is valid in a VisibilityRules entry.
- *
  * Gating is written in terms of **capabilities, not mode ids**. A
  * capability rule keeps holding when a new mode is added that permits the
- * same thing; a mode rule has to be found and edited every time. There is
- * no `mode:` rule left in this table — the `path-edit.*` chrome used to be
- * the exception, on the theory that it's the visual signature of one mode;
- * see the comment on those rules below for why that was wrong in both
- * directions and what replaced it.
- *
- * Chrome that gates on the *absence* of a capability (the selection
- * outline, suppressed while an anchor-editing overlay owns the visuals)
- * uses `capability: { not: … }` for the same reason.
+ * same thing; a mode rule has to be found and edited every time.
  */
 export const defaultVisibilityRules: VisibilityRules = {
-  // Static selection chrome — visible while a selection exists, but off
-  // whenever an anchor-editing overlay has taken over the visuals (today:
-  // path-edit mode; tomorrow: anything else that allows `edits-anchors`).
+  // Off whenever an anchor-editing overlay has taken over the visuals.
   'selection.outline': {
     all: [
       { selection: { atLeast: 1 } },
@@ -33,10 +19,7 @@ export const defaultVisibilityRules: VisibilityRules = {
   } as Rule,
 
   // Handles hide during an action so the moving / resizing object isn't
-  // visually crowded; they reappear on commit. Gated on the mode actually
-  // permitting transforms — grabbing a resize handle in a mode that
-  // forbids `transforms-selection` could only ever be a no-op — and on the
-  // selection being resizable (consumer `resizable` predicate).
+  // visually crowded; they reappear on commit.
   'selection.resize-handles': {
     all: [
       { selection: { atLeast: 1 } },
@@ -46,10 +29,6 @@ export const defaultVisibilityRules: VisibilityRules = {
     ],
   } as Rule,
 
-  // Rotation handle visible whenever any selection is focused — single
-  // mode pivots around the selected node's center; multi mode pivots
-  // around the union AABB center. Same transform gating as resize; also
-  // off during an action.
   'selection.rotation-handle': {
     all: [
       { selection: { atLeast: 1 } },
@@ -64,20 +43,12 @@ export const defaultVisibilityRules: VisibilityRules = {
   'action.lasso':       { actionIs: 'lasso' } as Rule,
   'action.move-ghosts': { actionIs: 'move' } as Rule,
 
-  // Path-edit chrome — gated on there actually being an edited path.
-  //
-  // This used to read `{ mode: 'path-edit' }`, which was wrong in both
-  // directions. Consumers with no mode registry report mode `'normal'`,
-  // so the anchor hit-test (which asks `isVisible('path-edit.anchors')`)
-  // refused every anchor while the overlay — which never consulted the
-  // table at all — drew them anyway: visible but not grabbable, the exact
-  // failure this table exists to make impossible. And a consumer defining
-  // its own anchor-editing mode under a different id got neither.
-  //
-  // `editingAnchors` is the state both surfaces actually care about. It's
-  // a state selector rather than a `capability:` one on purpose: the
+  // Path-edit chrome — gated on there actually being an edited path, not on
+  // `{ mode: 'path-edit' }`: consumers with no mode registry report mode
+  // `'normal'`, and one defining its own anchor-editing mode uses another id.
+  // A state selector rather than a `capability:` one on purpose: the
   // capability says the user *may* edit anchors, which is not the same as
-  // a path *being* edited, and drawing anchors for the former is wrong.
+  // a path *being* edited.
   'path-edit.anchors': { editingAnchors: true } as Rule,
   'path-edit.overlay': { editingAnchors: true } as Rule,
 
@@ -85,7 +56,6 @@ export const defaultVisibilityRules: VisibilityRules = {
   'snap.guides': { gesturing: true } as Rule,
   // 'snap.targets' — no default; consumer-driven for now.
 
-  // 'grid' / 'debug.*' — no default; visibility currently driven by
-  // dedicated boolean props on <SceneCanvas>. They'll move into this
-  // table as they migrate.
+  // 'grid' / 'debug.*' — no default; visibility is driven by dedicated
+  // boolean props on <SceneCanvas>.
 };

@@ -1,14 +1,10 @@
 /**
  * Reading a layer's draw envelope.
  *
- * Every `RenderLayer.draw` receives the drawing view's {@link CanvasHelpers} as
- * its `data` argument, and `<CanvasView>` overlays its own half before handing
- * the stack to a second camera. A layer that answers from a construction
- * closure instead therefore answers for view zero in every view — so these
- * lookups exist to make the envelope the easy source.
- *
- * A layer drawn by a bare consumer may get plain data instead, which is why
- * each reader has an "unwired" answer rather than throwing.
+ * Every `RenderLayer.draw` receives the drawing view's `CanvasHelpers` as its
+ * `data` argument. A layer that answers from a construction closure instead
+ * answers for view zero in every view. A layer drawn by a bare consumer may
+ * get plain data, so each reader has an "unwired" answer rather than throwing.
  */
 import type { ChromeState } from 'core/selection/chromeState';
 import type { OngoingOverlay } from '@weasel-js/routing';

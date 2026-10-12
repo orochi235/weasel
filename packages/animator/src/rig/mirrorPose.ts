@@ -2,17 +2,11 @@ import type { JointTransform, Pose, Skeleton } from './types';
 
 /**
  * `pose` reflected across the rig's y axis, as deltas against the same
- * skeleton — so the mirrored pose still blends, samples and resolves like any
- * other.
+ * skeleton — so the mirrored pose still blends, samples, and resolves like any
+ * other, and a rig faces the other way without a negative scale anywhere.
  *
- * Reflecting a joint chain is conjugation: every local transform `T·R·S`
- * becomes `F·T·R·S·F` with `F` the flip, which is again a plain transform
- * with `x` and `rotation` negated. Every resolved joint is then exactly the
- * original's reflection, which is how a rig faces the other way without a
- * negative scale anywhere — a scene pose such as `RectPose` has no term to
- * carry one. The negation applies to bind plus delta, so the delta for a
- * joint the pose leaves at its bind is nonzero whenever the bind is.
- *
+ * Each joint's `x` and `rotation` are negated as bind plus delta, so the delta
+ * for a joint the pose leaves at its bind is nonzero whenever the bind is.
  * Applying it twice gives the original pose back.
  */
 export function mirrorPose(skeleton: Skeleton, pose: Pose): Pose {

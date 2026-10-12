@@ -5,33 +5,16 @@ import { weaselDefines } from './scripts/vite-build-info';
 // Build-identity globals (`__WEASEL_CORE_VERSION__`, `__WEASEL_BUILD_DATE__`).
 // Real builds get these from vite `define`, but vitest transforms modules
 // through its own SSR pipeline, where define substitution doesn't run — so
-// under test the identifiers stay live and resolve against globalThis. Every
-// consumer guards with `typeof x === 'string'`, which is exactly what makes
-// that work. Assigning the same values the vite configs inject keeps
-// `VERSION` truthful in tests instead of the unknown-build fallback.
+// under test the identifiers stay live and resolve against globalThis.
 for (const [name, json] of Object.entries(weaselDefines(process.cwd()))) {
   (globalThis as Record<string, unknown>)[name] = JSON.parse(json);
 }
 
-/**
- * jsdom does not ship PointerEvent. When @testing-library/dom tries to use
- * window.PointerEvent to create pointer events it falls back to window.Event,
- * which doesn't expose modifier-key properties (shiftKey, altKey, etc.).
- *
- * This polyfill extends MouseEvent so that:
- *   - clientX / clientY propagate correctly (via MouseEventInit)
- *   - modifier keys (shiftKey, altKey, metaKey, ctrlKey) work
- *   - basic PointerEvent fields (pointerId, isPrimary, pointerType) work
- */
 // jsdom does not implement HTMLCanvasElement.prototype.getContext — it throws
-// "Not implemented" unless the (native, heavy) `canvas` package is installed.
-// Every component that mounts a <Canvas>/<SceneCanvas> tripped this, flooding
-// CI logs with identical stack dumps. Provide a non-throwing default:
-//   - '2d'    → a no-op context stub (enough surface for text/pattern paths)
-//   - 'webgl2'/'webgl' → null, which Canvas.tsx's renderer guard already
-//     treats as "no GL here, bail silently" (the jsdom code path).
-// Tests that need to assert on getContext (e.g. Canvas.test.tsx) still spy on
-// or re-stub it locally; this is only the quiet baseline.
+// "Not implemented" unless the native `canvas` package is installed. Provide a
+// non-throwing default: a no-op stub for '2d', and null for GL, which the
+// renderer treats as "no GL here". A test that asserts on getContext re-stubs
+// it locally.
 if (typeof HTMLCanvasElement !== 'undefined') {
   const make2dStub = (canvas: HTMLCanvasElement) => ({
     canvas,
@@ -64,8 +47,7 @@ if (typeof HTMLCanvasElement !== 'undefined') {
 }
 
 // Same gap as getContext above: jsdom only defines `ImageData` when the native
-// `canvas` package is installed, so code that legitimately constructs one in a
-// browser (a GL texture source) throws here.
+// `canvas` package is installed.
 if (typeof globalThis.ImageData === 'undefined') {
   class ImageDataStub {
     readonly data: Uint8ClampedArray;
@@ -87,8 +69,7 @@ if (typeof globalThis.ImageData === 'undefined') {
   (globalThis as { ImageData: unknown }).ImageData = ImageDataStub;
 }
 
-// Every browser has these; jsdom has none. The threads pool leaked Node's copies
-// in by accident, and a VM context does not, so they are given on purpose.
+// Every browser has these; jsdom has none, and a VM context does not get Node's.
 if (typeof globalThis.CompressionStream === 'undefined') {
   const web = await import('node:stream/web');
   Object.assign(globalThis, {
@@ -97,9 +78,10 @@ if (typeof globalThis.CompressionStream === 'undefined') {
   });
 }
 
+// jsdom does not ship PointerEvent, and @testing-library/dom then falls back to
+// window.Event, which carries no modifier keys or client coordinates.
 if (typeof window !== 'undefined' && !window.PointerEvent) {
   class PointerEvent extends MouseEvent {
-    // PointerEvent-specific fields
     pointerId: number;
     width: number;
     height: number;
@@ -130,9 +112,7 @@ if (typeof window !== 'undefined' && !window.PointerEvent) {
 }
 
 // jsdom doesn't implement CSS.escape, which react-aria-components uses
-// when reaching into selection collections by id. Without it any test
-// that opens a Select / Menu / ComboBox listbox throws TypeError on
-// `escape`. Use the spec's algorithm via a minimal polyfill.
+// when reaching into selection collections by id.
 if (typeof window !== 'undefined' && (typeof (window as any).CSS === 'undefined' || !((window as any).CSS as { escape?: unknown }).escape)) {
   const CSSObj = ((window as any).CSS ?? {}) as { escape?: (s: string) => string };
   CSSObj.escape = (value: string): string => {

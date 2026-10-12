@@ -5,11 +5,8 @@
  * cannot see the other half: `wrapNodeOutput` turns the painter's output about
  * that pose's center, so a composed pose that is right in the walk and wrong in
  * the wrap produces correct numbers and a visibly wrong picture. This reads the
- * geometry the renderer would actually draw.
- *
- * A framebuffer check would be better still and needs a browser; this is the
- * closest a unit test gets, and it is a proxy — see `tests/visual/` for the
- * real thing.
+ * geometry the renderer would actually draw; it is a proxy for a framebuffer
+ * check, which needs a browser.
  */
 import { describe, expect, it } from 'vitest';
 import { buildSceneViewCommands } from './sceneViewRender';

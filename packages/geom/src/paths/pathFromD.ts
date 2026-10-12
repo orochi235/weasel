@@ -2,25 +2,11 @@
  * `pathFromD` — build a weasel `Path` from an **SVG path-data string** (the
  * value of SVG's `d` attribute, e.g. `"M0 0 L100 0 Z"`).
  *
- * This is the terse, declarative composition surface for geometry: a
- * consumer authors a shape as `d` and hands it straight to a scene/op API,
- * instead of chaining imperative builder calls. SVG `d` is deliberately the
- * language — it's a standard every consumer already knows, so the kit gets
- * path-language expressiveness without minting a new one. See
- * `docs/conventions.md` ("Compose scenes in a terse path language").
- *
  * Lowers every supported command (M/m L/l H/h V/v C/c S/s Q/q T/t A/a Z/z)
  * into weasel's `PathBuilder` primitives (move, line, cubic, quadratic,
- * close). Smooth (`S`/`s`/`T`/`t`) commands resolve their implicit reflected
- * control point from the previous cubic / quadratic. Arc commands (`A`/`a`)
- * convert to a series of cubic Bezier curves using the standard
- * endpoint-parameterization formulas (F.6.5 in the SVG spec): we reconstruct
- * the center, sweep angle, and a fixed number of (≤ 90°) cubic segments per
- * arc.
- *
- * No runtime dependency — a small hand-rolled parser. `@weasel-js/svg`'s
- * document parser (`parseSvg`) calls this for `<path d=…>` elements, so the
- * `d` grammar coverage is shared between the two entry points.
+ * close). Arc commands (`A`/`a`) convert to a series of cubic Bezier curves
+ * using the standard endpoint-parameterization formulas (F.6.5 in the SVG
+ * spec).
  */
 
 import { PathBuilder } from './builder';
@@ -107,11 +93,8 @@ function readArcArgs(s: string): number[] {
   return out;
 }
 
-/**
- * Per-command argument counts (in floats). M/L/T = 2 coords; H/V = 1;
- * C = 6 (two controls + endpoint); S/Q = 4; A = 7 (rx ry x-axis-rotation
- * large-arc-flag sweep-flag x y).
- */
+/** Per-command argument counts (in floats). A = 7: rx ry x-axis-rotation
+ *  large-arc-flag sweep-flag x y. */
 const ARG_COUNTS: Record<string, number> = {
   M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7, Z: 0,
 };
@@ -297,11 +280,7 @@ function runCommand(
 /**
  * Convert an SVG elliptical arc segment to a series of cubic Bezier
  * `curveTo` calls on the builder. Standard endpoint-parameterization
- * implementation (SVG spec appendix F.6.5):
- *
- *   1. Handle degenerate cases (zero radii → line; same endpoints → noop).
- *   2. Compute the implicit center, start/sweep angles.
- *   3. Split the sweep into ≤ 90° pieces; each piece becomes one cubic.
+ * implementation (SVG spec appendix F.6.5).
  */
 function arcToCubics(
   x1: number, y1: number,

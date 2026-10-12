@@ -1,12 +1,10 @@
 /**
  * What a CSF `play` function asserts with.
  *
- * A play runs in the test page beside the story — a real browser document,
- * driven by `forgeTest` under vitest; the workshop never runs one — so it
- * cannot import `vitest`, whose entry only exists inside a test worker. This module assembles the same
+ * A play runs in the test page beside the story, so it cannot import `vitest`,
+ * whose entry only exists inside a test worker. This module assembles the same
  * `expect` vitest hands a test: chai carrying `@vitest/expect`'s jest-style
- * matchers. Queries and input come from testing-library, which is already
- * browser-only.
+ * matchers.
  *
  * No jest-dom matchers. They install through `expect.extend`, which wants the
  * matcher state a test worker sets up, and there is none here — the call

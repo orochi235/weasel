@@ -36,7 +36,6 @@ export interface EffectRenderProps<P = Record<string, never>> {
 }
 
 export interface EffectOffsetCtx<P = Record<string, never>> {
-  /** CSS px offset from the base perimeter point, in CSS px (caller scales to viewBox). */
   totalCss: number;
   perimeterAt: (s: number) => PerimeterPoint;
   params: P;
@@ -47,14 +46,11 @@ export interface EffectOffsetCtx<P = Record<string, never>> {
  * An effect layers visual treatment on top of the base shape. Two modes:
  *
  * - **offsetAt**: warp the perimeter. At each sample point `s` along the base perimeter,
- *   the effect contributes an additive (dx, dy) in CSS px to displace that sample.
- *   Spikes/puffs/bites/scallops use this. Multiple offset-style effects in the same badge
- *   compose by summing their offsets — so `[bites, spikes]` honestly draws a bitten outline
- *   with spikes radiating from it (the spike center samples just sit further out, but the
- *   inner bite samples between spikes still dip in).
+ *   the effect contributes an additive (dx, dy) in CSS px to displace that sample;
+ *   the caller scales it to the viewBox. Multiple offset-style effects in the same badge
+ *   compose by summing their offsets.
  * - **Component + zone**: draw decoration (bevel, sheen, woodgrain, rivets, shadow)
- *   without changing the silhouette. `zone: 'background'` draws before the body,
- *   `'foreground'` draws after. Decorations typically clip to the current sampler.
+ *   without changing the silhouette. Decorations typically clip to the current sampler.
  *
  * An effect may provide either or both.
  */

@@ -5,22 +5,15 @@ import { evaluate, ALWAYS, NEVER } from '@weasel-js/routing';
 import type { ModifierState } from '../../interactions/gestures/types';
 
 /**
- * Promote a Rule tree to a fluent Condition. The function form evaluates
- * the tree against a RuleCtx; combinator methods produce new Conditions
- * wrapping `all`/`any`/`not` nodes.
+ * Promote a Rule tree to a fluent Condition.
  *
  * **Chain semantics: strict left-to-right.** No boolean precedence.
  * `focused.or(hovering).and(selectionIs(1))` evaluates
- * `((focused || hovering) && selectionIs(1))` — NOT
- * `(focused || (hovering && selectionIs(1)))` as standard precedence
- * would give. For grouped disjunction, use the top-level `or` / `and` /
- * `not` helpers or name intermediates.
+ * `((focused || hovering) && selectionIs(1))`. For grouped disjunction, use
+ * the top-level `or` / `and` / `not` helpers or name intermediates.
  *
  * Combinators flatten same-kind nesting on construction so `a.and(b).and(c)`
- * produces `{ all: [a, b, c] }` rather than `{ all: [{ all: [a, b] }, c] }`.
- * Canonical form simplifies downstream introspection.
- *
- * Use {@link when} for the inline-lambda escape hatch.
+ * produces `{ all: [a, b, c] }`.
  */
 export function cond(rule: Rule): Condition {
   const fn = (ctx: RuleCtx) => evaluate(rule, ctx);
@@ -114,9 +107,7 @@ export const selectionIs = (n: number): Condition => cond({ selection: { is: n }
 export const selectionAtLeast = (n: number): Condition => cond({ selection: { atLeast: n } });
 
 /** Multi-mode handle behavior active (single shared union-bounds
- *  handle vs per-item handles). Implemented as a `when` because
- *  `multiActive` is a derived single-call read on RuleCtx, not a
- *  selector-table key. Stable; safe to introspect. */
+ *  handle vs per-item handles). */
 export const multiActive: Condition = cond({ when: (c) => c.multiActive });
 
 // ─── Hover atoms ────────────────────────────────────────────────────
@@ -138,7 +129,7 @@ export const modifierHeld = (m: keyof ModifierState): Condition => cond({ modifi
  *  `z`. Useful for "hide hairline chrome at low zoom" rules. */
 export const zoomAtLeast = (z: number): Condition => cond({ zoomAtLeast: z });
 
-// ─── Mode + capability atoms (new) ─────────────────────────────────
+// ─── Mode + capability atoms ───────────────────────────────────────
 
 /** Active mode equals `m`. */
 export const modeIs = (m: string): Condition => cond({ mode: m });
@@ -164,11 +155,8 @@ export const capabilityNot = (cap: string): Condition => cond({ capability: { no
 // ─── Device atoms ───────────────────────────────────────────────────
 
 /** Primary pointer is imprecise (touch, most styluses). Absent device
- *  profile → false, so a rule written with this atom is inert on the
- *  mouse-shaped default rather than silently flipping. */
+ *  profile → false. */
 export const coarsePointer: Condition = cond({ coarsePointer: true });
 
-/** Primary pointer can hover. Absent device profile → true. Pair with
- *  `not(...)` to gate chrome that only makes sense with a hovering
- *  pointer: `not(canHover)` is "this device cannot hover". */
+/** Primary pointer can hover. Absent device profile → true. */
 export const canHover: Condition = cond({ canHover: true });

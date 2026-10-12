@@ -26,20 +26,15 @@ const FIELD_SCALES = new Float32Array(2 * BATCH_TEXTURE_SLOTS);
 /**
  * Draw the staged run as one `drawElements`, under the state it was staged
  * under. Callers that are about to bind a different program, or paint anything
- * that must land on top of the run, call this first; a group that only changes
- * the color matrix does not, because `pushRect` notices and flushes then, and
- * one that only changes transform or alpha does not break the run at all.
+ * that must land on top of the run, call this first.
  *
- * Stencil clips are the exception: the stencil is real GL state that the
- * staged values cannot reconstruct, so `pushClip` flushes *before* writing a
- * bit, and `popClip` before clearing one a staged run tests. Rect clips never
- * reach the stencil while only staged geometry is inside them — see
- * `enterClip`.
+ * The stencil is real GL state that the staged values cannot reconstruct, so
+ * `pushClip` flushes *before* writing a bit, and `popClip` before clearing one
+ * a staged run tests.
  *
- * `u_color` stays white: the vertex-color program multiplies it by the
- * per-vertex color, so white makes the result bit-identical to the flat
- * program's `u_color`-only math. `u_model` stays identity for the same reason —
- * the corners arrive already transformed.
+ * `u_color` stays white because the program multiplies it by the per-vertex
+ * color, and `u_model` stays identity because the corners arrive already
+ * transformed.
  */
 export function flushBatch(ctx: DrawContext): void {
   const batch = ctx.drawBatch;

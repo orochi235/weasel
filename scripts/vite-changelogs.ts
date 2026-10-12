@@ -11,20 +11,18 @@ import type { ChangelogEntry, Release } from '../apps/shared/releases.ts';
  *
  *   import RELEASES from 'virtual:changelogs';
  *
- * All packages ship as one changesets `fixed` group, so a given version
- * number moves every package at once and the thirteen CHANGELOG files are
- * thirteen views of the same release. Entries are therefore keyed by their
+ * All packages ship as one changesets `fixed` group, so the per-package
+ * CHANGELOG files are views of the same release. Entries are keyed by their
  * changeset hash and merged across packages — one entry naming the packages
- * it touched, rather than the same prose repeated thirteen times.
+ * it touched.
  *
- * `Updated dependencies` stanzas are dropped: they are an artifact of the
- * fixed group (every release bumps every package's peers) and carry nothing
- * a reader wants. So is the same list written as a bare bullet, which is the
- * shape changesets uses when a package changed only by the bump.
+ * `Updated dependencies` stanzas are dropped, and so is the same list written
+ * as a bare bullet, which is the shape changesets uses when a package changed
+ * only by the bump.
  *
- * Pending `.changeset/*.md` files lead the list as an "Unreleased" entry. The
+ * Pending `.changeset/*.md` files lead the list as an "Unreleased" entry: the
  * site deploys from `main` on every push but publishes to npm only on a
- * release, so without it the page is stale against the build it ships in.
+ * release.
  *
  * Markdown is rendered to HTML here, at build time, so the client bundle
  * carries no markdown parser.

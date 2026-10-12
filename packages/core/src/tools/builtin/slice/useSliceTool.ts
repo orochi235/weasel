@@ -39,8 +39,7 @@ const VERTEX_RADIUS_PX = 3;
  * is released instead of cutting on its own.
  *
  * Every cut goes to the `slice` dep, which decides what it does to the scene.
- * `<SceneCanvas>` publishes one that cuts every path the cut crosses. The pending cut paints through
- * `Tool.overlay`, trailing to the pointer when the host publishes one.
+ * `<SceneCanvas>` publishes one that cuts every path the cut crosses.
  */
 export function useSliceTool(options: UseSliceToolOptions = {}): Tool<null> {
   const scratchRef = useRef<SliceScratch>({ points: [] });

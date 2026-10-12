@@ -5,13 +5,10 @@
  * Usage: node scripts/find-css-ties.mjs <forge-url> [story-id ...]
  *   npm run dev:forge, then
  *   node scripts/find-css-ties.mjs http://localhost:33453 labkit-lab-fullchrome--all-chrome
- * With no story ids, every story titled `labkit/…` is checked. Ids are read
- * from forge's own indexer rather than over HTTP, so this needs no endpoint
- * the workshop does not already serve.
+ * With no story ids, every story titled `labkit/…` is checked.
  *
  * Each page is seeded with a known collision first. A run that cannot find its
- * own canary reports the story as BROKEN rather than clean — an earlier version
- * of this probe reported "no collisions" against a plainly visible defect twice.
+ * own canary reports the story as BROKEN rather than clean.
  */
 import { resolve } from 'node:path';
 import { globSync, readFileSync } from 'node:fs';

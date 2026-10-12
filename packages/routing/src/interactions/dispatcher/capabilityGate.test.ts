@@ -1,15 +1,10 @@
 /**
- * `Eligibility.capabilities` — populated by `defineTool` from every
- * `ToolDef.capabilities` — gated nothing. `liveScope` short-circuits on
- * `state.allows &&`, and the dispatcher never supplied `allows`, so a tool
- * declaring a capability the active mode forbids kept routing input.
+ * A tool declaring a capability the active mode forbids stops routing input.
  *
- * Most tools were covered by accident: the action a binding points at repeats
- * the tag in its own `eligible` rule, a separate gate that does fire. What the
- * tool-level gate reaches is a binding whose action carries no rule —
- * `polygon.adjustSides` and `star.adjustPoints`, the wheel and arrow-key
- * bindings a shape tool owns, which kept routing in a mode that forbids
- * `creates-shapes` while the same tool's `insert` binding was stripped.
+ * Most tools are covered without this gate: the action a binding points at
+ * repeats the tag in its own `eligible` rule, a separate gate. What the
+ * tool-level gate reaches is a binding whose action carries no rule — the
+ * wheel and arrow-key bindings a shape tool owns.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createDispatcher } from './dispatcher';

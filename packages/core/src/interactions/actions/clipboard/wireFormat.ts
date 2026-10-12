@@ -36,20 +36,14 @@ export function sniffWeaselClipboardText(text: string): boolean {
   }
 }
 
-// Opening `<svg ...>` tag of a serialized document. `[^>]*` is safe for OUR
-// serializer's output (attribute values are XML-escaped, so no raw `>` can
-// appear inside the tag) — see embedWeaselMetadataInSvg's contract note.
+// `[^>]*` is safe for OUR serializer's output only: attribute values are
+// XML-escaped, so no raw `>` can appear inside the tag.
 const SVG_OPEN_TAG = /<svg(?:\s[^>]*)?>/i;
 
 /**
  * Embed a weasel clipboard payload in an SVG document as a `<metadata>`
  * child of the root — legal SVG 1.1, ignored by external tools — so one
- * `text/plain` flavor serves both audiences: external tools parse the SVG,
- * weasel extracts the JSON for full fidelity on draw→draw DOM paste.
- *
- * The payload rides in CDATA so JSON's `<` / `&` need no entity escaping; a
- * literal `]]>` inside the payload is split across CDATA sections
- * (`]]]]><![CDATA[>`), which {@link extractWeaselClipboardFromSvg} rejoins.
+ * `text/plain` flavor serves both audiences.
  *
  * Intended for OUR serializer's output only (`serializeSvg` — single
  * `<svg ...>` open tag, XML-escaped attributes). When no open tag is found
@@ -67,13 +61,9 @@ export function embedWeaselMetadataInSvg(svgText: string, payloadText: string): 
 }
 
 /**
- * Recover an embedded weasel clipboard payload from SVG text: read the first
- * `<metadata>` block, rejoin its CDATA sections (concatenation restores the
- * `]]>` split by {@link embedWeaselMetadataInSvg}; plain non-CDATA content
- * passes through as-is), and return the payload text iff it sniffs as the
- * weasel wire format — else null (external/non-weasel metadata declines).
- *
- * A text scan, not an XML parse — the payload is small and ours.
+ * The weasel clipboard payload embedded in SVG text by
+ * {@link embedWeaselMetadataInSvg}, or null when the first `<metadata>` block
+ * is absent or not the weasel wire format. A text scan, not an XML parse.
  */
 export function extractWeaselClipboardFromSvg(svgText: string): string | null {
   const block = /<metadata(?:\s[^>]*)?>([\s\S]*?)<\/metadata>/i.exec(svgText);

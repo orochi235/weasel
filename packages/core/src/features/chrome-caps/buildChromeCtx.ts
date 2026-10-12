@@ -1,15 +1,7 @@
 /**
- * Pure assembler for {@link ChromeCtx}.
- *
- * Called once per frame on the rendering side from whichever surface
- * needs to evaluate visibility rules — `composeAffordanceLayer`,
- * `createSelectionOverlayLayer`, the dispatcher overlay layer, etc.
- *
- * Sources are passed as plain getters / values rather than the live
- * objects they come from. This keeps `chrome-caps` from depending on
- * React, the dispatcher's concrete type, or `ChromeState`'s bounds
- * machinery — the same builder works from a test harness, a forge
- * story, or `<SceneCanvas>`.
+ * Pure assembler for {@link ChromeCtx}. Sources are passed as plain values
+ * rather than the live objects they come from, which keeps `chrome-caps`
+ * from depending on React or the dispatcher's concrete type.
  */
 
 import type { NodeId } from '../../core/scene/types';

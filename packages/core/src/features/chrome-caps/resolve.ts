@@ -6,15 +6,8 @@ import { defaultVisibilityRules } from './defaults';
 import { viewZoom } from 'core/viewport/view';
 
 /**
- * Build the per-frame visibility check. Merges consumer rules on top
- * of the kit defaults, then closes over `ctx` so each chrome-id
- * lookup runs its rule against the current state.
- *
- * `VisibilityRules` entries may be either fluent `Condition` values
- * (callable) or raw `Rule` trees — we normalize at lookup time.
- *
- * Predicates are O(1) and run once per chrome id per frame; no
- * memoization in v1 — profile before adding any.
+ * Build the per-frame visibility check: consumer rules merged on top of
+ * the kit defaults, evaluated against `ctx`.
  *
  * `ChromeCtx` is the legacy shape; surfaces still on it get `mode='normal'`
  * and `DEFAULT_ALLOWED_CAPABILITIES` filled in here, so a caller that never

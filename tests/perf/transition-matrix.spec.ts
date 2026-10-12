@@ -1,40 +1,25 @@
 /**
- * What a neighbour of a different kind costs: the pairwise transition matrix.
+ * What a neighbor of a different kind costs: the pairwise transition matrix.
  *
  * `frame-budget.spec.ts` prices each command kind on its own, where a frame of
- * one kind batches and holds state. Its `mixed-doc` row costs more than pricing
- * the same element mix from those rows predicts, and the difference has to be
- * the boundaries — a document interleaves kinds and every neighbour is a state
- * change. This measures a boundary directly.
+ * one kind batches and holds state. A document interleaves kinds and every
+ * neighbor is a state change. This measures a boundary directly.
  *
- * That gap was 3.5x when this spec was written, and is 1.37x now that the solid
- * batch cycles its buffers. The spec earns its keep either way: what it found
- * was that one kind carried nearly all of it, which is what made the fix
- * findable.
- *
- * For an ordered pair the frame alternates A and B, so it holds N/2 of each and
- * N-1 boundaries. Subtracting half of each kind's homogeneous frame leaves the
+ * For a pair the frame alternates A and B, so it holds N/2 of each and N-1
+ * boundaries. Subtracting half of each kind's homogeneous frame leaves the
  * boundaries alone, and dividing by N-1 puts the answer in microseconds per
- * boundary — a number that adds to a scene's cost once per adjacency, next to
- * per-command costs that add once per element.
+ * boundary.
  *
  * **An alternating frame cannot separate A→B from B→A.** Any cycle holds equal
  * counts of both, so a cell is the pair's cost, not a direction's. What it can
  * test is whether a boundary is a property of the *pair*: if every cell fits
  * `S(A,B) = f(A) + f(B)`, then each kind carries its own state cost and pays it
- * against any neighbour that is not itself. The report fits that model and
- * prints the residuals, so a pair that costs more than its two halves is
- * visible rather than assumed away.
+ * against any neighbor that is not itself. The report fits that model and
+ * prints the residuals.
  *
  * The diagonal is the instrument's resolution: `S(A,A)` is two measurements of
- * one frame, so it reports as noise in the same units as every other cell. Read
- * a cell against it. Each cell is the median of single frames drawn one per
- * task — `lib/frameTiming.ts` says why a block of frames in one task measures
- * something else.
- *
- * One renderer and one pool of leaves for the whole matrix, deliberately: the
- * caches key on object identity, so reusing the leaves is what makes every cell
- * a steady-state frame rather than a document load.
+ * one frame, so it reports as noise in the same units as every other cell. Each
+ * cell is the median of single frames drawn one per task (`lib/frameTiming.ts`).
  *
  * This reports; it does not gate. See `tests/perf/README.md`.
  */
@@ -112,8 +97,7 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
       const base = `/weasel/@fs${root}`;
       // One import of the renderer barrel, so the font and program registries
       // it reads are the module instances this code writes to. A second
-      // specifier can land on a second copy, and the symptom is a kind that
-      // silently paints nothing and therefore measures free.
+      // specifier can land on a second copy, and a kind then paints nothing.
       const rendererMod = await import(/* @vite-ignore */ `${base}/packages/renderer/src/index.ts`);
       const { WeaselRenderer, registerFont, registerProgram, registerTexture } = rendererMod;
       const kindsMod = await import(/* @vite-ignore */ `${base}/tests/perf/lib/kinds.ts`);
@@ -186,8 +170,7 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
         return frameMs(gl, () => renderer.render(cmds, identity));
       }
 
-      /** A kind that silently draws nothing measures free, which would make
-       *  every cell holding it a lie rather than merely a wrong number. */
+      /** A kind that silently draws nothing measures free. */
       function paintsAnything(kind: string): boolean {
         renderer.render([pools[kind][0]], identity);
         gl.finish();
@@ -222,10 +205,8 @@ test('transition matrix: what a neighbour of a different kind costs', async ({ p
         await report({ type: 'cell', index, run, slot, a, b, perFrameMs });
       };
 
-      // Homogeneous passes bracket the mixed cells rather than preceding them:
-      // averaging a baseline measured before and after straddles any drift the
-      // machine does while the 36 pairs run, instead of pinning the baseline to
-      // one end of it.
+      // Homogeneous passes bracket the mixed cells: averaging a baseline measured
+      // before and after straddles any drift while the pairs run.
       for (let run = 1; run <= runs; run++) {
         for (const k of kinds) await emit(run, 'hom1', k, k, pools[k]);
         for (let i = 0; i < kinds.length; i++) {

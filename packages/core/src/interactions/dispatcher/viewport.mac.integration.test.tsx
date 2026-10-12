@@ -44,10 +44,6 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-// ---------------------------------------------------------------------------
-// Harness
-// ---------------------------------------------------------------------------
-
 function makeViewApi(initial: View): ViewApi & { current: View } {
   const api = {
     current: { ...initial },
@@ -130,10 +126,6 @@ function fireKey(key: string, opts: { ctrlKey?: boolean; metaKey?: boolean } = {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Platform branch
-// ---------------------------------------------------------------------------
-
 describe('mac platform branch', () => {
   it('resolves `mod` to metaKey: Cmd+= zooms in and Ctrl+= does not', () => {
     const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });
@@ -150,10 +142,6 @@ describe('mac platform branch', () => {
     expect(viewApi.current.scale).toEqual({ x: 1.25, y: 1.25 });
   });
 });
-
-// ---------------------------------------------------------------------------
-// Trackpad pinch — the browser delivers it as ctrl+wheel
-// ---------------------------------------------------------------------------
 
 describe('mac trackpad pinch (ctrl+wheel)', () => {
   it('zooms the view and prevents the browser default', () => {

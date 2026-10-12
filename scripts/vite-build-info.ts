@@ -5,13 +5,7 @@
  * In-repo apps, dev servers, forge, and vitest all resolve `@weasel-js/*`
  * to package *source* via `weaselAliases`, so the version baked into each
  * package's published `dist` never reaches them. Every config that builds kit
- * source therefore has to re-apply the same defines — hence one helper rather
- * than a copy per config.
- *
- * Published builds get `__WEASEL_CORE_VERSION__` from core's own
- * `vite.config.ts` instead; both paths read `packages/core/package.json`, so
- * there is a single source of truth and changesets' version bump is the only
- * place the number is edited.
+ * source therefore has to re-apply the same defines.
  */
 
 import { readFileSync } from 'node:fs';
@@ -27,11 +21,8 @@ export function packageVersion(repoRoot: string, pkg: string): string {
  * `define` entries for vite/vitest configs. Spread into an existing `define`
  * block — this never replaces one.
  *
- * `__WEASEL_BUILD_DATE__` is captured when the config is loaded, which means
- * the moment of the build in CI and the moment the dev server started in
- * development. Consumers that display it should distinguish the two
- * (`import.meta.env.PROD`) rather than presenting a dev-server start time as a
- * build date.
+ * `__WEASEL_BUILD_DATE__` is captured when the config is loaded: the moment of
+ * the build in CI, and the moment the dev server started in development.
  */
 export function weaselDefines(repoRoot: string): Record<string, string> {
   return {

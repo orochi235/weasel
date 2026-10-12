@@ -1,21 +1,8 @@
 /**
- * DispatchTracePanel — DEV-only "what fired" diagnostic panel.
- *
- * Reads the rolling dispatcher trace log mounted by the kit on
- * `window.__weaselDispatchLog__` (populated by
- * `src/interactions/dispatcher/dispatcher.ts` in DEV builds only). The log
- * holds the last 200 input-handling decisions: which candidate actions
- * were considered for each event, whether each was enabled, which one
- * actually fired, and whether the event was ultimately handled.
- *
- * Use this panel to diagnose "X doesn't fire" complaints without having
- * to redispatch an agent — the log is right there, click an unhandled row
- * to see why every candidate was rejected.
- *
- * IMPORTANT: This component is DEV-only. The window global is not
- * populated in production builds, so the panel renders an empty table.
- * Wire it into the app sidebar (e.g. behind a `#/dev/dispatch` route or a
- * "Show dev panels" pref) only in development.
+ * DEV-only "what fired" panel over the dispatcher trace log the kit mounts on
+ * `window.__weaselDispatchLog__`: which candidate actions each event considered,
+ * which fired, and whether the event was handled. The global is not populated
+ * in production builds, so the panel renders an empty table there.
  */
 import { useCallback, useState, type CSSProperties, type ReactElement } from 'react';
 import { useHostAnchor } from '@weasel-js/core';
@@ -29,11 +16,9 @@ type OutcomeFilter = 'handled' | 'unhandled';
 export interface DispatchTracePanelProps {
   /** Initial collapsed state. Defaults to `false` (panel open). */
   defaultCollapsed?: boolean;
-  /** CSS selector for the workspace element the widget anchors to (the
-   *  striped area, not the document page). The widget pins itself to this
-   *  element's bottom-left in viewport coords and follows it on
-   *  scroll/resize. Default: `'.wd-canvas-host, canvas'` — the
-   *  WeaselDraw workspace if present, else any canvas. */
+  /** CSS selector for the workspace element the widget pins to the bottom-left
+   *  of. Default: `'.wd-canvas-host, canvas'` — the WeaselDraw workspace if
+   *  present, else any canvas. */
   anchorSelector?: string;
 }
 
@@ -47,9 +32,8 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
   // Poll only while open.
   const { entries, live, now, clear: onClear } = useDispatchTraceLog(!collapsed);
   const [showHandled, setShowHandled] = useState<boolean>(true);
-  // Unhandled events are noisy by default (every mousemove without an active
-  // gesture, every wheel scroll over chrome). Hidden by default; toggle to
-  // expose them when diagnosing routing problems.
+  // Unhandled events are noisy (every mousemove without an active gesture,
+  // every wheel scroll over chrome), so they start hidden.
   const [showUnhandled, setShowUnhandled] = useState<boolean>(false);
 
   const onToggleCollapse = useCallback(() => setCollapsed((c) => !c), []);

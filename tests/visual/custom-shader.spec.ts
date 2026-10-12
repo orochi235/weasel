@@ -1,16 +1,9 @@
 /**
- * Visual regression spec: custom-shader demo.
+ * Visual regression spec: custom-shader demo, one frame per panel.
  *
- * Captures one frame per panel (Plasma / Ripple / Voronoi) and asserts pixel
- * diff ≤ 2% vs the committed baselines.
- *
- * Determinism: `?frozenTime=0` swaps the RAF loop for a fixed `u_time = 0`
- * (see CustomShaderDemo.tsx readFrozenTime). All three panels render the
- * same frame on every run. Mouse defaults to (0.5, 0.5); ripples default to
- * empty; voronoi seeds derive from a fixed sequence — no other live state.
- *
- * This demo mounts three canvases, so each panel is captured by index via
- * captureCanvas's `nth` option.
+ * Determinism: `?frozenTime=0` swaps the RAF loop for a fixed `u_time = 0`.
+ * Mouse defaults to (0.5, 0.5); ripples default to empty; voronoi seeds
+ * derive from a fixed sequence — no other live state.
  */
 import { test } from '@playwright/test';
 import { resolve } from 'node:path';

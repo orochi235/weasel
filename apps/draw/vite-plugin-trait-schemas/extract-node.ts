@@ -1,14 +1,6 @@
 /**
- * Extract the SceneNode discriminated union shape.
- *
- * Reads `packages/core/src/core/scene/types.ts` and assembles a `SceneNodeSchema`:
- *   - `kinds`: the discriminator values pulled from each variant's `kind`
- *     property string-literal type.
- *   - `variants`: one entry per variant interface (`LeafNode`, `ContainerNode`)
- *     with all properties — including those inherited from `NodeBase` —
- *     merged in declaration order (base first, variant-specific second).
- *   - `source`: location of the `Node` type alias (the public re-export
- *     `SceneNode` aliases this one).
+ * Extracts the SceneNode discriminated union: one variant per interface, with
+ * the properties inherited from `NodeBase` merged in first.
  */
 import {
   type Project,
@@ -81,9 +73,8 @@ function propertiesOfInterface(iface: InterfaceDeclaration): readonly PropertyDe
   return out;
 }
 
-/** Pull the `kind` property's string-literal value (e.g. `'leaf'`) from a
- *  variant interface. Returns undefined if the property is missing or its
- *  type isn't a single literal. */
+/** The `kind` property's string-literal value (e.g. `'leaf'`), or undefined
+ *  if the property is missing or its type isn't a single literal. */
 function readKindLiteral(iface: InterfaceDeclaration): string | undefined {
   const prop = iface.getProperty('kind');
   if (!prop) return undefined;

@@ -3,12 +3,10 @@
  * floats-per-vertex taken from the `vertexAttribPointer` recorded for that same
  * buffer object.
  *
- * Pairing an upload with the pointer call next to it used to work because every
- * draw minted its own VAO and buffers. The text paths now take a slot from a
- * ring that configured its attributes once, so a frame after the first records
- * no pointer calls at all — hence a tracker that remembers what it has learned
- * rather than a function over one frame's calls. Ask it for `uploads()` after
- * each frame and it carries the strides across `recorder.reset()`.
+ * A ring slot configures its attributes once, so a frame after the first
+ * records no pointer calls at all — hence a tracker that remembers what it has
+ * learned. Ask it for `uploads()` after each frame and it carries the strides
+ * across `recorder.reset()`.
  */
 
 import type { GLCall, GLRecorder } from './glRecorder';
@@ -29,13 +27,10 @@ export interface UploadTracker {
 }
 
 /**
- * The floats an upload actually sent.
- *
- * `bufferSubData(target, offset, src, srcOffset, length)` hands GL a *window*
- * into a scratch array the batch reuses across frames, so the recorded
- * argument is the whole scratch — the tail of it being whatever the last, and
- * possibly longer, run left there. Reading it whole compares live vertices
- * against stale ones.
+ * The floats an upload actually sent. `bufferSubData(target, offset, src,
+ * srcOffset, length)` hands GL a *window* into a scratch array the batch
+ * reuses across frames, so reading the recorded argument whole compares live
+ * vertices against stale ones.
  */
 function payload(call: GLCall): Float32Array | null {
   const data = call.name === 'bufferData' ? call.args[1] : call.args[2];

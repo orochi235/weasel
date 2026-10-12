@@ -4,16 +4,9 @@ import { type Mesh, tessellate } from '@weasel-js/geom/tessellate';
 let cache = new WeakMap<Path, Mesh>();
 
 /**
- * Return the tessellated Mesh for `path`, computing and caching on first call.
- * Cached by Path identity (WeakMap) — different Path objects with the same
- * coords are distinct cache entries.
- *
- * A rect path the batch stages as a quad never reaches this cache. One used
- * as a clip, or filled with a pattern or vertex colors, does.
- *
- * Also bypassed whenever `DrawContext.flattenTolerance` is set: `fillMeshHandle`
- * (see `../draw`) routes custom-tolerance fills through a fresh transient
- * tessellation instead of this cache.
+ * The tessellated Mesh for `path`, cached by Path identity — different Path
+ * objects with the same coords are distinct cache entries. Bypassed whenever
+ * `DrawContext.flattenTolerance` is set.
  */
 export function getMesh(path: Path): Mesh {
   const cached = cache.get(path);

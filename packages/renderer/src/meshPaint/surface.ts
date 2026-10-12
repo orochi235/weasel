@@ -3,14 +3,8 @@
  * pure geometry.
  *
  * A patch is a curved quadrilateral: four cubic Bézier edges and a color at
- * each corner. The interior is what the edges imply — a Coons patch reads it
- * off the boundary alone; a tensor patch adds four interior control points
- * that pull it around. Both evaluate at a `(u, v)` in the unit square, which
- * is what lets the renderer subdivide a patch into as many triangles as it
- * wants without the patch knowing.
- *
- * Nothing here touches GL, a color string, or a scene. `evalPatch` is the
- * whole contract.
+ * each corner. A Coons patch reads its interior off the boundary alone; a
+ * tensor patch adds four interior control points that pull it around.
  */
 
 /** A point in the patch's own space. */
@@ -26,14 +20,10 @@ export interface MeshPoint {
  * leaving it, corner 1, its two, and so on — twelve points, ending with the
  * two controls that return to corner 0. A tensor patch appends its four
  * interior points, in the order `(1,1)`, `(1,2)`, `(2,2)`, `(2,1)` of the
- * bicubic control net, which is PDF's own order.
+ * bicubic control net, which is PDF's own order. Twelve points is a Coons
+ * patch and sixteen is a tensor patch.
  *
- * Twelve points is a Coons patch and sixteen is a tensor patch; there is no
- * flag, because the count already says which it is.
- *
- * `colors` are the corner colors in the same walk order, as whatever color
- * form the caller resolves — the renderer hands premultiplied RGBA in, the
- * serializer hands CSS strings.
+ * `colors` are the corner colors in the same walk order.
  */
 export interface MeshPatch<TColor = string> {
   points: readonly MeshPoint[];
@@ -153,17 +143,13 @@ function evalTensor(patch: MeshPatch<unknown>, u: number, v: number): MeshPoint 
 
 /**
  * The four corner weights at `(u, v)` — bilinear, in the corner walk order.
- *
- * Color is separate from position on purpose: it interpolates in whatever
- * space the caller chose, which is not a thing the surface can do for it.
  */
 export function cornerWeights(u: number, v: number): [number, number, number, number] {
   return [(1 - u) * (1 - v), u * (1 - v), u * v, (1 - u) * v];
 }
 
-/** Axis-aligned bounds of a patch, sampled on a grid. Control points alone
- *  bound a Bézier but not tightly, and a mesh paint is baked into a texture
- *  sized from this — a loose box wastes texels on every side. */
+/** Axis-aligned bounds of a patch, sampled on a grid: control points alone
+ *  bound a Bézier but not tightly. */
 export function patchBounds(
   patch: MeshPatch<unknown>, steps = 8,
 ): { x: number; y: number; width: number; height: number } {

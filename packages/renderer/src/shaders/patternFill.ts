@@ -1,14 +1,11 @@
 /**
  * GLSL ES 3.0 sources for pattern-fill paths.
  *
- * The vertex stage is `gradFill`'s: a path fill mesh carries `a_position`
- * only, so tile-space coordinates are recovered per fragment from the
- * screen position via `u_worldInv` rather than read from a UV attribute.
- * That matrix also carries the tile's origin and transform
- * (`patternTileSpace`). `u_tileSize` then converts to texture space, and
- * `REPEAT` wrapping (set at upload) tiles the result.
- *
- * Output convention §2: PREMULTIPLIED alpha.
+ * A path fill mesh carries `a_position` only, so tile-space coordinates are
+ * recovered per fragment from the screen position via `u_worldInv`, which also
+ * carries the tile's origin and transform. `u_tileSize` then converts to
+ * texture space, and `REPEAT` wrapping (set at upload) tiles the result.
+ * Output is PREMULTIPLIED alpha.
  */
 
 import { STRAIGHT_RGB_GLSL } from './straightRgb';

@@ -23,9 +23,7 @@ export interface ActionBarProps {
   /**
    * Per-entry icon overrides, keyed by `ActionItem.key` — the action id, or
    * `id:variant` for one variant of a parametric action. When an entry is provided
-   * it replaces the action's own `icon` for this bar only. Mirrors
-   * `PathfinderPanelProps.icons` so call sites that ship custom glyph sets
-   * can swap them in without re-registering actions.
+   * it replaces the action's own `icon` for this bar only.
    */
   icons?: Record<string, ReactNode>;
   /**
@@ -49,15 +47,9 @@ function resolveIcon(item: ActionItem, override: ReactNode | undefined): ReactNo
  * Generic group-keyed action toolbar. Reads the parent `ActionsRegistry`,
  * filters to actions whose `group` matches `props.group`, and renders one
  * icon button per match — or per variant, for an action that declares
- * `variants`. Disabled state is derived from each action's
- * `enabled` predicate via `evaluateEnabled` (so the button greys out and
- * swallows clicks while the keybinding — if any — still fires through the
- * registry's keydown listener; that's the registry's contract, not ours).
- *
- * Visual parity with the WeaselDraw `<PathfinderPanel>` is intentional;
- * this is the generic, registry-driven version. No keyboard navigation
- * (roving tabindex) yet — bar consumers today are short flat strips. Add
- * if/when a long bar lands.
+ * `variants`. A button whose action's `enabled` predicate fails greys out and
+ * swallows clicks, while the keybinding — if any — still fires through the
+ * registry's keydown listener. No keyboard navigation (roving tabindex).
  */
 export function ActionBar(props: ActionBarProps) {
   const { group, orientation = 'horizontal', icons, labels, className } = props;

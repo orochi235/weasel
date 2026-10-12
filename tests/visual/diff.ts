@@ -28,21 +28,13 @@ const PNG_DATA_URL_PREFIX = 'data:image/png;base64,';
  *
  * Deliberately NOT `locator.screenshot()`. An element screenshot clips to the
  * element's *layout* box, so the captured height depends on whether the canvas
- * happens to sit at a fractional y offset — and that offset is the accumulated
- * height of the text above it, which differs between platforms with different
- * font metrics. That produced ±1px baseline drift between macOS and the CI
- * runner. It also silently resamples any canvas whose CSS box differs from its
- * backing store (the `gestures` demo draws 520×360 into a 522×362 box).
+ * sits at a fractional y offset, which differs between platforms with
+ * different font metrics. It also silently resamples any canvas whose CSS box
+ * differs from its backing store.
  *
- * Reading the backing store yields exactly `canvas.width × canvas.height`
- * pixels of what the renderer actually drew, independent of layout, fonts,
- * borders, scrollbars, viewport size, and the compositor. Every WebGL2 context
- * the kit creates sets `preserveDrawingBuffer: true` (see Canvas.tsx), so the
- * buffer is still readable after the frame is composited.
- *
- * Note this captures only canvas pixels — the CSS background painted behind a
- * transparent canvas is not included, by design: these baselines test the
- * renderer, not the demo page's styling.
+ * The read relies on the canvas's WebGL2 context having been created with
+ * `preserveDrawingBuffer: true`. The CSS background painted behind a
+ * transparent canvas is not included.
  */
 export async function readCanvasPixels(canvas: Locator): Promise<Buffer> {
   const dataUrl = await canvas.evaluate((el) => {
@@ -115,13 +107,8 @@ function writeFailureArtifact(name: string, kind: 'actual' | 'diff', png: Buffer
 
 /**
  * Assert that `actual` (PNG buffer) matches `baselinePath` within tolerance.
- *
- * If UPDATE_SNAPSHOTS env var is set (set automatically by test:visual:update),
- * writes `actual` as the new baseline instead of asserting.
- *
- * @param actual      PNG buffer from captureCanvas()
- * @param baselinePath  Absolute path to the committed baseline PNG
- * @param opts        Tolerance overrides (document per-demo justification in spec)
+ * With `UPDATE_SNAPSHOTS=1`, or off CI with no baseline on disk, writes
+ * `actual` as the new baseline instead of asserting.
  */
 export function assertMatchesBaseline(
   actual: Buffer,
@@ -149,11 +136,8 @@ export function assertMatchesBaseline(
   const actualPng = PNG.sync.read(actual);
   const name = basename(baselinePath, '.png');
 
-  // Dimensions must match exactly. Since we read the backing store, the capture
-  // size is exactly the demo's canvas size — so a mismatch means the demo
-  // genuinely resized, not that the environment drifted. Treat it as a baseline
-  // invalidation rather than a pixel diff. No diff image is possible here, but
-  // the capture itself is the evidence.
+  // The capture is the backing store, so a size mismatch means the demo
+  // resized, not that the environment drifted. No diff image is possible.
   if (actualPng.width !== baselinePng.width || actualPng.height !== baselinePng.height) {
     writeFailureArtifact(name, 'actual', actual);
   }

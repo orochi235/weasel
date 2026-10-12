@@ -5,13 +5,7 @@
  *
  * Storage: command codes in a `Uint8Array`, parameters in a `Float32Array`.
  * Each command consumes a fixed number of coords (`PATH_CMD_LENGTHS`); walkers
- * step both arrays in lockstep, which keeps hot loops monomorphic and GC
- * pressure low under heavy edits.
- *
- * `RectPath` is split out at the type level so common-case machinery
- * (selection AABBs, area-select, rect hit-testing) can short-circuit without
- * the polygon kernel. Polymorphic kernels take the `Path` union and dispatch
- * on `kind`.
+ * step both arrays in lockstep.
  */
 
 /** Fill rule used by polygon path hit-testing and `ctx.fill()`. */
@@ -39,8 +33,7 @@ export interface PolygonPath {
 /**
  * Axis-aligned rectangle. Fast path for the (very common) case where the
  * shape is just a rect — preserves O(1) bounds and hit-test, avoids the
- * polygon kernel entirely. Promote to `PolygonPath` only when the shape
- * grows beyond what a rect can express.
+ * polygon kernel entirely.
  */
 export interface RectPath {
   kind: 'rect';

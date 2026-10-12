@@ -1,17 +1,4 @@
-/**
- * useHoverTracking — last-hovered NodeId for chrome-caps rules.
- *
- * Listens for `pointermove` on the element handed to the returned
- * `canvasRef`; on each move it runs the supplied `nodeAtClientPoint` and
- * caches the resulting id on a ref. Cleared on `pointerleave` (pointer left
- * the canvas → nothing is hovered).
- *
- * `getHover` is a stable getter — call once per frame from `buildChromeCtx`.
- *
- * No re-render: the ref updates silently, and the next render that
- * reads it picks up the fresh value. Chrome-caps rules are evaluated
- * during paint, so the hover state is always read fresh.
- */
+/** Last-hovered NodeId for chrome-caps rules. */
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
@@ -19,10 +6,7 @@ import type { NodeId } from '../../core/scene/types';
 
 /** Options for `useHoverTracking`. */
 export interface UseHoverTrackingArgs {
-  /** Topmost id under a client point, or null. One lookup rather than a
-   *  client→world thunk beside a world-space picker: a screen-pixel pick
-   *  tolerance converts against the camera the point resolved to, and two
-   *  thunks are two chances to disagree about which view that is. */
+  /** Topmost id under a client point, or null. */
   nodeAtClientPoint: (clientX: number, clientY: number) => { id: NodeId } | null;
   enabled?: boolean;
 }
@@ -37,8 +21,8 @@ export interface HoverTracking {
 }
 
 /** Track which node the pointer is over. Returns a getter rather than state,
- *  so per-frame code can read the current value without the hover re-rendering
- *  the component on every pointer move. */
+ *  so a pointer move does not re-render the component. Cleared on
+ *  `pointerleave`. */
 export function useHoverTracking(args: UseHoverTrackingArgs): HoverTracking {
   const { nodeAtClientPoint, enabled = true } = args;
   const hoverRef = useRef<NodeId | null>(null);

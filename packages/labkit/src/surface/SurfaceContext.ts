@@ -8,14 +8,11 @@ export const SurfaceContext = createContext<SurfaceHandle | null>(null);
  * Which of the two stacked buffers a tenant paints into.
  *
  * `'over'` sits above the trial DOM: right for marks that annotate an
- * instrument, which is what the surface was built for and so the default.
- * `'under'` sits below it, which is what an opaque renderer needs — a tile that
- * fills its pane hides anything the pane's own DOM draws, so a 3D viewport on
- * the over-buffer has to paint its own chrome into the backend rather than
- * putting a label or a button in the pane.
+ * instrument, and the default. `'under'` sits below it, which is what an
+ * opaque renderer needs — a tile that fills its pane hides anything the
+ * pane's own DOM draws.
  *
- * Both exist for the lifetime of the surface and share one set of tile rects,
- * so a lab can hold an annotated 2D trial and an opaque 3D one at once.
+ * Both exist for the lifetime of the surface and share one set of tile rects.
  */
 export type SurfaceLayer = 'over' | 'under';
 

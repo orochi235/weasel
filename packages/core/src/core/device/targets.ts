@@ -2,13 +2,9 @@
  * Base sizes for grabbable chrome, in CSS pixels at `targetScale = 1`, and the
  * one accessor that resolves them for a live pointer type.
  *
- * Paint and hit-test MUST scale together: chrome you can see but cannot grab
- * is the exact failure `chrome-caps` exists to make impossible, and a literal
- * `8` copied into a fifth file is how that failure gets reintroduced. So every
- * kit-internal use site goes through {@link targetSizesPx} — the selection
- * overlay's handle size, `buildAffordanceAt`'s hit radii, and the slops debug
- * overlay all read the same object. The bare constants below stay exported for
- * consumers, who get the unscaled numbers they always got.
+ * Paint and hit-test MUST scale together, or chrome can be seen and not
+ * grabbed, so every kit-internal use site goes through {@link targetSizesPx}.
+ * The bare constants below are the unscaled numbers, exported for consumers.
  */
 
 const BASE_PX = {

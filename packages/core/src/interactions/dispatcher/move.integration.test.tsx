@@ -1,26 +1,4 @@
-/**
- * End-to-end integration test for moveAction via dispatcher.
- *
- * Proves the full drag pump chain:
- *   pointerdown → match drag binding → start
- *   pointermove×N → onMove × N
- *   pointerup → onEnd('commit') → scene mutated by cumulative delta
- *
- * Also validates:
- *   - pointercancel → onEnd('cancel') → no scene mutation
- *   - empty selection → no-op (no scene mutation)
- *
- * ## Provider tree
- *
- * The test mounts the same provider tree used by the real app:
- *   DepRegistryProvider > ActiveToolContextProvider
- *     > ActionsProvider > [MountDispatcher + RegisterDeps + RegisterMove]
- *
- * `moveAction` is registered with `enabled: () => true` to bypass the
- * `ActionDisabledReason.SelectionRequired` placeholder that moveAction ships
- * with (Phase 7 TODO: wire live enabled state). The drag pump itself — start,
- * onMove, onEnd — is what this test validates.
- */
+/** End-to-end integration test for moveAction's drag pump via the dispatcher. */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -36,17 +14,9 @@ import { asNodeId } from 'core/scene/types';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 type D = { kind: 'rect' };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
-
-// ---------------------------------------------------------------------------
-// Canvas mock (required for JSDOM which lacks canvas context)
-// ---------------------------------------------------------------------------
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -59,15 +29,9 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
-// ---------------------------------------------------------------------------
-// Test harness components
-// ---------------------------------------------------------------------------
-
 /** Mounts the gesture dispatcher on the canvas element.
  *  `moveAction`'s ambient binding is `{ kind: 'drag', target: 'selected-body' }`,
- *  so the harness has to mark every drag as landing on the selection — we
- *  do that with a constant `classifyTarget` thunk. Real apps source this
- *  from a selection-aware hit test (see SceneCanvas). */
+ *  so a constant `classifyTarget` marks every drag as landing on the selection. */
 function MountDispatcher({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
   const registry = useActionsRegistry();
   useGestureDispatcher({
@@ -87,8 +51,6 @@ function RegisterDeps({ scene, selection }: { scene: Scene<D, L, P>; selection: 
   return null;
 }
 
-/** Registers moveAction with `enabled: () => true` so the dispatcher doesn't
- *  gate on SelectionRequired (Phase 7 TODO). */
 function RegisterMove() {
   const registry = useActionsRegistry();
   if (registry && !registry.list().find((a) => a.id === 'move')) {
@@ -134,10 +96,6 @@ function fire(canvas: HTMLElement, type: string, coords: { clientX?: number; cli
   );
 }
 
-// ---------------------------------------------------------------------------
-// Full harness factory
-// ---------------------------------------------------------------------------
-
 function buildHarness(scene: Scene<D, L, P>, selection: SelectionApi) {
   const canvasRef = { current: null } as React.RefObject<HTMLCanvasElement | null>;
 
@@ -161,10 +119,6 @@ function buildHarness(scene: Scene<D, L, P>, selection: SelectionApi) {
 
   return Harness;
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('moveAction integration via gesture dispatcher', () => {
   it('drag pointerdown→move→up translates selected nodes by delta', () => {

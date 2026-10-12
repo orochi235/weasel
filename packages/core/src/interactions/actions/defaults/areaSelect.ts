@@ -1,41 +1,8 @@
-/**
- * `areaSelectAction` — ongoing Action descriptor for marquee area selection.
- *
- * The marquee selection:
- *   - `start`: records the drag start world point and shift state.
- *   - `onMove`: tracks the current drag corner (no scene writes).
- *   - `onEnd('commit')`: derives the marquee bounds from start + current;
- *     calls `deps.areaSelect.hitTestArea(bounds)` to find overlapping nodes;
- *     calls `deps.areaSelect.setSelection(ids)` to update selection (extending
- *     with shift held). This is a **transient** write (no undo entry).
- *   - `onEnd('cancel')`: no-op.
- *
- * ## Dependencies
- *
- * Requires `areaSelect` dep from DepSchema:
- *   `{ hitTestArea(bounds): NodeId[], getSelection(): NodeId[], setSelection(ids): void }`
- *
- * `<SceneCanvas>` / `<StandardActionsRegistrar>` should source this dep by
- * iterating scene nodes and checking AABB overlap. The dep is intentionally
- * simple — consumers override it for custom hit-testing (contain-mode,
- * layer-aware filtering, etc.).
- *
- * ## What this does not wire
- *
- * - `AreaSelectBehavior` pipeline — omitted; only the default replace/extend
- *   semantics are implemented.
- * - Debug sink recording — not available in the descriptor model.
- */
-
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import type { AreaSelectDep, ViewApi } from '../depSchema';
 import { selectionFromHits } from '../hitSelection';
-
-// ---------------------------------------------------------------------------
-// Internal scratch
-// ---------------------------------------------------------------------------
 
 interface AreaSelectScratch {
   dep: AreaSelectDep;
@@ -46,31 +13,20 @@ interface AreaSelectScratch {
   shiftHeld: boolean;
   currentX: number;
   currentY: number;
-  /** Cleared once `onEnd` runs so subsequent `overlay()` calls report no
-   *  in-flight marquee (the dispatcher releases the handle after onEnd so
-   *  this is belt-and-suspenders for any consumer that retains a handle). */
+  /** Cleared once `onEnd` runs, so a consumer that retains the handle gets
+   *  no marquee from `overlay()`. */
   open: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Descriptor
-// ---------------------------------------------------------------------------
-
 /**
  * @experimental
- * Static descriptor for the `areaSelect` Action.
- *
- * Requires dep-schema entry: `areaSelect`.
- *
- * The invoker implements replace/extend marquee selection via the `areaSelect`
- * dep. Hit-testing and selection writes are delegated to the dep; the invoker
- * contains only the bounds-derivation and shift-extend logic.
+ * Marquee selection: replace, or extend with shift held. Hit-testing and
+ * selection writes are delegated to the `areaSelect` dep, and the selection
+ * write makes no undo entry.
  */
 export const areaSelectAction: Action & { requires: string[] } = {
   id: 'areaSelect',
   label: 'Area Select',
-  // Crosshair while the marquee is being pulled — the select tool used to
-  // read this off its own gesture scratch.
   activeCursor: 'crosshair',
   eligible: { capability: 'creates-selection' },
   requires: ['areaSelect', 'editAnchors', 'view'],
@@ -81,11 +37,8 @@ export const areaSelectAction: Action & { requires: string[] } = {
       if (!dep) return {};
 
       // Decline on anchor / control-handle affordances: the select tool's
-      // active-scope binding for this action is `{ kind: 'drag', target: 'empty' }`,
-      // which matches whenever `bodyTarget === 'empty'` — including drags
-      // where an anchor was hit on top of empty body. Without this opt-out
-      // areaSelect would beat editAnchors via scope priority. The
-      // dispatcher's empty-handle fallthrough then forwards the gesture.
+      // `{ kind: 'drag', target: 'empty' }` binding also matches an anchor hit
+      // on top of empty body, and would beat editAnchors via scope priority.
       const affordanceKind = ctx.drag?.affordance?.kind;
       if (
         typeof affordanceKind === 'string'
@@ -94,17 +47,13 @@ export const areaSelectAction: Action & { requires: string[] } = {
         return {};
       }
 
-      // Decline for the same reason while a path is in anchor-edit mode:
-      // an empty-canvas drag there means "rubber-band some anchors", which
-      // is `marqueeAnchorsAction`'s job. Capability eligibility already
-      // filters this action out in path-edit mode, but only for consumers
-      // that wired a mode registry — without one the dispatcher skips
-      // eligibility entirely and areaSelect's active scope would beat
-      // marqueeAnchors' ambient scope. Declining here covers both.
+      // Decline while a path is in anchor-edit mode, where an empty-canvas
+      // drag is `marqueeAnchorsAction`'s. Capability eligibility filters this
+      // only for consumers that wired a mode registry; without one
+      // areaSelect's active scope would beat marqueeAnchors' ambient scope.
       const editAnchors = ctx.deps.editAnchors;
       if (editAnchors?.editingId) return {};
 
-      // Drag start is the world point at the moment start() is called.
       const scratch: AreaSelectScratch = {
         dep,
         view: ctx.deps.view,
@@ -137,7 +86,6 @@ export const areaSelectAction: Action & { requires: string[] } = {
 
           const { dep: d, view, startX, startY, currentX, currentY, shiftHeld } = scratch;
 
-          // Derive the marquee AABB from the two world-space corners.
           const x = Math.min(startX, currentX);
           const y = Math.min(startY, currentY);
           const width = Math.abs(currentX - startX);
@@ -156,11 +104,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
       };
     },
   },
-  /**
-   * Always enabled at the dispatcher level. The dispatcher's
-   * specificity-fallthrough loop treats anything `!== true` as "skip this
-   * match" — returning a disabled reason would let lower-specificity
-   * ambient bindings win. The invoker has no preconditions to guard.
-   */
+  /** Always enabled: the dispatcher treats anything `!== true` as "skip this
+   *  match", so a disabled reason would let lower-specificity ambient bindings win. */
   enabled: () => true,
 };

@@ -21,13 +21,10 @@ export function enterGroupClip(ctx: DrawContext, clip: Path): void {
 }
 
 /**
- * Push a group's clip.
- *
- * A clip only the stencil can express takes its bit now. An axis-aligned rect
- * takes none: staged geometry is cut to it on the CPU (`batchClip.ts`), so
- * content inside it joins the run outside it instead of costing a flush on
- * the way in and another on the way out. It takes a bit only if something that
- * draws for itself turns up inside it — see `flushForOwnDraw`.
+ * Push a group's clip. A clip only the stencil can express takes its bit now.
+ * An axis-aligned rect takes none: staged geometry is cut to it on the CPU, so
+ * content inside it joins the run outside it. It takes a bit only if something
+ * that draws for itself turns up inside it — see `flushForOwnDraw`.
  */
 function enterClip(ctx: DrawContext, path: Path): void {
   const transform = ctx.state.transform;
@@ -97,10 +94,8 @@ export function runClipDepth(ctx: DrawContext): number {
  * refused to cut — one with a slanted edge across a clip (see
  * `DrawBatch.clipQuad`). Staged again between this and `leaveUncut`, the item
  * sees the full stencil depth and lands in a run of its own under every clip.
- * Returns the cut to hand back.
- *
- * A pair rather than a callback: the staging paths are hot, and a closure
- * over their arguments would cost an allocation on every call, refused or not.
+ * Returns the cut to hand back. A pair rather than a callback: the staging
+ * paths are hot, and a closure would cost an allocation on every call.
  */
 export function enterUncut(ctx: DrawContext): ClipRect | null {
   materializeClips(ctx);
@@ -136,9 +131,8 @@ export function flushForOwnDraw(ctx: DrawContext): void {
 }
 
 /**
- * Rasterize a path into the stencil buffer using the pathFill shader geometry.
- * The caller is responsible for setting stencilFunc / stencilOp / stencilMask
- * and colorMask before calling.
+ * Rasterize a path into the stencil buffer. The caller sets stencilFunc /
+ * stencilOp / stencilMask and colorMask before calling.
  */
 function rasterizePathToStencil(ctx: DrawContext, path: Path, model: GlMat3): void {
   const gl = ctx.gl;
@@ -151,12 +145,8 @@ function rasterizePathToStencil(ctx: DrawContext, path: Path, model: GlMat3): vo
 }
 
 /**
- * Push a clip level. Rasterizes the clip path into the stencil buffer,
- * setting bit `newDepth` where (a) the path's fragment passes AND (b) all
- * ancestor clip bits are already set.
- *
- * Invariant: restores stencilMask(0xFF) on exit so callers (draw functions)
- * can rely on an unnarrowed mask after clip ops complete.
+ * Push a clip level: sets stencil bit `newDepth` where the path covers and all
+ * ancestor clip bits are already set. Restores stencilMask(0xFF) on exit.
  */
 export function pushClip(
   ctx: DrawContext, path: Path, newDepth: number, model: GlMat3 = ctx.state.transform,
@@ -200,16 +190,9 @@ export function pushClip(
 }
 
 /**
- * Pop a clip level. Rasterizes the same path again, clearing bit
- * `oldDepth + 1` where it was set during the matching push.
- *
- * Must re-enable STENCIL_TEST because child draw functions (drawPathFillStencil,
- * drawPathStrokeStenciled) call gl.disable(STENCIL_TEST) at their end. If
- * one of those was the last child before popClip runs, the test would be off
- * and rasterizePathToStencil would write nothing.
- *
- * Invariant: restores stencilMask(0xFF) on exit so callers are not left with
- * a narrowed mask.
+ * Pop a clip level: rasterizes the same path again, clearing bit
+ * `oldDepth + 1` where the matching push set it. Restores stencilMask(0xFF)
+ * on exit.
  */
 export function popClip(
   ctx: DrawContext, path: Path, oldDepth: number, model: GlMat3 = ctx.state.transform,

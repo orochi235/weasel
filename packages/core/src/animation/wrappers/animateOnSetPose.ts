@@ -19,15 +19,10 @@ export interface AnimateOnSetPoseOptions<TPose> {
   geometry?: PoseDescriptor<TPose>;
   /** Predicate: return false to skip animation and write through immediately. */
   shouldAnimate?: (id: string, from: TPose, to: TPose) => boolean;
-  /** Convenience: when true, auto-skip animation if the id is currently being
-   *  manipulated by an active gesture. Implementation: see `gestureScope` —
-   *  the wrapper consults a shared "in-flight ids" Set if one is provided,
-   *  otherwise this option is a no-op (treat as `shouldAnimate` returning true).
-   *  Mutually exclusive with `shouldAnimate`. */
+  /** When true, write through immediately for an id in `gestureScope`. A no-op
+   *  without `gestureScope`, and ignored when `shouldAnimate` is set. */
   skipDuringGesture?: boolean;
-  /** Optional: a Set the kit (or app) populates with ids currently being
-   *  manipulated by a gesture. When `skipDuringGesture` is true and the id
-   *  is in this Set, the wrapper writes through immediately. */
+  /** The ids currently being manipulated by a gesture, for `skipDuringGesture`. */
   gestureScope?: ReadonlySet<string>;
   /** Op label for the recorded transform op. Default: `'animate'`. */
   opLabel?: string;
@@ -35,13 +30,10 @@ export interface AnimateOnSetPoseOptions<TPose> {
 
 /**
  * Wrap an adapter so every `setPose` animates to the new pose instead of
- * jumping to it. Anything that moves a node — a layout strategy, an action, a
- * consumer's own code — is animated without knowing it, since the adapter is
- * the single write path.
+ * jumping to it.
  *
  * Poses written from inside another animation's tick, and (optionally) poses
- * written for a node currently under a gesture, are passed straight through:
- * animating those would fight whatever is already driving the node.
+ * written for a node currently under a gesture, are passed straight through.
  *
  * Over a scene-backed adapter the document takes each pose as it is written
  * and only the node on screen glides; an `arrayAdapter` holds the pose on
@@ -71,14 +63,9 @@ export function animateOnSetPose<TNode extends { id: string }, TPose>(
         adapter.setPose(id, pose);
         return;
       }
-      // Re-entrant short-circuit (a): the caller IS another animation's tick
-      // (momentum decay, in-flight tween, spring) writing setPose ~60×/sec.
-      // Wrapping each call in a fresh 250ms tween fights the caller — the
-      // new tween's t=0 sample writes back the previous `from`, undoing
-      // this onTick — and when each wrap-tween settles, the very next
-      // caller-tick spawns another, looping visibly forever (cards never
-      // stop after a flick). Detect via animator.isTicking() and write
-      // through.
+      // The caller is another animation's tick writing setPose every frame.
+      // Wrapping each call in a fresh tween fights it — the new tween's t=0
+      // sample writes back the previous `from` — and never settles.
       if (animator.isTicking()) {
         adapter.setPose(id, pose);
         return;

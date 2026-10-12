@@ -2,13 +2,6 @@
  * One string, one style, three consumers — the paint, the silhouette and the
  * caret — asked to agree.
  *
- * Until this landed they were three walks: `drawText` through
- * `cachedLayoutRuns`, `textLineBoxes` through a bare `layoutRuns`, and
- * `caretIndexAt` through `ctx.measureText`. The first two differed only in
- * cost; the third differed in answer, because per-character measurement
- * cannot see a kerning pair and never looked at `runs` at all. Nothing
- * compared them, so the gap was invisible.
- *
  * The `inter` fixture is baked at size 32 with two glyphs — `A` (advance 23),
  * `B` (advance 22) — and one kerning pair, `A→B` at -1. At `fontSize: 32`
  * those are world units, so the pen puts `B` at x = 22 and an unkerned walk

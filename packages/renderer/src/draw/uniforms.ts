@@ -4,23 +4,14 @@ import { resolveColor } from '@weasel-js/paint';
 import type { DrawContext } from './drawContext';
 
 /**
- * Uniform values a program already holds this frame.
+ * Uniform values a program already holds this frame, so an unchanged one is
+ * not re-sent. Keyed on the `DrawContext`, which is built fresh per frame, so
+ * the cache cannot outlive a frame and go stale against GL state.
  *
- * GL keeps uniform state per program object, so re-sending a value the program
- * already has buys nothing. `u_proj` is constant for the whole frame and
- * `u_colorMatrix` is the identity in every scene that does not use one, yet
- * both were re-sent for every command: at a few thousand commands the two were
- * most of the frame.
- *
- * Keyed on the `DrawContext`, which `WeaselRenderer.render` builds fresh per
- * frame, so the cache cannot outlive a frame and go stale against GL state
- * that changed between them.
- *
- * **Only for uniforms this module is the sole writer of.** `u_color` and
- * `u_alpha` qualify because every write of them goes through `setColorUniform`
- * / `setAlphaUniform` — keep it that way. A `gl.uniform4f(… 'u_color' …)` added
- * anywhere else leaves the cache believing a value the program no longer has,
- * and the wrong color is drawn until something else moves it.
+ * **Only for uniforms this module is the sole writer of.** A
+ * `gl.uniform4f(… 'u_color' …)` added anywhere else leaves the cache believing
+ * a value the program no longer has, and the wrong color is drawn until
+ * something else moves it.
  */
 interface UploadedUniforms {
   proj?: Float32Array;
@@ -64,12 +55,8 @@ export function sameValues(prev: Float32Array | undefined, next: ArrayLike<numbe
 }
 
 /**
- * `u_color`, skipped when the program already holds it.
- *
- * Every writer of `u_color` goes through here — see `UploadedUniforms`. The
- * solid batch is what makes it worth caching: it holds the uniform at white
- * forever and flushed once per state change, so a mixed document re-sent the
- * same white a few hundred times a frame.
+ * `u_color`, skipped when the program already holds it. Every writer of
+ * `u_color` must go through here — see `UploadedUniforms`.
  */
 export function setColorUniform(
   ctx: DrawContext, prog: ShaderProgram,
@@ -149,14 +136,12 @@ const PROJ_SCRATCH = new Float32Array(9);
 /**
  * `u_proj` and `u_model`, each skipped when the program already holds it.
  *
- * `model` is in doubles and the uniform is not. Far from the origin at high
+ * `model` is in doubles and the uniform is not: far from the origin at high
  * zoom its translation is millions of pixels, which a float32 holds to a
- * whole pixel at best, and the shader then adds that to vertex coordinates
- * just as large. A program that declares `u_origin` computes
+ * whole pixel at best. A program that declares `u_origin` computes
  * `u_model * (a_position - u_origin)`, so for a large translation this sends
  * the local point that lands on the screen's corner as `u_origin` and a model
- * whose translation is what is left over, a few pixels. Any origin draws the
- * same place; this one keeps every number the GPU touches screen-sized.
+ * whose translation is what is left over, a few pixels.
  */
 export function setProjAndModel(
   ctx: DrawContext, prog: ShaderProgram,

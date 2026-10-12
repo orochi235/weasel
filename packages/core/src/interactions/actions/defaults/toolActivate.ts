@@ -30,11 +30,7 @@ export function buildToolActivateBindings(
 ): BoundGesture[] {
   return specs.map(({ toolId, keyOpts }) => {
     // Modifiers belong under `mods` (a `ModSpec`), not at the top level of
-    // the spec. They used to be spread flat and the mismatch was hidden by an
-    // `as never` cast, so the matcher — which treats an absent modifier as
-    // "must NOT be held" — could never match a modifier-qualified shortcut
-    // like Cmd+D. Nobody noticed while `useKeybindings`'s own document
-    // listener was doing the real matching.
+    // the spec: the matcher treats an absent modifier as "must NOT be held".
     const mods: Record<string, boolean | 'optional'> = {};
     if (keyOpts.mod !== undefined) mods.mod = keyOpts.mod;
     if (keyOpts.alt !== undefined) mods.alt = keyOpts.alt;
@@ -51,17 +47,11 @@ export function buildToolActivateBindings(
 }
 
 /** Build the consolidated `tool.activate` action. `bindings` enumerates one
- *  `{ spec, opts: { params: { toolId } } }` per tool; the invoker reads
- *  `params.toolId` and calls `activeTool.setActive(toolId)`. Imperative
- *  callers (palette, toolbar) reach the same effect via
- *  `registry.trigger('tool.activate', { toolId })`.
+ *  `{ spec, opts: { params: { toolId } } }` per tool. Imperative callers reach
+ *  the same effect via `registry.trigger('tool.activate', { toolId })`.
  *
- *  `isEligible` gates activation on the tool's `eligibility.capabilities` vs the active
- *  mode — the same predicate `ToolPalette` uses to grey a button out. It has
- *  to live in the invoker rather than in `Action.eligible` because eligibility
- *  here is per-TOOL (read off `params.toolId`), while `Action.eligible` is a
- *  static per-action descriptor. Omit it (or pass one that always returns
- *  true) for consumers with no mode registry. */
+ *  `isEligible` gates activation per tool, which the static per-action
+ *  `Action.eligible` cannot. Omit it for consumers with no mode registry. */
 export function makeToolActivateAction(
   bindings: BoundGesture[],
   isEligible?: (toolId: string) => boolean,
@@ -72,10 +62,7 @@ export function makeToolActivateAction(
       const activeTool = deps.activeTool;
       const toolId = params?.toolId as string | undefined;
       if (!activeTool || !toolId) return;
-      // Greyed out in the palette ⇒ not reachable by shortcut either. Before
-      // this, `ToolDef.capabilities` described an intent the runtime never
-      // enforced: in text-edit mode the palette greyed the pen button while
-      // `P` still activated pen.
+      // Grayed out in the palette ⇒ not reachable by shortcut either.
       if (isEligible && !isEligible(toolId)) return;
       activeTool.setActive(toolId);
     },

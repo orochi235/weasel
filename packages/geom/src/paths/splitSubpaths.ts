@@ -1,22 +1,10 @@
-/**
- * Split a `PolygonPath` at each `M` command, returning one `PolygonPath` per
- * subpath. Inverse-ish of compound-path construction: a multi-region
- * (compound) path becomes N independent paths.
- *
- * `fillRule` is propagated unchanged to every output. Even-odd compound paths
- * with interior "holes" lose the hole semantics — each subpath becomes its
- * own filled region. (Same behavior as Illustrator's Release Compound Path.)
- *
- * If the input has zero `M` commands (which would already be malformed) the
- * input is returned wrapped in a single-element array. A path with exactly
- * one subpath is also returned as a single-element array — a trivial pass.
- */
-
 import { forEachSegment, PATH_M } from '../commands';
 import type { PolygonPath } from '../path';
 
 /** Split a path into one path per subpath, cutting at each `M`. A path with a
- *  single subpath comes back as a one-element array. */
+ *  single subpath comes back as a one-element array. `fillRule` is propagated
+ *  unchanged, so even-odd compound paths with interior "holes" lose the hole
+ *  semantics — each subpath becomes its own filled region. */
 export function splitSubpaths(path: PolygonPath): PolygonPath[] {
   const { commands, coords } = path;
   const out: PolygonPath[] = [];

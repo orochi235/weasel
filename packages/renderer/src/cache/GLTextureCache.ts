@@ -1,14 +1,10 @@
 /**
- * GL texture upload + cache for MSDF font atlases (and future images).
+ * GL texture upload + cache, keyed by a string id (the font family name or
+ * image id). The cache is GL-context-bound; discard and create a new one on
+ * context loss.
  *
- * Textures are keyed by a string id (the font family name or image id).
- * Pixels are uploaded once per id; a later upload of the same id reuses the
- * texture and only re-applies its wrap mode when that changed.
- * The cache is GL-context-bound; discard and create a new one on context loss.
- *
- * Atlas format: RGBA UNSIGNED_BYTE, linear filtering, no mipmaps.
- * Mipmap generation is deliberately skipped — MSDF works correctly with
- * linear filtering, and mipmap resampling corrupts the multi-channel SDF signal.
+ * Atlas format: RGBA UNSIGNED_BYTE, linear filtering, no mipmaps: mipmap
+ * resampling corrupts the multi-channel SDF signal.
  */
 
 import { uploadPremultiplied, type ImageTexSource } from './uploadPremultiplied';
@@ -47,7 +43,7 @@ export class GLTextureCache {
   /** Uploads the pixels once per id. `wrap` is re-applied whenever it differs
    *  from what the id was last uploaded under: the same registered image can
    *  be a clamped shader texture in one draw and a repeating pattern tile in
-   *  the next, and first-upload-wins gave the second one the first one's mode. */
+   *  the next. */
   upload(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
     return this.ensure(id, source, wrap, uploadAsHeld);
   }
@@ -165,10 +161,8 @@ export class GLTextureCache {
   }
 
   /**
-   * Delete every uploaded GL texture and clear the map. Called by
-   * `WeaselRenderer.dispose()`. The cache is unusable but refillable
-   * afterward — a subsequent `upload()` for a previously-seen id re-creates
-   * the texture rather than restoring the deleted one.
+   * Delete every uploaded GL texture and clear the map. The cache is
+   * refillable afterward.
    */
   free(): void {
     const gl = this.gl;

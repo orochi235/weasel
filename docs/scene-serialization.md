@@ -28,16 +28,9 @@ const loaded = sceneFromJSON(
 );
 ```
 
-The `loaded` scene is fully live — you can call `add`, `remove`, `setPose`,
-`undo`, `redo`, and wire it into `<SceneCanvas>` exactly like a freshly
-constructed scene.
-
 ## JSON shape
 
-`scene.toJSON()` returns a `SerializedScene<TData, TLayer, TPose>`. The
-structure mirrors the `initial:` array you pass to `createScene`, so you can
-also use a `*.scene.json` file as initial scene data (see
-[Loading demo data from a JSON file](#loading-demo-data-from-a-json-file)).
+`scene.toJSON()` returns a `SerializedScene<TData, TLayer, TPose>`.
 
 ```ts
 import type { SerializedScene, SerializedNode } from '@weasel-js/core';
@@ -89,7 +82,7 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
 
 | Field | Type | Notes |
 |---|---|---|
-| `version` | `1` | Always `1` for now. `sceneFromJSON` throws on any other value. |
+| `version` | `1` | `sceneFromJSON` throws on any other value. |
 | `systemLayers` | `SystemLayerSpec[]` | Layer ids and optional visibility/locked overrides. |
 | `nodes` | `SerializedNode[]` | All nodes in tree preorder: parents before children, siblings in sibling order. A reader painting straight from `nodes` derives paint order from layers: paint each `systemLayers` entry in turn, taking that layer's nodes in the order they appear here. |
 | `nodes[i].id` | `string` | Node id. Stable across save/load. |
@@ -102,8 +95,8 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
 
 ## Function fields and the registry
 
-`ContainerNode.clipFromPose` is a function — functions aren't JSON-serializable.
-The registry bridges this gap: you give each factory a string key, and the JSON
+`ContainerNode.clipFromPose` is a function, which JSON cannot carry.
+You give each factory a string key in a registry, and the JSON
 stores the key. On load, `sceneFromJSON` looks the key up in the registry and
 wires the live function back onto the node.
 
@@ -142,29 +135,24 @@ const json = scene.toJSON();
 const loaded = sceneFromJSON(json, { registry });
 ```
 
-If you don't use `clipFromPose` (or any other function field), you don't need
-a registry. Just pass `{}` as the options to `sceneFromJSON` and omit `registry`
-from `createScene`.
+A scene with no function fields needs no registry: omit it from both calls.
 
 ## What is NOT serialized
 
-- **History.** The undo/redo stacks are not captured. A restored scene starts
-  with empty history — the user cannot undo past the load point.
+- **History.** A restored scene starts with empty history — the user cannot
+  undo past the load point.
 - **Selection.** Selection lives in `useSelection`, outside the `Scene`
-  primitive. It is the caller's responsibility to restore selection state if
-  needed.
+  primitive; restoring it is the caller's job.
 - **Pose overrides** (`scene.overrides`) — ephemeral per-node pose/alpha for a
   frame loop. Like selection, never document content: absent from `toJSON()`,
   never restored by `loadState`, and never recorded in history. Bake with
   `setPose` first if a frame's positions should survive a save.
 - **Tool state.** The active tool, any in-flight gesture, and scratch state are
   not part of `Scene`.
-- **View / viewport.** Camera position and zoom are not captured. Wire those
-  separately if your app needs to restore the viewport.
+- **View / viewport.** Camera position and zoom are not captured.
 - **`TData` / `TPose` JSON-safety.** The kit serializes whatever is in `data`
-  and `pose` as-is. If those contain non-JSON-serializable values (functions,
-  class instances, `undefined`), the `JSON.stringify` call will silently drop
-  or corrupt them. Keep your data and pose types JSON-safe.
+  and `pose` as-is. `JSON.stringify` silently drops or corrupts values JSON
+  cannot carry (functions, class instances, `undefined`).
 
 ## Error cases
 
@@ -173,20 +161,15 @@ than silently losing data.
 
 | Condition | Thrown by | Message pattern |
 |---|---|---|
-| Unknown JSON version | `sceneFromJSON` | `sceneFromJSON: unsupported version <n>; only v1 supported` |
-| Unknown `clipFromPoseKey` | `sceneFromJSON` | `sceneFromJSON: unknown clipFromPose key '<key>'. Register a function with this key in the registry option.` |
-| Cross-layer subtree (parent and child on different layers) | `sceneFromJSON` (via `createScene`) | `Scene: cannot place node '<id>' on layer '<layer>' under parent '<pid>' on layer '<plyr>' — subtree layer must match parent` |
-| Container with `clipFromPose` not registered in `toJSON`'s registry | `scene.toJSON()` | `Scene.toJSON: container '<id>' has clipFromPose but no matching registry key. The function must be registered via createScene's registry option to round-trip.` |
-
-The cross-layer error is the same one `createScene` throws for invalid
-`initial:` arrays. It fires when the JSON was manually edited or produced by
-a different version of your app that didn't enforce layer discipline.
+| Unknown JSON version | `sceneFromJSON` | `Scene: unsupported version <n>; only v1 supported` |
+| Unknown `clipFromPoseKey` | `sceneFromJSON` | `Scene: unknown clipFromPose key '<key>'. Register a function with this key in the registry option.` |
+| Child on a layer below its parent's | `sceneFromJSON` | `Scene: cannot place node '<id>' on layer '<layer>' under parent '<pid>' on layer '<plyr>' — a child may not render below its parent's layer` |
+| Node with `clipFromPose` not registered in the scene's registry | `scene.toJSON()` | `Scene.toJSON: node '<id>' has clipFromPose but no matching registry key. The function must be registered via createScene's registry option to round-trip.` |
 
 ## Loading demo data from a JSON file
 
-A common pattern is shipping initial scene data as a static `*.scene.json`
-file instead of an inline `initial:` array. This keeps demo source readable
-and makes the data diff-friendly.
+Initial scene data can ship as a static `*.scene.json` file instead of an
+inline `initial:` array.
 
 ```ts
 // my-scene.scene.json is a SerializedScene<MyData, MyLayer, MyPose> object.
@@ -201,14 +184,8 @@ const scene = sceneFromJSON(sceneData, {});
 const scene = sceneFromJSON(sceneData, { registry });
 ```
 
-Because `SerializedScene` is structurally the same as a `{ systemLayers, initial }`
-config, loading from JSON is equivalent to `createScene({ systemLayers, initial })` —
-the only difference is that `sceneFromJSON` validates the version field and resolves
-registry keys before delegating to `createScene`.
-
-For TypeScript: if your bundler supports `resolveJsonModule` (Vite and tsc both do
-with `"resolveJsonModule": true` in `tsconfig.json`), you can assert the imported
-JSON to the right type:
+With `"resolveJsonModule": true` in `tsconfig.json`, assert the imported JSON
+to the right type:
 
 ```ts
 import raw from './my-scene.scene.json';
@@ -220,10 +197,6 @@ const scene = sceneFromJSON(sceneData, {});
 
 ## Versioning
 
-The JSON format is currently `version: 1`. `sceneFromJSON` throws immediately
-on any other version value. Future format changes will increment the version
-number and include a migration step inside `sceneFromJSON` — consumers don't
-need to write migration code themselves. When a migration ships, the release
-notes will document the version bump and any breaking changes to field shapes.
-
-For now, `version: 1` is the only value you'll encounter.
+The JSON format is `version: 1`, and `sceneFromJSON` throws on any other
+value. A format change will increment the number and migrate inside
+`sceneFromJSON`, so consumers write no migration code.

@@ -50,9 +50,7 @@ export function toLab(hex: string): [number, number, number] {
  * what separates them is chroma. And it is not plain euclidean OKLab distance:
  * OKLab's chroma range is small beside its lightness range, so an unweighted
  * distance is almost all lightness, and it ranks a mid-gray as further from
- * white than a pale blue is. Measured against CIELAB dE on the same colors,
- * unweighted OKLab put `#c1c1c1` at 0.160 and `#abd9ff` at 0.126 while CIELAB
- * put them at 21.9 and 28.5 — opposite orders.
+ * white than a pale blue is.
  *
  * `CHROMA_WEIGHT` restores CIELAB's ordering. It is a weight, not a unit
  * conversion, so these numbers do not transfer to or from CIELAB dE.

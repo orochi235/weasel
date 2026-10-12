@@ -38,13 +38,10 @@ interface OpsApplier {
  *
  * A leaf is cut when its `data.path` is a `Path` and `poseDescriptor` can read
  * its world pose as a box and a rotation; a leaf on a locked layer, or one
- * whose geometry derives from other nodes, is passed over. Each path is drawn
- * into world space the way the renderer draws it, so a child is cut where it
- * appears, and each piece is mapped back into the source's frame: it keeps the
+ * whose geometry derives from other nodes, is passed over. A piece keeps the
  * source's rotation in its pose when the descriptor can write one
  * (`withRotation`), and has the rotation baked into its path otherwise. The
- * piece's pose is then stored in its parent's frame through the scene's composition.
- * The pieces of a selected leaf take its place in the selection.
+ * pieces of a selected leaf take its place in the selection.
  */
 export function useSliceDepSource(
   scene: Scene<unknown, string, unknown>,

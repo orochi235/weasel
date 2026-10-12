@@ -15,10 +15,8 @@ export const DEV: boolean = (() => {
 })();
 
 /** One entry per "mode change" — a kit state transition that isn't a
- *  dispatched input event but is load-bearing for understanding why an
- *  input was (or wasn't) handled later. Pushed via `recordModeSwitch()`;
- *  consumers include the editAnchors dep (editingId changes), and
- *  could expand to active-tool / hotkey-stack / focus changes. */
+ *  dispatched input event but explains why an input was (or wasn't) handled
+ *  later. Pushed via `recordModeSwitch()`. */
 export interface ModeSwitchLogEntry {
   kind: 'mode';
   ts: number;
@@ -36,18 +34,10 @@ export type TraceLogEntry = DispatchRecord | ModeSwitchLogEntry;
 
 const TRACE_LIMIT = 200;
 
-// `traceLog` is the rolling buffer; in dev it IS `window.__weaselDispatchLog__`
-// so the ToolkitBuilder widget can poll it. Bind to the existing global if one
-// is already present rather than reassigning a fresh array: an HMR
-// re-evaluation of this module would otherwise create a new array and orphan
-// the long-lived Dispatcher (held in a SceneCanvas `useRef` that survives Fast
-// Refresh) whose `recordTrace` closure still pushes to the previous array — the
-// widget would then read an array nothing writes to. Reuse keeps every module
-// instance and the widget pointed at one shared array.
-//
-// `__weaselDispatchLog__` is the historical global; entries are a union of
-// dispatch + mode-switch records. Filter via `(e) => e.kind === 'dispatch'` if
-// you only want input routing.
+// In dev the buffer IS `window.__weaselDispatchLog__`, so dev tools can poll
+// it. Bind to the existing global rather than assigning a fresh array: an HMR
+// re-evaluation of this module would otherwise orphan the long-lived
+// Dispatcher, whose `recordTrace` closure still pushes to the previous array.
 const traceLog: TraceLogEntry[] =
   DEV && typeof window !== 'undefined'
     ? ((window as unknown as { __weaselDispatchLog__?: TraceLogEntry[] }).__weaselDispatchLog__ ??=

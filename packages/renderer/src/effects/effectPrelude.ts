@@ -1,12 +1,9 @@
 /**
  * Kit-supplied vertex shader for a full-screen effect pass.
  *
- * Distinct from `CUSTOM_VERT_SRC` on purpose. That one places its quad through
- * `u_bounds` and `u_proj`, so its `v_uv` runs top-down in *screen* space; an
- * effect samples a texture the scene was just rendered into, whose v axis runs
- * the other way. Passing `a_position` straight to `gl_Position` and `a_uv`
- * straight out keeps the two aligned — `QUAD_VERTICES` already carries
- * `a_uv == (a_position + 1) / 2` on both axes.
+ * Distinct from `CUSTOM_VERT_SRC` on purpose. That one's `v_uv` runs top-down
+ * in *screen* space; an effect samples a texture the scene was just rendered
+ * into, whose v axis runs the other way.
  *
  * PUBLIC CONTRACT — what every effect fragment shader may read:
  *
@@ -15,11 +12,10 @@
  *   uniform vec2  u_resolution   source size in device pixels
  *   uniform vec2  u_texel        1.0 / u_resolution — one texel step
  *
- * PREMULTIPLIED ALPHA: `u_source` holds premultiplied RGBA, because that is
- * what the scene blends into it. An effect that weights neighbouring samples
- * (a blur) is doing the right thing on premultiplied values; one that
- * manipulates rgb against a must premultiply its own output the same way the
- * custom-shader prelude requires.
+ * PREMULTIPLIED ALPHA: `u_source` holds premultiplied RGBA. An effect that
+ * weights neighboring samples (a blur) is doing the right thing on
+ * premultiplied values; one that manipulates rgb against a must premultiply
+ * its own output.
  */
 export const EFFECT_VERT_SRC = /* glsl */ `#version 300 es
 in vec2 a_position;
@@ -40,11 +36,10 @@ export const EFFECT_ATTRIBUTES = ['a_position', 'a_uv'] as const;
  *  redeclare them with different meanings; it may leave any of them out. */
 export const EFFECT_KIT_UNIFORMS = ['u_source', 'u_resolution', 'u_texel'] as const;
 
-/** The pass that puts a group's finished texture back into its parent. Not an
- *  effect — no consumer registers it — but it runs on the same quad and the
- *  same vertex shader. `u_alpha` and the colour matrix are the parent group's,
- *  applied here rather than inside the offscreen render, so an effect samples
- *  the group's own pixels rather than pixels the parent has already faded. */
+/** The pass that puts a group's finished texture back into its parent.
+ *  `u_alpha` and the color matrix are applied here rather than inside the
+ *  offscreen render, so an effect samples the group's own pixels rather than
+ *  pixels already faded. */
 export const COMPOSITE_FRAG_SRC = /* glsl */ `#version 300 es
 precision highp float;
 in vec2 v_uv;

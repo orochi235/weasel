@@ -17,22 +17,15 @@ export const UNION_OF_CHILDREN = 'kit:unionOfChildren';
  * A container's pose as the envelope of what it holds — `unionAABB`, so a
  * rotated member contributes the extent of its ink rather than its unrotated
  * box. Paired with `dependsOn: 'children'`, this is what makes a group's
- * bounds track its members instead of freezing at the moment it was made.
- *
- * Its members and its result share one frame: a container deriving its pose
- * from its children defines none of its own (see `definesFrame`), so the same
- * union is right under any composition strategy.
+ * bounds track its members.
  *
  * Returns `null` for an emptied container, which falls back to its authored
- * pose — the group stays where the last member left it rather than collapsing
- * to a zero box at the origin.
+ * pose.
  *
- * Reads members as rect poses, and only as rect poses: a scene whose poses are
- * shaped otherwise gets `null` here and its container keeps its authored pose,
- * because this entry is registered into every scene and the scene layer holds
- * no descriptor to read another shape with. To make such a container track its
- * members, register `unionOfChildrenVia(itsDescriptor)` under
- * {@link UNION_OF_CHILDREN} — the consumer's entry wins the collision.
+ * Reads members as rect poses only: a scene whose poses are shaped otherwise
+ * gets `null` here and its container keeps its authored pose. To make such a
+ * container track its members, register `unionOfChildrenVia(itsDescriptor)`
+ * under {@link UNION_OF_CHILDREN} — the consumer's entry wins the collision.
  */
 export function unionOfChildren<TPose>(
   _node: unknown,

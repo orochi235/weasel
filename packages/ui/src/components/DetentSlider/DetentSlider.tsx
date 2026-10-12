@@ -72,12 +72,7 @@ function plainText(label: ReactNode, fallback: DetentValue): string {
 
 /**
  * Slider over a fixed list of values: one detent per value, evenly spaced, the
- * thumb resting on one of them.
- *
- * This is the shape to reach for when an option has a small set of allowed
- * values along a line — playback rate, zoom step, quality — in place of a
- * dropdown, which hides the ordering and the extent of the range behind a
- * click. The values need only be ordered, not numeric.
+ * thumb resting on one of them. The values need only be ordered, not numeric.
  *
  * It is a strict {@link Slider} over the *index* of `items`, which keeps the
  * detents evenly spaced however the values are distributed. Since the index is

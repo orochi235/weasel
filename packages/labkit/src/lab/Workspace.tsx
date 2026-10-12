@@ -46,8 +46,7 @@ export interface WorkspaceProps {
    * these, so neither means much without them.
    */
   ids?: readonly string[];
-  /** Draggable seams between tiles. Off by default — an even tiling is the
-   *  behavior every existing caller has. */
+  /** Draggable seams between tiles. Off by default. */
   resizable?: boolean;
   /** Let a tile be dragged to a new position. Off by default. The grid never
    *  reorders `children` itself: it reports the order a drop would produce and
@@ -144,12 +143,10 @@ export interface PanelDescriptor {
  * laid out by CSS — `windease/styles.css` (folded into
  * `@weasel-js/labkit/styles.css`) carries the rules that positioning depends on.
  *
- * `panels` are undocked sidebar sections. A `'tile'` panel is registered as a
- * peer of the trials under `PANEL_KIND`, so the grid places and resizes it like
- * one; a `'floating'` panel goes in the overlay above. Either way this renders
- * only the frame and an empty host: the section's content is portaled in by
- * the trial that owns it, which is what keeps a torn-out section inside its
- * trial's React tree instead of rebuilding it as a sibling.
+ * `panels` are undocked sidebar sections. Either way this renders only the
+ * frame and an empty host: the section's content is portaled in by the trial
+ * that owns it, which is what keeps a torn-out section inside its trial's
+ * React tree.
  */
 export function Workspace({
   children,
@@ -171,8 +168,7 @@ export function Workspace({
   const floatPanels = useMemo(() => (panels ?? []).filter((p) => p.as === 'floating'), [panels]);
   // Identity has to be stable while the id *contents* are unchanged: the sync
   // effect below keys off it, and a fresh array every render would re-register
-  // every tile forever. So the ids are memoized on a serialized key, and read
-  // back from it.
+  // every tile forever.
   const idKey = JSON.stringify([
     ...items.map((_, i) => ids?.[i] ?? `lk-ws-${i}`),
     ...tilePanels.map((p) => `lk-panel-${p.key}`),
