@@ -1080,13 +1080,13 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 - **(P3) Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an axis, seams draggable, each band carrying a payload) ships alongside `Slider` (a thumb list on an axis, `constraint: 'ordered'`, `onAddThumb`/`onRemoveThumb`, `renderTrack`). Under a contiguous tiling the two are the same control — N seams determine N+1 bands, so seams *are* an ordered thumb list — and they were kept separate deliberately: bridging them means teaching `Slider` about the region *between* thumbs (payload, hit-testing, selection), which is the wider change the reconciliation actually requires. The other trigger is `Slider` needing a non-linear axis. A third option arrived with `windease` 1.0 (2026-08-20): its `LayoutStrategy` is public API — `layout()` returns placements plus affordances, `reduce()` folds a gutter drag into strategy state — so a band control is a strategy you write rather than a control you build, and it brings widened gutter grab targets, `affects` for lock suppression, and — as of 1.2.0 — keyboard-operable gutters with it (`role="separator"` with the value triple, arrows plus Home/End, each keypress synthesized into the same drag event the pointer sends so the strategy clamps once). It ships no band strategy of its own: the two built-ins are `gridStrategy` and `stripStrategy`, and strip is `LayoutStrategy<void>` whose gutters are single-child `resize-x` affordances writing pixel `placement.size`. Mapping domain values onto seams is still the consumer's. Note `Slider` is the former `RangePicker`; its spec carries a banner saying so.
 
-- **(P3) The color literals with no token equivalent.** Arc 4 tokenized what had a token and
-  left the rest rather than inventing a mapping — `check-design-tokens` covers size, weight,
-  radius and the stray danger reds, but not color generally, for that reason. What remains is
-  `Badge`'s status palette (`#7ab8d4`, `#d4a574`), the `GradientHandles` and `Keycaps` literals,
-  and roughly 70 `rgba()` values that are depth geometry (box-shadow insets, gloss gradient
-  stops, the dialog scrim) for which the theme ships no shadow, gloss or scrim token. Each needs
-  a semantic name before it can become one.
+- **(P3) Shading drawn in black or white at an alpha.** Overlays cast `--wzl-shadow` and a dialog
+  dims with `--wzl-scrim`; no hex color is left in a `packages/ui` stylesheet. What is still a
+  literal is shading that belongs to one control's artwork: `Badge`'s bevel fills and text
+  shadow, the default colors of its `Metal` and `Sunbeams` effects, the `Slider` thumb's
+  shadows, the segmented track's well, and the glass ramp's gloss, rim, and drop shadows in
+  `Button` and the selected segment, which `--btn-*` tunes and `--wzl-gloss` fades. Whether any
+  of it wants a theme token, and under what name, is not decided.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 

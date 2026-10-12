@@ -110,6 +110,7 @@ export type TokenName =
   | '--wzl-radius-md'
   | '--wzl-radius-pill'
   | '--wzl-radius-sm'
+  | '--wzl-scrim'
   | '--wzl-secondary'
   | '--wzl-secondary-base'
   | '--wzl-secondary-fg'
@@ -264,6 +265,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#955cf9",
         '--wzl-code-string': "#48e628",
         '--wzl-code-number': "#e69628",
@@ -450,6 +452,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#955cf9",
         '--wzl-code-string': "#48e628",
         '--wzl-code-number': "#e69628",
@@ -636,6 +639,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#dc9d15",
         '--wzl-fg-inverse': "#0e0f12",
         '--wzl-shadow': "rgba(0, 0, 0, 0.6)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#955cf9",
         '--wzl-code-string': "#48e628",
         '--wzl-code-number': "#e69628",
@@ -822,6 +826,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#6d28d9",
         '--wzl-code-string': "#15803d",
         '--wzl-code-number': "#b45309",
@@ -1008,6 +1013,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#6d28d9",
         '--wzl-code-string': "#15803d",
         '--wzl-code-number': "#b45309",
@@ -1194,6 +1200,7 @@ export const THEMES = {
         '--wzl-secondary-fg': "#016458",
         '--wzl-fg-inverse': "#f5f5f6",
         '--wzl-shadow': "rgba(0, 0, 0, 0.18)",
+        '--wzl-scrim': "rgba(0, 0, 0, 0.4)",
         '--wzl-code-keyword': "#6d28d9",
         '--wzl-code-string': "#15803d",
         '--wzl-code-number': "#b45309",
@@ -1684,6 +1691,11 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
           "value": "rgba(0, 0, 0, 0.18)",
           "type": "color"
         }
+      },
+      "scrim": {
+        "value": "rgba(0, 0, 0, 0.4)",
+        "type": "color",
+        "description": "What a modal dims the page behind it with."
       },
       "code-keyword": {
         "by": "mode",
@@ -3067,6 +3079,11 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
           "type": "color",
           "value": "rgba(0, 0, 0, 0.18)"
         }
+      },
+      "scrim": {
+        "type": "color",
+        "value": "rgba(0, 0, 0, 0.4)",
+        "description": "What a modal dims the page behind it with."
       },
       "code-keyword": {
         "by": "mode",

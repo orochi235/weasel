@@ -42,7 +42,7 @@ const EXPECTED_NAMES = [
   'secondary', 'secondary-fg',
   'danger', 'warning', 'success', 'focus-ring', 'glass-tint',
   'fg-inverse', 'surface-hover', 'surface-pressed',
-  'shadow',
+  'shadow', 'scrim',
   'panel-surface', 'panel-border-color', 'panel-border-style', 'panel-border-width',
   'panel-radius', 'panel-pad', 'panel-blur', 'panel-tone-mix', 'panel-title-font',
   'panel-title-weight', 'panel-title-size', 'panel-title-case', 'panel-title-tracking',

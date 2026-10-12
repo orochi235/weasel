@@ -353,6 +353,11 @@
         "type": "color"
       }
     },
+    "scrim": {
+      "value": "rgba(0, 0, 0, 0.4)",
+      "type": "color",
+      "description": "What a modal dims the page behind it with."
+    },
     "code-keyword": {
       "by": "mode",
       "dark": {

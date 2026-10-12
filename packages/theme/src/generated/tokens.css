@@ -77,6 +77,8 @@
   --wzl-fg-inverse: var(--wzl-gray-900);
   /* Elevation. Always darker than any surface — never derived from fg, which is near-white on dark. */
   --wzl-shadow: rgba(0, 0, 0, 0.6);
+  /* What a modal dims the page behind it with. */
+  --wzl-scrim: rgba(0, 0, 0, 0.4);
   /* Keywords in highlighted code. */
   --wzl-code-keyword: var(--wzl-swatch-violet);
   /* String literals in highlighted code. */

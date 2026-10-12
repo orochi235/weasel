@@ -75,6 +75,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-secondary-fg', type: "color", group: "secondary", defaultValue: "#dc9d15", description: "Secondary accent for foreground use: a second voice beside the accent, such as a value the panel derived rather than one the user set. Picked from the ramp so it clears 4.5:1 on the surface in both modes.", hook: false },
   { name: '--wzl-fg-inverse', type: "color", group: "fg", defaultValue: "#0e0f12", description: "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive.", hook: false },
   { name: '--wzl-shadow', type: "color", group: "shadow", defaultValue: "rgba(0, 0, 0, 0.6)", description: "Elevation. Always darker than any surface — never derived from fg, which is near-white on dark.", hook: false },
+  { name: '--wzl-scrim', type: "color", group: "scrim", defaultValue: "rgba(0, 0, 0, 0.4)", description: "What a modal dims the page behind it with.", hook: false },
   { name: '--wzl-code-keyword', type: "color", group: "code", defaultValue: "#955cf9", description: "Keywords in highlighted code.", hook: false },
   { name: '--wzl-code-string', type: "color", group: "code", defaultValue: "#48e628", description: "String literals in highlighted code.", hook: false },
   { name: '--wzl-code-number', type: "color", group: "code", defaultValue: "#e69628", description: "Numbers in highlighted code.", hook: false },
