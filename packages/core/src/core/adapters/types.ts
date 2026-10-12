@@ -2,7 +2,7 @@ import type { Op } from '../ops/types';
 import type { ParallaxOpts } from '../viewport/parallax';
 import type { View } from '../viewport/view';
 import type { PoseDescriptor } from '../geometry/poseDescriptor';
-import type { Target } from '../../animation/target';
+import type { Target } from '@weasel-js/animator';
 
 /**
  * Opaque clipboard payload. `items` is `unknown[]` so each app's clipboard

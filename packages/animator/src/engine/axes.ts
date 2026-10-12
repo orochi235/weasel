@@ -1,4 +1,4 @@
-import { isPlainObject } from '../../core/isPlainObject';
+import { isPlainObject } from '@weasel-js/registry';
 
 /** How a value maps to the flat numbers blits moves, and back. */
 export interface Axes<T> {

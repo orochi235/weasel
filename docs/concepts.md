@@ -303,7 +303,7 @@ A pose animation over a scene therefore writes the document once, at its start,
 and shows its travel through a pose override. An `arrayAdapter` has no overrides,
 so its array is written the pose on screen each frame while the target keeps the
 committed pose. The values are computed by blits
-(`@msb235/blits`), behind `packages/core/src/animation/engine/`; no blits type is
+(`@msb235/blits`), behind `packages/animator/src/engine/`; no blits type is
 public. blits clocks the voices and sums them; how a target's holds share it is
 folded here, in `engine/holds.ts`, since blits weighs a voice whole and a hold can
 cover some axes and turn an angle. blits stays a repository of its own, not a

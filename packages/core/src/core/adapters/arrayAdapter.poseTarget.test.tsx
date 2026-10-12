@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { useState } from 'react';
 import { linear } from '@weasel-js/geom';
 import { tweenPose } from '../../animation/poseHelpers';
-import { useAnimator } from '../../animation/useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 import { arrayAdapter, type ArrayPoseTargets } from './arrayAdapter';
 import { useArrayAdapter } from './useArrayAdapter';
 

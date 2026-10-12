@@ -11,7 +11,7 @@ import type { SceneSlotConfig } from './Canvas';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { withDerivedPaths, sceneDerivedPathOf } from './derivedPath';
 import { withColorOverrides } from './colorOverrides';
-import type { ColorOverrideRegistry } from '../animation/colorRegistry';
+import type { ColorOverrideRegistry } from '@weasel-js/animator';
 import type { PoseComposition } from 'core/scene/composeFrame';
 
 /**

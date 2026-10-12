@@ -4,7 +4,7 @@ import { effectivePose } from '../../core/scene/effectivePose';
 import type { NodeId, RectPose } from '../../core/scene/types';
 import { mat3 } from '@weasel-js/geom';
 import { bindRig } from './bindRig';
-import type { Skeleton } from './types';
+import type { Skeleton } from '@weasel-js/animator';
 
 const LAYERS = [{ id: 'main' as const }];
 

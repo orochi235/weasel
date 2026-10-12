@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SampledTrack, TimelineTrack, Track } from '@weasel-js/core';
+import type { SampledTrack, TimelineTrack, Track } from '@weasel-js/animator';
 import { deleteKey, insertKey, moveKey, setKeyEasing, setKeyValue, snapTime } from './keys';
 
 const track = (ts: number[]): Track => ({

@@ -10,20 +10,20 @@
     "lines": 419,
     "longestFunction": 169
   },
-  "packages/core/src/animation/engine/codec.ts": {
+  "packages/animator/src/engine/codec.ts": {
     "longestFunction": 184
   },
   "packages/core/src/animation/reflow.ts": {
     "longestFunction": 165
   },
-  "packages/core/src/animation/timeline/booking.ts": {
+  "packages/animator/src/timeline/booking.ts": {
     "longestFunction": 135
   },
-  "packages/core/src/animation/timeline/createTimeline.ts": {
+  "packages/animator/src/timeline/createTimeline.ts": {
     "longestFunction": 187
   },
-  "packages/core/src/animation/types.ts": {
-    "lines": 491
+  "packages/animator/src/types.ts": {
+    "lines": 467
   },
   "packages/core/src/canvas/Canvas.tsx": {
     "lines": 1347,
@@ -137,7 +137,7 @@
     "longestFunction": 140
   },
   "packages/d3/src/transition.ts": {
-    "lines": 476,
+    "lines": 470,
     "longestFunction": 337
   },
   "packages/diagram/src/cluster.ts": {
@@ -273,7 +273,7 @@
     "longestFunction": 149
   },
   "packages/labkit/src/specimen/Specimen.tsx": {
-    "lines": 883,
+    "lines": 884,
     "longestFunction": 132
   },
   "packages/labkit/src/state/bindLabStore.ts": {
@@ -401,7 +401,7 @@
     "longestFunction": 320
   },
   "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {
-    "lines": 438,
+    "lines": 439,
     "longestFunction": 296
   },
   "packages/ui/src/components/DataGrid/DataGrid.tsx": {

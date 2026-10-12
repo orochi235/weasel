@@ -1,5 +1,6 @@
 import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
-import type { EasingSpec, Keyframe, SampledTrack, Track } from '@weasel-js/core';
+import type { EasingSpec } from '@weasel-js/core';
+import type { Keyframe, SampledTrack, Track } from '@weasel-js/animator';
 import s from './Timeline.module.css';
 import { EasingPicker } from './EasingPicker';
 import { Lane } from './Lane';

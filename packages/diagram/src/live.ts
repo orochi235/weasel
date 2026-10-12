@@ -20,13 +20,13 @@ import {
   AUTO_POSE_DESCRIPTOR,
   useLatest,
   usePoseRun,
-  type EasingFn,
   type NodeId,
   type PoseDescriptor,
   type PoseRunCtx,
   type PoseRunStep,
   type Scene,
 } from '@weasel-js/core';
+import { type EasingFn } from '@weasel-js/animator';
 import { forceRelaxation, type ForceOptions } from './force';
 import { buildGraph, type Graph, type GraphSource } from './graph';
 import { layered } from './layered';

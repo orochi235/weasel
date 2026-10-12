@@ -1,5 +1,5 @@
 // apps/site/demos/platformer/skeleton.ts
-import type { Joint, Skeleton } from '@weasel-js/core';
+import type { Joint, Skeleton } from '@weasel-js/animator';
 
 /**
  * Bones point along their own local +x. A joint's `bind.x` is therefore the

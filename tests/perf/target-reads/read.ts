@@ -1,7 +1,7 @@
 // Reads N moving `{ x, y }` targets in plain Node. argv[2]: read | readInto | parts, where parts
 // times each piece of a read alone. Run through `node tests/perf/target-reads/run.mjs`.
-import { createAnimatorCore } from '../../../packages/core/src/animation/engine/core';
-import { createTarget, stateOf } from '../../../packages/core/src/animation/target';
+import { createAnimatorCore } from '../../../packages/animator/src/engine/core';
+import { createTarget, stateOf } from '../../../packages/animator/src/target';
 
 type Pt = { x: number; y: number };
 const N = Number(process.env.N ?? 10000);

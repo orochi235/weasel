@@ -1,8 +1,14 @@
 // apps/site/demos/platformer/sceneWorld.ts
 import { asNodeId, solid } from '@weasel-js/core';
 import type {
-  FillStyle, NodeId, Pose, RectPose, Scene, TextStyle, TextVerticalAlign,
+  FillStyle,
+  NodeId,
+  RectPose,
+  Scene,
+  TextStyle,
+  TextVerticalAlign,
 } from '@weasel-js/core';
+import type { Pose } from '@weasel-js/animator';
 import { boneLocalPoses } from './boneRig';
 import { COIN_R, ENEMY_H, ENEMY_W, type Coin, type Enemy } from './entities';
 import { BALL_R, flagY, POLE_WIDTH, type Flagpole } from './flagpole';

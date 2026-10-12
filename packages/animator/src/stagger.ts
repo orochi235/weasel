@@ -1,4 +1,3 @@
-import { springPose, type PoseAnimationAdapter } from './poseHelpers';
 import type { Supervisor, SupervisorFactory, WatchCompletion } from './supervisor';
 import type {
   AnimationHandle,
@@ -8,7 +7,6 @@ import type {
   StaggerFactory,
   StaggerOptions,
   StaggerPerItem,
-  StaggerSpringPoseOptions,
   StaggerTweenOptions,
 } from './types';
 
@@ -227,18 +225,6 @@ function resolvePerItem<T, TItem>(
     : v;
 }
 
-function itemId(item: unknown): string {
-  if (item != null && typeof item === 'object' && 'id' in item) {
-    const id = (item as { id: unknown }).id;
-    if (typeof id === 'string') return id;
-  }
-  if (typeof item === 'string' || typeof item === 'number') return String(item);
-  throw new Error(
-    'stagger().springPose: each item must either be a primitive (string/number) ' +
-      'or have a string `id` field. Otherwise pose ids would collide.',
-  );
-}
-
 function makeBuilder<TItem>(
   animator: Animator,
   createSupervisor: SupervisorFactory,
@@ -259,25 +245,6 @@ function makeBuilder<TItem>(
           interpolate: opts.interpolate,
           onTick: (v) => opts.onTick(v, item, i),
           onDone: opts.onDone ? () => opts.onDone!(item, i) : undefined,
-        }),
-        opts,
-      ),
-    springPose: <TPose,>(
-      adapter: PoseAnimationAdapter<TPose>,
-      poseFn: (item: TItem, index: number) => TPose,
-      opts: StaggerSpringPoseOptions<TPose> = {},
-    ) =>
-      runStagger(createSupervisor, watchCompletion, items, delay, (item, i) =>
-        springPose(animator, adapter, {
-          id: itemId(item),
-          to: poseFn(item, i),
-          preset: opts.preset,
-          stiffness: opts.stiffness,
-          damping: opts.damping,
-          mass: opts.mass,
-          geometry: opts.geometry,
-          recordOp: opts.recordOp,
-          opLabel: opts.opLabel,
         }),
         opts,
       ),

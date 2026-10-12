@@ -21,6 +21,7 @@
   },
   "peerDependencies": {
     "react": ">=18",
+    "@weasel-js/animator": "1.9.4",
     "@weasel-js/core": "1.9.4",
     "@weasel-js/font": "1.9.4",
     "@weasel-js/geom": "1.9.4"

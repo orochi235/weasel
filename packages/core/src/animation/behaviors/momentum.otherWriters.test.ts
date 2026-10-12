@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useAnimator } from '../useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 import { momentum } from './momentum';
 import type { GestureContext } from 'interactions/gestures/types';
 import { moveEnd } from 'interactions/actions/testUtils';

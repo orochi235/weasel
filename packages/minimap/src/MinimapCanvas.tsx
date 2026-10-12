@@ -50,7 +50,7 @@ import type { DrawCommand } from '@weasel-js/core';
 import { normalizeView, type View } from '@weasel-js/core';
 import type { Scene } from '@weasel-js/core';
 import type { PoseDescriptor } from '@weasel-js/core';
-import type { Animator } from '@weasel-js/core';
+import type { Animator } from '@weasel-js/animator';
 import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core';
 import { accentColorOf } from '@weasel-js/core';
 

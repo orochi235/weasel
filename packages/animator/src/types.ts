@@ -437,20 +437,6 @@ export interface StaggerTweenOptions<T, TItem> extends StaggerOptions {
   onDone?: (item: TItem, index: number) => void;
 }
 
-/** Options for the stagger builder's `.springPose`: the spring tuning, and
- *  whether each item's settle is recorded as an undoable op. `cancelKey` and
- *  `label` belong to the stagger as a whole, as in {@link StaggerOptions};
- *  each item's spring keeps its own per-node key. */
-export interface StaggerSpringPoseOptions<TPose> extends StaggerOptions {
-  preset?: SpringPresetName;
-  stiffness?: number;
-  damping?: number;
-  mass?: number;
-  geometry?: import('interactions/actions/resize/geometry').PoseDescriptor<TPose>;
-  recordOp?: boolean;
-  opLabel?: string;
-}
-
 /** Fluent form of `Animator.stagger`: pick what to run per item after the
  *  items and the delay schedule are already fixed. */
 export interface StaggerBuilder<TItem> {
@@ -458,16 +444,6 @@ export interface StaggerBuilder<TItem> {
   each(factory: StaggerFactory<TItem>, opts?: StaggerOptions): AnimationHandle;
   /** Sugar: per-item `animator.tween` with per-item-varying options. */
   tween<T>(opts: StaggerTweenOptions<T, TItem>): AnimationHandle;
-  /** Sugar: per-item `springPose` against an adapter. `poseFn` returns the
-   *  target pose for each item. Each item must either be a primitive
-   *  (string/number) or expose a string `id` field — otherwise pose ids
-   *  would collide on `"[object Object]"` and successive tweens would
-   *  cancel each other. Throws on items that satisfy neither. */
-  springPose<TPose>(
-    adapter: import('./poseHelpers').PoseAnimationAdapter<TPose>,
-    poseFn: (item: TItem, index: number) => TPose,
-    opts?: StaggerSpringPoseOptions<TPose>,
-  ): AnimationHandle;
 }
 
 /** Options for `Animator.tweenLoop` — a tween's options plus how each

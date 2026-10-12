@@ -10,7 +10,7 @@ import { type DrawCommand } from '@weasel-js/renderer';
 import { type CommandFill, type CommandStroke } from '@weasel-js/paint';
 import type { RenderLayer } from 'core/layers/render';
 import { type Path, countPathAnchors } from '@weasel-js/geom';
-import type { ColorOverrideRegistry } from '../../animation/colorRegistry';
+import type { ColorOverrideRegistry } from '@weasel-js/animator';
 
 const PLACEHOLDER_FILL: CommandFill = { color: '#ffffff' };
 const PLACEHOLDER_STROKE: CommandStroke = { paint: { color: '#ffffff' }, width: 1 };

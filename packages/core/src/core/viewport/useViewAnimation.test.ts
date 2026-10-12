@@ -3,7 +3,7 @@ import { StrictMode, createElement } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { renderHook, act } from '@testing-library/react';
 import { useViewAnimation, type ViewAnimationApi, type ViewChannel } from './useViewAnimation';
-import { useAnimator } from '../../animation/useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 import { linear } from '@weasel-js/geom';
 import { zoomAt } from './zoomAt';
 import type { View } from './view';

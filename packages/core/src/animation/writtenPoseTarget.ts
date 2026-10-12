@@ -1,6 +1,6 @@
 import type { PoseDescriptor } from '../core/geometry/poseDescriptor';
 import { liveAxes } from './poseTarget';
-import { createTarget, type Target } from './target';
+import { createTarget, type Target } from '@weasel-js/animator';
 
 /** What {@link createWrittenPoseTarget} takes. */
 export interface WrittenPoseTargetOptions<TPose> {

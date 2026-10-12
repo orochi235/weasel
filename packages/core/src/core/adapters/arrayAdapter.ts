@@ -19,7 +19,7 @@ import {
   type PoseDescriptor,
 } from 'core/geometry/poseDescriptor';
 import type { Path } from '@weasel-js/geom';
-import type { Target } from '../../animation/target';
+import type { Target } from '@weasel-js/animator';
 import { createWrittenPoseTarget } from '../../animation/writtenPoseTarget';
 import {
   polygonRegion,

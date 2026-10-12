@@ -8,7 +8,7 @@ import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import type { MoveBehavior } from '../../gestures/types';
 import { momentum } from '../../../animation/behaviors/momentum';
-import { useAnimator } from '../../../animation/useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 
 type Pose = { x: number; y: number; width: number; height: number };
 

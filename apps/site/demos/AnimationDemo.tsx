@@ -9,15 +9,16 @@ import {
   SceneCanvas,
   WeaselProvider,
   sceneToAdapter,
-  useAnimator,
   useScene,
   useSelection,
   useSelectTool,
   useTools,
   useVelocityTracker,
 } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
 import { createGridLayer } from '@weasel-js/guides';
-import type { AnimationInfo, Animator, LiveAnimation, MoveBehavior, PhysicsHandle } from '@weasel-js/core';
+import type { MoveBehavior } from '@weasel-js/core';
+import type { AnimationInfo, Animator, LiveAnimation, PhysicsHandle } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import styles from './AnimationDemo.module.css';
 import num from '@weasel-js/theme/numeric.module.css';

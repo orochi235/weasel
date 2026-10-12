@@ -2,10 +2,10 @@
 // rows of a target table. Steady, then with rows stopping and starting every frame.
 // Run through `node tests/perf/target-reads/run.mjs table <N>... <idle | targets | table>`.
 // `idle` is the frame with nothing read, to take off the other two.
-import { createAnimatorCore } from '../../../packages/core/src/animation/engine/core';
-import { createTarget, stateOf, type Target } from '../../../packages/core/src/animation/target';
-import { createTargetTable } from '../../../packages/core/src/animation/targetTable';
-import type { AnimationHandle } from '../../../packages/core/src/animation/types';
+import { createAnimatorCore } from '../../../packages/animator/src/engine/core';
+import { createTarget, stateOf, type Target } from '../../../packages/animator/src/target';
+import { createTargetTable } from '../../../packages/animator/src/targetTable';
+import type { AnimationHandle } from '../../../packages/animator/src/types';
 
 const N = Number(process.env.N ?? 10000);
 const AXES = 2;

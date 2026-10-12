@@ -1,7 +1,7 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 import { poseLinearOf } from '@weasel-js/geom';
-import type { TargetAxes } from '../../animation/target';
+import type { TargetAxes } from '@weasel-js/animator';
 
 /** `Bounds` with a required rotation angle (radians). Pivot is the AABB
  *  center of the unrotated `{x, y, width, height}`. */

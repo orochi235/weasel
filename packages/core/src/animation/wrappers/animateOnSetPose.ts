@@ -2,7 +2,7 @@ import { poseKey, tweenPose, springPose } from '../poseHelpers';
 import { instantPoseWrite } from './instantPose';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
-import type { Animator, EasingSpec, SpringPresetName } from '../types';
+import type { Animator, EasingSpec, SpringPresetName } from '@weasel-js/animator';
 
 /** Options for `animateOnSetPose`. */
 export interface AnimateOnSetPoseOptions<TPose> {

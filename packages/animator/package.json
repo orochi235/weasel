@@ -1,0 +1,53 @@
+{
+  "name": "@weasel-js/animator",
+  "version": "1.9.4",
+  "description": "The weasel animator: tweens, springs, holds, staggers, and timelines that combine on targets, run by one frame loop. Needs no scene.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/animator"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@msb235/blits": "0.10.0",
+    "@weasel-js/geom": "1.9.4",
+    "@weasel-js/paint": "1.9.4",
+    "@weasel-js/react": "1.9.4",
+    "@weasel-js/registry": "1.9.4"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

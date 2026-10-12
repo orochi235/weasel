@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { EASINGS, PATH_M, PATH_L, type EasingName } from '@weasel-js/geom';
 import {
   SceneCanvas,
-  useAnimator,
   useScene,
   asNodeId,
   textCommandFromRuns,
 } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
 import type { RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Slider } from '@weasel-js/ui';

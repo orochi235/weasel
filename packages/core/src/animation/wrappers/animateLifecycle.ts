@@ -1,9 +1,8 @@
 import { tweenPose } from '../poseHelpers';
 import { setPoseInstant } from './instantPose';
-import { stateOf } from '../target';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
-import type { Animator, EasingSpec } from '../types';
+import type { Animator, EasingSpec } from '@weasel-js/animator';
 
 /** How nodes enter and leave. `enterFrom` derives the pose a new node starts
  *  at, given where it belongs; `exitTo` derives the pose a departing node
@@ -57,13 +56,12 @@ export function animateLifecycle<TNode extends { id: string; pose?: TPose }, TPo
       leaving.add(id);
       let unwatch = (): void => {};
       const target = adapter.poseTarget?.(id, opts.geometry);
-      const committed = target && stateOf(target);
-      const home = committed?.get();
+      const home = target?.committed();
       const remove = (): void => {
         if (!leaving.delete(id)) return;
         unwatch();
         // The exit pose was only for show: the node is removed as it stood, so undo restores that.
-        if (committed) committed.set(home as TPose);
+        if (target) target.commit(home as TPose);
         adapter.removeNode(id);
       };
       const current = adapter.getPose(id);

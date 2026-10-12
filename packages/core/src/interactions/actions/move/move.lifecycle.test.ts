@@ -7,7 +7,7 @@ import type { NodeId } from 'core/scene/types';
 import type { MoveBehavior } from '../../gestures/types';
 import { snapBackOrDelete } from './behaviors/snapBackOrDelete';
 import { momentum } from '../../../animation/behaviors/momentum';
-import type { Animator } from '../../../animation/types';
+import type { Animator } from '@weasel-js/animator';
 
 type Pose = { x: number; y: number; width: number; height: number };
 

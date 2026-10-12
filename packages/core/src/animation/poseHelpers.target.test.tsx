@@ -6,10 +6,10 @@ import { effectivePose } from '../core/scene/effectivePose';
 import type { RectPose } from '../core/scene/types';
 import { sceneToAdapter } from '../canvas/sceneAdapter';
 import { moveGestureAdapter } from '../interactions/actions/move/gestureAdapter';
-import { useAnimator } from './useAnimator';
+import { useAnimator } from '@weasel-js/animator';
 import { springPose, tweenPose } from './poseHelpers';
 import type { SceneAdapter } from '../core/adapters/types';
-import type { Animator } from './types';
+import type { Animator } from '@weasel-js/animator';
 
 function setup(options: Parameters<typeof sceneToAdapter>[1] = {}) {
   const cbs: ((t: number) => void)[] = [];

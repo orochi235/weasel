@@ -5,8 +5,8 @@ import {
   easeOutCubic,
   sceneFromJSON,
   useAnimatedReflow,
-  useAnimator,
 } from '@weasel-js/core';
+import { useAnimator } from '@weasel-js/animator';
 import { freeform, snapPoint, tileGrid } from '@weasel-js/guides';
 import type { SerializedScene } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';

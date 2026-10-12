@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createPathLayer } from './pathLayer';
 import { polygonFromPoints, rectPath, type Path } from '@weasel-js/geom';
 import type { CommandFill, CommandStroke } from '@weasel-js/paint';
-import { ColorOverrideRegistry } from '../../animation/colorRegistry';
+import { ColorOverrideRegistry } from '@weasel-js/animator';
 
 // createPathLayer emits raw world-space PathDrawCommands. The viewToMat3
 // wrap is applied at drawLayers orchestration time, not in the layer itself

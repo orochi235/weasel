@@ -5,8 +5,8 @@ import { documentPose, effectivePose, type PosedNode, type PoseSource } from '..
 import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
 import type { ReflowTransition } from '../layout/types';
 import { liveAxes } from './poseTarget';
-import { createTarget, type Target } from './target';
-import type { Animator, EasingSpec, SpringPresetName } from './types';
+import { createTarget, type Target } from '@weasel-js/animator';
+import type { Animator, EasingSpec, SpringPresetName } from '@weasel-js/animator';
 
 /** How a reflowed sibling travels: a duration and easing, or a spring. */
 export interface ReflowTransitionOptions<TPose> {
