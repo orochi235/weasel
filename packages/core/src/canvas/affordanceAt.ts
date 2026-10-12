@@ -9,7 +9,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { View } from 'core/viewport/view';
 import type { AffordanceHit } from '@weasel-js/routing';
-import type { Affordance, CommonAffordanceScratch } from 'affordances/types';
+import type { Affordance, CommonAffordanceScratch, LayerHit } from 'affordances/types';
 import { hitAffordanceRegions, type AffordanceRegionHit } from 'affordances/hitAffordanceRegions';
 import { createCornerResizeAffordance } from 'affordances/cornerResize';
 import { createRotationAffordance } from 'affordances/rotationHandle';
@@ -175,5 +175,19 @@ export function buildClassifyTarget(
       body: sel.includes(hitId) ? 'selected-body' : 'unselected-body',
       kind: kindOfNode?.(hitId),
     };
+  };
+}
+
+/** A registered layer's claim on a point, as the affordance the dispatcher
+ *  routes: its kind names the layer, and it carries what the layer's hit-test
+ *  resolved. */
+export function layerAffordance(layerId: string, claim: LayerHit): AffordanceHit {
+  return {
+    kind: `layer:${layerId}`,
+    owner: layerId,
+    strength: claim.strength ?? 'shared',
+    ...(claim.claimedKinds !== undefined ? { claimedKinds: claim.claimedKinds } : {}),
+    ...(claim.cursor !== undefined ? { cursor: claim.cursor } : {}),
+    ...(claim.initialScratch !== undefined ? { payload: claim.initialScratch } : {}),
   };
 }

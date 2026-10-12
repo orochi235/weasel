@@ -600,7 +600,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const {
     viewRef, controlledView, setView, getView, subscribeView,
     adoptControlled, announceControlled, clearSubscribers,
-  } = useCanvasView({ view: viewProp, defaultView, onViewChange, viewBounds, dimsRef, requestRedraw });
+  } = useCanvasView({
+    view: viewProp, defaultView, onViewChange, viewBounds, dims: () => dimsRef.current, requestRedraw,
+  });
 
   const hitTestExtras = useCallback((
     worldX: number,
