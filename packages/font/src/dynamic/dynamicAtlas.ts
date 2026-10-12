@@ -19,7 +19,7 @@ import type { BmFont, BmFontChar } from '../FontAtlas';
 // `fallback.ts` imports nothing, so this edge cannot close a cycle; keep it
 // that way. (registerFont.ts imports both this module and fallback.ts.)
 import { getFontFallbackPolicy } from '../fallback';
-import { notifyGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
+import { notifyGlyphBaked, notifyGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
 import { ShelfPacker } from './shelfPack';
 import {
   PAGE_SIZE, MAX_PAGES, blitToPage, clearPages, _resetPagesForTests,
@@ -335,7 +335,7 @@ function flushPending(): void {
     n++;
   }
   if (pending.length > 0) scheduleFlush();
-  notifyGlyphReady();
+  notifyGlyphBaked();
 }
 
 /** Reset the per-frame synchronous bake budget. Called by

@@ -16,8 +16,8 @@ import {
   __setGlyphRasterizerForTests,
   _resetFontOutlinesForTests,
 } from '@weasel-js/font/test-seams';
-import { layoutRuns } from './layoutRuns';
-import type { LayoutRunsOpts } from './layoutRuns';
+import { layoutAndPaint } from './testing/layoutAndPaint';
+import type { LayoutRunsOpts } from './layoutOpts';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
 import { resolveTextStyle } from '../textStyle';
 
@@ -78,7 +78,7 @@ const RUN_ITALIC = (text: string): ResolvedRun => ({ ...RUN_PLAIN(text), fontSty
 describe('layoutRuns — single line', () => {
   it('returns one group when all runs share the same variant', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(out.groups).toHaveLength(1);
     expect(out.groups[0].family).toBe('inter');
     expect(out.groups[0].weight).toBe(400);
@@ -96,16 +96,16 @@ describe('layoutRuns — single line', () => {
     });
     const opts: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
     // Paint identity is structural: built separately, equal gradients are one paint.
-    const one = layoutRuns([{ ...RUN_PLAIN('AB'), fill: gradient() }, { ...RUN_PLAIN('A'), fill: gradient() }], opts);
+    const one = layoutAndPaint([{ ...RUN_PLAIN('AB'), fill: gradient() }, { ...RUN_PLAIN('A'), fill: gradient() }], opts);
     expect(one.groups).toHaveLength(1);
     expect(one.groups[0].quads).toHaveLength(3);
-    const two = layoutRuns([{ ...RUN_PLAIN('AB'), fill: gradient() }, { ...RUN_PLAIN('A'), fill: gradient('#0f0') }], opts);
+    const two = layoutAndPaint([{ ...RUN_PLAIN('AB'), fill: gradient() }, { ...RUN_PLAIN('A'), fill: gradient('#0f0') }], opts);
     expect(two.groups.map((g) => g.quads.length)).toEqual([2, 1]);
   });
 
   it('emits one group per distinct (family, weight, style, synthetic, fill)', async () => {
     await registerFixture('inter', [{}, { weight: 700 }]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [RUN_PLAIN('A'), RUN_BOLD('B'), RUN_PLAIN('A')],
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
@@ -118,7 +118,7 @@ describe('layoutRuns — single line', () => {
 
   it('marks groups with synthetic flags when the resolver fell back', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_ITALIC('A')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([RUN_ITALIC('A')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(out.groups).toHaveLength(1);
     expect(out.groups[0].synthetic).toEqual({ bold: false, italic: true });
   });
@@ -126,7 +126,7 @@ describe('layoutRuns — single line', () => {
   it('per-run fill forces a separate group even for the same atlas variant', async () => {
     await registerFixture('inter', [{}]);
     const RED: ResolvedRun = { ...RUN_PLAIN('A'), fill: { paint: { kind: 'solid', color: '#f00' } } };
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [RUN_PLAIN('A'), RED, RUN_PLAIN('A')],
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
@@ -135,15 +135,15 @@ describe('layoutRuns — single line', () => {
 
   it('positions glyphs across runs on the same baseline with kerning carrying through', async () => {
     await registerFixture('inter', [{}]);
-    const single = layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
-    const split = layoutRuns([RUN_PLAIN('A'), RUN_PLAIN('B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const single = layoutAndPaint([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const split = layoutAndPaint([RUN_PLAIN('A'), RUN_PLAIN('B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     const singleX = single.groups[0].quads.map((q) => q.x0);
     const splitX = split.groups.flatMap((g) => g.quads.map((q) => q.x0)).sort((a, b) => a - b);
     expect(splitX).toEqual(singleX);
   });
 
   it('returns no groups when the family is unregistered', () => {
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [{ ...RUN_PLAIN('A'), fontFamily: 'missing' }],
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
@@ -156,7 +156,7 @@ describe('layoutRuns — single line', () => {
     // FIXTURE_FONT: info.size=32, common.base=29.
     // RUN_PLAIN: fontSize=32 → scale=1, so the baseline sits 29 below the
     // line-box top — which, layout being origin-relative, is y = 0.
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [RUN_PLAIN('A')],
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
@@ -170,7 +170,7 @@ describe('layoutRuns — word wrap', () => {
     // Fixture font has only 'A' (xadvance ~23 at size 32). Use width that
     // forces at least one wrap for the text below.
     const text = 'ABAB ABAB ABAB ABAB';
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [RUN_PLAIN(text)],
       { maxWidth: 150, lineHeight: 1.2, align: 'left' },
     );
@@ -185,7 +185,7 @@ describe('layoutRuns — word wrap', () => {
     await registerFixture('inter', [{}]);
     const small: ResolvedRun = { ...RUN_PLAIN('A'), fontSize: 16 };
     const big: ResolvedRun = { ...RUN_PLAIN('B'), fontSize: 40 };
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [small, big],
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
@@ -206,8 +206,8 @@ describe('layoutRuns — word wrap', () => {
     const big: ResolvedRun = { ...RUN_PLAIN('B'), fontSize: 40 };
     // Both orders, so the baseline cannot be coming from whichever run the
     // walk happened to visit first or last.
-    const bigFirst = layoutRuns([big, small], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
-    const bigLast = layoutRuns([small, big], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const bigFirst = layoutAndPaint([big, small], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const bigLast = layoutAndPaint([small, big], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(bigFirst.lines[0].baselineY).toBeCloseTo(36.25, 6);
     expect(bigLast.lines[0].baselineY).toBeCloseTo(36.25, 6);
     for (const out of [bigFirst, bigLast]) {
@@ -221,7 +221,7 @@ describe('layoutRuns — word wrap', () => {
     await registerTallFont();
     // inter's base is 29 in a 32 em; tall's is 58. At the same fontSize the
     // deeper ascent sinks the shared baseline, and both runs sit on it.
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [RUN_PLAIN('A'), { ...RUN_PLAIN('B'), fontFamily: 'tall' }],
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
@@ -233,9 +233,9 @@ describe('layoutRuns — word wrap', () => {
 
   it('alignment shifts each line by (maxWidth - lineWidth) * factor', async () => {
     await registerFixture('inter', [{}]);
-    const leftOut = layoutRuns([RUN_PLAIN('AB')], { maxWidth: 400, lineHeight: 1.2, align: 'left' });
-    const centerOut = layoutRuns([RUN_PLAIN('AB')], { maxWidth: 400, lineHeight: 1.2, align: 'center' });
-    const rightOut = layoutRuns([RUN_PLAIN('AB')], { maxWidth: 400, lineHeight: 1.2, align: 'right' });
+    const leftOut = layoutAndPaint([RUN_PLAIN('AB')], { maxWidth: 400, lineHeight: 1.2, align: 'left' });
+    const centerOut = layoutAndPaint([RUN_PLAIN('AB')], { maxWidth: 400, lineHeight: 1.2, align: 'center' });
+    const rightOut = layoutAndPaint([RUN_PLAIN('AB')], { maxWidth: 400, lineHeight: 1.2, align: 'right' });
     const leftX = leftOut.groups[0].quads[0].x0;
     const centerX = centerOut.groups[0].quads[0].x0;
     const rightX = rightOut.groups[0].quads[0].x0;
@@ -246,7 +246,7 @@ describe('layoutRuns — word wrap', () => {
   it('anchors center/right on the line width when no maxWidth box is given', async () => {
     await registerFixture('inter', [{}]);
     const at = (align: 'left' | 'center' | 'right') =>
-      layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align });
+      layoutAndPaint([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align });
     const first = (o: ReturnType<typeof at>) => o.groups[0].quads[0].x0;
     // Without a box, the anchor x is the text's left edge ('left'), midpoint
     // ('center'), or right edge ('right'). So center shifts left by half the
@@ -259,7 +259,7 @@ describe('layoutRuns — word wrap', () => {
 
   it('respects newlines inside a run as forced line breaks', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [RUN_PLAIN('A\nB')],
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
@@ -275,7 +275,7 @@ describe('layoutRuns — substituted families', () => {
   // to nothing and paints nothing, however correct the ResolveResult was.
   it('tags the group with the atlas family it will be looked up by', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [{ ...RUN_PLAIN('A'), fontFamily: 'ghost' }],
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
@@ -286,7 +286,7 @@ describe('layoutRuns — substituted families', () => {
 
   it('merges two families substituting to the same atlas into one group', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [
         { ...RUN_PLAIN('A'), fontFamily: 'ghost' },
         { ...RUN_PLAIN('A'), fontFamily: 'phantom' },
@@ -301,7 +301,7 @@ describe('layoutRuns — substituted families', () => {
   it('keeps a registered family on its own exact-match atlas', async () => {
     await registerFixture('inter', [{}]);
     await registerFixture('slab', [{}]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [RUN_PLAIN('A'), { ...RUN_PLAIN('A'), fontFamily: 'slab' }],
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );
@@ -334,7 +334,7 @@ describe('layoutRuns — canvas-dynamic faces', () => {
   });
 
   it('lays out a dynamic run into a canvas-source group with quads', () => {
-    const laid = layoutRuns([dynRun('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const laid = layoutAndPaint([dynRun('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(laid.groups.length).toBe(1);
     const g = laid.groups[0];
     expect(g.source).toBe('canvas');
@@ -347,13 +347,13 @@ describe('layoutRuns — canvas-dynamic faces', () => {
 
   it('unbaked glyphs advance the pen but emit no quads', () => {
     resetBakeBudget(0);
-    const laid = layoutRuns([dynRun('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const laid = layoutAndPaint([dynRun('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(laid.groups.flatMap((g) => g.quads).length).toBe(0);
     expect(laid.bounds.width).toBeCloseTo(22); // measureText advances still count
   });
 
   it('spaces contribute real measured advances without quads', () => {
-    const laid = layoutRuns([dynRun('A B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const laid = layoutAndPaint([dynRun('A B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(laid.groups.flatMap((g) => g.quads).length).toBe(2);
     // A(22) + space(12) + B(22) at scale 0.5.
     expect(laid.bounds.width).toBeCloseTo(28);
@@ -361,14 +361,14 @@ describe('layoutRuns — canvas-dynamic faces', () => {
 
   it('tracks dynamic glyphs too, including the blank ones that emit no quad', () => {
     const opts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
-    const plain = layoutRuns([dynRun('A B')], opts);
-    const tracked = layoutRuns([{ ...dynRun('A B'), letterSpacing: 5 }], opts);
+    const plain = layoutAndPaint([dynRun('A B')], opts);
+    const tracked = layoutAndPaint([{ ...dynRun('A B'), letterSpacing: 5 }], opts);
     // A(11) + space(6) + B(11) at scale 0.5, plus 5 after each of 3 characters.
     expect(plain.bounds.width).toBeCloseTo(28);
     expect(tracked.bounds.width).toBeCloseTo(43);
     // The space emits no quad but must still carry its tracking, so 'B' moves
     // by two characters' worth — otherwise quads drift out of the line width.
-    const bx = (o: ReturnType<typeof layoutRuns>) =>
+    const bx = (o: ReturnType<typeof layoutAndPaint>) =>
       o.groups.flatMap((g) => g.quads.map((q) => q.x0))[1];
     expect(bx(tracked) - bx(plain)).toBeCloseTo(10);
   });
@@ -381,7 +381,7 @@ describe('layoutRuns — canvas-dynamic faces', () => {
         : { width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255), left: -8, top: 26, advance: 22 }),
     });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const laid = layoutRuns([dynRun('A\ue000B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const laid = layoutAndPaint([dynRun('A\ue000B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(laid.lines[0].cells.map((c) => c.drawsInk)).toEqual([true, false, true]);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain('U+E000');
@@ -390,7 +390,7 @@ describe('layoutRuns — canvas-dynamic faces', () => {
 
   it('atlas groups still report source "atlas" and page 0', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     const group = out.groups[0];
     expect(group.source).toBe('atlas');
     expect(group.page).toBe(0);
@@ -404,13 +404,13 @@ describe('layoutRuns — letterSpacing', () => {
   const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
   // Emission order, deliberately unsorted — sorting would hide a bug that
   // reorders quads, and every case here lays out into a single group.
-  const xs = (o: ReturnType<typeof layoutRuns>) =>
+  const xs = (o: ReturnType<typeof layoutAndPaint>) =>
     o.groups.flatMap((g) => g.quads.map((q) => q.x0));
 
   it('adds tracking after every glyph, including the last', async () => {
     await registerFixture('inter', [{}]);
-    const plain = layoutRuns([RUN_PLAIN('AB')], OPTS);
-    const tracked = layoutRuns([{ ...RUN_PLAIN('AB'), letterSpacing: 4 }], OPTS);
+    const plain = layoutAndPaint([RUN_PLAIN('AB')], OPTS);
+    const tracked = layoutAndPaint([{ ...RUN_PLAIN('AB'), letterSpacing: 4 }], OPTS);
     // Trailing tracking counts toward the measured width (matches CSS).
     expect(plain.bounds.width).toBeCloseTo(44);
     expect(tracked.bounds.width).toBeCloseTo(plain.bounds.width + 4 * 2);
@@ -421,8 +421,8 @@ describe('layoutRuns — letterSpacing', () => {
 
   it('is a no-op at 0', async () => {
     await registerFixture('inter', [{}]);
-    const a = layoutRuns([RUN_PLAIN('AB')], OPTS);
-    const b = layoutRuns([{ ...RUN_PLAIN('AB'), letterSpacing: 0 }], OPTS);
+    const a = layoutAndPaint([RUN_PLAIN('AB')], OPTS);
+    const b = layoutAndPaint([{ ...RUN_PLAIN('AB'), letterSpacing: 0 }], OPTS);
     expect(b.bounds.width).toBe(a.bounds.width);
     expect(xs(b)).toEqual(xs(a));
   });
@@ -430,7 +430,7 @@ describe('layoutRuns — letterSpacing', () => {
   it('is in world units — the same tracking shifts glyphs equally at any fontSize', async () => {
     await registerFixture('inter', [{}]);
     const at = (fontSize: number, letterSpacing: number) =>
-      layoutRuns([{ ...RUN_PLAIN('AB'), fontSize, letterSpacing }], OPTS);
+      layoutAndPaint([{ ...RUN_PLAIN('AB'), fontSize, letterSpacing }], OPTS);
     for (const fontSize of [32, 16]) {
       const plain = at(fontSize, 0);
       const tracked = at(fontSize, 4);
@@ -442,7 +442,7 @@ describe('layoutRuns — letterSpacing', () => {
 
   it('accepts negative tracking, pulling glyphs together', async () => {
     await registerFixture('inter', [{}]);
-    const tight = layoutRuns([{ ...RUN_PLAIN('AB'), letterSpacing: -4 }], OPTS);
+    const tight = layoutAndPaint([{ ...RUN_PLAIN('AB'), letterSpacing: -4 }], OPTS);
     expect(xs(tight)).toEqual([1, 20]);
     expect(tight.bounds.width).toBeCloseTo(36);
   });
@@ -450,8 +450,8 @@ describe('layoutRuns — letterSpacing', () => {
   it('tracks spaces like any other character', async () => {
     await registerFixture('inter', [{}]);
     // Fixture has no space glyph → synthesized advance fontSize * 0.25 = 8.
-    const plain = layoutRuns([RUN_PLAIN('A B')], OPTS);
-    const tracked = layoutRuns([{ ...RUN_PLAIN('A B'), letterSpacing: 4 }], OPTS);
+    const plain = layoutAndPaint([RUN_PLAIN('A B')], OPTS);
+    const tracked = layoutAndPaint([{ ...RUN_PLAIN('A B'), letterSpacing: 4 }], OPTS);
     expect(plain.bounds.width).toBeCloseTo(53);
     // Three characters tracked: A, the space, and B.
     expect(tracked.bounds.width).toBeCloseTo(53 + 12);
@@ -463,11 +463,11 @@ describe('layoutRuns — letterSpacing', () => {
 
   it('applies each run’s own tracking to the gap that follows its glyphs', async () => {
     await registerFixture('inter', [{}]);
-    const trackedFirst = layoutRuns(
+    const trackedFirst = layoutAndPaint(
       [{ ...RUN_PLAIN('A'), letterSpacing: 10 }, RUN_PLAIN('B')],
       OPTS,
       );
-    const trackedSecond = layoutRuns(
+    const trackedSecond = layoutAndPaint(
       [RUN_PLAIN('A'), { ...RUN_PLAIN('B'), letterSpacing: 10 }],
       OPTS,
       );
@@ -479,7 +479,7 @@ describe('layoutRuns — letterSpacing', () => {
     expect(trackedSecond.bounds.width).toBeCloseTo(54);
   });
 
-  const lineCount = (o: ReturnType<typeof layoutRuns>) =>
+  const lineCount = (o: ReturnType<typeof layoutAndPaint>) =>
     new Set(o.groups.flatMap((g) => g.quads.map((q) => q.y0))).size;
 
   it('counts the tracking of the word being fitted, not just of the line so far', async () => {
@@ -492,7 +492,7 @@ describe('layoutRuns — letterSpacing', () => {
     // at 44 → 126 ≤ 130 → it stays on one line and this test fails.
     const wrapOpts = { maxWidth: 130, lineHeight: 1.2, align: 'left' as const };
     const at = (letterSpacing: number) =>
-      layoutRuns([{ ...RUN_PLAIN('AB AB'), letterSpacing }], wrapOpts);
+      layoutAndPaint([{ ...RUN_PLAIN('AB AB'), letterSpacing }], wrapOpts);
     expect(lineCount(at(0))).toBe(1);
     expect(lineCount(at(10))).toBe(2);
   });
@@ -501,8 +501,8 @@ describe('layoutRuns — letterSpacing', () => {
     await registerFixture('inter', [{}]);
     const wrapOpts = { maxWidth: 150, lineHeight: 1.2, align: 'left' as const };
     const text = 'AB AB AB AB AB AB';
-    const plain = layoutRuns([RUN_PLAIN(text)], wrapOpts);
-    const tracked = layoutRuns([{ ...RUN_PLAIN(text), letterSpacing: 10 }], wrapOpts);
+    const plain = layoutAndPaint([RUN_PLAIN(text)], wrapOpts);
+    const tracked = layoutAndPaint([{ ...RUN_PLAIN(text), letterSpacing: 10 }], wrapOpts);
     expect(lineCount(plain)).toBe(2);
     expect(lineCount(tracked)).toBe(3);
   });
@@ -536,7 +536,7 @@ describe('layoutRuns — letterSpacing', () => {
   it('tracks a base and its combining mark once, as CSS does', async () => {
     await registerMarksFont();
     // A(23) + U+0301(0) + B(22), no kerning across the mark: two clusters.
-    const out = layoutRuns([MARKS('A\u0301B', 4)], OPTS);
+    const out = layoutAndPaint([MARKS('A\u0301B', 4)], OPTS);
     expect(out.bounds.width).toBeCloseTo(45 + 2 * 4);
     // The mark sits against its base, before the tracking gap, not after it.
     const cells = out.lines[0].cells;
@@ -546,15 +546,15 @@ describe('layoutRuns — letterSpacing', () => {
 
   it('tracks a ZWJ sequence once', async () => {
     await registerMarksFont();
-    const out = layoutRuns([MARKS('\u{1F468}\u200D\u{1F469}', 4)], OPTS);
+    const out = layoutAndPaint([MARKS('\u{1F468}\u200D\u{1F469}', 4)], OPTS);
     expect(out.bounds.width).toBeCloseTo(60 + 4);
   });
 
   it('reaches layout through resolveRuns (run value wins, style value inherited)', async () => {
     await registerFixture('inter', [{}]);
     const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, letterSpacing: 4 });
-    const fromStyle = layoutRuns(resolveRuns([{ text: 'AB' }], style), OPTS);
-    const fromRun = layoutRuns(
+    const fromStyle = layoutAndPaint(resolveRuns([{ text: 'AB' }], style), OPTS);
+    const fromRun = layoutAndPaint(
       resolveRuns([{ text: 'AB', letterSpacing: 10 }], style),
       OPTS,
       );
@@ -578,13 +578,13 @@ describe('layoutRuns — decoration geometry', () => {
 
   it('emits no decorations when neither flag is set', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AB')], OPTS);
+    const out = layoutAndPaint([RUN_PLAIN('AB')], OPTS);
     expect(out.decorations).toEqual([]);
   });
 
   it('places an underline rule below the baseline, spanning the run advance', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([UNDERLINED('A')], OPTS);
+    const out = layoutAndPaint([UNDERLINED('A')], OPTS);
     expect(out.decorations).toHaveLength(1);
     const d = out.decorations[0];
     expect(d.kind).toBe('underline');
@@ -596,7 +596,7 @@ describe('layoutRuns — decoration geometry', () => {
 
   it('places a strikethrough rule above the baseline', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([{ ...RUN_PLAIN('A'), strikethrough: true }], OPTS);
+    const out = layoutAndPaint([{ ...RUN_PLAIN('A'), strikethrough: true }], OPTS);
     expect(out.decorations).toHaveLength(1);
     const d = out.decorations[0];
     expect(d.kind).toBe('strikethrough');
@@ -607,7 +607,7 @@ describe('layoutRuns — decoration geometry', () => {
 
   it('emits both rules for a run carrying both flags', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([{ ...RUN_PLAIN('A'), underline: true, strikethrough: true }], OPTS);
+    const out = layoutAndPaint([{ ...RUN_PLAIN('A'), underline: true, strikethrough: true }], OPTS);
     expect(out.decorations.map((d) => d.kind)).toEqual(['underline', 'strikethrough']);
     // One span, two rules: same horizontal extent.
     expect(out.decorations[0].x1).toBe(out.decorations[1].x1);
@@ -615,7 +615,7 @@ describe('layoutRuns — decoration geometry', () => {
 
   it('runs continuously across interior spaces, which emit no glyph quads', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([UNDERLINED('A B')], OPTS);
+    const out = layoutAndPaint([UNDERLINED('A B')], OPTS);
     expect(out.decorations).toHaveLength(1);
     // A(23) + space(8) + B(22) = 53.
     expect(out.decorations[0].x0).toBeCloseTo(0, 6);
@@ -628,7 +628,7 @@ describe('layoutRuns — decoration geometry', () => {
 
   it('covers trailing letter-spacing, matching the CSS inline box', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([{ ...UNDERLINED('A'), letterSpacing: 10 }], OPTS);
+    const out = layoutAndPaint([{ ...UNDERLINED('A'), letterSpacing: 10 }], OPTS);
     // Tracking is applied after every glyph including the last (see the
     // layoutRuns header), so the rule is 23 + 10 wide, not 23.
     expect(out.decorations[0].x1).toBeCloseTo(33, 6);
@@ -639,14 +639,14 @@ describe('layoutRuns — decoration geometry', () => {
     // The single-glyph case above only ever takes the branch that *opens* a
     // span. Tracking has to reach the branch that *extends* one too, which
     // needs a second glyph: A(23)+10 + kern(-1) + B(22)+10 = 64.
-    const out = layoutRuns([{ ...UNDERLINED('AB'), letterSpacing: 10 }], OPTS);
+    const out = layoutAndPaint([{ ...UNDERLINED('AB'), letterSpacing: 10 }], OPTS);
     expect(out.decorations).toHaveLength(1);
     expect(out.decorations[0].x1).toBeCloseTo(64, 6);
   });
 
   it('merges adjacent runs that agree on decoration and fill into one rule', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([UNDERLINED('A'), UNDERLINED('B')], OPTS);
+    const out = layoutAndPaint([UNDERLINED('A'), UNDERLINED('B')], OPTS);
     expect(out.decorations).toHaveLength(1);
     // A(23) + kern(-1) + B(22) = 44. A seam at the run join would show as two
     // rects, or as one rect that skipped the kerning gap.
@@ -657,7 +657,7 @@ describe('layoutRuns — decoration geometry', () => {
   it('breaks the rule where the fill changes, so each piece takes its run colour', async () => {
     await registerFixture('inter', [{}]);
     const RED: ResolvedRun = { ...UNDERLINED('B'), fill: { paint: { kind: 'solid', color: '#f00' } } };
-    const out = layoutRuns([UNDERLINED('A'), RED], OPTS);
+    const out = layoutAndPaint([UNDERLINED('A'), RED], OPTS);
     expect(out.decorations).toHaveLength(2);
     expect(out.decorations.map((d) => d.fill)).toEqual([
       { paint: { kind: 'solid', color: '#000' } },
@@ -673,7 +673,7 @@ describe('layoutRuns — decoration geometry', () => {
 
   it('does not merge across a font-size change, since offset and thickness scale', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [UNDERLINED('A'), { ...UNDERLINED('B'), fontSize: 16 }],
       OPTS,
       );
@@ -686,7 +686,7 @@ describe('layoutRuns — decoration geometry', () => {
 
   it('stops the rule at an undecorated run and starts a new one after it', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([UNDERLINED('A'), RUN_PLAIN('B'), UNDERLINED('A')], OPTS);
+    const out = layoutAndPaint([UNDERLINED('A'), RUN_PLAIN('B'), UNDERLINED('A')], OPTS);
     expect(out.decorations).toHaveLength(2);
     expect(out.decorations[0].x1).toBeLessThan(out.decorations[1].x0);
   });
@@ -695,7 +695,7 @@ describe('layoutRuns — decoration geometry', () => {
     await registerFixture('inter', [{}]);
     // maxWidth 30: 'A' (23) fits; the trailing space takes the line to 31;
     // 'B' (22) would take it to 53, so it wraps.
-    const out = layoutRuns([UNDERLINED('A B')], { ...OPTS, maxWidth: 30 });
+    const out = layoutAndPaint([UNDERLINED('A B')], { ...OPTS, maxWidth: 30 });
     expect(out.decorations).toHaveLength(2);
     const [first, second] = out.decorations;
     expect(second.y0 - first.y0).toBeCloseTo(32 * 1.2, 6);
@@ -707,21 +707,21 @@ describe('layoutRuns — decoration geometry', () => {
 
   it('follows the alignment shift, since it is applied before the pen walks', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([UNDERLINED('A')], { ...OPTS, maxWidth: 100, align: 'right' });
+    const out = layoutAndPaint([UNDERLINED('A')], { ...OPTS, maxWidth: 100, align: 'right' });
     expect(out.decorations[0].x0).toBeCloseTo(100 - 23, 6);
     expect(out.decorations[0].x1).toBeCloseTo(100, 6);
   });
 
   it('decorates a whitespace-only run, which contributes no glyph quads at all', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([UNDERLINED('A'), UNDERLINED(' ')], OPTS);
+    const out = layoutAndPaint([UNDERLINED('A'), UNDERLINED(' ')], OPTS);
     expect(out.groups.flatMap((g) => g.quads)).toHaveLength(1);
     expect(out.decorations[0].x1).toBeCloseTo(31, 6);
   });
 
   it('does not merge an underlined run into an adjacent struck-through one', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [UNDERLINED('A'), { ...RUN_PLAIN('B'), strikethrough: true }],
       OPTS,
       );
@@ -736,7 +736,7 @@ describe('layoutRuns — decoration geometry', () => {
     await registerTallFont();
     // base 29 vs 58 at equal size: both runs sit on the deeper baseline, so
     // the rule runs on under the join instead of stepping 29 units down.
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [UNDERLINED('A'), { ...UNDERLINED('B'), fontFamily: 'tall' }],
       OPTS,
       );
@@ -750,7 +750,7 @@ describe('layoutRuns — decoration geometry', () => {
     await registerTallFont();
     // Same baseline now by construction; the sizes still differ, and offset
     // and thickness both scale with size, so the two rules stay separate.
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [UNDERLINED('A'), { ...UNDERLINED('B'), fontFamily: 'tall', fontSize: 16 }],
       OPTS,
       );
@@ -763,14 +763,14 @@ describe('layoutRuns — decoration geometry', () => {
     await registerFixture('inter', [{}]);
     // Tracking exactly cancels the advance, so the span is zero-width. A rect
     // with x1 === x0 rasterizes nothing; don't pay a draw call for it.
-    const out = layoutRuns([{ ...UNDERLINED('A'), letterSpacing: -23 }], OPTS);
+    const out = layoutAndPaint([{ ...UNDERLINED('A'), letterSpacing: -23 }], OPTS);
     expect(out.decorations).toEqual([]);
   });
 
   it('reaches layout through resolveRuns, additively over the node style', async () => {
     await registerFixture('inter', [{}]);
     const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, underline: true });
-    const out = layoutRuns(resolveRuns([{ text: 'A' }], style), OPTS);
+    const out = layoutAndPaint(resolveRuns([{ text: 'A' }], style), OPTS);
     expect(out.decorations.map((d) => d.kind)).toEqual(['underline']);
   });
 });
@@ -807,7 +807,7 @@ describe('layoutRuns — a codepoint the atlas does not cover', () => {
   it('escalates it to the dynamic tier instead of dropping it', async () => {
     await registerFixture('inter', [{}]);
     stubRasterizer();
-    const out = layoutRuns([run(`A${EM_DASH}B`)], OPTS);
+    const out = layoutAndPaint([run(`A${EM_DASH}B`)], OPTS);
 
     // Two groups: the atlas serves A and B, the dynamic tier serves the dash.
     // They cannot merge — different texture, different shader.
@@ -838,7 +838,7 @@ describe('layoutRuns — a codepoint the atlas does not cover', () => {
     await registerFixture('inter', [{}]);
     stubRasterizer();
 
-    const out = layoutRuns([run(EM_DASH)], OPTS);
+    const out = layoutAndPaint([run(EM_DASH)], OPTS);
     // The one quad is the dash from the dynamic tier, not '?' from the atlas.
     expect(out.groups).toHaveLength(1);
     expect(out.groups[0].source).toBe('canvas');
@@ -848,7 +848,7 @@ describe('layoutRuns — a codepoint the atlas does not cover', () => {
   it('sets the escalated glyph between its neighbours, at its own scale', async () => {
     await registerFixture('inter', [{}]);
     stubRasterizer();
-    const out = layoutRuns([run(`A${EM_DASH}B`)], OPTS);
+    const out = layoutAndPaint([run(`A${EM_DASH}B`)], OPTS);
 
     const [a, b] = out.groups.find((g) => g.source === 'atlas')!.quads;
     const dash = out.groups.find((g) => g.source === 'canvas')!.quads[0];
@@ -870,7 +870,7 @@ describe('layoutRuns — a codepoint the atlas does not cover', () => {
     setFontFallbackPolicy('none');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const out = layoutRuns([run(`A${EM_DASH}B`)], OPTS);
+    const out = layoutAndPaint([run(`A${EM_DASH}B`)], OPTS);
     expect(out.groups).toHaveLength(1);
     expect(out.groups[0].source).toBe('atlas');
     expect(out.groups[0].quads).toHaveLength(2);
@@ -885,8 +885,8 @@ describe('layoutRuns — a codepoint the atlas does not cover', () => {
     setFontFallbackPolicy('none');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    layoutRuns([run(`${EM_DASH}${EM_DASH}${EM_DASH}`)], OPTS);
-    layoutRuns([run(EM_DASH)], OPTS);
+    layoutAndPaint([run(`${EM_DASH}${EM_DASH}${EM_DASH}`)], OPTS);
+    layoutAndPaint([run(EM_DASH)], OPTS);
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
@@ -923,7 +923,7 @@ describe('layoutRuns — outline tier', () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
-    const out = layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
     expect(out.groups[0].glyphs).toEqual([]);
   });
@@ -932,7 +932,7 @@ describe('layoutRuns — outline tier', () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
-    const out = layoutRuns([RUN_PLAIN('AB')], OPTS_OUT);
+    const out = layoutAndPaint([RUN_PLAIN('AB')], OPTS_OUT);
     expect(out.groups).toHaveLength(1);
     expect(out.groups[0].source).toBe('outline');
     expect(out.groups[0].quads).toEqual([]);
@@ -963,7 +963,7 @@ describe('layoutRuns — outline tier', () => {
     glyphOutline('solo', 400, 'normal', 65);
     await new Promise<void>((r) => setTimeout(r, 0));
 
-    const out = layoutRuns([{ ...RUN_PLAIN('A\u2014'), fontFamily: 'solo' }], OPTS_OUT);
+    const out = layoutAndPaint([{ ...RUN_PLAIN('A\u2014'), fontFamily: 'solo' }], OPTS_OUT);
     expect(out.groups.map((g) => [g.source, g.glyphs.length, g.quads.length]))
       .toEqual([['outline', 1, 0], ['canvas', 0, 1]]);
     const [a, dash] = out.lines[0].cells;
@@ -978,7 +978,7 @@ describe('layoutRuns — outline tier', () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
-    const out = layoutRuns([RUN_PLAIN('AB')], { ...OPTS_OUT, outlineMinSize: 48 });
+    const out = layoutAndPaint([RUN_PLAIN('AB')], { ...OPTS_OUT, outlineMinSize: 48 });
     expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
   });
 
@@ -990,7 +990,7 @@ describe('layoutRuns — outline tier', () => {
       ...RUN_PLAIN('AB'),
       stroke: { paint: { kind: 'solid', color: '#f00' }, width: 2 },
     };
-    const out = layoutRuns([stroked], { ...OPTS_OUT, outlineMinSize: 48 });
+    const out = layoutAndPaint([stroked], { ...OPTS_OUT, outlineMinSize: 48 });
 
     expect(out.groups.map((g) => g.source)).toEqual(['outline']);
     expect(out.groups[0].stroke).toMatchObject({ width: 2 });
@@ -1005,7 +1005,7 @@ describe('layoutRuns — outline tier', () => {
       fill: null,
       stroke: { paint: { kind: 'solid', color: '#f00' }, width: 2 },
     };
-    const out = layoutRuns([outlineOnly], OPTS_OUT);
+    const out = layoutAndPaint([outlineOnly], OPTS_OUT);
 
     expect(out.groups).toHaveLength(1);
     expect(out.groups[0].source).toBe('outline');
@@ -1021,10 +1021,21 @@ describe('layoutRuns — outline tier', () => {
     // Above the threshold there is geometry to be had, and below it there are
     // quads — an unpainted run must allocate neither.
     for (const opts of [OPTS_OUT, { ...OPTS_OUT, outlineMinSize: 48 }]) {
-      const out = layoutRuns([{ ...RUN_PLAIN('AB'), fill: null }], opts);
+      const out = layoutAndPaint([{ ...RUN_PLAIN('AB'), fill: null }], opts);
       expect(out.groups).toEqual([]);
       // The line still measures the same: paint does not move a glyph.
-      expect(out.bounds).toEqual(layoutRuns([RUN_PLAIN('AB')], opts).bounds);
+      expect(out.bounds).toEqual(layoutAndPaint([RUN_PLAIN('AB')], opts).bounds);
+    }
+  });
+
+  it('emits nothing for a fill that holds no paint, which paints nothing', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    for (const opts of [OPTS_OUT, { ...OPTS_OUT, outlineMinSize: 48 }]) {
+      const out = layoutAndPaint([{ ...RUN_PLAIN('AB'), fill: {}, underline: true }], opts);
+      expect(out.groups).toEqual([]);
+      expect(out.decorations).toEqual([]);
     }
   });
 
@@ -1033,7 +1044,7 @@ describe('layoutRuns — outline tier', () => {
 
     // No outlines registered, so the stroke has no geometry to ride — and a
     // textured quad would paint the fill that was refused.
-    const out = layoutRuns([{
+    const out = layoutAndPaint([{
       ...RUN_PLAIN('AB'),
       fill: null,
       stroke: { paint: { kind: 'solid', color: '#f00' }, width: 2 },
@@ -1045,7 +1056,7 @@ describe('layoutRuns — outline tier', () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
-    const out = layoutRuns([{
+    const out = layoutAndPaint([{
       ...RUN_PLAIN('AB'),
       fill: null,
       underline: true,
@@ -1054,7 +1065,7 @@ describe('layoutRuns — outline tier', () => {
     }], OPTS_OUT);
     expect(out.decorations).toEqual([]);
     // Still the same underlined-run shape otherwise: filled text keeps both.
-    expect(layoutRuns([{ ...RUN_PLAIN('AB'), underline: true }], OPTS_OUT).decorations)
+    expect(layoutAndPaint([{ ...RUN_PLAIN('AB'), underline: true }], OPTS_OUT).decorations)
       .toHaveLength(1);
   });
 
@@ -1066,7 +1077,7 @@ describe('layoutRuns — outline tier', () => {
       ...RUN_PLAIN('AB'),
       stroke: { paint: { kind: 'solid', color: '#f00' }, width: 0 },
     };
-    const out = layoutRuns([hairless], { ...OPTS_OUT, outlineMinSize: 48 });
+    const out = layoutAndPaint([hairless], { ...OPTS_OUT, outlineMinSize: 48 });
 
     expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
   });
@@ -1079,7 +1090,7 @@ describe('layoutRuns — outline tier', () => {
       ...RUN_PLAIN('AB'),
       stroke: { paint: { kind: 'solid', color: '#f00' }, width: 2 },
     };
-    const out = layoutRuns([stroked], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([stroked], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
 
     expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
   });
@@ -1088,8 +1099,8 @@ describe('layoutRuns — outline tier', () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
-    const atlas = layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
-    const outline = layoutRuns([RUN_PLAIN('AB')], OPTS_OUT);
+    const atlas = layoutAndPaint([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const outline = layoutAndPaint([RUN_PLAIN('AB')], OPTS_OUT);
 
     // The atlas quad carries the glyph's own baseline; an outline glyph's
     // origin IS that baseline, and its x is the pen — which for the first
@@ -1102,8 +1113,8 @@ describe('layoutRuns — outline tier', () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
-    const atlas = layoutRuns([RUN_PLAIN('Away we go')], { maxWidth: 200, lineHeight: 1.2, align: 'left' });
-    const outline = layoutRuns([RUN_PLAIN('Away we go')], { ...OPTS_OUT, maxWidth: 200 });
+    const atlas = layoutAndPaint([RUN_PLAIN('Away we go')], { maxWidth: 200, lineHeight: 1.2, align: 'left' });
+    const outline = layoutAndPaint([RUN_PLAIN('Away we go')], { ...OPTS_OUT, maxWidth: 200 });
 
     // This is what lets the threshold depend on zoom: crossing it must not
     // move a single glyph, or text reflows under the user's cursor.
@@ -1116,8 +1127,8 @@ describe('layoutRuns — outline tier', () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
-    const atlas = layoutRuns([RUN_PLAIN('AAA')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
-    const outline = layoutRuns([RUN_PLAIN('AAA')], OPTS_OUT);
+    const atlas = layoutAndPaint([RUN_PLAIN('AAA')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const outline = layoutAndPaint([RUN_PLAIN('AAA')], OPTS_OUT);
 
     // The absolute numbers differ by the glyph's left side bearing — an atlas
     // quad starts at the ink, an outline starts at the pen — but the step
@@ -1134,7 +1145,7 @@ describe('layoutRuns — outline tier', () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
-    const out = layoutRuns([RUN_BOLD('A')], OPTS_OUT);
+    const out = layoutAndPaint([RUN_BOLD('A')], OPTS_OUT);
     expect(out.groups[0].source).toBe('atlas');
     expect(out.groups[0].synthetic.bold).toBe(true);
   });
@@ -1143,14 +1154,14 @@ describe('layoutRuns — outline tier', () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
-    const out = layoutRuns([RUN_ITALIC('A')], OPTS_OUT);
+    const out = layoutAndPaint([RUN_ITALIC('A')], OPTS_OUT);
     expect(out.groups[0].source).toBe('outline');
     expect(out.groups[0].synthetic).toEqual({ bold: false, italic: true });
   });
 
   it('falls back to the SDF tier when the face has no outlines registered', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AB')], OPTS_OUT);
+    const out = layoutAndPaint([RUN_PLAIN('AB')], OPTS_OUT);
     expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
   });
 
@@ -1158,7 +1169,7 @@ describe('layoutRuns — outline tier', () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
 
-    const out = layoutRuns([RUN_PLAIN('AA B')], OPTS_OUT);
+    const out = layoutAndPaint([RUN_PLAIN('AA B')], OPTS_OUT);
     const keys = out.groups[0].glyphs.map((g) => g.key);
     expect(keys[0]).toBe('inter|400|normal|65');
     expect(keys[1]).toBe(keys[0]);
@@ -1172,7 +1183,7 @@ describe('layoutRuns — outline tier', () => {
     // Two runs of the same face and fill at different sizes, one either side
     // of the threshold.
     const small: ResolvedRun = { ...RUN_PLAIN('A'), fontSize: 10 };
-    const out = layoutRuns([small, RUN_PLAIN('B')], OPTS_OUT);
+    const out = layoutAndPaint([small, RUN_PLAIN('B')], OPTS_OUT);
     expect(out.groups.map((g) => g.source).sort()).toEqual(['atlas', 'outline']);
   });
 });
@@ -1218,7 +1229,7 @@ describe('layoutRuns from a font face alone', () => {
     registerFaceOnly(family);
     await settle(family);
 
-    const out = layoutRuns(runsOf('AB', family, 100), {
+    const out = layoutAndPaint(runsOf('AB', family, 100), {
       maxWidth: Infinity, lineHeight: 1.2, align: 'left',
     });
 
@@ -1241,10 +1252,10 @@ describe('layoutRuns from a font face alone', () => {
     registerFaceOnly(family);
     await settle(family);
 
-    const kerned = layoutRuns(runsOf('AV', family, 100), {
+    const kerned = layoutAndPaint(runsOf('AV', family, 100), {
       maxWidth: Infinity, lineHeight: 1.2, align: 'left',
     });
-    const plain = layoutRuns(runsOf('AB', family, 100), {
+    const plain = layoutAndPaint(runsOf('AB', family, 100), {
       maxWidth: Infinity, lineHeight: 1.2, align: 'left',
     });
 
@@ -1260,10 +1271,10 @@ describe('layoutRuns from a font face alone', () => {
     await settle(family);
 
     // 'AB' is 100 wide, a space 25: two words fit in 225, not in 200.
-    const wide = layoutRuns(runsOf('AB AB', family, 100), {
+    const wide = layoutAndPaint(runsOf('AB AB', family, 100), {
       maxWidth: 225, lineHeight: 1.2, align: 'left',
     });
-    const narrow = layoutRuns(runsOf('AB AB', family, 100), {
+    const narrow = layoutAndPaint(runsOf('AB AB', family, 100), {
       maxWidth: 200, lineHeight: 1.2, align: 'left',
     });
 
@@ -1278,7 +1289,7 @@ describe('layoutRuns from a font face alone', () => {
 
     // The gate exists to keep small text on an SDF tier. This family has none,
     // so gating it would paint nothing.
-    const out = layoutRuns(runsOf('A', family, 8), {
+    const out = layoutAndPaint(runsOf('A', family, 8), {
       maxWidth: Infinity, lineHeight: 1.2, align: 'left',
     });
 
@@ -1293,7 +1304,7 @@ describe('layoutRuns — baseline shift', () => {
 
   it('raises a run off the line baseline without moving its neighbours', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('A'), SHIFTED('B', 10)], OPTS);
+    const out = layoutAndPaint([RUN_PLAIN('A'), SHIFTED('B', 10)], OPTS);
     const quads = out.groups.flatMap((g) => g.quads);
     expect(quads.map((q) => q.baselineY)).toEqual([29, 19]);
     // The line itself is unmoved: its box still reports the shared baseline,
@@ -1305,8 +1316,8 @@ describe('layoutRuns — baseline shift', () => {
 
   it('lowers on a negative shift, and moves the glyph ink with the baseline', async () => {
     await registerFixture('inter', [{}]);
-    const plain = layoutRuns([RUN_PLAIN('A')], OPTS).groups[0].quads[0];
-    const down = layoutRuns([SHIFTED('A', -8)], OPTS).groups[0].quads[0];
+    const plain = layoutAndPaint([RUN_PLAIN('A')], OPTS).groups[0].quads[0];
+    const down = layoutAndPaint([SHIFTED('A', -8)], OPTS).groups[0].quads[0];
     expect(down.baselineY - plain.baselineY).toBeCloseTo(8, 6);
     expect(down.y0 - plain.y0).toBeCloseTo(8, 6);
     expect(down.y1 - plain.y1).toBeCloseTo(8, 6);
@@ -1319,7 +1330,7 @@ describe('layoutRuns — baseline shift', () => {
     await registerFixture('inter', [{}]);
     // A lone raised run would drag the baseline up with it if the line's
     // ascent were computed from shifted positions.
-    const out = layoutRuns([SHIFTED('A', 25)], OPTS);
+    const out = layoutAndPaint([SHIFTED('A', 25)], OPTS);
     expect(out.lines[0].baselineY).toBe(29);
     expect(out.groups[0].quads[0].baselineY).toBe(4);
   });
@@ -1330,8 +1341,8 @@ describe('layoutRuns — baseline shift', () => {
     // one a plain run at 32 lays out, so a superscript alone on its line does
     // not shrink the line under it.
     const small: ResolvedRun = { ...RUN_PLAIN('A'), fontSize: 16, baselineShift: 10, strutSize: 32 };
-    const out = layoutRuns([small], OPTS);
-    const plain = layoutRuns([RUN_PLAIN('A')], OPTS);
+    const out = layoutAndPaint([small], OPTS);
+    const plain = layoutAndPaint([RUN_PLAIN('A')], OPTS);
     expect(out.lines[0].baselineY).toBe(plain.lines[0].baselineY);
     expect(out.bounds.height).toBeCloseTo(32 * 1.2, 6);
     expect(out.groups[0].quads[0].baselineY).toBe(plain.lines[0].baselineY - 10);
@@ -1339,7 +1350,7 @@ describe('layoutRuns — baseline shift', () => {
 
   it('carries a shifted run’s own decoration rules with it', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [{ ...RUN_PLAIN('A'), underline: true, baselineShift: 10 }],
       OPTS,
     );
@@ -1350,7 +1361,7 @@ describe('layoutRuns — baseline shift', () => {
 
   it('does not merge a decorated span across a baseline shift', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [
         { ...RUN_PLAIN('A'), underline: true },
         { ...RUN_PLAIN('B'), underline: true, baselineShift: 10 },
@@ -1376,8 +1387,8 @@ describe('layoutRuns — baseline shift', () => {
     await new Promise((r) => setTimeout(r, 0));
 
     const opts = { ...OPTS, outlineMinSize: 20 };
-    const plain = layoutRuns([RUN_PLAIN('A')], opts);
-    const raised = layoutRuns([SHIFTED('A', 12)], opts);
+    const plain = layoutAndPaint([RUN_PLAIN('A')], opts);
+    const raised = layoutAndPaint([SHIFTED('A', 12)], opts);
     const a = plain.groups.find((g) => g.source === 'outline')!.glyphs[0];
     const b = raised.groups.find((g) => g.source === 'outline')!.glyphs[0];
     expect(a.baselineY - b.baselineY).toBeCloseTo(12, 6);
@@ -1391,7 +1402,7 @@ describe('layoutRuns — overline', () => {
 
   it('places a rule above the ascent, spanning the run advance', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([{ ...RUN_PLAIN('A'), overline: true }], OPTS);
+    const out = layoutAndPaint([{ ...RUN_PLAIN('A'), overline: true }], OPTS);
     expect(out.decorations).toHaveLength(1);
     const [rule] = out.decorations;
     expect(rule.kind).toBe('overline');
@@ -1406,7 +1417,7 @@ describe('layoutRuns — overline', () => {
 
   it('emits all three rules for one span, underline then strikethrough then overline', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [{ ...RUN_PLAIN('A'), underline: true, strikethrough: true, overline: true }],
       OPTS,
     );
@@ -1420,7 +1431,7 @@ describe('layoutRuns — overline', () => {
 
   it('does not merge an overlined span with a merely underlined one', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns(
+    const out = layoutAndPaint(
       [{ ...RUN_PLAIN('A'), underline: true },
        { ...RUN_PLAIN('B'), underline: true, overline: true }],
       OPTS,
@@ -1441,7 +1452,7 @@ describe('layoutRuns — one cell per code point', () => {
 
   it('keeps a cell for a code point the face cannot serve', async () => {
     await registerBareFixture();
-    const out = layoutRuns([RUN_PLAIN('ACB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('ACB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     const cells = out.lines[0].cells;
     expect(cells.map((c) => c.cp)).toEqual([65, 67, 66]);
     expect(cells[1].drawsInk).toBe(false);
@@ -1449,7 +1460,7 @@ describe('layoutRuns — one cell per code point', () => {
 
   it('gives an unservable code point no advance', async () => {
     await registerBareFixture();
-    const out = layoutRuns([RUN_PLAIN('ACB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('ACB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     const cells = out.lines[0].cells;
     // 'C' occupies a slot but no width, so 'B' sits exactly where it would
     // have without it.
@@ -1458,7 +1469,7 @@ describe('layoutRuns — one cell per code point', () => {
 
   it('keeps a cell for a space at the start of the text', async () => {
     await registerBareFixture();
-    const out = layoutRuns([RUN_PLAIN(' AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN(' AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     const cells = out.lines[0].cells;
     expect(cells.map((c) => c.cp)).toEqual([32, 65, 66]);
     expect(cells[0].x).toBeCloseTo(0, 10);
@@ -1469,19 +1480,19 @@ describe('layoutRuns — one cell per code point', () => {
   it('indents by every leading space, at the width a space has mid-line', async () => {
     await registerBareFixture();
     const opts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' } as const;
-    const mid = layoutRuns([RUN_PLAIN('A B')], opts).lines[0].cells;
+    const mid = layoutAndPaint([RUN_PLAIN('A B')], opts).lines[0].cells;
     const space = mid[2].x - mid[1].x;
     expect(space).toBeGreaterThan(0);
     for (const n of [1, 2, 3]) {
-      const out = layoutRuns([RUN_PLAIN(' '.repeat(n) + 'AB')], opts);
+      const out = layoutAndPaint([RUN_PLAIN(' '.repeat(n) + 'AB')], opts);
       expect(out.lines[0].cells[n].x).toBeCloseTo(n * space, 10);
-      expect(out.bounds.width).toBeCloseTo(n * space + layoutRuns([RUN_PLAIN('AB')], opts).bounds.width, 10);
+      expect(out.bounds.width).toBeCloseTo(n * space + layoutAndPaint([RUN_PLAIN('AB')], opts).bounds.width, 10);
     }
   });
 
   it('keeps a cell for a space at the start of a line after a newline', async () => {
     await registerBareFixture();
-    const out = layoutRuns([RUN_PLAIN('AB\n AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('AB\n AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(out.lines).toHaveLength(2);
     expect(out.lines[1].cells.map((c) => c.cp)).toEqual([32, 65, 66]);
     expect(out.lines[1].cells[1].x).toBeCloseTo(out.lines[1].cells[0].advance, 10);
@@ -1490,7 +1501,7 @@ describe('layoutRuns — one cell per code point', () => {
 
   it('reports which cells drew ink', async () => {
     await registerBareFixture();
-    const out = layoutRuns([RUN_PLAIN('A B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('A B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     expect(out.lines[0].cells.map((c) => c.drawsInk)).toEqual([true, false, true]);
   });
 
@@ -1507,7 +1518,7 @@ describe('layoutRuns — one cell per code point', () => {
       ['AB ', Infinity],
       ['A\u{1F600}B', Infinity],
     ] as Array<[string, number]>) {
-      const out = layoutRuns([RUN_PLAIN(text)], { maxWidth, lineHeight: 1.2, align: 'left' });
+      const out = layoutAndPaint([RUN_PLAIN(text)], { maxWidth, lineHeight: 1.2, align: 'left' });
       const cells = out.lines.reduce((n, l) => n + l.cells.length, 0);
       // A newline separates cells rather than being one.
       const expected = [...text].filter((c) => c !== '\n').length;
@@ -1517,7 +1528,7 @@ describe('layoutRuns — one cell per code point', () => {
 
   it('numbers cells by code point while srcIndex stays UTF-16', async () => {
     await registerBareFixture();
-    const out = layoutRuns([RUN_PLAIN('A\u{1F600}B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('A\u{1F600}B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     const cells = out.lines[0].cells;
     expect(cells).toHaveLength(3);
     expect(cells.map((c) => c.srcIndex)).toEqual([0, 1, 3]);
@@ -1528,7 +1539,7 @@ describe('layoutRuns — one cell per code point', () => {
     await registerBareFixture();
     const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32 });
     const runs = resolveRuns([{ text: 'Aß', textTransform: 'uppercase' }, { text: 'B' }], style);
-    const out = layoutRuns(runs, { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+    const out = layoutAndPaint(runs, { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
     const cells = out.lines[0].cells;
     expect(cells.map((c) => String.fromCodePoint(c.cp)).join('')).toBe('ASSB');
     expect(cells.map((c) => [c.srcIndex, c.srcEnd])).toEqual([[0, 1], [1, 2], [1, 2], [2, 3]]);
@@ -1540,7 +1551,7 @@ describe('layoutRuns — a cell says whether it closes a grapheme cluster', () =
   const OPTS: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
   const closes = (text: string, more: Partial<ResolvedRun> = {}): boolean[] => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const out = layoutRuns([{ ...RUN_PLAIN(text), ...more }], OPTS);
+    const out = layoutAndPaint([{ ...RUN_PLAIN(text), ...more }], OPTS);
     warn.mockRestore();
     return out.lines[0].cells.map((c) => c.clusterEnd);
   };
@@ -1569,7 +1580,7 @@ describe('layoutRuns — small caps', () => {
   // The fixture atlas states no heights, so small caps takes the default.
   const K = 0.7;
   const lay = (runs: Parameters<typeof resolveRuns>[0]) =>
-    layoutRuns(resolveRuns(runs, resolveTextStyle({ fontFamily: 'inter', fontSize: 32 })), OPTS);
+    layoutAndPaint(resolveRuns(runs, resolveTextStyle({ fontFamily: 'inter', fontSize: 32 })), OPTS);
 
   beforeEach(async () => {
     await registerFixture('inter', [{}]);
@@ -1617,47 +1628,47 @@ describe('layoutRuns — small caps', () => {
 
 describe('layoutRuns — reading-order alignment', () => {
   const BOX = { maxWidth: 200, lineHeight: 1.2 };
-  const xs = (o: ReturnType<typeof layoutRuns>) => o.lines[0].cells.map((c) => c.x);
+  const xs = (o: ReturnType<typeof layoutAndPaint>) => o.lines[0].cells.map((c) => c.x);
 
   it('resolves start to the left edge under ltr', async () => {
     await registerFixture('inter', [{}]);
-    const start = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'start', direction: 'ltr' });
-    const left = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
+    const start = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'start', direction: 'ltr' });
+    const left = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
     expect(xs(start)).toEqual(xs(left));
   });
 
   it('resolves start to the right edge under rtl', async () => {
     await registerFixture('inter', [{}]);
-    const start = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'start', direction: 'rtl' });
-    const right = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'right' });
+    const start = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'start', direction: 'rtl' });
+    const right = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'right' });
     expect(xs(start)).toEqual(xs(right));
   });
 
   it('resolves end against direction the other way', async () => {
     await registerFixture('inter', [{}]);
-    const endRtl = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'end', direction: 'rtl' });
-    const left = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
+    const endRtl = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'end', direction: 'rtl' });
+    const left = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
     expect(xs(endRtl)).toEqual(xs(left));
   });
 
   it('leaves left and right absolute under rtl', async () => {
     await registerFixture('inter', [{}]);
-    const leftRtl = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left', direction: 'rtl' });
-    const leftLtr = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left', direction: 'ltr' });
+    const leftRtl = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'left', direction: 'rtl' });
+    const leftLtr = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'left', direction: 'ltr' });
     expect(xs(leftRtl)).toEqual(xs(leftLtr));
   });
 
   it('reads left to right when the caller omits direction and no engine is registered', async () => {
     await registerFixture('inter', [{}]);
-    const bare = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'start' });
-    const left = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
+    const bare = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'start' });
+    const left = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'left' });
     expect(xs(bare)).toEqual(xs(left));
   });
 
   it('centers identically whatever the direction', async () => {
     await registerFixture('inter', [{}]);
-    const rtl = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'center', direction: 'rtl' });
-    const ltr = layoutRuns([RUN_PLAIN('AB')], { ...BOX, align: 'center', direction: 'ltr' });
+    const rtl = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'center', direction: 'rtl' });
+    const ltr = layoutAndPaint([RUN_PLAIN('AB')], { ...BOX, align: 'center', direction: 'ltr' });
     expect(xs(rtl)).toEqual(xs(ltr));
   });
 });
@@ -1666,8 +1677,8 @@ describe('layoutRuns — trailing whitespace hangs', () => {
   it('centers a line on its ink, not on its trailing space', async () => {
     await registerFixture('inter', [{}]);
     const opts = { maxWidth: 200, lineHeight: 1.2, align: 'center' as const };
-    const bare = layoutRuns([RUN_PLAIN('AB')], opts);
-    const trailed = layoutRuns([RUN_PLAIN('AB ')], opts);
+    const bare = layoutAndPaint([RUN_PLAIN('AB')], opts);
+    const trailed = layoutAndPaint([RUN_PLAIN('AB ')], opts);
     // CSS hangs trailing whitespace: the visible text sits in the same place
     // whether or not the line ends in a space.
     expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);
@@ -1676,14 +1687,14 @@ describe('layoutRuns — trailing whitespace hangs', () => {
   it('right-aligns a line on its ink, not on its trailing space', async () => {
     await registerFixture('inter', [{}]);
     const opts = { maxWidth: 200, lineHeight: 1.2, align: 'right' as const };
-    const bare = layoutRuns([RUN_PLAIN('AB')], opts);
-    const trailed = layoutRuns([RUN_PLAIN('AB ')], opts);
+    const bare = layoutAndPaint([RUN_PLAIN('AB')], opts);
+    const trailed = layoutAndPaint([RUN_PLAIN('AB ')], opts);
     expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);
   });
 
   it('still gives the hung space a cell past the ink', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AB ')], { maxWidth: 200, lineHeight: 1.2, align: 'center' });
+    const out = layoutAndPaint([RUN_PLAIN('AB ')], { maxWidth: 200, lineHeight: 1.2, align: 'center' });
     const cells = out.lines[0].cells;
     expect(cells).toHaveLength(3);
     expect(cells[2].cp).toBe(32);
@@ -1693,8 +1704,8 @@ describe('layoutRuns — trailing whitespace hangs', () => {
   it('leaves a left-aligned line alone', async () => {
     await registerFixture('inter', [{}]);
     const opts = { maxWidth: 200, lineHeight: 1.2, align: 'left' as const };
-    const bare = layoutRuns([RUN_PLAIN('AB')], opts);
-    const trailed = layoutRuns([RUN_PLAIN('AB ')], opts);
+    const bare = layoutAndPaint([RUN_PLAIN('AB')], opts);
+    const trailed = layoutAndPaint([RUN_PLAIN('AB ')], opts);
     expect(trailed.lines[0].cells[0].x).toBeCloseTo(bare.lines[0].cells[0].x, 10);
   });
 });
@@ -1716,14 +1727,14 @@ describe('layoutRuns — bidi seam', () => {
 
   it('lays out in logical order when no engine is supplied', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AB')], OPTS);
+    const out = layoutAndPaint([RUN_PLAIN('AB')], OPTS);
     const cells = out.lines[0].cells;
     expect(cells[0].x).toBeLessThan(cells[1].x);
   });
 
   it('positions cells in the order the engine gives', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
+    const out = layoutAndPaint([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
     const cells = out.lines[0].cells;
     // Reversed: 'B' is painted first, so 'A' now sits to its right.
     expect(cells[0].x).toBeGreaterThan(cells[1].x);
@@ -1731,7 +1742,7 @@ describe('layoutRuns — bidi seam', () => {
 
   it('keeps cells in logical order even when x is not monotonic', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
+    const out = layoutAndPaint([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
     // Slot i is still character i — the whole cell contract depends on this.
     expect(out.lines[0].cells.map((c) => c.cp)).toEqual([65, 66]);
   });
@@ -1740,7 +1751,7 @@ describe('layoutRuns — bidi seam', () => {
     await registerFixture('inter', [{}]);
     // 'AA' rather than 'AB': the fixture kerns A→B, and kerning is a gap
     // *between* cells rather than part of either one's width.
-    const out = layoutRuns([RUN_PLAIN('AA')], OPTS);
+    const out = layoutAndPaint([RUN_PLAIN('AA')], OPTS);
     const cells = out.lines[0].cells;
     expect(cells[0].advance).toBeGreaterThan(0);
     expect(cells[0].x + cells[0].advance).toBeCloseTo(cells[1].x, 10);
@@ -1748,7 +1759,7 @@ describe('layoutRuns — bidi seam', () => {
 
   it('leaves kerning between cells rather than inside one', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AB')], OPTS);
+    const out = layoutAndPaint([RUN_PLAIN('AB')], OPTS);
     const [a, b] = out.lines[0].cells;
     // The fixture kerns A→B by -1, so B starts a unit before A's extent ends.
     expect(b.x).toBeCloseTo(a.x + a.advance - 1, 10);
@@ -1756,9 +1767,9 @@ describe('layoutRuns — bidi seam', () => {
 
   it('reports the resolved level per cell', async () => {
     await registerFixture('inter', [{}]);
-    const plain = layoutRuns([RUN_PLAIN('AB')], OPTS);
+    const plain = layoutAndPaint([RUN_PLAIN('AB')], OPTS);
     expect(plain.lines[0].cells.map((c) => c.level)).toEqual([0, 0]);
-    const rev = layoutRuns([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
+    const rev = layoutAndPaint([RUN_PLAIN('AB')], { ...OPTS, bidi: REVERSING });
     expect(rev.lines[0].cells.map((c) => c.level)).toEqual([1, 1]);
   });
 });
@@ -1788,7 +1799,7 @@ describe('layoutRuns — a family with no metrics at all', () => {
   it('warns rather than laying out nothing in silence', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const out = layoutRuns([run('hello')], OPTS);
+    const out = layoutAndPaint([run('hello')], OPTS);
 
     expect(out.groups).toHaveLength(0);
     expect(warn).toHaveBeenCalledTimes(1);
@@ -1800,7 +1811,7 @@ describe('layoutRuns — a family with no metrics at all', () => {
   // registered the face, into the other copy's registry.
   it('names the duplicated-font cause, which produces exactly this', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    layoutRuns([run('hello')], OPTS);
+    layoutAndPaint([run('hello')], OPTS);
     expect(warn.mock.calls[0][0]).toContain('@weasel-js/font');
     warn.mockRestore();
   });
@@ -1808,9 +1819,9 @@ describe('layoutRuns — a family with no metrics at all', () => {
   it('warns once per family variant however many runs use it', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    layoutRuns([run('a'), run('b'), run('c')], OPTS);
-    layoutRuns([run('d')], OPTS);
-    layoutRuns([run('e', 'also-missing')], OPTS);
+    layoutAndPaint([run('a'), run('b'), run('c')], OPTS);
+    layoutAndPaint([run('d')], OPTS);
+    layoutAndPaint([run('e', 'also-missing')], OPTS);
 
     expect(warn).toHaveBeenCalledTimes(2);
     warn.mockRestore();
@@ -1821,7 +1832,7 @@ describe('layoutRuns — a family with no metrics at all', () => {
     await registerFixture('lonely', [{ weight: 700, style: 'italic' }]);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    layoutRuns([run('hello', 'lonely')], OPTS);
+    layoutAndPaint([run('hello', 'lonely')], OPTS);
 
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain('will not render at all');
@@ -1836,7 +1847,7 @@ describe('layoutRuns — a family with no metrics at all', () => {
     global.fetch = vi.fn(() => new Promise<Response>(() => {})) as typeof fetch;
 
     void registerFont('pending-atlas', {}, '/p.json', '/p.png');
-    layoutRuns([run('hello', 'pending-atlas')], OPTS);
+    layoutAndPaint([run('hello', 'pending-atlas')], OPTS);
 
     expect(warn).not.toHaveBeenCalled();
     global.fetch = realFetch;
@@ -1847,8 +1858,8 @@ describe('layoutRuns — a family with no metrics at all', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     registerFontOutlines('pending-outline', {}, () => new Promise<ArrayBuffer>(() => {}));
 
-    layoutRuns([run('hello', 'pending-outline')], OPTS);
-    layoutRuns([run('hello', 'pending-outline')], OPTS);
+    layoutAndPaint([run('hello', 'pending-outline')], OPTS);
+    layoutAndPaint([run('hello', 'pending-outline')], OPTS);
 
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
@@ -1863,13 +1874,13 @@ describe('layoutRuns — a family with no metrics at all', () => {
     const unsubscribe = subscribeGlyphReady(redraw);
 
     const registration = registerFont('failing-atlas', {}, '/f.json', '/f.png').catch(() => {});
-    layoutRuns([run('hello', 'failing-atlas')], OPTS);
+    layoutAndPaint([run('hello', 'failing-atlas')], OPTS);
     expect(warn).not.toHaveBeenCalled();
 
     fail(new Error('network down'));
     await registration;
     expect(redraw).toHaveBeenCalled();
-    layoutRuns([run('hello', 'failing-atlas')], OPTS);
+    layoutAndPaint([run('hello', 'failing-atlas')], OPTS);
 
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain('no metrics for "failing-atlas"');
@@ -1895,7 +1906,7 @@ describe('layoutRuns — hung trailing whitespace and bounds', () => {
 
   it('leaves a wrapped line out of bounds.width by its hung space', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AAAA BBBB')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('AAAA BBBB')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
 
     expect(out.lines).toHaveLength(2);
     expect(out.bounds.width).toBe(AAAA);
@@ -1904,7 +1915,7 @@ describe('layoutRuns — hung trailing whitespace and bounds', () => {
 
   it('keeps the hung space in x1, which is the line-closing caret stop', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AAAA BBBB')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('AAAA BBBB')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
 
     expect(out.lines[0].x1).toBe(AAAA + SPACE);
     expect(out.lines[1].x1).toBe(BBBB);
@@ -1912,7 +1923,7 @@ describe('layoutRuns — hung trailing whitespace and bounds', () => {
 
   it('measures a line with no trailing space unchanged', async () => {
     await registerFixture('inter', [{}]);
-    const out = layoutRuns([RUN_PLAIN('AAAA')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
+    const out = layoutAndPaint([RUN_PLAIN('AAAA')], { maxWidth: BOX, lineHeight: 1.1, align: 'left' });
 
     expect(out.lines).toHaveLength(1);
     expect(out.bounds.width).toBe(AAAA);
@@ -1935,7 +1946,7 @@ describe('layoutRuns — a run built without a baselineShift', () => {
       underline: false, strikethrough: false, overline: false,
     } as unknown as ResolvedRun;
 
-    const quads = layoutRuns([run], OPTS).groups.flatMap((g) => g.quads);
+    const quads = layoutAndPaint([run], OPTS).groups.flatMap((g) => g.quads);
     expect(quads.length).toBeGreaterThan(0);
     for (const q of quads) {
       expect(Number.isFinite(q.y0)).toBe(true);
@@ -1948,7 +1959,7 @@ describe('layoutRuns — a run built without a baselineShift', () => {
 
 describe('layoutRuns — alignWidth', () => {
   const at = (text: string, opts: Partial<LayoutRunsOpts>) =>
-    layoutRuns([RUN_PLAIN(text)], { maxWidth: Infinity, lineHeight: 1.2, align: 'left', ...opts });
+    layoutAndPaint([RUN_PLAIN(text)], { maxWidth: Infinity, lineHeight: 1.2, align: 'left', ...opts });
 
   it('aligns within alignWidth exactly as within a finite maxWidth', async () => {
     await registerFixture('inter', [{}]);
@@ -1993,7 +2004,7 @@ describe('layoutRuns — baseline from the face ascent and descent', () => {
 
   it('puts an atlas face at half-leading plus its ascent', async () => {
     await registerAtlas('stated', { ascent: 0.9, descent: 0.2 });
-    const out = layoutRuns([{ ...RUN_PLAIN('AB'), fontFamily: 'stated' }], OPTS);
+    const out = layoutAndPaint([{ ...RUN_PLAIN('AB'), fontFamily: 'stated' }], OPTS);
     expect(out.lines[0].baselineY).toBeCloseTo(32 * cssBaseline(1.2, 0.9, 0.2), 6);
     // The glyph quads hang off that baseline, in the atlas's own frame.
     expect(out.groups[0].quads[0].baselineY).toBeCloseTo(out.lines[0].baselineY, 6);
@@ -2003,7 +2014,7 @@ describe('layoutRuns — baseline from the face ascent and descent', () => {
   it('lets the leading go negative when ascent and descent outgrow the line box', async () => {
     // Papyrus on macOS: 0.938 + 0.604 = 1.542 em in a 1.2 em line.
     await registerAtlas('papyrus', { ascent: 0.938, descent: 0.604 });
-    const out = layoutRuns([{ ...RUN_PLAIN('AB\nAB'), fontFamily: 'papyrus' }], OPTS);
+    const out = layoutAndPaint([{ ...RUN_PLAIN('AB\nAB'), fontFamily: 'papyrus' }], OPTS);
     expect(out.lines[0].baselineY).toBeCloseTo(32 * cssBaseline(1.2, 0.938, 0.604), 6);
     expect(out.lines[0].baselineY).toBeLessThan(32 * 0.938);
     // The line box keeps its height; the glyphs overflow it instead.
@@ -2015,7 +2026,7 @@ describe('layoutRuns — baseline from the face ascent and descent', () => {
     await registerAtlas('stated', { ascent: 0.9, descent: 0.2 });
     const small = { ...RUN_PLAIN('A'), fontFamily: 'stated', fontSize: 16 };
     const big = { ...RUN_PLAIN('B'), fontFamily: 'stated', fontSize: 40 };
-    const out = layoutRuns([small, big], OPTS);
+    const out = layoutAndPaint([small, big], OPTS);
     expect(out.lines[0].baselineY).toBeCloseTo(40 * cssBaseline(1.2, 0.9, 0.2), 6);
     expect(new Set(out.groups.flatMap((g) => g.quads).map((q) => q.baselineY)).size).toBe(1);
   });
@@ -2030,8 +2041,8 @@ describe('layoutRuns — baseline from the face ascent and descent', () => {
     });
     glyphOutline('outlined', 400, 'normal', 65);
     await new Promise<void>((r) => setTimeout(r, 0));
-    const outline = layoutRuns([{ ...RUN_PLAIN('AB'), fontFamily: 'outlined' }], { ...OPTS, outlineMinSize: 20 });
-    const atlas = layoutRuns([{ ...RUN_PLAIN('AB'), fontFamily: 'stated' }], OPTS);
+    const outline = layoutAndPaint([{ ...RUN_PLAIN('AB'), fontFamily: 'outlined' }], { ...OPTS, outlineMinSize: 20 });
+    const atlas = layoutAndPaint([{ ...RUN_PLAIN('AB'), fontFamily: 'stated' }], OPTS);
     expect(outline.groups[0].source).toBe('outline');
     expect(outline.lines[0].baselineY).toBeCloseTo(atlas.lines[0].baselineY, 6);
   });
@@ -2043,7 +2054,7 @@ describe('layoutRuns — baseline from the face ascent and descent', () => {
       rasterize: () => ({ width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255), left: 0, top: 26, advance: 22 }),
     });
     registerCanvasFont('DynMetrics');
-    const out = layoutRuns([{ ...RUN_PLAIN('A'), fontFamily: 'DynMetrics', fontSize: 24 }], OPTS);
+    const out = layoutAndPaint([{ ...RUN_PLAIN('A'), fontFamily: 'DynMetrics', fontSize: 24 }], OPTS);
     // 40 and 8 at the 48px bake size.
     expect(out.lines[0].baselineY).toBeCloseTo(24 * cssBaseline(1.2, 40 / 48, 8 / 48), 6);
   });

@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { registerFont, registerFontOutlines, glyphOutline, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
-import { layoutRuns } from './layoutRuns';
+import { layoutAndPaint } from './testing/layoutAndPaint';
 import { resolveRuns } from '../runs/resolveRuns';
 import { resolveTextStyle } from '../textStyle';
 import { createMarkdownRenderer } from '../markdownText';
@@ -54,7 +54,7 @@ const RUNS: StyledRun[] = [
 
 function lay(fontFamily: string) {
   const runs = resolveRuns(RUNS, resolveTextStyle({ fontFamily, fontSize: 40 }));
-  const laid = layoutRuns(runs, { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+  const laid = layoutAndPaint(runs, { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
   return { runs, laid };
 }
 
@@ -98,7 +98,7 @@ describe('face metrics across tiers', () => {
       { text: 'A', script: 'super' },
     ];
     createMarkdownRenderer(ctx, runs, 40, Infinity, { family: 'inter-atlas' }).renderer(ctx, '', 0, 0);
-    const gl = layoutRuns(
+    const gl = layoutAndPaint(
       resolveRuns([runs[0]], resolveTextStyle({ fontFamily: 'inter-atlas', fontSize: 40 })),
       { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
     );

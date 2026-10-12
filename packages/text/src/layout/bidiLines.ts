@@ -114,3 +114,33 @@ export function restoreRemoved(
   }
   return out;
 }
+
+/** One line's visual order. */
+export interface LineOrder {
+  /** Positions within the line, in visual order, left to right. */
+  visual: number[];
+  /** Resolved embedding level per position; even reads left to right. */
+  levels: number[];
+}
+
+/**
+ * The visual order of the line of `count` code points opening at `start` in
+ * the text `paragraphs` analyzed. With no analysis that is logical order, all
+ * at level 0. A position the engine removed still has a place: see
+ * {@link restoreRemoved}.
+ */
+export function orderLine(
+  paragraphs: AnalyzedParagraphs | null,
+  start: number,
+  count: number,
+): LineOrder {
+  const levels = new Array<number>(count).fill(0);
+  if (paragraphs === null || count === 0) return { visual: levels.map((_, pos) => pos), levels };
+  const r = paragraphs.reorder(start, start + count);
+  for (let pos = 0; pos < count; pos++) {
+    const level = r.levels[pos];
+    if (typeof level === 'number' && level >= 0) levels[pos] = level;
+  }
+  const kept = r.order.map((at) => at - start).filter((pos) => pos >= 0 && pos < count);
+  return { visual: restoreRemoved(kept, count, (pos) => levels[pos] % 2 === 1), levels };
+}

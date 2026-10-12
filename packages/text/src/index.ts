@@ -49,16 +49,23 @@ export { layoutTextPose, textPoseLayoutInput } from './layout/textPoseLayout';
 export type { TextPoseLayout, TextPoseLayoutInput } from './layout/textPoseLayout';
 export type { BidiResolver, BidiReordering, BidiAnalysis } from './layout/bidiSeam';
 export { registerBidi, paragraphDirection } from './layout/bidiRegistry';
+export type { LayoutRunsOpts } from './layout/layoutOpts';
 export type {
-  LayoutRunsOpts,
   LaidOutRuns,
+  LaidOutLineBox,
+  LaidOutCell,
+  PlacedGlyph,
+} from './layout/layoutRuns';
+export { paintRuns } from './layout/paintRuns';
+export type {
+  PaintRunsOpts,
+  PaintedRuns,
   LaidOutGroup,
   LaidOutQuad,
   LaidOutOutlineGlyph,
   LaidOutDecoration,
-  LaidOutLineBox,
-  LaidOutCell,
-} from './layout/layoutRuns';
+} from './layout/paintRuns';
+export { cachedPaintRuns } from './layout/paintCache';
 
 export { measureText, measuredWidth } from './measure/measureText';
 export type { MeasuredText, MeasuredSpan } from './measure/measureText';

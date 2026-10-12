@@ -12,7 +12,7 @@ import {
   __setGlyphRasterizerForTests, _resetFontOutlinesForTests,
 } from '@weasel-js/font/test-seams';
 import type { Paint } from '@weasel-js/paint';
-import { layoutRuns } from './layoutRuns';
+import { layoutAndPaint } from './testing/layoutAndPaint';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 const OUTLINE_D = 'M0 0L0.5 -0.7L1 0Z';
@@ -80,7 +80,7 @@ describe('paint groups of a mixed-paint, mixed-tier paragraph', () => {
       run('B', { fill: { paint: solid('#0f0') } }),
       run('A'),
     ];
-    const out = layoutRuns(runs, {
+    const out = layoutAndPaint(runs, {
       maxWidth: Infinity, lineHeight: 1.2, align: 'left', outlineMinSize: 48,
     });
 
