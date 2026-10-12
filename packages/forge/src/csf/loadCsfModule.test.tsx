@@ -348,4 +348,37 @@ describe('loadCsfModule', () => {
   it('has no play when the story and meta have none', () => {
     expect(loadCsfModule({ default: { title: 'ui/B' }, A: {} }, AUTO_TITLE)[0]?.play).toBeNull();
   });
+
+  describe("argTypes read from the component's props", () => {
+    const __forgeArgTypes = { disabled: { control: { type: 'boolean' } }, size: { options: ['sm', 'md'] } };
+    const kinds = (story: LoadedStory | undefined) =>
+      Object.fromEntries(
+        Object.entries(story?.config.nodes ?? {}).map(([key, node]) => [key, (node as { kind: string }).kind]),
+      );
+
+    it('give a story with no args a control per prop, and are not a story themselves', () => {
+      const stories = loadCsfModule({ default: {}, Plain: {}, __forgeArgTypes }, AUTO_TITLE);
+      expect(stories.map((s) => s.exportName)).toEqual(['Plain']);
+      expect(kinds(stories[0])).toEqual({ disabled: 'boolean', size: 'enum' });
+      expect(stories[0]?.config.defaults()).toEqual({});
+    });
+
+    it("sit under the story's own argTypes", () => {
+      const [story] = loadCsfModule(
+        { default: { argTypes: { size: { options: ['xs'] }, disabled: { control: false } } }, Plain: {}, __forgeArgTypes },
+        AUTO_TITLE,
+      );
+      expect(story?.config.nodes.size).toMatchObject({ kind: 'enum', annotations: { options: [{ value: 'xs' }] } });
+      expect(story?.config.nodes.disabled).toBeUndefined();
+    });
+
+    it('are left out of a story whose render takes no args', () => {
+      const [fixed, taking] = loadCsfModule(
+        { default: {}, Fixed: { render: () => null }, Taking: { render: (_args: unknown) => null }, __forgeArgTypes },
+        AUTO_TITLE,
+      );
+      expect(kinds(fixed)).toEqual({});
+      expect(kinds(taking)).toEqual({ disabled: 'boolean', size: 'enum' });
+    });
+  });
 });
