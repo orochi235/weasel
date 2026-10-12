@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import {
+  prefAliasName,
   prefValueAtPath,
   type PrefAction,
   type PrefAlias,
@@ -112,14 +113,15 @@ export function shownLeaf(ctx: WalkCtx, pref: PrefLeaf): { pref: PrefLeaf; at?: 
   return shown ? { pref: shown.leaf, at: shown.path } : null;
 }
 
-export function PrefRow({ ctx, path, pref }: { ctx: WalkCtx; path: string; pref: PrefLeaf }) {
-  const shown = shownLeaf(ctx, pref);
+/** A leaf's row. `at` says `pref` is already the leaf an alias at `path` shows, and where its value lives. */
+export function PrefRow({ ctx, path, pref, at }: { ctx: WalkCtx; path: string; pref: PrefLeaf; at?: string }) {
+  const shown = at === undefined ? shownLeaf(ctx, pref) : { pref, at };
   if (shown) return <LeafRow ctx={ctx} path={path} pref={shown.pref} at={shown.at} />;
   const alias = pref as PrefAlias;
   // An alias of nothing is a wiring fault, shown where it sits and not dropped from the form.
   return (
     <div className={s.rowSlot} {...selectionAttrs(path, ctx, true)}>
-      <PropertyRow label={alias.name === '' ? 'Alias' : alias.name} description={alias.description} className={s.row}
+      <PropertyRow label={prefAliasName(alias)} description={alias.description} className={s.row}
         hint={marksHidden(ctx.hidden, path) ? <HiddenBadge /> : undefined}>
         <span className={s.unrenderable}>(alias: no pref at {alias.of === '' ? 'an empty path' : alias.of})</span>
       </PropertyRow>

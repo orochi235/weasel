@@ -7,6 +7,7 @@ import {
   type PrefLeaf,
   type PrefList,
   type PrefSection,
+  prefAliasName,
   prefIsCompound,
 } from '@weasel-js/prefs';
 import {
@@ -82,11 +83,7 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
   if (target) return <LeafRow {...props} {...target} inside={props.over && targets} />;
   // An alias of nothing is a wiring fault, shown where it sits and not dropped from the panel.
   return (
-    <PropertyRow
-      label={alias.name === '' ? 'Alias' : alias.name}
-      description={alias.description}
-      layout={props.layout}
-    >
+    <PropertyRow label={prefAliasName(alias)} description={alias.description} layout={props.layout}>
       <span>(alias: no control at {alias.of === '' ? 'an empty path' : alias.of})</span>
     </PropertyRow>
   );

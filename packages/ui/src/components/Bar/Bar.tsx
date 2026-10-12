@@ -8,7 +8,7 @@ import { pairRows } from '../SelectionPanel/model';
 import { renderCells, type LeafCell } from '../SelectionPanel/cells';
 import type { PropertyRenderContext, PropertyRenderer } from '../SelectionPanel/renderContext';
 import { renderBuiltin } from '../SelectionPanel/renderLeaf';
-import { BarLayout, groupBarNodes, type BarCell, type BarLeafNode, type BarNode, type BarOrientation } from './BarLayout';
+import { barLeafName, BarLayout, groupBarNodes, shownBarNodes, type BarCell, type BarLeafNode, type BarOrientation } from './BarLayout';
 import { withBarLabel, type LeafSurface } from './renderBarLeaf';
 import s from './Bar.module.css';
 
@@ -62,7 +62,7 @@ export function Bar(props: BarProps) {
   const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, targets };
   return (
     <BarLayout
-      nodes={shown === null ? [] : shownNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />), draw)}
+      nodes={shown === null ? [] : shownBarNodes(groupBarNodes(shown, '', (group, path) => <GroupRows draw={draw} group={group} path={path} />), (node) => shownNode(node, draw))}
       orientation={orientation}
       label={label}
       framed={framed}
@@ -92,13 +92,6 @@ function shownNode(node: BarLeafNode, draw: Draw): BarLeafNode {
   if (node.leaf.kind !== 'alias' || draw.renderers?.alias) return node;
   const shown = draw.targets.shown(node.leaf as PrefAlias);
   return shown ? { path: node.path, at: shown.path, leaf: shown.leaf } : node;
-}
-
-function shownNodes(nodes: readonly BarNode[], draw: Draw): BarNode[] {
-  return nodes.map((node) => {
-    if (node.kind === 'leaf') return { kind: 'leaf', ...shownNode(node, draw) };
-    return node.kind === 'run' ? { ...node, nodes: shownNodes(node.nodes, draw) } : node;
-  });
 }
 
 /** The value a condition reads at `path`: the entry there, else the part of an entry above it that the rest of the path names. */
@@ -165,7 +158,7 @@ function leafRow(node: BarLeafNode, draw: Draw): ReactNode {
   const { leaf, path } = node;
   if (leaf.block) return <div key={path}>{control}</div>;
   return (
-    <PropertyRow key={path} label={leaf.name} description={leaf.description} group disabled={draw.disabled.has(path)}>
+    <PropertyRow key={path} label={barLeafName(leaf)} description={leaf.description} group disabled={draw.disabled.has(path)}>
       {control}
     </PropertyRow>
   );

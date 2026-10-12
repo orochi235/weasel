@@ -1119,22 +1119,25 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   `markHidden` carries no mark, and a hidden `Bar` cell is dimmed with no badge. In a
   `SelectionPanel`'s narrow label column the `hidden` badge runs about a pixel into the field.
   `Bar`'s item conditions run through `SelectionPanel`'s shared code and have no test of their
-  own. `Properties.module.css` is one 1,597-line sheet. Every surface takes the schema
-  its aliases point into as `over`, but `PrefSchemaEditor`'s preview of a properties layout seeds
-  its one node from the layout's own leaves and writes only under `pose` and `data`, so a row
-  aliased into a dialog's schema draws unset and an edit to it goes nowhere. labkit's
-  `ControlMatrix` takes no `over`: a cell's popover finds an alias's leaf in the matrix's own
-  schema. A condition that reads a setting of `over` takes that
-  leaf's default only where the surface takes its own leaves': a `Bar` reads `values` alone and
-  a `SelectionPanel` only an `absentIsDefault` leaf's, and whether `over`'s default should
-  stand in there is not decided. A lab resolves its instrument's config schema with no `over`
-  (`useConfigSchema`), so that schema cannot hold such a condition. A vertical bar inside a
-  `PrefsForm` names the popover of an alias left unnamed with the empty string, where `Bar`
-  names it for the leaf it shows. `PrefSchemaEditor` edits an entry's own `enableIf` and
-  nothing inside an object entry, whose fields it draws no rows for, so a field's
+  own. `Properties.module.css` is one 1,597-line sheet. `PrefSchemaEditor` edits an entry's own
+  `enableIf` and nothing inside an object entry, whose fields it draws no rows for, so a field's
   `{ from: 'item' }` condition is written in code. A list of plain text entries is one
   `ListEditor`, which disables all of its entries or none, so an item `enableIf` that reads the
   entry does nothing there.
+
+- **(P3) What `over` does not reach yet.** Every surface takes the schema its aliases point
+  into, and its own conditions may read, as `over`. Left: (1) A condition that reads a setting
+  of `over` takes that leaf's default only where the surface takes its own leaves': a `Bar`
+  reads `values` alone and a `SelectionPanel` only an `absentIsDefault` leaf's. Whether `over`'s
+  default should stand in there is not decided. (2) `PrefSchemaEditor`'s preview of a properties
+  layout seeds its one node from the layout's own leaves and writes only under `pose` and
+  `data`, so a row aliased into a dialog's schema draws unset and an edit to it goes nowhere.
+  Its drag ghost draws a pointer with no `over`, as an alias of nothing. (3) labkit's
+  `ControlMatrix` takes no `over`, so a cell's popover finds an alias's leaf in the matrix's own
+  schema, and a lab resolves its instrument's config schema with none (`useConfigSchema`), so
+  that schema cannot hold a condition on another's setting. (4) An alias of nothing in a bar
+  inside a `PrefsForm` draws no cell on a horizontal bar, where a `Bar` draws
+  `(alias: no pref at …)`.
 
 - **(P3) What a bar does not do yet.** `ActionBar` is not built on `Bar`: its `icons` prop
   overrides an entry's icon with a `ReactNode`, which a leaf, being data, cannot carry, so it needs
