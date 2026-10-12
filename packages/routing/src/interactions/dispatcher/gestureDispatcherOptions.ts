@@ -82,7 +82,7 @@ export interface DispatcherChannels {
 }
 
 /** Options for `useGestureDispatcher`: the element to listen on, the actions
- *  and tools in play, and the hooks that turn raw DOM events into the world
+ *  and entries in play, and the hooks that turn raw DOM events into the world
  *  coordinates and hit targets bindings match against. */
 export interface UseGestureDispatcherOptions {
   /**
@@ -96,7 +96,8 @@ export interface UseGestureDispatcherOptions {
   canvasRef: RefObject<HTMLElement | null>;
   /** Action registry (ActionsRegistry from registry.tsx). */
   actions: ActionsRegistry;
-  /** Tool definitions keyed by id. Typically passes an empty Map. */
+  /** Every entry in play, keyed by id: tools and any other contribution
+   *  whose bindings this dispatcher routes. */
   entriesById: ReadonlyMap<string, Contribution<unknown>>;
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
