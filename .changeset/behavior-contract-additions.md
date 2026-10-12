@@ -5,7 +5,7 @@
 A gesture behavior can do three more things. Two existing things change with them:
 
 - Code that calls a `MoveBehavior`'s `onEnd` directly, such as a consumer's own test, must now pass a `MoveEnd` as the second argument: `{ answered, translateOps }`.
-- For the dragged nodes `snapToContainer` has no slot for, the committed ops now come from the move's default translate. They carry the move's label where they carried the behavior's `moveLabel`, include the geometry data op when `geometryProjection` is wired, and under a turned frame land where the preview showed them.
+- For the dragged nodes `snapToContainer` has no slot for, the committed ops now come from the move's default translate. They carry the move's label where they carried the behavior's `moveLabel`, and include the geometry data op when `geometryProjection` is wired.
 
 A move behavior that claims the commit can ask for the default translate of the nodes it did not place. Its `onEnd` is handed a `MoveEnd`, and `end.translateOps(ids)` returns the ops the action would have written for those dragged roots and the descendants that follow them, by the drag as the behaviors shaped it. `ActionBehavior` takes the type of that second argument as a fourth parameter, `BehaviorEnd` unless an action says otherwise. `snapToContainer` commits the nodes it has no slot for this way, which fixes undo for a derived node among them: undoing the drop left its authored pose at the derived one.
 
