@@ -1626,11 +1626,6 @@ only story runner in the repo.
   (`expected +0 to be 4`), and passed alone on this machine at that commit. Whether it is a race
   between the last paint and the readback or a real missed repaint is not known.
 
-- **(P3) labkit's `usePersistedState` test failed once on the fleet.** "keeps its value across a
-  remount, lab-scoped outside a trial" read `'shape'` where it expected `'color+'`, in a full run
-  of `9c526ca33` on 2026-10-11 that passed 19,793 others; alone on this machine at that commit
-  the file passes 6 of 6. Not rerun on the fleet.
-
 - **(P3) Browser tests time out on the fleet, a different handful each run.** Across six full runs
   on studio and teitou on 2026-10-11, each of these failed once or twice with a 15 s test timeout
   or a `locator.screenshot` timeout, and passed in the runs around it:
