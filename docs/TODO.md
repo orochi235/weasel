@@ -913,9 +913,16 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   bypassing the viewer's argument and the point of the surface is to let a
   consumer see which one is being applied.
 
-- **(P3) AudioWorklet scheduling** — immune to main-thread jank; costs a worklet
-  module, cross-thread messaging and a bundling story. Revisit if jank proves
-  audible.
+- **(P3) AudioWorklet voices** — immune to main-thread jank. Moving only the
+  scheduler's timer into a worklet would change nothing: it already runs off
+  the main thread, in a Worker, and what a stall delays is the callback that
+  makes a voice's nodes, which has to run on the main thread. Immunity means
+  synthesizing the voices inside a worklet processor from events posted ahead
+  of time: a second implementation of the oscillator, partial, noise, filter,
+  and envelope voices, plus a worklet module, cross-thread messaging, and a
+  bundling story. The engine's `onLate` option reports every event a stall made
+  late, and by how many ms. Revisit when it fires in a real app whose
+  `lookahead` has already been raised.
 
 ---
 

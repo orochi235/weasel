@@ -17,6 +17,10 @@ dedicated Worker instead (`createTickTimer`). The worker is built from an inline
 global, or a Content-Security-Policy without `worker-src blob:` — it falls back
 to `setTimeout`, and a hidden tab books late again.
 
+The worker times the pass, but the pass itself runs on the main thread, so a
+stall there longer than the lookahead starts whatever came due late. The
+`onLate(lateMs, when)` option reports each one; if it fires, raise `lookahead`.
+
 A suspended `AudioContext` is a separate matter: its clock stops, and on resume
 the engine drops what came due meanwhile rather than firing it all at once.
 
