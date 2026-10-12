@@ -12,16 +12,17 @@ export default meta;
 type Story = StoryObj<typeof Dialog>;
 
 export const Basic: Story = {
-  render: () => {
+  args: { title: 'Preferences' },
+  render: (args) => {
     function Wrap() {
       const [open, setOpen] = useState(false);
       return (
         <>
           <Button onClick={() => setOpen(true)}>Open dialog</Button>
           <Dialog
+            {...args}
             isOpen={open}
             onOpenChange={setOpen}
-            title="Preferences"
             footer={
               <>
                 <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
@@ -39,17 +40,17 @@ export const Basic: Story = {
 };
 
 export const AlertDialog: Story = {
-  render: () => {
+  args: { role: 'alertdialog', title: 'Delete this layer?' },
+  render: (args) => {
     function Wrap() {
       const [open, setOpen] = useState(false);
       return (
         <>
           <Button onClick={() => setOpen(true)}>Delete layer</Button>
           <Dialog
+            {...args}
             isOpen={open}
             onOpenChange={setOpen}
-            role="alertdialog"
-            title="Delete this layer?"
             footer={
               <>
                 <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
