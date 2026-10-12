@@ -76,8 +76,8 @@ function recordTransformOp<TPose>(
  * returns the node to where it started. Undone mid-flight, the node comes to rest on the
  * undone pose.
  *
- * An adapter without `poseTarget`, and a pose with no axes (a path), keep the older behavior:
- * `setPose` is written each frame, and a new move on the node cancels the one running.
+ * An adapter without `poseTarget`, and a pose its descriptor gives no axes for, keep the older
+ * behavior: `setPose` is written each frame, and a new move on the node cancels the one running.
  */
 export function tweenPose<TPose>(
   animator: Animator,

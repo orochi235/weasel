@@ -2,7 +2,7 @@ import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../core/geometry/pose
 import { documentPose, type PoseSource } from '../core/scene/effectivePose';
 import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
 import { axesOf } from './engine/axes';
-import { createTarget, type Target, type TargetAxes } from './target';
+import { createTarget, stateOf, type Target, type TargetAxes } from './target';
 
 /** What {@link createPoseTarget} takes. */
 export interface PoseTargetOptions<TPose> {
@@ -190,10 +190,14 @@ export function scenePoseTarget<TPose>(
     made = new Map();
     sceneTargets.set(scene.overrides, made);
   }
-  const held = made.get(id) as Target<TPose> | undefined;
-  if (held) return held;
   const nid = id as NodeId;
   const node = scene.get(nid);
+  const by = descriptor ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
+  const held = made.get(id) as Target<TPose> | undefined;
+  // A pose that has changed shape at rest, a polygon given more points, needs axes made for it.
+  const fits = !held || held.active || !node
+    || poseAxes(by, documentPose(scene, node))?.count === stateOf(held).axes.count;
+  if (held && fits) return held;
   if (!node) return undefined;
   // A node removed mid-flight keeps answering with the last pose it had.
   let last = documentPose(scene, node);
@@ -203,7 +207,7 @@ export function scenePoseTarget<TPose>(
   let target: Target<TPose> | null = null;
   target = build<TPose>({
     id,
-    descriptor: descriptor ?? (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>),
+    descriptor: by,
     overrides: scene.overrides,
     get() {
       const n = scene.get(nid);
